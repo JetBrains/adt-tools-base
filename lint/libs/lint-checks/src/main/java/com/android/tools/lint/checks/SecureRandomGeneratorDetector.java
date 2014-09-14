@@ -58,7 +58,6 @@ public class SecureRandomGeneratorDetector extends Detector implements ClassScan
     public static final Issue ISSUE = Issue.create(
             "TrulyRandom", //$NON-NLS-1$
             "Weak RNG",
-            "Looks for calls to JCA primitives that may be affected by SecureRandom vulnerability",
             "Key generation, signing, encryption, and random number generation may not " +
             "receive cryptographically strong values due to improper initialization of " +
             "the underlying PRNG on Android 4.3 and below.\n" +

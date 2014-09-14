@@ -48,7 +48,6 @@ public class ClickableViewAccessibilityDetector extends Detector implements Dete
     public static final Issue ISSUE = Issue.create(
             "ClickableViewAccessibility", //$NON-NLS-1$
             "Accessibility in Custom Views",
-            "Checks that custom views handle accessibility on click events",
             "If a `View` that overrides `onTouchEvent` or uses an `OnTouchListener` does not also "
                     + "implement `performClick` and call it when clicks are detected, the `View` "
                     + "may not handle accessibility actions properly. Logic handling the click "

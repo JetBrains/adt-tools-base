@@ -47,7 +47,6 @@ public class AppCompatCallDetector extends Detector implements Detector.JavaScan
     public static final Issue ISSUE = Issue.create(
             "AppCompatMethod",
             "Using Wrong AppCompat Method",
-            "Finds cases where a custom `appcompat` method should be used instead",
             "When using the appcompat library, there are some methods you should be calling " +
             "instead of the normal ones; for example, `getSupportActionBar()` instead of " +
             "`getActionBar()`. This lint check looks for calls to the wrong method.",

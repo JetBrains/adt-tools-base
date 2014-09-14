@@ -43,7 +43,6 @@ import java.util.List;
 public final class Issue implements Comparable<Issue> {
     private final String mId;
     private final String mBriefDescription;
-    private final String mDescription;
     private final String mExplanation;
     private final Category mCategory;
     private final int mPriority;
@@ -56,19 +55,16 @@ public final class Issue implements Comparable<Issue> {
     private Issue(
             @NonNull String id,
             @NonNull String shortDescription,
-            @NonNull String description,
             @NonNull String explanation,
             @NonNull Category category,
             int priority,
             @NonNull Severity severity,
             @NonNull Implementation implementation) {
         assert !shortDescription.isEmpty();
-        assert !description.isEmpty();
         assert !explanation.isEmpty();
 
         mId = id;
         mBriefDescription = shortDescription;
-        mDescription = description;
         mExplanation = explanation;
         mCategory = category;
         mPriority = priority;
@@ -85,8 +81,6 @@ public final class Issue implements Comparable<Issue> {
      * @param briefDescription short summary (typically 5-6 words or less), typically
      *                         describing the <b>problem</b> rather than the <b>fix</b>
      *                         (e.g. "Missing minSdkVersion")
-     * @param description the quick summary of the issue (one line), typically describing
-     *                    what the detector looks for
      * @param explanation a full explanation of the issue, with suggestions for
      *            how to fix it
      * @param category the associated category, if any
@@ -100,13 +94,32 @@ public final class Issue implements Comparable<Issue> {
     public static Issue create(
             @NonNull String id,
             @NonNull String briefDescription,
-            @NonNull String description,
             @NonNull String explanation,
             @NonNull Category category,
             int priority,
             @NonNull Severity severity,
             @NonNull Implementation implementation) {
-        return new Issue(id, briefDescription, description, explanation, category, priority,
+        return new Issue(id, briefDescription, explanation, category, priority,
+                severity, implementation);
+    }
+
+    /**
+     * For compatibility with older custom rules)
+     *
+     * @deprecated Use {@link #create(String, String, String, Category, int, Severity, Implementation)} instead
+     */
+    @NonNull
+    @Deprecated
+    public static Issue create(
+            @NonNull String id,
+            @NonNull String briefDescription,
+            @SuppressWarnings("UnusedParameters") @NonNull String description,
+            @NonNull String explanation,
+            @NonNull Category category,
+            int priority,
+            @NonNull Severity severity,
+            @NonNull Implementation implementation) {
+        return new Issue(id, briefDescription, explanation, category, priority,
                 severity, implementation);
     }
 
@@ -126,22 +139,10 @@ public final class Issue implements Comparable<Issue> {
      * Briefly (in a couple of words) describes these errors
      *
      * @return a brief summary of the issue, never null, never empty
-     * @see #getDescription(TextFormat)
      */
     @NonNull
     public String getBriefDescription(@NonNull TextFormat format) {
         return RAW.convertTo(mBriefDescription, format);
-    }
-
-    /**
-     * Describes in a single line the kinds of checks performed by this rule
-     *
-     * @return a quick summary of the issue, never null, never empty
-     * @see #getBriefDescription(TextFormat)
-     */
-    @NonNull
-    public String getDescription(@NonNull TextFormat format) {
-        return RAW.convertTo(mDescription, format);
     }
 
     /**

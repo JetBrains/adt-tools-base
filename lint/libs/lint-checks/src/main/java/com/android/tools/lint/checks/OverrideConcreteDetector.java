@@ -50,7 +50,6 @@ public class OverrideConcreteDetector extends Detector implements JavaScanner {
     public static final Issue ISSUE = Issue.create(
         "OverrideAbstract", //$NON-NLS-1$
         "Not overriding abstract methods on older platforms",
-        "Ensures that all methods that used to be abstract in older versions are overridden",
 
         "To improve the usability of some APIs, some methods that used to be `abstract` have " +
         "been made concrete by adding default implementations. This means that when compiling " +

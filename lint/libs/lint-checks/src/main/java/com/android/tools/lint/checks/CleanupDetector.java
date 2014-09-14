@@ -60,7 +60,6 @@ public class CleanupDetector extends Detector implements ClassScanner {
     public static final Issue RECYCLE_RESOURCE = Issue.create(
         "Recycle", //$NON-NLS-1$
         "Missing `recycle()` calls",
-        "Looks for missing `recycle()` calls on resources",
 
         "Many resources, such as TypedArrays, VelocityTrackers, etc., " +
         "should be recycled (with a `recycle()` call) after use. This lint check looks " +
@@ -75,7 +74,6 @@ public class CleanupDetector extends Detector implements ClassScanner {
     public static final Issue COMMIT_FRAGMENT = Issue.create(
             "CommitTransaction", //$NON-NLS-1$
             "Missing `commit()` calls",
-            "Looks for missing `commit()` calls on `FragmentTransactions`",
 
             "After creating a `FragmentTransaction`, you typically need to commit it as well",
 

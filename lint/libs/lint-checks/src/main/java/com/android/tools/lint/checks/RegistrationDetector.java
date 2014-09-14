@@ -62,8 +62,6 @@ public class RegistrationDetector extends LayoutDetector implements ClassScanner
     public static final Issue ISSUE = Issue.create(
             "Registered", //$NON-NLS-1$
             "Class is not registered in the manifest",
-            "Ensures that Activities, Services and Content Providers are registered in the " +
-            "manifest",
 
             "Activities, services and content providers should be registered in the " +
             "`AndroidManifest.xml` file using `<activity>`, `<service>` and `<provider>` tags.\n" +

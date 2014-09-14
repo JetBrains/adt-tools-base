@@ -61,8 +61,6 @@ public class GridLayoutDetector extends LayoutDetector {
     public static final Issue ISSUE = Issue.create(
             "GridLayout", //$NON-NLS-1$
             "GridLayout validation",
-            "Checks for potential GridLayout errors like declaring rows and columns outside " +
-            "the declared grid dimensions",
             "Declaring a layout_row or layout_column that falls outside the declared size " +
             "of a GridLayout's `rowCount` or `columnCount` is usually an unintentional error.",
             Category.CORRECTNESS,

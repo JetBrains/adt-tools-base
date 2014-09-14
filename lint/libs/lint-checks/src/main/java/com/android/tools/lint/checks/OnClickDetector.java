@@ -60,7 +60,6 @@ public class OnClickDetector extends LayoutDetector implements ClassScanner {
     public static final Issue ISSUE = Issue.create(
             "OnClick", //$NON-NLS-1$
             "`onClick` method does not exist",
-            "Ensures that `onClick` attribute values refer to real methods",
 
             "The `onClick` attribute value should be the name of a method in this View's context " +
             "to invoke when the view is clicked. This name must correspond to a public method " +

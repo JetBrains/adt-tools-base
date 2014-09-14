@@ -38,7 +38,6 @@ public class PrivateResourceDetector extends ResourceXmlDetector {
     public static final Issue ISSUE = Issue.create(
             "PrivateResource", //$NON-NLS-1$
             "Using private resources",
-            "Looks for references to private resources",
 
             "Private resources should not be referenced; the may not be present everywhere, and " +
             "even where they are they may disappear without notice.\n" +

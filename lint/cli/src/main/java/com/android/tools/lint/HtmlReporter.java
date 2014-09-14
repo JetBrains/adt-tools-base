@@ -388,7 +388,7 @@ public class HtmlReporter extends Reporter {
 
         mWriter.write("<div class=\"summary\">\n");              //$NON-NLS-1$
         mWriter.write("Explanation: ");
-        String description = issue.getDescription(HTML);
+        String description = issue.getBriefDescription(HTML);
         mWriter.write(description);
         if (!description.isEmpty()
                 && Character.isLetter(description.charAt(description.length() - 1))) {

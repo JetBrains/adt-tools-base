@@ -63,7 +63,6 @@ public class AnnotationDetector extends Detector implements Detector.JavaScanner
     public static final Issue ISSUE = Issue.create(
             "LocalSuppress", //$NON-NLS-1$
             "@SuppressLint on invalid element",
-            "Looks for @SuppressLint annotations in locations where it doesn't work for class based checks",
 
             "The `@SuppressAnnotation` is used to suppress Lint warnings in Java files. However, " +
             "while many lint checks analyzes the Java source code, where they can find " +

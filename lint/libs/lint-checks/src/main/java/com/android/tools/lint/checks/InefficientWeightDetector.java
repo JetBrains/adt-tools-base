@@ -71,7 +71,6 @@ public class InefficientWeightDetector extends LayoutDetector {
     public static final Issue INEFFICIENT_WEIGHT = Issue.create(
             "InefficientWeight", //$NON-NLS-1$
             "Inefficient layout weight",
-            "Looks for inefficient weight declarations in LinearLayouts",
             "When only a single widget in a LinearLayout defines a weight, it is more " +
             "efficient to assign a width/height of `0dp` to it since it will absorb all " +
             "the remaining space anyway. With a declared width/height of `0dp` it " +
@@ -85,7 +84,6 @@ public class InefficientWeightDetector extends LayoutDetector {
     public static final Issue NESTED_WEIGHTS = Issue.create(
             "NestedWeights", //$NON-NLS-1$
             "Nested layout weights",
-            "Looks for nested layout weights, which are costly",
             "Layout weights require a widget to be measured twice. When a LinearLayout with " +
             "non-zero weights is nested inside another LinearLayout with non-zero weights, " +
             "then the number of measurements increase exponentially.",
@@ -98,7 +96,6 @@ public class InefficientWeightDetector extends LayoutDetector {
     public static final Issue BASELINE_WEIGHTS = Issue.create(
             "DisableBaselineAlignment", //$NON-NLS-1$
             "Missing `baselineAligned` attribute",
-            "Looks for LinearLayouts which should set android:baselineAligned=false",
             "When a LinearLayout is used to distribute the space proportionally between " +
             "nested layouts, the baseline alignment property should be turned off to " +
             "make the layout computation faster.",
@@ -111,8 +108,6 @@ public class InefficientWeightDetector extends LayoutDetector {
     public static final Issue WRONG_0DP = Issue.create(
             "Suspicious0dp", //$NON-NLS-1$
             "Suspicious 0dp dimension",
-            "Looks for 0dp as the width in a vertical LinearLayout or as the height in a " +
-            "horizontal",
 
             "Using 0dp as the width in a horizontal LinearLayout with weights is a useful " +
             "trick to ensure that only the weights (and not the intrinsic sizes) are used " +
@@ -130,7 +125,6 @@ public class InefficientWeightDetector extends LayoutDetector {
     public static final Issue ORIENTATION = Issue.create(
             "Orientation", //$NON-NLS-1$
             "Missing explicit orientation",
-            "Checks that LinearLayouts with multiple children set the orientation",
 
             "The default orientation of a LinearLayout is horizontal. It's pretty easy to "
             + "believe that the layout is vertical, add multiple children to it, and wonder "

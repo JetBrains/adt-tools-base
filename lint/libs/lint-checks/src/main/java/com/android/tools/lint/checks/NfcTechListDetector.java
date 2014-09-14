@@ -45,7 +45,6 @@ public class NfcTechListDetector extends ResourceXmlDetector implements JavaScan
     public static final Issue ISSUE = Issue.create(
             "NfcTechWhitespace", //$NON-NLS-1$
             "Whitespace in NFC tech lists",
-            "Ensures that NFC <tech> lists do not include whitespace",
 
             "In a <tech-list>, there can be whitespace around the <tech> elements," +
             "but not inside them. This is because the code which reads in the tech " +

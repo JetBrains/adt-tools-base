@@ -78,7 +78,6 @@ public class RelativeOverlapDetector extends LayoutDetector {
     public static final Issue ISSUE = Issue.create(
             "RelativeOverlap",
             "Overlapping items in RelativeLayout",
-            "Looks for potential overlap of left and right-aligned items in RelativeLayout",
             "If relative layout has text or button items aligned to left and right " +
             "sides they can overlap each other due to localized text expansion " +
             "unless they have mutual constraints like `toEndOf`/`toStartOf`.",

@@ -51,7 +51,6 @@ public class CommentDetector extends Detector implements Detector.JavaScanner {
     public static final Issue EASTER_EGG = Issue.create(
             "EasterEgg", //$NON-NLS-1$
             "Code contains easter egg",
-            "Looks for hidden easter eggs",
             "An \"easter egg\" is code deliberately hidden in the code, both from potential " +
             "users and even from other developers. This lint check looks for code which " +
             "looks like it may be hidden from sight.",
@@ -65,8 +64,6 @@ public class CommentDetector extends Detector implements Detector.JavaScanner {
     public static final Issue STOP_SHIP = Issue.create(
             "StopShip", //$NON-NLS-1$
             "Code contains `STOPSHIP` marker",
-            "Looks for comment markers of the form `//STOPSHIP` which indicates that code " +
-            "should not be released yet",
 
             "Using the comment `// STOPSHIP` can be used to flag code that is incomplete but " +
             "checked in. This comment marker can be used to indicate that the code should not " +

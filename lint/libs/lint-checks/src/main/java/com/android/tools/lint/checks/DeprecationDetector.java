@@ -55,7 +55,6 @@ public class DeprecationDetector extends LayoutDetector {
     public static final Issue ISSUE = Issue.create(
             "Deprecated", //$NON-NLS-1$
             "Using deprecated resources",
-            "Looks for usages of deprecated layouts, attributes, and so on.",
             "Deprecated views, attributes and so on are deprecated because there " +
             "is a better way to do something. Do it that new way. You've been warned.",
             Category.CORRECTNESS,

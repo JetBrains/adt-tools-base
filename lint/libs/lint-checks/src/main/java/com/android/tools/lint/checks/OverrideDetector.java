@@ -56,7 +56,6 @@ public class OverrideDetector extends Detector implements ClassScanner {
     public static final Issue ISSUE = Issue.create(
             "DalvikOverride", //$NON-NLS-1$
             "Method considered overridden by Dalvik",
-            "Looks for methods treated as overrides by Dalvik",
 
             "The Android virtual machine will treat a package private method in one " +
             "class as overriding a package private method in its super class, even if " +

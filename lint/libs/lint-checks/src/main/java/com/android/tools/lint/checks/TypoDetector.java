@@ -95,7 +95,6 @@ public class TypoDetector extends ResourceXmlDetector {
     public static final Issue ISSUE = Issue.create(
             "Typos", //$NON-NLS-1$
             "Spelling error",
-            "Looks for typos in messages",
 
             "This check looks through the string definitions, and if it finds any words " +
             "that look like likely misspellings, they are flagged.",

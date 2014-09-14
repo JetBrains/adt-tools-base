@@ -59,8 +59,6 @@ public class AlwaysShowActionDetector extends ResourceXmlDetector implements Jav
     public static final Issue ISSUE = Issue.create(
             "AlwaysShowAction", //$NON-NLS-1$
             "Usage of `showAsAction=always`",
-            "Checks for uses of `showAsAction=\"always\"` and suggests `showAsAction=\"ifRoom\"` " +
-                "instead",
 
             "Using `showAsAction=\"always\"` in menu XML, or `MenuItem.SHOW_AS_ACTION_ALWAYS` in " +
             "Java code is usually a deviation from the user interface style guide." +

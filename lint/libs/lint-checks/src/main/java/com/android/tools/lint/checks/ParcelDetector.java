@@ -51,7 +51,6 @@ public class ParcelDetector extends Detector implements Detector.JavaScanner {
     public static final Issue ISSUE = Issue.create(
             "ParcelCreator", //$NON-NLS-1$
             "Missing Parcelable `CREATOR` field",
-            "Checks that classes implementing `Parcelable` also provide a `CREATOR` field",
 
             "According to the `Parcelable` interface documentation, " +
             "\"Classes implementing the Parcelable interface must also have a " +

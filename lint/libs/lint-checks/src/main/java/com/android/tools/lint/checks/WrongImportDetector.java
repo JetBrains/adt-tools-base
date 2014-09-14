@@ -52,7 +52,6 @@ public class WrongImportDetector extends Detector implements Detector.JavaScanne
     public static final Issue ISSUE = Issue.create(
             "SuspiciousImport", //$NON-NLS-1$
             "'`import android.R`' statement",
-            "Checks for 'import android.R' statements, which are usually accidental",
             "Importing `android.R` is usually not intentional; it sometimes happens when " +
             "you use an IDE and ask it to automatically add imports at a time when your " +
             "project's R class it not present.\n" +

@@ -112,7 +112,6 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
     public static final Issue USE_START = Issue.create(
         "RtlHardcoded", //$NON-NLS-1$
         "Using left/right instead of start/end attributes",
-        "Looks for hardcoded left/right constants which could be start/end for bidirectional text",
 
         "Using `Gravity#LEFT` and `Gravity#RIGHT` can lead to problems when a layout is " +
         "rendered in locales where text flows from right to left. Use `Gravity#START` " +
@@ -136,7 +135,6 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
     public static final Issue COMPAT = Issue.create(
         "RtlCompat", //$NON-NLS-1$
         "Right-to-left text compatibility issues",
-        "Looks for compatibility issues with RTL support",
 
         "API 17 adds a `textAlignment` attribute to specify text alignment. However, " +
         "if you are supporting older versions than API 17, you must *also* specify a " +
@@ -148,7 +146,6 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
     public static final Issue SYMMETRY = Issue.create(
         "RtlSymmetry", //$NON-NLS-1$
         "Padding and margin symmetry",
-        "Ensures that specifying padding on one side is matched by padding on the other",
 
         "If you specify padding or margin on the left side of a layout, you should " +
         "probably also specify padding on the right side (and vice versa) for " +
@@ -160,7 +157,6 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
     public static final Issue ENABLED = Issue.create(
         "RtlEnabled", //$NON-NLS-1$
         "Using RTL attributes without enabling RTL support",
-        "Looks for usages of right-to-left text constants without enabling RTL support",
 
         "To enable right-to-left support, when running on API 17 and higher, you must " +
         "set the `android:supportsRtl` attribute in the manifest `<application>` element." +
@@ -174,7 +170,6 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
     public static final Issue FIELD = Issue.create(
         "RtlFieldAccess", //$NON-NLS-1$
         "Accessing margin and padding fields directly",
-        "Looks for problematic manipulation of view padding and margin fields",
 
         "Modifying the padding and margin constants in view objects directly is " +
         "problematic when using RTL support, since it can lead to inconsistent states. You " +
@@ -185,7 +180,6 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
     public static final Issue AWARE = Issue.create(
         "RtlAware", //$NON-NLS-1$
         "View code not aware of RTL APIs",
-        "Looks for view-related code which might need RTL adjustments",
 
         "When manipulating views, and especially when implementing custom layouts, " +
         "the code may need to be aware of RTL APIs. This lint check looks for usages of " +

@@ -43,7 +43,6 @@ public class MathDetector extends Detector implements Detector.ClassScanner {
     public static final Issue ISSUE = Issue.create(
             "FloatMath", //$NON-NLS-1$
             "Using `FloatMath` instead of `Math`",
-            "Suggests replacing `android.util.FloatMath` calls with `java.lang.Math`",
 
             "In older versions of Android, using `android.util.FloatMath` was recommended " +
             "for performance reasons when operating on floats. However, on modern hardware " +

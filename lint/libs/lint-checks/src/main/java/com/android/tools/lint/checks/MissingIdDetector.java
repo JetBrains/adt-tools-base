@@ -44,7 +44,6 @@ public class MissingIdDetector extends LayoutDetector {
     public static final Issue ISSUE = Issue.create(
             "MissingId", //$NON-NLS-1$
             "Fragments should specify an `id` or `tag`",
-            "Ensures that XML tags like `<fragment>` specify an `id` or `tag` attribute",
 
             "If you do not specify an android:id or an android:tag attribute on a " +
             "<fragment> element, then if the activity is restarted (for example for " +

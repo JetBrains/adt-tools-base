@@ -98,7 +98,6 @@ public class UnusedResourceDetector extends ResourceXmlDetector implements Detec
     public static final Issue ISSUE = Issue.create(
             "UnusedResources", //$NON-NLS-1$
             "Unused resources",
-            "Looks for unused resources",
             "Unused resources make applications larger and slow down builds.",
             Category.PERFORMANCE,
             3,
@@ -109,7 +108,6 @@ public class UnusedResourceDetector extends ResourceXmlDetector implements Detec
     public static final Issue ISSUE_IDS = Issue.create(
             "UnusedIds", //$NON-NLS-1$
             "Unused id",
-            "Looks for unused id's",
             "This resource id definition appears not to be needed since it is not referenced " +
             "from anywhere. Having id definitions, even if unused, is not necessarily a bad " +
             "idea since they make working on layouts and menus easier, so there is not a " +

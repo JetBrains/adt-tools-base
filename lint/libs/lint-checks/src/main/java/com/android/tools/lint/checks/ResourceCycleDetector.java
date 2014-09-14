@@ -83,7 +83,6 @@ public class ResourceCycleDetector extends ResourceXmlDetector {
     public static final Issue CYCLE = Issue.create(
             "ResourceCycle", //$NON-NLS-1$
             "Cycle in resource definitions",
-            "Looks for cycles in resource definitions",
             "There should be no cycles in resource definitions as this can lead to runtime " +
             "exceptions.",
             Category.CORRECTNESS,
@@ -96,7 +95,6 @@ public class ResourceCycleDetector extends ResourceXmlDetector {
     public static final Issue CRASH = Issue.create(
             "AaptCrash", //$NON-NLS-1$
             "Potential AAPT crash",
-            "Looks for source constructs that can cause AAPT to crash",
             "Defining a style which sets `android:id` to a dynamically generated id can cause " +
             "many versions of `aapt`, the resource packaging tool, to crash. To work around " +
             "this, declare the id explicitly with `<item type=\"id\" name=\"...\" />` instead.",

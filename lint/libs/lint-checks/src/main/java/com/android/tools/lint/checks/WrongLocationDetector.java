@@ -37,7 +37,6 @@ public class WrongLocationDetector extends LayoutDetector {
     public static final Issue ISSUE = Issue.create(
             "WrongFolder", //$NON-NLS-1$
             "Resource file in the wrong `res` folder",
-            "Finds resource files that are placed in the wrong folders",
 
             "Resource files are sometimes placed in the wrong folder, and it can lead to " +
             "subtle bugs that are hard to understand. This check looks for problems in this " +

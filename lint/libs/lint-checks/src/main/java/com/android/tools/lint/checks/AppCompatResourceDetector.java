@@ -48,7 +48,6 @@ public class AppCompatResourceDetector extends ResourceXmlDetector implements Ja
     public static final Issue ISSUE = Issue.create(
             "AppCompatResource", //$NON-NLS-1$
             "Menu namespace",
-            "Ensures that menu items are using the right namespace",
 
             "When using the appcompat library, menu resources should refer to the " +
             "`showAsAction` in the `app:` namespace, not the `android:` namespace.\n" +

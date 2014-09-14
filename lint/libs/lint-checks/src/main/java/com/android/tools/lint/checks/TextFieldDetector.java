@@ -60,7 +60,6 @@ public class TextFieldDetector extends LayoutDetector {
     public static final Issue ISSUE = Issue.create(
             "TextFields", //$NON-NLS-1$
             "Missing `inputType` or `hint`",
-            "Looks for text fields missing `inputType` or `hint` settings",
 
             "Providing an `inputType` attribute on a text field improves usability " +
             "because depending on the data to be input, optimized keyboards can be shown " +

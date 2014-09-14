@@ -56,7 +56,6 @@ public class NamespaceDetector extends LayoutDetector {
     public static final Issue TYPO = Issue.create(
             "NamespaceTypo", //$NON-NLS-1$
             "Misspelled namespace declaration",
-            "Looks for misspellings in namespace declarations",
 
             "Accidental misspellings in namespace declarations can lead to some very " +
             "obscure error messages. This check looks for potential misspellings to " +
@@ -70,7 +69,6 @@ public class NamespaceDetector extends LayoutDetector {
     public static final Issue UNUSED = Issue.create(
             "UnusedNamespace", //$NON-NLS-1$
             "Unused namespace",
-            "Finds unused namespaces in XML documents",
 
             "Unused namespace declarations take up space and require processing that is not " +
             "necessary",
@@ -84,7 +82,6 @@ public class NamespaceDetector extends LayoutDetector {
     public static final Issue CUSTOM_VIEW = Issue.create(
             "LibraryCustomView", //$NON-NLS-1$
             "Custom views in libraries should use res-auto-namespace",
-            "Flags custom attributes in libraries, which must use the res-auto-namespace instead",
 
             "When using a custom view with custom attributes in a library project, the layout " +
             "must use the special namespace " + AUTO_URI + " instead of a URI which includes " +
@@ -100,7 +97,6 @@ public class NamespaceDetector extends LayoutDetector {
     public static final Issue RES_AUTO = Issue.create(
             "ResAuto", //$NON-NLS-1$
             "Hardcoded Package in Namespace",
-            "Finds resource namespaces with hardcoded package names",
 
             "In Gradle projects, the actual package used in the final APK can vary; for " +
             "you can add a `.debug` package suffix in one version and not the other. " +
