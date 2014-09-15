@@ -35,14 +35,11 @@ import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.Speed;
 
 import java.lang.reflect.Modifier;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.List;
 
-import lombok.ast.AstVisitor;
 import lombok.ast.ClassDeclaration;
 import lombok.ast.ConstructorDeclaration;
-import lombok.ast.ForwardingAstVisitor;
-import lombok.ast.Node;
 import lombok.ast.NormalTypeBody;
 import lombok.ast.TypeMember;
 
@@ -93,96 +90,77 @@ public class FragmentDetector extends Detector implements JavaScanner {
 
     @Nullable
     @Override
-    public List<Class<? extends Node>> getApplicableNodeTypes() {
-        return Collections.<Class<? extends Node>>singletonList(ClassDeclaration.class);
+    public List<String> applicableSuperClasses() {
+        return Arrays.asList(CLASS_FRAGMENT, CLASS_V4_FRAGMENT);
     }
 
-    @Nullable
     @Override
-    public AstVisitor createJavaVisitor(@NonNull final JavaContext context) {
-        return new ForwardingAstVisitor() {
-            @Override
-            public boolean visitClassDeclaration(ClassDeclaration node) {
-                int flags = node.astModifiers().getEffectiveModifierFlags();
-                if ((flags & Modifier.ABSTRACT) != 0) {
-                    return true;
-                }
+    public void checkClass(@NonNull JavaContext context, @NonNull ClassDeclaration node,
+            @NonNull ResolvedClass cls) {
+        int flags = node.astModifiers().getEffectiveModifierFlags();
+        if ((flags & Modifier.ABSTRACT) != 0) {
+            return;
+        }
 
-                ResolvedNode resolved = context.resolve(node);
-                if (!(resolved instanceof ResolvedClass)) {
-                    return true;
-                }
+        if ((flags & Modifier.PUBLIC) == 0) {
+            String message = String.format("This fragment class should be public (%1$s)",
+                    cls.getName());
+            context.report(ISSUE, node, context.getLocation(node.astName()), message,
+                    null);
+            return;
+        }
 
-                ResolvedClass cls = (ResolvedClass) resolved;
+        if (cls.getContainingClass() != null && (flags & Modifier.STATIC) == 0) {
+            String message = String.format(
+                    "This fragment inner class should be static (%1$s)", cls.getName());
+            context.report(ISSUE, node, context.getLocation(node.astName()), message,
+                    null);
+            return;
+        }
 
-                if (!cls.isSubclassOf(CLASS_FRAGMENT, false)
-                        && !cls.isSubclassOf(CLASS_V4_FRAGMENT, false)) {
-                    return true;
-                }
-
-                if ((flags & Modifier.PUBLIC) == 0) {
-                    String message = String.format("This fragment class should be public (%1$s)",
-                            cls.getName());
-                    context.report(ISSUE, node, context.getLocation(node.astName()), message,
-                            null);
-                    return true;
-                }
-
-                if (cls.getContainingClass() != null && (flags & Modifier.STATIC) == 0) {
-                    String message = String.format(
-                            "This fragment inner class should be static (%1$s)", cls.getName());
-                    context.report(ISSUE, node, context.getLocation(node.astName()), message,
-                            null);
-                    return true;
-                }
-
-                boolean hasDefaultConstructor = false;
-                boolean hasConstructor = false;
-                NormalTypeBody body = node.astBody();
-                if (body != null) {
-                    for (TypeMember member : body.astMembers()) {
-                        if (member instanceof ConstructorDeclaration) {
-                            hasConstructor = true;
-                            ConstructorDeclaration constructor = (ConstructorDeclaration) member;
-                            if (constructor.astParameters().isEmpty()) {
-                                // The constructor must be public
-                                if (constructor.astModifiers().isPublic()) {
-                                    hasDefaultConstructor = true;
-                                } else {
-                                    Location location = context.getLocation(
-                                            constructor.astTypeName());
-                                    context.report(ISSUE, constructor, location,
-                                            "The default constructor must be public",
-                                            null);
-                                    // Also mark that we have a constructor so we don't complain again
-                                    // below since we've already emitted a more specific error related
-                                    // to the default constructor
-                                    hasDefaultConstructor = true;
-                                }
-                            } else {
-                                Location location = context.getLocation(constructor.astTypeName());
-                                // TODO: Use separate issue for this which isn't an error
-                                String message = "Avoid non-default constructors in fragments: "
-                                        + "use a default constructor plus "
-                                        + "`Fragment#setArguments(Bundle)` instead";
-                                context.report(ISSUE, constructor, location, message, null);
-                            }
+        boolean hasDefaultConstructor = false;
+        boolean hasConstructor = false;
+        NormalTypeBody body = node.astBody();
+        if (body != null) {
+            for (TypeMember member : body.astMembers()) {
+                if (member instanceof ConstructorDeclaration) {
+                    hasConstructor = true;
+                    ConstructorDeclaration constructor = (ConstructorDeclaration) member;
+                    if (constructor.astParameters().isEmpty()) {
+                        // The constructor must be public
+                        if (constructor.astModifiers().isPublic()) {
+                            hasDefaultConstructor = true;
+                        } else {
+                            Location location = context.getLocation(
+                                    constructor.astTypeName());
+                            context.report(ISSUE, constructor, location,
+                                    "The default constructor must be public",
+                                    null);
+                            // Also mark that we have a constructor so we don't complain again
+                            // below since we've already emitted a more specific error related
+                            // to the default constructor
+                            hasDefaultConstructor = true;
                         }
+                    } else {
+                        Location location = context.getLocation(constructor.astTypeName());
+                        // TODO: Use separate issue for this which isn't an error
+                        String message = "Avoid non-default constructors in fragments: "
+                                + "use a default constructor plus "
+                                + "`Fragment#setArguments(Bundle)` instead";
+                        context.report(ISSUE, constructor, location, message, null);
                     }
                 }
-
-                if (!hasDefaultConstructor && hasConstructor) {
-                    String message = String.format(
-                            "This fragment should provide a default constructor (a public " +
-                            "constructor with no arguments) (`%1$s`)",
-                            cls.getName()
-                    );
-                    context.report(ISSUE, node, context.getLocation(node.astName()), message,
-                            null);
-                }
-
-                return true;
             }
-        };
+        }
+
+        if (!hasDefaultConstructor && hasConstructor) {
+            String message = String.format(
+                    "This fragment should provide a default constructor (a public " +
+                    "constructor with no arguments) (`%1$s`)",
+                    cls.getName()
+            );
+            context.report(ISSUE, node, context.getLocation(node.astName()), message,
+                    null);
+        }
     }
 }

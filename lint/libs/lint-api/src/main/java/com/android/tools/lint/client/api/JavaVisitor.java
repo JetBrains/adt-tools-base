@@ -20,6 +20,7 @@ import static com.android.SdkConstants.ANDROID_PKG;
 import static com.android.SdkConstants.R_CLASS;
 
 import com.android.annotations.NonNull;
+import com.android.tools.lint.client.api.JavaParser.ResolvedClass;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Detector.JavaScanner;
 import com.android.tools.lint.detector.api.Detector.XmlScanner;
@@ -109,7 +110,6 @@ import lombok.ast.VariableDefinitionEntry;
 import lombok.ast.VariableReference;
 import lombok.ast.While;
 
-
 /**
  * Specialized visitor for running detectors on a Java AST.
  * It operates in three phases:
@@ -141,6 +141,8 @@ public class JavaVisitor {
     private final Map<Class<? extends Node>, List<VisitingDetector>> mNodeTypeDetectors =
             new HashMap<Class<? extends Node>, List<VisitingDetector>>();
     private final JavaParser mParser;
+    private final Map<String, List<VisitingDetector>> mSuperClassDetectors =
+            new HashMap<String, List<VisitingDetector>>();
 
     JavaVisitor(@NonNull JavaParser parser, @NonNull List<Detector> detectors) {
         mParser = parser;
@@ -150,6 +152,19 @@ public class JavaVisitor {
         for (Detector detector : detectors) {
             VisitingDetector v = new VisitingDetector(detector, (JavaScanner) detector);
             mAllDetectors.add(v);
+
+            List<String> applicableSuperClasses = detector.applicableSuperClasses();
+            if (applicableSuperClasses != null) {
+                for (String fqn : applicableSuperClasses) {
+                    List<VisitingDetector> list = mSuperClassDetectors.get(fqn);
+                    if (list == null) {
+                        list = new ArrayList<VisitingDetector>(SAME_TYPE_COUNT);
+                        mSuperClassDetectors.put(fqn, list);
+                    }
+                    list.add(v);
+                }
+                continue;
+            }
 
             List<Class<? extends Node>> nodeTypes = detector.getApplicableNodeTypes();
             if (nodeTypes != null) {
@@ -205,11 +220,14 @@ public class JavaVisitor {
                 v.getDetector().beforeCheckFile(context);
             }
 
+            if (!mSuperClassDetectors.isEmpty()) {
+                SuperclassVisitor visitor = new SuperclassVisitor(context);
+                compilationUnit.accept(visitor);
+            }
+
             for (VisitingDetector v : mFullTreeDetectors) {
                 AstVisitor visitor = v.getVisitor();
-                if (visitor != null) {
-                    compilationUnit.accept(visitor);
-                }
+                compilationUnit.accept(visitor);
             }
 
             if (!mMethodDetectors.isEmpty() || !mResourceFieldDetectors.isEmpty()) {
@@ -273,6 +291,57 @@ public class JavaVisitor {
                 }
             }
             return mVisitor;
+        }
+    }
+
+    private class SuperclassVisitor extends ForwardingAstVisitor {
+        private JavaContext mContext;
+
+        public SuperclassVisitor(@NonNull JavaContext context) {
+            mContext = context;
+        }
+
+        @Override
+        public boolean visitClassDeclaration(ClassDeclaration node) {
+            JavaParser.ResolvedNode resolved = mContext.resolve(node);
+            if (!(resolved instanceof ResolvedClass)) {
+                return true;
+            }
+
+            ResolvedClass resolvedClass = (ResolvedClass) resolved;
+            ResolvedClass cls = resolvedClass;
+            while (cls != null) {
+                String fqcn = cls.getSignature();
+                if (fqcn != null) {
+                    List<VisitingDetector> list = mSuperClassDetectors.get(fqcn);
+                    if (list != null) {
+                        for (VisitingDetector v : list) {
+                            v.getJavaScanner().checkClass(mContext, node, resolvedClass);
+                        }
+                    }
+                }
+
+                cls = cls.getSuperClass();
+            }
+
+            return false;
+        }
+
+        @Override
+        public boolean visitMethodDeclaration(MethodDeclaration node) {
+            // No need to look inside methods
+            return true;
+        }
+
+        @Override
+        public boolean visitConstructorInvocation(ConstructorInvocation node) {
+            // No need to look inside methods
+            return true;
+        }
+
+        @Override
+        public boolean visitImportDeclaration(ImportDeclaration node) {
+            return true;
         }
     }
 
@@ -1142,6 +1211,7 @@ public class JavaVisitor {
 
                             for (VisitingDetector v : mResourceFieldDetectors) {
                                 JavaScanner detector = v.getJavaScanner();
+                                //noinspection ConstantConditions
                                 detector.visitResourceReference(mContext, v.getVisitor(),
                                         node, type, name, isFramework);
                             }

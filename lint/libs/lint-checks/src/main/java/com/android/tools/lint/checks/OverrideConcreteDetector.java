@@ -16,6 +16,8 @@
 
 package com.android.tools.lint.checks;
 
+import static com.android.SdkConstants.CLASS_FRAGMENT;
+import static com.android.SdkConstants.CLASS_V4_FRAGMENT;
 import static com.android.tools.lint.client.api.JavaParser.ResolvedClass;
 import static com.android.tools.lint.client.api.JavaParser.ResolvedNode;
 
@@ -32,12 +34,11 @@ import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 
 import java.lang.reflect.Modifier;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import lombok.ast.AstVisitor;
 import lombok.ast.ClassDeclaration;
-import lombok.ast.ForwardingAstVisitor;
 import lombok.ast.Node;
 
 /**
@@ -90,80 +91,62 @@ public class OverrideConcreteDetector extends Detector implements JavaScanner {
 
     @Nullable
     @Override
-    public List<Class<? extends Node>> getApplicableNodeTypes() {
-        return Collections.<Class<? extends Node>>singletonList(ClassDeclaration.class);
+    public List<String> applicableSuperClasses() {
+        return Collections.singletonList(NOTIFICATION_LISTENER_SERVICE_FQN);
     }
 
-    @Nullable
     @Override
-    public AstVisitor createJavaVisitor(@NonNull final JavaContext context) {
-        return new ForwardingAstVisitor() {
-            @Override
-            public boolean visitClassDeclaration(ClassDeclaration node) {
-                int flags = node.astModifiers().getEffectiveModifierFlags();
-                if ((flags & Modifier.ABSTRACT) != 0) {
-                    return true;
+    public void checkClass(@NonNull JavaContext context, @NonNull ClassDeclaration node,
+            @NonNull ResolvedClass resolvedClass) {
+        int flags = node.astModifiers().getEffectiveModifierFlags();
+        if ((flags & Modifier.ABSTRACT) != 0) {
+            return;
+        }
+
+        int minSdk = Math.max(context.getProject().getMinSdk(), getTargetApi(node));
+        if (minSdk >= CONCRETE_IN) {
+            return;
+        }
+
+        String[] methodNames = {ON_NOTIFICATION_POSTED, ON_NOTIFICATION_REMOVED};
+        for (String methodName : methodNames) {
+            boolean found = false;
+            for (ResolvedMethod method : resolvedClass.getMethods(methodName, true)) {
+                // Make sure it's not the base method, but that it's been defined
+                // in a subclass, concretely
+                ResolvedClass containingClass = method.getContainingClass();
+                if (containingClass.matches(NOTIFICATION_LISTENER_SERVICE_FQN)) {
+                    continue;
+                }
+                // Make sure subclass isn't just defining another abstract definition
+                // of the method
+                if ((method.getModifiers() & Modifier.ABSTRACT) != 0) {
+                    continue;
+                }
+                // Make sure it has the exact right signature
+                if (method.getArgumentCount() != 1) {
+                    continue; // Wrong signature
+                }
+                if (!method.getArgumentType(0).matchesName(STATUS_BAR_NOTIFICATION_FQN)) {
+                    continue;
                 }
 
-                ResolvedNode resolved = context.resolve(node);
-                if (!(resolved instanceof ResolvedClass)) {
-                    return true;
-                }
-
-                ResolvedClass cls = (ResolvedClass) resolved;
-
-                if (!cls.isSubclassOf(NOTIFICATION_LISTENER_SERVICE_FQN, true)) {
-                    return true;
-                }
-
-                int minSdk = Math.max(context.getProject().getMinSdk(), getTargetApi(node));
-                if (minSdk >= CONCRETE_IN) {
-                    return true;
-                }
-
-                String[] methodNames = {ON_NOTIFICATION_POSTED, ON_NOTIFICATION_REMOVED};
-                for (String methodName : methodNames) {
-                    boolean found = false;
-                    for (ResolvedMethod method : cls.getMethods(methodName, true)) {
-                        // Make sure it's not the base method, but that it's been defined
-                        // in a subclass, concretely
-                        ResolvedClass containingClass = method.getContainingClass();
-                        if (containingClass.matches(NOTIFICATION_LISTENER_SERVICE_FQN)) {
-                            continue;
-                        }
-                        // Make sure subclass isn't just defining another abstract definition
-                        // of the method
-                        if ((method.getModifiers() & Modifier.ABSTRACT) != 0) {
-                            continue;
-                        }
-                        // Make sure it has the exact right signature
-                        if (method.getArgumentCount() != 1) {
-                            continue; // Wrong signature
-                        }
-                        if (!method.getArgumentType(0).matchesName(STATUS_BAR_NOTIFICATION_FQN)) {
-                            continue;
-                        }
-
-                        found = true;
-                        break;
-                    }
-
-                    if (!found) {
-                        String message = String.format(
-                                "Must override `%1$s.%2$s(%3$s)`: Method was abstract until %4$d, and your `minSdkVersion` is %5$d",
-                                NOTIFICATION_LISTENER_SERVICE_FQN, methodName,
-                                STATUS_BAR_NOTIFICATION_FQN, CONCRETE_IN, minSdk);
-                        Node nameNode = node.astName();
-                        context.report(ISSUE, node, context.getLocation(nameNode),
-                                message, null);
-                        break;
-                    }
-
-                }
-
-                return true;
+                found = true;
+                break;
             }
-        };
+
+            if (!found) {
+                String message = String.format(
+                        "Must override `%1$s.%2$s(%3$s)`: Method was abstract until %4$d, and your `minSdkVersion` is %5$d",
+                        NOTIFICATION_LISTENER_SERVICE_FQN, methodName,
+                        STATUS_BAR_NOTIFICATION_FQN, CONCRETE_IN, minSdk);
+                Node nameNode = node.astName();
+                context.report(ISSUE, node, context.getLocation(nameNode),
+                        message, null);
+                break;
+            }
+
+        }
     }
 
     private static int getTargetApi(ClassDeclaration node) {
