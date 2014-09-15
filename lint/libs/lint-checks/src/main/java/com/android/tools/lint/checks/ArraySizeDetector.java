@@ -71,7 +71,6 @@ public class ArraySizeDetector extends ResourceXmlDetector {
     public static final Issue INCONSISTENT = Issue.create(
             "InconsistentArrays", //$NON-NLS-1$
             "Inconsistencies in array element counts",
-            "Checks for inconsistencies in the number of elements in arrays",
             "When an array is translated in a different locale, it should normally have " +
             "the same number of elements as the original array. When adding or removing " +
             "elements to an array, it is easy to forget to update all the locales, and this " +

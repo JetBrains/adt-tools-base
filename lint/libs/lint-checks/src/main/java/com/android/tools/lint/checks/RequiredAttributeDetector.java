@@ -87,7 +87,6 @@ public class RequiredAttributeDetector extends LayoutDetector implements Detecto
     public static final Issue ISSUE = Issue.create(
             "RequiredSize", //$NON-NLS-1$
             "Missing `layout_width` or `layout_height` attributes",
-            "Ensures that the `layout_width` and `layout_height` are specified for all views",
 
             "All views must specify an explicit `layout_width` and `layout_height` attribute. " +
             "There is a runtime check for this, so if you fail to specify a size, an exception " +

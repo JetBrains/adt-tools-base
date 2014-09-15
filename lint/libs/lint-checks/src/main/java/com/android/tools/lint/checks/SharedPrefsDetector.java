@@ -69,7 +69,6 @@ public class SharedPrefsDetector extends Detector implements Detector.JavaScanne
     public static final Issue ISSUE = Issue.create(
             "CommitPrefEdits", //$NON-NLS-1$
             "Missing `commit()` on `SharedPreference` editor",
-            "Looks for code editing a `SharedPreference` but forgetting to call `commit()` on it",
 
             "After calling `edit()` on a `SharedPreference`, you must call `commit()` " +
             "or `apply()` on the editor to save the results.",

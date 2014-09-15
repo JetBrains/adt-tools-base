@@ -131,8 +131,7 @@ public class MainTest extends AbstractCheckTest {
         // Expected output
         "NewApi\n" +
         "------\n" +
-        "Summary: Finds API accesses to APIs that are not supported in all targeted API\n" +
-        "versions\n" +
+        "Summary: Calling new methods on older versions\n" +
         "\n" +
         "Priority: 6 / 10\n" +
         "Severity: Error\n" +
@@ -179,7 +178,7 @@ public class MainTest extends AbstractCheckTest {
                 // Expected output
                 + "SdCardPath\n"
                 + "----------\n"
-                + "Summary: Looks for hardcoded references to /sdcard\n"
+                + "Summary: Hardcoded reference to /sdcard\n"
                 + "\n"
                 + "Priority: 6 / 10\n"
                 + "Severity: Warning\n"

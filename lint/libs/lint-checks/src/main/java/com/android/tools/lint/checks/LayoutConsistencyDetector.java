@@ -92,7 +92,6 @@ public class LayoutConsistencyDetector extends LayoutDetector implements Detecto
     public static final Issue INCONSISTENT_IDS = Issue.create(
             "InconsistentLayout", //$NON-NLS-1$
             "Inconsistent Layouts",
-            "Checks that layout variations are consistent",
 
             "This check ensures that a layout resource which is defined in multiple "
             + "resource folders, specifies the same set of widgets.\n"

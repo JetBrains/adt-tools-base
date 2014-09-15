@@ -126,7 +126,6 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
     public static final Issue INVALID = Issue.create(
             "StringFormatInvalid", //$NON-NLS-1$
             "Invalid format string",
-            "Checks that format strings are valid",
 
             "If a string contains a '%' character, then the string may be a formatting string " +
             "which will be passed to `String.format` from Java code to replace each '%' " +
@@ -154,8 +153,6 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
     public static final Issue ARG_COUNT = Issue.create(
             "StringFormatCount", //$NON-NLS-1$
             "Formatting argument types incomplete or inconsistent",
-            "Ensures that all format strings are used and that the same number is defined " +
-            "across translations",
 
             "When a formatted string takes arguments, it usually needs to reference the " +
             "same arguments in all translations (or all arguments if there are no " +
@@ -173,8 +170,6 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
     public static final Issue ARG_TYPES = Issue.create(
             "StringFormatMatches", //$NON-NLS-1$
             "`String.format` string doesn't match the XML format string",
-            "Ensures that the format used in `<string>` definitions is compatible with the "
-                + "`String.format` call",
 
             "This lint check ensures the following:\n" +
             "(1) If there are multiple translations of the format string, then all translations " +

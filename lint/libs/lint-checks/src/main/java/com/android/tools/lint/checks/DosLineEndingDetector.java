@@ -37,7 +37,6 @@ public class DosLineEndingDetector extends LayoutDetector {
     public static final Issue ISSUE = Issue.create(
             "MangledCRLF", //$NON-NLS-1$
             "Mangled file line endings",
-            "Checks that files with DOS line endings are consistent",
 
             "On Windows, line endings are typically recorded as carriage return plus " +
             "newline: \\r\\n.\n" +

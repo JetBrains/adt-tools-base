@@ -54,7 +54,6 @@ public class ChildCountDetector extends LayoutDetector {
     public static final Issue SCROLLVIEW_ISSUE = Issue.create(
             "ScrollViewCount", //$NON-NLS-1$
             "ScrollViews can have only one child",
-            "Checks that ScrollViews have exactly one child widget",
             "ScrollViews can only have one child widget. If you want more children, wrap them " +
             "in a container layout.",
             Category.CORRECTNESS,
@@ -66,7 +65,6 @@ public class ChildCountDetector extends LayoutDetector {
     public static final Issue ADAPTER_VIEW_ISSUE = Issue.create(
             "AdapterViewChildren", //$NON-NLS-1$
             "AdapterViews cannot have children in XML",
-            "Checks that AdapterViews do not define their children in XML",
             "AdapterViews such as ListViews must be configured with data from Java code, " +
             "such as a ListAdapter.",
             Category.CORRECTNESS,

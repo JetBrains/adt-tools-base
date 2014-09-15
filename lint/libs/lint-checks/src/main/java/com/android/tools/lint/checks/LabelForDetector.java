@@ -59,7 +59,6 @@ public class LabelForDetector extends LayoutDetector {
     public static final Issue ISSUE = Issue.create(
             "LabelFor", //$NON-NLS-1$
             "Missing `labelFor` attribute",
-            "Ensures that text fields are marked with a `labelFor` attribute",
 
             "Text fields should be labelled with a `labelFor` attribute, " +
             "provided your `minSdkVersion` is at least 17.\n" +

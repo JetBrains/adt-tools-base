@@ -67,7 +67,6 @@ public class DuplicateResourceDetector extends ResourceXmlDetector {
     public static final Issue ISSUE = Issue.create(
             "DuplicateDefinition", //$NON-NLS-1$
             "Duplicate definitions of resources",
-            "Discovers duplicate definitions of resources",
 
             "You can define a resource multiple times in different resource folders; that's how " +
             "string translations are done, for example. However, defining the same resource " +
@@ -88,7 +87,6 @@ public class DuplicateResourceDetector extends ResourceXmlDetector {
     public static final Issue TYPE_MISMATCH = Issue.create(
             "ReferenceType", //$NON-NLS-1$
             "Incorrect reference types",
-            "Looks for resource aliases that are of the wrong type",
             "When you generate a resource alias, the resource you are pointing to must be " +
                     "of the same type as the alias",
             Category.CORRECTNESS,

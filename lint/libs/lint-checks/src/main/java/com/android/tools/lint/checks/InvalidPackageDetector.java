@@ -52,7 +52,6 @@ public class InvalidPackageDetector extends Detector implements Detector.ClassSc
     public static final Issue ISSUE = Issue.create(
             "InvalidPackage", //$NON-NLS-1$
             "Package not included in Android",
-            "Finds API accesses to APIs that are not supported in Android",
 
             "This check scans through libraries looking for calls to APIs that are not included " +
             "in Android.\n" +

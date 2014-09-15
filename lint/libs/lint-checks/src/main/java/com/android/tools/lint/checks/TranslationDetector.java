@@ -81,7 +81,6 @@ public class TranslationDetector extends ResourceXmlDetector {
     public static final Issue MISSING = Issue.create(
             "MissingTranslation", //$NON-NLS-1$
             "Incomplete translation",
-            "Checks for incomplete translations where not all strings are translated",
             "If an application has more than one locale, then all the strings declared in " +
             "one language should also be translated in all other languages.\n" +
             "\n" +
@@ -109,7 +108,6 @@ public class TranslationDetector extends ResourceXmlDetector {
     public static final Issue EXTRA = Issue.create(
             "ExtraTranslation", //$NON-NLS-1$
             "Extra translation",
-            "Checks for translations that appear to be unused (no default language string)",
             "If a string appears in a specific language translation file, but there is " +
             "no corresponding string in the default locale, then this string is probably " +
             "unused. (It's technically possible that your application is only intended to " +

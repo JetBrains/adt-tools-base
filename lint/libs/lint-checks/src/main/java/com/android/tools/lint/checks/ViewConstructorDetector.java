@@ -51,7 +51,6 @@ public class ViewConstructorDetector extends Detector implements Detector.JavaSc
     public static final Issue ISSUE = Issue.create(
             "ViewConstructor", //$NON-NLS-1$
             "Missing View constructors for XML inflation",
-            "Checks that custom views define the expected constructors",
 
             "Some layout tools (such as the Android layout editor for Studio & Eclipse) needs to " +
             "find a constructor with one of the following signatures:\n" +

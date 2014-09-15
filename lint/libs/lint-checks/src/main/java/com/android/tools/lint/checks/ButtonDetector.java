@@ -102,8 +102,6 @@ public class ButtonDetector extends ResourceXmlDetector {
     public static final Issue ORDER = Issue.create(
             "ButtonOrder", //$NON-NLS-1$
             "Button order",
-            "Ensures the dismissive action of a dialog is on the left and affirmative on " +
-            "the right",
 
             "According to the Android Design Guide,\n" +
             "\n" +
@@ -128,7 +126,6 @@ public class ButtonDetector extends ResourceXmlDetector {
     public static final Issue STYLE = Issue.create(
             "ButtonStyle", //$NON-NLS-1$
             "Button should be borderless",
-            "Ensures that buttons in button bars are borderless",
 
             "Button bars typically use a borderless style for the buttons. Set the " +
             "`style=\"?android:attr/buttonBarButtonStyle\"` attribute " +
@@ -146,7 +143,6 @@ public class ButtonDetector extends ResourceXmlDetector {
     public static final Issue BACK_BUTTON = Issue.create(
             "BackButton", //$NON-NLS-1$
             "Back button",
-            "Looks for Back buttons, which are not common on the Android platform.",
             // TODO: Look for ">" as label suffixes as well
 
             "According to the Android Design Guide,\n" +
@@ -172,7 +168,6 @@ public class ButtonDetector extends ResourceXmlDetector {
     public static final Issue CASE = Issue.create(
             "ButtonCase", //$NON-NLS-1$
             "Cancel/OK dialog button capitalization",
-            "Ensures that Cancel/OK dialog buttons use the canonical capitalization",
 
             "The standard capitalization for OK/Cancel dialogs is \"OK\" and \"Cancel\". " +
             "To ensure that your dialogs use the standard strings, you can use " +

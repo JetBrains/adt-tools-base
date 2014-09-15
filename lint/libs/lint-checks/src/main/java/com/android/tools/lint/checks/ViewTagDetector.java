@@ -53,7 +53,6 @@ public class ViewTagDetector extends Detector implements ClassScanner {
     public static final Issue ISSUE = Issue.create(
             "ViewTag", //$NON-NLS-1$
             "Tagged object leaks",
-            "Finds potential leaks when using `View.setTag`",
 
             "Prior to Android 4.0, the implementation of `View.setTag(int, Object)` would " +
             "store the objects in a static map, where the values were strongly referenced. " +

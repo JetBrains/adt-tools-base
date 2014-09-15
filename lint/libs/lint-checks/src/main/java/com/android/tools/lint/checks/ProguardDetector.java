@@ -44,7 +44,6 @@ public class ProguardDetector extends Detector {
     public static final Issue WRONG_KEEP = Issue.create(
             "Proguard", //$NON-NLS-1$
             "Using obsolete ProGuard configuration",
-            "Looks for problems in proguard config files",
             "Using `-keepclasseswithmembernames` in a proguard config file is not " +
             "correct; it can cause some symbols to be renamed which should not be.\n" +
             "Earlier versions of ADT used to create proguard.cfg files with the " +
@@ -64,7 +63,6 @@ public class ProguardDetector extends Detector {
     public static final Issue SPLIT_CONFIG = Issue.create(
             "ProguardSplit", //$NON-NLS-1$
             "Proguard.cfg file contains generic Android rules",
-            "Checks for old proguard.cfg files that contain generic Android rules",
 
             "Earlier versions of the Android tools bundled a single `proguard.cfg` file " +
             "containing a ProGuard configuration file suitable for Android shrinking and " +

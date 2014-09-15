@@ -81,7 +81,7 @@ public class XmlReporter extends Reporter {
                         issue.getCategory().getFullName());
                 writeAttribute(mWriter, 2, "priority",                                //$NON-NLS-1$
                         Integer.toString(issue.getPriority()));
-                writeAttribute(mWriter, 2, "summary", issue.getDescription(RAW));     //$NON-NLS-1$
+                writeAttribute(mWriter, 2, "summary", issue.getBriefDescription(RAW));//$NON-NLS-1$
                 writeAttribute(mWriter, 2, "explanation", issue.getExplanation(RAW)); //$NON-NLS-1$
                 List<String> moreInfo = issue.getMoreInfo();
                 if (!moreInfo.isEmpty()) {

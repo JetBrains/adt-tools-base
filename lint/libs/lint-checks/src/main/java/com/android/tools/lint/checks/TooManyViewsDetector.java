@@ -44,7 +44,6 @@ public class TooManyViewsDetector extends LayoutDetector {
     public static final Issue TOO_MANY = Issue.create(
             "TooManyViews", //$NON-NLS-1$
             "Layout has too many views",
-            "Checks whether a layout has too many views",
             "Using too many views in a single layout is bad for " +
             "performance. Consider using compound drawables or other tricks for " +
             "reducing the number of views in this layout.\n\n" +
@@ -59,7 +58,6 @@ public class TooManyViewsDetector extends LayoutDetector {
     public static final Issue TOO_DEEP = Issue.create(
             "TooDeepLayout", //$NON-NLS-1$
             "Layout hierarchy is too deep",
-            "Checks whether a layout hierarchy is too deep",
             "Layouts with too much nesting is bad for performance. " +
             "Consider using a flatter layout (such as `RelativeLayout` or `GridLayout`)." +
             "The default maximum depth is 10 but can be configured with the environment " +

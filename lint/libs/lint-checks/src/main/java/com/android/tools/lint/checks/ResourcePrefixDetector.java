@@ -59,7 +59,6 @@ public class ResourcePrefixDetector extends ResourceXmlDetector implements
     public static final Issue ISSUE = Issue.create(
             "ResourceName", //$NON-NLS-1$
             "Resource with Wrong Prefix",
-            "Ensures that resource names follow the specified name prefix for the project",
             "In Gradle projects you can specify a resource prefix that all resources " +
             "in the project must conform to. This makes it easier to ensure that you don't " +
             "accidentally combine resources from different libraries, since they all end " +

@@ -94,7 +94,7 @@ public class XmlReporterTest extends AbstractCheckTest {
                 "        message=\"&lt;uses-sdk> tag should specify a target API level (the highest verified version; when running on later versions, compatibility behaviors may be enabled) with android:targetSdkVersion=&quot;?&quot;\"\n" +
                 "        category=\"Correctness\"\n" +
                 "        priority=\"9\"\n" +
-                "        summary=\"Checks that the minimum SDK and target SDK attributes are defined\"\n" +
+                "        summary=\"Minimum SDK and target SDK attributes not defined\"\n" +
                 "        explanation=\"The manifest should contain a `&lt;uses-sdk>` element which defines the minimum API Level required for the application to run, as well as the target version (the highest API level you have tested the version for.)\"\n" +
                 "        url=\"http://developer.android.com/guide/topics/manifest/uses-sdk-element.html\"\n" +
                 "        urls=\"http://developer.android.com/guide/topics/manifest/uses-sdk-element.html\"\n" +
@@ -112,7 +112,7 @@ public class XmlReporterTest extends AbstractCheckTest {
                 "        message=\"[I18N] Hardcoded string &quot;Fooo&quot;, should use @string resource\"\n" +
                 "        category=\"Internationalization\"\n" +
                 "        priority=\"5\"\n" +
-                "        summary=\"Looks for hardcoded text attributes which should be converted to resource lookup\"\n" +
+                "        summary=\"Hardcoded text\"\n" +
                 "        explanation=\"Hardcoding text attributes directly in layout files is bad for several reasons:\n" +
                 "\n" +
                 "* When creating configuration variations (for example for landscape or portrait)you have to repeat the actual text (and keep it up to date when making changes)\n" +
@@ -198,7 +198,7 @@ public class XmlReporterTest extends AbstractCheckTest {
                 "        message=\"&lt;uses-sdk> tag should specify a target API level (the highest verified version; when running on later versions, compatibility behaviors may be enabled) with android:targetSdkVersion=&quot;?&quot;\"\n" +
                 "        category=\"Correctness\"\n" +
                 "        priority=\"9\"\n" +
-                "        summary=\"Checks that the minimum SDK and target SDK attributes are defined\"\n" +
+                "        summary=\"Minimum SDK and target SDK attributes not defined\"\n" +
                 "        explanation=\"The manifest should contain a `&lt;uses-sdk>` element which defines the minimum API Level required for the application to run, as well as the target version (the highest API level you have tested the version for.)\"\n" +
                 "        url=\"http://developer.android.com/guide/topics/manifest/uses-sdk-element.html\"\n" +
                 "        urls=\"http://developer.android.com/guide/topics/manifest/uses-sdk-element.html\"\n" +
@@ -216,7 +216,7 @@ public class XmlReporterTest extends AbstractCheckTest {
                 "        message=\"[I18N] Hardcoded string &quot;Fooo&quot;, should use @string resource\"\n" +
                 "        category=\"Internationalization\"\n" +
                 "        priority=\"5\"\n" +
-                "        summary=\"Looks for hardcoded text attributes which should be converted to resource lookup\"\n" +
+                "        summary=\"Hardcoded text\"\n" +
                 "        explanation=\"Hardcoding text attributes directly in layout files is bad for several reasons:\n" +
                 "\n" +
                 "* When creating configuration variations (for example for landscape or portrait)you have to repeat the actual text (and keep it up to date when making changes)\n" +
@@ -289,7 +289,7 @@ public class XmlReporterTest extends AbstractCheckTest {
                     + "        message=\"Use fraction character ¼ (&amp;#188;) instead of 1/4 ?\"\n"
                     + "        category=\"Usability:Typography\"\n"
                     + "        priority=\"5\"\n"
-                    + "        summary=\"Looks for fraction strings which can be replaced with a fraction character\"\n"
+                    + "        summary=\"Fraction string can be replaced with fraction character\"\n"
                     + "        explanation=\"You can replace certain strings, such as 1/2, and 1/4, with dedicated characters for these, such as ½ (&amp;#189;) and ¼ (&amp;#188;). This can help make the text more readable.\"\n"
                     + "        url=\"http://en.wikipedia.org/wiki/Number_Forms\"\n"
                     + "        urls=\"http://en.wikipedia.org/wiki/Number_Forms\">\n"

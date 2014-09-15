@@ -72,7 +72,6 @@ public class UselessViewDetector extends LayoutDetector {
     public static final Issue USELESS_PARENT = Issue.create(
             "UselessParent", //$NON-NLS-1$
             "Useless parent layout",
-            "Checks whether a parent layout can be removed.",
             "A layout with children that has no siblings, is not a scrollview or " +
             "a root layout, and does not have a background, can be removed and have " +
             "its children moved directly into the parent for a flatter and more " +
@@ -86,7 +85,6 @@ public class UselessViewDetector extends LayoutDetector {
     public static final Issue USELESS_LEAF = Issue.create(
             "UselessLeaf", //$NON-NLS-1$
             "Useless leaf layout",
-            "Checks whether a leaf layout can be removed.",
             "A layout that has no children or no background can often be removed (since it " +
             "is invisible) for a flatter and more efficient layout hierarchy.",
             Category.PERFORMANCE,
