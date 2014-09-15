@@ -19,6 +19,8 @@ package com.android.tools.lint.detector.api;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.resources.ResourceFolderType;
+import com.android.tools.lint.client.api.JavaParser;
+import com.android.tools.lint.client.api.JavaParser.ResolvedClass;
 import com.android.tools.lint.client.api.LintDriver;
 import com.google.common.annotations.Beta;
 
@@ -38,6 +40,7 @@ import java.util.List;
 import java.util.Map;
 
 import lombok.ast.AstVisitor;
+import lombok.ast.ClassDeclaration;
 import lombok.ast.MethodInvocation;
 import lombok.ast.Node;
 
@@ -198,6 +201,27 @@ public abstract class Detector {
                 @NonNull String type,
                 @NonNull String name,
                 boolean isFramework);
+
+        /**
+         * Returns a list of fully qualified names for super classes that this
+         * detector cares about. If not null, this detector will *only* be called
+         * if the current class is a subclass of one of the specified superclasses.
+         *
+         * @return a list of fully qualified names
+         */
+        @Nullable
+        List<String> applicableSuperClasses();
+
+        /**
+         * Called for each class that extends one of the super classes specified with
+         * {@link #applicableSuperClasses()}
+         *
+         * @param context the lint scanning context
+         * @param node the class declaration node
+         * @param resolvedClass the resolved class
+         */
+        void checkClass(@NonNull JavaContext context, @NonNull ClassDeclaration node,
+                @NonNull ResolvedClass resolvedClass);
     }
 
     /** Specialized interface for detectors that scan Java class files */
@@ -632,6 +656,15 @@ public abstract class Detector {
     public void visitResourceReference(@NonNull JavaContext context, @Nullable AstVisitor visitor,
             @NonNull Node node, @NonNull String type, @NonNull String name,
             boolean isFramework) {
+    }
+
+    @Nullable
+    public List<String> applicableSuperClasses() {
+        return null;
+    }
+
+    public void checkClass(@NonNull JavaContext context, @NonNull ClassDeclaration node,
+            @NonNull ResolvedClass resolvedClass) {
     }
 
     // ---- Dummy implementations to make implementing a ClassScanner easier: ----
