@@ -377,8 +377,7 @@ public class GradleDetectorTest extends AbstractCheckTest {
 
     @Override
     protected void checkReportedError(@NonNull Context context, @NonNull Issue issue,
-            @NonNull Severity severity, @Nullable Location location, @NonNull String message,
-            @Nullable Object data) {
+            @NonNull Severity severity, @Nullable Location location, @NonNull String message) {
         if (issue == DEPENDENCY && message.startsWith("Using the appcompat library when ")) {
             // No data embedded in this specific message
             return;

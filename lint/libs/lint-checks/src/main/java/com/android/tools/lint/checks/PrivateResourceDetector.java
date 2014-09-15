@@ -72,7 +72,7 @@ public class PrivateResourceDetector extends ResourceXmlDetector {
         if (value.startsWith("@*android:")) { //$NON-NLS-1$
             context.report(ISSUE, attribute, context.getLocation(attribute),
                     "Illegal resource reference: `@*android` resources are private and " +
-                    "not always present", null);
+                    "not always present");
         }
     }
 }

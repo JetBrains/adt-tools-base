@@ -140,8 +140,7 @@ public class DetectMissingPrefix extends LayoutDetector {
 
             context.report(MISSING_NAMESPACE, attribute,
                     context.getLocation(attribute),
-                    "Attribute is missing the Android namespace prefix",
-                    null);
+                    "Attribute is missing the Android namespace prefix");
         } else if (!ANDROID_URI.equals(uri)
                 && !TOOLS_URI.equals(uri)
                 && context.getResourceFolderType() == ResourceFolderType.LAYOUT
@@ -156,8 +155,7 @@ public class DetectMissingPrefix extends LayoutDetector {
             context.report(MISSING_NAMESPACE, attribute,
                     context.getLocation(attribute),
                     String.format("Unexpected namespace prefix \"%1$s\" found for tag `%2$s`",
-                            attribute.getPrefix(), attribute.getOwnerElement().getTagName()),
-                            null);
+                            attribute.getPrefix(), attribute.getOwnerElement().getTagName()));
         }
     }
 

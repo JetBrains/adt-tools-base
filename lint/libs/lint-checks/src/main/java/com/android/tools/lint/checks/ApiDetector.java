@@ -303,7 +303,7 @@ public class ApiDetector extends ResourceXmlDetector
         if (mApiDatabase == null && !mWarnedMissingDb) {
             mWarnedMissingDb = true;
             context.report(IssueRegistry.LINT_ERROR, Location.create(context.file),
-                        "Can't find API database; API check not performed", null);
+                        "Can't find API database; API check not performed");
         }
     }
 
@@ -349,9 +349,8 @@ public class ApiDetector extends ResourceXmlDetector
                     String message = String.format(
                             "Attribute `%1$s` is only used in API level %2$d and higher "
                                     + "(current min is %3$d)",
-                            attribute.getLocalName(), attributeApiLevel, minSdk
-                    );
-                    context.report(UNUSED, attribute, location, message, null);
+                            attribute.getLocalName(), attributeApiLevel, minSdk);
+                    context.report(UNUSED, attribute, location, message);
                 }
             }
 
@@ -426,15 +425,14 @@ public class ApiDetector extends ResourceXmlDetector
                         "`%1$s` requires API level %2$d (current min is %3$d), but note "
                                 + "that attribute `%4$s` is only used in API level %5$d "
                                 + "and higher",
-                        name, api, minSdk, attributeName, attributeApiLevel
-                );
-                context.report(UNSUPPORTED, attribute, location, message, null);
+                        name, api, minSdk, attributeName, attributeApiLevel);
+                context.report(UNSUPPORTED, attribute, location, message);
             } else {
                 Location location = context.getLocation(attribute);
                 String message = String.format(
                         "`%1$s` requires API level %2$d (current min is %3$d)",
                         value, api, minSdk);
-                context.report(UNSUPPORTED, attribute, location, message, null);
+                context.report(UNSUPPORTED, attribute, location, message);
             }
         }
     }
@@ -498,7 +496,7 @@ public class ApiDetector extends ResourceXmlDetector
                                 String message = String.format(
                                         "`%1$s` requires API level %2$d (current min is %3$d)",
                                         text, api, minSdk);
-                                context.report(UNSUPPORTED, element, location, message, null);
+                                context.report(UNSUPPORTED, element, location, message);
                             }
                         }
                     }
@@ -533,7 +531,7 @@ public class ApiDetector extends ResourceXmlDetector
                 String message = String.format(
                         "View requires API level %1$d (current min is %2$d): `<%3$s>`",
                         api, minSdk, tag);
-                context.report(UNSUPPORTED, element, location, message, null);
+                context.report(UNSUPPORTED, element, location, message);
             }
         }
     }
@@ -556,10 +554,9 @@ public class ApiDetector extends ResourceXmlDetector
                     assert issue == UNUSED : issue;
                     message = String.format(
                             "`<%1$s>` is only used in API level %2$d and higher "
-                                    + "(current min is %3$d)", tag, api, minSdk
-                    );
+                                    + "(current min is %3$d)", tag, api, minSdk);
                 }
-                context.report(issue, element, location, message, null);
+                context.report(issue, element, location, message);
             }
         }
     }
@@ -669,7 +666,7 @@ public class ApiDetector extends ResourceXmlDetector
                             api, buildSdk, fqcn);
 
                     Location location = context.getLocation(method, classNode);
-                    context.report(OVERRIDE, method, null, location, message, null);
+                    context.report(OVERRIDE, method, null, location, message);
                 }
             }
 
@@ -879,7 +876,7 @@ public class ApiDetector extends ResourceXmlDetector
             int lineNumber = ClassContext.findLineNumber(classNode);
             Location location = context.getLocationForLine(lineNumber, name, null,
                     hints);
-            context.report(UNSUPPORTED, location, message, null);
+            context.report(UNSUPPORTED, location, message);
         }
     }
 
@@ -1262,7 +1259,7 @@ public class ApiDetector extends ResourceXmlDetector
 
         Location location = context.getLocationForLine(lineNumber, patternStart, patternEnd,
                 hints);
-        context.report(UNSUPPORTED, method, node, location, message, null);
+        context.report(UNSUPPORTED, method, node, location, message);
     }
 
     @Override
@@ -1272,7 +1269,7 @@ public class ApiDetector extends ResourceXmlDetector
                 for (Pair<String, Location> pair : list) {
                     String message = pair.getFirst();
                     Location location = pair.getSecond();
-                    context.report(INLINED, location, message, null);
+                    context.report(INLINED, location, message);
                 }
             }
         }
@@ -1650,7 +1647,7 @@ public class ApiDetector extends ResourceXmlDetector
                                 + "API level %1$d (current min is %2$d)", api, minSdk);
                         LintDriver driver = mContext.getDriver();
                         if (!driver.isSuppressed(mContext, UNSUPPORTED, node)) {
-                            mContext.report(UNSUPPORTED, location, message, null);
+                            mContext.report(UNSUPPORTED, location, message);
                         }
                     }
                 } else {
@@ -1678,7 +1675,7 @@ public class ApiDetector extends ResourceXmlDetector
                                     api, minSdk, fqcn);
                                 LintDriver driver = mContext.getDriver();
                                 if (!driver.isSuppressed(mContext, UNSUPPORTED, typeReference)) {
-                                    mContext.report(UNSUPPORTED, location, message, null);
+                                    mContext.report(UNSUPPORTED, location, message);
                                 }
                             }
                         }

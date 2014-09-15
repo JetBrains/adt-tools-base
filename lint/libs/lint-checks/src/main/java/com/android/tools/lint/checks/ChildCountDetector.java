@@ -102,15 +102,14 @@ public class ChildCountDetector extends LayoutDetector {
         if (tagName.equals(SCROLL_VIEW) || tagName.equals(HORIZONTAL_SCROLL_VIEW)) {
             if (childCount > 1 && getAccurateChildCount(element) > 1) {
                 context.report(SCROLLVIEW_ISSUE, element,
-                        context.getLocation(element), "A scroll view can have only one child",
-                        null);
+                        context.getLocation(element), "A scroll view can have only one child");
             }
         } else {
             // Adapter view
             if (childCount > 0 && getAccurateChildCount(element) > 0) {
                 context.report(ADAPTER_VIEW_ISSUE, element,
                         context.getLocation(element),
-                        "A list/grid should have no children declared in XML", null);
+                        "A list/grid should have no children declared in XML");
             }
         }
     }

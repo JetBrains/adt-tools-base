@@ -147,7 +147,7 @@ public class CustomViewDetector extends Detector implements Detector.JavaScanner
                                 + "should have the same name (various editor features rely on "
                                 + "this convention)",
                         className, styleableName);
-                    context.report(ISSUE, node, context.getLocation(expression), message, null);
+                    context.report(ISSUE, node, context.getLocation(expression), message);
                 }
             } else if (resolvedClass.isSubclassOf(CLASS_VIEWGROUP + DOT_LAYOUT_PARAMS, false)) {
                 ClassDeclaration outer = JavaContext.findSurroundingClass(cls.getParent());
@@ -163,7 +163,7 @@ public class CustomViewDetector extends Detector implements Detector.JavaScanner
                                     + "class (`%3$s`) plus \"`_Layout`\", e.g. `%4$s`. "
                                     + "(Various editor features rely on this convention.)",
                             styleableName, className, layoutClassName, expectedName);
-                    context.report(ISSUE, node, context.getLocation(expression), message, null);
+                    context.report(ISSUE, node, context.getLocation(expression), message);
                 }
             }
         }

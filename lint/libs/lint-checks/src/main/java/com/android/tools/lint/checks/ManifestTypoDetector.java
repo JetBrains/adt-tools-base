@@ -177,7 +177,7 @@ public class ManifestTypoDetector extends Detector implements Detector.XmlScanne
                 String message = String.format("Misspelled tag `<%1$s>`: Did you mean `%2$s` ?",
                         tag, suggestionString);
                 context.report(ISSUE, element, context.getLocation(element),
-                        message, null);
+                        message);
             }
         }
     }

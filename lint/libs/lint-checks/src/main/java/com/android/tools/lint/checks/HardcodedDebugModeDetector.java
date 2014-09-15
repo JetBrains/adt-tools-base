@@ -91,7 +91,7 @@ public class HardcodedDebugModeDetector extends Detector implements Detector.Xml
         //if (attribute.getOwnerElement().getTagName().equals(TAG_APPLICATION)) {
             context.report(ISSUE, attribute, context.getLocation(attribute),
                     "Avoid hardcoding the debug mode; leaving it out allows debug and " +
-                    "release builds to automatically assign one", null);
+                    "release builds to automatically assign one");
         }
     }
 }

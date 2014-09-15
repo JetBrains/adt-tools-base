@@ -27,7 +27,6 @@ import com.android.tools.lint.client.api.Configuration;
 import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.client.api.LintDriver;
 import com.android.tools.lint.client.api.SdkInfo;
-import com.android.tools.lint.detector.api.TextFormat;
 import com.google.common.annotations.Beta;
 
 import java.io.File;
@@ -251,13 +250,11 @@ public class Context {
      * @param issue the issue to report
      * @param location the location of the issue, or null if not known
      * @param message the message for this warning
-     * @param data any associated data, or null
      */
     public void report(
             @NonNull Issue issue,
             @Nullable Location location,
-            @NonNull String message,
-            @Nullable Object data) {
+            @NonNull String message) {
         Configuration configuration = mConfiguration;
 
         // If this error was computed for a context where the context corresponds to
@@ -284,8 +281,25 @@ public class Context {
             return;
         }
 
-        mDriver.getClient().report(this, issue, severity, location, message, TextFormat.RAW,
-                data);
+        mDriver.getClient().report(this, issue, severity, location, message, TextFormat.RAW);
+    }
+
+    /**
+     * Report an error.
+     * Like {@link #report(Issue, Location, String)} but with
+     * a now-unused data parameter at the end
+     *
+     * @deprecated Use {@link #report(Issue, Location, String)} instead;
+     *    this method is here for custom rule compatibility
+     */
+    @SuppressWarnings("UnusedDeclaration") // Potentially used by external existing custom rules
+    @Deprecated
+    public void report(
+            @NonNull Issue issue,
+            @Nullable Location location,
+            @NonNull String message,
+            @SuppressWarnings("UnusedParameters") @Nullable Object data) {
+        report(issue, location, message);
     }
 
     /**

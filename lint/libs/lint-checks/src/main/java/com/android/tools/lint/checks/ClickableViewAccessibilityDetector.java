@@ -141,7 +141,7 @@ public class ClickableViewAccessibilityDetector extends Detector implements Dete
             String message = String.format(
                     "Custom view `%1$s` has `setOnTouchListener` called on it but does not "
                             + "override `performClick`", ownerClass.name);
-            context.report(ISSUE, method, call, context.getLocation(call), message, null);
+            context.report(ISSUE, method, call, context.getLocation(call), message);
         }
     }
 
@@ -167,8 +167,7 @@ public class ClickableViewAccessibilityDetector extends Detector implements Dete
                         onTouchNode,
                         null,
                         context.getLocation(onTouchNode, classNode),
-                        message,
-                        null);
+                        message);
             }
         }
     }
@@ -187,7 +186,7 @@ public class ClickableViewAccessibilityDetector extends Detector implements Dete
                         "Custom view `%1$s` overrides `onTouchEvent` but not `performClick`",
                         classNode.name);
                 context.report(ISSUE, onTouchEvent, null,
-                        context.getLocation(onTouchEvent, classNode), message, null);
+                        context.getLocation(onTouchEvent, classNode), message);
             } else {
                 // If we override performClick, ensure that it is called inside onTouchEvent.
                 AbstractInsnNode performClickInOnTouchEventInsnNode = findMethodCallInstruction(
@@ -200,8 +199,7 @@ public class ClickableViewAccessibilityDetector extends Detector implements Dete
                             "`%1$s#onTouchEvent` should call `%1$s#performClick` when a click is detected",
                             classNode.name);
                     context.report(ISSUE, onTouchEvent, null,
-                            context.getLocation(onTouchEvent, classNode), message,
-                            null);
+                            context.getLocation(onTouchEvent, classNode), message);
                 }
             }
         }
@@ -218,7 +216,7 @@ public class ClickableViewAccessibilityDetector extends Detector implements Dete
                         "`%1$s#performClick` should call `super#performClick`",
                         classNode.name);
                 context.report(ISSUE, performClick, null,
-                        context.getLocation(performClick, classNode), message, null);
+                        context.getLocation(performClick, classNode), message);
             }
         }
     }

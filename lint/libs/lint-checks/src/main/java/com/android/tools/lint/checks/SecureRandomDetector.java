@@ -148,15 +148,13 @@ public class SecureRandomDetector extends Detector implements ClassScanner {
         if (opcode == Opcodes.LCONST_0 || opcode == Opcodes.LCONST_1 || opcode == Opcodes.LDC) {
             context.report(ISSUE, context.getLocation(call),
                     "Do not call `setSeed()` on a `SecureRandom` with a fixed seed: " +
-                    "it is not secure. Use `getSeed()`.",
-                    null);
+                    "it is not secure. Use `getSeed()`.");
         } else if (opcode == Opcodes.INVOKESTATIC) {
             String methodName = ((MethodInsnNode) prev).name;
             if (methodName.equals("currentTimeMillis") || methodName.equals("nanoTime")) {
                 context.report(ISSUE, context.getLocation(call),
                         "It is dangerous to seed `SecureRandom` with the current time because " +
-                        "that value is more predictable to an attacker than the default seed.",
-                        null);
+                        "that value is more predictable to an attacker than the default seed.");
             }
         }
     }

@@ -501,7 +501,7 @@ public class RequiredAttributeDetector extends LayoutDetector implements Detecto
                     }
                 }
                 context.report(ISSUE, element, context.getLocation(element),
-                        message, null);
+                        message);
             }
         }
     }

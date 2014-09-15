@@ -95,7 +95,7 @@ public abstract class LintClient {
      * Report the given issue. This method will only be called if the configuration
      * provided by {@link #getConfiguration(Project)} has reported the corresponding
      * issue as enabled and has not filtered out the issue with its
-     * {@link Configuration#ignore(Context, Issue, Location, String, Object)} method.
+     * {@link Configuration#ignore(Context,Issue,Location,String)} method.
      * <p>
      * @param context the context used by the detector when the issue was found
      * @param issue the issue that was found
@@ -103,11 +103,6 @@ public abstract class LintClient {
      * @param location the location of the issue
      * @param message the associated user message
      * @param format the format of the description and location descriptions
-     * @param data optional extra data for a discovered issue, or null. The
-     *            content depends on the specific issue. Detectors can pass
-     *            extra info here which automatic fix tools etc can use to
-     *            extract relevant information instead of relying on parsing the
-     *            error message text. See each detector for details on which
      */
     public abstract void report(
             @NonNull Context context,
@@ -115,8 +110,7 @@ public abstract class LintClient {
             @NonNull Severity severity,
             @Nullable Location location,
             @NonNull String message,
-            @NonNull TextFormat format,
-            @Nullable Object data);
+            @NonNull TextFormat format);
 
     /**
      * Send an exception or error message (with warning severity) to the log

@@ -101,6 +101,6 @@ public class AddJavascriptInterfaceDetector extends Detector implements Detector
 
         String message = "`WebView.addJavascriptInterface` should not be called with minSdkVersion < 17 for security reasons: " +
                          "JavaScript can use reflection to manipulate application";
-        context.report(ISSUE, node, context.getLocation(node.astName()), message, null);
+        context.report(ISSUE, node, context.getLocation(node.astName()), message);
     }
 }

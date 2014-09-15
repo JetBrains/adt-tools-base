@@ -136,7 +136,7 @@ public class StateListDetector extends ResourceXmlDetector {
                         location.setSecondary(secondary);
                         context.report(ISSUE, current, location, String.format(
                                 "This item is unreachable because a previous item (item #%1$d) is a more general match than this one",
-                                i + 1),  null);
+                                i + 1));
                         // Don't keep reporting errors for all the remaining cases in this file
                         return;
                     }

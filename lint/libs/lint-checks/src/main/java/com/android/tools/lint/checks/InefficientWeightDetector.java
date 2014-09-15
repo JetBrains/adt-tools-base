@@ -190,7 +190,7 @@ public class InefficientWeightDetector extends LayoutDetector {
                         Attr sizeNode = child.getAttributeNodeNS(ANDROID_URI, ATTR_LAYOUT_WEIGHT);
                         context.report(NESTED_WEIGHTS, sizeNode,
                                 context.getLocation(sizeNode),
-                                "Nested weights are bad for performance", null);
+                                "Nested weights are bad for performance");
                         // Don't warn again
                         checkNesting = false;
                     }
@@ -226,7 +226,7 @@ public class InefficientWeightDetector extends LayoutDetector {
                 String message = "Wrong orientation? No orientation specified, and the default "
                         + "is horizontal, yet this layout has multiple children where at "
                         + "least one has `layout_width=\"match_parent\"`";
-                context.report(ORIENTATION, element, context.getLocation(element), message, null);
+                context.report(ORIENTATION, element, context.getLocation(element), message);
             }
         } else if (children.isEmpty() && (orientation == null || orientation.isEmpty())
                 && context.isEnabled(ORIENTATION)
@@ -247,7 +247,7 @@ public class InefficientWeightDetector extends LayoutDetector {
             if (!ignore) {
                 String message = "No orientation specified, and the default is horizontal. "
                         + "This is a common source of bugs when children are added dynamically.";
-                context.report(ORIENTATION, element, context.getLocation(element), message, null);
+                context.report(ORIENTATION, element, context.getLocation(element), message);
             }
         }
 
@@ -273,8 +273,7 @@ public class InefficientWeightDetector extends LayoutDetector {
                 context.report(BASELINE_WEIGHTS,
                         element,
                         context.getLocation(element),
-                        "Set `android:baselineAligned=\"false\"` on this element for better performance",
-                        null);
+                        "Set `android:baselineAligned=\"false\"` on this element for better performance");
             }
         }
 
@@ -310,7 +309,7 @@ public class InefficientWeightDetector extends LayoutDetector {
                         dimension, size);
                 context.report(INEFFICIENT_WEIGHT,
                         weightChild,
-                        context.getLocation(sizeNode != null ? sizeNode : weightChild), msg, null);
+                        context.getLocation(sizeNode != null ? sizeNode : weightChild), msg);
 
             }
         }
@@ -366,21 +365,21 @@ public class InefficientWeightDetector extends LayoutDetector {
                 if (!hasWeight) {
                     context.report(WRONG_0DP, widthNode, context.getLocation(widthNode),
                         "Suspicious size: this will make the view invisible, should be " +
-                        "used with `layout_weight`", null);
+                        "used with `layout_weight`");
                 } else if (isVertical) {
                     context.report(WRONG_0DP, widthNode, context.getLocation(widthNode),
                         "Suspicious size: this will make the view invisible, probably " +
-                        "intended for `layout_height`", null);
+                        "intended for `layout_height`");
                 }
             } else {
                 if (!hasWeight) {
                     context.report(WRONG_0DP, widthNode, context.getLocation(heightNode),
                         "Suspicious size: this will make the view invisible, should be " +
-                        "used with `layout_weight`", null);
+                        "used with `layout_weight`");
                 } else if (!isVertical) {
                     context.report(WRONG_0DP, widthNode, context.getLocation(heightNode),
                         "Suspicious size: this will make the view invisible, probably " +
-                        "intended for `layout_width`", null);
+                        "intended for `layout_width`");
                 }
             }
         }

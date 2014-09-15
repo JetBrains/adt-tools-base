@@ -98,8 +98,7 @@ public class ToastDetector extends Detector implements Detector.JavaScanner {
             if (duration instanceof IntegralLiteral) {
                 context.report(ISSUE, duration, context.getLocation(duration),
                         "Expected duration `Toast.LENGTH_SHORT` or `Toast.LENGTH_LONG`, a custom " +
-                        "duration value is not supported",
-                        null);
+                        "duration value is not supported");
             }
         }
 
@@ -112,7 +111,7 @@ public class ToastDetector extends Detector implements Detector.JavaScanner {
         method.accept(finder);
         if (!finder.isShowCalled()) {
             context.report(ISSUE, node, context.getLocation(node),
-                    "Toast created but not shown: did you forget to call `show()` ?", null);
+                    "Toast created but not shown: did you forget to call `show()` ?");
         }
     }
 

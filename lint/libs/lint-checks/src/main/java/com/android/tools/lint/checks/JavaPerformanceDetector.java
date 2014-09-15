@@ -230,8 +230,7 @@ public class JavaPerformanceDetector extends Detector implements Detector.JavaSc
                         && node.astArguments().size() == 1) {
                     String argument = node.astArguments().first().toString();
                     mContext.report(USE_VALUE_OF, node, mContext.getLocation(node), getUseValueOfErrorMessage(
-                            typeName, argument),
-                            null);
+                            typeName, argument));
                 }
             }
 
@@ -258,7 +257,7 @@ public class JavaPerformanceDetector extends Detector implements Detector.JavaSc
         private void reportAllocation(Node node) {
             mContext.report(PAINT_ALLOC, node, mContext.getLocation(node),
                 "Avoid object allocations during draw/layout operations (preallocate and " +
-                "reuse instead)", null);
+                "reuse instead)");
         }
 
         @Override
@@ -289,7 +288,7 @@ public class JavaPerformanceDetector extends Detector implements Detector.JavaSc
                         mContext.report(PAINT_ALLOC, node, mContext.getLocation(node),
                                 "Avoid object allocations during draw operations: Use " +
                                 "`Canvas.getClipBounds(Rect)` instead of `Canvas.getClipBounds()` " +
-                                "which allocates a temporary `Rect`", null);
+                                "which allocates a temporary `Rect`");
                     }
                 }
             }
@@ -505,22 +504,18 @@ public class JavaPerformanceDetector extends Detector implements Detector.JavaSc
                     String valueType = types.last().getTypeName();
                     if (valueType.equals(INTEGER)) {
                         mContext.report(USE_SPARSE_ARRAY, node, mContext.getLocation(node),
-                            "Use new `SparseIntArray(...)` instead for better performance",
-                            null);
+                            "Use new `SparseIntArray(...)` instead for better performance");
                     } else if (valueType.equals(LONG) && minSdk >= 18) {
                         mContext.report(USE_SPARSE_ARRAY, node, mContext.getLocation(node),
-                                "Use `new SparseLongArray(...)` instead for better performance",
-                                null);
+                                "Use `new SparseLongArray(...)` instead for better performance");
                     } else if (valueType.equals(BOOLEAN)) {
                         mContext.report(USE_SPARSE_ARRAY, node, mContext.getLocation(node),
-                                "Use `new SparseBooleanArray(...)` instead for better performance",
-                                null);
+                                "Use `new SparseBooleanArray(...)` instead for better performance");
                     } else {
                         mContext.report(USE_SPARSE_ARRAY, node, mContext.getLocation(node),
                             String.format(
                                 "Use `new SparseArray<%1$s>(...)` instead for better performance",
-                              valueType),
-                            null);
+                              valueType));
                     }
                 } else if (typeName.equals(LONG) && (minSdk >= 16 ||
                         Boolean.TRUE == mContext.getMainProject().dependsOn(
@@ -530,7 +525,7 @@ public class JavaPerformanceDetector extends Detector implements Detector.JavaSc
                             "Use `new LongSparseArray(...)` instead for better performance" :
                             "Use `new android.support.v4.util.LongSparseArray(...)` instead for better performance";
                     mContext.report(USE_SPARSE_ARRAY, node, mContext.getLocation(node),
-                            message, null);
+                            message);
                 }
             }
         }
@@ -543,12 +538,10 @@ public class JavaPerformanceDetector extends Detector implements Detector.JavaSc
                 String valueType = first.getTypeName();
                 if (valueType.equals(INTEGER)) {
                     mContext.report(USE_SPARSE_ARRAY, node, mContext.getLocation(node),
-                        "Use `new SparseIntArray(...)` instead for better performance",
-                        null);
+                        "Use `new SparseIntArray(...)` instead for better performance");
                 } else if (valueType.equals(BOOLEAN)) {
                     mContext.report(USE_SPARSE_ARRAY, node, mContext.getLocation(node),
-                            "Use `new SparseBooleanArray(...)` instead for better performance",
-                            null);
+                            "Use `new SparseBooleanArray(...)` instead for better performance");
                 }
             }
         }

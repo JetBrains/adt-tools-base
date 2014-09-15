@@ -200,8 +200,7 @@ public class CleanupDetector extends Detector implements ClassScanner {
                 mObtainsMotionEvent = true;
                 if (phase == 2 && !mRecyclesMotionEvent) {
                     context.report(RECYCLE_RESOURCE, method, call, context.getLocation(call),
-                            getErrorMessage(MOTION_EVENT_CLS),
-                            null);
+                            getErrorMessage(MOTION_EVENT_CLS));
                 } else if (phase == 1
                         && checkMethodFlow(context, classNode, method, call, MOTION_EVENT_CLS)) {
                     // Already reported error above; don't do global check
@@ -213,15 +212,13 @@ public class CleanupDetector extends Detector implements ClassScanner {
                 mObtainsTracker = true;
                 if (phase == 2 && !mRecyclesTracker) {
                     context.report(RECYCLE_RESOURCE, method, call, context.getLocation(call),
-                            getErrorMessage(VELOCITY_TRACKER_CLS),
-                            null);
+                            getErrorMessage(VELOCITY_TRACKER_CLS));
                 }
             } else if (owner.equals(PARCEL_CLS)) {
                 mObtainsParcel = true;
                 if (phase == 2 && !mRecyclesParcel) {
                     context.report(RECYCLE_RESOURCE, method, call, context.getLocation(call),
-                            getErrorMessage(PARCEL_CLS),
-                            null);
+                            getErrorMessage(PARCEL_CLS));
                 } else if (phase == 1
                         && checkMethodFlow(context, classNode, method, call, PARCEL_CLS)) {
                     // Already reported error above; don't do global check
@@ -236,8 +233,7 @@ public class CleanupDetector extends Detector implements ClassScanner {
                 mObtainsTypedArray = true;
                 if (phase == 2 && !mRecyclesTypedArray) {
                     context.report(RECYCLE_RESOURCE, method, call, context.getLocation(call),
-                            getErrorMessage(TYPED_ARRAY_CLS),
-                            null);
+                            getErrorMessage(TYPED_ARRAY_CLS));
                 } else if (phase == 1
                         && checkMethodFlow(context, classNode, method, call, TYPED_ARRAY_CLS)) {
                     // Already reported error above; don't do global check
@@ -250,7 +246,7 @@ public class CleanupDetector extends Detector implements ClassScanner {
             if (phase == 2 && !mCommitsTransaction) {
                 context.report(COMMIT_FRAGMENT, method, call, context.getLocation(call),
                     getErrorMessage(owner.equals(FRAGMENT_MANAGER_CLS)
-                            ? FRAGMENT_TRANSACTION_CLS : FRAGMENT_TRANSACTION_V4_CLS), null);
+                            ? FRAGMENT_TRANSACTION_CLS : FRAGMENT_TRANSACTION_V4_CLS));
             } else if (phase == 1
                     && checkMethodFlow(context, classNode, method, call,
                     owner.equals(FRAGMENT_MANAGER_CLS)
@@ -292,7 +288,7 @@ public class CleanupDetector extends Detector implements ClassScanner {
                 String message = getErrorMessage(recycleOwner);
                 Issue issue = call.owner.equals(FRAGMENT_MANAGER_CLS)
                         ? COMMIT_FRAGMENT : RECYCLE_RESOURCE;
-                context.report(issue, method, call, location, message, null);
+                context.report(issue, method, call, location, message);
                 return true;
             }
         } catch (AnalyzerException e) {
@@ -488,7 +484,7 @@ public class CleanupDetector extends Detector implements ClassScanner {
                         Location location = mContext.getLocation(call);
                         String message = String.format("This `%1$s` has already been recycled",
                                 mRecycleOwner.substring(mRecycleOwner.lastIndexOf('/') + 1));
-                        mContext.report(RECYCLE_RESOURCE, mMethod, call, location, message, null);
+                        mContext.report(RECYCLE_RESOURCE, mMethod, call, location, message);
                     }
                 }
             }

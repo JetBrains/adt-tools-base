@@ -107,8 +107,7 @@ public class AppCompatCallDetectorTest extends AbstractCheckTest {
 
     @Override
     protected void checkReportedError(@NonNull Context context, @NonNull Issue issue,
-            @NonNull Severity severity, @Nullable Location location, @NonNull String message,
-            @Nullable Object data) {
+            @NonNull Severity severity, @Nullable Location location, @NonNull String message) {
         assertNotNull(message, AppCompatCallDetector.getOldCall(message, TEXT));
         assertNotNull(message, AppCompatCallDetector.getNewCall(message, TEXT));
     }

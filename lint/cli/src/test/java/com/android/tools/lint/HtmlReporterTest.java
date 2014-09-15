@@ -76,7 +76,7 @@ public class HtmlReporterTest extends AbstractCheckTest {
                     "<uses-sdk> tag should specify a target API level (the highest verified " +
                     "version; when running on later versions, compatibility behaviors may " +
                     "be enabled) with android:targetSdkVersion=\"?\"",
-                    Severity.WARNING, project, null);
+                    Severity.WARNING, project);
             warning1.line = 6;
             warning1.file = manifest;
             warning1.errorLine = "    <uses-sdk android:minSdkVersion=\"8\" />\n    ^\n";
@@ -86,7 +86,7 @@ public class HtmlReporterTest extends AbstractCheckTest {
 
             Warning warning2 = new Warning(HardcodedValuesDetector.ISSUE,
                     "[I18N] Hardcoded string \"Fooo\", should use @string resource",
-                    Severity.WARNING, project, null);
+                    Severity.WARNING, project);
             warning2.line = 11;
             warning2.file = main;
             warning2.errorLine = " (java.lang.String)         android:text=\"Fooo\" />\n" +

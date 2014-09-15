@@ -108,7 +108,7 @@ public class DosLineEndingDetector extends LayoutDetector {
 
                 int lineEnd = Math.min(contents.length(), i + 1);
                 Location location = Location.create(context.file, contents, lineBegin, lineEnd);
-                context.report(ISSUE, document.getDocumentElement(), location, message, null);
+                context.report(ISSUE, document.getDocumentElement(), location, message);
                 return;
             }
             prev = c;
