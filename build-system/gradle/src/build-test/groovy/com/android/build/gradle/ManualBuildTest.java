@@ -274,7 +274,7 @@ public class ManualBuildTest extends BuildTest {
         checkJar(file, map);
 
         // check the resulting .aar file to ensure annotations.zip inclusion.
-        File archiveFile = new File(project, "build/outputs/aar/extractAnnotations.aar");
+        File archiveFile = new File(project, "build/outputs/aar/extractAnnotations-debug.aar");
         assertTrue(archiveFile.isFile());
         ZipFile archive = null;
         try {
@@ -297,7 +297,7 @@ public class ManualBuildTest extends BuildTest {
                 "clean", "assembleDebug");
 
         // check the resulting .aar file to ensure annotations.zip inclusion.
-        File archiveFile = new File(project, "build/outputs/aar/extractRsEnabledAnnotations.aar");
+        File archiveFile = new File(project, "build/outputs/aar/extractRsEnabledAnnotations-debug.aar");
         assertTrue(archiveFile.isFile());
         ZipFile archive = null;
         try {
