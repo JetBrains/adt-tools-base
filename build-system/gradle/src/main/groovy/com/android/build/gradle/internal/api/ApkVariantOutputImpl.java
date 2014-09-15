@@ -18,14 +18,11 @@ package com.android.build.gradle.internal.api;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.gradle.BasePlugin;
 import com.android.build.gradle.api.ApkVariantOutput;
 import com.android.build.gradle.internal.variant.ApkVariantOutputData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.tasks.PackageApplication;
 import com.android.build.gradle.tasks.ZipAlign;
-
-import org.gradle.api.DefaultTask;
 
 import java.io.File;
 
@@ -66,12 +63,6 @@ public class ApkVariantOutputImpl extends BaseVariantOutputImpl implements ApkVa
     public ZipAlign createZipAlignTask(@NonNull String taskName, @NonNull File inputFile,
             @NonNull File outputFile) {
         return variantOutputData.createZipAlignTask(taskName, inputFile, outputFile);
-    }
-
-    @Nullable
-    @Override
-    public DefaultTask getInstall() {
-        return variantOutputData.installTask;
     }
 
     @Override

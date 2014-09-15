@@ -34,7 +34,6 @@ import com.android.builder.model.NdkConfig;
 import com.android.builder.model.ProductFlavor;
 import com.android.builder.model.SigningConfig;
 import com.android.builder.model.SourceProvider;
-import com.android.builder.testing.TestData;
 import com.android.ide.common.res2.AssetSet;
 import com.android.ide.common.res2.ResourceSet;
 import com.google.common.collect.ArrayListMultimap;
@@ -55,7 +54,7 @@ import java.util.Set;
 /**
  * A Variant configuration.
  */
-public class VariantConfiguration implements TestData {
+public class VariantConfiguration {
 
     // per variant, as is caches some manifest data specific to this variant.
     private final ManifestParser sManifestParser = new DefaultManifestParser();
@@ -827,7 +826,6 @@ public class VariantConfiguration implements TestData {
      * could be overridden through the product flavors and/or the build type.
      * @return the application ID
      */
-    @Override
     @NonNull
     public String getApplicationId() {
         String id;
@@ -857,7 +855,6 @@ public class VariantConfiguration implements TestData {
         return id;
     }
 
-    @Override
     @Nullable
     public String getTestedApplicationId() {
         if (mType == Type.TEST) {
@@ -952,7 +949,6 @@ public class VariantConfiguration implements TestData {
      * variant is a test, the one to use to test the tested variant.
      * @return the instrumentation test runner name
      */
-    @Override
     @NonNull
     public String getInstrumentationRunner() {
         VariantConfiguration config = this;
@@ -968,7 +964,6 @@ public class VariantConfiguration implements TestData {
      * variant is a test, the one to use to test the tested variant.
      * @return the handleProfiling value
      */
-    @Override
     @NonNull
     public Boolean getHandleProfiling() {
         VariantConfiguration config = this;
@@ -984,7 +979,6 @@ public class VariantConfiguration implements TestData {
      * variant is a test, the one to use to test the tested variant.
      * @return the functionalTest value
      */
-    @Override
     @NonNull
     public Boolean getFunctionalTest() {
         VariantConfiguration config = this;
@@ -1029,7 +1023,7 @@ public class VariantConfiguration implements TestData {
      * from the flavor(s) (if present).
      * @return the minSdkVersion
      */
-    @Override
+    @NonNull
     public ApiVersion getMinSdkVersion() {
         if (mTestedConfig != null) {
             return mTestedConfig.getMinSdkVersion();
@@ -1052,6 +1046,7 @@ public class VariantConfiguration implements TestData {
      * from the flavor(s) (if present).
      * @return the targetSdkVersion
      */
+    @NonNull
     public ApiVersion getTargetSdkVersion() {
         if (mTestedConfig != null) {
             return mTestedConfig.getTargetSdkVersion();
@@ -1683,7 +1678,6 @@ public class VariantConfiguration implements TestData {
     }
 
     @Nullable
-    @Override
     public Set<String> getSupportedAbis() {
         if (mMergedNdkConfig != null) {
             return mMergedNdkConfig.getAbiFilters();
@@ -1692,7 +1686,6 @@ public class VariantConfiguration implements TestData {
         return null;
     }
 
-    @Override
     public boolean isTestCoverageEnabled() {
         return mBuildType.isTestCoverageEnabled();
     }

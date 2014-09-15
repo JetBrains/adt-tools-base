@@ -21,6 +21,7 @@ import com.android.annotations.Nullable;
 import com.android.ddmlib.log.LogReceiver;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -39,6 +40,7 @@ public interface IDevice extends IShellEnabledDevice {
     public static final String PROP_DEVICE_CPU_ABI = "ro.product.cpu.abi";
     public static final String PROP_DEVICE_CPU_ABI2 = "ro.product.cpu.abi2";
     public static final String PROP_BUILD_CHARACTERISTICS = "ro.build.characteristics";
+    public static final String PROP_DEVICE_DENSITY = "ro.sf.lcd_density";
 
     public static final String PROP_DEBUGGABLE = "ro.debuggable";
 
@@ -175,7 +177,8 @@ public interface IDevice extends IShellEnabledDevice {
      * @param name the name of the value to return.
      * @return the value or <code>null</code> if the property value was not immediately available
      */
-    public @Nullable String getProperty(@NonNull String name);
+    @Nullable
+    public String getProperty(@NonNull String name);
 
     /**
      * Returns <code>true></code> if properties have been cached
@@ -573,7 +576,8 @@ public interface IDevice extends IShellEnabledDevice {
      * @return a {@link Future} that can be used to query the battery level. The Future will return
      * a {@link ExecutionException} if battery level could not be retrieved.
      */
-    public @NonNull Future<Integer> getBattery();
+    @NonNull
+    public Future<Integer> getBattery();
 
     /**
      * Return the device's battery level, from 0 to 100 percent.
@@ -586,6 +590,22 @@ public interface IDevice extends IShellEnabledDevice {
      * @return a {@link Future} that can be used to query the battery level. The Future will return
      * a {@link ExecutionException} if battery level could not be retrieved.
      */
-    public @NonNull Future<Integer> getBattery(long freshnessTime, @NonNull TimeUnit timeUnit);
+    @NonNull
+    public Future<Integer> getBattery(long freshnessTime, @NonNull TimeUnit timeUnit);
 
+
+    /**
+     * Returns the ABIs supported by this device. The ABIs are sorted in preferred order, with the
+     * first ABI being the most preferred.
+     * @return the list of ABIs.
+     */
+    @NonNull
+    public List<String> getAbis();
+
+    /**
+     * Returns the density bucket of the device screen.
+     *
+     * @return the density, or 0 if it's unknown.
+     */
+    public int getDensity();
 }

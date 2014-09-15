@@ -20,9 +20,11 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.model.ApiVersion;
 
-import java.util.Set;
+import java.io.File;
+import java.util.List;
 
 /**
+ * Data representing the test app and the tested application/library.
  */
 public interface TestData {
 
@@ -59,12 +61,17 @@ public interface TestData {
     /**
      * The min SDK version of the app
      */
+    @NonNull
     ApiVersion getMinSdkVersion();
 
+    boolean isLibrary();
+
     /**
-     * List of supported ABIs. Null means all.
-     * @return a list of abi or null for all
+     * Returns an APK file to install based on given density and abis.
+     * @param density the density
+     * @param abis a list of ABIs in descending priority order.
+     * @return the file to install or null if non is compatible.
      */
     @Nullable
-    Set<String> getSupportedAbis();
+    File getTestedApk(int density, @NonNull List<String> abis);
 }

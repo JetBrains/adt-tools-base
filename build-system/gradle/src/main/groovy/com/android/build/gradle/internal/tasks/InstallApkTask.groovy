@@ -20,7 +20,7 @@ import org.gradle.api.tasks.TaskAction
 /**
  * Task installing an app.
  */
-public class InstallTask extends DefaultTask {
+public class InstallApkTask extends DefaultTask {
     @InputFile
     File adbExe
 
@@ -28,7 +28,7 @@ public class InstallTask extends DefaultTask {
     File packageFile
 
     @TaskAction
-    void generate() {
+    void install() {
         project.exec {
             executable = getAdbExe()
             args 'install'
