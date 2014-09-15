@@ -19,9 +19,10 @@ package com.android.tools.lint.checks;
 import static com.android.SdkConstants.ATTR_QUANTITY;
 import static com.android.SdkConstants.TAG_ITEM;
 import static com.android.SdkConstants.TAG_PLURALS;
-import com.android.tools.lint.checks.PluralsDatabase.Quantity;
+
 import com.android.annotations.NonNull;
 import com.android.resources.ResourceFolderType;
+import com.android.tools.lint.checks.PluralsDatabase.Quantity;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
@@ -136,7 +137,7 @@ public class PluralsDetector extends ResourceXmlDetector {
         int count = LintUtils.getChildCount(element);
         if (count == 0) {
             context.report(MISSING, element, context.getLocation(element),
-                    "There should be at least one quantity string in this <plural> definition",
+                    "There should be at least one quantity string in this `<plural>` definition",
                     null);
             return;
         }
@@ -188,9 +189,9 @@ public class PluralsDetector extends ResourceXmlDetector {
                 } else {
                     append = " (" + example + ")";
                 }
-                String message = String.format("The quantity '%1$s' matches more than one "
+                String message = String.format("The quantity `'%1$s'` matches more than one "
                                 + "specific number in this locale%2$s, but the message did "
-                                + "not include a formatting argument (such as %%d). "
+                                + "not include a formatting argument (such as `%%d`). "
                                 + "This is usually an internationalization error. See full issue "
                                 + "explanation for more.",
                         quantity, append);

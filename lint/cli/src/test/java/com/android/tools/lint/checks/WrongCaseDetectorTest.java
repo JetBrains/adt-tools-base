@@ -16,6 +16,9 @@
 
 package com.android.tools.lint.checks;
 
+import static com.android.tools.lint.detector.api.TextFormat.RAW;
+import static com.android.tools.lint.detector.api.TextFormat.TEXT;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.tools.lint.detector.api.Context;
@@ -52,19 +55,23 @@ public class WrongCaseDetectorTest extends AbstractCheckTest {
 
     public void testGetOldValue() {
         assertEquals("Merge", WrongCaseDetector.getOldValue(
-                "Invalid tag <Merge>; should be <merge>"));
+                "Invalid tag `<Merge>`; should be `<merge>`", RAW));
+        assertEquals("Merge", WrongCaseDetector.getOldValue(
+                "Invalid tag <Merge>; should be <merge>", TEXT));
     }
 
     public void testGetNewValue() {
         assertEquals("merge", WrongCaseDetector.getNewValue(
-                "Invalid tag <Merge>; should be <merge>"));
+                "Invalid tag <Merge>; should be <merge>", TEXT));
+        assertEquals("merge", WrongCaseDetector.getNewValue(
+                "Invalid tag `<Merge>`; should be `<merge>`", RAW));
     }
 
     @Override
     protected void checkReportedError(@NonNull Context context, @NonNull Issue issue,
             @NonNull Severity severity, @Nullable Location location, @NonNull String message,
             @Nullable Object data) {
-        assertNotNull(message, WrongCaseDetector.getOldValue(message));
-        assertNotNull(message, WrongCaseDetector.getNewValue(message));
+        assertNotNull(message, WrongCaseDetector.getOldValue(message, TEXT));
+        assertNotNull(message, WrongCaseDetector.getNewValue(message, TEXT));
     }
 }

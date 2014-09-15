@@ -39,11 +39,9 @@ import java.util.List;
 
 import lombok.ast.AstVisitor;
 import lombok.ast.ClassDeclaration;
-import lombok.ast.ConstructorDeclaration;
 import lombok.ast.ForwardingAstVisitor;
 import lombok.ast.Node;
 import lombok.ast.NormalTypeBody;
-import lombok.ast.TypeMember;
 
 /**
  * Looks for custom views that do not define the view constructors needed by UI builders
@@ -166,9 +164,9 @@ public class ViewConstructorDetector extends Detector implements Detector.JavaSc
 
             if (!found) {
                 String message = String.format(
-                        "Custom view %1$s is missing constructor used by tools: "
-                                + "(Context) or (Context,AttributeSet) "
-                                + "or (Context,AttributeSet,int)",
+                        "Custom view `%1$s` is missing constructor used by tools: "
+                                + "`(Context)` or `(Context,AttributeSet)` "
+                                + "or `(Context,AttributeSet,int)`",
                         node.astName().astValue()
                 );
                 Location location = mContext.getLocation(node.astName());

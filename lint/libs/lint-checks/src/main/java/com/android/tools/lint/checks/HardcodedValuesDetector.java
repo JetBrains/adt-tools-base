@@ -111,7 +111,7 @@ public class HardcodedValuesDetector extends LayoutDetector {
             }
 
             context.report(ISSUE, attribute, context.getLocation(attribute),
-                    String.format("[I18N] Hardcoded string \"%1$s\", should use @string resource",
+                    String.format("[I18N] Hardcoded string \"%1$s\", should use `@string` resource",
                             value), null);
         }
     }

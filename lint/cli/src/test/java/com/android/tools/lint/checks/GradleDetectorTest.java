@@ -28,6 +28,7 @@ import static com.android.tools.lint.checks.GradleDetector.REMOTE_VERSION;
 import static com.android.tools.lint.checks.GradleDetector.STRING_INTEGER;
 import static com.android.tools.lint.checks.GradleDetector.getNewValue;
 import static com.android.tools.lint.checks.GradleDetector.getOldValue;
+import static com.android.tools.lint.detector.api.TextFormat.TEXT;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -76,47 +77,51 @@ public class GradleDetectorTest extends AbstractCheckTest {
 
     public void testGetOldValue() {
         assertEquals("11.0.2", getOldValue(DEPENDENCY,
-                "A newer version of com.google.guava:guava than 11.0.2 is available: 17.0.0"));
-        assertNull(getOldValue(DEPENDENCY, "Bogus"));
-        assertNull(getOldValue(DEPENDENCY, "bogus"));
+                "A newer version of com.google.guava:guava than 11.0.2 is available: 17.0.0",
+                TEXT));
+        assertNull(getOldValue(DEPENDENCY, "Bogus", TEXT));
+        assertNull(getOldValue(DEPENDENCY, "bogus", TEXT));
         // targetSdkVersion 20, compileSdkVersion 19: Should replace targetVersion 20 with 19
         assertEquals("20", getOldValue(DEPENDENCY,
-                "The targetSdkVersion (20) should not be higher than the compileSdkVersion (19)"));
+                "The targetSdkVersion (20) should not be higher than the compileSdkVersion (19)",
+                TEXT));
         assertEquals("'19'", getOldValue(STRING_INTEGER,
-                "Use an integer rather than a string here (replace '19' with just 19)"));
+                "Use an integer rather than a string here (replace '19' with just 19)", TEXT));
         assertEquals("android", getOldValue(DEPRECATED,
-                "'android' is deprecated; use 'com.android.application' instead"));
+                "'android' is deprecated; use 'com.android.application' instead", TEXT));
         assertEquals("android-library", getOldValue(DEPRECATED,
-                "'android-library' is deprecated; use 'com.android.library' instead"));
+                "'android-library' is deprecated; use 'com.android.library' instead", TEXT));
         assertEquals("packageName", getOldValue(DEPRECATED,
-                "Deprecated: Replace 'packageName' with 'applicationId'"));
+                "Deprecated: Replace 'packageName' with 'applicationId'", TEXT));
         assertEquals("packageNameSuffix", getOldValue(DEPRECATED,
-                "Deprecated: Replace 'packageNameSuffix' with 'applicationIdSuffix'"));
+                "Deprecated: Replace 'packageNameSuffix' with 'applicationIdSuffix'", TEXT));
         assertEquals("18.0.0", getOldValue(DEPENDENCY,
-                "Old buildToolsVersion 18.0.0; recommended version is 19.1 or later"));
+                "Old buildToolsVersion 18.0.0; recommended version is 19.1 or later", TEXT));
     }
 
     public void testGetNewValue() {
         assertEquals("17.0.0", getNewValue(DEPENDENCY,
-                "A newer version of com.google.guava:guava than 11.0.2 is available: 17.0.0"));
+                "A newer version of com.google.guava:guava than 11.0.2 is available: 17.0.0",
+                TEXT));
         assertNull(getNewValue(DEPENDENCY,
-                "A newer version of com.google.guava:guava than 11.0.2 is available"));
-        assertNull(getNewValue(DEPENDENCY, "bogus"));
+                "A newer version of com.google.guava:guava than 11.0.2 is available", TEXT));
+        assertNull(getNewValue(DEPENDENCY, "bogus", TEXT));
         // targetSdkVersion 20, compileSdkVersion 19: Should replace targetVersion 20 with 19
         assertEquals("19", getNewValue(DEPENDENCY,
-                "The targetSdkVersion (20) should not be higher than the compileSdkVersion (19)"));
+                "The targetSdkVersion (20) should not be higher than the compileSdkVersion (19)",
+                TEXT));
         assertEquals("19", getNewValue(STRING_INTEGER,
-                "Use an integer rather than a string here (replace '19' with just 19)"));
+                "Use an integer rather than a string here (replace '19' with just 19)", TEXT));
         assertEquals("com.android.application", getNewValue(DEPRECATED,
-                "'android' is deprecated; use 'com.android.application' instead"));
+                "'android' is deprecated; use 'com.android.application' instead", TEXT));
         assertEquals("com.android.library", getNewValue(DEPRECATED,
-                "'android-library' is deprecated; use 'com.android.library' instead"));
+                "'android-library' is deprecated; use 'com.android.library' instead", TEXT));
         assertEquals("applicationId", getNewValue(DEPRECATED,
-                "Deprecated: Replace 'packageName' with 'applicationId'"));
+                "Deprecated: Replace 'packageName' with 'applicationId'", TEXT));
         assertEquals("applicationIdSuffix", getNewValue(DEPRECATED,
-                "Deprecated: Replace 'packageNameSuffix' with 'applicationIdSuffix'"));
+                "Deprecated: Replace 'packageNameSuffix' with 'applicationIdSuffix'", TEXT));
         assertEquals("19.1", getNewValue(DEPENDENCY,
-                "Old buildToolsVersion 18.0.0; recommended version is 19.1 or later"));
+                "Old buildToolsVersion 18.0.0; recommended version is 19.1 or later", TEXT));
     }
 
     public void test() throws Exception {
@@ -385,14 +390,14 @@ public class GradleDetectorTest extends AbstractCheckTest {
                 || issue == DEPRECATED
                 || issue == PLUS) {
             assertNotNull("Could not extract message tokens from " + message,
-                    GradleDetector.getOldValue(issue, message));
+                    GradleDetector.getOldValue(issue, message, TEXT));
         }
 
         if (issue == DEPENDENCY
                 || issue == STRING_INTEGER
                 || issue == DEPRECATED) {
             assertNotNull("Could not extract message tokens from " + message,
-                    GradleDetector.getNewValue(issue, message));
+                    GradleDetector.getNewValue(issue, message, TEXT));
         }
     }
 

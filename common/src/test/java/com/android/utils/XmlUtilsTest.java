@@ -115,6 +115,7 @@ public class XmlUtilsTest extends TestCase {
         assertEquals("", XmlUtils.fromXmlAttributeValue(""));
         assertEquals("foo", XmlUtils.fromXmlAttributeValue("foo"));
         assertEquals("foo<bar", XmlUtils.fromXmlAttributeValue("foo&lt;bar"));
+        assertEquals("foo<bar<bar>foo", XmlUtils.fromXmlAttributeValue("foo&lt;bar&lt;bar&gt;foo"));
         assertEquals("foo>bar", XmlUtils.fromXmlAttributeValue("foo>bar"));
 
         assertEquals("\"", XmlUtils.fromXmlAttributeValue("&quot;"));

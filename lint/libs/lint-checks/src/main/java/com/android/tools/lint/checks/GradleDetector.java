@@ -39,6 +39,7 @@ import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.Speed;
+import com.android.tools.lint.detector.api.TextFormat;
 import com.google.common.collect.Lists;
 
 import java.io.BufferedReader;
@@ -471,10 +472,14 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
      *
      * @param issue the corresponding issue
      * @param errorMessage the error message associated with the error
+     * @param format the format of the error message
      * @return the corresponding old value, or null if not recognized
      */
     @Nullable
-    public static String getOldValue(@NonNull Issue issue, @NonNull String errorMessage) {
+    public static String getOldValue(@NonNull Issue issue, @NonNull String errorMessage,
+            @NonNull TextFormat format) {
+        errorMessage = format.toText(errorMessage);
+
         // Consider extracting all the error strings as constants and handling this
         // using the LintUtils#getFormattedParameters() method to pull back out the information
         if (issue == DEPENDENCY) {
@@ -514,10 +519,14 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
      *
      * @param issue the corresponding issue
      * @param errorMessage the error message associated with the error
+     * @param format the format of the error message
      * @return the corresponding new value, or null if not recognized
      */
     @Nullable
-    public static String getNewValue(@NonNull Issue issue, @NonNull String errorMessage) {
+    public static String getNewValue(@NonNull Issue issue, @NonNull String errorMessage,
+            @NonNull TextFormat format) {
+        errorMessage = format.toText(errorMessage);
+
         if (issue == DEPENDENCY) {
             // "A newer version of com.google.guava:guava than 11.0.2 is available: 17.0.0"
             if (errorMessage.startsWith("A newer ")) {
@@ -916,7 +925,7 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
                 dependency.getMajorVersion() != GradleCoordinate.PLUS_REV_VALUE &&
                 context.isEnabled(COMPATIBILITY)) {
             String message = "This support library should not use a lower version ("
-                + dependency.getMajorVersion() + ") than the targetSdkVersion ("
+                + dependency.getMajorVersion() + ") than the `targetSdkVersion` ("
                     + mTargetSdkVersion + ")";
             report(context, cookie, COMPATIBILITY, message);
         }

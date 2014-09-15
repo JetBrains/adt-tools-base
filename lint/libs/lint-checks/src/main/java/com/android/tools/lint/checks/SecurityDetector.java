@@ -385,13 +385,13 @@ public class SecurityDetector extends Detector implements Detector.XmlScanner,
             if ("MODE_WORLD_WRITEABLE".equals(node.astValue())) { //$NON-NLS-1$
                 Location location = mContext.getLocation(node);
                 mContext.report(WORLD_WRITEABLE, node, location,
-                        "Using MODE_WORLD_WRITEABLE when creating files can be " +
+                        "Using `MODE_WORLD_WRITEABLE` when creating files can be " +
                                 "risky, review carefully",
                         null);
             } else if ("MODE_WORLD_READABLE".equals(node.astValue())) { //$NON-NLS-1$
                 Location location = mContext.getLocation(node);
                 mContext.report(WORLD_READABLE, node, location,
-                        "Using MODE_WORLD_READABLE when creating files can be " +
+                        "Using `MODE_WORLD_READABLE` when creating files can be " +
                                 "risky, review carefully",
                         null);
             }

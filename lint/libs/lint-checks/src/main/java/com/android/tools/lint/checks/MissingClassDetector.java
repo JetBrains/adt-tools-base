@@ -51,6 +51,7 @@ import com.android.tools.lint.detector.api.Location.Handle;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.Speed;
+import com.android.tools.lint.detector.api.TextFormat;
 import com.android.tools.lint.detector.api.XmlContext;
 import com.android.utils.SdkUtils;
 import com.google.common.collect.Maps;
@@ -360,7 +361,7 @@ public class MissingClassDetector extends LayoutDetector implements ClassScanner
                 }
 
                 String message = String.format(
-                        "Class referenced in the manifest, %1$s, was not found in the " +
+                        "Class referenced in the manifest, `%1$s`, was not found in the " +
                                 "project or the libraries", fqcn);
                 Location location = handle.resolve();
                 File parentFile = location.getFile().getParentFile();
@@ -369,16 +370,16 @@ public class MissingClassDetector extends LayoutDetector implements ClassScanner
                     ResourceFolderType type = ResourceFolderType.getFolderType(parent);
                     if (type == LAYOUT) {
                         message = String.format(
-                            "Class referenced in the layout file, %1$s, was not found in "
+                            "Class referenced in the layout file, `%1$s`, was not found in "
                                 + "the project or the libraries", fqcn);
                     } else if (type == XML) {
                         message = String.format(
-                                "Class referenced in the preference header file, %1$s, was not "
+                                "Class referenced in the preference header file, `%1$s`, was not "
                                         + "found in the project or the libraries", fqcn);
 
                     } else if (type == VALUES) {
                         message = String.format(
-                                "Class referenced in the analytics file, %1$s, was not "
+                                "Class referenced in the analytics file, `%1$s`, was not "
                                         + "found in the project or the libraries", fqcn);
                     }
                 }
@@ -496,11 +497,14 @@ public class MissingClassDetector extends LayoutDetector implements ClassScanner
      *
      * @param issue the corresponding issue
      * @param errorMessage the error message associated with the error
+     * @param format the format of the error message
      * @return the corresponding old value, or null if not recognized
      */
     @Nullable
-    public static String getOldValue(@NonNull Issue issue, @NonNull String errorMessage) {
+    public static String getOldValue(@NonNull Issue issue, @NonNull String errorMessage,
+            @NonNull TextFormat format) {
         if (issue == INNERCLASS) {
+            errorMessage = format.toText(errorMessage);
             return LintUtils.findSubstring(errorMessage, " replace \"", "\"");
         }
 
@@ -515,11 +519,14 @@ public class MissingClassDetector extends LayoutDetector implements ClassScanner
      *
      * @param issue the corresponding issue
      * @param errorMessage the error message associated with the error
+     * @param format the format of the error message
      * @return the corresponding new value, or null if not recognized
      */
     @Nullable
-    public static String getNewValue(@NonNull Issue issue, @NonNull String errorMessage) {
+    public static String getNewValue(@NonNull Issue issue, @NonNull String errorMessage,
+            @NonNull TextFormat format) {
         if (issue == INNERCLASS) {
+            errorMessage = format.toText(errorMessage);
             return LintUtils.findSubstring(errorMessage, " with \"", "\"");
         }
         return null;

@@ -28,6 +28,7 @@ import com.android.tools.lint.detector.api.Location.Handle;
 import com.android.tools.lint.detector.api.Position;
 import com.android.tools.lint.detector.api.Project;
 import com.android.tools.lint.detector.api.Severity;
+import com.android.tools.lint.detector.api.TextFormat;
 import com.android.tools.lint.detector.api.XmlContext;
 
 import junit.framework.TestCase;
@@ -162,6 +163,7 @@ public class LintCliXmlParserTest extends TestCase {
                 @NonNull Severity severity,
                 @Nullable Location location,
                 @NonNull String message,
+                @NonNull TextFormat format,
                 @Nullable Object data) {
             System.out.println(location + ":" + message);
         }

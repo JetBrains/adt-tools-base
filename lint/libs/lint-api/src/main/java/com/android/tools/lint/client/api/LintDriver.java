@@ -45,11 +45,13 @@ import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.LintUtils;
 import com.android.tools.lint.detector.api.Location;
+import com.android.tools.lint.detector.api.TextFormat;
 import com.android.tools.lint.detector.api.Project;
 import com.android.tools.lint.detector.api.ResourceContext;
 import com.android.tools.lint.detector.api.ResourceXmlDetector;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
+import com.android.tools.lint.detector.api.TextFormat;
 import com.android.tools.lint.detector.api.XmlContext;
 import com.google.common.annotations.Beta;
 import com.google.common.base.Objects;
@@ -926,7 +928,7 @@ public class LintDriver {
                 IssueRegistry.CANCELLED,
                 Severity.INFORMATIONAL,
                 null /*range*/,
-                "Lint canceled by user", null);
+                "Lint canceled by user", TextFormat.RAW, null);
         }
 
         mCurrentProjects = null;
@@ -1246,14 +1248,14 @@ public class LintDriver {
         List<File> classFolders = project.getJavaClassFolders();
         List<ClassEntry> classEntries;
         if (classFolders.isEmpty()) {
-            String message = String.format("No .class files were found in project \"%1$s\", "
+            String message = String.format("No `.class` files were found in project \"%1$s\", "
                     + "so none of the classfile based checks could be run. "
                     + "Does the project need to be built first?", project.getName());
             Location location = Location.create(project.getDir());
             mClient.report(new Context(this, project, main, project.getDir()),
                     IssueRegistry.LINT_ERROR,
                     project.getConfiguration().getSeverity(IssueRegistry.LINT_ERROR),
-                    location, message, null);
+                    location, message, TextFormat.RAW, null);
             classEntries = Collections.emptyList();
         } else {
             classEntries = new ArrayList<ClassEntry>(64);
@@ -1976,6 +1978,7 @@ public class LintDriver {
                 @NonNull Severity severity,
                 @Nullable Location location,
                 @NonNull String message,
+                @NonNull TextFormat format,
                 @Nullable Object data) {
             assert mCurrentProject != null;
             if (!mCurrentProject.getReportIssues()) {
@@ -1999,7 +2002,7 @@ public class LintDriver {
                 return;
             }
 
-            mDelegate.report(context, issue, severity, location, message, data);
+            mDelegate.report(context, issue, severity, location, message, format, data);
         }
 
         // Everything else just delegates to the embedding lint client

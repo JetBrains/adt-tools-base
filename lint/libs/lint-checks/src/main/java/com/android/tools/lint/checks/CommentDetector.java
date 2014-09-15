@@ -195,7 +195,7 @@ public class CommentDetector extends Detector implements Detector.JavaScanner {
                 Location location = Location.create(context.file, source,
                         offset + i - 1, offset + i - 1 + STOPSHIP_COMMENT.length());
                 context.report(STOP_SHIP, location,
-                        "STOPSHIP comment found; points to code which must be fixed prior " +
+                        "`STOPSHIP` comment found; points to code which must be fixed prior " +
                         "to release",
                         null);
             }

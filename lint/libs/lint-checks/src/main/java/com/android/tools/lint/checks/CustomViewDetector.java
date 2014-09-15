@@ -144,7 +144,7 @@ public class CustomViewDetector extends Detector implements Detector.JavaScanner
             if (resolvedClass.isSubclassOf(CLASS_VIEW, false)) {
                 if (!styleableName.equals(className)) {
                     String message = String.format(
-                        "By convention, the custom view (%1$s) and the declare-styleable (%2$s) "
+                        "By convention, the custom view (`%1$s`) and the declare-styleable (`%2$s`) "
                                 + "should have the same name (various editor features rely on "
                                 + "this convention)",
                         className, styleableName);
@@ -159,9 +159,9 @@ public class CustomViewDetector extends Detector implements Detector.JavaScanner
                 String expectedName = layoutClassName + "_Layout";
                 if (!styleableName.equals(expectedName)) {
                     String message = String.format(
-                            "By convention, the declare-styleable (%1$s) for a layout parameter "
-                                    + "class (%2$s) is expected to be the surrounding "
-                                    + "class (%3$s) plus \"_Layout\", e.g. %4$s. "
+                            "By convention, the declare-styleable (`%1$s`) for a layout parameter "
+                                    + "class (`%2$s`) is expected to be the surrounding "
+                                    + "class (`%3$s`) plus \"`_Layout`\", e.g. `%4$s`. "
                                     + "(Various editor features rely on this convention.)",
                             styleableName, className, layoutClassName, expectedName);
                     context.report(ISSUE, node, context.getLocation(expression), message, null);

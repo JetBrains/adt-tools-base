@@ -257,7 +257,7 @@ public class WrongIdDetector extends LayoutDetector {
                                 if (context.isEnabled(NOT_SIBLING)) {
                                     XmlContext xmlContext = (XmlContext) context;
                                     String message = String.format(
-                                            "%1$s is not a sibling in the same RelativeLayout",
+                                            "`%1$s` is not a sibling in the same `RelativeLayout`",
                                             value);
                                     Location location = xmlContext.getLocation(attr);
                                     xmlContext.report(NOT_SIBLING, attr, location, message, null);
@@ -322,11 +322,11 @@ public class WrongIdDetector extends LayoutDetector {
                     String message;
                     if (isDeclared) {
                         message = String.format(
-                                "The id \"%1$s\" is defined but not assigned to any views.%2$s",
+                                "The id \"`%1$s`\" is defined but not assigned to any views.%2$s",
                                 id, suggestionMessage);
                     } else {
                         message = String.format(
-                                "The id \"%1$s\" is not defined anywhere.%2$s",
+                                "The id \"`%1$s`\" is not defined anywhere.%2$s",
                                 id, suggestionMessage);
                     }
                     report(context, UNKNOWN_ID, handle, message);
@@ -338,7 +338,7 @@ public class WrongIdDetector extends LayoutDetector {
                     Handle handle = pair.getSecond();
                     report(context, UNKNOWN_ID_LAYOUT, handle,
                             String.format(
-                                    "The id \"%1$s\" is not referring to any views in this layout",
+                                    "The id \"`%1$s`\" is not referring to any views in this layout",
                                     stripIdPrefix(id)));
                 }
             }
@@ -393,7 +393,7 @@ public class WrongIdDetector extends LayoutDetector {
             int nameStart = id.startsWith(NEW_ID_PREFIX) ? NEW_ID_PREFIX.length() : 2;
             String suggested = NEW_ID_PREFIX + id.substring(nameStart).replace('/', '_');
             String message = String.format(
-                    "ID definitions *must* be of the form @+id/name; try using %1$s", suggested);
+                    "ID definitions *must* be of the form `@+id/name`; try using `%1$s`", suggested);
             context.report(INVALID, attribute, context.getLocation(attribute), message, null);
         }
     }

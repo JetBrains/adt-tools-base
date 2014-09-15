@@ -98,7 +98,7 @@ public class LayoutInflationDetector extends LayoutDetector implements Detector.
             .addMoreInfo("http://www.doubleencore.com/2013/05/layout-inflation-as-intended");
 
     private static final String ERROR_MESSAGE =
-            "Avoid passing null as the view root (needed to resolve "
+            "Avoid passing `null` as the view root (needed to resolve "
             + "layout parameters on the inflated layout's root element)";
 
     /** Constructs a new {@link LayoutInflationDetector} check */

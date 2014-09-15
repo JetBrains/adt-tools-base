@@ -223,12 +223,12 @@ public class UselessViewDetector extends LayoutDetector {
         String tag = element.getTagName();
         String format;
         if (hasId) {
-            format = "This %1$s layout or its %2$s parent is possibly useless";
+            format = "This `%1$s` layout or its `%2$s` parent is possibly useless";
         } else {
-            format = "This %1$s layout or its %2$s parent is useless";
+            format = "This `%1$s` layout or its `%2$s` parent is useless";
         }
         if (nodeHasBackground || parentHasBackground) {
-            format += "; transfer the background attribute to the other view";
+            format += "; transfer the `background` attribute to the other view";
         }
         String message = String.format(format, tag, parentTag);
         context.report(USELESS_PARENT, element, location, message, null);
@@ -265,7 +265,7 @@ public class UselessViewDetector extends LayoutDetector {
         Location location = context.getLocation(element);
         String tag = element.getTagName();
         String message = String.format(
-                "This %1$s view is useless (no children, no background, no id, no style)", tag);
+                "This `%1$s` view is useless (no children, no `background`, no `id`, no `style`)", tag);
         context.report(USELESS_LEAF, element, location, message, null);
     }
 }

@@ -154,8 +154,8 @@ public class ResourcePrefixDetector extends ResourceXmlDetector implements
 
     private String getErrorMessage(String name) {
         assert mPrefix != null && !name.startsWith(mPrefix);
-        return String.format("Resource named '%1$s' does not start "
-                        + "with the project's resource prefix '%2$s'; rename to '%3$s' ?",
+        return String.format("Resource named '`%1$s`' does not start "
+                        + "with the project's resource prefix '`%2$s`'; rename to '`%3$s`' ?",
                 name, mPrefix, LintUtils.computeResourceName(mPrefix, name));
     }
 

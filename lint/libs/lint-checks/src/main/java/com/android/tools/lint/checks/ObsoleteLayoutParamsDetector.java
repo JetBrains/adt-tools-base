@@ -301,7 +301,7 @@ public class ObsoleteLayoutParamsDetector extends LayoutDetector {
                         return;
                     }
                     context.report(ISSUE, attribute, context.getLocation(attribute),
-                            String.format("Invalid layout param in a %1$s: %2$s", parentTag, name),
+                            String.format("Invalid layout param in a `%1$s`: `%2$s`", parentTag, name),
                             null);
                 }
             } else {
@@ -398,11 +398,11 @@ public class ObsoleteLayoutParamsDetector extends LayoutDetector {
                     }
                     File from = include.getFirst();
                     String parentTag = include.getSecond();
-                    sb.append(String.format("included from within a %1$s in %2$s",
+                    sb.append(String.format("included from within a `%1$s` in `%2$s`",
                             parentTag,
                             from.getParentFile().getName() + File.separator + from.getName()));
                 }
-                String message = String.format("Invalid layout param '%1$s' (%2$s)",
+                String message = String.format("Invalid layout param '`%1$s`' (%2$s)",
                             name, sb.toString());
                 // TODO: Compute applicable scope node
                 context.report(ISSUE, location, message, null);

@@ -18,8 +18,9 @@ package com.android.tools.lint;
 
 import static com.android.SdkConstants.DOT_JPG;
 import static com.android.SdkConstants.DOT_PNG;
-import static com.android.tools.lint.detector.api.Issue.OutputFormat.HTML;
 import static com.android.tools.lint.detector.api.LintUtils.endsWith;
+import static com.android.tools.lint.detector.api.TextFormat.HTML;
+import static com.android.tools.lint.detector.api.TextFormat.RAW;
 
 import com.android.tools.lint.checks.BuiltinIssueRegistry;
 import com.android.tools.lint.client.api.Configuration;
@@ -215,7 +216,7 @@ public class HtmlReporter extends Reporter {
                         addedImage = addImage(url, warning.location);
                     }
                     mWriter.write("<span class=\"message\">");           //$NON-NLS-1$
-                    appendEscapedText(warning.message);
+                    mWriter.append(RAW.convertTo(warning.message, HTML));
                     mWriter.write("</span>");                            //$NON-NLS-1$
                     if (addedImage) {
                         mWriter.write("<br clear=\"right\"/>");          //$NON-NLS-1$
@@ -244,7 +245,7 @@ public class HtmlReporter extends Reporter {
                                 mWriter.write(':');
                                 mWriter.write(' ');
                                 mWriter.write("<span class=\"message\">");           //$NON-NLS-1$
-                                appendEscapedText(message);
+                                mWriter.append(RAW.convertTo(message, HTML));
                                 mWriter.write("</span>");                            //$NON-NLS-1$
                                 mWriter.write("<br />");                         //$NON-NLS-1$
 
@@ -641,6 +642,7 @@ public class HtmlReporter extends Reporter {
             displayPath = url;
         }
         mWriter.write(displayPath);
+        //noinspection VariableNotUsedInsideIf
         if (url != null) {
             mWriter.write("</a>");                       //$NON-NLS-1$
         }

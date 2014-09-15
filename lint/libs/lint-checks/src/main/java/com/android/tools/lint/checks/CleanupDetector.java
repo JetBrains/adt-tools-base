@@ -266,10 +266,10 @@ public class CleanupDetector extends Detector implements ClassScanner {
     /** Computes an error message for a missing recycle of the given type */
     private static String getErrorMessage(String owner) {
         if (FRAGMENT_TRANSACTION_CLS.equals(owner) || FRAGMENT_TRANSACTION_V4_CLS.equals(owner)) {
-            return "This transaction should be completed with a commit() call";
+            return "This transaction should be completed with a `commit()` call";
         }
         String className = owner.substring(owner.lastIndexOf('/') + 1);
-        return String.format("This %1$s should be recycled after use with #recycle()",
+        return String.format("This `%1$s` should be recycled after use with `#recycle()`",
                 className);
     }
 
@@ -488,7 +488,7 @@ public class CleanupDetector extends Detector implements ClassScanner {
                         mEscapes = true;
                     } else if (v == RECYCLED && call != null) {
                         Location location = mContext.getLocation(call);
-                        String message = String.format("This %1$s has already been recycled",
+                        String message = String.format("This `%1$s` has already been recycled",
                                 mRecycleOwner.substring(mRecycleOwner.lastIndexOf('/') + 1));
                         mContext.report(RECYCLE_RESOURCE, mMethod, call, location, message, null);
                     }

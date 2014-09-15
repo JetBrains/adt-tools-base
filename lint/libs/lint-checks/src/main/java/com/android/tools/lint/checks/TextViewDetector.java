@@ -154,7 +154,7 @@ public class TextViewDetector extends LayoutDetector {
                     && context.isEnabled(SELECTABLE)) {
                 context.report(SELECTABLE, element, context.getLocation(element),
                         "Consider making the text value selectable by specifying " +
-                        "android:textIsSelectable=\"true\"", null);
+                        "`android:textIsSelectable=\"true\"`", null);
             }
         }
 
@@ -226,11 +226,11 @@ public class TextViewDetector extends LayoutDetector {
                 String view = element.getTagName();
                 if (view.equals(TEXT_VIEW)) {
                     message = String.format(
-                            "Attribute %1$s should not be used with <TextView>: " +
-                            "Change element type to <EditText> ?", attribute.getName());
+                            "Attribute `%1$s` should not be used with `<TextView>`: " +
+                            "Change element type to `<EditText>` ?", attribute.getName());
                 } else {
                     message = String.format(
-                            "Attribute %1$s should not be used with <%2$s>: " +
+                            "Attribute `%1$s` should not be used with `<%2$s>`: " +
                             "intended for editable text widgets",
                             attribute.getName(), view);
                 }

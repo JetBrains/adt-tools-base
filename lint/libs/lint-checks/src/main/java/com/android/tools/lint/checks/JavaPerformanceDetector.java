@@ -31,6 +31,7 @@ import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.Speed;
+import com.android.tools.lint.detector.api.TextFormat;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Sets.SetView;
 
@@ -290,8 +291,8 @@ public class JavaPerformanceDetector extends Detector implements Detector.JavaSc
                     if (node.astArguments().isEmpty()) {
                         mContext.report(PAINT_ALLOC, node, mContext.getLocation(node),
                                 "Avoid object allocations during draw operations: Use " +
-                                "Canvas.getClipBounds(Rect) instead of Canvas.getClipBounds() " +
-                                "which allocates a temporary Rect", null);
+                                "`Canvas.getClipBounds(Rect)` instead of `Canvas.getClipBounds()` " +
+                                "which allocates a temporary `Rect`", null);
                     }
                 }
             }
@@ -507,20 +508,20 @@ public class JavaPerformanceDetector extends Detector implements Detector.JavaSc
                     String valueType = types.last().getTypeName();
                     if (valueType.equals(INTEGER)) {
                         mContext.report(USE_SPARSE_ARRAY, node, mContext.getLocation(node),
-                            "Use new SparseIntArray(...) instead for better performance",
+                            "Use new `SparseIntArray(...)` instead for better performance",
                             null);
                     } else if (valueType.equals(LONG) && minSdk >= 18) {
                         mContext.report(USE_SPARSE_ARRAY, node, mContext.getLocation(node),
-                                "Use new SparseLongArray(...) instead for better performance",
+                                "Use `new SparseLongArray(...)` instead for better performance",
                                 null);
                     } else if (valueType.equals(BOOLEAN)) {
                         mContext.report(USE_SPARSE_ARRAY, node, mContext.getLocation(node),
-                                "Use new SparseBooleanArray(...) instead for better performance",
+                                "Use `new SparseBooleanArray(...)` instead for better performance",
                                 null);
                     } else {
                         mContext.report(USE_SPARSE_ARRAY, node, mContext.getLocation(node),
                             String.format(
-                                "Use new SparseArray<%1$s>(...) instead for better performance",
+                                "Use `new SparseArray<%1$s>(...)` instead for better performance",
                               valueType),
                             null);
                     }
@@ -529,8 +530,8 @@ public class JavaPerformanceDetector extends Detector implements Detector.JavaSc
                                 SUPPORT_LIB_ARTIFACT))) {
                     boolean useBuiltin = minSdk >= 16;
                     String message = useBuiltin ?
-                            "Use new LongSparseArray(...) instead for better performance" :
-                            "Use new android.support.v4.util.LongSparseArray(...) instead for better performance";
+                            "Use `new LongSparseArray(...)` instead for better performance" :
+                            "Use `new android.support.v4.util.LongSparseArray(...)` instead for better performance";
                     mContext.report(USE_SPARSE_ARRAY, node, mContext.getLocation(node),
                             message, null);
                 }
@@ -545,11 +546,11 @@ public class JavaPerformanceDetector extends Detector implements Detector.JavaSc
                 String valueType = first.getTypeName();
                 if (valueType.equals(INTEGER)) {
                     mContext.report(USE_SPARSE_ARRAY, node, mContext.getLocation(node),
-                        "Use new SparseIntArray(...) instead for better performance",
+                        "Use `new SparseIntArray(...)` instead for better performance",
                         null);
                 } else if (valueType.equals(BOOLEAN)) {
                     mContext.report(USE_SPARSE_ARRAY, node, mContext.getLocation(node),
-                            "Use new SparseBooleanArray(...) instead for better performance",
+                            "Use `new SparseBooleanArray(...)` instead for better performance",
                             null);
                 }
             }
@@ -558,7 +559,7 @@ public class JavaPerformanceDetector extends Detector implements Detector.JavaSc
 
     private static String getUseValueOfErrorMessage(String typeName, String argument) {
         // Keep in sync with {@link #getReplacedType} below
-        return String.format("Use %1$s.valueOf(%2$s) instead", typeName, argument);
+        return String.format("Use `%1$s.valueOf(%2$s)` instead", typeName, argument);
     }
 
     /**
@@ -566,7 +567,8 @@ public class JavaPerformanceDetector extends Detector implements Detector.JavaSc
      * returns the type being replaced. Intended to use for IDE quickfix implementations.
      */
     @Nullable
-    public static String getReplacedType(@NonNull String message) {
+    public static String getReplacedType(@NonNull String message, @NonNull TextFormat format) {
+        message = format.toText(message);
         int index = message.indexOf('.');
         if (index != -1 && message.startsWith("Use ")) {
             return message.substring(4, index);

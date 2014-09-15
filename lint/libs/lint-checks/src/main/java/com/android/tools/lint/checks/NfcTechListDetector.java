@@ -104,7 +104,7 @@ public class NfcTechListDetector extends ResourceXmlDetector implements JavaScan
 
         String text = child.getNodeValue();
         if (!text.equals(text.trim())) {
-            String message = "There should not be any whitespace inside <tech> elements";
+            String message = "There should not be any whitespace inside `<tech>` elements";
             context.report(ISSUE, element, context.getLocation(child), message, null);
         }
     }

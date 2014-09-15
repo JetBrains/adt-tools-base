@@ -164,7 +164,7 @@ public class AlwaysShowActionDetector extends ResourceXmlDetector implements Jav
                         }
                     }
                     context.report(ISSUE, location,
-                            "Prefer \"ifRoom\" instead of \"always\"", null);
+                            "Prefer \"`ifRoom`\" instead of \"`always`\"", null);
                 }
             }
         }
@@ -175,7 +175,7 @@ public class AlwaysShowActionDetector extends ResourceXmlDetector implements Jav
         if (mAlwaysFields != null && !mHasIfRoomRefs) {
             for (Location location : mAlwaysFields) {
                 context.report(ISSUE, location,
-                        "Prefer \"SHOW_AS_ACTION_IF_ROOM\" instead of \"SHOW_AS_ACTION_ALWAYS\"",
+                        "Prefer \"`SHOW_AS_ACTION_IF_ROOM`\" instead of \"`SHOW_AS_ACTION_ALWAYS`\"",
                         null);
             }
         }

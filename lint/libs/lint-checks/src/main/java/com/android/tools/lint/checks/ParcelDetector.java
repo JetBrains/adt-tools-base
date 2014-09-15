@@ -125,8 +125,8 @@ public class ParcelDetector extends Detector implements Detector.JavaScanner {
                                 }
                                 Location location = mContext.getLocation(node.astName());
                                 mContext.report(ISSUE, node, location,
-                                        "This class implements Parcelable but does not "
-                                                + "provide a CREATOR field",
+                                        "This class implements `Parcelable` but does not "
+                                                + "provide a `CREATOR` field",
                                         null);
                             }
                         }

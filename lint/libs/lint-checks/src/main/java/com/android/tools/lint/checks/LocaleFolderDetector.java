@@ -101,9 +101,9 @@ public class LocaleFolderDetector extends Detector implements Detector.ResourceF
 
                 if (replace != null) {
                     // TODO: Check for suppress somewhere other than lint.xml?
-                    String message = String.format("The locale folder \"%1$s\" should be "
-                                    + "called \"%2$s\" instead; see the "
-                                    + "java.util.Locale documentation",
+                    String message = String.format("The locale folder \"`%1$s`\" should be "
+                                    + "called \"`%2$s`\" instead; see the "
+                                    + "`java.util.Locale` documentation",
                             language, replace
                     );
                     context.report(ISSUE, Location.create(context.file), message, null);

@@ -93,7 +93,7 @@ public class PreferenceActivityDetector extends Detector
             if (fqcn != null) {
                 if (fqcn.equals(PREFERENCE_ACTIVITY) &&
                         !context.getDriver().isSuppressed(context, ISSUE, element)) {
-                    String message = "PreferenceActivity should not be exported";
+                    String message = "`PreferenceActivity` should not be exported";
                     context.report(ISSUE, context.getLocation(element), message, null);
                 }
                 mExportedActivities.put(fqcn, context.createLocationHandle(element));
@@ -161,7 +161,7 @@ public class PreferenceActivityDetector extends Detector
                 }
 
                 String message = String.format(
-                        "PreferenceActivity subclass %1$s should not be exported",
+                        "`PreferenceActivity` subclass `%1$s` should not be exported",
                         className);
                 mContext.report(ISSUE, mExportedActivities.get(className).resolve(), message, null);
             }

@@ -16,6 +16,8 @@
 
 package com.android.tools.lint.checks;
 
+import static com.android.tools.lint.detector.api.TextFormat.TEXT;
+
 import com.android.tools.lint.detector.api.Detector;
 
 import java.util.Arrays;
@@ -147,9 +149,9 @@ public class TypoDetectorTest extends AbstractCheckTest {
     public void testGetReplacements() {
         String s = "\"throught\" is a common misspelling; did you mean \"thought\" or " +
                    "\"through\" or \"throughout\" ?\n";
-        assertEquals("throught", TypoDetector.getTypo(s));
+        assertEquals("throught", TypoDetector.getTypo(s, TEXT));
         assertEquals(Arrays.asList("thought", "through", "throughout"),
-                TypoDetector.getSuggestions(s));
+                TypoDetector.getSuggestions(s, TEXT));
     }
 
     public void testNorwegianDefault() throws Exception {

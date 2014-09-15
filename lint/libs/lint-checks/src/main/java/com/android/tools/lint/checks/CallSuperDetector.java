@@ -18,9 +18,7 @@ package com.android.tools.lint.checks;
 
 import static com.android.SdkConstants.CLASS_VIEW;
 
-import com.android.SdkConstants;
 import com.android.annotations.NonNull;
-import com.android.tools.lint.client.api.JavaParser;
 import com.android.tools.lint.client.api.JavaParser.ResolvedMethod;
 import com.android.tools.lint.client.api.JavaParser.ResolvedNode;
 import com.android.tools.lint.detector.api.Category;
@@ -121,8 +119,8 @@ public class CallSuperDetector extends Detector implements Detector.JavaScanner 
                     }
 
                     if (isView) {
-                        String message = "Overriding method should call super."
-                                + ON_DETACHED_FROM_WINDOW;
+                        String message = "Overriding method should call `super."
+                                + ON_DETACHED_FROM_WINDOW + "`";
                         Location location = mContext.getLocation(node.astMethodName());
                         mContext.report(ISSUE, node, location, message, null);
                     }

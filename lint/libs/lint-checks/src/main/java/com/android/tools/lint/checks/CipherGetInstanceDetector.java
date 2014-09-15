@@ -114,7 +114,7 @@ public class CipherGetInstanceDetector extends Detector implements Detector.Java
             @NonNull MethodInvocation call, @NonNull Node node, @NonNull String value,
             boolean includeValue) {
         if (ALGORITHM_ONLY.contains(value)) {
-            String message = "Cipher.getInstance should not be called without setting the"
+            String message = "`Cipher.getInstance` should not be called without setting the"
                     + " encryption mode and padding";
             context.report(ISSUE, call, context.getLocation(node), message, null);
         } else if (value.contains(ECB)) {

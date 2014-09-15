@@ -164,7 +164,7 @@ public class ViewTagDetector extends Detector implements ClassScanner {
 
                 if (objectType != null) {
                     Location location = context.getLocation(call);
-                    String message = String.format("Avoid setting %1$s as values for setTag: " +
+                    String message = String.format("Avoid setting %1$s as values for `setTag`: " +
                         "Can lead to memory leaks in versions older than Android 4.0",
                         objectType);
                     context.report(ISSUE, method, call, location, message, null);
