@@ -333,7 +333,7 @@ public class UnusedResourceDetector extends ResourceXmlDetector implements Detec
                         }
                     }
 
-                    String message = String.format("The resource %1$s appears to be unused",
+                    String message = String.format("The resource `%1$s` appears to be unused",
                             resource);
                     Issue issue = getIssue(resource);
                     // TODO: Compute applicable node scope

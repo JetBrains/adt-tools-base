@@ -101,7 +101,7 @@ public class ColorUsageDetector extends Detector implements Detector.JavaScanner
                         context.report(
                                 ISSUE, select, context.getLocation(select), String.format(
                                     "Should pass resolved color instead of resource id here: " +
-                                    "getResources().getColor(%1$s)", select.toString()),
+                                    "`getResources().getColor(%1$s)`", select.toString()),
                                 null);
                     }
                     break;

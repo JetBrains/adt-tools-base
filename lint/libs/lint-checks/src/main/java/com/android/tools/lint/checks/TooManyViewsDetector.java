@@ -138,12 +138,12 @@ public class TooManyViewsDetector extends LayoutDetector {
             // for the view count error since we'll only have view count exactly equal the
             // max just once.
             mWarnedAboutDepth = true;
-            String msg = String.format("%1$s has more than %2$d levels, bad for performance",
+            String msg = String.format("`%1$s` has more than %2$d levels, bad for performance",
                     context.file.getName(), MAX_DEPTH);
             context.report(TOO_DEEP, element, context.getLocation(element), msg, null);
         }
         if (mViewCount == MAX_VIEW_COUNT) {
-            String msg = String.format("%1$s has more than %2$d views, bad for performance",
+            String msg = String.format("`%1$s` has more than %2$d views, bad for performance",
                     context.file.getName(), MAX_VIEW_COUNT);
             context.report(TOO_MANY, element, context.getLocation(element), msg, null);
         }

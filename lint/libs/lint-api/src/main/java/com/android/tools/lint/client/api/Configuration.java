@@ -22,6 +22,7 @@ import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Severity;
+import com.android.tools.lint.detector.api.TextFormat;
 import com.google.common.annotations.Beta;
 
 /**
@@ -44,7 +45,7 @@ public abstract class Configuration {
      * @param location the location of the issue
      * @param message the associated user message
      * @param data additional information about an issue (see
-     *            {@link LintClient#report(Context, Issue, Severity, Location, String, Object)}
+     *            {@link LintClient#report(Context,Issue,Severity,Location,String,TextFormat,Object)}
      *            for more information
      * @return true if this issue should be suppressed
      */

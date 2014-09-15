@@ -39,6 +39,7 @@ import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.LintUtils;
 import com.android.tools.lint.detector.api.Location;
+import com.android.tools.lint.detector.api.TextFormat;
 import com.android.tools.lint.detector.api.Project;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.utils.XmlUtils;
@@ -96,18 +97,17 @@ public abstract class LintClient {
      * issue as enabled and has not filtered out the issue with its
      * {@link Configuration#ignore(Context, Issue, Location, String, Object)} method.
      * <p>
-     *
      * @param context the context used by the detector when the issue was found
      * @param issue the issue that was found
      * @param severity the severity of the issue
      * @param location the location of the issue
      * @param message the associated user message
+     * @param format the format of the description and location descriptions
      * @param data optional extra data for a discovered issue, or null. The
      *            content depends on the specific issue. Detectors can pass
      *            extra info here which automatic fix tools etc can use to
      *            extract relevant information instead of relying on parsing the
      *            error message text. See each detector for details on which
-     *            data if any is supplied for a given issue.
      */
     public abstract void report(
             @NonNull Context context,
@@ -115,6 +115,7 @@ public abstract class LintClient {
             @NonNull Severity severity,
             @Nullable Location location,
             @NonNull String message,
+            @NonNull TextFormat format,
             @Nullable Object data);
 
     /**

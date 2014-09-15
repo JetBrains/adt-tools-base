@@ -98,7 +98,7 @@ public class ServiceCastDetector extends Detector implements Detector.JavaScanne
                         }
 
                         String message = String.format(
-                                "Suspicious cast to %1$s for a %2$s: expected %3$s",
+                                "Suspicious cast to `%1$s` for a `%2$s`: expected `%3$s`",
                                 stripPackage(castType), name, stripPackage(expectedClass));
                         context.report(ISSUE, node, context.getLocation(cast), message, null);
                     }

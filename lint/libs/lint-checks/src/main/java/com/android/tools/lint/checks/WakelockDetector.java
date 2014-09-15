@@ -134,7 +134,7 @@ public class WakelockDetector extends Detector implements ClassScanner {
                 if (context.getDriver().getPhase() == 2) {
                     assert !mHasRelease;
                     context.report(ISSUE, method, call, context.getLocation(call),
-                        "Found a wakelock acquire() but no release() calls anywhere",
+                        "Found a wakelock `acquire()` but no `release()` calls anywhere",
                         null);
                 } else {
                     assert context.getDriver().getPhase() == 1;
@@ -153,7 +153,7 @@ public class WakelockDetector extends Detector implements ClassScanner {
                         && context.getDriver().isSubclassOf(
                                 classNode, ANDROID_APP_ACTIVITY)) {
                     context.report(ISSUE, method, call, context.getLocation(call),
-                        "Wakelocks should be released in onPause, not onDestroy",
+                        "Wakelocks should be released in `onPause`, not `onDestroy`",
                         null);
                 }
             }
@@ -178,9 +178,9 @@ public class WakelockDetector extends Detector implements ClassScanner {
                     final int both = PARTIAL_WAKE_LOCK | ACQUIRE_CAUSES_WAKEUP;
                     if ((flag & both) == both) {
                         context.report(ISSUE, method, call, context.getLocation(call),
-                                "Should not set both PARTIAL_WAKE_LOCK and ACQUIRE_CAUSES_WAKEUP. "
+                                "Should not set both `PARTIAL_WAKE_LOCK` and `ACQUIRE_CAUSES_WAKEUP`. "
                                         + "If you do not want the screen to turn on, get rid of "
-                                        + "ACQUIRE_CAUSES_WAKEUP",
+                                        + "`ACQUIRE_CAUSES_WAKEUP`",
                                 null);
                     }
                 }
@@ -231,9 +231,9 @@ public class WakelockDetector extends Detector implements ClassScanner {
             if ((status & SEEN_RETURN) != 0) {
                 String message;
                 if ((status & SEEN_EXCEPTION) != 0) {
-                    message = "The release() call is not always reached (via exceptional flow)";
+                    message = "The `release()` call is not always reached (via exceptional flow)";
                 } else {
-                    message = "The release() call is not always reached";
+                    message = "The `release()` call is not always reached";
                 }
 
                 context.report(ISSUE, method, acquire,

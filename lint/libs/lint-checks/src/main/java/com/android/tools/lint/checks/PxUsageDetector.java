@@ -191,7 +191,7 @@ public class PxUsageDetector extends LayoutDetector {
                         if (child.getNodeType() == Node.TEXT_NODE &&
                                 isDpUnit(child.getNodeValue())) {
                             String message = "This dimension is used as a text size: "
-                                    + "Should use \"sp\" instead of \"dp\"";
+                                    + "Should use \"`sp`\" instead of \"`dp`\"";
                             Location location = context.getLocation(child);
                             Location secondary = mTextSizeUsage.get(name).resolve();
                             secondary.setMessage("Dimension used as a text size here");
@@ -214,7 +214,7 @@ public class PxUsageDetector extends LayoutDetector {
             }
             if (context.isEnabled(PX_ISSUE)) {
                 context.report(PX_ISSUE, attribute, context.getLocation(attribute),
-                    "Avoid using \"px\" as units; use \"dp\" instead", null);
+                    "Avoid using \"`px`\" as units; use \"`dp`\" instead", null);
             }
         } else if (value.endsWith(UNIT_MM) && value.matches("\\d+mm") //$NON-NLS-1$
                        || value.endsWith(UNIT_IN) && value.matches("\\d+in")) { //$NON-NLS-1$
@@ -225,9 +225,9 @@ public class PxUsageDetector extends LayoutDetector {
             if (context.isEnabled(IN_MM_ISSUE)) {
                 String unit = value.substring(value.length() - 2);
                 context.report(IN_MM_ISSUE, attribute, context.getLocation(attribute),
-                        String.format("Avoid using \"%1$s\" as units " +
-                                "(it does not work accurately on all devices); use \"dp\" instead",
-                                unit),
+                        String.format("Avoid using \"`%1$s`\" as units " +
+                            "(it does not work accurately on all devices); use \"`dp`\" instead",
+                            unit),
                     null);
             }
         } else if (value.endsWith(UNIT_SP)
@@ -237,14 +237,14 @@ public class PxUsageDetector extends LayoutDetector {
             int size = getSize(value);
             if (size > 0 && size < 12) {
                 context.report(SMALL_SP_ISSUE, attribute, context.getLocation(attribute),
-                        String.format("Avoid using sizes smaller than 12sp: %1$s", value),
+                        String.format("Avoid using sizes smaller than `12sp`: `%1$s`", value),
                         null);
             }
         } else if (ATTR_TEXT_SIZE.equals(attribute.getLocalName())) {
             if (isDpUnit(value)) { //$NON-NLS-1$
                 if (context.isEnabled(DP_ISSUE)) {
                     context.report(DP_ISSUE, attribute, context.getLocation(attribute),
-                            "Should use \"sp\" instead of \"dp\" for text sizes", null);
+                            "Should use \"`sp`\" instead of \"`dp`\" for text sizes", null);
                 }
             } else if (value.startsWith(DIMEN_PREFIX)) {
                 if (context.getClient().supportsProjectResources()) {
@@ -265,7 +265,7 @@ public class PxUsageDetector extends LayoutDetector {
                                         ResourceFile sourceFile = item.getSource();
                                         assert sourceFile != null;
                                         String message = String.format(
-                                                "Should use \"sp\" instead of \"dp\" for text sizes (%1$s is defined as %2$s in %3$s",
+                                                "Should use \"`sp`\" instead of \"`dp`\" for text sizes (`%1$s` is defined as `%2$s` in `%3$s`",
                                                 value, dimenValue, sourceFile.getFile());
                                         context.report(DP_ISSUE, attribute,
                                                 context.getLocation(attribute),
@@ -339,7 +339,7 @@ public class PxUsageDetector extends LayoutDetector {
                             !text.equals("1px")) { //$NON-NLS-1$
                         if (context.isEnabled(PX_ISSUE)) {
                             context.report(PX_ISSUE, item, context.getLocation(textNode),
-                                "Avoid using \"px\" as units; use \"dp\" instead", null);
+                                "Avoid using `\"px\"` as units; use `\"dp\"` instead", null);
                         }
                     }
                 } else if (c == 'm' && text.charAt(j - 1) == 'm' ||
@@ -349,9 +349,9 @@ public class PxUsageDetector extends LayoutDetector {
                     if (text.matches("\\d+" + unit) && text.charAt(0) != '0') { //$NON-NLS-1$
                         if (context.isEnabled(IN_MM_ISSUE)) {
                             context.report(IN_MM_ISSUE, item, context.getLocation(textNode),
-                                String.format("Avoid using \"%1$s\" as units "
+                                String.format("Avoid using \"`%1$s`\" as units "
                                         + "(it does not work accurately on all devices); "
-                                        + "use \"dp\" instead", unit), null);
+                                        + "use \"`dp`\" instead", unit), null);
                         }
                     }
                 } else if (c == 'p' && (text.charAt(j - 1) == 'd'
@@ -363,7 +363,7 @@ public class PxUsageDetector extends LayoutDetector {
                             && text.matches("\\d+di?p")) {  //$NON-NLS-1$
                         if (context.isEnabled(DP_ISSUE)) {
                             context.report(DP_ISSUE, item, context.getLocation(textNode),
-                                "Should use \"sp\" instead of \"dp\" for text sizes", null);
+                                "Should use \"`sp`\" instead of \"`dp`\" for text sizes", null);
                         }
                     }
                 } else if (c == 'p' && text.charAt(j - 1) == 's') {
@@ -377,7 +377,7 @@ public class PxUsageDetector extends LayoutDetector {
                                 if (size > 0 && size < 12) {
                                     context.report(SMALL_SP_ISSUE, item,
                                         context.getLocation(textNode), String.format(
-                                                "Avoid using sizes smaller than 12sp: %1$s",
+                                                "Avoid using sizes smaller than `12sp`: `%1$s`",
                                                         text), null);
                                 }
                             }

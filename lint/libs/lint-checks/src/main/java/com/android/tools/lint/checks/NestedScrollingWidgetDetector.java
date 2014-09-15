@@ -121,11 +121,11 @@ public class NestedScrollingWidgetDetector extends LayoutDetector {
             if (parent != null) {
                 String format;
                 if (mVisitingVerticalScroll > 1) {
-                    format = "The vertically scrolling %1$s should not contain another " +
-                            "vertically scrolling widget (%2$s)";
+                    format = "The vertically scrolling `%1$s` should not contain another " +
+                            "vertically scrolling widget (`%2$s`)";
                 } else {
-                    format = "The horizontally scrolling %1$s should not contain another " +
-                            "horizontally scrolling widget (%2$s)";
+                    format = "The horizontally scrolling `%1$s` should not contain another " +
+                            "horizontally scrolling widget (`%2$s`)";
                 }
                 String msg = String.format(format, parent.getTagName(), element.getTagName());
                 context.report(ISSUE, element, context.getLocation(element), msg, null);

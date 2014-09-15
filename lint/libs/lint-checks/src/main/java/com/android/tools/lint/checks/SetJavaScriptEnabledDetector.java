@@ -65,7 +65,7 @@ public class SetJavaScriptEnabledDetector extends Detector implements Detector.J
         if (node.astArguments().size() == 1
                 && !node.astArguments().first().toString().equals("false")) { //$NON-NLS-1$
             context.report(ISSUE, node, context.getLocation(node),
-                    "Using setJavaScriptEnabled can introduce XSS vulnerabilities " +
+                    "Using `setJavaScriptEnabled` can introduce XSS vulnerabilities " +
                             "into you application, review carefully.",
                     null);
         }

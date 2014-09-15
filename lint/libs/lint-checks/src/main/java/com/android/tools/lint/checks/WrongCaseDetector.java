@@ -26,6 +26,7 @@ import com.android.tools.lint.detector.api.LintUtils;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.Speed;
+import com.android.tools.lint.detector.api.TextFormat;
 import com.android.tools.lint.detector.api.XmlContext;
 
 import org.w3c.dom.Element;
@@ -82,7 +83,7 @@ public class WrongCaseDetector extends LayoutDetector {
         String tag = element.getTagName();
         String correct = Character.toLowerCase(tag.charAt(0)) + tag.substring(1);
         context.report(WRONG_CASE, element, context.getLocation(element),
-                String.format("Invalid tag <%1$s>; should be <%2$s>", tag, correct), null);
+                String.format("Invalid tag `<%1$s>`; should be `<%2$s>`", tag, correct), null);
     }
 
     /**
@@ -92,11 +93,12 @@ public class WrongCaseDetector extends LayoutDetector {
      * Intended for IDE quickfix implementations.
      *
      * @param errorMessage the error message associated with the error
+     * @param format the format of the error message
      * @return the corresponding old value, or null if not recognized
      */
     @Nullable
-    public static String getOldValue(@NonNull String errorMessage) {
-        return LintUtils.findSubstring(errorMessage, " tag <", ">");
+    public static String getOldValue(@NonNull String errorMessage, @NonNull TextFormat format) {
+        return LintUtils.findSubstring(format.toText(errorMessage), " tag <", ">");
     }
 
     /**
@@ -106,10 +108,11 @@ public class WrongCaseDetector extends LayoutDetector {
      * Intended for IDE quickfix implementations.
      *
      * @param errorMessage the error message associated with the error
+     * @param format the format of the error message
      * @return the corresponding new value, or null if not recognized
      */
     @Nullable
-    public static String getNewValue(@NonNull String errorMessage) {
-        return LintUtils.findSubstring(errorMessage, " should be <", ">");
+    public static String getNewValue(@NonNull String errorMessage, @NonNull TextFormat format) {
+        return LintUtils.findSubstring(format.toText(errorMessage), " should be <", ">");
     }
 }

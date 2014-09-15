@@ -682,7 +682,7 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
                                 sb.append(file.getParentFile().getName());
                             }
                             String message = String.format(
-                                "The %1$s icon has identical contents in the following configuration folders: %2$s",
+                                "The `%1$s` icon has identical contents in the following configuration folders: %2$s",
                                         lastName, sb.toString());
                                 context.report(DUPLICATES_CONFIGURATIONS, location, message, null);
                         } else {
@@ -868,7 +868,7 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
                                 fileName, dip.width, dip.height, px.width, px.height));
                     }
                     String message = String.format(
-                        "The image %1$s varies significantly in its density-independent (dip) " +
+                        "The image `%1$s` varies significantly in its density-independent (dip) " +
                         "size across the various density versions: %2$s",
                             name, sb.toString());
                     context.report(ICON_DIP_SIZE, location, message, null);
@@ -906,7 +906,7 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
                 context.report(
                     ICON_MISSING_FOLDER,
                     Location.create(res),
-                    String.format("Missing density variation folders in %1$s: %2$s",
+                    String.format("Missing density variation folders in `%1$s`: %2$s",
                             context.getProject().getDisplayPath(res),
                             LintUtils.formatList(missing, -1)),
                     null);
@@ -946,7 +946,7 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
 
                     context.report(ICON_NODPI, location,
                         String.format(
-                            "The following images appear in both -nodpi and in a density folder: %1$s",
+                            "The following images appear in both `-nodpi` and in a density folder: %1$s",
                             LintUtils.formatList(list,
                                     context.getDriver().isAbbreviating() ? 10 : -1)),
                         null);
@@ -1016,7 +1016,7 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
 
                         context.report(ICON_XML_AND_PNG, location,
                             String.format(
-                                "The following images appear both as density independent .xml files and as bitmap files: %1$s",
+                                "The following images appear both as density independent `.xml` files and as bitmap files: %1$s",
                                 LintUtils.formatList(fileNames,
                                         context.getDriver().isAbbreviating() ? 10 : -1)),
                             null);
@@ -1066,7 +1066,7 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
 
                     context.report(ICON_DENSITIES, Location.create(file),
                             String.format(
-                                    "Missing the following drawables in %1$s: %2$s%3$s",
+                                    "Missing the following drawables in `%1$s`: %2$s%3$s",
                                     file.getName(),
                                     LintUtils.formatList(delta,
                                             context.getDriver().isAbbreviating() ? 5 : -1),
@@ -1192,7 +1192,7 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
                         || endsWith(name, DOT_GIF)) {
                     context.report(ICON_LOCATION,
                         Location.create(file),
-                        String.format("Found bitmap drawable res/drawable/%1$s in " +
+                        String.format("Found bitmap drawable `res/drawable/%1$s` in " +
                                 "densityless folder",
                                 file.getName()),
                         null);
@@ -1205,7 +1205,7 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
                 String name = file.getName();
                 if (endsWith(name, DOT_GIF)) {
                     context.report(GIF_USAGE, Location.create(file),
-                            "Using the .gif format for bitmaps is discouraged",
+                            "Using the `.gif` format for bitmaps is discouraged",
                             null);
                 }
             }
@@ -1348,8 +1348,8 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
                                 int b = (rgb & 0x0000FF);
                                 if (r != g || r != b) {
                                     String message = "Action Bar icons should use a single gray "
-                                        + "color (#333333 for light themes (with 60%/30% "
-                                        + "opacity for enabled/disabled), and #FFFFFF with "
+                                        + "color (`#333333` for light themes (with 60%/30% "
+                                        + "opacity for enabled/disabled), and `#FFFFFF` with "
                                         + "opacity 80%/30% for dark themes";
                                     context.report(ICON_COLORS, Location.create(file),
                                             message, null);
@@ -1452,8 +1452,8 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
                                         return;
                                     }
                                     String message = String.format(
-                                            "Misleading file extension; named .%1$s but the " +
-                                            "file format is %2$s", extension, formatName);
+                                            "Misleading file extension; named `.%1$s` but the " +
+                                            "file format is `%2$s`", extension, formatName);
                                     Location location = Location.create(file);
                                     context.report(ICON_EXTENSION, location, message, null);
                                 }
@@ -1542,8 +1542,8 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
             Location location = chainLocations(files);
 
             String message = String.format(
-                    "The files %1$s.png and %1$s.9.png clash; both "
-                    + "will map to @drawable/%1$s", name);
+                    "The files `%1$s.png` and `%1$s.9.png` clash; both "
+                    + "will map to `@drawable/%1$s`", name);
             context.report(ICON_MIX_9PNG, location, message, null);
         }
     }
@@ -1710,7 +1710,7 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
                         ICON_EXPECTED_SIZE,
                     Location.create(file),
                     String.format(
-                        "Incorrect icon size for %1$s: expected %2$dx%3$d, but was %4$dx%5$d",
+                        "Incorrect icon size for `%1$s`: expected %2$dx%3$d, but was %4$dx%5$d",
                         folderName + File.separator + file.getName(),
                         width, height, size.width, size.height),
                     null);
@@ -1719,7 +1719,7 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
                         ICON_EXPECTED_SIZE,
                     Location.create(file),
                     String.format(
-                        "Incorrect icon size for %1$s: icon size should be at most %2$dx%3$d, but was %4$dx%5$d",
+                        "Incorrect icon size for `%1$s`: icon size should be at most %2$dx%3$d, but was %4$dx%5$d",
                         folderName + File.separator + file.getName(),
                         width, height, size.width, size.height),
                     null);

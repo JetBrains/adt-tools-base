@@ -104,7 +104,7 @@ public class ApiDetectorTest extends AbstractCheckTest {
 
     public void testUnusedAttributes() throws Exception {
         assertEquals(""
-                + "res/layout/divider.xml:9: Warning: Attribute \"showDividers\" is only used in API level 11 and higher (current min is 4) [UnusedAttribute]\n"
+                + "res/layout/divider.xml:9: Warning: Attribute showDividers is only used in API level 11 and higher (current min is 4) [UnusedAttribute]\n"
                 + "    android:showDividers=\"middle\"\n"
                 + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                 + "0 errors, 1 warnings\n",
@@ -122,7 +122,7 @@ public class ApiDetectorTest extends AbstractCheckTest {
                 + "res/layout/attribute2.xml:4: Error: switchTextAppearance requires API level 14 (current min is 1), but note that attribute editTextColor is only used in API level 11 and higher [NewApi]\n"
                 + "    android:editTextColor=\"?android:switchTextAppearance\"\n"
                 + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-                + "res/layout/attribute2.xml:4: Warning: Attribute \"editTextColor\" is only used in API level 11 and higher (current min is 1) [UnusedAttribute]\n"
+                + "res/layout/attribute2.xml:4: Warning: Attribute editTextColor is only used in API level 11 and higher (current min is 1) [UnusedAttribute]\n"
                 + "    android:editTextColor=\"?android:switchTextAppearance\"\n"
                 + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                 + "1 errors, 1 warnings\n",
@@ -147,7 +147,7 @@ public class ApiDetectorTest extends AbstractCheckTest {
     }
 
     public void testReportAttributeName() throws Exception {
-        assertEquals("res/layout/layout.xml:13: Warning: Attribute \"layout_row\" is only used in API level 14 and higher (current min is 4) [UnusedAttribute]\n"
+        assertEquals("res/layout/layout.xml:13: Warning: Attribute layout_row is only used in API level 14 and higher (current min is 4) [UnusedAttribute]\n"
                 + "            android:layout_row=\"2\"\n"
                 + "            ~~~~~~~~~~~~~~~~~~~~~~\n"
                 + "0 errors, 1 warnings\n",
@@ -1110,7 +1110,7 @@ public class ApiDetectorTest extends AbstractCheckTest {
                 + "res/drawable/ripple.xml:1: Error: <ripple> requires API level 21 (current min is 14) [NewApi]\n"
                 + "<ripple\n"
                 + "^\n"
-                + "res/drawable/ripple.xml:4: Warning: Attribute \"tintMode\" is only used in API level 21 and higher (current min is 14) [UnusedAttribute]\n"
+                + "res/drawable/ripple.xml:4: Warning: Attribute tintMode is only used in API level 21 and higher (current min is 14) [UnusedAttribute]\n"
                 + "    android:tintMode=\"src_over\"\n"
                 + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                 + "1 errors, 1 warnings\n",
@@ -1143,16 +1143,16 @@ public class ApiDetectorTest extends AbstractCheckTest {
                 + "res/drawable/vector.xml:1: Error: <vector> requires API level 21 (current min is 1) [NewApi]\n"
                 + "<vector xmlns:android=\"http://schemas.android.com/apk/res/android\" >\n"
                 + "^\n"
-                + "AndroidManifest.xml:8: Warning: Attribute \"viewportHeight\" is only used in API level 21 and higher (current min is 1) [UnusedAttribute]\n"
+                + "AndroidManifest.xml:8: Warning: Attribute viewportHeight is only used in API level 21 and higher (current min is 1) [UnusedAttribute]\n"
                 + "        android:viewportHeight=\"24\"\n"
                 + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-                + "AndroidManifest.xml:9: Warning: Attribute \"viewportWidth\" is only used in API level 21 and higher (current min is 1) [UnusedAttribute]\n"
+                + "AndroidManifest.xml:9: Warning: Attribute viewportWidth is only used in API level 21 and higher (current min is 1) [UnusedAttribute]\n"
                 + "        android:viewportWidth=\"24\" />\n"
                 + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-                + "res/drawable/vector.xml:8: Warning: Attribute \"viewportHeight\" is only used in API level 21 and higher (current min is 1) [UnusedAttribute]\n"
+                + "res/drawable/vector.xml:8: Warning: Attribute viewportHeight is only used in API level 21 and higher (current min is 1) [UnusedAttribute]\n"
                 + "        android:viewportHeight=\"24\"\n"
                 + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-                + "res/drawable/vector.xml:9: Warning: Attribute \"viewportWidth\" is only used in API level 21 and higher (current min is 1) [UnusedAttribute]\n"
+                + "res/drawable/vector.xml:9: Warning: Attribute viewportWidth is only used in API level 21 and higher (current min is 1) [UnusedAttribute]\n"
                 + "        android:viewportWidth=\"24\" />\n"
                 + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                 + "1 errors, 4 warnings\n",

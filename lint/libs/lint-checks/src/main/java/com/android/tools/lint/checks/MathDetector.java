@@ -93,7 +93,7 @@ public class MathDetector extends Detector implements Detector.ClassScanner {
         if (owner.equals("android/util/FloatMath")  //$NON-NLS-1$
                 && context.getProject().getMinSdk() >= 8) {
             String message = String.format(
-                    "Use java.lang.Math#%1$s instead of android.util.FloatMath#%1$s() " +
+                    "Use `java.lang.Math#%1$s` instead of `android.util.FloatMath#%1$s()` " +
                     "since it is faster as of API 8", call.name);
             context.report(ISSUE, method, call, context.getLocation(call), message, null /*data*/);
         }

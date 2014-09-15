@@ -117,16 +117,16 @@ public class WrongIdDetectorTest extends AbstractCheckTest {
     public void testInvalidIds1() throws Exception {
         // See https://code.google.com/p/android/issues/detail?id=56029
         assertEquals(""
-                + "res/layout/invalid_ids.xml:23: Error: ID definitions *must* be of the form @+id/name; try using @+id/menu_Reload [InvalidId]\n"
+                + "res/layout/invalid_ids.xml:23: Error: ID definitions must be of the form @+id/name; try using @+id/menu_Reload [InvalidId]\n"
                 + "        android:id=\"@+menu/Reload\"\n"
                 + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-                + "res/layout/invalid_ids.xml:31: Error: ID definitions *must* be of the form @+id/name; try using @+id/_id_foo [InvalidId]\n"
+                + "res/layout/invalid_ids.xml:31: Error: ID definitions must be of the form @+id/name; try using @+id/_id_foo [InvalidId]\n"
                 + "        android:id=\"@+/id_foo\"\n"
                 + "        ~~~~~~~~~~~~~~~~~~~~~~\n"
-                + "res/layout/invalid_ids.xml:37: Error: ID definitions *must* be of the form @+id/name; try using @+id/myid_button5 [InvalidId]\n"
+                + "res/layout/invalid_ids.xml:37: Error: ID definitions must be of the form @+id/name; try using @+id/myid_button5 [InvalidId]\n"
                 + "            android:id=\"@+myid/button5\"\n"
                 + "            ~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-                + "res/layout/invalid_ids.xml:43: Error: ID definitions *must* be of the form @+id/name; try using @+id/string_whatevs [InvalidId]\n"
+                + "res/layout/invalid_ids.xml:43: Error: ID definitions must be of the form @+id/name; try using @+id/string_whatevs [InvalidId]\n"
                 + "            android:id=\"@+string/whatevs\"\n"
                 + "            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                 + "4 errors, 0 warnings\n",
@@ -137,7 +137,7 @@ public class WrongIdDetectorTest extends AbstractCheckTest {
     public void testInvalidIds2() throws Exception {
         // https://code.google.com/p/android/issues/detail?id=65244
         assertEquals(""
-                + "res/layout/invalid_ids2.xml:8: Error: ID definitions *must* be of the form @+id/name; try using @+id/btn_skip [InvalidId]\n"
+                + "res/layout/invalid_ids2.xml:8: Error: ID definitions must be of the form @+id/name; try using @+id/btn_skip [InvalidId]\n"
                 + "        android:id=\"@+id/btn/skip\"\n"
                 + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                 + "1 errors, 0 warnings\n",

@@ -16,7 +16,7 @@
 
 package com.android.tools.lint;
 
-import static com.android.tools.lint.detector.api.Issue.OutputFormat.RAW;
+import static com.android.tools.lint.detector.api.TextFormat.RAW;
 
 import com.android.tools.lint.checks.BuiltinIssueRegistry;
 import com.android.tools.lint.detector.api.Issue;

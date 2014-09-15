@@ -109,7 +109,7 @@ public class TitleDetector extends ResourceXmlDetector implements JavaScanner {
             return;
         }
 
-        String message = "Menu items should specify a title";
+        String message = "Menu items should specify a `title`";
         context.report(ISSUE, element, context.getLocation(element), message, null);
     }
 }

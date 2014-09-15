@@ -263,12 +263,12 @@ public class DuplicateIdDetector extends LayoutDetector {
                 Attr first = findIdAttribute(attribute.getOwnerDocument(), id);
                 if (first != null && first != attribute) {
                     Location secondLocation = context.getLocation(first);
-                    secondLocation.setMessage(String.format("%1$s originally defined here", id));
+                    secondLocation.setMessage(String.format("`%1$s` originally defined here", id));
                     location.setSecondary(secondLocation);
                 }
 
                 context.report(WITHIN_LAYOUT, attribute, location,
-                        String.format("Duplicate id %1$s, already defined earlier in this layout",
+                        String.format("Duplicate id `%1$s`, already defined earlier in this layout",
                                 id), null);
             } else if (id.startsWith(NEW_ID_PREFIX)) {
                 // Skip id's on include tags

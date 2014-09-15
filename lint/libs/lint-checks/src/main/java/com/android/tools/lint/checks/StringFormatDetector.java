@@ -444,8 +444,8 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
 
                                 Location location = handle.resolve();
                                 String message = String.format(
-                                        "Incorrect formatting string %1$s; missing conversion " +
-                                        "character in '%2$s' ?", name, str);
+                                        "Incorrect formatting string `%1$s`; missing conversion " +
+                                        "character in '`%2$s`' ?", name, str);
                                 context.report(INVALID, location, message, null);
                                 //warned = true;
                                 continue;
@@ -496,7 +496,7 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
                         File f = otherLocation.getFile();
                         String message = String.format(
                                 "Inconsistent formatting types for argument #%1$d in " +
-                                "format string %2$s ('%3$s'): Found both '%4$s' and '%5$s' " +
+                                "format string `%2$s` ('%3$s'): Found both '`%4$s`' and '`%5$s`' " +
                                 "(in %6$s)",
                                 number, name,
                                 str,
@@ -651,7 +651,7 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
                 secondary.setMessage("Conflicting number of arguments here");
                 location.setSecondary(secondary);
                 String message = String.format(
-                        "Inconsistent number of arguments in formatting string %1$s; " +
+                        "Inconsistent number of arguments in formatting string `%1$s`; " +
                         "found both %2$d and %3$d", name, prevCount, count);
                 context.report(ARG_COUNT, location, message, null);
                 break;
@@ -676,7 +676,7 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
                     Collections.sort(sorted);
                     Location location = handle.resolve();
                     String message = String.format(
-                            "Formatting string '%1$s' is not referencing numbered arguments %2$s",
+                            "Formatting string '`%1$s`' is not referencing numbered arguments %2$s",
                             name, sorted);
                     context.report(ARG_COUNT, location, message, null);
                     break;
@@ -966,8 +966,8 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
             }
             Location location = handle.resolve();
             String message = String.format(
-                    "Format string '%1$s' is not a valid format string so it should not be " +
-                    "passed to String.format",
+                    "Format string '`%1$s`' is not a valid format string so it should not be " +
+                    "passed to `String.format`",
                     name);
             context.report(INVALID, call, location, message, null);
             return;
@@ -1079,8 +1079,8 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
                             count));
                     location.setSecondary(secondary);
                     String message = String.format(
-                            "Wrong argument count, format string %1$s requires %2$d but format " +
-                            "call supplies %3$d",
+                            "Wrong argument count, format string `%1$s` requires `%2$d` but format " +
+                            "call supplies `%3$d`",
                             name, count, args.size() - 1 - (specifiesLocale ? 1 : 0));
                     context.report(ARG_TYPES, method, location, message, null);
                     if (reported == null) {
@@ -1164,7 +1164,7 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
 
                                 String message = String.format(
                                         "Wrong argument type for formatting argument '#%1$d' " +
-                                        "in %2$s: conversion is '%3$s', received %4$s " +
+                                        "in `%2$s`: conversion is '`%3$s`', received `%4$s` " +
                                         "(argument #%5$d in method call)",
                                         i, name, formatType, type.getSimpleName(),
                                         argumentIndex + 1);

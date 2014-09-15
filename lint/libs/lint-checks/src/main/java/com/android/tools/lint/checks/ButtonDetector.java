@@ -279,7 +279,7 @@ public class ButtonDetector extends ResourceXmlDetector {
                                         context.report(CASE, child, context.getLocation(child),
                                             String.format(
                                             "The standard Android way to capitalize %1$s " +
-                                            "is \"Cancel\" (tip: use @android:string/cancel instead)",
+                                            "is \"Cancel\" (tip: use `@android:string/cancel` instead)",
                                             label),  null);
                                     }
                                 }
@@ -296,7 +296,7 @@ public class ButtonDetector extends ResourceXmlDetector {
                                         context.report(CASE, child, context.getLocation(child),
                                             String.format(
                                             "The standard Android way to capitalize %1$s " +
-                                            "is \"OK\" (tip: use @android:string/ok instead)",
+                                            "is \"OK\" (tip: use `@android:string/ok` instead)",
                                             label),  null);
                                     }
                                 }
@@ -322,8 +322,8 @@ public class ButtonDetector extends ResourceXmlDetector {
                         && !parentDefinesSelectableItem(element)) {
                     context.report(STYLE, element, context.getLocation(element),
                             "Buttons in button bars should be borderless; use " +
-                            "style=\"?android:attr/buttonBarButtonStyle\" (and " +
-                            "?android:attr/buttonBarStyle on the parent)",
+                            "`style=\"?android:attr/buttonBarButtonStyle\"` (and " +
+                            "`?android:attr/buttonBarStyle` on the parent)",
                             null);
                 }
             }
@@ -530,7 +530,7 @@ public class ButtonDetector extends ResourceXmlDetector {
         if (mustCreateIcsLayout) {
             message = String.format(
                     "Layout uses the wrong button order for API >= 14: Create a " +
-                    "layout-v14/%1$s file with opposite order: %2$s",
+                    "`layout-v14/%1$s` file with opposite order: %2$s",
                     context.file.getName(), message);
         }
 

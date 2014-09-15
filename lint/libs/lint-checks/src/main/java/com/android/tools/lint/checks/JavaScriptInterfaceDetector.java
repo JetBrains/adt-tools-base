@@ -136,7 +136,7 @@ public class JavaScriptInterfaceDetector extends Detector implements Detector.Cl
             Location location = context.getLocation(call);
             context.report(ISSUE, location,
                     "None of the methods in the added interface have been annotated "
-                            + "with @android.webkit.JavascriptInterface; they will not "
+                            + "with `@android.webkit.JavascriptInterface`; they will not "
                             + "be visible in API 17", null);
         }
     }

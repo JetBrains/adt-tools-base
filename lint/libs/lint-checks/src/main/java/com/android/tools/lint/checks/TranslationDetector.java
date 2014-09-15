@@ -193,6 +193,7 @@ public class TranslationDetector extends ResourceXmlDetector {
                         }
                         mFileToLocale.put(context.file, locale);
                     }
+                    // Add in English here if not specified? Worry about false positives listing "en" explicitly
                 }
             }
 
@@ -416,7 +417,7 @@ public class TranslationDetector extends ResourceXmlDetector {
                             mMissingLocations.put(s, null);
                             String message = mDescriptions.get(s);
                             if (message == null) {
-                                message = String.format("\"%1$s\" is not translated in %2$s",
+                                message = String.format("\"`%1$s`\" is not translated in %2$s",
                                         s, getLanguageDescription(language));
                             } else {
                                 message = message + ", " + getLanguageDescription(language);
@@ -442,7 +443,7 @@ public class TranslationDetector extends ResourceXmlDetector {
                             }
                             mExtraLocations.put(s, null);
                             String message = String.format(
-                                "\"%1$s\" is translated here but not found in default locale", s);
+                                "\"`%1$s`\" is translated here but not found in default locale", s);
                             mDescriptions.put(s, message);
                         }
                     }
@@ -552,7 +553,7 @@ public class TranslationDetector extends ResourceXmlDetector {
         assert context.getPhase() == 1;
         if (attribute == null || attribute.getValue().isEmpty()) {
             context.report(MISSING, element, context.getLocation(element),
-                    "Missing name attribute in <string> declaration", null);
+                    "Missing `name` attribute in `<string>` declaration", null);
         } else {
             String name = attribute.getValue();
 
@@ -562,7 +563,7 @@ public class TranslationDetector extends ResourceXmlDetector {
                 if (l != null) {
                     context.report(EXTRA, translatable, context.getLocation(translatable),
                         "Non-translatable resources should only be defined in the base " +
-                        "values/ folder", null);
+                        "`values/` folder", null);
                 } else {
                     if (mNonTranslatable == null) {
                         mNonTranslatable = new HashSet<String>();
@@ -602,8 +603,8 @@ public class TranslationDetector extends ResourceXmlDetector {
             mNames.add(name);
 
             if (mNonTranslatable != null && mNonTranslatable.contains(name)) {
-                String message = String.format("The resource string \"%1$s\" has been marked as " +
-                        "translatable=\"false\"", name);
+                String message = String.format("The resource string \"`%1$s`\" has been marked as " +
+                        "`translatable=\"false\"`", name);
                 context.report(EXTRA, attribute, context.getLocation(attribute), message, null);
             }
 

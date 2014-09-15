@@ -162,11 +162,11 @@ public class GridLayoutDetector extends LayoutDetector {
             }
 
             StringBuilder sb = new StringBuilder();
-            sb.append("Wrong namespace; with v7 GridLayout you should use ").append(prefix)
+            sb.append("Wrong namespace; with v7 `GridLayout` you should use ").append(prefix)
                     .append(":").append(name);
             if (!haveNamespace) {
-                sb.append(" (and add xmlns:app=\"").append(AUTO_URI)
-                        .append("\" to your root element.)");
+                sb.append(" (and add `xmlns:app=\"").append(AUTO_URI)
+                        .append("\"` to your root element.)");
             }
             String message = sb.toString();
 

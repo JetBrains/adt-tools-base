@@ -128,10 +128,10 @@ public class LabelForDetector extends LayoutDetector {
                     String message;
                     if (id == null || id.isEmpty()) {
                         message = "No label views point to this text field with a " +
-                                "labelFor attribute";
+                                "`labelFor` attribute";
                     } else {
                         message = String.format("No label views point to this text field with " +
-                                "an android:labelFor=\"@+id/%1$s\" attribute", id);
+                                "an `android:labelFor=\"@+id/%1$s\"` attribute", id);
                     }
                     xmlContext.report(ISSUE, element, location, message, null);
                 }

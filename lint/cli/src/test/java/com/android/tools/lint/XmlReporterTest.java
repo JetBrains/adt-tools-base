@@ -22,10 +22,10 @@ import com.android.tools.lint.checks.ManifestDetector;
 import com.android.tools.lint.checks.TypographyDetector;
 import com.android.tools.lint.detector.api.DefaultPosition;
 import com.android.tools.lint.detector.api.Detector;
-import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Project;
 import com.android.tools.lint.detector.api.Severity;
+import com.android.tools.lint.detector.api.TextFormat;
 import com.android.utils.PositionXmlParser;
 import com.google.common.base.Charsets;
 import com.google.common.io.Files;
@@ -308,7 +308,7 @@ public class XmlReporterTest extends AbstractCheckTest {
             assertEquals(1, document.getElementsByTagName("issue").getLength());
             String explanation =  ((Element)document.getElementsByTagName("issue").item(0)).
                     getAttribute("explanation");
-            assertEquals(TypographyDetector.FRACTIONS.getExplanation(Issue.OutputFormat.RAW),
+            assertEquals(TypographyDetector.FRACTIONS.getExplanation(TextFormat.RAW),
                     explanation);
         } finally {
             //noinspection ResultOfMethodCallIgnored

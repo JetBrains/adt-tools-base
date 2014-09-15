@@ -107,12 +107,12 @@ public class OnClickDetector extends LayoutDetector implements ClassScanner {
 
                 Location location = handle.resolve();
                 String message = String.format(
-                    "Corresponding method handler 'public void %1$s(android.view.View)' not found",
+                    "Corresponding method handler '`public void %1$s(android.view.View)`' not found",
                     name);
                 List<String> similar = mSimilar != null ? mSimilar.get(name) : null;
                 if (similar != null) {
                     Collections.sort(similar);
-                  message += String.format(" (did you mean %1$s ?)", Joiner.on(", ").join(similar));
+                  message += String.format(" (did you mean `%1$s` ?)", Joiner.on(", ").join(similar));
                 }
                 context.report(ISSUE, location, message, null);
             }
@@ -131,7 +131,7 @@ public class OnClickDetector extends LayoutDetector implements ClassScanner {
         String value = attribute.getValue();
         if (value.isEmpty() || value.trim().isEmpty()) {
             context.report(ISSUE, attribute, context.getLocation(attribute),
-                    "onClick attribute value cannot be empty", null);
+                    "`onClick` attribute value cannot be empty", null);
         } else if (!value.equals(value.trim())) {
             context.report(ISSUE, attribute, context.getLocation(attribute),
                     "There should be no whitespace around attribute values", null);
@@ -210,13 +210,13 @@ public class OnClickDetector extends LayoutDetector implements ClassScanner {
                 if ((method.access & Opcodes.ACC_PUBLIC) == 0) {
                     Location location = context.getLocation(method, classNode);
                     String message = String.format(
-                            "On click handler %1$s(View) must be public",
+                            "On click handler `%1$s(View)` must be public",
                             method.name);
                     context.report(ISSUE, location, message, null);
                 } else if ((method.access & Opcodes.ACC_STATIC) != 0) {
                     Location location = context.getLocation(method, classNode);
                     String message = String.format(
-                            "On click handler %1$s(View) should not be static",
+                            "On click handler `%1$s(View)` should not be static",
                             method.name);
                     context.report(ISSUE, location, message, null);
                 }

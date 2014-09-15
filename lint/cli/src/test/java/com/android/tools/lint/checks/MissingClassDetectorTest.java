@@ -19,6 +19,7 @@ package com.android.tools.lint.checks;
 import static com.android.tools.lint.checks.MissingClassDetector.INNERCLASS;
 import static com.android.tools.lint.checks.MissingClassDetector.INSTANTIATABLE;
 import static com.android.tools.lint.checks.MissingClassDetector.MISSING;
+import static com.android.tools.lint.detector.api.TextFormat.TEXT;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -507,12 +508,14 @@ public class MissingClassDetectorTest extends AbstractCheckTest {
 
     public void testGetOldValue() {
         assertEquals(".Foo.Bar", MissingClassDetector.getOldValue(INNERCLASS,
-                "Use '$' instead of '.' for inner classes (or use only lowercase letters in package names); replace \".Foo.Bar\" with \".Foo$Bar\" [InnerclassSeparator]"));
+                "Use '$' instead of '.' for inner classes (or use only lowercase letters in package names); replace \".Foo.Bar\" with \".Foo$Bar\" [InnerclassSeparator]",
+                TEXT));
     }
 
     public void testGetNewValue() {
         assertEquals(".Foo$Bar", MissingClassDetector.getNewValue(INNERCLASS,
-                "Use '$' instead of '.' for inner classes (or use only lowercase letters in package names); replace \".Foo.Bar\" with \".Foo$Bar\" [InnerclassSeparator]"));
+                "Use '$' instead of '.' for inner classes (or use only lowercase letters in package names); replace \".Foo.Bar\" with \".Foo$Bar\" [InnerclassSeparator]",
+                TEXT));
     }
 
     @Override
@@ -520,8 +523,8 @@ public class MissingClassDetectorTest extends AbstractCheckTest {
             @NonNull Severity severity, @Nullable Location location, @NonNull String message,
             @Nullable Object data) {
         if (issue == INNERCLASS) {
-            assertNotNull(message, MissingClassDetector.getOldValue(issue, message));
-            assertNotNull(message, MissingClassDetector.getNewValue(issue, message));
+            assertNotNull(message, MissingClassDetector.getOldValue(issue, message, TEXT));
+            assertNotNull(message, MissingClassDetector.getNewValue(issue, message, TEXT));
         }
     }
 }

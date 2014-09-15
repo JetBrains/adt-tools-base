@@ -53,6 +53,7 @@ import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Project;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
+import com.android.tools.lint.detector.api.TextFormat;
 import com.android.utils.ILogger;
 import com.android.utils.SdkUtils;
 import com.android.utils.StdLogger;
@@ -86,7 +87,6 @@ import java.security.CodeSource;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
@@ -434,10 +434,16 @@ public abstract class AbstractCheckTest extends SdkTestCase {
                 @NonNull Severity severity,
                 @Nullable Location location,
                 @NonNull String message,
+                @NonNull TextFormat format,
                 @Nullable Object data) {
             if (ignoreSystemErrors() && (issue == IssueRegistry.LINT_ERROR)) {
                 return;
             }
+
+            // Use plain ascii in the test golden files for now. (This also ensures
+            // that the markup is wellformed, e.g. if we have a ` without a matching
+            // closing `, the ` would show up in the plain text.)
+            message = format.convertTo(message, TextFormat.TEXT);
 
             checkReportedError(context, issue, severity, location, message, data);
 
@@ -464,7 +470,7 @@ public abstract class AbstractCheckTest extends SdkTestCase {
                 }
             }
 
-            super.report(context, issue, severity, location, message, data);
+            super.report(context, issue, severity, location, message, format, data);
 
             // Make sure errors are unique!
             Warning prev = null;

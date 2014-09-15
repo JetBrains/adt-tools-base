@@ -163,7 +163,7 @@ public class PluralsDatabase {
         public static String formatSet(@NonNull EnumSet<Quantity> set) {
             List<String> list = new ArrayList<String>(set.size());
             for (Quantity quantity : set) {
-                list.add(quantity.name());
+                list.add('`' + quantity.name() + '`');
             }
             return LintUtils.formatList(list, Integer.MAX_VALUE);
         }

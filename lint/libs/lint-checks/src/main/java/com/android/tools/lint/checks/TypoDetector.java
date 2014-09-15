@@ -36,6 +36,7 @@ import com.android.tools.lint.detector.api.ResourceXmlDetector;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.Speed;
+import com.android.tools.lint.detector.api.TextFormat;
 import com.android.tools.lint.detector.api.XmlContext;
 import com.android.utils.Pair;
 import com.google.common.base.Charsets;
@@ -476,10 +477,14 @@ public class TypoDetector extends ResourceXmlDetector {
      * message <b>must</b> be one supplied by lint.
      *
      * @param errorMessage the error message
+     * @param format the format of the error message
      * @return a list of replacement words suggested by the error message
      */
     @Nullable
-    public static List<String> getSuggestions(@NonNull String errorMessage) {
+    public static List<String> getSuggestions(@NonNull String errorMessage,
+            @NonNull TextFormat format) {
+        errorMessage = format.toText(errorMessage);
+
         // The words are all in quotes; the first word is the misspelling,
         // the other words are the suggested replacements
         List<String> words = new ArrayList<String>();
@@ -510,10 +515,12 @@ public class TypoDetector extends ResourceXmlDetector {
      * Returns the typo word in the error message from this detector
      *
      * @param errorMessage the error message produced earlier by this detector
+     * @param format the format of the error message
      * @return the typo
      */
     @Nullable
-    public static String getTypo(@NonNull String errorMessage) {
+    public static String getTypo(@NonNull String errorMessage, @NonNull TextFormat format) {
+        errorMessage = format.toText(errorMessage);
         // The words are all in quotes
         int index = errorMessage.indexOf('"');
         int start = index + 1;

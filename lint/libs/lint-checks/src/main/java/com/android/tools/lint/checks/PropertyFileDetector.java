@@ -29,6 +29,7 @@ import com.android.tools.lint.detector.api.LintUtils;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
+import com.android.tools.lint.detector.api.TextFormat;
 import com.google.common.base.Splitter;
 
 import java.io.File;
@@ -118,7 +119,7 @@ public class PropertyFileDetector extends Detector {
         if (hadNonPathEscape && key.endsWith(".dir=") || new File(pathString).exists()) {
             String escapedPath = pathString.replace("\\", "\\\\");
             // NOTE: Keep in sync with {@link #getSuggestedEscape} below
-            String message = "Windows file separators (\\) must be escaped (\\\\); use "
+            String message = "Windows file separators (`\\`) must be escaped (`\\\\`); use "
                     + escapedPath;
             int startOffset = offset + valueStart;
             int endOffset = offset + line.length();
@@ -133,10 +134,11 @@ public class PropertyFileDetector extends Detector {
      * been computed by this lint detector.
      *
      * @param message the error message created by this lint detector
+     * @param format the format of the error message
      * @return the suggested escaped value
      */
     @Nullable
-    public static String getSuggestedEscape(@NonNull String message) {
-        return LintUtils.findSubstring(message, "; use ", null);
+    public static String getSuggestedEscape(@NonNull String message, @NonNull TextFormat format) {
+        return LintUtils.findSubstring(format.toText(message), "; use ", null);
     }
 }

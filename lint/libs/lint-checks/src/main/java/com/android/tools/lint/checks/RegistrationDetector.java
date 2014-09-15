@@ -203,7 +203,7 @@ public class RegistrationDetector extends LayoutDetector implements ClassScanner
                     ISSUE,
                     location,
                     String.format(
-                            "%1$s is a <%2$s> but is registered in the manifest as a <%3$s>",
+                            "`%1$s` is a `<%2$s>` but is registered in the manifest as a `<%3$s>`",
                             className, tag, classToTag(wrongClass)),
                     null);
         } else if (!tag.equals(TAG_RECEIVER)) { // don't need to be registered
@@ -219,7 +219,7 @@ public class RegistrationDetector extends LayoutDetector implements ClassScanner
                     ISSUE,
                     location,
                     String.format(
-                            "The <%1$s> %2$s is not registered in the manifest",
+                            "The `<%1$s> %2$s` is not registered in the manifest",
                             tag, className),
                     null);
         }
