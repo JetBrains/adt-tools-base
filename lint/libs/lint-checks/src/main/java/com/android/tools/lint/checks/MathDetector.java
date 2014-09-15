@@ -94,7 +94,7 @@ public class MathDetector extends Detector implements Detector.ClassScanner {
             String message = String.format(
                     "Use `java.lang.Math#%1$s` instead of `android.util.FloatMath#%1$s()` " +
                     "since it is faster as of API 8", call.name);
-            context.report(ISSUE, method, call, context.getLocation(call), message, null /*data*/);
+            context.report(ISSUE, method, call, context.getLocation(call), message  /*data*/);
         }
     }
 }

@@ -134,8 +134,7 @@ public class PluralsDetector extends ResourceXmlDetector {
         int count = LintUtils.getChildCount(element);
         if (count == 0) {
             context.report(MISSING, element, context.getLocation(element),
-                    "There should be at least one quantity string in this `<plural>` definition",
-                    null);
+                    "There should be at least one quantity string in this `<plural>` definition");
             return;
         }
 
@@ -192,7 +191,7 @@ public class PluralsDetector extends ResourceXmlDetector {
                                 + "This is usually an internationalization error. See full issue "
                                 + "explanation for more.",
                         quantity, append);
-                context.report(IMPLIED_QUANTITY, child, context.getLocation(child), message, null);
+                context.report(IMPLIED_QUANTITY, child, context.getLocation(child), message);
             }
         }
 
@@ -208,7 +207,7 @@ public class PluralsDetector extends ResourceXmlDetector {
                     "For locale %1$s the following quantities should also be defined: %2$s",
                     TranslationDetector.getLanguageDescription(language),
                     Quantity.formatSet(missing));
-            context.report(MISSING, element, context.getLocation(element), message, null);
+            context.report(MISSING, element, context.getLocation(element), message);
         }
 
         // Look for irrelevant
@@ -219,7 +218,7 @@ public class PluralsDetector extends ResourceXmlDetector {
                     "For language %1$s the following quantities are not relevant: %2$s",
                     TranslationDetector.getLanguageDescription(language),
                     Quantity.formatSet(extra));
-            context.report(EXTRA, element, context.getLocation(element), message, null);
+            context.report(EXTRA, element, context.getLocation(element), message);
         }
     }
 

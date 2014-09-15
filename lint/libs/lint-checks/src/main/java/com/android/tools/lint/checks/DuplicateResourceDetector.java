@@ -187,7 +187,7 @@ public class DuplicateResourceDetector extends ResourceXmlDetector {
                                         + "expected value of type `@" + type + "/`";
                                 context.report(TYPE_MISMATCH, element,
                                         context.getLocation(child),
-                                        message, null);
+                                        message);
                             }
                         }
                         break;
@@ -224,7 +224,7 @@ public class DuplicateResourceDetector extends ResourceXmlDetector {
                     location.setSecondary(secondary);
                 }
             }
-            context.report(ISSUE, attribute, location, message, null);
+            context.report(ISSUE, attribute, location, message);
         } else {
             names.add(name);
             List<Pair<String, Handle>> list = mLocations.get(type);
@@ -260,8 +260,7 @@ public class DuplicateResourceDetector extends ResourceXmlDetector {
                         String message = String.format(
                                 "`%1$s` has already been defined in this `<%2$s>`",
                                 name, parent.getTagName());
-                        context.report(ISSUE, nameNode, location, message,
-                                null);
+                        context.report(ISSUE, nameNode, location, message);
                     }
                     names.add(name);
                 }

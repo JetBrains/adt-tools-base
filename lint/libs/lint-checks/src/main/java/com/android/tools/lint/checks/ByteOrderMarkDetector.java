@@ -82,7 +82,7 @@ public class ByteOrderMarkDetector extends ResourceXmlDetector {
             if (c == '\uFEFF') {
                 Location location = context.getLocation(attribute);
                 String message = "Found byte-order-mark in the middle of a file";
-                context.report(BOM, null, location, message, null);
+                context.report(BOM, null, location, message);
                 break;
             }
         }

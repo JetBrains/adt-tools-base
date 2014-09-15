@@ -264,7 +264,7 @@ public class SecurityDetector extends Detector implements Detector.XmlScanner,
                 !isStandardReceiver(element)) {
             // No declared permission for this exported receiver: complain
             context.report(EXPORTED_RECEIVER, element, context.getLocation(element),
-                           "Exported receiver does not require permission", null);
+                           "Exported receiver does not require permission");
         }
     }
 
@@ -272,7 +272,7 @@ public class SecurityDetector extends Detector implements Detector.XmlScanner,
         if (getExported(element) && isUnprotectedByPermission(element)) {
             // No declared permission for this exported service: complain
             context.report(EXPORTED_SERVICE, element, context.getLocation(element),
-                           "Exported service does not require permission", null);
+                           "Exported service does not require permission");
         }
     }
 
@@ -283,14 +283,14 @@ public class SecurityDetector extends Detector implements Detector.XmlScanner,
 
         String msg = "Content provider shares everything; this is potentially dangerous.";
         if (path != null && path.getValue().equals("/")) { //$NON-NLS-1$
-            context.report(OPEN_PROVIDER, path, context.getLocation(path), msg, null);
+            context.report(OPEN_PROVIDER, path, context.getLocation(path), msg);
         }
         if (prefix != null && prefix.getValue().equals("/")) { //$NON-NLS-1$
-            context.report(OPEN_PROVIDER, prefix, context.getLocation(prefix), msg, null);
+            context.report(OPEN_PROVIDER, prefix, context.getLocation(prefix), msg);
         }
         if (pattern != null && (pattern.getValue().equals("/")  //$NON-NLS-1$
                /* || pattern.getValue().equals(".*")*/)) {
-            context.report(OPEN_PROVIDER, pattern, context.getLocation(pattern), msg, null);
+            context.report(OPEN_PROVIDER, pattern, context.getLocation(pattern), msg);
         }
     }
 
@@ -329,8 +329,7 @@ public class SecurityDetector extends Detector implements Detector.XmlScanner,
                             context.report(EXPORTED_PROVIDER, element,
                                     context.getLocation(element),
                                     "Exported content providers can provide access to " +
-                                            "potentially sensitive data",
-                                    null);
+                                            "potentially sensitive data");
                         }
                     }
                 }
@@ -378,14 +377,12 @@ public class SecurityDetector extends Detector implements Detector.XmlScanner,
                 Location location = mContext.getLocation(node);
                 mContext.report(WORLD_WRITEABLE, node, location,
                         "Using `MODE_WORLD_WRITEABLE` when creating files can be " +
-                                "risky, review carefully",
-                        null);
+                                "risky, review carefully");
             } else if ("MODE_WORLD_READABLE".equals(node.astValue())) { //$NON-NLS-1$
                 Location location = mContext.getLocation(node);
                 mContext.report(WORLD_READABLE, node, location,
                         "Using `MODE_WORLD_READABLE` when creating files can be " +
-                                "risky, review carefully",
-                        null);
+                                "risky, review carefully");
             }
 
             return false;

@@ -199,7 +199,7 @@ public class DuplicateIdDetector extends LayoutDetector {
                         }
                     }
 
-                    context.report(CROSS_LAYOUT, location, occurrence.message, null);
+                    context.report(CROSS_LAYOUT, location, occurrence.message);
                 }
             }
         }
@@ -267,7 +267,7 @@ public class DuplicateIdDetector extends LayoutDetector {
 
                 context.report(WITHIN_LAYOUT, attribute, location,
                         String.format("Duplicate id `%1$s`, already defined earlier in this layout",
-                                id), null);
+                                id));
             } else if (id.startsWith(NEW_ID_PREFIX)) {
                 // Skip id's on include tags
                 if (attribute.getOwnerElement().getTagName().equals(VIEW_INCLUDE)) {

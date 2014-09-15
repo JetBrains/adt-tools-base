@@ -121,7 +121,7 @@ public class LayoutInflationDetector extends LayoutDetector implements Detector.
                     continue;
                 }
                 Location location = pair.getSecond();
-                context.report(ISSUE, location, ERROR_MESSAGE, null);
+                context.report(ISSUE, location, ERROR_MESSAGE);
             }
         }
     }
@@ -193,7 +193,7 @@ public class LayoutInflationDetector extends LayoutDetector implements Detector.
                         mPendingErrors.add(Pair.of(layoutName, location));
                     }
                 } else if (hasLayoutParams(context, layoutName)) {
-                    context.report(ISSUE, node, context.getLocation(second), ERROR_MESSAGE, null);
+                    context.report(ISSUE, node, context.getLocation(second), ERROR_MESSAGE);
                 }
             }
         }

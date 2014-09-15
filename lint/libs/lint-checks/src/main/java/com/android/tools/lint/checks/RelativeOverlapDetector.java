@@ -385,8 +385,7 @@ public class RelativeOverlapDetector extends LayoutDetector {
                                     "`%1$s` can overlap `%2$s` if %3$s %4$s due to localized text expansion",
                                     nodeToBlame.getNodeId(), otherNode.getNodeId(),
                                     Joiner.on(", ").join(canGrowRight),
-                                    canGrowRight.size() > 1 ? "grow" : "grows"),
-                            null);
+                                    canGrowRight.size() > 1 ? "grow" : "grows"));
                 }
             }
         }

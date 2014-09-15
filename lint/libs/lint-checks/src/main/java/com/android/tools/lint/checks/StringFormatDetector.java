@@ -441,7 +441,7 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
                                 String message = String.format(
                                         "Incorrect formatting string `%1$s`; missing conversion " +
                                         "character in '`%2$s`' ?", name, str);
-                                context.report(INVALID, location, message, null);
+                                context.report(INVALID, location, message);
                                 //warned = true;
                                 continue;
                             }
@@ -498,7 +498,7 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
                                 currentFormat, format,
                                 f.getParentFile().getName() + File.separator + f.getName());
                         //warned = true;
-                        context.report(ARG_TYPES, location, message, null);
+                        context.report(ARG_TYPES, location, message);
                         break;
                     }
                 } else {
@@ -648,7 +648,7 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
                 String message = String.format(
                         "Inconsistent number of arguments in formatting string `%1$s`; " +
                         "found both %2$d and %3$d", name, prevCount, count);
-                context.report(ARG_COUNT, location, message, null);
+                context.report(ARG_COUNT, location, message);
                 break;
             }
 
@@ -673,7 +673,7 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
                     String message = String.format(
                             "Formatting string '`%1$s`' is not referencing numbered arguments %2$s",
                             name, sorted);
-                    context.report(ARG_COUNT, location, message, null);
+                    context.report(ARG_COUNT, location, message);
                     break;
                 }
             }
@@ -964,7 +964,7 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
                     "Format string '`%1$s`' is not a valid format string so it should not be " +
                     "passed to `String.format`",
                     name);
-            context.report(INVALID, call, location, message, null);
+            context.report(INVALID, call, location, message);
             return;
         }
 
@@ -1077,7 +1077,7 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
                             "Wrong argument count, format string `%1$s` requires `%2$d` but format " +
                             "call supplies `%3$d`",
                             name, count, args.size() - 1 - (specifiesLocale ? 1 : 0));
-                    context.report(ARG_TYPES, method, location, message, null);
+                    context.report(ARG_TYPES, method, location, message);
                     if (reported == null) {
                         reported = Sets.newHashSet();
                     }
@@ -1163,7 +1163,7 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
                                         "(argument #%5$d in method call)",
                                         i, name, formatType, type.getSimpleName(),
                                         argumentIndex + 1);
-                                context.report(ARG_TYPES, method, location, message, null);
+                                context.report(ARG_TYPES, method, location, message);
                                 if (reported == null) {
                                     reported = Sets.newHashSet();
                                 }

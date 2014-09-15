@@ -458,7 +458,7 @@ public class TypoDetector extends ResourceXmlDetector {
         }
 
         int end = begin + word.length();
-        context.report(ISSUE, node, context.getLocation(node, begin, end), message, null);
+        context.report(ISSUE, node, context.getLocation(node, begin, end), message);
     }
 
     /** Reports a repeated word */
@@ -469,7 +469,7 @@ public class TypoDetector extends ResourceXmlDetector {
                 "Repeated word \"%1$s\" in message: possible typo",
                 text.substring(begin, end));
         Location location = context.getLocation(node, lastWordBegin, end);
-        context.report(ISSUE, node, location, message, null);
+        context.report(ISSUE, node, location, message);
     }
 
     /** Returns the suggested replacements, if any, for the given typo. The error

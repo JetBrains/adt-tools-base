@@ -145,7 +145,7 @@ public class TextFieldDetector extends LayoutDetector {
             }
 
             context.report(ISSUE, element, context.getLocation(element),
-                    "This text field does not specify an `inputType` or a `hint`", null);
+                    "This text field does not specify an `inputType` or a `hint`");
         }
 
         Attr idNode = element.getAttributeNodeNS(ANDROID_URI, ATTR_ID);
@@ -245,7 +245,7 @@ public class TextFieldDetector extends LayoutDetector {
         } else {
             location = context.getLocation(idNode);
         }
-        context.report(ISSUE, idNode.getOwnerElement(), location, message, null);
+        context.report(ISSUE, idNode.getOwnerElement(), location, message);
     }
 
     /** Returns true if the given sentence contains a given word */

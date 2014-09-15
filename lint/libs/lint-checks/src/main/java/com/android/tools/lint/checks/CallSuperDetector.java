@@ -121,7 +121,7 @@ public class CallSuperDetector extends Detector implements Detector.JavaScanner 
                         String message = "Overriding method should call `super."
                                 + ON_DETACHED_FROM_WINDOW + "`";
                         Location location = mContext.getLocation(node.astMethodName());
-                        mContext.report(ISSUE, node, location, message, null);
+                        mContext.report(ISSUE, node, location, message);
                     }
                 }
             }

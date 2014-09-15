@@ -152,7 +152,7 @@ public class TextViewDetector extends LayoutDetector {
                     && context.isEnabled(SELECTABLE)) {
                 context.report(SELECTABLE, element, context.getLocation(element),
                         "Consider making the text value selectable by specifying " +
-                        "`android:textIsSelectable=\"true\"`", null);
+                        "`android:textIsSelectable=\"true\"`");
             }
         }
 
@@ -232,7 +232,7 @@ public class TextViewDetector extends LayoutDetector {
                             "intended for editable text widgets",
                             attribute.getName(), view);
                 }
-                context.report(ISSUE, attribute, location, message, null);
+                context.report(ISSUE, attribute, location, message);
             }
         }
     }

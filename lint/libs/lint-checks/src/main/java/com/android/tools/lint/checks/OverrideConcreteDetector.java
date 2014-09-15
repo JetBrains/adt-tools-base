@@ -142,7 +142,7 @@ public class OverrideConcreteDetector extends Detector implements JavaScanner {
                         STATUS_BAR_NOTIFICATION_FQN, CONCRETE_IN, minSdk);
                 Node nameNode = node.astName();
                 context.report(ISSUE, node, context.getLocation(nameNode),
-                        message, null);
+                        message);
                 break;
             }
 

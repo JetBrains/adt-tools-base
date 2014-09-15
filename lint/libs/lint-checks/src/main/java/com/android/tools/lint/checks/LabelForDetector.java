@@ -132,7 +132,7 @@ public class LabelForDetector extends LayoutDetector {
                         message = String.format("No label views point to this text field with " +
                                 "an `android:labelFor=\"@+id/%1$s\"` attribute", id);
                     }
-                    xmlContext.report(ISSUE, element, location, message, null);
+                    xmlContext.report(ISSUE, element, location, message);
                 }
 
             }

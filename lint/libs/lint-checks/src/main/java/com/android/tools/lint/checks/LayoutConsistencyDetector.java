@@ -392,7 +392,7 @@ public class LayoutConsistencyDetector extends LayoutDetector implements Detecto
                 if (locations != null) {
                     Location location = chainLocations(locations);
 
-                    context.report(INCONSISTENT_IDS, location, message, null);
+                    context.report(INCONSISTENT_IDS, location, message);
                 }
             }
         }

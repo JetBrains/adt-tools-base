@@ -95,7 +95,7 @@ public class WebViewDetector extends LayoutDetector {
                 Location secondary = context.getLocation(attr);
                 secondary.setMessage("`wrap_content` here may not work well with WebView below");
                 location.setSecondary(secondary);
-                context.report(ISSUE, element, location, message, null);
+                context.report(ISSUE, element, location, message);
             }
         }
     }

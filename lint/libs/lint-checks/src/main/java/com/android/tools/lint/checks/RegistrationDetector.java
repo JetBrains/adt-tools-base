@@ -202,8 +202,7 @@ public class RegistrationDetector extends LayoutDetector implements ClassScanner
                     location,
                     String.format(
                             "`%1$s` is a `<%2$s>` but is registered in the manifest as a `<%3$s>`",
-                            className, tag, classToTag(wrongClass)),
-                    null);
+                            className, tag, classToTag(wrongClass)));
         } else if (!tag.equals(TAG_RECEIVER)) { // don't need to be registered
             if (context.getMainProject().isGradleProject()) {
                 // Disabled for now; we need to formalize the difference between
@@ -218,8 +217,7 @@ public class RegistrationDetector extends LayoutDetector implements ClassScanner
                     location,
                     String.format(
                             "The `<%1$s> %2$s` is not registered in the manifest",
-                            tag, className),
-                    null);
+                            tag, className));
         }
     }
 

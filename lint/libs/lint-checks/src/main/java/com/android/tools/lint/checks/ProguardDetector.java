@@ -106,7 +106,7 @@ public class ProguardDetector extends Detector {
                     context.report(WRONG_KEEP,
                             Location.create(context.file, contents, index, index),
                             "Obsolete ProGuard file; use `-keepclasseswithmembers` instead of " +
-                            "`-keepclasseswithmembernames`", null);
+                            "`-keepclasseswithmembernames`");
                 }
             }
             if (context.isEnabled(SPLIT_CONFIG)) {
@@ -146,7 +146,7 @@ public class ProguardDetector extends Detector {
                             "Modify `project.properties` to define " +
                             "`proguard.config=${sdk.dir}/tools/proguard/proguard-android.txt:%1$s`" +
                             " and then keep only project-specific configuration here",
-                            context.file.getName()), null);
+                            context.file.getName()));
                     }
                 }
             }

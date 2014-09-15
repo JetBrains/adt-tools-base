@@ -103,9 +103,8 @@ public class LocaleFolderDetector extends Detector implements Detector.ResourceF
                     String message = String.format("The locale folder \"`%1$s`\" should be "
                                     + "called \"`%2$s`\" instead; see the "
                                     + "`java.util.Locale` documentation",
-                            language, replace
-                    );
-                    context.report(ISSUE, Location.create(context.file), message, null);
+                            language, replace);
+                    context.report(ISSUE, Location.create(context.file), message);
                 }
             }
         }

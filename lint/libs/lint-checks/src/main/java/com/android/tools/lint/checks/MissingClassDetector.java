@@ -323,7 +323,7 @@ public class MissingClassDetector extends LayoutDetector implements ClassScanner
                         "(or use only lowercase letters in package names); replace \"" +
                         className + "\" with \"" + fixed + "\"";
                 Location location = context.getLocation(classNameNode);
-                context.report(INNERCLASS, element, location, message, null);
+                context.report(INNERCLASS, element, location, message);
             }
         }
     }
@@ -381,7 +381,7 @@ public class MissingClassDetector extends LayoutDetector implements ClassScanner
                     }
                 }
 
-                context.report(MISSING, location, message, null);
+                context.report(MISSING, location, message);
             }
         }
     }
@@ -404,16 +404,14 @@ public class MissingClassDetector extends LayoutDetector implements ClassScanner
             if ((classNode.access & Opcodes.ACC_PUBLIC) == 0) {
                 context.report(INSTANTIATABLE, context.getLocation(classNode), String.format(
                         "This class should be public (%1$s)",
-                            ClassContext.createSignature(classNode.name, null, null)),
-                        null);
+                            ClassContext.createSignature(classNode.name, null, null)));
                 return;
             }
 
             if (classNode.name.indexOf('$') != -1 && !LintUtils.isStaticInnerClass(classNode)) {
                 context.report(INSTANTIATABLE, context.getLocation(classNode), String.format(
                         "This inner class should be static (%1$s)",
-                            ClassContext.createSignature(classNode.name, null, null)),
-                        null);
+                            ClassContext.createSignature(classNode.name, null, null)));
                 return;
             }
 
@@ -429,8 +427,7 @@ public class MissingClassDetector extends LayoutDetector implements ClassScanner
                             hasDefaultConstructor = true;
                         } else {
                             context.report(INSTANTIATABLE, context.getLocation(method, classNode),
-                                    "The default constructor must be public",
-                                    null);
+                                    "The default constructor must be public");
                             // Also mark that we have a constructor so we don't complain again
                             // below since we've already emitted a more specific error related
                             // to the default constructor
@@ -445,8 +442,7 @@ public class MissingClassDetector extends LayoutDetector implements ClassScanner
                 context.report(INSTANTIATABLE, context.getLocation(classNode), String.format(
                         "This class should provide a default constructor (a public " +
                         "constructor with no arguments) (%1$s)",
-                            ClassContext.createSignature(classNode.name, null, null)),
-                        null);
+                            ClassContext.createSignature(classNode.name, null, null)));
             }
         }
     }

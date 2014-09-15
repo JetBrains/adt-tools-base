@@ -124,7 +124,7 @@ public class WrongCallDetector extends Detector implements Detector.JavaScanner 
                 // Keep in sync with {@link #getOldValue} and {@link #getNewValue} below!
                 "Suspicious method call; should probably call \"`%1$s`\" rather than \"`%2$s`\"",
                 suggestion, name);
-        context.report(ISSUE, node, context.getLocation(node.astName()), message, null);
+        context.report(ISSUE, node, context.getLocation(node.astName()), message);
     }
 
     /**

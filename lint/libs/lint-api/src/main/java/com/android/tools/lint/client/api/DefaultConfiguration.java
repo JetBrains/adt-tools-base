@@ -27,7 +27,6 @@ import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.TextFormat;
 import com.android.tools.lint.detector.api.Project;
 import com.android.tools.lint.detector.api.Severity;
-import com.android.tools.lint.detector.api.TextFormat;
 import com.android.utils.XmlUtils;
 import com.google.common.annotations.Beta;
 import com.google.common.annotations.VisibleForTesting;
@@ -156,8 +155,7 @@ public class DefaultConfiguration extends Configuration {
             @NonNull Context context,
             @NonNull Issue issue,
             @Nullable Location location,
-            @NonNull String message,
-            @Nullable Object data) {
+            @NonNull String message) {
         ensureInitialized();
 
         String id = issue.getId();
@@ -209,7 +207,7 @@ public class DefaultConfiguration extends Configuration {
             }
         }
 
-        return mParent != null && mParent.isIgnored(context, issue, location, message, data);
+        return mParent != null && mParent.isIgnored(context, issue, location, message);
     }
 
     @NonNull
@@ -261,7 +259,7 @@ public class DefaultConfiguration extends Configuration {
         mClient.report(new Context(driver, mProject, mProject, mConfigFile),
                 IssueRegistry.LINT_ERROR,
                 mProject.getConfiguration().getSeverity(IssueRegistry.LINT_ERROR),
-                Location.create(mConfigFile), message, TextFormat.RAW, null);
+                Location.create(mConfigFile), message, TextFormat.RAW);
     }
 
     private void readConfig() {
@@ -534,8 +532,7 @@ public class DefaultConfiguration extends Configuration {
             @NonNull Context context,
             @NonNull Issue issue,
             @Nullable Location location,
-            @NonNull String message,
-            @Nullable Object data) {
+            @NonNull String message) {
         // This configuration only supports suppressing warnings on a per-file basis
         if (location != null) {
             ignore(issue, location.getFile());

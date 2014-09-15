@@ -335,7 +335,7 @@ public class UnusedResourceDetector extends ResourceXmlDetector implements Detec
                             resource);
                     Issue issue = getIssue(resource);
                     // TODO: Compute applicable node scope
-                    context.report(issue, location, message, resource);
+                    context.report(issue, location, message);
                 }
             }
         }

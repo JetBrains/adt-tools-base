@@ -108,7 +108,7 @@ public class Utf8Detector extends ResourceXmlDetector {
                         matcher.start(1), matcher.end(1));
                 context.report(ISSUE, null, location, String.format(
                         "%1$s: Not using UTF-8 as the file encoding. This can lead to subtle " +
-                                "bugs with non-ascii characters", encoding), null);
+                                "bugs with non-ascii characters", encoding));
             }
         }
     }

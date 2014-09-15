@@ -274,7 +274,7 @@ public class InvalidPackageDetector extends Detector implements Detector.ClassSc
             String message = String.format(
                     "Invalid package reference in library; not included in Android: `%1$s`. " +
                     "Referenced from `%2$s`.", pkg, ClassContext.getFqcn(referencedIn));
-            context.report(ISSUE, location, message, null);
+            context.report(ISSUE, location, message);
         }
     }
 

@@ -275,7 +275,7 @@ public class ButtonDetector extends ResourceXmlDetector {
                                             String.format(
                                             "The standard Android way to capitalize %1$s " +
                                             "is \"Cancel\" (tip: use `@android:string/cancel` instead)",
-                                            label),  null);
+                                            label));
                                     }
                                 }
                             } else if (LintUtils.startsWith(text, OK_LABEL, j)) {
@@ -292,7 +292,7 @@ public class ButtonDetector extends ResourceXmlDetector {
                                             String.format(
                                             "The standard Android way to capitalize %1$s " +
                                             "is \"OK\" (tip: use `@android:string/ok` instead)",
-                                            label),  null);
+                                            label));
                                     }
                                 }
                             } else if (LintUtils.startsWith(text, BACK_LABEL, j) &&
@@ -318,8 +318,7 @@ public class ButtonDetector extends ResourceXmlDetector {
                     context.report(STYLE, element, context.getLocation(element),
                             "Buttons in button bars should be borderless; use " +
                             "`style=\"?android:attr/buttonBarButtonStyle\"` (and " +
-                            "`?android:attr/buttonBarStyle` on the parent)",
-                            null);
+                            "`?android:attr/buttonBarStyle` on the parent)");
                 }
             }
 
@@ -346,7 +345,7 @@ public class ButtonDetector extends ResourceXmlDetector {
                         if (context.isEnabled(BACK_BUTTON)) {
                             context.report(BACK_BUTTON, element, location,
                                 "Back buttons are not standard on Android; see design guide's " +
-                                "navigation section", null);
+                                "navigation section");
                         }
                     }
                 }
@@ -542,7 +541,7 @@ public class ButtonDetector extends ResourceXmlDetector {
         }
 
         Location location = context.getLocation(element);
-        context.report(ORDER, element, location, message, null);
+        context.report(ORDER, element, location, message);
     }
 
     /**

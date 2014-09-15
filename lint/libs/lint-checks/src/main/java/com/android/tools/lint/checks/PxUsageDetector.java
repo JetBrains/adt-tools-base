@@ -192,7 +192,7 @@ public class PxUsageDetector extends LayoutDetector {
                             Location secondary = mTextSizeUsage.get(name).resolve();
                             secondary.setMessage("Dimension used as a text size here");
                             location.setSecondary(secondary);
-                            context.report(DP_ISSUE, attribute, location, message, null);
+                            context.report(DP_ISSUE, attribute, location, message);
                             break;
                         }
                     }
@@ -210,7 +210,7 @@ public class PxUsageDetector extends LayoutDetector {
             }
             if (context.isEnabled(PX_ISSUE)) {
                 context.report(PX_ISSUE, attribute, context.getLocation(attribute),
-                    "Avoid using \"`px`\" as units; use \"`dp`\" instead", null);
+                    "Avoid using \"`px`\" as units; use \"`dp`\" instead");
             }
         } else if (value.endsWith(UNIT_MM) && value.matches("\\d+mm") //$NON-NLS-1$
                        || value.endsWith(UNIT_IN) && value.matches("\\d+in")) { //$NON-NLS-1$
@@ -223,8 +223,7 @@ public class PxUsageDetector extends LayoutDetector {
                 context.report(IN_MM_ISSUE, attribute, context.getLocation(attribute),
                         String.format("Avoid using \"`%1$s`\" as units " +
                             "(it does not work accurately on all devices); use \"`dp`\" instead",
-                            unit),
-                    null);
+                            unit));
             }
         } else if (value.endsWith(UNIT_SP)
                 && (ATTR_TEXT_SIZE.equals(attribute.getLocalName())
@@ -233,14 +232,13 @@ public class PxUsageDetector extends LayoutDetector {
             int size = getSize(value);
             if (size > 0 && size < 12) {
                 context.report(SMALL_SP_ISSUE, attribute, context.getLocation(attribute),
-                        String.format("Avoid using sizes smaller than `12sp`: `%1$s`", value),
-                        null);
+                        String.format("Avoid using sizes smaller than `12sp`: `%1$s`", value));
             }
         } else if (ATTR_TEXT_SIZE.equals(attribute.getLocalName())) {
             if (isDpUnit(value)) { //$NON-NLS-1$
                 if (context.isEnabled(DP_ISSUE)) {
                     context.report(DP_ISSUE, attribute, context.getLocation(attribute),
-                            "Should use \"`sp`\" instead of \"`dp`\" for text sizes", null);
+                            "Should use \"`sp`\" instead of \"`dp`\" for text sizes");
                 }
             } else if (value.startsWith(DIMEN_PREFIX)) {
                 if (context.getClient().supportsProjectResources()) {
@@ -265,9 +263,7 @@ public class PxUsageDetector extends LayoutDetector {
                                                 value, dimenValue, sourceFile.getFile());
                                         context.report(DP_ISSUE, attribute,
                                                 context.getLocation(attribute),
-                                                message,
-                                                null
-                                        );
+                                                message);
                                         break;
                                     }
                                 }
@@ -335,7 +331,7 @@ public class PxUsageDetector extends LayoutDetector {
                             !text.equals("1px")) { //$NON-NLS-1$
                         if (context.isEnabled(PX_ISSUE)) {
                             context.report(PX_ISSUE, item, context.getLocation(textNode),
-                                "Avoid using `\"px\"` as units; use `\"dp\"` instead", null);
+                                "Avoid using `\"px\"` as units; use `\"dp\"` instead");
                         }
                     }
                 } else if (c == 'm' && text.charAt(j - 1) == 'm' ||
@@ -347,7 +343,7 @@ public class PxUsageDetector extends LayoutDetector {
                             context.report(IN_MM_ISSUE, item, context.getLocation(textNode),
                                 String.format("Avoid using \"`%1$s`\" as units "
                                         + "(it does not work accurately on all devices); "
-                                        + "use \"`dp`\" instead", unit), null);
+                                        + "use \"`dp`\" instead", unit));
                         }
                     }
                 } else if (c == 'p' && (text.charAt(j - 1) == 'd'
@@ -359,7 +355,7 @@ public class PxUsageDetector extends LayoutDetector {
                             && text.matches("\\d+di?p")) {  //$NON-NLS-1$
                         if (context.isEnabled(DP_ISSUE)) {
                             context.report(DP_ISSUE, item, context.getLocation(textNode),
-                                "Should use \"`sp`\" instead of \"`dp`\" for text sizes", null);
+                                "Should use \"`sp`\" instead of \"`dp`\" for text sizes");
                         }
                     }
                 } else if (c == 'p' && text.charAt(j - 1) == 's') {
@@ -374,7 +370,7 @@ public class PxUsageDetector extends LayoutDetector {
                                     context.report(SMALL_SP_ISSUE, item,
                                         context.getLocation(textNode), String.format(
                                                 "Avoid using sizes smaller than `12sp`: `%1$s`",
-                                                        text), null);
+                                                        text));
                                 }
                             }
                         }

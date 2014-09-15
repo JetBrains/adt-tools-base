@@ -182,7 +182,7 @@ public class SystemPermissionsDetector extends Detector implements Detector.XmlS
             String permissionName = nameNode.getValue();
             if (Arrays.binarySearch(SYSTEM_PERMISSIONS, permissionName) >= 0) {
                 context.report(ISSUE, element, context.getLocation(nameNode),
-                    "Permission is only granted to system apps", null);
+                    "Permission is only granted to system apps");
             }
         }
     }

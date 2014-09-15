@@ -113,7 +113,7 @@ public class OnClickDetector extends LayoutDetector implements ClassScanner {
                     Collections.sort(similar);
                   message += String.format(" (did you mean `%1$s` ?)", Joiner.on(", ").join(similar));
                 }
-                context.report(ISSUE, location, message, null);
+                context.report(ISSUE, location, message);
             }
         }
     }
@@ -130,10 +130,10 @@ public class OnClickDetector extends LayoutDetector implements ClassScanner {
         String value = attribute.getValue();
         if (value.isEmpty() || value.trim().isEmpty()) {
             context.report(ISSUE, attribute, context.getLocation(attribute),
-                    "`onClick` attribute value cannot be empty", null);
+                    "`onClick` attribute value cannot be empty");
         } else if (!value.equals(value.trim())) {
             context.report(ISSUE, attribute, context.getLocation(attribute),
-                    "There should be no whitespace around attribute values", null);
+                    "There should be no whitespace around attribute values");
         } else if (!value.startsWith(PREFIX_RESOURCE_REF)) { // Not resolved
             if (!context.getProject().getReportIssues()) {
                 // If this is a library project not being analyzed, ignore it
@@ -211,13 +211,13 @@ public class OnClickDetector extends LayoutDetector implements ClassScanner {
                     String message = String.format(
                             "On click handler `%1$s(View)` must be public",
                             method.name);
-                    context.report(ISSUE, location, message, null);
+                    context.report(ISSUE, location, message);
                 } else if ((method.access & Opcodes.ACC_STATIC) != 0) {
                     Location location = context.getLocation(method, classNode);
                     String message = String.format(
                             "On click handler `%1$s(View)` should not be static",
                             method.name);
-                    context.report(ISSUE, location, message, null);
+                    context.report(ISSUE, location, message);
                 }
 
                 if (mNames.isEmpty()) {

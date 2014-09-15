@@ -289,7 +289,7 @@ public class ResourceCycleDetector extends ResourceXmlDetector {
                         parent.equals(STYLE_RESOURCE_PREFIX + name) && context.isEnabled(CYCLE)
                         && context.getDriver().getPhase() == 1) {
                     context.report(CYCLE, parentNode, context.getLocation(parentNode),
-                            String.format("Style `%1$s` should not extend itself", name), null);
+                            String.format("Style `%1$s` should not extend itself", name));
                 } else if (parent.startsWith(STYLE_RESOURCE_PREFIX)
                         && parent.startsWith(name, STYLE_RESOURCE_PREFIX.length())
                         && parent.startsWith(".", STYLE_RESOURCE_PREFIX.length() + name.length())
@@ -297,7 +297,7 @@ public class ResourceCycleDetector extends ResourceXmlDetector {
                     context.report(CYCLE, parentNode, context.getLocation(parentNode),
                         String.format("Potential cycle: `%1$s` is the implied parent of `%2$s` and " +
                                     "this defines the opposite", name,
-                                    parent.substring(STYLE_RESOURCE_PREFIX.length())), null);
+                                    parent.substring(STYLE_RESOURCE_PREFIX.length())));
                     // Don't record this reference; we don't want to double report this
                     // as a chain, since this error is more helpful
                     return;
@@ -354,7 +354,7 @@ public class ResourceCycleDetector extends ResourceXmlDetector {
                         String message = String.format("Layout `%1$s` should not include itself",
                                 currentLayout);
                         context.report(CYCLE, layoutNode, context.getLocation(layoutNode),
-                                message, null);
+                                message);
                     }
                 }
             }
@@ -383,7 +383,7 @@ public class ResourceCycleDetector extends ResourceXmlDetector {
                                     && context.getDriver().getPhase() == 1) {
                                 context.report(CYCLE, child, context.getLocation(child),
                                         String.format("Color `%1$s` should not reference itself",
-                                                color), null);
+                                                color));
                             }
                         } else {
                             break;
@@ -412,7 +412,7 @@ public class ResourceCycleDetector extends ResourceXmlDetector {
                                 + "the id explicitly using "
                                 + "`<item type=\"id\" name=\"" + name + "\"/>` instead.";
                         context.report(CRASH, item, context.getLocation(item),
-                                message, null);
+                                message);
                     } else {
                         return;
                     }
@@ -483,7 +483,7 @@ public class ResourceCycleDetector extends ResourceXmlDetector {
                     String message = String.format("%1$s Resource definition cycle: %2$s",
                             type.getDisplayName(), Joiner.on(" => ").join(chain));
 
-                    context.report(CYCLE, location, message, null);
+                    context.report(CYCLE, location, message);
                 }
             }
         }

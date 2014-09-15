@@ -105,11 +105,11 @@ public class JavaContext extends Context {
 
     @Override
     public void report(@NonNull Issue issue, @Nullable Location location,
-            @NonNull String message, @Nullable Object data) {
+            @NonNull String message) {
         if (mDriver.isSuppressed(this, issue, mCompilationUnit)) {
             return;
         }
-        super.report(issue, location, message, data);
+        super.report(issue, location, message);
     }
 
     /**
@@ -122,20 +122,36 @@ public class JavaContext extends Context {
      *    nodes) and if so suppress the warning without involving the client.
      * @param location the location of the issue, or null if not known
      * @param message the message for this warning
-     * @param data any associated data, or null
      */
     public void report(
             @NonNull Issue issue,
             @Nullable Node scope,
             @Nullable Location location,
-            @NonNull String message,
-            @Nullable Object data) {
+            @NonNull String message) {
         if (scope != null && mDriver.isSuppressed(this, issue, scope)) {
             return;
         }
-        super.report(issue, location, message, data);
+        super.report(issue, location, message);
     }
 
+    /**
+     * Report an error.
+     * Like {@link #report(Issue, Node, Location, String)} but with
+     * a now-unused data parameter at the end.
+     *
+     * @deprecated Use {@link #report(Issue, Node, Location, String)} instead;
+     *    this method is here for custom rule compatibility
+     */
+    @SuppressWarnings("UnusedDeclaration") // Potentially used by external existing custom rules
+    @Deprecated
+    public void report(
+            @NonNull Issue issue,
+            @Nullable Node scope,
+            @Nullable Location location,
+            @NonNull String message,
+            @SuppressWarnings("UnusedParameters") @Nullable Object data) {
+        report(issue, scope, location, message);
+    }
 
     @Nullable
     public static Node findSurroundingMethod(Node scope) {

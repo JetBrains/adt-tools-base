@@ -196,8 +196,7 @@ public class AnnotationDetector extends Detector implements Detector.JavaScanner
                 mContext.report(ISSUE, node, mContext.getLocation(node), String.format(
                     "The `@SuppressLint` annotation cannot be used on a local " +
                     "variable with the lint check '%1$s': move out to the " +
-                    "surrounding method", id),
-                    null);
+                    "surrounding method", id));
                 return false;
             }
 

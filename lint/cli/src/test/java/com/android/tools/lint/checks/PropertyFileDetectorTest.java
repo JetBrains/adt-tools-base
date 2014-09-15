@@ -49,8 +49,7 @@ public class PropertyFileDetectorTest extends AbstractCheckTest {
 
     @Override
     protected void checkReportedError(@NonNull Context context, @NonNull Issue issue,
-            @NonNull Severity severity, @Nullable Location location, @NonNull String message,
-            @Nullable Object data) {
+            @NonNull Severity severity, @Nullable Location location, @NonNull String message) {
         assertNotNull(message, PropertyFileDetector.getSuggestedEscape(message, TEXT));
     }
 }

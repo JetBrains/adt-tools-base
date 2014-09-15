@@ -133,8 +133,7 @@ public class WakelockDetector extends Detector implements ClassScanner {
                 if (context.getDriver().getPhase() == 2) {
                     assert !mHasRelease;
                     context.report(ISSUE, method, call, context.getLocation(call),
-                        "Found a wakelock `acquire()` but no `release()` calls anywhere",
-                        null);
+                        "Found a wakelock `acquire()` but no `release()` calls anywhere");
                 } else {
                     assert context.getDriver().getPhase() == 1;
                     // Perform flow analysis in this method to see if we're
@@ -152,8 +151,7 @@ public class WakelockDetector extends Detector implements ClassScanner {
                         && context.getDriver().isSubclassOf(
                                 classNode, ANDROID_APP_ACTIVITY)) {
                     context.report(ISSUE, method, call, context.getLocation(call),
-                        "Wakelocks should be released in `onPause`, not `onDestroy`",
-                        null);
+                        "Wakelocks should be released in `onPause`, not `onDestroy`");
                 }
             }
         } else if (call.owner.equals(POWER_MANAGER)) {
@@ -179,8 +177,7 @@ public class WakelockDetector extends Detector implements ClassScanner {
                         context.report(ISSUE, method, call, context.getLocation(call),
                                 "Should not set both `PARTIAL_WAKE_LOCK` and `ACQUIRE_CAUSES_WAKEUP`. "
                                         + "If you do not want the screen to turn on, get rid of "
-                                        + "`ACQUIRE_CAUSES_WAKEUP`",
-                                null);
+                                        + "`ACQUIRE_CAUSES_WAKEUP`");
                     }
                 }
 
@@ -236,7 +233,7 @@ public class WakelockDetector extends Detector implements ClassScanner {
                 }
 
                 context.report(ISSUE, method, acquire,
-                        context.getLocation(release), message, null);
+                        context.getLocation(release), message);
             }
         } catch (AnalyzerException e) {
             context.log(e, null);

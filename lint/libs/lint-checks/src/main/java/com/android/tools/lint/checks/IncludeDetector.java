@@ -106,7 +106,7 @@ public class IncludeDetector extends LayoutDetector {
                             "Layout parameter `%1$s` ignored unless %2$s on `<include>` tag",
                             name, condition);
                     context.report(ISSUE, element, context.getLocation(attribute),
-                            message, null);
+                            message);
                 }
             }
         }

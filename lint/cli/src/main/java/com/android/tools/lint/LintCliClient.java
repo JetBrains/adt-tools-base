@@ -41,7 +41,6 @@ import com.android.tools.lint.detector.api.TextFormat;
 import com.android.tools.lint.detector.api.Position;
 import com.android.tools.lint.detector.api.Project;
 import com.android.tools.lint.detector.api.Severity;
-import com.android.tools.lint.detector.api.TextFormat;
 import com.google.common.annotations.Beta;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Maps;
@@ -197,8 +196,7 @@ public class LintCliClient extends LintClient {
             @NonNull Severity severity,
             @Nullable Location location,
             @NonNull String message,
-            @NonNull TextFormat format,
-            @Nullable Object data) {
+            @NonNull TextFormat format) {
         assert context.isEnabled(issue) || issue == LINT_ERROR;
 
         if (severity == Severity.IGNORE) {
@@ -216,7 +214,7 @@ public class LintCliClient extends LintClient {
         // convert it to text for the text reporter, HTML for the HTML reporter
         // and so on.
         message = format.convertTo(message, TextFormat.RAW);
-        Warning warning = new Warning(issue, message, severity, context.getProject(), data);
+        Warning warning = new Warning(issue, message, severity, context.getProject());
         mWarnings.add(warning);
 
         if (location != null) {

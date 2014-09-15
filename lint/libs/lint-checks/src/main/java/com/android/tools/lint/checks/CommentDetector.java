@@ -180,8 +180,7 @@ public class CommentDetector extends Detector implements Detector.JavaScanner {
                                 offset + i - 1, offset + i - 1 + ESCAPE_STRING.length());
                         context.report(EASTER_EGG, location,
                                 "Code might be hidden here; found unicode escape sequence " +
-                                "which is interpreted as comment end, compiled code follows",
-                                null);
+                                "which is interpreted as comment end, compiled code follows");
                     }
                 } else {
                     i++;
@@ -193,8 +192,7 @@ public class CommentDetector extends Detector implements Detector.JavaScanner {
                         offset + i - 1, offset + i - 1 + STOPSHIP_COMMENT.length());
                 context.report(STOP_SHIP, location,
                         "`STOPSHIP` comment found; points to code which must be fixed prior " +
-                        "to release",
-                        null);
+                        "to release");
             }
         }
     }
