@@ -246,8 +246,7 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
                 Location location = Location.create(manifestFile.get(0));
                 context.report(ENABLED, location,
                         "The project references RTL attributes, but does not explicitly enable " +
-                                "or disable RTL support with `android:supportsRtl` in the manifest",
-                        null);
+                        "or disable RTL support with `android:supportsRtl` in the manifest");
             }
         }
     }
@@ -384,7 +383,7 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
             if (!attribute.getOwnerElement().getTagName().equals(TAG_APPLICATION)) {
                 context.report(ENABLED, attribute, context.getLocation(attribute), String.format(
                     "Wrong declaration: `%1$s` should be defined on the `<application>` element",
-                        attribute.getName()), null);
+                        attribute.getName()));
             }
             int targetSdk = project.getTargetSdk();
             if (mEnabledRtlSupport && targetSdk < RTL_API) {
@@ -392,8 +391,7 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
                         "You must set `android:targetSdkVersion` to at least %1$d when "
                                 + "enabling RTL support (is %2$d)",
                                 RTL_API, project.getTargetSdk());
-                context.report(ENABLED, attribute, context.getLocation(attribute),
-                        message, null);
+                context.report(ENABLED, attribute, context.getLocation(attribute), message);
             }
             return;
         }
@@ -425,8 +423,7 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
                                 "To support older versions than API 17 (project specifies %1$d) "
                                     + "you must *also* specify `gravity` or `layout_gravity=\"%2$s\"`",
                                 project.getMinSdk(), expectedGravity);
-                        context.report(COMPAT, attribute, context.getLocation(attribute), message,
-                                null);
+                        context.report(COMPAT, attribute, context.getLocation(attribute), message);
                     }
                 }
                 return;
@@ -441,7 +438,7 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
                                 + "`textAlignment` and `gravity` attributes: was `%1$s`, expected `%2$s`",
                         gravity, expectedGravity);
                 Location location = context.getLocation(attribute);
-                context.report(COMPAT, attribute, location, message, null);
+                context.report(COMPAT, attribute, location, message);
                 Location secondary = context.getLocation(gravityNode);
                 secondary.setMessage("Incompatible direction here");
                 location.setSecondary(secondary);
@@ -465,8 +462,7 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
                     isLeft ? GRAVITY_VALUE_START : GRAVITY_VALUE_END,
                     isLeft ? GRAVITY_VALUE_LEFT : GRAVITY_VALUE_RIGHT);
             if (context.isEnabled(USE_START)) {
-                context.report(USE_START, attribute, context.getLocation(attribute), message,
-                        null);
+                context.report(USE_START, attribute, context.getLocation(attribute), message);
             }
 
             return;
@@ -494,8 +490,7 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
                 String message = String.format(
                         "When you define `%1$s` you should probably also define `%2$s` for "
                         + "right-to-left symmetry", name, opposite);
-                context.report(SYMMETRY, attribute, context.getLocation(attribute),
-                        message, null);
+                context.report(SYMMETRY, attribute, context.getLocation(attribute), message);
             }
         }
 
@@ -512,8 +507,7 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
                             "Redundant attribute `%1$s`; already defining `%2$s` with "
                                     + "`targetSdkVersion` %3$s",
                             name, rtl, targetSdk);
-                    context.report(USE_START, attribute, context.getLocation(attribute),
-                            message, null);
+                    context.report(USE_START, attribute, context.getLocation(attribute), message);
                 }
             } else {
                 String message;
@@ -528,8 +522,7 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
                                     + "right-to-left layouts",
                             attribute.getPrefix(), rtl, value);
                 }
-                context.report(USE_START, attribute, context.getLocation(attribute),
-                        message, null);
+                context.report(USE_START, attribute, context.getLocation(attribute), message);
             }
         } else {
             if (project.getMinSdk() >= RTL_API || !context.isEnabled(COMPAT)) {
@@ -550,7 +543,7 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
                             + "you should *also* add `%2$s:%3$s=\"%4$s\"`",
                     project.getMinSdk(), attribute.getPrefix(), old,
                     convertNewToOld(value));
-            context.report(COMPAT, attribute, context.getLocation(attribute), message, null);
+            context.report(COMPAT, attribute, context.getLocation(attribute), message);
         }
     }
 
@@ -641,7 +634,7 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
                     (isLeft ? GRAVITY_VALUE_START : GRAVITY_VALUE_END).toUpperCase(Locale.US),
                     (isLeft ? GRAVITY_VALUE_LEFT : GRAVITY_VALUE_RIGHT).toUpperCase(Locale.US));
             Location location = mContext.getLocation(node);
-            mContext.report(USE_START, node, location, message, identifier);
+            mContext.report(USE_START, node, location, message);
 
             return true;
         }

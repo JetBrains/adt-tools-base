@@ -104,7 +104,7 @@ public class WrongImportDetector extends Detector implements Detector.JavaScanne
                 Location location = mContext.getLocation(node);
                 mContext.report(ISSUE, node, location,
                     "Don't include `android.R` here; use a fully qualified name for "
-                            + "each usage instead", null);
+                            + "each usage instead");
             }
             return false;
         }

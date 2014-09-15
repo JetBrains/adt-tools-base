@@ -93,8 +93,7 @@ public class HandlerDetector extends Detector implements ClassScanner {
             Location location = context.getLocation(classNode);
             context.report(ISSUE, location, String.format(
                     "This Handler class should be static or leaks might occur (%1$s)",
-                        ClassContext.createSignature(classNode.name, null, null)),
-                    null);
+                        ClassContext.createSignature(classNode.name, null, null)));
         }
     }
 }

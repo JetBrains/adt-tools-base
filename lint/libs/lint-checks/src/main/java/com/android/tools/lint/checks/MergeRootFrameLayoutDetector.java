@@ -137,7 +137,7 @@ public class MergeRootFrameLayoutDetector extends LayoutDetector implements Dete
 
                     Location location = handle.resolve();
                     context.report(ISSUE, location,
-                            "This `<FrameLayout>` can be replaced with a `<merge>` tag", null);
+                            "This `<FrameLayout>` can be replaced with a `<merge>` tag");
                 }
             }
         }

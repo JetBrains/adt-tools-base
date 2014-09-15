@@ -78,8 +78,7 @@ public class WrongCallDetectorTest extends AbstractCheckTest {
 
     @Override
     protected void checkReportedError(@NonNull Context context, @NonNull Issue issue,
-            @NonNull Severity severity, @Nullable Location location, @NonNull String message,
-            @Nullable Object data) {
+            @NonNull Severity severity, @Nullable Location location, @NonNull String message) {
         assertNotNull(message, WrongCallDetector.getOldValue(message, TEXT));
         assertNotNull(message, WrongCallDetector.getNewValue(message, TEXT));
     }

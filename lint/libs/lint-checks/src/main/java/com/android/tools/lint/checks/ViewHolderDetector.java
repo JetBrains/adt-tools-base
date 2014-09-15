@@ -217,7 +217,7 @@ public class ViewHolderDetector extends Detector implements Detector.JavaScanner
                             + "Should use View Holder pattern (use recycled view passed "
                             + "into this method as the second parameter) for smoother "
                             + "scrolling";
-                    mContext.report(ISSUE, node, mContext.getLocation(node), message, null);
+                    mContext.report(ISSUE, node, mContext.getLocation(node), message);
                 }
             }
         }

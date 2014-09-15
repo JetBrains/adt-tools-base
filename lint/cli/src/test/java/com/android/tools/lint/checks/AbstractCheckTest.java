@@ -192,8 +192,7 @@ public abstract class AbstractCheckTest extends SdkTestCase {
             @NonNull Issue issue,
             @NonNull Severity severity,
             @Nullable Location location,
-            @NonNull String message,
-            @Nullable Object data) {
+            @NonNull String message) {
     }
 
     protected TestLintClient createClient() {
@@ -434,8 +433,7 @@ public abstract class AbstractCheckTest extends SdkTestCase {
                 @NonNull Severity severity,
                 @Nullable Location location,
                 @NonNull String message,
-                @NonNull TextFormat format,
-                @Nullable Object data) {
+                @NonNull TextFormat format) {
             if (ignoreSystemErrors() && (issue == IssueRegistry.LINT_ERROR)) {
                 return;
             }
@@ -445,7 +443,7 @@ public abstract class AbstractCheckTest extends SdkTestCase {
             // closing `, the ` would show up in the plain text.)
             message = format.convertTo(message, TextFormat.TEXT);
 
-            checkReportedError(context, issue, severity, location, message, data);
+            checkReportedError(context, issue, severity, location, message);
 
             if (severity == Severity.FATAL) {
                 // Treat fatal errors like errors in the golden files.
@@ -470,7 +468,7 @@ public abstract class AbstractCheckTest extends SdkTestCase {
                 }
             }
 
-            super.report(context, issue, severity, location, message, format, data);
+            super.report(context, issue, severity, location, message, format);
 
             // Make sure errors are unique!
             Warning prev = null;
@@ -796,7 +794,7 @@ public abstract class AbstractCheckTest extends SdkTestCase {
 
         @Override
         public void ignore(@NonNull Context context, @NonNull Issue issue,
-                @Nullable Location location, @NonNull String message, @Nullable Object data) {
+                @Nullable Location location, @NonNull String message) {
             fail("Not supported in tests.");
         }
 

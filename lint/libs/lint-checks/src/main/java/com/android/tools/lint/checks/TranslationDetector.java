@@ -238,7 +238,7 @@ public class TranslationDetector extends ResourceXmlDetector {
                 // We were prepending locations, but we want to prefer the base folders
                 location = Location.reverse(location);
 
-                context.report(issue, location, message, null);
+                context.report(issue, location, message);
             }
         }
     }
@@ -564,7 +564,7 @@ public class TranslationDetector extends ResourceXmlDetector {
         assert context.getPhase() == 1;
         if (attribute == null || attribute.getValue().isEmpty()) {
             context.report(MISSING, element, context.getLocation(element),
-                    "Missing `name` attribute in `<string>` declaration", null);
+                    "Missing `name` attribute in `<string>` declaration");
         } else {
             String name = attribute.getValue();
 
@@ -574,7 +574,7 @@ public class TranslationDetector extends ResourceXmlDetector {
                 if (l != null) {
                     context.report(EXTRA, translatable, context.getLocation(translatable),
                         "Non-translatable resources should only be defined in the base " +
-                        "`values/` folder", null);
+                        "`values/` folder");
                 } else {
                     if (mNonTranslatable == null) {
                         mNonTranslatable = new HashSet<String>();
@@ -616,7 +616,7 @@ public class TranslationDetector extends ResourceXmlDetector {
             if (mNonTranslatable != null && mNonTranslatable.contains(name)) {
                 String message = String.format("The resource string \"`%1$s`\" has been marked as " +
                         "`translatable=\"false\"`", name);
-                context.report(EXTRA, attribute, context.getLocation(attribute), message, null);
+                context.report(EXTRA, attribute, context.getLocation(attribute), message);
             }
 
             // TBD: Also make sure that the strings are not empty or placeholders?

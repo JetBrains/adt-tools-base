@@ -40,7 +40,6 @@ import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.TextFormat;
 import com.android.tools.lint.detector.api.Project;
 import com.android.tools.lint.detector.api.Severity;
-import com.android.tools.lint.detector.api.TextFormat;
 import com.android.utils.SdkUtils;
 import com.google.common.annotations.Beta;
 
@@ -149,7 +148,7 @@ public class Main {
                         report(context,
                                IssueRegistry.LINT_ERROR,
                                project.getConfiguration().getSeverity(IssueRegistry.LINT_ERROR),
-                               location, message, TextFormat.RAW, null);
+                               location, message, TextFormat.RAW);
                     }
                 }
                 return project;
@@ -171,8 +170,7 @@ public class Main {
 
                        @Override
                        public boolean isIgnored(@NonNull Context context, @NonNull Issue issue,
-                               @Nullable Location location, @NonNull String message,
-                               @Nullable Object data) {
+                               @Nullable Location location, @NonNull String message) {
                            return issue != IssueRegistry.LINT_ERROR;
                        }
                    };

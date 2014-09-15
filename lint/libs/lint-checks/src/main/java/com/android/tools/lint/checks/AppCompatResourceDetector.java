@@ -95,15 +95,13 @@ public class AppCompatResourceDetector extends ResourceXmlDetector implements Ja
                     context.report(ISSUE, attribute,
                         context.getLocation(attribute),
                         "Should use `app:showAsAction` with the appcompat library with "
-                                + "`xmlns:app=\"http://schemas.android.com/apk/res-auto\"`",
-                        null);
+                                + "`xmlns:app=\"http://schemas.android.com/apk/res-auto\"`");
                 }
             } else {
                 if (appCompat == Boolean.FALSE) {
                     context.report(ISSUE, attribute,
                         context.getLocation(attribute),
-                        "Should use `android:showAsAction` when not using the appcompat library",
-                        null);
+                        "Should use `android:showAsAction` when not using the appcompat library");
                 }
             }
         }

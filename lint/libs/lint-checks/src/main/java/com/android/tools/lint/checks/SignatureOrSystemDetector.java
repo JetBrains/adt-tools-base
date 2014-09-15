@@ -83,7 +83,7 @@ public class SignatureOrSystemDetector extends Detector implements Detector.XmlS
         if (protectionLevel != null
             && protectionLevel.equals(SIGNATURE_OR_SYSTEM)) {
             String message = "`protectionLevel` should probably not be set to `signatureOrSystem`";
-            context.report(ISSUE, attribute, context.getLocation(attribute), message, null);
+            context.report(ISSUE, attribute, context.getLocation(attribute), message);
         }
     }
 }

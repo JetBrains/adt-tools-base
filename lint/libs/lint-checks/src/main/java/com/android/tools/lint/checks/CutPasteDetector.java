@@ -139,7 +139,7 @@ public class CutPasteDetector extends Detector implements Detector.JavaScanner {
                         location.setSecondary(secondary);
                         context.report(ISSUE, call, location, String.format(
                             "The id `%1$s` has already been looked up in this method; possible " +
-                            "cut & paste error?", first.toString()), null);
+                            "cut & paste error?", first.toString()));
                     } else {
                         mIds.put(id, call);
                         mLhs.put(id, lhs);

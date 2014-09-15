@@ -127,7 +127,7 @@ public class DeprecationDetector extends LayoutDetector {
     @Override
     public void visitElement(@NonNull XmlContext context, @NonNull Element element) {
         context.report(ISSUE, element, context.getLocation(element),
-                String.format("`%1$s` is deprecated", element.getTagName()), null);
+                String.format("`%1$s` is deprecated", element.getTagName()));
     }
 
     @Override
@@ -172,6 +172,6 @@ public class DeprecationDetector extends LayoutDetector {
 
         context.report(ISSUE, attribute, context.getLocation(attribute),
                 String.format("`%1$s` is deprecated: %2$s",
-                        attribute.getName(), fix), null);
+                        attribute.getName(), fix));
     }
 }

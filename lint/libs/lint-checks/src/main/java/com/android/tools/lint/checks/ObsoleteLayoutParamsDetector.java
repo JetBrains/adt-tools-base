@@ -300,8 +300,7 @@ public class ObsoleteLayoutParamsDetector extends LayoutDetector {
                         return;
                     }
                     context.report(ISSUE, attribute, context.getLocation(attribute),
-                            String.format("Invalid layout param in a `%1$s`: `%2$s`", parentTag, name),
-                            null);
+                            String.format("Invalid layout param in a `%1$s`: `%2$s`", parentTag, name));
                 }
             } else {
                 // We could warn about unknown layout params but this might be brittle if
@@ -404,7 +403,7 @@ public class ObsoleteLayoutParamsDetector extends LayoutDetector {
                 String message = String.format("Invalid layout param '`%1$s`' (%2$s)",
                             name, sb.toString());
                 // TODO: Compute applicable scope node
-                context.report(ISSUE, location, message, null);
+                context.report(ISSUE, location, message);
             }
         }
     }

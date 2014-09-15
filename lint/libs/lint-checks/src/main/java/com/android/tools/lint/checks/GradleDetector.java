@@ -1001,7 +1001,7 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
                 }
             }
 
-            context.report(issue, createLocation(context, cookie), message, null);
+            context.report(issue, createLocation(context, cookie), message);
         }
     }
 

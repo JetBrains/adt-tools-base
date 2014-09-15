@@ -140,12 +140,12 @@ public class ResourcePrefixDetector extends ResourceXmlDetector implements
                         Element root = xmlContext.document.getDocumentElement();
                         if (root != null) {
                             xmlContext.report(ISSUE, root, xmlContext.getLocation(root),
-                                    getErrorMessage(name), null);
+                                    getErrorMessage(name));
                             return;
                         }
                     }
                     context.report(ISSUE, Location.create(context.file),
-                            getErrorMessage(name), null);
+                            getErrorMessage(name));
                 }
             }
         }
@@ -173,7 +173,7 @@ public class ResourcePrefixDetector extends ResourceXmlDetector implements
                 if (!name.startsWith(mPrefix)) {
                     String message = getErrorMessage(name);
                     context.report(ISSUE, nameAttribute, context.getLocation(nameAttribute),
-                            message, null);
+                            message);
                 }
             }
         }
@@ -189,7 +189,7 @@ public class ResourcePrefixDetector extends ResourceXmlDetector implements
                 String name = LintUtils.getBaseName(context.file.getName());
                 if (!name.startsWith(mPrefix)) {
                     Location location = Location.create(context.file);
-                    context.report(ISSUE, location, getErrorMessage(name), null);
+                    context.report(ISSUE, location, getErrorMessage(name));
                 }
             }
         }

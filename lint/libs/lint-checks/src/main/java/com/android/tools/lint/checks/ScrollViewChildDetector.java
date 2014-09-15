@@ -94,8 +94,7 @@ public class ScrollViewChildDetector extends LayoutDetector {
             if (VALUE_FILL_PARENT.equals(value) || VALUE_MATCH_PARENT.equals(value)) {
                 String msg = String.format("This %1$s should use `android:%2$s=\"wrap_content\"`",
                         child.getTagName(), attributeName);
-                context.report(ISSUE, sizeNode, context.getLocation(sizeNode), msg,
-                        null);
+                context.report(ISSUE, sizeNode, context.getLocation(sizeNode), msg);
             }
         }
     }

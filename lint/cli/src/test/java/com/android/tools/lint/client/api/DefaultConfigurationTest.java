@@ -106,20 +106,20 @@ public class DefaultConfigurationTest extends AbstractCheckTest {
                 + "</lint>");
 
         assertFalse(configuration
-                .isIgnored(plainContext, ApiDetector.UNSUPPORTED, plainLocation, "", null));
+                .isIgnored(plainContext, ApiDetector.UNSUPPORTED, plainLocation, ""));
         assertFalse(configuration
                 .isIgnored(plainContext, ObsoleteLayoutParamsDetector.ISSUE, plainLocation,
-                        "", null));
+                        ""));
 
         assertTrue(configuration
                 .isIgnored(windowsContext, ObsoleteLayoutParamsDetector.ISSUE, windowsLocation,
-                        "", null));
+                        ""));
         assertTrue(
                 configuration
-                        .isIgnored(largeContext, ApiDetector.UNSUPPORTED, largeLocation, "", null));
+                        .isIgnored(largeContext, ApiDetector.UNSUPPORTED, largeLocation, ""));
         assertTrue(configuration
                 .isIgnored(largeContext, ObsoleteLayoutParamsDetector.ISSUE, largeLocation,
-                        "", null));
+                        ""));
     }
 
     public void testPatternIgnore() throws Exception {
@@ -160,13 +160,13 @@ public class DefaultConfigurationTest extends AbstractCheckTest {
                 + "</lint>");
 
         assertFalse(configuration.isIgnored(plainContext, ApiDetector.UNSUPPORTED,
-                plainLocation, "", null));
+                plainLocation, ""));
         assertFalse(configuration.isIgnored(plainContext, ObsoleteLayoutParamsDetector.ISSUE,
-                plainLocation, "", null));
+                plainLocation, ""));
         assertTrue(configuration.isIgnored(windowsContext, ObsoleteLayoutParamsDetector.ISSUE,
-                windowsLocation, "", null));
+                windowsLocation, ""));
         assertTrue(configuration.isIgnored(largeContext, ObsoleteLayoutParamsDetector.ISSUE,
-                largeLocation, "", null));
+                largeLocation, ""));
     }
 
     public void testGlobbing() throws Exception {
@@ -207,13 +207,13 @@ public class DefaultConfigurationTest extends AbstractCheckTest {
                 + "</lint>");
 
         assertFalse(configuration.isIgnored(plainContext, ApiDetector.UNSUPPORTED,
-                plainLocation, "", null));
+                plainLocation, ""));
         assertFalse(configuration.isIgnored(plainContext, ObsoleteLayoutParamsDetector.ISSUE,
-                plainLocation, "", null));
+                plainLocation, ""));
         assertTrue(configuration.isIgnored(windowsContext, ObsoleteLayoutParamsDetector.ISSUE,
-                windowsLocation, "", null));
+                windowsLocation, ""));
         assertTrue(configuration.isIgnored(largeContext, ObsoleteLayoutParamsDetector.ISSUE,
-                largeLocation, "", null));
+                largeLocation, ""));
     }
 
     public void testWriteLintXml() throws Exception {

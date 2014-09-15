@@ -256,7 +256,7 @@ public class WrongIdDetector extends LayoutDetector {
                                             "`%1$s` is not a sibling in the same `RelativeLayout`",
                                             value);
                                     Location location = xmlContext.getLocation(attr);
-                                    xmlContext.report(NOT_SIBLING, attr, location, message, null);
+                                    xmlContext.report(NOT_SIBLING, attr, location, message);
                                 }
                             }
                         }
@@ -350,7 +350,7 @@ public class WrongIdDetector extends LayoutDetector {
             }
         }
 
-        context.report(issue, location, message, null);
+        context.report(issue, location, message);
     }
 
     @Override
@@ -390,7 +390,7 @@ public class WrongIdDetector extends LayoutDetector {
             String suggested = NEW_ID_PREFIX + id.substring(nameStart).replace('/', '_');
             String message = String.format(
                     "ID definitions *must* be of the form `@+id/name`; try using `%1$s`", suggested);
-            context.report(INVALID, attribute, context.getLocation(attribute), message, null);
+            context.report(INVALID, attribute, context.getLocation(attribute), message);
         }
     }
 

@@ -105,16 +105,14 @@ public class FragmentDetector extends Detector implements JavaScanner {
         if ((flags & Modifier.PUBLIC) == 0) {
             String message = String.format("This fragment class should be public (%1$s)",
                     cls.getName());
-            context.report(ISSUE, node, context.getLocation(node.astName()), message,
-                    null);
+            context.report(ISSUE, node, context.getLocation(node.astName()), message);
             return;
         }
 
         if (cls.getContainingClass() != null && (flags & Modifier.STATIC) == 0) {
             String message = String.format(
                     "This fragment inner class should be static (%1$s)", cls.getName());
-            context.report(ISSUE, node, context.getLocation(node.astName()), message,
-                    null);
+            context.report(ISSUE, node, context.getLocation(node.astName()), message);
             return;
         }
 
@@ -134,8 +132,7 @@ public class FragmentDetector extends Detector implements JavaScanner {
                             Location location = context.getLocation(
                                     constructor.astTypeName());
                             context.report(ISSUE, constructor, location,
-                                    "The default constructor must be public",
-                                    null);
+                                    "The default constructor must be public");
                             // Also mark that we have a constructor so we don't complain again
                             // below since we've already emitted a more specific error related
                             // to the default constructor
@@ -147,7 +144,7 @@ public class FragmentDetector extends Detector implements JavaScanner {
                         String message = "Avoid non-default constructors in fragments: "
                                 + "use a default constructor plus "
                                 + "`Fragment#setArguments(Bundle)` instead";
-                        context.report(ISSUE, constructor, location, message, null);
+                        context.report(ISSUE, constructor, location, message);
                     }
                 }
             }
@@ -157,10 +154,8 @@ public class FragmentDetector extends Detector implements JavaScanner {
             String message = String.format(
                     "This fragment should provide a default constructor (a public " +
                     "constructor with no arguments) (`%1$s`)",
-                    cls.getName()
-            );
-            context.report(ISSUE, node, context.getLocation(node.astName()), message,
-                    null);
+                    cls.getName());
+            context.report(ISSUE, node, context.getLocation(node.astName()), message);
         }
     }
 }

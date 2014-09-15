@@ -124,7 +124,7 @@ public class PropertyFileDetector extends Detector {
             int endOffset = offset + line.length();
             Location location = Location.create(context.file, contents, startOffset,
                     endOffset);
-            context.report(ISSUE, location, message, null);
+            context.report(ISSUE, location, message);
         }
     }
 

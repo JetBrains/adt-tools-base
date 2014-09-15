@@ -163,8 +163,7 @@ public class LintCliXmlParserTest extends TestCase {
                 @NonNull Severity severity,
                 @Nullable Location location,
                 @NonNull String message,
-                @NonNull TextFormat format,
-                @Nullable Object data) {
+                @NonNull TextFormat format) {
             System.out.println(location + ":" + message);
         }
     }

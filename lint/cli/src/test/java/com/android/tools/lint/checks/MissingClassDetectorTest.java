@@ -520,8 +520,7 @@ public class MissingClassDetectorTest extends AbstractCheckTest {
 
     @Override
     protected void checkReportedError(@NonNull Context context, @NonNull Issue issue,
-            @NonNull Severity severity, @Nullable Location location, @NonNull String message,
-            @Nullable Object data) {
+            @NonNull Severity severity, @Nullable Location location, @NonNull String message) {
         if (issue == INNERCLASS) {
             assertNotNull(message, MissingClassDetector.getOldValue(issue, message, TEXT));
             assertNotNull(message, MissingClassDetector.getNewValue(issue, message, TEXT));

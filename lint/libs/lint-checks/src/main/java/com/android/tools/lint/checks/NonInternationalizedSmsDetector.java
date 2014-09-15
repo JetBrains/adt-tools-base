@@ -96,8 +96,7 @@ public class NonInternationalizedSmsDetector extends Detector implements Detecto
                    context.report(ISSUE, node, context.getLocation(destinationAddress),
                        "To make sure the SMS can be sent by all users, please start the SMS number " +
                        "with a + and a country code or restrict the code invocation to people in the country " +
-                       "you are targeting.",
-                       null);
+                       "you are targeting.");
                 }
             }
         }

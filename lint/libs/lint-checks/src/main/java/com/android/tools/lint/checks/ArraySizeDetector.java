@@ -232,7 +232,7 @@ public class ArraySizeDetector extends ResourceXmlDetector {
                     }
 
                     String message = mDescriptions.get(name);
-                    context.report(INCONSISTENT, location, message, null);
+                    context.report(INCONSISTENT, location, message);
                 }
             }
 
@@ -251,8 +251,8 @@ public class ArraySizeDetector extends ResourceXmlDetector {
                 return;
             }
             context.report(INCONSISTENT, element, context.getLocation(element),
-                String.format("Missing name attribute in `%1$s` declaration", element.getTagName()),
-                null);
+                String.format("Missing name attribute in `%1$s` declaration",
+                        element.getTagName()));
         } else {
             String name = attribute.getValue();
             if (phase == 1) {
@@ -315,7 +315,7 @@ public class ArraySizeDetector extends ResourceXmlDetector {
                                 name, childCount, thisName, arv.getElementCount(), otherName);
 
                         context.report(INCONSISTENT, element, context.getLocation(element),
-                                message, null);
+                                message);
                     }
                 }
             }

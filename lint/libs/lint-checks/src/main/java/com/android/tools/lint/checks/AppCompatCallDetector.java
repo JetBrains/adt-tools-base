@@ -116,7 +116,7 @@ public class AppCompatCallDetector extends Detector implements Detector.JavaScan
 
             if (replace != null) {
                 String message = String.format(ERROR_MESSAGE_FORMAT, replace, name);
-                context.report(ISSUE, node, context.getLocation(node), message, null);
+                context.report(ISSUE, node, context.getLocation(node), message);
             }
         }
     }

@@ -51,7 +51,6 @@ import com.android.tools.lint.detector.api.ResourceContext;
 import com.android.tools.lint.detector.api.ResourceXmlDetector;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
-import com.android.tools.lint.detector.api.TextFormat;
 import com.android.tools.lint.detector.api.XmlContext;
 import com.google.common.annotations.Beta;
 import com.google.common.base.Objects;
@@ -398,7 +397,7 @@ public class LintDriver {
                 Location location = e.getLocation();
                 File file = location != null ? location.getFile() : mCurrentProject.getDir();
                 Context context = new Context(this, mCurrentProject, null, file);
-                context.report(IssueRegistry.LINT_ERROR, e.getLocation(), e.getMessage(), null);
+                context.report(IssueRegistry.LINT_ERROR, e.getLocation(), e.getMessage());
                 mCurrentProject = null;
             }
             return;
@@ -928,7 +927,7 @@ public class LintDriver {
                 IssueRegistry.CANCELLED,
                 Severity.INFORMATIONAL,
                 null /*range*/,
-                "Lint canceled by user", TextFormat.RAW, null);
+                "Lint canceled by user", TextFormat.RAW);
         }
 
         mCurrentProjects = null;
@@ -1255,7 +1254,7 @@ public class LintDriver {
             mClient.report(new Context(this, project, main, project.getDir()),
                     IssueRegistry.LINT_ERROR,
                     project.getConfiguration().getSeverity(IssueRegistry.LINT_ERROR),
-                    location, message, TextFormat.RAW, null);
+                    location, message, TextFormat.RAW);
             classEntries = Collections.emptyList();
         } else {
             classEntries = new ArrayList<ClassEntry>(64);
@@ -1978,8 +1977,7 @@ public class LintDriver {
                 @NonNull Severity severity,
                 @Nullable Location location,
                 @NonNull String message,
-                @NonNull TextFormat format,
-                @Nullable Object data) {
+                @NonNull TextFormat format) {
             assert mCurrentProject != null;
             if (!mCurrentProject.getReportIssues()) {
                 return;
@@ -1994,7 +1992,7 @@ public class LintDriver {
                 return;
             }
 
-            if (configuration.isIgnored(context, issue, location, message, data)) {
+            if (configuration.isIgnored(context, issue, location, message)) {
                 return;
             }
 
@@ -2002,7 +2000,7 @@ public class LintDriver {
                 return;
             }
 
-            mDelegate.report(context, issue, severity, location, message, format, data);
+            mDelegate.report(context, issue, severity, location, message, format);
         }
 
         // Everything else just delegates to the embedding lint client

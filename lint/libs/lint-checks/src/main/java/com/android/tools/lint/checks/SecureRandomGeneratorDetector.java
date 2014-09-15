@@ -234,7 +234,7 @@ public class SecureRandomGeneratorDetector extends Detector implements ClassScan
         if (mLocation != null && !mIgnore) {
             String message = "Potentially insecure random numbers on Android 4.3 and older. "
                     + "Read " + BLOG_URL + " for more info.";
-            context.report(ISSUE, mLocation, message, null);
+            context.report(ISSUE, mLocation, message);
         }
     }
 }

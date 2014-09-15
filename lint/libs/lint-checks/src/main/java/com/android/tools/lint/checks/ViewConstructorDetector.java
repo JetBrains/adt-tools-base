@@ -139,10 +139,9 @@ public class ViewConstructorDetector extends Detector implements Detector.JavaSc
                     "Custom view `%1$s` is missing constructor used by tools: "
                             + "`(Context)` or `(Context,AttributeSet)` "
                             + "or `(Context,AttributeSet,int)`",
-                    node.astName().astValue()
-            );
+                    node.astName().astValue());
             Location location = context.getLocation(node.astName());
-            context.report(ISSUE, node, location, message, null /*data*/);
+            context.report(ISSUE, node, location, message  /*data*/);
         }
     }
 }

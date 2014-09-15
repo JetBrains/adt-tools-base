@@ -114,7 +114,7 @@ public class UseCompoundDrawableDetector extends LayoutDetector {
 
                 context.report(ISSUE, element, context.getLocation(element),
                         "This tag and its children can be replaced by one `<TextView/>` and " +
-                                "a compound drawable", null);
+                                "a compound drawable");
             }
         }
     }

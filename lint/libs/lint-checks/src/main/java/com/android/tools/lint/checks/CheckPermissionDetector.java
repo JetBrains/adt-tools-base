@@ -74,7 +74,7 @@ public class CheckPermissionDetector extends Detector implements Detector.JavaSc
             context.report(ISSUE, node, context.getLocation(node),
                     String.format(
                             "The result of `%1$s` is not used; did you mean to call `%2$s`?",
-                            check, enforce), null);
+                            check, enforce));
         }
     }
 
