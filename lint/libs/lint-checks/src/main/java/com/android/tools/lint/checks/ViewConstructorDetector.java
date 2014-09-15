@@ -18,7 +18,6 @@ package com.android.tools.lint.checks;
 
 import static com.android.tools.lint.client.api.JavaParser.ResolvedClass;
 import static com.android.tools.lint.client.api.JavaParser.ResolvedMethod;
-import static com.android.tools.lint.client.api.JavaParser.ResolvedNode;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
@@ -37,10 +36,7 @@ import java.lang.reflect.Modifier;
 import java.util.Collections;
 import java.util.List;
 
-import lombok.ast.AstVisitor;
 import lombok.ast.ClassDeclaration;
-import lombok.ast.ForwardingAstVisitor;
-import lombok.ast.Node;
 import lombok.ast.NormalTypeBody;
 
 /**
@@ -82,18 +78,6 @@ public class ViewConstructorDetector extends Detector implements Detector.JavaSc
 
     // ---- Implements JavaScanner ----
 
-    @Nullable
-    @Override
-    public List<Class<? extends Node>> getApplicableNodeTypes() {
-        return Collections.<Class<? extends Node>>singletonList(ClassDeclaration.class);
-    }
-
-    @Nullable
-    @Override
-    public AstVisitor createJavaVisitor(@NonNull final JavaContext context) {
-        return new ViewConstructorVisitor(context);
-    }
-
     private static boolean isXmlConstructor(ResolvedMethod method) {
         // Accept
         //   android.content.Context
@@ -119,61 +103,46 @@ public class ViewConstructorDetector extends Detector implements Detector.JavaSc
         return method.getArgumentType(2).matchesName("int");
     }
 
-    private static class ViewConstructorVisitor extends ForwardingAstVisitor {
+    @Nullable
+    @Override
+    public List<String> applicableSuperClasses() {
+        return Collections.singletonList(SdkConstants.CLASS_VIEW);
+    }
 
-        private final JavaContext mContext;
-
-        public ViewConstructorVisitor(JavaContext context) {
-            mContext = context;
+    @Override
+    public void checkClass(@NonNull JavaContext context, @NonNull ClassDeclaration node,
+            @NonNull ResolvedClass resolvedClass) {
+        // Only applies to concrete classes
+        int flags = node.astModifiers().getEffectiveModifierFlags();
+        // Ignore abstract classes
+        if ((flags & Modifier.ABSTRACT) != 0) {
+            return;
         }
 
-        @Override
-        public boolean visitClassDeclaration(ClassDeclaration node) {
-            // Only applies to concrete classes
-            int flags = node.astModifiers().getEffectiveModifierFlags();
-            // Ignore abstract classes
-            if ((flags & Modifier.ABSTRACT) != 0) {
-                return true;
-            }
+        if (node.getParent() instanceof NormalTypeBody
+                && ((flags & Modifier.STATIC) == 0)) {
+            // Ignore inner classes that aren't static: we can't create these
+            // anyway since we'd need the outer instance
+            return;
+        }
 
-            if (node.getParent() instanceof NormalTypeBody
-                    && ((flags & Modifier.STATIC) == 0)) {
-                // Ignore inner classes that aren't static: we can't create these
-                // anyway since we'd need the outer instance
-                return true;
+        boolean found = false;
+        for (ResolvedMethod constructor : resolvedClass.getConstructors()) {
+            if (isXmlConstructor(constructor)) {
+                found = true;
+                break;
             }
+        }
 
-            ResolvedNode resolved = mContext.resolve(node);
-            if (!(resolved instanceof ResolvedClass)) {
-                return true;
-            }
-
-            ResolvedClass cls = (ResolvedClass) resolved;
-            if (!cls.isSubclassOf(SdkConstants.CLASS_VIEW, false)) {
-                return true;
-            }
-
-            boolean found = false;
-            for (ResolvedMethod constructor : cls.getConstructors()) {
-                if (isXmlConstructor(constructor)) {
-                    found = true;
-                    break;
-                }
-            }
-
-            if (!found) {
-                String message = String.format(
-                        "Custom view `%1$s` is missing constructor used by tools: "
-                                + "`(Context)` or `(Context,AttributeSet)` "
-                                + "or `(Context,AttributeSet,int)`",
-                        node.astName().astValue()
-                );
-                Location location = mContext.getLocation(node.astName());
-                mContext.report(ISSUE, node, location,
-                        message, null /*data*/);
-            }
-
-            return true;
+        if (!found) {
+            String message = String.format(
+                    "Custom view `%1$s` is missing constructor used by tools: "
+                            + "`(Context)` or `(Context,AttributeSet)` "
+                            + "or `(Context,AttributeSet,int)`",
+                    node.astName().astValue()
+            );
+            Location location = context.getLocation(node.astName());
+            context.report(ISSUE, node, location, message, null /*data*/);
         }
     }
 }
