@@ -342,23 +342,17 @@ public class TranslationDetector extends ResourceXmlDetector {
             }
         }
 
-        // Fast check to see if there's no problem: if the default locale set is the
-        // same as the all set (meaning there are no extra strings in the other languages)
-        // then we can quickly determine if everything is okay by just making sure that
-        // each language defines everything. If that's the case they will all have the same
-        // string count.
         int stringCount = allStrings.size();
-        if (stringCount == defaultStrings.size()) {
-            boolean haveError = false;
-            for (Map.Entry<String, Set<String>> entry : languageToStrings.entrySet()) {
-                Set<String> strings = entry.getValue();
-                if (stringCount != strings.size()) {
-                    haveError = true;
+
+        // Treat English is the default language if not explicitly specified
+        if (!sCompleteRegions && !languageToStrings.containsKey("en")
+                && mFileToLocale == null) {  //$NON-NLS-1$
+            // But only if we have an actual region
+            for (String l : languageToStrings.keySet()) {
+                if (l.startsWith("en-")) {  //$NON-NLS-1$
+                    languageToStrings.put("en", defaultStrings); //$NON-NLS-1$
                     break;
                 }
-            }
-            if (!haveError) {
-                return;
             }
         }
 
@@ -386,6 +380,25 @@ public class TranslationDetector extends ResourceXmlDetector {
                     // we need to do it; once merged we can bail
                     break;
                 }
+            }
+        }
+
+        // Fast check to see if there's no problem: if the default locale set is the
+        // same as the all set (meaning there are no extra strings in the other languages)
+        // then we can quickly determine if everything is okay by just making sure that
+        // each language defines everything. If that's the case they will all have the same
+        // string count.
+        if (stringCount == defaultStrings.size()) {
+            boolean haveError = false;
+            for (Map.Entry<String, Set<String>> entry : languageToStrings.entrySet()) {
+                Set<String> strings = entry.getValue();
+                if (stringCount != strings.size()) {
+                    haveError = true;
+                    break;
+                }
+            }
+            if (!haveError) {
+                return;
             }
         }
 
