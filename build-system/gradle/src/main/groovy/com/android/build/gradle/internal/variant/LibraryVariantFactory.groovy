@@ -15,7 +15,6 @@
  */
 
 package com.android.build.gradle.internal.variant
-
 import com.android.SdkConstants
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
@@ -28,6 +27,7 @@ import com.android.build.gradle.internal.api.LibraryVariantOutputImpl
 import com.android.build.gradle.internal.coverage.JacocoInstrumentTask
 import com.android.build.gradle.internal.coverage.JacocoPlugin
 import com.android.build.gradle.internal.tasks.MergeFileTask
+import com.android.build.gradle.ndk.NdkPlugin
 import com.android.build.gradle.tasks.ExtractAnnotations
 import com.android.build.gradle.tasks.MergeResources
 import com.android.builder.core.BuilderConstants
@@ -38,7 +38,6 @@ import com.android.builder.dependency.LibraryDependency
 import com.android.builder.dependency.ManifestDependency
 import com.android.builder.model.AndroidLibrary
 import com.android.builder.model.MavenCoordinates
-import com.android.build.gradle.ndk.NdkPlugin
 import com.google.common.collect.Lists
 import org.gradle.api.Project
 import org.gradle.api.Task
@@ -53,7 +52,6 @@ import static com.android.SdkConstants.LIBS_FOLDER
 import static com.android.build.gradle.BasePlugin.DIR_BUNDLES
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
 import static com.android.builder.model.AndroidProject.FD_OUTPUTS
-
 /**
  */
 public class LibraryVariantFactory implements VariantFactory<LibraryVariantData> {
@@ -322,6 +320,7 @@ public class LibraryVariantFactory implements VariantFactory<LibraryVariantData>
 
         bundle.setDescription("Assembles a bundle containing the library in ${fullName.capitalize()}.");
         bundle.destinationDir = project.file("$project.buildDir/${FD_OUTPUTS}/aar")
+        bundle.setArchiveName("${project.name}-${variantConfig.baseName}.${BuilderConstants.EXT_LIB_ARCHIVE}")
         bundle.extension = BuilderConstants.EXT_LIB_ARCHIVE
         bundle.from(project.file("$project.buildDir/${FD_INTERMEDIATES}/$DIR_BUNDLES/${dirName}"))
         bundle.from(project.file("$project.buildDir/${FD_INTERMEDIATES}/$ANNOTATIONS/${dirName}"))
