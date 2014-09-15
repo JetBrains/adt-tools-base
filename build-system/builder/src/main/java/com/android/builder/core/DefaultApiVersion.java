@@ -43,6 +43,7 @@ public class DefaultApiVersion implements ApiVersion {
         this(1, codename);
     }
 
+    @NonNull
     public static ApiVersion create(@NonNull Object value) {
         if (value instanceof Integer) {
             return new DefaultApiVersion((Integer) value, null);
@@ -50,7 +51,7 @@ public class DefaultApiVersion implements ApiVersion {
             return new DefaultApiVersion(1, (String) value);
         }
 
-        return null;
+        return new DefaultApiVersion(1, null);
     }
 
     @Override

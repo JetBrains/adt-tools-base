@@ -498,7 +498,7 @@ public class AndroidProjectTest extends TestCase {
         expected.put("xxhdpi", 512);
 
         for (AndroidArtifactOutput output : debugOutputs) {
-            String densityFilter = output.densityFilter();
+            String densityFilter = output.getDensityFilter();
             Integer value = expected.get(densityFilter);
             // this checks we're not getting an unexpected output.
             assertNotNull("Check Valid output: " + (densityFilter == null ? "universal" : densityFilter),
@@ -539,7 +539,7 @@ public class AndroidProjectTest extends TestCase {
         expected.put("x86", 3000123);
 
         for (AndroidArtifactOutput output : debugOutputs) {
-            String abiFilter = output.abiFilter();
+            String abiFilter = output.getAbiFilter();
             Integer value = expected.get(abiFilter);
             // this checks we're not getting an unexpected output.
             assertNotNull("Check Valid output: " + abiFilter, value);

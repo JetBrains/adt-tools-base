@@ -17,6 +17,8 @@ android {
     versionCode 12
     minSdkVersion 16
     targetSdkVersion 20
+
+    buildConfigField "String", "FOO", "\"bar\""
   }
 
   splits {

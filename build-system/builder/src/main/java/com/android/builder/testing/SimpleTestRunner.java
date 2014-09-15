@@ -17,19 +17,16 @@
 package com.android.builder.testing;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
+import com.android.builder.internal.InstallUtils;
 import com.android.builder.internal.testing.SimpleTestCallable;
-import com.android.builder.model.ApiVersion;
 import com.android.builder.testing.api.DeviceConnector;
 import com.android.builder.testing.api.TestException;
 import com.android.ddmlib.IDevice;
 import com.android.ide.common.internal.WaitableExecutor;
-import com.android.sdklib.SdkVersionInfo;
 import com.android.utils.ILogger;
 
 import java.io.File;
 import java.util.List;
-import java.util.Set;
 
 /**
  * Basic {@link TestRunner} running tests on all devices.
@@ -38,17 +35,16 @@ public class SimpleTestRunner implements TestRunner {
 
     @Override
     public boolean runTests(
-            @NonNull  String projectName,
-            @NonNull  String variantName,
-            @NonNull  File testApk,
-            @Nullable File testedApk,
-            @NonNull  TestData testData,
-            @NonNull  List<? extends DeviceConnector> deviceList,
-                      int maxThreads,
-                      int timeout,
-            @NonNull  File resultsDir,
-            @NonNull  File coverageDir,
-            @NonNull  ILogger logger) throws TestException, NoAuthorizedDeviceFoundException, InterruptedException {
+            @NonNull String projectName,
+            @NonNull String variantName,
+            @NonNull File testApk,
+            @NonNull TestData testData,
+            @NonNull List<? extends DeviceConnector> deviceList,
+                     int maxThreads,
+                     int timeout,
+            @NonNull File resultsDir,
+            @NonNull File coverageDir,
+            @NonNull ILogger logger) throws TestException, NoAuthorizedDeviceFoundException, InterruptedException {
 
         WaitableExecutor<Boolean> executor = new WaitableExecutor<Boolean>(maxThreads);
 
@@ -56,7 +52,21 @@ public class SimpleTestRunner implements TestRunner {
         for (DeviceConnector device : deviceList) {
             if (device.getState() != IDevice.DeviceState.UNAUTHORIZED) {
                 foundAtLeastOneAuthorizedDevice = true;
-                if (filterOutDevice(device, testData, logger, projectName, variantName)) {
+                if (InstallUtils.checkDeviceApiLevel(
+                        device, testData.getMinSdkVersion(), logger, projectName, variantName)) {
+
+                    // now look for a matching output file
+                    File testedApk = null;
+                    if (!testData.isLibrary()) {
+                        testedApk = testData.getTestedApk(device.getDensity(), device.getAbis());
+
+                        if (testedApk == null) {
+                            logger.info("Skipping device '%1$s' for '%2$s:%3$s': No matching output file",
+                                    device.getName(), projectName, variantName);
+                            continue;
+                        }
+                    }
+
                     executor.execute(new SimpleTestCallable(device, projectName, variantName,
                             testApk, testedApk, testData,
                             resultsDir, coverageDir, timeout, logger));
@@ -85,67 +95,4 @@ public class SimpleTestRunner implements TestRunner {
         return success;
     }
 
-    private boolean filterOutDevice(@NonNull DeviceConnector device, @NonNull TestData testData,
-                                    @NonNull ILogger logger,
-                                    @NonNull String projectName, @NonNull String variantName) {
-        int deviceApiLevel = device.getApiLevel();
-        if (deviceApiLevel == 0) {
-            logger.info("Skipping device '%1$s' for '%2$s:%3$s': Unknown API Level",
-                    device.getName(), projectName, variantName);
-            return false;
-        }
-
-        ApiVersion apiVersion = testData.getMinSdkVersion();
-        int minSdkVersion = apiVersion == null ? 1 : apiVersion.getApiLevel();
-        if (apiVersion != null && apiVersion.getCodename() != null) {
-            String deviceCodeName = device.getApiCodeName();
-            if (deviceCodeName != null) {
-                if (deviceCodeName.equals(apiVersion.getCodename())) {
-                    logger.info("Skipping device '%1$s', due to different API preview '%2$s' and '%3$s'",
-                            device.getName(), deviceCodeName, apiVersion.getCodename());
-                    return false;
-                }
-            } else {
-                minSdkVersion = SdkVersionInfo.getApiByBuildCode(apiVersion.getCodename(), true);
-
-                if (minSdkVersion > deviceApiLevel) {
-                    logger.info("Skipping device '%s' for '%s:%s'",
-                            device.getName(), projectName, variantName);
-
-                    return false;
-                }
-            }
-
-        } else {
-            if (minSdkVersion > deviceApiLevel) {
-                logger.info("Skipping device '%s' for '%s:%s'",
-                        device.getName(), projectName, variantName);
-
-                return false;
-            }
-        }
-
-        Set<String> appAbis = testData.getSupportedAbis();
-        if (appAbis != null && !appAbis.isEmpty()) {
-            List<String> deviceAbis = device.getAbis();
-            if (deviceAbis.isEmpty()) {
-                logger.info("Skipping device '%s' for '%s:%s': Unknown ABI",
-                        device.getName(), projectName, variantName);
-                return false;
-            }
-
-            boolean compatibleAbi = false;
-            for (String deviceAbi : deviceAbis) {
-                if (appAbis.contains(deviceAbi)) {
-                    compatibleAbi = true;
-                }
-            }
-
-            if (!compatibleAbi) {
-                return false;
-            }
-        }
-
-        return true;
-    }
 }

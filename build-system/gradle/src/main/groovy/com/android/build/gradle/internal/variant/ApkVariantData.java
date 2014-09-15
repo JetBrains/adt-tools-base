@@ -29,6 +29,7 @@ import org.gradle.api.DefaultTask;
 public abstract class ApkVariantData extends BaseVariantData<ApkVariantOutputData> {
 
     public Dex dexTask;
+    public DefaultTask installTask;
     public DefaultTask uninstallTask;
 
     protected ApkVariantData(

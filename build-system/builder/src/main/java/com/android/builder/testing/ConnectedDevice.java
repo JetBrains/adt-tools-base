@@ -27,7 +27,6 @@ import com.android.ddmlib.ShellCommandUnresponsiveException;
 import com.android.ddmlib.SyncException;
 import com.android.ddmlib.TimeoutException;
 import com.android.utils.ILogger;
-import com.google.common.collect.Lists;
 
 import java.io.File;
 import java.io.IOException;
@@ -116,6 +115,12 @@ public class ConnectedDevice extends DeviceConnector {
         }
     }
 
+    @NonNull
+    @Override
+    public String getSerialNumber() {
+        return iDevice.getSerialNumber();
+    }
+
     @Override
     public int getApiLevel() {
         String sdkVersion = iDevice.getProperty(IDevice.PROP_BUILD_API_LEVEL);
@@ -157,23 +162,12 @@ public class ConnectedDevice extends DeviceConnector {
     @NonNull
     @Override
     public List<String> getAbis() {
-        List<String> abis = Lists.newArrayListWithExpectedSize(2);
-        String abi = iDevice.getProperty(IDevice.PROP_DEVICE_CPU_ABI);
-        if (abi != null) {
-            abis.add(abi);
-        }
-
-        abi = iDevice.getProperty(IDevice.PROP_DEVICE_CPU_ABI2);
-        if (abi != null) {
-            abis.add(abi);
-        }
-
-        return abis;
+        return iDevice.getAbis();
     }
 
     @Override
     public int getDensity() {
-        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+        return iDevice.getDensity();
     }
 
     @Override
