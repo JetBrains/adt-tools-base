@@ -18,6 +18,7 @@ package com.android.ide.common.rendering;
 
 import static com.android.ide.common.rendering.api.Result.Status.ERROR_REFLECTION;
 
+import com.android.annotations.VisibleForTesting;
 import com.android.ide.common.rendering.api.Bridge;
 import com.android.ide.common.rendering.api.Capability;
 import com.android.ide.common.rendering.api.DrawableParams;
@@ -767,5 +768,14 @@ public class LayoutLibrary {
         }
 
         return Integer.MIN_VALUE;
+    }
+
+    @VisibleForTesting(visibility = VisibleForTesting.Visibility.PRIVATE)
+    protected LayoutLibrary() {
+        mBridge = null;
+        mLegacyBridge = null;
+        mClassLoader = null;
+        mStatus = null;
+        mLoadMessage = null;
     }
 }
