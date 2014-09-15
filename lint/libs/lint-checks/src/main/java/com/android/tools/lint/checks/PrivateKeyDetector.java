@@ -42,7 +42,6 @@ public class PrivateKeyDetector extends Detector implements Detector.OtherFileSc
     public static final Issue ISSUE = Issue.create(
             "PackagedPrivateKey", //$NON-NLS-1$
             "Packaged private key",
-            "Looks for packaged private key files",
 
             "In general, you should not package private key files inside your app.",
 

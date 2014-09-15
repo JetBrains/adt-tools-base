@@ -46,7 +46,6 @@ public class AddJavascriptInterfaceDetector extends Detector implements Detector
     public static final Issue ISSUE = Issue.create(
             "AddJavascriptInterface", //$NON-NLS-1$
             "addJavascriptInterface Called",
-            "Checks that `WebView#addJavascriptInterface` is not called for API levels below 17",
             "For applications built for API levels below 17, `WebView#addJavascriptInterface` "
                     + "presents a security hazard as JavaScript on the target web page has the "
                     + "ability to use reflection to access the injected object's public fields and "

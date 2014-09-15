@@ -54,7 +54,6 @@ public class AccessibilityDetector extends LayoutDetector {
     public static final Issue ISSUE = Issue.create(
             "ContentDescription", //$NON-NLS-1$
             "Image without `contentDescription`",
-            "Ensures that image widgets provide a contentDescription",
             "Non-textual widgets like ImageViews and ImageButtons should use the " +
             "`contentDescription` attribute to specify a textual description of " +
             "the widget such that screen readers and other accessibility tools " +

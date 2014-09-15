@@ -57,7 +57,6 @@ public class CallSuperDetector extends Detector implements Detector.JavaScanner 
     public static final Issue ISSUE = Issue.create(
             "MissingSuperCall", //$NON-NLS-1$
             "Missing Super Call",
-            "Looks for overriding methods that should also invoke the parent method",
 
             "Some methods, such as `View#onDetachedFromWindow`, require that you also " +
             "call the super implementation as part of your method.",

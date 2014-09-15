@@ -41,7 +41,6 @@ public class CheckPermissionDetector extends Detector implements Detector.JavaSc
     /** Main issue checked by this detector */
     public static final Issue ISSUE = Issue.create("UseCheckPermission", //$NON-NLS-1$
         "Using the result of check permission calls",
-        "Ensures that the return value of check permission calls are used",
 
         "You normally want to use the result of checking a permission; these methods " +
         "return whether the permission is held; they do not throw an error if the permission " +

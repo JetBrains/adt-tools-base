@@ -53,8 +53,6 @@ public class WrongCallDetector extends Detector implements Detector.JavaScanner 
     public static final Issue ISSUE = Issue.create(
             "WrongCall", //$NON-NLS-1$
             "Using wrong draw/layout method",
-            "Finds cases where the wrong call is made, such as calling `onMeasure` " +
-            "instead of `measure`",
 
             "Custom views typically need to call `measure()` on their children, not `onMeasure`. " +
             "Ditto for onDraw, onLayout, etc.",

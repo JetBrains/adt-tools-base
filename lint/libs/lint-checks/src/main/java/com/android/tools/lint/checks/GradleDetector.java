@@ -68,7 +68,6 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
     public static final Issue DEPENDENCY = Issue.create(
             "GradleDependency", //$NON-NLS-1$
             "Obsolete Gradle Dependency",
-            "Looks for old or obsolete Gradle library dependencies",
             "This detector looks for usages of libraries where the version you are using " +
             "is not the current stable release. Using older versions is fine, and there are " +
             "cases where you deliberately want to stick with an older version. However, " +
@@ -83,7 +82,6 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
     public static final Issue DEPRECATED = Issue.create(
             "GradleDeprecated", //$NON-NLS-1$
             "Deprecated Gradle Construct",
-            "Looks for deprecated Gradle constructs",
             "This detector looks for deprecated Gradle constructs which currently work but " +
             "will likely stop working in a future update.",
             Category.CORRECTNESS,
@@ -95,7 +93,6 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
     public static final Issue GRADLE_PLUGIN_COMPATIBILITY = Issue.create(
             "AndroidGradlePluginVersion", //$NON-NLS-1$
             "Incompatible Android Gradle Plugin",
-            "Ensures that the Android Gradle plugin version is compatible with this SDK",
             "Not all versions of the Android Gradle plugin are compatible with all versions " +
             "of the SDK. If you update your tools, or if you are trying to open a project that " +
             "was built with an old version of the tools, you may need to update your plugin " +
@@ -109,7 +106,6 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
     public static final Issue PATH = Issue.create(
             "GradlePath", //$NON-NLS-1$
             "Gradle Path Issues",
-            "Looks for Gradle path problems such as using platform specific path separators",
             "Gradle build scripts are meant to be cross platform, so file paths use " +
             "Unix-style path separators (a forward slash) rather than Windows path separators " +
             "(a backslash). Similarly, to keep projects portable and repeatable, avoid " +
@@ -125,7 +121,6 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
     public static final Issue IDE_SUPPORT = Issue.create(
             "GradleIdeError", //$NON-NLS-1$
             "Gradle IDE Support Issues",
-            "Looks for constructs in Gradle files which affect IDE usage",
             "Gradle is highly flexible, and there are things you can do in Gradle files which " +
             "can make it hard or impossible for IDEs to properly handle the project. This lint " +
             "check looks for constructs that potentially break IDE support.",
@@ -138,7 +133,6 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
     public static final Issue PLUS = Issue.create(
             "GradleDynamicVersion", //$NON-NLS-1$
             "Gradle Dynamic Version",
-            "Looks for dependencies using a dynamic version rather than a fixed version",
             "Using `+` in dependencies lets you automatically pick up the latest available " +
             "version rather than a specific, named version. However, this is not recommended; " +
             "your builds are not repeatable; you may have tested with a slightly different " +
@@ -153,7 +147,6 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
     public static final Issue GRADLE_GETTER = Issue.create(
             "GradleGetter", //$NON-NLS-1$
             "Gradle Implicit Getter Call",
-            "Identifies accidental calls to implicit getters",
             "Gradle will let you replace specific constants in your build scripts with method " +
             "calls, so you can for example dynamically compute a version string based on your " +
             "current version control revision number, rather than hardcoding a number.\n" +
@@ -173,7 +166,6 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
     public static final Issue COMPATIBILITY = Issue.create(
             "GradleCompatible", //$NON-NLS-1$
             "Incompatible Gradle Versions",
-            "Ensures that tool and library versions are compatible",
 
             "There are some combinations of libraries, or tools and libraries, that are " +
             "incompatible, or can lead to bugs. One such incompatibility is compiling with " +
@@ -189,7 +181,6 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
     public static final Issue STRING_INTEGER = Issue.create(
             "StringShouldBeInt", //$NON-NLS-1$
             "String should be int",
-            "Checks for uses of strings where an integer should be used",
 
             "The properties `compileSdkVersion`, `minSdkVersion` and `targetSdkVersion` are " +
             "usually numbers, but can be strings when you are using an add-on (in the case " +
@@ -207,7 +198,6 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
     public static final Issue REMOTE_VERSION = Issue.create(
             "NewerVersionAvailable", //$NON-NLS-1$
             "Newer Library Versions Available",
-            "Looks for Gradle library dependencies that can be replaced by newer versions",
             "This detector checks with a central repository to see if there are newer versions " +
             "available for the dependencies used by this project.\n" +
             "This is similar to the `GradleDependency` check, which checks for newer versions " +
@@ -223,7 +213,6 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
     public static final Issue ACCIDENTAL_OCTAL = Issue.create(
             "AccidentalOctal", //$NON-NLS-1$
             "Accidental Octal",
-            "Looks for integer literals that are interpreted as octal numbers",
 
             "In Groovy, an integer literal that starts with a leading 0 will be interpreted " +
             "as an octal number. That is usually (always?) an accident and can lead to " +

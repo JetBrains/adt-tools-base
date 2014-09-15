@@ -44,7 +44,6 @@ public class WrongCaseDetector extends LayoutDetector {
     public static final Issue WRONG_CASE = Issue.create(
             "WrongCase", //$NON-NLS-1$
             "Wrong case for view tag",
-            "Ensures that the correct case is used for special layout tags such as <fragment>",
 
             "Most layout tags, such as <Button>, refer to actual view classes and are therefore " +
             "capitalized. However, there are exceptions such as <fragment> and <include>. This " +

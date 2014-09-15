@@ -45,7 +45,6 @@ public class PropertyFileDetector extends Detector {
     public static final Issue ISSUE = Issue.create(
             "PropertyEscape", //$NON-NLS-1$
             "Incorrect property escapes",
-            "Looks for property files with incorrect paths",
             "All backslashes and colons in .property files must be escaped with " +
             "a backslash (\\). This means that when writing a Windows path, you " +
             "must escape the file separators, so the path \\My\\Files should be " +

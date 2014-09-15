@@ -48,7 +48,6 @@ public class WebViewDetector extends LayoutDetector {
     public static final Issue ISSUE = Issue.create(
             "WebViewLayout", //$NON-NLS-1$
             "WebViews in wrap_content parents",
-            "Ensures that WebViews are not placed in parents with wrap_content layout",
 
             "The WebView implementation has certain performance optimizations which will not " +
             "work correctly if the parent view is using `wrap_content` rather than " +

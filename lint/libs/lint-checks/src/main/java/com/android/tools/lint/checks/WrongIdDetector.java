@@ -103,7 +103,6 @@ public class WrongIdDetector extends LayoutDetector {
     public static final Issue UNKNOWN_ID = Issue.create(
             "UnknownId", //$NON-NLS-1$
             "Reference to an unknown id",
-            "Checks for id references in RelativeLayouts that are not defined elsewhere",
             "The `@+id/` syntax refers to an existing id, or creates a new one if it has " +
             "not already been defined elsewhere. However, this means that if you have a " +
             "typo in your reference, or if the referred view no longer exists, you do not " +
@@ -122,7 +121,6 @@ public class WrongIdDetector extends LayoutDetector {
     public static final Issue NOT_SIBLING = Issue.create(
             "NotSibling", //$NON-NLS-1$
             "RelativeLayout Invalid Constraints",
-            "Checks for id references in RelativeLayouts that are not referencing a sibling",
             "Layout constraints in a given `RelativeLayout` should reference other views " +
             "within the same relative layout.",
             Category.CORRECTNESS,
@@ -134,7 +132,6 @@ public class WrongIdDetector extends LayoutDetector {
     public static final Issue INVALID = Issue.create(
             "InvalidId", //$NON-NLS-1$
             "Invalid ID declaration",
-            "Checks for invalid ID definitions",
             "An id definition *must* be of the form `@+id/yourname`. The tools have not " +
             "rejected strings of the form `@+foo/bar` in the past, but that was an error, " +
             "and could lead to tricky errors because of the way the id integers are assigned.\n" +
@@ -150,7 +147,6 @@ public class WrongIdDetector extends LayoutDetector {
     public static final Issue UNKNOWN_ID_LAYOUT = Issue.create(
             "UnknownIdInLayout", //$NON-NLS-1$
             "Reference to an id that is not in the current layout",
-            "Makes sure that @+id references refer to views in the same layout",
 
             "The `@+id/` syntax refers to an existing id, or creates a new one if it has " +
             "not already been defined elsewhere. However, this means that if you have a " +

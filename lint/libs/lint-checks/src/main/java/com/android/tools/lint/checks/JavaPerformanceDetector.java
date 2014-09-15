@@ -76,7 +76,6 @@ public class JavaPerformanceDetector extends Detector implements Detector.JavaSc
     public static final Issue PAINT_ALLOC = Issue.create(
             "DrawAllocation", //$NON-NLS-1$
             "Memory allocations within drawing code",
-            "Looks for memory allocations within drawing code",
 
             "You should avoid allocating objects during a drawing or layout operation. These " +
             "are called frequently, so a smooth UI can be interrupted by garbage collection " +
@@ -97,7 +96,6 @@ public class JavaPerformanceDetector extends Detector implements Detector.JavaSc
     public static final Issue USE_SPARSE_ARRAY = Issue.create(
             "UseSparseArrays", //$NON-NLS-1$
             "HashMap can be replaced with SparseArray",
-            "Looks for opportunities to replace HashMaps with the more efficient SparseArray",
 
             "For maps where the keys are of type integer, it's typically more efficient to " +
             "use the Android `SparseArray` API. This check identifies scenarios where you might " +
@@ -120,7 +118,6 @@ public class JavaPerformanceDetector extends Detector implements Detector.JavaSc
     public static final Issue USE_VALUE_OF = Issue.create(
             "UseValueOf", //$NON-NLS-1$
             "Should use `valueOf` instead of `new`",
-            "Looks for usages of `new` for wrapper classes which should use `valueOf` instead",
 
             "You should not call the constructor for wrapper classes directly, such as" +
             "`new Integer(42)`. Instead, call the `valueOf` factory method, such as " +

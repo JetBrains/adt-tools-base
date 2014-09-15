@@ -110,7 +110,6 @@ public class ObsoleteLayoutParamsDetector extends LayoutDetector {
     public static final Issue ISSUE = Issue.create(
             "ObsoleteLayoutParam", //$NON-NLS-1$
             "Obsolete layout params",
-            "Looks for layout params that are not valid for the given parent layout",
 
             "The given layout_param is not defined for the given layout, meaning it has no " +
             "effect. This usually happens when you change the parent layout or move view " +

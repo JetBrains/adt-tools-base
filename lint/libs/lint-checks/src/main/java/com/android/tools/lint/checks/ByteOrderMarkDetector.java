@@ -44,7 +44,6 @@ public class ByteOrderMarkDetector extends ResourceXmlDetector {
     public static final Issue BOM = Issue.create(
             "ByteOrderMark", //$NON-NLS-1$
             "Byte order mark inside files",
-            "Looks for byte order mark characters in the middle of files",
             "Lint will flag any byte-order-mark (BOM) characters it finds in the middle " +
             "of a file. Since we expect files to be encoded with UTF-8 (see the EnforceUTF8 " +
             "issue), the BOM characters are not necessary, and they are not handled correctly " +

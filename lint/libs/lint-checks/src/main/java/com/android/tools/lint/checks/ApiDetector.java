@@ -156,7 +156,6 @@ public class ApiDetector extends ResourceXmlDetector
     public static final Issue UNSUPPORTED = Issue.create(
             "NewApi", //$NON-NLS-1$
             "Calling new methods on older versions",
-            "Finds API accesses to APIs that are not supported in all targeted API versions",
 
             "This check scans through all the Android API calls in the application and " +
             "warns about any calls that are not available on *all* versions targeted " +
@@ -193,7 +192,6 @@ public class ApiDetector extends ResourceXmlDetector
     public static final Issue INLINED = Issue.create(
             "InlinedApi", //$NON-NLS-1$
             "Using inlined constants on older versions",
-            "Finds inlined fields that may or may not work on older platforms",
 
             "This check scans through all the Android API field references in the application " +
             "and flags certain constants, such as static final integers and Strings, " +
@@ -225,7 +223,6 @@ public class ApiDetector extends ResourceXmlDetector
     public static final Issue OVERRIDE = Issue.create(
             "Override", //$NON-NLS-1$
             "Method conflicts with new inherited method",
-            "Finds method declarations that will accidentally override methods in later versions",
 
             "Suppose you are building against Android API 8, and you've subclassed Activity. " +
             "In your subclass you add a new method called `isDestroyed`(). At some later point, " +
@@ -254,7 +251,6 @@ public class ApiDetector extends ResourceXmlDetector
     public static final Issue UNUSED = Issue.create(
             "UnusedAttribute", //$NON-NLS-1$
             "Attribute unused on older versions",
-            "Finds usages of attributes that will not be used (read) on all targeted versions",
 
             "This check finds attributes set in XML files that were introduced in a version " +
             "newer than the oldest version targeted by your application (with the the " +

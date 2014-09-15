@@ -46,7 +46,6 @@ public class ExtraTextDetector extends ResourceXmlDetector {
     public static final Issue ISSUE = Issue.create(
             "ExtraText", //$NON-NLS-1$
             "Extraneous text in resource files",
-            "Looks for extraneous text in resource files",
 
             "Layout resource files should only contain elements and attributes. Any XML " +
             "text content found in the file is likely accidental (and potentially " +

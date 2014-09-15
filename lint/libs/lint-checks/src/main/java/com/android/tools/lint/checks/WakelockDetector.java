@@ -55,7 +55,6 @@ public class WakelockDetector extends Detector implements ClassScanner {
     public static final Issue ISSUE = Issue.create(
             "Wakelock", //$NON-NLS-1$
             "Incorrect `WakeLock` usage",
-            "Looks for problems with `WakeLock` usage",
 
             "Failing to release a wakelock properly can keep the Android device in " +
             "a high power mode, which reduces battery life. There are several causes " +

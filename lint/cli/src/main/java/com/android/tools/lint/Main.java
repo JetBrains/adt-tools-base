@@ -838,7 +838,7 @@ public class Main {
     }
 
     private static void listIssue(PrintStream out, Issue issue) {
-        out.print(wrapArg("\"" + issue.getId() + "\": " + issue.getDescription(TEXT)));
+        out.print(wrapArg("\"" + issue.getId() + "\": " + issue.getBriefDescription(TEXT)));
     }
 
     private static void showIssues(IssueRegistry registry) {
@@ -885,7 +885,7 @@ public class Main {
             System.out.print('-');
         }
         System.out.println();
-        System.out.println(wrap("Summary: " + issue.getDescription(TEXT)));
+        System.out.println(wrap("Summary: " + issue.getBriefDescription(TEXT)));
         System.out.println("Priority: " + issue.getPriority() + " / 10");
         System.out.println("Severity: " + issue.getDefaultSeverity().getDescription());
         System.out.println("Category: " + issue.getCategory().getFullName());

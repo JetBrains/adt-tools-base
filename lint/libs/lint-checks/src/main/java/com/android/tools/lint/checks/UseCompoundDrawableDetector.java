@@ -50,8 +50,6 @@ public class UseCompoundDrawableDetector extends LayoutDetector {
     public static final Issue ISSUE = Issue.create(
             "UseCompoundDrawables", //$NON-NLS-1$
             "Node can be replaced by a `TextView` with compound drawables",
-            "Checks whether the current node can be replaced by a `TextView` using "
-                    + "compound drawables.",
 
             "A `LinearLayout` which contains an `ImageView` and a `TextView` can be more " +
             "efficiently handled as a compound drawable (a single TextView, using the " +

@@ -73,7 +73,6 @@ public class PxUsageDetector extends LayoutDetector {
     public static final Issue PX_ISSUE = Issue.create(
             "PxUsage", //$NON-NLS-1$
             "Using 'px' dimension",
-            "Looks for use of the `px` dimension",
             // This description is from the below screen support document
             "For performance reasons and to keep the code simpler, the Android system uses pixels " +
             "as the standard unit for expressing dimension or coordinate values. That means that " +
@@ -95,7 +94,6 @@ public class PxUsageDetector extends LayoutDetector {
     public static final Issue IN_MM_ISSUE = Issue.create(
             "InOrMmUsage", //$NON-NLS-1$
             "Using `mm` or `in` dimensions",
-            "Looks for use of the `mm` or `in` dimensions",
 
             "Avoid using `mm` (millimeters) or `in` (inches) as the unit for dimensions.\n" +
             "\n" +
@@ -112,7 +110,6 @@ public class PxUsageDetector extends LayoutDetector {
     public static final Issue DP_ISSUE = Issue.create(
             "SpUsage", //$NON-NLS-1$
             "Using `dp` instead of `sp` for text sizes",
-            "Looks for uses of `dp` instead of `sp` dimensions for text sizes",
 
             "When setting text sizes, you should normally use `sp`, or \"scale-independent " +
             "pixels\". This is like the `dp` unit, but it is also scaled " +
@@ -136,7 +133,6 @@ public class PxUsageDetector extends LayoutDetector {
     public static final Issue SMALL_SP_ISSUE = Issue.create(
             "SmallSp", //$NON-NLS-1$
             "Text size is too small",
-            "Looks for text sizes that are too small",
 
             "Avoid using sizes smaller than 12sp.",
 

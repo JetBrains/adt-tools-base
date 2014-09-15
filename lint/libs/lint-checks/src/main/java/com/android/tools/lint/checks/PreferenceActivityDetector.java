@@ -57,7 +57,6 @@ public class PreferenceActivityDetector extends Detector
     public static final Issue ISSUE = Issue.create(
             "ExportedPreferenceActivity", //$NON-NLS-1$
             "PreferenceActivity should not be exported",
-            "Checks that PreferenceActivity and its subclasses are never exported",
             "Fragment injection gives anyone who can send your PreferenceActivity an intent the "
                     + "ability to load any fragment, with any arguments, in your process.",
             Category.SECURITY,

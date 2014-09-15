@@ -58,7 +58,6 @@ public class CutPasteDetector extends Detector implements Detector.JavaScanner {
     public static final Issue ISSUE = Issue.create(
             "CutPasteId", //$NON-NLS-1$
             "Likely cut & paste mistakes",
-            "Looks for code cut & paste mistakes in `findViewById()` calls",
 
             "This lint check looks for cases where you have cut & pasted calls to " +
             "`findViewById` but have forgotten to update the R.id field. It's possible " +

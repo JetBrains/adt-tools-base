@@ -51,7 +51,6 @@ public class ScrollViewChildDetector extends LayoutDetector {
     public static final Issue ISSUE = Issue.create(
             "ScrollViewSize", //$NON-NLS-1$
             "ScrollView size validation",
-            "Checks that ScrollViews use `wrap_content` in the scrolling dimension",
             // TODO add a better explanation here!
             "ScrollView children must set their `layout_width` or `layout_height` attributes " +
             "to `wrap_content` rather than `fill_parent` or `match_parent` in the scrolling " +

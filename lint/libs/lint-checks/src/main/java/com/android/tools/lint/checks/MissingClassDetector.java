@@ -82,7 +82,6 @@ public class MissingClassDetector extends LayoutDetector implements ClassScanner
     public static final Issue MISSING = Issue.create(
             "MissingRegistered", //$NON-NLS-1$
             "Missing registered class",
-            "Ensures that classes referenced in the manifest are present in the project or libraries",
 
             "If a class is referenced in the manifest, it must also exist in the project (or in one " +
             "of the libraries included by the project. This check helps uncover typos in " +
@@ -102,7 +101,6 @@ public class MissingClassDetector extends LayoutDetector implements ClassScanner
     public static final Issue INSTANTIATABLE = Issue.create(
             "Instantiatable", //$NON-NLS-1$
             "Registered class is not instantiatable",
-            "Ensures that classes registered in the manifest file are instantiatable",
 
             "Activities, services, broadcast receivers etc. registered in the manifest file " +
             "must be \"instantiatable\" by the system, which means that the class must be " +
@@ -120,7 +118,6 @@ public class MissingClassDetector extends LayoutDetector implements ClassScanner
     public static final Issue INNERCLASS = Issue.create(
             "InnerclassSeparator", //$NON-NLS-1$
             "Inner classes should use `$` rather than `.`",
-            "Ensures that inner classes are referenced using '$' instead of '.' in class names",
 
             "When you reference an inner class in a manifest file, you must use '$' instead of '.' " +
             "as the separator character, i.e. Outer$Inner instead of Outer.Inner.\n" +

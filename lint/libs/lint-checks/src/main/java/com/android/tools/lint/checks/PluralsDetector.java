@@ -56,7 +56,6 @@ public class PluralsDetector extends ResourceXmlDetector {
     public static final Issue MISSING = Issue.create(
             "MissingQuantity", //$NON-NLS-1$
             "Missing quantity translation",
-            "Checks for missing quantity strings relevant to each locale",
             "Different languages have different rules for grammatical agreement with " +
             "quantity. In English, for example, the quantity 1 is a special case. " +
             "We write \"1 book\", but for any other quantity we'd write \"n books\". " +
@@ -79,7 +78,6 @@ public class PluralsDetector extends ResourceXmlDetector {
     public static final Issue EXTRA = Issue.create(
             "UnusedQuantity", //$NON-NLS-1$
             "Unused quantity translations",
-            "Checks for quantity string translations which are not used in this language",
             "Android defines a number of different quantity strings, such as `zero`, `one`, " +
             "`few` and `many`. However, many languages do not distinguish grammatically " +
             "between all these different quantities.\n" +
@@ -101,7 +99,6 @@ public class PluralsDetector extends ResourceXmlDetector {
     public static final Issue IMPLIED_QUANTITY = Issue.create(
             "ImpliedQuantity", //$NON-NLS-1$
             "Implied Quantities",
-            "Looks for quantity string translations which do not include the quantity",
 
             "Plural strings should generally include a `%s` or `%d` formatting argument. " +
             "In locales like English, the `one` quantity only applies to a single value, " +

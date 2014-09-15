@@ -60,7 +60,6 @@ public class FragmentDetector extends Detector implements JavaScanner {
     public static final Issue ISSUE = Issue.create(
         "ValidFragment", //$NON-NLS-1$
         "Fragment not instantiatable",
-        "Ensures that `Fragment` subclasses can be instantiated",
 
         "From the Fragment documentation:\n" +
         "*Every* fragment must have an empty constructor, so it can be instantiated when " +

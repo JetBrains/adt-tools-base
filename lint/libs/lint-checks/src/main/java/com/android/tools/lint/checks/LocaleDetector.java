@@ -61,7 +61,6 @@ public class LocaleDetector extends Detector implements ClassScanner {
     public static final Issue STRING_LOCALE = Issue.create(
             "DefaultLocale", //$NON-NLS-1$
             "Implied default locale in case conversion",
-            "Finds calls to locale-ambiguous `String` manipulation methods",
 
             "Calling `String#toLowerCase()` or `#toUpperCase()` *without specifying an " +
             "explicit locale* is a common source of bugs. The reason for that is that those " +
@@ -85,7 +84,6 @@ public class LocaleDetector extends Detector implements ClassScanner {
     public static final Issue DATE_FORMAT = Issue.create(
             "SimpleDateFormat", //$NON-NLS-1$
             "Implied locale in date format",
-            "Using `SimpleDateFormat` directly without an explicit locale",
 
             "Almost all callers should use `getDateInstance()`, `getDateTimeInstance()`, or " +
             "`getTimeInstance()` to get a ready-made instance of SimpleDateFormat suitable " +

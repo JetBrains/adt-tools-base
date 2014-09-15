@@ -95,7 +95,6 @@ public class OverdrawDetector extends LayoutDetector implements Detector.JavaSca
     public static final Issue ISSUE = Issue.create(
             "Overdraw", //$NON-NLS-1$
             "Overdraw: Painting regions more than once",
-            "Looks for overdraw issues (where a view is painted only to be fully painted over)",
 
             "If you set a background drawable on a root view, then you should use a " +
             "custom theme where the theme background is null. Otherwise, the theme background " +

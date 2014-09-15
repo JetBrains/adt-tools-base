@@ -160,7 +160,6 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
     public static final Issue ICON_EXPECTED_SIZE = Issue.create(
             "IconExpectedSize", //$NON-NLS-1$
             "Icon has incorrect size",
-            "Ensures that launcher icons, notification icons etc have the correct size",
             "There are predefined sizes (for each density) for launcher icons. You " +
             "should follow these conventions to make sure your icons fit in with the " +
             "overall look of the platform.",
@@ -177,7 +176,6 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
     public static final Issue ICON_DIP_SIZE = Issue.create(
             "IconDipSize", //$NON-NLS-1$
             "Icon density-independent size validation",
-            "Ensures that icons across densities provide roughly the same density-independent size",
             "Checks the all icons which are provided in multiple densities, all compute to " +
             "roughly the same density-independent pixel (`dip`) size. This catches errors where " +
             "images are either placed in the wrong folder, or icons are changed to new sizes " +
@@ -191,7 +189,6 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
     public static final Issue ICON_LOCATION = Issue.create(
             "IconLocation", //$NON-NLS-1$
             "Image defined in density-independent drawable folder",
-            "Ensures that images are not defined in the density-independent drawable folder",
             "The res/drawable folder is intended for density-independent graphics such as " +
             "shapes defined in XML. For bitmaps, move it to `drawable-mdpi` and consider " +
             "providing higher and lower resolution versions in `drawable-ldpi`, `drawable-hdpi` " +
@@ -207,7 +204,6 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
     public static final Issue ICON_DENSITIES = Issue.create(
             "IconDensities", //$NON-NLS-1$
             "Icon densities validation",
-            "Ensures that icons provide custom versions for all supported densities",
             "Icons will look best if a custom version is provided for each of the " +
             "major screen density classes (low, medium, high, extra high). " +
             "This lint check identifies icons which do not have complete coverage " +
@@ -228,7 +224,6 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
     public static final Issue ICON_MISSING_FOLDER = Issue.create(
             "IconMissingDensityFolder", //$NON-NLS-1$
             "Missing density folder",
-            "Ensures that all the density folders are present",
             "Icons will look best if a custom version is provided for each of the " +
             "major screen density classes (low, medium, high, extra-high, extra-extra-high). " +
             "This lint check identifies folders which are missing, such as `drawable-hdpi`." +
@@ -248,7 +243,6 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
     public static final Issue GIF_USAGE = Issue.create(
             "GifUsage", //$NON-NLS-1$
             "Using `.gif` format for bitmaps is discouraged",
-            "Checks for images using the GIF file format which is discouraged",
             "The `.gif` file format is discouraged. Consider using `.png` (preferred) " +
             "or `.jpg` (acceptable) instead.",
             Category.ICONS,
@@ -261,7 +255,6 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
     public static final Issue DUPLICATES_NAMES = Issue.create(
             "IconDuplicates", //$NON-NLS-1$
             "Duplicated icons under different names",
-            "Finds duplicated icons under different names",
             "If an icon is repeated under different names, you can consolidate and just " +
             "use one of the icons and delete the others to make your application smaller. " +
             "However, duplicated icons usually are not intentional and can sometimes point " +
@@ -275,7 +268,6 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
     public static final Issue DUPLICATES_CONFIGURATIONS = Issue.create(
             "IconDuplicatesConfig", //$NON-NLS-1$
             "Identical bitmaps across various configurations",
-            "Finds icons that have identical bitmaps across various configuration parameters",
             "If an icon is provided under different configuration parameters such as " +
             "`drawable-hdpi` or `-v11`, they should typically be different. This detector " +
             "catches cases where the same icon is provided in different configuration folder " +
@@ -289,7 +281,6 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
     public static final Issue ICON_NODPI = Issue.create(
             "IconNoDpi", //$NON-NLS-1$
             "Icon appears in both `-nodpi` and dpi folders",
-            "Finds icons that appear in both a `-nodpi` folder and a dpi folder",
             "Bitmaps that appear in `drawable-nodpi` folders will not be scaled by the " +
             "Android framework. If a drawable resource of the same name appears *both* in " +
             "a `-nodpi` folder as well as a dpi folder such as `drawable-hdpi`, then " +
@@ -304,7 +295,6 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
     public static final Issue ICON_MIX_9PNG = Issue.create(
             "IconMixedNinePatch", //$NON-NLS-1$
             "Clashing PNG and 9-PNG files",
-            "Checks for filename clashes between .png files and nine patch (.9.png) files",
 
             "If you accidentally name two separate resources `file.png` and `file.9.png`, " +
             "the image file and the nine patch file will both map to the same drawable " +
@@ -318,7 +308,6 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
     public static final Issue ICON_XML_AND_PNG = Issue.create(
             "IconXmlAndPng", //$NON-NLS-1$
             "Icon is specified both as `.xml` file and as a bitmap",
-            "Finds icons that appear both as a drawable `.xml` file and as bitmaps",
             "If a drawable resource appears as an `.xml` file in the `drawable/` folder, " +
             "it's usually not intentional for it to also appear as a bitmap using the " +
             "same name; generally you expect the drawable XML file to define states " +
@@ -332,7 +321,6 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
     public static final Issue ICON_EXTENSION = Issue.create(
             "IconExtension", //$NON-NLS-1$
             "Icon format does not match the file extension",
-            "Checks that the icon file extension matches the actual image format in the file",
 
             "Ensures that icons have the correct file extension (e.g. a `.png` file is " +
             "really in the PNG format and not for example a GIF file named `.png`.)",
@@ -345,7 +333,6 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
     public static final Issue ICON_COLORS = Issue.create(
             "IconColors", //$NON-NLS-1$
             "Icon colors do not follow the recommended visual style",
-            "Checks that icons follow the recommended visual style",
 
             "Notification icons and Action Bar icons should only white and shades of gray. " +
             "See the Android Design Guide for more details. " +
@@ -364,7 +351,6 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
     public static final Issue ICON_LAUNCHER_SHAPE = Issue.create(
             "IconLauncherShape", //$NON-NLS-1$
             "The launcher icon shape should use a distinct silhouette",
-            "Checks that launcher icons follow the recommended visual style",
 
             "According to the Android Design Guide " +
             "(http://developer.android.com/design/style/iconography.html) " +

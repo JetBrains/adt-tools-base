@@ -50,7 +50,6 @@ public class StateListDetector extends ResourceXmlDetector {
     public static final Issue ISSUE = Issue.create(
             "StateListReachable", //$NON-NLS-1$
             "Unreachable state in a `<selector>`",
-            "Looks for unreachable states in a `<selector>`",
             "In a selector, only the last child in the state list should omit a " +
             "state qualifier. If not, all subsequent items in the list will be ignored " +
             "since the given item will match all.",

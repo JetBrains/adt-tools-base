@@ -44,7 +44,6 @@ public class HandlerDetector extends Detector implements ClassScanner {
     public static final Issue ISSUE = Issue.create(
             "HandlerLeak", //$NON-NLS-1$
             "Handler reference leaks",
-            "Ensures that Handler classes do not hold on to a reference to an outer class",
 
             "Since this Handler is declared as an inner class, it may prevent the outer " +
             "class from being garbage collected. If the Handler is using a Looper or " +

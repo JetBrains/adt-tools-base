@@ -73,7 +73,6 @@ public class ManifestTypoDetector extends Detector implements Detector.XmlScanne
     public static final Issue ISSUE = Issue.create(
             "ManifestTypo", //$NON-NLS-1$
             "Typos in manifest tags",
-            "Checks for manifest typos",
 
             "This check looks through the manifest, and if it finds any tags " +
             "that look like likely misspellings, they are flagged.",

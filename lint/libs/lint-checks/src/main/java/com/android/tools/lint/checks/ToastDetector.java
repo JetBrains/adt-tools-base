@@ -46,7 +46,6 @@ public class ToastDetector extends Detector implements Detector.JavaScanner {
     public static final Issue ISSUE = Issue.create(
             "ShowToast", //$NON-NLS-1$
             "Toast created but not shown",
-            "Looks for code creating a `Toast` but forgetting to call `show()` on it",
 
             "`Toast.makeText()` creates a `Toast` but does *not* show it. You must call " +
             "`show()` on the resulting object to actually make the `Toast` appear.",

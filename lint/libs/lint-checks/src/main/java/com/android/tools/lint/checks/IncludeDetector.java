@@ -47,7 +47,6 @@ public class IncludeDetector extends LayoutDetector {
     public static final Issue ISSUE = Issue.create(
             "IncludeLayoutParam", //$NON-NLS-1$
             "Ignored layout params on include",
-            "Ensures that layout params on `<include>` tags are used correctly",
 
             "Layout parameters specified on an `<include>` tag will only be used if you " +
             "also override `layout_width` and `layout_height` on the `<include>` tag; " +

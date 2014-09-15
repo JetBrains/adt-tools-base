@@ -43,7 +43,6 @@ public class LocaleFolderDetector extends Detector implements Detector.ResourceF
     public static final Issue ISSUE = Issue.create(
             "LocaleFolder", //$NON-NLS-1$
             "Wrong locale name",
-            "Using the new locale name",
             "From the `java.util.Locale` documentation:\n" +
             "\"Note that Java uses several deprecated two-letter codes. The Hebrew (\"he\") " +
             "language code is rewritten as \"iw\", Indonesian (\"id\") as \"in\", and " +

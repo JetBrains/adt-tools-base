@@ -61,7 +61,6 @@ public class CustomViewDetector extends Detector implements Detector.JavaScanner
     public static final Issue ISSUE = Issue.create(
             "CustomViewStyleable", //$NON-NLS-1$
             "Mismatched Styleable/Custom View Name",
-            "Ensures that custom views and declare-styleables use the same name",
 
             "The convention for custom views is to use a `declare-styleable` whose name " +
             "matches the custom view class name. The IDE relies on this convention such that " +

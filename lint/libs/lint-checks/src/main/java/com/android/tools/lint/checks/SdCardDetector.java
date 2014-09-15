@@ -45,7 +45,6 @@ public class SdCardDetector extends Detector implements Detector.JavaScanner {
     public static final Issue ISSUE = Issue.create(
             "SdCardPath", //$NON-NLS-1$
             "Hardcoded reference to `/sdcard`",
-            "Looks for hardcoded references to `/sdcard`",
 
             "Your code should not reference the `/sdcard` path directly; instead use " +
             "`Environment.getExternalStorageDirectory().getPath()`.\n" +

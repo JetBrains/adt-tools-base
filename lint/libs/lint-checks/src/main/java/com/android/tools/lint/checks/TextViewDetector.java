@@ -80,7 +80,6 @@ public class TextViewDetector extends LayoutDetector {
     public static final Issue ISSUE = Issue.create(
             "TextViewEdits", //$NON-NLS-1$
             "TextView should probably be an EditText instead",
-            "Looks for TextViews being used for input",
 
             "Using a `<TextView>` to input text is generally an error, you should be " +
             "using `<EditText>` instead.  `EditText` is a subclass of `TextView`, and some " +
@@ -102,7 +101,6 @@ public class TextViewDetector extends LayoutDetector {
     public static final Issue SELECTABLE = Issue.create(
             "SelectableText", //$NON-NLS-1$
             "Dynamic text should probably be selectable",
-            "Looks for TextViews which should probably allow their text to be selected",
 
             "If a `<TextView>` is used to display data, the user might want to copy that " +
             "data and paste it elsewhere. To allow this, the `<TextView>` should specify " +

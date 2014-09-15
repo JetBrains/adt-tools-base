@@ -86,7 +86,6 @@ public class LayoutInflationDetector extends LayoutDetector implements Detector.
     public static final Issue ISSUE = Issue.create(
             "InflateParams", //$NON-NLS-1$
             "Layout Inflation without a Parent",
-            "Ensures that a proper parent context is passed to a layout inflater",
 
             "When inflating a layout, avoid passing in null as the parent view, since " +
             "otherwise any layout parameters on the root of the inflated layout will be ignored.",

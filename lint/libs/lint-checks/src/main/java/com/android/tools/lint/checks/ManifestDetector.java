@@ -90,7 +90,6 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
     public static final Issue ORDER = Issue.create(
             "ManifestOrder", //$NON-NLS-1$
             "Incorrect order of elements in manifest",
-            "Checks for manifest problems like `<uses-sdk>` after the `<application>` tag",
             "The <application> tag should appear after the elements which declare " +
             "which version you need, which features you need, which libraries you " +
             "need, and so on. In the past there have been subtle bugs (such as " +
@@ -106,7 +105,6 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
     public static final Issue USES_SDK = Issue.create(
             "UsesMinSdkAttributes", //$NON-NLS-1$
             "Minimum SDK and target SDK attributes not defined",
-            "Checks that the minimum SDK and target SDK attributes are defined",
 
             "The manifest should contain a `<uses-sdk>` element which defines the " +
             "minimum API Level required for the application to run, " +
@@ -123,7 +121,6 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
     public static final Issue TARGET_NEWER = Issue.create(
             "OldTargetApi", //$NON-NLS-1$
             "Target SDK attribute is not targeting latest version",
-            "Checks that the manifest specifies a targetSdkVersion that is recent",
 
             "When your application runs on a version of Android that is more recent than your " +
             "`targetSdkVersion` specifies that it has been tested with, various compatibility " +
@@ -147,7 +144,6 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
     public static final Issue MULTIPLE_USES_SDK = Issue.create(
             "MultipleUsesSdk", //$NON-NLS-1$
             "Multiple `<uses-sdk>` elements in the manifest",
-            "Checks that the `<uses-sdk>` element appears at most once",
 
             "The `<uses-sdk>` element should appear just once; the tools will *not* merge the " +
             "contents of all the elements so if you split up the attributes across multiple " +
@@ -164,7 +160,6 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
     public static final Issue WRONG_PARENT = Issue.create(
             "WrongManifestParent", //$NON-NLS-1$
             "Wrong manifest parent",
-            "Checks that various manifest elements are declared in the right place",
 
             "The `<uses-library>` element should be defined as a direct child of the " +
             "`<application>` tag, not the `<manifest>` tag or an `<activity>` tag. Similarly, " +
@@ -182,7 +177,6 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
     public static final Issue DUPLICATE_ACTIVITY = Issue.create(
             "DuplicateActivity", //$NON-NLS-1$
             "Activity registered more than once",
-            "Checks that an activity is registered only once in the manifest",
 
             "An activity should only be registered once in the manifest. If it is " +
             "accidentally registered more than once, then subtle errors can occur, " +
@@ -198,7 +192,6 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
     public static final Issue ALLOW_BACKUP = Issue.create(
             "AllowBackup", //$NON-NLS-1$
             "Missing `allowBackup` attribute",
-            "Ensure that allowBackup is explicitly set in the application's manifest",
 
             "The allowBackup attribute determines if an application's data can be backed up " +
             "and restored. It is documented at " +
@@ -232,7 +225,6 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
     public static final Issue UNIQUE_PERMISSION = Issue.create(
             "UniquePermission", //$NON-NLS-1$
             "Permission names are not unique",
-            "Checks that permission names are unique",
 
             "The unqualified names or your permissions must be unique. The reason for this " +
             "is that at build time, the `aapt` tool will generate a class named `Manifest` " +
@@ -252,7 +244,6 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
     public static final Issue SET_VERSION = Issue.create(
             "MissingVersion", //$NON-NLS-1$
             "Missing application name/version",
-            "Checks that the application name and version are set",
 
             "You should define the version information for your application.\n" +
             "`android:versionCode`: An integer value that represents the version of the " +
@@ -271,7 +262,6 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
     public static final Issue ILLEGAL_REFERENCE = Issue.create(
             "IllegalResourceRef", //$NON-NLS-1$
             "Name and version must be integer or string, not resource",
-            "Checks for resource references where only literals are allowed",
 
             "For the `versionCode` attribute, you have to specify an actual integer " +
             "literal; you cannot use an indirection with a `@dimen/name` resource. " +
@@ -287,7 +277,6 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
     public static final Issue DUPLICATE_USES_FEATURE = Issue.create(
             "DuplicateUsesFeature", //$NON-NLS-1$
             "Feature declared more than once",
-            "Ensures you declare each hardware or software feature only once in the manifest",
 
             "A given feature should only be declared once in the manifest.",
 
@@ -300,7 +289,6 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
     public static final Issue APPLICATION_ICON = Issue.create(
             "MissingApplicationIcon", //$NON-NLS-1$
             "Missing application icon",
-            "Checks that the application icon is set",
 
             "You should set an icon for the application as whole because there is no " +
             "default. This attribute must be set as a reference to a drawable resource " +
@@ -316,7 +304,6 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
     public static final Issue DEVICE_ADMIN = Issue.create(
             "DeviceAdmin", //$NON-NLS-1$
             "Malformed Device Admin",
-            "Ensures that device admins are properly registered",
             "If you register a broadcast receiver which acts as a device admin, you must also " +
             "register an `<intent-filter>` for the action " +
             "`android.app.action.DEVICE_ADMIN_ENABLED`, without any `<data>`, such that the " +
@@ -336,7 +323,6 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
     public static final Issue MOCK_LOCATION = Issue.create(
             "MockLocation", //$NON-NLS-1$
             "Using mock location provider in production",
-            "Checks that mock location providers are only used in debug builds",
 
             "Using a mock location provider (by requiring the permission " +
             "`android.permission.ACCESS_MOCK_LOCATION`) should *only* be done " +
@@ -356,8 +342,6 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
     public static final Issue GRADLE_OVERRIDES = Issue.create(
             "GradleOverrides", //$NON-NLS-1$
             "Value overridden by Gradle build script",
-            "Looks for values specified in the manifest file which are overridden by values "
-                    + "in Gradle",
 
             "The value of (for example) `minSdkVersion` is only used if it is not specified in " +
             "the `build.gradle` build scripts. When specified in the Gradle build scripts, " +

@@ -49,7 +49,6 @@ public class HardcodedValuesDetector extends LayoutDetector {
     public static final Issue ISSUE = Issue.create(
             "HardcodedText", //$NON-NLS-1$
             "Hardcoded text",
-            "Looks for hardcoded text attributes which should be converted to resource lookup",
 
             "Hardcoding text attributes directly in layout files is bad for several reasons:\n" +
             "\n" +

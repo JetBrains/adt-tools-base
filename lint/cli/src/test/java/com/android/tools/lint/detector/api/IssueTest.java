@@ -31,7 +31,7 @@ public class IssueTest extends TestCase {
         // works correctly
         Implementation implementation = new Implementation(AccessibilityDetector.class,
                 Scope.RESOURCE_FILE_SCOPE);
-        Issue issue = Issue.create("MyId", "ShortDesc", "Desc", "Explanation",
+        Issue issue = Issue.create("MyId", "ShortDesc", "Explanation",
                 Category.CORRECTNESS, 10, Severity.ERROR, implementation);
         assertTrue(issue.getMoreInfo().isEmpty());
         String url1 = "http://tools.android.com";
