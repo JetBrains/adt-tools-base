@@ -1632,6 +1632,15 @@ public class VariantConfiguration {
         return signingConfig != null && signingConfig.isSigningReady();
     }
 
+    /**
+     * Returns the proguard config file coming from the project but also from the dependencies.
+     *
+     * The dependencies configuration files may not yet exist at the moment this API is called since
+     * aars are unpacked on demand during build.
+     *
+     * @param includeLibraries whether to include the library dependencies.
+     * @return a non null list of proguard files.
+     */
     @NonNull
     public List<Object> getProguardFiles(boolean includeLibraries) {
         List<Object> fullList = Lists.newArrayList();
@@ -1648,9 +1657,7 @@ public class VariantConfiguration {
         if (includeLibraries) {
             for (LibraryDependency libraryDependency : mFlatLibraries) {
                 File proguardRules = libraryDependency.getProguardRules();
-                if (proguardRules.exists()) {
-                    fullList.add(proguardRules);
-                }
+                fullList.add(proguardRules);
             }
         }
 
