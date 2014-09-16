@@ -916,7 +916,6 @@ public class AndroidProjectTest extends TestCase {
         assertTrue("Found suppport jar check", foundSupportJar);
     }
 
-
     public void testGenFolderApi() throws Exception {
         // Load the custom model for the project
         ProjectData projectData = getModelForProject("genFolderApi");
@@ -1137,6 +1136,54 @@ public class AndroidProjectTest extends TestCase {
         //  \--- com.google.code.findbugs:jsr305:1.3.9
         //  + the local jar
         assertEquals(3, javaLibraries.size());
+    }
+
+    public void testOutputFileNameUniquenessInApp() {
+        ProjectData projectData = getModelForProject("basic");
+
+        // make sure that debug and release variant file output have different names.
+        compareDebugAndReleaseOutput(projectData);
+    }
+
+    public void testOutputFileNameUniquenessInLib() {
+        ProjectData projectData = getModelForProject("libTestDep");
+
+        // make sure that debug and release variant file output have different names.
+        compareDebugAndReleaseOutput(projectData);
+    }
+
+    private static void compareDebugAndReleaseOutput(ProjectData projectData) {
+        AndroidProject model = projectData.model;
+
+        Collection<Variant> variants = model.getVariants();
+        assertEquals("Variant Count", 2 , variants.size());
+
+        // debug variant
+        Variant debugVariant = getVariant(variants, "debug");
+        assertNotNull("debug Variant null-check", debugVariant);
+
+        // debug variant
+        AndroidArtifact debugMainInfo = debugVariant.getMainArtifact();
+        assertNotNull("Debug main info null-check", debugMainInfo);
+
+        Collection<AndroidArtifactOutput> debugMainOutputs = debugMainInfo.getOutputs();
+        assertNotNull("Debug main output null-check", debugMainOutputs);
+
+        // release variant
+        Variant releaseVariant = getVariant(variants, "release");
+        assertNotNull("release Variant null-check", releaseVariant);
+
+        AndroidArtifact relMainInfo = releaseVariant.getMainArtifact();
+        assertNotNull("Release main info null-check", relMainInfo);
+
+        Collection<AndroidArtifactOutput> relMainOutputs = relMainInfo.getOutputs();
+        assertNotNull("Rel Main output null-check", relMainOutputs);
+
+        File debugFile = debugMainOutputs.iterator().next().getOutputFile();
+        File releaseFile = relMainOutputs.iterator().next().getOutputFile();
+
+        assertFalse("debug: " + debugFile + " / release: " + releaseFile,
+                debugFile.equals(releaseFile));
     }
 
     /**
