@@ -2270,7 +2270,7 @@ public abstract class BasePlugin {
             proguardTask.configuration(testedVariantOutputData.processResourcesTask.proguardOutputFile)
         }
 
-        // all the config files coming from build type, product flavors.
+        // all the config files coming from build type, product flavors, as well as aars
         List<Object> proguardFiles = variantConfig.getProguardFiles(true /*includeLibs*/)
         for (Object proguardFile : proguardFiles) {
             proguardTask.configuration(proguardFile)
