@@ -16,10 +16,7 @@
 
 package com.android.tools.lint.checks;
 
-import static com.android.SdkConstants.CLASS_FRAGMENT;
-import static com.android.SdkConstants.CLASS_V4_FRAGMENT;
 import static com.android.tools.lint.client.api.JavaParser.ResolvedClass;
-import static com.android.tools.lint.client.api.JavaParser.ResolvedNode;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -34,7 +31,6 @@ import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 
 import java.lang.reflect.Modifier;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
