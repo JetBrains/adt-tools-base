@@ -141,7 +141,7 @@ public class PreDex extends BaseTask {
      * @return
      */
     @NonNull
-    private static File getDexFileName(@NonNull File outFolder, @NonNull File inputFile) {
+    static File getDexFileName(@NonNull File outFolder, @NonNull File inputFile) {
         // get the filename
         String name = inputFile.getName()
         // remove the extension
