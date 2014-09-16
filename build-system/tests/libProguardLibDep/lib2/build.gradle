@@ -10,10 +10,12 @@ android {
         minSdkVersion 16
         targetSdkVersion 16
         proguardFile 'config.pro'
-        consumerProguardFiles 'config.pro'
     }
 
     buildTypes {
+        debug {
+            runProguard true
+        }
         release {
             runProguard true
         }

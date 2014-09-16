@@ -18,6 +18,9 @@ android {
     }
 
     buildTypes {
+        debug {
+            runProguard true
+        }
         release {
             runProguard true
         }
