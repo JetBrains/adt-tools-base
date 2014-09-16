@@ -134,12 +134,12 @@ public class AndroidBuilder {
         }
     };
 
-    private final String mProjectId;
-    private final ILogger mLogger;
-    private final CommandLineRunner mCmdLineRunner;
+    @NonNull private final String mProjectId;
+    @NonNull private final ILogger mLogger;
+    @NonNull private final CommandLineRunner mCmdLineRunner;
     private final boolean mVerboseExec;
 
-    private String mCreatedBy;
+    @Nullable private String mCreatedBy;
 
     private SdkInfo mSdkInfo;
     private TargetInfo mTargetInfo;
@@ -212,6 +212,11 @@ public class AndroidBuilder {
     @Nullable
     public TargetInfo getTargetInfo() {
         return mTargetInfo;
+    }
+
+    @NonNull
+    public ILogger getLogger() {
+        return mLogger;
     }
 
     /**
