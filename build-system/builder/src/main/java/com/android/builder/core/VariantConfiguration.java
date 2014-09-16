@@ -1642,8 +1642,8 @@ public class VariantConfiguration {
      * @return a non null list of proguard files.
      */
     @NonNull
-    public List<Object> getProguardFiles(boolean includeLibraries) {
-        List<Object> fullList = Lists.newArrayList();
+    public List<File> getProguardFiles(boolean includeLibraries) {
+        List<File> fullList = Lists.newArrayList();
 
         // add the config files from the build type, main config and flavors
         fullList.addAll(mDefaultConfig.getProguardFiles());

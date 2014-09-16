@@ -2221,12 +2221,12 @@ public abstract class BasePlugin {
      */
     @NonNull
     public File createProguardTasks(
-            @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData,
-            @Nullable BaseVariantData<? extends BaseVariantOutputData> testedVariantData) {
-        VariantConfiguration variantConfig = variantData.variantConfiguration
+            final @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData,
+            final @Nullable BaseVariantData<? extends BaseVariantOutputData> testedVariantData) {
+        final VariantConfiguration variantConfig = variantData.variantConfiguration
 
         // use single output for now.
-        BaseVariantOutputData variantOutputData = variantData.outputs.get(0)
+        final BaseVariantOutputData variantOutputData = variantData.outputs.get(0)
 
         def proguardTask = project.tasks.create(
                 "proguard${variantData.variantConfiguration.fullName.capitalize()}",
@@ -2253,8 +2253,6 @@ public abstract class BasePlugin {
         // --- Proguard Config ---
 
         if (testedVariantData != null) {
-            // use single output for now.
-            BaseVariantOutputData testedVariantOutputData = testedVariantData.outputs.get(0)
 
             // don't remove any code in tested app
             proguardTask.dontshrink()
@@ -2265,24 +2263,21 @@ public abstract class BasePlugin {
 
             // input the mapping from the tested app so that we can deal with obfuscated code
             proguardTask.applymapping("${project.buildDir}/${FD_OUTPUTS}/proguard/${testedVariantData.variantConfiguration.dirName}/mapping.txt")
+        }
 
+        Closure configFiles = {
+            List<File> proguardFiles = variantConfig.getProguardFiles(true /*includeLibs*/)
+            proguardFiles.add(variantOutputData.processResourcesTask.proguardOutputFile)
             // for tested app, we only care about their aapt config since the base
             // configs are the same files anyway.
-            proguardTask.configuration(testedVariantOutputData.processResourcesTask.proguardOutputFile)
-        }
-
-        // all the config files coming from build type, product flavors, as well as aars
-        // We need to do this in doFirst, as we need to make sure that the files are there
-        // before we call proguard
-        proguardTask.doFirst {
-            List<Object> proguardFiles = variantConfig.getProguardFiles(true /*includeLibs*/)
-            for (Object proguardFile : proguardFiles) {
-                proguardTask.configuration(proguardFile)
+            if (testedVariantData != null) {
+                // use single output for now.
+                proguardFiles.add(testedVariantData.outputs.get(0).processResourcesTask.proguardOutputFile)
             }
-        }
 
-        // also the config file output by aapt
-        proguardTask.configuration(variantOutputData.processResourcesTask.proguardOutputFile)
+            return proguardFiles
+        }
+        proguardTask.configuration(configFiles)
 
         // --- InJars / LibraryJars ---
 
