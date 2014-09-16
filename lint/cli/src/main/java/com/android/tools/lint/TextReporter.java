@@ -23,7 +23,6 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.Location;
-import com.android.tools.lint.detector.api.TextFormat;
 import com.android.tools.lint.detector.api.Position;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.TextFormat;

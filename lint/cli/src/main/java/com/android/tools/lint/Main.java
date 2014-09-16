@@ -24,8 +24,8 @@ import static com.android.tools.lint.LintCliFlags.ERRNO_HELP;
 import static com.android.tools.lint.LintCliFlags.ERRNO_INVALID_ARGS;
 import static com.android.tools.lint.LintCliFlags.ERRNO_SUCCESS;
 import static com.android.tools.lint.LintCliFlags.ERRNO_USAGE;
-import static com.android.tools.lint.detector.api.TextFormat.TEXT;
 import static com.android.tools.lint.detector.api.LintUtils.endsWith;
+import static com.android.tools.lint.detector.api.TextFormat.TEXT;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -37,9 +37,9 @@ import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.LintUtils;
 import com.android.tools.lint.detector.api.Location;
-import com.android.tools.lint.detector.api.TextFormat;
 import com.android.tools.lint.detector.api.Project;
 import com.android.tools.lint.detector.api.Severity;
+import com.android.tools.lint.detector.api.TextFormat;
 import com.android.utils.SdkUtils;
 import com.google.common.annotations.Beta;
 

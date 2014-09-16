@@ -19,7 +19,6 @@ package com.android.tools.lint.detector.api;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.resources.ResourceFolderType;
-import com.android.tools.lint.client.api.JavaParser;
 import com.android.tools.lint.client.api.JavaParser.ResolvedClass;
 import com.android.tools.lint.client.api.LintDriver;
 import com.google.common.annotations.Beta;

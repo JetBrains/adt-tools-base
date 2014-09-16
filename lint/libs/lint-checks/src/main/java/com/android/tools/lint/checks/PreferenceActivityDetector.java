@@ -19,8 +19,6 @@ package com.android.tools.lint.checks;
 import static com.android.SdkConstants.ANDROID_URI;
 import static com.android.SdkConstants.ATTR_NAME;
 import static com.android.SdkConstants.ATTR_PACKAGE;
-import static com.android.SdkConstants.CLASS_FRAGMENT;
-import static com.android.SdkConstants.CLASS_V4_FRAGMENT;
 import static com.android.SdkConstants.TAG_ACTIVITY;
 import static com.android.tools.lint.client.api.JavaParser.TYPE_STRING;
 
@@ -28,7 +26,6 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.tools.lint.client.api.JavaParser.ResolvedClass;
 import com.android.tools.lint.client.api.JavaParser.ResolvedMethod;
-import com.android.tools.lint.client.api.JavaParser.ResolvedNode;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Implementation;
@@ -42,7 +39,6 @@ import com.android.tools.lint.detector.api.XmlContext;
 
 import org.w3c.dom.Element;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -50,9 +46,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import lombok.ast.AstVisitor;
 import lombok.ast.ClassDeclaration;
-import lombok.ast.ForwardingAstVisitor;
 
 /**
  * Ensures that PreferenceActivity and its subclasses are never exported.
