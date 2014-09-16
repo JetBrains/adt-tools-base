@@ -47,10 +47,12 @@ public class SplitOutputMatcherTest extends TestCase {
 
         private final String densityFilter;
         private final String abiFilter;
+        private final int versionCode;
 
-        FakeSplitOutput(String densityFilter, String abiFilter) {
+        FakeSplitOutput(String densityFilter, String abiFilter, int versionCode) {
             this.densityFilter = densityFilter;
             this.abiFilter = abiFilter;
+            this.versionCode = versionCode;
         }
 
         @Nullable
@@ -72,8 +74,13 @@ public class SplitOutputMatcherTest extends TestCase {
         }
 
         @Override
+        public int getVersionCode() {
+            return versionCode;
+        }
+
+        @Override
         public String toString() {
-            return "FilteredOutput{" + densityFilter + ':' + abiFilter + '}';
+            return "FilteredOutput{" + densityFilter + ':' + abiFilter + ':' + versionCode + '}';
         }
     }
 
@@ -81,7 +88,7 @@ public class SplitOutputMatcherTest extends TestCase {
         SplitOutput match;
         List<SplitOutput> list = Lists.newArrayList();
 
-        list.add(match = getUniversalOutput());
+        list.add(match = getUniversalOutput(1));
 
         SplitOutput result = computeBestOutput(list, 160, "foo");
 
@@ -92,9 +99,9 @@ public class SplitOutputMatcherTest extends TestCase {
         SplitOutput match;
         List<SplitOutput> list = Lists.newArrayList();
 
-        list.add(getUniversalOutput());
-        list.add(match = getDensityOutput(160));
-        list.add(getDensityOutput(320));
+        list.add(getUniversalOutput(1));
+        list.add(match = getDensityOutput(160, 2));
+        list.add(getDensityOutput(320, 3));
 
         SplitOutput result = computeBestOutput(list, 160, "foo");
 
@@ -105,9 +112,9 @@ public class SplitOutputMatcherTest extends TestCase {
         SplitOutput match;
         List<SplitOutput> list = Lists.newArrayList();
 
-        list.add(match = getUniversalOutput());
-        list.add(getDensityOutput(320));
-        list.add(getDensityOutput(480));
+        list.add(match = getUniversalOutput(3));
+        list.add(getDensityOutput(320, 2));
+        list.add(getDensityOutput(480, 1));
 
         SplitOutput result = computeBestOutput(list, 160, "foo");
 
@@ -117,8 +124,8 @@ public class SplitOutputMatcherTest extends TestCase {
     public void testDensityOnlyWithNoMatch() {
         List<SplitOutput> list = Lists.newArrayList();
 
-        list.add(getDensityOutput(320));
-        list.add(getDensityOutput(480));
+        list.add(getDensityOutput(320, 1));
+        list.add(getDensityOutput(480, 2));
 
         SplitOutput result = computeBestOutput(list, 160, "foo");
 
@@ -129,9 +136,9 @@ public class SplitOutputMatcherTest extends TestCase {
         SplitOutput match;
         List<SplitOutput> list = Lists.newArrayList();
 
-        list.add(match = getUniversalOutput());
-        list.add(getDensityOutput(320));
-        list.add(getDensityOutput(480));
+        list.add(match = getUniversalOutput(1));
+        list.add(getDensityOutput(320, 2));
+        list.add(getDensityOutput(480, 3));
 
         SplitOutput result = computeBestOutput(list, 1, "foo");
 
@@ -143,9 +150,9 @@ public class SplitOutputMatcherTest extends TestCase {
         SplitOutput match;
         List<SplitOutput> list = Lists.newArrayList();
 
-        list.add(getUniversalOutput());
-        list.add(match = getAbiOutput("foo"));
-        list.add(getAbiOutput("bar"));
+        list.add(getUniversalOutput(1));
+        list.add(match = getAbiOutput("foo", 2));
+        list.add(getAbiOutput("bar", 3));
 
         SplitOutput result = computeBestOutput(list, 160, "foo");
 
@@ -156,12 +163,28 @@ public class SplitOutputMatcherTest extends TestCase {
         SplitOutput match;
         List<SplitOutput> list = Lists.newArrayList();
 
-        list.add(getUniversalOutput());
-        list.add(getAbiOutput("foo"));
-        list.add(match = getAbiOutput("bar"));
+        // test where the versionCode match the abi order
+        list.add(getUniversalOutput(1));
+        list.add(getAbiOutput("foo", 2));
+        list.add(match = getAbiOutput("bar", 3));
 
         // bar is preferred over foo
         SplitOutput result = computeBestOutput(list, 160, "bar", "foo");
+
+        assertEquals(match, result);
+    }
+
+    public void testAbiOnlyWithMultiMatch2() {
+        SplitOutput match;
+        List<SplitOutput> list = Lists.newArrayList();
+
+        // test where the versionCode does not match the abi order
+        list.add(getUniversalOutput(1));
+        list.add(getAbiOutput("foo", 2));
+        list.add(match = getAbiOutput("bar", 3));
+
+        // bar is preferred over foo
+        SplitOutput result = computeBestOutput(list, 160, "foo", "bar");
 
         assertEquals(match, result);
     }
@@ -170,9 +193,9 @@ public class SplitOutputMatcherTest extends TestCase {
         SplitOutput match;
         List<SplitOutput> list = Lists.newArrayList();
 
-        list.add(match = getUniversalOutput());
-        list.add(getAbiOutput("foo"));
-        list.add(getAbiOutput("bar"));
+        list.add(match = getUniversalOutput(1));
+        list.add(getAbiOutput("foo", 2));
+        list.add(getAbiOutput("bar", 3));
 
         SplitOutput result = computeBestOutput(list, 160, "zzz");
 
@@ -182,8 +205,8 @@ public class SplitOutputMatcherTest extends TestCase {
     public void testAbiOnlyWithNoMatch() {
         List<SplitOutput> list = Lists.newArrayList();
 
-        list.add(getAbiOutput("foo"));
-        list.add(getAbiOutput("bar"));
+        list.add(getAbiOutput("foo", 1));
+        list.add(getAbiOutput("bar", 2));
 
         SplitOutput result = computeBestOutput(list, 160, "zzz");
 
@@ -194,10 +217,10 @@ public class SplitOutputMatcherTest extends TestCase {
         SplitOutput match;
         List<SplitOutput> list = Lists.newArrayList();
 
-        list.add(getUniversalOutput());
-        list.add(getOutput(160, "zzz"));
-        list.add(match = getOutput(160, "foo"));
-        list.add(getOutput(320, "foo"));
+        list.add(getUniversalOutput(1));
+        list.add(getOutput(160, "zzz",2));
+        list.add(match = getOutput(160, "foo", 4));
+        list.add(getOutput(320, "foo", 3));
 
         SplitOutput result = computeBestOutput(list, 160, "foo");
 
@@ -208,10 +231,10 @@ public class SplitOutputMatcherTest extends TestCase {
         SplitOutput match;
         List<SplitOutput> list = Lists.newArrayList();
 
-        list.add(match = getUniversalOutput());
-        list.add(getOutput(320, "zzz"));
-        list.add(getOutput(160, "bar"));
-        list.add(getOutput(320, "foo"));
+        list.add(match = getUniversalOutput(4));
+        list.add(getOutput(320, "zzz", 3));
+        list.add(getOutput(160, "bar", 2));
+        list.add(getOutput(320, "foo", 1));
 
         SplitOutput result = computeBestOutput(list, 160, "zzz");
 
@@ -221,30 +244,30 @@ public class SplitOutputMatcherTest extends TestCase {
     public void testMultiFilterWithNoMatch() {
         List<SplitOutput> list = Lists.newArrayList();
 
-        list.add(getOutput(320, "zzz"));
-        list.add(getOutput(160, "bar"));
-        list.add(getOutput(320, "foo"));
+        list.add(getOutput(320, "zzz", 1));
+        list.add(getOutput(160, "bar", 2));
+        list.add(getOutput(320, "foo", 3));
 
         SplitOutput result = computeBestOutput(list, 160, "zzz");
 
         assertNull(result);
     }
 
-    private static SplitOutput getUniversalOutput() {
-        return new FakeSplitOutput(null, null);
+    private static SplitOutput getUniversalOutput(int versionCode) {
+        return new FakeSplitOutput(null, null, versionCode);
     }
 
-    private static SplitOutput getDensityOutput(int densityFilter) {
+    private static SplitOutput getDensityOutput(int densityFilter, int versionCode) {
         Density densityEnum = Density.getEnum(densityFilter);
-        return new FakeSplitOutput(densityEnum.getResourceValue(), null);
+        return new FakeSplitOutput(densityEnum.getResourceValue(), null, versionCode);
     }
 
-    private static SplitOutput getAbiOutput(String filter) {
-        return new FakeSplitOutput( null, filter);
+    private static SplitOutput getAbiOutput(String filter, int versionCode) {
+        return new FakeSplitOutput( null, filter, versionCode);
     }
 
-    private static SplitOutput getOutput(int densityFilter, String abiFilter) {
+    private static SplitOutput getOutput(int densityFilter, String abiFilter, int versionCode) {
         Density densityEnum = Density.getEnum(densityFilter);
-        return new FakeSplitOutput(densityEnum.getResourceValue(), abiFilter);
+        return new FakeSplitOutput(densityEnum.getResourceValue(), abiFilter, versionCode);
     }
 }

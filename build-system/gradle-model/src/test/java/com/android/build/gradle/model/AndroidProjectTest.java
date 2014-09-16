@@ -383,7 +383,7 @@ public class AndroidProjectTest extends TestCase {
         assertNotNull(debugMainOutput.getOutputFile());
         assertNotNull(debugMainOutput.getAssembleTaskName());
         assertNotNull(debugMainOutput.getGeneratedManifest());
-        assertEquals(12, debugMainOutput.versionCode());
+        assertEquals(12, debugMainOutput.getVersionCode());
 
         // this variant is tested.
         Collection<AndroidArtifact> debugExtraAndroidArtifacts = debugVariant.getExtraAndroidArtifacts();
@@ -427,7 +427,7 @@ public class AndroidProjectTest extends TestCase {
         assertNotNull(relMainOutput.getOutputFile());
         assertNotNull(relMainOutput.getAssembleTaskName());
         assertNotNull(relMainOutput.getGeneratedManifest());
-        assertEquals(13, relMainOutput.versionCode());
+        assertEquals(13, relMainOutput.getVersionCode());
 
 
         Collection<AndroidArtifact> releaseExtraAndroidArtifacts = releaseVariant.getExtraAndroidArtifacts();
@@ -504,7 +504,7 @@ public class AndroidProjectTest extends TestCase {
             assertNotNull("Check Valid output: " + (densityFilter == null ? "universal" : densityFilter),
                     value);
 
-            assertEquals(value.intValue(), output.versionCode());
+            assertEquals(value.intValue(), output.getVersionCode());
             expected.remove(densityFilter);
         }
 
@@ -544,7 +544,7 @@ public class AndroidProjectTest extends TestCase {
             // this checks we're not getting an unexpected output.
             assertNotNull("Check Valid output: " + abiFilter, value);
 
-            assertEquals(value.intValue(), output.versionCode());
+            assertEquals(value.intValue(), output.getVersionCode());
             expected.remove(abiFilter);
         }
 

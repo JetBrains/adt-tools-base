@@ -90,9 +90,4 @@ public class AndroidArtifactOutputImpl implements AndroidArtifactOutput, Seriali
     public String getAbiFilter() {
         return abiFilter;
     }
-
-    @Override
-    public int versionCode() {
-        return versionCode;
-    }
 }
