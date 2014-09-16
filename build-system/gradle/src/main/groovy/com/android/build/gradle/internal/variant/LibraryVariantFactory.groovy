@@ -242,11 +242,8 @@ public class LibraryVariantFactory implements VariantFactory<LibraryVariantData>
             // run proguard on output of compile task
             basePlugin.createProguardTasks(variantData, null)
 
-            // hack since bundle can't depend on variantData.obfuscationTask
-            mergeProGuardFileTask.dependsOn variantData.obfuscationTask
-
-            bundle.dependsOn packageRes, packageRenderscript, mergeProGuardFileTask,
-                    lintCopy, packageJniLibs
+            bundle.dependsOn packageRes, packageRenderscript, variantData.obfuscationTask,
+                    mergeProGuardFileTask, lintCopy, packageJniLibs
             if (extract != null) {
                 bundle.dependsOn(extract)
             }
