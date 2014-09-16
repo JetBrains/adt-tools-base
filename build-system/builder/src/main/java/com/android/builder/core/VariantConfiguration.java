@@ -1633,10 +1633,10 @@ public class VariantConfiguration {
     }
 
     /**
-     * Returns the proguard config file coming from the project but also from the dependencies.
+     * Returns the proguard config files coming from the project but also from the dependencies.
      *
-     * The dependencies configuration files may not yet exist at the moment this API is called since
-     * aars are unpacked on demand during build.
+     * Note that if the method is set to include config files coming from libraries, they will
+     * only be included if the aars have already been unzipped.
      *
      * @param includeLibraries whether to include the library dependencies.
      * @return a non null list of proguard files.
@@ -1657,7 +1657,9 @@ public class VariantConfiguration {
         if (includeLibraries) {
             for (LibraryDependency libraryDependency : mFlatLibraries) {
                 File proguardRules = libraryDependency.getProguardRules();
-                fullList.add(proguardRules);
+                if (proguardRules.exists()) {
+                    fullList.add(proguardRules);
+                }
             }
         }
 
