@@ -1,9 +1,5 @@
 apply plugin: 'com.android.application'
 
-dependencies {
-    compile project(":lib")
-}
-
 android {
     compileSdkVersion 19
     buildToolsVersion "19.1.0"
