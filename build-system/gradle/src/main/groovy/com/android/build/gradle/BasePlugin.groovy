@@ -1948,6 +1948,7 @@ public abstract class BasePlugin {
             }
 
             if (extension.ndkLib != null) {
+                project.evaluationDependsOn(extension.ndkLib.targetProjectName)
                 packageApp.dependsOn extension.ndkLib.getBinaries(config)
             }
 
