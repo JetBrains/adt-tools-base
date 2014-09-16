@@ -18,8 +18,8 @@ package com.android.tools.lint;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.tools.lint.client.api.XmlParser;
 import com.android.tools.lint.client.api.IssueRegistry;
+import com.android.tools.lint.client.api.XmlParser;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Location.Handle;
 import com.android.tools.lint.detector.api.XmlContext;
