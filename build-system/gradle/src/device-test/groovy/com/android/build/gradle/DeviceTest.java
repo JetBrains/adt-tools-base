@@ -41,6 +41,10 @@ public class DeviceTest extends BuildTest {
 
     private String projectName;
     private String gradleVersion;
+    private TestType testType;
+
+
+    private static enum TestType { CHECK, CHECK_AND_REPORT }
 
     private static final String[] sBuiltProjects = new String[] {
             "api",
@@ -82,6 +86,10 @@ public class DeviceTest extends BuildTest {
             "ndkStl"
     );
 
+    private static final String[] sMergeReportProjects = new String[] {
+            "multiproject",
+    };
+
     public static Test suite() {
         TestSuite suite = new TestSuite();
         suite.setName("DeviceTest");
@@ -103,7 +111,16 @@ public class DeviceTest extends BuildTest {
                 String testName = "check_" + projectName + "_" + gradleVersion;
 
                 DeviceTest test = (DeviceTest) TestSuite.createTest(DeviceTest.class, testName);
-                test.setProjectInfo(projectName, gradleVersion);
+                test.setProjectInfo(projectName, gradleVersion, TestType.CHECK);
+                suite.addTest(test);
+            }
+
+            // first the project we build on all available versions of Gradle
+            for (String projectName : sMergeReportProjects) {
+                String testName = "check_" + projectName + "_" + gradleVersion;
+
+                DeviceTest test = (DeviceTest) TestSuite.createTest(DeviceTest.class, testName);
+                test.setProjectInfo(projectName, gradleVersion, TestType.CHECK_AND_REPORT);
                 suite.addTest(test);
             }
         }
@@ -111,17 +128,24 @@ public class DeviceTest extends BuildTest {
         return suite;
     }
 
-    private void setProjectInfo(String projectName, String gradleVersion) {
+    private void setProjectInfo(String projectName, String gradleVersion, TestType testType) {
         this.projectName = projectName;
         this.gradleVersion = gradleVersion;
+        this.testType = testType;
     }
 
     @Override
     protected void runTest() throws Throwable {
         try {
-            runTasksOnProject(projectName, gradleVersion,
-                    Collections.<String>emptyList(),
-                    "clean", "connectedCheck");
+            if (testType == DeviceTest.TestType.CHECK) {
+                runTasksOnProject(projectName, gradleVersion,
+                        Collections.<String>emptyList(),
+                        "clean", "connectedCheck");
+            } else {
+                runTasksOnProject(projectName, gradleVersion,
+                        Collections.<String>emptyList(),
+                        "clean", "connectedCheck", "mergeAndroidReports");
+            }
         } finally {
             // because runTasksOnProject will throw an exception if the gradle side fails, do this
             // in the finally block.
