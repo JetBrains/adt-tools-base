@@ -76,6 +76,7 @@ public class ApkVariantOutputData extends BaseVariantOutputData {
         return zipAlignTask;
     }
 
+    @Override
     public int getVersionCode() {
         if (versionCodeOverride > 0) {
             return versionCodeOverride;

@@ -51,4 +51,13 @@ public interface SplitOutput {
      */
     @Nullable
     String getAbiFilter();
+
+    /**
+     * The output versionCode.
+     *
+     * In case of multi-apk, the version code of each apk is different.
+     *
+     * @return the versionCode
+     */
+    int getVersionCode();
 }
