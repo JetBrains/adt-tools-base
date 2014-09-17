@@ -57,7 +57,7 @@ idea {
     module {
         testSourceDirs += files('src/build-test/groovy', 'src/device-test/groovy').files
 
-        scopes.COMPILE.plus += configurations.provided
+        scopes.COMPILE.plus += [ configurations.provided ]
     }
 }
 

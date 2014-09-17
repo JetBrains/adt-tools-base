@@ -90,20 +90,23 @@ class ToolchainConfigurationAction implements Action<Project> {
         project.model {
             toolChains {
                 "$name"(toolchainName.equals("gcc") ? Gcc : Clang) {
-                    target platform
+                    // TODO:  Gradle 2.2 allow customizing options for each target platform.
+                    // Simplify the code to contain one toolchain for the project instead of one for
+                    // each platform.
+                    target(platform) {
+                        if (toolchainName.equals("gcc")) {
+                            cCompiler.setExecutable("${GCC_PREFIX[platform]}-gcc")
+                            cppCompiler.setExecutable("${GCC_PREFIX[platform]}-g++")
+                            linker.setExecutable("${GCC_PREFIX[platform]}-g++")
+                            assembler.setExecutable("${GCC_PREFIX[platform]}-as")
+                            staticLibArchiver.setExecutable("${GCC_PREFIX[platform]}-ar")
+                        }
 
-                    if (toolchainName.equals("gcc")) {
-                        cCompiler.setExecutable("${GCC_PREFIX[platform]}-gcc")
-                        cppCompiler.setExecutable("${GCC_PREFIX[platform]}-g++")
-                        linker.setExecutable("${GCC_PREFIX[platform]}-g++")
-                        assembler.setExecutable("${GCC_PREFIX[platform]}-as")
-                        staticLibArchiver.setExecutable("${GCC_PREFIX[platform]}-ar")
-                    }
-
-                    // By default, gradle will use -Xlinker to pass arguments to the linker.
-                    // Removing it as it prevents -sysroot from being properly set.
-                    linker.withArguments { List<String> args ->
-                        args.removeAll("-Xlinker")
+                        // By default, gradle will use -Xlinker to pass arguments to the linker.
+                        // Removing it as it prevents -sysroot from being properly set.
+                        linker.withArguments { List<String> args ->
+                            args.removeAll("-Xlinker")
+                        }
                     }
                     path bin
                 }
