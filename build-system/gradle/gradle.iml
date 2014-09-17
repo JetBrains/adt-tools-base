@@ -159,7 +159,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../../out/gradle-dist-link/lib/jul-to-slf4j-1.7.5.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/gradle-dist-link/lib/jul-to-slf4j-1.7.7.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -186,7 +186,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../../out/gradle-dist-link/lib/slf4j-api-1.7.5.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/gradle-dist-link/lib/slf4j-api-1.7.7.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -195,7 +195,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../../out/gradle-dist-link/lib/log4j-over-slf4j-1.7.5.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/gradle-dist-link/lib/log4j-over-slf4j-1.7.7.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -204,7 +204,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../../out/gradle-dist-link/lib/jcl-over-slf4j-1.7.5.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/gradle-dist-link/lib/jcl-over-slf4j-1.7.7.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -448,15 +448,6 @@
       <library>
         <CLASSES>
           <root url="jar://$MODULE_DIR$/../../../../out/gradle-dist-link/lib/objenesis-1.2.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../../out/gradle-dist-link/lib/plugins/gradle-core-impl-2.2-20140916220025+0000.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -915,7 +906,115 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../../out/gradle-dist-link/lib/plugins/gradle-antlr-2.1.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../../../out/gradle-dist-link/lib/plugins/gradle-antlr-2.2-20140916220025+0000.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../../../out/gradle-dist-link/lib/plugins/gradle-cunit-2.2-20140916220025+0000.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../../../out/gradle-dist-link/lib/plugins/gradle-dependency-management-2.2-20140916220025+0000.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../../../out/gradle-dist-link/lib/plugins/gradle-ide-native-2.2-20140916220025+0000.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../../../out/gradle-dist-link/lib/plugins/gradle-language-groovy-2.2-20140916220025+0000.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../../../out/gradle-dist-link/lib/plugins/gradle-language-java-2.2-20140916220025+0000.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../../../out/gradle-dist-link/lib/plugins/gradle-language-jvm-2.2-20140916220025+0000.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../../../out/gradle-dist-link/lib/plugins/gradle-language-native-2.2-20140916220025+0000.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../../../out/gradle-dist-link/lib/plugins/gradle-platform-base-2.2-20140916220025+0000.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../../../out/gradle-dist-link/lib/plugins/gradle-platform-jvm-2.2-20140916220025+0000.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../../../out/gradle-dist-link/lib/plugins/gradle-platform-native-2.2-20140916220025+0000.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../../../out/gradle-dist-link/lib/plugins/gradle-plugin-development-2.2-20140916220025+0000.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../../../out/gradle-dist-link/lib/plugins/gradle-plugin-use-2.2-20140916220025+0000.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -1041,15 +1140,6 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../../out/gradle-dist-link/lib/plugins/sonar-runner-2.0.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
           <root url="jar://$MODULE_DIR$/../../../../out/gradle-dist-link/lib/plugins/sonar-batch-bootstrapper-2.9.jar!/" />
         </CLASSES>
         <JAVADOC />
@@ -1078,15 +1168,6 @@
       <library>
         <CLASSES>
           <root url="jar://$MODULE_DIR$/../../../../out/gradle-dist-link/lib/plugins/bcprov-jdk15-1.46.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../../out/gradle-dist-link/lib/plugins/gradle-cpp-2.2-20140916220025+0000.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -1213,15 +1294,6 @@
       <library>
         <CLASSES>
           <root url="jar://$MODULE_DIR$/../../../../out/gradle-dist-link/lib/plugins/gradle-language-jvm-2.2-20140916220025+0000.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../../out/gradle-dist-link/lib/plugins/gradle-language-base-2.2-20140916220025+0000.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
