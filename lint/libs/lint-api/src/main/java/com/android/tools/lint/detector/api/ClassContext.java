@@ -696,10 +696,15 @@ public class ClassContext extends Context {
             return fqcn;
         }
 
+        // If class name contains $, it's not an ambiguous inner class name.
+        if (fqcn.indexOf('$') != -1) {
+            return fqcn.replace('.', '/');
+        }
+        // Let's assume that components that start with Caps are class names.
         StringBuilder sb = new StringBuilder(fqcn.length());
         String prev = null;
         for (String part : Splitter.on('.').split(fqcn)) {
-            if (prev != null && prev.length() > 0) {
+            if (prev != null && !prev.isEmpty()) {
                 if (Character.isUpperCase(prev.charAt(0))) {
                     sb.append('$');
                 } else {
