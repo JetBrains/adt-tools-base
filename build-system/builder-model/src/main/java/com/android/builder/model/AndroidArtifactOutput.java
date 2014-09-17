@@ -39,21 +39,4 @@ public interface AndroidArtifactOutput extends SplitOutput {
      */
     @NonNull
     File getGeneratedManifest();
-
-    /**
-     * The output versionCode.
-     *
-     * In case of multi-apk, the version code of each apk is different.
-     *
-     * @return the versionCode
-     */
-    int getVersionCode();
-
-
-    /**
-     * Compatibility version. To be removed in 1.0
-     * STOPSHIP
-     */
-    @Deprecated
-    int versionCode();
 }

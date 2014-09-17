@@ -48,4 +48,9 @@ public class LibVariantOutputData extends BaseVariantOutputData {
     public File getOutputFile() {
         return packageLibTask.getArchivePath();
     }
+
+    @Override
+    public int getVersionCode() {
+        return 0;
+    }
 }
