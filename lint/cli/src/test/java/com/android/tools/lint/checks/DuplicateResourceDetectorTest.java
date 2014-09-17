@@ -86,7 +86,7 @@ public class DuplicateResourceDetectorTest extends AbstractCheckTest {
                 + "    res/values/duplicate-items.xml:5: Previously defined here\n"
                 + "res/values/duplicate-items.xml:13: Error: contentId has already been defined in this <declare-styleable> [DuplicateDefinition]\n"
                 + "        <attr name=\"contentId\" format=\"integer\" />\n"
-                + "              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "              ~~~~~~~~~~~~~~~~\n"
                 + "    res/values/duplicate-items.xml:11: Previously defined here\n"
                 + "2 errors, 0 warnings\n",
 
