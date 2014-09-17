@@ -2272,9 +2272,13 @@ public abstract class BasePlugin {
         }
 
         // all the config files coming from build type, product flavors, as well as aars
-        List<Object> proguardFiles = variantConfig.getProguardFiles(true /*includeLibs*/)
-        for (Object proguardFile : proguardFiles) {
-            proguardTask.configuration(proguardFile)
+        // We need to do this in doFirst, as we need to make sure that the files are there
+        // before we call proguard
+        proguardTask.doFirst {
+            List<Object> proguardFiles = variantConfig.getProguardFiles(true /*includeLibs*/)
+            for (Object proguardFile : proguardFiles) {
+                proguardTask.configuration(proguardFile)
+            }
         }
 
         // also the config file output by aapt
