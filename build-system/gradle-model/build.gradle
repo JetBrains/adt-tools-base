@@ -42,6 +42,6 @@ test.dependsOn ':publishLocal'
 
 idea {
     module {
-        scopes.COMPILE.plus += configurations.gradleRepo
+        scopes.COMPILE.plus += [ configurations.gradleRepo ]
     }
 }
