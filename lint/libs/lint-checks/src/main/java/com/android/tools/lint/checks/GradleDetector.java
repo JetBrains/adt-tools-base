@@ -703,16 +703,16 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
         Issue issue = DEPENDENCY;
         if ("com.android.tools.build".equals(dependency.getGroupId()) &&
                 "gradle".equals(dependency.getArtifactId())) {
-            version = getNewerRevision(dependency, 0, 12, 2);
+            version = getNewerRevision(dependency, 0, 13, 0);
         } else if ("com.google.guava".equals(dependency.getGroupId()) &&
                 "guava".equals(dependency.getArtifactId())) {
-            version = getNewerRevision(dependency, 17, 0, 0);
+            version = getNewerRevision(dependency, 18, 0, 0);
         } else if ("com.google.code.gson".equals(dependency.getGroupId()) &&
                 "gson".equals(dependency.getArtifactId())) {
-            version = getNewerRevision(dependency, 2, 2, 4);
+            version = getNewerRevision(dependency, 2, 3, 0);
         } else if ("org.apache.httpcomponents".equals(dependency.getGroupId()) &&
                 "httpclient".equals(dependency.getArtifactId())) {
-            version = getNewerRevision(dependency, 4, 3, 3);
+            version = getNewerRevision(dependency, 4, 3, 5);
         }
 
         // Network check for really up to date libraries? Only done in batch mode
