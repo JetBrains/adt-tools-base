@@ -22,7 +22,7 @@
         android:label="@string/app_name"
         android:description="@string/app_name" />
 
-    <permission android:name="foo.blah.SEND_SMS"
+    <permission android:name="foo.blah.SEND_TEXT"
         android:permissionGroup="foo.permission-group.COST_MONEY"
         android:label="@string/app_name"
         android:description="@string/app_name" />
