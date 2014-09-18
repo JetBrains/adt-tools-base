@@ -24,12 +24,10 @@ import com.android.builder.model.NdkConfig;
 import com.android.builder.model.ProductFlavor;
 import com.android.builder.model.SigningConfig;
 import com.google.common.base.Objects;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -347,6 +345,40 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
         flavor.addResourceConfigurations(base.getResourceConfigurations());
 
         flavor.addManifestPlaceHolders(base.getManifestPlaceholders());
+        flavor.addManifestPlaceHolders(getManifestPlaceholders());
+
+        return flavor;
+    }
+
+    /**
+     * Clones the productFlavor.
+     */
+    @Override
+    @NonNull
+    public DefaultProductFlavor clone() {
+        DefaultProductFlavor flavor = new DefaultProductFlavor(getName());
+        flavor._initWith(this);
+
+        flavor.mMinSdkVersion = mMinSdkVersion;
+        flavor.mTargetSdkVersion =mTargetSdkVersion;
+        flavor.mMaxSdkVersion = mMaxSdkVersion;
+        flavor.mRenderscriptTargetApi = mRenderscriptTargetApi;
+        flavor.mRenderscriptSupportMode = mRenderscriptSupportMode;
+        flavor.mRenderscriptNdkMode = mRenderscriptNdkMode;
+
+        flavor.mVersionCode = mVersionCode;
+        flavor.mVersionName = mVersionName;
+
+        flavor.mApplicationId = mApplicationId;
+
+        flavor.mTestApplicationId = mTestApplicationId;
+        flavor.mTestInstrumentationRunner = mTestInstrumentationRunner;
+        flavor.mTestHandleProfiling = mTestHandleProfiling;
+        flavor.mTestFunctionalTest = mTestFunctionalTest;
+
+        flavor.mSigningConfig = mSigningConfig;
+
+        flavor.addResourceConfigurations(getResourceConfigurations());
         flavor.addManifestPlaceHolders(getManifestPlaceholders());
 
         return flavor;

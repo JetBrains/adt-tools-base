@@ -56,6 +56,11 @@ public class DefaultProductFlavorTest extends TestCase {
                 ImmutableMap.of("two","twoValueBis", "three", "threeValue"));
     }
 
+    public void testClone() {
+        ProductFlavor flavor = mCustom.clone();
+        assertEquals(mCustom, flavor);
+    }
+
     public void testMergeOnDefault() {
         ProductFlavor flavor = mCustom.mergeOver(mDefault);
 
