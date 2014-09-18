@@ -18,6 +18,8 @@ package com.android.build.gradle.internal.variant;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.gradle.api.ApkOutput;
+import com.google.common.collect.ImmutableList;
 
 import org.gradle.api.tasks.bundling.Zip;
 
@@ -41,6 +43,11 @@ public class LibVariantOutputData extends BaseVariantOutputData {
     public void setOutputFile(@NonNull File file) {
         packageLibTask.setDestinationDir(file.getParentFile());
         packageLibTask.setArchiveName(file.getName());
+    }
+
+    @Override
+    public ImmutableList<ApkOutput> getOutputFiles() {
+        return ImmutableList.<ApkOutput>of(new ApkOutput.MainApkOutput(getOutputFile()));
     }
 
     @NonNull

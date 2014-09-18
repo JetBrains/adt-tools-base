@@ -74,4 +74,7 @@ public interface TestData {
      */
     @Nullable
     File getTestedApk(int density, @NonNull List<String> abis);
+
+    @Nullable
+    File[] getSplitApks();
 }

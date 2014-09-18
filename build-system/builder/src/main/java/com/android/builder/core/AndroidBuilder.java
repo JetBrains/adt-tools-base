@@ -55,6 +55,7 @@ import com.android.builder.packaging.SealedPackageException;
 import com.android.builder.packaging.SigningException;
 import com.android.builder.sdk.SdkInfo;
 import com.android.builder.sdk.TargetInfo;
+import com.android.builder.signing.SignedJarBuilder;
 import com.android.ide.common.internal.AaptCruncher;
 import com.android.ide.common.internal.CommandLineRunner;
 import com.android.ide.common.internal.LoggedErrorException;
@@ -88,8 +89,11 @@ import com.google.common.hash.Hashing;
 import com.google.common.io.Files;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -969,7 +973,8 @@ public class AndroidBuilder {
      * @param resourceConfigs a list of resource config filters to pass to aapt.
      * @param enforceUniquePackageName if true method will fail if some libraries share the same
      *                                 package name
-     *
+     * @param splits optional list of split dimensions values (like a density or an abi). This
+     *               will be used by aapt to generate the corresponding pure split apks.
      *
      * @throws IOException
      * @throws InterruptedException
@@ -989,7 +994,8 @@ public class AndroidBuilder {
                       boolean debuggable,
             @NonNull  AaptOptions options,
             @NonNull  Collection<String> resourceConfigs,
-                      boolean enforceUniquePackageName)
+                      boolean enforceUniquePackageName,
+            @Nullable Collection<String> splits)
             throws IOException, InterruptedException, LoggedErrorException {
 
         checkNotNull(manifestFile, "manifestFile cannot be null.");
@@ -1023,7 +1029,6 @@ public class AndroidBuilder {
         }
 
         command.add("-f");
-
         command.add("--no-crunch");
 
         // inputs
@@ -1061,11 +1066,20 @@ public class AndroidBuilder {
             command.add(proguardOutput);
         }
 
+        if (splits != null) {
+            for (String split : splits) {
+
+                command.add("--split");
+                command.add(split);
+            }
+        }
+
         // options controlled by build variants
 
         if (debuggable) {
             command.add("--debug-mode");
         }
+
 
         if (type != VariantConfiguration.Type.TEST) {
             if (packageForR != null) {
@@ -1769,6 +1783,45 @@ public class AndroidBuilder {
             // shouldn't happen since we control the package from start to end.
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * Signs a single jar file using the passed {@link SigningConfig}.
+     * @param in the jar file to sign.
+     * @param signingConfig the signing configuration
+     * @param out the file path for the signed jar.
+     * @throws IOException
+     * @throws KeytoolException
+     * @throws SigningException
+     * @throws NoSuchAlgorithmException
+     * @throws SignedJarBuilder.IZipEntryFilter.ZipAbortException
+     * @throws com.android.builder.signing.SigningException
+     */
+    public void signApk(File in, SigningConfig signingConfig, File out)
+            throws IOException, KeytoolException, SigningException, NoSuchAlgorithmException,
+            SignedJarBuilder.IZipEntryFilter.ZipAbortException,
+            com.android.builder.signing.SigningException {
+
+        CertificateInfo certificateInfo = null;
+        if (signingConfig != null && signingConfig.isSigningReady()) {
+            certificateInfo = KeystoreHelper.getCertificateInfo(signingConfig.getStoreType(),
+                    signingConfig.getStoreFile(), signingConfig.getStorePassword(),
+                    signingConfig.getKeyPassword(), signingConfig.getKeyAlias());
+            if (certificateInfo == null) {
+                throw new SigningException("Failed to read key from keystore");
+            }
+        }
+
+        SignedJarBuilder signedJarBuilder = new SignedJarBuilder(
+                new FileOutputStream(out),
+                certificateInfo != null ? certificateInfo.getKey() : null,
+                certificateInfo != null ? certificateInfo.getCertificate() : null,
+                Packager.getLocalVersion(), mCreatedBy);
+
+
+        signedJarBuilder.writeZip(new FileInputStream(in), null);
+        signedJarBuilder.close();
+
     }
 
     /**

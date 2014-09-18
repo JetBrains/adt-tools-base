@@ -18,10 +18,12 @@ package com.android.build.gradle.internal.api;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.gradle.api.ApkOutput;
 import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.tasks.ManifestProcessorTask;
 import com.android.build.gradle.tasks.ProcessAndroidResources;
+import com.google.common.collect.ImmutableList;
 
 import org.gradle.api.Task;
 
@@ -48,6 +50,12 @@ public abstract class BaseVariantOutputImpl implements BaseVariantOutput {
     @Override
     public File getOutputFile() {
         return getVariantOutputData().getOutputFile();
+    }
+
+    @NonNull
+    @Override
+    public ImmutableList<ApkOutput> getOutputFiles() {
+        return getVariantOutputData().getOutputFiles();
     }
 
     @NonNull

@@ -638,7 +638,7 @@ public final class Packager implements IArchiveBuilder {
         }
     }
 
-    private static String getLocalVersion() {
+    public static String getLocalVersion() {
         Class clazz = Packager.class;
         String className = clazz.getSimpleName() + ".class";
         String classPath = clazz.getResource(className).toString();
