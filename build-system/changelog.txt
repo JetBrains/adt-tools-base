@@ -1,3 +1,16 @@
+0.12.2 (2014/07/16)
+- Fix packaging of wear application
+- Fix issue with ${applicationId} placeholder when build.gradle doesn't customize it.
+- Custom Java code generation steps now part of the source generation steps (fix IDE integration).
+- Move unzipped aar back in each project as a temporary fix for a possible race condition.
+
+0.12.1 (2014/07/01)
+- Fix merging of the package attribute in the manifest.
+
+0.12.0 (2014/06/25)
+- New IDE Model, requires Studio Beta 0.8
+- Fixes in the manifest mergers.
+
 0.11.1:
 - Fix issue with artifact depending on android.jar artifact on MavenCentral.
 - Fix issue with missing custom namespace declaration in generated manifest.
