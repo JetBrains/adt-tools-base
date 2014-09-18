@@ -49,7 +49,7 @@ public class TranslationDetectorTest extends AbstractCheckTest {
             "    res/values-es/strings.xml:12: Also translated here\n" +
             "res/values-de-rDE/strings.xml:11: Error: \"continue_skip_label\" is translated here but not found in default locale [ExtraTranslation]\n" +
             "    <string name=\"continue_skip_label\">\"Weiter\"</string>\n" +
-            "            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
+            "            ~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
             "5 errors, 0 warnings\n",
 
             lintProject(
@@ -86,7 +86,7 @@ public class TranslationDetectorTest extends AbstractCheckTest {
             "    res/values-land/strings.xml:19: <No location-specific message\n" +
             "res/values-de-rDE/strings.xml:11: Error: \"continue_skip_label\" is translated here but not found in default locale [ExtraTranslation]\n" +
             "    <string name=\"continue_skip_label\">\"Weiter\"</string>\n" +
-            "            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
+            "            ~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
             "6 errors, 0 warnings\n",
 
             lintProject(

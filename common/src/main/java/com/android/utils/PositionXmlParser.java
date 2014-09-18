@@ -365,11 +365,12 @@ public class PositionXmlParser {
                 // Locate the name=value attribute in the source text
                 // Fast string check first for the common occurrence
                 String name = attr.getName();
-                Pattern pattern = Pattern.compile(
-                        String.format("%1$s\\s*=\\s*[\"'].*[\"']", name)); //$NON-NLS-1$
+                Pattern pattern = Pattern.compile(attr.getPrefix() != null
+                    ? String.format("(%1$s\\s*=\\s*[\"'].*?[\"'])", name) //$NON-NLS-1$
+                    : String.format("[^:](%1$s\\s*=\\s*[\"'].*?[\"'])", name));//$NON-NLS-1$
                 Matcher matcher = pattern.matcher(contents);
-                if (matcher.find(startOffset) && matcher.start() <= endOffset) {
-                    int index = matcher.start();
+                if (matcher.find(startOffset) && matcher.start(1) <= endOffset) {
+                    int index = matcher.start(1);
                     // Adjust the line and column to this new offset
                     int line = pos.getLine();
                     int column = pos.getColumn();
@@ -385,8 +386,8 @@ public class PositionXmlParser {
 
                     Position attributePosition = createPosition(line, column, index);
                     // Also set end range for retrieval in getLocation
-                    attributePosition.setEnd(createPosition(line, column + matcher.end() - index,
-                            matcher.end()));
+                    attributePosition.setEnd(createPosition(line, column + matcher.end(1) - index,
+                            matcher.end(1)));
                     return attributePosition;
                 } else {
                     // No regexp match either: just fall back to element position
