@@ -1,3 +1,17 @@
+0.13.0 (2014/09/18)
+- Requires Gradle 2.1
+- It is now possible to provide a manifest for test apps (src/androidTest/AndroidManifest.xml)
+- AndroidManifest files in Library project can now include placeholders. If they cannot be resolved
+  in the libraries, they'll be resolved in the consuming project.
+- AndroidManifest placeholder can now be setup on Product Flavors and Build Types.
+- Variant.getMappingFile() API now allow querying for the proguard mapping file.
+- New Split mechanism for Density and ABI driven multi-apk.
+- Bug fixes:
+  * Fix issue where consumer proguard file (from aars) are ignored on first build
+  * Fixed aar output names so that variants do not overwrite each other
+  * Properly merge declare-styleable to contain all attrs.
+  * Fix whitespace issue in resource strings during resource merge.
+
 0.12.2 (2014/07/16)
 - Fix packaging of wear application
 - Fix issue with ${applicationId} placeholder when build.gradle doesn't customize it.
