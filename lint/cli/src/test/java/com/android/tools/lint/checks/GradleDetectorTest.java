@@ -164,7 +164,7 @@ public class GradleDetectorTest extends AbstractCheckTest {
     public void testIncompatiblePlugin() throws Exception {
         mEnabled = Collections.singleton(GRADLE_PLUGIN_COMPATIBILITY);
         assertEquals(""
-                + "build.gradle:6: Error: You must use a newer version of the Android Gradle plugin. The minimum supported version is 0.12.0 and the recommended version is 0.12.2 [AndroidGradlePluginVersion]\n"
+                + "build.gradle:6: Error: You must use a newer version of the Android Gradle plugin. The minimum supported version is 0.12.0 and the recommended version is 0.13.0 [AndroidGradlePluginVersion]\n"
                 + "    classpath 'com.android.tools.build:gradle:0.1.0'\n"
                 + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                 + "1 errors, 0 warnings\n",
