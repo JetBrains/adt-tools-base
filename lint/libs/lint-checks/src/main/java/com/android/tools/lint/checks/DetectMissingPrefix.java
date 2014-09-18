@@ -134,7 +134,14 @@ public class DetectMissingPrefix extends LayoutDetector {
                 return;
             }
 
-            if (name.startsWith(XMLNS_PREFIX)) {
+            if (name.indexOf(':') != -1) {
+                // Don't flag warnings for attributes that already have a different
+                // namespace! This doesn't usually happen when lint is run from the
+                // command line, since (with the exception of xmlns: declaration attributes)
+                // an attribute shouldn't have a prefix *and* have no namespace, but
+                // when lint is run in the IDE (with a more fault-tolerant XML parser)
+                // this can happen, and we don't want to flag erroneous/misleading lint
+                // errors in this case.
                 return;
             }
 
