@@ -503,7 +503,8 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
                             file,
                             LocationType.IN_IMAGES_SUBFOLDER,
                             SystemImage.DEFAULT_TAG,
-                            file.getName(),
+                            mAddonDesc.getVendor(),
+                            abi,
                             FileOp.EMPTY_FILE_ARRAY));
                     tagToAbiFound.put(defaultTag, abi);
                 }

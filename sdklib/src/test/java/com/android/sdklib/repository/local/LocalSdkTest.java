@@ -972,8 +972,10 @@ public class LocalSdkTest extends TestCase {
         assertNotNull(t);
 
         assertEquals(
-                "[SystemImage tag=default, ABI=armeabi-v7a, location in images subfolder='/sdk/add-ons/addon-vendor_name-2/images/armeabi-v7a', " +
-                 "SystemImage tag=default, ABI=x86, location in images subfolder='/sdk/add-ons/addon-vendor_name-2/images/x86']",
+                "[SystemImage addon-vendor=vendor, tag=default, ABI=armeabi-v7a, " +
+                "location in images subfolder='/sdk/add-ons/addon-vendor_name-2/images/armeabi-v7a', " +
+                "SystemImage addon-vendor=vendor, tag=default, ABI=x86, " +
+                "location in images subfolder='/sdk/add-ons/addon-vendor_name-2/images/x86']",
                  sanitizePath(Arrays.toString(t.getSystemImages())));
 
         assertEquals(
