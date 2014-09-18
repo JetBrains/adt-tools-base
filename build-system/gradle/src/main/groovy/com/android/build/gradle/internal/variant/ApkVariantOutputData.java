@@ -18,8 +18,11 @@ package com.android.build.gradle.internal.variant;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.gradle.api.ApkOutput;
 import com.android.build.gradle.tasks.PackageApplication;
+import com.android.build.gradle.tasks.SplitZipAlign;
 import com.android.build.gradle.tasks.ZipAlign;
+import com.google.common.collect.ImmutableList;
 
 import java.io.File;
 
@@ -30,6 +33,7 @@ public class ApkVariantOutputData extends BaseVariantOutputData {
 
     public PackageApplication packageApplicationTask;
     public ZipAlign zipAlignTask;
+    public SplitZipAlign splitZipAlign;
 
     private int versionCodeOverride = -1;
 
@@ -57,6 +61,17 @@ public class ApkVariantOutputData extends BaseVariantOutputData {
         }
 
         return packageApplicationTask.getOutputFile();
+    }
+
+    @NonNull
+    @Override
+    public ImmutableList<ApkOutput> getOutputFiles() {
+        ImmutableList.Builder<ApkOutput> outputs = ImmutableList.builder();
+        if (packageSplitResourcesTask != null) {
+            outputs.addAll(packageSplitResourcesTask.getOutputFiles());
+        }
+        outputs.add(new ApkOutput.MainApkOutput(getOutputFile()));
+        return outputs.build();
     }
 
     @NonNull

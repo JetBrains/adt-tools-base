@@ -16,6 +16,8 @@
 
 package com.android.builder.internal.testing;
 
+import static com.android.sdklib.BuildToolInfo.PathId.ZIP_ALIGN;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.testing.TestData;
@@ -27,10 +29,17 @@ import com.android.ddmlib.testrunner.RemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.TestIdentifier;
 import com.android.utils.ILogger;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.PipedInputStream;
 import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
@@ -59,6 +68,11 @@ public class SimpleTestCallable implements Callable<Boolean> {
     private final File testApk;
     @Nullable
     private final File testedApk;
+    @Nullable
+    private final File[] splitApks;
+    @NonNull
+    private final File adbExec;
+
     private final int timeout;
     @NonNull
     private final ILogger logger;
@@ -69,6 +83,8 @@ public class SimpleTestCallable implements Callable<Boolean> {
             @NonNull  String flavorName,
             @NonNull  File testApk,
             @Nullable File testedApk,
+            @Nullable File[] splitApks,
+            @NonNull  File adbExec,
             @NonNull  TestData testData,
             @NonNull  File resultsDir,
             @NonNull  File coverageDir,
@@ -82,6 +98,8 @@ public class SimpleTestCallable implements Callable<Boolean> {
         this.testApk = testApk;
         this.testedApk = testedApk;
         this.testData = testData;
+        this.splitApks = splitApks;
+        this.adbExec = adbExec;
         this.timeout = timeout;
         this.logger = logger;
     }
@@ -105,7 +123,38 @@ public class SimpleTestCallable implements Callable<Boolean> {
 
             if (testedApk != null) {
                 logger.verbose("DeviceConnector '%s': installing %s", deviceName, testedApk);
-                device.installPackage(testedApk, timeout, logger);
+                if (splitApks != null) {
+                    List<String> args = new ArrayList<String>();
+                    args.add(adbExec.getAbsolutePath());
+                    args.add("install-multiple");
+                    args.add("-r");
+                    args.add(testedApk.getAbsolutePath());
+                    // for now, do a simple java exec adb
+                    for (File split : splitApks) {
+                        args.add(split.getAbsolutePath());
+                    }
+                    ProcessBuilder processBuilder = new ProcessBuilder(args);
+                    Process process = processBuilder.start();
+                    //Read out dir output
+                    InputStream is = process.getErrorStream();
+                    InputStreamReader isr = new InputStreamReader(is);
+                    BufferedReader br = new BufferedReader(isr);
+                    String line;
+                    while ((line = br.readLine()) != null) {
+                        logger.verbose("adb output is :" + line);
+                    }
+
+                    //Wait to get exit value
+                    try {
+                        int exitValue = process.waitFor();
+                        logger.verbose("\n\nExit Value is " + exitValue);
+                    } catch (InterruptedException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    }
+                } else {
+                    device.installPackage(testedApk, timeout, logger);
+                }
             }
 
             logger.verbose("DeviceConnector '%s': installing %s", deviceName, testApk);

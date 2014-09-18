@@ -14,10 +14,13 @@
  * limitations under the License.
  */
 package com.android.build.gradle.tasks
+
+import com.android.build.gradle.api.ApkOutput
 import com.android.build.gradle.internal.dependency.SymbolFileProviderImpl
 import com.android.build.gradle.internal.dsl.AaptOptionsImpl
 import com.android.build.gradle.internal.tasks.IncrementalTask
 import com.android.builder.core.VariantConfiguration
+import com.google.gson.Gson
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.InputFile
@@ -25,6 +28,9 @@ import org.gradle.api.tasks.Nested
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.OutputFile
+
+import java.util.regex.Matcher
+import java.util.regex.Pattern
 
 public class ProcessAndroidResources extends IncrementalTask {
 
@@ -51,6 +57,9 @@ public class ProcessAndroidResources extends IncrementalTask {
     @OutputFile @Optional
     File proguardOutputFile
 
+    @OutputFile @Optional
+    File splitInfoOutputFile
+
     @Input
     Collection<String> resourceConfigs
 
@@ -61,6 +70,9 @@ public class ProcessAndroidResources extends IncrementalTask {
 
     @Input @Optional
     String packageForR
+
+    @Nested @Optional
+    Collection<String> splits
 
     @Input
     boolean enforceUniquePackageName
@@ -82,6 +94,7 @@ public class ProcessAndroidResources extends IncrementalTask {
             emptyFolder(srcOut)
         }
 
+        File resOutBaseNameFile = getPackageOutputFile()
         getBuilder().processResources(
                 getManifestFile(),
                 getResDir(),
@@ -90,13 +103,41 @@ public class ProcessAndroidResources extends IncrementalTask {
                 getPackageForR(),
                 srcOut?.absolutePath,
                 getTextSymbolOutputDir()?.absolutePath,
-                getPackageOutputFile()?.absolutePath,
+                resOutBaseNameFile?.absolutePath,
                 getProguardOutputFile()?.absolutePath,
                 getType(),
                 getDebuggable(),
                 getAaptOptions(),
                 getResourceConfigs(),
-                getEnforceUniquePackageName()
+                getEnforceUniquePackageName(),
+                getSplits()
         )
+
+        if (resOutBaseNameFile != null && splits!=null) {
+            File resOutBaseDirectory = resOutBaseNameFile.getParentFile();
+            String resOutputBaseName = resOutBaseNameFile.getName();
+            final Pattern pattern = Pattern.compile("${resOutputBaseName}_([h|x|d|p|i|m]*)(.*)")
+
+            List<ApkOutput> variantOutputList = new ArrayList<ApkOutput>();
+            for (File f : resOutBaseDirectory.listFiles()) {
+
+                Matcher matcher = pattern.matcher(f.getName());
+                if (matcher.matches()) {
+                    ApkOutput variantOutput = new ApkOutput.SplitApkOutput(
+                            ApkOutput.OutputType.SPLIT,
+                            ApkOutput.SplitType.DENSITY,
+                            matcher.group(1),
+                            matcher.group(2),
+                            f)
+                    variantOutputList.add(variantOutput)
+                }
+            }
+            Gson gson = new Gson();
+            println gson.toJson(variantOutputList);
+            FileWriter fileWriter = new FileWriter(getSplitInfoOutputFile());
+            fileWriter.append(gson.toJson(variantOutputList));
+            fileWriter.close()
+        }
+
     }
 }

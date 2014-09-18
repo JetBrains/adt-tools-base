@@ -62,10 +62,16 @@ public class ApplicationVariantFactory implements VariantFactory<ApplicationVari
         }
 
         // create its outputs
-        for (String density : densities) {
-            for (String abi : abis) {
-                variant.createOutput(density, abi);
+        if (variant.getSplitHandlingPolicy() ==
+                BaseVariantData.SplitHandlingPolicy.PRE_21_POLICY) {
+            // create its outputs
+            for (String density : densities) {
+                for (String abi : abis) {
+                    variant.createOutput(density, abi);
+                }
             }
+        } else {
+            variant.createOutput(null, null);
         }
 
         return variant;
@@ -166,6 +172,10 @@ public class ApplicationVariantFactory implements VariantFactory<ApplicationVari
             basePlugin.createNdkTasks(variantData);
         }
 
+        if (variantData.getSplitHandlingPolicy() ==
+                BaseVariantData.SplitHandlingPolicy.RELEASE_21_AND_AFTER_POLICY) {
+            basePlugin.createPackageSplitResTask(appVariantData);
+        }
         basePlugin.addPackageTasks(appVariantData, assembleTask, true /*publishApk*/);
     }
 

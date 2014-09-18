@@ -33,6 +33,13 @@ import java.util.List;
  */
 public class SimpleTestRunner implements TestRunner {
 
+    File mAdbExec;
+
+    public SimpleTestRunner(File adbExec) {
+        mAdbExec = adbExec;
+    }
+
+
     @Override
     public boolean runTests(
             @NonNull String projectName,
@@ -68,7 +75,7 @@ public class SimpleTestRunner implements TestRunner {
                     }
 
                     executor.execute(new SimpleTestCallable(device, projectName, variantName,
-                            testApk, testedApk, testData,
+                            testApk, testedApk, testData.getSplitApks(), mAdbExec, testData,
                             resultsDir, coverageDir, timeout, logger));
                 }
             }

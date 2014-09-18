@@ -84,6 +84,7 @@ import com.android.build.gradle.tasks.MergeManifests
 import com.android.build.gradle.tasks.MergeResources
 import com.android.build.gradle.tasks.NdkCompile
 import com.android.build.gradle.tasks.PackageApplication
+import com.android.build.gradle.tasks.PackageSplitRes
 import com.android.build.gradle.tasks.PreDex
 import com.android.build.gradle.tasks.ProcessAndroidResources
 import com.android.build.gradle.tasks.ProcessAppManifest
@@ -91,6 +92,7 @@ import com.android.build.gradle.tasks.ProcessManifest
 import com.android.build.gradle.tasks.ProcessTestManifest
 import com.android.build.gradle.tasks.ProcessTestManifest2
 import com.android.build.gradle.tasks.RenderscriptCompile
+import com.android.build.gradle.tasks.SplitZipAlign
 import com.android.build.gradle.tasks.ZipAlign
 import com.android.builder.core.AndroidBuilder
 import com.android.builder.core.DefaultBuildType
@@ -127,6 +129,7 @@ import com.google.common.collect.Lists
 import com.google.common.collect.Maps
 import com.google.common.collect.Multimap
 import com.google.common.collect.Sets
+import com.google.common.base.Predicate
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.Project
@@ -1124,6 +1127,23 @@ public abstract class BasePlugin {
                     variantData.mergeResourcesTask, variantData.mergeAssetsTask
             processResources.plugin = this
 
+            if (variantData.getSplitHandlingPolicy() ==
+                    BaseVariantData.SplitHandlingPolicy.RELEASE_21_AND_AFTER_POLICY) {
+
+                Set<String> filters = Sets.filter(getExtension().getSplits().getDensityFilters(),
+                        new Predicate<? super String>() {
+
+                            @Override
+                            boolean apply(Object o) {
+                                return o != null;
+                            }
+                        });
+                processResources.splits = filters;
+                processResources.conventionMapping.splitInfoOutputFile = {
+                    project.file("$project.buildDir/${FD_INTERMEDIATES}/res/splitInfoList.json")
+                }
+            }
+
             // only generate code if the density filter is null, and if we haven't generated
             // it yet (if you have abi + density splits, then several abi output will have no
             // densityFilter)
@@ -1196,6 +1216,75 @@ public abstract class BasePlugin {
                 return resConfigs
             }
         }
+    }
+
+    /**
+     * Creates the split resources packages task if necessary. AAPT will produce split packages
+     * for all --split provided parameters. These split packages should be signed and moved
+     * unchanged to the APK build output directory.
+     * @param variantData the variant configuration.
+     */
+
+    public void createPackageSplitResTask(
+            @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData) {
+
+        assert variantData.getSplitHandlingPolicy() ==
+                BaseVariantData.SplitHandlingPolicy.RELEASE_21_AND_AFTER_POLICY;
+
+        VariantConfiguration config = variantData.variantConfiguration
+        Set<String> filters = Sets.filter(getExtension().getSplits().getDensityFilters(),
+                new Predicate<? super String>() {
+
+                    @Override
+                    boolean apply(Object o) {
+                        return o != null;
+                    }
+                });
+        def outputs = variantData.outputs;
+        if (outputs.size() != 1) {
+            throw new RuntimeException("In release 21 and later, there can be only one main APK, " +
+                    "found " + outputs.size());
+        }
+
+        BaseVariantOutputData variantOutputData = outputs.get(0);
+        variantOutputData.packageSplitResourcesTask =
+                project.tasks.create("package${config.fullName.capitalize()}SplitResources",
+                        PackageSplitRes);
+        variantOutputData.packageSplitResourcesTask.inputDirectory =
+                new File("$project.buildDir/${FD_INTERMEDIATES}/res")
+        variantOutputData.packageSplitResourcesTask.inputSplitResListFile =
+                variantOutputData.processResourcesTask.splitInfoOutputFile
+        variantOutputData.packageSplitResourcesTask.splits = filters
+        variantOutputData.packageSplitResourcesTask.outputBaseName = config.fullName
+        variantOutputData.packageSplitResourcesTask.signingConfig =
+                (SigningConfigDsl) config.signingConfig
+        variantOutputData.packageSplitResourcesTask.outputDirectory =
+                new File("$project.buildDir/outputs/apk")
+        variantOutputData.packageSplitResourcesTask.outputPackagedSplitResListFile =
+                new File(variantOutputData.packageSplitResourcesTask.outputDirectory,
+                    "packaged${config.fullName.capitalize()}SplitInfo.json")
+        variantOutputData.packageSplitResourcesTask.plugin = this
+        variantOutputData.packageSplitResourcesTask.dependsOn variantOutputData.processResourcesTask
+
+        SplitZipAlign zipAlign = project.tasks.create("zipAlign${config.fullName.capitalize()}SplitPackages", SplitZipAlign)
+        zipAlign.conventionMapping.packagedSplitResListFile = {
+            variantOutputData.packageSplitResourcesTask.outputPackagedSplitResListFile
+        }
+        zipAlign.conventionMapping.zipAlignExe = {
+            String path = androidBuilder.targetInfo?.buildTools?.getPath(ZIP_ALIGN)
+            if (path != null) {
+                return new File(path)
+            }
+
+            return null
+        }
+        zipAlign.alignedFileList =
+                new File(variantOutputData.packageSplitResourcesTask.outputDirectory,
+                "aligned${config.fullName.capitalize()}PackagedSplitInfo.json")
+        zipAlign.outputFile = new File("$project.buildDir/outputs/apk")
+        zipAlign.outputBaseName = config.fullName;
+        ((ApkVariantOutputData) variantOutputData).splitZipAlign = zipAlign
+        zipAlign.dependsOn(variantOutputData.packageSplitResourcesTask)
     }
 
     public void createProcessJavaResTask(
@@ -1760,6 +1849,11 @@ public abstract class BasePlugin {
 
             project.file("$rootLocation/$subFolder/$flavorFolder")
         }
+
+        testTask.conventionMapping.adbExec = {
+            return getSdkInfo().getAdb()
+        }
+
         testTask.conventionMapping.reportsDir = {
             String rootLocation = extension.testOptions.reportDir != null ?
                 extension.testOptions.reportDir :
@@ -1938,6 +2032,9 @@ public abstract class BasePlugin {
             variantOutputData.packageApplicationTask = packageApp
             packageApp.dependsOn variantOutputData.processResourcesTask, dexTask,
                     variantData.processJavaResourcesTask
+            if (variantOutputData.packageSplitResourcesTask != null) {
+                packageApp.dependsOn variantOutputData.packageSplitResourcesTask
+            }
 
             // Add dependencies on NDK tasks if NDK plugin is applied.
             if (extension.getUseNewNativePlugin()) {
@@ -2053,6 +2150,9 @@ public abstract class BasePlugin {
                         }
 
                         return null
+                    }
+                    if (variantOutputData.splitZipAlign != null) {
+                        zipAlignTask.dependsOn variantOutputData.splitZipAlign
                     }
 
                     appTask = zipAlignTask
