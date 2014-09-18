@@ -29,10 +29,10 @@ public class DetectMissingPrefixTest extends AbstractCheckTest {
         assertEquals(
             "res/layout/namespace.xml:2: Error: Attribute is missing the Android namespace prefix [MissingPrefix]\n" +
             "<LinearLayout xmlns:android=\"http://schemas.android.com/apk/res/android\" xmlns:other=\"http://foo.bar\" android:id=\"@+id/newlinear\" android:orientation=\"vertical\" android:layout_width=\"match_parent\" android:layout_height=\"match_parent\" orientation=\"true\">\n" +
-            "                                                                                                                                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
+            "                                                                                                                                                                                                                                          ~~~~~~~~~~~~~~~~~~\n" +
             "res/layout/namespace.xml:3: Error: Attribute is missing the Android namespace prefix [MissingPrefix]\n" +
             "    <Button style=\"@style/setupWizardOuterFrame\" android.text=\"Button\" android:id=\"@+id/button1\" android:layout_width=\"wrap_content\" android:layout_height=\"wrap_content\"></Button>\n" +
-            "                                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
+            "                                                 ~~~~~~~~~~~~~~~~~~~~~\n" +
             "res/layout/namespace.xml:5: Error: Unexpected namespace prefix \"other\" found for tag LinearLayout [MissingPrefix]\n" +
             "    <LinearLayout other:orientation=\"horizontal\"/>\n" +
             "                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
@@ -43,11 +43,10 @@ public class DetectMissingPrefixTest extends AbstractCheckTest {
 
     public void testCustomNamespace() throws Exception {
         assertEquals(
-            "res/layout/namespace2.xml:8: Error: Attribute is missing the Android namespace prefix [MissingPrefix]\n" +
-            "    customprefix:orientation=\"vertical\"\n" +
-            "                 ~~~~~~~~~~~~~~~~~~~~~~\n" +
-            "1 errors, 0 warnings\n" +
-            "",
+            "res/layout/namespace2.xml:9: Error: Attribute is missing the Android namespace prefix [MissingPrefix]\n" +
+            "    orientation=\"true\">\n" +
+            "    ~~~~~~~~~~~~~~~~~~\n" +
+            "1 errors, 0 warnings\n",
 
             lintFiles("res/layout/namespace2.xml"));
     }

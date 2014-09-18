@@ -416,4 +416,80 @@ public class PositionXmlParserTest extends TestCase {
         assertEquals(9, buttonPosition.getLine());
         assertEquals(4, buttonPosition.getColumn());
     }
+
+    public void testAttributeWithoutNamespace() throws Exception {
+        // Search for attribute with different prefixes and with no prefix.
+        // Make sure we find it regardless of which one comes first (which is why we
+        // list all 3 orders here and search for all attributes in all 3.)
+        String xml = ""
+                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                + "<LinearLayout\n"
+                + "        xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "        xmlns:other=\"http://foo.bar\">\n"
+                + "    <Button\n"
+                + "        android:id=\"@+id/button1\"\n"
+                + "        android:orientation=\"vertical\"\n"
+                + "        other:orientation=\"vertical\"\n"
+                + "        orientation=\"true\"/>\n"
+                + "    <Button\n"
+                + "        android:id=\"@+id/button2\"\n"
+                + "        other:orientation=\"vertical\"\n"
+                + "        android:orientation=\"vertical\"\n"
+                + "        orientation=\"true\"/>\n"
+                + "    <Button\n"
+                + "        android:id=\"@+id/button3\"\n"
+                + "        orientation=\"true\"\n"
+                + "        android:orientation=\"vertical\"\n"
+                + "        other:orientation=\"vertical\"/>\n"
+                + "</LinearLayout>\n"
+                + "\n";
+
+        PositionXmlParser parser = new PositionXmlParser();
+        File file = File.createTempFile("parsertest", ".xml");
+        file.deleteOnExit();
+        Writer fw = new BufferedWriter(new FileWriter(file));
+        fw.write(xml);
+        fw.close();
+        Document document = parser.parse(new FileInputStream(file));
+        assertNotNull(document);
+
+        // Basic parsing heart beat tests
+        Element linearLayout = (Element) document.getElementsByTagName("LinearLayout").item(0);
+        assertNotNull(linearLayout);
+        NodeList buttons = document.getElementsByTagName("Button");
+        assertEquals(3, buttons.getLength());
+
+        // Check attribute positions
+        for (int i = 0, n = buttons.getLength(); i < n; i++) {
+            Element button = (Element)buttons.item(i);
+            Attr attr;
+            Position start;
+            Position end;
+
+            attr = button.getAttributeNode("orientation");
+            start = parser.getPosition(attr);
+            assertNotNull(start);
+            end = start.getEnd();
+            assertNotNull(end);
+            assertEquals(" orientation=\"true\"",
+                    xml.substring(start.getOffset() - 1, end.getOffset()));
+
+            attr = button.getAttributeNodeNS("http://schemas.android.com/apk/res/android",
+                    "orientation");
+            start = parser.getPosition(attr);
+            assertNotNull(start);
+            end = start.getEnd();
+            assertNotNull(end);
+            assertEquals("android:orientation=\"vertical\"",
+                    xml.substring(start.getOffset(), end.getOffset()));
+
+            attr = button.getAttributeNodeNS("http://foo.bar", "orientation");
+            start = parser.getPosition(attr);
+            assertNotNull(start);
+            end = start.getEnd();
+            assertNotNull(end);
+            assertEquals("other:orientation=\"vertical\"",
+                    xml.substring(start.getOffset(), end.getOffset()));
+        }
+    }
 }

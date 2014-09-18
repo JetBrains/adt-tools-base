@@ -29,7 +29,7 @@ public class PrivateResourceDetectorTest extends AbstractCheckTest {
         assertEquals(
             "res/layout/private.xml:3: Error: Illegal resource reference: @*android resources are private and not always present [PrivateResource]\n" +
             "    <ImageView android:id=\"@+id/android_logo\" android:layout_width=\"wrap_content\" android:layout_height=\"wrap_content\" android:src=\"@*android:drawable/android_button\" android:focusable=\"false\" android:clickable=\"false\" />\n" +
-            "                                                                                                                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
+            "                                                                                                                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
             "1 errors, 0 warnings\n" +
             "",
             lintProject("res/layout/private.xml"));

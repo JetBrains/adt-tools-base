@@ -222,7 +222,7 @@ public class NamespaceDetector extends LayoutDetector {
             if (checkCustomAttrs) {
                 checkCustomNamespace(context, root);
             }
-            checkElement(context, root);
+            checkElement(root);
 
             if (mCheckUnused && !mUnusedNamespaces.isEmpty()) {
                 for (Map.Entry<String, Attr> entry : mUnusedNamespaces.entrySet()) {
@@ -257,7 +257,7 @@ public class NamespaceDetector extends LayoutDetector {
         }
     }
 
-    private void checkElement(XmlContext context, Node node) {
+    private void checkElement(Node node) {
         if (node.getNodeType() == Node.ELEMENT_NODE) {
             if (mCheckUnused) {
                 NamedNodeMap attributes = node.getAttributes();
@@ -272,7 +272,7 @@ public class NamespaceDetector extends LayoutDetector {
 
             NodeList childNodes = node.getChildNodes();
             for (int i = 0, n = childNodes.getLength(); i < n; i++) {
-                checkElement(context, childNodes.item(i));
+                checkElement(childNodes.item(i));
             }
         }
     }
