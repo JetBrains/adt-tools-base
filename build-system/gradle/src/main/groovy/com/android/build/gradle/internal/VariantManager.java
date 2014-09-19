@@ -53,6 +53,7 @@ import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -171,6 +172,10 @@ public class VariantManager {
         Splits splits = basePlugin.getExtension().getSplits();
         Set<String> densities = splits.getDensityFilters();
         Set<String> abis = splits.getAbiFilters();
+
+        // check against potentially empty lists. We always need to generate at least one output
+        densities = densities.isEmpty() ? Collections.<String>singleton(null) : densities;
+        abis = abis.isEmpty() ? Collections.<String>singleton(null) : abis;
 
         if (productFlavors.isEmpty()) {
             createTasksForDefaultBuild(densities, abis, signingOverride);
