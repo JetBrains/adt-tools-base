@@ -48,6 +48,7 @@ public class AutomatedBuildTest extends BuildTest {
             "densitySplitWithOldMerger",
             "dependencies",
             "dependencyChecker",
+            "emptySplit",
             "filteredOutBuildType",
             "flavored",
             "flavorlib",
