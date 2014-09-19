@@ -27,6 +27,11 @@ import java.io.File;
 public interface SplitOutput {
 
     /**
+     * An object representing the lack of filter.
+     */
+    public static final String NO_FILTER = null;
+
+    /**
      * Returns the output file for this artifact's output.
      * Depending on whether the project is an app or a library project, this could be an apk or
      * an aar file.
