@@ -40,6 +40,9 @@ public final class HandleViewDebug extends ChunkHandler {
     /** Capture View Layers. */
     private static final int VURT_CAPTURE_LAYERS = 2;
 
+    /** Dump View Theme. */
+    private static final int VURT_DUMP_THEME = 3;
+
     /**
      * Generic View Operation, first parameter in the packet should be one of the
      * VUOP_* constants below.
@@ -229,6 +232,23 @@ public final class HandleViewDebug extends ChunkHandler {
             @NonNull String view) throws IOException {
         sendViewOpPacket(client, VUOP_DUMP_DISPLAYLIST, viewRoot, view, null,
                 sViewOpNullChunkHandler);
+    }
+
+    public static void dumpTheme(@NonNull Client client, @NonNull String viewRoot,
+            @NonNull ViewDumpHandler handler)
+            throws IOException {
+        ByteBuffer buf = allocBuffer(4      // opcode
+                + 4                         // view root length
+                + viewRoot.length() * 2);     // view root
+        JdwpPacket packet = new JdwpPacket(buf);
+        ByteBuffer chunkBuf = getChunkDataBuf(buf);
+
+        chunkBuf.putInt(VURT_DUMP_THEME);
+        chunkBuf.putInt(viewRoot.length());
+        ByteBufferUtil.putString(chunkBuf, viewRoot);
+
+        finishChunkPacket(packet, CHUNK_VURT, chunkBuf.position());
+        client.sendAndConsume(packet, handler);
     }
 
     /** A {@link ViewDumpHandler} to use when no response is expected. */
