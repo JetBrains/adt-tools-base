@@ -125,7 +125,9 @@ public class XmlDocument {
             XmlDocument lowerPriorityDocument,
             MergingReport.Builder mergingReportBuilder) {
 
-        mergingReportBuilder.getActionRecorder().recordDefaultNodeAction(getRootNode());
+        if (getFileType() == Type.MAIN) {
+            mergingReportBuilder.getActionRecorder().recordDefaultNodeAction(getRootNode());
+        }
 
         getRootNode().mergeWithLowerPriorityNode(
                 lowerPriorityDocument.getRootNode(), mergingReportBuilder);
