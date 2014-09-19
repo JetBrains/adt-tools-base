@@ -204,4 +204,9 @@ public class FakeDevice extends DeviceConnector {
     public int getWidth() {
         return 480;
     }
+
+    public String getProperty(String propertyName) {
+        if ("ro.sf.lcd_density".equals(propertyName)) return "160";
+        return null;
+    }
 }

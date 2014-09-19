@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.build.FilterData;
 import com.android.build.OutputFile;
 import com.android.build.gradle.api.ApkOutputFile;
+import com.android.build.gradle.api.MainApkOutputFile;
 import com.android.build.gradle.tasks.PackageApplication;
 import com.android.build.gradle.tasks.SplitZipAlign;
 import com.android.build.gradle.tasks.ZipAlign;
@@ -70,8 +71,12 @@ public class ApkVariantOutputData extends BaseVariantOutputData {
     public ImmutableList<ApkOutputFile> getOutputs() {
         ImmutableList.Builder<ApkOutputFile> outputs = ImmutableList.builder();
         outputs.add(getMainOutputFile());
-        if (packageSplitResourcesTask != null) {
-            outputs.addAll(packageSplitResourcesTask.getOutputSplitFiles());
+        if (splitZipAlign != null) {
+            outputs.addAll(splitZipAlign.getOutputSplitFiles());
+        } else {
+            if (packageSplitResourcesTask != null) {
+                outputs.addAll(packageSplitResourcesTask.getOutputSplitFiles());
+            }
         }
         return outputs.build();
     }

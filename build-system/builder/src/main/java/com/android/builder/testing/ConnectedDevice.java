@@ -179,4 +179,10 @@ public class ConnectedDevice extends DeviceConnector {
     public int getWidth() {
         return 0;  //To change body of implemented methods use File | Settings | File Templates.
     }
+
+    @Override
+    @NonNull
+    public String getProperty(String propertyName) {
+        return iDevice.getProperty(propertyName);
+    }
 }

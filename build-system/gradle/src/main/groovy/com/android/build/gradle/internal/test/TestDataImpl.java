@@ -101,37 +101,21 @@ public class TestDataImpl implements TestData {
         return testedVariantData2.getVariantConfiguration().getType() == VariantConfiguration.Type.LIBRARY;
     }
 
-    @Nullable
+    @NonNull
     @Override
-    public File getTestedApk(int density, @NonNull List<String> abis) {
+    public ImmutableList<File> getTestedApks(int density, @NonNull List<String> abis) {
         TestedVariantData testedVariantData = testVariantData.getTestedVariantData();
         BaseVariantData<?> testedVariantData2 = (BaseVariantData) testedVariantData;
 
-        List<File> outputFiles = SplitOutputMatcher.computeBestOutput(
+        List<OutputFile> outputFiles = SplitOutputMatcher.computeBestOutput(
                 testedVariantData2.getOutputs(),
                 testedVariantData2.getVariantConfiguration().getSupportedAbis(),
                 density,
                 abis);
-        if (!outputFiles.isEmpty()) {
-            return outputFiles.get(0);
+        ImmutableList.Builder<File> apks = ImmutableList.builder();
+        for (OutputFile outputFile : outputFiles) {
+            apks.add(((ApkOutputFile) outputFile).getOutputFile());
         }
-
-        return null;
-    }
-
-    @Nullable
-    @Override
-    public File[] getSplitApks() {
-        TestedVariantData testedVariantData = testVariantData.getTestedVariantData();
-        BaseVariantData<?> testedVariantData2 = (BaseVariantData) testedVariantData;
-
-        ArrayList<File> splits = new ArrayList<File>();
-        for (ApkOutputFile apkOutput :
-                testedVariantData2.getOutputs().get(0).getOutputs()) {
-            if (apkOutput.getType() == OutputFile.OutputType.SPLIT) {
-                splits.add(apkOutput.getOutputFile());
-            }
-        }
-        return splits.isEmpty() ? null : splits.toArray(new File[splits.size()]);
+        return apks.build();
     }
 }
