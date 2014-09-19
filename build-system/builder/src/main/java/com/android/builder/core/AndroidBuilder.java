@@ -68,6 +68,7 @@ import com.android.manifmerger.ManifestMerger;
 import com.android.manifmerger.ManifestMerger2;
 import com.android.manifmerger.MergerLog;
 import com.android.manifmerger.MergingReport;
+import com.android.manifmerger.PlaceholderHandler;
 import com.android.manifmerger.XmlDocument;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
@@ -785,10 +786,13 @@ public class AndroidBuilder {
 
             if (testManifestFile != null) {
                 File mergedTestManifest = File.createTempFile("manifestMerger", ".xml", tmpDir);
-                mLogger.verbose("Merging user supplied manifest in %1$s", generatedTestManifest.getAbsolutePath());
+                mLogger.verbose("Merging user supplied manifest in %1$s",
+                        generatedTestManifest.getAbsolutePath());
                 Invoker invoker = ManifestMerger2.newMerger(
                         testManifestFile, mLogger, ManifestMerger2.MergeType.APPLICATION)
                         .setOverride(SystemProperty.PACKAGE, testApplicationId)
+                        .setPlaceHolderValue(PlaceholderHandler.INSTRUMENTATION_RUNNER,
+                                instrumentationRunner)
                         .addLibraryManifests(generatedTestManifest);
                 if (minSdkVersion != null) {
                     invoker.setOverride(SystemProperty.MIN_SDK_VERSION, minSdkVersion);

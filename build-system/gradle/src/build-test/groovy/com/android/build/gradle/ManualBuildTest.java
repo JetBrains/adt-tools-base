@@ -384,12 +384,22 @@ public class ManualBuildTest extends BuildTest {
         }, null /*env vars*/);
 
         System.out.println("Beginning dump");
+        boolean foundPermission = false;
+        boolean foundMetadata = false;
         for (String line : aaptOutput) {
             if (line.contains("foo.permission-group.COST_MONEY")) {
-                return;
+                foundPermission = true;
+            }
+            if (line.contains("meta-data")) {
+                foundMetadata = true;
             }
         }
-        fail("Could not find user-specified permission group.");
+        if (!foundPermission) {
+            fail("Could not find user-specified permission group.");
+        }
+        if (!foundMetadata) {
+            fail("Could not find meta-data under instrumentation ");
+        }
     }
 
     public void testDensitySplits() throws Exception {
