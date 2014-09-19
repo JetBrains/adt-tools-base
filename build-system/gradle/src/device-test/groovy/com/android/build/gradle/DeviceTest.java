@@ -44,7 +44,7 @@ public class DeviceTest extends BuildTest {
     private TestType testType;
 
 
-    private static enum TestType { CHECK, CHECK_AND_REPORT }
+    private static enum TestType { CHECK, CHECK_AND_REPORT, INSTALL }
 
     private static final String[] sBuiltProjects = new String[] {
             "api",
@@ -90,6 +90,10 @@ public class DeviceTest extends BuildTest {
             "multiproject",
     };
 
+    private static final String[] sInstallProjects = new String[] {
+            "basic"
+    };
+
     public static Test suite() {
         TestSuite suite = new TestSuite();
         suite.setName("DeviceTest");
@@ -115,12 +119,19 @@ public class DeviceTest extends BuildTest {
                 suite.addTest(test);
             }
 
-            // first the project we build on all available versions of Gradle
             for (String projectName : sMergeReportProjects) {
-                String testName = "check_" + projectName + "_" + gradleVersion;
+                String testName = "report_" + projectName + "_" + gradleVersion;
 
                 DeviceTest test = (DeviceTest) TestSuite.createTest(DeviceTest.class, testName);
                 test.setProjectInfo(projectName, gradleVersion, TestType.CHECK_AND_REPORT);
+                suite.addTest(test);
+            }
+
+            for (String projectName : sInstallProjects) {
+                String testName = "install_" + projectName + "_" + gradleVersion;
+
+                DeviceTest test = (DeviceTest) TestSuite.createTest(DeviceTest.class, testName);
+                test.setProjectInfo(projectName, gradleVersion, TestType.INSTALL);
                 suite.addTest(test);
             }
         }
@@ -136,15 +147,24 @@ public class DeviceTest extends BuildTest {
 
     @Override
     protected void runTest() throws Throwable {
+        //noinspection EmptyFinallyBlock
         try {
-            if (testType == DeviceTest.TestType.CHECK) {
-                runTasksOnProject(projectName, gradleVersion,
-                        Collections.<String>emptyList(),
-                        "clean", "connectedCheck");
-            } else {
-                runTasksOnProject(projectName, gradleVersion,
-                        Collections.<String>emptyList(),
-                        "clean", "connectedCheck", "mergeAndroidReports");
+            switch (testType) {
+                case CHECK:
+                    runTasksOnProject(projectName, gradleVersion,
+                            Collections.<String>emptyList(),
+                            "clean", "connectedCheck");
+                    break;
+                case CHECK_AND_REPORT:
+                    runTasksOnProject(projectName, gradleVersion,
+                            Collections.<String>emptyList(),
+                            "clean", "connectedCheck", "mergeAndroidReports");
+                    break;
+                case INSTALL:
+                    runTasksOnProject(projectName, gradleVersion,
+                            Collections.<String>emptyList(),
+                            "clean", "installDebug", "uninstallAll");
+                    break;
             }
         } finally {
             // because runTasksOnProject will throw an exception if the gradle side fails, do this
