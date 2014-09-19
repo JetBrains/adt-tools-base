@@ -16,7 +16,7 @@
 
 package com.android.build.gradle
 import com.android.build.gradle.internal.tasks.AndroidReportTask
-import com.android.build.gradle.internal.tasks.DeviceProviderInstrumentTestLibraryTask
+import com.android.build.gradle.internal.tasks.DeviceProviderInstrumentTestTask
 import com.android.build.gradle.internal.test.TestOptions
 import com.android.build.gradle.internal.test.report.ReportType
 import org.gradle.api.Project
@@ -70,8 +70,8 @@ class ReportingPlugin implements org.gradle.api.Plugin<Project> {
                 for (AndroidReportTask task : tasks) {
                     mergeReportsTask.addTask(task)
                 }
-                TaskCollection<DeviceProviderInstrumentTestLibraryTask> tasks2 = p.tasks.withType(DeviceProviderInstrumentTestLibraryTask)
-                for (DeviceProviderInstrumentTestLibraryTask task : tasks2) {
+                TaskCollection<DeviceProviderInstrumentTestTask> tasks2 = p.tasks.withType(DeviceProviderInstrumentTestTask)
+                for (DeviceProviderInstrumentTestTask task : tasks2) {
                     mergeReportsTask.addTask(task)
                 }
             }
