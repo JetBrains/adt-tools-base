@@ -27,12 +27,12 @@ public class UninstallTask extends BaseTask {
 
     @TaskAction
     public void uninstall() {
-        String packageName = variant.packageName
-        logger.info("Uninstalling app: " + packageName)
+        String applicationId = variant.getApplicationId()
+        logger.info("Uninstalling app: " + applicationId)
         project.exec {
             executable = getAdbExe()
             args "uninstall"
-            args packageName
+            args applicationId
         }
     }
 }
