@@ -247,11 +247,16 @@ public enum TextFormat {
                     }
 
                     String url = text.substring(i, end);
+                    // <nobr>: don't wrap URLs
+                    //noinspection SpellCheckingInspection
+                    sb.append("<nobr>");            //$NON-NLS-1$
                     sb.append("<a href=\"");        //$NON-NLS-1$
                     sb.append(url);
                     sb.append('"').append('>');
                     sb.append(url);
                     sb.append("</a>");              //$NON-NLS-1$
+                    //noinspection SpellCheckingInspection
+                    sb.append("</nobr>");           //$NON-NLS-1$
 
                     flushIndex = end;
                     i = flushIndex - 1; // -1: account for the i++ in the loop
