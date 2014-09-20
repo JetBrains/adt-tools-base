@@ -16,8 +16,6 @@
 
 package com.android.builder.internal.testing;
 
-import static com.android.sdklib.BuildToolInfo.PathId.ZIP_ALIGN;
-
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.testing.TestData;
@@ -27,6 +25,7 @@ import com.android.ddmlib.NullOutputReceiver;
 import com.android.ddmlib.testrunner.ITestRunListener;
 import com.android.ddmlib.testrunner.RemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.TestIdentifier;
+import com.android.ddmlib.testrunner.TestRunResult;
 import com.android.utils.ILogger;
 
 import java.io.BufferedReader;
@@ -34,10 +33,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.PipedInputStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -47,6 +44,8 @@ import java.util.concurrent.TimeUnit;
 /**
  * Basic Callable to run tests on a given {@link DeviceConnector} using
  * {@link RemoteAndroidTestRunner}.
+ *
+ * The boolean return value is true if success.
  */
 public class SimpleTestCallable implements Callable<Boolean> {
 
@@ -176,9 +175,30 @@ public class SimpleTestCallable implements Callable<Boolean> {
 
             runner.run(runListener);
 
-            boolean result = runListener.getRunResult().hasFailedTests();
+            TestRunResult testRunResult = runListener.getRunResult();
+
             success = true;
-            return result;
+
+            // for now throw an exception if no tests.
+            // TODO return a status instead of allow merging of multi-variants/multi-device reports.
+            if (testRunResult.getNumTests() == 0) {
+                CustomTestRunListener fakeRunListener = new CustomTestRunListener(
+                        deviceName, projectName, flavorName, logger);
+                fakeRunListener.setReportDir(resultsDir);
+
+                // create a fake test output
+                Map<String, String> emptyMetrics = Collections.emptyMap();
+                TestIdentifier fakeTest = new TestIdentifier(device.getClass().getName(), "hasTests");
+                fakeRunListener.testStarted(fakeTest);
+                fakeRunListener.testFailed(ITestRunListener.TestFailure.ERROR, fakeTest , "No tests found.");
+                fakeRunListener.testEnded(fakeTest, emptyMetrics);
+
+                // end the run to generate the XML file.
+                fakeRunListener.testRunEnded(System.currentTimeMillis() - time, emptyMetrics);
+                return false;
+            }
+
+            return !testRunResult.hasFailedTests();
         } catch (Exception e) {
             Map<String, String> emptyMetrics = Collections.emptyMap();
 

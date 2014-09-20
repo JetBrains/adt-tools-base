@@ -20,6 +20,7 @@ public class ShowPeopleActivity extends Activity {
 
         LinearLayout group = new LinearLayout(this);
         group.setOrientation(LinearLayout.VERTICAL);
+        group.setId(R.id.rootView);
 
         Iterable<Person> people = new People();
         for (Person person : people) {
