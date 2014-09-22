@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.internal;
 
+import static com.android.build.SplitOutput.NO_FILTER;
 import static com.android.builder.core.BuilderConstants.ANDROID_TEST;
 import static com.android.builder.core.BuilderConstants.DEBUG;
 import static com.android.builder.core.BuilderConstants.LINT;
@@ -174,8 +175,8 @@ public class VariantManager {
         Set<String> abis = splits.getAbiFilters();
 
         // check against potentially empty lists. We always need to generate at least one output
-        densities = densities.isEmpty() ? Collections.<String>singleton(null) : densities;
-        abis = abis.isEmpty() ? Collections.<String>singleton(null) : abis;
+        densities = densities.isEmpty() ? Collections.singleton(NO_FILTER) : densities;
+        abis = abis.isEmpty() ? Collections.singleton(NO_FILTER) : abis;
 
         if (productFlavors.isEmpty()) {
             createTasksForDefaultBuild(densities, abis, signingOverride);
