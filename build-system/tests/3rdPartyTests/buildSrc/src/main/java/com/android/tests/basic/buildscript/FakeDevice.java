@@ -90,7 +90,51 @@ public class FakeDevice extends DeviceConnector {
             throws TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException,
             IOException {
         System.out.println(String.format("EXECSHELL(%S) CALLED", name));
+
+        // now fake out some tests result to make the test runner happy.
+        addLineToReceiver("INSTRUMENTATION_STATUS: numtests=2\r\n", receiver);
+        addLineToReceiver("INSTRUMENTATION_STATUS: numtests=2\r\n", receiver);
+        addLineToReceiver("INSTRUMENTATION_STATUS: stream=\r\n", receiver);
+        addLineToReceiver("com.android.tests.basic.MainTest:\r\n", receiver);
+        addLineToReceiver("INSTRUMENTATION_STATUS: id=InstrumentationTestRunner\r\n", receiver);
+        addLineToReceiver("INSTRUMENTATION_STATUS: test=testBuildConfig\r\n", receiver);
+        addLineToReceiver("INSTRUMENTATION_STATUS: class=com.android.tests.basic.MainTest\r\n", receiver);
+        addLineToReceiver("INSTRUMENTATION_STATUS: current=1\r\n", receiver);
+        addLineToReceiver("INSTRUMENTATION_STATUS_CODE: 1\r\n", receiver);
+        addLineToReceiver("INSTRUMENTATION_STATUS: numtests=2\r\n", receiver);
+        addLineToReceiver("INSTRUMENTATION_STATUS: stream=.\r\n", receiver);
+        addLineToReceiver("INSTRUMENTATION_STATUS: id=InstrumentationTestRunner\r\n", receiver);
+        addLineToReceiver("INSTRUMENTATION_STATUS: test=testBuildConfig\r\n", receiver);
+        addLineToReceiver("INSTRUMENTATION_STATUS: class=com.android.tests.basic.MainTest\r\n", receiver);
+        addLineToReceiver("INSTRUMENTATION_STATUS: current=1\r\n", receiver);
+        addLineToReceiver("INSTRUMENTATION_STATUS_CODE: 0\r\n", receiver);
+        addLineToReceiver("INSTRUMENTATION_STATUS: numtests=2\r\n", receiver);
+        addLineToReceiver("INSTRUMENTATION_STATUS: stream=\r\n", receiver);
+        addLineToReceiver("INSTRUMENTATION_STATUS: id=InstrumentationTestRunner\r\n", receiver);
+        addLineToReceiver("INSTRUMENTATION_STATUS: test=testPreconditions\r\n", receiver);
+        addLineToReceiver("INSTRUMENTATION_STATUS: class=com.android.tests.basic.MainTest\r\n", receiver);
+        addLineToReceiver("INSTRUMENTATION_STATUS: current=2\r\n", receiver);
+        addLineToReceiver("INSTRUMENTATION_STATUS_CODE: 1\r\n", receiver);
+        addLineToReceiver("INSTRUMENTATION_STATUS: numtests=2\r\n", receiver);
+        addLineToReceiver("INSTRUMENTATION_STATUS: stream=.\r\n", receiver);
+        addLineToReceiver("INSTRUMENTATION_STATUS: id=InstrumentationTestRunner\r\n", receiver);
+        addLineToReceiver("INSTRUMENTATION_STATUS: test=testPreconditions\r\n", receiver);
+        addLineToReceiver("INSTRUMENTATION_STATUS: class=com.android.tests.basic.MainTest\r\n", receiver);
+        addLineToReceiver("INSTRUMENTATION_STATUS: current=2\r\n", receiver);
+        addLineToReceiver("INSTRUMENTATION_STATUS_CODE: 0\r\n", receiver);
+        addLineToReceiver("INSTRUMENTATION_RESULT: stream=\r\n", receiver);
+        addLineToReceiver("Test results for InstrumentationTestRunner=..\r\n", receiver);
+        addLineToReceiver("Time: 0.247\r\n", receiver);
+        addLineToReceiver("\r\n", receiver);
+        addLineToReceiver("OK (2 tests)\r\n", receiver);
+        receiver.flush();
+
         execShellCalled = true;
+    }
+
+    private void addLineToReceiver(String line, IShellOutputReceiver receiver) {
+        byte[] bytes = line.getBytes();
+        receiver.addOutput(bytes, 0, bytes.length);
     }
 
     @Override
