@@ -16,6 +16,8 @@
 
 package com.android.build.gradle.internal.dsl;
 
+import static com.android.build.SplitOutput.NO_FILTER;
+
 import com.android.annotations.NonNull;
 
 import java.util.Set;
@@ -42,7 +44,7 @@ public class AbiSplitData extends SplitData {
 
         // if universal, and splitting enabled, then add an entry with no filter.
         if (isEnable() && universalApk) {
-            list.add(null);
+            list.add(NO_FILTER);
         }
 
         return list;

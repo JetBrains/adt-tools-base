@@ -16,6 +16,8 @@
 
 package com.android.build.gradle.internal.dsl;
 
+import static com.android.build.SplitOutput.NO_FILTER;
+
 import com.android.annotations.NonNull;
 import com.google.common.collect.Sets;
 
@@ -68,7 +70,7 @@ public class DensitySplitData extends SplitData {
 
         // if splitting enabled, then add an entry with no filter for universal
         if (isEnable()) {
-            list.add(null);
+            list.add(NO_FILTER);
         }
 
         return list;
