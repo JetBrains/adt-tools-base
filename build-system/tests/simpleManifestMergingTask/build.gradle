@@ -7,22 +7,17 @@ buildscript {
     }
 }
 
-apply plugin: 'com.android.application'
-
-android {
-    compileSdkVersion 19
-    buildToolsVersion '19.1.0'
-}
-
 task manifestMerger(type: com.android.build.gradle.tasks.InvokeManifestMerger) {
     mainManifestFile = file('src/main/AndroidManifest.xml')
     secondaryManifestFiles = [ file('src/main/Lib1_AndroidManifest.xml'), file('src/main/Lib2_AndroidManifest.xml') ]
     outputFile = file('build/Result_AndroidManifest.xml')
 }
 
-task checkResult << {
+task assembleDebug << {
     String actual = new File('build/Result_AndroidManifest.xml').text
     if (actual.indexOf("foo.permission.SEND_SMS") == -1 || actual.indexOf("foo.permission-group.COST_MONEY") == -1) {
         throw new org.gradle.tooling.BuildException("Resulting file is different from expected", null)
     }
 }
+
+assembleDebug.dependsOn manifestMerger
