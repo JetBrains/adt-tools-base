@@ -13,6 +13,7 @@ android {
     buildToolsVersion '19.1.0'
 
     defaultConfig {
+        minSdkVersion 8
         ndk {
             moduleName "sanangeles"
             cFlags "-DANDROID_NDK -DDISABLE_IMPORTGL"

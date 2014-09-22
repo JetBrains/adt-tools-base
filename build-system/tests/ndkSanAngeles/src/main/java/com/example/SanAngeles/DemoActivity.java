@@ -70,7 +70,8 @@ public class DemoActivity extends Activity {
         mGLView.onResume();
     }
 
-    private GLSurfaceView mGLView;
+    // visible for testing
+    GLSurfaceView mGLView;
 
     static {
         System.loadLibrary("sanangeles");
