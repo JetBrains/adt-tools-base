@@ -1,0 +1,29 @@
+<project name="layoutlib tests" default="test" basedir=".">
+    <property environment="env"/>
+    <description>
+        Run Project tests from Jar
+    </description>
+    <target name="test" description="All the tests.">
+        <junit fork="true">
+            <jvmarg value="-Dcom.android.test.folder=${basedir}/tests" />
+            <jvmarg value="-Dcom.android.test.sdk=${env.sdk_dir}" />
+            <jvmarg value="-Dcom.android.test.ndk=${env.ndk_dir}" />
+            <jvmarg value="-DCUSTOM_REPO=/Volumes/Sources/ext/studio-1.0-dev/out/repo" />
+            <jvmarg value="-DCUSTOM_GRADLE=0.14.0" />
+            <jvmarg value="-DCUSTOM_BUILDTOOLS=21.0.0" />
+                <classpath>
+                    <fileset dir="." >
+                        <include name="lib/*.jar" />
+                        <exclude name="project-test.jar" />
+                    </fileset>
+                </classpath>
+            <batchtest haltonfailure="false" skipNonTests="true">
+                <zipfileset src="lib/project-test.jar">
+                    <include name="**/*.class" />
+                </zipfileset>
+                <!--<zipfileset src="layoutlib-create-tests.jar" includes="**/*Test.class" />-->
+            </batchtest>
+            <formatter type="xml" usefile="true" />
+        </junit>
+    </target>
+</project>

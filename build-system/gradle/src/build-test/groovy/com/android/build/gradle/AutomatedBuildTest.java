@@ -16,6 +16,7 @@
 
 package com.android.build.gradle;
 
+import com.android.annotations.NonNull;
 import com.google.common.collect.ImmutableList;
 
 import junit.framework.Test;
@@ -31,6 +32,7 @@ import java.util.List;
  */
 public class AutomatedBuildTest extends BuildTest {
 
+    private String testFolder;
     private String projectName;
     private String gradleVersion;
     private TestType testType;
@@ -50,6 +52,7 @@ public class AutomatedBuildTest extends BuildTest {
             "dependencyChecker",
             "emptySplit",
             "filteredOutBuildType",
+            "filteredOutVariants",
             "flavored",
             "flavorlib",
             "flavoredlib",
@@ -64,14 +67,10 @@ public class AutomatedBuildTest extends BuildTest {
             "migrated",
             "multiproject",
             "multires",
-            "ndkSanAngeles",
-            "ndkSanAngeles2",
-            "ndkStandaloneSo",
             "ndkJniLib",
-            "ndkJniLib2",
-            "ndkPrebuilts",
             "ndkLibPrebuilts",
-            "ndkVariants",
+            "ndkPrebuilts",
+            "ndkSanAngeles",
             "noPreDex",
             "overlay1",
             "overlay2",
@@ -83,11 +82,11 @@ public class AutomatedBuildTest extends BuildTest {
             "renderscriptMultiSrc",
             "rsSupportMode",
             "sameNamedLibs",
-            "tictactoe",
-            /*"autorepo"*/
+            "tictactoe"
     };
 
-    private static final List<String> ndkPluginTests = ImmutableList.of(
+    // these tests are excluded on mac/win
+    private static final List<String> sNdkPluginTests = ImmutableList.of(
             "ndkJniLib2",
             "ndkSanAngeles2",
             "ndkStandaloneSo",
@@ -109,20 +108,25 @@ public class AutomatedBuildTest extends BuildTest {
             }
             // first the project we build on all available versions of Gradle
             for (String projectName : sBuiltProjects) {
-                // Disable NDK plugin tests on non-Linux platforms due to Gradle incorrectly
-                // setting arguments based on current OS instead of target OS.
-                if (!System.getProperty("os.name").equals("Linux") &&
-                        ndkPluginTests.contains(projectName)) {
-                    // TODO: Remove this when Gradle is fix.
-                    continue;
-                }
-
                 String testName = "build_" + projectName + "_" + gradleVersion;
 
                 AutomatedBuildTest test = (AutomatedBuildTest) TestSuite.createTest(
                         AutomatedBuildTest.class, testName);
-                test.setProjectInfo(projectName, gradleVersion, TestType.BUILD);
+                test.setProjectInfo(FOLDER_TEST_REGULAR, projectName, gradleVersion, TestType.BUILD);
                 suite.addTest(test);
+            }
+
+            // some native tests that run only on linux for now.
+            if (System.getProperty("os.name").equals("Linux")) {
+                for (String projectName : sNdkPluginTests) {
+                    String testName = "build_" + projectName + "_" + gradleVersion;
+
+                    AutomatedBuildTest test = (AutomatedBuildTest) TestSuite.createTest(
+                            AutomatedBuildTest.class, testName);
+                    test.setProjectInfo(FOLDER_TEST_NATIVE, projectName, gradleVersion,
+                            TestType.BUILD);
+                    suite.addTest(test);
+                }
             }
 
             // then the project to run reports on
@@ -131,7 +135,8 @@ public class AutomatedBuildTest extends BuildTest {
 
                 AutomatedBuildTest test = (AutomatedBuildTest) TestSuite.createTest(
                         AutomatedBuildTest.class, testName);
-                test.setProjectInfo(projectName, gradleVersion, TestType.REPORT);
+                test.setProjectInfo(FOLDER_TEST_REGULAR, projectName, gradleVersion,
+                        TestType.REPORT);
                 suite.addTest(test);
             }
         }
@@ -139,7 +144,12 @@ public class AutomatedBuildTest extends BuildTest {
         return suite;
     }
 
-    private void setProjectInfo(String projectName, String gradleVersion, TestType testType) {
+    private void setProjectInfo(
+            @NonNull String testFolder,
+            @NonNull String projectName,
+            @NonNull String gradleVersion,
+            @NonNull TestType testType) {
+        this.testFolder = testFolder;
         this.projectName = projectName;
         this.gradleVersion = gradleVersion;
         this.testType = testType;
@@ -148,9 +158,10 @@ public class AutomatedBuildTest extends BuildTest {
     @Override
     protected void runTest() throws Throwable {
         if (testType == TestType.BUILD) {
-            buildProject(projectName, gradleVersion);
+            buildProject(testFolder, projectName, gradleVersion);
         } else if (testType == TestType.REPORT) {
-            runTasksOn(projectName, gradleVersion, "androidDependencies", "signingReport");
+            runTasksOn(testFolder, projectName, gradleVersion,
+                    "androidDependencies", "signingReport");
         }
     }
 }

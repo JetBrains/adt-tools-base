@@ -65,6 +65,9 @@ import java.util.Map;
 
 public class AndroidProjectTest extends TestCase {
 
+    private static final String FOLDER_TEST_REGULAR = "regular";
+    private static final String FOLDER_TEST_MANUAL = "manual";
+
     private static final String MODEL_VERSION = "0.14.0";
 
     private static final Map<String, ProjectData> sProjectModelMap = Maps.newHashMap();
@@ -156,14 +159,14 @@ public class AndroidProjectTest extends TestCase {
 
     }
 
-    private ProjectData getModelForProject(String projectName) {
+    private ProjectData getModelForProject(String testFolder, String projectName) {
         ProjectData projectData = sProjectModelMap.get(projectName);
 
         if (projectData == null) {
             // Configure the connector and create the connection
             GradleConnector connector = GradleConnector.newConnector();
 
-            File projectDir = new File(getTestDir(), projectName);
+            File projectDir = new File(getTestDir(testFolder), projectName);
             connector.forProjectDirectory(projectDir);
 
             ProjectConnection connection = connector.connect();
@@ -187,11 +190,12 @@ public class AndroidProjectTest extends TestCase {
         return projectData;
     }
 
-    private Map<String, ProjectData> getModelForMultiProject(String projectName) throws Exception {
+    private Map<String, ProjectData> getModelForMultiProject(String testFolder, String projectName)
+            throws Exception {
         // Configure the connector and create the connection
         GradleConnector connector = GradleConnector.newConnector();
 
-        File projectDir = new File(getTestDir(), projectName);
+        File projectDir = new File(getTestDir(testFolder), projectName);
         connector.forProjectDirectory(projectDir);
 
         Map<String, ProjectData> map = Maps.newHashMap();
@@ -238,7 +242,7 @@ public class AndroidProjectTest extends TestCase {
 
     public void testBasic() {
         // Load the custom model for the project
-        ProjectData projectData = getModelForProject("basic");
+        ProjectData projectData = getModelForProject(FOLDER_TEST_REGULAR, "basic");
 
         AndroidProject model = projectData.model;
 
@@ -253,7 +257,7 @@ public class AndroidProjectTest extends TestCase {
 
     public void testBasicSourceProviders() throws Exception {
         // Load the custom model for the project
-        ProjectData projectData = getModelForProject("basic");
+        ProjectData projectData = getModelForProject(FOLDER_TEST_REGULAR, "basic");
 
         AndroidProject model = projectData.model;
         File projectDir = projectData.projectDir;
@@ -270,7 +274,7 @@ public class AndroidProjectTest extends TestCase {
 
     public void testBasicMultiFlavorsSourceProviders() throws Exception {
         // Load the custom model for the project
-        ProjectData projectData = getModelForProject("basicMultiFlavors");
+        ProjectData projectData = getModelForProject(FOLDER_TEST_MANUAL, "basicMultiFlavors");
 
         AndroidProject model = projectData.model;
         File projectDir = projectData.projectDir;
@@ -347,7 +351,7 @@ public class AndroidProjectTest extends TestCase {
 
     public void testBasicVariantDetails() throws Exception {
         // Load the custom model for the project
-        ProjectData projectData = getModelForProject("basic");
+        ProjectData projectData = getModelForProject(FOLDER_TEST_REGULAR, "basic");
 
         AndroidProject model = projectData.model;
 
@@ -508,7 +512,7 @@ public class AndroidProjectTest extends TestCase {
 
     public void testBasicSigningConfigs() throws Exception {
         // Load the custom model for the project
-        ProjectData projectData = getModelForProject("basic");
+        ProjectData projectData = getModelForProject(FOLDER_TEST_REGULAR, "basic");
 
         AndroidProject model = projectData.model;
 
@@ -529,7 +533,7 @@ public class AndroidProjectTest extends TestCase {
 
     public void testDensitySplitOutputs() throws Exception {
         // Load the custom model for the project
-        ProjectData projectData = getModelForProject("densitySplit");
+        ProjectData projectData = getModelForProject(FOLDER_TEST_REGULAR, "densitySplit");
 
         AndroidProject model = projectData.model;
 
@@ -572,12 +576,12 @@ public class AndroidProjectTest extends TestCase {
 
     public void testAbiSplitOutputs() throws Exception {
         // Load the custom model for the project
-        ProjectData projectData = getModelForProject("ndkSanAngeles");
+        ProjectData projectData = getModelForProject(FOLDER_TEST_REGULAR, "ndkSanAngeles");
 
         AndroidProject model = projectData.model;
 
         Collection<Variant> variants = model.getVariants();
-        assertEquals("Variant Count", 2 , variants.size());
+        assertEquals("Variant Count", 2, variants.size());
 
         // get the main artifact of the debug artifact
         Variant debugVariant = getVariant(variants, DEBUG);
@@ -612,7 +616,7 @@ public class AndroidProjectTest extends TestCase {
 
     public void testMigrated() throws Exception {
         // Load the custom model for the project
-        ProjectData projectData = getModelForProject("migrated");
+        ProjectData projectData = getModelForProject(FOLDER_TEST_REGULAR, "migrated");
 
         AndroidProject model = projectData.model;
         File projectDir = projectData.projectDir;
@@ -653,7 +657,7 @@ public class AndroidProjectTest extends TestCase {
 
     public void testRenamedApk() throws Exception {
         // Load the custom model for the project
-        ProjectData projectData = getModelForProject("renamedApk");
+        ProjectData projectData = getModelForProject(FOLDER_TEST_REGULAR, "renamedApk");
 
         AndroidProject model = projectData.model;
         File projectDir = projectData.projectDir;
@@ -682,7 +686,7 @@ public class AndroidProjectTest extends TestCase {
 
     public void testFilteredOutBuildType() {
         // Load the custom model for the project
-        ProjectData projectData = getModelForProject("filteredOutBuildType");
+        ProjectData projectData = getModelForProject(FOLDER_TEST_REGULAR, "filteredOutBuildType");
 
         AndroidProject model = projectData.model;
 
@@ -693,7 +697,7 @@ public class AndroidProjectTest extends TestCase {
 
     public void testFilteredOutVariants() {
         // Load the custom model for the project
-        ProjectData projectData = getModelForProject("filteredOutVariants");
+        ProjectData projectData = getModelForProject(FOLDER_TEST_REGULAR, "filteredOutVariants");
 
         AndroidProject model = projectData.model;
 
@@ -712,7 +716,7 @@ public class AndroidProjectTest extends TestCase {
 
     public void testFlavors() {
         // Load the custom model for the project
-        ProjectData projectData = getModelForProject("flavors");
+        ProjectData projectData = getModelForProject(FOLDER_TEST_REGULAR, "flavors");
 
         AndroidProject model = projectData.model;
         File projectDir = projectData.projectDir;
@@ -749,7 +753,7 @@ public class AndroidProjectTest extends TestCase {
     }
 
     public void testTicTacToe() throws Exception {
-        Map<String, ProjectData> map = getModelForMultiProject("tictactoe");
+        Map<String, ProjectData> map = getModelForMultiProject(FOLDER_TEST_REGULAR, "tictactoe");
 
         ProjectData libModelData = map.get(":lib");
         assertNotNull("lib module model null-check", libModelData);
@@ -779,7 +783,7 @@ public class AndroidProjectTest extends TestCase {
     }
 
     public void testFlavorLib() throws Exception {
-        Map<String, ProjectData> map = getModelForMultiProject("flavorlib");
+        Map<String, ProjectData> map = getModelForMultiProject(FOLDER_TEST_REGULAR, "flavorlib");
 
         ProjectData appModelData = map.get(":app");
         assertNotNull("Module app null-check", appModelData);
@@ -826,7 +830,7 @@ public class AndroidProjectTest extends TestCase {
     }
 
     public void testFlavoredLib() throws Exception {
-        Map<String, ProjectData> map = getModelForMultiProject("flavoredlib");
+        Map<String, ProjectData> map = getModelForMultiProject(FOLDER_TEST_REGULAR, "flavoredlib");
 
         ProjectData appModelData = map.get(":app");
         assertNotNull("Module app null-check", appModelData);
@@ -875,7 +879,7 @@ public class AndroidProjectTest extends TestCase {
     }
 
     public void testMultiproject() throws Exception {
-        Map<String, ProjectData> map = getModelForMultiProject("multiproject");
+        Map<String, ProjectData> map = getModelForMultiProject(FOLDER_TEST_REGULAR, "multiproject");
 
         ProjectData baseLibModelData = map.get(":baseLibrary");
         assertNotNull("Module app null-check", baseLibModelData);
@@ -906,7 +910,7 @@ public class AndroidProjectTest extends TestCase {
 
     public void testTestWithDep() {
         // Load the custom model for the project
-        ProjectData projectData = getModelForProject("testWithDep");
+        ProjectData projectData = getModelForProject(FOLDER_TEST_MANUAL, "testWithDep");
 
         AndroidProject model = projectData.model;
 
@@ -925,7 +929,7 @@ public class AndroidProjectTest extends TestCase {
 
     public void testLibTestDep() {
         // Load the custom model for the project
-        ProjectData projectData = getModelForProject("libTestDep");
+        ProjectData projectData = getModelForProject(FOLDER_TEST_REGULAR, "libTestDep");
 
         AndroidProject model = projectData.model;
 
@@ -949,7 +953,7 @@ public class AndroidProjectTest extends TestCase {
 
     public void testRsSupportMode() throws Exception {
         // Load the custom model for the project
-        ProjectData projectData = getModelForProject("rsSupportMode");
+        ProjectData projectData = getModelForProject(FOLDER_TEST_REGULAR, "rsSupportMode");
 
         AndroidProject model = projectData.model;
         File projectDir = projectData.projectDir;
@@ -976,7 +980,7 @@ public class AndroidProjectTest extends TestCase {
 
     public void testGenFolderApi() throws Exception {
         // Load the custom model for the project
-        ProjectData projectData = getModelForProject("genFolderApi");
+        ProjectData projectData = getModelForProject(FOLDER_TEST_REGULAR, "genFolderApi");
 
         AndroidProject model = projectData.model;
         File projectDir = projectData.projectDir;
@@ -1009,7 +1013,7 @@ public class AndroidProjectTest extends TestCase {
 
     public void testGenFolderApi2() throws Exception {
         // Load the custom model for the project
-        ProjectData projectData = getModelForProject("genFolderApi2");
+        ProjectData projectData = getModelForProject(FOLDER_TEST_MANUAL, "genFolderApi2");
 
         AndroidProject model = projectData.model;
         File projectDir = projectData.projectDir;
@@ -1042,7 +1046,7 @@ public class AndroidProjectTest extends TestCase {
 
     public void testArtifactApi() throws Exception {
         // Load the custom model for the project
-        ProjectData projectData = getModelForProject("artifactApi");
+        ProjectData projectData = getModelForProject(FOLDER_TEST_MANUAL, "artifactApi");
 
         AndroidProject model = projectData.model;
 
@@ -1058,7 +1062,8 @@ public class AndroidProjectTest extends TestCase {
         ArtifactMetaData extraArtifactMetaData = getArtifactMetaData(extraArtifacts, "__test__");
         assertNotNull("custom extra metadata null-check", extraArtifactMetaData);
         assertFalse("custom extra meta data is Test check", extraArtifactMetaData.isTest());
-        assertEquals("custom extra meta data type check", ArtifactMetaData.TYPE_JAVA, extraArtifactMetaData.getType());
+        assertEquals("custom extra meta data type check", ArtifactMetaData.TYPE_JAVA,
+                extraArtifactMetaData.getType());
 
         // check the extra source provider on the build Types.
         for (BuildTypeContainer btContainer : model.getBuildTypes()) {
@@ -1145,7 +1150,7 @@ public class AndroidProjectTest extends TestCase {
 
     public void testCustomArtifact() throws Exception {
         // Load the custom model for the projects
-        Map<String, ProjectData> map = getModelForMultiProject("customArtifactDep");
+        Map<String, ProjectData> map = getModelForMultiProject(FOLDER_TEST_MANUAL, "customArtifactDep");
 
         ProjectData appModelData = map.get(":app");
         assertNotNull("Module app null-check", appModelData);
@@ -1173,7 +1178,7 @@ public class AndroidProjectTest extends TestCase {
     }
 
     public void testLocalJarInLib() throws Exception {
-        Map<String, ProjectData> map = getModelForMultiProject("localJars");
+        Map<String, ProjectData> map = getModelForMultiProject(FOLDER_TEST_REGULAR, "localJars");
 
         ProjectData libModelData = map.get(":baseLibrary");
         assertNotNull("Module app null-check", libModelData);
@@ -1197,14 +1202,14 @@ public class AndroidProjectTest extends TestCase {
     }
 
     public void testOutputFileNameUniquenessInApp() {
-        ProjectData projectData = getModelForProject("basic");
+        ProjectData projectData = getModelForProject(FOLDER_TEST_REGULAR, "basic");
 
         // make sure that debug and release variant file output have different names.
         compareDebugAndReleaseOutput(projectData);
     }
 
     public void testOutputFileNameUniquenessInLib() {
-        ProjectData projectData = getModelForProject("libTestDep");
+        ProjectData projectData = getModelForProject(FOLDER_TEST_REGULAR, "libTestDep");
 
         // make sure that debug and release variant file output have different names.
         compareDebugAndReleaseOutput(projectData);
@@ -1291,9 +1296,9 @@ public class AndroidProjectTest extends TestCase {
     /**
      * Returns the root folder for the tests projects.
      */
-    private File getTestDir() {
+    private File getTestDir(@NonNull String testFolder) {
         File rootDir = getRootDir();
-        return new File(rootDir, "tests");
+        return new File(new File(rootDir, "tests"), testFolder);
     }
 
     @Nullable
