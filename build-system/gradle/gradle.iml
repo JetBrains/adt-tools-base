@@ -1313,6 +1313,7 @@
       </library>
     </orderEntry>
     <orderEntry type="library" name="groovy" level="project" />
+    <orderEntry type="module" module-name="project-test-lib" scope="TEST" />
   </component>
 </module>
 

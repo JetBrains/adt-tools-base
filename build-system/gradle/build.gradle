@@ -28,6 +28,7 @@ dependencies {
     compile "com.google.code.gson:gson:2.3"
 
     testCompile 'junit:junit:3.8.1'
+    testCompile project(':base:project-test-lib')
 
     buildTestCompile sourceSets.main.output
     buildTestCompile sourceSets.test.output
