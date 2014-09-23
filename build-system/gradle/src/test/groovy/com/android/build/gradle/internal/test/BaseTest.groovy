@@ -16,19 +16,24 @@
 
 package com.android.build.gradle.internal.test
 import com.android.annotations.NonNull
-import com.android.annotations.Nullable
-import com.android.sdklib.internal.project.ProjectProperties
-import com.android.sdklib.internal.project.ProjectPropertiesWorkingCopy
-import com.google.common.collect.Lists
+import com.android.build.tests.GradleProjectHandler
 import junit.framework.TestCase
-import org.gradle.tooling.GradleConnector
-import org.gradle.tooling.ProjectConnection
 
 import java.security.CodeSource
 /**
  * Base class for tests.
  */
 public abstract class BaseTest extends TestCase {
+
+    protected File sdkDir;
+    protected File ndkDir;
+
+    @Override
+    protected void setUp() throws Exception {
+        super.setUp();
+        sdkDir = getSdkDir();
+        ndkDir = getNdkDir();
+    }
 
     /**
      * Returns the root dir for the gradle plugin project
@@ -106,7 +111,7 @@ public abstract class BaseTest extends TestCase {
      * Returns the SDK folder as built from the Android source tree.
      * @return
      */
-    protected File getNdkDir() {
+    protected static File getNdkDir() {
         String androidHome = System.getenv("ANDROID_NDK_HOME");
         if (androidHome != null) {
             File f = new File(androidHome);
@@ -118,62 +123,37 @@ public abstract class BaseTest extends TestCase {
         }
     }
 
-    protected static File createLocalProp(@NonNull File project,
-                                          @NonNull File sdkDir,
-                                          @Nullable File ndkDir) {
-        ProjectPropertiesWorkingCopy localProp = ProjectProperties.create(
-                project.absolutePath, ProjectProperties.PropertyType.LOCAL)
-        localProp.setProperty(ProjectProperties.PROPERTY_SDK, sdkDir.absolutePath)
-        if (ndkDir != null) {
-            localProp.setProperty(ProjectProperties.PROPERTY_NDK, ndkDir.absolutePath)
-        }
-        localProp.save()
-
-        return (File) localProp.file
-    }
-
     protected File runTasksOn(
             @NonNull String name,
             @NonNull String gradleVersion,
             @NonNull String... tasks) {
         File project = new File(testDir, name)
 
-        runGradleTasks(sdkDir, ndkDir, gradleVersion, project,
-                Collections.<String>emptyList(), tasks)
-
-        return project;
+        return runTasksOn(project, gradleVersion, Collections.<String>emptyList(), tasks);
     }
 
-    protected static void runGradleTasks(
-            @NonNull File sdkDir,
-            @NonNull File ndkDir,
-            @NonNull String gradleVersion,
+    protected File runTasksOn(
             @NonNull File project,
+            @NonNull String gradleVersion,
+            @NonNull String... tasks) {
+        return runTasksOn(project, gradleVersion, Collections.<String>emptyList(), tasks);
+
+    }
+
+    protected File runTasksOn(
+            @NonNull File project,
+            @NonNull String gradleVersion,
             @NonNull List<String> arguments,
             @NonNull String... tasks) {
-        File localProp = createLocalProp(project, sdkDir, ndkDir)
 
-        try {
+        File buildGradle = new File(project, "build.gradle");
+        assertTrue("Missing file: " + buildGradle, buildGradle.isFile());
 
-            GradleConnector connector = GradleConnector.newConnector()
+        GradleProjectHandler handler = new GradleProjectHandler(sdkDir, ndkDir);
 
-            ProjectConnection connection = connector
-                    .useGradleVersion(gradleVersion)
-                    .forProjectDirectory(project)
-                    .connect()
-            try {
-                List<String> args = Lists.newArrayListWithCapacity(2 + arguments.size());
-                args.add("-i");
-                args.add("-u");
-                args.addAll(arguments);
+        handler.runGradleTasks(project, gradleVersion, arguments, tasks)
 
-                connection.newBuild().forTasks(tasks).withArguments(args.toArray() as String[]).run()
-            } finally {
-                connection.close()
-            }
-        } finally {
-            localProp.delete()
-        }
+        return project;
     }
 
     protected static void deleteFolder(File folder) {
