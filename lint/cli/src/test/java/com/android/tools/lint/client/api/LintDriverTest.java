@@ -16,7 +16,13 @@
 
 package com.android.tools.lint.client.api;
 
+import com.android.annotations.NonNull;
+import com.android.tools.lint.checks.AbstractCheckTest;
+import com.android.tools.lint.checks.AccessibilityDetector;
 import com.android.tools.lint.client.api.LintDriver.ClassEntry;
+import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Project;
+import com.google.common.collect.Lists;
 
 import junit.framework.TestCase;
 
@@ -27,7 +33,7 @@ import java.util.Collections;
 import java.util.List;
 
 @SuppressWarnings("javadoc")
-public class LintDriverTest extends TestCase {
+public class LintDriverTest extends AbstractCheckTest {
     public void testClassEntryCompare() throws Exception {
         ClassEntry c0 = new ClassEntry(new File("/a1/Foo.class"), null, null, null);
         ClassEntry c1 = new ClassEntry(new File("/a1/Foo.clazz"), null, null, null);
@@ -55,5 +61,31 @@ public class LintDriverTest extends TestCase {
         ClassEntry c1 = new ClassEntry(new File("abcde"), null, null, null);
         assertTrue(c0.compareTo(c1) <= 0);
         assertTrue(c1.compareTo(c0) <= 0);
+    }
+
+    public void testMissingResourceDirectory() throws Exception {
+        assertEquals("No warnings.", lintProject("res/layout/layout1.xml"));
+    }
+
+    @Override
+    protected TestLintClient createClient() {
+        return new TestLintClient() {
+            private List<File> mResources;
+
+            @NonNull
+            @Override
+            public List<File> getResourceFolders(@NonNull Project project) {
+                if (mResources == null) {
+                    mResources = Lists.newArrayList(super.getResourceFolders(project));
+                    mResources.add(new File("bogus"));
+                }
+                return mResources;
+            }
+        };
+    }
+
+    @Override
+    protected Detector getDetector() {
+        return new AccessibilityDetector();
     }
 }
