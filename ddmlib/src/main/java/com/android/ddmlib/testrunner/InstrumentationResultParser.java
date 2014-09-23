@@ -94,11 +94,15 @@ public class InstrumentationResultParser extends MultiLineReceiver {
 
     /** Test result status codes. */
     private static class StatusCodes {
-        private static final int FAILURE = -2;
         private static final int START = 1;
+        private static final int IN_PROGRESS = 2;
+
+        // codes used for test completed
+        private static final int ASSUMPTION_FAILURE = -4;
+        private static final int IGNORED = -3;
+        private static final int FAILURE = -2;
         private static final int ERROR = -1;
         private static final int OK = 0;
-        private static final int IN_PROGRESS = 2;
     }
 
     /** Prefixes used to identify output. */
@@ -454,18 +458,33 @@ public class InstrumentationResultParser extends MultiLineReceiver {
             case StatusCodes.FAILURE:
                 metrics = getAndResetTestMetrics();
                 for (ITestRunListener listener : mTestListeners) {
-                    listener.testFailed(ITestRunListener.TestFailure.FAILURE, testId,
-                        getTrace(testInfo));
-
+                    listener.testFailed(testId, getTrace(testInfo));
                     listener.testEnded(testId, metrics);
                 }
                 mNumTestsRun++;
                 break;
             case StatusCodes.ERROR:
+                // we're dealing with a legacy JUnit3 runner that still reports errors.
+                // just report this as a failure, since thats what upstream JUnit4 does
                 metrics = getAndResetTestMetrics();
                 for (ITestRunListener listener : mTestListeners) {
-                    listener.testFailed(ITestRunListener.TestFailure.ERROR, testId,
-                        getTrace(testInfo));
+                    listener.testFailed(testId, getTrace(testInfo));
+                    listener.testEnded(testId, metrics);
+                }
+                mNumTestsRun++;
+                break;
+            case StatusCodes.IGNORED:
+                metrics = getAndResetTestMetrics();
+                for (ITestRunListener listener : mTestListeners) {
+                    listener.testIgnored(testId);
+                    listener.testEnded(testId, metrics);
+                }
+                mNumTestsRun++;
+                break;
+            case StatusCodes.ASSUMPTION_FAILURE:
+                metrics = getAndResetTestMetrics();
+                for (ITestRunListener listener : mTestListeners) {
+                    listener.testAssumptionFailure(testId, getTrace(testInfo));
                     listener.testEnded(testId, metrics);
                 }
                 mNumTestsRun++;
@@ -554,7 +573,7 @@ public class InstrumentationResultParser extends MultiLineReceiver {
             TestIdentifier testId = new TestIdentifier(mLastTestResult.mTestClass,
                     mLastTestResult.mTestName);
             for (ITestRunListener listener : mTestListeners) {
-                listener.testFailed(ITestRunListener.TestFailure.ERROR, testId,
+                listener.testFailed(testId,
                     String.format("%1$s. Reason: '%2$s'. %3$s", INCOMPLETE_TEST_ERR_MSG_PREFIX,
                             errorMsg, INCOMPLETE_TEST_ERR_MSG_POSTFIX));
                 listener.testEnded(testId, getAndResetTestMetrics());

@@ -94,7 +94,7 @@ public class CustomTestRunListener extends XmlTestRunListener {
     }
 
     @Override
-    public void testFailed(TestFailure status, TestIdentifier test, String trace) {
+    public void testFailed(TestIdentifier test, String trace) {
         if (mLogger != null) {
             mLogger.warning(
                     String.format("\n%1$s > %2$s[%3$s] \033[31mFAILED \033[0m",
@@ -104,10 +104,12 @@ public class CustomTestRunListener extends XmlTestRunListener {
 
         mFailedTests.add(test);
 
-        // Force test to be a failure and not an error to go around a limitation of
-        // Gradle's reporting that handle errors like success!
-        // TODO: support ERROR test failures.
-        super.testFailed(TestFailure.FAILURE, test, trace);
+        super.testFailed(test, trace);
+    }
+    
+    @Override
+    public void testAssumptionFailure(TestIdentifier test, String trace) {
+        testFailed(test, trace);
     }
 
     @Override
