@@ -382,7 +382,10 @@ public class WrongIdDetector extends LayoutDetector {
         mFileIds.add(id);
         mGlobalIds.add(id);
 
-        if (id.startsWith("@+") && !id.startsWith(NEW_ID_PREFIX) //$NON-NLS-1$
+        if (id.equals(NEW_ID_PREFIX) || id.equals(ID_PREFIX) || "@+id".equals(ID_PREFIX)) {
+            String message = "Invalid id: missing value";
+            context.report(INVALID, attribute, context.getLocation(attribute), message);
+        } else if (id.startsWith("@+") && !id.startsWith(NEW_ID_PREFIX) //$NON-NLS-1$
                 && !id.startsWith("@+android:id/")  //$NON-NLS-1$
                 || id.startsWith(NEW_ID_PREFIX)
                 && id.indexOf('/', NEW_ID_PREFIX.length()) != -1) {
