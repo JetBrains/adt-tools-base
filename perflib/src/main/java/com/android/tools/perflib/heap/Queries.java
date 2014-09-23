@@ -124,6 +124,27 @@ public class Queries {
         return result;
     }
 
+    /**
+     * Returns a collection of classes common to both snapshots.
+     *
+     * <p>The query returns instances from the first snapshot. Note: two classes having the same
+     * fully-qualified name are considered equal, even if they differ in static fields, superclass,
+     * classloader, etc.
+     */
+    @NonNull
+    public static Collection<ClassObj> commonClasses(@NonNull Snapshot first,
+            @NonNull Snapshot second) {
+        Collection<ClassObj> classes = new ArrayList<ClassObj>();
+        for (Heap heap : first.getHeaps()) {
+            for (ClassObj clazz : heap.getClasses()) {
+                if (second.findClass(clazz.getClassName()) != null) {
+                    classes.add(clazz);
+                }
+            }
+        }
+        return classes;
+    }
+
     /*
      * It's sorta sad that this is a pass-through call, but it seems like
      * having all of the hat-like query methods in one place is a good thing

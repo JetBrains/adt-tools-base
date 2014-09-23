@@ -486,7 +486,7 @@ public class HprofParser {
         int stackSerialNumber = mInput.readInt();
         StackTrace stack = mSnapshot.getStackTrace(stackSerialNumber);
         final long superClassId = readId();
-        readId(); // Ignored: class loader ID.
+        final long classLoaderId = readId();
         readId(); // Ignored: Signeres ID.
         readId(); // Ignored: Protection domain ID.
         readId(); // RESERVED.
@@ -506,6 +506,7 @@ public class HprofParser {
 
         final ClassObj theClass = new ClassObj(id, stack, mClassNames.get(id), mInput.position());
         theClass.setSuperClassId(superClassId);
+        theClass.setClassLoaderId(classLoaderId);
 
         //  Skip over static fields
         numEntries = readUnsignedShort();

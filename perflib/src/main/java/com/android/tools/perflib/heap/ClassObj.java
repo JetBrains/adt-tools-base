@@ -17,6 +17,7 @@
 package com.android.tools.perflib.heap;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 
 import java.util.ArrayList;
@@ -34,6 +35,8 @@ public class ClassObj extends Instance implements Comparable<ClassObj> {
     private final long mStaticFieldsOffset;
 
     long mSuperClassId;
+
+    long mClassLoaderId;
 
     Field[] mFields;
 
@@ -80,6 +83,10 @@ public class ClassObj extends Instance implements Comparable<ClassObj> {
 
     public final void setSuperClassId(long superClass) {
         mSuperClassId = superClass;
+    }
+
+    public final void setClassLoaderId(long classLoader) {
+        mClassLoaderId = classLoader;
     }
 
     public Field[] getFields() {
@@ -176,6 +183,11 @@ public class ClassObj extends Instance implements Comparable<ClassObj> {
 
     public ClassObj getSuperClassObj() {
         return mHeap.mSnapshot.findClass(mSuperClassId);
+    }
+
+    @Nullable
+    public Instance getClassLoader() {
+        return mHeap.mSnapshot.findReference(mClassLoaderId);
     }
 
     @NonNull
