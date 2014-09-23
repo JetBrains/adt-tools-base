@@ -241,7 +241,7 @@ public class RelativeOverlapDetector extends LayoutDetector {
                 mToRight = findNodeByAttr(nodes, ATTR_LAYOUT_TO_RIGHT_OF);
             }
             if (mToRight != null) {
-                mToRight.mLastRight = false;
+                mToRight.mLastLeft = false;
                 mLastRight = false;
             }
 
