@@ -122,21 +122,21 @@ public class ManualBuildTest extends BuildTest {
         File repo = new File(testDir, "repo");
 
         try {
-            runGradleTasks(sdkDir, ndkDir, BasePlugin.GRADLE_TEST_VERSION,
+            runTasksOn(
                     new File(repo, "util"),
-                    Collections.<String>emptyList(),
+                    BasePlugin.GRADLE_TEST_VERSION,
                     "clean", "uploadArchives");
-            runGradleTasks(sdkDir, ndkDir, BasePlugin.GRADLE_TEST_VERSION,
+            runTasksOn(
                     new File(repo, "baseLibrary"),
-                    Collections.<String>emptyList(),
+                    BasePlugin.GRADLE_TEST_VERSION,
                     "clean", "uploadArchives");
-            runGradleTasks(sdkDir, ndkDir, BasePlugin.GRADLE_TEST_VERSION,
+            runTasksOn(
                     new File(repo, "library"),
-                    Collections.<String>emptyList(),
+                    BasePlugin.GRADLE_TEST_VERSION,
                     "clean", "uploadArchives");
-            runGradleTasks(sdkDir, ndkDir, BasePlugin.GRADLE_TEST_VERSION,
+            runTasksOn(
                     new File(repo, "app"),
-                    Collections.<String>emptyList(),
+                    BasePlugin.GRADLE_TEST_VERSION,
                     "clean", "assemble");
         } finally {
             // clean up the test repository.
@@ -149,9 +149,9 @@ public class ManualBuildTest extends BuildTest {
         File project = new File(testDir, "libsTest");
         File fileOutput = new File(project, "libapp/build/" + FD_INTERMEDIATES + "/bundles/release/AndroidManifest.xml");
 
-        runGradleTasks(sdkDir, ndkDir, BasePlugin.GRADLE_TEST_VERSION,
+        runTasksOn(
                 project,
-                Collections.<String>emptyList(),
+                BasePlugin.GRADLE_TEST_VERSION,
                 "clean", "build");
         assertTrue(fileOutput.exists());
     }
@@ -161,9 +161,9 @@ public class ManualBuildTest extends BuildTest {
         File project = new File(testDir, "libProguard");
         File fileOutput = new File(project, "build/" + FD_OUTPUTS + "/proguard/release");
 
-        runGradleTasks(sdkDir, ndkDir, BasePlugin.GRADLE_TEST_VERSION,
+        runTasksOn(
                 project,
-                Collections.<String>emptyList(),
+                BasePlugin.GRADLE_TEST_VERSION,
                 "clean", "build");
         checkFile(fileOutput, "mapping.txt", new String[]{"int proguardInt -> a"});
 
@@ -175,9 +175,9 @@ public class ManualBuildTest extends BuildTest {
         File debugFileOutput = new File(project, "build/" + FD_INTERMEDIATES + "/bundles/debug");
         File releaseFileOutput = new File(project, "build/" + FD_INTERMEDIATES + "/bundles/release");
 
-        runGradleTasks(sdkDir, ndkDir, BasePlugin.GRADLE_TEST_VERSION,
+        runTasksOn(
                 project,
-                Collections.<String>emptyList(),
+                BasePlugin.GRADLE_TEST_VERSION,
                 "clean", "build");
         checkFile(debugFileOutput, "proguard.txt", new String[]{"A"});
         checkFile(releaseFileOutput, "proguard.txt", new String[]{"A", "B", "C"});
@@ -187,9 +187,9 @@ public class ManualBuildTest extends BuildTest {
         File project = new File(testDir, "extractAnnotations");
         File debugFileOutput = new File(project, "build/" + FD_INTERMEDIATES + "/annotations/debug");
 
-        runGradleTasks(sdkDir, ndkDir, BasePlugin.GRADLE_TEST_VERSION,
+        runTasksOn(
                 project,
-                Collections.<String>emptyList(),
+                BasePlugin.GRADLE_TEST_VERSION,
                 "clean", "assembleDebug");
         File file = new File(debugFileOutput, "annotations.zip");
 
@@ -291,9 +291,9 @@ public class ManualBuildTest extends BuildTest {
     public void testRsEnabledAnnotations() throws IOException {
         File project = new File(testDir, "extractRsEnabledAnnotations");
 
-        runGradleTasks(sdkDir, ndkDir, BasePlugin.GRADLE_TEST_VERSION,
+        runTasksOn(
                 project,
-                Collections.<String>emptyList(),
+                BasePlugin.GRADLE_TEST_VERSION,
                 "clean", "assembleDebug");
 
         // check the resulting .aar file to ensure annotations.zip inclusion.
@@ -314,9 +314,9 @@ public class ManualBuildTest extends BuildTest {
     public void testSimpleManifestMerger() throws IOException {
         File project = new File(testDir, "simpleManifestMergingTask");
 
-        runGradleTasks(sdkDir, ndkDir, BasePlugin.GRADLE_TEST_VERSION,
+        runTasksOn(
                 project,
-                Collections.<String>emptyList(),
+                BasePlugin.GRADLE_TEST_VERSION,
                 "clean", "manifestMerger");
     }
 
@@ -324,18 +324,18 @@ public class ManualBuildTest extends BuildTest {
         // custom because we want to run deviceCheck even without devices, since we use
         // a fake DeviceProvider that doesn't use a device, but only record the calls made
         // to the DeviceProvider and the DeviceConnector.
-        runGradleTasks(sdkDir, ndkDir, BasePlugin.GRADLE_TEST_VERSION,
+        runTasksOn(
                 new File(testDir, "3rdPartyTests"),
-                Collections.<String>emptyList(),
+                BasePlugin.GRADLE_TEST_VERSION,
                 "clean", "deviceCheck");
     }
 
     public void testEmbedded() throws Exception {
         File project = new File(testDir, "embedded");
 
-        runGradleTasks(sdkDir, ndkDir, BasePlugin.GRADLE_TEST_VERSION,
+        runTasksOn(
                 project,
-                Collections.<String>emptyList(),
+                BasePlugin.GRADLE_TEST_VERSION,
                 "clean", ":main:assembleRelease");
 
         File mainApk = new File(project, "main/build/" + FD_OUTPUTS + "/apk/main-release-unsigned.apk");
@@ -348,9 +348,9 @@ public class ManualBuildTest extends BuildTest {
     public void testUserProvidedTestAndroidManifest() throws Exception {
         File project = new File(testDir, "androidManifestInTest");
 
-        runGradleTasks(sdkDir, ndkDir, BasePlugin.GRADLE_TEST_VERSION,
+        runTasksOn(
                 project,
-                Collections.<String>emptyList(),
+                BasePlugin.GRADLE_TEST_VERSION,
                 "clean", "assembleDebugTest");
 
         File testApk = new File(project, "build/" + FD_OUTPUTS + "/apk/androidManifestInTest-debug-test-unaligned.apk");
@@ -405,9 +405,9 @@ public class ManualBuildTest extends BuildTest {
     public void testDensitySplits() throws Exception {
         File project = new File(testDir, "densitySplit");
 
-        runGradleTasks(sdkDir, ndkDir, BasePlugin.GRADLE_TEST_VERSION,
+        runTasksOn(
                 project,
-                Collections.<String>emptyList(),
+                BasePlugin.GRADLE_TEST_VERSION,
                 "clean", "assembleDebug");
 
         Map<String, Integer> expected = Maps.newHashMapWithExpectedSize(5);
@@ -423,9 +423,9 @@ public class ManualBuildTest extends BuildTest {
     public void testDensitySplitWithOldMerger() throws Exception {
         File project = new File(testDir, "densitySplitWithOldMerger");
 
-        runGradleTasks(sdkDir, ndkDir, BasePlugin.GRADLE_TEST_VERSION,
+        runTasksOn(
                 project,
-                Collections.<String>emptyList(),
+                BasePlugin.GRADLE_TEST_VERSION,
                 "clean", "assembleDebug");
 
         Map<String, Integer> expected = Maps.newHashMapWithExpectedSize(5);
@@ -441,9 +441,9 @@ public class ManualBuildTest extends BuildTest {
     public void testAbiSplits() throws Exception {
         File project = new File(testDir, "ndkJniLib");
 
-        runGradleTasks(sdkDir, ndkDir, BasePlugin.GRADLE_TEST_VERSION,
+        runTasksOn(
                 project,
-                Collections.<String>emptyList(),
+                BasePlugin.GRADLE_TEST_VERSION,
                 "clean", "app:assembleDebug");
 
         Map<String, Integer> expected = Maps.newHashMapWithExpectedSize(5);
@@ -531,8 +531,9 @@ public class ManualBuildTest extends BuildTest {
         args.add("-P" + PROPERTY_SIGNING_KEY_ALIAS + "=AndroidDebugKey");
         args.add("-P" + PROPERTY_SIGNING_KEY_PASSWORD + "=android");
 
-        runGradleTasks(sdkDir, ndkDir, BasePlugin.GRADLE_TEST_VERSION,
+        runTasksOn(
                 project,
+                BasePlugin.GRADLE_TEST_VERSION,
                 args,
                 "clean", ":assembleRelease");
 
@@ -549,9 +550,9 @@ public class ManualBuildTest extends BuildTest {
     public void testMaxSdkVersion() throws Exception {
         File project = new File(testDir, "maxSdkVersion");
 
-        runGradleTasks(sdkDir, ndkDir, BasePlugin.GRADLE_TEST_VERSION,
+        runTasksOn(
                 project,
-                Collections.<String>emptyList(),
+                BasePlugin.GRADLE_TEST_VERSION,
                 "clean", "assembleDebug");
         checkMaxSdkVersion(
                 new File(project, "build/" + FD_OUTPUTS + "/apk/maxSdkVersion-f1-debug.apk"), "21");
