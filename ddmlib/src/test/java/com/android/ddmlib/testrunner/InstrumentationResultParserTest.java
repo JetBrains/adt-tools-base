@@ -16,8 +16,6 @@
 
 package com.android.ddmlib.testrunner;
 
-import com.android.ddmlib.testrunner.ITestRunListener.TestFailure;
-
 import junit.framework.TestCase;
 
 import org.easymock.Capture;
@@ -167,7 +165,7 @@ public class InstrumentationResultParserTest extends TestCase {
 
         mMockListener.testRunStarted(RUN_NAME, 1);
         mMockListener.testStarted(TEST_ID);
-        mMockListener.testFailed(TestFailure.FAILURE, TEST_ID, STACK_TRACE);
+        mMockListener.testFailed(TEST_ID, STACK_TRACE);
         mMockListener.testEnded(TEST_ID, Collections.EMPTY_MAP);
         mMockListener.testRunEnded(0, Collections.EMPTY_MAP);
 
@@ -262,7 +260,7 @@ public class InstrumentationResultParserTest extends TestCase {
 
         mMockListener.testRunStarted(RUN_NAME, 1);
         mMockListener.testStarted(TEST_ID);
-        mMockListener.testFailed(EasyMock.eq(TestFailure.ERROR), EasyMock.eq(TEST_ID),
+        mMockListener.testFailed(EasyMock.eq(TEST_ID),
                 EasyMock.startsWith(InstrumentationResultParser.INCOMPLETE_TEST_ERR_MSG_PREFIX));
         mMockListener.testEnded(TEST_ID, Collections.EMPTY_MAP);
         mMockListener.testRunFailed(EasyMock.startsWith(
