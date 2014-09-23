@@ -140,7 +140,10 @@ public class WrongIdDetectorTest extends AbstractCheckTest {
                 + "res/layout/invalid_ids2.xml:8: Error: ID definitions must be of the form @+id/name; try using @+id/btn_skip [InvalidId]\n"
                 + "        android:id=\"@+id/btn/skip\"\n"
                 + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-                + "1 errors, 0 warnings\n",
+                + "res/layout/invalid_ids2.xml:16: Error: Invalid id: missing value [InvalidId]\n"
+                + "        android:id=\"@+id/\"\n"
+                + "        ~~~~~~~~~~~~~~~~~~\n"
+                + "2 errors, 0 warnings\n",
 
                 lintFiles("res/layout/invalid_ids2.xml"));
     }
