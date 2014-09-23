@@ -220,12 +220,6 @@ public class VariantConfiguration {
 
         mMergedFlavor = mDefaultConfig.clone();
         computeNdkConfig();
-
-        if (testedConfig != null &&
-                testedConfig.mType == Type.LIBRARY &&
-                testedConfig.mOutput != null) {
-            mDirectLibraries.add(testedConfig.mOutput);
-        }
     }
 
     /**
@@ -658,6 +652,15 @@ public class VariantConfiguration {
      */
     @NonNull
     public VariantConfiguration setDependencies(@NonNull DependencyContainer container) {
+        // Output of mTestedConfig will not be initialized until the tasks for the tested config are
+        // created.  If library output has never been added to mDirectLibraries, checked the output
+        // of the mTestedConfig to see if the tasks are now created.
+        if (mTestedConfig != null &&
+                mTestedConfig.mType == Type.LIBRARY &&
+                mTestedConfig.mOutput != null &&
+                !mDirectLibraries.contains(mTestedConfig.mOutput)) {
+            mDirectLibraries.add(mTestedConfig.mOutput);
+        }
 
         mDirectLibraries.addAll(container.getAndroidDependencies());
         mJars.addAll(container.getJarDependencies());

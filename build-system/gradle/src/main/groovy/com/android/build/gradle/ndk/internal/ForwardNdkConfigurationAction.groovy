@@ -22,10 +22,10 @@ import com.android.build.gradle.BasePlugin
 import com.android.build.gradle.LibraryPlugin
 import com.android.build.gradle.api.AndroidSourceDirectorySet
 import com.android.build.gradle.api.AndroidSourceSet
+import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.build.gradle.ndk.NdkExtension
 import com.android.build.gradle.ndk.NdkPlugin
 import com.android.builder.model.BuildType
-import com.android.builder.model.ProductFlavor
 import org.gradle.api.Action
 import org.gradle.api.Project
 
@@ -43,7 +43,8 @@ public class ForwardNdkConfigurationAction implements Action<Project> {
             return;
         }
 
-        NdkExtension ndkExtension = project.getPlugins().getPlugin(NdkPlugin.class).getNdkExtension();
+        NdkPlugin ndkPlugin = project.getPlugins().getPlugin(NdkPlugin.class)
+        NdkExtension ndkExtension = ndkPlugin.getNdkExtension();
         BaseExtension androidExtension = androidPlugin.getExtension();
         if (ndkExtension.getCompileSdkVersion() == null) {
             // Retrieve compileSdkVersion from Android plugin if it is not set for the NDK plugin.
@@ -58,11 +59,13 @@ public class ForwardNdkConfigurationAction implements Action<Project> {
                 }
             }
         }
-        androidExtension.getProductFlavors().all { ProductFlavor flavor ->
-            // TODO: Read BaseVariantData from VariantManager to support flavorDimension.
-            project.model {
-                flavors {
-                    maybeCreate(flavor.name)
+
+        if (!androidExtension.getProductFlavors().isEmpty()) {
+            androidPlugin.getVariantDataList().each { BaseVariantData data ->
+                project.model {
+                    flavors {
+                        maybeCreate(data.getVariantConfiguration().getFlavorName())
+                    }
                 }
             }
         }
