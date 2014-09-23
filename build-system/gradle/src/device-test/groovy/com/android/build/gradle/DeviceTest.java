@@ -21,7 +21,6 @@ import com.google.common.collect.ImmutableList;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -151,18 +150,15 @@ public class DeviceTest extends BuildTest {
         try {
             switch (testType) {
                 case CHECK:
-                    runTasksOnProject(projectName, gradleVersion,
-                            Collections.<String>emptyList(),
+                    runTasksOn(projectName, gradleVersion,
                             "clean", "connectedCheck");
                     break;
                 case CHECK_AND_REPORT:
-                    runTasksOnProject(projectName, gradleVersion,
-                            Collections.<String>emptyList(),
+                    runTasksOn(projectName, gradleVersion,
                             "clean", "connectedCheck", "mergeAndroidReports");
                     break;
                 case INSTALL:
-                    runTasksOnProject(projectName, gradleVersion,
-                            Collections.<String>emptyList(),
+                    runTasksOn(projectName, gradleVersion,
                             "clean", "installDebug", "uninstallAll");
                     break;
             }
