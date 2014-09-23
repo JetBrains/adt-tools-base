@@ -190,7 +190,7 @@ public class SimpleTestCallable implements Callable<Boolean> {
                 Map<String, String> emptyMetrics = Collections.emptyMap();
                 TestIdentifier fakeTest = new TestIdentifier(device.getClass().getName(), "hasTests");
                 fakeRunListener.testStarted(fakeTest);
-                fakeRunListener.testFailed(ITestRunListener.TestFailure.ERROR, fakeTest , "No tests found.");
+                fakeRunListener.testFailed(fakeTest , "No tests found.");
                 fakeRunListener.testEnded(fakeTest, emptyMetrics);
 
                 // end the run to generate the XML file.
