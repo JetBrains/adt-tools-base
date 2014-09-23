@@ -2,6 +2,7 @@
 - Added ability to merge Instrumentation element from test
 - Fix uninstallAll task
 - Fix issue where bad configuration could lead to no outputs on variants which would prevent evaluation of the project.
+- connectedCheck will now fail if no tests are found.
 
 0.13.0 (2014/09/18)
 - Requires Gradle 2.1
