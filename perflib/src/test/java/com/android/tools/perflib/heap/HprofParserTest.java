@@ -58,6 +58,16 @@ public class HprofParserTest extends TestCase {
         assertNull(none);
     }
 
+    public void testClassLoaders() {
+        ClassObj application = mSnapshot.findClass("android.app.Application");
+        assertNull(application.getClassLoader());
+
+        ClassObj dialer = mSnapshot.findClass("com.android.dialer.DialerApplication");
+        Instance classLoader = dialer.getClassLoader();
+        assertNotNull(classLoader);
+        assertEquals("dalvik.system.PathClassLoader", classLoader.getClassObj().getClassName());
+    }
+
     /**
      * Tests the creation of an Enum class which covers static values, fields of type references,
      * strings and primitive values.
