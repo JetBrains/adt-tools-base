@@ -16,6 +16,8 @@
 
 package com.android.build.gradle
 
+import static org.junit.Assert.assertNotNull
+
 import com.android.build.gradle.internal.test.category.DeviceTests
 import com.android.build.gradle.internal.test.fixture.GradleProjectTestRule
 import com.android.build.gradle.internal.test.fixture.app.HelloWorldJniApp
@@ -23,6 +25,8 @@ import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
 import org.junit.experimental.categories.Category
+
+import java.util.zip.ZipFile
 
 /**
  * Basic integration test for native plugin.
@@ -43,13 +47,47 @@ android {
     ndk {
         moduleName "hello-jni"
     }
+    buildTypes {
+        debug {
+            jniDebugBuild true
+        }
+    }
 }
 """
     }
 
     @Test
-    public void basicDebug() {
+    public void assembleRelease() {
+        fixture.execute("assembleRelease");
+        ZipFile apk = new ZipFile(
+                fixture.file("build/outputs/apk/${fixture.testDir.getName()}-release-unsigned.apk"));
+
+        // Verify .so are built for all platform.
+        assertNotNull(apk.getEntry("lib/x86/libhello-jni.so"));
+        assertNotNull(apk.getEntry("lib/mips/libhello-jni.so"));
+        assertNotNull(apk.getEntry("lib/armeabi/libhello-jni.so"));
+        assertNotNull(apk.getEntry("lib/armeabi-v7a/libhello-jni.so"));
+    }
+
+    @Test
+    public void assembleDebug() {
         fixture.execute("assembleDebug");
+        ZipFile apk = new ZipFile(
+                fixture.file("build/outputs/apk/${fixture.testDir.getName()}-debug.apk"));
+
+        // Verify .so are built for all platform.
+        assertNotNull(apk.getEntry("lib/x86/libhello-jni.so"));
+        assertNotNull(apk.getEntry("lib/x86/gdbserver"));
+        assertNotNull(apk.getEntry("lib/x86/gdb.setup"));
+        assertNotNull(apk.getEntry("lib/mips/libhello-jni.so"));
+        assertNotNull(apk.getEntry("lib/mips/gdbserver"));
+        assertNotNull(apk.getEntry("lib/mips/gdb.setup"));
+        assertNotNull(apk.getEntry("lib/armeabi/libhello-jni.so"));
+        assertNotNull(apk.getEntry("lib/armeabi/gdbserver"));
+        assertNotNull(apk.getEntry("lib/armeabi/gdb.setup"));
+        assertNotNull(apk.getEntry("lib/armeabi-v7a/libhello-jni.so"));
+        assertNotNull(apk.getEntry("lib/armeabi-v7a/gdbserver"));
+        assertNotNull(apk.getEntry("lib/armeabi-v7a/gdb.setup"));
     }
 
     @Test

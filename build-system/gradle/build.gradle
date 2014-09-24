@@ -122,6 +122,8 @@ task integTest(type: Test) {
 buildTest.dependsOn ':publishLocal'
 check.dependsOn buildTest
 
+integTest.dependsOn ':publishLocal'
+
 task deviceTest(type: Test) {
     testClassesDir = sourceSets.deviceTest.output.classesDir
     classpath = sourceSets.deviceTest.runtimeClasspath

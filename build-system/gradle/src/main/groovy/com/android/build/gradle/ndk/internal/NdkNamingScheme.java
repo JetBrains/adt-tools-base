@@ -39,6 +39,6 @@ public class NdkNamingScheme {
     }
 
     public static String getSharedLibraryFileName(String moduleName) {
-        return "/lib" + moduleName + ".so";
+        return "lib" + moduleName + ".so";
     }
 }
