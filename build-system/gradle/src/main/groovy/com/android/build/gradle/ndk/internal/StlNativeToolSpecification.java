@@ -75,7 +75,8 @@ public class StlNativeToolSpecification extends AbstractNativeToolSpecification 
         }
 
         for (String dir : includeDirs) {
-            cppFlags.add("-I" + new File(getStlBaseDirectory(), dir).toString());
+            cppFlags.add("-I" +
+                    new File(StlConfiguration.getStlBaseDirectory(ndkHandler), dir).toString());
         }
         return cppFlags;
     }
@@ -88,10 +89,6 @@ public class StlNativeToolSpecification extends AbstractNativeToolSpecification 
         List<String> flags = Lists.newArrayList();
         flags.add(getStlLib().toString());
         return flags;
-    }
-
-    public File getStlBaseDirectory() {
-        return new File(ndkHandler.getNdkDirectory(), "sources/cxx-stl/");
     }
 
     public File getStlLib() {
@@ -110,7 +107,7 @@ public class StlNativeToolSpecification extends AbstractNativeToolSpecification 
                     "in which case there is no library file and getStlLib should not be called.");
         }
         return new File(
-                getStlBaseDirectory(),
+                StlConfiguration.getStlBaseDirectory(ndkHandler),
                 stlLib + "/libs/" + platform.getName() + "/lib" + stl + (isStatic ? ".a" : ".so"));
     }
 }

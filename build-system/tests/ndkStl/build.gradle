@@ -21,6 +21,8 @@ subprojects {
             moduleName "hello-jni"
         }
 
+        buildTypes.debug.jniDebugBuild true
+
         sourceSets {
             androidTest {
                 java {
