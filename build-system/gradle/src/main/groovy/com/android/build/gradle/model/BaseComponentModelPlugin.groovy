@@ -15,20 +15,18 @@
  */
 
 package com.android.build.gradle.model
+
 import com.android.annotations.Nullable
 import com.android.build.gradle.AppExtension
 import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.BasePlugin
 import com.android.build.gradle.api.AndroidSourceDirectorySet
 import com.android.build.gradle.api.AndroidSourceSet
-import com.android.build.gradle.internal.BadPluginException
 import com.android.build.gradle.internal.BuildTypeData
 import com.android.build.gradle.internal.ProductFlavorData
 import com.android.build.gradle.internal.VariantManager
 import com.android.build.gradle.internal.dsl.BuildTypeDsl
-import com.android.build.gradle.internal.dsl.BuildTypeFactory
 import com.android.build.gradle.internal.dsl.GroupableProductFlavorDsl
-import com.android.build.gradle.internal.dsl.GroupableProductFlavorFactory
 import com.android.build.gradle.internal.dsl.SigningConfigDsl
 import com.android.build.gradle.internal.dsl.SigningConfigFactory
 import com.android.build.gradle.internal.tasks.DependencyReportTask
@@ -36,8 +34,9 @@ import com.android.build.gradle.internal.tasks.PrepareSdkTask
 import com.android.build.gradle.internal.tasks.SigningReportTask
 import com.android.build.gradle.internal.variant.ApplicationVariantFactory
 import com.android.build.gradle.internal.variant.BaseVariantData
+import com.android.build.gradle.internal.variant.TestVariantData
 import com.android.build.gradle.internal.variant.VariantFactory
-import com.android.build.gradle.ndk.NdkPlugin
+import com.android.build.gradle.ndk.NdkExtension
 import com.android.builder.core.BuilderConstants
 import com.android.builder.core.DefaultBuildType
 import com.android.builder.model.SigningConfig
@@ -48,7 +47,6 @@ import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.file.SourceDirectorySet
 import org.gradle.api.internal.project.ProjectInternal
-import org.gradle.api.plugins.ExtensionContainer
 import org.gradle.api.plugins.JavaBasePlugin
 import org.gradle.api.tasks.TaskContainer
 import org.gradle.internal.reflect.Instantiator
@@ -61,39 +59,37 @@ import org.gradle.language.base.internal.LanguageRegistry
 import org.gradle.language.base.internal.SourceTransformTaskConfig
 import org.gradle.model.Model
 import org.gradle.model.Mutate
+import org.gradle.model.Path
 import org.gradle.model.RuleSource
-import org.gradle.model.collection.CollectionBuilder
+import org.gradle.model.internal.core.ModelCreators
+import org.gradle.model.internal.core.ModelReference
 import org.gradle.platform.base.BinaryContainer
 import org.gradle.platform.base.BinarySpec
 import org.gradle.platform.base.BinaryType
 import org.gradle.platform.base.BinaryTypeBuilder
 import org.gradle.platform.base.ComponentSpecContainer
-import org.gradle.platform.base.ComponentType
-import org.gradle.platform.base.ComponentTypeBuilder
 import org.gradle.platform.base.TransformationFileType
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry
 
 import javax.inject.Inject
 
 import static com.android.builder.core.BuilderConstants.DEBUG
-import static com.android.builder.core.BuilderConstants.RELEASE
 
-public class AppModelPlugin extends BasePlugin implements Plugin<Project> {
+public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Project> {
     @Inject
-    protected AppModelPlugin(Instantiator instantiator, ToolingModelBuilderRegistry registry) {
+    protected BaseComponentModelPlugin(Instantiator instantiator, ToolingModelBuilderRegistry registry) {
         super(instantiator, registry);
     }
 
     @Override
     protected Class<? extends BaseExtension> getExtensionClass() {
-        return AppExtension.class
+        throw new RuntimeException("getExtensionClass should not called for component model plugin.")
     }
 
     @Override
     protected VariantFactory getVariantFactory() {
-        return new ApplicationVariantFactory(this)
+        throw new RuntimeException("getVariantFactory should not called for component model plugin.")
     }
-
 
     @Override
     void apply(Project project) {
@@ -105,18 +101,11 @@ public class AppModelPlugin extends BasePlugin implements Plugin<Project> {
      */
     @Override
     protected void doApply() {
-        // Add this plugin as an extension so that it can be accesed in model rules for now.
-        // Eventually, we can refactor so that BasePlugin is not used extensively through our
-        // codebase.
-        project.extensions.add("androidPlugin", this);
+        project.plugins.apply(AndroidComponentModelPlugin)
 
         configureProject()
 
-        if (project.plugins.hasPlugin(NdkPlugin.class)) {
-            throw new BadPluginException(
-                    "Cannot apply Android native plugin before the Android plugin.")
-        }
-        project.apply plugin: NdkPlugin
+        project.plugins.apply(NdkComponentModelPlugin)
 
         // Setup Android's FunctionalSourceSet.
         project.getExtensions().getByType(LanguageRegistry.class).add(new AndroidSource());
@@ -133,71 +122,41 @@ public class AppModelPlugin extends BasePlugin implements Plugin<Project> {
                 jniLibs(AndroidLanguageSourceSet)
         }
 
-        // create the config to link a wear apk.
-        project.configurations.create(ApplicationVariantFactory.CONFIG_WEAR_APP)
+        project.modelRegistry.create(
+                ModelCreators.of(ModelReference.of("androidBasePlugin", BasePlugin.class), this)
+                        .simpleDescriptor("Android BaseComponentModelPlugin.")
+                        .build())
     }
 
     @RuleSource
     static class Rules {
-        @Model
-        BasePlugin androidPlugin(ExtensionContainer extensions) {
-            return extensions.getByType(AppModelPlugin)
-        }
-
         @Model("android")
-        AppExtension androidapp(
+        BaseExtension androidapp(
                 ServiceRegistry serviceRegistry,
                 NamedDomainObjectContainer<DefaultBuildType> buildTypeContainer,
                 NamedDomainObjectContainer<GroupableProductFlavorDsl> productFlavorContainer,
                 NamedDomainObjectContainer<SigningConfig> signingConfigContainer,
+                @Path("extensionClass") Class extensionClass,
                 BasePlugin plugin) {
             Instantiator instantiator = serviceRegistry.get(Instantiator.class);
             Project project = plugin.getProject()
 
-            AppExtension extension = instantiator.newInstance(AppExtension,
+            BaseExtension extension = (BaseExtension)instantiator.newInstance(extensionClass,
                     plugin, (ProjectInternal) project, instantiator,
                     buildTypeContainer, productFlavorContainer, signingConfigContainer, false)
             plugin.setBaseExtension(extension)
 
-            def ndkPlugin = project.plugins.getPlugin(NdkPlugin)
-
-            extension.setNdkExtension(ndkPlugin.getNdkExtension())
+            // Android component model always use new plugin.
+            extension.useNewNativePlugin = true
 
             return extension
         }
 
-        @Model("android.buildTypes")
-        NamedDomainObjectContainer<DefaultBuildType> buildTypes(ServiceRegistry serviceRegistry,
-                BasePlugin plugin) {
-            Instantiator instantiator = serviceRegistry.get(Instantiator.class);
-            Project project = plugin.getProject()
-            def buildTypeContainer = project.container(DefaultBuildType,
-                new BuildTypeFactory(instantiator,  project, project.getLogger()))
-
-            // create default Objects, signingConfig first as its used by the BuildTypes.
-            buildTypeContainer.create(DEBUG)
-            buildTypeContainer.create(RELEASE)
-
-            buildTypeContainer.whenObjectRemoved {
-                throw new UnsupportedOperationException("Removing build types is not supported.")
+        @Mutate
+        void forwardCompileSdkVersion(NdkExtension ndkExtension, BaseExtension baseExtension) {
+            if (ndkExtension.compileSdkVersion == null) {
+                ndkExtension.compileSdkVersion(baseExtension.compileSdkVersion);
             }
-            return buildTypeContainer
-        }
-
-        @Model("android.productFlavors")
-        NamedDomainObjectContainer<GroupableProductFlavorDsl> productFlavors(
-                ServiceRegistry serviceRegistry,
-                BasePlugin plugin) {
-            Instantiator instantiator = serviceRegistry.get(Instantiator.class);
-            Project project = plugin.getProject()
-            def productFlavorContainer = project.container(GroupableProductFlavorDsl,
-                new GroupableProductFlavorFactory(instantiator, project, project.getLogger()))
-
-            productFlavorContainer.whenObjectRemoved {
-                throw new UnsupportedOperationException("Removing product flavors is not supported.")
-            }
-
-            return productFlavorContainer
         }
 
         @Model("android.signingConfig")
@@ -214,25 +173,25 @@ public class AppModelPlugin extends BasePlugin implements Plugin<Project> {
             return signingConfigContainer
         }
 
-        @ComponentType
-        void defineComponentType(ComponentTypeBuilder<AndroidComponentSpec> builder) {
-            builder.defaultImplementation(DefaultAndroidComponentSpec)
+        @Mutate
+        void closeProjectSourceSet(ProjectSourceSet sources) {
         }
 
         @Mutate
         void createAndroidComponents(
-                CollectionBuilder<AndroidComponentSpec> androidComponents,
-                AppExtension androidExtension,
+                ComponentSpecContainer specContainer,
+                BaseExtension androidExtension,
                 NamedDomainObjectContainer<DefaultBuildType> buildTypeContainer,
                 NamedDomainObjectContainer<GroupableProductFlavorDsl> productFlavorContainer,
                 NamedDomainObjectContainer<SigningConfig> signingConfigContainer,
                 ProjectSourceSet sources,
+                VariantFactory variantFactory,
                 BasePlugin plugin) {
             VariantManager variantManager = new VariantManager(
                     plugin.project,
                     plugin,
                     androidExtension,
-                    new ApplicationVariantFactory(plugin))
+                    variantFactory)
 
             signingConfigContainer.all { SigningConfig signingConfig ->
                 variantManager.addSigningConfig((SigningConfigDsl) signingConfig)
@@ -245,7 +204,7 @@ public class AppModelPlugin extends BasePlugin implements Plugin<Project> {
             }
             plugin.variantManager = variantManager;
 
-            androidComponents.create("main") { DefaultAndroidComponentSpec spec ->
+            specContainer.withType(AndroidComponentSpec) { DefaultAndroidComponentSpec spec ->
                 spec.extension = androidExtension
                 spec.variantManager = variantManager
                 spec.signingOverride = plugin.getSigningOverride()
@@ -255,22 +214,21 @@ public class AppModelPlugin extends BasePlugin implements Plugin<Project> {
         }
 
         @BinaryType
-        void defineBinaryType(BinaryTypeBuilder<AndroidBinary> builder) {
-            builder.defaultImplementation(DefaultAndroidBinary)
+        void defineBinaryType(BinaryTypeBuilder<AndroidTestBinary> builder) {
+            builder.defaultImplementation(DefaultAndroidTestBinary)
         }
 
-        // TODO: Convert to @ComponentBinaries when it is implemented.
         @Mutate
-        void createBinaries(BinaryContainer binaries, ComponentSpecContainer specContainer) {
-            AndroidComponentSpec componentSpec = specContainer.withType(AndroidComponentSpec)[0]
-            DefaultAndroidComponentSpec spec = (DefaultAndroidComponentSpec) componentSpec
-
-            VariantManager variantManager = spec.getVariantManager()
-            variantManager.populateVariantDataList(spec.getSigningOverride())
-
-            for (BaseVariantData variantData : variantManager.getVariantDataList()) {
-                binaries.create("${variantData.getName()}Binary", AndroidBinary ) { binary ->
-                    ((DefaultAndroidBinary) binary).setVariantData(variantData);
+        void createTestBinary(BinaryContainer binaries, ComponentSpecContainer specs) {
+            AndroidComponentSpec spec =
+                    (AndroidComponentSpec) specs.getByName(AndroidComponentModelPlugin.COMPONENT_NAME)
+            spec.binaries.withType(AndroidBinary) { binary ->
+                if (binary.buildType.name.equals(DEBUG)) {
+                    DefaultAndroidTestBinary testBinary =
+                            (DefaultAndroidTestBinary) binaries.create(
+                                    binary.name + "Test", AndroidTestBinary);
+                    testBinary.testedBinary = binary
+                    spec.binaries.add(testBinary)
                 }
             }
         }
@@ -312,6 +270,8 @@ public class AppModelPlugin extends BasePlugin implements Plugin<Project> {
                 }
             }
 
+            plugin.createLintCompileTask();
+
             // Create tasks for each binaries.
             if (!variantManager.productFlavors.isEmpty()) {
                 // there'll be more than one test app, so we need a top level assembleTest
@@ -322,7 +282,22 @@ public class AppModelPlugin extends BasePlugin implements Plugin<Project> {
             }
 
             binaries.withType(AndroidBinary) { DefaultAndroidBinary binary ->
-                variantManager.createTasksForVariantData(tasks, binary.getVariantData())
+                BaseVariantData variantData = variantManager.createVariantData(
+                        binary.buildType,
+                        binary.productFlavors,
+                        plugin.signingOverride
+                )
+                binary.variantData = variantData
+                variantManager.getVariantDataList().add(variantData)
+                variantManager.createTasksForVariantData(tasks, variantData)
+            }
+
+            // Create test tasks.
+            binaries.withType(AndroidTestBinary) { binary ->
+                TestVariantData testVariantData =
+                        variantManager.createTestVariantData(((DefaultAndroidBinary)binary.testedBinary).variantData, plugin.signingOverride)
+                variantManager.getVariantDataList().add(testVariantData);
+                variantManager.createTasksForVariantData(tasks, testVariantData)
             }
 
             // create the lint tasks.
@@ -361,6 +336,10 @@ public class AppModelPlugin extends BasePlugin implements Plugin<Project> {
                                 : (name.equals(BuilderConstants.ANDROID_TEST)
                                         ? plugin.testSourceSet
                                         : findAndroidSourceSet(variantManager, name)))
+
+                if (androidSource == null) {
+                    continue;
+                }
 
                 convertSourceSet(androidSource.getResources(), source.findByName("resource")?.getSource())
                 convertSourceSet(androidSource.getJava(), source.findByName("java")?.getSource())

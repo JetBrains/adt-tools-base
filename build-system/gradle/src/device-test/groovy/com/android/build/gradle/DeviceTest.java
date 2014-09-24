@@ -17,10 +17,13 @@
 package com.android.build.gradle;
 
 import com.android.annotations.NonNull;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
+
+import java.util.List;
 
 /**
  * DeviceConnector tests.

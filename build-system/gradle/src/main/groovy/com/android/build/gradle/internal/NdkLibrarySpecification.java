@@ -16,7 +16,7 @@
 
 package com.android.build.gradle.internal;
 
-import com.android.build.gradle.ndk.NdkPlugin;
+import com.android.build.gradle.model.NdkComponentModelPlugin;
 import com.android.builder.core.VariantConfiguration;
 
 import org.gradle.api.InvalidUserDataException;
@@ -34,14 +34,14 @@ public class NdkLibrarySpecification {
 
     private String targetProjectName;
 
-    private NdkPlugin getNdkPlugin() {
+    private NdkComponentModelPlugin getNdkPlugin() {
         Project targetProject = targetProjectName.isEmpty()
                     ? currentProject
                     : currentProject.getRootProject().project(targetProjectName);
-        NdkPlugin plugin = targetProject.getPlugins().findPlugin(NdkPlugin.class);
+        NdkComponentModelPlugin plugin = targetProject.getPlugins().findPlugin(NdkComponentModelPlugin.class);
         if (plugin == null) {
             throw new InvalidUserDataException(
-                    "Unable to find NdkPlugin in project '" + targetProjectName + "'.");
+                    "Unable to find android native plugin in project '" + targetProjectName + "'.");
         }
         return plugin;
     }

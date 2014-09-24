@@ -33,7 +33,7 @@ import java.util.NoSuchElementException;
 public abstract class AbstractAndroidTestApp implements AndroidTestApp {
     private Multimap<String, TestSourceFile> sourceFiles = ArrayListMultimap.create();
 
-    protected void addFile(TestSourceFile ... files) {
+    protected void addFiles(TestSourceFile... files) {
         for (TestSourceFile file : files) {
             sourceFiles.put(file.getName(), file);
         }
@@ -62,6 +62,16 @@ public abstract class AbstractAndroidTestApp implements AndroidTestApp {
                 return path.equals(testSourceFile.getPath());
             }
         });
+    }
+
+    @Override
+    public void addFile(TestSourceFile file) {
+        sourceFiles.put(file.getName(), file);
+    }
+
+    @Override
+    public boolean removeFile(TestSourceFile file) {
+        return sourceFiles.remove(file.getName(), file);
     }
 
     @Override

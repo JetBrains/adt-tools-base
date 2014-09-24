@@ -14,8 +14,22 @@
  * limitations under the License.
  */
 
-model {
-    android.ndk {
-        stl "gnustl_static"
+package com.android.build.gradle.model;
+
+import org.gradle.platform.base.binary.BaseBinarySpec;
+
+/**
+ * Binary for Android.
+ */
+public class DefaultAndroidTestBinary extends BaseBinarySpec implements AndroidTestBinary {
+    AndroidBinary testedBinary;
+
+    @Override
+    public AndroidBinary getTestedBinary() {
+        return testedBinary;
+    }
+
+    public void setTestedBinary(AndroidBinary testedBinary) {
+        this.testedBinary = testedBinary;
     }
 }

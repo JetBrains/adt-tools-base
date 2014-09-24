@@ -27,7 +27,7 @@ import org.junit.Test
 import org.junit.experimental.categories.Category
 
 /**
- * Basic integration test for AppModelPlugin.
+ * Basic integration test for AppComponentModelPlugin.
  */
 class AppComponentModelIntegTest {
     @Rule
@@ -37,8 +37,7 @@ class AppComponentModelIntegTest {
     public void setup() {
         new HelloWorldApp().writeSources(fixture.getSourceDir())
         fixture.buildFile << """
-import com.android.build.gradle.model.AppModelPlugin
-apply plugin: AppModelPlugin
+apply plugin: "com.android.model.application"
 
 model {
     android {
@@ -75,15 +74,15 @@ model {
                 "assembleF1",
                 "assembleF1B1",
                 "assembleF1Debug",
-                "assembleF1DebugTest",
                 "assembleF1Release",
                 "assembleF2",
                 "assembleF2B1",
                 "assembleF2Debug",
-                "assembleF2DebugTest",
                 "assembleF2Release",
                 "assembleRelease",
-                "assembleTest");
+                "assembleTest",
+                "assembleF1DebugTest",
+                "assembleF2DebugTest");
     }
 
     @Test

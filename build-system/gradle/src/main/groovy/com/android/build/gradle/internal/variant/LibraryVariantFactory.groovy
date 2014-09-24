@@ -32,7 +32,7 @@ import com.android.build.gradle.internal.core.GradleVariantConfiguration
 import com.android.build.gradle.internal.coverage.JacocoInstrumentTask
 import com.android.build.gradle.internal.coverage.JacocoPlugin
 import com.android.build.gradle.internal.tasks.MergeFileTask
-import com.android.build.gradle.ndk.NdkPlugin
+import com.android.build.gradle.model.NdkComponentModelPlugin
 import com.android.build.gradle.tasks.ExtractAnnotations
 import com.android.build.gradle.tasks.MergeResources
 import com.android.builder.core.BuilderConstants
@@ -68,6 +68,8 @@ public class LibraryVariantFactory implements VariantFactory<LibraryVariantData>
     private final BasePlugin basePlugin
     @NonNull
     private final LibraryExtension extension
+
+    private Task assembleDefault
 
     public LibraryVariantFactory(@NonNull BasePlugin basePlugin,
             @NonNull LibraryExtension extension) {
@@ -120,6 +122,13 @@ public class LibraryVariantFactory implements VariantFactory<LibraryVariantData>
     @Override
     boolean isLibrary() {
         return true
+    }
+
+    private Task getAssembleDefault() {
+        if (assembleDefault == null) {
+            assembleDefault = basePlugin.project.tasks.findByName("assembleDefault");
+        }
+        return assembleDefault
     }
 
     @Override
@@ -197,7 +206,7 @@ public class LibraryVariantFactory implements VariantFactory<LibraryVariantData>
 
         // Add dependencies on NDK tasks if NDK plugin is applied.
         if (extension.getUseNewNativePlugin()) {
-            NdkPlugin ndkPlugin = project.plugins.getPlugin(NdkPlugin.class)
+            NdkComponentModelPlugin ndkPlugin = project.plugins.getPlugin(NdkComponentModelPlugin.class)
             packageJniLibs.dependsOn ndkPlugin.getBinaries(variantConfig)
             packageJniLibs.from(ndkPlugin.getOutputDirectories(variantConfig)).include("**/*.so")
         } else {
@@ -351,7 +360,7 @@ public class LibraryVariantFactory implements VariantFactory<LibraryVariantData>
             // add the artifact that will be published
             project.artifacts.add("default", bundle)
 
-            basePlugin.assembleDefault.dependsOn variantData.assembleVariantTask
+            getAssembleDefault().dependsOn variantData.assembleVariantTask
         }
 
         // also publish the artifact with its full config name
