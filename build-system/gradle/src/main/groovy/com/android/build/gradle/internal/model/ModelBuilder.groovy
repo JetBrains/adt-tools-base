@@ -329,7 +329,9 @@ public class ModelBuilder implements ToolingModelBuilder {
             return Collections.emptyList()
         }
 
-        return Collections.singletonList(variantData.renderscriptCompileTask.resOutputDir)
+        return Lists.asList(
+                variantData.renderscriptCompileTask.resOutputDir,
+                variantData.generateResValuesTask.resOutputDir)
     }
 
     @NonNull
