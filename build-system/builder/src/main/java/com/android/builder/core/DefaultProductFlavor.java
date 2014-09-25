@@ -341,11 +341,17 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
         flavor.mSigningConfig =
                 mSigningConfig != null ? mSigningConfig : base.mSigningConfig;
 
-        flavor.addResourceConfigurations(getResourceConfigurations());
         flavor.addResourceConfigurations(base.getResourceConfigurations());
+        flavor.addResourceConfigurations(getResourceConfigurations());
 
         flavor.addManifestPlaceHolders(base.getManifestPlaceholders());
         flavor.addManifestPlaceHolders(getManifestPlaceholders());
+
+        flavor.addResValues(base.getResValues());
+        flavor.addResValues(getResValues());
+
+        flavor.addBuildConfigFields(base.getBuildConfigFields());
+        flavor.addBuildConfigFields(getBuildConfigFields());
 
         return flavor;
     }

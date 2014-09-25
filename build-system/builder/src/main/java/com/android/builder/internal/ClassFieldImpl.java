@@ -17,6 +17,7 @@
 package com.android.builder.internal;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.concurrency.Immutable;
 import com.android.builder.model.ClassField;
 import com.google.common.collect.ImmutableSet;
 
@@ -24,7 +25,9 @@ import java.io.Serializable;
 import java.util.Set;
 
 /**
+ * Immutable implementation of {@link ClassField}
  */
+@Immutable
 public final class ClassFieldImpl implements ClassField, Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -55,6 +58,11 @@ public final class ClassFieldImpl implements ClassField, Serializable {
         this.value = value;
         this.annotations = ImmutableSet.copyOf(annotations);
         this.documentation = documentation;
+    }
+
+    public ClassFieldImpl(@NonNull ClassField classField) {
+        this(classField.getType(), classField.getName(), classField.getValue(),
+                classField.getAnnotations(), classField.getDocumentation());
     }
 
     @Override

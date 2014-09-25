@@ -19,25 +19,19 @@ package com.android.build.gradle.internal.model;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.model.ApiVersion;
-import com.android.builder.model.ClassField;
 import com.android.builder.model.NdkConfig;
 import com.android.builder.model.ProductFlavor;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
+import com.google.common.collect.ImmutableSet;
 
-import java.io.File;
 import java.io.Serializable;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
  * Implementation of ProductFlavor that is serializable. Objects used in the DSL cannot be
  * serialized.
  **/
-class ProductFlavorImpl implements ProductFlavor, Serializable {
+class ProductFlavorImpl extends BaseConfigImpl implements ProductFlavor, Serializable {
     private static final long serialVersionUID = 1L;
 
     private String name = null;
@@ -55,14 +49,13 @@ class ProductFlavorImpl implements ProductFlavor, Serializable {
     private Boolean mTestHandleProfiling = null;
     private Boolean mTestFunctionalTest = null;
     private Set<String> mResourceConfigurations = null;
-    private Map<String, String> mManifestPlaceholders = null;
 
     @NonNull
     static ProductFlavorImpl cloneFlavor(
             @NonNull ProductFlavor productFlavor,
             @Nullable ApiVersion minSdkVersionOverride,
             @Nullable ApiVersion targetSdkVersionOverride) {
-        ProductFlavorImpl clonedFlavor = new ProductFlavorImpl();
+        ProductFlavorImpl clonedFlavor = new ProductFlavorImpl(productFlavor);
         clonedFlavor.name = productFlavor.getName();
 
         clonedFlavor.mMinSdkVersion = minSdkVersionOverride != null
@@ -88,16 +81,14 @@ class ProductFlavorImpl implements ProductFlavor, Serializable {
         clonedFlavor.mTestHandleProfiling = productFlavor.getTestHandleProfiling();
         clonedFlavor.mTestFunctionalTest = productFlavor.getTestFunctionalTest();
 
-        clonedFlavor.mResourceConfigurations = Sets.newHashSet(
+        clonedFlavor.mResourceConfigurations = ImmutableSet.copyOf(
                 productFlavor.getResourceConfigurations());
-
-        clonedFlavor.mManifestPlaceholders = Maps.newHashMap(
-                productFlavor.getManifestPlaceholders());
 
         return clonedFlavor;
     }
 
-    private ProductFlavorImpl() {
+    private ProductFlavorImpl(@NonNull ProductFlavor productFlavor) {
+        super(productFlavor);
     }
 
     @Override
@@ -178,30 +169,6 @@ class ProductFlavorImpl implements ProductFlavor, Serializable {
         return mTestFunctionalTest;
     }
 
-    @NonNull
-    @Override
-    public Map<String, ClassField> getBuildConfigFields() {
-        return Collections.emptyMap();
-    }
-
-    @NonNull
-    @Override
-    public Map<String, ClassField> getResValues() {
-        return Collections.emptyMap();
-    }
-
-    @NonNull
-    @Override
-    public List<File> getProguardFiles() {
-        return Collections.emptyList();
-    }
-
-    @NonNull
-    @Override
-    public List<File> getConsumerProguardFiles() {
-        return Collections.emptyList();
-    }
-
     @Override
     @Nullable
     public NdkConfig getNdkConfig() {
@@ -214,18 +181,13 @@ class ProductFlavorImpl implements ProductFlavor, Serializable {
         return mResourceConfigurations;
     }
 
-    @NonNull
-    @Override
-    public Map<String, String> getManifestPlaceholders() {
-        return mManifestPlaceholders;
-    }
-
     @Override
     public String toString() {
         return "ProductFlavorImpl{" +
                 "name='" + name + '\'' +
                 ", mMinSdkVersion=" + mMinSdkVersion +
                 ", mTargetSdkVersion=" + mTargetSdkVersion +
+                ", mMaxSdkVersion=" + mMaxSdkVersion +
                 ", mRenderscriptTargetApi=" + mRenderscriptTargetApi +
                 ", mRenderscriptSupportMode=" + mRenderscriptSupportMode +
                 ", mRenderscriptNdkMode=" + mRenderscriptNdkMode +
@@ -234,10 +196,9 @@ class ProductFlavorImpl implements ProductFlavor, Serializable {
                 ", mApplicationId='" + mApplicationId + '\'' +
                 ", mTestApplicationId='" + mTestApplicationId + '\'' +
                 ", mTestInstrumentationRunner='" + mTestInstrumentationRunner + '\'' +
-                ", mTestHandleProfiling='" + mTestHandleProfiling + '\'' +
-                ", mTestFunctionalTest='" + mTestFunctionalTest + '\'' +
-                ", mResourceConfigurations='" + mResourceConfigurations + '\'' +
-                ", mManifestPlaceholders='" + mManifestPlaceholders + '\'' +
-                '}';
+                ", mTestHandleProfiling=" + mTestHandleProfiling +
+                ", mTestFunctionalTest=" + mTestFunctionalTest +
+                ", mResourceConfigurations=" + mResourceConfigurations +
+                "} " + super.toString();
     }
 }

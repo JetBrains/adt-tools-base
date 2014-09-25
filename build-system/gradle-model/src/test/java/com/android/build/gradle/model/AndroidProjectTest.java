@@ -17,6 +17,7 @@
 package com.android.build.gradle.model;
 
 import static com.android.builder.core.BuilderConstants.ANDROID_TEST;
+import static com.android.builder.core.BuilderConstants.DEBUG;
 import static com.android.builder.model.AndroidProject.ARTIFACT_ANDROID_TEST;
 
 import com.android.SdkConstants;
@@ -30,6 +31,7 @@ import com.android.builder.model.AndroidProject;
 import com.android.builder.model.ApiVersion;
 import com.android.builder.model.ArtifactMetaData;
 import com.android.builder.model.BuildTypeContainer;
+import com.android.builder.model.ClassField;
 import com.android.builder.model.Dependencies;
 import com.android.builder.model.JavaArtifact;
 import com.android.builder.model.JavaCompileOptions;
@@ -353,7 +355,7 @@ public class AndroidProjectTest extends TestCase {
         assertEquals("Variant Count", 2 , variants.size());
 
         // debug variant
-        Variant debugVariant = getVariant(variants, "debug");
+        Variant debugVariant = getVariant(variants, DEBUG);
         assertNotNull("debug Variant null-check", debugVariant);
         new ProductFlavorTester(debugVariant.getMergedFlavor(), "Debug Merged Flavor")
                 .setVersionCode(12)
@@ -405,6 +407,57 @@ public class AndroidProjectTest extends TestCase {
         assertNotNull(debugTestOutput.getOutputFile());
         assertNotNull(debugTestOutput.getAssembleTaskName());
         assertNotNull(debugTestOutput.getGeneratedManifest());
+
+        // test the resValues and buildConfigFields.
+        ProductFlavor defaultConfig = model.getDefaultConfig().getProductFlavor();
+        Map<String, ClassField> buildConfigFields = defaultConfig.getBuildConfigFields();
+        assertNotNull(buildConfigFields);
+        assertEquals(2, buildConfigFields.size());
+
+        assertEquals("true", buildConfigFields.get("DEFAULT").getValue());
+        assertEquals("\"foo2\"", buildConfigFields.get("FOO").getValue());
+
+        Map<String, ClassField> resValues = defaultConfig.getResValues();
+        assertNotNull(resValues);
+        assertEquals(1, resValues.size());
+
+        assertEquals("foo", resValues.get("foo").getValue());
+
+
+        // test on the debug build type.
+        Collection<BuildTypeContainer> buildTypes = model.getBuildTypes();
+        for (BuildTypeContainer buildTypeContainer : buildTypes) {
+            if (buildTypeContainer.getBuildType().getName().equals(DEBUG)) {
+                buildConfigFields = buildTypeContainer.getBuildType().getBuildConfigFields();
+                assertNotNull(buildConfigFields);
+                assertEquals(1, buildConfigFields.size());
+
+                assertEquals("\"bar\"", buildConfigFields.get("FOO").getValue());
+
+                resValues = buildTypeContainer.getBuildType().getResValues();
+                assertNotNull(resValues);
+                assertEquals(1, resValues.size());
+
+                assertEquals("foo2", resValues.get("foo").getValue());
+            }
+        }
+
+        // now test the merged flavor
+        ProductFlavor mergedFlavor = debugVariant.getMergedFlavor();
+
+        buildConfigFields = mergedFlavor.getBuildConfigFields();
+        assertNotNull(buildConfigFields);
+        assertEquals(2, buildConfigFields.size());
+
+        assertEquals("true", buildConfigFields.get("DEFAULT").getValue());
+        assertEquals("\"foo2\"", buildConfigFields.get("FOO").getValue());
+
+        resValues = mergedFlavor.getResValues();
+        assertNotNull(resValues);
+        assertEquals(1, resValues.size());
+
+        assertEquals("foo", resValues.get("foo").getValue());
+
 
         // release variant, not tested.
         Variant releaseVariant = getVariant(variants, "release");
@@ -458,9 +511,9 @@ public class AndroidProjectTest extends TestCase {
         assertNotNull("SigningConfigs null-check", signingConfigs);
         assertEquals("Number of signingConfig", 2, signingConfigs.size());
 
-        SigningConfig debugSigningConfig = getSigningConfig(signingConfigs, "debug");
+        SigningConfig debugSigningConfig = getSigningConfig(signingConfigs, DEBUG);
         assertNotNull("debug signing config null-check", debugSigningConfig);
-        new SigningConfigTester(debugSigningConfig, "debug", true).test();
+        new SigningConfigTester(debugSigningConfig, DEBUG, true).test();
 
         SigningConfig mySigningConfig = getSigningConfig(signingConfigs, "myConfig");
         assertNotNull("myConfig signing config null-check", mySigningConfig);
@@ -479,7 +532,7 @@ public class AndroidProjectTest extends TestCase {
         assertEquals("Variant Count", 2 , variants.size());
 
         // get the main artifact of the debug artifact
-        Variant debugVariant = getVariant(variants, "debug");
+        Variant debugVariant = getVariant(variants, DEBUG);
         assertNotNull("debug Variant null-check", debugVariant);
         AndroidArtifact debugMainArficat = debugVariant.getMainArtifact();
         assertNotNull("Debug main info null-check", debugMainArficat);
@@ -522,7 +575,7 @@ public class AndroidProjectTest extends TestCase {
         assertEquals("Variant Count", 2 , variants.size());
 
         // get the main artifact of the debug artifact
-        Variant debugVariant = getVariant(variants, "debug");
+        Variant debugVariant = getVariant(variants, DEBUG);
         assertNotNull("debug Variant null-check", debugVariant);
         AndroidArtifact debugMainArficat = debugVariant.getMainArtifact();
         assertNotNull("Debug main info null-check", debugMainArficat);
@@ -701,7 +754,7 @@ public class AndroidProjectTest extends TestCase {
         assertNotNull("app module model null-check", appModelData);
 
         Collection<Variant> variants = appModelData.model.getVariants();
-        Variant debugVariant = getVariant(variants, "debug");
+        Variant debugVariant = getVariant(variants, DEBUG);
         assertNotNull("debug variant null-check", debugVariant);
 
         Dependencies dependencies = debugVariant.getMainArtifact().getDependencies();
@@ -853,7 +906,7 @@ public class AndroidProjectTest extends TestCase {
         AndroidProject model = projectData.model;
 
         Collection<Variant> variants = model.getVariants();
-        Variant debugVariant = getVariant(variants, "debug");
+        Variant debugVariant = getVariant(variants, DEBUG);
         assertNotNull(debugVariant);
 
         Collection<AndroidArtifact> extraAndroidArtifact = debugVariant.getExtraAndroidArtifacts();
@@ -872,7 +925,7 @@ public class AndroidProjectTest extends TestCase {
         AndroidProject model = projectData.model;
 
         Collection<Variant> variants = model.getVariants();
-        Variant debugVariant = getVariant(variants, "debug");
+        Variant debugVariant = getVariant(variants, DEBUG);
         assertNotNull(debugVariant);
 
         Collection<AndroidArtifact> extraAndroidArtifact = debugVariant.getExtraAndroidArtifacts();
@@ -1159,7 +1212,7 @@ public class AndroidProjectTest extends TestCase {
         assertEquals("Variant Count", 2 , variants.size());
 
         // debug variant
-        Variant debugVariant = getVariant(variants, "debug");
+        Variant debugVariant = getVariant(variants, DEBUG);
         assertNotNull("debug Variant null-check", debugVariant);
 
         // debug variant
