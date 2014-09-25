@@ -120,6 +120,7 @@ public class AppModelPlugin extends BasePlugin implements Plugin<Project> {
 
         // Setup Android's FunctionalSourceSet.
         project.getExtensions().getByType(LanguageRegistry.class).add(new AndroidSource());
+        project.sources.create("main")
         project.sources.all {
                 resources(AndroidLanguageSourceSet)
                 java(AndroidLanguageSourceSet)
@@ -131,7 +132,6 @@ public class AppModelPlugin extends BasePlugin implements Plugin<Project> {
                 jni(AndroidLanguageSourceSet)
                 jniLibs(AndroidLanguageSourceSet)
         }
-
 
         // create the config to link a wear apk.
         project.configurations.create(ApplicationVariantFactory.CONFIG_WEAR_APP)
