@@ -27,6 +27,10 @@ public class ValueXmlHelperTest extends TestCase {
     public void testEscapeStringShouldEscapeXmlSpecialCharacters() throws Exception {
         assertEquals("&lt;", escapeResourceString("<"));
         assertEquals("&amp;", escapeResourceString("&"));
+        assertEquals("&lt;", escapeResourceString("<", true));
+        assertEquals("&amp;", escapeResourceString("&", true));
+        assertEquals("<", escapeResourceString("<", false));
+        assertEquals("&", escapeResourceString("&", false));
     }
 
     public void testEscapeStringShouldEscapeQuotes() throws Exception {
