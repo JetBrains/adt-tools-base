@@ -17,22 +17,15 @@
 package com.android.build.gradle.tasks
 
 import com.android.build.gradle.ndk.NdkExtension
-import com.android.build.gradle.ndk.NdkPlugin
 import com.android.build.gradle.ndk.internal.NdkHandler
-import com.android.build.gradle.ndk.internal.NdkNamingScheme
 import com.android.build.gradle.ndk.internal.StlConfiguration
 import com.android.builder.core.BuilderConstants
 import com.google.common.base.Charsets
-import com.google.common.collect.Lists
 import com.google.common.io.Files
 import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.OutputDirectory
-import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
-import org.gradle.nativeplatform.BuildType
 import org.gradle.nativeplatform.NativeBinary
-import org.gradle.nativeplatform.platform.Platform
 
 /**
  * Task to create gdb.setup for native code debugging.

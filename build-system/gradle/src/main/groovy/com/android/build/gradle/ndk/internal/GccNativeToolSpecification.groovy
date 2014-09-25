@@ -19,7 +19,7 @@ package com.android.build.gradle.ndk.internal
 import com.android.SdkConstants
 import com.android.builder.core.BuilderConstants
 import org.gradle.nativeplatform.BuildType
-import org.gradle.nativeplatform.platform.Platform
+import org.gradle.nativeplatform.platform.NativePlatform
 
 /**
  * Flag configuration for GCC toolchain.
@@ -190,11 +190,11 @@ class GccNativeToolSpecification extends AbstractNativeToolSpecification {
             "-no-canonical-prefixes",
     ]
 
-    private Platform platform
+    private NativePlatform platform
 
     private boolean isDebugBuild
 
-    GccNativeToolSpecification(BuildType buildType, Platform platform) {
+    GccNativeToolSpecification(BuildType buildType, NativePlatform platform) {
         this.isDebugBuild = (buildType.name.equals(BuilderConstants.DEBUG))
         this.platform = platform
     }

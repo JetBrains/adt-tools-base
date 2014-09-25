@@ -18,7 +18,7 @@ package com.android.build.gradle.ndk.internal;
 
 import com.google.common.collect.Lists;
 
-import org.gradle.nativeplatform.platform.Platform;
+import org.gradle.nativeplatform.platform.NativePlatform;
 
 import java.io.File;
 import java.util.Collections;
@@ -32,9 +32,9 @@ public class StlNativeToolSpecification extends AbstractNativeToolSpecification 
     private String stl;
     private String stlName;
     private Boolean isStatic;
-    private Platform platform;
+    private NativePlatform platform;
 
-    StlNativeToolSpecification(NdkHandler ndkHandler, String stl, Platform platform) {
+    StlNativeToolSpecification(NdkHandler ndkHandler, String stl, NativePlatform platform) {
         this.ndkHandler = ndkHandler;
         this.stl = stl;
         this.stlName = stl.equals("system") ? stl : stl.substring(0, stl.indexOf('_'));
