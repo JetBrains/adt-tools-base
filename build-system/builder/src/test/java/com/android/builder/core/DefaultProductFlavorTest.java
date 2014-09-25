@@ -16,6 +16,8 @@
 
 package com.android.builder.core;
 
+import com.android.builder.internal.ClassFieldImpl;
+import com.android.builder.model.ClassField;
 import com.android.builder.model.ProductFlavor;
 import com.google.common.collect.ImmutableMap;
 
@@ -50,10 +52,20 @@ public class DefaultProductFlavorTest extends TestCase {
         mCustom.addResourceConfiguration("hdpi");
         mCustom.addManifestPlaceHolders(ImmutableMap.of("one", "oneValue", "two", "twoValue"));
 
+        mCustom.addResValue(new ClassFieldImpl("foo", "one", "oneValue"));
+        mCustom.addResValue(new ClassFieldImpl("foo", "two", "twoValue"));
+        mCustom.addBuildConfigField(new ClassFieldImpl("foo", "one", "oneValue"));
+        mCustom.addBuildConfigField(new ClassFieldImpl("foo", "two", "twoValue"));
+
+
         mCustom2 = new DefaultProductFlavor("custom2");
         mCustom2.addResourceConfigurations("ldpi", "hdpi");
         mCustom2.addManifestPlaceHolders(
                 ImmutableMap.of("two","twoValueBis", "three", "threeValue"));
+        mCustom2.addResValue(new ClassFieldImpl("foo", "two", "twoValueBis"));
+        mCustom2.addResValue(new ClassFieldImpl("foo", "three", "threeValue"));
+        mCustom2.addBuildConfigField(new ClassFieldImpl("foo", "two", "twoValueBis"));
+        mCustom2.addBuildConfigField(new ClassFieldImpl("foo", "three", "threeValue"));
     }
 
     public void testClone() {
@@ -128,5 +140,25 @@ public class DefaultProductFlavorTest extends TestCase {
         assertEquals("twoValue", manifestPlaceholders.get("two"));
         assertEquals("threeValue", manifestPlaceholders.get("three"));
 
+    }
+
+    public void testResValuesMerge() {
+        ProductFlavor productFlavor = mCustom.mergeOver(mCustom2);
+
+        Map<String, ClassField> resValues = productFlavor.getResValues();
+        assertEquals(3, resValues.size());
+        assertEquals("oneValue", resValues.get("one").getValue());
+        assertEquals("twoValue", resValues.get("two").getValue());
+        assertEquals("threeValue", resValues.get("three").getValue());
+    }
+
+    public void testBuildConfigFieldMerge() {
+        ProductFlavor productFlavor = mCustom.mergeOver(mCustom2);
+
+        Map<String, ClassField> buildConfigFields = productFlavor.getBuildConfigFields();
+        assertEquals(3, buildConfigFields.size());
+        assertEquals("oneValue", buildConfigFields.get("one").getValue());
+        assertEquals("twoValue", buildConfigFields.get("two").getValue());
+        assertEquals("threeValue", buildConfigFields.get("three").getValue());
     }
 }

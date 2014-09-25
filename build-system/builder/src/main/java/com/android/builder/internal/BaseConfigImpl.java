@@ -24,7 +24,6 @@ import com.google.common.collect.Maps;
 
 import java.io.File;
 import java.io.Serializable;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -48,10 +47,18 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
         mResValues.put(field.getName(), field);
     }
 
+    public void addResValues(@NonNull Map<String, ClassField> values) {
+        mResValues.putAll(values);
+    }
+
     @Override
     @NonNull
     public Map<String, ClassField> getBuildConfigFields() {
         return mBuildConfigFields;
+    }
+
+    public void addBuildConfigFields(@NonNull Map<String, ClassField> fields) {
+        mBuildConfigFields.putAll(fields);
     }
 
     @NonNull
