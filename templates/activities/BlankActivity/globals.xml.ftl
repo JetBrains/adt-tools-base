@@ -6,6 +6,5 @@
     <global id="Support" value="${(minApiLevel lt 14)?string('Support','')}" />
     <global id="srcOut" value="${srcDir}/${slashedPackageName(packageName)}" />
     <global id="resOut" value="${resDir}" />
-    <global id="menuName" value="${classToResource(activityClass)}" />
     <global id="relativePackage" value="<#if relativePackage?has_content>${relativePackage}<#else>${packageName}</#if>" />
 </globals>
