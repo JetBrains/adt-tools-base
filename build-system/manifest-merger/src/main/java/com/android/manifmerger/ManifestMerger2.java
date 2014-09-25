@@ -139,6 +139,11 @@ public class ManifestMerger2 {
         performSystemPropertiesInjection(mergingReportBuilder,
                 loadedMainManifestInfo.getXmlDocument());
 
+        // force the re-parsing of the xml as elements may have been added through system
+        // property injection.
+        loadedMainManifestInfo = new LoadedManifestInfo(loadedMainManifestInfo,
+                loadedMainManifestInfo.getXmlDocument().reparse());
+
         // invariant : xmlDocumentOptional holds the higher priority document and we try to
         // merge in lower priority documents.
         Optional<XmlDocument> xmlDocumentOptional = Optional.absent();
