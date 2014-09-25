@@ -21,12 +21,15 @@ import com.android.annotations.Nullable;
 import com.android.build.SplitOutput;
 import com.android.resources.Density;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 
 import junit.framework.TestCase;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 public class SplitOutputMatcherTest extends TestCase {
 
@@ -37,7 +40,17 @@ public class SplitOutputMatcherTest extends TestCase {
             @NonNull List<? extends SplitOutput> outputs,
             int density,
             @NonNull String... abis) {
-        return SplitOutputMatcher.computeBestOutput(outputs, density, Arrays.asList(abis));
+        return SplitOutputMatcher.computeBestOutput(
+                outputs, Collections.<String>emptySet(), density, Arrays.asList(abis));
+    }
+
+    private static SplitOutput computeBestOutput(
+            @NonNull List<? extends SplitOutput> outputs,
+            @NonNull Set<String> variantAbis,
+            int density,
+            @NonNull String... abis) {
+        return SplitOutputMatcher.computeBestOutput(
+                outputs, variantAbis, density, Arrays.asList(abis));
     }
 
     /**
@@ -251,6 +264,40 @@ public class SplitOutputMatcherTest extends TestCase {
         SplitOutput result = computeBestOutput(list, 160, "zzz");
 
         assertNull(result);
+    }
+
+    public void testVariantLevelAbiFilter() {
+        SplitOutput match;
+        List<SplitOutput> list = Lists.newArrayList();
+
+        list.add(match = getUniversalOutput(1));
+        SplitOutput result = computeBestOutput(list, Sets.newHashSet("bar", "foo"), 160, "foo", "zzz");
+
+        assertEquals(match, result);
+    }
+
+    public void testWrongVariantLevelAbiFilter() {
+        List<SplitOutput> list = Lists.newArrayList();
+
+        list.add(getUniversalOutput(1));
+
+        SplitOutput result = computeBestOutput(list, Sets.newHashSet("bar", "foo"), 160, "zzz");
+
+        assertNull(result);
+    }
+
+    public void testDensitySplitPlugVariantLevelAbiFilter() {
+        SplitOutput match;
+        List<SplitOutput> list = Lists.newArrayList();
+
+        list.add(getUniversalOutput(1));
+        list.add(getDensityOutput(240, 2));
+        list.add(match = getDensityOutput(320, 3));
+        list.add(getDensityOutput(480, 4));
+
+        SplitOutput result = computeBestOutput(list, Sets.newHashSet("bar", "foo"), 320, "foo", "zzz");
+
+        assertEquals(match, result);
     }
 
     private static SplitOutput getUniversalOutput(int versionCode) {

@@ -25,6 +25,7 @@ import com.google.common.collect.Lists;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Helper class to help with installation of multi-output variants.
@@ -39,6 +40,8 @@ public class SplitOutputMatcher {
      * Then take the one with the highest versionCode.
      *
      * @param outputs the outputs to choose from
+     * @param variantAbiFilters a list of abi filters applied to the variant. This is used in place
+     *                          of the outputs, if there is a single output with no abi filters.
      * @param density the density
      * @param abis a list of ABIs.
      * @return the output to use or null if none are compatible.
@@ -46,6 +49,7 @@ public class SplitOutputMatcher {
     @Nullable
     public static SplitOutput computeBestOutput(
             @NonNull List<? extends SplitOutput> outputs,
+            @NonNull Set<String> variantAbiFilters,
             int density,
             @NonNull List<String> abis) {
         Density densityEnum = Density.getEnum(density);
@@ -80,11 +84,29 @@ public class SplitOutputMatcher {
             return null;
         }
 
-        return Collections.max(matches, new Comparator<SplitOutput>() {
+        SplitOutput match = Collections.max(matches, new Comparator<SplitOutput>() {
             @Override
             public int compare(SplitOutput splitOutput, SplitOutput splitOutput2) {
                 return splitOutput.getVersionCode() - splitOutput2.getVersionCode();
             }
         });
+
+        if (match.getDensityFilter() == null && !variantAbiFilters.isEmpty()) {
+            // if we have a match that has no abi filter, and we have variant-level filters, then
+            // we need to make sure that the variant filters are compatible with the device abis.
+            boolean foundMatch = false;
+            for (String abi : abis) {
+                if (variantAbiFilters.contains(abi)) {
+                    foundMatch = true;
+                    break;
+                }
+            }
+
+            if (!foundMatch) {
+                return null;
+            }
+        }
+
+        return match;
     }
 }

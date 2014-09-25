@@ -1689,13 +1689,14 @@ public class VariantConfiguration {
         return mMergedNdkConfig;
     }
 
-    @Nullable
+    @NonNull
     public Set<String> getSupportedAbis() {
-        if (mMergedNdkConfig != null) {
-            return mMergedNdkConfig.getAbiFilters();
+        Set<String> filters = mMergedNdkConfig.getAbiFilters();
+        if (filters != null) {
+            return filters;
         }
 
-        return null;
+        return Collections.emptySet();
     }
 
     public boolean isTestCoverageEnabled() {

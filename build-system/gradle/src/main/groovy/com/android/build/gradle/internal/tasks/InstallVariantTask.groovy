@@ -51,21 +51,22 @@ public class InstallVariantTask extends BaseTask {
 
         String serial = System.getenv("ANDROID_SERIAL");
 
-        boolean foundAtLeastOneAuthorizedDevice = false;
+        int foundDevice = 0;
         for (DeviceConnector device : deviceProvider.getDevices()) {
             if (serial != null && !serial.equals(device.getSerialNumber())) {
                 continue;
             }
 
             if (device.getState() != IDevice.DeviceState.UNAUTHORIZED) {
-                foundAtLeastOneAuthorizedDevice = true;
                 if (InstallUtils.checkDeviceApiLevel(
                         device, variantConfig.minSdkVersion, plugin.logger, projectName,
                         variantName)) {
 
                     // now look for a matching output file
                     SplitOutput output = SplitOutputMatcher.computeBestOutput(
-                            variantData.outputs, device.getDensity(), device.getAbis())
+                            variantData.outputs,
+                            variantData.variantConfiguration.getSupportedAbis(),
+                            device.getDensity(), device.getAbis())
 
                     if (output == null) {
                         System.out.println(
@@ -75,13 +76,13 @@ public class InstallVariantTask extends BaseTask {
                                 "Installing '${output.baseName}' on '${device.getName()}'.");
                         File apkFile = output.getOutputFile();
                         device.installPackage(apkFile, getTimeOut(), plugin.logger)
-
+                        foundDevice++
                     }
                 }
             }
         }
 
-        if (!foundAtLeastOneAuthorizedDevice) {
+        if (foundDevice == 0) {
             System.out.println("Found no authorized devices")
         }
     }

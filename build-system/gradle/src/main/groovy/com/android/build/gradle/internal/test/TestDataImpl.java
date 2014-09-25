@@ -104,7 +104,10 @@ public class TestDataImpl implements TestData {
         BaseVariantData<?> testedVariantData2 = (BaseVariantData) testedVariantData;
 
         SplitOutput output = SplitOutputMatcher.computeBestOutput(
-                testedVariantData2.getOutputs(), density, abis);
+                testedVariantData2.getOutputs(),
+                testedVariantData2.getVariantConfiguration().getSupportedAbis(),
+                density,
+                abis);
         if (output != null) {
             return output.getOutputFile();
         }
