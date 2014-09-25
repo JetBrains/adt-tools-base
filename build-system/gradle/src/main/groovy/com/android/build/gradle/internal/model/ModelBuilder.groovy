@@ -17,7 +17,6 @@
 package com.android.build.gradle.internal.model
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
-import com.android.build.gradle.AppPlugin
 import com.android.build.gradle.BasePlugin
 import com.android.build.gradle.LibraryPlugin
 import com.android.build.gradle.internal.BuildTypeData
@@ -65,15 +64,9 @@ public class ModelBuilder implements ToolingModelBuilder {
 
     @Override
     public Object buildAll(String modelName, Project project) {
-        AppPlugin appPlugin = getPlugin(project, AppPlugin.class)
-        LibraryPlugin libPlugin = null
-        BasePlugin basePlugin = appPlugin
-
         Collection<SigningConfig> signingConfigs
 
-        if (appPlugin == null) {
-            basePlugin = libPlugin = getPlugin(project, LibraryPlugin.class)
-        }
+        BasePlugin basePlugin = BasePlugin.findBasePlugin(project);
 
         if (basePlugin == null) {
             project.logger.error("Failed to find Android plugin for project " + project.name)
@@ -112,7 +105,7 @@ public class ModelBuilder implements ToolingModelBuilder {
                 lintOptions,
                 project.getBuildDir(),
                 basePlugin.extension.resourcePrefix,
-                libPlugin != null)
+                basePlugin instanceof LibraryPlugin)
                     .setDefaultConfig(ProductFlavorContainerImpl.createPFC(
                         basePlugin.defaultConfigData,
                         basePlugin.getExtraFlavorSourceProviders(basePlugin.defaultConfigData.productFlavor.name)))
@@ -355,21 +348,5 @@ public class ModelBuilder implements ToolingModelBuilder {
         }
 
         return null;
-    }
-
-    /**
-     * Safely queries a project for a given plugin class.
-     * @param project the project to query
-     * @param pluginClass the plugin class.
-     * @return the plugin instance or null if it is not applied.
-     */
-    private static <T> T getPlugin(@NonNull Project project, @NonNull Class<T> pluginClass) {
-        try {
-            return project.getPlugins().findPlugin(pluginClass)
-        } catch (UnknownPluginException ignored) {
-            // ignore, return null below.
-        }
-
-        return null
     }
 }

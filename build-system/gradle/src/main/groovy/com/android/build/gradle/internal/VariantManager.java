@@ -54,6 +54,7 @@ import com.google.common.collect.Maps;
 import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
+import org.gradle.api.tasks.TaskContainer;
 
 import java.util.Collections;
 import java.util.List;
@@ -168,6 +169,68 @@ public class VariantManager {
         return variantDataList;
     }
 
+    public void createTasksForVariantData(TaskContainer tasks, BaseVariantData variantData) {
+        if (variantData.getVariantConfiguration().getType() == VariantConfiguration.Type.TEST) {
+            ProductFlavorData defaultConfigData = basePlugin.getDefaultConfigData();
+            VariantConfiguration testVariantConfig = variantData.getVariantConfiguration();
+            BaseVariantData testedVariantData= (BaseVariantData) ((TestVariantData)variantData).getTestedVariantData();
+            // dependencies for the test variant, they'll be resolved below
+            VariantDependencies variantDep = VariantDependencies.compute(
+                    project, testVariantConfig.getFullName(),
+                    false /*publishVariant*/,
+                    variantFactory.isLibrary(),
+                    defaultConfigData.getTestProvider(),
+                    testedVariantData.getVariantConfiguration().getType() == VariantConfiguration.Type.LIBRARY ?
+                            testedVariantData.getVariantDependency() : null);
+            variantData.setVariantDependency(variantDep);
+
+            basePlugin.resolveDependencies(variantDep);
+            testVariantConfig.setDependencies(variantDep);
+            basePlugin.createTestApkTasks((TestVariantData)variantData);
+        } else {
+            if (productFlavors.isEmpty()) {
+                variantFactory.createTasks(
+                        variantData,
+                        buildTypes.get(
+                                variantData.getVariantConfiguration().getBuildType().getName())
+                                .getAssembleTask());
+            } else {
+                variantFactory.createTasks(variantData, null);
+
+                // setup the task dependencies
+                // build type
+                buildTypes.get(variantData.getVariantConfiguration().getBuildType().getName())
+                        .getAssembleTask().dependsOn(variantData.assembleVariantTask);
+
+                // each flavor
+                VariantConfiguration variantConfig = variantData.getVariantConfiguration();
+                for (ProductFlavor flavor : variantConfig.getFlavorConfigs()) {
+                    productFlavors.get(flavor.getName()).getAssembleTask()
+                            .dependsOn(variantData.assembleVariantTask);
+                }
+
+                Task assembleTask = null;
+                // assembleTask for this flavor(dimension), created on demand if needed.
+                if (variantConfig.getFlavorConfigs().size() > 1) {
+                    String name = StringHelper.capitalize(variantConfig.getFlavorName());
+                    assembleTask = tasks.findByName("assemble" + name);
+                    if (assembleTask == null) {
+                        assembleTask = project.getTasks().create("assemble" + name);
+                        assembleTask.setDescription(
+                                "Assembles all builds for flavor combination: " + name);
+                        assembleTask.setGroup("Build");
+
+                        tasks.getByName("assemble").dependsOn(assembleTask);
+                    }
+                }
+                // flavor combo
+                if (assembleTask != null) {
+                    assembleTask.dependsOn(variantData.assembleVariantTask);
+                }
+            }
+        }
+    }
+
     public void createAndroidTasks(@Nullable SigningConfig signingOverride) {
         if (!productFlavors.isEmpty()) {
             // there'll be more than one test app, so we need a top level assembleTest
@@ -182,68 +245,7 @@ public class VariantManager {
         }
 
         for (BaseVariantData variantData : variantDataList) {
-            if (variantData.getVariantConfiguration().getType() == VariantConfiguration.Type.TEST) {
-                ProductFlavorData defaultConfigData = basePlugin.getDefaultConfigData();
-                VariantConfiguration testVariantConfig = variantData.getVariantConfiguration();
-                BaseVariantData testedVariantData= (BaseVariantData) ((TestVariantData)variantData).getTestedVariantData();
-
-                // If the variant being tested is a library variant, VariantDependencies must be
-                // computed the tasks for the tested variant is created.  Therefore, the
-                // VariantDependencies is computed here instead of when the VariantData was created.
-                VariantDependencies variantDep = VariantDependencies.compute(
-                        project, testVariantConfig.getFullName(),
-                        false /*publishVariant*/,
-                        variantFactory.isLibrary(),
-                        defaultConfigData.getTestProvider(),
-                        testedVariantData.getVariantConfiguration().getType() == VariantConfiguration.Type.LIBRARY ?
-                                testedVariantData.getVariantDependency() : null);
-                variantData.setVariantDependency(variantDep);
-
-                basePlugin.resolveDependencies(variantDep);
-                testVariantConfig.setDependencies(variantDep);
-                basePlugin.createTestApkTasks((TestVariantData)variantData);
-            } else {
-                if (productFlavors.isEmpty()) {
-                    variantFactory.createTasks(
-                            variantData,
-                            buildTypes.get(
-                                    variantData.getVariantConfiguration().getBuildType().getName())
-                                    .getAssembleTask());
-                } else {
-                    variantFactory.createTasks(variantData, null);
-
-                    // setup the task dependencies
-                    // build type
-                    buildTypes.get(variantData.getVariantConfiguration().getBuildType().getName())
-                            .getAssembleTask().dependsOn(variantData.assembleVariantTask);
-
-                    // each flavor
-                    VariantConfiguration variantConfig = variantData.getVariantConfiguration();
-                    for (ProductFlavor flavor : variantConfig.getFlavorConfigs()) {
-                        productFlavors.get(flavor.getName()).getAssembleTask()
-                                .dependsOn(variantData.assembleVariantTask);
-                    }
-
-                    Task assembleTask = null;
-                    // assembleTask for this flavor(dimension), created on demand if needed.
-                    if (variantConfig.getFlavorConfigs().size() > 1) {
-                        String name = StringHelper.capitalize(variantConfig.getFlavorName());
-                        assembleTask = project.getTasks().findByName("assemble" + name);
-                        if (assembleTask == null) {
-                            assembleTask = project.getTasks().create("assemble" + name);
-                            assembleTask.setDescription(
-                                    "Assembles all builds for flavor combination: " + name);
-                            assembleTask.setGroup("Build");
-
-                            project.getTasks().getByName("assemble").dependsOn(assembleTask);
-                        }
-                    }
-                    // flavor combo
-                    if (assembleTask != null) {
-                        assembleTask.dependsOn(variantData.assembleVariantTask);
-                    }
-                }
-            }
+            createTasksForVariantData(project.getTasks(), variantData);
         }
 
         // create the lint tasks.
@@ -621,7 +623,7 @@ public class VariantManager {
         return assembleTask;
     }
 
-    private void createApiObjects() {
+    public void createApiObjects() {
         // we always want to have the test/tested objects created at the same time
         // so that dynamic closure call on add can have referenced objects created.
         // This means some objects are created before they are processed from the loop,
