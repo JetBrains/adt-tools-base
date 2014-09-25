@@ -319,6 +319,34 @@ public class ValueXmlHelper {
      * @return the escaped string as it would appear in the XML text in a values file
      */
     public static String escapeResourceString(String s) {
+      return escapeResourceString(s, true);
+    }
+
+  /**
+   * Escape a string value to be placed in a string resource file such that it complies with
+   * the escaping rules described here:
+   *   http://developer.android.com/guide/topics/resources/string-resource.html
+   * More examples of the escaping rules can be found here:
+   *   http://androidcookbook.com/Recipe.seam?recipeId=2219&recipeFrom=ViewTOC
+   * This method assumes that the String is not escaped already.
+   *
+   * Rules:
+   * <ul>
+   * <li>Double quotes are needed if string starts or ends with at least one space.
+   * <li>{@code @, ?} at beginning of string have to be escaped with a backslash.
+   * <li>{@code ', ", \} have to be escaped with a backslash.
+   * <li>{@code <, >, &} have to be replaced by their predefined xml entity.
+   * <li>{@code \n, \t} have to be replaced by a backslash and the appropriate character.
+   * </ul>
+   * @param s the string to be escaped
+   * @param escapeXml whether XML characters like {@code <} and {@code &} should be
+   *                  escaped; this should normally be true, but is optional since
+   *                  some callers need to pass the string over to code which already escapes
+   *                  XML content, and you wouldn't want the ampersand in the escaped character
+   *                  entity to itself be escaped.
+   * @return the escaped string as it would appear in the XML text in a values file
+   */
+    public static String escapeResourceString(String s, boolean escapeXml) {
         int n = s.length();
         if (n == 0) {
             return "";
@@ -348,10 +376,18 @@ public class ValueXmlHelper {
                     sb.append(c);
                     break;
                 case '<':
-                    sb.append(LT_ENTITY);
+                    if (escapeXml) {
+                        sb.append(LT_ENTITY);
+                    } else {
+                        sb.append(c);
+                    }
                     break;
                 case '&':
-                    sb.append(AMP_ENTITY);
+                    if (escapeXml) {
+                        sb.append(AMP_ENTITY);
+                    } else {
+                        sb.append(c);
+                    }
                     break;
                 case '\n':
                     sb.append("\\n"); //$NON-NLS-1$
