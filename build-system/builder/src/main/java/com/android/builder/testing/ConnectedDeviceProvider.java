@@ -81,8 +81,17 @@ public class ConnectedDeviceProvider extends DeviceProvider {
                 throw new RuntimeException("No connected devices!", null);
             }
 
+            final String androidSerial = System.getenv("ANDROID_SERIAL");
+            final Boolean isValidSerial = androidSerial != null && !androidSerial.isEmpty();
             for (IDevice iDevice : devices) {
-                localDevices.add(new ConnectedDevice(iDevice));
+                if (!isValidSerial || iDevice.getSerialNumber().equals(androidSerial)) {
+                    localDevices.add(new ConnectedDevice(iDevice));
+                }
+            }
+
+            if (isValidSerial && (localDevices.size() == 0)) {
+                throw new RuntimeException("Connected device with serial " + androidSerial
+                        + " not found!", null);
             }
         } catch (Exception e) {
             throw new DeviceException(e);
