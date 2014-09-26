@@ -399,6 +399,11 @@ public class AndroidProjectTest extends TestCase {
         assertEquals("Test sourceGenTask", "generateDebugTestSources", debugTestInfo.getSourceGenTaskName());
         assertEquals("Test compileTask", "compileDebugTestSources", debugTestInfo.getCompileTaskName());
 
+        Collection<File> generatedResFolders = debugTestInfo.getGeneratedResourceFolders();
+        assertNotNull(generatedResFolders);
+        // size 2 = rs output + resValue output
+        assertEquals(2, generatedResFolders.size());
+
         Collection<AndroidArtifactOutput> debugTestOutputs = debugTestInfo.getOutputs();
         assertNotNull("Debug test output null-check", debugTestOutputs);
         assertEquals("Debug test output size", 1, debugTestOutputs.size());
