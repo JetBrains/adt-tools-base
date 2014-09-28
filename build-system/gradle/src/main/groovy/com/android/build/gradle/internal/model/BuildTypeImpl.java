@@ -19,7 +19,6 @@ package com.android.build.gradle.internal.model;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.model.BuildType;
-import com.android.builder.model.NdkConfig;
 
 import java.io.Serializable;
 
@@ -116,12 +115,6 @@ class BuildTypeImpl extends BaseConfigImpl implements BuildType, Serializable {
     @Override
     public boolean isZipAlign() {
         return zipAlign;
-    }
-
-    @Override
-    @Nullable
-    public NdkConfig getNdkConfig() {
-        return null;
     }
 
     @Override

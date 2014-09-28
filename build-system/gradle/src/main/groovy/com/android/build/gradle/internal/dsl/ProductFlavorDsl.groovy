@@ -24,7 +24,7 @@ import com.android.builder.core.DefaultApiVersion
 import com.android.builder.core.DefaultProductFlavor
 import com.android.builder.model.ApiVersion
 import com.android.builder.model.ClassField
-import com.android.builder.model.NdkConfig
+import com.android.builder.internal.NdkConfig
 import com.android.builder.model.ProductFlavor
 import org.gradle.api.Action
 import org.gradle.api.Project

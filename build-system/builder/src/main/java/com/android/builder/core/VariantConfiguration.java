@@ -30,7 +30,7 @@ import com.android.builder.internal.StringHelper;
 import com.android.builder.model.ApiVersion;
 import com.android.builder.model.BaseConfig;
 import com.android.builder.model.ClassField;
-import com.android.builder.model.NdkConfig;
+import com.android.builder.internal.NdkConfig;
 import com.android.builder.model.ProductFlavor;
 import com.android.builder.model.SigningConfig;
 import com.android.builder.model.SourceProvider;
@@ -1689,14 +1689,15 @@ public class VariantConfiguration {
         return mMergedNdkConfig;
     }
 
-    @NonNull
+    /**
+     * Returns the ABI filters associated with the artifact, or null if there are no filters.
+     *
+     * If the list contains values, then the artifact only contains these ABIs and excludes
+     * others.
+     */
+    @Nullable
     public Set<String> getSupportedAbis() {
-        Set<String> filters = mMergedNdkConfig.getAbiFilters();
-        if (filters != null) {
-            return filters;
-        }
-
-        return Collections.emptySet();
+        return mMergedNdkConfig.getAbiFilters();
     }
 
     public boolean isTestCoverageEnabled() {

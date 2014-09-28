@@ -18,7 +18,6 @@ package com.android.builder.internal;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.builder.model.NdkConfig;
 import com.google.common.collect.Sets;
 
 import java.util.Set;
