@@ -18,6 +18,7 @@ package com.android.build.tests;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.builder.model.AndroidProject;
 import com.android.io.StreamException;
 import com.google.common.collect.Lists;
 
@@ -32,7 +33,7 @@ import java.util.Properties;
 
 /**
  */
-public class GradleProjectHandler {
+public class AndroidProjectConnector {
 
     @NonNull
     private final File mSdkDir;
@@ -40,7 +41,7 @@ public class GradleProjectHandler {
     @Nullable
     private final File mNdkDir;
 
-    public GradleProjectHandler(@NonNull File sdkDir, @Nullable File ndkDir) {
+    public AndroidProjectConnector(@NonNull File sdkDir, @Nullable File ndkDir) {
         mSdkDir = sdkDir;
         mNdkDir = ndkDir;
     }
@@ -71,6 +72,21 @@ public class GradleProjectHandler {
             }
         } finally {
             localProp.delete();
+        }
+    }
+
+    public AndroidProject getModel(@NonNull File project) {
+        // Configure the connector and create the connection
+        GradleConnector connector = GradleConnector.newConnector();
+
+        connector.forProjectDirectory(project);
+
+        ProjectConnection connection = connector.connect();
+        try {
+            // Load the custom model for the project
+            return connection.getModel(AndroidProject.class);
+        } finally {
+            connection.close();
         }
     }
 

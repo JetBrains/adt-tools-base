@@ -16,7 +16,7 @@
 
 package com.android.build.gradle.internal.test
 import com.android.annotations.NonNull
-import com.android.build.tests.GradleProjectHandler
+import com.android.build.tests.AndroidProjectConnector
 import junit.framework.TestCase
 
 import java.security.CodeSource
@@ -149,7 +149,7 @@ public abstract class BaseTest extends TestCase {
         File buildGradle = new File(project, "build.gradle");
         assertTrue("Missing file: " + buildGradle, buildGradle.isFile());
 
-        GradleProjectHandler handler = new GradleProjectHandler(sdkDir, ndkDir);
+        AndroidProjectConnector handler = new AndroidProjectConnector(sdkDir, ndkDir);
 
         handler.runGradleTasks(project, gradleVersion, arguments, tasks)
 
