@@ -27,7 +27,6 @@ import junit.framework.TestCase;
 
 import java.io.File;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -41,7 +40,7 @@ public class SplitOutputMatcherTest extends TestCase {
             int density,
             @NonNull String... abis) {
         return SplitOutputMatcher.computeBestOutput(
-                outputs, Collections.<String>emptySet(), density, Arrays.asList(abis));
+                outputs, null, density, Arrays.asList(abis));
     }
 
     private static SplitOutput computeBestOutput(

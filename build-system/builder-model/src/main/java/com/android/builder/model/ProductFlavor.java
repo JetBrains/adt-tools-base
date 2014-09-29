@@ -20,7 +20,6 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 
 import java.util.Collection;
-import java.util.Map;
 
 /**
  * a Product Flavor. This is only the configuration of the flavor.
@@ -150,13 +149,6 @@ public interface ProductFlavor extends BaseConfig {
      */
     @Nullable
     Boolean getTestFunctionalTest();
-
-    /**
-     * Returns the NDK configuration.
-     * @return the ndk config.
-     */
-    @Nullable
-    NdkConfig getNdkConfig();
 
     /**
      * Returns the resource configuration for this variant.

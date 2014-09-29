@@ -107,13 +107,6 @@ public interface BuildType extends BaseConfig {
     boolean isZipAlign();
 
     /**
-     * Returns the NDK configuration.
-     * @return the ndk config.
-     */
-    @Nullable
-    NdkConfig getNdkConfig();
-
-    /**
      * Returns whether the variant embeds the micro app.
      */
     boolean isEmbedMicroApp();

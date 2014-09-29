@@ -19,7 +19,6 @@ package com.android.build.gradle.internal.model;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.model.ApiVersion;
-import com.android.builder.model.NdkConfig;
 import com.android.builder.model.ProductFlavor;
 import com.google.common.collect.ImmutableSet;
 
@@ -167,12 +166,6 @@ class ProductFlavorImpl extends BaseConfigImpl implements ProductFlavor, Seriali
     @Override
     public Boolean getTestFunctionalTest() {
         return mTestFunctionalTest;
-    }
-
-    @Override
-    @Nullable
-    public NdkConfig getNdkConfig() {
-        return null;
     }
 
     @NonNull

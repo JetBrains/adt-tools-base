@@ -21,6 +21,7 @@ import com.android.annotations.Nullable;
 
 import java.io.File;
 import java.util.Collection;
+import java.util.Set;
 
 /**
  * An Android Artifact.
@@ -86,4 +87,13 @@ public interface AndroidArtifact extends BaseArtifact {
      */
     @NonNull
     Collection<File> getGeneratedResourceFolders();
+
+    /**
+     * Returns the ABI filters associated with the artifact, or null if there are no filters.
+     *
+     * If the list contains values, then the artifact only contains these ABIs and excludes
+     * others.
+     */
+    @Nullable
+    Set<String> getAbiFilters();
 }
