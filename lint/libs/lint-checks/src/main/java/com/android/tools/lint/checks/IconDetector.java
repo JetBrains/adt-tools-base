@@ -24,6 +24,7 @@ import static com.android.SdkConstants.DOT_GIF;
 import static com.android.SdkConstants.DOT_JPEG;
 import static com.android.SdkConstants.DOT_JPG;
 import static com.android.SdkConstants.DOT_PNG;
+import static com.android.SdkConstants.DOT_WEBP;
 import static com.android.SdkConstants.DOT_XML;
 import static com.android.SdkConstants.DRAWABLE_FOLDER;
 import static com.android.SdkConstants.DRAWABLE_HDPI;
@@ -68,7 +69,7 @@ import com.google.common.collect.Sets;
 
 import org.w3c.dom.Element;
 
-import java.awt.*;
+import java.awt.Dimension;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -469,7 +470,7 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
     private static boolean isDrawableFile(String name) {
         // endsWith(name, DOT_PNG) is also true for endsWith(name, DOT_9PNG)
         return endsWith(name, DOT_PNG)|| endsWith(name, DOT_JPG) || endsWith(name, DOT_GIF)
-                || endsWith(name, DOT_XML) || endsWith(name, DOT_JPEG);
+                || endsWith(name, DOT_XML) || endsWith(name, DOT_JPEG) || endsWith(name, DOT_WEBP);
     }
 
     // This method looks for duplicates in the assets. This uses two pieces of information
@@ -729,6 +730,7 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
             String name = entry.getKey();
             List<File> files = entry.getValue();
             for (File file : files) {
+                //noinspection ConstantConditions
                 String parentName = file.getParentFile().getName();
                 // Strip out the density part
                 int index = -1;
@@ -779,6 +781,7 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
                 int dipHeightSum = 0; // Incremental computation of average
                 int count = 0;
                 for (File file : files) {
+                    //noinspection ConstantConditions
                     float factor = getMdpiScalingFactor(file.getParentFile().getName());
                     if (factor > 0) {
                         Dimension size = pixelSizes.get(file);
@@ -847,6 +850,7 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
                         location.setSecondary(linkedLocation);
                         Dimension dip = entry2.getValue();
                         Dimension px = pixelSizes.get(file);
+                        //noinspection ConstantConditions
                         String fileName = file.getParentFile().getName() + File.separator
                                 + file.getName();
                         sb.append(String.format("%1$s: %2$dx%3$d dp (%4$dx%5$d px)",
@@ -1140,6 +1144,9 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
 
     @Nullable
     private BufferedImage getImage(@Nullable File file) throws IOException {
+        if (file == null) {
+            return null;
+        }
         if (mImageCache == null) {
             mImageCache = Maps.newHashMap();
         } else {
@@ -1845,7 +1852,6 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
             }
         }
     }
-
 
     // ---- Implements JavaScanner ----
 
