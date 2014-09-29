@@ -54,6 +54,7 @@ import com.android.tools.lint.detector.api.TextFormat;
 import com.android.tools.lint.detector.api.XmlContext;
 import com.google.common.annotations.Beta;
 import com.google.common.base.Objects;
+import com.google.common.base.Splitter;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -97,6 +98,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -2651,6 +2654,43 @@ public class LintDriver {
         }
 
         return false;
+    }
+
+    private File mCachedFolder = null;
+    private int mCachedFolderVersion = -1;
+    /** Pattern for version qualifiers */
+    private static final Pattern VERSION_PATTERN = Pattern.compile("^v(\\d+)$"); //$NON-NLS-1$
+
+    /**
+     * Returns the folder version of the given file. For example, for the file values-v14/foo.xml,
+     * it returns 14.
+     *
+     * @param resourceFile the file to be checked
+     * @return the folder version, or -1 if no specific version was specified
+     */
+    public int getResourceFolderVersion(@NonNull File resourceFile) {
+        File parent = resourceFile.getParentFile();
+        if (parent == null) {
+            return -1;
+        }
+        if (parent.equals(mCachedFolder)) {
+            return mCachedFolderVersion;
+        }
+
+        mCachedFolder = parent;
+        mCachedFolderVersion = -1;
+
+        for (String qualifier : Splitter.on('-').split(parent.getName())) {
+            Matcher matcher = VERSION_PATTERN.matcher(qualifier);
+            if (matcher.matches()) {
+                String group = matcher.group(1);
+                assert group != null;
+                mCachedFolderVersion = Integer.parseInt(group);
+                break;
+            }
+        }
+
+        return mCachedFolderVersion;
     }
 
     /** A pending class to be analyzed by {@link #checkClasses} */
