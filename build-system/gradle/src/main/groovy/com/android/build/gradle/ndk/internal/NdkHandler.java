@@ -28,8 +28,7 @@ import com.google.common.io.Closeables;
 
 import org.gradle.api.InvalidUserDataException;
 import org.gradle.api.Project;
-import org.gradle.nativeplatform.BuildType;
-import org.gradle.nativeplatform.platform.Platform;
+import org.gradle.nativeplatform.platform.NativePlatform;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -237,7 +236,7 @@ public class NdkHandler {
     /**
      * Returns the sysroot directory for the toolchain.
      */
-    public String getSysroot(Platform platform) {
+    public String getSysroot(NativePlatform platform) {
         return ndkDirectory + "/platforms/" + ndkExtension.getCompileSdkVersion()
                 + "/arch-" + ARCHITECTURE_STRING.get(platform.getName());
     }
@@ -245,7 +244,7 @@ public class NdkHandler {
     /**
      * Return the directory containing prebuilt binaries such as gdbserver.
      */
-    public File getPrebuiltDirectory(Platform platform) {
+    public File getPrebuiltDirectory(NativePlatform platform) {
         return new File(
                 ndkDirectory, "prebuilt/android-" + ARCHITECTURE_STRING.get(platform.getName()));
     }

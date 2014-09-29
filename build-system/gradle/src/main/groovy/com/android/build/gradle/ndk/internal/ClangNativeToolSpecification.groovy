@@ -19,7 +19,7 @@ package com.android.build.gradle.ndk.internal
 import com.android.SdkConstants
 import com.android.builder.core.BuilderConstants
 import org.gradle.nativeplatform.BuildType
-import org.gradle.nativeplatform.platform.Platform
+import org.gradle.nativeplatform.platform.NativePlatform
 
 /**
  * Flag configuration for Clang toolchain.
@@ -28,7 +28,7 @@ class ClangNativeToolSpecification extends AbstractNativeToolSpecification {
 
     private NdkHandler ndkHandler
 
-    private Platform platform
+    private NativePlatform platform
 
     private boolean isDebugBuild
 
@@ -180,7 +180,7 @@ class ClangNativeToolSpecification extends AbstractNativeToolSpecification {
     public ClangNativeToolSpecification(
             NdkHandler ndkHandler,
             BuildType buildType,
-            Platform platform) {
+            NativePlatform platform) {
         this.ndkHandler = ndkHandler
         this.isDebugBuild = (buildType.name.equals(BuilderConstants.DEBUG))
         this.platform = platform
