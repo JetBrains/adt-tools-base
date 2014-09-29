@@ -14,6 +14,7 @@
                    to="${escapeXmlAttribute(manifestOut)}/AndroidManifest.xml" />
 
 <#if copyIcons>
+    <mkdir  at="${escapeXmlAttribute(resOut)}/drawable" />
     <copy from="res/drawable-hdpi"
             to="${escapeXmlAttribute(resOut)}/drawable-hdpi" />
     <copy from="res/drawable-mdpi"

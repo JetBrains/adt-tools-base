@@ -24,6 +24,7 @@
     <instantiate from="proguard-rules.txt.ftl"
                    to="${escapeXmlAttribute(projectOut)}/proguard-rules.pro" />
 </#if>
+    <mkdir  at="${escapeXmlAttribute(resOut)}/drawable" />
     <copy from="res/drawable-hdpi"
             to="${escapeXmlAttribute(resOut)}/drawable-hdpi" />
     <copy from="res/drawable-mdpi"
