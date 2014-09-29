@@ -395,13 +395,12 @@ public class IconDetectorTest extends AbstractCheckTest {
                     "res/drawable/ic_launcher.png=>res/drawable-mdpi/ic_launcher6.png",
                     "res/drawable/ic_launcher.png=>res/drawable-mdpi/ic_launcher7.png",
                     "res/drawable/ic_launcher.png=>res/drawable-mdpi/ic_launcher8.png",
-                    "res/drawable/ic_launcher.png=>res/drawable-mdpi/ic_launcher9.png",
+                    "res/drawable/ic_launcher.png=>res/drawable-mdpi/ic_launcher9.webp",
                     "res/drawable/ic_launcher.png=>res/drawable-mdpi/ic_launcher10.png",
                     "res/drawable/ic_launcher.png=>res/drawable-mdpi/ic_launcher11.png",
                     "res/drawable/ic_launcher.png=>res/drawable-mdpi/ic_launcher12.png"
             ));
     }
-
 
     public void testShowAll() throws Exception {
         mEnabled = Collections.singleton(IconDetector.ICON_DENSITIES);

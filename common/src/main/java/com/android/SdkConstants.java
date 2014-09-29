@@ -998,6 +998,7 @@ public final class SdkConstants {
     public static final String DOT_GIF = ".gif";                       //$NON-NLS-1$
     public static final String DOT_JPG = ".jpg";                       //$NON-NLS-1$
     public static final String DOT_JPEG = ".jpeg";                     //$NON-NLS-1$
+    public static final String DOT_WEBP = ".webp";                     //$NON-NLS-1$
     public static final String DOT_PNG = ".png";                       //$NON-NLS-1$
     public static final String DOT_9PNG = ".9.png";                    //$NON-NLS-1$
     public static final String DOT_JAVA = ".java";                     //$NON-NLS-1$
