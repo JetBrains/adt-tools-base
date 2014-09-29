@@ -17,7 +17,10 @@
 package com.android.ide.common.resources.configuration;
 
 import com.android.resources.ResourceFolderType;
+import com.android.resources.ScreenOrientation;
 import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 
 import junit.framework.TestCase;
@@ -174,6 +177,30 @@ public class FolderConfigurationTest extends TestCase {
         assertNull(versionQualifier);
     }
 
+    @SuppressWarnings("ConstantConditions")
+    public void testConfigMatch() {
+        FolderConfiguration ref = new FolderConfiguration();
+        ref.createDefault();
+        ref.addQualifier(new ScreenOrientationQualifier(ScreenOrientation.PORTRAIT));
+        List<Configurable> configurables = getConfigurable(
+                "",                // No qualifier
+                "xhdpi",           // A matching qualifier
+                "land",            // A non matching qualifier
+                "xhdpi-v14",       // Matching qualifier with ignored qualifier
+                "v14"              // Ignored qualifier
+        );
+        // First check that when all qualifiers are present, we match only one resource.
+        List<Configurable> matchingConfigurables = ref.findMatchingConfigurables(configurables);
+        assertEquals(ImmutableList.of(configurables.get(3)), matchingConfigurables);
+
+        // Now remove the version qualifier and check that we "xhdpi" and "xhdpi-v14"
+        ref.setVersionQualifier(null);
+        matchingConfigurables = ref.findMatchingConfigurables(configurables);
+        assertEquals(ImmutableSet.of(configurables.get(1), configurables.get(3)),
+                ImmutableSet.copyOf(matchingConfigurables));
+
+    }
+
     // --- helper methods
 
     private static final class MockConfigurable implements Configurable {
@@ -199,14 +226,14 @@ public class FolderConfigurationTest extends TestCase {
         FolderConfiguration reference = FolderConfiguration.getConfig(getFolderSegments(refConfig));
         assertNotNull(reference);
 
-        List<? extends Configurable> list = getConfigurable(configs);
+        List<Configurable> list = getConfigurable(configs);
 
         Configurable match = reference.findMatchingConfigurable(list);
         assertEquals(resultIndex, list.indexOf(match));
     }
 
-    private static List<? extends Configurable> getConfigurable(String... configs) {
-        ArrayList<MockConfigurable> list = new ArrayList<MockConfigurable>();
+    private static List<Configurable> getConfigurable(String... configs) {
+        ArrayList<Configurable> list = new ArrayList<Configurable>();
 
         for (String config : configs) {
             list.add(new MockConfigurable(config));

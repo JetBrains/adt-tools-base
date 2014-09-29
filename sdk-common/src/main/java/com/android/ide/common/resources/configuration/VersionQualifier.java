@@ -132,8 +132,10 @@ public final class VersionQualifier extends ResourceQualifier {
     @Override
     public boolean isMatchFor(ResourceQualifier qualifier) {
         if (qualifier instanceof VersionQualifier) {
-            // it is considered a match if the api level is equal or lower to the given qualifier
-            return mVersion <= ((VersionQualifier) qualifier).mVersion;
+            // it is considered a match if our api level is equal or lower to the given qualifier,
+            // or the given qualifier doesn't specify an API Level.
+            return mVersion <= ((VersionQualifier) qualifier).mVersion
+                    || ((VersionQualifier)qualifier).mVersion == -1;
         }
 
         return false;
