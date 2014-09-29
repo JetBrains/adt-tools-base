@@ -33,26 +33,28 @@ import java.util.Set;
 public class SplitOutputMatcher {
 
     /**
-     * Returns which output to use based on given densities and abis.
+     * Returns which output to use based on given device density and abis.
      *
      * This uses the same logic as the store, using two passes:
      * First, find all the compatible outputs.
      * Then take the one with the highest versionCode.
      *
-     * @param outputs the outputs to choose from
+     * @param outputs the outputs to choose from.
      * @param variantAbiFilters a list of abi filters applied to the variant. This is used in place
      *                          of the outputs, if there is a single output with no abi filters.
-     * @param density the density
-     * @param abis a list of ABIs.
+     *                          If the list is null, then the variant does not restrict ABI
+     *                          packaging.
+     * @param deviceDensity the density of the device.
+     * @param deviceAbis a list of ABIs supported by the device.
      * @return the output to use or null if none are compatible.
      */
     @Nullable
     public static SplitOutput computeBestOutput(
             @NonNull List<? extends SplitOutput> outputs,
-            @NonNull Set<String> variantAbiFilters,
-            int density,
-            @NonNull List<String> abis) {
-        Density densityEnum = Density.getEnum(density);
+            @Nullable Set<String> variantAbiFilters,
+            int deviceDensity,
+            @NonNull List<String> deviceAbis) {
+        Density densityEnum = Density.getEnum(deviceDensity);
 
         String densityValue;
         if (densityEnum == null) {
@@ -73,7 +75,7 @@ public class SplitOutputMatcher {
                 continue;
             }
 
-            if (abiFilter != null && !abis.contains(abiFilter)) {
+            if (abiFilter != null && !deviceAbis.contains(abiFilter)) {
                 continue;
             }
 
@@ -91,11 +93,11 @@ public class SplitOutputMatcher {
             }
         });
 
-        if (match.getDensityFilter() == null && !variantAbiFilters.isEmpty()) {
+        if (match.getDensityFilter() == null && variantAbiFilters != null) {
             // if we have a match that has no abi filter, and we have variant-level filters, then
             // we need to make sure that the variant filters are compatible with the device abis.
             boolean foundMatch = false;
-            for (String abi : abis) {
+            for (String abi : deviceAbis) {
                 if (variantAbiFilters.contains(abi)) {
                     foundMatch = true;
                     break;

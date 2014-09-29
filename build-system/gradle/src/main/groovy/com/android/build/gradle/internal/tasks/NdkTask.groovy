@@ -16,7 +16,7 @@
 
 package com.android.build.gradle.internal.tasks
 
-import com.android.builder.model.NdkConfig
+import com.android.builder.internal.NdkConfig
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Optional
 

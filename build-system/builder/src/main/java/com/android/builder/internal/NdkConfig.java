@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.builder.model;
+package com.android.builder.internal;
 
 import com.android.annotations.Nullable;
 

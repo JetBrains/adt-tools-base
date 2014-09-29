@@ -275,7 +275,8 @@ public class ModelBuilder implements ToolingModelBuilder {
                 variantData.javaCompileTask.destinationDir,
                 DependenciesImpl.cloneDependencies(variantData, basePlugin, gradleProjects),
                 variantSourceProvider,
-                multiFlavorSourceProvider)
+                multiFlavorSourceProvider,
+                vC.supportedAbis)
     }
 
     @NonNull
