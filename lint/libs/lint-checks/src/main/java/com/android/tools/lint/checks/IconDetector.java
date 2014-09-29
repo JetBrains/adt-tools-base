@@ -55,7 +55,6 @@ import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.LintUtils;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Project;
-import com.android.tools.lint.detector.api.ResourceContext;
 import com.android.tools.lint.detector.api.ResourceXmlDetector;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
@@ -1296,7 +1295,7 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
      * if known (for use by other checks)
      */
     private Dimension checkColor(Context context, File file, boolean isActionBarIcon) {
-        int folderVersion = ResourceContext.getFolderVersion(file);
+        int folderVersion = context.getDriver().getResourceFolderVersion(file);
         if (isActionBarIcon) {
             if (folderVersion != -1 && folderVersion < 11
                     || !isAndroid30(context, folderVersion)) {
@@ -1546,7 +1545,7 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
         }
 
         String folderName = folder.getName();
-        int folderVersion = ResourceContext.getFolderVersion(files[0]);
+        int folderVersion = context.getDriver().getResourceFolderVersion(files[0]);
 
         for (File file : files) {
             String name = file.getName();
@@ -1789,7 +1788,7 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
         // As of Android 3.0 ic_menu_ are action icons
         //noinspection SimplifiableIfStatement,RedundantIfStatement
         if (file != null && name.startsWith("ic_menu_") //$NON-NLS-1$
-                && isAndroid30(context, ResourceContext.getFolderVersion(file))) {
+                && isAndroid30(context, context.getDriver().getResourceFolderVersion(file))) {
             // Naming convention
             return true;
         }

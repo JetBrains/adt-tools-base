@@ -21,11 +21,8 @@ import com.android.annotations.Nullable;
 import com.android.resources.ResourceFolderType;
 import com.android.tools.lint.client.api.LintDriver;
 import com.google.common.annotations.Beta;
-import com.google.common.base.Splitter;
 
 import java.io.File;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * A {@link com.android.tools.lint.detector.api.Context} used when checking resource files
@@ -71,12 +68,6 @@ public class ResourceContext extends Context {
         return mFolderType;
     }
 
-    /** Pattern for version qualifiers */
-    private static final Pattern VERSION_PATTERN = Pattern.compile("^v(\\d+)$"); //$NON-NLS-1$
-
-    private static File sCachedFolder = null;
-    private static int sCachedFolderVersion = -1;
-
     /**
      * Returns the folder version. For example, for the file values-v14/foo.xml,
      * it returns 14.
@@ -84,33 +75,6 @@ public class ResourceContext extends Context {
      * @return the folder version, or -1 if no specific version was specified
      */
     public int getFolderVersion() {
-        return getFolderVersion(file);
-    }
-
-    /**
-     * Returns the folder version of the given file. For example, for the file values-v14/foo.xml,
-     * it returns 14.
-     *
-     * @param file the file to be checked
-     * @return the folder version, or -1 if no specific version was specified
-     */
-    public static int getFolderVersion(File file) {
-        File parent = file.getParentFile();
-        if (parent.equals(sCachedFolder)) {
-            return sCachedFolderVersion;
-        }
-
-        sCachedFolder = parent;
-        sCachedFolderVersion = -1;
-
-        for (String qualifier : Splitter.on('-').split(parent.getName())) {
-            Matcher matcher = VERSION_PATTERN.matcher(qualifier);
-            if (matcher.matches()) {
-                sCachedFolderVersion = Integer.parseInt(matcher.group(1));
-                break;
-            }
-        }
-
-        return sCachedFolderVersion;
+        return mDriver.getResourceFolderVersion(file);
     }
 }
