@@ -54,9 +54,11 @@ public class NdkExtensionConventionAction implements Action<Project> {
                 throw new InvalidUserDataException(
                         "compileSdkVersion must be set for Android NDK plugin.");
             }
-
         }
+        setExtensionDefault(extension);
+    }
 
+    public static void setExtensionDefault(NdkExtension extension) {
         if (extension.getToolchain() == null) {
             extension.setToolchain(DEFAULT_TOOLCHAIN);
         }

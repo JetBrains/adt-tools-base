@@ -32,10 +32,11 @@ import org.gradle.api.tasks.Copy
 import org.gradle.model.internal.core.ModelPath
 import org.gradle.model.internal.core.ModelType
 import org.gradle.nativeplatform.BuildTypeContainer
+import org.gradle.nativeplatform.NativeLibrarySpec
 import org.gradle.nativeplatform.internal.DefaultSharedLibraryBinarySpec
 import org.gradle.language.c.tasks.CCompile
 import org.gradle.language.cpp.tasks.CppCompile
-import org.gradle.platform.base.PlatformContainer
+import org.gradle.platform.base.ComponentSpecContainer
 
 /**
  * Configure settings used by the native binaries.
@@ -52,16 +53,30 @@ class NdkConfigurationAction implements Action<Project> {
     }
 
     public void execute(Project project) {
-        BuildTypeContainer buildTypes =
-            project.modelRegistry.get(ModelPath.path("buildTypes"), ModelType.of(BuildTypeContainer))
-        buildTypes.maybeCreate(BuilderConstants.DEBUG)
-        buildTypes.maybeCreate(BuilderConstants.RELEASE)
+        createBuildTypes(
+            project.modelRegistry.get(ModelPath.path("buildTypes"), ModelType.of(BuildTypeContainer)));
 
-        project.libraries.create(ndkExtension.getModuleName())
-        configureProperties(project)
+        NativeLibrarySpec library = createNativeLibrary(
+            project.modelRegistry.get(ModelPath.path("componentSpecs"), ModelType.of(ComponentSpecContainer)),
+            ndkExtension);
+
+        configureProperties(
+                library,
+                project, ndkExtension, ndkHandler)
+
+        configureSources(project.sources, ndkExtension)
     }
 
-    void configureProperties(Project project) {
+    public static void createBuildTypes(BuildTypeContainer buildTypes) {
+        buildTypes.maybeCreate(BuilderConstants.DEBUG)
+        buildTypes.maybeCreate(BuilderConstants.RELEASE)
+    }
+
+    public static NativeLibrarySpec createNativeLibrary(ComponentSpecContainer specs, NdkExtension extension) {
+        NativeLibrarySpec library = specs.create(extension.getModuleName(), NativeLibrarySpec)
+    }
+
+    public static void configureSources(ProjectSourceSet sources, NdkExtension ndkExtension) {
         String moduleName = ndkExtension.getModuleName();
         ndkExtension.getSourceSets().all { AndroidSourceDirectorySet sourceSet ->
             // For Android's main source set, just configure the default FunctionalSourceSet.
@@ -70,7 +85,7 @@ class NdkConfigurationAction implements Action<Project> {
                             ? moduleName
                             : moduleName + sourceSet.name)
 
-            project.sources.maybeCreate(sourceSetName).configure {
+            sources.maybeCreate(sourceSetName).configure {
                 c(CSourceSet) {
                     source {
                         setSrcDirs(sourceSet.srcDirs)
@@ -87,74 +102,76 @@ class NdkConfigurationAction implements Action<Project> {
                 }
             }
         }
-        project.libraries.getByName(ndkExtension.getModuleName()) {
-            List<String> abiList = ndkHandler.getSupportedAbis()
-            targetPlatform abiList.toArray(new String[abiList.size()])
-            binaries.withType(DefaultSharedLibraryBinarySpec) { DefaultSharedLibraryBinarySpec binary ->
-                if (binary.targetPlatform.name.equals("current")) {
-                    return
-                }
+    }
 
-                // TODO: Support flavorDimension.
-                sourceIfExist(binary, project.sources, "$ndkExtension.moduleName${flavor.name}")
-                sourceIfExist(binary, project.sources, "$ndkExtension.moduleName${buildType.name}")
+    public static void configureProperties(NativeLibrarySpec library, Project project, NdkExtension ndkExtension, NdkHandler ndkHandler) {
+        Collection<String> abiList = ndkHandler.getSupportedAbis()
+        library.targetPlatform(abiList.toArray(new String[abiList.size()]))
 
-                cCompiler.define "ANDROID"
-                cppCompiler.define "ANDROID"
-                cCompiler.define "ANDROID_NDK"
-                cppCompiler.define "ANDROID_NDK"
+        library.binaries.withType(DefaultSharedLibraryBinarySpec) { DefaultSharedLibraryBinarySpec binary ->
+            if (binary.targetPlatform.name.equals("current")) {
+                return
+            }
 
-                // Set output library filename.
-                sharedLibraryFile = new File(
-                        project.buildDir,
-                        NdkNamingScheme.getOutputDirectoryName(binary) + "/" +
-                        NdkNamingScheme.getSharedLibraryFileName(ndkExtension.getModuleName()))
+            // TODO: Support flavorDimension.
+            sourceIfExist(binary, project.sources, "$ndkExtension.moduleName${flavor.name}")
+            sourceIfExist(binary, project.sources, "$ndkExtension.moduleName${buildType.name}")
 
-                // Replace output directory of compile tasks.
-                binary.tasks.withType(CCompile) {
-                    String sourceSetName = objectFileDir.name
-                    objectFileDir = project.file(
-                            "$project.buildDir/$AndroidProject.FD_INTERMEDIATES/objectFiles/" +
-                                    "${binary.namingScheme.outputDirectoryBase}/$sourceSetName")
-                }
-                binary.tasks.withType(CppCompile) {
-                    String sourceSetName = objectFileDir.name
-                    objectFileDir = project.file(
-                            "$project.buildDir/$AndroidProject.FD_INTERMEDIATES/objectFiles/" +
-                                    "${binary.namingScheme.outputDirectoryBase}/$sourceSetName")
-                }
+            cCompiler.define "ANDROID"
+            cppCompiler.define "ANDROID"
+            cCompiler.define "ANDROID_NDK"
+            cppCompiler.define "ANDROID_NDK"
 
-                String sysroot = ndkHandler.getSysroot(targetPlatform)
-                cCompiler.args  "--sysroot=$sysroot"
-                cppCompiler.args  "--sysroot=$sysroot"
-                linker.args "--sysroot=$sysroot"
+            // Set output library filename.
+            sharedLibraryFile = new File(
+                    project.buildDir,
+                    NdkNamingScheme.getOutputDirectoryName(binary) + "/" +
+                            NdkNamingScheme.getSharedLibraryFileName(ndkExtension.getModuleName()))
 
-                if (ndkExtension.getRenderscriptNdkMode()) {
-                    cCompiler.args "-I$sysroot/usr/include/rs"
-                    cCompiler.args "-I$sysroot/usr/include/rs/cpp"
-                    cppCompiler.args "-I$sysroot/usr/include/rs"
-                    cppCompiler.args "-I$sysroot/usr/include/rs/cpp"
-                    linker.args "-L$sysroot/usr/lib/rs"
-                }
+            // Replace output directory of compile tasks.
+            binary.tasks.withType(CCompile) {
+                String sourceSetName = objectFileDir.name
+                objectFileDir = project.file(
+                        "$project.buildDir/$AndroidProject.FD_INTERMEDIATES/objectFiles/" +
+                                "${binary.namingScheme.outputDirectoryBase}/$sourceSetName")
+            }
+            binary.tasks.withType(CppCompile) {
+                String sourceSetName = objectFileDir.name
+                objectFileDir = project.file(
+                        "$project.buildDir/$AndroidProject.FD_INTERMEDIATES/objectFiles/" +
+                                "${binary.namingScheme.outputDirectoryBase}/$sourceSetName")
+            }
 
-                StlConfiguration.apply(ndkHandler, ndkExtension.getStl(), project, binary)
+            String sysroot = ndkHandler.getSysroot(binary.targetPlatform)
+            cCompiler.args  "--sysroot=$sysroot"
+            cppCompiler.args  "--sysroot=$sysroot"
+            linker.args "--sysroot=$sysroot"
 
-                NativeToolSpecificationFactory.create(ndkHandler, buildType, targetPlatform).apply(binary)
+            if (ndkExtension.getRenderscriptNdkMode()) {
+                cCompiler.args "-I$sysroot/usr/include/rs"
+                cCompiler.args "-I$sysroot/usr/include/rs/cpp"
+                cppCompiler.args "-I$sysroot/usr/include/rs"
+                cppCompiler.args "-I$sysroot/usr/include/rs/cpp"
+                linker.args "-L$sysroot/usr/lib/rs"
+            }
 
-                // Add flags defined in NdkExtension
-                if (ndkExtension.getcFlags() != null) {
-                    cCompiler.args ndkExtension.getcFlags()
-                }
-                if (ndkExtension.getCppFlags() != null) {
-                    cppCompiler.args ndkExtension.getCppFlags()
-                }
-                for (String ldLibs : ndkExtension.getLdLibs()) {
-                    linker.args "-l$ldLibs"
-                }
+            StlConfiguration.apply(ndkHandler, ndkExtension.getStl(), project, binary)
 
-                if (buildType.name.equals(BuilderConstants.DEBUG)) {
-                    setupNdkGdbDebug(project, binary)
-                }
+            NativeToolSpecificationFactory.create(ndkHandler, binary.buildType, binary.targetPlatform).apply(binary)
+
+            // Add flags defined in NdkExtension
+            if (ndkExtension.getcFlags() != null) {
+                cCompiler.args ndkExtension.getcFlags()
+            }
+            if (ndkExtension.getCppFlags() != null) {
+                cppCompiler.args ndkExtension.getCppFlags()
+            }
+            for (String ldLibs : ndkExtension.getLdLibs()) {
+                linker.args "-l$ldLibs"
+            }
+
+            if (buildType.name.equals(BuilderConstants.DEBUG)) {
+                setupNdkGdbDebug(project, binary, ndkExtension, ndkHandler)
             }
         }
     }
@@ -180,12 +197,12 @@ class NdkConfigurationAction implements Action<Project> {
     /**
      * Setup tasks to create gdb.setup and copy gdbserver for NDK debugging.
      */
-    private void setupNdkGdbDebug(Project project, DefaultSharedLibraryBinarySpec binary) {
+    private static void setupNdkGdbDebug(Project project, DefaultSharedLibraryBinarySpec binary, NdkExtension ndkExtension, NdkHandler handler) {
         Task copyGdbServerTask = project.tasks.create(
                 name: binary.namingScheme.getTaskName("copy", "GdbServer"),
                 type: Copy) {
             from(new File(
-                    ndkHandler.getPrebuiltDirectory(binary.targetPlatform),
+                    handler.getPrebuiltDirectory(binary.targetPlatform),
                     "gdbserver/gdbserver"))
             into(new File(project.buildDir, NdkNamingScheme.getOutputDirectoryName(binary)))
         }
@@ -194,7 +211,7 @@ class NdkConfigurationAction implements Action<Project> {
         Task createGdbSetupTask = project.tasks.create(
                 name: binary.namingScheme.getTaskName("create", "Gdbsetup"),
                 type: GdbSetupTask) { def task ->
-            task.ndkHandler = this.ndkHandler
+            task.ndkHandler = handler
             task.extension = ndkExtension
             task.binary = binary
             task.outputDir = new File(project.buildDir, NdkNamingScheme.getOutputDirectoryName(binary))

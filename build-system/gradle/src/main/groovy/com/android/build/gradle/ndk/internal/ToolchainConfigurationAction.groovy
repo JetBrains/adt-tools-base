@@ -22,6 +22,7 @@ import org.gradle.api.Action
 import org.gradle.api.Project
 import org.gradle.model.internal.core.ModelPath
 import org.gradle.model.internal.core.ModelType
+import org.gradle.nativeplatform.platform.NativePlatform
 import org.gradle.nativeplatform.toolchain.Clang
 import org.gradle.nativeplatform.toolchain.Gcc
 import org.gradle.platform.base.PlatformContainer
@@ -52,66 +53,72 @@ class ToolchainConfigurationAction implements Action<Project> {
     }
 
     public void execute(Project project) {
+        // Create android platforms.
         configurePlatforms(
-                project.modelRegistry.get(ModelPath.path("platforms"), ModelType.of(PlatformContainer)))
+                project.modelRegistry.get(ModelPath.path("platforms"), ModelType.of(PlatformContainer)),
+                ndkHandler)
 
-        List<String> abiList = ndkHandler.getSupportedAbis();
-        for (String abi: abiList) {
-            // Create toolchain for each ABI.
-            configureToolchain(
-                    project.modelRegistry.get(ModelPath.path("toolChains"), ModelType.of(ToolChainRegistry)),
-                    ndkExtension.getToolchain(),
-                    ndkExtension.getToolchainVersion(),
-                    abi)
-        }
+        // Create toolchain for each ABI.
+        configureToolchain(
+                project.modelRegistry.get(ModelPath.path("toolChains"), ModelType.of(ToolChainRegistry)),
+                ndkExtension.getToolchain(),
+                ndkExtension.getToolchainVersion(),
+                ndkHandler)
     }
 
-    public void configurePlatforms(PlatformContainer platforms) {
+    public static void configurePlatforms(PlatformContainer platforms, NdkHandler ndkHandler) {
         List<String> abiList = ndkHandler.getSupportedAbis();
         for (String abi : abiList) {
-            platforms.create(abi) {
-                // All we care is the name of the platform.  It doesn't matter what the
-                // architecture is, but it must be set to non-x86 so that it does not match
-                // the default supported platform.
-                architecture "ppc"
-                operatingSystem "linux"
-            }
+            NativePlatform platform = (NativePlatform) platforms.maybeCreate(abi)
+
+            // All we care is the name of the platform.  It doesn't matter what the
+            // architecture is, but it must be set to non-x86 so that it does not match
+            // the default supported platform.
+            platform.architecture "ppc"
+            platform.operatingSystem "linux"
         }
     }
 
     /**
      * Configure toolchain for a platform.
      */
-    private void configureToolchain(
+    public static void configureToolchain(
             ToolChainRegistry toolchains,
             String toolchainName,
             String toolchainVersion,
-            String platform) {
-        String name = "$toolchainName-$toolchainVersion-$platform"
-        String bin = (
-                ndkHandler.getToolchainPath(toolchainName, toolchainVersion, platform).toString()
-                        + "/bin")
+            NdkHandler ndkHandler) {
+        List<String> abiList = ndkHandler.getSupportedAbis();
+        for (String abi: abiList) {
+            String platform = abi
+            String name = "$toolchainName-$toolchainVersion-$platform"
 
-        toolchains.create(name, toolchainName.equals("gcc") ? Gcc : Clang) {
-            // TODO:  Gradle 2.2 allow customizing options for each target platform.
-            // Simplify the code to contain one toolchain for the project instead of one for
-            // each platform.
-            target(platform) {
-                if (toolchainName.equals("gcc")) {
-                    cCompiler.setExecutable("${GCC_PREFIX[platform]}-gcc")
-                    cppCompiler.setExecutable("${GCC_PREFIX[platform]}-g++")
-                    linker.setExecutable("${GCC_PREFIX[platform]}-g++")
-                    assembler.setExecutable("${GCC_PREFIX[platform]}-as")
-                    staticLibArchiver.setExecutable("${GCC_PREFIX[platform]}-ar")
-                }
+            // Create toolchain for each ABI.
+            String bin = (
+                    ndkHandler.getToolchainPath(toolchainName, toolchainVersion, platform).
+                            toString()
+                            + "/bin")
 
-                // By default, gradle will use -Xlinker to pass arguments to the linker.
-                // Removing it as it prevents -sysroot from being properly set.
-                linker.withArguments { List<String> args ->
-                    args.removeAll("-Xlinker")
+            toolchains.create(name, toolchainName.equals("gcc") ? Gcc : Clang) {
+                // TODO:  Gradle 2.2 allow customizing options for each target platform.
+                // Simplify the code to contain one toolchain for the project instead of one for
+                // each platform.
+                target(platform) {
+                    if (toolchainName.equals("gcc")) {
+                        cCompiler.setExecutable("${GCC_PREFIX[platform]}-gcc")
+                        cppCompiler.setExecutable("${GCC_PREFIX[platform]}-g++")
+                        linker.setExecutable("${GCC_PREFIX[platform]}-g++")
+                        assembler.setExecutable("${GCC_PREFIX[platform]}-as")
+                        staticLibArchiver.setExecutable("${GCC_PREFIX[platform]}-ar")
+                    }
+
+                    // By default, gradle will use -Xlinker to pass arguments to the linker.
+                    // Removing it as it prevents -sysroot from being properly set.
+                    linker.withArguments { List<String> args ->
+                        args.removeAll("-Xlinker")
+                    }
                 }
+                path bin
             }
-            path bin
         }
     }
 
