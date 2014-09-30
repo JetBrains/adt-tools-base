@@ -5,10 +5,12 @@
     <merge from="AndroidManifest.xml.ftl"
              to="${escapeXmlAttribute(manifestOut)}/AndroidManifest.xml" />
 
-    <merge from="res/values-large/refs.xml.ftl"
-             to="${escapeXmlAttribute(resOut)}/values-large/refs.xml" />
-    <merge from="res/values-sw600dp/refs.xml.ftl"
-             to="${escapeXmlAttribute(resOut)}/values-sw600dp/refs.xml" />
+    <#if minApiLevel lt 13>
+      <merge from="res/values-large/refs.xml.ftl"
+               to="${escapeXmlAttribute(resOut)}/values-large/refs.xml" />
+      <merge from="res/values-sw600dp/refs.xml.ftl"
+               to="${escapeXmlAttribute(resOut)}/values-sw600dp/refs.xml" />
+    </#if>
     <merge from="res/values/strings.xml.ftl"
              to="${escapeXmlAttribute(resOut)}/values/strings.xml" />
 
@@ -16,8 +18,13 @@
                    to="${escapeXmlAttribute(resOut)}/layout/activity_${detail_name}.xml" />
     <instantiate from="res/layout/activity_content_list.xml.ftl"
                    to="${escapeXmlAttribute(resOut)}/layout/activity_${collection_name}.xml" />
-    <instantiate from="res/layout/activity_content_twopane.xml.ftl"
-                   to="${escapeXmlAttribute(resOut)}/layout/activity_${extractLetters(objectKind?lower_case)}_twopane.xml" />
+    <#if minApiLevel lt 13>
+      <instantiate from="res/layout/activity_content_twopane.xml.ftl"
+                     to="${escapeXmlAttribute(resOut)}/layout/activity_${extractLetters(objectKind?lower_case)}_twopane.xml" />
+    <#else>
+      <instantiate from="res/layout/activity_content_twopane.xml.ftl"
+                     to="${escapeXmlAttribute(resOut)}/layout-sw600dp/activity_${extractLetters(objectKind?lower_case)}_list.xml" />
+    </#if>
     <instantiate from="res/layout/fragment_content_detail.xml.ftl"
                    to="${escapeXmlAttribute(resOut)}/layout/fragment_${detail_name}.xml" />
 
