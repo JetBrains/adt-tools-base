@@ -57,6 +57,11 @@ android {
     }
 
     @Test
+    public void assemble() {
+        fixture.execute("assemble");
+    }
+
+    @Test
     public void assembleRelease() {
         fixture.execute("assembleRelease");
         ZipFile apk = new ZipFile(
