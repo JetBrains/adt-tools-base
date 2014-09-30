@@ -367,10 +367,10 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
     private int mSeenUsesSdk;
 
     /** Activities we've encountered */
-    private final Set<String> mActivities = new HashSet<String>();
+    private Set<String> mActivities;
 
     /** Features we've encountered */
-    private final Set<String> mUsesFeatures = new HashSet<String>();
+    private Set<String> mUsesFeatures;
 
     /** Permission basenames */
     private Map<String, String> mPermissionNames;
@@ -401,6 +401,8 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
     public void beforeCheckFile(@NonNull Context context) {
         mSeenApplication = false;
         mSeenUsesSdk = 0;
+        mActivities = new HashSet<String>();
+        mUsesFeatures = new HashSet<String>();
     }
 
     @Override
