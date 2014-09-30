@@ -15,7 +15,7 @@
  */
 package com.android.build.gradle.internal.tasks
 
-import com.android.build.SplitOutput
+import com.android.build.OutputFile
 import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.build.gradle.internal.variant.BaseVariantOutputData
 import com.android.builder.core.VariantConfiguration
@@ -63,7 +63,7 @@ public class InstallVariantTask extends BaseTask {
                         variantName)) {
 
                     // now look for a matching output file
-                    SplitOutput output = SplitOutputMatcher.computeBestOutput(
+                    OutputFile output = SplitOutputMatcher.computeBestOutput(
                             variantData.outputs,
                             variantData.variantConfiguration.getSupportedAbis(),
                             device.getDensity(), device.getAbis())

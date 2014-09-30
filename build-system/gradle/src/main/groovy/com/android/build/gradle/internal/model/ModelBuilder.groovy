@@ -17,9 +17,12 @@
 package com.android.build.gradle.internal.model
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
+import com.android.build.OutputFile
 import com.android.build.gradle.AppPlugin
 import com.android.build.gradle.BasePlugin
 import com.android.build.gradle.LibraryPlugin
+import com.android.build.gradle.api.ApkOutputFile
+import com.android.build.gradle.api.MainApkOutputFile
 import com.android.build.gradle.internal.BuildTypeData
 import com.android.build.gradle.internal.ProductFlavorData
 import com.android.build.gradle.internal.dsl.LintOptionsImpl
@@ -43,7 +46,10 @@ import com.android.builder.model.SourceProvider
 import com.android.builder.model.SourceProviderContainer
 import com.android.sdklib.AndroidVersion
 import com.android.sdklib.IAndroidTarget
+import com.google.common.collect.ImmutableCollection
+import com.google.common.collect.ImmutableList
 import com.google.common.collect.Lists
+import com.google.common.util.concurrent.Callables
 import org.gradle.api.Project
 import org.gradle.api.plugins.UnknownPluginException
 import org.gradle.tooling.provider.model.ToolingModelBuilder
@@ -258,16 +264,26 @@ public class ModelBuilder implements ToolingModelBuilder {
 
             int intVersionCode = versionCode != null ? versionCode.intValue() : 1;
 
-            AndroidArtifactOutput output = new AndroidArtifactOutputImpl(
-                    variantOutputData.outputFile,
+            ImmutableCollection.Builder<OutputFile> outputFiles = ImmutableList.builder();
+
+            // add the main APK
+            outputFiles.add(new MainOutputFileImpl(
+                    variantOutputData.mainOutputFile.filters,
+                    variantOutputData.mainOutputFile.getType().name(),
+                    variantOutputData.outputFile));
+
+            for (ApkOutputFile splitApk : variantOutputData.outputs) {
+                if (splitApk.getType() == OutputFile.OutputType.SPLIT) {
+                    outputFiles.add(new OutputFileImpl(splitApk.getFilters(), OutputFile.SPLIT));
+                }
+            }
+
+            // add the main APK.
+            outputs.add(new AndroidArtifactOutputImpl(
+                    outputFiles.build(),
                     variantOutputData.assembleTask.name,
                     variantOutputData.manifestProcessorTask.manifestOutputFile,
-                    intVersionCode,
-                    variantOutputData.densityFilter,
-                    variantOutputData.abiFilter
-            );
-
-            outputs.add(output)
+                    intVersionCode));
         }
 
         return new AndroidArtifactImpl(

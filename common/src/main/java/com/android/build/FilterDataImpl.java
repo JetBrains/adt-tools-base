@@ -14,33 +14,33 @@
  * limitations under the License.
  */
 
-package com.android.builder.model;
+package com.android.build;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
-import com.android.build.OutputFile;
-import com.android.build.VariantOutput;
 
-import java.io.File;
-import java.util.Collection;
+import java.io.Serializable;
 
 /**
- * The Actual output for a {@link AndroidArtifact}, which can be one file at the minimum or
- * several APKs in case of pure splits configuration.
+ * Implementation of {@link FilterData} interface
  */
-public interface AndroidArtifactOutput extends VariantOutput {
+class FilterDataImpl implements FilterData, Serializable {
+    private final String filterType;
+    private final String identifier;
 
-    /**
-     * Returns the name of the task used to generate this artifact output.
-     *
-     * @return the name of the task.
-     */
-    @NonNull
-    String getAssembleTaskName();
+    FilterDataImpl(String filterType, String identifier) {
+        this.filterType = filterType;
+        this.identifier = identifier;
+    }
 
-    /**
-     * The generated manifest for this variant's artifact's output.
-     */
     @NonNull
-    File getGeneratedManifest();
+    @Override
+    public String getIdentifier() {
+        return identifier;
+    }
+
+    @NonNull
+    @Override
+    public String getFilterType() {
+        return filterType;
+    }
 }

@@ -17,19 +17,14 @@
 package com.android.build;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 
 import java.io.File;
 
 /**
- * An output with an associated set of filters.
+ * A main variant output, it must be either a {@link com.android.build.OutputFile.OutputType#MAIN}
+ * or {@link com.android.build.OutputFile.OutputType#FULL_SPLIT}
  */
-public interface SplitOutput {
-
-    /**
-     * An object representing the lack of filter.
-     */
-    public static final String NO_FILTER = null;
+public interface MainOutputFile extends OutputFile {
 
     /**
      * Returns the output file for this artifact's output.
@@ -42,27 +37,4 @@ public interface SplitOutput {
      */
     @NonNull
     File getOutputFile();
-
-    /**
-     * The density filter if applicable.
-     * @return the density filter or null if not applicable.
-     */
-    @Nullable
-    String getDensityFilter();
-
-    /**
-     * The ABI filter if applicable.
-     * @return the ABI filter or null if not applicable.
-     */
-    @Nullable
-    String getAbiFilter();
-
-    /**
-     * The output versionCode.
-     *
-     * In case of multi-apk, the version code of each apk is different.
-     *
-     * @return the versionCode
-     */
-    int getVersionCode();
 }

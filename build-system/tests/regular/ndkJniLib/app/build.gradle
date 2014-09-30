@@ -1,5 +1,7 @@
 apply plugin: 'com.android.application'
 
+import com.android.build.OutputFile;
+
 dependencies {
     compile project(':lib')
 }
@@ -44,7 +46,7 @@ android {
         // and the density component.
         variant.outputs.each { output ->
             // get the key for the abi component
-            def key = output.abiFilter == null ? "all" : output.abiFilter
+            def key = output.getFilter(OutputFile.ABI) == null ? "all" : output.getFilter(OutputFile.ABI)
 
             // set the versionCode on the output.
             output.versionCodeOverride = apiVersion * 1000000 + project.ext.versionCodes.get(key) * 100000 + defaultConfig.versionCode
