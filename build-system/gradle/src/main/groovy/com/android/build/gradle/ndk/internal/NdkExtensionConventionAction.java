@@ -11,12 +11,13 @@ import com.android.builder.core.BuilderConstants;
 
 import org.gradle.api.Action;
 import org.gradle.api.InvalidUserDataException;
+import org.gradle.api.Project;
 import org.gradle.api.internal.project.ProjectInternal;
 
 /**
  * Action to setup default values for NdkExtension.
  */
-public class NdkExtensionConventionAction implements Action<ProjectInternal> {
+public class NdkExtensionConventionAction implements Action<Project> {
 
     private static final String DEFAULT_TOOLCHAIN = "gcc";
 
@@ -28,10 +29,14 @@ public class NdkExtensionConventionAction implements Action<ProjectInternal> {
 
     private static final String DEFAULT_STL = "system";
 
-    @Override
-    public void execute(ProjectInternal project) {
-        NdkExtension extension = project.getPlugins().getPlugin(NdkPlugin.class).getNdkExtension();
+    private NdkExtension extension;
 
+    public NdkExtensionConventionAction(NdkExtension extension) {
+        this.extension = extension;
+    }
+
+    @Override
+    public void execute(Project project) {
         if (extension.getModuleName() == null || extension.getModuleName().isEmpty()) {
             throw new InvalidUserDataException("moduleName must be set for Android NDK plugin.");
         }

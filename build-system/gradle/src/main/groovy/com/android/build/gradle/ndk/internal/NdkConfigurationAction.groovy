@@ -29,9 +29,13 @@ import org.gradle.language.c.CSourceSet
 import org.gradle.language.cpp.CppSourceSet
 import org.gradle.api.Task
 import org.gradle.api.tasks.Copy
+import org.gradle.model.internal.core.ModelPath
+import org.gradle.model.internal.core.ModelType
+import org.gradle.nativeplatform.BuildTypeContainer
 import org.gradle.nativeplatform.internal.DefaultSharedLibraryBinarySpec
 import org.gradle.language.c.tasks.CCompile
 import org.gradle.language.cpp.tasks.CppCompile
+import org.gradle.platform.base.PlatformContainer
 
 /**
  * Configure settings used by the native binaries.
@@ -48,12 +52,11 @@ class NdkConfigurationAction implements Action<Project> {
     }
 
     public void execute(Project project) {
-        project.model {
-            buildTypes {
-                maybeCreate(BuilderConstants.DEBUG)
-                maybeCreate(BuilderConstants.RELEASE)
-            }
-        }
+        BuildTypeContainer buildTypes =
+            project.modelRegistry.get(ModelPath.path("buildTypes"), ModelType.of(BuildTypeContainer))
+        buildTypes.maybeCreate(BuilderConstants.DEBUG)
+        buildTypes.maybeCreate(BuilderConstants.RELEASE)
+
         project.libraries.create(ndkExtension.getModuleName())
         configureProperties(project)
     }
@@ -86,6 +89,10 @@ class NdkConfigurationAction implements Action<Project> {
         }
         project.libraries.getByName(ndkExtension.getModuleName()) {
             binaries.withType(DefaultSharedLibraryBinarySpec) { DefaultSharedLibraryBinarySpec binary ->
+                if (binary.targetPlatform.name.equals("current")) {
+                    return
+                }
+
                 // TODO: Support flavorDimension.
                 sourceIfExist(binary, project.sources, "$ndkExtension.moduleName${flavor.name}")
                 sourceIfExist(binary, project.sources, "$ndkExtension.moduleName${buildType.name}")

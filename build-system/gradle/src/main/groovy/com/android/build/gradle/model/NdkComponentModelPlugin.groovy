@@ -13,38 +13,41 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.build.gradle.ndk
 
-import com.android.build.gradle.AppPlugin
+
+package com.android.build.gradle.model
+
 import com.android.build.gradle.BasePlugin
-import com.android.build.gradle.LibraryPlugin
 import com.android.build.gradle.api.AndroidSourceDirectorySet
 import com.android.build.gradle.internal.api.DefaultAndroidSourceDirectorySet
-import com.android.build.gradle.ndk.internal.ForwardNdkConfigurationAction
+import com.android.build.gradle.ndk.NdkExtension
 import com.android.build.gradle.ndk.internal.NdkConfigurationAction
 import com.android.build.gradle.ndk.internal.NdkExtensionConventionAction
 import com.android.build.gradle.ndk.internal.NdkHandler
 import com.android.build.gradle.ndk.internal.ToolchainConfigurationAction
 import com.android.builder.core.VariantConfiguration
-import org.gradle.api.Action
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.gradle.api.Task
-import org.gradle.api.logging.Logger
-import org.gradle.api.logging.Logging
+import org.gradle.api.plugins.ExtensionContainer
 import org.gradle.api.specs.Spec
+import org.gradle.api.tasks.TaskContainer
 import org.gradle.configuration.project.ProjectConfigurationActionContainer
-import org.gradle.internal.Actions
 import org.gradle.internal.reflect.Instantiator
+import org.gradle.model.Finalize
+import org.gradle.model.Model
+import org.gradle.model.Mutate
+import org.gradle.model.RuleSource
+import org.gradle.nativeplatform.StaticLibraryBinary
 import org.gradle.nativeplatform.internal.DefaultSharedLibraryBinarySpec
-import org.gradle.nativeplatform.internal.DefaultStaticLibraryBinarySpec
+import org.gradle.platform.base.BinaryContainer
+import org.gradle.platform.base.PlatformContainer
 
 import javax.inject.Inject
 
 /**
  * Plugin for Android NDK applications.
  */
-class NdkPlugin implements Plugin<Project> {
+class NdkComponentModelPlugin implements Plugin<Project> {
 
     protected Project project
 
@@ -57,7 +60,7 @@ class NdkPlugin implements Plugin<Project> {
     protected Instantiator instantiator
 
     @Inject
-    public NdkPlugin(
+    public NdkComponentModelPlugin(
             ProjectConfigurationActionContainer configurationActions,
             Instantiator instantiator) {
         this.configurationActions = configurationActions
@@ -74,55 +77,48 @@ class NdkPlugin implements Plugin<Project> {
 
     void apply(Project project) {
         this.project = project
+        project.extensions.add("projectModel", project)
 
         def sourceSetContainers = project.container(AndroidSourceDirectorySet) { name ->
             instantiator.newInstance(DefaultAndroidSourceDirectorySet, name, project)
         }
         extension = instantiator.newInstance(NdkExtension, sourceSetContainers)
 
-        if (project.extensions.findByName("android") == null) {
-            project.extensions.add("android", extension)
-        }
+        project.extensions.add("android_ndk", extension)
+
         ndkHandler = new NdkHandler(project, extension)
+        project.extensions.add("ndk_handler", ndkHandler)
 
         project.apply plugin: 'c'
         project.apply plugin: 'cpp'
 
-        configurationActions.add(Actions.filter(
-                Actions.composite(
-                        new WarnExperimental(),
-                        new ForwardNdkConfigurationAction(),
-                        new NdkExtensionConventionAction(extension),
-                        new ToolchainConfigurationAction(ndkHandler, extension),
-                        new NdkConfigurationAction(ndkHandler, extension)),
-                new Spec<Project>() {
-                    @Override
-                    boolean isSatisfiedBy(Project p) {
-                        // Disable NdkPlugin for now.
-                        BasePlugin androidPlugin = BasePlugin.findBasePlugin(p)
-                        if (androidPlugin == null) {
-                            return true
-                        }
-                        return androidPlugin.extension?.useNewNativePlugin &&
-                                extension.moduleName != null
-                    }
-                }))
-
-        project.afterEvaluate {
-            if (extension.moduleName != null) {
-                hideUnwantedTasks()
-            }
+        // Remove static library tasks from assemble
+        project.binaries.withType(StaticLibraryBinary) {
+            // TODO: Determine how to hide these task from task list.
+            it.buildable = false
         }
+
     }
 
-    private static class WarnExperimental implements Action<Project> {
-        @Override
-        public void execute(Project proj) {
-            BasePlugin.displayWarning(
-                    Logging.getLogger(NdkPlugin.class),
-                    proj,
-                    "NdkPlugin is an experimental plugin.  Future versions may not be backward " +
-                    "compatible.")
+    @RuleSource
+    static class Rules {
+        @Model("android.ndk")
+        NdkExtension createAndroidNdk(ExtensionContainer extensions) {
+            println "Create NDK Model: " + extensions.getByType(NdkExtension)
+            return extensions.getByType(NdkExtension)
+        }
+
+        @Model
+        Project projectModel(ExtensionContainer extensions) {
+            return extensions.getByType(Project)
+        }
+
+        @Mutate
+        void closeNdkExtension(PlatformContainer platforms, NdkExtension extension, Project project) {
+            NdkHandler ndkHandler = new NdkHandler(project, extension)
+            new NdkExtensionConventionAction(extension).execute(project)
+            new ToolchainConfigurationAction(ndkHandler, extension).execute(project)
+            new NdkConfigurationAction(ndkHandler, extension).execute(project)
         }
     }
 
@@ -142,7 +138,6 @@ class NdkPlugin implements Plugin<Project> {
                     && (binary.flavor.name.equals(variantConfig.getFlavorName())
                             || (binary.flavor.name.equals("default")
                                     && variantConfig.getFlavorName().isEmpty()))
-                    && !binary.targetPlatform.name.equals("current")
                     && (variantConfig.getNdkConfig().getAbiFilters() == null
                             || variantConfig.getNdkConfig().getAbiFilters().contains(
                                     binary.targetPlatform.name)))
@@ -163,31 +158,5 @@ class NdkPlugin implements Plugin<Project> {
                 .unique())
     }
 
-    /**
-     * Remove unintended tasks created by Gradle native plugin from task list.
-     *
-     * Gradle native plugins creates static library tasks automatically.  This method removes them
-     * to avoid cluttering the task list.
-     */
-    private void hideUnwantedTasks() {
-        // Gradle do not support a way to remove created tasks.  The best workaround is to clear the
-        // group of the task and have another task depends on it.  Therefore, we have to create
-        // a dummy task to depend on all the tasks that we do not want to show up on the task
-        // list. The dummy task dependsOn itself, effectively making it non-executable and
-        // invisible unless the --all option is use.
-        Task nonExecutableTask = project.task("nonExecutableTask")
-        nonExecutableTask.dependsOn nonExecutableTask
-        nonExecutableTask.description =
-                "Dummy task to hide other unwanted tasks in the task list."
-
-        project.libraries.getByName(ndkExtension.getModuleName()) {
-            Iterable<Task> lifecycleTasks =
-                    binaries.withType(DefaultStaticLibraryBinarySpec)*.getBuildTask()
-            nonExecutableTask.dependsOn lifecycleTasks
-            lifecycleTasks*.group = null
-            lifecycleTasks*.enabled = false
-            lifecycleTasks*.setDependsOn([])
-        }
-    }
 }
 
