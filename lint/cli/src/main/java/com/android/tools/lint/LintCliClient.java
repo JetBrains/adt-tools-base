@@ -26,13 +26,13 @@ import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.tools.lint.client.api.Configuration;
 import com.android.tools.lint.client.api.DefaultConfiguration;
-import com.android.tools.lint.client.api.XmlParser;
-import com.android.tools.lint.client.api.JavaParser;
 import com.android.tools.lint.client.api.IssueRegistry;
+import com.android.tools.lint.client.api.JavaParser;
 import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.client.api.LintDriver;
 import com.android.tools.lint.client.api.LintListener;
 import com.android.tools.lint.client.api.LintRequest;
+import com.android.tools.lint.client.api.XmlParser;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.LintUtils;
@@ -40,6 +40,7 @@ import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Position;
 import com.android.tools.lint.detector.api.Project;
 import com.android.tools.lint.detector.api.Severity;
+import com.android.tools.lint.detector.api.TextFormat;
 import com.google.common.annotations.Beta;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Maps;
@@ -195,7 +196,7 @@ public class LintCliClient extends LintClient {
             @NonNull Severity severity,
             @Nullable Location location,
             @NonNull String message,
-            @Nullable Object data) {
+            @NonNull TextFormat format) {
         assert context.isEnabled(issue) || issue == LINT_ERROR;
 
         if (severity == Severity.IGNORE) {
@@ -209,7 +210,11 @@ public class LintCliClient extends LintClient {
             mWarningCount++;
         }
 
-        Warning warning = new Warning(issue, message, severity, context.getProject(), data);
+        // Store the message in the raw format internally such that we can
+        // convert it to text for the text reporter, HTML for the HTML reporter
+        // and so on.
+        message = format.convertTo(message, TextFormat.RAW);
+        Warning warning = new Warning(issue, message, severity, context.getProject());
         mWarnings.add(warning);
 
         if (location != null) {

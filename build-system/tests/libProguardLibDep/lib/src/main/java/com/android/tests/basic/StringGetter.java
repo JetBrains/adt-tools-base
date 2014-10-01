@@ -6,18 +6,24 @@ import java.lang.reflect.Method;
 
 public class StringGetter{
 
+    /**
+     * Public method that will not get obfuscated
+     */
     public static String getString(int foo) {
          return getStringInternal(foo);
     }
 
+    /**
+     * Public method that will get obfuscated by the app project.
+     */
+    public static String getString2(int foo) {
+        return getStringInternal(foo);
+    }
+
+    /**
+     * method that will get obfuscated by the library.
+     */
     public static String getStringInternal(int foo) {
-        try {
-            // use reflection to make sure the class wasn't obfuscated
-            Class<?> theClass = Class.forName("com.android.tests.basic.StringProvider");
-            Method method = theClass.getDeclaredMethod("getString", int.class);
-            return (String) method.invoke(null, foo);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        return Integer.toString(foo);
     }
 }

@@ -21,7 +21,11 @@ import com.android.annotations.Nullable;
 import com.android.ddmlib.log.LogReceiver;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 /**
  *  A Device. It can be a physical device or an emulator.
@@ -36,6 +40,7 @@ public interface IDevice extends IShellEnabledDevice {
     public static final String PROP_DEVICE_CPU_ABI = "ro.product.cpu.abi";
     public static final String PROP_DEVICE_CPU_ABI2 = "ro.product.cpu.abi2";
     public static final String PROP_BUILD_CHARACTERISTICS = "ro.build.characteristics";
+    public static final String PROP_DEVICE_DENSITY = "ro.sf.lcd_density";
 
     public static final String PROP_DEBUGGABLE = "ro.debuggable";
 
@@ -150,23 +155,30 @@ public interface IDevice extends IShellEnabledDevice {
     public DeviceState getState();
 
     /**
-     * Returns the device properties. It contains the whole output of 'getprop'
+     * Returns the cached device properties. It contains the whole output of 'getprop'
+     *
+     * @deprecated use {@link #getSystemProperty(String)} instead
      */
+    @Deprecated
     public Map<String, String> getProperties();
 
     /**
      * Returns the number of property for this device.
+     *
+     * @deprecated implementation detail
      */
+    @Deprecated
     public int getPropertyCount();
 
     /**
-     * Returns the cached property value.
+     * Convenience method that attempts to retrieve a property via
+     * {@link #getSystemProperty(String)} with minimal wait time, and swallows exceptions.
      *
      * @param name the name of the value to return.
-     * @return the value or <code>null</code> if the property does not exist or has not yet been
-     * cached.
+     * @return the value or <code>null</code> if the property value was not immediately available
      */
-    public String getProperty(String name);
+    @Nullable
+    public String getProperty(@NonNull String name);
 
     /**
      * Returns <code>true></code> if properties have been cached
@@ -176,6 +188,7 @@ public interface IDevice extends IShellEnabledDevice {
     /**
      * A variant of {@link #getProperty(String)} that will attempt to retrieve the given
      * property from device directly, without using cache.
+     * This method should (only) be used for any volatile properties.
      *
      * @param name the name of the value to return.
      * @return the value or <code>null</code> if the property does not exist
@@ -184,14 +197,16 @@ public interface IDevice extends IShellEnabledDevice {
      * @throws ShellCommandUnresponsiveException in case the shell command doesn't send output for a
      *             given time.
      * @throws IOException in case of I/O error on the connection.
+     * @deprecated use {@link #getSystemProperty(String)}
      */
+    @Deprecated
     public String getPropertySync(String name) throws TimeoutException,
             AdbCommandRejectedException, ShellCommandUnresponsiveException, IOException;
 
     /**
      * A combination of {@link #getProperty(String)} and {@link #getPropertySync(String)} that
-     * will attempt to retrieve the property from cache if available, and if not, will query the
-     * device directly.
+     * will attempt to retrieve the property from cache. If not found, will synchronously
+     * attempt to query device directly and repopulate the cache if successful.
      *
      * @param name the name of the value to return.
      * @return the value or <code>null</code> if the property does not exist
@@ -200,9 +215,20 @@ public interface IDevice extends IShellEnabledDevice {
      * @throws ShellCommandUnresponsiveException in case the shell command doesn't send output for a
      *             given time.
      * @throws IOException in case of I/O error on the connection.
+     * @deprecated use {@link #getSystemProperty(String)} instead
      */
+    @Deprecated
     public String getPropertyCacheOrSync(String name) throws TimeoutException,
             AdbCommandRejectedException, ShellCommandUnresponsiveException, IOException;
+
+    /**
+     * Do a potential asynchronous query for a system property.
+     *
+     * @param name the name of the value to return.
+     * @return a {@link Future} which can be used to retrieve value of property. Future#get() can
+     *         return null if property can not be retrieved.
+     */
+    public @NonNull Future<String> getSystemProperty(@NonNull String name);
 
     /** Returns whether this device supports the given software feature. */
     boolean supportsFeature(@NonNull Feature feature);
@@ -520,7 +546,9 @@ public interface IDevice extends IShellEnabledDevice {
      * battery level if 5 minutes have expired since the last successful query.
      *
      * @return the battery level or <code>null</code> if it could not be retrieved
+     * @deprecated use {@link #getBattery()}
      */
+    @Deprecated
     public Integer getBatteryLevel() throws TimeoutException,
             AdbCommandRejectedException, IOException, ShellCommandUnresponsiveException;
 
@@ -533,8 +561,51 @@ public interface IDevice extends IShellEnabledDevice {
      * @param freshnessMs
      * @return the battery level or <code>null</code> if it could not be retrieved
      * @throws ShellCommandUnresponsiveException
+     * @deprecated use {@link #getBattery(long, TimeUnit))}
      */
+    @Deprecated
     public Integer getBatteryLevel(long freshnessMs) throws TimeoutException,
             AdbCommandRejectedException, IOException, ShellCommandUnresponsiveException;
 
+    /**
+     * Return the device's battery level, from 0 to 100 percent.
+     * <p/>
+     * The battery level may be cached. Only queries the device for its
+     * battery level if 5 minutes have expired since the last successful query.
+     *
+     * @return a {@link Future} that can be used to query the battery level. The Future will return
+     * a {@link ExecutionException} if battery level could not be retrieved.
+     */
+    @NonNull
+    public Future<Integer> getBattery();
+
+    /**
+     * Return the device's battery level, from 0 to 100 percent.
+     * <p/>
+     * The battery level may be cached. Only queries the device for its
+     * battery level if <code>freshnessTime</code> has expired since the last successful query.
+     *
+     * @param freshnessTime the desired recency of battery level
+     * @param timeUnit the {@link TimeUnit} of freshnessTime
+     * @return a {@link Future} that can be used to query the battery level. The Future will return
+     * a {@link ExecutionException} if battery level could not be retrieved.
+     */
+    @NonNull
+    public Future<Integer> getBattery(long freshnessTime, @NonNull TimeUnit timeUnit);
+
+
+    /**
+     * Returns the ABIs supported by this device. The ABIs are sorted in preferred order, with the
+     * first ABI being the most preferred.
+     * @return the list of ABIs.
+     */
+    @NonNull
+    public List<String> getAbis();
+
+    /**
+     * Returns the density bucket of the device screen.
+     *
+     * @return the density, or 0 if it's unknown.
+     */
+    public int getDensity();
 }

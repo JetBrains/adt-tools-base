@@ -27,6 +27,7 @@ import java.io.File;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Implementation of AndroidArtifact that is serializable
@@ -47,22 +48,26 @@ public class AndroidArtifactImpl extends BaseArtifactImpl implements AndroidArti
     private final List<File> generatedSourceFolders;
     @NonNull
     private final List<File> generatedResourceFolders;
+    @Nullable
+    private final Set<String> abiFilters;
 
-    AndroidArtifactImpl(@NonNull String name,
-                        @NonNull Collection<AndroidArtifactOutput> outputs,
-                        @NonNull String assembleTaskName,
-                        boolean isSigned,
-                        @Nullable String signingConfigName,
-                        @NonNull String applicationId,
-                        @NonNull String sourceGenTaskName,
-                        @NonNull String javaCompileTaskName,
-                        @NonNull List<File> generatedSourceFolders,
-                        @NonNull List<File> generatedResourceFolders,
-                        @NonNull File classesFolder,
-                        @NonNull Dependencies dependencies,
-                        @Nullable SourceProvider variantSourceProvider,
-                        @Nullable SourceProvider multiFlavorSourceProviders) {
-        super(name, assembleTaskName, javaCompileTaskName, classesFolder, dependencies,
+    AndroidArtifactImpl(
+            @NonNull String name,
+            @NonNull Collection<AndroidArtifactOutput> outputs,
+            @NonNull String assembleTaskName,
+            boolean isSigned,
+            @Nullable String signingConfigName,
+            @NonNull String applicationId,
+            @NonNull String sourceGenTaskName,
+            @NonNull String compileTaskName,
+            @NonNull List<File> generatedSourceFolders,
+            @NonNull List<File> generatedResourceFolders,
+            @NonNull File classesFolder,
+            @NonNull Dependencies dependencies,
+            @Nullable SourceProvider variantSourceProvider,
+            @Nullable SourceProvider multiFlavorSourceProviders,
+            @Nullable Set<String> abiFilters) {
+        super(name, assembleTaskName, compileTaskName, classesFolder, dependencies,
                 variantSourceProvider, multiFlavorSourceProviders);
 
         this.outputs = outputs;
@@ -72,6 +77,7 @@ public class AndroidArtifactImpl extends BaseArtifactImpl implements AndroidArti
         this.sourceGenTaskName = sourceGenTaskName;
         this.generatedSourceFolders = generatedSourceFolders;
         this.generatedResourceFolders = generatedResourceFolders;
+        this.abiFilters = abiFilters;
     }
 
     @NonNull
@@ -113,5 +119,11 @@ public class AndroidArtifactImpl extends BaseArtifactImpl implements AndroidArti
     @Override
     public List<File> getGeneratedResourceFolders() {
         return generatedResourceFolders;
+    }
+
+    @Nullable
+    @Override
+    public Set<String> getAbiFilters() {
+        return abiFilters;
     }
 }

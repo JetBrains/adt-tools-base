@@ -50,7 +50,6 @@ public class SystemPermissionsDetector extends Detector implements Detector.XmlS
     public static final Issue ISSUE = Issue.create(
             "ProtectedPermissions", //$NON-NLS-1$
             "Using system app permission",
-            "Looks for permissions that are only granted to system apps",
 
             "Permissions with the protection level signature or signatureOrSystem are only " +
             "granted to system apps. If an app is a regular non-system app, it will never be " +
@@ -183,7 +182,7 @@ public class SystemPermissionsDetector extends Detector implements Detector.XmlS
             String permissionName = nameNode.getValue();
             if (Arrays.binarySearch(SYSTEM_PERMISSIONS, permissionName) >= 0) {
                 context.report(ISSUE, element, context.getLocation(nameNode),
-                    "Permission is only granted to system apps", null);
+                    "Permission is only granted to system apps");
             }
         }
     }

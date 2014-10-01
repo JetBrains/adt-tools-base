@@ -26,6 +26,7 @@ import com.google.common.base.Splitter;
 import com.google.common.collect.Iterators;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
@@ -872,8 +873,25 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
      */
     @Nullable
     public Configurable findMatchingConfigurable(@Nullable List<? extends Configurable> configurables) {
+        // Because we skip qualifiers where reference configuration doesn't have a valid qualifier,
+        // we can end up with more than one match. In this case, we just take the first one.
+        List<Configurable> matches = findMatchingConfigurables(configurables);
+        return matches.isEmpty() ? null : matches.get(0);
+    }
+
+    /**
+     * Tries to eliminate as many {@link Configurable}s as possible. It skips the
+     * {@link ResourceQualifier} if it's not valid and assumes that all resources match it.
+     *
+     * @param configurables the list of {@code Configurable} to choose from.
+     *
+     * @return a list of items from the above list. This may be empty.
+     */
+    @NonNull
+    public List<Configurable> findMatchingConfigurables(
+            @Nullable List<? extends Configurable> configurables) {
         if (configurables == null) {
-            return null;
+            return Collections.emptyList();
         }
 
         //
@@ -895,11 +913,9 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
             }
         }
 
-        // if there is only one match, just take it
-        if (matchingConfigurables.size() == 1) {
-            return matchingConfigurables.get(0);
-        } else if (matchingConfigurables.isEmpty()) {
-            return null;
+        // if there is at most one match, just take it
+        if (matchingConfigurables.size() < 2) {
+            return matchingConfigurables;
         }
 
         // 2. Loop on the qualifiers, and eliminate matches
@@ -913,6 +929,11 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
             // possible match, will all be considered best match.
             ResourceQualifier referenceQualifier = getQualifier(q);
 
+            // If referenceQualifier is null, we don't eliminate resources based on it.
+            if (referenceQualifier == null) {
+                continue;
+            }
+
             boolean found = false;
             ResourceQualifier bestMatch = null; // this is to store the best match.
             for (Configurable configurable : matchingConfigurables) {
@@ -924,10 +945,8 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
                     // Now check for a best match. If the reference qualifier is null ,
                     // any qualifier is a "best" match (we don't need to record all of them.
                     // Instead the non compatible ones are removed below)
-                    if (referenceQualifier != null) {
-                        if (qualifier.isBetterMatchThan(bestMatch, referenceQualifier)) {
-                            bestMatch = qualifier;
-                        }
+                    if (qualifier.isBetterMatchThan(bestMatch, referenceQualifier)) {
+                        bestMatch = qualifier;
                     }
                 }
             }
@@ -944,15 +963,14 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
                     if (qualifier == null) {
                         // this resources has no qualifier of this type: rejected.
                         matchingConfigurables.remove(configurable);
-                    } else if (referenceQualifier != null && bestMatch != null &&
-                            !bestMatch.equals(qualifier)) {
+                    } else if (bestMatch != null && !bestMatch.equals(qualifier)) {
                         // there's a reference qualifier and there is a better match for it than
                         // this resource, so we reject it.
                         matchingConfigurables.remove(configurable);
                     } else {
                         // looks like we keep this resource, move on to the next one.
-                      //noinspection AssignmentToForLoopParameter
-                      i++;
+                        //noinspection AssignmentToForLoopParameter
+                        i++;
                     }
                 }
 
@@ -964,15 +982,9 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
             }
         }
 
-        // Because we accept resources whose configuration have qualifiers where the reference
-        // configuration doesn't, we can end up with more than one match. In this case, we just
-        // take the first one.
-        if (matchingConfigurables.isEmpty()) {
-            return null;
-        }
-        return matchingConfigurables.get(0);
+        // We've exhausted all the qualifiers. If we still have matching ones left, return all.
+        return matchingConfigurables;
     }
-
 
     /**
      * Returns whether the configuration is a match for the given reference config.

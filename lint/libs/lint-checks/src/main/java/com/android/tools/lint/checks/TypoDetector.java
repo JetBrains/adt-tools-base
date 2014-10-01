@@ -36,6 +36,7 @@ import com.android.tools.lint.detector.api.ResourceXmlDetector;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.Speed;
+import com.android.tools.lint.detector.api.TextFormat;
 import com.android.tools.lint.detector.api.XmlContext;
 import com.android.utils.Pair;
 import com.google.common.base.Charsets;
@@ -94,7 +95,6 @@ public class TypoDetector extends ResourceXmlDetector {
     public static final Issue ISSUE = Issue.create(
             "Typos", //$NON-NLS-1$
             "Spelling error",
-            "Looks for typos in messages",
 
             "This check looks through the string definitions, and if it finds any words " +
             "that look like likely misspellings, they are flagged.",
@@ -458,7 +458,7 @@ public class TypoDetector extends ResourceXmlDetector {
         }
 
         int end = begin + word.length();
-        context.report(ISSUE, node, context.getLocation(node, begin, end), message, null);
+        context.report(ISSUE, node, context.getLocation(node, begin, end), message);
     }
 
     /** Reports a repeated word */
@@ -469,17 +469,21 @@ public class TypoDetector extends ResourceXmlDetector {
                 "Repeated word \"%1$s\" in message: possible typo",
                 text.substring(begin, end));
         Location location = context.getLocation(node, lastWordBegin, end);
-        context.report(ISSUE, node, location, message, null);
+        context.report(ISSUE, node, location, message);
     }
 
     /** Returns the suggested replacements, if any, for the given typo. The error
      * message <b>must</b> be one supplied by lint.
      *
      * @param errorMessage the error message
+     * @param format the format of the error message
      * @return a list of replacement words suggested by the error message
      */
     @Nullable
-    public static List<String> getSuggestions(@NonNull String errorMessage) {
+    public static List<String> getSuggestions(@NonNull String errorMessage,
+            @NonNull TextFormat format) {
+        errorMessage = format.toText(errorMessage);
+
         // The words are all in quotes; the first word is the misspelling,
         // the other words are the suggested replacements
         List<String> words = new ArrayList<String>();
@@ -510,10 +514,12 @@ public class TypoDetector extends ResourceXmlDetector {
      * Returns the typo word in the error message from this detector
      *
      * @param errorMessage the error message produced earlier by this detector
+     * @param format the format of the error message
      * @return the typo
      */
     @Nullable
-    public static String getTypo(@NonNull String errorMessage) {
+    public static String getTypo(@NonNull String errorMessage, @NonNull TextFormat format) {
+        errorMessage = format.toText(errorMessage);
         // The words are all in quotes
         int index = errorMessage.indexOf('"');
         int start = index + 1;

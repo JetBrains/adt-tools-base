@@ -250,13 +250,11 @@ public class Context {
      * @param issue the issue to report
      * @param location the location of the issue, or null if not known
      * @param message the message for this warning
-     * @param data any associated data, or null
      */
     public void report(
             @NonNull Issue issue,
             @Nullable Location location,
-            @NonNull String message,
-            @Nullable Object data) {
+            @NonNull String message) {
         Configuration configuration = mConfiguration;
 
         // If this error was computed for a context where the context corresponds to
@@ -283,7 +281,25 @@ public class Context {
             return;
         }
 
-        mDriver.getClient().report(this, issue, severity, location, message, data);
+        mDriver.getClient().report(this, issue, severity, location, message, TextFormat.RAW);
+    }
+
+    /**
+     * Report an error.
+     * Like {@link #report(Issue, Location, String)} but with
+     * a now-unused data parameter at the end
+     *
+     * @deprecated Use {@link #report(Issue, Location, String)} instead;
+     *    this method is here for custom rule compatibility
+     */
+    @SuppressWarnings("UnusedDeclaration") // Potentially used by external existing custom rules
+    @Deprecated
+    public void report(
+            @NonNull Issue issue,
+            @Nullable Location location,
+            @NonNull String message,
+            @SuppressWarnings("UnusedParameters") @Nullable Object data) {
+        report(issue, location, message);
     }
 
     /**
@@ -372,7 +388,7 @@ public class Context {
             return false;
         }
 
-        if (startOffset == -1) {
+        if (startOffset <= 0) {
             return false;
         }
 
@@ -386,10 +402,6 @@ public class Context {
         // Scan backwards to the previous line and see if it contains the marker
         int lineStart = contents.lastIndexOf('\n', startOffset) + 1;
         if (lineStart <= 1) {
-            return false;
-        }
-        int prevLineStart = contents.lastIndexOf('\n', lineStart - 2) + 1;
-        if (prevLineStart == 0) {
             return false;
         }
         int index = findPrefixOnPreviousLine(contents, lineStart, prefix);

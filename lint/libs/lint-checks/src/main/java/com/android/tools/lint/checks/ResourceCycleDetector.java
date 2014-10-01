@@ -83,7 +83,6 @@ public class ResourceCycleDetector extends ResourceXmlDetector {
     public static final Issue CYCLE = Issue.create(
             "ResourceCycle", //$NON-NLS-1$
             "Cycle in resource definitions",
-            "Looks for cycles in resource definitions",
             "There should be no cycles in resource definitions as this can lead to runtime " +
             "exceptions.",
             Category.CORRECTNESS,
@@ -96,7 +95,6 @@ public class ResourceCycleDetector extends ResourceXmlDetector {
     public static final Issue CRASH = Issue.create(
             "AaptCrash", //$NON-NLS-1$
             "Potential AAPT crash",
-            "Looks for source constructs that can cause AAPT to crash",
             "Defining a style which sets `android:id` to a dynamically generated id can cause " +
             "many versions of `aapt`, the resource packaging tool, to crash. To work around " +
             "this, declare the id explicitly with `<item type=\"id\" name=\"...\" />` instead.",
@@ -291,15 +289,15 @@ public class ResourceCycleDetector extends ResourceXmlDetector {
                         parent.equals(STYLE_RESOURCE_PREFIX + name) && context.isEnabled(CYCLE)
                         && context.getDriver().getPhase() == 1) {
                     context.report(CYCLE, parentNode, context.getLocation(parentNode),
-                            String.format("Style %1$s should not extend itself", name), null);
+                            String.format("Style `%1$s` should not extend itself", name));
                 } else if (parent.startsWith(STYLE_RESOURCE_PREFIX)
                         && parent.startsWith(name, STYLE_RESOURCE_PREFIX.length())
                         && parent.startsWith(".", STYLE_RESOURCE_PREFIX.length() + name.length())
                         && context.isEnabled(CYCLE) && context.getDriver().getPhase() == 1) {
                     context.report(CYCLE, parentNode, context.getLocation(parentNode),
-                        String.format("Potential cycle: %1$s is the implied parent of %2$s and " +
+                        String.format("Potential cycle: `%1$s` is the implied parent of `%2$s` and " +
                                     "this defines the opposite", name,
-                                    parent.substring(STYLE_RESOURCE_PREFIX.length())), null);
+                                    parent.substring(STYLE_RESOURCE_PREFIX.length())));
                     // Don't record this reference; we don't want to double report this
                     // as a chain, since this error is more helpful
                     return;
@@ -353,10 +351,10 @@ public class ResourceCycleDetector extends ResourceXmlDetector {
                                     + LAYOUT_RESOURCE_PREFIX.length()
                             && context.isEnabled(CYCLE)
                             && context.getDriver().getPhase() == 1) {
-                        String message = String.format("Layout %1$s should not include itself",
+                        String message = String.format("Layout `%1$s` should not include itself",
                                 currentLayout);
                         context.report(CYCLE, layoutNode, context.getLocation(layoutNode),
-                                message, null);
+                                message);
                     }
                 }
             }
@@ -384,8 +382,8 @@ public class ResourceCycleDetector extends ResourceXmlDetector {
                                     && context.isEnabled(CYCLE)
                                     && context.getDriver().getPhase() == 1) {
                                 context.report(CYCLE, child, context.getLocation(child),
-                                        String.format("Color %1$s should not reference itself",
-                                                color), null);
+                                        String.format("Color `%1$s` should not reference itself",
+                                                color));
                             }
                         } else {
                             break;
@@ -409,12 +407,12 @@ public class ResourceCycleDetector extends ResourceXmlDetector {
                         return;
                     } else if (text.startsWith(NEW_ID_PREFIX, k)) {
                         String name = text.trim().substring(NEW_ID_PREFIX.length());
-                        String message = "This construct can potentially crash aapt during a "
-                                + "build. Change @+id/" + name + " to @id/" + name + " and define "
+                        String message = "This construct can potentially crash `aapt` during a "
+                                + "build. Change `@+id/" + name + "` to `@id/" + name + "` and define "
                                 + "the id explicitly using "
-                                + "<item type=\"id\" name=\"" + name + "\"/> instead.";
+                                + "`<item type=\"id\" name=\"" + name + "\"/>` instead.";
                         context.report(CRASH, item, context.getLocation(item),
-                                message, null);
+                                message);
                     } else {
                         return;
                     }
@@ -485,7 +483,7 @@ public class ResourceCycleDetector extends ResourceXmlDetector {
                     String message = String.format("%1$s Resource definition cycle: %2$s",
                             type.getDisplayName(), Joiner.on(" => ").join(chain));
 
-                    context.report(CYCLE, location, message, null);
+                    context.report(CYCLE, location, message);
                 }
             }
         }

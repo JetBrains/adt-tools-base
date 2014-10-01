@@ -55,7 +55,6 @@ public class JavaScriptInterfaceDetector extends Detector implements Detector.Cl
     public static final Issue ISSUE = Issue.create(
             "JavascriptInterface", //$NON-NLS-1$
             "Missing @JavascriptInterface on methods",
-            "Ensures that interfaces added with addJavascriptInterface are annotated with @JavascriptInterface",
 
             "As of API 17, you must annotate methods in objects registered with the " +
             "`addJavascriptInterface` method with a `@JavascriptInterface` annotation.",
@@ -136,8 +135,8 @@ public class JavaScriptInterfaceDetector extends Detector implements Detector.Cl
             Location location = context.getLocation(call);
             context.report(ISSUE, location,
                     "None of the methods in the added interface have been annotated "
-                            + "with @android.webkit.JavascriptInterface; they will not "
-                            + "be visible in API 17", null);
+                            + "with `@android.webkit.JavascriptInterface`; they will not "
+                            + "be visible in API 17");
         }
     }
 

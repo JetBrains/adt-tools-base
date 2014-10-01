@@ -43,7 +43,6 @@ public class SignatureOrSystemDetector extends Detector implements Detector.XmlS
     public static final Issue ISSUE = Issue.create(
             "SignatureOrSystemPermissions", //$NON-NLS-1$
             "signatureOrSystem permissions declared",
-            "Checks for signatureOrSystem level permissions",
             "The `signature` protection level should probably be sufficient for most needs and "
                     + "works regardless of where applications are installed. The "
                     + "`signatureOrSystem` level is used for certain situations where "
@@ -83,8 +82,8 @@ public class SignatureOrSystemDetector extends Detector implements Detector.XmlS
         String protectionLevel = attribute.getValue();
         if (protectionLevel != null
             && protectionLevel.equals(SIGNATURE_OR_SYSTEM)) {
-            String message = "protectionLevel should probably not be set to signatureOrSystem";
-            context.report(ISSUE, attribute, context.getLocation(attribute), message, null);
+            String message = "`protectionLevel` should probably not be set to `signatureOrSystem`";
+            context.report(ISSUE, attribute, context.getLocation(attribute), message);
         }
     }
 }

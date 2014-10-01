@@ -20,18 +20,23 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.BasePlugin;
 import com.android.build.gradle.api.BaseVariant;
+import com.android.build.gradle.api.BaseVariantOutput;
+import com.android.build.gradle.internal.api.ApkVariantImpl;
+import com.android.build.gradle.internal.api.ApkVariantOutputImpl;
 import com.android.build.gradle.internal.api.ApplicationVariantImpl;
 import com.android.builder.core.VariantConfiguration;
+import com.google.common.collect.Lists;
 
 import org.gradle.api.Task;
 import org.gradle.api.artifacts.Configuration;
 
 import java.io.File;
+import java.util.List;
 import java.util.Set;
 
 /**
  */
-public class ApplicationVariantFactory implements VariantFactory {
+public class ApplicationVariantFactory implements VariantFactory<ApplicationVariantData> {
 
     public static final String CONFIG_WEAR_APP = "wearApp";
 
@@ -45,14 +50,63 @@ public class ApplicationVariantFactory implements VariantFactory {
 
     @Override
     @NonNull
-    public BaseVariantData createVariantData(@NonNull VariantConfiguration variantConfiguration) {
-        return new ApplicationVariantData(variantConfiguration);
+    public ApplicationVariantData createVariantData(
+            @NonNull VariantConfiguration variantConfiguration,
+            @NonNull Set<String> densities,
+            @NonNull Set<String> abis,
+            @NonNull Set<String> compatibleScreens) {
+        ApplicationVariantData variant = new ApplicationVariantData(basePlugin, variantConfiguration);
+
+        if (!densities.isEmpty()) {
+            variant.setCompatibleScreens(compatibleScreens);
+        }
+
+        // create its outputs
+        if (variant.getSplitHandlingPolicy() ==
+                BaseVariantData.SplitHandlingPolicy.PRE_21_POLICY) {
+            // create its outputs
+            for (String density : densities) {
+                for (String abi : abis) {
+                    variant.createOutput(density, abi);
+                }
+            }
+        } else {
+            variant.createOutput(null, null);
+        }
+
+        return variant;
     }
 
     @Override
     @NonNull
-    public BaseVariant createVariantApi(@NonNull BaseVariantData variantData) {
-        return basePlugin.getInstantiator().newInstance(ApplicationVariantImpl.class, variantData, basePlugin);
+    public BaseVariant createVariantApi(@NonNull BaseVariantData<? extends BaseVariantOutputData> variantData) {
+        // create the base variant object.
+        ApplicationVariantImpl variant = basePlugin.getInstantiator().newInstance(
+                ApplicationVariantImpl.class, variantData, basePlugin);
+
+        // now create the output objects
+        createApkOutputApiObjects(basePlugin, variantData, variant);
+
+        return variant;
+    }
+
+    public static void createApkOutputApiObjects(
+            @NonNull BasePlugin basePlugin,
+            @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData,
+            @NonNull ApkVariantImpl variant) {
+        List<? extends BaseVariantOutputData> outputList = variantData.getOutputs();
+        List<BaseVariantOutput> apiOutputList = Lists.newArrayListWithCapacity(outputList.size());
+
+        for (BaseVariantOutputData variantOutputData : outputList) {
+            ApkVariantOutputData apkOutput = (ApkVariantOutputData) variantOutputData;
+
+            ApkVariantOutputImpl output = basePlugin.getInstantiator().newInstance(
+                    ApkVariantOutputImpl.class, apkOutput);
+
+            apiOutputList.add(output);
+        }
+
+        variant.addOutputs(apiOutputList);
     }
 
     @NonNull
@@ -73,7 +127,7 @@ public class ApplicationVariantFactory implements VariantFactory {
      */
     @Override
     public void createTasks(
-            @NonNull BaseVariantData variantData,
+            @NonNull BaseVariantData<?> variantData,
             @Nullable Task assembleTask) {
 
         assert variantData instanceof ApplicationVariantData;
@@ -85,7 +139,7 @@ public class ApplicationVariantFactory implements VariantFactory {
         handleMicroApp(variantData);
 
         // Add a task to process the manifest(s)
-        basePlugin.createMergeManifestsTask(variantData, "manifests");
+        basePlugin.createMergeAppManifestsTask(variantData);
 
         // Add a task to create the res values
         basePlugin.createGenerateResValuesTask(variantData);
@@ -102,7 +156,7 @@ public class ApplicationVariantFactory implements VariantFactory {
         // Add a task to create the BuildConfig class
         basePlugin.createBuildConfigTask(variantData);
 
-        // Add a task to generate resource source files
+        // Add a task to process the Android Resources and generate source files
         basePlugin.createProcessResTask(variantData, true /*generateResourcePackage*/);
 
         // Add a task to process the java resources
@@ -111,15 +165,21 @@ public class ApplicationVariantFactory implements VariantFactory {
         basePlugin.createAidlTask(variantData, null /*parcelableDir*/);
 
         // Add a compile task
-        basePlugin.createCompileTask(variantData, null/*testedVariant*/);
+        basePlugin.createCompileTask(variantData, null /*testedVariant*/);
 
         // Add NDK tasks
-        basePlugin.createNdkTasks(variantData);
+        if (!basePlugin.getExtension().getUseNewNativePlugin()) {
+            basePlugin.createNdkTasks(variantData);
+        }
 
+        if (variantData.getSplitHandlingPolicy() ==
+                BaseVariantData.SplitHandlingPolicy.RELEASE_21_AND_AFTER_POLICY) {
+            basePlugin.createPackageSplitResTask(appVariantData);
+        }
         basePlugin.addPackageTasks(appVariantData, assembleTask, true /*publishApk*/);
     }
 
-    private void handleMicroApp(@NonNull BaseVariantData variantData) {
+    private void handleMicroApp(@NonNull BaseVariantData<?> variantData) {
 
         Configuration config = basePlugin.getProject().getConfigurations().findByName(
                 CONFIG_WEAR_APP);
@@ -128,7 +188,6 @@ public class ApplicationVariantFactory implements VariantFactory {
         int count = file.size();
         if (count == 1) {
             if (variantData.getVariantConfiguration().getBuildType().isEmbedMicroApp()) {
-                basePlugin.createCopyMicroApkTask(variantData, config);
                 basePlugin.createGenerateMicroApkDataTask(variantData, config);
             }
         } else if (count > 1) {

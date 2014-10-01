@@ -40,6 +40,7 @@ import java.util.TimeZone;
  * <p/>
  * Creates a separate XML file per test run.
  * <p/>
+ * @see https://svn.jenkins-ci.org/trunk/hudson/dtkit/dtkit-format/dtkit-junit-model/src/main/resources/com/thalesgroup/dtkit/junit/model/xsd/junit-4.xsd
  */
 public class XmlTestRunListener implements ITestRunListener {
 
@@ -52,10 +53,13 @@ public class XmlTestRunListener implements ITestRunListener {
     private static final String TESTCASE = "testcase";
     private static final String ERROR = "error";
     private static final String FAILURE = "failure";
+    private static final String SKIPPED_TAG = "skipped";
     private static final String ATTR_NAME = "name";
     private static final String ATTR_TIME = "time";
     private static final String ATTR_ERRORS = "errors";
     private static final String ATTR_FAILURES = "failures";
+    private static final String ATTR_SKIPPED = "skipped";
+    private static final String ATTR_ASSERTIOMS = "assertions";
     private static final String ATTR_TESTS = "tests";
     //private static final String ATTR_TYPE = "type";
     //private static final String ATTR_MESSAGE = "message";
@@ -96,42 +100,48 @@ public class XmlTestRunListener implements ITestRunListener {
 
     @Override
     public void testRunStarted(String runName, int numTests) {
-        mRunResult = new TestRunResult(runName);
+        mRunResult = new TestRunResult();
+        mRunResult.testRunStarted(runName, numTests);
     }
 
     @Override
     public void testStarted(TestIdentifier test) {
-       mRunResult.reportTestStarted(test);
+       mRunResult.testStarted(test);
     }
 
     @Override
-    public void testFailed(TestFailure status, TestIdentifier test, String trace) {
-        if (status.equals(TestFailure.ERROR)) {
-            mRunResult.reportTestFailure(test, TestStatus.ERROR, trace);
-        } else {
-            mRunResult.reportTestFailure(test, TestStatus.FAILURE, trace);
-        }
-        Log.d(LOG_TAG, String.format("%s %s: %s", test, status, trace));
+    public void testFailed(TestIdentifier test, String trace) {
+        mRunResult.testFailed(test, trace);
+    }
+
+    @Override
+    public void testAssumptionFailure(TestIdentifier test, String trace) {
+        mRunResult.testAssumptionFailure(test, trace);
+    }
+
+    @Override
+    public void testIgnored(TestIdentifier test) {
+        mRunResult.testIgnored(test);
     }
 
     @Override
     public void testEnded(TestIdentifier test, Map<String, String> testMetrics) {
-        mRunResult.reportTestEnded(test, testMetrics);
+        mRunResult.testEnded(test, testMetrics);
     }
 
     @Override
     public void testRunFailed(String errorMessage) {
-        mRunResult.setRunFailureError(errorMessage);
+        mRunResult.testRunFailed(errorMessage);
     }
 
     @Override
-    public void testRunStopped(long arg0) {
-        // ignore
+    public void testRunStopped(long elapsedTime) {
+        mRunResult.testRunStopped(elapsedTime);
     }
 
     @Override
     public void testRunEnded(long elapsedTime, Map<String, String> runMetrics) {
-        mRunResult.setRunComplete(true);
+        mRunResult.testRunEnded(elapsedTime, runMetrics);
         generateDocument(mReportDir, elapsedTime);
     }
 
@@ -152,9 +162,8 @@ public class XmlTestRunListener implements ITestRunListener {
             // TODO: insert build info
             printTestResults(serializer, timestamp, elapsedTime);
             serializer.endDocument();
-            String msg = String.format("XML test result file generated at %s. Total tests %d, " +
-                    "Failed %d, Error %d", getAbsoluteReportPath(), mRunResult.getNumTests(),
-                    mRunResult.getNumFailedTests(), mRunResult.getNumErrorTests());
+            String msg = String.format("XML test result file generated at %s. %s" ,
+                    getAbsoluteReportPath(), mRunResult.getTextSummary());
             Log.logAndDisplay(LogLevel.INFO, LOG_TAG, msg);
         } catch (IOException e) {
             Log.e(LOG_TAG, "Failed to generate report data");
@@ -222,8 +231,13 @@ public class XmlTestRunListener implements ITestRunListener {
             serializer.attribute(ns, ATTR_NAME, name);
         }
         serializer.attribute(ns, ATTR_TESTS, Integer.toString(mRunResult.getNumTests()));
-        serializer.attribute(ns, ATTR_FAILURES, Integer.toString(mRunResult.getNumFailedTests()));
-        serializer.attribute(ns, ATTR_ERRORS, Integer.toString(mRunResult.getNumErrorTests()));
+        serializer.attribute(ns, ATTR_FAILURES, Integer.toString(
+                mRunResult.getNumAllFailedTests()));
+        // legacy - there are no errors in JUnit4
+        serializer.attribute(ns, ATTR_ERRORS, "0");
+        serializer.attribute(ns, ATTR_SKIPPED, Integer.toString(mRunResult.getNumTestsInState(
+                TestStatus.IGNORED)));
+
         serializer.attribute(ns, ATTR_TIME, Double.toString((double) elapsedTime / 1000.f));
         serializer.attribute(ns, TIMESTAMP, timestamp);
         serializer.attribute(ns, HOSTNAME, mHostName);
@@ -261,25 +275,35 @@ public class XmlTestRunListener implements ITestRunListener {
         serializer.attribute(ns, ATTR_NAME, getTestName(testId));
         serializer.attribute(ns, ATTR_CLASSNAME, testId.getClassName());
         long elapsedTimeMs = testResult.getEndTime() - testResult.getStartTime();
-        serializer.attribute(ns, ATTR_TIME, Double.toString((double) elapsedTimeMs / 1000.f));
+        serializer.attribute(ns, ATTR_TIME, Double.toString((double)elapsedTimeMs / 1000.f));
 
-        if (!TestStatus.PASSED.equals(testResult.getStatus())) {
-            String result = testResult.getStatus().equals(TestStatus.FAILURE) ? FAILURE : ERROR;
-            serializer.startTag(ns, result);
-            // TODO: get message of stack trace ?
-//            String msg = testResult.getStackTrace();
-//            if (msg != null && msg.length() > 0) {
-//                serializer.attribute(ns, ATTR_MESSAGE, msg);
-//            }
-           // TODO: get class name of stackTrace exception
-            //serializer.attribute(ns, ATTR_TYPE, testId.getClassName());
-            String stackText = sanitize(testResult.getStackTrace());
-            serializer.text(stackText);
-            serializer.endTag(ns, result);
+        switch (testResult.getStatus()) {
+            case FAILURE: // intentional fall through
+            case ASSUMPTION_FAILURE:
+                printFailedTest(serializer, FAILURE, testResult.getStackTrace());
+                break;
+            case IGNORED:
+                serializer.startTag(ns, SKIPPED_TAG);
+                serializer.endTag(ns, SKIPPED_TAG);
+                break;
         }
 
         serializer.endTag(ns, TESTCASE);
-     }
+    }
+
+    private void printFailedTest(KXmlSerializer serializer, String tag, String stack)
+            throws IOException {
+        serializer.startTag(ns, tag);
+        // TODO: get message of stack trace ?
+        // String msg = testResult.getStackTrace();
+        // if (msg != null && msg.length() > 0) {
+        //     serializer.attribute(ns, ATTR_MESSAGE, msg);
+        // }
+        // TODO: get class name of stackTrace exception
+        // serializer.attribute(ns, ATTR_TYPE, testId.getClassName());
+        serializer.text(sanitize(stack));
+        serializer.endTag(ns, tag);
+    }
 
     /**
      * Returns the text in a format that is safe for use in an XML document.

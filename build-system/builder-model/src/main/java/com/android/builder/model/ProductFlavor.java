@@ -20,7 +20,6 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 
 import java.util.Collection;
-import java.util.Map;
 
 /**
  * a Product Flavor. This is only the configuration of the flavor.
@@ -86,6 +85,14 @@ public interface ProductFlavor extends BaseConfig {
     ApiVersion getTargetSdkVersion();
 
     /**
+     * Returns the maxSdkVersion. This is only the value set on this produce flavor.
+     *
+     * @return the maxSdkVersion, or null if not specified
+     */
+    @Nullable
+    Integer getMaxSdkVersion();
+
+    /**
      * Returns the renderscript target api. This is only the value set on this product flavor.
      * TODO: make final renderscript target api available through the model
      *
@@ -144,13 +151,6 @@ public interface ProductFlavor extends BaseConfig {
     Boolean getTestFunctionalTest();
 
     /**
-     * Returns the NDK configuration.
-     * @return the ndk config.
-     */
-    @Nullable
-    NdkConfig getNdkConfig();
-
-    /**
      * Returns the resource configuration for this variant.
      * TODO implement this.
      *
@@ -161,12 +161,4 @@ public interface ProductFlavor extends BaseConfig {
     @NonNull
     Collection<String> getResourceConfigurations();
 
-    /**
-     * Returns the map of key value pairs for placeholder substitution in the android manifest file.
-     *
-     * This map will be used by the manifest merger.
-     * @return the map of key value pairs.
-     */
-    @NonNull
-    Map<String, String> getManifestPlaceholders();
 }

@@ -43,17 +43,13 @@ public abstract class Configuration {
      * @param issue the issue that was found
      * @param location the location of the issue
      * @param message the associated user message
-     * @param data additional information about an issue (see
-     *            {@link LintClient#report(Context, Issue, Severity, Location, String, Object)}
-     *            for more information
      * @return true if this issue should be suppressed
      */
     public boolean isIgnored(
             @NonNull Context context,
             @NonNull Issue issue,
             @Nullable Location location,
-            @NonNull String message,
-            @Nullable Object data) {
+            @NonNull String message) {
         return false;
     }
 
@@ -89,14 +85,12 @@ public abstract class Configuration {
      * @param issue the issue to be ignored
      * @param location The location to ignore the warning at, if any
      * @param message The message for the warning
-     * @param data The corresponding data, or null
      */
     public abstract void ignore(
             @NonNull Context context,
             @NonNull Issue issue,
             @Nullable Location location,
-            @NonNull String message,
-            @Nullable Object data);
+            @NonNull String message);
 
     /**
      * Sets the severity to be used for this issue.

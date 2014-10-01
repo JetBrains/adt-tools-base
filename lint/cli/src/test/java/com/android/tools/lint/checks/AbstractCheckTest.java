@@ -53,6 +53,7 @@ import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Project;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
+import com.android.tools.lint.detector.api.TextFormat;
 import com.android.utils.ILogger;
 import com.android.utils.SdkUtils;
 import com.android.utils.StdLogger;
@@ -60,6 +61,8 @@ import com.android.utils.XmlUtils;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
 
@@ -182,6 +185,14 @@ public abstract class AbstractCheckTest extends SdkTestCase {
         }
 
         return result;
+    }
+
+    protected void checkReportedError(
+            @NonNull Context context,
+            @NonNull Issue issue,
+            @NonNull Severity severity,
+            @Nullable Location location,
+            @NonNull String message) {
     }
 
     protected TestLintClient createClient() {
@@ -422,10 +433,17 @@ public abstract class AbstractCheckTest extends SdkTestCase {
                 @NonNull Severity severity,
                 @Nullable Location location,
                 @NonNull String message,
-                @Nullable Object data) {
+                @NonNull TextFormat format) {
             if (ignoreSystemErrors() && (issue == IssueRegistry.LINT_ERROR)) {
                 return;
             }
+
+            // Use plain ascii in the test golden files for now. (This also ensures
+            // that the markup is wellformed, e.g. if we have a ` without a matching
+            // closing `, the ` would show up in the plain text.)
+            message = format.convertTo(message, TextFormat.TEXT);
+
+            checkReportedError(context, issue, severity, location, message);
 
             if (severity == Severity.FATAL) {
                 // Treat fatal errors like errors in the golden files.
@@ -450,7 +468,7 @@ public abstract class AbstractCheckTest extends SdkTestCase {
                 }
             }
 
-            super.report(context, issue, severity, location, message, data);
+            super.report(context, issue, severity, location, message, format);
 
             // Make sure errors are unique!
             Warning prev = null;
@@ -570,6 +588,45 @@ public abstract class AbstractCheckTest extends SdkTestCase {
                 resourceSet.loadFromFiles(logger);
                 merger.addDataSet(resourceSet);
                 merger.mergeData(repository.createMergeConsumer(), true);
+
+                // Make tests stable: sort the item lists!
+                Map<ResourceType, ListMultimap<String, ResourceItem>> map = repository.getItems();
+                for (Map.Entry<ResourceType, ListMultimap<String, ResourceItem>> entry : map.entrySet()) {
+                    Map<String, List<ResourceItem>> m = Maps.newHashMap();
+                    ListMultimap<String, ResourceItem> value = entry.getValue();
+                    List<List<ResourceItem>> lists = Lists.newArrayList();
+                    for (Map.Entry<String, ResourceItem> e : value.entries()) {
+                        String key = e.getKey();
+                        ResourceItem item = e.getValue();
+
+                        List<ResourceItem> list = m.get(key);
+                        if (list == null) {
+                            list = Lists.newArrayList();
+                            lists.add(list);
+                            m.put(key, list);
+                        }
+                        list.add(item);
+                    }
+
+                    for (List<ResourceItem> list : lists) {
+                        Collections.sort(list, new Comparator<ResourceItem>() {
+                            @Override
+                            public int compare(ResourceItem o1, ResourceItem o2) {
+                                return o1.getKey().compareTo(o2.getKey());
+                            }
+                        });
+                    }
+
+                    // Store back in list multi map in new sorted order
+                    value.clear();
+                    for (Map.Entry<String, List<ResourceItem>> e : m.entrySet()) {
+                        String key = e.getKey();
+                        List<ResourceItem> list = e.getValue();
+                        for (ResourceItem item : list) {
+                            value.put(key, item);
+                        }
+                    }
+                }
 
                 // Workaround: The repository does not insert ids from layouts! We need
                 // to do that here.
@@ -737,7 +794,7 @@ public abstract class AbstractCheckTest extends SdkTestCase {
 
         @Override
         public void ignore(@NonNull Context context, @NonNull Issue issue,
-                @Nullable Location location, @NonNull String message, @Nullable Object data) {
+                @Nullable Location location, @NonNull String message) {
             fail("Not supported in tests.");
         }
 

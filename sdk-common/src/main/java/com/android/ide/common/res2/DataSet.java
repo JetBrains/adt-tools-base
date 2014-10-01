@@ -19,6 +19,7 @@ package com.android.ide.common.res2;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.utils.ILogger;
+import com.google.common.base.Splitter;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Lists;
@@ -403,6 +404,10 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
             case REMOVED:
                 F dataFile = mDataFileMap.get(changedFile);
 
+                if (dataFile == null) {
+                    return false;
+                }
+
                 // flag all resource items are removed
                 for (I dataItem : dataFile.getItems()) {
                     dataItem.setRemoved();
@@ -448,7 +453,7 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
         return true;
     }
 
-    protected void addItem(I item, String key) {
+    protected void addItem(@NonNull I item, @Nullable String key) {
         if (key == null) {
             key = item.getKey();
         }
@@ -456,7 +461,7 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
         mItems.put(key, item);
     }
 
-    protected F getDataFile(File file) {
+    protected F getDataFile(@NonNull File file) {
         return mDataFileMap.get(file);
     }
 
@@ -481,22 +486,105 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
      * @param file the file to check
      * @return true if it is a valid file, false if it should be ignored.
      */
-    protected boolean checkFileForAndroidRes(File file) {
-        // TODO: use the aapt ignore pattern value.
-        // We should move this somewhere else when introduce aapt pattern
+    protected boolean checkFileForAndroidRes(@NonNull File file) {
+        return !isIgnored(file);
+    }
 
-        String name = file.getName();
-        int pos = name.lastIndexOf('.');
-        String extension = "";
-        if (pos != -1) {
-            extension = name.substring(pos + 1);
+    /**
+     * The pattern to use for ignoring asset files. Defaults to the same value as aapt but
+     * can be customized via {@code $ANDROID_AAPT_IGNORE}.
+     * <p>
+     * Patterns syntax:
+     * <ul>
+     *   <li> Delimiter is :
+     *   <li> Entry can start with the flag ! to avoid printing a warning
+     *        about the file being ignored.
+     *   <li> Entry can have the flag {@code <dir>} to match only directories
+     *        or {@code <file>} to match only files. Default is to match both.
+     *   <li> Entry can be a simplified glob {@code <prefix>*} or {@code *<suffix>}
+     *        where prefix/suffix must have at least 1 character (so that
+     *        we don't match a '*' catch-all pattern.)
+     *   <li> The special filenames "." and ".." are always ignored.
+     *   <li> Otherwise the full string is matched.
+     *   <li> match is not case-sensitive.
+     * </ul>
+     */
+    private static final Iterable<String> sIgnoredPatterns;
+    static {
+        String patterns = System.getenv("ANDROID_AAPT_IGNORE"); //$NON-NLS-1$
+        if (patterns == null || patterns.isEmpty()) {
+            // Matches aapt: frameworks/base/tools/aapt/AaptAssets.cpp:gDefaultIgnoreAssets
+            patterns = "!.svn:!.git:!.ds_store:!*.scc:.*:<dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~";
         }
 
-        // ignore hidden files and backup files
-        return !(name.charAt(0) == '.' || name.charAt(name.length() - 1) == '~') &&
-                !"scc".equalsIgnoreCase(extension) &&     // VisualSourceSafe
-                !"swp".equalsIgnoreCase(extension) &&     // vi swap file
-                !"thumbs.db".equalsIgnoreCase(name) &&    // image index file
-                !"picasa.ini".equalsIgnoreCase(name);     // image index file
+        sIgnoredPatterns = Splitter.on(':').split(patterns);
+    }
+
+    /**
+     * Returns whether the given file should be ignored.
+     *
+     * @param file the file to check
+     * @return true if the file is hidden
+     */
+    public static boolean isIgnored(@NonNull File file) {
+        String path = file.getPath();
+        int nameIndex = path.lastIndexOf(File.separatorChar) + 1;
+
+        if (path.equals(".") || path.equals("..")) {
+            return true;
+        }
+
+        boolean ignore = false;
+        boolean isDirectory = file.isDirectory();
+
+        int nameLength = path.length() - nameIndex;
+        for (String token : sIgnoredPatterns) {
+            if (token.isEmpty()) {
+                continue;
+            }
+            int tokenIndex = 0;
+            if (token.charAt(tokenIndex) == '!') {
+                tokenIndex++; // skip !
+            }
+
+            if (token.regionMatches(tokenIndex, "<dir>", 0, 5)) {
+                if (!isDirectory) {
+                    continue;
+                }
+                tokenIndex += 5;
+            }
+            if (token.regionMatches(tokenIndex, "<file>", 0, 6)) {
+                if (isDirectory) {
+                    continue;
+                }
+                tokenIndex += 6;
+            }
+
+            int n = token.length() - tokenIndex;
+
+            if (token.charAt(tokenIndex) == '*') {
+                // Match *suffix such as *.scc or *~
+                tokenIndex++;
+                n--;
+                if (n <= nameLength) {
+                    ignore = token.regionMatches(true, tokenIndex, path,
+                            nameIndex + nameLength - n, n);
+                }
+            } else if (n > 1 && token.charAt(token.length() - 1) == '*') {
+                // Match prefix* such as .* or _*
+                ignore = token.regionMatches(true, tokenIndex, path, nameIndex, n - 1);
+            } else {
+                // Match exactly, such as thumbs.db, .git, etc.
+                ignore = (token.length() - tokenIndex) == (path.length() - nameIndex)
+                        && token.regionMatches(true, tokenIndex, path, nameIndex,
+                        path.length() - nameIndex);
+            }
+
+            if (ignore) {
+                break;
+            }
+        }
+
+        return ignore;
     }
 }

@@ -87,7 +87,6 @@ public class RequiredAttributeDetector extends LayoutDetector implements Detecto
     public static final Issue ISSUE = Issue.create(
             "RequiredSize", //$NON-NLS-1$
             "Missing `layout_width` or `layout_height` attributes",
-            "Ensures that the `layout_width` and `layout_height` are specified for all views",
 
             "All views must specify an explicit `layout_width` and `layout_height` attribute. " +
             "There is a runtime check for this, so if you fail to specify a size, an exception " +
@@ -485,24 +484,24 @@ public class RequiredAttributeDetector extends LayoutDetector implements Detecto
                 String message;
                 if (!(hasWidth || hasHeight)) {
                     if (certain) {
-                        message = "The required layout_width and layout_height attributes " +
+                        message = "The required `layout_width` and `layout_height` attributes " +
                                 "are missing";
                     } else {
-                        message = "The required layout_width and layout_height attributes " +
+                        message = "The required `layout_width` and `layout_height` attributes " +
                                 "*may* be missing";
                     }
                 } else {
                     String attribute = hasWidth ? ATTR_LAYOUT_HEIGHT : ATTR_LAYOUT_WIDTH;
                     if (certain) {
-                        message = String.format("The required %1$s attribute is missing",
+                        message = String.format("The required `%1$s` attribute is missing",
                                 attribute);
                     } else {
-                        message = String.format("The required %1$s attribute *may* be missing",
+                        message = String.format("The required `%1$s` attribute *may* be missing",
                                 attribute);
                     }
                 }
                 context.report(ISSUE, element, context.getLocation(element),
-                        message, null);
+                        message);
             }
         }
     }

@@ -47,7 +47,6 @@ public class AssertDetector extends Detector implements Detector.JavaScanner {
     public static final Issue ISSUE = Issue.create(
             "Assert", //$NON-NLS-1$
             "Assertions",
-            "Looks for usages of the assert keyword",
 
             "Assertions are not checked at runtime. There are ways to request that they be used " +
             "by Dalvik (`adb shell setprop debug.assert 1`), but the property is ignored in " +
@@ -111,8 +110,8 @@ public class AssertDetector extends Detector implements Detector.JavaScanner {
                     }
                 }
                 String message
-                        = "Assertions are unreliable. Use BuildConfig.DEBUG conditional checks instead.";
-                context.report(ISSUE, node, context.getLocation(node), message, null);
+                        = "Assertions are unreliable. Use `BuildConfig.DEBUG` conditional checks instead.";
+                context.report(ISSUE, node, context.getLocation(node), message);
                 return false;
             }
         };

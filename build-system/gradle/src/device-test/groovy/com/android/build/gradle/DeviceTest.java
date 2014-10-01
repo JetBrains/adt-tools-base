@@ -16,10 +16,12 @@
 
 package com.android.build.gradle;
 
+import com.google.common.collect.ImmutableList;
+
 import junit.framework.Test;
 import junit.framework.TestSuite;
 
-import java.util.Collections;
+import java.util.List;
 
 /**
  * DeviceConnector tests.
@@ -38,6 +40,10 @@ public class DeviceTest extends BuildTest {
 
     private String projectName;
     private String gradleVersion;
+    private TestType testType;
+
+
+    private static enum TestType { CHECK, CHECK_AND_REPORT, INSTALL }
 
     private static final String[] sBuiltProjects = new String[] {
             "api",
@@ -46,6 +52,7 @@ public class DeviceTest extends BuildTest {
             "attrOrder",
             "basic",
             "dependencies",
+            "densitySplit",
             "flavored",
             "flavorlib",
             "flavoredlib",
@@ -56,9 +63,13 @@ public class DeviceTest extends BuildTest {
             "libsTest",
             "migrated",
             "multires",
+            "ndkSanAngeles",
+            "ndkStandaloneSo",
             "ndkJniLib",
+            "ndkJniLib2",
             "ndkPrebuilts",
             "ndkLibPrebuilts",
+            "ndkStl",
             "overlay1",
             "overlay2",
             "packagingOptions",
@@ -66,6 +77,20 @@ public class DeviceTest extends BuildTest {
             "proguard",
             "proguardLib",
             "sameNamedLibs"
+    };
+
+    private static final List<String> ndkPluginTests = ImmutableList.of(
+            "ndkJniLib2",
+            "ndkStandaloneSo",
+            "ndkStl"
+    );
+
+    private static final String[] sMergeReportProjects = new String[] {
+            "multiproject",
+    };
+
+    private static final String[] sInstallProjects = new String[] {
+            "basic"
     };
 
     public static Test suite() {
@@ -78,10 +103,34 @@ public class DeviceTest extends BuildTest {
             }
             // first the project we build on all available versions of Gradle
             for (String projectName : sBuiltProjects) {
+                // Disable NDK plugin tests on non-Linux platforms due to Gradle incorrectly
+                // setting arguments based on current OS instead of target OS.
+                if (!System.getProperty("os.name").equals("Linux") &&
+                        ndkPluginTests.contains(projectName)) {
+                    // TODO: Remove this when Gradle is fix.
+                    continue;
+                }
+
                 String testName = "check_" + projectName + "_" + gradleVersion;
 
                 DeviceTest test = (DeviceTest) TestSuite.createTest(DeviceTest.class, testName);
-                test.setProjectInfo(projectName, gradleVersion);
+                test.setProjectInfo(projectName, gradleVersion, TestType.CHECK);
+                suite.addTest(test);
+            }
+
+            for (String projectName : sMergeReportProjects) {
+                String testName = "report_" + projectName + "_" + gradleVersion;
+
+                DeviceTest test = (DeviceTest) TestSuite.createTest(DeviceTest.class, testName);
+                test.setProjectInfo(projectName, gradleVersion, TestType.CHECK_AND_REPORT);
+                suite.addTest(test);
+            }
+
+            for (String projectName : sInstallProjects) {
+                String testName = "install_" + projectName + "_" + gradleVersion;
+
+                DeviceTest test = (DeviceTest) TestSuite.createTest(DeviceTest.class, testName);
+                test.setProjectInfo(projectName, gradleVersion, TestType.INSTALL);
                 suite.addTest(test);
             }
         }
@@ -89,17 +138,30 @@ public class DeviceTest extends BuildTest {
         return suite;
     }
 
-    private void setProjectInfo(String projectName, String gradleVersion) {
+    private void setProjectInfo(String projectName, String gradleVersion, TestType testType) {
         this.projectName = projectName;
         this.gradleVersion = gradleVersion;
+        this.testType = testType;
     }
 
     @Override
     protected void runTest() throws Throwable {
+        //noinspection EmptyFinallyBlock
         try {
-            runTasksOnProject(projectName, gradleVersion,
-                    Collections.<String>emptyList(),
-                    "clean", "connectedCheck");
+            switch (testType) {
+                case CHECK:
+                    runTasksOn(projectName, gradleVersion,
+                            "clean", "connectedCheck");
+                    break;
+                case CHECK_AND_REPORT:
+                    runTasksOn(projectName, gradleVersion,
+                            "clean", "connectedCheck", "mergeAndroidReports");
+                    break;
+                case INSTALL:
+                    runTasksOn(projectName, gradleVersion,
+                            "clean", "installDebug", "uninstallAll");
+                    break;
+            }
         } finally {
             // because runTasksOnProject will throw an exception if the gradle side fails, do this
             // in the finally block.

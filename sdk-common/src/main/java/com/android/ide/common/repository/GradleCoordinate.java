@@ -18,6 +18,8 @@ package com.android.ide.common.repository;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.google.common.base.Joiner;
+import com.google.common.base.Predicate;
+import com.google.common.collect.Lists;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -35,6 +37,7 @@ import java.util.regex.Pattern;
  * on what type of ordering you need.
  */
 public class GradleCoordinate {
+    private static final String NONE = "NONE";
 
     /**
      * Maven coordinates take the following form: groupId:artifactId:packaging:classifier:version
@@ -87,12 +90,15 @@ public class GradleCoordinate {
         }
     }
 
+    public static final String PREVIEW_ID = "rc";
+
     /**
      * A single component of a revision number: either a number, a string or a list of
      * components separated by dashes.
      */
     public abstract static class RevisionComponent implements Comparable<RevisionComponent> {
         public abstract int asInteger();
+        public abstract boolean isPreview();
     }
 
     public static class NumberComponent extends RevisionComponent {
@@ -110,6 +116,11 @@ public class GradleCoordinate {
         @Override
         public int asInteger() {
             return mNumber;
+        }
+
+        @Override
+        public boolean isPreview() {
+            return false;
         }
 
         @Override
@@ -137,6 +148,30 @@ public class GradleCoordinate {
         }
     }
 
+    /**
+     * Like NumberComponent, but used for numeric strings that have leading zeroes which
+     * we must preserve
+     */
+    public static class PaddedNumberComponent extends NumberComponent {
+        private final String mString;
+
+        public PaddedNumberComponent(int number, String string) {
+            super(number);
+            mString = string;
+        }
+
+        @Override
+        public String toString() {
+            return mString;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            return o instanceof PaddedNumberComponent
+                    && ((PaddedNumberComponent) o).mString.equals(mString);
+        }
+    }
+
     public static class StringComponent extends RevisionComponent {
         private final String mString;
 
@@ -152,6 +187,11 @@ public class GradleCoordinate {
         @Override
         public int asInteger() {
             return 0;
+        }
+
+        @Override
+        public boolean isPreview() {
+            return mString.startsWith(PREVIEW_ID);
         }
 
         @Override
@@ -191,6 +231,11 @@ public class GradleCoordinate {
         }
 
         @Override
+        public boolean isPreview() {
+            return false;
+        }
+
+        @Override
         public int compareTo(RevisionComponent o) {
             throw new UnsupportedOperationException(
                     "Please use a specific comparator that knows how to handle +");
@@ -219,6 +264,11 @@ public class GradleCoordinate {
         @Override
         public int asInteger() {
             return 0;
+        }
+
+        @Override
+        public boolean isPreview() {
+            return !mItems.isEmpty() && mItems.get(mItems.size() - 1).isPreview();
         }
 
         @Override
@@ -282,7 +332,7 @@ public class GradleCoordinate {
      * Constructor
      */
     public GradleCoordinate(@NonNull String groupId, @NonNull String artifactId,
-                            @NonNull int... revisions) {
+            @NonNull int... revisions) {
         this(groupId, artifactId, createComponents(revisions), null);
     }
 
@@ -343,7 +393,11 @@ public class GradleCoordinate {
         return new GradleCoordinate(groupId, artifactId, revisions, type);
     }
 
-    private static List<RevisionComponent> parseRevisionNumber(String revision) {
+    public static GradleCoordinate parseVersionOnly(@NonNull String revision) {
+        return new GradleCoordinate(NONE, NONE, parseRevisionNumber(revision), null);
+    }
+
+    public static List<RevisionComponent> parseRevisionNumber(String revision) {
         List<RevisionComponent> components = new ArrayList<RevisionComponent>();
         StringBuilder buffer = new StringBuilder();
         for (int i = 0; i < revision.length(); i++) {
@@ -368,27 +422,33 @@ public class GradleCoordinate {
                 buffer.append(c);
             }
         }
-        if (buffer.length() > 0 || components.size() == 0) {
+        if (buffer.length() > 0 || components.isEmpty()) {
             flushBuffer(components, buffer, true);
         }
         return components;
     }
 
     private static void flushBuffer(List<RevisionComponent> components, StringBuilder buffer,
-                                    boolean closeList) {
+            boolean closeList) {
         RevisionComponent newComponent;
         if (buffer.length() == 0) {
             newComponent = new NumberComponent(0);
         } else {
+            String string = buffer.toString();
             try {
-                newComponent = new NumberComponent(Integer.parseInt(buffer.toString()));
-            } catch(NumberFormatException e) {
-                newComponent = new StringComponent(buffer.toString());
+                int number = Integer.parseInt(string);
+                if (string.length() > 1 && string.charAt(0) == '0') {
+                    newComponent = new PaddedNumberComponent(number, string);
+                } else {
+                    newComponent = new NumberComponent(number);
+                }
+            } catch (NumberFormatException e) {
+                newComponent = new StringComponent(string);
             }
         }
         buffer.setLength(0);
-        if (components.size() > 0 &&
-               components.get(components.size() - 1) instanceof ListComponent) {
+        if (!components.isEmpty() &&
+                components.get(components.size() - 1) instanceof ListComponent) {
             ListComponent component = (ListComponent) components.get(components.size() - 1);
             if (!component.mClosed) {
                 component.add(newComponent);
@@ -448,6 +508,10 @@ public class GradleCoordinate {
         }
 
         return revision.toString();
+    }
+
+    public boolean isPreview() {
+        return !mRevisions.isEmpty() && mRevisions.get(mRevisions.size() - 1).isPreview();
     }
 
     /**

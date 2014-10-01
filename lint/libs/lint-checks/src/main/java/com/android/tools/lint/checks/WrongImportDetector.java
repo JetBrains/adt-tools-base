@@ -52,7 +52,6 @@ public class WrongImportDetector extends Detector implements Detector.JavaScanne
     public static final Issue ISSUE = Issue.create(
             "SuspiciousImport", //$NON-NLS-1$
             "'`import android.R`' statement",
-            "Checks for 'import android.R' statements, which are usually accidental",
             "Importing `android.R` is usually not intentional; it sometimes happens when " +
             "you use an IDE and ask it to automatically add imports at a time when your " +
             "project's R class it not present.\n" +
@@ -104,8 +103,8 @@ public class WrongImportDetector extends Detector implements Detector.JavaScanne
             if (fqn.equals("android.R")) { //$NON-NLS-1$
                 Location location = mContext.getLocation(node);
                 mContext.report(ISSUE, node, location,
-                    "Don't include android.R here; use a fully qualified name for "
-                            + "each usage instead", null);
+                    "Don't include `android.R` here; use a fully qualified name for "
+                            + "each usage instead");
             }
             return false;
         }

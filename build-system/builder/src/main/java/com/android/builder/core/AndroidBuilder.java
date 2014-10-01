@@ -55,6 +55,7 @@ import com.android.builder.packaging.SealedPackageException;
 import com.android.builder.packaging.SigningException;
 import com.android.builder.sdk.SdkInfo;
 import com.android.builder.sdk.TargetInfo;
+import com.android.builder.signing.SignedJarBuilder;
 import com.android.ide.common.internal.AaptCruncher;
 import com.android.ide.common.internal.CommandLineRunner;
 import com.android.ide.common.internal.LoggedErrorException;
@@ -67,6 +68,7 @@ import com.android.manifmerger.ManifestMerger;
 import com.android.manifmerger.ManifestMerger2;
 import com.android.manifmerger.MergerLog;
 import com.android.manifmerger.MergingReport;
+import com.android.manifmerger.PlaceholderHandler;
 import com.android.manifmerger.XmlDocument;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
@@ -88,8 +90,11 @@ import com.google.common.hash.Hashing;
 import com.google.common.io.Files;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -393,6 +398,7 @@ public class AndroidBuilder {
             String versionName,
             @Nullable String minSdkVersion,
             @Nullable String targetSdkVersion,
+            @Nullable Integer maxSdkVersion,
             @NonNull String outManifestLocation,
             ManifestMerger2.MergeType mergeType,
             Map<String, String> placeHolders) {
@@ -405,8 +411,13 @@ public class AndroidBuilder {
                             manifestOverlays.toArray(new File[manifestOverlays.size()]))
                     .addLibraryManifests(collectLibraries(libraries));
 
+            if (mergeType == ManifestMerger2.MergeType.APPLICATION) {
+                manifestMergerInvoker.withFeatures(Invoker.Feature.REMOVE_TOOLS_DECLARATIONS);
+            }
+
             setInjectableValues(manifestMergerInvoker,
-                    packageOverride, versionCode, versionName, minSdkVersion, targetSdkVersion);
+                    packageOverride, versionCode, versionName,
+                    minSdkVersion, targetSdkVersion, maxSdkVersion);
 
             MergingReport mergingReport = manifestMergerInvoker.merge();
             mLogger.info("Merging result:" + mergingReport.getResult());
@@ -448,7 +459,8 @@ public class AndroidBuilder {
             int versionCode,
             String versionName,
             @Nullable String minSdkVersion,
-            @Nullable String targetSdkVersion) {
+            @Nullable String targetSdkVersion,
+            @Nullable Integer maxSdkVersion) {
 
         if (!Strings.isNullOrEmpty(packageOverride)) {
             invoker.setOverride(SystemProperty.PACKAGE, packageOverride);
@@ -465,6 +477,9 @@ public class AndroidBuilder {
         }
         if (!Strings.isNullOrEmpty(targetSdkVersion)) {
             invoker.setOverride(SystemProperty.TARGET_SDK_VERSION, targetSdkVersion);
+        }
+        if (maxSdkVersion != null) {
+            invoker.setOverride(SystemProperty.MAX_SDK_VERSION, maxSdkVersion.toString());
         }
     }
 
@@ -720,6 +735,7 @@ public class AndroidBuilder {
      * @param instrumentationRunner the name of the instrumentation runner
      * @param handleProfiling whether or not the Instrumentation object will turn profiling on and off
      * @param functionalTest whether or not the Instrumentation class should run as a functional test
+     * @param testManifestFile optionally user provided AndroidManifest.xml for testing application
      * @param libraries the library dependency graph
      * @param outManifest the output location for the merged manifest
      *
@@ -740,8 +756,10 @@ public class AndroidBuilder {
             @NonNull  String instrumentationRunner,
             @NonNull  Boolean handleProfiling,
             @NonNull  Boolean functionalTest,
+            @Nullable File testManifestFile,
             @NonNull  List<? extends ManifestDependency> libraries,
-            @NonNull  File outManifest) {
+            @NonNull  File outManifest,
+            @NonNull  File tmpDir) {
         checkNotNull(testApplicationId, "testApplicationId cannot be null.");
         checkNotNull(testedApplicationId, "testedApplicationId cannot be null.");
         checkNotNull(instrumentationRunner, "instrumentationRunner cannot be null.");
@@ -750,63 +768,84 @@ public class AndroidBuilder {
         checkNotNull(libraries, "libraries cannot be null.");
         checkNotNull(outManifest, "outManifestLocation cannot be null.");
 
-        if (!libraries.isEmpty()) {
-            try {
-                // create the test manifest, merge the libraries in it
-                File generatedTestManifest = File.createTempFile("manifestMerge", ".xml");
+        try {
+            tmpDir.mkdirs();
+            File generatedTestManifest = libraries.isEmpty() && testManifestFile == null
+                    ? outManifest : File.createTempFile("manifestMerger", ".xml", tmpDir);
 
-                generateTestManifest(
-                        testApplicationId,
-                        minSdkVersion,
-                        targetSdkVersion,
-                        testedApplicationId,
-                        instrumentationRunner,
-                        handleProfiling,
-                        functionalTest,
-                        generatedTestManifest);
-
-                MergingReport mergingReport = ManifestMerger2.newMerger(
-                        generatedTestManifest, mLogger, ManifestMerger2.MergeType.APPLICATION)
-                        .setOverride(SystemProperty.PACKAGE, testApplicationId)
-                        .addLibraryManifests(collectLibraries(libraries))
-                        .merge();
-
-                mLogger.info("Merging result:" + mergingReport.getResult());
-                switch (mergingReport.getResult()) {
-                    case WARNING:
-                        mergingReport.log(mLogger);
-                        // fall through since these are just warnings.
-                    case SUCCESS:
-                        XmlDocument xmlDocument = mergingReport.getMergedDocument().get();
-                        try {
-                            String annotatedDocument = mergingReport.getActions().blame(xmlDocument);
-                            mLogger.verbose(annotatedDocument);
-                        } catch (Exception e) {
-                            mLogger.error(e, "cannot print resulting xml");
-                        }
-                        save(xmlDocument, outManifest);
-                        mLogger.info("Merged manifest saved to " + outManifest);
-                        break;
-                    case ERROR:
-                        mergingReport.log(mLogger);
-                        throw new RuntimeException(mergingReport.getReportString());
-                    default:
-                        throw new RuntimeException("Unhandled result type : "
-                                + mergingReport.getResult());
-                }
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        } else {
+            mLogger.verbose("Generating in %1$s", generatedTestManifest.getAbsolutePath());
             generateTestManifest(
                     testApplicationId,
                     minSdkVersion,
-                    targetSdkVersion,
+                    targetSdkVersion.equals("-1") ? null : targetSdkVersion,
                     testedApplicationId,
                     instrumentationRunner,
                     handleProfiling,
                     functionalTest,
-                    outManifest);
+                    generatedTestManifest);
+
+            if (testManifestFile != null) {
+                File mergedTestManifest = File.createTempFile("manifestMerger", ".xml", tmpDir);
+                mLogger.verbose("Merging user supplied manifest in %1$s",
+                        generatedTestManifest.getAbsolutePath());
+                Invoker invoker = ManifestMerger2.newMerger(
+                        testManifestFile, mLogger, ManifestMerger2.MergeType.APPLICATION)
+                        .setOverride(SystemProperty.PACKAGE, testApplicationId)
+                        .setPlaceHolderValue(PlaceholderHandler.INSTRUMENTATION_RUNNER,
+                                instrumentationRunner)
+                        .addLibraryManifests(generatedTestManifest);
+                if (minSdkVersion != null) {
+                    invoker.setOverride(SystemProperty.MIN_SDK_VERSION, minSdkVersion);
+                }
+                if (!targetSdkVersion.equals("-1")) {
+                    invoker.setOverride(SystemProperty.TARGET_SDK_VERSION, targetSdkVersion);
+                }
+                MergingReport mergingReport = invoker.merge();
+                if (libraries.isEmpty()) {
+                    handleMergingResult(mergingReport, outManifest);
+                } else {
+                    handleMergingResult(mergingReport, mergedTestManifest);
+                    generatedTestManifest = mergedTestManifest;
+                }
+            }
+
+            if (!libraries.isEmpty()) {
+                MergingReport mergingReport = ManifestMerger2.newMerger(
+                        generatedTestManifest, mLogger, ManifestMerger2.MergeType.APPLICATION)
+                        .withFeatures(Invoker.Feature.REMOVE_TOOLS_DECLARATIONS)
+                        .setOverride(SystemProperty.PACKAGE, testApplicationId)
+                        .addLibraryManifests(collectLibraries(libraries))
+                        .merge();
+
+                handleMergingResult(mergingReport, outManifest);
+            }
+        } catch(Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void handleMergingResult(@NonNull MergingReport mergingReport, @NonNull File outFile) {
+        switch (mergingReport.getResult()) {
+            case WARNING:
+                mergingReport.log(mLogger);
+                // fall through since these are just warnings.
+            case SUCCESS:
+                XmlDocument xmlDocument = mergingReport.getMergedDocument().get();
+                try {
+                    String annotatedDocument = mergingReport.getActions().blame(xmlDocument);
+                    mLogger.verbose(annotatedDocument);
+                } catch (Exception e) {
+                    mLogger.error(e, "cannot print resulting xml");
+                }
+                save(xmlDocument, outFile);
+                mLogger.info("Merged manifest saved to " + outFile);
+                break;
+            case ERROR:
+                mergingReport.log(mLogger);
+                throw new RuntimeException(mergingReport.getReportString());
+            default:
+                throw new RuntimeException("Unhandled result type : "
+                        + mergingReport.getResult());
         }
     }
 
@@ -938,7 +977,8 @@ public class AndroidBuilder {
      * @param resourceConfigs a list of resource config filters to pass to aapt.
      * @param enforceUniquePackageName if true method will fail if some libraries share the same
      *                                 package name
-     *
+     * @param splits optional list of split dimensions values (like a density or an abi). This
+     *               will be used by aapt to generate the corresponding pure split apks.
      *
      * @throws IOException
      * @throws InterruptedException
@@ -948,7 +988,7 @@ public class AndroidBuilder {
             @NonNull  File manifestFile,
             @NonNull  File resFolder,
             @Nullable File assetsDir,
-            @NonNull  List<? extends SymbolFileProvider> libraries,
+            @Nullable  List<? extends SymbolFileProvider> libraries,
             @Nullable String packageForR,
             @Nullable String sourceOutputDir,
             @Nullable String symbolOutputDir,
@@ -958,18 +998,21 @@ public class AndroidBuilder {
                       boolean debuggable,
             @NonNull  AaptOptions options,
             @NonNull  Collection<String> resourceConfigs,
-                      boolean enforceUniquePackageName)
+                      boolean enforceUniquePackageName,
+            @Nullable Collection<String> splits)
             throws IOException, InterruptedException, LoggedErrorException {
 
         checkNotNull(manifestFile, "manifestFile cannot be null.");
         checkNotNull(resFolder, "resFolder cannot be null.");
-        checkNotNull(libraries, "libraries cannot be null.");
         checkNotNull(options, "options cannot be null.");
         // if both output types are empty, then there's nothing to do and this is an error
         checkArgument(sourceOutputDir != null || resPackageOutput != null,
                 "No output provided for aapt task");
         checkState(mTargetInfo != null,
                 "Cannot call processResources() before setTargetInfo() is called.");
+        if (symbolOutputDir != null || sourceOutputDir != null) {
+            checkNotNull(libraries, "libraries cannot be null if symbolOutputDir or sourceOutputDir is non-null");
+        }
 
         BuildToolInfo buildToolInfo = mTargetInfo.getBuildTools();
         IAndroidTarget target = mTargetInfo.getTarget();
@@ -990,7 +1033,6 @@ public class AndroidBuilder {
         }
 
         command.add("-f");
-
         command.add("--no-crunch");
 
         // inputs
@@ -1028,11 +1070,20 @@ public class AndroidBuilder {
             command.add(proguardOutput);
         }
 
+        if (splits != null) {
+            for (String split : splits) {
+
+                command.add("--split");
+                command.add(split);
+            }
+        }
+
         // options controlled by build variants
 
         if (debuggable) {
             command.add("--debug-mode");
         }
+
 
         if (type != VariantConfiguration.Type.TEST) {
             if (packageForR != null) {
@@ -1052,6 +1103,15 @@ public class AndroidBuilder {
         if (ignoreAssets != null) {
             command.add("--ignore-assets");
             command.add(ignoreAssets);
+        }
+
+        if (options.getFailOnMissingConfigEntry()) {
+            if (buildToolInfo.getRevision().getMajor() > 20) {
+                command.add("--error-on-missing-config-entry");
+            } else {
+                throw new IllegalStateException("aaptOptions:failOnMissingConfigEntry cannot be used"
+                        + " with SDK Build Tools revision earlier than 21.0.0");
+            }
         }
 
         // never compress apks.
@@ -1084,7 +1144,7 @@ public class AndroidBuilder {
 
         // now if the project has libraries, R needs to be created for each libraries,
         // but only if the current project is not a library.
-        if (type != VariantConfiguration.Type.LIBRARY && !libraries.isEmpty()) {
+        if (sourceOutputDir != null && type != VariantConfiguration.Type.LIBRARY && !libraries.isEmpty()) {
             SymbolLoader fullSymbolValues = null;
 
             // First pass processing the libraries, collecting them by packageName,
@@ -1165,7 +1225,8 @@ public class AndroidBuilder {
 
     public void generateApkData(@NonNull File apkFile,
                                 @NonNull File outResFolder,
-                                @NonNull String mainPkgName)
+                                @NonNull String mainPkgName,
+                                @NonNull String resName)
             throws InterruptedException, LoggedErrorException, IOException {
 
         // need to run aapt to get apk information
@@ -1227,8 +1288,8 @@ public class AndroidBuilder {
                 "<wearableApp package=\"%1$s\">\n" +
                 "    <versionCode>%2$s</versionCode>\n" +
                 "    <versionName>%3$s</versionName>\n" +
-                "    <path>%4$s</path>\n" +
-                "</wearableApp>", pkgName, versionCode, versionName, apkFile.getName());
+                "    <rawPathResId>%4$s</rawPathResId>\n" +
+                "</wearableApp>", pkgName, versionCode, versionName, resName);
 
         // xml folder
         File resXmlFile = new File(outResFolder, FD_RES_XML);
@@ -1518,9 +1579,12 @@ public class AndroidBuilder {
             command.add("--no-strict");
         }
 
+        /**
+         * This seems to trigger some error in dx, so disable for now.
         if (dexOptions.getThreadCount() > 1) {
             command.add("--num-threads=" + dexOptions.getThreadCount());
         }
+         */
 
         if (additionalParameters != null) {
             for (String arg : additionalParameters) {
@@ -1723,6 +1787,45 @@ public class AndroidBuilder {
             // shouldn't happen since we control the package from start to end.
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * Signs a single jar file using the passed {@link SigningConfig}.
+     * @param in the jar file to sign.
+     * @param signingConfig the signing configuration
+     * @param out the file path for the signed jar.
+     * @throws IOException
+     * @throws KeytoolException
+     * @throws SigningException
+     * @throws NoSuchAlgorithmException
+     * @throws SignedJarBuilder.IZipEntryFilter.ZipAbortException
+     * @throws com.android.builder.signing.SigningException
+     */
+    public void signApk(File in, SigningConfig signingConfig, File out)
+            throws IOException, KeytoolException, SigningException, NoSuchAlgorithmException,
+            SignedJarBuilder.IZipEntryFilter.ZipAbortException,
+            com.android.builder.signing.SigningException {
+
+        CertificateInfo certificateInfo = null;
+        if (signingConfig != null && signingConfig.isSigningReady()) {
+            certificateInfo = KeystoreHelper.getCertificateInfo(signingConfig.getStoreType(),
+                    signingConfig.getStoreFile(), signingConfig.getStorePassword(),
+                    signingConfig.getKeyPassword(), signingConfig.getKeyAlias());
+            if (certificateInfo == null) {
+                throw new SigningException("Failed to read key from keystore");
+            }
+        }
+
+        SignedJarBuilder signedJarBuilder = new SignedJarBuilder(
+                new FileOutputStream(out),
+                certificateInfo != null ? certificateInfo.getKey() : null,
+                certificateInfo != null ? certificateInfo.getCertificate() : null,
+                Packager.getLocalVersion(), mCreatedBy);
+
+
+        signedJarBuilder.writeZip(new FileInputStream(in), null);
+        signedJarBuilder.close();
+
     }
 
     /**

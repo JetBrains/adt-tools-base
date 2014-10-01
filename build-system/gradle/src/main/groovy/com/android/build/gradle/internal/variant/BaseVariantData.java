@@ -18,6 +18,7 @@ package com.android.build.gradle.internal.variant;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
+import com.android.build.gradle.BasePlugin;
 import com.android.build.gradle.api.AndroidSourceSet;
 import com.android.build.gradle.internal.StringHelper;
 import com.android.build.gradle.internal.dependency.VariantDependencies;
@@ -31,7 +32,6 @@ import com.android.build.gradle.tasks.MergeAssets;
 import com.android.build.gradle.tasks.MergeResources;
 import com.android.build.gradle.tasks.NdkCompile;
 import com.android.build.gradle.tasks.ProcessAndroidResources;
-import com.android.build.gradle.tasks.ManifestProcessorTask;
 import com.android.build.gradle.tasks.RenderscriptCompile;
 import com.android.builder.core.VariantConfiguration;
 import com.android.builder.model.SourceProvider;
@@ -46,49 +46,116 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-import groovy.lang.Closure;
-
 /**
  * Base data about a variant.
  */
-public abstract class BaseVariantData {
+public abstract class BaseVariantData<T extends BaseVariantOutputData> {
 
+    public enum SplitHandlingPolicy {
+        /**
+         * Any release before L will create fake splits where each split will be the entire
+         * application with the split specific resources.
+         */
+        PRE_21_POLICY,
+
+        /**
+         * Android L and after, the splits are pure splits where splits only contain resources
+         * specific to the split characteristics.
+         */
+        RELEASE_21_AND_AFTER_POLICY
+    }
+
+
+    @NonNull
+    protected final BasePlugin basePlugin;
+    @NonNull
     private final VariantConfiguration variantConfiguration;
+
     private VariantDependencies variantDependency;
 
     public Task preBuildTask;
     public PrepareDependenciesTask prepareDependenciesTask;
+    public ProcessAndroidResources generateRClassTask;
+
     public Task sourceGenTask;
     public Task resourceGenTask;
     public Task assetGenTask;
     public CheckManifest checkManifestTask;
 
-    public ManifestProcessorTask manifestProcessorTask;
     public RenderscriptCompile renderscriptCompileTask;
     public AidlCompile aidlCompileTask;
     public MergeResources mergeResourcesTask;
     public MergeAssets mergeAssetsTask;
-    public ProcessAndroidResources processResourcesTask;
     public GenerateBuildConfig generateBuildConfigTask;
     public GenerateResValues generateResValuesTask;
     public Copy copyApkTask;
     public GenerateApkDataTask generateApkDataTask;
 
     public JavaCompile javaCompileTask;
-    public Task obfuscationTask;
     public Copy processJavaResourcesTask;
     public NdkCompile ndkCompileTask;
 
-    private Object outputFile;
-    private Object[] javaSources;
+    public Task compileTask;
 
-    public Task assembleTask;
+    public Task obfuscationTask;
+    public File mappingFile;
+
+    // Task to assemble the variant and all its output.
+    public Task assembleVariantTask;
+
+    private Object[] javaSources;
 
     private List<File> extraGeneratedSourceFolders;
 
-    public BaseVariantData(@NonNull VariantConfiguration variantConfiguration) {
+    private final List<T> outputs = Lists.newArrayListWithExpectedSize(4);
+
+    private SplitHandlingPolicy mSplitHandlingPolicy;
+
+
+    public BaseVariantData(
+            @NonNull BasePlugin basePlugin,
+            @NonNull VariantConfiguration variantConfiguration) {
+        this.basePlugin = basePlugin;
         this.variantConfiguration = variantConfiguration;
+
+        // eventually, this will require a more open ended comparison.
+        mSplitHandlingPolicy =
+                variantConfiguration.getMinSdkVersion() != null
+                        && variantConfiguration.getMinSdkVersion().getApiString().equals("L")
+                    ? SplitHandlingPolicy.RELEASE_21_AND_AFTER_POLICY
+                    : SplitHandlingPolicy.PRE_21_POLICY;
+
         variantConfiguration.checkSourceProviders();
+    }
+
+
+    public SplitHandlingPolicy getSplitHandlingPolicy() {
+        return mSplitHandlingPolicy;
+    }
+
+    @NonNull
+    protected abstract T doCreateOutput(@Nullable String densityFilter, @Nullable String abiFilter);
+
+    @NonNull
+    public T createOutput(@Nullable String densityFilter, @Nullable String abiFilter) {
+        T data = doCreateOutput(densityFilter, abiFilter);
+
+        // if it's the first time we add an output, mark previous output as part of a multi-output
+        // setup.
+        if (outputs.size() == 1) {
+            outputs.get(0).setMultiOutput(true);
+            data.setMultiOutput(true);
+        } else if (outputs.size() > 1) {
+            data.setMultiOutput(true);
+        }
+
+        outputs.add(data);
+        return data;
+    }
+
+    @NonNull
+    public List<T> getOutputs() {
+        return outputs;
     }
 
     @NonNull
@@ -109,7 +176,7 @@ public abstract class BaseVariantData {
     public abstract String getDescription();
 
     @NonNull
-    public String getPackageName() {
+    public String getApplicationId() {
         return variantConfiguration.getApplicationId();
     }
 
@@ -121,22 +188,6 @@ public abstract class BaseVariantData {
     @NonNull
     protected String getCapitalizedFlavorName() {
         return StringHelper.capitalize(variantConfiguration.getFlavorName());
-    }
-
-    public void setOutputFile(Object file) {
-        outputFile = file;
-    }
-
-    public File getOutputFile() {
-        if (outputFile instanceof File) {
-            return (File) outputFile;
-        } else if (outputFile instanceof Closure) {
-            Closure c = (Closure) outputFile;
-            return (File) c.call();
-        }
-
-        assert false;
-        return null;
     }
 
     @VisibleForTesting
@@ -167,11 +218,7 @@ public abstract class BaseVariantData {
     }
 
     public void registerJavaGeneratingTask(@NonNull Task task, @NonNull File... generatedSourceFolders) {
-        if (extraGeneratedSourceFolders == null) {
-            extraGeneratedSourceFolders = Lists.newArrayList();
-        }
-
-        javaCompileTask.dependsOn(task);
+        sourceGenTask.dependsOn(task);
 
         for (File f : generatedSourceFolders) {
             javaCompileTask.source(f);
@@ -181,11 +228,7 @@ public abstract class BaseVariantData {
     }
 
     public void registerJavaGeneratingTask(@NonNull Task task, @NonNull Collection<File> generatedSourceFolders) {
-        if (extraGeneratedSourceFolders == null) {
-            extraGeneratedSourceFolders = Lists.newArrayList();
-        }
-
-        javaCompileTask.dependsOn(task);
+        sourceGenTask.dependsOn(task);
 
         for (File f : generatedSourceFolders) {
             javaCompileTask.source(f);
@@ -211,7 +254,9 @@ public abstract class BaseVariantData {
             }
 
             // then all the generated src folders.
-            sourceList.add(processResourcesTask.getSourceOutputDir());
+            sourceList.add(generateRClassTask.getSourceOutputDir());
+
+            // for the other, there's no duplicate so no issue.
             sourceList.add(generateBuildConfigTask.getSourceOutputDir());
             sourceList.add(aidlCompileTask.getSourceOutputDir());
             if (!variantConfiguration.getMergedFlavor().getRenderscriptNdkMode()) {

@@ -19,9 +19,10 @@ package com.android.tools.lint.checks;
 import static com.android.SdkConstants.ATTR_QUANTITY;
 import static com.android.SdkConstants.TAG_ITEM;
 import static com.android.SdkConstants.TAG_PLURALS;
-import com.android.tools.lint.checks.PluralsDatabase.Quantity;
+
 import com.android.annotations.NonNull;
 import com.android.resources.ResourceFolderType;
+import com.android.tools.lint.checks.PluralsDatabase.Quantity;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
@@ -55,7 +56,6 @@ public class PluralsDetector extends ResourceXmlDetector {
     public static final Issue MISSING = Issue.create(
             "MissingQuantity", //$NON-NLS-1$
             "Missing quantity translation",
-            "Checks for missing quantity strings relevant to each locale",
             "Different languages have different rules for grammatical agreement with " +
             "quantity. In English, for example, the quantity 1 is a special case. " +
             "We write \"1 book\", but for any other quantity we'd write \"n books\". " +
@@ -78,7 +78,6 @@ public class PluralsDetector extends ResourceXmlDetector {
     public static final Issue EXTRA = Issue.create(
             "UnusedQuantity", //$NON-NLS-1$
             "Unused quantity translations",
-            "Checks for quantity string translations which are not used in this language",
             "Android defines a number of different quantity strings, such as `zero`, `one`, " +
             "`few` and `many`. However, many languages do not distinguish grammatically " +
             "between all these different quantities.\n" +
@@ -100,7 +99,6 @@ public class PluralsDetector extends ResourceXmlDetector {
     public static final Issue IMPLIED_QUANTITY = Issue.create(
             "ImpliedQuantity", //$NON-NLS-1$
             "Implied Quantities",
-            "Looks for quantity string translations which do not include the quantity",
 
             "Plural strings should generally include a `%s` or `%d` formatting argument. " +
             "In locales like English, the `one` quantity only applies to a single value, " +
@@ -136,8 +134,7 @@ public class PluralsDetector extends ResourceXmlDetector {
         int count = LintUtils.getChildCount(element);
         if (count == 0) {
             context.report(MISSING, element, context.getLocation(element),
-                    "There should be at least one quantity string in this <plural> definition",
-                    null);
+                    "There should be at least one quantity string in this `<plural>` definition");
             return;
         }
 
@@ -188,13 +185,13 @@ public class PluralsDetector extends ResourceXmlDetector {
                 } else {
                     append = " (" + example + ")";
                 }
-                String message = String.format("The quantity '%1$s' matches more than one "
+                String message = String.format("The quantity `'%1$s'` matches more than one "
                                 + "specific number in this locale%2$s, but the message did "
-                                + "not include a formatting argument (such as %%d). "
+                                + "not include a formatting argument (such as `%%d`). "
                                 + "This is usually an internationalization error. See full issue "
                                 + "explanation for more.",
                         quantity, append);
-                context.report(IMPLIED_QUANTITY, child, context.getLocation(child), message, null);
+                context.report(IMPLIED_QUANTITY, child, context.getLocation(child), message);
             }
         }
 
@@ -210,7 +207,7 @@ public class PluralsDetector extends ResourceXmlDetector {
                     "For locale %1$s the following quantities should also be defined: %2$s",
                     TranslationDetector.getLanguageDescription(language),
                     Quantity.formatSet(missing));
-            context.report(MISSING, element, context.getLocation(element), message, null);
+            context.report(MISSING, element, context.getLocation(element), message);
         }
 
         // Look for irrelevant
@@ -221,7 +218,7 @@ public class PluralsDetector extends ResourceXmlDetector {
                     "For language %1$s the following quantities are not relevant: %2$s",
                     TranslationDetector.getLanguageDescription(language),
                     Quantity.formatSet(extra));
-            context.report(EXTRA, element, context.getLocation(element), message, null);
+            context.report(EXTRA, element, context.getLocation(element), message);
         }
     }
 

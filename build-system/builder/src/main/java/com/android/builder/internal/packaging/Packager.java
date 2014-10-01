@@ -473,6 +473,7 @@ public final class Packager implements IArchiveBuilder {
      * This may or may not copy gdbserver into the apk based on whether the debug mode is set.
      *
      * @param nativeFolder the root folder containing the abi folders which contain the .so
+     * @param abiFilters a list of abi filters to include. If null or empty, all abis are included.
      *
      * @throws PackagerException if an error occurred
      * @throws SealedPackageException if the APK is already sealed.
@@ -502,7 +503,7 @@ public final class Packager implements IArchiveBuilder {
 
         if (abiList != null) {
             for (File abi : abiList) {
-                if (abiFilters != null && !abiFilters.contains(abi.getName())) {
+                if (abiFilters != null && !abiFilters.isEmpty() && !abiFilters.contains(abi.getName())) {
                     continue;
                 }
 
@@ -638,7 +639,7 @@ public final class Packager implements IArchiveBuilder {
         }
     }
 
-    private static String getLocalVersion() {
+    public static String getLocalVersion() {
         Class clazz = Packager.class;
         String className = clazz.getSimpleName() + ".class";
         String classPath = clazz.getResource(className).toString();

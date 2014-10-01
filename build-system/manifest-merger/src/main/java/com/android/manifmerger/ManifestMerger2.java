@@ -52,7 +52,7 @@ public class ManifestMerger2 {
     private final File mManifestFile;
 
     @NonNull
-    private final KeyBasedValueResolver<String> mPlaceHolderValueResolver;
+    private final Map<String, String> mPlaceHolderValues;
 
     @NonNull
     private final KeyBasedValueResolver<SystemProperty> mSystemPropertyResolver;
@@ -69,11 +69,11 @@ public class ManifestMerger2 {
             @NonNull ImmutableList<Pair<String, File>> libraryFiles,
             @NonNull ImmutableList<File> flavorsAndBuildTypeFiles,
             @NonNull ImmutableList<Invoker.Feature> optionalFeatures,
-            @NonNull KeyBasedValueResolver<String> placeHolderValueResolver,
+            @NonNull Map<String, String> placeHolderValues,
             @NonNull KeyBasedValueResolver<SystemProperty> systemPropertiesResolver,
             @NonNull MergeType mergeType) {
         this.mSystemPropertyResolver = systemPropertiesResolver;
-        this.mPlaceHolderValueResolver = placeHolderValueResolver;
+        this.mPlaceHolderValues = placeHolderValues;
         this.mManifestFile = mainManifestFile;
         this.mLogger = logger;
         this.mLibraryFiles = libraryFiles;
@@ -97,7 +97,8 @@ public class ManifestMerger2 {
         SelectorResolver selectors = new SelectorResolver();
         // load all the libraries xml files up front to have a list of all possible node:selector
         // values.
-        List<LoadedManifestInfo> loadedLibraryDocuments = loadLibraries(selectors);
+        List<LoadedManifestInfo> loadedLibraryDocuments =
+                loadLibraries(selectors, mergingReportBuilder);
 
         // load the main manifest file to do some checking along the way.
         LoadedManifestInfo loadedMainManifestInfo = load(
@@ -106,7 +107,8 @@ public class ManifestMerger2 {
                         mManifestFile,
                         XmlDocument.Type.MAIN,
                         Optional.<String>absent() /* mainManifestPackageName */),
-                selectors);
+                selectors,
+                mergingReportBuilder);
 
         // first do we have a package declaration in the main manifest ?
         Optional<XmlAttribute> mainPackageAttribute =
@@ -116,10 +118,31 @@ public class ManifestMerger2 {
                     loadedMainManifestInfo.getXmlDocument().getSourceLocation(), 0, 0,
                     MergingReport.Record.Severity.ERROR,
                     String.format(
-                            "Main AndroidManifest.xml at %1$s manifest:package attribute is not declared",
-                            loadedMainManifestInfo.getXmlDocument().getSourceLocation().print(true)));
+                            "Main AndroidManifest.xml at %1$s manifest:package attribute "
+                                    + "is not declared",
+                            loadedMainManifestInfo.getXmlDocument().getSourceLocation()
+                                    .print(true)));
             return mergingReportBuilder.build();
         }
+
+        // check for placeholders presence.
+        Map<String, String> finalPlaceHolderValues = mPlaceHolderValues;
+        if (!mPlaceHolderValues.containsKey("applicationId")) {
+            finalPlaceHolderValues =
+                    ImmutableMap.<String, String>builder().putAll(mPlaceHolderValues)
+                            .put("packageName", mainPackageAttribute.get().getValue())
+                            .put("applicationId", mainPackageAttribute.get().getValue())
+                            .build();
+        }
+
+        // perform system property injection
+        performSystemPropertiesInjection(mergingReportBuilder,
+                loadedMainManifestInfo.getXmlDocument());
+
+        // force the re-parsing of the xml as elements may have been added through system
+        // property injection.
+        loadedMainManifestInfo = new LoadedManifestInfo(loadedMainManifestInfo,
+                loadedMainManifestInfo.getXmlDocument().reparse());
 
         // invariant : xmlDocumentOptional holds the higher priority document and we try to
         // merge in lower priority documents.
@@ -128,7 +151,9 @@ public class ManifestMerger2 {
             mLogger.info("Merging flavors and build manifest %s \n", inputFile.getPath());
             LoadedManifestInfo overlayDocument = load(
                     new ManifestInfo(null, inputFile, XmlDocument.Type.OVERLAY,
-                            Optional.of(mainPackageAttribute.get().getValue())), selectors);
+                            Optional.of(mainPackageAttribute.get().getValue())),
+                    selectors,
+                    mergingReportBuilder);
 
             // check package declaration.
             Optional<XmlAttribute> packageAttribute =
@@ -143,8 +168,8 @@ public class ManifestMerger2 {
                         ? String.format(
                                 "Overlay manifest:package attribute declared at %1$s value=(%2$s)\n"
                                         + "\thas a different value=(%3$s) "
-                                        + "declared in main manifest at %4$s \n"
-                                        + "\tSuggestion : remove the overlay declaration at %5$s "
+                                        + "declared in main manifest at %4$s\n"
+                                        + "\tSuggestion: remove the overlay declaration at %5$s "
                                         + "\tand place it in the build.gradle:\n"
                                         + "\t\tflavorName {\n"
                                         + "\t\t\tapplicationId = \"%2$s\"\n"
@@ -211,11 +236,17 @@ public class ManifestMerger2 {
             return mergingReportBuilder.build();
         }
 
-        // do placeholder substitution
+        // do one last placeholder substitution, this is useful as we don't stop the build
+        // when a library failed a placeholder substitution, but the element might have
+        // been overridden so the problem was transient. However, with the final document
+        // ready, all placeholders values must have been provided.
+        KeyBasedValueResolver<String> placeHolderValueResolver =
+                new MapBasedKeyBasedValueResolver<String>(finalPlaceHolderValues);
         PlaceholderHandler placeholderHandler = new PlaceholderHandler();
         placeholderHandler.visit(
+                mMergeType,
                 xmlDocumentOptional.get(),
-                mPlaceHolderValueResolver,
+                placeHolderValueResolver,
                 mergingReportBuilder);
         if (mergingReportBuilder.hasErrors()) {
             return mergingReportBuilder.build();
@@ -233,9 +264,13 @@ public class ManifestMerger2 {
         }
 
         // only remove tools annotations if we are packaging an application.
-        if (mMergeType == MergeType.APPLICATION) {
+        if (mOptionalFeatures.contains(Invoker.Feature.REMOVE_TOOLS_DECLARATIONS)) {
             finalMergedDocument =
                     ToolsInstructionsCleaner.cleanToolsReferences(finalMergedDocument, mLogger);
+        }
+
+        if (mOptionalFeatures.contains(Invoker.Feature.EXTRACT_FQCNS)) {
+            extractFcqns(finalMergedDocument);
         }
 
         if (finalMergedDocument != null) {
@@ -250,23 +285,101 @@ public class ManifestMerger2 {
         return build;
     }
 
-    // merge the optionally existing xmlDocument with a lower priority xml file.
-    private LoadedManifestInfo load(
-            ManifestInfo lowerPriorityManifest,
-            KeyResolver<String> selectors) throws MergeFailureException {
+    /**
+     * shorten all fully qualified class name that belong to the same package as the manifest's
+     * package attribute value.
+     * @param finalMergedDocument the AndroidManifest.xml document.
+     */
+    private void extractFcqns(XmlDocument finalMergedDocument) {
+        extractFcqns(finalMergedDocument.getPackageName(), finalMergedDocument.getRootNode());
+    }
 
-        XmlDocument lowerPriorityDocument;
+    /**
+     * shorten recursively all attributes that are package dependent of the passed nodes and all
+     * its child nodes.
+     * @param packageName the manifest package name.
+     * @param xmlElement the xml element to process recursively.
+     */
+    private void extractFcqns(String packageName, XmlElement xmlElement) {
+        for (XmlAttribute xmlAttribute : xmlElement.getAttributes()) {
+            if (xmlAttribute.getModel() !=null && xmlAttribute.getModel().isPackageDependent()) {
+                String value = xmlAttribute.getValue();
+                if (value != null && value.startsWith(packageName) &&
+                        value.charAt(packageName.length()) == '.') {
+                    xmlAttribute.getXml().setValue(value.substring(packageName.length()));
+                }
+            }
+        }
+        for (XmlElement child : xmlElement.getMergeableElements()) {
+            extractFcqns(packageName, child);
+        }
+    }
+
+    /**
+     * Load an xml file and perform placeholder substitution
+     * @param manifestInfo the android manifest information like if it is a library, an
+     *                     overlay or a main manifest file.
+     * @param selectors all the libraries selectors
+     * @param mergingReportBuilder the merging report to store events and errors.
+     * @return a loaded manifest info.
+     * @throws MergeFailureException
+     */
+    private LoadedManifestInfo load(
+            ManifestInfo manifestInfo,
+            KeyResolver<String> selectors,
+            MergingReport.Builder mergingReportBuilder) throws MergeFailureException {
+
+        XmlDocument xmlDocument;
         try {
-            lowerPriorityDocument = XmlLoader.load(selectors,
+            xmlDocument = XmlLoader.load(selectors,
                     mSystemPropertyResolver,
-                    lowerPriorityManifest.mName,
-                    lowerPriorityManifest.mLocation,
-                    lowerPriorityManifest.getType(),
-                    lowerPriorityManifest.getMainManifestPackageName());
+                    manifestInfo.mName,
+                    manifestInfo.mLocation,
+                    manifestInfo.getType(),
+                    manifestInfo.getMainManifestPackageName());
         } catch (Exception e) {
             throw new MergeFailureException(e);
         }
-        return new LoadedManifestInfo(lowerPriorityManifest, lowerPriorityDocument);
+
+        MergingReport.Builder builder = manifestInfo.getType() == XmlDocument.Type.MAIN
+                ? mergingReportBuilder
+                : new MergingReport.Builder(mergingReportBuilder.getLogger());
+
+        builder.getActionRecorder().recordDefaultNodeAction(
+            xmlDocument.getRootNode());
+
+        // perform place holder substitution, this is necessary to do so early in case placeholders
+        // are used in key attributes.
+        performPlaceHolderSubstitution(manifestInfo, xmlDocument, builder);
+
+        return new LoadedManifestInfo(manifestInfo, xmlDocument);
+    }
+
+    private void performPlaceHolderSubstitution(ManifestInfo manifestInfo,
+            XmlDocument xmlDocument,
+            MergingReport.Builder mergingReportBuilder) {
+
+        // check for placeholders presence.
+        Map<String, String> finalPlaceHolderValues = mPlaceHolderValues;
+        if (!mPlaceHolderValues.containsKey("applicationId")) {
+            String packageName = manifestInfo.getMainManifestPackageName().isPresent()
+                    ? manifestInfo.getMainManifestPackageName().get()
+                    : xmlDocument.getPackageName();
+            finalPlaceHolderValues =
+                    ImmutableMap.<String, String>builder().putAll(mPlaceHolderValues)
+                            .put(PlaceholderHandler.PACKAGE_NAME, packageName)
+                            .put(PlaceholderHandler.APPLICATION_ID, packageName)
+                            .build();
+        }
+
+        KeyBasedValueResolver<String> placeHolderValueResolver =
+                new MapBasedKeyBasedValueResolver<String>(finalPlaceHolderValues);
+        PlaceholderHandler placeholderHandler = new PlaceholderHandler();
+        placeholderHandler.visit(
+                mMergeType,
+                xmlDocument,
+                placeHolderValueResolver,
+                mergingReportBuilder);
     }
 
     // merge the optionally existing xmlDocument with a lower priority xml file.
@@ -303,13 +416,14 @@ public class ManifestMerger2 {
         return result;
     }
 
-    private List<LoadedManifestInfo> loadLibraries(SelectorResolver selectors)
-            throws MergeFailureException {
+    private List<LoadedManifestInfo> loadLibraries(SelectorResolver selectors,
+            MergingReport.Builder mergingReportBuilder) throws MergeFailureException {
 
         ImmutableList.Builder<LoadedManifestInfo> loadedLibraryDocuments = ImmutableList.builder();
         for (Pair<String, File> libraryFile : mLibraryFiles) {
             mLogger.info("Loading library manifest " + libraryFile.getSecond().getPath());
-            ManifestInfo manifestInfo = new ManifestInfo(libraryFile.getFirst(), libraryFile.getSecond(),
+            ManifestInfo manifestInfo = new ManifestInfo(libraryFile.getFirst(),
+                    libraryFile.getSecond(),
                     XmlDocument.Type.LIBRARY, Optional.<String>absent());
             XmlDocument libraryDocument;
             try {
@@ -326,6 +440,18 @@ public class ManifestMerger2 {
             // save it in the selector instance.
             if (!Strings.isNullOrEmpty(libraryPackage)) {
                 selectors.addSelector(libraryPackage, libraryFile.getFirst());
+            }
+
+            // perform placeholder substitution, this is useful when the library is using
+            // a placeholder in a key element, we however do not need to record these
+            // substitutions so feed it with a fake merging report.
+            MergingReport.Builder builder = new MergingReport.Builder(mergingReportBuilder.getLogger());
+            builder.getActionRecorder().recordDefaultNodeAction(libraryDocument.getRootNode());
+            performPlaceHolderSubstitution(manifestInfo, libraryDocument, builder);
+            if (builder.hasErrors()) {
+                // we log the errors but continue, in case the error is of no consequence
+                // to the application consuming the library.
+                builder.build().log(mLogger);
             }
 
             loadedLibraryDocuments.add(new LoadedManifestInfo(manifestInfo, libraryDocument));
@@ -402,6 +528,16 @@ public class ManifestMerger2 {
          * http://developer.android.com/guide/topics/manifest/uses-sdk-element.html#target
          */
         TARGET_SDK_VERSION {
+            @Override
+            public void addTo(@NonNull ActionRecorder actionRecorder,
+                    @NonNull XmlDocument document,
+                    @NonNull String value) {
+                addToElementInAndroidNS(this, actionRecorder, value,
+                        createOrGetUseSdk(actionRecorder, document));
+            }
+        },
+
+        MAX_SDK_VERSION {
             @Override
             public void addTo(@NonNull ActionRecorder actionRecorder,
                     @NonNull XmlDocument document,
@@ -543,7 +679,8 @@ public class ManifestMerger2 {
         for (SystemProperty systemProperty : SystemProperty.values()) {
             String propertyOverride = mSystemPropertyResolver.getValue(systemProperty);
             if (propertyOverride != null) {
-                systemProperty.addTo(mergingReport.getActionRecorder(), xmlDocument, propertyOverride);
+                systemProperty.addTo(
+                        mergingReport.getActionRecorder(), xmlDocument, propertyOverride);
             }
         }
     }
@@ -627,7 +764,18 @@ public class ManifestMerger2 {
              * When logging file names, use {@link java.io.File#getName()} rather than
              * {@link java.io.File#getPath()}
              */
-            PRINT_SIMPLE_FILENAMES
+            PRINT_SIMPLE_FILENAMES,
+
+            /**
+             * Perform a sweep after all merging activities to remove all fully qualified class
+             * names and replace them with the equivalent short version.
+             */
+            EXTRACT_FQCNS,
+
+            /**
+             * Perform a sweep after all merging activities to remove all tools: decorations.
+             */
+            REMOVE_TOOLS_DECLARATIONS
         }
 
         private final ImmutableList.Builder<Pair<String, File>> mLibraryFilesBuilder =
@@ -728,7 +876,8 @@ public class ManifestMerger2 {
          *
          * This method can be invoked several time and will re-do the file merges.
          *
-         * @throws com.android.manifmerger.ManifestMerger2.MergeFailureException if the merging cannot be completed successfully.
+         * @throws com.android.manifmerger.ManifestMerger2.MergeFailureException if the merging
+         * cannot be completed successfully.
          */
         public MergingReport merge() throws MergeFailureException {
 
@@ -746,9 +895,8 @@ public class ManifestMerger2 {
                             mLibraryFilesBuilder.build(),
                             mFlavorsAndBuildTypeFiles.build(),
                             mFeaturesBuilder.build(),
-                            new MapBasedKeyBasedValueResolver<String>(mPlaceHolders.build()),
-                            new MapBasedKeyBasedValueResolver<SystemProperty>(
-                                    systemProperties),
+                            mPlaceHolders.build(),
+                            new MapBasedKeyBasedValueResolver<SystemProperty>(systemProperties),
                             mMergeType);
             return manifestMerger.merge();
         }

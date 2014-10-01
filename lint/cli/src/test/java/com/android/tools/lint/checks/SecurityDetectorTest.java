@@ -210,4 +210,11 @@ public class SecurityDetectorTest extends AbstractCheckTest {
             "No warnings.",
             lintProject("exportreceiver6.xml=>AndroidManifest.xml"));
     }
+
+    public void testUsingInstallReferrerReceiver() throws Exception {
+        // Regression test for https://code.google.com/p/android/issues/detail?id=73934
+        assertEquals(
+                "No warnings.",
+                lintProject("exportreceiver7.xml=>AndroidManifest.xml"));
+    }
 }

@@ -31,7 +31,6 @@ import com.android.sdklib.repository.FullRevision;
 import com.android.utils.ILogger;
 import com.google.common.base.Charsets;
 import com.google.common.io.Closeables;
-import com.google.common.io.Closer;
 
 import org.gradle.api.Project;
 
@@ -87,13 +86,25 @@ public class SdkHandler {
         androidBuilder.setTargetInfo(sdkInfo, targetInfo);
     }
 
+    @Nullable
+    public File getSdkFolder() {
+        return sdkFolder;
+    }
+
+    @Nullable
+    public File getAndCheckSdkFolder() {
+        if (sdkFolder == null) {
+            throw new RuntimeException(
+                    "SDK location not found. Define location with sdk.dir in the local.properties file or with an ANDROID_HOME environment variable.");
+        }
+
+        return sdkFolder;
+    }
+
     public synchronized SdkLoader getSdkLoader() {
         if (sdkLoader == null) {
             if (isRegularSdk) {
-                if (sdkFolder == null) {
-                    throw new RuntimeException(
-                            "SDK location not found. Define location with sdk.dir in the local.properties file or with an ANDROID_HOME environment variable.");
-                }
+                getAndCheckSdkFolder();
 
                 // check if the SDK folder actually exist.
                 // For internal test we provide a fake SDK location through
@@ -202,10 +213,5 @@ public class SdkHandler {
 
         findSdkLocation(properties, rootDir);
         findNdkLocation(properties);
-    }
-
-    @Nullable
-    public File getSdkFolder() {
-        return sdkFolder;
     }
 }

@@ -105,7 +105,9 @@ public class ManifestMerger2SmallTest extends TestCase {
 
         try {
             MergingReport mergingReport = ManifestMerger2.newMerger(tmpFile, mockLog,
-                    ManifestMerger2.MergeType.APPLICATION).merge();
+                    ManifestMerger2.MergeType.APPLICATION)
+                    .withFeatures(ManifestMerger2.Invoker.Feature.REMOVE_TOOLS_DECLARATIONS)
+                    .merge();
             assertEquals(MergingReport.Result.WARNING, mergingReport.getResult());
             // ensure tools annotation removal.
             XmlDocument mergedDocument = mergingReport.getMergedDocument().get();
@@ -143,7 +145,8 @@ public class ManifestMerger2SmallTest extends TestCase {
 
         try {
             MergingReport mergingReport = ManifestMerger2.newMerger(tmpFile, mockLog,
-                    ManifestMerger2.MergeType.LIBRARY).merge();
+                    ManifestMerger2.MergeType.LIBRARY)
+                    .merge();
             assertEquals(MergingReport.Result.WARNING, mergingReport.getResult());
             // ensure tools annotation removal.
             XmlDocument mergedDocument = mergingReport.getMergedDocument().get();
@@ -222,6 +225,11 @@ public class ManifestMerger2SmallTest extends TestCase {
         usesSdk = (Element) document.getXml().getElementsByTagName("uses-sdk").item(0);
         assertNotNull(usesSdk);
         assertEquals("14", usesSdk.getAttribute("android:targetSdkVersion"));
+
+        ManifestMerger2.SystemProperty.MAX_SDK_VERSION.addTo(mActionRecorder, document, "16");
+        usesSdk = (Element) document.getXml().getElementsByTagName("uses-sdk").item(0);
+        assertNotNull(usesSdk);
+        assertEquals("16", usesSdk.getAttribute("android:maxSdkVersion"));
     }
 
     public void testAddingSystemProperties_withDifferentPrefix()
@@ -342,6 +350,117 @@ public class ManifestMerger2SmallTest extends TestCase {
         } finally {
             inputFile.delete();
         }
+    }
+
+    public void testNoApplicationIdValueProvided()
+            throws IOException, ManifestMerger2.MergeFailureException {
+        String xml = ""
+                + "<manifest package=\"foo\" versionCode=\"34\" versionName=\"3.4\"\n"
+                + "    xmlns:android=\"http://schemas.android.com/apk/res/android\">\n"
+                + "    <activity android:name=\"${applicationId}.activityOne\"/>\n"
+                + "</manifest>";
+
+        MockLog mockLog = new MockLog();
+        File inputFile = inputAsFile("testPlaceholderSubstitution", xml);
+        try {
+            MergingReport mergingReport = ManifestMerger2
+                    .newMerger(inputFile, mockLog, ManifestMerger2.MergeType.APPLICATION)
+                    .merge();
+
+            assertTrue(mergingReport.getResult().isSuccess());
+            assertTrue(mergingReport.getMergedDocument().isPresent());
+            XmlDocument xmlDocument = mergingReport.getMergedDocument().get();
+            assertEquals("foo", xmlDocument.getPackageName());
+            Optional<XmlElement> activityOne = xmlDocument
+                    .getByTypeAndKey(ManifestModel.NodeTypes.ACTIVITY, "foo.activityOne");
+            assertTrue(activityOne.isPresent());
+        } finally {
+            inputFile.delete();
+        }
+    }
+
+    public void testNoFqcnsExtraction()
+            throws ParserConfigurationException, SAXException, IOException,
+            ManifestMerger2.MergeFailureException {
+        String xml = ""
+                + "<manifest\n"
+                + "    package=\"com.foo.example\""
+                + "    xmlns:t=\"http://schemas.android.com/apk/res/android\">\n"
+                + "    <activity t:name=\"activityOne\"/>\n"
+                + "    <activity t:name=\"com.foo.bar.example.activityTwo\"/>\n"
+                + "    <activity t:name=\"com.foo.example.activityThree\"/>\n"
+                + "    <application t:name=\".applicationOne\" "
+                + "         t:backupAgent=\"com.foo.example.myBackupAgent\"/>\n"
+                + "</manifest>";
+
+        File inputFile = inputAsFile("testFcqnsExtraction", xml);
+
+        MockLog mockLog = new MockLog();
+        MergingReport mergingReport = ManifestMerger2
+                .newMerger(inputFile, mockLog, ManifestMerger2.MergeType.APPLICATION)
+                .merge();
+
+        assertTrue(mergingReport.getResult().isSuccess());
+        XmlDocument xmlDocument = mergingReport.getMergedDocument().get();
+        assertEquals("com.foo.example.activityOne",
+                xmlDocument.getXml().getElementsByTagName("activity").item(0).getAttributes()
+                        .item(0).getNodeValue());
+        assertEquals("com.foo.bar.example.activityTwo",
+                xmlDocument.getXml().getElementsByTagName("activity").item(1).getAttributes()
+                        .item(0).getNodeValue());
+        assertEquals("com.foo.example.activityThree",
+                xmlDocument.getXml().getElementsByTagName("activity").item(2).getAttributes()
+                        .item(0).getNodeValue());
+        assertEquals("com.foo.example.applicationOne",
+                xmlDocument.getXml().getElementsByTagName("application").item(0).getAttributes()
+                        .getNamedItemNS("http://schemas.android.com/apk/res/android", "name")
+                        .getNodeValue());
+        assertEquals("com.foo.example.myBackupAgent",
+                xmlDocument.getXml().getElementsByTagName("application").item(0).getAttributes()
+                        .getNamedItemNS("http://schemas.android.com/apk/res/android", "backupAgent")
+                        .getNodeValue());    }
+
+    public void testFqcnsExtraction()
+            throws ParserConfigurationException, SAXException, IOException,
+            ManifestMerger2.MergeFailureException {
+        String xml = ""
+                + "<manifest\n"
+                + "    package=\"com.foo.example\""
+                + "    xmlns:t=\"http://schemas.android.com/apk/res/android\">\n"
+                + "    <activity t:name=\"activityOne\"/>\n"
+                + "    <activity t:name=\"com.foo.bar.example.activityTwo\"/>\n"
+                + "    <activity t:name=\"com.foo.example.activityThree\"/>\n"
+                + "    <application t:name=\".applicationOne\" "
+                + "         t:backupAgent=\"com.foo.example.myBackupAgent\"/>\n"
+                + "</manifest>";
+
+        File inputFile = inputAsFile("testFcqnsExtraction", xml);
+
+        MockLog mockLog = new MockLog();
+        MergingReport mergingReport = ManifestMerger2
+                .newMerger(inputFile, mockLog, ManifestMerger2.MergeType.APPLICATION)
+                .withFeatures(ManifestMerger2.Invoker.Feature.EXTRACT_FQCNS)
+                .merge();
+
+        assertTrue(mergingReport.getResult().isSuccess());
+        XmlDocument xmlDocument = mergingReport.getMergedDocument().get();
+        assertEquals(".activityOne",
+                xmlDocument.getXml().getElementsByTagName("activity").item(0).getAttributes()
+                        .item(0).getNodeValue());
+        assertEquals("com.foo.bar.example.activityTwo",
+                xmlDocument.getXml().getElementsByTagName("activity").item(1).getAttributes()
+                        .item(0).getNodeValue());
+        assertEquals(".activityThree",
+                xmlDocument.getXml().getElementsByTagName("activity").item(2).getAttributes()
+                        .item(0).getNodeValue());
+        assertEquals(".applicationOne",
+                xmlDocument.getXml().getElementsByTagName("application").item(0).getAttributes()
+                        .getNamedItemNS("http://schemas.android.com/apk/res/android", "name")
+                        .getNodeValue());
+        assertEquals(".myBackupAgent",
+                xmlDocument.getXml().getElementsByTagName("application").item(0).getAttributes()
+                        .getNamedItemNS("http://schemas.android.com/apk/res/android", "backupAgent")
+                        .getNodeValue());
     }
 
     /**

@@ -50,9 +50,11 @@ import com.android.tools.lint.detector.api.ResourceContext;
 import com.android.tools.lint.detector.api.ResourceXmlDetector;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
+import com.android.tools.lint.detector.api.TextFormat;
 import com.android.tools.lint.detector.api.XmlContext;
 import com.google.common.annotations.Beta;
 import com.google.common.base.Objects;
+import com.google.common.base.Splitter;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -96,6 +98,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -396,7 +400,7 @@ public class LintDriver {
                 Location location = e.getLocation();
                 File file = location != null ? location.getFile() : mCurrentProject.getDir();
                 Context context = new Context(this, mCurrentProject, null, file);
-                context.report(IssueRegistry.LINT_ERROR, e.getLocation(), e.getMessage(), null);
+                context.report(IssueRegistry.LINT_ERROR, e.getLocation(), e.getMessage());
                 mCurrentProject = null;
             }
             return;
@@ -926,7 +930,7 @@ public class LintDriver {
                 IssueRegistry.CANCELLED,
                 Severity.INFORMATIONAL,
                 null /*range*/,
-                "Lint canceled by user", null);
+                "Lint canceled by user", TextFormat.RAW);
         }
 
         mCurrentProjects = null;
@@ -1065,8 +1069,7 @@ public class LintDriver {
             checkProGuard(project, main);
         }
 
-        if (project == main && mScope.contains(Scope.PROPERTY_FILE) &&
-                project.isAndroidProject()) {
+        if (project == main && mScope.contains(Scope.PROPERTY_FILE)) {
             checkProperties(project, main);
         }
     }
@@ -1247,14 +1250,14 @@ public class LintDriver {
         List<File> classFolders = project.getJavaClassFolders();
         List<ClassEntry> classEntries;
         if (classFolders.isEmpty()) {
-            String message = String.format("No .class files were found in project \"%1$s\", "
+            String message = String.format("No `.class` files were found in project \"%1$s\", "
                     + "so none of the classfile based checks could be run. "
                     + "Does the project need to be built first?", project.getName());
             Location location = Location.create(project.getDir());
             mClient.report(new Context(this, project, main, project.getDir()),
                     IssueRegistry.LINT_ERROR,
                     project.getConfiguration().getSeverity(IssueRegistry.LINT_ERROR),
-                    location, message, null);
+                    location, message, TextFormat.RAW);
             classEntries = Collections.emptyList();
         } else {
             classEntries = new ArrayList<ClassEntry>(64);
@@ -1787,7 +1790,6 @@ public class LintDriver {
             @NonNull List<ResourceXmlDetector> xmlChecks,
             @Nullable List<Detector> dirChecks,
             @Nullable List<Detector> binaryChecks) {
-        assert res.isDirectory() : res;
         File[] resourceDirs = res.listFiles();
         if (resourceDirs == null) {
             return;
@@ -1977,7 +1979,7 @@ public class LintDriver {
                 @NonNull Severity severity,
                 @Nullable Location location,
                 @NonNull String message,
-                @Nullable Object data) {
+                @NonNull TextFormat format) {
             assert mCurrentProject != null;
             if (!mCurrentProject.getReportIssues()) {
                 return;
@@ -1992,7 +1994,7 @@ public class LintDriver {
                 return;
             }
 
-            if (configuration.isIgnored(context, issue, location, message, data)) {
+            if (configuration.isIgnored(context, issue, location, message)) {
                 return;
             }
 
@@ -2000,7 +2002,7 @@ public class LintDriver {
                 return;
             }
 
-            mDelegate.report(context, issue, severity, location, message, data);
+            mDelegate.report(context, issue, severity, location, message, format);
         }
 
         // Everything else just delegates to the embedding lint client
@@ -2652,6 +2654,43 @@ public class LintDriver {
         }
 
         return false;
+    }
+
+    private File mCachedFolder = null;
+    private int mCachedFolderVersion = -1;
+    /** Pattern for version qualifiers */
+    private static final Pattern VERSION_PATTERN = Pattern.compile("^v(\\d+)$"); //$NON-NLS-1$
+
+    /**
+     * Returns the folder version of the given file. For example, for the file values-v14/foo.xml,
+     * it returns 14.
+     *
+     * @param resourceFile the file to be checked
+     * @return the folder version, or -1 if no specific version was specified
+     */
+    public int getResourceFolderVersion(@NonNull File resourceFile) {
+        File parent = resourceFile.getParentFile();
+        if (parent == null) {
+            return -1;
+        }
+        if (parent.equals(mCachedFolder)) {
+            return mCachedFolderVersion;
+        }
+
+        mCachedFolder = parent;
+        mCachedFolderVersion = -1;
+
+        for (String qualifier : Splitter.on('-').split(parent.getName())) {
+            Matcher matcher = VERSION_PATTERN.matcher(qualifier);
+            if (matcher.matches()) {
+                String group = matcher.group(1);
+                assert group != null;
+                mCachedFolderVersion = Integer.parseInt(group);
+                break;
+            }
+        }
+
+        return mCachedFolderVersion;
     }
 
     /** A pending class to be analyzed by {@link #checkClasses} */

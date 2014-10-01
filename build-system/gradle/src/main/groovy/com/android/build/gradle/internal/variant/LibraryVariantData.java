@@ -17,21 +17,32 @@ package com.android.build.gradle.internal.variant;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.gradle.BasePlugin;
 import com.android.builder.core.VariantConfiguration;
-import org.gradle.api.tasks.bundling.Zip;
 
 /**
  * Data about a variant that produce a Library bundle (.aar)
  */
-public class LibraryVariantData extends BaseVariantData implements TestedVariantData {
-
-    public Zip packageLibTask;
+public class LibraryVariantData extends BaseVariantData<LibVariantOutputData> implements TestedVariantData {
 
     @Nullable
     private TestVariantData testVariantData = null;
 
-    public LibraryVariantData(@NonNull VariantConfiguration config) {
-        super(config);
+    public LibraryVariantData(
+            @NonNull BasePlugin basePlugin,
+            @NonNull VariantConfiguration config) {
+        super(basePlugin, config);
+
+        // create default output
+        createOutput(null, null);
+    }
+
+    @NonNull
+    @Override
+    protected LibVariantOutputData doCreateOutput(
+            @Nullable String densityFilter,
+            @Nullable String abiFilter) {
+        return new LibVariantOutputData(densityFilter, abiFilter, this);
     }
 
     @Override

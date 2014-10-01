@@ -37,6 +37,7 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
     private final Map<String, ClassField> mResValues = Maps.newTreeMap();
     private final List<File> mProguardFiles = Lists.newArrayList();
     private final List<File> mConsumerProguardFiles = Lists.newArrayList();
+    private final Map<String, String> mManifestPlaceholders = Maps.newHashMap();
 
     public void addBuildConfigField(@NonNull ClassField field) {
         mBuildConfigFields.put(field.getName(), field);
@@ -46,10 +47,18 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
         mResValues.put(field.getName(), field);
     }
 
+    public void addResValues(@NonNull Map<String, ClassField> values) {
+        mResValues.putAll(values);
+    }
+
     @Override
     @NonNull
     public Map<String, ClassField> getBuildConfigFields() {
         return mBuildConfigFields;
+    }
+
+    public void addBuildConfigFields(@NonNull Map<String, ClassField> fields) {
+        mBuildConfigFields.putAll(fields);
     }
 
     @NonNull
@@ -71,6 +80,21 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
     }
 
 
+    @NonNull
+    @Override
+    public Map<String, String> getManifestPlaceholders() {
+        return mManifestPlaceholders;
+    }
+
+    public void addManifestPlaceHolders(@NonNull Map<String, String> manifestPlaceholders) {
+        mManifestPlaceholders.putAll(manifestPlaceholders);
+    }
+
+    public void setManifestPlaceholders(@NonNull Map<String, String> manifestPlaceholders) {
+        mManifestPlaceholders.clear();
+        this.mManifestPlaceholders.putAll(manifestPlaceholders);
+    }
+
     protected void _initWith(@NonNull BaseConfig that) {
         setBuildConfigFields(that.getBuildConfigFields());
         setResValues(that.getResValues());
@@ -80,6 +104,9 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
 
         mConsumerProguardFiles.clear();
         mConsumerProguardFiles.addAll(that.getConsumerProguardFiles());
+
+        mManifestPlaceholders.clear();
+        mManifestPlaceholders.putAll(that.getManifestPlaceholders());
     }
 
     private void setBuildConfigFields(@NonNull Map<String, ClassField> fields) {
@@ -103,6 +130,7 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
         if (!mResValues.equals(that.mResValues)) return false;
         if (!mProguardFiles.equals(that.mProguardFiles)) return false;
         if (!mConsumerProguardFiles.equals(that.mConsumerProguardFiles)) return false;
+        if (!mManifestPlaceholders.equals(that.getManifestPlaceholders())) return false;
 
         return true;
     }
@@ -113,6 +141,7 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
         result = 31 * result + mResValues.hashCode();
         result = 31 * result + mProguardFiles.hashCode();
         result = 31 * result + mConsumerProguardFiles.hashCode();
+        result = 31 * result + mManifestPlaceholders.hashCode();
         return result;
     }
 }

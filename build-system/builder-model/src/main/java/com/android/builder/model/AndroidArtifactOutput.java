@@ -17,26 +17,14 @@
 package com.android.builder.model;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
+import com.android.build.SplitOutput;
 
 import java.io.File;
 
 /**
  * The Actual output for a {@link AndroidArtifact}
  */
-public interface AndroidArtifactOutput {
-
-    /**
-     * Returns the output file for this artifact's output.
-     * Depending on whether the project is an app or a library project, this could be an apk or
-     * an aar file.
-     *
-     * For test artifact for a library project, this would also be an apk.
-     *
-     * @return the output file.
-     */
-    @NonNull
-    File getOutputFile();
+public interface AndroidArtifactOutput extends SplitOutput {
 
     /**
      * Returns the name of the task used to generate this artifact output.
@@ -51,27 +39,4 @@ public interface AndroidArtifactOutput {
      */
     @NonNull
     File getGeneratedManifest();
-
-    /**
-     * The output versionCode.
-     *
-     * In case of multi-apk, the version code of each apk is different.
-     *
-     * @return the versionCode
-     */
-    int versionCode();
-
-    /**
-     * The density filter if applicable.
-     * @return the density filter or null if not applicable.
-     */
-    @Nullable
-    String densityFilter();
-
-    /**
-     * The ABI filter if applicable.
-     * @return the ABI filter or null if not applicable.
-     */
-    @Nullable
-    String abiFilter();
 }

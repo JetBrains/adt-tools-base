@@ -16,26 +16,34 @@
 package com.android.build.gradle.internal.variant;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+import com.android.build.gradle.BasePlugin;
 import com.android.build.gradle.tasks.Dex;
-import com.android.build.gradle.tasks.PackageApplication;
-import com.android.build.gradle.tasks.ZipAlign;
 import com.android.builder.core.VariantConfiguration;
+
 import org.gradle.api.DefaultTask;
 
 /**
  * Base data about a variant that generates an APK file.
  */
-public abstract class ApkVariantData extends BaseVariantData {
+public abstract class ApkVariantData extends BaseVariantData<ApkVariantOutputData> {
 
     public Dex dexTask;
-    public PackageApplication packageApplicationTask;
-    public ZipAlign zipAlignTask;
-
     public DefaultTask installTask;
     public DefaultTask uninstallTask;
 
-    protected ApkVariantData(@NonNull VariantConfiguration config) {
-        super(config);
+    protected ApkVariantData(
+            @NonNull BasePlugin basePlugin,
+            @NonNull VariantConfiguration config) {
+        super(basePlugin, config);
+    }
+
+    @Override
+    @NonNull
+    protected ApkVariantOutputData doCreateOutput(
+            @Nullable String densityFilter,
+            @Nullable String abiFilter) {
+        return new ApkVariantOutputData(densityFilter, abiFilter, this);
     }
 
     @Override

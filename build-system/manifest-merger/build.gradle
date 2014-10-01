@@ -11,7 +11,7 @@ dependencies {
     compile project(':base:common')
     compile project(':base:sdklib')
     compile project(':base:sdk-common')
-    compile 'kxml2:kxml2:2.3.0'
+    compile 'net.sf.kxml:kxml2:2.3.0'
 
     testCompile project(':base:sdklib').sourceSets.test.output
     testCompile 'junit:junit:3.8.1'

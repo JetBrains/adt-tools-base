@@ -1,0 +1,12 @@
+<component name="libraryTable">
+  <library name="Trove4j">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/net/sf/trove4j/trove4j/1.1/trove4j-1.1.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/net/sf/trove4j/trove4j/1.1/trove4j-1.1-sources.jar!/core/src" />
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/net/sf/trove4j/trove4j/1.1/trove4j-1.1-sources.jar!/generated/src" />
+    </SOURCES>
+  </library>
+</component>

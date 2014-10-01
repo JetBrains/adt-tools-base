@@ -22,6 +22,7 @@ import com.android.sdklib.SdkManager;
 import com.android.sdklib.internal.repository.IDescription;
 import com.android.sdklib.internal.repository.ITaskMonitor;
 import com.android.sdklib.internal.repository.archives.Archive;
+import com.android.sdklib.repository.FullRevision;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
 
 import java.io.File;
@@ -210,5 +211,26 @@ public class BrokenPackage extends MajorRevisionPackage
     public void postInstallHook(Archive archive, ITaskMonitor monitor, File installFolder) {
         // Nothing specific to do.
         super.postInstallHook(archive, monitor, installFolder);
+    }
+
+    /**
+     * Similar to {@link BuildToolPackage#comparisonKey()}, but we need to use
+     * {@link #getPkgDesc} instead of {@link #getRevision()}
+     */
+    @Override
+    protected String comparisonKey() {
+        String s = super.comparisonKey();
+        FullRevision rev = getPkgDesc().getFullRevision();
+        if (rev != null) {
+            int pos = s.indexOf("|r:");         //$NON-NLS-1$
+            assert pos > 0;
+            String reverseSort = String.format("|rr:%1$04d.%2$04d.%3$04d.",         //$NON-NLS-1$
+                    9999 - rev.getMajor(),
+                    9999 - rev.getMinor(),
+                    9999 - rev.getMicro());
+
+            s = s.substring(0, pos) + reverseSort + s.substring(pos);
+        }
+        return s;
     }
 }

@@ -54,7 +54,6 @@ public class FieldGetterDetector extends Detector implements Detector.ClassScann
     public static final Issue ISSUE = Issue.create(
             "FieldGetter", //$NON-NLS-1$
             "Using getter instead of field",
-            "Suggests replacing uses of getters with direct field access within a class",
 
             "Accessing a field within the class that defines a getter for that field is " +
             "at least 3 times faster than calling the getter. For simple getters that do " +
@@ -172,8 +171,8 @@ public class FieldGetterDetector extends Detector implements Detector.ClassScann
                             }
                             context.report(ISSUE, entry.method, entry.call, location,
                                 String.format(
-                                "Calling getter method %1$s() on self is " +
-                                "slower than field access (%2$s)", getter, fieldName), fieldName);
+                                "Calling getter method `%1$s()` on self is " +
+                                "slower than field access (`%2$s`)", getter, fieldName));
                         }
                     }
                 }

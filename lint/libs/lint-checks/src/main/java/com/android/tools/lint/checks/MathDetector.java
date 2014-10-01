@@ -43,7 +43,6 @@ public class MathDetector extends Detector implements Detector.ClassScanner {
     public static final Issue ISSUE = Issue.create(
             "FloatMath", //$NON-NLS-1$
             "Using `FloatMath` instead of `Math`",
-            "Suggests replacing `android.util.FloatMath` calls with `java.lang.Math`",
 
             "In older versions of Android, using `android.util.FloatMath` was recommended " +
             "for performance reasons when operating on floats. However, on modern hardware " +
@@ -93,9 +92,9 @@ public class MathDetector extends Detector implements Detector.ClassScanner {
         if (owner.equals("android/util/FloatMath")  //$NON-NLS-1$
                 && context.getProject().getMinSdk() >= 8) {
             String message = String.format(
-                    "Use java.lang.Math#%1$s instead of android.util.FloatMath#%1$s() " +
+                    "Use `java.lang.Math#%1$s` instead of `android.util.FloatMath#%1$s()` " +
                     "since it is faster as of API 8", call.name);
-            context.report(ISSUE, method, call, context.getLocation(call), message, null /*data*/);
+            context.report(ISSUE, method, call, context.getLocation(call), message  /*data*/);
         }
     }
 }

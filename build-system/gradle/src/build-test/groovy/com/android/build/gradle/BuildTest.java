@@ -18,12 +18,10 @@ package com.android.build.gradle;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.test.BaseTest;
-import com.google.common.collect.Lists;
 
 import java.io.File;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 
 /**
  * Base class for build tests.
@@ -32,17 +30,14 @@ import java.util.List;
  * Android Source tree under out/host/<platform>/sdk/... (result of 'make sdk')
  */
 abstract class BuildTest extends BaseTest {
-    private static final Collection<String> IGNORED_GRADLE_VERSIONS = Lists.newArrayList("1.10", "1.11");
+    private static final Collection<String> IGNORED_GRADLE_VERSIONS = Collections.emptyList();
 
     protected File testDir;
-    protected File sdkDir;
-    protected File ndkDir;
 
     @Override
     protected void setUp() throws Exception {
+        super.setUp();
         testDir = getTestDir();
-        sdkDir = getSdkDir();
-        ndkDir = getNdkDir();
     }
 
     /**
@@ -57,26 +52,9 @@ abstract class BuildTest extends BaseTest {
     }
 
     protected File buildProject(@NonNull String name, @NonNull String gradleVersion) {
-        return runTasksOnProject(
+        return runTasksOn(
                 name,
                 gradleVersion,
-                Collections.<String>emptyList(),
                 "clean", "assembleDebug", "lint");
-    }
-
-    protected File runTasksOnProject(
-            @NonNull String name,
-            @NonNull String gradleVersion,
-            @NonNull List<String> arguments,
-            @NonNull String... tasks) {
-        File project = new File(testDir, name);
-
-        File buildGradle = new File(project, "build.gradle");
-        assertTrue("Missing file: " + buildGradle, buildGradle.isFile());
-
-        // build the project
-        runGradleTasks(sdkDir, ndkDir, gradleVersion, project, arguments, tasks);
-
-        return project;
     }
 }

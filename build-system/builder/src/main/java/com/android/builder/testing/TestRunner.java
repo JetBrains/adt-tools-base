@@ -17,7 +17,6 @@
 package com.android.builder.testing;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.android.builder.testing.api.DeviceConnector;
 import com.android.builder.testing.api.TestException;
 import com.android.utils.ILogger;
@@ -38,7 +37,6 @@ public interface TestRunner {
      * @param projectName
      * @param variantName
      * @param testApk
-     * @param testedApk
      * @param testData
      * @param deviceList
      * @param maxThreads the max number of threads to run in parallel. 0 means unlimited.
@@ -55,7 +53,6 @@ public interface TestRunner {
             @NonNull  String projectName,
             @NonNull  String variantName,
             @NonNull  File testApk,
-            @Nullable File testedApk,
             @NonNull  TestData testData,
             @NonNull  List<? extends DeviceConnector> deviceList,
                       int maxThreads,

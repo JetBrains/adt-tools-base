@@ -115,6 +115,7 @@ public class XmlUtilsTest extends TestCase {
         assertEquals("", XmlUtils.fromXmlAttributeValue(""));
         assertEquals("foo", XmlUtils.fromXmlAttributeValue("foo"));
         assertEquals("foo<bar", XmlUtils.fromXmlAttributeValue("foo&lt;bar"));
+        assertEquals("foo<bar<bar>foo", XmlUtils.fromXmlAttributeValue("foo&lt;bar&lt;bar&gt;foo"));
         assertEquals("foo>bar", XmlUtils.fromXmlAttributeValue("foo>bar"));
 
         assertEquals("\"", XmlUtils.fromXmlAttributeValue("&quot;"));
@@ -275,6 +276,38 @@ public class XmlUtilsTest extends TestCase {
         String formatted = XmlUtils.toXml(doc, true);
         assertEquals(xml, formatted);
     }
+
+    public void testToXml6() throws Exception {
+        // Check CDATA
+        String xml = ""
+                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                + "<resources>\n"
+                + "    <string \n"
+                + "        name=\"description_search\">Search</string>\n"
+                + "    <string name=\"map_at\">At %1$s:<![CDATA[<br><b>%2$s</b>]]></string>\n"
+                + "    <string name=\"map_now_playing\">Now playing:\n"
+                + "<![CDATA[\n"
+                + "<br><b>%1$s</b>\n"
+                + "]]></string>\n"
+                + "</resources>";
+
+        Document doc = parse(xml);
+
+        String formatted = XmlUtils.toXml(doc, true);
+        assertEquals(""
+                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                + "<resources>\n"
+                + "    <string name=\"description_search\">Search</string>\n"
+                + "    <string name=\"map_at\">At %1$s:<![CDATA[<br><b>%2$s</b>]]></string>\n"
+                + "    <string name=\"map_now_playing\">Now playing:\n"
+                + "<![CDATA[\n"
+                + "<br><b>%1$s</b>\n"
+                + "]]></string>\n"
+                + "</resources>",
+                formatted);
+    }
+
+
 
     @Nullable
     private static Document createEmptyPlainDocument() throws Exception {

@@ -47,7 +47,6 @@ public class CipherGetInstanceDetector extends Detector implements Detector.Java
     public static final Issue ISSUE = Issue.create(
             "GetInstance", //$NON-NLS-1$
             "Cipher.getInstance with ECB",
-            "Checks that `Cipher#getInstance` is not called using the ECB cipher mode",
             "`Cipher#getInstance` should not be called with ECB as the cipher mode or without "
                     + "setting the cipher mode because the default mode on android is ECB, which "
                     + "is insecure.",
@@ -114,15 +113,15 @@ public class CipherGetInstanceDetector extends Detector implements Detector.Java
             @NonNull MethodInvocation call, @NonNull Node node, @NonNull String value,
             boolean includeValue) {
         if (ALGORITHM_ONLY.contains(value)) {
-            String message = "Cipher.getInstance should not be called without setting the"
+            String message = "`Cipher.getInstance` should not be called without setting the"
                     + " encryption mode and padding";
-            context.report(ISSUE, call, context.getLocation(node), message, null);
+            context.report(ISSUE, call, context.getLocation(node), message);
         } else if (value.contains(ECB)) {
             String message = "ECB encryption mode should not be used";
             if (includeValue) {
                 message += " (was \"" + value + "\")";
             }
-            context.report(ISSUE, call, context.getLocation(node), message, null);
+            context.report(ISSUE, call, context.getLocation(node), message);
         }
     }
 }

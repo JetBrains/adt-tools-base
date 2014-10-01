@@ -63,6 +63,32 @@ public class ApiDetectorTest extends AbstractCheckTest {
                 ));
     }
 
+    public void testXmlApi2() throws Exception {
+        assertEquals(""
+                + "res/layout/textureview.xml:8: Error: View requires API level 14 (current min is 1): <TextureView> [NewApi]\n"
+                + "    <TextureView\n"
+                + "    ^\n"
+                + "1 errors, 0 warnings\n",
+
+                lintProject(
+                        "apicheck/minsdk1.xml=>AndroidManifest.xml",
+                        "res/layout/textureview.xml=>res/layout/textureview.xml"
+                ));
+    }
+
+    public void testTag() throws Exception {
+        assertEquals(""
+                + "res/layout/tag.xml:12: Warning: <tag> is only used in API level 21 and higher (current min is 1) [UnusedAttribute]\n"
+                + "        <tag id=\"@+id/test\" />\n"
+                + "        ~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "0 errors, 1 warnings\n",
+
+                lintProject(
+                        "apicheck/minsdk1.xml=>AndroidManifest.xml",
+                        "res/layout/tag.xml=>res/layout/tag.xml"
+                ));
+    }
+
     public void testAttrWithoutSlash() throws Exception {
         assertEquals(""
                 + "res/layout/attribute.xml:4: Error: ?android:indicatorStart requires API level 18 (current min is 1) [NewApi]\n"
@@ -76,15 +102,17 @@ public class ApiDetectorTest extends AbstractCheckTest {
                 ));
     }
 
-    public void testUnusedShowDividers() throws Exception {
+    public void testUnusedAttributes() throws Exception {
         assertEquals(""
-                + "res/layout/divider.xml:9: Warning: Attribute \"showDividers\" is only used in API level 11 and higher (current min is 1) [UnusedAttribute]\n"
+                + "res/layout/divider.xml:9: Warning: Attribute showDividers is only used in API level 11 and higher (current min is 4) [UnusedAttribute]\n"
                 + "    android:showDividers=\"middle\"\n"
                 + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                 + "0 errors, 1 warnings\n",
 
                 lintProject(
-                        "apicheck/minsdk1.xml=>AndroidManifest.xml",
+                        "apicheck/minsdk4.xml=>AndroidManifest.xml",
+                        "res/layout/labelfor.xml",
+                        "res/layout/edit_textview.xml",
                         "apicheck/divider.xml=>res/layout/divider.xml"
                 ));
     }
@@ -94,7 +122,7 @@ public class ApiDetectorTest extends AbstractCheckTest {
                 + "res/layout/attribute2.xml:4: Error: switchTextAppearance requires API level 14 (current min is 1), but note that attribute editTextColor is only used in API level 11 and higher [NewApi]\n"
                 + "    android:editTextColor=\"?android:switchTextAppearance\"\n"
                 + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-                + "res/layout/attribute2.xml:4: Warning: Attribute \"editTextColor\" is only used in API level 11 and higher (current min is 1) [UnusedAttribute]\n"
+                + "res/layout/attribute2.xml:4: Warning: Attribute editTextColor is only used in API level 11 and higher (current min is 1) [UnusedAttribute]\n"
                 + "    android:editTextColor=\"?android:switchTextAppearance\"\n"
                 + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                 + "1 errors, 1 warnings\n",
@@ -119,7 +147,7 @@ public class ApiDetectorTest extends AbstractCheckTest {
     }
 
     public void testReportAttributeName() throws Exception {
-        assertEquals("res/layout/layout.xml:13: Warning: Attribute \"layout_row\" is only used in API level 14 and higher (current min is 4) [UnusedAttribute]\n"
+        assertEquals("res/layout/layout.xml:13: Warning: Attribute layout_row is only used in API level 14 and higher (current min is 4) [UnusedAttribute]\n"
                 + "            android:layout_row=\"2\"\n"
                 + "            ~~~~~~~~~~~~~~~~~~~~~~\n"
                 + "0 errors, 1 warnings\n",
@@ -1037,6 +1065,30 @@ public class ApiDetectorTest extends AbstractCheckTest {
                 ));
     }
 
+    public void testReflectiveOperationException() throws Exception {
+        assertEquals(""
+                + "src/test/pkg/Java7API.java:8: Error: Class requires API level 19 (current min is 1): java.lang.ReflectiveOperationException [NewApi]\n"
+                + "        } catch (ReflectiveOperationException e) {\n"
+                + "                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "src/test/pkg/Java7API.java:9: Error: Call requires API level 19 (current min is 1): java.lang.ReflectiveOperationException#printStackTrace [NewApi]\n"
+                + "            e.printStackTrace();\n"
+                + "              ~~~~~~~~~~~~~~~\n"
+                + "2 errors, 0 warnings\n",
+                lintProject(
+                        "apicheck/minsdk1.xml=>AndroidManifest.xml",
+                        "src/test/pkg/Java7API.java.txt=>src/test/pkg/Java7API.java",
+                        "src/test/pkg/Java7API.class.data=>bin/classes/test/pkg/Java7API.class"
+                ));
+    }
+
+    public void testReflectiveOperationExceptionOk() throws Exception {
+        assertEquals("No warnings.",
+                lintProject(
+                        "apicheck/minsdk19.xml=>AndroidManifest.xml",
+                        "src/test/pkg/Java7API.java.txt=>src/test/pkg/Java7API.java"
+                ));
+    }
+
     public void testMissingApiDatabase() throws Exception {
         ApiLookup.dispose();
         assertEquals(""
@@ -1050,6 +1102,74 @@ public class ApiDetectorTest extends AbstractCheckTest {
                     "apicheck/classpath=>.classpath",
                     "apicheck/ApiCallTest.java.txt=>src/foo/bar/ApiCallTest.java",
                     "apicheck/ApiCallTest.class.data=>bin/classes/foo/bar/ApiCallTest.class"
+            ));
+    }
+
+    public void testRipple() throws Exception {
+        assertEquals(""
+                + "res/drawable/ripple.xml:1: Error: <ripple> requires API level 21 (current min is 14) [NewApi]\n"
+                + "<ripple\n"
+                + "^\n"
+                + "res/drawable/ripple.xml:4: Warning: Attribute tintMode is only used in API level 21 and higher (current min is 14) [UnusedAttribute]\n"
+                + "    android:tintMode=\"src_over\"\n"
+                + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "1 errors, 1 warnings\n",
+                lintProject(
+                        "apicheck/minsdk14.xml=>AndroidManifest.xml",
+                        "apicheck/ripple.xml=>res/drawable/ripple.xml"
+                ));
+    }
+
+    public void testRippleOk1() throws Exception {
+        // minSdkVersion satisfied
+        assertEquals("No warnings.",
+                lintProject(
+                        "apicheck/minsdk21.xml=>AndroidManifest.xml",
+                        "apicheck/ripple.xml=>res/drawable/ripple.xml"
+                ));
+    }
+
+    public void testRippleOk2() throws Exception {
+        // -vNN location satisfied
+        assertEquals("No warnings.",
+                lintProject(
+                        "apicheck/minsdk4.xml=>AndroidManifest.xml",
+                        "apicheck/ripple.xml=>res/drawable-v21/ripple.xml"
+                ));
+    }
+
+    public void testVector() throws Exception {
+        assertEquals(""
+                + "res/drawable/vector.xml:1: Error: <vector> requires API level 21 (current min is 1) [NewApi]\n"
+                + "<vector xmlns:android=\"http://schemas.android.com/apk/res/android\" >\n"
+                + "^\n"
+                + "AndroidManifest.xml:8: Warning: Attribute viewportHeight is only used in API level 21 and higher (current min is 1) [UnusedAttribute]\n"
+                + "        android:viewportHeight=\"24\"\n"
+                + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "AndroidManifest.xml:9: Warning: Attribute viewportWidth is only used in API level 21 and higher (current min is 1) [UnusedAttribute]\n"
+                + "        android:viewportWidth=\"24\" />\n"
+                + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "res/drawable/vector.xml:8: Warning: Attribute viewportHeight is only used in API level 21 and higher (current min is 1) [UnusedAttribute]\n"
+                + "        android:viewportHeight=\"24\"\n"
+                + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "res/drawable/vector.xml:9: Warning: Attribute viewportWidth is only used in API level 21 and higher (current min is 1) [UnusedAttribute]\n"
+                + "        android:viewportWidth=\"24\" />\n"
+                + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "1 errors, 4 warnings\n",
+                lintProject(
+                        "apicheck/vector.xml=>AndroidManifest.xml",
+                        "apicheck/vector.xml=>res/drawable/vector.xml"
+                ));
+    }
+
+    public void testSwitch() throws Exception {
+        assertEquals("No warnings.",
+            lintProject(
+                    "apicheck/classpath=>.classpath",
+                    "apicheck/minsdk4.xml=>AndroidManifest.xml",
+                    "apicheck/TargetApiTest.java.txt=>src/test/pkg/TargetApiTest.java",
+                    "apicheck/TargetApiTest.class.data=>bin/classes/test/pkg/TargetApiTest.class",
+                    "apicheck/TargetApiTest$1.class.data=>bin/classes/test/pkg/TargetApiTest$1.class"
             ));
     }
 

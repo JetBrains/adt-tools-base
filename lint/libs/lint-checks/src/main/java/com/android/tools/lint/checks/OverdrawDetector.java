@@ -95,7 +95,6 @@ public class OverdrawDetector extends LayoutDetector implements Detector.JavaSca
     public static final Issue ISSUE = Issue.create(
             "Overdraw", //$NON-NLS-1$
             "Overdraw: Painting regions more than once",
-            "Looks for overdraw issues (where a view is painted only to be fully painted over)",
 
             "If you set a background drawable on a root view, then you should use a " +
             "custom theme where the theme background is null. Otherwise, the theme background " +
@@ -224,13 +223,12 @@ public class OverdrawDetector extends LayoutDetector implements Detector.JavaSca
                 if (theme == null || !isBlankTheme(theme)) {
                     String drawable = pair.getSecond();
                     String message = String.format(
-                            "Possible overdraw: Root element paints background %1$s with " +
-                            "a theme that also paints a background (inferred theme is %2$s)",
+                            "Possible overdraw: Root element paints background `%1$s` with " +
+                            "a theme that also paints a background (inferred theme is `%2$s`)",
                             drawable, theme);
                     // TODO: Compute applicable scope node
-                    context.report(ISSUE, location, message, null);
+                    context.report(ISSUE, location, message);
                 }
-
             }
         }
     }
@@ -280,7 +278,7 @@ public class OverdrawDetector extends LayoutDetector implements Detector.JavaSca
                 return;
             }
 
-            if (background.equals(TRANSPARENT_COLOR)) {
+            if (background.equals(TRANSPARENT_COLOR) || background.equals(NULL_RESOURCE)) {
                 return;
             }
 

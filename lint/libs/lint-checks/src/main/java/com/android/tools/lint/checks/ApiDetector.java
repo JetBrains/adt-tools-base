@@ -21,14 +21,18 @@ import static com.android.SdkConstants.ANDROID_THEME_PREFIX;
 import static com.android.SdkConstants.ANDROID_URI;
 import static com.android.SdkConstants.ATTR_CLASS;
 import static com.android.SdkConstants.ATTR_ID;
+import static com.android.SdkConstants.ATTR_LABEL_FOR;
 import static com.android.SdkConstants.ATTR_LAYOUT_HEIGHT;
 import static com.android.SdkConstants.ATTR_LAYOUT_WIDTH;
 import static com.android.SdkConstants.ATTR_NAME;
 import static com.android.SdkConstants.ATTR_PARENT;
 import static com.android.SdkConstants.ATTR_TARGET_API;
+import static com.android.SdkConstants.ATTR_TEXT_IS_SELECTABLE;
+import static com.android.SdkConstants.CLASS_CONSTRUCTOR;
 import static com.android.SdkConstants.CONSTRUCTOR_NAME;
 import static com.android.SdkConstants.PREFIX_ANDROID;
 import static com.android.SdkConstants.R_CLASS;
+import static com.android.SdkConstants.TAG;
 import static com.android.SdkConstants.TAG_ITEM;
 import static com.android.SdkConstants.TAG_STYLE;
 import static com.android.SdkConstants.TARGET_API;
@@ -43,10 +47,11 @@ import static com.android.tools.lint.detector.api.Location.SearchDirection.NEARE
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.ide.common.sdk.SdkVersionInfo;
 import com.android.resources.ResourceFolderType;
 import com.android.sdklib.AndroidVersion;
+import com.android.sdklib.SdkVersionInfo;
 import com.android.tools.lint.client.api.IssueRegistry;
+import com.android.tools.lint.client.api.JavaParser;
 import com.android.tools.lint.client.api.LintDriver;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.ClassContext;
@@ -76,6 +81,7 @@ import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.AnnotationNode;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FieldInsnNode;
+import org.objectweb.asm.tree.FieldNode;
 import org.objectweb.asm.tree.InsnList;
 import org.objectweb.asm.tree.IntInsnNode;
 import org.objectweb.asm.tree.LdcInsnNode;
@@ -92,7 +98,6 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -103,6 +108,7 @@ import lombok.ast.AnnotationValue;
 import lombok.ast.AstVisitor;
 import lombok.ast.BinaryExpression;
 import lombok.ast.Case;
+import lombok.ast.Catch;
 import lombok.ast.ClassDeclaration;
 import lombok.ast.ConstructorDeclaration;
 import lombok.ast.ConstructorInvocation;
@@ -132,6 +138,7 @@ import lombok.ast.VariableReference;
  */
 public class ApiDetector extends ResourceXmlDetector
         implements Detector.ClassScanner, Detector.JavaScanner {
+
     /**
      * Whether we flag variable, field, parameter and return type declarations of a type
      * not yet available. It appears Dalvik is very forgiving and doesn't try to preload
@@ -149,14 +156,13 @@ public class ApiDetector extends ResourceXmlDetector
     public static final Issue UNSUPPORTED = Issue.create(
             "NewApi", //$NON-NLS-1$
             "Calling new methods on older versions",
-            "Finds API accesses to APIs that are not supported in all targeted API versions",
 
             "This check scans through all the Android API calls in the application and " +
             "warns about any calls that are not available on *all* versions targeted " +
             "by this application (according to its minimum SDK attribute in the manifest).\n" +
             "\n" +
             "If you really want to use this API and don't need to support older devices just " +
-            "set the `minSdkVersion` in your `AndroidManifest.xml` file." +
+            "set the `minSdkVersion` in your `build.gradle` or `AndroidManifest.xml` files." +
             "\n" +
             "If your code is *deliberately* accessing newer APIs, and you have ensured " +
             "(e.g. with conditional execution) that this code will only ever be called on a " +
@@ -186,7 +192,6 @@ public class ApiDetector extends ResourceXmlDetector
     public static final Issue INLINED = Issue.create(
             "InlinedApi", //$NON-NLS-1$
             "Using inlined constants on older versions",
-            "Finds inlined fields that may or may not work on older platforms",
 
             "This check scans through all the Android API field references in the application " +
             "and flags certain constants, such as static final integers and Strings, " +
@@ -199,7 +204,7 @@ public class ApiDetector extends ResourceXmlDetector
             "or whether the code needs tbe guarded.\n" +
             "\n" +
             "If you really want to use this API and don't need to support older devices just " +
-            "set the `minSdkVersion` in your `AndroidManifest.xml` file." +
+            "set the `minSdkVersion` in your `build.gradle` or `AndroidManifest.xml` files." +
             "\n" +
             "If your code is *deliberately* accessing newer APIs, and you have ensured " +
             "(e.g. with conditional execution) that this code will only ever be called on a " +
@@ -218,7 +223,6 @@ public class ApiDetector extends ResourceXmlDetector
     public static final Issue OVERRIDE = Issue.create(
             "Override", //$NON-NLS-1$
             "Method conflicts with new inherited method",
-            "Finds method declarations that will accidentally override methods in later versions",
 
             "Suppose you are building against Android API 8, and you've subclassed Activity. " +
             "In your subclass you add a new method called `isDestroyed`(). At some later point, " +
@@ -247,7 +251,6 @@ public class ApiDetector extends ResourceXmlDetector
     public static final Issue UNUSED = Issue.create(
             "UnusedAttribute", //$NON-NLS-1$
             "Attribute unused on older versions",
-            "Finds usages of attributes that will not be used (read) on all targeted versions",
 
             "This check finds attributes set in XML files that were introduced in a version " +
             "newer than the oldest version targeted by your application (with the the " +
@@ -258,7 +261,10 @@ public class ApiDetector extends ResourceXmlDetector
             "application, you should consider finding an alternative way to achieve the " +
             "same result with only available attributes, and then you can optionally create " +
             "a copy of the layout in a layout-vNN folder which will be used on API NN or " +
-            "higher where you can take advantage of the newer attribute.",
+            "higher where you can take advantage of the newer attribute.\n" +
+            "\n" +
+            "Note: This check does not only apply to attributes. For example, some tags can be " +
+            "unused too, such as the new `<tag>` element in layouts introduced in API 21.",
             Category.CORRECTNESS,
             6,
             Severity.WARNING,
@@ -269,6 +275,7 @@ public class ApiDetector extends ResourceXmlDetector
     private static final String TARGET_API_VMSIG = '/' + TARGET_API + ';';
     private static final String SWITCH_TABLE_PREFIX = "$SWITCH_TABLE$";  //$NON-NLS-1$
     private static final String ORDINAL_METHOD = "ordinal"; //$NON-NLS-1$
+    public static final String ENUM_SWITCH_PREFIX = "$SwitchMap$";  //$NON-NLS-1$
 
     protected ApiLookup mApiDatabase;
     private boolean mWarnedMissingDb;
@@ -296,7 +303,7 @@ public class ApiDetector extends ResourceXmlDetector
         if (mApiDatabase == null && !mWarnedMissingDb) {
             mWarnedMissingDb = true;
             context.report(IssueRegistry.LINT_ERROR, Location.create(context.file),
-                        "Can't find API database; API check not performed", null);
+                        "Can't find API database; API check not performed");
         }
     }
 
@@ -333,17 +340,17 @@ public class ApiDetector extends ResourceXmlDetector
                 int minSdk = getMinSdk(context);
                 if (attributeApiLevel > minSdk && attributeApiLevel > context.getFolderVersion()
                         && attributeApiLevel > getLocalMinSdk(attribute.getOwnerElement())
+                        && !isBenignUnusedAttribute(name)
                         // No need to warn for example that
                         //  "layout_alignParentStart will only be used in API level 17 and higher"
                         // since we have a dedicated RTL lint rule dealing with those attributes
                         && !RtlDetector.isRtlAttributeName(name)) {
                     Location location = context.getLocation(attribute);
                     String message = String.format(
-                            "Attribute \"%1$s\" is only used in API level %2$d and higher "
+                            "Attribute `%1$s` is only used in API level %2$d and higher "
                                     + "(current min is %3$d)",
-                            attribute.getLocalName(), attributeApiLevel, minSdk
-                    );
-                    context.report(UNUSED, attribute, location, message, null);
+                            attribute.getLocalName(), attributeApiLevel, minSdk);
+                    context.report(UNUSED, attribute, location, message);
                 }
             }
 
@@ -395,7 +402,6 @@ public class ApiDetector extends ResourceXmlDetector
                 return;
             }
         }
-        assert name != null : value;
         int api = mApiDatabase.getFieldVersion(owner, name);
         int minSdk = getMinSdk(context);
         if (api > minSdk && api > context.getFolderVersion()
@@ -416,20 +422,31 @@ public class ApiDetector extends ResourceXmlDetector
                 String attributeName = attribute.getLocalName();
                 Location location = context.getLocation(attribute);
                 String message = String.format(
-                        "%1$s requires API level %2$d (current min is %3$d), but note "
-                                + "that attribute %4$s is only used in API level %5$d "
+                        "`%1$s` requires API level %2$d (current min is %3$d), but note "
+                                + "that attribute `%4$s` is only used in API level %5$d "
                                 + "and higher",
-                        name, api, minSdk, attributeName, attributeApiLevel
-                );
-                context.report(UNSUPPORTED, attribute, location, message, null);
+                        name, api, minSdk, attributeName, attributeApiLevel);
+                context.report(UNSUPPORTED, attribute, location, message);
             } else {
                 Location location = context.getLocation(attribute);
                 String message = String.format(
-                        "%1$s requires API level %2$d (current min is %3$d)",
+                        "`%1$s` requires API level %2$d (current min is %3$d)",
                         value, api, minSdk);
-                context.report(UNSUPPORTED, attribute, location, message, null);
+                context.report(UNSUPPORTED, attribute, location, message);
             }
         }
+    }
+
+    /**
+     * Is the given attribute a "benign" unused attribute, one we probably don't need to
+     * flag to the user as not applicable on all versions? These are typically attributes
+     * which add some nice platform behavior when available, but that are not critical
+     * and developers would not typically need to be aware of to try to implement workarounds
+     * on older platforms.
+     */
+    public static boolean isBenignUnusedAttribute(@NonNull String name) {
+        return ATTR_LABEL_FOR.equals(name) || ATTR_TEXT_IS_SELECTABLE.equals(name);
+
     }
 
     private static String getFieldName(String styleName) {
@@ -446,6 +463,11 @@ public class ApiDetector extends ResourceXmlDetector
 
         ResourceFolderType folderType = context.getResourceFolderType();
         if (folderType != ResourceFolderType.LAYOUT) {
+            if (folderType == ResourceFolderType.DRAWABLE) {
+                checkElement(context, element, "ripple", 21, UNSUPPORTED);
+                checkElement(context, element, "vector", 21, UNSUPPORTED);
+                checkElement(context, element, "animated-selector", 21, UNSUPPORTED);
+            }
             if (element.getParentNode().getNodeType() != Node.ELEMENT_NODE) {
                 // Root node
                 return;
@@ -472,9 +494,9 @@ public class ApiDetector extends ResourceXmlDetector
                                     && api > getLocalMinSdk(element)) {
                                 Location location = context.getLocation(textNode);
                                 String message = String.format(
-                                        "%1$s requires API level %2$d (current min is %3$d)",
+                                        "`%1$s` requires API level %2$d (current min is %3$d)",
                                         text, api, minSdk);
-                                context.report(UNSUPPORTED, element, location, message, null);
+                                context.report(UNSUPPORTED, element, location, message);
                             }
                         }
                     }
@@ -486,6 +508,9 @@ public class ApiDetector extends ResourceXmlDetector
                 if (tag == null || tag.isEmpty()) {
                     return;
                 }
+            } else {
+                // TODO: Complain if <tag> is used at the root level!
+                checkElement(context, element, TAG, 21, UNUSED);
             }
 
             // Check widgets to make sure they're available in this version of the SDK.
@@ -493,21 +518,45 @@ public class ApiDetector extends ResourceXmlDetector
                 // Custom views aren't in the index
                 return;
             }
+            String fqn = "android/widget/" + tag;    //$NON-NLS-1$
+            if (tag.equals("TextureView")) {         //$NON-NLS-1$
+                fqn = "android/view/TextureView";    //$NON-NLS-1$
+            }
             // TODO: Consider other widgets outside of android.widget.*
-            int api = mApiDatabase.getCallVersion("android/widget/" + tag,  //$NON-NLS-1$
-                    CONSTRUCTOR_NAME,
-                    // Not all views provided this constructor right away, for example,
-                    // LinearLayout added it in API 11 yet LinearLayout is much older:
-                    // "(Landroid/content/Context;Landroid/util/AttributeSet;I)V"); //$NON-NLS-1$
-                    "(Landroid/content/Context;)"); //$NON-NLS-1$
+            int api = mApiDatabase.getClassVersion(fqn);
             int minSdk = getMinSdk(context);
             if (api > minSdk && api > context.getFolderVersion()
                     && api > getLocalMinSdk(element)) {
                 Location location = context.getLocation(element);
                 String message = String.format(
-                        "View requires API level %1$d (current min is %2$d): <%3$s>",
+                        "View requires API level %1$d (current min is %2$d): `<%3$s>`",
                         api, minSdk, tag);
-                context.report(UNSUPPORTED, element, location, message, null);
+                context.report(UNSUPPORTED, element, location, message);
+            }
+        }
+    }
+
+    /** Checks whether the given element is the given tag, and if so, whether it satisfied
+     * the minimum version that the given tag is supported in */
+    private void checkElement(@NonNull XmlContext context, @NonNull Element element,
+            @NonNull String tag, int api, @NonNull Issue issue) {
+        if (tag.equals(element.getTagName())) {
+            int minSdk = getMinSdk(context);
+            if (api > minSdk && api > context.getFolderVersion()
+                    && api > getLocalMinSdk(element)) {
+                Location location = context.getLocation(element);
+                String message;
+                if (issue == UNSUPPORTED) {
+                    message = String.format(
+                            "`<%1$s>` requires API level %2$d (current min is %3$d)", tag, api,
+                            minSdk);
+                } else {
+                    assert issue == UNUSED : issue;
+                    message = String.format(
+                            "`<%1$s>` is only used in API level %2$d and higher "
+                                    + "(current min is %3$d)", tag, api, minSdk);
+                }
+                context.report(issue, element, location, message);
             }
         }
     }
@@ -613,11 +662,11 @@ public class ApiDetector extends ResourceXmlDetector
                     }
                     String message = String.format(
                             "This method is not overriding anything with the current build " +
-                            "target, but will in API level %1$d (current target is %2$d): %3$s",
+                            "target, but will in API level %1$d (current target is %2$d): `%3$s`",
                             api, buildSdk, fqcn);
 
                     Location location = context.getLocation(method, classNode);
-                    context.report(OVERRIDE, method, null, location, message, null);
+                    context.report(OVERRIDE, method, null, location, message);
                 }
             }
 
@@ -639,7 +688,7 @@ public class ApiDetector extends ResourceXmlDetector
                             if (api > minSdk) {
                                 String fqcn = ClassContext.getFqcn(className);
                                 String message = String.format(
-                                    "Class requires API level %1$d (current min is %2$d): %3$s",
+                                    "Class requires API level %1$d (current min is %2$d): `%3$s`",
                                     api, minSdk, fqcn);
                                 report(context, message, var.start, method,
                                         className.substring(className.lastIndexOf('/') + 1), null,
@@ -662,7 +711,7 @@ public class ApiDetector extends ResourceXmlDetector
                         if (api > minSdk) {
                             String fqcn = ClassContext.getFqcn(type);
                             String message = String.format(
-                                "Class requires API level %1$d (current min is %2$d): %3$s",
+                                "Class requires API level %1$d (current min is %2$d): `%3$s`",
                                 api, minSdk, fqcn);
                             AbstractInsnNode first = nodes.size() > 0 ? nodes.get(0) : null;
                             report(context, message, first, method, method.name, null,
@@ -715,7 +764,7 @@ public class ApiDetector extends ResourceXmlDetector
                                 fqcn = ClassContext.getFqcn(owner) + '#' + name;
                             }
                             String message = String.format(
-                                    "Call requires API level %1$d (current min is %2$d): %3$s",
+                                    "Call requires API level %1$d (current min is %2$d): `%3$s`",
                                     api, minSdk, fqcn);
 
                             if (name.equals(ORDINAL_METHOD)
@@ -726,7 +775,7 @@ public class ApiDetector extends ResourceXmlDetector
                                         == Opcodes.TABLESWITCH) {
                                 message = String.format(
                                     "Enum for switch requires API level %1$d " +
-                                    "(current min is %2$d): %3$s",
+                                    "(current min is %2$d): `%3$s`",
                                     api, minSdk, ClassContext.getFqcn(owner));
                             }
 
@@ -775,12 +824,17 @@ public class ApiDetector extends ResourceXmlDetector
                                     api, minSdk);
                             continue;
                         }
+
+                        if (isSkippedEnumSwitch(context, classNode, method, node, owner, api)) {
+                            continue;
+                        }
+
                         String fqcn = ClassContext.getFqcn(owner) + '#' + name;
                         if (mPendingFields != null) {
                             mPendingFields.remove(fqcn);
                         }
                         String message = String.format(
-                                "Field requires API level %1$d (current min is %2$d): %3$s",
+                                "Field requires API level %1$d (current min is %2$d): `%3$s`",
                                 api, minSdk, fqcn);
                         report(context, message, node, method, name, null,
                                 SearchHints.create(FORWARD).matchJavaSymbol());
@@ -795,7 +849,7 @@ public class ApiDetector extends ResourceXmlDetector
                         if (api > minSdk) {
                             String fqcn = ClassContext.getFqcn(className);
                             String message = String.format(
-                                    "Class requires API level %1$d (current min is %2$d): %3$s",
+                                    "Class requires API level %1$d (current min is %2$d): `%3$s`",
                                     api, minSdk, fqcn);
                             report(context, message, node, method,
                                     className.substring(className.lastIndexOf('/') + 1), null,
@@ -813,7 +867,7 @@ public class ApiDetector extends ResourceXmlDetector
         if (api > classMinSdk) {
             String fqcn = ClassContext.getFqcn(signature);
             String message = String.format(
-                    "Class requires API level %1$d (current min is %2$d): %3$s",
+                    "Class requires API level %1$d (current min is %2$d): `%3$s`",
                     api, classMinSdk, fqcn);
 
             String name = signature.substring(signature.lastIndexOf('/') + 1);
@@ -822,7 +876,7 @@ public class ApiDetector extends ResourceXmlDetector
             int lineNumber = ClassContext.findLineNumber(classNode);
             Location location = context.getLocationForLine(lineNumber, name, null,
                     hints);
-            context.report(UNSUPPORTED, location, message, null);
+            context.report(UNSUPPORTED, location, message);
         }
     }
 
@@ -851,7 +905,7 @@ public class ApiDetector extends ResourceXmlDetector
                         } else  if (!isEscaped && (c == 'L' || c == 'c')) {
                             String message = String.format(
                                     "The pattern character '%1$c' requires API level 9 (current " +
-                                    "min is %2$d) : \"%3$s\"", c, minSdk, pattern);
+                                    "min is %2$d) : \"`%3$s`\"", c, minSdk, pattern);
                             report(context, message, node, method, pattern, null,
                                     SearchHints.create(FORWARD));
                             return;
@@ -981,7 +1035,7 @@ public class ApiDetector extends ResourceXmlDetector
                                 String fqcn = ClassContext.getFqcn(owner) + '#' + name;
                                 String message = String.format(
                                         "Enum value requires API level %1$d " +
-                                        "(current min is %2$d): %3$s",
+                                        "(current min is %2$d): `%3$s`",
                                         api, minSdk, fqcn);
                                 report(context, message, lookup, (MethodNode) m, name, null,
                                         SearchHints.create(FORWARD).matchJavaSymbol());
@@ -997,6 +1051,74 @@ public class ApiDetector extends ResourceXmlDetector
                 }
             }
         }
+    }
+
+    private static boolean isEnumSwitchInitializer(ClassNode classNode) {
+        @SuppressWarnings("rawtypes") // ASM API
+        List fieldList = classNode.fields;
+        for (Object f : fieldList) {
+            FieldNode field = (FieldNode) f;
+            if (field.name.startsWith(ENUM_SWITCH_PREFIX)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static MethodNode findEnumSwitchUsage(ClassNode classNode, String owner) {
+        String target = ENUM_SWITCH_PREFIX + owner.replace('/', '$');
+        @SuppressWarnings("rawtypes") // ASM API
+        List methodList = classNode.methods;
+        for (Object f : methodList) {
+            MethodNode method = (MethodNode) f;
+            InsnList nodes = method.instructions;
+            for (int i = 0, n = nodes.size(); i < n; i++) {
+                AbstractInsnNode instruction = nodes.get(i);
+                if (instruction.getOpcode() == Opcodes.GETSTATIC) {
+                    FieldInsnNode field = (FieldInsnNode) instruction;
+                    if (field.name.equals(target)) {
+                        return method;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    private static boolean isSkippedEnumSwitch(ClassContext context, ClassNode classNode,
+            MethodNode method, FieldInsnNode node, String owner, int api) {
+        // Enum-style switches are handled in a different way: it generates
+        // an innerclass where the class initializer creates a mapping from
+        // the ordinals to the corresponding values.
+        // Here we need to check to see if the call site which *used* the
+        // table switch had a suppress node on it (or up that node's parent
+        // chain
+        AbstractInsnNode next = LintUtils.getNextInstruction(node);
+        if (next != null && next.getOpcode() == Opcodes.INVOKEVIRTUAL
+                && CLASS_CONSTRUCTOR.equals(method.name)
+                && ORDINAL_METHOD.equals(((MethodInsnNode) next).name)
+                && classNode.outerClass != null
+                && isEnumSwitchInitializer(classNode)) {
+            LintDriver driver = context.getDriver();
+            ClassNode outer = driver.getOuterClassNode(classNode);
+            if (outer != null) {
+                MethodNode switchUser = findEnumSwitchUsage(outer, owner);
+                if (switchUser != null) {
+                    // Is the API check suppressed at the call site?
+                    if (driver.isSuppressed(UNSUPPORTED, outer, switchUser,
+                            null)) {
+                        return true;
+                    }
+                    // Is there a @TargetAPI annotation on the method or
+                    // class referencing this switch map class?
+                    if (getLocalMinSdk(switchUser.invisibleAnnotations) >= api
+                            || getLocalMinSdk(outer.invisibleAnnotations) >= api) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     /**
@@ -1065,7 +1187,7 @@ public class ApiDetector extends ResourceXmlDetector
                             if (key.equals("value")) {  //$NON-NLS-1$
                                 Object value = annotation.values.get(i + 1);
                                 if (value instanceof Integer) {
-                                    return ((Integer) value).intValue();
+                                    return (Integer) value;
                                 }
                             }
                         }
@@ -1137,7 +1259,7 @@ public class ApiDetector extends ResourceXmlDetector
 
         Location location = context.getLocationForLine(lineNumber, patternStart, patternEnd,
                 hints);
-        context.report(UNSUPPORTED, method, node, location, message, null);
+        context.report(UNSUPPORTED, method, node, location, message);
     }
 
     @Override
@@ -1147,7 +1269,7 @@ public class ApiDetector extends ResourceXmlDetector
                 for (Pair<String, Location> pair : list) {
                     String message = pair.getFirst();
                     Location location = pair.getSecond();
-                    context.report(INLINED, location, message, null);
+                    context.report(INLINED, location, message);
                 }
             }
         }
@@ -1525,7 +1647,37 @@ public class ApiDetector extends ResourceXmlDetector
                                 + "API level %1$d (current min is %2$d)", api, minSdk);
                         LintDriver driver = mContext.getDriver();
                         if (!driver.isSuppressed(mContext, UNSUPPORTED, node)) {
-                            mContext.report(UNSUPPORTED, location, message, null);
+                            mContext.report(UNSUPPORTED, location, message);
+                        }
+                    }
+                } else {
+                    // Special case: check types of catch block variables; these apparently
+                    // need to be available at runtime even if there are no explicit calls
+                    for (Catch c : node.astCatches()) {
+                        VariableDefinition variableDefinition = c.astExceptionDeclaration();
+                        TypeReference typeReference = variableDefinition.astTypeReference();
+                        String fqcn = null;
+                        JavaParser.ResolvedNode resolved = mContext.resolve(typeReference);
+                        if (resolved != null) {
+                            fqcn = resolved.getSignature();
+                        } else if (typeReference.getTypeName().equals(
+                                "ReflectiveOperationException")) {
+                            fqcn = "java.lang.ReflectiveOperationException";
+                        }
+                        if (fqcn != null) {
+                            String owner = getInternalName(fqcn);
+                            int api = mApiDatabase.getClassVersion(owner);
+                            int minSdk = getMinSdk(mContext);
+                            if (api > minSdk && api > getLocalMinSdk(typeReference)) {
+                                Location location = mContext.getLocation(typeReference);
+                                String message = String.format(
+                                    "Class requires API level %1$d (current min is %2$d): `%3$s`",
+                                    api, minSdk, fqcn);
+                                LintDriver driver = mContext.getDriver();
+                                if (!driver.isSuppressed(mContext, UNSUPPORTED, typeReference)) {
+                                    mContext.report(UNSUPPORTED, location, message);
+                                }
+                            }
                         }
                     }
                 }
@@ -1580,7 +1732,7 @@ public class ApiDetector extends ResourceXmlDetector
                     }
 
                     String message = String.format(
-                            "Field requires API level %1$d (current min is %2$d): %3$s",
+                            "Field requires API level %1$d (current min is %2$d): `%3$s`",
                             api, minSdk, fqcn);
 
                     LintDriver driver = mContext.getDriver();
@@ -1647,7 +1799,7 @@ public class ApiDetector extends ResourceXmlDetector
                 if (type == VariableDefinition.class) {
                     // Variable
                     VariableDefinition declaration = (VariableDefinition) scope;
-                    int targetApi = getLocalMinSdk(declaration.astModifiers());
+                    int targetApi = getTargetApi(declaration.astModifiers());
                     if (targetApi != -1) {
                         return targetApi;
                     }
@@ -1655,7 +1807,7 @@ public class ApiDetector extends ResourceXmlDetector
                     // Method
                     // Look for annotations on the method
                     MethodDeclaration declaration = (MethodDeclaration) scope;
-                    int targetApi = getLocalMinSdk(declaration.astModifiers());
+                    int targetApi = getTargetApi(declaration.astModifiers());
                     if (targetApi != -1) {
                         return targetApi;
                     }
@@ -1663,14 +1815,14 @@ public class ApiDetector extends ResourceXmlDetector
                     // Constructor
                     // Look for annotations on the method
                     ConstructorDeclaration declaration = (ConstructorDeclaration) scope;
-                    int targetApi = getLocalMinSdk(declaration.astModifiers());
+                    int targetApi = getTargetApi(declaration.astModifiers());
                     if (targetApi != -1) {
                         return targetApi;
                     }
                 } else if (type == ClassDeclaration.class) {
                     // Class
                     ClassDeclaration declaration = (ClassDeclaration) scope;
-                    int targetApi = getLocalMinSdk(declaration.astModifiers());
+                    int targetApi = getTargetApi(declaration.astModifiers());
                     if (targetApi != -1) {
                         return targetApi;
                     }
@@ -1681,61 +1833,56 @@ public class ApiDetector extends ResourceXmlDetector
 
             return -1;
         }
+    }
 
-        /**
-         * Returns true if the given AST modifier has a suppress annotation for the
-         * given issue (which can be null to check for the "all" annotation)
-         *
-         * @param modifiers the modifier to check
-         * @return true if the issue or all issues should be suppressed for this
-         *         modifier
-         */
-        private int getLocalMinSdk(@Nullable Modifiers modifiers) {
-            if (modifiers == null) {
-                return -1;
-            }
-            StrictListAccessor<Annotation, Modifiers> annotations = modifiers.astAnnotations();
-            if (annotations == null) {
-                return -1;
-            }
+    /**
+     * Returns the API level for the given AST node if specified with
+     * an {@code @TargetApi} annotation.
+     *
+     * @param modifiers the modifier to check
+     * @return the target API level, or -1 if not specified
+     */
+    public static int getTargetApi(@Nullable Modifiers modifiers) {
+        if (modifiers == null) {
+            return -1;
+        }
+        StrictListAccessor<Annotation, Modifiers> annotations = modifiers.astAnnotations();
+        if (annotations == null) {
+            return -1;
+        }
 
-            Iterator<Annotation> iterator = annotations.iterator();
-            while (iterator.hasNext()) {
-                Annotation annotation = iterator.next();
-                TypeReference t = annotation.astAnnotationTypeReference();
-                String typeName = t.getTypeName();
-                if (typeName.endsWith(TARGET_API)) {
-                    StrictListAccessor<AnnotationElement, Annotation> values =
-                            annotation.astElements();
-                    if (values != null) {
-                        Iterator<AnnotationElement> valueIterator = values.iterator();
-                        while (valueIterator.hasNext()) {
-                            AnnotationElement element = valueIterator.next();
-                            AnnotationValue valueNode = element.astValue();
-                            if (valueNode == null) {
-                                continue;
-                            }
-                            if (valueNode instanceof IntegralLiteral) {
-                                IntegralLiteral literal = (IntegralLiteral) valueNode;
-                                return literal.astIntValue();
-                            } else if (valueNode instanceof StringLiteral) {
-                                String value = ((StringLiteral) valueNode).astValue();
-                                return SdkVersionInfo.getApiByBuildCode(value, true);
-                            } else if (valueNode instanceof Select) {
-                                Select select = (Select) valueNode;
-                                String codename = select.astIdentifier().astValue();
-                                return SdkVersionInfo.getApiByBuildCode(codename, true);
-                            } else if (valueNode instanceof VariableReference) {
-                                VariableReference reference = (VariableReference) valueNode;
-                                String codename = reference.astIdentifier().astValue();
-                                return SdkVersionInfo.getApiByBuildCode(codename, true);
-                            }
+        for (Annotation annotation : annotations) {
+            TypeReference t = annotation.astAnnotationTypeReference();
+            String typeName = t.getTypeName();
+            if (typeName.endsWith(TARGET_API)) {
+                StrictListAccessor<AnnotationElement, Annotation> values =
+                        annotation.astElements();
+                if (values != null) {
+                    for (AnnotationElement element : values) {
+                        AnnotationValue valueNode = element.astValue();
+                        if (valueNode == null) {
+                            continue;
+                        }
+                        if (valueNode instanceof IntegralLiteral) {
+                            IntegralLiteral literal = (IntegralLiteral) valueNode;
+                            return literal.astIntValue();
+                        } else if (valueNode instanceof StringLiteral) {
+                            String value = ((StringLiteral) valueNode).astValue();
+                            return SdkVersionInfo.getApiByBuildCode(value, true);
+                        } else if (valueNode instanceof Select) {
+                            Select select = (Select) valueNode;
+                            String codename = select.astIdentifier().astValue();
+                            return SdkVersionInfo.getApiByBuildCode(codename, true);
+                        } else if (valueNode instanceof VariableReference) {
+                            VariableReference reference = (VariableReference) valueNode;
+                            String codename = reference.astIdentifier().astValue();
+                            return SdkVersionInfo.getApiByBuildCode(codename, true);
                         }
                     }
                 }
             }
-
-            return -1;
         }
+
+        return -1;
     }
 }

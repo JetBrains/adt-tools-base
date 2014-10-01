@@ -18,8 +18,9 @@ package com.android.tools.lint;
 
 import static com.android.SdkConstants.DOT_JPG;
 import static com.android.SdkConstants.DOT_PNG;
-import static com.android.tools.lint.detector.api.Issue.OutputFormat.HTML;
 import static com.android.tools.lint.detector.api.LintUtils.endsWith;
+import static com.android.tools.lint.detector.api.TextFormat.HTML;
+import static com.android.tools.lint.detector.api.TextFormat.RAW;
 
 import com.android.tools.lint.checks.BuiltinIssueRegistry;
 import com.android.tools.lint.client.api.Configuration;
@@ -215,7 +216,7 @@ public class HtmlReporter extends Reporter {
                         addedImage = addImage(url, warning.location);
                     }
                     mWriter.write("<span class=\"message\">");           //$NON-NLS-1$
-                    appendEscapedText(warning.message);
+                    mWriter.append(RAW.convertTo(warning.message, HTML));
                     mWriter.write("</span>");                            //$NON-NLS-1$
                     if (addedImage) {
                         mWriter.write("<br clear=\"right\"/>");          //$NON-NLS-1$
@@ -244,7 +245,7 @@ public class HtmlReporter extends Reporter {
                                 mWriter.write(':');
                                 mWriter.write(' ');
                                 mWriter.write("<span class=\"message\">");           //$NON-NLS-1$
-                                appendEscapedText(message);
+                                mWriter.append(RAW.convertTo(message, HTML));
                                 mWriter.write("</span>");                            //$NON-NLS-1$
                                 mWriter.write("<br />");                         //$NON-NLS-1$
 
@@ -344,16 +345,23 @@ public class HtmlReporter extends Reporter {
             throws IOException {
         mWriter.write("<div class=\"metadata\">");               //$NON-NLS-1$
 
-        if (mClient.getRegistry() instanceof BuiltinIssueRegistry &&
-                ((BuiltinIssueRegistry) mClient.getRegistry()).hasAutoFix("adt", issue)) { //$NON-NLS-1$
-            mWriter.write("Note: This issue has an associated quickfix operation in Eclipse/ADT");
-            if (mFixUrl != null) {
-                mWriter.write("&nbsp;<img alt=\"Fix\" border=\"0\" align=\"top\" src=\""); //$NON-NLS-1$
-                mWriter.write(mFixUrl);
-                mWriter.write("\" />\n");                            //$NON-NLS-1$
-            }
+        if (mClient.getRegistry() instanceof BuiltinIssueRegistry) {
+            boolean adtHasFix = QuickfixHandler.ADT.hasAutoFix(issue);
+            boolean studioHasFix = QuickfixHandler.STUDIO.hasAutoFix(issue);
+            if (adtHasFix || studioHasFix) {
+                String adt = "Eclipse/ADT";
+                String studio = "Android Studio/IntelliJ";
+                String tools = adtHasFix && studioHasFix
+                        ? (adt + " & " + studio) : studioHasFix ? studio : adt;
+                mWriter.write("Note: This issue has an associated quickfix operation in " + tools);
+                if (mFixUrl != null) {
+                    mWriter.write("&nbsp;<img alt=\"Fix\" border=\"0\" align=\"top\" src=\""); //$NON-NLS-1$
+                    mWriter.write(mFixUrl);
+                    mWriter.write("\" />\n");                            //$NON-NLS-1$
+                }
 
-            mWriter.write("<br>\n");
+                mWriter.write("<br>\n");
+            }
         }
 
         if (disabledBy != null) {
@@ -380,7 +388,7 @@ public class HtmlReporter extends Reporter {
 
         mWriter.write("<div class=\"summary\">\n");              //$NON-NLS-1$
         mWriter.write("Explanation: ");
-        String description = issue.getDescription(HTML);
+        String description = issue.getBriefDescription(HTML);
         mWriter.write(description);
         if (!description.isEmpty()
                 && Character.isLetter(description.charAt(description.length() - 1))) {
@@ -634,6 +642,7 @@ public class HtmlReporter extends Reporter {
             displayPath = url;
         }
         mWriter.write(displayPath);
+        //noinspection VariableNotUsedInsideIf
         if (url != null) {
             mWriter.write("</a>");                       //$NON-NLS-1$
         }

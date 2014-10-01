@@ -50,7 +50,6 @@ public class StateListDetector extends ResourceXmlDetector {
     public static final Issue ISSUE = Issue.create(
             "StateListReachable", //$NON-NLS-1$
             "Unreachable state in a `<selector>`",
-            "Looks for unreachable states in a `<selector>`",
             "In a selector, only the last child in the state list should omit a " +
             "state qualifier. If not, all subsequent items in the list will be ignored " +
             "since the given item will match all.",
@@ -137,7 +136,7 @@ public class StateListDetector extends ResourceXmlDetector {
                         location.setSecondary(secondary);
                         context.report(ISSUE, current, location, String.format(
                                 "This item is unreachable because a previous item (item #%1$d) is a more general match than this one",
-                                i + 1),  null);
+                                i + 1));
                         // Don't keep reporting errors for all the remaining cases in this file
                         return;
                     }

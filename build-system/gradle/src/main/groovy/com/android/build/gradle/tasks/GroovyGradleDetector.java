@@ -90,7 +90,6 @@ public class GroovyGradleDetector extends GradleDetector {
                     if (expressions.size() == 1 &&
                             expressions.get(0) instanceof ClosureExpression) {
                         if (isInterestingBlock(parent, parentParent)) {
-                            checkBlock(context, parent, parentParent, expression);
                             ClosureExpression closureExpression =
                                     (ClosureExpression)expressions.get(0);
                             Statement block = closureExpression.getCode();

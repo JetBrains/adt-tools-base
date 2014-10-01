@@ -61,8 +61,6 @@ public class GridLayoutDetector extends LayoutDetector {
     public static final Issue ISSUE = Issue.create(
             "GridLayout", //$NON-NLS-1$
             "GridLayout validation",
-            "Checks for potential GridLayout errors like declaring rows and columns outside " +
-            "the declared grid dimensions",
             "Declaring a layout_row or layout_column that falls outside the declared size " +
             "of a GridLayout's `rowCount` or `columnCount` is usually an unintentional error.",
             Category.CORRECTNESS,
@@ -116,7 +114,7 @@ public class GridLayoutDetector extends LayoutDetector {
                         Attr node = child.getAttributeNodeNS(ANDROID_URI, ATTR_LAYOUT_COLUMN);
                         context.report(ISSUE, node, context.getLocation(node),
                                 String.format("Column attribute (%1$d) exceeds declared grid column count (%2$d)",
-                                        column, declaredColumnCount), null);
+                                        column, declaredColumnCount));
                     }
                 }
                 if (declaredRowCount != -1) {
@@ -125,7 +123,7 @@ public class GridLayoutDetector extends LayoutDetector {
                         Attr node = child.getAttributeNodeNS(ANDROID_URI, ATTR_LAYOUT_ROW);
                         context.report(ISSUE, node, context.getLocation(node),
                                 String.format("Row attribute (%1$d) exceeds declared grid row count (%2$d)",
-                                        row, declaredRowCount), null);
+                                        row, declaredRowCount));
                     }
                 }
             }
@@ -162,15 +160,15 @@ public class GridLayoutDetector extends LayoutDetector {
             }
 
             StringBuilder sb = new StringBuilder();
-            sb.append("Wrong namespace; with v7 GridLayout you should use ").append(prefix)
+            sb.append("Wrong namespace; with v7 `GridLayout` you should use ").append(prefix)
                     .append(":").append(name);
             if (!haveNamespace) {
-                sb.append(" (and add xmlns:app=\"").append(AUTO_URI)
-                        .append("\" to your root element.)");
+                sb.append(" (and add `xmlns:app=\"").append(AUTO_URI)
+                        .append("\"` to your root element.)");
             }
             String message = sb.toString();
 
-            context.report(ISSUE, attribute, context.getLocation(attribute), message, null);
+            context.report(ISSUE, attribute, context.getLocation(attribute), message);
         }
     }
 

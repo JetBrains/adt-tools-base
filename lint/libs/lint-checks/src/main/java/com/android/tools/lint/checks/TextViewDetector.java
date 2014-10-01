@@ -80,7 +80,6 @@ public class TextViewDetector extends LayoutDetector {
     public static final Issue ISSUE = Issue.create(
             "TextViewEdits", //$NON-NLS-1$
             "TextView should probably be an EditText instead",
-            "Looks for TextViews being used for input",
 
             "Using a `<TextView>` to input text is generally an error, you should be " +
             "using `<EditText>` instead.  `EditText` is a subclass of `TextView`, and some " +
@@ -102,7 +101,6 @@ public class TextViewDetector extends LayoutDetector {
     public static final Issue SELECTABLE = Issue.create(
             "SelectableText", //$NON-NLS-1$
             "Dynamic text should probably be selectable",
-            "Looks for TextViews which should probably allow their text to be selected",
 
             "If a `<TextView>` is used to display data, the user might want to copy that " +
             "data and paste it elsewhere. To allow this, the `<TextView>` should specify " +
@@ -154,7 +152,7 @@ public class TextViewDetector extends LayoutDetector {
                     && context.isEnabled(SELECTABLE)) {
                 context.report(SELECTABLE, element, context.getLocation(element),
                         "Consider making the text value selectable by specifying " +
-                        "android:textIsSelectable=\"true\"", null);
+                        "`android:textIsSelectable=\"true\"`");
             }
         }
 
@@ -226,15 +224,15 @@ public class TextViewDetector extends LayoutDetector {
                 String view = element.getTagName();
                 if (view.equals(TEXT_VIEW)) {
                     message = String.format(
-                            "Attribute %1$s should not be used with <TextView>: " +
-                            "Change element type to <EditText> ?", attribute.getName());
+                            "Attribute `%1$s` should not be used with `<TextView>`: " +
+                            "Change element type to `<EditText>` ?", attribute.getName());
                 } else {
                     message = String.format(
-                            "Attribute %1$s should not be used with <%2$s>: " +
+                            "Attribute `%1$s` should not be used with `<%2$s>`: " +
                             "intended for editable text widgets",
                             attribute.getName(), view);
                 }
-                context.report(ISSUE, attribute, location, message, null);
+                context.report(ISSUE, attribute, location, message);
             }
         }
     }

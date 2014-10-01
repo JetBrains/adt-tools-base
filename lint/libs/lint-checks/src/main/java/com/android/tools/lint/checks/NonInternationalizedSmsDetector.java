@@ -43,7 +43,6 @@ public class NonInternationalizedSmsDetector extends Detector implements Detecto
     public static final Issue ISSUE = Issue.create(
             "UnlocalizedSms", //$NON-NLS-1$
             "SMS phone number missing country code",
-            "Looks for code sending text messages to unlocalized phone numbers",
 
             "SMS destination numbers must start with a country code or the application code " +
             "must ensure that the SMS is only sent when the user is in the same country as " +
@@ -97,8 +96,7 @@ public class NonInternationalizedSmsDetector extends Detector implements Detecto
                    context.report(ISSUE, node, context.getLocation(destinationAddress),
                        "To make sure the SMS can be sent by all users, please start the SMS number " +
                        "with a + and a country code or restrict the code invocation to people in the country " +
-                       "you are targeting.",
-                       null);
+                       "you are targeting.");
                 }
             }
         }

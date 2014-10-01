@@ -47,7 +47,6 @@ public class IncludeDetector extends LayoutDetector {
     public static final Issue ISSUE = Issue.create(
             "IncludeLayoutParam", //$NON-NLS-1$
             "Ignored layout params on include",
-            "Ensures that layout params on `<include>` tags are used correctly",
 
             "Layout parameters specified on an `<include>` tag will only be used if you " +
             "also override `layout_width` and `layout_height` on the `<include>` tag; " +
@@ -100,16 +99,50 @@ public class IncludeDetector extends LayoutDetector {
                         && (!ATTR_LAYOUT_HEIGHT.equals(name) || flagHeight)
                         && ANDROID_URI.equals(attribute.getNamespaceURI())) {
                     String condition = !hasWidth && !hasHeight ?
-                            "both layout_width and layout_height are also specified"
-                            : !hasWidth ? "layout_width is also specified"
-                                        : "layout_height is also specified";
+                            "both `layout_width` and `layout_height` are also specified"
+                            : !hasWidth ? "`layout_width` is also specified"
+                                        : "`layout_height` is also specified";
                     String message = String.format(
-                            "Layout parameter %1$s ignored unless %2$s on <include> tag",
+                            "Layout parameter `%1$s` ignored unless %2$s on `<include>` tag",
                             name, condition);
                     context.report(ISSUE, element, context.getLocation(attribute),
-                            message, null);
+                            message);
                 }
             }
         }
+    }
+
+    /**
+     * Returns true if the error message (earlier reported by this lint detector) requests
+     * for the layout_width to be defined.
+     * <p>
+     * Intended for IDE quickfix implementations.
+     *
+     * @param errorMessage the error message computed by lint
+     * @return true if the layout_width needs to be defined
+     */
+    public static boolean requestsWidth(@NonNull String errorMessage) {
+        int index = errorMessage.indexOf(" unless ");
+        if (index != -1) {
+            return errorMessage.contains(ATTR_LAYOUT_WIDTH);
+        }
+        return false;
+    }
+
+    /**
+     * Returns true if the error message (earlier reported by this lint detector) requests
+     * for the layout_height to be defined.
+     * <p>
+     * Intended for IDE quickfix implementations.
+     *
+     * @param errorMessage the error message computed by lint
+     * @return true if the layout_height needs to be defined
+     */
+    public static boolean requestsHeight(@NonNull String errorMessage) {
+        int index = errorMessage.indexOf(" unless ");
+        if (index != -1) {
+            return errorMessage.contains(ATTR_LAYOUT_HEIGHT);
+        }
+        return false;
     }
 }

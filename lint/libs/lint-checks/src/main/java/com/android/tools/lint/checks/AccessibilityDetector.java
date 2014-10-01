@@ -54,7 +54,6 @@ public class AccessibilityDetector extends LayoutDetector {
     public static final Issue ISSUE = Issue.create(
             "ContentDescription", //$NON-NLS-1$
             "Image without `contentDescription`",
-            "Ensures that image widgets provide a contentDescription",
             "Non-textual widgets like ImageViews and ImageButtons should use the " +
             "`contentDescription` attribute to specify a textual description of " +
             "the widget such that screen readers and other accessibility tools " +
@@ -106,8 +105,8 @@ public class AccessibilityDetector extends LayoutDetector {
         Element element = attribute.getOwnerElement();
         if (element.hasAttributeNS(ANDROID_URI, ATTR_HINT)) {
             context.report(ISSUE, element, context.getLocation(attribute),
-                    "Do not set both contentDescription and hint: the contentDescription " +
-                    "will mask the hint", null);
+                    "Do not set both `contentDescription` and `hint`: the `contentDescription` " +
+                    "will mask the `hint`");
         }
     }
 
@@ -120,13 +119,13 @@ public class AccessibilityDetector extends LayoutDetector {
                 return;
             }
             context.report(ISSUE, element, context.getLocation(element),
-                    "[Accessibility] Missing contentDescription attribute on image", null);
+                    "[Accessibility] Missing `contentDescription` attribute on image");
         } else {
             Attr attributeNode = element.getAttributeNodeNS(ANDROID_URI, ATTR_CONTENT_DESCRIPTION);
             String attribute = attributeNode.getValue();
             if (attribute.isEmpty() || attribute.equals("TODO")) { //$NON-NLS-1$
                 context.report(ISSUE, attributeNode, context.getLocation(attributeNode),
-                        "[Accessibility] Empty contentDescription attribute on image", null);
+                        "[Accessibility] Empty `contentDescription` attribute on image");
             }
         }
     }

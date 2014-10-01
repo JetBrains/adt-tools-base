@@ -58,7 +58,6 @@ public class ViewHolderDetector extends Detector implements Detector.JavaScanner
     public static final Issue ISSUE = Issue.create(
             "ViewHolder", //$NON-NLS-1$
             "View Holder Candidates",
-            "Looks for candidates for the view holder pattern",
 
             "When implementing a view Adapter, you should avoid unconditionally inflating a " +
             "new layout; if an available item is passed in for reuse, you should try to " +
@@ -218,7 +217,7 @@ public class ViewHolderDetector extends Detector implements Detector.JavaScanner
                             + "Should use View Holder pattern (use recycled view passed "
                             + "into this method as the second parameter) for smoother "
                             + "scrolling";
-                    mContext.report(ISSUE, node, mContext.getLocation(node), message, null);
+                    mContext.report(ISSUE, node, mContext.getLocation(node), message);
                 }
             }
         }

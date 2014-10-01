@@ -20,6 +20,9 @@ import static com.android.resources.ResourceType.DIMEN;
 import static com.android.resources.ResourceType.ID;
 import static com.android.resources.ResourceType.LAYOUT;
 
+import com.android.ide.common.rendering.api.ResourceValue;
+import com.android.resources.ResourceType;
+
 import junit.framework.TestCase;
 
 public class ResourceUrlTest extends TestCase {
@@ -74,6 +77,12 @@ public class ResourceUrlTest extends TestCase {
         assertFalse(ResourceUrl.parse("@id/?").hasValidName());
         assertFalse(ResourceUrl.parse("@id/123").hasValidName());
         assertFalse(ResourceUrl.parse("@id/ab+").hasValidName());
+    }
 
+    public void testCreateFromResourceValue() {
+        assertEquals("@android:string/foo",
+            ResourceUrl.create(new ResourceValue(ResourceType.STRING, "foo", true)).toString());
+        assertEquals("@string/foo",
+            ResourceUrl.create(new ResourceValue(ResourceType.STRING, "foo", false)).toString());
     }
 }

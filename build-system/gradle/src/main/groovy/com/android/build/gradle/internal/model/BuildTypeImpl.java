@@ -19,20 +19,14 @@ package com.android.build.gradle.internal.model;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.model.BuildType;
-import com.android.builder.model.ClassField;
-import com.android.builder.model.NdkConfig;
 
-import java.io.File;
 import java.io.Serializable;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
 
 /**
  * Implementation of BuildType that is serializable. Objects used in the DSL cannot be
  * serialized.
  */
-class BuildTypeImpl implements BuildType, Serializable {
+class BuildTypeImpl extends BaseConfigImpl implements BuildType, Serializable {
     private static final long serialVersionUID = 1L;
 
     private String name;
@@ -48,8 +42,9 @@ class BuildTypeImpl implements BuildType, Serializable {
     private boolean embedMicroApp;
 
     @NonNull
-    static BuildTypeImpl cloneBuildType(BuildType buildType) {
-        BuildTypeImpl clonedBuildType = new BuildTypeImpl();
+    static BuildTypeImpl cloneBuildType(@NonNull BuildType buildType) {
+        BuildTypeImpl clonedBuildType = new BuildTypeImpl(buildType);
+
         clonedBuildType.name = buildType.getName();
         clonedBuildType.debuggable = buildType.isDebuggable();
         clonedBuildType.testCoverageEnabled = buildType.isTestCoverageEnabled();
@@ -65,7 +60,8 @@ class BuildTypeImpl implements BuildType, Serializable {
         return clonedBuildType;
     }
 
-    private BuildTypeImpl() {
+    private BuildTypeImpl(@NonNull BuildType buildType) {
+        super(buildType);
     }
 
     @NonNull
@@ -121,38 +117,25 @@ class BuildTypeImpl implements BuildType, Serializable {
         return zipAlign;
     }
 
-    @NonNull
-    @Override
-    public Map<String, ClassField> getBuildConfigFields() {
-        return Collections.emptyMap();
-    }
-
-    @NonNull
-    @Override
-    public Map<String, ClassField> getResValues() {
-        return Collections.emptyMap();
-    }
-
-    @NonNull
-    @Override
-    public List<File> getProguardFiles() {
-        return Collections.emptyList();
-    }
-
-    @NonNull
-    @Override
-    public List<File> getConsumerProguardFiles() {
-        return Collections.emptyList();
-    }
-
-    @Override
-    @Nullable
-    public NdkConfig getNdkConfig() {
-        return null;
-    }
-
     @Override
     public boolean isEmbedMicroApp() {
         return embedMicroApp;
+    }
+
+    @Override
+    public String toString() {
+        return "BuildTypeImpl{" +
+                "name='" + name + '\'' +
+                ", debuggable=" + debuggable +
+                ", testCoverageEnabled=" + testCoverageEnabled +
+                ", jniDebugBuild=" + jniDebugBuild +
+                ", renderscriptDebugBuild=" + renderscriptDebugBuild +
+                ", renderscriptOptimLevel=" + renderscriptOptimLevel +
+                ", applicationIdSuffix='" + applicationIdSuffix + '\'' +
+                ", versionNameSuffix='" + versionNameSuffix + '\'' +
+                ", runProguard=" + runProguard +
+                ", zipAlign=" + zipAlign +
+                ", embedMicroApp=" + embedMicroApp +
+                "} " + super.toString();
     }
 }

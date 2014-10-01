@@ -126,7 +126,6 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
     public static final Issue INVALID = Issue.create(
             "StringFormatInvalid", //$NON-NLS-1$
             "Invalid format string",
-            "Checks that format strings are valid",
 
             "If a string contains a '%' character, then the string may be a formatting string " +
             "which will be passed to `String.format` from Java code to replace each '%' " +
@@ -154,8 +153,6 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
     public static final Issue ARG_COUNT = Issue.create(
             "StringFormatCount", //$NON-NLS-1$
             "Formatting argument types incomplete or inconsistent",
-            "Ensures that all format strings are used and that the same number is defined " +
-            "across translations",
 
             "When a formatted string takes arguments, it usually needs to reference the " +
             "same arguments in all translations (or all arguments if there are no " +
@@ -173,8 +170,6 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
     public static final Issue ARG_TYPES = Issue.create(
             "StringFormatMatches", //$NON-NLS-1$
             "`String.format` string doesn't match the XML format string",
-            "Ensures that the format used in `<string>` definitions is compatible with the "
-                + "`String.format` call",
 
             "This lint check ensures the following:\n" +
             "(1) If there are multiple translations of the format string, then all translations " +
@@ -444,9 +439,9 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
 
                                 Location location = handle.resolve();
                                 String message = String.format(
-                                        "Incorrect formatting string %1$s; missing conversion " +
-                                        "character in '%2$s' ?", name, str);
-                                context.report(INVALID, location, message, null);
+                                        "Incorrect formatting string `%1$s`; missing conversion " +
+                                        "character in '`%2$s`' ?", name, str);
+                                context.report(INVALID, location, message);
                                 //warned = true;
                                 continue;
                             }
@@ -496,14 +491,14 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
                         File f = otherLocation.getFile();
                         String message = String.format(
                                 "Inconsistent formatting types for argument #%1$d in " +
-                                "format string %2$s ('%3$s'): Found both '%4$s' and '%5$s' " +
+                                "format string `%2$s` ('%3$s'): Found both '`%4$s`' and '`%5$s`' " +
                                 "(in %6$s)",
                                 number, name,
                                 str,
                                 currentFormat, format,
                                 f.getParentFile().getName() + File.separator + f.getName());
                         //warned = true;
-                        context.report(ARG_TYPES, location, message, null);
+                        context.report(ARG_TYPES, location, message);
                         break;
                     }
                 } else {
@@ -651,9 +646,9 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
                 secondary.setMessage("Conflicting number of arguments here");
                 location.setSecondary(secondary);
                 String message = String.format(
-                        "Inconsistent number of arguments in formatting string %1$s; " +
+                        "Inconsistent number of arguments in formatting string `%1$s`; " +
                         "found both %2$d and %3$d", name, prevCount, count);
-                context.report(ARG_COUNT, location, message, null);
+                context.report(ARG_COUNT, location, message);
                 break;
             }
 
@@ -676,9 +671,9 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
                     Collections.sort(sorted);
                     Location location = handle.resolve();
                     String message = String.format(
-                            "Formatting string '%1$s' is not referencing numbered arguments %2$s",
+                            "Formatting string '`%1$s`' is not referencing numbered arguments %2$s",
                             name, sorted);
-                    context.report(ARG_COUNT, location, message, null);
+                    context.report(ARG_COUNT, location, message);
                     break;
                 }
             }
@@ -966,10 +961,10 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
             }
             Location location = handle.resolve();
             String message = String.format(
-                    "Format string '%1$s' is not a valid format string so it should not be " +
-                    "passed to String.format",
+                    "Format string '`%1$s`' is not a valid format string so it should not be " +
+                    "passed to `String.format`",
                     name);
-            context.report(INVALID, call, location, message, null);
+            context.report(INVALID, call, location, message);
             return;
         }
 
@@ -1024,14 +1019,15 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
                                         Matcher matcher = FORMAT.matcher(value);
                                         if (!matcher.find(j)) {
                                             isFormattingString = false;
-                                        }
-                                        String conversion = matcher.group(6);
-                                        int conversionClass = getConversionClass(
-                                                conversion.charAt(0));
-                                        if (conversionClass == CONVERSION_CLASS_UNKNOWN
-                                                || matcher.group(5) != null) {
-                                            // Some date format etc - don't process
-                                            return;
+                                        } else {
+                                            String conversion = matcher.group(6);
+                                            int conversionClass = getConversionClass(
+                                                    conversion.charAt(0));
+                                            if (conversionClass == CONVERSION_CLASS_UNKNOWN
+                                                    || matcher.group(5) != null) {
+                                                // Some date format etc - don't process
+                                                return;
+                                            }
                                         }
                                         j++; // Don't process second % in a %%
                                     }
@@ -1078,10 +1074,10 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
                             count));
                     location.setSecondary(secondary);
                     String message = String.format(
-                            "Wrong argument count, format string %1$s requires %2$d but format " +
-                            "call supplies %3$d",
+                            "Wrong argument count, format string `%1$s` requires `%2$d` but format " +
+                            "call supplies `%3$d`",
                             name, count, args.size() - 1 - (specifiesLocale ? 1 : 0));
-                    context.report(ARG_TYPES, method, location, message, null);
+                    context.report(ARG_TYPES, method, location, message);
                     if (reported == null) {
                         reported = Sets.newHashSet();
                     }
@@ -1163,11 +1159,11 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
 
                                 String message = String.format(
                                         "Wrong argument type for formatting argument '#%1$d' " +
-                                        "in %2$s: conversion is '%3$s', received %4$s " +
+                                        "in `%2$s`: conversion is '`%3$s`', received `%4$s` " +
                                         "(argument #%5$d in method call)",
                                         i, name, formatType, type.getSimpleName(),
                                         argumentIndex + 1);
-                                context.report(ARG_TYPES, method, location, message, null);
+                                context.report(ARG_TYPES, method, location, message);
                                 if (reported == null) {
                                     reported = Sets.newHashSet();
                                 }

@@ -16,8 +16,12 @@
 
 package com.android.build.gradle;
 
+import com.google.common.collect.ImmutableList;
+
 import junit.framework.Test;
 import junit.framework.TestSuite;
+
+import java.util.List;
 
 /**
  * Automated tests building a set of projects using a set of gradle versions.
@@ -40,8 +44,11 @@ public class AutomatedBuildTest extends BuildTest {
             "assets",
             "attrOrder",
             "basic",
+            "densitySplit",
+            "densitySplitWithOldMerger",
             "dependencies",
             "dependencyChecker",
+            "emptySplit",
             "filteredOutBuildType",
             "flavored",
             "flavorlib",
@@ -58,9 +65,13 @@ public class AutomatedBuildTest extends BuildTest {
             "multiproject",
             "multires",
             "ndkSanAngeles",
+            "ndkSanAngeles2",
+            "ndkStandaloneSo",
             "ndkJniLib",
+            "ndkJniLib2",
             "ndkPrebuilts",
             "ndkLibPrebuilts",
+            "ndkVariants",
             "noPreDex",
             "overlay1",
             "overlay2",
@@ -76,6 +87,14 @@ public class AutomatedBuildTest extends BuildTest {
             /*"autorepo"*/
     };
 
+    private static final List<String> ndkPluginTests = ImmutableList.of(
+            "ndkJniLib2",
+            "ndkSanAngeles2",
+            "ndkStandaloneSo",
+            "ndkStl",
+            "ndkVariants"
+    );
+
     private static final String[] sReportProjects = new String[] {
             "basic", "flavorlib"
     };
@@ -90,6 +109,14 @@ public class AutomatedBuildTest extends BuildTest {
             }
             // first the project we build on all available versions of Gradle
             for (String projectName : sBuiltProjects) {
+                // Disable NDK plugin tests on non-Linux platforms due to Gradle incorrectly
+                // setting arguments based on current OS instead of target OS.
+                if (!System.getProperty("os.name").equals("Linux") &&
+                        ndkPluginTests.contains(projectName)) {
+                    // TODO: Remove this when Gradle is fix.
+                    continue;
+                }
+
                 String testName = "build_" + projectName + "_" + gradleVersion;
 
                 AutomatedBuildTest test = (AutomatedBuildTest) TestSuite.createTest(

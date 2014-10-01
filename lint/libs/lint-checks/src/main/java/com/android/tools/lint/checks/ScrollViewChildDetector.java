@@ -51,7 +51,6 @@ public class ScrollViewChildDetector extends LayoutDetector {
     public static final Issue ISSUE = Issue.create(
             "ScrollViewSize", //$NON-NLS-1$
             "ScrollView size validation",
-            "Checks that ScrollViews use `wrap_content` in the scrolling dimension",
             // TODO add a better explanation here!
             "ScrollView children must set their `layout_width` or `layout_height` attributes " +
             "to `wrap_content` rather than `fill_parent` or `match_parent` in the scrolling " +
@@ -93,10 +92,9 @@ public class ScrollViewChildDetector extends LayoutDetector {
             }
             String value = sizeNode.getValue();
             if (VALUE_FILL_PARENT.equals(value) || VALUE_MATCH_PARENT.equals(value)) {
-                String msg = String.format("This %1$s should use android:%2$s=\"wrap_content\"",
+                String msg = String.format("This %1$s should use `android:%2$s=\"wrap_content\"`",
                         child.getTagName(), attributeName);
-                context.report(ISSUE, sizeNode, context.getLocation(sizeNode), msg,
-                        null);
+                context.report(ISSUE, sizeNode, context.getLocation(sizeNode), msg);
             }
         }
     }

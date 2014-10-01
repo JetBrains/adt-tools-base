@@ -51,7 +51,6 @@ public class CommentDetector extends Detector implements Detector.JavaScanner {
     public static final Issue EASTER_EGG = Issue.create(
             "EasterEgg", //$NON-NLS-1$
             "Code contains easter egg",
-            "Looks for hidden easter eggs",
             "An \"easter egg\" is code deliberately hidden in the code, both from potential " +
             "users and even from other developers. This lint check looks for code which " +
             "looks like it may be hidden from sight.",
@@ -65,8 +64,6 @@ public class CommentDetector extends Detector implements Detector.JavaScanner {
     public static final Issue STOP_SHIP = Issue.create(
             "StopShip", //$NON-NLS-1$
             "Code contains `STOPSHIP` marker",
-            "Looks for comment markers of the form `//STOPSHIP` which indicates that code " +
-            "should not be released yet",
 
             "Using the comment `// STOPSHIP` can be used to flag code that is incomplete but " +
             "checked in. This comment marker can be used to indicate that the code should not " +
@@ -183,8 +180,7 @@ public class CommentDetector extends Detector implements Detector.JavaScanner {
                                 offset + i - 1, offset + i - 1 + ESCAPE_STRING.length());
                         context.report(EASTER_EGG, location,
                                 "Code might be hidden here; found unicode escape sequence " +
-                                "which is interpreted as comment end, compiled code follows",
-                                null);
+                                "which is interpreted as comment end, compiled code follows");
                     }
                 } else {
                     i++;
@@ -195,9 +191,8 @@ public class CommentDetector extends Detector implements Detector.JavaScanner {
                 Location location = Location.create(context.file, source,
                         offset + i - 1, offset + i - 1 + STOPSHIP_COMMENT.length());
                 context.report(STOP_SHIP, location,
-                        "STOPSHIP comment found; points to code which must be fixed prior " +
-                        "to release",
-                        null);
+                        "`STOPSHIP` comment found; points to code which must be fixed prior " +
+                        "to release");
             }
         }
     }

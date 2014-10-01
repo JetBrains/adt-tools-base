@@ -16,31 +16,37 @@
 package com.android.tools.lint.checks;
 
 import static com.android.SdkConstants.APPCOMPAT_LIB_ARTIFACT;
+import static com.android.SdkConstants.CLASS_ACTIVITY;
+import static com.android.tools.lint.detector.api.TextFormat.RAW;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.tools.lint.client.api.JavaParser;
+import com.android.tools.lint.client.api.JavaParser.ResolvedClass;
+import com.android.tools.lint.client.api.JavaParser.ResolvedMethod;
+import com.android.tools.lint.client.api.JavaParser.ResolvedNode;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.JavaContext;
+import com.android.tools.lint.detector.api.LintUtils;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.Speed;
+import com.android.tools.lint.detector.api.TextFormat;
 
 import java.util.Arrays;
 import java.util.List;
 
 import lombok.ast.AstVisitor;
+import lombok.ast.ClassDeclaration;
 import lombok.ast.MethodInvocation;
 
 public class AppCompatCallDetector extends Detector implements Detector.JavaScanner {
     public static final Issue ISSUE = Issue.create(
             "AppCompatMethod",
             "Using Wrong AppCompat Method",
-            "Finds cases where a custom `appcompat` method should be used instead",
             "When using the appcompat library, there are some methods you should be calling " +
             "instead of the normal ones; for example, `getSupportActionBar()` instead of " +
             "`getActionBar()`. This lint check looks for calls to the wrong method.",
@@ -56,6 +62,8 @@ public class AppCompatCallDetector extends Detector implements Detector.JavaScan
     private static final String SET_PROGRESS_BAR_IN_VIS = "setProgressBarIndeterminateVisibility";
     private static final String SET_PROGRESS_BAR_INDETERMINATE = "setProgressBarIndeterminate";
     private static final String REQUEST_WINDOW_FEATURE = "requestWindowFeature";
+    /** If you change number of parameters or order, update {@link #getMessagePart(String, int,TextFormat)} */
+    private static final String ERROR_MESSAGE_FORMAT = "Should use `%1$s` instead of `%2$s` name";
 
     private boolean mDependsOnAppCompat;
 
@@ -107,23 +115,73 @@ public class AppCompatCallDetector extends Detector implements Detector.JavaScan
             }
 
             if (replace != null) {
-                String message = String.format("Should use %1$s instead of %2$s name",
-                        replace, name);
-                context.report(ISSUE, node, context.getLocation(node), message, null);
+                String message = String.format(ERROR_MESSAGE_FORMAT, replace, name);
+                context.report(ISSUE, node, context.getLocation(node), message);
             }
         }
     }
 
     private static boolean isAppBarActivityCall(@NonNull JavaContext context,
             @NonNull MethodInvocation node) {
-        JavaParser.ResolvedNode resolved = context.resolve(node);
-        if (resolved instanceof JavaParser.ResolvedMethod) {
-            JavaParser.ResolvedMethod method = (JavaParser.ResolvedMethod) resolved;
-            JavaParser.ResolvedClass containingClass = method.getContainingClass();
-            if (containingClass.isSubclassOf("android.app.Activity", false)) {
-                return true;
+        ResolvedNode resolved = context.resolve(node);
+        if (resolved instanceof ResolvedMethod) {
+            ResolvedMethod method = (ResolvedMethod) resolved;
+            ResolvedClass containingClass = method.getContainingClass();
+            if (containingClass.isSubclassOf(CLASS_ACTIVITY, false)) {
+                // Make sure that the calling context is a subclass of ActionBarActivity;
+                // we don't want to flag these calls if they are in non-appcompat activities
+                // such as PreferenceActivity (see b.android.com/58512)
+                ClassDeclaration surroundingClass = JavaContext.findSurroundingClass(node);
+                if (surroundingClass != null) {
+                    ResolvedNode clz = context.resolve(surroundingClass);
+                    return clz instanceof ResolvedClass &&
+                            ((ResolvedClass)clz).isSubclassOf(
+                                    "android.support.v7.app.ActionBarActivity",
+                                    false);
+                }
             }
         }
         return false;
+    }
+
+    /**
+     * Given an error message created by this lint check, return the corresponding old method name
+     * that it suggests should be deleted. (Intended to support quickfix implementations
+     * for this lint check.)
+     *
+     * @param errorMessage the error message originally produced by this detector
+     * @param format the format of the error message
+     * @return the corresponding old method name, or null if not recognized
+     */
+    @Nullable
+    public static String getOldCall(@NonNull String errorMessage, @NonNull TextFormat format) {
+        return getMessagePart(errorMessage, 2, format);
+    }
+
+    /**
+     * Given an error message created by this lint check, return the corresponding new method name
+     * that it suggests replace the old method name. (Intended to support quickfix implementations
+     * for this lint check.)
+     *
+     * @param errorMessage the error message originally produced by this detector
+     * @param format the format of the error message
+     * @return the corresponding new method name, or null if not recognized
+     */
+    @Nullable
+    public static String getNewCall(@NonNull String errorMessage, @NonNull TextFormat format) {
+        return getMessagePart(errorMessage, 1, format);
+    }
+
+    @Nullable
+    private static String getMessagePart(@NonNull String errorMessage, int group,
+            @NonNull TextFormat format) {
+        List<String> parameters = LintUtils.getFormattedParameters(
+                RAW.convertTo(ERROR_MESSAGE_FORMAT, format),
+                errorMessage);
+        if (parameters.size() == 2 && group <= 2) {
+            return parameters.get(group - 1);
+        }
+
+        return null;
     }
 }

@@ -1140,14 +1140,6 @@ public class PkgDesc implements IPkgDesc {
 
     @NonNull
     private static String sanitize(@NonNull String str) {
-        if (str.startsWith(AndroidTargetHash.PLATFORM_HASH_PREFIX)) {
-            // This block is necessary when installing android-L. Currently installation fails because this method converts it to
-            // "android-l" (lowercase "L".)
-            String platform = str.substring(AndroidTargetHash.PLATFORM_HASH_PREFIX.length());
-            if (!platform.isEmpty() && !Character.isDigit(platform.charAt(0))) {
-                return str;
-            }
-        }
         str = str.toLowerCase(Locale.US).replaceAll("[^a-z0-9_.-]+", "_").replaceAll("_+", "_");
         return str;
     }

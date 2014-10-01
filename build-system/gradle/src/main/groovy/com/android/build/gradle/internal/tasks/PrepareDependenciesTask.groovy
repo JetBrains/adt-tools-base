@@ -18,9 +18,11 @@ package com.android.build.gradle.internal.tasks
 import com.android.build.gradle.internal.dependency.DependencyChecker
 import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.builder.model.ApiVersion
-import com.android.ide.common.sdk.SdkVersionInfo
+import com.android.sdklib.SdkVersionInfo
 import com.android.utils.Pair
+import org.gradle.api.GradleException
 import org.gradle.api.tasks.TaskAction
+import org.gradle.api.tasks.TaskExecutionException
 
 public class PrepareDependenciesTask extends BaseTask {
     BaseVariantData variant
@@ -51,7 +53,6 @@ public class PrepareDependenciesTask extends BaseTask {
                             checker.configurationDependencies.name.capitalize(), api, variant.name, minSdk))
                 }
             }
-
         }
     }
 

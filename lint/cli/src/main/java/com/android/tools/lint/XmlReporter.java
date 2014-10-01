@@ -16,7 +16,7 @@
 
 package com.android.tools.lint;
 
-import static com.android.tools.lint.detector.api.Issue.OutputFormat.RAW;
+import static com.android.tools.lint.detector.api.TextFormat.RAW;
 
 import com.android.tools.lint.checks.BuiltinIssueRegistry;
 import com.android.tools.lint.detector.api.Issue;
@@ -81,7 +81,7 @@ public class XmlReporter extends Reporter {
                         issue.getCategory().getFullName());
                 writeAttribute(mWriter, 2, "priority",                                //$NON-NLS-1$
                         Integer.toString(issue.getPriority()));
-                writeAttribute(mWriter, 2, "summary", issue.getDescription(RAW));     //$NON-NLS-1$
+                writeAttribute(mWriter, 2, "summary", issue.getBriefDescription(RAW));//$NON-NLS-1$
                 writeAttribute(mWriter, 2, "explanation", issue.getExplanation(RAW)); //$NON-NLS-1$
                 List<String> moreInfo = issue.getMoreInfo();
                 if (!moreInfo.isEmpty()) {
@@ -109,10 +109,13 @@ public class XmlReporter extends Reporter {
                     writeAttribute(mWriter, 2, "excludedVariants", Joiner.on(',').join(warning.getExcludedVariantNames()));
                 }
 
-                if (mClient.getRegistry() instanceof BuiltinIssueRegistry &&
-                        ((BuiltinIssueRegistry) mClient.getRegistry()).hasAutoFix(
-                                "adt", issue)) { //$NON-NLS-1$
-                    writeAttribute(mWriter, 2, "quickfix", "adt");      //$NON-NLS-1$ //$NON-NLS-2$
+                if (mClient.getRegistry() instanceof BuiltinIssueRegistry) {
+                    boolean adt = QuickfixHandler.ADT.hasAutoFix(issue);
+                    boolean studio = QuickfixHandler.STUDIO.hasAutoFix(issue);
+                    if (adt || studio) { //$NON-NLS-1$
+                        String value = adt && studio ? "studio,adt" : studio ? "studio" : "adt";
+                        writeAttribute(mWriter, 2, "quickfix", value);      //$NON-NLS-1$ //$NON-NLS-2$
+                    }
                 }
 
                 assert (warning.file != null) == (warning.location != null);

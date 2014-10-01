@@ -59,7 +59,6 @@ public class LabelForDetector extends LayoutDetector {
     public static final Issue ISSUE = Issue.create(
             "LabelFor", //$NON-NLS-1$
             "Missing `labelFor` attribute",
-            "Ensures that text fields are marked with a `labelFor` attribute",
 
             "Text fields should be labelled with a `labelFor` attribute, " +
             "provided your `minSdkVersion` is at least 17.\n" +
@@ -128,12 +127,12 @@ public class LabelForDetector extends LayoutDetector {
                     String message;
                     if (id == null || id.isEmpty()) {
                         message = "No label views point to this text field with a " +
-                                "labelFor attribute";
+                                "`labelFor` attribute";
                     } else {
                         message = String.format("No label views point to this text field with " +
-                                "an android:labelFor=\"@+id/%1$s\" attribute", id);
+                                "an `android:labelFor=\"@+id/%1$s\"` attribute", id);
                     }
-                    xmlContext.report(ISSUE, element, location, message, null);
+                    xmlContext.report(ISSUE, element, location, message);
                 }
 
             }

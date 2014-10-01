@@ -110,7 +110,6 @@ public class ObsoleteLayoutParamsDetector extends LayoutDetector {
     public static final Issue ISSUE = Issue.create(
             "ObsoleteLayoutParam", //$NON-NLS-1$
             "Obsolete layout params",
-            "Looks for layout params that are not valid for the given parent layout",
 
             "The given layout_param is not defined for the given layout, meaning it has no " +
             "effect. This usually happens when you change the parent layout or move view " +
@@ -301,8 +300,7 @@ public class ObsoleteLayoutParamsDetector extends LayoutDetector {
                         return;
                     }
                     context.report(ISSUE, attribute, context.getLocation(attribute),
-                            String.format("Invalid layout param in a %1$s: %2$s", parentTag, name),
-                            null);
+                            String.format("Invalid layout param in a `%1$s`: `%2$s`", parentTag, name));
                 }
             } else {
                 // We could warn about unknown layout params but this might be brittle if
@@ -398,14 +396,14 @@ public class ObsoleteLayoutParamsDetector extends LayoutDetector {
                     }
                     File from = include.getFirst();
                     String parentTag = include.getSecond();
-                    sb.append(String.format("included from within a %1$s in %2$s",
+                    sb.append(String.format("included from within a `%1$s` in `%2$s`",
                             parentTag,
                             from.getParentFile().getName() + File.separator + from.getName()));
                 }
-                String message = String.format("Invalid layout param '%1$s' (%2$s)",
+                String message = String.format("Invalid layout param '`%1$s`' (%2$s)",
                             name, sb.toString());
                 // TODO: Compute applicable scope node
-                context.report(ISSUE, location, message, null);
+                context.report(ISSUE, location, message);
             }
         }
     }

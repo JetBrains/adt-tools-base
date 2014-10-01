@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <recipe>
 
-    <dependency mavenUrl="com.android.support:support-v4:19.+"/>
+    <dependency mavenUrl="com.android.support:support-v4:${targetApi}.+"/>
     <merge from="AndroidManifest.xml.ftl"
              to="${escapeXmlAttribute(manifestOut)}/AndroidManifest.xml" />
 

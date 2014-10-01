@@ -59,7 +59,6 @@ public class ResourcePrefixDetector extends ResourceXmlDetector implements
     public static final Issue ISSUE = Issue.create(
             "ResourceName", //$NON-NLS-1$
             "Resource with Wrong Prefix",
-            "Ensures that resource names follow the specified name prefix for the project",
             "In Gradle projects you can specify a resource prefix that all resources " +
             "in the project must conform to. This makes it easier to ensure that you don't " +
             "accidentally combine resources from different libraries, since they all end " +
@@ -141,12 +140,12 @@ public class ResourcePrefixDetector extends ResourceXmlDetector implements
                         Element root = xmlContext.document.getDocumentElement();
                         if (root != null) {
                             xmlContext.report(ISSUE, root, xmlContext.getLocation(root),
-                                    getErrorMessage(name), null);
+                                    getErrorMessage(name));
                             return;
                         }
                     }
                     context.report(ISSUE, Location.create(context.file),
-                            getErrorMessage(name), null);
+                            getErrorMessage(name));
                 }
             }
         }
@@ -154,8 +153,8 @@ public class ResourcePrefixDetector extends ResourceXmlDetector implements
 
     private String getErrorMessage(String name) {
         assert mPrefix != null && !name.startsWith(mPrefix);
-        return String.format("Resource named '%1$s' does not start "
-                        + "with the project's resource prefix '%2$s'; rename to '%3$s' ?",
+        return String.format("Resource named '`%1$s`' does not start "
+                        + "with the project's resource prefix '`%2$s`'; rename to '`%3$s`' ?",
                 name, mPrefix, LintUtils.computeResourceName(mPrefix, name));
     }
 
@@ -174,7 +173,7 @@ public class ResourcePrefixDetector extends ResourceXmlDetector implements
                 if (!name.startsWith(mPrefix)) {
                     String message = getErrorMessage(name);
                     context.report(ISSUE, nameAttribute, context.getLocation(nameAttribute),
-                            message, null);
+                            message);
                 }
             }
         }
@@ -190,7 +189,7 @@ public class ResourcePrefixDetector extends ResourceXmlDetector implements
                 String name = LintUtils.getBaseName(context.file.getName());
                 if (!name.startsWith(mPrefix)) {
                     Location location = Location.create(context.file);
-                    context.report(ISSUE, location, getErrorMessage(name), null);
+                    context.report(ISSUE, location, getErrorMessage(name));
                 }
             }
         }

@@ -103,7 +103,7 @@ public class AndroidAsciiReportRenderer extends TextReportRenderer {
     }
 
     @Override
-    public void complete() throws IOException {
+    public void complete() {
         if (hasCyclicDependencies) {
             getTextOutput().withStyle(Info).println(
                     "\n(*) - dependencies omitted (listed previously)");

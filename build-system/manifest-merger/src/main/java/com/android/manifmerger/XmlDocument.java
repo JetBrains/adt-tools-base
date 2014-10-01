@@ -24,7 +24,7 @@ import static com.android.manifmerger.PlaceholderHandler.KeyBasedValueResolver;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.ide.common.sdk.SdkVersionInfo;
+import com.android.sdklib.SdkVersionInfo;
 import com.android.ide.common.xml.XmlFormatPreferences;
 import com.android.ide.common.xml.XmlFormatStyle;
 import com.android.ide.common.xml.XmlPrettyPrinter;
@@ -125,7 +125,9 @@ public class XmlDocument {
             XmlDocument lowerPriorityDocument,
             MergingReport.Builder mergingReportBuilder) {
 
-        mergingReportBuilder.getActionRecorder().recordDefaultNodeAction(getRootNode());
+        if (getFileType() == Type.MAIN) {
+            mergingReportBuilder.getActionRecorder().recordDefaultNodeAction(getRootNode());
+        }
 
         getRootNode().mergeWithLowerPriorityNode(
                 lowerPriorityDocument.getRootNode(), mergingReportBuilder);
@@ -380,7 +382,7 @@ public class XmlDocument {
                                         + "%2$s declared in library %3$s",
                                 getTargetSdkVersion(),
                                 libraryTargetSdkVersion,
-                                lowerPriorityDocument.getSourceLocation().print(true)
+                                lowerPriorityDocument.getSourceLocation().print(false)
                         )
                 );
                 return;
@@ -398,7 +400,7 @@ public class XmlDocument {
                                         + "%2$s declared in library %3$s",
                                 getMinSdkVersion(),
                                 libraryMinSdkVersion,
-                                lowerPriorityDocument.getSourceLocation().print(true)
+                                lowerPriorityDocument.getSourceLocation().print(false)
                         )
                 );
                 return;

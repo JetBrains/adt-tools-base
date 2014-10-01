@@ -72,7 +72,6 @@ public class UselessViewDetector extends LayoutDetector {
     public static final Issue USELESS_PARENT = Issue.create(
             "UselessParent", //$NON-NLS-1$
             "Useless parent layout",
-            "Checks whether a parent layout can be removed.",
             "A layout with children that has no siblings, is not a scrollview or " +
             "a root layout, and does not have a background, can be removed and have " +
             "its children moved directly into the parent for a flatter and more " +
@@ -86,7 +85,6 @@ public class UselessViewDetector extends LayoutDetector {
     public static final Issue USELESS_LEAF = Issue.create(
             "UselessLeaf", //$NON-NLS-1$
             "Useless leaf layout",
-            "Checks whether a leaf layout can be removed.",
             "A layout that has no children or no background can often be removed (since it " +
             "is invisible) for a flatter and more efficient layout hierarchy.",
             Category.PERFORMANCE,
@@ -223,15 +221,15 @@ public class UselessViewDetector extends LayoutDetector {
         String tag = element.getTagName();
         String format;
         if (hasId) {
-            format = "This %1$s layout or its %2$s parent is possibly useless";
+            format = "This `%1$s` layout or its `%2$s` parent is possibly useless";
         } else {
-            format = "This %1$s layout or its %2$s parent is useless";
+            format = "This `%1$s` layout or its `%2$s` parent is useless";
         }
         if (nodeHasBackground || parentHasBackground) {
-            format += "; transfer the background attribute to the other view";
+            format += "; transfer the `background` attribute to the other view";
         }
         String message = String.format(format, tag, parentTag);
-        context.report(USELESS_PARENT, element, location, message, null);
+        context.report(USELESS_PARENT, element, location, message);
     }
 
     // This is the old UselessView check from layoutopt
@@ -265,7 +263,7 @@ public class UselessViewDetector extends LayoutDetector {
         Location location = context.getLocation(element);
         String tag = element.getTagName();
         String message = String.format(
-                "This %1$s view is useless (no children, no background, no id, no style)", tag);
-        context.report(USELESS_LEAF, element, location, message, null);
+                "This `%1$s` view is useless (no children, no `background`, no `id`, no `style`)", tag);
+        context.report(USELESS_LEAF, element, location, message);
     }
 }

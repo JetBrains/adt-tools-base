@@ -58,7 +58,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 
 import lombok.ast.AstVisitor;
@@ -86,7 +85,6 @@ public class SecurityDetector extends Detector implements Detector.XmlScanner,
     public static final Issue EXPORTED_SERVICE = Issue.create(
             "ExportedService", //$NON-NLS-1$
             "Exported service does not require permission",
-            "Checks for exported services that do not require permissions",
             "Exported services (services which either set `exported=true` or contain " +
             "an intent-filter and do not specify `exported=false`) should define a " +
             "permission that an entity must have in order to launch the service " +
@@ -100,7 +98,6 @@ public class SecurityDetector extends Detector implements Detector.XmlScanner,
     public static final Issue EXPORTED_PROVIDER = Issue.create(
             "ExportedContentProvider", //$NON-NLS-1$
             "Content provider does not require permission",
-            "Checks for exported content providers that do not require permissions",
             "Content providers are exported by default and any application on the " +
             "system can potentially use them to read and write data. If the content " +
             "provider provides access to sensitive data, it should be protected by " +
@@ -115,7 +112,6 @@ public class SecurityDetector extends Detector implements Detector.XmlScanner,
     public static final Issue EXPORTED_RECEIVER = Issue.create(
             "ExportedReceiver", //$NON-NLS-1$
             "Receiver does not require permission",
-            "Checks for exported receivers that do not require permissions",
             "Exported receivers (receivers which either set `exported=true` or contain " +
             "an intent-filter and do not specify `exported=false`) should define a " +
             "permission that an entity must have in order to launch the receiver " +
@@ -129,7 +125,6 @@ public class SecurityDetector extends Detector implements Detector.XmlScanner,
     public static final Issue OPEN_PROVIDER = Issue.create(
             "GrantAllUris", //$NON-NLS-1$
             "Content provider shares everything",
-            "Checks for `<grant-uri-permission>` elements where everything is shared",
             "The `<grant-uri-permission>` element allows specific paths to be shared. " +
             "This detector checks for a path URL of just '/' (everything), which is " +
             "probably not what you want; you should limit access to a subset.",
@@ -142,8 +137,6 @@ public class SecurityDetector extends Detector implements Detector.XmlScanner,
     public static final Issue WORLD_WRITEABLE = Issue.create(
             "WorldWriteableFiles", //$NON-NLS-1$
             "`openFileOutput()` call passing `MODE_WORLD_WRITEABLE`",
-            "Checks for `openFileOutput()` and `getSharedPreferences()` calls passing " +
-            "`MODE_WORLD_WRITEABLE`",
             "There are cases where it is appropriate for an application to write " +
             "world writeable files, but these should be reviewed carefully to " +
             "ensure that they contain no private data, and that if the file is " +
@@ -159,8 +152,6 @@ public class SecurityDetector extends Detector implements Detector.XmlScanner,
     public static final Issue WORLD_READABLE = Issue.create(
             "WorldReadableFiles", //$NON-NLS-1$
             "`openFileOutput()` call passing `MODE_WORLD_READABLE`",
-            "Checks for `openFileOutput()` and `getSharedPreferences()` calls passing " +
-            "`MODE_WORLD_READABLE`",
             "There are cases where it is appropriate for an application to write " +
             "world readable files, but these should be reviewed carefully to " +
             "ensure that they contain no private data that is leaked to other " +
@@ -245,24 +236,15 @@ public class SecurityDetector extends Detector implements Detector.XmlScanner,
         return false;
     }
 
-    private static boolean isLauncher(Element element) {
-        // Checks whether an element is a launcher activity.
-        for (Element child : LintUtils.getChildren(element)) {
-            if (child.getTagName().equals(TAG_INTENT_FILTER)) {
-                for (Element innerChild: LintUtils.getChildren(child)) {
-                    if (innerChild.getTagName().equals("category")) { //$NON-NLS-1$
-                        String categoryString = innerChild.getAttributeNS(ANDROID_URI, ATTR_NAME);
-                        return "android.intent.category.LAUNCHER".equals(categoryString); //$NON-NLS-1$
-                    }
-                }
-            }
+    private static boolean isStandardReceiver(Element element) {
+        // Play Services also the following receiver which we'll consider standard
+        // in the sense that it doesn't require a separate permission
+        String name = element.getAttributeNS(ANDROID_URI, ATTR_NAME);
+        if ("com.google.android.gms.tagmanager.InstallReferrerReceiver".equals(name)) {
+            return true;
         }
 
-        return false;
-    }
-
-    private static boolean isStandardReceiver(Element element) {
-      // Checks whether a broadcast receiver receives a standard Android action
+        // Checks whether a broadcast receiver receives a standard Android action
         for (Element child : LintUtils.getChildren(element)) {
             if (child.getTagName().equals(TAG_INTENT_FILTER)) {
                 for (Element innerChild : LintUtils.getChildren(child)) {
@@ -273,15 +255,16 @@ public class SecurityDetector extends Detector implements Detector.XmlScanner,
                 }
             }
         }
+
         return false;
     }
 
     private static void checkReceiver(XmlContext context, Element element) {
         if (getExported(element) && isUnprotectedByPermission(element) &&
-            !isStandardReceiver(element)) {
+                !isStandardReceiver(element)) {
             // No declared permission for this exported receiver: complain
             context.report(EXPORTED_RECEIVER, element, context.getLocation(element),
-                           "Exported receiver does not require permission", null);
+                           "Exported receiver does not require permission");
         }
     }
 
@@ -289,7 +272,7 @@ public class SecurityDetector extends Detector implements Detector.XmlScanner,
         if (getExported(element) && isUnprotectedByPermission(element)) {
             // No declared permission for this exported service: complain
             context.report(EXPORTED_SERVICE, element, context.getLocation(element),
-                           "Exported service does not require permission", null);
+                           "Exported service does not require permission");
         }
     }
 
@@ -300,14 +283,14 @@ public class SecurityDetector extends Detector implements Detector.XmlScanner,
 
         String msg = "Content provider shares everything; this is potentially dangerous.";
         if (path != null && path.getValue().equals("/")) { //$NON-NLS-1$
-            context.report(OPEN_PROVIDER, path, context.getLocation(path), msg, null);
+            context.report(OPEN_PROVIDER, path, context.getLocation(path), msg);
         }
         if (prefix != null && prefix.getValue().equals("/")) { //$NON-NLS-1$
-            context.report(OPEN_PROVIDER, prefix, context.getLocation(prefix), msg, null);
+            context.report(OPEN_PROVIDER, prefix, context.getLocation(prefix), msg);
         }
         if (pattern != null && (pattern.getValue().equals("/")  //$NON-NLS-1$
                /* || pattern.getValue().equals(".*")*/)) {
-            context.report(OPEN_PROVIDER, pattern, context.getLocation(pattern), msg, null);
+            context.report(OPEN_PROVIDER, pattern, context.getLocation(pattern), msg);
         }
     }
 
@@ -346,8 +329,7 @@ public class SecurityDetector extends Detector implements Detector.XmlScanner,
                             context.report(EXPORTED_PROVIDER, element,
                                     context.getLocation(element),
                                     "Exported content providers can provide access to " +
-                                            "potentially sensitive data",
-                                    null);
+                                            "potentially sensitive data");
                         }
                     }
                 }
@@ -371,9 +353,8 @@ public class SecurityDetector extends Detector implements Detector.XmlScanner,
     public void visitMethod(@NonNull JavaContext context, @Nullable AstVisitor visitor,
             @NonNull MethodInvocation node) {
         StrictListAccessor<Expression,MethodInvocation> args = node.astArguments();
-        Iterator<Expression> iterator = args.iterator();
-        while (iterator.hasNext()) {
-            iterator.next().accept(visitor);
+        for (Expression arg : args) {
+            arg.accept(visitor);
         }
     }
 
@@ -395,15 +376,13 @@ public class SecurityDetector extends Detector implements Detector.XmlScanner,
             if ("MODE_WORLD_WRITEABLE".equals(node.astValue())) { //$NON-NLS-1$
                 Location location = mContext.getLocation(node);
                 mContext.report(WORLD_WRITEABLE, node, location,
-                        "Using MODE_WORLD_WRITEABLE when creating files can be " +
-                                "risky, review carefully",
-                        null);
+                        "Using `MODE_WORLD_WRITEABLE` when creating files can be " +
+                                "risky, review carefully");
             } else if ("MODE_WORLD_READABLE".equals(node.astValue())) { //$NON-NLS-1$
                 Location location = mContext.getLocation(node);
                 mContext.report(WORLD_READABLE, node, location,
-                        "Using MODE_WORLD_READABLE when creating files can be " +
-                                "risky, review carefully",
-                        null);
+                        "Using `MODE_WORLD_READABLE` when creating files can be " +
+                                "risky, review carefully");
             }
 
             return false;

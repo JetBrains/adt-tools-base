@@ -19,7 +19,7 @@ package com.android.ide.common.res2;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 
-import java.io.File;
+import javax.xml.parsers.DocumentBuilderFactory;
 
 /**
  * A consumer of merges. Used with {@link DataMerger#mergeData(MergeConsumer, boolean)}.
@@ -40,7 +40,7 @@ public interface MergeConsumer<I extends DataItem> {
      * Called before the merge starts.
      * @throws ConsumerException
      */
-    void start() throws ConsumerException;
+    void start(@NonNull DocumentBuilderFactory factory) throws ConsumerException;
 
     /**
      * Called after the merge ends.

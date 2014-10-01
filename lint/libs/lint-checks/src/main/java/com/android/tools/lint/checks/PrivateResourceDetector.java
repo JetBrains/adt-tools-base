@@ -38,7 +38,6 @@ public class PrivateResourceDetector extends ResourceXmlDetector {
     public static final Issue ISSUE = Issue.create(
             "PrivateResource", //$NON-NLS-1$
             "Using private resources",
-            "Looks for references to private resources",
 
             "Private resources should not be referenced; the may not be present everywhere, and " +
             "even where they are they may disappear without notice.\n" +
@@ -72,8 +71,8 @@ public class PrivateResourceDetector extends ResourceXmlDetector {
         String value = attribute.getNodeValue();
         if (value.startsWith("@*android:")) { //$NON-NLS-1$
             context.report(ISSUE, attribute, context.getLocation(attribute),
-                    "Illegal resource reference: @*android resources are private and " +
-                    "not always present", null);
+                    "Illegal resource reference: `@*android` resources are private and " +
+                    "not always present");
         }
     }
 }

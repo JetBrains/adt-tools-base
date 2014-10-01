@@ -21,31 +21,24 @@ import static com.android.tools.lint.checks.JavaPerformanceDetector.ON_DRAW;
 import static com.android.tools.lint.checks.JavaPerformanceDetector.ON_LAYOUT;
 import static com.android.tools.lint.checks.JavaPerformanceDetector.ON_MEASURE;
 
-import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.tools.lint.client.api.JavaParser;
 import com.android.tools.lint.detector.api.Category;
-import com.android.tools.lint.detector.api.ClassContext;
 import com.android.tools.lint.detector.api.Detector;
-import com.android.tools.lint.detector.api.Detector.ClassScanner;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.JavaContext;
+import com.android.tools.lint.detector.api.LintUtils;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.Speed;
-
-import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.MethodInsnNode;
-import org.objectweb.asm.tree.MethodNode;
+import com.android.tools.lint.detector.api.TextFormat;
 
 import java.util.Arrays;
 import java.util.List;
 
 import lombok.ast.AstVisitor;
-import lombok.ast.ConstructorDeclaration;
 import lombok.ast.Expression;
 import lombok.ast.MethodDeclaration;
 import lombok.ast.MethodInvocation;
@@ -60,8 +53,6 @@ public class WrongCallDetector extends Detector implements Detector.JavaScanner 
     public static final Issue ISSUE = Issue.create(
             "WrongCall", //$NON-NLS-1$
             "Using wrong draw/layout method",
-            "Finds cases where the wrong call is made, such as calling `onMeasure` " +
-            "instead of `measure`",
 
             "Custom views typically need to call `measure()` on their children, not `onMeasure`. " +
             "Ditto for onDraw, onLayout, etc.",
@@ -130,8 +121,41 @@ public class WrongCallDetector extends Detector implements Detector.JavaScanner 
         String name = node.astName().astValue();
         String suggestion = Character.toLowerCase(name.charAt(2)) + name.substring(3);
         String message = String.format(
-                "Suspicious method call; should probably call \"%1$s\" rather than \"%2$s\"",
+                // Keep in sync with {@link #getOldValue} and {@link #getNewValue} below!
+                "Suspicious method call; should probably call \"`%1$s`\" rather than \"`%2$s`\"",
                 suggestion, name);
-        context.report(ISSUE, node, context.getLocation(node.astName()), message, null);
+        context.report(ISSUE, node, context.getLocation(node.astName()), message);
+    }
+
+    /**
+     * Given an error message produced by this lint detector for the given issue type,
+     * returns the old value to be replaced in the source code.
+     * <p>
+     * Intended for IDE quickfix implementations.
+     *
+     * @param errorMessage the error message associated with the error
+     * @param format the format of the error message
+     * @return the corresponding old value, or null if not recognized
+     */
+    @Nullable
+    public static String getOldValue(@NonNull String errorMessage, @NonNull TextFormat format) {
+        errorMessage = format.toText(errorMessage);
+        return LintUtils.findSubstring(errorMessage, "than \"", "\"");
+    }
+
+    /**
+     * Given an error message produced by this lint detector for the given issue type,
+     * returns the new value to be put into the source code.
+     * <p>
+     * Intended for IDE quickfix implementations.
+     *
+     * @param errorMessage the error message associated with the error
+     * @param format the format of the error message
+     * @return the corresponding new value, or null if not recognized
+     */
+    @Nullable
+    public static String getNewValue(@NonNull String errorMessage, @NonNull TextFormat format) {
+        errorMessage = format.toText(errorMessage);
+        return LintUtils.findSubstring(errorMessage, "call \"", "\"");
     }
 }

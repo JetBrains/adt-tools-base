@@ -35,7 +35,7 @@ import java.util.ArrayList;
  * <p/>
  * To get a {@link SyncService} object, use {@link Device#getSyncService()}.
  */
-public final class SyncService {
+public class SyncService {
 
     private static final byte[] ID_OKAY = { 'O', 'K', 'A', 'Y' };
     private static final byte[] ID_FAIL = { 'F', 'A', 'I', 'L' };

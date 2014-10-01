@@ -44,7 +44,6 @@ public class TooManyViewsDetector extends LayoutDetector {
     public static final Issue TOO_MANY = Issue.create(
             "TooManyViews", //$NON-NLS-1$
             "Layout has too many views",
-            "Checks whether a layout has too many views",
             "Using too many views in a single layout is bad for " +
             "performance. Consider using compound drawables or other tricks for " +
             "reducing the number of views in this layout.\n\n" +
@@ -59,7 +58,6 @@ public class TooManyViewsDetector extends LayoutDetector {
     public static final Issue TOO_DEEP = Issue.create(
             "TooDeepLayout", //$NON-NLS-1$
             "Layout hierarchy is too deep",
-            "Checks whether a layout hierarchy is too deep",
             "Layouts with too much nesting is bad for performance. " +
             "Consider using a flatter layout (such as `RelativeLayout` or `GridLayout`)." +
             "The default maximum depth is 10 but can be configured with the environment " +
@@ -138,14 +136,14 @@ public class TooManyViewsDetector extends LayoutDetector {
             // for the view count error since we'll only have view count exactly equal the
             // max just once.
             mWarnedAboutDepth = true;
-            String msg = String.format("%1$s has more than %2$d levels, bad for performance",
+            String msg = String.format("`%1$s` has more than %2$d levels, bad for performance",
                     context.file.getName(), MAX_DEPTH);
-            context.report(TOO_DEEP, element, context.getLocation(element), msg, null);
+            context.report(TOO_DEEP, element, context.getLocation(element), msg);
         }
         if (mViewCount == MAX_VIEW_COUNT) {
-            String msg = String.format("%1$s has more than %2$d views, bad for performance",
+            String msg = String.format("`%1$s` has more than %2$d views, bad for performance",
                     context.file.getName(), MAX_VIEW_COUNT);
-            context.report(TOO_MANY, element, context.getLocation(element), msg, null);
+            context.report(TOO_MANY, element, context.getLocation(element), msg);
         }
     }
 

@@ -12,6 +12,7 @@ public class Main extends Activity
 {
 
     private int foo = 1234;
+    private TextView textView;
 
     /** Called when the activity is first created. */
     @Override
@@ -20,27 +21,16 @@ public class Main extends Activity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
 
-        TextView tv = (TextView) findViewById(R.id.dateText);
-
-        try {
-            // use reflection to make sure the class wasn't obfuscated
-            Class<?> theClass = Class.forName("com.android.tests.basic.StringGetter");
-            Method method = theClass.getDeclaredMethod("getString", int.class);
-            tv.setText((String) method.invoke(null, foo));
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        textView = (TextView) findViewById(R.id.dateText);
     }
 
-    /**
-     * use reflection to get a method that should be obfuscated
-     */
-    public void getObfuscatedMethod() throws NoSuchMethodException{
-        try {
-            Class<?> theClass = Class.forName("com.android.tests.basic.StringGetter");
-            Method method = theClass.getDeclaredMethod("getStringInternal", int.class);
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
-        }
+    public void setUpTextView1() {
+        // doesn't actually set the value on the view since we're calling
+        // this from the tes.
+        String value = StringGetter.getString(foo);
+    }
+
+    public void setUpTextView2() {
+        String value = StringGetter.getString2(foo);
     }
 }

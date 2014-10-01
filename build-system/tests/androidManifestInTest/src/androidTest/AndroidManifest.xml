@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+      package="com.android.tests.basic">
+
+    <instrumentation android:name="${instrumentationRunner}">
+        <meta-data android:name="listener"
+                   android:value="android.support.test.internal.runner.listener.ManifestListener"/>
+    </instrumentation>
+
+    <permission-group android:name="foo.permission-group.COST_MONEY"
+        android:label="@string/app_name"
+        android:description="@string/app_name" />
+
+    <permission android:name="foo.permission.RECEIVED_SMS"
+        android:permissionGroup="foo.permission-group.COST_MONEY"
+        android:label="@string/app_name"
+        android:description="@string/app_name" />
+
+</manifest>

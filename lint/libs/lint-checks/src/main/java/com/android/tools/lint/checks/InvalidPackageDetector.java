@@ -52,7 +52,6 @@ public class InvalidPackageDetector extends Detector implements Detector.ClassSc
     public static final Issue ISSUE = Issue.create(
             "InvalidPackage", //$NON-NLS-1$
             "Package not included in Android",
-            "Finds API accesses to APIs that are not supported in Android",
 
             "This check scans through libraries looking for calls to APIs that are not included " +
             "in Android.\n" +
@@ -273,9 +272,9 @@ public class InvalidPackageDetector extends Detector implements Detector.ClassSc
             }
 
             String message = String.format(
-                    "Invalid package reference in library; not included in Android: %1$s. " +
-                    "Referenced from %2$s.", pkg, ClassContext.getFqcn(referencedIn));
-            context.report(ISSUE, location, message, null);
+                    "Invalid package reference in library; not included in Android: `%1$s`. " +
+                    "Referenced from `%2$s`.", pkg, ClassContext.getFqcn(referencedIn));
+            context.report(ISSUE, location, message);
         }
     }
 

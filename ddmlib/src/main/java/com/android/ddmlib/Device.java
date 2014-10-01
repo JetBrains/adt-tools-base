@@ -17,11 +17,11 @@
 package com.android.ddmlib;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.annotations.concurrency.GuardedBy;
 import com.android.ddmlib.log.LogReceiver;
 import com.google.common.base.Splitter;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
 import java.io.File;
@@ -29,13 +29,14 @@ import java.io.IOException;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -46,8 +47,6 @@ import java.util.regex.Pattern;
  */
 final class Device implements IDevice {
     private static final int INSTALL_TIMEOUT = 2*60*1000; //2min
-    private static final int BATTERY_TIMEOUT = 2*1000; //2 seconds
-    private static final int GETPROP_TIMEOUT = 2*1000; //2 seconds
 
     /** Emulator Serial Number regexp. */
     static final String RE_EMULATOR_SN = "emulator-(\\d+)"; //$NON-NLS-1$
@@ -62,8 +61,10 @@ final class Device implements IDevice {
     private DeviceState mState = null;
 
     /** Device properties. */
-    private final Map<String, String> mProperties = new HashMap<String, String>();
+    private final PropertyFetcher mPropFetcher = new PropertyFetcher(this);
     private final Map<String, String> mMountPoints = new HashMap<String, String>();
+
+    private final BatteryFetcher mBatteryFetcher = new BatteryFetcher(this);
 
     @GuardedBy("mClients")
     private final List<Client> mClients = new ArrayList<Client>();
@@ -82,13 +83,12 @@ final class Device implements IDevice {
      */
     private SocketChannel mSocketChannel;
 
-    private boolean mArePropertiesSet = false;
-
     private Integer mLastBatteryLevel = null;
     private long mLastBatteryCheckTime = 0;
 
     /** Path to the screen recorder binary on the device. */
     private static final String SCREEN_RECORDER_DEVICE_PATH = "/system/bin/screenrecord";
+    private static final long LS_TIMEOUT_SEC = 2;
 
     /** Flag indicating whether the device has the screen recorder binary. */
     private Boolean mHasScreenRecorder;
@@ -137,101 +137,6 @@ final class Device implements IDevice {
 
         public String getErrorMessage() {
             return mErrorMessage;
-        }
-    }
-
-    /**
-     * Output receiver for "dumpsys battery" command line.
-     */
-    private static final class BatteryReceiver extends MultiLineReceiver {
-        private static final Pattern BATTERY_LEVEL = Pattern.compile("\\s*level: (\\d+)");
-        private static final Pattern SCALE = Pattern.compile("\\s*scale: (\\d+)");
-
-        private Integer mBatteryLevel = null;
-        private Integer mBatteryScale = null;
-
-        /**
-         * Get the parsed percent battery level.
-         * @return
-         */
-        public Integer getBatteryLevel() {
-            if (mBatteryLevel != null && mBatteryScale != null) {
-                return (mBatteryLevel * 100) / mBatteryScale;
-            }
-            return null;
-        }
-
-        @Override
-        public void processNewLines(String[] lines) {
-            for (String line : lines) {
-                Matcher batteryMatch = BATTERY_LEVEL.matcher(line);
-                if (batteryMatch.matches()) {
-                    try {
-                        mBatteryLevel = Integer.parseInt(batteryMatch.group(1));
-                    } catch (NumberFormatException e) {
-                        Log.w(LOG_TAG, String.format("Failed to parse %s as an integer",
-                                batteryMatch.group(1)));
-                    }
-                }
-                Matcher scaleMatch = SCALE.matcher(line);
-                if (scaleMatch.matches()) {
-                    try {
-                        mBatteryScale = Integer.parseInt(scaleMatch.group(1));
-                    } catch (NumberFormatException e) {
-                        Log.w(LOG_TAG, String.format("Failed to parse %s as an integer",
-                                batteryMatch.group(1)));
-                    }
-                }
-            }
-        }
-
-        @Override
-        public boolean isCancelled() {
-            return false;
-        }
-    }
-
-    /**
-     * Output receiver for "cat /sys/class/power_supply/.../capacity" command line.
-     */
-    static final class SysFsBatteryLevelReceiver extends MultiLineReceiver {
-
-        private static final Pattern BATTERY_LEVEL = Pattern.compile("^(\\d+)[.\\s]*");
-        private Integer mBatteryLevel = null;
-
-        /**
-         * Get the parsed battery level.
-         * @return battery level or <code>null</code> if it cannot be determined
-         */
-        @Nullable
-        public Integer getBatteryLevel() {
-            return mBatteryLevel;
-        }
-
-        @Override
-        public boolean isCancelled() {
-            return false;
-        }
-
-        @Override
-        public void processNewLines(String[] lines) {
-            for (String line : lines) {
-                Matcher batteryMatch = BATTERY_LEVEL.matcher(line);
-                if (batteryMatch.matches()) {
-                    if (mBatteryLevel == null) {
-                        mBatteryLevel = Integer.parseInt(batteryMatch.group(1));
-                    } else {
-                        // multiple matches, check if they are different
-                        Integer tmpLevel = Integer.parseInt(batteryMatch.group(1));
-                        if (!mBatteryLevel.equals(tmpLevel)) {
-                            Log.w(LOG_TAG, String.format(
-                                    "Multiple lines matched with different value; " +
-                                    "Original: %s, Current: %s (keeping original)",
-                                    mBatteryLevel.toString(), tmpLevel.toString()));
-                        }
-                    }
-                }
-            }
         }
     }
 
@@ -291,9 +196,9 @@ final class Device implements IDevice {
 
             try {
                 manufacturer = cleanupStringForDisplay(
-                    getPropertyCacheOrSync(PROP_DEVICE_MANUFACTURER));
+                    getSystemProperty(PROP_DEVICE_MANUFACTURER).get());
                 model = cleanupStringForDisplay(
-                    getPropertyCacheOrSync(PROP_DEVICE_MODEL));
+                        getSystemProperty(PROP_DEVICE_MODEL).get());
             } catch (Exception e) {
                 // If there are exceptions thrown while attempting to get these properties,
                 // we can just use the serial number, so ignore these exceptions.
@@ -358,7 +263,7 @@ final class Device implements IDevice {
      */
     @Override
     public Map<String, String> getProperties() {
-        return Collections.unmodifiableMap(mProperties);
+        return Collections.unmodifiableMap(mPropFetcher.getProperties());
     }
 
     /*
@@ -367,7 +272,7 @@ final class Device implements IDevice {
      */
     @Override
     public int getPropertyCount() {
-        return mProperties.size();
+        return mPropFetcher.getProperties().size();
     }
 
     /*
@@ -376,42 +281,55 @@ final class Device implements IDevice {
      */
     @Override
     public String getProperty(String name) {
-        return mProperties.get(name);
+        Future<String> future = mPropFetcher.getProperty(name);
+        try {
+            return future.get(1, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            // ignore
+        } catch (ExecutionException e) {
+            // ignore
+        } catch (java.util.concurrent.TimeoutException e) {
+            // ignore
+        }
+        return null;
     }
 
     @Override
     public boolean arePropertiesSet() {
-        return mArePropertiesSet;
+        return mPropFetcher.arePropertiesSet();
     }
 
     @Override
     public String getPropertyCacheOrSync(String name) throws TimeoutException,
             AdbCommandRejectedException, ShellCommandUnresponsiveException, IOException {
-        if (mArePropertiesSet) {
-            return getProperty(name);
-        } else {
-            return getPropertySync(name);
+        Future<String> future = mPropFetcher.getProperty(name);
+        try {
+            return future.get();
+        } catch (InterruptedException e) {
+            // ignore
+        } catch (ExecutionException e) {
+            // ignore
         }
+        return null;
     }
 
     @Override
     public String getPropertySync(String name) throws TimeoutException,
             AdbCommandRejectedException, ShellCommandUnresponsiveException, IOException {
-        CountDownLatch latch = new CountDownLatch(1);
-        CollectingOutputReceiver receiver = new CollectingOutputReceiver(latch);
-        executeShellCommand(String.format("getprop '%s'", name), receiver, GETPROP_TIMEOUT);
+        Future<String> future = mPropFetcher.getProperty(name);
         try {
-            latch.await(GETPROP_TIMEOUT, TimeUnit.MILLISECONDS);
+            return future.get();
         } catch (InterruptedException e) {
-            return null;
+            // ignore
+        } catch (ExecutionException e) {
+            // ignore
         }
+        return null;
+    }
 
-        String value = receiver.getOutput().trim();
-        if (value.isEmpty()) {
-            return null;
-        }
-
-        return value;
+    @Override
+    public @NonNull Future<String> getSystemProperty(@NonNull String name) {
+        return mPropFetcher.getProperty(name);
     }
 
     @Override
@@ -439,7 +357,7 @@ final class Device implements IDevice {
     public boolean supportsFeature(@NonNull HardwareFeature feature) {
         if (mHardwareCharacteristics == null) {
             try {
-                String characteristics = getPropertyCacheOrSync(PROP_BUILD_CHARACTERISTICS);
+                String characteristics = getSystemProperty(PROP_BUILD_CHARACTERISTICS).get();
                 mHardwareCharacteristics = Sets.newHashSet(Splitter.on(',').split(characteristics));
             } catch (Exception e) {
                 mHardwareCharacteristics = Collections.emptySet();
@@ -455,7 +373,7 @@ final class Device implements IDevice {
         }
 
         try {
-            mApiLevel = Integer.parseInt(getPropertyCacheOrSync(PROP_BUILD_API_LEVEL));
+            mApiLevel = Integer.parseInt(getSystemProperty(PROP_BUILD_API_LEVEL).get());
             return mApiLevel;
         } catch (Exception e) {
             return -1;
@@ -472,7 +390,7 @@ final class Device implements IDevice {
         }
 
         try {
-            latch.await(GETPROP_TIMEOUT, TimeUnit.MILLISECONDS);
+            latch.await(LS_TIMEOUT_SEC, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             return false;
         }
@@ -764,19 +682,12 @@ final class Device implements IDevice {
     }
 
     void update(int changeMask) {
-        if ((changeMask & CHANGE_BUILD_INFO) != 0) {
-            mArePropertiesSet = true;
-        }
         mMonitor.getServer().deviceChanged(this, changeMask);
     }
 
     void update(Client client, int changeMask) {
         mMonitor.getServer().clientChanged(client, changeMask);
         updateClientInfo(client, changeMask);
-    }
-
-    void addProperty(String label, String value) {
-        mProperties.put(label, value);
     }
 
     void setMountingPoint(String name, String value) {
@@ -1042,24 +953,52 @@ final class Device implements IDevice {
     @Override
     public Integer getBatteryLevel(long freshnessMs) throws TimeoutException,
             AdbCommandRejectedException, IOException, ShellCommandUnresponsiveException {
-        if (mLastBatteryLevel != null
-                && mLastBatteryCheckTime > (System.currentTimeMillis() - freshnessMs)) {
-            return mLastBatteryLevel;
+        Future<Integer> futureBattery = getBattery(freshnessMs, TimeUnit.MILLISECONDS);
+        try {
+            return futureBattery.get();
+        } catch (InterruptedException e) {
+            return null;
+        } catch (ExecutionException e) {
+            return null;
         }
-        // first try to get it from sysfs
-        SysFsBatteryLevelReceiver sysBattReceiver = new SysFsBatteryLevelReceiver();
-        executeShellCommand("cat /sys/class/power_supply/*/capacity",
-                sysBattReceiver, BATTERY_TIMEOUT);
-        mLastBatteryLevel = sysBattReceiver.getBatteryLevel();
-        if (mLastBatteryLevel != null) {
-            mLastBatteryCheckTime = System.currentTimeMillis();
-            return mLastBatteryLevel;
+    }
+
+    @NonNull
+    @Override
+    public Future<Integer> getBattery() {
+        return getBattery(5, TimeUnit.MINUTES);
+    }
+
+    @NonNull
+    @Override
+    public Future<Integer> getBattery(long freshnessTime, @NonNull TimeUnit timeUnit) {
+        return mBatteryFetcher.getBattery(freshnessTime, timeUnit);
+    }
+
+    @NonNull
+    @Override
+    public List<String> getAbis() {
+        List<String> abis = Lists.newArrayListWithExpectedSize(2);
+        String abi = getProperty(IDevice.PROP_DEVICE_CPU_ABI);
+        if (abi != null) {
+            abis.add(abi);
         }
-        // now try dumpsys
-        BatteryReceiver receiver = new BatteryReceiver();
-        executeShellCommand("dumpsys battery", receiver, BATTERY_TIMEOUT);
-        mLastBatteryLevel = receiver.getBatteryLevel();
-        mLastBatteryCheckTime = System.currentTimeMillis();
-        return mLastBatteryLevel;
+
+        abi = getProperty(IDevice.PROP_DEVICE_CPU_ABI2);
+        if (abi != null) {
+            abis.add(abi);
+        }
+
+        return abis;
+    }
+
+    @Override
+    public int getDensity() {
+        String densityValue = getProperty(IDevice.PROP_DEVICE_DENSITY);
+        if (densityValue != null) {
+            return Integer.parseInt(densityValue);
+        }
+
+        return 0;
     }
 }

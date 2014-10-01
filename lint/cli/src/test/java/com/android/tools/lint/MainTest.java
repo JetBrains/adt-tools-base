@@ -131,8 +131,7 @@ public class MainTest extends AbstractCheckTest {
         // Expected output
         "NewApi\n" +
         "------\n" +
-        "Summary: Finds API accesses to APIs that are not supported in all targeted API\n" +
-        "versions\n" +
+        "Summary: Calling new methods on older versions\n" +
         "\n" +
         "Priority: 6 / 10\n" +
         "Severity: Error\n" +
@@ -143,7 +142,7 @@ public class MainTest extends AbstractCheckTest {
         "application (according to its minimum SDK attribute in the manifest).\n" +
         "\n" +
         "If you really want to use this API and don't need to support older devices\n" +
-        "just set the minSdkVersion in your AndroidManifest.xml file.\n" +
+        "just set the minSdkVersion in your build.gradle or AndroidManifest.xml files.\n" +
         "If your code is deliberately accessing newer APIs, and you have ensured (e.g.\n" +
         "with conditional execution) that this code will only ever be called on a\n" +
         "supported platform, then you can annotate your class or method with the\n" +
@@ -179,7 +178,7 @@ public class MainTest extends AbstractCheckTest {
                 // Expected output
                 + "SdCardPath\n"
                 + "----------\n"
-                + "Summary: Looks for hardcoded references to /sdcard\n"
+                + "Summary: Hardcoded reference to /sdcard\n"
                 + "\n"
                 + "Priority: 6 / 10\n"
                 + "Severity: Warning\n"
@@ -461,10 +460,7 @@ public class MainTest extends AbstractCheckTest {
         );
         checkDriver(""
                 + "\n"
-                + "Scanning MainTest_testGradle: \n"
-                + "MainTest_testGradle: Error: \"MainTest_testGradle\" is a Gradle project. "
-                + "To correctly analyze Gradle projects, you should run \"gradlew :lint\" "
-                + "instead. [LintError]\n"
+                + "MainTest_testGradle: Error: \"MainTest_testGradle\" is a Gradle project. To correctly analyze Gradle projects, you should run \"gradlew :lint\" instead. [LintError]\n"
                 + "1 errors, 0 warnings\n",
 
                 "",

@@ -86,7 +86,6 @@ public class LayoutInflationDetector extends LayoutDetector implements Detector.
     public static final Issue ISSUE = Issue.create(
             "InflateParams", //$NON-NLS-1$
             "Layout Inflation without a Parent",
-            "Ensures that a proper parent context is passed to a layout inflater",
 
             "When inflating a layout, avoid passing in null as the parent view, since " +
             "otherwise any layout parameters on the root of the inflated layout will be ignored.",
@@ -98,7 +97,7 @@ public class LayoutInflationDetector extends LayoutDetector implements Detector.
             .addMoreInfo("http://www.doubleencore.com/2013/05/layout-inflation-as-intended");
 
     private static final String ERROR_MESSAGE =
-            "Avoid passing null as the view root (needed to resolve "
+            "Avoid passing `null` as the view root (needed to resolve "
             + "layout parameters on the inflated layout's root element)";
 
     /** Constructs a new {@link LayoutInflationDetector} check */
@@ -122,7 +121,7 @@ public class LayoutInflationDetector extends LayoutDetector implements Detector.
                     continue;
                 }
                 Location location = pair.getSecond();
-                context.report(ISSUE, location, ERROR_MESSAGE, null);
+                context.report(ISSUE, location, ERROR_MESSAGE);
             }
         }
     }
@@ -194,7 +193,7 @@ public class LayoutInflationDetector extends LayoutDetector implements Detector.
                         mPendingErrors.add(Pair.of(layoutName, location));
                     }
                 } else if (hasLayoutParams(context, layoutName)) {
-                    context.report(ISSUE, node, context.getLocation(second), ERROR_MESSAGE, null);
+                    context.report(ISSUE, node, context.getLocation(second), ERROR_MESSAGE);
                 }
             }
         }

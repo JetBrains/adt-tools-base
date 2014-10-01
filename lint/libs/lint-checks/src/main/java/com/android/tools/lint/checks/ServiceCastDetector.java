@@ -47,7 +47,6 @@ public class ServiceCastDetector extends Detector implements Detector.JavaScanne
     public static final Issue ISSUE = Issue.create(
             "ServiceCast", //$NON-NLS-1$
             "Wrong system service casts",
-            "Looks for `Context#getSystemService()` calls where the value is cast incorrectly",
 
             "When you call `Context#getSystemService()`, the result is typically cast to " +
             "a specific interface. This lint check ensures that the cast is compatible with " +
@@ -98,9 +97,9 @@ public class ServiceCastDetector extends Detector implements Detector.JavaScanne
                         }
 
                         String message = String.format(
-                                "Suspicious cast to %1$s for a %2$s: expected %3$s",
+                                "Suspicious cast to `%1$s` for a `%2$s`: expected `%3$s`",
                                 stripPackage(castType), name, stripPackage(expectedClass));
-                        context.report(ISSUE, node, context.getLocation(cast), message, null);
+                        context.report(ISSUE, node, context.getLocation(cast), message);
                     }
                 }
 

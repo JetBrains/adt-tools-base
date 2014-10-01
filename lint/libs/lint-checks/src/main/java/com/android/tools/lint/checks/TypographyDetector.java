@@ -57,7 +57,6 @@ public class TypographyDetector extends ResourceXmlDetector {
     public static final Issue DASHES = Issue.create(
             "TypographyDashes", //$NON-NLS-1$
             "Hyphen can be replaced with dash",
-            "Looks for usages of hyphens which can be replaced by n dash and m dash characters",
             "The \"n dash\" (\u2013, &#8211;) and the \"m dash\" (\u2014, &#8212;) " +
             "characters are used for ranges (n dash) and breaks (m dash). Using these " +
             "instead of plain hyphens can make text easier to read and your application " +
@@ -72,7 +71,6 @@ public class TypographyDetector extends ResourceXmlDetector {
     public static final Issue QUOTES = Issue.create(
             "TypographyQuotes", //$NON-NLS-1$
             "Straight quotes can be replaced with curvy quotes",
-            "Looks for straight quotes which can be replaced by curvy quotes",
             "Straight single quotes and double quotes, when used as a pair, can be replaced " +
             "by \"curvy quotes\" (or directional quotes). This can make the text more " +
             "readable.\n" +
@@ -94,7 +92,6 @@ public class TypographyDetector extends ResourceXmlDetector {
     public static final Issue FRACTIONS = Issue.create(
             "TypographyFractions", //$NON-NLS-1$
             "Fraction string can be replaced with fraction character",
-            "Looks for fraction strings which can be replaced with a fraction character",
             "You can replace certain strings, such as 1/2, and 1/4, with dedicated " +
             "characters for these, such as \u00BD (&#189;) and \u00BC (&#188;). " +
             "This can help make the text more readable.",
@@ -108,7 +105,6 @@ public class TypographyDetector extends ResourceXmlDetector {
     public static final Issue ELLIPSIS = Issue.create(
             "TypographyEllipsis", //$NON-NLS-1$
             "Ellipsis string can be replaced with ellipsis character",
-            "Looks for ellipsis strings (...) which can be replaced with an ellipsis character",
             "You can replace the string \"...\" with a dedicated ellipsis character, " +
             "ellipsis character (\u2026, &#8230;). This can help make the text more readable.",
             Category.TYPOGRAPHY,
@@ -121,7 +117,6 @@ public class TypographyDetector extends ResourceXmlDetector {
     public static final Issue OTHER = Issue.create(
             "TypographyOther", //$NON-NLS-1$
             "Other typographical problems",
-            "Looks for miscellaneous typographical problems like replacing (c) with \u00A9",
             "This check looks for miscellaneous typographical problems and offers replacement " +
             "sequences that will make the text easier to read and your application more " +
             "polished.",
@@ -256,7 +251,7 @@ public class TypographyDetector extends ResourceXmlDetector {
             int ellipsis = text.indexOf("..."); //$NON-NLS-1$
             if (ellipsis != -1 && !text.startsWith(".", ellipsis + 3)) { //$NON-NLS-1$
                 context.report(ELLIPSIS, element, context.getLocation(textNode),
-                        ELLIPSIS_MESSAGE, null);
+                        ELLIPSIS_MESSAGE);
             }
         }
 
@@ -276,8 +271,7 @@ public class TypographyDetector extends ResourceXmlDetector {
                                     matcher.group(1).length() - 1));
                     if (!isNegativeNumber && !isAnalyticsTrackingId((Element) element)) {
                         context.report(DASHES, element, context.getLocation(textNode),
-                            EN_DASH_MESSAGE,
-                            null);
+                            EN_DASH_MESSAGE);
                     }
                 }
 
@@ -287,7 +281,7 @@ public class TypographyDetector extends ResourceXmlDetector {
                 // used as digit marker strings
                 if (emdash > 1 && !text.startsWith("-", emdash + 2)) {   //$NON-NLS-1$
                     context.report(DASHES, element, context.getLocation(textNode),
-                            EM_DASH_MESSAGE, null);
+                            EM_DASH_MESSAGE);
                 }
             }
         }
@@ -301,7 +295,7 @@ public class TypographyDetector extends ResourceXmlDetector {
                         && (quoteEnd < text.length() -1 || quoteStart > 0)
                         && SINGLE_QUOTE.matcher(text).matches()) {
                     context.report(QUOTES, element, context.getLocation(textNode),
-                        SINGLE_QUOTE_MESSAGE, null);
+                        SINGLE_QUOTE_MESSAGE);
                     return;
                 }
 
@@ -309,7 +303,7 @@ public class TypographyDetector extends ResourceXmlDetector {
                 if (quoteEnd == -1 && quoteStart > 0
                         && Character.isLetterOrDigit(text.charAt(quoteStart - 1))) {
                     context.report(QUOTES, element, context.getLocation(textNode),
-                            TYPOGRAPHIC_APOSTROPHE_MESSAGE, null);
+                            TYPOGRAPHIC_APOSTROPHE_MESSAGE);
                     return;
                 }
             }
@@ -321,7 +315,7 @@ public class TypographyDetector extends ResourceXmlDetector {
                 if (quoteEnd != -1 && quoteEnd > quoteStart + 1) {
                     if (quoteEnd < text.length() -1 || quoteStart > 0) {
                         context.report(QUOTES, element, context.getLocation(textNode),
-                            DBL_QUOTES_MESSAGE, null);
+                            DBL_QUOTES_MESSAGE);
                         return;
                     }
                 }
@@ -331,7 +325,7 @@ public class TypographyDetector extends ResourceXmlDetector {
             if (text.indexOf('`') != -1 && GRAVE_QUOTATION.matcher(text).matches()) {
                 // Are we indenting ``like this'' or `this' ? If so, complain
                 context.report(QUOTES, element, context.getLocation(textNode),
-                        GRAVE_QUOTE_MESSAGE, null);
+                        GRAVE_QUOTE_MESSAGE);
                 return;
             }
 
@@ -350,19 +344,19 @@ public class TypographyDetector extends ResourceXmlDetector {
                 String bottom = matcher.group(2); // Denominator
                 if (top.equals("1") && bottom.equals("2")) { //$NON-NLS-1$ //$NON-NLS-2$
                     context.report(FRACTIONS, element, context.getLocation(textNode),
-                            String.format(FRACTION_MESSAGE, '\u00BD', "&#189;", "1/2"), null);
+                            String.format(FRACTION_MESSAGE, '\u00BD', "&#189;", "1/2"));
                 } else if (top.equals("1") && bottom.equals("4")) { //$NON-NLS-1$ //$NON-NLS-2$
                     context.report(FRACTIONS, element, context.getLocation(textNode),
-                            String.format(FRACTION_MESSAGE, '\u00BC', "&#188;", "1/4"), null);
+                            String.format(FRACTION_MESSAGE, '\u00BC', "&#188;", "1/4"));
                 } else if (top.equals("3") && bottom.equals("4")) { //$NON-NLS-1$ //$NON-NLS-2$
                     context.report(FRACTIONS, element, context.getLocation(textNode),
-                            String.format(FRACTION_MESSAGE, '\u00BE', "&#190;", "3/4"), null);
+                            String.format(FRACTION_MESSAGE, '\u00BE', "&#190;", "3/4"));
                 } else if (top.equals("1") && bottom.equals("3")) { //$NON-NLS-1$ //$NON-NLS-2$
                     context.report(FRACTIONS, element, context.getLocation(textNode),
-                            String.format(FRACTION_MESSAGE, '\u2153', "&#8531;", "1/3"), null);
+                            String.format(FRACTION_MESSAGE, '\u2153', "&#8531;", "1/3"));
                 } else if (top.equals("2") && bottom.equals("3")) { //$NON-NLS-1$ //$NON-NLS-2$
                     context.report(FRACTIONS, element, context.getLocation(textNode),
-                            String.format(FRACTION_MESSAGE, '\u2154', "&#8532;", "2/3"), null);
+                            String.format(FRACTION_MESSAGE, '\u2154', "&#8532;", "2/3"));
                 }
             }
         }
@@ -372,8 +366,7 @@ public class TypographyDetector extends ResourceXmlDetector {
             if (text.indexOf('(') != -1
                     && (text.contains("(c)") || text.contains("(C)"))) { //$NON-NLS-1$ //$NON-NLS-2$
                 // Suggest replacing with copyright symbol?
-                context.report(OTHER, element, context.getLocation(textNode),
-                    COPYRIGHT_MESSAGE, null);
+                context.report(OTHER, element, context.getLocation(textNode), COPYRIGHT_MESSAGE);
                 // Replace (R) and TM as well? There are unicode characters for these but they
                 // are probably not very common within Android app strings.
             }

@@ -162,6 +162,11 @@ public class ResourceResolverTest extends TestCase {
         StyleResourceValue theme = resolver.getTheme("Theme", true);
         assertNotNull(theme);
 
+        // getParent
+        StyleResourceValue parent = resolver.getParent(myTheme);
+        assertNotNull(parent);
+        assertEquals("Theme.Light", parent.getName());
+
         // themeIsParentOf
         assertTrue(resolver.themeIsParentOf(themeLight, myTheme));
         assertFalse(resolver.themeIsParentOf(myTheme, themeLight));
@@ -496,5 +501,57 @@ public class ResourceResolverTest extends TestCase {
         textColor = darkResolver.findItemInTheme("textColor", true);
         assertNotNull(textColor);
         assertEquals("#000000", textColor.getValue());
+    }
+
+    public void testCycle() throws Exception {
+        TestResourceRepository frameworkRepository = TestResourceRepository.create(true,
+                new Object[] {
+                        "values/themes.xml", ""
+                        + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                        + "<resources>\n"
+                        + "    <style name=\"Theme.DeviceDefault.Light\"/>\n"
+                        + "</resources>\n",
+                });
+
+        TestResourceRepository projectRepository = TestResourceRepository.create(false,
+                new Object[] {
+                        "values/themes.xml", ""
+                        + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                        + "<resources>\n"
+                        + "    <style name=\"AppTheme\" parent=\"android:Theme.DeviceDefault.Light\"/>\n"
+                        + "    <style name=\"AppTheme.Dark\" parent=\"android:Theme.DeviceDefault\"/>\n"
+                        + "    <style name=\"foo\" parent=\"bar\"/>\n"
+                        + "    <style name=\"bar\" parent=\"foo\"/>\n"
+                        + "</resources>\n"
+                });
+
+        assertFalse(projectRepository.isFrameworkRepository());
+        FolderConfiguration config = FolderConfiguration.getConfigForFolder("values");
+        assertNotNull(config);
+        Map<ResourceType, Map<String, ResourceValue>> projectResources = projectRepository
+                .getConfiguredResources(config);
+        Map<ResourceType, Map<String, ResourceValue>> frameworkResources = frameworkRepository
+                .getConfiguredResources(config);
+        assertNotNull(projectResources);
+        ResourceResolver resolver = ResourceResolver.create(projectResources,
+                frameworkResources, "AppTheme", true);
+
+        final AtomicBoolean wasWarned = new AtomicBoolean(false);
+        LayoutLog logger = new LayoutLog() {
+            @Override
+            public void error(String tag, String message, Object data) {
+                if ("Cyclic style parent definitions: \"foo\" specifies parent \"bar\" specifies parent \"foo\"".equals(message)) {
+                    wasWarned.set(true);
+                } else {
+                    fail(message);
+                }
+            }
+        };
+        resolver.setLogger(logger);
+        assertFalse(resolver.isTheme(resolver.findResValue("@style/foo", false), null));
+        assertTrue(wasWarned.get());
+
+        projectRepository.dispose();
+
     }
 }

@@ -16,6 +16,7 @@
 package com.android.build.gradle.internal.variant;
 
 import com.android.annotations.NonNull;
+import com.android.build.gradle.BasePlugin;
 import com.android.build.gradle.internal.tasks.DeviceProviderInstrumentTestTask;
 import com.android.builder.core.VariantConfiguration;
 import com.google.common.collect.Lists;
@@ -32,10 +33,15 @@ public class TestVariantData extends ApkVariantData {
     @NonNull
     private final TestedVariantData testedVariantData;
 
-    public TestVariantData(@NonNull VariantConfiguration config,
-                           @NonNull TestedVariantData testedVariantData) {
-        super(config);
+    public TestVariantData(
+            @NonNull BasePlugin basePlugin,
+            @NonNull VariantConfiguration config,
+            @NonNull TestedVariantData testedVariantData) {
+        super(basePlugin, config);
         this.testedVariantData = testedVariantData;
+
+        // create default output
+        createOutput(null, null);
     }
 
     @NonNull

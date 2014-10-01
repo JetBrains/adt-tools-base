@@ -55,7 +55,7 @@ public class TextReporterTest extends AbstractCheckTest {
                     "<uses-sdk> tag should specify a target API level (the highest verified " +
                             "version; when running on later versions, compatibility behaviors may " +
                             "be enabled) with android:targetSdkVersion=\"?\"",
-                    Severity.WARNING, project, null);
+                    Severity.WARNING, project);
             warning1.line = 6;
             warning1.file = new File("/foo/bar/Foo/AndroidManifest.xml");
             warning1.errorLine = "    <uses-sdk android:minSdkVersion=\"8\" />\n    ^\n";
@@ -69,7 +69,7 @@ public class TextReporterTest extends AbstractCheckTest {
 
             Warning warning2 = new Warning(HardcodedValuesDetector.ISSUE,
                     "[I18N] Hardcoded string \"Fooo\", should use @string resource",
-                    Severity.WARNING, project, null);
+                    Severity.WARNING, project);
             warning2.line = 11;
             warning2.file = new File("/foo/bar/Foo/res/layout/main.xml");
             warning2.errorLine = "        android:text=\"Fooo\" />\n" +
@@ -133,7 +133,7 @@ public class TextReporterTest extends AbstractCheckTest {
                     "<uses-sdk> tag should specify a target API level (the highest verified " +
                             "version; when running on later versions, compatibility behaviors may " +
                             "be enabled) with android:targetSdkVersion=\"?\"",
-                    Severity.WARNING, project, null);
+                    Severity.WARNING, project);
             warning1.line = 6;
             warning1.file = new File("/foo/bar/Foo/AndroidManifest.xml");
             warning1.errorLine = "    <uses-sdk android:minSdkVersion=\"8\" />\n    ^\n";
@@ -147,7 +147,7 @@ public class TextReporterTest extends AbstractCheckTest {
 
             Warning warning2 = new Warning(HardcodedValuesDetector.ISSUE,
                     "[I18N] Hardcoded string \"Fooo\", should use @string resource",
-                    Severity.WARNING, project, null);
+                    Severity.WARNING, project);
             warning2.line = 11;
             warning2.file = new File("/foo/bar/Foo/res/layout/main.xml");
             warning2.errorLine = "        android:text=\"Fooo\" />\n" +
@@ -170,7 +170,7 @@ public class TextReporterTest extends AbstractCheckTest {
                     "<uses-sdk> tag should specify a target API level (the highest verified " +
                             "version; when running on later versions, compatibility behaviors may " +
                             "be enabled) with android:targetSdkVersion=\"?\"",
-                    Severity.WARNING, project, null);
+                    Severity.WARNING, project);
             warning3.line = 8;
             warning3.file = new File("/foo/bar/Foo/AndroidManifest.xml");
             warning3.errorLine = "    <uses-sdk android:minSdkVersion=\"8\" />\n    ^\n";

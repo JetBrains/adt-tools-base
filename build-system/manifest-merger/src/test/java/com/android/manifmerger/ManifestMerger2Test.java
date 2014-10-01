@@ -52,6 +52,10 @@ public class ManifestMerger2Test extends ManifestMergerTest {
             "06_inject_attributes_with_specific_prefix.xml",
             "07_no_package_provided.xml",
             "08_no_library_package_provided.xml",
+            "09_overlay_package_provided.xml",
+            "08b_library_injection.xml",
+            "09b_overlay_package_different.xml",
+            "09c_overlay_package_not_provided.xml",
             "10_activity_merge",
             "11_activity_dup",
             "12_alias_dup",
@@ -72,6 +76,7 @@ public class ManifestMerger2Test extends ManifestMergerTest {
             "30_uses_sdk_ok",
             "32_uses_sdk_minsdk_ok",
             "33_uses_sdk_minsdk_conflict",
+            "34_inject_uses_sdk_no_dup.xml",
             "36_uses_sdk_targetsdk_warning",
             "40_uses_feat_merge",
             "41_uses_feat_errors",
@@ -143,7 +148,9 @@ public class ManifestMerger2Test extends ManifestMergerTest {
         ManifestMerger2.Invoker invoker = ManifestMerger2.newMerger(testFiles.getMain(),
                 stdLogger, ManifestMerger2.MergeType.APPLICATION)
                 .addLibraryManifests(testFiles.getLibs())
-                .withFeatures(ManifestMerger2.Invoker.Feature.KEEP_INTERMEDIARY_STAGES);
+                .addFlavorAndBuildTypeManifests(testFiles.getOverlayFiles())
+                .withFeatures(ManifestMerger2.Invoker.Feature.KEEP_INTERMEDIARY_STAGES,
+                        ManifestMerger2.Invoker.Feature.REMOVE_TOOLS_DECLARATIONS);
 
         if (!Strings.isNullOrEmpty(testFiles.getPackageOverride())) {
             invoker.setOverride(SystemProperty.PACKAGE, testFiles.getPackageOverride());

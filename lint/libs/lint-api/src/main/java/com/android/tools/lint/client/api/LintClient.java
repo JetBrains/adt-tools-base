@@ -25,13 +25,14 @@ import static com.android.SdkConstants.RES_FOLDER;
 import static com.android.SdkConstants.SRC_FOLDER;
 import static com.android.tools.lint.detector.api.LintUtils.endsWith;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ide.common.res2.AbstractResourceRepository;
 import com.android.ide.common.res2.ResourceItem;
-import com.android.ide.common.sdk.SdkVersionInfo;
 import com.android.prefs.AndroidLocation;
 import com.android.sdklib.IAndroidTarget;
+import com.android.sdklib.SdkVersionInfo;
 import com.android.sdklib.repository.local.LocalSdk;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
@@ -40,6 +41,7 @@ import com.android.tools.lint.detector.api.LintUtils;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Project;
 import com.android.tools.lint.detector.api.Severity;
+import com.android.tools.lint.detector.api.TextFormat;
 import com.android.utils.XmlUtils;
 import com.google.common.annotations.Beta;
 import com.google.common.collect.Lists;
@@ -93,20 +95,14 @@ public abstract class LintClient {
      * Report the given issue. This method will only be called if the configuration
      * provided by {@link #getConfiguration(Project)} has reported the corresponding
      * issue as enabled and has not filtered out the issue with its
-     * {@link Configuration#ignore(Context, Issue, Location, String, Object)} method.
+     * {@link Configuration#ignore(Context,Issue,Location,String)} method.
      * <p>
-     *
      * @param context the context used by the detector when the issue was found
      * @param issue the issue that was found
      * @param severity the severity of the issue
      * @param location the location of the issue
      * @param message the associated user message
-     * @param data optional extra data for a discovered issue, or null. The
-     *            content depends on the specific issue. Detectors can pass
-     *            extra info here which automatic fix tools etc can use to
-     *            extract relevant information instead of relying on parsing the
-     *            error message text. See each detector for details on which
-     *            data if any is supplied for a given issue.
+     * @param format the format of the description and location descriptions
      */
     public abstract void report(
             @NonNull Context context,
@@ -114,7 +110,7 @@ public abstract class LintClient {
             @NonNull Severity severity,
             @Nullable Location location,
             @NonNull String message,
-            @Nullable Object data);
+            @NonNull TextFormat format);
 
     /**
      * Send an exception or error message (with warning severity) to the log
@@ -382,7 +378,19 @@ public abstract class LintClient {
         // This is not an accurate test; specific LintClient implementations (e.g.
         // IDEs or a gradle-integration of lint) have more context and can perform a more accurate
         // check
-        return new File(project.getDir(), "build.gradle").exists();
+        if (new File(project.getDir(), SdkConstants.FN_BUILD_GRADLE).exists()) {
+            return true;
+        }
+
+        File parent = project.getDir().getParentFile();
+        if (parent != null && parent.getName().equals(SdkConstants.FD_SOURCES)) {
+            File root = parent.getParentFile();
+            if (root != null && new File(root, SdkConstants.FN_BUILD_GRADLE).exists()) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

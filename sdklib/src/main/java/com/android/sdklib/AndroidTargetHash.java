@@ -16,6 +16,7 @@
 
 package com.android.sdklib;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.sdklib.repository.descriptors.IdDisplay;
@@ -60,11 +61,13 @@ public abstract class AndroidTargetHash {
     }
 
     /**
-     * Returns the {@link com.android.sdklib.AndroidVersion} for the given hash string,
+     * Returns the {@link AndroidVersion} for the given hash string,
      * if it represents a platform. If the hash string represents a preview platform,
-     * the returned {@link AndroidVersion} will have an unknown API level (set to 1).
+     * the returned {@link AndroidVersion} will have an unknown API level (set to 1
+     * or a known matching API level.)
      *
-     * @param hashString the hash string
+     * @param hashString the hash string (e.g. "android-19" or "android-CUPCAKE")
+     *          or a pure API level for convenience (e.g. "19" instead of the proper "android-19")
      * @return a platform, or null
      */
     @Nullable
@@ -73,12 +76,24 @@ public abstract class AndroidTargetHash {
             String suffix = hashString.substring(PLATFORM_HASH_PREFIX.length());
             if (!suffix.isEmpty()) {
                 if (Character.isDigit(suffix.charAt(0))) {
-                    int api = Integer.parseInt(suffix);
-                    return new AndroidVersion(api, null);
+                    try {
+                        int api = Integer.parseInt(suffix);
+                        return new AndroidVersion(api, null);
+                    } catch (NumberFormatException ignore) {}
                 } else {
-                    return new AndroidVersion(1, suffix);
+                    int api = SdkVersionInfo.getApiByBuildCode(suffix, false);
+                    if (api < 1) {
+                        api = 1;
+                    }
+                    return new AndroidVersion(api, suffix);
                 }
             }
+        } else if (hashString.length() > 0 && Character.isDigit(hashString.charAt(0))) {
+            // For convenience, interpret a single integer as the proper "android-NN" form.
+            try {
+                int api = Integer.parseInt(hashString);
+                return new AndroidVersion(api, null);
+            } catch (NumberFormatException ignore) {}
         }
 
         return null;

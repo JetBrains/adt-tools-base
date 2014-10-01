@@ -15,17 +15,19 @@
  */
 
 package com.android.build.gradle.internal.variant
-
 import com.android.SdkConstants
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
 import com.android.build.gradle.BasePlugin
 import com.android.build.gradle.LibraryExtension
 import com.android.build.gradle.api.BaseVariant
+import com.android.build.gradle.api.BaseVariantOutput
 import com.android.build.gradle.internal.api.LibraryVariantImpl
+import com.android.build.gradle.internal.api.LibraryVariantOutputImpl
 import com.android.build.gradle.internal.coverage.JacocoInstrumentTask
 import com.android.build.gradle.internal.coverage.JacocoPlugin
 import com.android.build.gradle.internal.tasks.MergeFileTask
+import com.android.build.gradle.ndk.NdkPlugin
 import com.android.build.gradle.tasks.ExtractAnnotations
 import com.android.build.gradle.tasks.MergeResources
 import com.android.builder.core.BuilderConstants
@@ -36,6 +38,7 @@ import com.android.builder.dependency.LibraryDependency
 import com.android.builder.dependency.ManifestDependency
 import com.android.builder.model.AndroidLibrary
 import com.android.builder.model.MavenCoordinates
+import com.google.common.collect.Lists
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.tasks.Copy
@@ -49,10 +52,11 @@ import static com.android.SdkConstants.LIBS_FOLDER
 import static com.android.build.gradle.BasePlugin.DIR_BUNDLES
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
 import static com.android.builder.model.AndroidProject.FD_OUTPUTS
-
 /**
  */
-public class LibraryVariantFactory implements VariantFactory {
+public class LibraryVariantFactory implements VariantFactory<LibraryVariantData> {
+
+    private static final String ANNOTATIONS = "annotations"
 
     @NonNull
     private final BasePlugin basePlugin
@@ -67,14 +71,35 @@ public class LibraryVariantFactory implements VariantFactory {
 
     @Override
     @NonNull
-    public BaseVariantData createVariantData(@NonNull VariantConfiguration variantConfiguration) {
-        return new LibraryVariantData(variantConfiguration)
+    public LibraryVariantData createVariantData(
+            @NonNull VariantConfiguration variantConfiguration,
+            @NonNull Set<String> densities,
+            @NonNull Set<String> abis,
+            @NonNull Set<String> compatibleScreens) {
+        return new LibraryVariantData(basePlugin, variantConfiguration)
     }
 
     @Override
     @NonNull
-    public BaseVariant createVariantApi(@NonNull BaseVariantData variantData) {
-        return basePlugin.getInstantiator().newInstance(LibraryVariantImpl.class, variantData)
+    public BaseVariant createVariantApi(@NonNull BaseVariantData<? extends BaseVariantOutputData> variantData) {
+        LibraryVariantImpl variant = basePlugin.getInstantiator().newInstance(LibraryVariantImpl.class, variantData, basePlugin)
+
+        // now create the output objects
+        List<? extends BaseVariantOutputData> outputList = variantData.getOutputs();
+        List<BaseVariantOutput> apiOutputList = Lists.newArrayListWithCapacity(outputList.size());
+
+        for (BaseVariantOutputData variantOutputData : outputList) {
+            LibVariantOutputData libOutput = (LibVariantOutputData) variantOutputData;
+
+            LibraryVariantOutputImpl output = basePlugin.getInstantiator().newInstance(
+                    LibraryVariantOutputImpl.class, libOutput);
+
+            apiOutputList.add(output);
+        }
+
+        variant.addOutputs(apiOutputList);
+
+        return variant
     }
 
     @NonNull
@@ -89,7 +114,9 @@ public class LibraryVariantFactory implements VariantFactory {
     }
 
     @Override
-    public void createTasks(@NonNull BaseVariantData variantData, @Nullable Task assembleTask) {
+    public void createTasks(
+            @NonNull BaseVariantData<?> variantData,
+            @Nullable Task assembleTask) {
         LibraryVariantData libVariantData = variantData as LibraryVariantData
         VariantConfiguration variantConfig = variantData.variantConfiguration
         DefaultBuildType buildType = variantConfig.buildType
@@ -106,7 +133,7 @@ public class LibraryVariantFactory implements VariantFactory {
         basePlugin.createGenerateResValuesTask(variantData)
 
         // Add a task to process the manifest(s)
-        basePlugin.createProcessManifestTask(variantData, DIR_BUNDLES)
+        basePlugin.createMergeLibManifestsTask(variantData, DIR_BUNDLES)
 
         // Add a task to compile renderscript files.
         basePlugin.createRenderscriptTask(variantData)
@@ -154,17 +181,25 @@ public class LibraryVariantFactory implements VariantFactory {
         // Add a compile task
         basePlugin.createCompileTask(variantData, null/*testedVariant*/)
 
-        // Add NDK tasks
-        basePlugin.createNdkTasks(variantData);
-
         // package the prebuilt native libs into the bundle folder
         Sync packageJniLibs = project.tasks.create(
                 "package${fullName.capitalize()}JniLibs",
                 Sync)
-        packageJniLibs.dependsOn variantData.ndkCompileTask
-        // package from 3 sources.
+
+        // Add dependencies on NDK tasks if NDK plugin is applied.
+        if (extension.getUseNewNativePlugin()) {
+            NdkPlugin ndkPlugin = project.plugins.getPlugin(NdkPlugin.class)
+            packageJniLibs.dependsOn ndkPlugin.getBinaries(variantConfig)
+            packageJniLibs.from(ndkPlugin.getOutputDirectories(variantConfig)).include("**/*.so")
+        } else {
+            // Add NDK tasks
+            basePlugin.createNdkTasks(variantData);
+            packageJniLibs.dependsOn variantData.ndkCompileTask
+            packageJniLibs.from(variantData.ndkCompileTask.soFolder).include("**/*.so")
+        }
+
+        // package from 2 sources.
         packageJniLibs.from(variantConfig.jniLibsList).include("**/*.so")
-        packageJniLibs.from(variantData.ndkCompileTask.soFolder).include("**/*.so")
         packageJniLibs.into(project.file(
                 "$project.buildDir/${FD_INTERMEDIATES}/$DIR_BUNDLES/${dirName}/jni"))
 
@@ -207,11 +242,8 @@ public class LibraryVariantFactory implements VariantFactory {
             // run proguard on output of compile task
             basePlugin.createProguardTasks(variantData, null)
 
-            // hack since bundle can't depend on variantData.obfuscationTask
-            mergeProGuardFileTask.dependsOn variantData.obfuscationTask
-
-            bundle.dependsOn packageRes, packageRenderscript, mergeProGuardFileTask,
-                    lintCopy, packageJniLibs
+            bundle.dependsOn packageRes, packageRenderscript, variantData.obfuscationTask,
+                    mergeProGuardFileTask, lintCopy, packageJniLibs
             if (extract != null) {
                 bundle.dependsOn(extract)
             }
@@ -285,17 +317,20 @@ public class LibraryVariantFactory implements VariantFactory {
 
         bundle.setDescription("Assembles a bundle containing the library in ${fullName.capitalize()}.");
         bundle.destinationDir = project.file("$project.buildDir/${FD_OUTPUTS}/aar")
+        bundle.setArchiveName("${project.name}-${variantConfig.baseName}.${BuilderConstants.EXT_LIB_ARCHIVE}")
         bundle.extension = BuilderConstants.EXT_LIB_ARCHIVE
         bundle.from(project.file("$project.buildDir/${FD_INTERMEDIATES}/$DIR_BUNDLES/${dirName}"))
+        bundle.from(project.file("$project.buildDir/${FD_INTERMEDIATES}/$ANNOTATIONS/${dirName}"))
 
-        libVariantData.packageLibTask = bundle
-        variantData.outputFile = bundle.archivePath
+        // get the single output for now, though that may always be the case for a library.
+        LibVariantOutputData variantOutputData = libVariantData.outputs.get(0)
+        variantOutputData.packageLibTask = bundle
 
         if (assembleTask == null) {
             assembleTask = basePlugin.createAssembleTask(variantData)
         }
         assembleTask.dependsOn bundle
-        variantData.assembleTask = assembleTask
+        variantData.assembleVariantTask = variantOutputData.assembleTask = assembleTask
 
         if (extension.defaultPublishConfig.equals(fullName)) {
             VariantHelper.setupDefaultConfig(project,
@@ -304,7 +339,7 @@ public class LibraryVariantFactory implements VariantFactory {
             // add the artifact that will be published
             project.artifacts.add("default", bundle)
 
-            basePlugin.assembleDefault.dependsOn variantData.assembleTask
+            basePlugin.assembleDefault.dependsOn variantData.assembleVariantTask
         }
 
         // also publish the artifact with its full config name
@@ -378,13 +413,15 @@ public class LibraryVariantFactory implements VariantFactory {
         task.group = org.gradle.api.plugins.BasePlugin.BUILD_GROUP
         task.plugin = basePlugin
         task.variant = variantData
-        task.destinationDir = project.file("$project.buildDir/${FD_INTERMEDIATES}/$DIR_BUNDLES/${dirName}")
+        task.destinationDir = project.file("$project.buildDir/${FD_INTERMEDIATES}/$ANNOTATIONS/${dirName}")
         task.output = new File(task.destinationDir, FN_ANNOTATIONS_ZIP)
         task.classDir = project.file("$project.buildDir/${FD_INTERMEDIATES}/classes/${variantData.variantConfiguration.dirName}")
         task.source = variantData.getJavaSources()
         task.encoding = extension.compileOptions.encoding
         task.sourceCompatibility = extension.compileOptions.sourceCompatibility
-        task.classpath = project.files(basePlugin.getAndroidBuilder().getCompileClasspath(config))
+        task.conventionMapping.classpath =  {
+            project.files(basePlugin.getAndroidBuilder().getCompileClasspath(config))
+        }
         task.dependsOn variantData.javaCompileTask
 
         // Setup the boot classpath just before the task actually runs since this will

@@ -279,6 +279,12 @@ public class ResourceItemResolver extends RenderResources {
         return resolver != null ? resolver.findItemInStyle(style, attrName, isFrameworkAttr) : null;
     }
 
+    @Override
+    public StyleResourceValue getParent(StyleResourceValue style) {
+        ResourceResolver resolver = getFullResolver();
+        return resolver != null ? resolver.getParent(style) : null;
+    }
+
     private ResourceResolver getFullResolver() {
         if (mResolver == null) {
             if (mResourceProvider == null) {

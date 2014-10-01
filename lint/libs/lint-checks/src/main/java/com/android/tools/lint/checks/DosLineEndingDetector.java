@@ -37,7 +37,6 @@ public class DosLineEndingDetector extends LayoutDetector {
     public static final Issue ISSUE = Issue.create(
             "MangledCRLF", //$NON-NLS-1$
             "Mangled file line endings",
-            "Checks that files with DOS line endings are consistent",
 
             "On Windows, line endings are typically recorded as carriage return plus " +
             "newline: \\r\\n.\n" +
@@ -80,8 +79,8 @@ public class DosLineEndingDetector extends LayoutDetector {
         for (int i = 0, n = contents.length(); i < n; i++) {
             char c = contents.charAt(i);
             if (c == '\r' && prev == '\r') {
-                String message = "Incorrect line ending: found carriage return (\\r) without " +
-                        "corresponding newline (\\n)";
+                String message = "Incorrect line ending: found carriage return (`\\r`) without " +
+                        "corresponding newline (`\\n`)";
 
                 // Mark the whole line as the error range, since pointing just to the
                 // line ending makes the error invisible in IDEs and error reports etc
@@ -109,7 +108,7 @@ public class DosLineEndingDetector extends LayoutDetector {
 
                 int lineEnd = Math.min(contents.length(), i + 1);
                 Location location = Location.create(context.file, contents, lineBegin, lineEnd);
-                context.report(ISSUE, document.getDocumentElement(), location, message, null);
+                context.report(ISSUE, document.getDocumentElement(), location, message);
                 return;
             }
             prev = c;

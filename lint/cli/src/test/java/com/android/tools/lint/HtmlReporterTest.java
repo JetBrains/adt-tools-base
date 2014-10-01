@@ -76,7 +76,7 @@ public class HtmlReporterTest extends AbstractCheckTest {
                     "<uses-sdk> tag should specify a target API level (the highest verified " +
                     "version; when running on later versions, compatibility behaviors may " +
                     "be enabled) with android:targetSdkVersion=\"?\"",
-                    Severity.WARNING, project, null);
+                    Severity.WARNING, project);
             warning1.line = 6;
             warning1.file = manifest;
             warning1.errorLine = "    <uses-sdk android:minSdkVersion=\"8\" />\n    ^\n";
@@ -86,7 +86,7 @@ public class HtmlReporterTest extends AbstractCheckTest {
 
             Warning warning2 = new Warning(HardcodedValuesDetector.ISSUE,
                     "[I18N] Hardcoded string \"Fooo\", should use @string resource",
-                    Severity.WARNING, project, null);
+                    Severity.WARNING, project);
             warning2.line = 11;
             warning2.file = main;
             warning2.errorLine = " (java.lang.String)         android:text=\"Fooo\" />\n" +
@@ -166,7 +166,7 @@ public class HtmlReporterTest extends AbstractCheckTest {
                     + "<div class=\"metadata\">Priority: 9 / 10<br/>\n"
                     + "Category: Correctness</div>\n"
                     + "Severity: <span class=\"warning\">Warning</span><div class=\"summary\">\n"
-                    + "Explanation: Checks that the minimum SDK and target SDK attributes are defined.</div>\n"
+                    + "Explanation: Minimum SDK and target SDK attributes not defined.</div>\n"
                     + "<div class=\"explanation\">\n"
                     + "The manifest should contain a <code>&lt;uses-sdk></code> element which defines the minimum API Level required for the application to run, as well as the target version (the highest API level you have tested the version for.)\n"
                     + "</div>\n"
@@ -187,7 +187,7 @@ public class HtmlReporterTest extends AbstractCheckTest {
                     + "<div class=\"metadata\">Priority: 5 / 10<br/>\n"
                     + "Category: Internationalization</div>\n"
                     + "Severity: <span class=\"warning\">Warning</span><div class=\"summary\">\n"
-                    + "Explanation: Looks for hardcoded text attributes which should be converted to resource lookup.</div>\n"
+                    + "Explanation: Hardcoded text.</div>\n"
                     + "<div class=\"explanation\">\n"
                     + "Hardcoding text attributes directly in layout files is bad for several reasons:<br/>\n"
                     + "<br/>\n"

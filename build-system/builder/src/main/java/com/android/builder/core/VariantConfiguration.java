@@ -30,11 +30,10 @@ import com.android.builder.internal.StringHelper;
 import com.android.builder.model.ApiVersion;
 import com.android.builder.model.BaseConfig;
 import com.android.builder.model.ClassField;
-import com.android.builder.model.NdkConfig;
+import com.android.builder.internal.NdkConfig;
 import com.android.builder.model.ProductFlavor;
 import com.android.builder.model.SigningConfig;
 import com.android.builder.model.SourceProvider;
-import com.android.builder.testing.TestData;
 import com.android.ide.common.res2.AssetSet;
 import com.android.ide.common.res2.ResourceSet;
 import com.google.common.collect.ArrayListMultimap;
@@ -55,9 +54,10 @@ import java.util.Set;
 /**
  * A Variant configuration.
  */
-public class VariantConfiguration implements TestData {
+public class VariantConfiguration {
 
-    private static final ManifestParser sManifestParser = new DefaultManifestParser();
+    // per variant, as is caches some manifest data specific to this variant.
+    private final ManifestParser sManifestParser = new DefaultManifestParser();
 
     /**
      * Full, unique name of the variant in camel case, including BuildType and Flavors (and Test)
@@ -142,7 +142,7 @@ public class VariantConfiguration implements TestData {
      */
     @Nullable
     public static String getManifestPackage(@NonNull File manifestFile) {
-        return sManifestParser.getPackage(manifestFile);
+        return new DefaultManifestParser().getPackage(manifestFile);
     }
 
     /**
@@ -218,14 +218,8 @@ public class VariantConfiguration implements TestData {
         mSigningConfigOverride = signingConfigOverride;
         checkState(mType != Type.TEST || mTestedConfig != null);
 
-        mMergedFlavor = mDefaultConfig;
+        mMergedFlavor = mDefaultConfig.clone();
         computeNdkConfig();
-
-        if (testedConfig != null &&
-                testedConfig.mType == Type.LIBRARY &&
-                testedConfig.mOutput != null) {
-            mDirectLibraries.add(testedConfig.mOutput);
-        }
     }
 
     /**
@@ -254,6 +248,31 @@ public class VariantConfiguration implements TestData {
         }
 
         return mFullName;
+    }
+
+    /**
+     * Returns a full name that includes the given splits name.
+     * @param splitName the split name
+     * @return a unique name made up of the variant and split names.
+     */
+    @NonNull
+    public String computeFullNameWithSplits(@NonNull String splitName) {
+        StringBuilder sb = new StringBuilder();
+        String flavorName = getFlavorName();
+        if (!flavorName.isEmpty()) {
+            sb.append(flavorName);
+            sb.append(StringHelper.capitalize(splitName));
+        } else {
+            sb.append(splitName);
+        }
+
+        sb.append(StringHelper.capitalize(mBuildType.getName()));
+
+        if (mType == Type.TEST) {
+            sb.append("Test");
+        }
+
+        return sb.toString();
     }
 
     /**
@@ -312,6 +331,31 @@ public class VariantConfiguration implements TestData {
     }
 
     /**
+     * Returns a base name that includes the given splits name.
+     * @param splitName the split name
+     * @return a unique name made up of the variant and split names.
+     */
+    @NonNull
+    public String computeBaseNameWithSplits(@NonNull String splitName) {
+        StringBuilder sb = new StringBuilder();
+
+        if (!mFlavorConfigs.isEmpty()) {
+            for (ProductFlavor pf : mFlavorConfigs) {
+                sb.append(pf.getName()).append('-');
+            }
+        }
+
+        sb.append(splitName).append('-');
+        sb.append(mBuildType.getName());
+
+        if (mType == Type.TEST) {
+            sb.append('-').append("test");
+        }
+
+        return sb.toString();
+    }
+
+    /**
      * Returns a unique directory name (can include multiple folders) for the variant,
      * based on build type, flavor and test.
      * This always uses forward slashes ('/') as separator on all platform.
@@ -343,6 +387,40 @@ public class VariantConfiguration implements TestData {
         }
 
         return mDirName;
+    }
+
+    /**
+     * Returns a unique directory name (can include multiple folders) for the variant,
+     * based on build type, flavor and test, and splits.
+     * This always uses forward slashes ('/') as separator on all platform.
+     *
+     * @return the directory name for the variant
+     */
+    @NonNull
+    public String computeDirNameWithSplits(@NonNull String... splitNames) {
+        StringBuilder sb = new StringBuilder();
+
+        if (mType == Type.TEST) {
+            sb.append("test/");
+        }
+
+        if (!mFlavorConfigs.isEmpty()) {
+            for (DefaultProductFlavor flavor : mFlavorConfigs) {
+                sb.append(flavor.getName());
+            }
+
+            sb.append('/');
+        }
+
+        for (String splitName : splitNames) {
+            if (splitName != null) {
+                sb.append(splitName).append('/');
+            }
+        }
+
+        sb.append(mBuildType.getName());
+
+        return sb.toString();
     }
 
     /**
@@ -574,6 +652,15 @@ public class VariantConfiguration implements TestData {
      */
     @NonNull
     public VariantConfiguration setDependencies(@NonNull DependencyContainer container) {
+        // Output of mTestedConfig will not be initialized until the tasks for the tested config are
+        // created.  If library output has never been added to mDirectLibraries, checked the output
+        // of the mTestedConfig to see if the tasks are now created.
+        if (mTestedConfig != null &&
+                mTestedConfig.mType == Type.LIBRARY &&
+                mTestedConfig.mOutput != null &&
+                !mDirectLibraries.contains(mTestedConfig.mOutput)) {
+            mDirectLibraries.add(mTestedConfig.mOutput);
+        }
 
         mDirectLibraries.addAll(container.getAndroidDependencies());
         mJars.addAll(container.getJarDependencies());
@@ -742,7 +829,6 @@ public class VariantConfiguration implements TestData {
      * could be overridden through the product flavors and/or the build type.
      * @return the application ID
      */
-    @Override
     @NonNull
     public String getApplicationId() {
         String id;
@@ -772,7 +858,6 @@ public class VariantConfiguration implements TestData {
         return id;
     }
 
-    @Override
     @Nullable
     public String getTestedApplicationId() {
         if (mType == Type.TEST) {
@@ -867,7 +952,6 @@ public class VariantConfiguration implements TestData {
      * variant is a test, the one to use to test the tested variant.
      * @return the instrumentation test runner name
      */
-    @Override
     @NonNull
     public String getInstrumentationRunner() {
         VariantConfiguration config = this;
@@ -883,7 +967,6 @@ public class VariantConfiguration implements TestData {
      * variant is a test, the one to use to test the tested variant.
      * @return the handleProfiling value
      */
-    @Override
     @NonNull
     public Boolean getHandleProfiling() {
         VariantConfiguration config = this;
@@ -899,7 +982,6 @@ public class VariantConfiguration implements TestData {
      * variant is a test, the one to use to test the tested variant.
      * @return the functionalTest value
      */
-    @Override
     @NonNull
     public Boolean getFunctionalTest() {
         VariantConfiguration config = this;
@@ -944,7 +1026,7 @@ public class VariantConfiguration implements TestData {
      * from the flavor(s) (if present).
      * @return the minSdkVersion
      */
-    @Override
+    @NonNull
     public ApiVersion getMinSdkVersion() {
         if (mTestedConfig != null) {
             return mTestedConfig.getMinSdkVersion();
@@ -967,6 +1049,7 @@ public class VariantConfiguration implements TestData {
      * from the flavor(s) (if present).
      * @return the targetSdkVersion
      */
+    @NonNull
     public ApiVersion getTargetSdkVersion() {
         if (mTestedConfig != null) {
             return mTestedConfig.getTargetSdkVersion();
@@ -1552,9 +1635,18 @@ public class VariantConfiguration implements TestData {
         return signingConfig != null && signingConfig.isSigningReady();
     }
 
+    /**
+     * Returns the proguard config files coming from the project but also from the dependencies.
+     *
+     * Note that if the method is set to include config files coming from libraries, they will
+     * only be included if the aars have already been unzipped.
+     *
+     * @param includeLibraries whether to include the library dependencies.
+     * @return a non null list of proguard files.
+     */
     @NonNull
-    public List<Object> getProguardFiles(boolean includeLibraries) {
-        List<Object> fullList = Lists.newArrayList();
+    public List<File> getProguardFiles(boolean includeLibraries) {
+        List<File> fullList = Lists.newArrayList();
 
         // add the config files from the build type, main config and flavors
         fullList.addAll(mDefaultConfig.getProguardFiles());
@@ -1597,18 +1689,31 @@ public class VariantConfiguration implements TestData {
         return mMergedNdkConfig;
     }
 
+    /**
+     * Returns the ABI filters associated with the artifact, or null if there are no filters.
+     *
+     * If the list contains values, then the artifact only contains these ABIs and excludes
+     * others.
+     */
     @Nullable
-    @Override
     public Set<String> getSupportedAbis() {
-        if (mMergedNdkConfig != null) {
-            return mMergedNdkConfig.getAbiFilters();
-        }
-
-        return null;
+        return mMergedNdkConfig.getAbiFilters();
     }
 
-    @Override
     public boolean isTestCoverageEnabled() {
         return mBuildType.isTestCoverageEnabled();
+    }
+
+    /**
+     * Returns the merged manifest placeholders. All product flavors are merged first, then build
+     * type specific placeholders are added and potentially overrides product flavors values.
+     * @return the merged manifest placeholders for a build variant.
+     */
+    @NonNull
+    public Map<String, String> getManifestPlaceholders() {
+        Map<String, String> mergedFlavorsPlaceholders = mMergedFlavor.getManifestPlaceholders();
+        // so far, blindly override the build type placeholders
+        mergedFlavorsPlaceholders.putAll(mBuildType.getManifestPlaceholders());
+        return mergedFlavorsPlaceholders;
     }
 }

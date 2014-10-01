@@ -55,11 +55,10 @@ import lombok.ast.Select;
 public class AlwaysShowActionDetector extends ResourceXmlDetector implements JavaScanner {
 
     /** The main issue discovered by this detector */
+    @SuppressWarnings("unchecked")
     public static final Issue ISSUE = Issue.create(
             "AlwaysShowAction", //$NON-NLS-1$
             "Usage of `showAsAction=always`",
-            "Checks for uses of `showAsAction=\"always\"` and suggests `showAsAction=\"ifRoom\"` " +
-                "instead",
 
             "Using `showAsAction=\"always\"` in menu XML, or `MenuItem.SHOW_AS_ACTION_ALWAYS` in " +
             "Java code is usually a deviation from the user interface style guide." +
@@ -79,7 +78,8 @@ public class AlwaysShowActionDetector extends ResourceXmlDetector implements Jav
             Severity.WARNING,
             new Implementation(
                     AlwaysShowActionDetector.class,
-                    Scope.JAVA_AND_RESOURCE_FILES))
+                    Scope.JAVA_AND_RESOURCE_FILES,
+                    Scope.RESOURCE_FILE_SCOPE))
             .addMoreInfo("http://developer.android.com/design/patterns/actionbar.html"); //$NON-NLS-1$
 
     /** List of showAsAction attributes appearing in the current menu XML file */
@@ -162,7 +162,7 @@ public class AlwaysShowActionDetector extends ResourceXmlDetector implements Jav
                         }
                     }
                     context.report(ISSUE, location,
-                            "Prefer \"ifRoom\" instead of \"always\"", null);
+                            "Prefer \"`ifRoom`\" instead of \"`always`\"");
                 }
             }
         }
@@ -173,8 +173,7 @@ public class AlwaysShowActionDetector extends ResourceXmlDetector implements Jav
         if (mAlwaysFields != null && !mHasIfRoomRefs) {
             for (Location location : mAlwaysFields) {
                 context.report(ISSUE, location,
-                        "Prefer \"SHOW_AS_ACTION_IF_ROOM\" instead of \"SHOW_AS_ACTION_ALWAYS\"",
-                        null);
+                    "Prefer \"`SHOW_AS_ACTION_IF_ROOM`\" instead of \"`SHOW_AS_ACTION_ALWAYS`\"");
             }
         }
     }

@@ -38,6 +38,15 @@
         help="The name of the activity. For launcher activities, the application title." />
 
     <parameter
+        id="menuName"
+        name="Menu Resource Name"
+        type="string"
+        constraints="layout|unique|nonempty"
+        suggest="menu_${classToResource(activityClass)}"
+        default="menu_main"
+        help="The name of the resource file to create for the menu items" />
+
+    <parameter
         id="isLauncher"
         name="Launcher Activity"
         type="boolean"

@@ -16,7 +16,11 @@
 
 package com.android.tools.lint.checks;
 
+import static com.android.SdkConstants.CLASS_VIEW;
+
 import com.android.annotations.NonNull;
+import com.android.tools.lint.client.api.JavaParser.ResolvedMethod;
+import com.android.tools.lint.client.api.JavaParser.ResolvedNode;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
@@ -53,7 +57,6 @@ public class CallSuperDetector extends Detector implements Detector.JavaScanner 
     public static final Issue ISSUE = Issue.create(
             "MissingSuperCall", //$NON-NLS-1$
             "Missing Super Call",
-            "Looks for overriding methods that should also invoke the parent method",
 
             "Some methods, such as `View#onDetachedFromWindow`, require that you also " +
             "call the super implementation as part of your method.",
@@ -105,10 +108,21 @@ public class CallSuperDetector extends Detector implements Detector.JavaScanner 
             if (node.astMethodName().astValue().equals(ON_DETACHED_FROM_WINDOW) &&
                     node.astParameters() != null && node.astParameters().isEmpty()) {
                 if (!callsSuper(node, ON_DETACHED_FROM_WINDOW)) {
-                    String message = "Overriding method should call super."
-                            + ON_DETACHED_FROM_WINDOW;
-                    Location location = mContext.getLocation(node.astMethodName());
-                    mContext.report(ISSUE, node, location, message, null);
+                    // Make sure the current class extends View, if type information is
+                    // available
+                    boolean isView = true; // Don't know without type information
+                    ResolvedNode resolved = mContext.resolve(node);
+                    if (resolved instanceof ResolvedMethod) {
+                        ResolvedMethod method = (ResolvedMethod) resolved;
+                        isView = method.getContainingClass().isSubclassOf(CLASS_VIEW, false);
+                    }
+
+                    if (isView) {
+                        String message = "Overriding method should call `super."
+                                + ON_DETACHED_FROM_WINDOW + "`";
+                        Location location = mContext.getLocation(node.astMethodName());
+                        mContext.report(ISSUE, node, location, message);
+                    }
                 }
             }
 

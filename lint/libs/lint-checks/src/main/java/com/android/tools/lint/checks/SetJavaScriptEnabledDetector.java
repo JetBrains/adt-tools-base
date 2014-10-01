@@ -39,7 +39,6 @@ public class SetJavaScriptEnabledDetector extends Detector implements Detector.J
     /** Invocations of setJavaScriptEnabled */
     public static final Issue ISSUE = Issue.create("SetJavaScriptEnabled", //$NON-NLS-1$
             "Using `setJavaScriptEnabled`",
-            "Looks for invocations of android.webkit.WebSettings.setJavaScriptEnabled",
 
             "Your code should not invoke `setJavaScriptEnabled` if you are not sure that " +
             "your app really requires JavaScript support.",
@@ -65,9 +64,8 @@ public class SetJavaScriptEnabledDetector extends Detector implements Detector.J
         if (node.astArguments().size() == 1
                 && !node.astArguments().first().toString().equals("false")) { //$NON-NLS-1$
             context.report(ISSUE, node, context.getLocation(node),
-                    "Using setJavaScriptEnabled can introduce XSS vulnerabilities " +
-                            "into you application, review carefully.",
-                    null);
+                    "Using `setJavaScriptEnabled` can introduce XSS vulnerabilities " +
+                            "into you application, review carefully.");
         }
     }
 

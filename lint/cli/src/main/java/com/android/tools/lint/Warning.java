@@ -46,7 +46,6 @@ public class Warning implements Comparable<Warning> {
     public final Issue issue;
     public final String message;
     public final Severity severity;
-    public final Object data;
     public final Project project;
     public AndroidProject gradleProject;
     public Location location;
@@ -58,12 +57,11 @@ public class Warning implements Comparable<Warning> {
     public String fileContents;
     public Set<Variant> variants;
 
-    public Warning(Issue issue, String message, Severity severity, Project project, Object data) {
+    public Warning(Issue issue, String message, Severity severity, Project project) {
         this.issue = issue;
         this.message = message;
         this.severity = severity;
         this.project = project;
-        this.data = data;
     }
 
     // ---- Implements Comparable<Warning> ----

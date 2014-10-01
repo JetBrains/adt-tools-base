@@ -41,6 +41,7 @@ import static com.android.SdkConstants.DOT_XML
 
 public class LintOptionsImpl implements LintOptions, Serializable {
     public static final String STDOUT = "stdout"
+    public static final String STDERR = "stderr"
     private static final long serialVersionUID = 1L;
 
     @Input
@@ -438,8 +439,8 @@ public class LintOptionsImpl implements LintOptions, Serializable {
             if (textReport || flags.isFatalOnly()) {
                 File output = textOutput
                 if (output == null) {
-                    output = new File(STDOUT)
-                } else if (!output.isAbsolute() && !isStdOut(output)) {
+                    output = new File(flags.isFatalOnly() ? STDERR: STDOUT)
+                } else if (!output.isAbsolute() && !isStdOut(output) && !isStdErr(output)) {
                     output = project.file(output.getPath())
                 }
                 output = validateOutputFile(output)
@@ -449,6 +450,9 @@ public class LintOptionsImpl implements LintOptions, Serializable {
                 boolean closeWriter
                 if (isStdOut(output)) {
                     writer = new PrintWriter(System.out, true)
+                    closeWriter = false
+                } else if (isStdErr(output)) {
+                    writer = new PrintWriter(System.err, true)
                     closeWriter = false
                 } else {
                     file = output
@@ -497,9 +501,13 @@ public class LintOptionsImpl implements LintOptions, Serializable {
         return STDOUT.equals(output.getPath())
     }
 
+    private static boolean isStdErr(@NonNull File output) {
+        return STDERR.equals(output.getPath())
+    }
+
     @NonNull
     private static File validateOutputFile(@NonNull File output) {
-        if (isStdOut(output)) {
+        if (isStdOut(output) || isStdErr(output)) {
             return output
         }
 
@@ -593,7 +601,7 @@ public class LintOptionsImpl implements LintOptions, Serializable {
         }
     }
 
-    // For textOutput 'stdout' (normally a file)
+    // For textOutput 'stdout' or 'stderr' (normally a file)
     void textOutput(String textOutput) {
         this.textOutput = new File(textOutput)
     }

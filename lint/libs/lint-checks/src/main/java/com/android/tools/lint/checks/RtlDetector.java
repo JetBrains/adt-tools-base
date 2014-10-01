@@ -56,7 +56,9 @@ import static com.android.SdkConstants.GRAVITY_VALUE_START;
 import static com.android.SdkConstants.TAG_APPLICATION;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
+import com.android.tools.lint.client.api.JavaParser;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
@@ -84,11 +86,13 @@ import java.util.List;
 import java.util.Locale;
 
 import lombok.ast.AstVisitor;
+import lombok.ast.EnumConstant;
 import lombok.ast.ForwardingAstVisitor;
 import lombok.ast.Identifier;
 import lombok.ast.ImportDeclaration;
 import lombok.ast.Node;
 import lombok.ast.Select;
+import lombok.ast.VariableDefinitionEntry;
 import lombok.ast.VariableReference;
 
 /**
@@ -108,7 +112,6 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
     public static final Issue USE_START = Issue.create(
         "RtlHardcoded", //$NON-NLS-1$
         "Using left/right instead of start/end attributes",
-        "Looks for hardcoded left/right constants which could be start/end for bidirectional text",
 
         "Using `Gravity#LEFT` and `Gravity#RIGHT` can lead to problems when a layout is " +
         "rendered in locales where text flows from right to left. Use `Gravity#START` " +
@@ -127,36 +130,33 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
         "`left` bitmask. Therefore, you can use `gravity=\"start\"` rather than " +
         "`gravity=\"left|start\"`.)",
 
-        Category.RTL, 5, Severity.WARNING, IMPLEMENTATION).setEnabledByDefault(false);
+        Category.RTL, 5, Severity.WARNING, IMPLEMENTATION);
 
     public static final Issue COMPAT = Issue.create(
         "RtlCompat", //$NON-NLS-1$
         "Right-to-left text compatibility issues",
-        "Looks for compatibility issues with RTL support",
 
         "API 17 adds a `textAlignment` attribute to specify text alignment. However, " +
         "if you are supporting older versions than API 17, you must *also* specify a " +
         "gravity or layout_gravity attribute, since older platforms will ignore the " +
         "`textAlignment` attribute.",
 
-        Category.RTL, 6, Severity.ERROR, IMPLEMENTATION).setEnabledByDefault(false);
+        Category.RTL, 6, Severity.ERROR, IMPLEMENTATION);
 
     public static final Issue SYMMETRY = Issue.create(
-            "RtlSymmetry", //$NON-NLS-1$
-            "Padding and margin symmetry",
-            "Ensures that specifying padding on one side is matched by padding on the other",
+        "RtlSymmetry", //$NON-NLS-1$
+        "Padding and margin symmetry",
 
-            "If you specify padding or margin on the left side of a layout, you should " +
-            "probably also specify padding on the right side (and vice versa) for " +
-            "right-to-left layout symmetry.",
+        "If you specify padding or margin on the left side of a layout, you should " +
+        "probably also specify padding on the right side (and vice versa) for " +
+        "right-to-left layout symmetry.",
 
-            Category.RTL, 6, Severity.ERROR, IMPLEMENTATION).setEnabledByDefault(false);
+        Category.RTL, 6, Severity.WARNING, IMPLEMENTATION);
 
 
     public static final Issue ENABLED = Issue.create(
         "RtlEnabled", //$NON-NLS-1$
         "Using RTL attributes without enabling RTL support",
-        "Looks for usages of right-to-left text constants without enabling RTL support",
 
         "To enable right-to-left support, when running on API 17 and higher, you must " +
         "set the `android:supportsRtl` attribute in the manifest `<application>` element." +
@@ -164,13 +164,12 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
         "If you have started adding RTL attributes, but have not yet finished the " +
         "migration, you can set the attribute to false to satisfy this lint check.",
 
-        Category.RTL, 3, Severity.WARNING, IMPLEMENTATION).setEnabledByDefault(false);
+        Category.RTL, 3, Severity.WARNING, IMPLEMENTATION);
 
     /* TODO:
     public static final Issue FIELD = Issue.create(
         "RtlFieldAccess", //$NON-NLS-1$
         "Accessing margin and padding fields directly",
-        "Looks for problematic manipulation of view padding and margin fields",
 
         "Modifying the padding and margin constants in view objects directly is " +
         "problematic when using RTL support, since it can lead to inconsistent states. You " +
@@ -181,7 +180,6 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
     public static final Issue AWARE = Issue.create(
         "RtlAware", //$NON-NLS-1$
         "View code not aware of RTL APIs",
-        "Looks for view-related code which might need RTL adjustments",
 
         "When manipulating views, and especially when implementing custom layouts, " +
         "the code may need to be aware of RTL APIs. This lint check looks for usages of " +
@@ -195,6 +193,7 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
     private static final String RIGHT_FIELD = "RIGHT";                          //$NON-NLS-1$
     private static final String LEFT_FIELD = "LEFT";                            //$NON-NLS-1$
     private static final String GRAVITY_CLASS = "Gravity";                      //$NON-NLS-1$
+    private static final String FQCN_GRAVITY = "android.view.Gravity";          //$NON-NLS-1$
     private static final String FQCN_GRAVITY_PREFIX = "android.view.Gravity.";  //$NON-NLS-1$
     private static final String ATTR_SUPPORTS_RTL = "supportsRtl";              //$NON-NLS-1$
     private static final String ATTR_TEXT_ALIGNMENT = "textAlignment";          //$NON-NLS-1$
@@ -247,8 +246,7 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
                 Location location = Location.create(manifestFile.get(0));
                 context.report(ENABLED, location,
                         "The project references RTL attributes, but does not explicitly enable " +
-                                "or disable RTL support with android:supportsRtl in the manifest",
-                        null);
+                        "or disable RTL support with `android:supportsRtl` in the manifest");
             }
         }
     }
@@ -326,6 +324,17 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
         }
     }
 
+    @Nullable
+    static String getTextAlignmentToGravity(String attribute) {
+        if (attribute.endsWith(START)) { // textStart, viewStart, ...
+            return GRAVITY_VALUE_START;
+        } else if (attribute.endsWith(END)) { // textEnd, viewEnd, ...
+            return GRAVITY_VALUE_END;
+        } else {
+            return null; // inherit, others
+        }
+    }
+
     @Override
     public Collection<String> getApplicableAttributes() {
         int size = ATTRIBUTES.length + 4;
@@ -373,8 +382,8 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
             mEnabledRtlSupport = Boolean.valueOf(value);
             if (!attribute.getOwnerElement().getTagName().equals(TAG_APPLICATION)) {
                 context.report(ENABLED, attribute, context.getLocation(attribute), String.format(
-                    "Wrong declaration: %1$s should be defined on the <application> element",
-                        attribute.getName()), null);
+                    "Wrong declaration: `%1$s` should be defined on the `<application>` element",
+                        attribute.getName()));
             }
             int targetSdk = project.getTargetSdk();
             if (mEnabledRtlSupport && targetSdk < RTL_API) {
@@ -382,8 +391,7 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
                         "You must set `android:targetSdkVersion` to at least %1$d when "
                                 + "enabling RTL support (is %2$d)",
                                 RTL_API, project.getTargetSdk());
-                context.report(ENABLED, attribute, context.getLocation(attribute),
-                        message, null);
+                context.report(ENABLED, attribute, context.getLocation(attribute), message);
             }
             return;
         }
@@ -393,37 +401,47 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
         }
 
         if (name.equals(ATTR_TEXT_ALIGNMENT)) {
-            mUsesRtlAttributes = true;
+            if (context.getProject().getReportIssues()) {
+              mUsesRtlAttributes = true;
+            }
 
             Element element = attribute.getOwnerElement();
             final String gravity;
+            final Attr gravityNode;
             if (element.hasAttributeNS(ANDROID_URI, ATTR_GRAVITY)) {
-                gravity = element.getAttributeNS(ANDROID_URI, ATTR_GRAVITY);
+                gravityNode = element.getAttributeNodeNS(ANDROID_URI, ATTR_GRAVITY);
+                gravity = gravityNode.getValue();
             } else if (element.hasAttributeNS(ANDROID_URI, ATTR_LAYOUT_GRAVITY)) {
-                gravity = element.getAttributeNS(ANDROID_URI, ATTR_LAYOUT_GRAVITY);
+                gravityNode = element.getAttributeNodeNS(ANDROID_URI, ATTR_LAYOUT_GRAVITY);
+                gravity = gravityNode.getValue();
             } else if (project.getMinSdk() < RTL_API) {
                 int folderVersion = context.getFolderVersion();
-                if (folderVersion >= RTL_API) {
-                    return;
-                }
-                String message = String.format(
-                        "To support older versions than API 17 (project specifies %1$d) "
-                                + "you must *also* specify gravity or layout_gravity=\"%2$s\"",
-                        project.getMinSdk(), value);
-                if (context.isEnabled(COMPAT)) {
-                    context.report(COMPAT, attribute, context.getLocation(attribute), message,
-                            null);
+                if (folderVersion < RTL_API && context.isEnabled(COMPAT)) {
+                    String expectedGravity = getTextAlignmentToGravity(value);
+                    if (expectedGravity != null) {
+                        String message = String.format(
+                                "To support older versions than API 17 (project specifies %1$d) "
+                                    + "you must *also* specify `gravity` or `layout_gravity=\"%2$s\"`",
+                                project.getMinSdk(), expectedGravity);
+                        context.report(COMPAT, attribute, context.getLocation(attribute), message);
+                    }
                 }
                 return;
             } else {
                 return;
             }
 
-            if (!value.equals(gravity) && context.isEnabled(COMPAT)) {
-                // TODO: Only compare horizontal alignment attributes?
-                String message = "Inconsistent alignment specification between "
-                        + "textAlignment and gravity attributes";
-                context.report(COMPAT, attribute, context.getLocation(attribute), message, null);
+            String expectedGravity = getTextAlignmentToGravity(value);
+            if (expectedGravity != null && !gravity.contains(expectedGravity)
+                    && context.isEnabled(COMPAT)) {
+                String message = String.format("Inconsistent alignment specification between "
+                                + "`textAlignment` and `gravity` attributes: was `%1$s`, expected `%2$s`",
+                        gravity, expectedGravity);
+                Location location = context.getLocation(attribute);
+                context.report(COMPAT, attribute, location, message);
+                Location secondary = context.getLocation(gravityNode);
+                secondary.setMessage("Incompatible direction here");
+                location.setSecondary(secondary);
             }
             return;
         }
@@ -432,19 +450,19 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
             boolean isLeft = value.contains(GRAVITY_VALUE_LEFT);
             boolean isRight = value.contains(GRAVITY_VALUE_RIGHT);
             if (!isLeft && !isRight) {
-                if (value.contains(GRAVITY_VALUE_START) || value.contains(GRAVITY_VALUE_END)) {
+                if ((value.contains(GRAVITY_VALUE_START) || value.contains(GRAVITY_VALUE_END))
+                        && context.getProject().getReportIssues()) {
                     mUsesRtlAttributes = true;
                 }
                 return;
             }
             String message = String.format(
-                    "Use \"%1$s\" instead of \"%2$s\" to ensure correct behavior in "
+                    "Use \"`%1$s`\" instead of \"`%2$s`\" to ensure correct behavior in "
                             + "right-to-left locales",
                     isLeft ? GRAVITY_VALUE_START : GRAVITY_VALUE_END,
                     isLeft ? GRAVITY_VALUE_LEFT : GRAVITY_VALUE_RIGHT);
             if (context.isEnabled(USE_START)) {
-                context.report(USE_START, attribute, context.getLocation(attribute), message,
-                        null);
+                context.report(USE_START, attribute, context.getLocation(attribute), message);
             }
 
             return;
@@ -469,10 +487,10 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
                     && !element.hasAttributeNS(ANDROID_URI,
                     isOldAttribute(opposite) ? convertOldToNew(opposite)
                             : convertNewToOld(opposite)) && context.isEnabled(SYMMETRY)) {
-                String message = "When you define %1$s you should probably also define %2$s for "
-                        + "right-to-left symmetry";
-                context.report(SYMMETRY, attribute, context.getLocation(attribute),
-                        message, null);
+                String message = String.format(
+                        "When you define `%1$s` you should probably also define `%2$s` for "
+                        + "right-to-left symmetry", name, opposite);
+                context.report(SYMMETRY, attribute, context.getLocation(attribute), message);
             }
         }
 
@@ -486,27 +504,25 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
                 if (project.getMinSdk() >= RTL_API || context.getFolderVersion() >= RTL_API) {
                     // Warn that left/right isn't needed
                     String message = String.format(
-                            "Redundant attribute %1$s; already defining %2$s with "
-                                    + "targetSdkVersion %3$s",
+                            "Redundant attribute `%1$s`; already defining `%2$s` with "
+                                    + "`targetSdkVersion` %3$s",
                             name, rtl, targetSdk);
-                    context.report(USE_START, attribute, context.getLocation(attribute),
-                            message, null);
+                    context.report(USE_START, attribute, context.getLocation(attribute), message);
                 }
             } else {
                 String message;
                 if (project.getMinSdk() >= RTL_API || context.getFolderVersion() >= RTL_API) {
                     message = String.format(
-                            "Consider replacing %1$s with %2$s:%3$s=\"%4$s\" to better support "
+                            "Consider replacing `%1$s` with `%2$s:%3$s=\"%4$s\"` to better support "
                                     + "right-to-left layouts",
                             attribute.getName(), attribute.getPrefix(), rtl, value);
                 } else {
                     message = String.format(
-                            "Consider adding %1$s:%2$s=\"%3$s\" to better support "
+                            "Consider adding `%1$s:%2$s=\"%3$s\"` to better support "
                                     + "right-to-left layouts",
                             attribute.getPrefix(), rtl, value);
                 }
-                context.report(USE_START, attribute, context.getLocation(attribute),
-                        message, null);
+                context.report(USE_START, attribute, context.getLocation(attribute), message);
             }
         } else {
             if (project.getMinSdk() >= RTL_API || !context.isEnabled(COMPAT)) {
@@ -524,9 +540,10 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
             }
             String message = String.format(
                     "To support older versions than API 17 (project specifies %1$d) "
-                            + "you should *also* add %2$s:%3$s=\"%4$s\"",
-                    project.getMinSdk(), attribute.getPrefix(), old, value);
-            context.report(COMPAT, attribute, context.getLocation(attribute), message, null);
+                            + "you should *also* add `%2$s:%3$s=\"%4$s\"`",
+                    project.getMinSdk(), attribute.getPrefix(), old,
+                    convertNewToOld(value));
+            context.report(COMPAT, attribute, context.getLocation(attribute), message);
         }
     }
 
@@ -578,28 +595,46 @@ public class RtlDetector extends LayoutDetector implements Detector.JavaScanner 
             if (!isLeft && !isRight) {
                 return false;
             }
+
             Node parent = node.getParent();
-            if (parent instanceof ImportDeclaration) {
+            if (parent instanceof ImportDeclaration || parent instanceof EnumConstant
+                    || parent instanceof VariableDefinitionEntry) {
                 return false;
             }
-            if (parent instanceof Select &&
-                    !(GRAVITY_CLASS.equals(((Select) parent).astOperand().toString()))) {
-                return false;
-            }
-            if (parent instanceof VariableReference) {
-                // No operand: make sure it's statically imported
-                if (!LintUtils.isImported(mContext.getCompilationUnit(),
-                        FQCN_GRAVITY_PREFIX + identifier)) {
+
+            JavaParser.ResolvedNode resolved = mContext.resolve(node);
+            if (resolved != null) {
+                if (!(resolved instanceof JavaParser.ResolvedField)) {
+                    return false;
+                } else {
+                    JavaParser.ResolvedField field = (JavaParser.ResolvedField) resolved;
+                    if (!field.getContainingClass().matches(FQCN_GRAVITY)) {
+                        return false;
+                    }
+                }
+            } else {
+                // Can't resolve types (for example while editing code with errors):
+                // rely on heuristics like import statements and class qualifiers
+                if (parent instanceof Select &&
+                        !(GRAVITY_CLASS.equals(((Select) parent).astOperand().toString()))) {
                     return false;
                 }
+                if (parent instanceof VariableReference) {
+                    // No operand: make sure it's statically imported
+                    if (!LintUtils.isImported(mContext.getCompilationUnit(),
+                            FQCN_GRAVITY_PREFIX + identifier)) {
+                        return false;
+                    }
+                }
             }
+
             String message = String.format(
-                    "Use \"Gravity.%1$s\" instead of \"Gravity.%2$s\" to ensure correct "
+                    "Use \"`Gravity.%1$s`\" instead of \"`Gravity.%2$s`\" to ensure correct "
                             + "behavior in right-to-left locales",
                     (isLeft ? GRAVITY_VALUE_START : GRAVITY_VALUE_END).toUpperCase(Locale.US),
                     (isLeft ? GRAVITY_VALUE_LEFT : GRAVITY_VALUE_RIGHT).toUpperCase(Locale.US));
             Location location = mContext.getLocation(node);
-            mContext.report(USE_START, node, location, message, identifier);
+            mContext.report(USE_START, node, location, message);
 
             return true;
         }

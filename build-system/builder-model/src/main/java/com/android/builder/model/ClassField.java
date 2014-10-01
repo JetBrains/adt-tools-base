@@ -18,6 +18,8 @@ package com.android.builder.model;
 
 import com.android.annotations.NonNull;
 
+import java.util.Set;
+
 /**
  * A Simple class field with name, type and value, all as strings.
  */
@@ -30,4 +32,10 @@ public interface ClassField {
 
     @NonNull
     String getValue();
+
+    @NonNull
+    String getDocumentation();
+
+    @NonNull
+    Set<String> getAnnotations();
 }

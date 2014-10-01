@@ -18,13 +18,8 @@ package com.android.tools.lint.checks;
 
 import static com.android.SdkConstants.ANDROID_URI;
 import static com.android.SdkConstants.ATTR_SHOW_AS_ACTION;
-import static com.android.SdkConstants.ATTR_TITLE;
-import static com.android.SdkConstants.ATTR_VISIBLE;
-import static com.android.SdkConstants.TAG_ITEM;
-import static com.android.SdkConstants.VALUE_FALSE;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.android.resources.ResourceFolderType;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Detector.JavaScanner;
@@ -38,7 +33,6 @@ import com.android.tools.lint.detector.api.Speed;
 import com.android.tools.lint.detector.api.XmlContext;
 
 import org.w3c.dom.Attr;
-import org.w3c.dom.Element;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -54,7 +48,6 @@ public class AppCompatResourceDetector extends ResourceXmlDetector implements Ja
     public static final Issue ISSUE = Issue.create(
             "AppCompatResource", //$NON-NLS-1$
             "Menu namespace",
-            "Ensures that menu items are using the right namespace",
 
             "When using the appcompat library, menu resources should refer to the " +
             "`showAsAction` in the `app:` namespace, not the `android:` namespace.\n" +
@@ -100,17 +93,15 @@ public class AppCompatResourceDetector extends ResourceXmlDetector implements Ja
                 }
                 if (appCompat == Boolean.TRUE) {
                     context.report(ISSUE, attribute,
-                            context.getLocation(attribute),
-                            "Should use app:showAsAction with the appcompat library with "
-                                    + "xmlns:app=\"http://schemas.android.com/apk/res-auto\"",
-                            null);
+                        context.getLocation(attribute),
+                        "Should use `app:showAsAction` with the appcompat library with "
+                                + "`xmlns:app=\"http://schemas.android.com/apk/res-auto\"`");
                 }
             } else {
                 if (appCompat == Boolean.FALSE) {
                     context.report(ISSUE, attribute,
-                            context.getLocation(attribute),
-                            "Should use android:showAsAction when not using the appcompat library",
-                            null);
+                        context.getLocation(attribute),
+                        "Should use `android:showAsAction` when not using the appcompat library");
                 }
             }
         }

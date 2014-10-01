@@ -102,8 +102,6 @@ public class ButtonDetector extends ResourceXmlDetector {
     public static final Issue ORDER = Issue.create(
             "ButtonOrder", //$NON-NLS-1$
             "Button order",
-            "Ensures the dismissive action of a dialog is on the left and affirmative on " +
-            "the right",
 
             "According to the Android Design Guide,\n" +
             "\n" +
@@ -128,7 +126,6 @@ public class ButtonDetector extends ResourceXmlDetector {
     public static final Issue STYLE = Issue.create(
             "ButtonStyle", //$NON-NLS-1$
             "Button should be borderless",
-            "Ensures that buttons in button bars are borderless",
 
             "Button bars typically use a borderless style for the buttons. Set the " +
             "`style=\"?android:attr/buttonBarButtonStyle\"` attribute " +
@@ -146,7 +143,6 @@ public class ButtonDetector extends ResourceXmlDetector {
     public static final Issue BACK_BUTTON = Issue.create(
             "BackButton", //$NON-NLS-1$
             "Back button",
-            "Looks for Back buttons, which are not common on the Android platform.",
             // TODO: Look for ">" as label suffixes as well
 
             "According to the Android Design Guide,\n" +
@@ -172,7 +168,6 @@ public class ButtonDetector extends ResourceXmlDetector {
     public static final Issue CASE = Issue.create(
             "ButtonCase", //$NON-NLS-1$
             "Cancel/OK dialog button capitalization",
-            "Ensures that Cancel/OK dialog buttons use the canonical capitalization",
 
             "The standard capitalization for OK/Cancel dialogs is \"OK\" and \"Cancel\". " +
             "To ensure that your dialogs use the standard strings, you can use " +
@@ -279,8 +274,8 @@ public class ButtonDetector extends ResourceXmlDetector {
                                         context.report(CASE, child, context.getLocation(child),
                                             String.format(
                                             "The standard Android way to capitalize %1$s " +
-                                            "is \"Cancel\" (tip: use @android:string/cancel instead)",
-                                            label),  null);
+                                            "is \"Cancel\" (tip: use `@android:string/cancel` instead)",
+                                            label));
                                     }
                                 }
                             } else if (LintUtils.startsWith(text, OK_LABEL, j)) {
@@ -296,8 +291,8 @@ public class ButtonDetector extends ResourceXmlDetector {
                                         context.report(CASE, child, context.getLocation(child),
                                             String.format(
                                             "The standard Android way to capitalize %1$s " +
-                                            "is \"OK\" (tip: use @android:string/ok instead)",
-                                            label),  null);
+                                            "is \"OK\" (tip: use `@android:string/ok` instead)",
+                                            label));
                                     }
                                 }
                             } else if (LintUtils.startsWith(text, BACK_LABEL, j) &&
@@ -322,9 +317,8 @@ public class ButtonDetector extends ResourceXmlDetector {
                         && !parentDefinesSelectableItem(element)) {
                     context.report(STYLE, element, context.getLocation(element),
                             "Buttons in button bars should be borderless; use " +
-                            "style=\"?android:attr/buttonBarButtonStyle\" (and " +
-                            "?android:attr/buttonBarStyle on the parent)",
-                            null);
+                            "`style=\"?android:attr/buttonBarButtonStyle\"` (and " +
+                            "`?android:attr/buttonBarStyle` on the parent)");
                 }
             }
 
@@ -351,7 +345,7 @@ public class ButtonDetector extends ResourceXmlDetector {
                         if (context.isEnabled(BACK_BUTTON)) {
                             context.report(BACK_BUTTON, element, location,
                                 "Back buttons are not standard on Android; see design guide's " +
-                                "navigation section", null);
+                                "navigation section");
                         }
                     }
                 }
@@ -530,7 +524,7 @@ public class ButtonDetector extends ResourceXmlDetector {
         if (mustCreateIcsLayout) {
             message = String.format(
                     "Layout uses the wrong button order for API >= 14: Create a " +
-                    "layout-v14/%1$s file with opposite order: %2$s",
+                    "`layout-v14/%1$s` file with opposite order: %2$s",
                     context.file.getName(), message);
         }
 
@@ -547,7 +541,7 @@ public class ButtonDetector extends ResourceXmlDetector {
         }
 
         Location location = context.getLocation(element);
-        context.report(ORDER, element, location, message, null);
+        context.report(ORDER, element, location, message);
     }
 
     /**

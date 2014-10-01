@@ -3,6 +3,8 @@ buildscript {
         maven { url '../../../../../out/repo' }
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:0.12.2'
+        classpath 'com.android.tools.build:gradle:0.14.0'
     }
 }
+
+apply plugin: 'android-reporting'

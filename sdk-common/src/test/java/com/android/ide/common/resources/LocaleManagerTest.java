@@ -33,7 +33,7 @@ public class LocaleManagerTest extends TestCase {
         Map<String, String> languageNames = LocaleManager.getLanguageNamesMap();
         Map<String, String> regionNames = LocaleManager.getRegionNamesMap();
         assertEquals("Make sure to update initial capacity in declaration after editing map",
-                177, languageToCountry.size());
+                176, languageToCountry.size());
         assertEquals("Make sure to update initial capacity in declaration after editing map",
                 187, languageNames.size());
         assertEquals("Make sure to update initial capacity in declaration after editing map",

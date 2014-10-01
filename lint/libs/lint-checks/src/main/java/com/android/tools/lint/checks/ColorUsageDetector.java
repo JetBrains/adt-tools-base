@@ -47,8 +47,6 @@ public class ColorUsageDetector extends Detector implements Detector.JavaScanner
     public static final Issue ISSUE = Issue.create(
             "ResourceAsColor", //$NON-NLS-1$
             "Should pass resolved color instead of resource id",
-            "Looks for calls to setColor where a resource id is passed instead of a " +
-            "resolved color",
 
             "Methods that take a color in the form of an integer should be passed " +
             "an RGB triple, not the actual color resource id. You must call " +
@@ -101,8 +99,7 @@ public class ColorUsageDetector extends Detector implements Detector.JavaScanner
                         context.report(
                                 ISSUE, select, context.getLocation(select), String.format(
                                     "Should pass resolved color instead of resource id here: " +
-                                    "getResources().getColor(%1$s)", select.toString()),
-                                null);
+                                    "`getResources().getColor(%1$s)`", select.toString()));
                     }
                     break;
                 } else if (current.getClass() == MethodDeclaration.class) {

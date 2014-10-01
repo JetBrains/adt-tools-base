@@ -2,7 +2,7 @@
 <recipe>
 
 
-    <#if appCompat?has_content><dependency mavenUrl="com.android.support:appcompat-v7:19.+"/></#if>
+    <#if appCompat?has_content><dependency mavenUrl="com.android.support:appcompat-v7:${targetApi}.+"/></#if>
 
 <#if !createActivity>
     <mkdir at="${escapeXmlAttribute(srcOut)}" />
@@ -18,6 +18,7 @@
                    to="${escapeXmlAttribute(manifestOut)}/AndroidManifest.xml" />
 
 <#if copyIcons>
+    <mkdir  at="${escapeXmlAttribute(resOut)}/drawable" />
     <copy from="res/drawable-hdpi"
             to="${escapeXmlAttribute(resOut)}/drawable-hdpi" />
     <copy from="res/drawable-mdpi"
@@ -38,6 +39,10 @@
 <#if !(isLibraryProject??) || !isLibraryProject>
     <instantiate from="res/values/styles.xml.ftl"
                    to="${escapeXmlAttribute(resOut)}/values/styles.xml" />
+<#if buildApi gte 21>
+    <copy from="res/values-v21/styles.xml"
+          to="${escapeXmlAttribute(resOut)}/values-v21/styles.xml" />
+</#if>
 </#if>
 
     <instantiate from="res/values/strings.xml.ftl"

@@ -470,6 +470,7 @@ public final class AddOnTarget implements IAndroidTarget {
         skinSet.addAll(Arrays.asList(mBasePlatform.getSkins()));
 
         mSkins = skinSet.toArray(new File[skinSet.size()]);
+        Arrays.sort(mSkins);
     }
 
     /**

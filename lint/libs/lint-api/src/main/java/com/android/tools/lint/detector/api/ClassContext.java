@@ -282,21 +282,19 @@ public class ClassContext extends Context {
      * Detectors should only call this method if an error applies to the whole class
      * scope and there is no specific method or field that applies to the error.
      * If so, use
-     * {@link #report(Issue, MethodNode, AbstractInsnNode, Location, String, Object)} or
-     * {@link #report(Issue, FieldNode, Location, String, Object)}, such that
+     * {@link #report(Issue, org.objectweb.asm.tree.MethodNode, org.objectweb.asm.tree.AbstractInsnNode, Location, String)} or
+     * {@link #report(Issue, org.objectweb.asm.tree.FieldNode, Location, String)}, such that
      * suppress annotations are checked.
      *
      * @param issue the issue to report
      * @param location the location of the issue, or null if not known
      * @param message the message for this warning
-     * @param data any associated data, or null
      */
     @Override
     public void report(
             @NonNull Issue issue,
             @Nullable Location location,
-            @NonNull String message,
-            @Nullable Object data) {
+            @NonNull String message) {
         if (mDriver.isSuppressed(issue, mClassNode)) {
             return;
         }
@@ -329,7 +327,7 @@ public class ClassContext extends Context {
             }
         }
 
-        super.report(issue, location, message, data);
+        super.report(issue, location, message);
     }
 
     // Unfortunately, ASMs nodes do not extend a common DOM node type with parent
@@ -354,19 +352,17 @@ public class ClassContext extends Context {
      *            on that method but for the {@link FieldNode}'s.
      * @param location the location of the issue, or null if not known
      * @param message the message for this warning
-     * @param data any associated data, or null
      */
     public void report(
             @NonNull Issue issue,
             @Nullable MethodNode method,
             @Nullable AbstractInsnNode instruction,
             @Nullable Location location,
-            @NonNull String message,
-            @Nullable Object data) {
+            @NonNull String message) {
         if (method != null && mDriver.isSuppressed(issue, mClassNode, method, instruction)) {
             return;
         }
-        report(issue, location, message, data); // also checks the class node
+        report(issue, location, message); // also checks the class node
     }
 
     /**
@@ -378,18 +374,55 @@ public class ClassContext extends Context {
      *    class) and if so suppress the warning without involving the client.
      * @param location the location of the issue, or null if not known
      * @param message the message for this warning
-     * @param data any associated data, or null
      */
     public void report(
             @NonNull Issue issue,
             @Nullable FieldNode field,
             @Nullable Location location,
-            @NonNull String message,
-            @Nullable Object data) {
+            @NonNull String message) {
         if (field != null && mDriver.isSuppressed(issue, field)) {
             return;
         }
-        report(issue, location, message, data); // also checks the class node
+        report(issue, location, message); // also checks the class node
+    }
+
+    /**
+     * Report an error.
+     * Like {@link #report(Issue, MethodNode, AbstractInsnNode, Location, String)} but with
+     * a now-unused data parameter at the end.
+     *
+     * @deprecated Use {@link #report(Issue, FieldNode, Location, String)} instead;
+     *    this method is here for custom rule compatibility
+     */
+    @SuppressWarnings("UnusedDeclaration") // Potentially used by external existing custom rules
+    @Deprecated
+    public void report(
+            @NonNull Issue issue,
+            @Nullable MethodNode method,
+            @Nullable AbstractInsnNode instruction,
+            @Nullable Location location,
+            @NonNull String message,
+            @SuppressWarnings("UnusedParameters") @Nullable Object data) {
+        report(issue, method, instruction, location, message);
+    }
+
+    /**
+     * Report an error.
+     * Like {@link #report(Issue, FieldNode, Location, String)} but with
+     * a now-unused data parameter at the end.
+     *
+     * @deprecated Use {@link #report(Issue, FieldNode, Location, String)} instead;
+     *    this method is here for custom rule compatibility
+     */
+    @SuppressWarnings("UnusedDeclaration") // Potentially used by external existing custom rules
+    @Deprecated
+    public void report(
+            @NonNull Issue issue,
+            @Nullable FieldNode field,
+            @Nullable Location location,
+            @NonNull String message,
+            @SuppressWarnings("UnusedParameters") @Nullable Object data) {
+        report(issue, field, location, message);
     }
 
     /**
@@ -663,10 +696,15 @@ public class ClassContext extends Context {
             return fqcn;
         }
 
+        // If class name contains $, it's not an ambiguous inner class name.
+        if (fqcn.indexOf('$') != -1) {
+            return fqcn.replace('.', '/');
+        }
+        // Let's assume that components that start with Caps are class names.
         StringBuilder sb = new StringBuilder(fqcn.length());
         String prev = null;
         for (String part : Splitter.on('.').split(fqcn)) {
-            if (prev != null && prev.length() > 0) {
+            if (prev != null && !prev.isEmpty()) {
                 if (Character.isUpperCase(prev.charAt(0))) {
                     sb.append('$');
                 } else {

@@ -17,6 +17,7 @@
 package com.android.ide.common.rendering;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.ide.common.rendering.api.HardwareConfig;
 import com.android.resources.ScreenOrientation;
 import com.android.sdklib.devices.ButtonType;
@@ -173,6 +174,9 @@ public class HardwareConfigHelper {
     private static final String NEXUS = "Nexus";                          //$NON-NLS-1$
     private static final Pattern GENERIC_PATTERN =
             Pattern.compile("(\\d+\\.?\\d*)\" (.+?)( \\(.*Nexus.*\\))?"); //$NON-NLS-1$
+    private static final String ID_PREFIX_WEAR = "wear_";                 //$NON-NLS-1$
+    private static final String ID_PREFIX_WEAR_ROUND = "wear_round";      //$NON-NLS-1$
+    private static final String ID_PREFIX_TV = "tv_";                     //$NON-NLS-1$
 
     /**
      * Returns a user-displayable description of the given Nexus device
@@ -254,6 +258,27 @@ public class HardwareConfigHelper {
      */
     public static boolean isNexus(@NonNull Device device) {
         return device.getId().contains(NEXUS);
+    }
+
+    /**
+     * Whether the given device is a wear device
+     */
+    public static boolean isWear(@Nullable Device device) {
+        return device != null && device.getId().startsWith(ID_PREFIX_WEAR);
+    }
+
+    /**
+     * Whether the given device has a round screen
+     */
+    public static boolean isRound(@Nullable Device device) {
+        return device != null && ID_PREFIX_WEAR_ROUND.equals(device.getId());
+    }
+
+    /**
+     * Whether the given device is a TV device
+     */
+    public static boolean isTv(@Nullable Device device) {
+        return device != null && device.getId().startsWith(ID_PREFIX_TV);
     }
 
     /**

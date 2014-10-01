@@ -24,9 +24,7 @@ import static com.android.tools.lint.client.api.JavaParser.TYPE_STRING;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.tools.lint.client.api.JavaParser;
 import com.android.tools.lint.detector.api.Category;
-import com.android.tools.lint.detector.api.ClassContext;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
@@ -34,10 +32,6 @@ import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.Speed;
-
-import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.MethodInsnNode;
-import org.objectweb.asm.tree.MethodNode;
 
 import java.util.Collections;
 import java.util.List;
@@ -52,7 +46,6 @@ public class AddJavascriptInterfaceDetector extends Detector implements Detector
     public static final Issue ISSUE = Issue.create(
             "AddJavascriptInterface", //$NON-NLS-1$
             "addJavascriptInterface Called",
-            "Checks that `WebView#addJavascriptInterface` is not called for API levels below 17",
             "For applications built for API levels below 17, `WebView#addJavascriptInterface` "
                     + "presents a security hazard as JavaScript on the target web page has the "
                     + "ability to use reflection to access the injected object's public fields and "
@@ -106,7 +99,8 @@ public class AddJavascriptInterfaceDetector extends Detector implements Detector
             return;
         }
 
-        String message = "WebView.addJavascriptInterface should not be called";
-        context.report(ISSUE, node, context.getLocation(node.astName()), message, null);
+        String message = "`WebView.addJavascriptInterface` should not be called with minSdkVersion < 17 for security reasons: " +
+                         "JavaScript can use reflection to manipulate application";
+        context.report(ISSUE, node, context.getLocation(node.astName()), message);
     }
 }

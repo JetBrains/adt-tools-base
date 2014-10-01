@@ -103,7 +103,6 @@ public class WrongIdDetector extends LayoutDetector {
     public static final Issue UNKNOWN_ID = Issue.create(
             "UnknownId", //$NON-NLS-1$
             "Reference to an unknown id",
-            "Checks for id references in RelativeLayouts that are not defined elsewhere",
             "The `@+id/` syntax refers to an existing id, or creates a new one if it has " +
             "not already been defined elsewhere. However, this means that if you have a " +
             "typo in your reference, or if the referred view no longer exists, you do not " +
@@ -122,7 +121,6 @@ public class WrongIdDetector extends LayoutDetector {
     public static final Issue NOT_SIBLING = Issue.create(
             "NotSibling", //$NON-NLS-1$
             "RelativeLayout Invalid Constraints",
-            "Checks for id references in RelativeLayouts that are not referencing a sibling",
             "Layout constraints in a given `RelativeLayout` should reference other views " +
             "within the same relative layout.",
             Category.CORRECTNESS,
@@ -134,7 +132,6 @@ public class WrongIdDetector extends LayoutDetector {
     public static final Issue INVALID = Issue.create(
             "InvalidId", //$NON-NLS-1$
             "Invalid ID declaration",
-            "Checks for invalid ID definitions",
             "An id definition *must* be of the form `@+id/yourname`. The tools have not " +
             "rejected strings of the form `@+foo/bar` in the past, but that was an error, " +
             "and could lead to tricky errors because of the way the id integers are assigned.\n" +
@@ -150,7 +147,6 @@ public class WrongIdDetector extends LayoutDetector {
     public static final Issue UNKNOWN_ID_LAYOUT = Issue.create(
             "UnknownIdInLayout", //$NON-NLS-1$
             "Reference to an id that is not in the current layout",
-            "Makes sure that @+id references refer to views in the same layout",
 
             "The `@+id/` syntax refers to an existing id, or creates a new one if it has " +
             "not already been defined elsewhere. However, this means that if you have a " +
@@ -257,10 +253,10 @@ public class WrongIdDetector extends LayoutDetector {
                                 if (context.isEnabled(NOT_SIBLING)) {
                                     XmlContext xmlContext = (XmlContext) context;
                                     String message = String.format(
-                                            "%1$s is not a sibling in the same RelativeLayout",
+                                            "`%1$s` is not a sibling in the same `RelativeLayout`",
                                             value);
                                     Location location = xmlContext.getLocation(attr);
-                                    xmlContext.report(NOT_SIBLING, attr, location, message, null);
+                                    xmlContext.report(NOT_SIBLING, attr, location, message);
                                 }
                             }
                         }
@@ -322,11 +318,11 @@ public class WrongIdDetector extends LayoutDetector {
                     String message;
                     if (isDeclared) {
                         message = String.format(
-                                "The id \"%1$s\" is defined but not assigned to any views.%2$s",
+                                "The id \"`%1$s`\" is defined but not assigned to any views.%2$s",
                                 id, suggestionMessage);
                     } else {
                         message = String.format(
-                                "The id \"%1$s\" is not defined anywhere.%2$s",
+                                "The id \"`%1$s`\" is not defined anywhere.%2$s",
                                 id, suggestionMessage);
                     }
                     report(context, UNKNOWN_ID, handle, message);
@@ -338,7 +334,7 @@ public class WrongIdDetector extends LayoutDetector {
                     Handle handle = pair.getSecond();
                     report(context, UNKNOWN_ID_LAYOUT, handle,
                             String.format(
-                                    "The id \"%1$s\" is not referring to any views in this layout",
+                                    "The id \"`%1$s`\" is not referring to any views in this layout",
                                     stripIdPrefix(id)));
                 }
             }
@@ -354,7 +350,7 @@ public class WrongIdDetector extends LayoutDetector {
             }
         }
 
-        context.report(issue, location, message, null);
+        context.report(issue, location, message);
     }
 
     @Override
@@ -386,15 +382,18 @@ public class WrongIdDetector extends LayoutDetector {
         mFileIds.add(id);
         mGlobalIds.add(id);
 
-        if (id.startsWith("@+") && !id.startsWith(NEW_ID_PREFIX) //$NON-NLS-1$
+        if (id.equals(NEW_ID_PREFIX) || id.equals(ID_PREFIX) || "@+id".equals(ID_PREFIX)) {
+            String message = "Invalid id: missing value";
+            context.report(INVALID, attribute, context.getLocation(attribute), message);
+        } else if (id.startsWith("@+") && !id.startsWith(NEW_ID_PREFIX) //$NON-NLS-1$
                 && !id.startsWith("@+android:id/")  //$NON-NLS-1$
                 || id.startsWith(NEW_ID_PREFIX)
                 && id.indexOf('/', NEW_ID_PREFIX.length()) != -1) {
             int nameStart = id.startsWith(NEW_ID_PREFIX) ? NEW_ID_PREFIX.length() : 2;
             String suggested = NEW_ID_PREFIX + id.substring(nameStart).replace('/', '_');
             String message = String.format(
-                    "ID definitions *must* be of the form @+id/name; try using %1$s", suggested);
-            context.report(INVALID, attribute, context.getLocation(attribute), message, null);
+                    "ID definitions *must* be of the form `@+id/name`; try using `%1$s`", suggested);
+            context.report(INVALID, attribute, context.getLocation(attribute), message);
         }
     }
 

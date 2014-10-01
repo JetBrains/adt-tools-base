@@ -60,7 +60,6 @@ public class TextFieldDetector extends LayoutDetector {
     public static final Issue ISSUE = Issue.create(
             "TextFields", //$NON-NLS-1$
             "Missing `inputType` or `hint`",
-            "Looks for text fields missing `inputType` or `hint` settings",
 
             "Providing an `inputType` attribute on a text field improves usability " +
             "because depending on the data to be input, optimized keyboards can be shown " +
@@ -146,7 +145,7 @@ public class TextFieldDetector extends LayoutDetector {
             }
 
             context.report(ISSUE, element, context.getLocation(element),
-                    "This text field does not specify an inputType or a hint", null);
+                    "This text field does not specify an `inputType` or a `hint`");
         }
 
         Attr idNode = element.getAttributeNodeNS(ANDROID_URI, ATTR_ID);
@@ -169,8 +168,8 @@ public class TextFieldDetector extends LayoutDetector {
         if (containsWord(id, "phone", true, true)) {                 //$NON-NLS-1$
             if (!inputType.contains("phone")                         //$NON-NLS-1$
                     && element.getAttributeNodeNS(ANDROID_URI, ATTR_PHONE_NUMBER) == null) {
-                String message = String.format("The view name (%1$s) suggests this is a phone "
-                        + "number, but it does not include 'phone' in the inputType", id);
+                String message = String.format("The view name (`%1$s`) suggests this is a phone "
+                        + "number, but it does not include '`phone`' in the `inputType`", id);
                 reportMismatch(context, idNode, inputTypeNode, message);
             }
             return;
@@ -183,8 +182,8 @@ public class TextFieldDetector extends LayoutDetector {
                 || containsWord(id, "weight", false, true)
                 || containsWord(id, "number", false, true)) {
             if (!inputType.contains("number") && !inputType.contains("phone")) { //$NON-NLS-1$
-                String message = String.format("The view name (%1$s) suggests this is a number, "
-                        + "but it does not include a numeric inputType (such as 'numberSigned')",
+                String message = String.format("The view name (`%1$s`) suggests this is a number, "
+                        + "but it does not include a numeric `inputType` (such as '`numberSigned`')",
                         id);
                 reportMismatch(context, idNode, inputTypeNode, message);
             }
@@ -194,8 +193,8 @@ public class TextFieldDetector extends LayoutDetector {
         if (containsWord(id, "password", true, true)) {   //$NON-NLS-1$
             if (!(inputType.contains("Password"))  //$NON-NLS-1$
                 && element.getAttributeNodeNS(ANDROID_URI, ATTR_PASSWORD) == null) {
-                String message = String.format("The view name (%1$s) suggests this is a password, "
-                        + "but it does not include 'textPassword' in the inputType", id);
+                String message = String.format("The view name (`%1$s`) suggests this is a password, "
+                        + "but it does not include '`textPassword`' in the `inputType`", id);
                 reportMismatch(context, idNode, inputTypeNode, message);
             }
             return;
@@ -203,8 +202,8 @@ public class TextFieldDetector extends LayoutDetector {
 
         if (containsWord(id, "email", true, true)) {                   //$NON-NLS-1$
             if (!inputType.contains("Email")) { //$NON-NLS-1$
-                String message = String.format("The view name (%1$s) suggests this is an e-mail "
-                        + "address, but it does not include 'textEmail' in the inputType", id);
+                String message = String.format("The view name (`%1$s`) suggests this is an e-mail "
+                        + "address, but it does not include '`textEmail`' in the `inputType`", id);
                 reportMismatch(context, idNode, inputTypeNode, message);
             }
             return;
@@ -213,8 +212,8 @@ public class TextFieldDetector extends LayoutDetector {
         if (endsWith(id, "pin", false, true)) {    //$NON-NLS-1$
             if (!(inputType.contains("numberPassword"))  //$NON-NLS-1$
                 && element.getAttributeNodeNS(ANDROID_URI, ATTR_PASSWORD) == null) {
-                String message = String.format("The view name (%1$s) suggests this is a password, "
-                        + "but it does not include 'numberPassword' in the inputType", id);
+                String message = String.format("The view name (`%1$s`) suggests this is a password, "
+                        + "but it does not include '`numberPassword`' in the `inputType`", id);
                 reportMismatch(context, idNode, inputTypeNode, message);
             }
             return;
@@ -222,15 +221,15 @@ public class TextFieldDetector extends LayoutDetector {
 
         if ((containsWord(id, "uri") || containsWord(id, "url"))
                 && !inputType.contains("textUri")) {
-            String message = String.format("The view name (%1$s) suggests this is a URI, "
-                    + "but it does not include 'textUri' in the inputType", id);
+            String message = String.format("The view name (`%1$s`) suggests this is a URI, "
+                    + "but it does not include '`textUri`' in the `inputType`", id);
             reportMismatch(context, idNode, inputTypeNode, message);
         }
 
         if ((containsWord(id, "date"))            //$NON-NLS-1$
                 && !inputType.contains("date")) { //$NON-NLS-1$
-            String message = String.format("The view name (%1$s) suggests this is a date, "
-                    + "but it does not include 'date' or 'datetime' in the inputType", id);
+            String message = String.format("The view name (`%1$s`) suggests this is a date, "
+                    + "but it does not include '`date`' or '`datetime`' in the `inputType`", id);
             reportMismatch(context, idNode, inputTypeNode, message);
         }
     }
@@ -246,7 +245,7 @@ public class TextFieldDetector extends LayoutDetector {
         } else {
             location = context.getLocation(idNode);
         }
-        context.report(ISSUE, idNode.getOwnerElement(), location, message, null);
+        context.report(ISSUE, idNode.getOwnerElement(), location, message);
     }
 
     /** Returns true if the given sentence contains a given word */

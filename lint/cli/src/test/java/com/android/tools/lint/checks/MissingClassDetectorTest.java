@@ -19,13 +19,18 @@ package com.android.tools.lint.checks;
 import static com.android.tools.lint.checks.MissingClassDetector.INNERCLASS;
 import static com.android.tools.lint.checks.MissingClassDetector.INSTANTIATABLE;
 import static com.android.tools.lint.checks.MissingClassDetector.MISSING;
+import static com.android.tools.lint.detector.api.TextFormat.TEXT;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.tools.lint.client.api.LintClient;
+import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Issue;
+import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Project;
 import com.android.tools.lint.detector.api.Scope;
+import com.android.tools.lint.detector.api.Severity;
 import com.google.common.collect.Sets;
 
 import java.io.File;
@@ -313,7 +318,7 @@ public class MissingClassDetectorTest extends AbstractCheckTest {
             "AndroidManifest.xml:14: Error: Class referenced in the manifest, test.pkg.Foo.Bar, was not found in the project or the libraries [MissingRegistered]\n" +
             "        <activity\n" +
             "        ^\n" +
-            "AndroidManifest.xml:15: Warning: Use '$' instead of '.' for inner classes (or use only lowercase letters in package names) [InnerclassSeparator]\n" +
+            "AndroidManifest.xml:15: Warning: Use '$' instead of '.' for inner classes (or use only lowercase letters in package names); replace \".Foo.Bar\" with \".Foo$Bar\" [InnerclassSeparator]\n" +
             "            android:name=\".Foo.Bar\"\n" +
             "            ~~~~~~~~~~~~~~~~~~~~~~~\n" +
             "1 errors, 1 warnings\n",
@@ -498,5 +503,27 @@ public class MissingClassDetectorTest extends AbstractCheckTest {
                         "bytecode/FragmentTest.java.txt=>src/test/pkg/FragmentTest.java",
                         "bytecode/.classpath=>.classpath",
                         "res/xml/prefs_headers.xml"));
+    }
+
+
+    public void testGetOldValue() {
+        assertEquals(".Foo.Bar", MissingClassDetector.getOldValue(INNERCLASS,
+                "Use '$' instead of '.' for inner classes (or use only lowercase letters in package names); replace \".Foo.Bar\" with \".Foo$Bar\" [InnerclassSeparator]",
+                TEXT));
+    }
+
+    public void testGetNewValue() {
+        assertEquals(".Foo$Bar", MissingClassDetector.getNewValue(INNERCLASS,
+                "Use '$' instead of '.' for inner classes (or use only lowercase letters in package names); replace \".Foo.Bar\" with \".Foo$Bar\" [InnerclassSeparator]",
+                TEXT));
+    }
+
+    @Override
+    protected void checkReportedError(@NonNull Context context, @NonNull Issue issue,
+            @NonNull Severity severity, @Nullable Location location, @NonNull String message) {
+        if (issue == INNERCLASS) {
+            assertNotNull(message, MissingClassDetector.getOldValue(issue, message, TEXT));
+            assertNotNull(message, MissingClassDetector.getNewValue(issue, message, TEXT));
+        }
     }
 }

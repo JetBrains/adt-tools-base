@@ -51,7 +51,6 @@ public class ParcelDetector extends Detector implements Detector.JavaScanner {
     public static final Issue ISSUE = Issue.create(
             "ParcelCreator", //$NON-NLS-1$
             "Missing Parcelable `CREATOR` field",
-            "Checks that classes implementing `Parcelable` also provide a `CREATOR` field",
 
             "According to the `Parcelable` interface documentation, " +
             "\"Classes implementing the Parcelable interface must also have a " +
@@ -112,7 +111,7 @@ public class ParcelDetector extends Detector implements Detector.JavaScanner {
                         JavaParser.ResolvedNode resolved = mContext.resolve(node);
                         if (resolved instanceof ResolvedClass) {
                             ResolvedClass cls = (ResolvedClass) resolved;
-                            ResolvedField field = cls.getField("CREATOR");
+                            ResolvedField field = cls.getField("CREATOR", false);
                             if (field == null) {
                                 // Make doubly sure that we're really implementing
                                 // android.os.Parcelable
@@ -125,9 +124,8 @@ public class ParcelDetector extends Detector implements Detector.JavaScanner {
                                 }
                                 Location location = mContext.getLocation(node.astName());
                                 mContext.report(ISSUE, node, location,
-                                        "This class implements Parcelable but does not "
-                                                + "provide a CREATOR field",
-                                        null);
+                                        "This class implements `Parcelable` but does not "
+                                                + "provide a `CREATOR` field");
                             }
                         }
                         break;

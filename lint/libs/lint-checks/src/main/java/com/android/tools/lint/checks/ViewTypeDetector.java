@@ -93,7 +93,6 @@ public class ViewTypeDetector extends ResourceXmlDetector implements Detector.Ja
     public static final Issue ISSUE = Issue.create(
             "WrongViewCast", //$NON-NLS-1$
             "Mismatched view type",
-            "Looks for incorrect casts to views that according to the XML are of a different type",
             "Keeps track of the view types associated with ids and if it finds a usage of " +
             "the id in the Java code it ensures that it is treated as the same type.",
             Category.CORRECTNESS,
@@ -327,9 +326,9 @@ public class ViewTypeDetector extends ResourceXmlDetector implements Detector.Ja
                 layoutType = Joiner.on("|").join(layoutTypes);
             }
             String message = String.format(
-                    "Unexpected cast to %1$s: layout tag was %2$s",
+                    "Unexpected cast to `%1$s`: layout tag was `%2$s`",
                     castType, layoutType);
-            context.report(ISSUE, node, context.getLocation(node), message, null);
+            context.report(ISSUE, node, context.getLocation(node), message);
         }
     }
 }

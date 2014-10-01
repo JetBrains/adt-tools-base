@@ -35,7 +35,7 @@ class BaseArtifactImpl implements BaseArtifact, Serializable {
     @NonNull
     private final String assembleTaskName;
     @NonNull
-    private final String javaCompileTaskName;
+    private final String compileTaskName;
     @NonNull
     private final File classesFolder;
     @NonNull
@@ -48,14 +48,14 @@ class BaseArtifactImpl implements BaseArtifact, Serializable {
 
     BaseArtifactImpl(@NonNull String name,
                      @NonNull String assembleTaskName,
-                     @NonNull String javaCompileTaskName,
+                     @NonNull String compileTaskName,
                      @NonNull File classesFolder,
                      @NonNull Dependencies dependencies,
                      @Nullable SourceProvider variantSourceProvider,
                      @Nullable SourceProvider multiFlavorSourceProviders) {
         this.name = name;
         this.assembleTaskName = assembleTaskName;
-        this.javaCompileTaskName = javaCompileTaskName;
+        this.compileTaskName = compileTaskName;
         this.classesFolder = classesFolder;
         this.dependencies = dependencies;
         this.variantSourceProvider = variantSourceProvider;
@@ -71,7 +71,13 @@ class BaseArtifactImpl implements BaseArtifact, Serializable {
     @NonNull
     @Override
     public String getJavaCompileTaskName() {
-        return javaCompileTaskName;
+        return compileTaskName;
+    }
+
+    @NonNull
+    @Override
+    public String getCompileTaskName() {
+        return compileTaskName;
     }
 
     @NonNull

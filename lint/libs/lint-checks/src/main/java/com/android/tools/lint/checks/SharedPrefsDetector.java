@@ -69,7 +69,6 @@ public class SharedPrefsDetector extends Detector implements Detector.JavaScanne
     public static final Issue ISSUE = Issue.create(
             "CommitPrefEdits", //$NON-NLS-1$
             "Missing `commit()` on `SharedPreference` editor",
-            "Looks for code editing a `SharedPreference` but forgetting to call `commit()` on it",
 
             "After calling `edit()` on a `SharedPreference`, you must call `commit()` " +
             "or `apply()` on the editor to save the results.",
@@ -190,8 +189,7 @@ public class SharedPrefsDetector extends Detector implements Detector.JavaScanne
         method.accept(finder);
         if (!finder.isCommitCalled()) {
             context.report(ISSUE, method, context.getLocation(node),
-                    "SharedPreferences.edit() without a corresponding commit() or apply() call",
-                    null);
+                "`SharedPreferences.edit()` without a corresponding `commit()` or `apply()` call");
         }
     }
 
@@ -297,12 +295,11 @@ public class SharedPrefsDetector extends Detector implements Detector.JavaScanne
                                     returnValueIgnored = true;
                                 }
                             }
-                            if (returnValueIgnored) {
-                                String message = "Consider using apply() instead; commit writes "
+                            if (returnValueIgnored && isCommit) {
+                                String message = "Consider using `apply()` instead; `commit` writes "
                                         + "its data to persistent storage immediately, whereas "
-                                        + "apply will handle it in the background";
-                                mContext.report(ISSUE, node, mContext.getLocation(node), message,
-                                        null);
+                                        + "`apply` will handle it in the background";
+                                mContext.report(ISSUE, node, mContext.getLocation(node), message);
                             }
                         }
                     }

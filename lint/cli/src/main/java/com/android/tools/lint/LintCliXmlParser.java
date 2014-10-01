@@ -18,8 +18,8 @@ package com.android.tools.lint;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.tools.lint.client.api.XmlParser;
 import com.android.tools.lint.client.api.IssueRegistry;
+import com.android.tools.lint.client.api.XmlParser;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Location.Handle;
 import com.android.tools.lint.detector.api.XmlContext;
@@ -63,8 +63,8 @@ public class LintCliXmlParser extends XmlParser {
                     // is valid
                     IssueRegistry.PARSER_ERROR, Location.create(context.file),
                     e.getCause() != null ? e.getCause().getLocalizedMessage() :
-                        e.getLocalizedMessage(),
-                    null);
+                        e.getLocalizedMessage()
+            );
         } catch (SAXException e) {
             Location location = Location.create(context.file);
             String message = e.getCause() != null ? e.getCause().getLocalizedMessage() :
@@ -82,8 +82,8 @@ public class LintCliXmlParser extends XmlParser {
                     // Must provide an issue since API guarantees that the issue parameter
                     // is valid
                     IssueRegistry.PARSER_ERROR, location,
-                    message,
-                    null);
+                    message
+            );
         } catch (Throwable t) {
             context.log(t, null);
         }

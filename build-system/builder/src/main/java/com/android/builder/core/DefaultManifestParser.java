@@ -23,7 +23,9 @@ import com.android.io.StreamException;
 import com.android.utils.XmlUtils;
 import com.android.xml.AndroidManifest;
 import com.android.xml.AndroidXPathFactory;
+import com.google.common.base.Optional;
 
+import org.apache.http.annotation.ThreadSafe;
 import org.xml.sax.InputSource;
 
 import java.io.File;
@@ -32,58 +34,81 @@ import java.io.IOException;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathExpressionException;
 
-public class DefaultManifestParser implements ManifestParser {
+@ThreadSafe
+class DefaultManifestParser implements ManifestParser {
+
+    Optional<Object> mMinSdkVersion;
+    Optional<Object> mTargetSdkVersion;
+    Optional<Integer> mVersionCode;
+    Optional<String> mPackage;
+    Optional<String> mVersionName;
 
     @Nullable
     @Override
-    public String getPackage(@NonNull File manifestFile) {
-        return getStringValue(manifestFile, "/manifest/@package");
+    public synchronized  String getPackage(@NonNull File manifestFile) {
+        if (mPackage == null) {
+            mPackage = Optional.fromNullable(getStringValue(manifestFile, "/manifest/@package"));
+        }
+        return mPackage.orNull();
     }
 
     @Nullable
     @Override
-    public String getVersionName(@NonNull File manifestFile) {
-        return getStringValue(manifestFile, "/manifest/@android:versionName");
+    public synchronized  String getVersionName(@NonNull File manifestFile) {
+        if (mVersionName == null) {
+            mVersionName = Optional.fromNullable(
+                    getStringValue(manifestFile, "/manifest/@android:versionName"));
+        }
+        return mVersionName.orNull();
     }
 
     @Override
-    public int getVersionCode(@NonNull File manifestFile) {
-        try {
-            String value = getStringValue(manifestFile, "/manifest/@android:versionCode");
-            if (value != null) {
-                return Integer.valueOf(value);
+    @NonNull
+    public synchronized int getVersionCode(@NonNull File manifestFile) {
+        if (mVersionCode == null) {
+            try {
+                String value = getStringValue(manifestFile, "/manifest/@android:versionCode");
+                if (value != null) {
+                    mVersionCode = Optional.of(Integer.valueOf(value));
+                }
+            } catch (NumberFormatException ignored) {
+                mVersionCode = Optional.absent();
             }
-        } catch (NumberFormatException ignored) {
-            // return -1 below.
         }
-
-        return -1;
+        return mVersionCode.or(-1);
     }
 
     @Override
-    public Object getMinSdkVersion(@NonNull File manifestFile) {
-        try {
-            return AndroidManifest.getMinSdkVersion(new FileWrapper(manifestFile));
-        } catch (XPathExpressionException e) {
-            // won't happen.
-        } catch (StreamException e) {
-            throw new RuntimeException(e);
+    @NonNull
+    public synchronized Object getMinSdkVersion(@NonNull File manifestFile) {
+        if (mMinSdkVersion == null) {
+            try {
+                mMinSdkVersion = Optional.fromNullable(
+                        AndroidManifest.getMinSdkVersion(new FileWrapper(manifestFile)));
+            } catch (XPathExpressionException e) {
+                throw new RuntimeException(e);
+            } catch (StreamException e) {
+                throw new RuntimeException(e);
+            }
         }
-
-        return 1;
+        return mMinSdkVersion.or(1);
     }
 
     @Override
+    @NonNull
     public Object getTargetSdkVersion(@NonNull File manifestFile) {
-        try {
-            return AndroidManifest.getTargetSdkVersion(new FileWrapper(manifestFile));
-        } catch (XPathExpressionException e) {
-            // won't happen.
-        } catch (StreamException e) {
-            throw new RuntimeException(e);
+        if (mTargetSdkVersion == null) {
+            try {
+                mTargetSdkVersion =
+                        Optional.fromNullable(AndroidManifest.getTargetSdkVersion(
+                                new FileWrapper(manifestFile)));
+            } catch (XPathExpressionException e) {
+                return new RuntimeException(e);
+            } catch (StreamException e) {
+                throw new RuntimeException(e);
+            }
         }
-
-        return -1;
+        return mTargetSdkVersion.or(-1);
     }
 
     private static String getStringValue(@NonNull File file, @NonNull String xPath) {

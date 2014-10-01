@@ -259,6 +259,31 @@ public class EcjParser extends JavaParser {
                 requestor, problemFactory, outputMap);
         try {
             compiler.compile(sourceUnits.toArray(new ICompilationUnit[sourceUnits.size()]));
+        } catch (OutOfMemoryError e) {
+            // Since we're running out of memory, if it's all still held we could potentially
+            // fail attempting to log the failure. Actively get rid of the large ECJ data
+            // structure references first so minimize the chance of that
+            //noinspection UnusedAssignment
+            compiler = null;
+            //noinspection UnusedAssignment
+            environment = null;
+            //noinspection UnusedAssignment
+            requestor = null;
+            //noinspection UnusedAssignment
+            problemFactory = null;
+            //noinspection UnusedAssignment
+            policy = null;
+
+            String msg = "Ran out of memory analyzing .java sources with ECJ: Some lint checks "
+                    + "may not be accurate (missing type information from the compiler)";
+            if (client != null) {
+                // Don't log exception too; this isn't a compiler error per se where we
+                // need to pin point the exact unlucky code that asked for memory when it
+                // had already run out
+                client.log(null, msg);
+            } else {
+                System.out.println(msg);
+            }
         } catch (Throwable t) {
             if (client != null) {
                 CompilationUnitDeclaration currentUnit = compiler.getCurrentUnit();
@@ -890,19 +915,56 @@ public class EcjParser extends JavaParser {
 
         @Override
         @NonNull
-        public Iterable<ResolvedMethod> getMethods(@NonNull String name) {
+        public Iterable<ResolvedMethod> getMethods(@NonNull String name,
+                boolean includeInherited) {
             if (mBinding instanceof ReferenceBinding) {
                 ReferenceBinding cls = (ReferenceBinding) mBinding;
-                MethodBinding[] methods = cls.getMethods(name.toCharArray());
-                if (methods != null) {
-                    int count = methods.length;
-                    List<ResolvedMethod> result = Lists.newArrayListWithExpectedSize(count);
-                    for (MethodBinding method : methods) {
-                        if (!method.isConstructor()) {
-                            result.add(new EcjResolvedMethod(method));
+                if (includeInherited) {
+                    List<ResolvedMethod> result = null;
+                    while (cls != null) {
+                        MethodBinding[] methods = cls.getMethods(name.toCharArray());
+                        if (methods != null) {
+                            int count = methods.length;
+                            if (count > 0) {
+                                if (result == null) {
+                                    result = Lists.newArrayListWithExpectedSize(count);
+                                }
+                                for (MethodBinding method : methods) {
+                                    if (!method.isConstructor()) {
+                                        // See if this method looks like it's masked
+                                        boolean masked = false;
+                                        for (ResolvedMethod m : result) {
+                                            MethodBinding mb = ((EcjResolvedMethod) m).mBinding;
+                                            if (mb.areParameterErasuresEqual(method)) {
+                                                masked = true;
+                                                break;
+                                            }
+                                        }
+                                        if (masked) {
+                                            continue;
+                                        }
+
+                                        result.add(new EcjResolvedMethod(method));
+                                    }
+                                }
+                            }
                         }
+                        cls = cls.superclass();
                     }
-                    return result;
+
+                    return result != null ? result : Collections.<ResolvedMethod>emptyList();
+                } else {
+                    MethodBinding[] methods = cls.getMethods(name.toCharArray());
+                    if (methods != null) {
+                        int count = methods.length;
+                        List<ResolvedMethod> result = Lists.newArrayListWithExpectedSize(count);
+                        for (MethodBinding method : methods) {
+                            if (!method.isConstructor()) {
+                                result.add(new EcjResolvedMethod(method));
+                            }
+                        }
+                        return result;
+                    }
                 }
             }
 
@@ -911,15 +973,22 @@ public class EcjParser extends JavaParser {
 
         @Override
         @Nullable
-        public ResolvedField getField(@NonNull String name) {
+        public ResolvedField getField(@NonNull String name, boolean includeInherited) {
             if (mBinding instanceof ReferenceBinding) {
                 ReferenceBinding cls = (ReferenceBinding) mBinding;
-                FieldBinding[] fields = cls.fields();
-                if (fields != null) {
-                    for (FieldBinding field : fields) {
-                        if (sameChars(name, field.name)) {
-                            return new EcjResolvedField(field);
+                while (cls != null) {
+                    FieldBinding[] fields = cls.fields();
+                    if (fields != null) {
+                        for (FieldBinding field : fields) {
+                            if (sameChars(name, field.name)) {
+                                return new EcjResolvedField(field);
+                            }
                         }
+                    }
+                    if (includeInherited) {
+                        cls = cls.superclass();
+                    } else {
+                        break;
                     }
                 }
             }

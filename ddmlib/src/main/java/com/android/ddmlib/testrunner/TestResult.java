@@ -15,6 +15,8 @@
  */
 package com.android.ddmlib.testrunner;
 
+import com.android.ddmlib.testrunner.TestResult.TestStatus;
+
 import java.util.Arrays;
 import java.util.Map;
 
@@ -24,14 +26,16 @@ import java.util.Map;
 public class TestResult {
 
     public enum TestStatus {
-        /** Test error */
-        ERROR,
         /** Test failed. */
         FAILURE,
         /** Test passed */
         PASSED,
         /** Test started but not ended */
-        INCOMPLETE
+        INCOMPLETE,
+        /** Test assumption failure */
+        ASSUMPTION_FAILURE,
+        /** Test ignored */
+        IGNORED,
     }
 
     private TestStatus mStatus;

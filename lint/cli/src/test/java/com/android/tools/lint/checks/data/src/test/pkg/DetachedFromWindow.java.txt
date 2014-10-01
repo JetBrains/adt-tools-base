@@ -31,4 +31,10 @@ public class DetachedFromWindow {
         }
     }
 
+    private static class Test5 extends Object {
+        protected void onDetachedFromWindow() {
+            // OK - not in a view
+            // Regression test for http://b.android.com/73571
+        }
+    }
 }

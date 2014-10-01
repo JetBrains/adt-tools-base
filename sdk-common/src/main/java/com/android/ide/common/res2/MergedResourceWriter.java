@@ -26,7 +26,6 @@ import static com.android.utils.SdkUtils.createPathComment;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ide.common.internal.PngCruncher;
-import com.android.ide.common.xml.XmlPrettyPrinter;
 import com.android.resources.ResourceFolderType;
 import com.android.resources.ResourceType;
 import com.android.utils.SdkUtils;
@@ -61,6 +60,8 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
 
     @Nullable
     private final PngCruncher mCruncher;
+
+    private DocumentBuilderFactory mFactory;
 
     private boolean mInsertSourceMarkers = true;
 
@@ -100,10 +101,11 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
     }
 
     @Override
-    public void start() throws ConsumerException {
-        super.start();
+    public void start(@NonNull DocumentBuilderFactory factory) throws ConsumerException {
+        super.start(factory);
         mValuesResMap = ArrayListMultimap.create();
         mQualifierWithDeletedValues = Sets.newHashSet();
+        mFactory = factory;
     }
 
     @Override
@@ -112,6 +114,7 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
 
         mValuesResMap = null;
         mQualifierWithDeletedValues = null;
+        mFactory = null;
     }
 
     @Override
@@ -121,14 +124,14 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
 
     @Override
     public void addItem(@NonNull final ResourceItem item) throws ConsumerException {
-        ResourceFile.FileType type = item.getSource().getType();
+        ResourceFile.FileType type = item.getSourceType();
 
         if (type == ResourceFile.FileType.MULTI) {
             // this is a resource for the values files
 
             // just add the node to write to the map based on the qualifier.
             // We'll figure out later if the files needs to be written or (not)
-            mValuesResMap.put(item.getSource().getQualifiers(), item);
+            mValuesResMap.put(item.getQualifiers(), item);
         } else {
             // This is a single value file.
             // Only write it if the state is TOUCHED.
@@ -201,15 +204,15 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
     @Override
     public void removeItem(@NonNull ResourceItem removedItem, @Nullable ResourceItem replacedBy)
             throws ConsumerException {
-        ResourceFile.FileType removedType = removedItem.getSource().getType();
+        ResourceFile.FileType removedType = removedItem.getSourceType();
         ResourceFile.FileType replacedType = replacedBy != null ?
-                replacedBy.getSource().getType() : null;
+                replacedBy.getSourceType() : null;
 
         if (removedType == replacedType) {
             // if the type is multi, then we make sure to flag the qualifier as deleted.
             if (removedType == ResourceFile.FileType.MULTI) {
                 mQualifierWithDeletedValues.add(
-                        removedItem.getSource().getQualifiers());
+                        removedItem.getQualifiers());
             } else {
                 // both are single type resources, so we actually don't delete the previous
                 // file as the new one will replace it instead.
@@ -224,7 +227,7 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
             // removed type is multi.
             // whether the new type is single or doesn't exist, we always need to mark the qualifier
             // for rewrite.
-            mQualifierWithDeletedValues.add(removedItem.getSource().getQualifiers());
+            mQualifierWithDeletedValues.add(removedItem.getQualifiers());
         }
     }
 
@@ -263,13 +266,7 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
                 try {
                     createDir(valuesFolder);
 
-                    DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-                    factory.setNamespaceAware(true);
-                    factory.setValidating(false);
-                    factory.setIgnoringComments(true);
-                    DocumentBuilder builder;
-
-                    builder = factory.newDocumentBuilder();
+                    DocumentBuilder builder = mFactory.newDocumentBuilder();
                     Document document = builder.newDocument();
 
                     Node rootNode = document.createElement(TAG_RESOURCES);
@@ -278,33 +275,34 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
                     Collections.sort(items);
 
                     for (ResourceItem item : items) {
+                        // add a carriage return so that the nodes are not all on the same line.
+                        // also add an indent of 4 spaces.
+                        rootNode.appendChild(document.createTextNode("\n    "));
+
                         ResourceFile source = item.getSource();
                         if (source != currentFile && source != null && mInsertSourceMarkers) {
                             currentFile = source;
-                            rootNode.appendChild(document.createTextNode("\n"));
                             File file = source.getFile();
                             rootNode.appendChild(document.createComment(
                                     createPathComment(file, true)));
-                            rootNode.appendChild(document.createTextNode("\n"));
+                            rootNode.appendChild(document.createTextNode("\n    "));
                             // Add an <eat-comment> element to ensure that this comment won't
                             // get merged into a potential comment from the next child (or
                             // even added as the sole comment in the R class)
                             rootNode.appendChild(document.createElement(TAG_EAT_COMMENT));
-                            rootNode.appendChild(document.createTextNode("\n"));
+                            rootNode.appendChild(document.createTextNode("\n    "));
                         }
                         Node adoptedNode = NodeUtils.adoptNode(document, item.getValue());
                         rootNode.appendChild(adoptedNode);
+
                     }
+
+                    // finish with a carriage return
+                    rootNode.appendChild(document.createTextNode("\n"));
 
                     currentFile = null;
 
-                    String content;
-                    try {
-                        content = XmlPrettyPrinter.prettyPrint(document, true);
-                    } catch (Throwable t) {
-                        content = XmlUtils.toXml(document, true);
-                    }
-
+                    String content = XmlUtils.toXml(document, true /*preserveWhitespace*/);
                     Files.write(content, outFile, Charsets.UTF_8);
                 } catch (Throwable t) {
                     ConsumerException exception = new ConsumerException(t);

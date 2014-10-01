@@ -255,31 +255,31 @@ public class RtlDetectorTest extends AbstractCheckTest {
     public void testRelativeLayoutCompat() throws Exception {
         mEnabled = Collections.singleton(RtlDetector.COMPAT);
         assertEquals(""
-                + "res/layout/relative.xml:10: Error: To support older versions than API 17 (project specifies 5) you should *also* add android:layout_alignParentLeft=\"true\" [RtlCompat]\n"
+                + "res/layout/relative.xml:10: Error: To support older versions than API 17 (project specifies 5) you should also add android:layout_alignParentLeft=\"true\" [RtlCompat]\n"
                 + "        android:layout_alignParentStart=\"true\"\n"
                 + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-                + "res/layout/relative.xml:13: Error: To support older versions than API 17 (project specifies 5) you should *also* add android:layout_marginLeft=\"40dip\" [RtlCompat]\n"
+                + "res/layout/relative.xml:13: Error: To support older versions than API 17 (project specifies 5) you should also add android:layout_marginLeft=\"40dip\" [RtlCompat]\n"
                 + "        android:layout_marginStart=\"40dip\"\n"
                 + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-                + "res/layout/relative.xml:24: Error: To support older versions than API 17 (project specifies 5) you should *also* add android:layout_marginLeft=\"40dip\" [RtlCompat]\n"
+                + "res/layout/relative.xml:24: Error: To support older versions than API 17 (project specifies 5) you should also add android:layout_marginLeft=\"40dip\" [RtlCompat]\n"
                 + "        android:layout_marginStart=\"40dip\"\n"
                 + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-                + "res/layout/relative.xml:26: Error: To support older versions than API 17 (project specifies 5) you should *also* add android:layout_toRightOf=\"@id/loading_progress\" [RtlCompat]\n"
+                + "res/layout/relative.xml:26: Error: To support older versions than API 17 (project specifies 5) you should also add android:layout_toRightOf=\"@id/loading_progress\" [RtlCompat]\n"
                 + "        android:layout_toEndOf=\"@id/loading_progress\"\n"
                 + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-                + "res/layout/relative.xml:29: Error: To support older versions than API 17 (project specifies 5) you should *also* add android:paddingRight=\"120dip\" [RtlCompat]\n"
+                + "res/layout/relative.xml:29: Error: To support older versions than API 17 (project specifies 5) you should also add android:paddingRight=\"120dip\" [RtlCompat]\n"
                 + "        android:paddingEnd=\"120dip\"\n"
                 + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-                + "res/layout/relative.xml:37: Error: To support older versions than API 17 (project specifies 5) you should *also* add android:layout_alignParentLeft=\"true\" [RtlCompat]\n"
+                + "res/layout/relative.xml:37: Error: To support older versions than API 17 (project specifies 5) you should also add android:layout_alignParentLeft=\"true\" [RtlCompat]\n"
                 + "        android:layout_alignParentStart=\"true\"\n"
                 + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-                + "res/layout/relative.xml:38: Error: To support older versions than API 17 (project specifies 5) you should *also* add android:layout_alignRight=\"@id/text\" [RtlCompat]\n"
+                + "res/layout/relative.xml:38: Error: To support older versions than API 17 (project specifies 5) you should also add android:layout_alignRight=\"@id/text\" [RtlCompat]\n"
                 + "        android:layout_alignEnd=\"@id/text\"\n"
                 + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-                + "res/layout/relative.xml:47: Error: To support older versions than API 17 (project specifies 5) you should *also* add android:layout_alignLeft=\"@id/cancel\" [RtlCompat]\n"
+                + "res/layout/relative.xml:47: Error: To support older versions than API 17 (project specifies 5) you should also add android:layout_alignLeft=\"@id/cancel\" [RtlCompat]\n"
                 + "        android:layout_alignStart=\"@id/cancel\"\n"
                 + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-                + "res/layout/relative.xml:48: Error: To support older versions than API 17 (project specifies 5) you should *also* add android:layout_alignRight=\"@id/cancel\" [RtlCompat]\n"
+                + "res/layout/relative.xml:48: Error: To support older versions than API 17 (project specifies 5) you should also add android:layout_alignRight=\"@id/cancel\" [RtlCompat]\n"
                 + "        android:layout_alignEnd=\"@id/cancel\"\n"
                 + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                 + "9 errors, 0 warnings\n",
@@ -372,15 +372,50 @@ public class RtlDetectorTest extends AbstractCheckTest {
     public void testSymmetry() throws Exception {
         mEnabled = Collections.singleton(RtlDetector.SYMMETRY);
         assertEquals(""
-                + "res/layout/relative.xml:29: Error: When you define %1$s you should probably also define %2$s for right-to-left symmetry [RtlSymmetry]\n"
+                + "res/layout/relative.xml:29: Warning: When you define paddingRight you should probably also define paddingLeft for right-to-left symmetry [RtlSymmetry]\n"
                 + "        android:paddingRight=\"120dip\"\n"
                 + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-                + "1 errors, 0 warnings\n",
+                + "0 errors, 1 warnings\n",
 
                 lintProject(
                         "rtl/project-api17.properties=>project.properties",
                         "rtl/minsdk5targetsdk17.xml=>AndroidManifest.xml",
                         "rtl/relative.xml=>res/layout/relative.xml"
+                ));
+    }
+
+    public void testCompatAttributeValueConversion() throws Exception {
+        // Ensure that when the RTL value contains a direction, we produce the
+        // compatibility version of it for the compatibility attribute, e.g. if the
+        // attribute for paddingEnd is ?listPreferredItemPaddingEnd, when we suggest
+        // also setting paddingRight we suggest ?listPreferredItemPaddingRight
+        mEnabled = Collections.singleton(RtlDetector.COMPAT);
+        assertEquals(""
+                + "res/layout/symmetry.xml:8: Error: To support older versions than API 17 (project specifies 5) you should also add android:paddingRight=\"?android:listPreferredItemPaddingRight\" [RtlCompat]\n"
+                + "        android:paddingEnd=\"?android:listPreferredItemPaddingEnd\"\n"
+                + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "1 errors, 0 warnings\n",
+
+                lintProject(
+                        "rtl/project-api17.properties=>project.properties",
+                        "rtl/minsdk5targetsdk17.xml=>AndroidManifest.xml",
+                        "rtl/symmetry.xml=>res/layout/symmetry.xml"
+                ));
+    }
+
+    public void testTextAlignment() throws Exception {
+        mEnabled = Collections.singleton(RtlDetector.COMPAT);
+        assertEquals(""
+                + "res/layout/spinner.xml:49: Error: Inconsistent alignment specification between textAlignment and gravity attributes: was end, expected start [RtlCompat]\n"
+                + "            android:textAlignment=\"textStart\"/> <!-- ERROR -->\n"
+                + "            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "    res/layout/spinner.xml:46: Incompatible direction here\n"
+                + "1 errors, 0 warnings\n",
+
+                lintProject(
+                        "rtl/project-api17.properties=>project.properties",
+                        "rtl/minsdk5targetsdk17.xml=>AndroidManifest.xml",
+                        "rtl/spinner.xml=>res/layout/spinner.xml"
                 ));
     }
 
@@ -412,5 +447,23 @@ public class RtlDetectorTest extends AbstractCheckTest {
         assertEquals("paddingRight", convertToOppositeDirection("paddingLeft"));
         assertEquals("paddingStart", convertToOppositeDirection("paddingEnd"));
         assertEquals("paddingEnd", convertToOppositeDirection("paddingStart"));
+    }
+
+    public void testEnumConstants() throws Exception {
+        // Regression test for
+        //   https://code.google.com/p/android/issues/detail?id=75480
+        // Also checks that static imports work correctly
+        mEnabled = ALL;
+        assertEquals(""
+            + "src/test/pkg/GravityTest2.java:19: Warning: Use \"Gravity.START\" instead of \"Gravity.LEFT\" to ensure correct behavior in right-to-left locales [RtlHardcoded]\n"
+            + "        if (gravity == LEFT) { // ERROR\n"
+            + "                       ~~~~\n"
+            + "0 errors, 1 warnings\n",
+
+            lintProject(
+                    "rtl/project-api17.properties=>project.properties",
+                    "rtl/minsdk5targetsdk17.xml=>AndroidManifest.xml",
+                    "rtl/GravityTest2.java.txt=>src/test/pkg/GravityTest2.java"
+            ));
     }
 }

@@ -24,12 +24,13 @@ import static com.android.tools.lint.LintCliFlags.ERRNO_HELP;
 import static com.android.tools.lint.LintCliFlags.ERRNO_INVALID_ARGS;
 import static com.android.tools.lint.LintCliFlags.ERRNO_SUCCESS;
 import static com.android.tools.lint.LintCliFlags.ERRNO_USAGE;
-import static com.android.tools.lint.detector.api.Issue.OutputFormat.TEXT;
 import static com.android.tools.lint.detector.api.LintUtils.endsWith;
+import static com.android.tools.lint.detector.api.TextFormat.TEXT;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.tools.lint.checks.BuiltinIssueRegistry;
+import com.android.tools.lint.client.api.Configuration;
 import com.android.tools.lint.client.api.IssueRegistry;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
@@ -37,6 +38,8 @@ import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.LintUtils;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Project;
+import com.android.tools.lint.detector.api.Severity;
+import com.android.tools.lint.detector.api.TextFormat;
 import com.android.utils.SdkUtils;
 import com.google.common.annotations.Beta;
 
@@ -136,8 +139,8 @@ public class Main {
                 Project project = super.createProject(dir, referenceDir);
                 if (project.isGradleProject()) {
                     @SuppressWarnings("SpellCheckingInspection")
-                    String message = String.format("\"%1$s\" is a Gradle project. To correctly "
-                            + "analyze Gradle projects, you should run \"gradlew :lint\" instead.",
+                    String message = String.format("\"`%1$s`\" is a Gradle project. To correctly "
+                            + "analyze Gradle projects, you should run \"`gradlew :lint`\" instead.",
                             project.getName());
                     Location location = Location.create(project.getDir());
                     Context context = new Context(mDriver, project, project, project.getDir());
@@ -145,10 +148,34 @@ public class Main {
                         report(context,
                                IssueRegistry.LINT_ERROR,
                                project.getConfiguration().getSeverity(IssueRegistry.LINT_ERROR),
-                               location, message, null);
+                               location, message, TextFormat.RAW);
                     }
                 }
                 return project;
+            }
+
+            @Override
+            public Configuration getConfiguration(@NonNull Project project) {
+                if (project.isGradleProject()) {
+                    // Don't report any issues when analyzing a Gradle project from the
+                    // non-Gradle runner; they are likely to be false, and will hide the real
+                    // problem reported above
+                   return new CliConfiguration(getConfiguration(), project, true) {
+                       @NonNull
+                       @Override
+                       public Severity getSeverity(@NonNull Issue issue) {
+                           return issue == IssueRegistry.LINT_ERROR
+                                   ? Severity.FATAL : Severity.IGNORE;
+                       }
+
+                       @Override
+                       public boolean isIgnored(@NonNull Context context, @NonNull Issue issue,
+                               @Nullable Location location, @NonNull String message) {
+                           return issue != IssueRegistry.LINT_ERROR;
+                       }
+                   };
+                }
+                return super.getConfiguration(project);
             }
         };
 
@@ -809,7 +836,7 @@ public class Main {
     }
 
     private static void listIssue(PrintStream out, Issue issue) {
-        out.print(wrapArg("\"" + issue.getId() + "\": " + issue.getDescription(TEXT)));
+        out.print(wrapArg("\"" + issue.getId() + "\": " + issue.getBriefDescription(TEXT)));
     }
 
     private static void showIssues(IssueRegistry registry) {
@@ -856,7 +883,7 @@ public class Main {
             System.out.print('-');
         }
         System.out.println();
-        System.out.println(wrap("Summary: " + issue.getDescription(TEXT)));
+        System.out.println(wrap("Summary: " + issue.getBriefDescription(TEXT)));
         System.out.println("Priority: " + issue.getPriority() + " / 10");
         System.out.println("Severity: " + issue.getDefaultSeverity().getDescription());
         System.out.println("Category: " + issue.getCategory().getFullName());

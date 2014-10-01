@@ -73,10 +73,7 @@ final class HandleHeap extends ChunkHandler {
      */
     @Override
     public void clientReady(Client client) throws IOException {
-        if (client.isHeapUpdateEnabled()) {
-            //sendHPSG(client, WHEN_GC, WHAT_MERGE);
-            sendHPIF(client, HPIF_WHEN_EVERY_GC);
-        }
+        client.initializeHeapUpdateStatus();
     }
 
     /**
@@ -123,9 +120,7 @@ final class HandleHeap extends ChunkHandler {
 
             for (int i = 0; i < numHeaps; i++) {
                 int heapId = data.getInt();
-                @SuppressWarnings("unused")
                 long timeStamp = data.getLong();
-                @SuppressWarnings("unused")
                 byte reason = data.get();
                 long maxHeapSize = (long)data.getInt() & 0x00ffffffff;
                 long heapSize = (long)data.getInt() & 0x00ffffffff;
@@ -133,7 +128,7 @@ final class HandleHeap extends ChunkHandler {
                 long objectsAllocated = (long)data.getInt() & 0x00ffffffff;
 
                 client.getClientData().setHeapInfo(heapId, maxHeapSize,
-                        heapSize, bytesAllocated, objectsAllocated);
+                        heapSize, bytesAllocated, objectsAllocated, timeStamp, reason);
                 client.update(Client.CHANGE_HEAP_DATA);
             }
         } catch (BufferUnderflowException ex) {

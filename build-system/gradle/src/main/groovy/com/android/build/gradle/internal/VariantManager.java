@@ -16,8 +16,9 @@
 
 package com.android.build.gradle.internal;
 
-import static com.android.builder.core.BuilderConstants.DEBUG;
+import static com.android.build.SplitOutput.NO_FILTER;
 import static com.android.builder.core.BuilderConstants.ANDROID_TEST;
+import static com.android.builder.core.BuilderConstants.DEBUG;
 import static com.android.builder.core.BuilderConstants.LINT;
 import static com.android.builder.core.BuilderConstants.UI_TEST;
 
@@ -34,7 +35,10 @@ import com.android.build.gradle.internal.dependency.VariantDependencies;
 import com.android.build.gradle.internal.dsl.BuildTypeDsl;
 import com.android.build.gradle.internal.dsl.GroupableProductFlavorDsl;
 import com.android.build.gradle.internal.dsl.SigningConfigDsl;
+import com.android.build.gradle.internal.dsl.Splits;
+import com.android.build.gradle.internal.variant.ApplicationVariantFactory;
 import com.android.build.gradle.internal.variant.BaseVariantData;
+import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.internal.variant.TestVariantData;
 import com.android.build.gradle.internal.variant.TestedVariantData;
 import com.android.build.gradle.internal.variant.VariantFactory;
@@ -51,8 +55,10 @@ import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import groovy.lang.Closure;
 
@@ -75,6 +81,8 @@ public class VariantManager {
     private final Map<String, SigningConfig> signingConfigs = Maps.newHashMap();
 
     private final VariantFilterImpl variantFilter = new VariantFilterImpl();
+
+    private final List<BaseVariantData<? extends BaseVariantOutputData>> variantDataList = Lists.newArrayList();
 
     public VariantManager(
             @NonNull Project project,
@@ -156,29 +164,123 @@ public class VariantManager {
         productFlavors.put(productFlavor.getName(), productFlavorData);
     }
 
-    /**
-     * Task creation entry point.
-     *
-     * @param signingOverride a signing override. Generally driven through the IDE.
-     */
-    public void createAndroidTasks(@Nullable SigningConfig signingOverride) {
-        // Add a compile lint task
-        basePlugin.createLintCompileTask();
+    public List<BaseVariantData<? extends BaseVariantOutputData>> getVariantDataList() {
+        return variantDataList;
+    }
 
-        if (productFlavors.isEmpty()) {
-            createTasksForDefaultBuild(signingOverride);
-        } else {
+    public void createAndroidTasks(@Nullable SigningConfig signingOverride) {
+        if (!productFlavors.isEmpty()) {
             // there'll be more than one test app, so we need a top level assembleTest
             Task assembleTest = project.getTasks().create("assembleTest");
             assembleTest.setGroup(org.gradle.api.plugins.BasePlugin.BUILD_GROUP);
             assembleTest.setDescription("Assembles all the Test applications");
             basePlugin.setAssembleTest(assembleTest);
+        }
 
+        if (variantDataList.isEmpty()) {
+            createBaseVariantData(signingOverride);
+        }
+
+        for (BaseVariantData variantData : variantDataList) {
+            if (variantData.getVariantConfiguration().getType() == VariantConfiguration.Type.TEST) {
+                ProductFlavorData defaultConfigData = basePlugin.getDefaultConfigData();
+                VariantConfiguration testVariantConfig = variantData.getVariantConfiguration();
+                BaseVariantData testedVariantData= (BaseVariantData) ((TestVariantData)variantData).getTestedVariantData();
+
+                // If the variant being tested is a library variant, VariantDependencies must be
+                // computed the tasks for the tested variant is created.  Therefore, the
+                // VariantDependencies is computed here instead of when the VariantData was created.
+                VariantDependencies variantDep = VariantDependencies.compute(
+                        project, testVariantConfig.getFullName(),
+                        false /*publishVariant*/,
+                        variantFactory.isLibrary(),
+                        defaultConfigData.getTestProvider(),
+                        testedVariantData.getVariantConfiguration().getType() == VariantConfiguration.Type.LIBRARY ?
+                                testedVariantData.getVariantDependency() : null);
+                variantData.setVariantDependency(variantDep);
+
+                basePlugin.resolveDependencies(variantDep);
+                testVariantConfig.setDependencies(variantDep);
+                basePlugin.createTestApkTasks((TestVariantData)variantData);
+            } else {
+                if (productFlavors.isEmpty()) {
+                    variantFactory.createTasks(
+                            variantData,
+                            buildTypes.get(
+                                    variantData.getVariantConfiguration().getBuildType().getName())
+                                    .getAssembleTask());
+                } else {
+                    variantFactory.createTasks(variantData, null);
+
+                    // setup the task dependencies
+                    // build type
+                    buildTypes.get(variantData.getVariantConfiguration().getBuildType().getName())
+                            .getAssembleTask().dependsOn(variantData.assembleVariantTask);
+
+                    // each flavor
+                    VariantConfiguration variantConfig = variantData.getVariantConfiguration();
+                    for (ProductFlavor flavor : variantConfig.getFlavorConfigs()) {
+                        productFlavors.get(flavor.getName()).getAssembleTask()
+                                .dependsOn(variantData.assembleVariantTask);
+                    }
+
+                    Task assembleTask = null;
+                    // assembleTask for this flavor(dimension), created on demand if needed.
+                    if (variantConfig.getFlavorConfigs().size() > 1) {
+                        String name = StringHelper.capitalize(variantConfig.getFlavorName());
+                        assembleTask = project.getTasks().findByName("assemble" + name);
+                        if (assembleTask == null) {
+                            assembleTask = project.getTasks().create("assemble" + name);
+                            assembleTask.setDescription(
+                                    "Assembles all builds for flavor combination: " + name);
+                            assembleTask.setGroup("Build");
+
+                            project.getTasks().getByName("assemble").dependsOn(assembleTask);
+                        }
+                    }
+                    // flavor combo
+                    if (assembleTask != null) {
+                        assembleTask.dependsOn(variantData.assembleVariantTask);
+                    }
+                }
+            }
+        }
+
+        // create the lint tasks.
+        basePlugin.createLintTasks();
+
+        // create the test tasks.
+        basePlugin.createCheckTasks(!productFlavors.isEmpty(), false /*isLibrary*/);
+
+        // Create the variant API objects after the tasks have been created!
+        createApiObjects();
+    }
+
+    /**
+     * Task creation entry point.
+     *
+     * @param signingOverride a signing override. Generally driven through the IDE.
+     */
+    public void createBaseVariantData(@Nullable SigningConfig signingOverride) {
+        // Add a compile lint task
+        basePlugin.createLintCompileTask();
+
+        Splits splits = basePlugin.getExtension().getSplits();
+        Set<String> densities = splits.getDensityFilters();
+        Set<String> abis = splits.getAbiFilters();
+
+        // check against potentially empty lists. We always need to generate at least one output
+        densities = densities.isEmpty() ? Collections.singleton(NO_FILTER) : densities;
+        abis = abis.isEmpty() ? Collections.singleton(NO_FILTER) : abis;
+
+        if (productFlavors.isEmpty()) {
+            createVariantDataForDefaultBuild(densities, abis, signingOverride);
+        } else {
             // check whether we have multi flavor builds
             List<String> flavorDimensionList = extension.getFlavorDimensionList();
             if (flavorDimensionList == null || flavorDimensionList.size() < 2) {
                 for (ProductFlavorData productFlavorData : productFlavors.values()) {
-                    createTasksForFlavoredBuild(signingOverride, productFlavorData);
+                    createVariantDataForFlavoredBuild(densities, abis, signingOverride, productFlavorData);
                 }
             } else {
                 // need to group the flavor per dimension.
@@ -204,18 +306,9 @@ public class VariantManager {
 
                 // now we use the flavor dimensions to generate an ordered array of flavor to use
                 ProductFlavorData[] array = new ProductFlavorData[flavorDimensionList.size()];
-                createTasksForMultiFlavoredBuilds(array, 0, map, signingOverride);
+                createVariantDataForMultiFlavoredBuilds(array, 0, map, densities, abis, signingOverride);
             }
         }
-
-        // create the lint tasks.
-        basePlugin.createLintTasks();
-
-        // create the test tasks.
-        basePlugin.createCheckTasks(!productFlavors.isEmpty(), false /*isLibrary*/);
-
-        // Create the variant API objects after the tasks have been created!
-        createApiObjects();
     }
 
     /**
@@ -223,19 +316,22 @@ public class VariantManager {
      *
      * This recursively fills the array of ProductFlavorData (in the order defined
      * in extension.flavorDimensionList), creating all possible combination.
-     *
-     * @param datas the arrays to fill
+     *  @param datas the arrays to fill
      * @param index the current index to fill
      * @param map the map of dimension -> list(ProductFlavor)
+     * @param densities the list of density-specific apk to generate. null means universal apk.
+     * @param abis the list of abi-specific apk to generate. null means universal apk.
      * @param signingOverride a signing override. Generally driven through the IDE.
      */
-    private void createTasksForMultiFlavoredBuilds(
-            ProductFlavorData[] datas,
+    private void createVariantDataForMultiFlavoredBuilds(
+            @NonNull ProductFlavorData[] datas,
             int index,
-            ListMultimap<String, ? extends ProductFlavorData> map,
+            @NonNull ListMultimap<String, ? extends ProductFlavorData> map,
+            @NonNull Set<String> densities,
+            @NonNull Set<String> abis,
             @Nullable SigningConfig signingOverride) {
         if (index == datas.length) {
-            createTasksForFlavoredBuild(signingOverride, datas);
+            createVariantDataForFlavoredBuild(densities, abis, signingOverride, datas);
             return;
         }
 
@@ -250,7 +346,8 @@ public class VariantManager {
         // indices.
         for (ProductFlavorData flavor : flavorList) {
             datas[index] = flavor;
-            createTasksForMultiFlavoredBuilds(datas, index + 1, map, signingOverride);
+            createVariantDataForMultiFlavoredBuilds(datas, index + 1, map,
+                    densities, abis, signingOverride);
         }
     }
 
@@ -259,16 +356,21 @@ public class VariantManager {
      * assemble<Type> are directly building the <type> build instead of all build of the given
      * <type>.
      *
+     * @param densities the list of density-specific apk to generate. null means universal apk.
+     * @param abis the list of abi-specific apk to generate. null means universal apk.
      * @param signingOverride a signing override. Generally driven through the IDE.
      */
-    private void createTasksForDefaultBuild(@Nullable SigningConfig signingOverride) {
+    private void createVariantDataForDefaultBuild(
+            @NonNull Set<String> densities,
+            @NonNull Set<String> abis,
+            @Nullable SigningConfig signingOverride) {
         BuildTypeData testData = buildTypes.get(extension.getTestBuildType());
         if (testData == null) {
             throw new RuntimeException(String.format(
                     "Test Build Type '%1$s' does not exist.", extension.getTestBuildType()));
         }
 
-        BaseVariantData testedVariantData = null;
+        BaseVariantData<?> testedVariantData = null;
 
         ProductFlavorData defaultConfigData = basePlugin.getDefaultConfigData();
 
@@ -276,6 +378,9 @@ public class VariantManager {
         DefaultAndroidSourceSet defaultConfigSourceSet = defaultConfigData.getSourceSet();
 
         Closure<Void> variantFilterClosure = basePlugin.getExtension().getVariantFilter();
+
+        Set<String> compatibleScreens = basePlugin.getExtension().getSplits().getDensity()
+                .getCompatibleScreens();
 
         for (BuildTypeData buildTypeData : buildTypes.values()) {
             boolean ignore = false;
@@ -294,8 +399,10 @@ public class VariantManager {
                         variantFactory.getVariantConfigurationType(),
                         signingOverride);
 
-                // create the variant and get its internal storage object.
-                BaseVariantData variantData = variantFactory.createVariantData(variantConfig);
+                // create the variant, and outputs and get its internal storage object.
+                BaseVariantData<?> variantData = variantFactory.createVariantData(
+                        variantConfig, densities, abis, compatibleScreens);
+
                 // create its dependencies. They'll be resolved below.
                 VariantDependencies variantDep = VariantDependencies.compute(
                         project, variantConfig.getFullName(),
@@ -311,9 +418,7 @@ public class VariantManager {
                 basePlugin.resolveDependencies(variantDep);
                 variantConfig.setDependencies(variantDep);
 
-                basePlugin.getVariantDataList().add(variantData);
-                variantFactory.createTasks(variantData,
-                        buildTypes.get(variantConfig.getBuildType().getName()).getAssembleTask());
+                variantDataList.add(variantData);
             }
         }
 
@@ -329,25 +434,13 @@ public class VariantManager {
                     signingOverride);
 
             // create the internal storage for this test variant.
-            TestVariantData testVariantData = new TestVariantData(testVariantConfig, (TestedVariantData) testedVariantData);
+            TestVariantData testVariantData = new TestVariantData(
+                    basePlugin, testVariantConfig, (TestedVariantData) testedVariantData);
+
             // link the testVariant to the tested variant in the other direction
             ((TestedVariantData) testedVariantData).setTestVariantData(testVariantData);
 
-            // dependencies for the test variant, they'll be resolved below
-            VariantDependencies variantDep = VariantDependencies.compute(
-                    project, testVariantConfig.getFullName(),
-                    false /*publishVariant*/,
-                    variantFactory.isLibrary(),
-                    defaultConfigData.getTestProvider(),
-                    testedConfig.getType() == VariantConfiguration.Type.LIBRARY ?
-                            testedVariantData.getVariantDependency() : null);
-            testVariantData.setVariantDependency(variantDep);
-
-            basePlugin.resolveDependencies(variantDep);
-            testVariantConfig.setDependencies(variantDep);
-
-            basePlugin.getVariantDataList().add(testVariantData);
-            basePlugin.createTestApkTasks(testVariantData, testedVariantData);
+            variantDataList.add(testVariantData);
         }
     }
 
@@ -355,10 +448,15 @@ public class VariantManager {
      * Creates Task for a given flavor. This will create tasks for all build types for the given
      * flavor.
      *
+     * @param densities the list of density-specific apk to generate. null means universal apk.
+     * @param abis the list of abi-specific apk to generate. null means universal apk.
      * @param signingOverride a signing override. Generally driven through the IDE.
      * @param flavorDataList the flavor(s) to build.
      */
-    private void createTasksForFlavoredBuild(@Nullable SigningConfig signingOverride,
+    private void createVariantDataForFlavoredBuild(
+            @NonNull Set<String> densities,
+            @NonNull Set<String> abis,
+            @Nullable SigningConfig signingOverride,
             @NonNull ProductFlavorData... flavorDataList) {
 
         BuildTypeData testData = buildTypes.get(extension.getTestBuildType());
@@ -367,14 +465,7 @@ public class VariantManager {
                     "Test Build Type '%1$s' does not exist.", extension.getTestBuildType()));
         }
 
-        // because this method is called multiple times, we need to keep track
-        // of the variantData only for this call.
-        final List<BaseVariantData> localVariantDataList = Lists.newArrayListWithCapacity(buildTypes.size());
-
         BaseVariantData testedVariantData = null;
-
-        // assembleTask for this flavor(dimension), created on demand if needed.
-        Task assembleTask = null;
 
         ProductFlavorData defaultConfigData = basePlugin.getDefaultConfigData();
         DefaultProductFlavor defaultConfig = defaultConfigData.getProductFlavor();
@@ -384,6 +475,8 @@ public class VariantManager {
 
         Closure<Void> variantFilterClosure = basePlugin.getExtension().getVariantFilter();
         final List<ProductFlavor> productFlavorList = (variantFilterClosure != null) ? Lists.<ProductFlavor>newArrayListWithCapacity(flavorDataList.length) : null;
+
+        Set<String> compatibleScreens = basePlugin.getExtension().getSplits().getDensity().getCompatibleScreens();
 
         for (BuildTypeData buildTypeData : buildTypes.values()) {
             boolean ignore = false;
@@ -398,11 +491,6 @@ public class VariantManager {
             }
 
             if (!ignore) {
-                if (assembleTask == null && flavorDataList.length > 1) {
-                    assembleTask = createAssembleTask(flavorDataList);
-                    project.getTasks().getByName("assemble").dependsOn(assembleTask);
-                }
-
                 /// add the container of dependencies
                 // the order of the libraries is important. In descending order:
                 // build types, flavors, defaultConfig.
@@ -436,7 +524,8 @@ public class VariantManager {
                 variantProviders.add(basePlugin.getDefaultConfigData().getMainProvider());
 
                 // create the variant and get its internal storage object.
-                BaseVariantData variantData = variantFactory.createVariantData(variantConfig);
+                BaseVariantData<?> variantData = variantFactory.createVariantData(variantConfig,
+                        densities, abis, compatibleScreens);
 
                 NamedDomainObjectContainer<AndroidSourceSet> sourceSetsContainer = extension
                         .getSourceSetsContainer();
@@ -461,8 +550,6 @@ public class VariantManager {
                         variantProviders.toArray(new ConfigurationProvider[variantProviders.size()]));
                 variantData.setVariantDependency(variantDep);
 
-                localVariantDataList.add(variantData);
-
                 if (buildTypeData == testData) {
                     testedVariantData = variantData;
                 }
@@ -470,21 +557,7 @@ public class VariantManager {
                 basePlugin.resolveDependencies(variantDep);
                 variantConfig.setDependencies(variantDep);
 
-                basePlugin.getVariantDataList().add(variantData);
-                variantFactory.createTasks(variantData, null);
-
-                // setup the task dependencies
-                // build type
-                buildTypeData.getAssembleTask().dependsOn(variantData.assembleTask);
-                // each flavor
-                for (ProductFlavorData data : flavorDataList) {
-                    data.getAssembleTask().dependsOn(variantData.assembleTask);
-                }
-
-                // flavor combo
-                if (assembleTask != null) {
-                    assembleTask.dependsOn(variantData.assembleTask);
-                }
+                variantDataList.add(variantData);
             }
         }
 
@@ -524,8 +597,8 @@ public class VariantManager {
             testVariantProviders.add(basePlugin.getDefaultConfigData().getTestProvider());
 
             // create the internal storage for this variant.
-            TestVariantData testVariantData = new TestVariantData(testVariantConfig, (TestedVariantData) testedVariantData);
-            localVariantDataList.add(testVariantData);
+            TestVariantData testVariantData = new TestVariantData(
+                    basePlugin, testVariantConfig, (TestedVariantData) testedVariantData);
             // link the testVariant to the tested variant in the other direction
             ((TestedVariantData) testedVariantData).setTestVariantData(testVariantData);
 
@@ -533,20 +606,7 @@ public class VariantManager {
                 testVariantProviders.add(testedVariantData.getVariantDependency());
             }
 
-            // dependencies for the test variant
-            VariantDependencies variantDep = VariantDependencies.compute(
-                    project, testVariantData.getVariantConfiguration().getFullName(),
-                    false /*publishVariant*/,
-                    variantFactory.isLibrary(),
-                    testVariantProviders.toArray(new ConfigurationProvider[testVariantProviders.size()]));
-            testVariantData.setVariantDependency(variantDep);
-
-            basePlugin.resolveDependencies(variantDep);
-            testVariantConfig.setDependencies(variantDep);
-
-            basePlugin.getVariantDataList().add(testVariantData);
-            basePlugin.createTestApkTasks(testVariantData,
-                    (BaseVariantData) testVariantData.getTestedVariantData());
+            variantDataList.add(testVariantData);
         }
     }
 
@@ -567,7 +627,7 @@ public class VariantManager {
         // This means some objects are created before they are processed from the loop,
         // so we store whether we have processed them or not.
         Map<BaseVariantData, BaseVariant> map = Maps.newHashMap();
-        for (BaseVariantData variantData : basePlugin.getVariantDataList()) {
+        for (BaseVariantData variantData : variantDataList) {
             if (map.get(variantData) != null) {
                 continue;
             }
@@ -593,13 +653,16 @@ public class VariantManager {
 
     private void createVariantApiObjects(
             @NonNull Map<BaseVariantData, BaseVariant> map,
-            @NonNull BaseVariantData variantData,
+            @NonNull BaseVariantData<?> variantData,
             @Nullable TestVariantData testVariantData) {
         BaseVariant variantApi = variantFactory.createVariantApi(variantData);
 
         TestVariantImpl testVariant = null;
         if (testVariantData != null) {
             testVariant = basePlugin.getInstantiator().newInstance(TestVariantImpl.class, testVariantData, basePlugin);
+
+            // add the test output.
+            ApplicationVariantFactory.createApkOutputApiObjects(basePlugin, testVariantData, testVariant);
         }
 
         if (testVariant != null) {

@@ -71,7 +71,6 @@ public class ArraySizeDetector extends ResourceXmlDetector {
     public static final Issue INCONSISTENT = Issue.create(
             "InconsistentArrays", //$NON-NLS-1$
             "Inconsistencies in array element counts",
-            "Checks for inconsistencies in the number of elements in arrays",
             "When an array is translated in a different locale, it should normally have " +
             "the same number of elements as the original array. When adding or removing " +
             "elements to an array, it is easy to forget to update all the locales, and this " +
@@ -171,7 +170,7 @@ public class ArraySizeDetector extends ResourceXmlDetector {
                         String otherName = otherFile.getParentFile().getName() + File.separator
                                 + otherFile.getName();
                         String message = String.format(
-                             "Array %1$s has an inconsistent number of items (%2$d in %3$s, %4$d in %5$s)",
+                             "Array `%1$s` has an inconsistent number of items (%2$d in `%3$s`, %4$d in `%5$s`)",
                              name, count, thisName, current, otherName);
                          mDescriptions.put(name,  message);
                     }
@@ -233,7 +232,7 @@ public class ArraySizeDetector extends ResourceXmlDetector {
                     }
 
                     String message = mDescriptions.get(name);
-                    context.report(INCONSISTENT, location, message, null);
+                    context.report(INCONSISTENT, location, message);
                 }
             }
 
@@ -252,8 +251,8 @@ public class ArraySizeDetector extends ResourceXmlDetector {
                 return;
             }
             context.report(INCONSISTENT, element, context.getLocation(element),
-                String.format("Missing name attribute in %1$s declaration", element.getTagName()),
-                null);
+                String.format("Missing name attribute in `%1$s` declaration",
+                        element.getTagName()));
         } else {
             String name = attribute.getValue();
             if (phase == 1) {
@@ -312,11 +311,11 @@ public class ArraySizeDetector extends ResourceXmlDetector {
                         String otherName = otherFile.getParentFile().getName() + File.separator
                                 + otherFile.getName();
                         String message = String.format(
-                                "Array %1$s has an inconsistent number of items (%2$d in %3$s, %4$d in %5$s)",
+                                "Array `%1$s` has an inconsistent number of items (%2$d in `%3$s`, %4$d in `%5$s`)",
                                 name, childCount, thisName, arv.getElementCount(), otherName);
 
                         context.report(INCONSISTENT, element, context.getLocation(element),
-                                message, null);
+                                message);
                     }
                 }
             }

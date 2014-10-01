@@ -44,7 +44,6 @@ public class Utf8Detector extends ResourceXmlDetector {
     public static final Issue ISSUE = Issue.create(
             "EnforceUTF8", //$NON-NLS-1$
             "Encoding used in resource files is not UTF-8",
-            "Checks that all XML resource files are using UTF-8 as the file encoding",
             "XML supports encoding in a wide variety of character sets. However, not all " +
             "tools handle the XML encoding attribute correctly, and nearly all Android " +
             "apps use UTF-8, so by using UTF-8 you can protect yourself against subtle " +
@@ -109,7 +108,7 @@ public class Utf8Detector extends ResourceXmlDetector {
                         matcher.start(1), matcher.end(1));
                 context.report(ISSUE, null, location, String.format(
                         "%1$s: Not using UTF-8 as the file encoding. This can lead to subtle " +
-                                "bugs with non-ascii characters", encoding), null);
+                                "bugs with non-ascii characters", encoding));
             }
         }
     }

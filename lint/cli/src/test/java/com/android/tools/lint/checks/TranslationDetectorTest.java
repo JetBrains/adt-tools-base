@@ -49,7 +49,7 @@ public class TranslationDetectorTest extends AbstractCheckTest {
             "    res/values-es/strings.xml:12: Also translated here\n" +
             "res/values-de-rDE/strings.xml:11: Error: \"continue_skip_label\" is translated here but not found in default locale [ExtraTranslation]\n" +
             "    <string name=\"continue_skip_label\">\"Weiter\"</string>\n" +
-            "            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
+            "            ~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
             "5 errors, 0 warnings\n",
 
             lintProject(
@@ -86,7 +86,7 @@ public class TranslationDetectorTest extends AbstractCheckTest {
             "    res/values-land/strings.xml:19: <No location-specific message\n" +
             "res/values-de-rDE/strings.xml:11: Error: \"continue_skip_label\" is translated here but not found in default locale [ExtraTranslation]\n" +
             "    <string name=\"continue_skip_label\">\"Weiter\"</string>\n" +
-            "            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
+            "            ~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
             "6 errors, 0 warnings\n",
 
             lintProject(
@@ -249,6 +249,46 @@ public class TranslationDetectorTest extends AbstractCheckTest {
                         "locale33845/res/values/styles.xml=>res/values/styles.xml",
                         "locale33845/res/values/strings2.xml=>res/values/strings.xml",
                         "locale33845/res/values-en-rGB/strings2.xml=>res/values-en-rGB/strings.xml"
+                ));
+    }
+
+    public void testEnglishRegionAndValuesAsEnglish1() throws Exception {
+        // tools:locale=en in base folder
+        // Regression test for https://code.google.com/p/android/issues/detail?id=75879
+        assertEquals("No warnings.",
+
+                lintProject(
+                        "locale33845/res/values/strings3.xml=>res/values/strings.xml",
+                        "locale33845/res/values-en-rGB/strings3.xml=>res/values-en-rGB/strings.xml"
+                ));
+    }
+
+    public void testEnglishRegionAndValuesAsEnglish2() throws Exception {
+        // No tools:locale specified in the base folder: *assume* English
+        // Regression test for https://code.google.com/p/android/issues/detail?id=75879
+        assertEquals(""
+                + "res/values/strings.xml:5: Error: \"other\" is not translated in \"de-rDE\" (German: Germany) [MissingTranslation]\n"
+                + "    <string name=\"other\">other</string>\n"
+                + "            ~~~~~~~~~~~~\n"
+                + "1 errors, 0 warnings\n",
+
+                lintProject(
+                        "locale33845/res/values/strings4.xml=>res/values/strings.xml",
+                        // Flagged because it's not the default locale:
+                        "locale33845/res/values-en-rGB/strings3.xml=>res/values-de-rDE/strings.xml",
+                        // Not flagged because it's the implicit default locale
+                        "locale33845/res/values-en-rGB/strings3.xml=>res/values-en-rGB/strings.xml"
+                ));
+    }
+
+    public void testEnglishRegionAndValuesAsEnglish3() throws Exception {
+        // tools:locale=de in base folder
+        // Regression test for https://code.google.com/p/android/issues/detail?id=75879
+        assertEquals("No warnings.",
+
+                lintProject(
+                        "locale33845/res/values/strings5.xml=>res/values/strings.xml",
+                        "locale33845/res/values-en-rGB/strings3.xml=>res/values-de-rDE/strings.xml"
                 ));
     }
 }

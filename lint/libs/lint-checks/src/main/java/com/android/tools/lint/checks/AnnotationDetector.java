@@ -63,7 +63,6 @@ public class AnnotationDetector extends Detector implements Detector.JavaScanner
     public static final Issue ISSUE = Issue.create(
             "LocalSuppress", //$NON-NLS-1$
             "@SuppressLint on invalid element",
-            "Looks for @SuppressLint annotations in locations where it doesn't work for class based checks",
 
             "The `@SuppressAnnotation` is used to suppress Lint warnings in Java files. However, " +
             "while many lint checks analyzes the Java source code, where they can find " +
@@ -195,10 +194,9 @@ public class AnnotationDetector extends Detector implements Detector.JavaScanner
                 // This issue doesn't have AST access: annotations are not
                 // available for local variables or parameters
                 mContext.report(ISSUE, node, mContext.getLocation(node), String.format(
-                    "The @SuppressLint annotation cannot be used on a local " +
+                    "The `@SuppressLint` annotation cannot be used on a local " +
                     "variable with the lint check '%1$s': move out to the " +
-                    "surrounding method", id),
-                    null);
+                    "surrounding method", id));
                 return false;
             }
 

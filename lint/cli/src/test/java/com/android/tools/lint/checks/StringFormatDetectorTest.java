@@ -288,8 +288,8 @@ public class StringFormatDetectorTest  extends AbstractCheckTest {
                 "        String output1 = String.format(hello, target);\n" +
                 "                                              ~~~~~~\n" +
                 "    res/values-es/formatstrings.xml: Conflicting argument declaration here\n" +
-                "res/values-es/formatstrings.xml: Error: Inconsistent formatting types for argument #1 in format string hello ('%1$d'): Found both 's' and 'd' (in values/formatstrings.xml) [StringFormatMatches]\n" +
-                "    res/values/formatstrings.xml: Conflicting argument type here\n" +
+                "res/values/formatstrings.xml: Error: Inconsistent formatting types for argument #1 in format string hello ('%1$s'): Found both 'd' and 's' (in values-es/formatstrings.xml) [StringFormatMatches]\n" +
+                "    res/values-es/formatstrings.xml: Conflicting argument type here\n" +
                 "res/values/formatstrings.xml: Warning: Inconsistent number of arguments in formatting string hello2; found both 3 and 2 [StringFormatCount]\n" +
                 "    res/values-es/formatstrings.xml: Conflicting number of arguments here\n" +
                 "9 errors, 1 warnings\n",
@@ -323,6 +323,22 @@ public class StringFormatDetectorTest  extends AbstractCheckTest {
                         "res/values/formatstrings3.xml",//"res/values/formatstrings.xml",
                         "res/values/shared_prefs_keys.xml",
                         "src/test/pkg/SharedPrefsTest6.java.txt=>src/test/pkg/SharedPrefsTest6.java"));
+    }
+
+    public void testIncrementalNonMatch() throws Exception {
+        // Regression test for scenario where the below source files would crash during
+        // a string format check with
+        //   java.lang.IllegalStateException: No match found
+        //       at java.util.regex.Matcher.group(Matcher.java:468)
+        //       at com.android.tools.lint.checks.StringFormatDetector.checkStringFormatCall(StringFormatDetector.java:1028)
+        // ...
+        assertEquals("No warnings.",
+
+                lintProjectIncrementally(
+                        "src/test/pkg/StringFormatActivity3.java",
+                        "res/values/formatstrings11.xml",
+                        "res/values/formatstrings11.xml=>res/values-de/formatstrings11de.xml",
+                        "src/test/pkg/StringFormatActivity3.java.txt=>src/test/pkg/StringFormatActivity3.java"));
     }
 
     public void testXliff() throws Exception {

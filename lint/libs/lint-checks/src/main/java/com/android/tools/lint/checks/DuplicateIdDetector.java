@@ -81,7 +81,6 @@ public class DuplicateIdDetector extends LayoutDetector {
     public static final Issue WITHIN_LAYOUT = Issue.create(
             "DuplicateIds", //$NON-NLS-1$
             "Duplicate ids within a single layout",
-            "Checks for duplicate ids within a single layout",
             "Within a layout, id's should be unique since otherwise `findViewById()` can " +
             "return an unexpected view.",
             Category.CORRECTNESS,
@@ -93,7 +92,6 @@ public class DuplicateIdDetector extends LayoutDetector {
     public static final Issue CROSS_LAYOUT = Issue.create(
             "DuplicateIncludedIds", //$NON-NLS-1$
             "Duplicate ids across layouts combined with include tags",
-            "Checks for duplicate ids across layouts that are combined with include tags",
             "It's okay for two independent layouts to use the same ids. However, if " +
             "layouts are combined with include tags, then the id's need to be unique " +
             "within any chain of included layouts, or `Activity#findViewById()` can " +
@@ -201,7 +199,7 @@ public class DuplicateIdDetector extends LayoutDetector {
                         }
                     }
 
-                    context.report(CROSS_LAYOUT, location, occurrence.message, null);
+                    context.report(CROSS_LAYOUT, location, occurrence.message);
                 }
             }
         }
@@ -263,13 +261,13 @@ public class DuplicateIdDetector extends LayoutDetector {
                 Attr first = findIdAttribute(attribute.getOwnerDocument(), id);
                 if (first != null && first != attribute) {
                     Location secondLocation = context.getLocation(first);
-                    secondLocation.setMessage(String.format("%1$s originally defined here", id));
+                    secondLocation.setMessage(String.format("`%1$s` originally defined here", id));
                     location.setSecondary(secondLocation);
                 }
 
                 context.report(WITHIN_LAYOUT, attribute, location,
-                        String.format("Duplicate id %1$s, already defined earlier in this layout",
-                                id), null);
+                        String.format("Duplicate id `%1$s`, already defined earlier in this layout",
+                                id));
             } else if (id.startsWith(NEW_ID_PREFIX)) {
                 // Skip id's on include tags
                 if (attribute.getOwnerElement().getTagName().equals(VIEW_INCLUDE)) {

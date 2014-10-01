@@ -56,7 +56,6 @@ public class OverrideDetector extends Detector implements ClassScanner {
     public static final Issue ISSUE = Issue.create(
             "DalvikOverride", //$NON-NLS-1$
             "Method considered overridden by Dalvik",
-            "Looks for methods treated as overrides by Dalvik",
 
             "The Android virtual machine will treat a package private method in one " +
             "class as overriding a package private method in its super class, even if " +
@@ -206,9 +205,9 @@ public class OverrideDetector extends Detector implements ClassScanner {
                             }
                             String message = String.format(
                                     "This package private method may be unintentionally " +
-                                    "overriding %1$s in %2$s", methodName,
+                                    "overriding `%1$s` in `%2$s`", methodName,
                                     ClassContext.getFqcn(superClass));
-                            context.report(ISSUE, location, message, null);
+                            context.report(ISSUE, location, message);
                         }
                     }
                 }

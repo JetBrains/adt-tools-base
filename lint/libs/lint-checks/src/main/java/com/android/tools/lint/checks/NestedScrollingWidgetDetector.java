@@ -50,7 +50,6 @@ public class NestedScrollingWidgetDetector extends LayoutDetector {
     public static final Issue ISSUE = Issue.create(
             "NestedScrolling", //$NON-NLS-1$
             "Nested scrolling widgets",
-            "Checks whether a scrolling widget has any nested scrolling widgets within",
             // TODO: Better description!
             "A scrolling widget such as a `ScrollView` should not contain any nested " +
             "scrolling widgets since this has various usability issues",
@@ -121,14 +120,14 @@ public class NestedScrollingWidgetDetector extends LayoutDetector {
             if (parent != null) {
                 String format;
                 if (mVisitingVerticalScroll > 1) {
-                    format = "The vertically scrolling %1$s should not contain another " +
-                            "vertically scrolling widget (%2$s)";
+                    format = "The vertically scrolling `%1$s` should not contain another " +
+                            "vertically scrolling widget (`%2$s`)";
                 } else {
-                    format = "The horizontally scrolling %1$s should not contain another " +
-                            "horizontally scrolling widget (%2$s)";
+                    format = "The horizontally scrolling `%1$s` should not contain another " +
+                            "horizontally scrolling widget (`%2$s`)";
                 }
                 String msg = String.format(format, parent.getTagName(), element.getTagName());
-                context.report(ISSUE, element, context.getLocation(element), msg, null);
+                context.report(ISSUE, element, context.getLocation(element), msg);
             }
         }
     }

@@ -18,7 +18,9 @@ package com.android.build.gradle.internal.api;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.gradle.BasePlugin;
 import com.android.build.gradle.api.LibraryVariant;
+import com.android.build.gradle.api.LibraryVariantOutput;
 import com.android.build.gradle.api.TestVariant;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.LibraryVariantData;
@@ -29,6 +31,9 @@ import java.io.File;
 /**
  * implementation of the {@link LibraryVariant} interface around a
  * {@link LibraryVariantData} object.
+ *
+ * This is a wrapper around the internal data model, in order to control what is accessible
+ * through the external API.
  */
 public class LibraryVariantImpl extends BaseVariantImpl implements LibraryVariant, TestedVariant {
 
@@ -37,13 +42,16 @@ public class LibraryVariantImpl extends BaseVariantImpl implements LibraryVarian
     @Nullable
     private TestVariant testVariant = null;
 
-    public LibraryVariantImpl(@NonNull LibraryVariantData variantData) {
+    public LibraryVariantImpl(
+            @NonNull LibraryVariantData variantData,
+            @NonNull BasePlugin plugin) {
+        super(plugin);
         this.variantData = variantData;
     }
 
     @Override
     @NonNull
-    protected BaseVariantData getVariantData() {
+    protected BaseVariantData<?> getVariantData() {
         return variantData;
     }
 
@@ -53,25 +61,27 @@ public class LibraryVariantImpl extends BaseVariantImpl implements LibraryVarian
     }
 
     @Override
-    @NonNull
-    public File getOutputFile() {
-        return variantData.packageLibTask.getArchivePath();
-    }
-
-    @Override
-    public void setOutputFile(@NonNull File outputFile) {
-        variantData.packageLibTask.setDestinationDir(outputFile.getParentFile());
-        variantData.packageLibTask.setArchiveName(outputFile.getName());
-    }
-
-    @Override
     @Nullable
     public TestVariant getTestVariant() {
         return testVariant;
     }
 
+    // ---- Deprecated, will be removed in 1.0
+    //STOPSHIP
+
     @Override
     public Zip getPackageLibrary() {
-        return variantData.packageLibTask;
+        // if more than one output, refuse to use this method
+        if (outputs.size() > 1) {
+            throw new RuntimeException(String.format(
+                    "More than one output on variant '%s', cannot call getPackageLibrary() on it. Call it on one of its outputs instead.",
+                    getName()));
+        }
+
+        // deprecation warning.
+        plugin.displayDeprecationWarning("variant.getPackageLibrary() is deprecated. Call it on one of variant.getOutputs() instead.");
+
+        // use the single output for compatibility.
+        return ((LibraryVariantOutput) outputs.get(0)).getPackageLibrary();
     }
 }

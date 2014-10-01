@@ -61,7 +61,6 @@ public class LocaleDetector extends Detector implements ClassScanner {
     public static final Issue STRING_LOCALE = Issue.create(
             "DefaultLocale", //$NON-NLS-1$
             "Implied default locale in case conversion",
-            "Finds calls to locale-ambiguous `String` manipulation methods",
 
             "Calling `String#toLowerCase()` or `#toUpperCase()` *without specifying an " +
             "explicit locale* is a common source of bugs. The reason for that is that those " +
@@ -85,7 +84,6 @@ public class LocaleDetector extends Detector implements ClassScanner {
     public static final Issue DATE_FORMAT = Issue.create(
             "SimpleDateFormat", //$NON-NLS-1$
             "Implied locale in date format",
-            "Using `SimpleDateFormat` directly without an explicit locale",
 
             "Almost all callers should use `getDateInstance()`, `getDateTimeInstance()`, or " +
             "`getTimeInstance()` to get a ready-made instance of SimpleDateFormat suitable " +
@@ -151,10 +149,10 @@ public class LocaleDetector extends Detector implements ClassScanner {
                     || desc.equals("(Ljava/lang/String;)V")) {                      //$NON-NLS-1$
                 Location location = context.getLocation(call);
                 String message =
-                    "To get local formatting use getDateInstance(), getDateTimeInstance(), " +
-                    "or getTimeInstance(), or use new SimpleDateFormat(String template, " +
-                    "Locale locale) with for example Locale.US for ASCII dates.";
-                context.report(DATE_FORMAT, method, call, location, message, null);
+                    "To get local formatting use `getDateInstance()`, `getDateTimeInstance()`, " +
+                    "or `getTimeInstance()`, or use `new SimpleDateFormat(String template, " +
+                    "Locale locale)` with for example `Locale.US` for ASCII dates.";
+                context.report(DATE_FORMAT, method, call, location, message);
             }
             return;
         } else if (!owner.equals(STRING_OWNER)) {
@@ -193,8 +191,8 @@ public class LocaleDetector extends Detector implements ClassScanner {
                         Location location = context.getLocation(call);
                         String message =
                             "Implicitly using the default locale is a common source of bugs: " +
-                            "Use String.format(Locale, ...) instead";
-                        context.report(STRING_LOCALE, method, call, location, message, null);
+                            "Use `String.format(Locale, ...)` instead";
+                        context.report(STRING_LOCALE, method, call, location, message);
                     }
                 }
             } catch (AnalyzerException e) {
@@ -205,8 +203,8 @@ public class LocaleDetector extends Detector implements ClassScanner {
                 Location location = context.getLocation(call);
                 String message = String.format(
                     "Implicitly using the default locale is a common source of bugs: " +
-                    "Use %1$s(Locale) instead", name);
-                context.report(STRING_LOCALE, method, call, location, message, null);
+                    "Use `%1$s(Locale)` instead", name);
+                context.report(STRING_LOCALE, method, call, location, message);
             }
         }
     }

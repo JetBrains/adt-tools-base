@@ -233,60 +233,88 @@ public class SdkUtilsTest extends TestCase {
     }
 
     public void testFileToUrl() throws Exception {
-        if (SdkConstants.CURRENT_PLATFORM == SdkConstants.PLATFORM_WINDOWS) {
-            assertEquals("file:/D:/tmp/foo/bar",
-                    fileToUrlString(new File("D:\\tmp\\foo\\bar")));
-            // File path normalization adds a missing drive letter on Windows's File
-            // implementation which defaults to C:
-            assertEquals("file:/C:/tmp/foo/bar",
-                    fileToUrlString(new File("/tmp/foo/bar")));
-            assertEquals("file:/C:/tmp/$&+,:;=%3F@/foo%20bar%25",
-                    fileToUrlString(new File("/tmp/$&+,:;=?@/foo bar%")));
-        } else {
-            assertEquals("file:/tmp/foo/bar",
-                    fileToUrlString(new File("/tmp/foo/bar")));
-            assertEquals("file:/tmp/$&+,:;=%3F@/foo%20bar%25",
-                    fileToUrlString(new File("/tmp/$&+,:;=?@/foo bar%")));
-        }
+        // path -- drive "C:" used as prefix in paths, empty for mac/linux.
+        String pDrive = SdkConstants.CURRENT_PLATFORM == SdkConstants.PLATFORM_WINDOWS ? "C:" : "";
+        // url -- drive becomes "/C:" when used in URLs, empty for mac/linux.
+        String uDrive = SdkConstants.CURRENT_PLATFORM == SdkConstants.PLATFORM_WINDOWS ? "/C:" : "";
+
+        assertEquals(
+                "file:" + uDrive + "/tmp/foo/bar",
+                fileToUrlString(new File(pDrive + "/tmp/foo/bar")));
+        assertEquals(
+                "file:" + uDrive + "/tmp/$&+,:;=%3F@/foo%20bar%25",
+                fileToUrlString(new File(pDrive + "/tmp/$&+,:;=?@/foo bar%")));
     }
 
     public void testUrlToFile() throws Exception {
-        assertEquals(new File("/tmp/foo/bar"), urlToFile("file:/tmp/foo/bar"));
-        assertEquals(new File("/tmp/$&+,:;=?@/foo bar%"),
-                urlToFile("file:/tmp/$&+,:;=%3F@/foo%20bar%25"));
+        // path -- drive "C:" used as prefix in paths, empty for mac/linux.
+        String pDrive = SdkConstants.CURRENT_PLATFORM == SdkConstants.PLATFORM_WINDOWS ? "C:" : "";
+        // url -- drive becomes "/C:" when used in URLs, empty for mac/linux.
+        String uDrive = SdkConstants.CURRENT_PLATFORM == SdkConstants.PLATFORM_WINDOWS ? "/C:" : "";
 
-        assertEquals(new File("/tmp/foo/bar"),
-                urlToFile(new URL("file:/tmp/foo/bar")));
-        assertEquals(new File("/tmp/$&+,:;=?@/foo bar%"),
-                urlToFile(new URL("file:/tmp/$&+,:;=%3F@/foo%20bar%25")));
+        assertEquals(
+                new File(pDrive + "/tmp/foo/bar"),
+                urlToFile("file:" + uDrive + "/tmp/foo/bar"));
+        assertEquals(
+                new File(pDrive + "/tmp/$&+,:;=?@/foo bar%"),
+                urlToFile("file:" + uDrive + "/tmp/$&+,:;=%3F@/foo%20bar%25"));
+
+        assertEquals(
+                new File(pDrive + "/tmp/foo/bar"),
+                urlToFile(new URL("file:" + uDrive + "/tmp/foo/bar")));
+        assertEquals(
+                new File(pDrive + "/tmp/$&+,:;=?@/foo bar%"),
+                urlToFile(new URL("file:" + uDrive + "/tmp/$&+,:;=%3F@/foo%20bar%25")));
     }
 
     public void testCreatePathComment() throws Exception {
-        assertEquals("From: file:/tmp/foo", createPathComment(new File("/tmp/foo"), false));
-        assertEquals(" From: file:/tmp/foo ", createPathComment(new File("/tmp/foo"), true));
-        assertEquals("From: file:/tmp-/%2D%2D/a%2D%2Da/foo",
-                createPathComment(new File("/tmp-/--/a--a/foo"), false));
+        // path -- drive "C:" used as prefix in paths, empty for mac/linux.
+        String pDrive = SdkConstants.CURRENT_PLATFORM == SdkConstants.PLATFORM_WINDOWS ? "C:" : "";
+        // url -- drive becomes "/C:" when used in URLs, empty for mac/linux.
+        String uDrive = SdkConstants.CURRENT_PLATFORM == SdkConstants.PLATFORM_WINDOWS ? "/C:" : "";
+
+        assertEquals(
+                "From: file:" + uDrive + "/tmp/foo",
+                createPathComment(new File(pDrive + "/tmp/foo"), false));
+        assertEquals(
+                " From: file:" + uDrive + "/tmp/foo ",
+                createPathComment(new File(pDrive + "/tmp/foo"), true));
+        assertEquals(
+                "From: file:" + uDrive + "/tmp-/%2D%2D/a%2D%2Da/foo",
+                createPathComment(new File(pDrive + "/tmp-/--/a--a/foo"), false));
 
         String path = "/tmp/foo";
         String urlString =
-                createPathComment(new File(path), false).substring(5); // 5: "From:".length()
-        assertEquals(path, urlToFile(new URL(urlString)).getPath());
+                createPathComment(new File(pDrive + path), false).substring(5); // 5: "From:".length()
+        assertEquals(
+                (pDrive + path).replace('/', File.separatorChar),
+                urlToFile(new URL(urlString)).getPath());
 
         path = "/tmp-/--/a--a/foo";
-        urlString = createPathComment(new File(path), false).substring(5);
-        assertEquals(path, urlToFile(new URL(urlString)).getPath());
+        urlString = createPathComment(new File(pDrive + path), false).substring(5);
+        assertEquals(
+                (pDrive + path).replace('/', File.separatorChar),
+                urlToFile(new URL(urlString)).getPath());
 
         // Make sure we handle file://path too, not just file:path
         urlString = "file:///tmp-/%2D%2D/a%2D%2Da/foo";
-        assertEquals(path, urlToFile(new URL(urlString)).getPath());
+        assertEquals(
+                path.replace('/', File.separatorChar),
+                urlToFile(new URL(urlString)).getPath());
     }
 
     public void testFormattedComment() throws Exception {
+        // path -- drive "C:" used as prefix in paths, empty for mac/linux.
+        String pDrive = SdkConstants.CURRENT_PLATFORM == SdkConstants.PLATFORM_WINDOWS ? "C:" : "";
+        // url -- drive becomes "/C:" when used in URLs, empty for mac/linux.
+        String uDrive = SdkConstants.CURRENT_PLATFORM == SdkConstants.PLATFORM_WINDOWS ? "/C:" : "";
+
         Document document = XmlUtils.parseDocumentSilently("<root/>", true);
         assertNotNull(document);
+
         // Many invalid characters in XML, such as -- and <, and characters invalid in URLs, such
         // as spaces
-        String path = "/My Program Files/--/Q&A/X<Y/foo";
+        String path = pDrive + "/My Program Files/--/Q&A/X<Y/foo";
         String comment = createPathComment(new File(path), true);
         Element root = document.getDocumentElement();
         assertNotNull(root);
@@ -294,13 +322,17 @@ public class SdkUtilsTest extends TestCase {
         String xml = XmlUtils.toXml(document, false);
         assertEquals(""
                 + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
-                + "<root><!-- From: file:/My%20Program%20Files/%2D%2D/Q&A/X%3CY/foo --></root>",
+                + "<root>"
+                + "<!-- From: file:" + uDrive + "/My%20Program%20Files/%2D%2D/Q&A/X%3CY/foo -->"
+                + "</root>",
                 xml);
         int index = xml.indexOf(FILENAME_PREFIX);
         assertTrue(index != -1);
         String urlString = xml.substring(index + FILENAME_PREFIX.length(),
                 xml.indexOf("-->")).trim();
-        assertEquals(path, urlToFile(new URL(urlString)).getPath());
+        assertEquals(
+                path.replace('/', File.separatorChar),
+                urlToFile(new URL(urlString)).getPath());
     }
 
     public void testCopyXmlWithSourceReference() throws IOException {

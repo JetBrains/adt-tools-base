@@ -74,16 +74,16 @@ public class UnusedResourceDetectorTest extends AbstractCheckTest {
            "Warning: The resource R.string.hello appears to be unused [UnusedResources]\n" +
            "res/layout/accessibility.xml:2: Warning: The resource R.id.newlinear appears to be unused [UnusedIds]\n" +
            "<LinearLayout xmlns:android=\"http://schemas.android.com/apk/res/android\" android:id=\"@+id/newlinear\" android:orientation=\"vertical\" android:layout_width=\"match_parent\" android:layout_height=\"match_parent\">\n" +
-           "                                                                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
+           "                                                                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
            "res/layout/accessibility.xml:3: Warning: The resource R.id.button1 appears to be unused [UnusedIds]\n" +
            "    <Button android:text=\"Button\" android:id=\"@+id/button1\" android:layout_width=\"wrap_content\" android:layout_height=\"wrap_content\"></Button>\n" +
-           "                                  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
+           "                                  ~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
            "res/layout/accessibility.xml:4: Warning: The resource R.id.android_logo appears to be unused [UnusedIds]\n" +
            "    <ImageView android:id=\"@+id/android_logo\" android:layout_width=\"wrap_content\" android:layout_height=\"wrap_content\" android:src=\"@drawable/android_button\" android:focusable=\"false\" android:clickable=\"false\" android:layout_weight=\"1.0\" />\n" +
-           "               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
+           "               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
            "res/layout/accessibility.xml:5: Warning: The resource R.id.android_logo2 appears to be unused [UnusedIds]\n" +
            "    <ImageButton android:importantForAccessibility=\"yes\" android:id=\"@+id/android_logo2\" android:layout_width=\"wrap_content\" android:layout_height=\"wrap_content\" android:src=\"@drawable/android_button\" android:focusable=\"false\" android:clickable=\"false\" android:layout_weight=\"1.0\" />\n" +
-           "                                                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
+           "                                                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
            "Warning: The resource R.id.imageView1 appears to be unused [UnusedIds]\n" +
            "Warning: The resource R.id.include1 appears to be unused [UnusedIds]\n" +
            "Warning: The resource R.id.linearLayout2 appears to be unused [UnusedIds]\n" +

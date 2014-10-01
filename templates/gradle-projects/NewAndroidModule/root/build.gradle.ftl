@@ -1,7 +1,7 @@
 <#if !(perModuleRepositories??) || perModuleRepositories>
 buildscript {
     repositories {
-        mavenCentral()
+        jcenter()
 <#if mavenUrl != "mavenCentral">
         maven {
             url '${mavenUrl}'
@@ -21,7 +21,7 @@ apply plugin: 'com.android.application'
 <#if !(perModuleRepositories??) || perModuleRepositories>
 
 repositories {
-        mavenCentral()
+        jcenter()
 <#if mavenUrl != "mavenCentral">
         maven {
             url '${mavenUrl}'
@@ -65,4 +65,8 @@ dependencies {
     </#list>
     </#if>
     compile fileTree(dir: 'libs', include: ['*.jar'])
+<#if WearprojectName?has_content && NumberOfEnabledFormFactors?has_content && NumberOfEnabledFormFactors gt 1>
+    wearApp project(':${WearprojectName}')
+    compile 'com.google.android.gms:play-services:+'
+</#if>
 }

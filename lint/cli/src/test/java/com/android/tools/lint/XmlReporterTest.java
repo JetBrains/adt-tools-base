@@ -22,10 +22,10 @@ import com.android.tools.lint.checks.ManifestDetector;
 import com.android.tools.lint.checks.TypographyDetector;
 import com.android.tools.lint.detector.api.DefaultPosition;
 import com.android.tools.lint.detector.api.Detector;
-import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Project;
 import com.android.tools.lint.detector.api.Severity;
+import com.android.tools.lint.detector.api.TextFormat;
 import com.android.utils.PositionXmlParser;
 import com.google.common.base.Charsets;
 import com.google.common.io.Files;
@@ -58,7 +58,7 @@ public class XmlReporterTest extends AbstractCheckTest {
                     "<uses-sdk> tag should specify a target API level (the highest verified " +
                     "version; when running on later versions, compatibility behaviors may " +
                     "be enabled) with android:targetSdkVersion=\"?\"",
-                    Severity.WARNING, project, null);
+                    Severity.WARNING, project);
             warning1.line = 6;
             warning1.file = new File("/foo/bar/Foo/AndroidManifest.xml");
             warning1.errorLine = "    <uses-sdk android:minSdkVersion=\"8\" />\n    ^\n";
@@ -68,7 +68,7 @@ public class XmlReporterTest extends AbstractCheckTest {
 
             Warning warning2 = new Warning(HardcodedValuesDetector.ISSUE,
                     "[I18N] Hardcoded string \"Fooo\", should use @string resource",
-                    Severity.WARNING, project, null);
+                    Severity.WARNING, project);
             warning2.line = 11;
             warning2.file = new File("/foo/bar/Foo/res/layout/main.xml");
             warning2.errorLine = "        android:text=\"Fooo\" />\n" +
@@ -94,7 +94,7 @@ public class XmlReporterTest extends AbstractCheckTest {
                 "        message=\"&lt;uses-sdk> tag should specify a target API level (the highest verified version; when running on later versions, compatibility behaviors may be enabled) with android:targetSdkVersion=&quot;?&quot;\"\n" +
                 "        category=\"Correctness\"\n" +
                 "        priority=\"9\"\n" +
-                "        summary=\"Checks that the minimum SDK and target SDK attributes are defined\"\n" +
+                "        summary=\"Minimum SDK and target SDK attributes not defined\"\n" +
                 "        explanation=\"The manifest should contain a `&lt;uses-sdk>` element which defines the minimum API Level required for the application to run, as well as the target version (the highest API level you have tested the version for.)\"\n" +
                 "        url=\"http://developer.android.com/guide/topics/manifest/uses-sdk-element.html\"\n" +
                 "        urls=\"http://developer.android.com/guide/topics/manifest/uses-sdk-element.html\"\n" +
@@ -112,7 +112,7 @@ public class XmlReporterTest extends AbstractCheckTest {
                 "        message=\"[I18N] Hardcoded string &quot;Fooo&quot;, should use @string resource\"\n" +
                 "        category=\"Internationalization\"\n" +
                 "        priority=\"5\"\n" +
-                "        summary=\"Looks for hardcoded text attributes which should be converted to resource lookup\"\n" +
+                "        summary=\"Hardcoded text\"\n" +
                 "        explanation=\"Hardcoding text attributes directly in layout files is bad for several reasons:\n" +
                 "\n" +
                 "* When creating configuration variations (for example for landscape or portrait)you have to repeat the actual text (and keep it up to date when making changes)\n" +
@@ -162,7 +162,7 @@ public class XmlReporterTest extends AbstractCheckTest {
                     "<uses-sdk> tag should specify a target API level (the highest verified " +
                     "version; when running on later versions, compatibility behaviors may " +
                     "be enabled) with android:targetSdkVersion=\"?\"",
-                    Severity.WARNING, project, null);
+                    Severity.WARNING, project);
             warning1.line = 6;
             warning1.file = new File("/foo/bar/../Foo/AndroidManifest.xml");
             warning1.errorLine = "    <uses-sdk android:minSdkVersion=\"8\" />\n    ^\n";
@@ -172,7 +172,7 @@ public class XmlReporterTest extends AbstractCheckTest {
 
             Warning warning2 = new Warning(HardcodedValuesDetector.ISSUE,
                     "[I18N] Hardcoded string \"Fooo\", should use @string resource",
-                    Severity.WARNING, project, null);
+                    Severity.WARNING, project);
             warning2.line = 11;
             warning2.file = new File("/foo/bar/Foo/res/layout/main.xml");
             warning2.errorLine = "        android:text=\"Fooo\" />\n" +
@@ -198,7 +198,7 @@ public class XmlReporterTest extends AbstractCheckTest {
                 "        message=\"&lt;uses-sdk> tag should specify a target API level (the highest verified version; when running on later versions, compatibility behaviors may be enabled) with android:targetSdkVersion=&quot;?&quot;\"\n" +
                 "        category=\"Correctness\"\n" +
                 "        priority=\"9\"\n" +
-                "        summary=\"Checks that the minimum SDK and target SDK attributes are defined\"\n" +
+                "        summary=\"Minimum SDK and target SDK attributes not defined\"\n" +
                 "        explanation=\"The manifest should contain a `&lt;uses-sdk>` element which defines the minimum API Level required for the application to run, as well as the target version (the highest API level you have tested the version for.)\"\n" +
                 "        url=\"http://developer.android.com/guide/topics/manifest/uses-sdk-element.html\"\n" +
                 "        urls=\"http://developer.android.com/guide/topics/manifest/uses-sdk-element.html\"\n" +
@@ -216,7 +216,7 @@ public class XmlReporterTest extends AbstractCheckTest {
                 "        message=\"[I18N] Hardcoded string &quot;Fooo&quot;, should use @string resource\"\n" +
                 "        category=\"Internationalization\"\n" +
                 "        priority=\"5\"\n" +
-                "        summary=\"Looks for hardcoded text attributes which should be converted to resource lookup\"\n" +
+                "        summary=\"Hardcoded text\"\n" +
                 "        explanation=\"Hardcoding text attributes directly in layout files is bad for several reasons:\n" +
                 "\n" +
                 "* When creating configuration variations (for example for landscape or portrait)you have to repeat the actual text (and keep it up to date when making changes)\n" +
@@ -263,7 +263,7 @@ public class XmlReporterTest extends AbstractCheckTest {
 
             Warning warning1 = new Warning(TypographyDetector.FRACTIONS,
                     String.format("Use fraction character %1$c (%2$s) instead of %3$s ?",
-                            '\u00BC', "&#188;", "1/4"), Severity.WARNING, project, null);
+                            '\u00BC', "&#188;", "1/4"), Severity.WARNING, project);
             warning1.line = 592;
             warning1.file = new File("/foo/bar/Foo/AndroidManifest.xml");
             warning1.errorLine =
@@ -289,7 +289,7 @@ public class XmlReporterTest extends AbstractCheckTest {
                     + "        message=\"Use fraction character ¼ (&amp;#188;) instead of 1/4 ?\"\n"
                     + "        category=\"Usability:Typography\"\n"
                     + "        priority=\"5\"\n"
-                    + "        summary=\"Looks for fraction strings which can be replaced with a fraction character\"\n"
+                    + "        summary=\"Fraction string can be replaced with fraction character\"\n"
                     + "        explanation=\"You can replace certain strings, such as 1/2, and 1/4, with dedicated characters for these, such as ½ (&amp;#189;) and ¼ (&amp;#188;). This can help make the text more readable.\"\n"
                     + "        url=\"http://en.wikipedia.org/wiki/Number_Forms\"\n"
                     + "        urls=\"http://en.wikipedia.org/wiki/Number_Forms\">\n"
@@ -308,7 +308,7 @@ public class XmlReporterTest extends AbstractCheckTest {
             assertEquals(1, document.getElementsByTagName("issue").getLength());
             String explanation =  ((Element)document.getElementsByTagName("issue").item(0)).
                     getAttribute("explanation");
-            assertEquals(TypographyDetector.FRACTIONS.getExplanation(Issue.OutputFormat.RAW),
+            assertEquals(TypographyDetector.FRACTIONS.getExplanation(TextFormat.RAW),
                     explanation);
         } finally {
             //noinspection ResultOfMethodCallIgnored

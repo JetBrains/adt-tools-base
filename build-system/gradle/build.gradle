@@ -15,6 +15,10 @@ sourceSets {
         groovy.srcDir file('src/device-test/groovy')
         resources.srcDir file('src/device-test/resources')
     }
+    integTest {
+        groovy.srcDir file('src/integ-test/groovy')
+        resources.srcDir file('src/integ-test/resources')
+    }
 }
 
 ext.proguardVersion = "4.11"
@@ -25,8 +29,10 @@ dependencies {
     compile project(':base:builder')
     compile project(':base:lint')
     compile "net.sf.proguard:proguard-gradle:${project.ext.proguardVersion}"
+    compile "com.google.code.gson:gson:2.3"
 
     testCompile 'junit:junit:3.8.1'
+    testCompile project(':base:project-test-lib')
 
     buildTestCompile sourceSets.main.output
     buildTestCompile sourceSets.test.output
@@ -38,6 +44,11 @@ dependencies {
     deviceTestCompile sourceSets.buildTest.output
     deviceTestCompile configurations.testCompile
     deviceTestCompile configurations.testRuntime
+
+    integTestCompile sourceSets.main.output
+    integTestCompile sourceSets.test.output
+    integTestCompile configurations.testCompile
+    integTestCompile configurations.testRuntime
 }
 
 // configuration for dependencies provided by the runtime,
@@ -80,8 +91,32 @@ task buildTest(type: Test) {
     systemProperties['jar.path'] = jar.archivePath
 }
 
+task integTest(type: Test) {
+    testClassesDir = sourceSets.integTest.output.classesDir
+    classpath = sourceSets.integTest.runtimeClasspath
+    description =
+            "Runs the project integration tests. This requires an SDK either from the Android " +
+                    "source tree, under out/..., or an env var ANDROID_HOME and a device."
+    group = "verification"
+    systemProperties['jar.path'] = jar.archivePath
+
+    // Allow user to include/exclude categories from the command line.
+    // e.g. add the following to skip device tests:
+    // -DintegTest.excludeCategories=com.android.build.gradle.internal.test.category.DeviceTests
+    useJUnit {
+        if (System.properties[name + ".includeCategories"] != null) {
+            includeCategories System.properties[name + ".includeCategories"]
+        }
+        if (System.properties[name + ".excludeCategories"] != null) {
+            excludeCategories System.properties[name + ".excludeCategories"]
+        }
+    }
+}
+
 buildTest.dependsOn ':publishLocal'
 check.dependsOn buildTest
+
+integTest.dependsOn ':publishLocal'
 
 task deviceTest(type: Test) {
     testClassesDir = sourceSets.deviceTest.output.classesDir

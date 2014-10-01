@@ -20,16 +20,14 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.internal.BaseConfigImpl;
 import com.android.builder.model.ApiVersion;
-import com.android.builder.model.NdkConfig;
+import com.android.builder.internal.NdkConfig;
 import com.android.builder.model.ProductFlavor;
 import com.android.builder.model.SigningConfig;
 import com.google.common.base.Objects;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -45,6 +43,7 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
     private final String mName;
     private ApiVersion mMinSdkVersion = null;
     private ApiVersion mTargetSdkVersion = null;
+    private Integer mMaxSdkVersion = null;
     private int mRenderscriptTargetApi = -1;
     private Boolean mRenderscriptSupportMode;
     private Boolean mRenderscriptNdkMode;
@@ -154,6 +153,17 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
         return mTargetSdkVersion;
     }
 
+    @NonNull
+    public ProductFlavor setMaxSdkVersion(Integer maxSdkVersion) {
+        mMaxSdkVersion = maxSdkVersion;
+        return this;
+    }
+
+    @Override
+    public Integer getMaxSdkVersion() {
+        return mMaxSdkVersion;
+    }
+
     @Override
     public int getRenderscriptTargetApi() {
         return mRenderscriptTargetApi;
@@ -251,7 +261,6 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
         return this;
     }
 
-    @Override
     @Nullable
     public NdkConfig getNdkConfig() {
         return null;
@@ -291,25 +300,6 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
         return mResourceConfiguration;
     }
 
-    @NonNull
-    public Map<String, String> getManifestPlaceholders() {
-        if (mManifestPlaceholders == null) {
-            mManifestPlaceholders = Maps.newHashMap();
-        }
-        return mManifestPlaceholders;
-    }
-
-    public void addManifestPlaceHolders(@NonNull Map<String, String> manifestPlaceholders) {
-        if (mManifestPlaceholders == null) {
-            mManifestPlaceholders = Maps.newHashMap();
-        }
-        mManifestPlaceholders.putAll(manifestPlaceholders);
-    }
-
-    public void setManifestPlaceholders(Map<String, String> manifestPlaceholders) {
-        this.mManifestPlaceholders = manifestPlaceholders;
-    }
-
     /**
      * Merges the flavor on top of a base platform and returns a new object with the result.
      * @param base the flavor to merge on top of
@@ -323,6 +313,8 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
                 mMinSdkVersion != null ? mMinSdkVersion : base.mMinSdkVersion;
         flavor.mTargetSdkVersion =
                 mTargetSdkVersion != null ? mTargetSdkVersion : base.mTargetSdkVersion;
+        flavor.mMaxSdkVersion =
+                mMaxSdkVersion != null ? mMaxSdkVersion : base.mMaxSdkVersion;
         flavor.mRenderscriptTargetApi = chooseInt(mRenderscriptTargetApi,
                 base.mRenderscriptTargetApi);
         flavor.mRenderscriptSupportMode = chooseBoolean(mRenderscriptSupportMode,
@@ -348,10 +340,50 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
         flavor.mSigningConfig =
                 mSigningConfig != null ? mSigningConfig : base.mSigningConfig;
 
-        flavor.addResourceConfigurations(getResourceConfigurations());
         flavor.addResourceConfigurations(base.getResourceConfigurations());
+        flavor.addResourceConfigurations(getResourceConfigurations());
 
         flavor.addManifestPlaceHolders(base.getManifestPlaceholders());
+        flavor.addManifestPlaceHolders(getManifestPlaceholders());
+
+        flavor.addResValues(base.getResValues());
+        flavor.addResValues(getResValues());
+
+        flavor.addBuildConfigFields(base.getBuildConfigFields());
+        flavor.addBuildConfigFields(getBuildConfigFields());
+
+        return flavor;
+    }
+
+    /**
+     * Clones the productFlavor.
+     */
+    @Override
+    @NonNull
+    public DefaultProductFlavor clone() {
+        DefaultProductFlavor flavor = new DefaultProductFlavor(getName());
+        flavor._initWith(this);
+
+        flavor.mMinSdkVersion = mMinSdkVersion;
+        flavor.mTargetSdkVersion =mTargetSdkVersion;
+        flavor.mMaxSdkVersion = mMaxSdkVersion;
+        flavor.mRenderscriptTargetApi = mRenderscriptTargetApi;
+        flavor.mRenderscriptSupportMode = mRenderscriptSupportMode;
+        flavor.mRenderscriptNdkMode = mRenderscriptNdkMode;
+
+        flavor.mVersionCode = mVersionCode;
+        flavor.mVersionName = mVersionName;
+
+        flavor.mApplicationId = mApplicationId;
+
+        flavor.mTestApplicationId = mTestApplicationId;
+        flavor.mTestInstrumentationRunner = mTestInstrumentationRunner;
+        flavor.mTestHandleProfiling = mTestHandleProfiling;
+        flavor.mTestFunctionalTest = mTestFunctionalTest;
+
+        flavor.mSigningConfig = mSigningConfig;
+
+        flavor.addResourceConfigurations(getResourceConfigurations());
         flavor.addManifestPlaceHolders(getManifestPlaceholders());
 
         return flavor;

@@ -15,14 +15,17 @@
  */
 
 package com.android.build.gradle.internal.tasks
-
 import com.android.builder.core.AndroidBuilder
+import com.google.common.io.Files
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 
+import static com.android.SdkConstants.DOT_ANDROID_PACKAGE
+import static com.android.SdkConstants.FD_RES_RAW
+import static com.android.builder.core.BuilderConstants.ANDROID_WEAR_MICRO_APK
 /**
  * Task to generate micro app data res file.
  */
@@ -46,9 +49,18 @@ public class GenerateApkDataTask extends BaseTask {
         File outDir = getResOutputDir()
         emptyFolder(outDir)
 
+        File apk = getApkFile()
+        // copy the file into the destination, by sanitizing the name first.
+        File rawDir = new File(outDir, FD_RES_RAW)
+        rawDir.mkdirs()
+
+        File to = new File(rawDir, ANDROID_WEAR_MICRO_APK + DOT_ANDROID_PACKAGE)
+        Files.copy(apk, to)
+
+        // now create the matching XML and the manifest entry.
         AndroidBuilder builder = getBuilder();
 
-        builder.generateApkData(getApkFile(), outDir, getMainPkgName())
+        builder.generateApkData(apk, outDir, getMainPkgName(), ANDROID_WEAR_MICRO_APK)
         builder.generateApkDataEntryInManifest(getManifestFile())
     }
 }

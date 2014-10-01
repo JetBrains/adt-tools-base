@@ -46,7 +46,6 @@ public class HardcodedDebugModeDetector extends Detector implements Detector.Xml
     public static final Issue ISSUE = Issue.create(
             "HardcodedDebugMode", //$NON-NLS-1$
             "Hardcoded value of `android:debuggable` in the manifest",
-            "Checks for hardcoded values of `android:debuggable` in the manifest",
 
             "It's best to leave out the `android:debuggable` attribute from the manifest. " +
             "If you do, then the tools will automatically insert `android:debuggable=true` when " +
@@ -92,7 +91,7 @@ public class HardcodedDebugModeDetector extends Detector implements Detector.Xml
         //if (attribute.getOwnerElement().getTagName().equals(TAG_APPLICATION)) {
             context.report(ISSUE, attribute, context.getLocation(attribute),
                     "Avoid hardcoding the debug mode; leaving it out allows debug and " +
-                    "release builds to automatically assign one", null);
+                    "release builds to automatically assign one");
         }
     }
 }

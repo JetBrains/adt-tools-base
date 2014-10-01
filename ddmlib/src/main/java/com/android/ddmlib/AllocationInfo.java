@@ -17,8 +17,12 @@
 package com.android.ddmlib;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+import com.google.common.collect.Lists;
 
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Locale;
 
 /**
@@ -32,7 +36,7 @@ public class AllocationInfo implements IStackTraceInfo {
     private final StackTraceElement[] mStackTrace;
 
     public enum SortMode {
-        NUMBER, SIZE, CLASS, THREAD, IN_CLASS, IN_METHOD
+        NUMBER, SIZE, CLASS, THREAD, ALLOCATION_SITE, IN_CLASS, IN_METHOD
     }
 
     public static final class AllocationSorter implements Comparator<AllocationInfo> {
@@ -91,6 +95,11 @@ public class AllocationInfo implements IStackTraceInfo {
                     String method1 = o1.getFirstTraceMethodName();
                     String method2 = o2.getFirstTraceMethodName();
                     diff = compareOptionalString(method1, method2);
+                    break;
+                case ALLOCATION_SITE:
+                    String desc1 = o1.getAllocationSite();
+                    String desc2 = o2.getAllocationSite();
+                    diff = compareOptionalString(desc1, desc2);
                     break;
             }
 
@@ -178,6 +187,14 @@ public class AllocationInfo implements IStackTraceInfo {
         return otherAlloc.mAllocationSize - mAllocationSize;
     }
 
+    @Nullable
+    public String getAllocationSite() {
+      if (mStackTrace.length > 0) {
+        return mStackTrace[0].toString();
+      }
+      return null;
+    }
+
     public String getFirstTraceClassName() {
         if (mStackTrace.length > 0) {
             return mStackTrace[0].getClassName();
@@ -199,25 +216,29 @@ public class AllocationInfo implements IStackTraceInfo {
      * the given locale) this allocation info.
      */
     public boolean filter(String filter, boolean fullTrace, Locale locale) {
-        if (mAllocatedClass.toLowerCase(locale).contains(filter)) {
-            return true;
+        return allocatedClassMatches(filter, locale) || !getMatchingStackFrames(filter, fullTrace, locale).isEmpty();
+    }
+
+    public boolean allocatedClassMatches(@NonNull String pattern, @NonNull Locale locale) {
+      return mAllocatedClass.toLowerCase(locale).contains(pattern.toLowerCase(locale));
+    }
+
+    @NonNull
+    public List<String> getMatchingStackFrames(@NonNull String filter, boolean fullTrace, @NonNull Locale locale) {
+      filter = filter.toLowerCase(locale);
+      // check the top of the stack trace always
+      if (mStackTrace.length > 0) {
+        final int length = fullTrace ? mStackTrace.length : 1;
+        List<String> matchingFrames = Lists.newArrayListWithExpectedSize(length);
+        for (int i = 0; i < length; ++i) {
+          String frameString = mStackTrace[i].toString();
+          if (frameString.toLowerCase(locale).contains(filter)) {
+            matchingFrames.add(frameString);
+          }
         }
-
-        if (mStackTrace.length > 0) {
-            // check the top of the stack trace always
-            final int length = fullTrace ? mStackTrace.length : 1;
-
-            for (int i = 0 ; i < length ; i++) {
-                if (mStackTrace[i].getClassName().toLowerCase(locale).contains(filter)) {
-                    return true;
-                }
-
-                if (mStackTrace[i].getMethodName().toLowerCase(locale).contains(filter)) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
+        return matchingFrames;
+      } else {
+        return Collections.emptyList();
+      }
     }
 }

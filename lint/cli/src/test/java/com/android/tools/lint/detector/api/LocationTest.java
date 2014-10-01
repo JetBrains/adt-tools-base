@@ -16,10 +16,10 @@
 
 package com.android.tools.lint.detector.api;
 
+import junit.framework.TestCase;
+
 import java.io.File;
 import java.io.IOException;
-
-import junit.framework.TestCase;
 
 @SuppressWarnings("javadoc")
 public class LocationTest extends TestCase {

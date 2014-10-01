@@ -36,6 +36,7 @@ import static com.android.resources.ResourceFolderType.VALUES;
 import static com.android.resources.ResourceFolderType.XML;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.resources.ResourceFolderType;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.ClassContext;
@@ -50,6 +51,7 @@ import com.android.tools.lint.detector.api.Location.Handle;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.Speed;
+import com.android.tools.lint.detector.api.TextFormat;
 import com.android.tools.lint.detector.api.XmlContext;
 import com.android.utils.SdkUtils;
 import com.google.common.collect.Maps;
@@ -80,7 +82,6 @@ public class MissingClassDetector extends LayoutDetector implements ClassScanner
     public static final Issue MISSING = Issue.create(
             "MissingRegistered", //$NON-NLS-1$
             "Missing registered class",
-            "Ensures that classes referenced in the manifest are present in the project or libraries",
 
             "If a class is referenced in the manifest, it must also exist in the project (or in one " +
             "of the libraries included by the project. This check helps uncover typos in " +
@@ -100,7 +101,6 @@ public class MissingClassDetector extends LayoutDetector implements ClassScanner
     public static final Issue INSTANTIATABLE = Issue.create(
             "Instantiatable", //$NON-NLS-1$
             "Registered class is not instantiatable",
-            "Ensures that classes registered in the manifest file are instantiatable",
 
             "Activities, services, broadcast receivers etc. registered in the manifest file " +
             "must be \"instantiatable\" by the system, which means that the class must be " +
@@ -118,7 +118,6 @@ public class MissingClassDetector extends LayoutDetector implements ClassScanner
     public static final Issue INNERCLASS = Issue.create(
             "InnerclassSeparator", //$NON-NLS-1$
             "Inner classes should use `$` rather than `.`",
-            "Ensures that inner classes are referenced using '$' instead of '.' in class names",
 
             "When you reference an inner class in a manifest file, you must use '$' instead of '.' " +
             "as the separator character, i.e. Outer$Inner instead of Outer.Inner.\n" +
@@ -275,21 +274,7 @@ public class MissingClassDetector extends LayoutDetector implements ClassScanner
         }
 
         if (signature.indexOf('$') != -1) {
-            if (pkg != null && className.indexOf('$') == -1 && className.indexOf('.', 1) > 0) {
-                boolean haveUpperCase = false;
-                for (int i = 0, n = pkg.length(); i < n; i++) {
-                    if (Character.isUpperCase(pkg.charAt(i))) {
-                        haveUpperCase = true;
-                        break;
-                    }
-                }
-                if (!haveUpperCase) {
-                    String message = "Use '$' instead of '.' for inner classes " +
-                            "(or use only lowercase letters in package names)";
-                    Location location = context.getLocation(classNameNode);
-                    context.report(INNERCLASS, element, location, message, null);
-                }
-            }
+            checkInnerClass(context, element, pkg, classNameNode, className);
 
             // The internal name contains a $ which means it's an inner class.
             // The conversion from fqcn to internal name is a bit ambiguous:
@@ -318,6 +303,27 @@ public class MissingClassDetector extends LayoutDetector implements ClassScanner
                         mCustomViews.add(signature);
                     }
                 }
+            }
+        }
+    }
+
+    private static void checkInnerClass(XmlContext context, Element element, String pkg,
+            Node classNameNode, String className) {
+        if (pkg != null && className.indexOf('$') == -1 && className.indexOf('.', 1) > 0) {
+            boolean haveUpperCase = false;
+            for (int i = 0, n = pkg.length(); i < n; i++) {
+                if (Character.isUpperCase(pkg.charAt(i))) {
+                    haveUpperCase = true;
+                    break;
+                }
+            }
+            if (!haveUpperCase) {
+                String fixed = className.charAt(0) + className.substring(1).replace('.','$');
+                String message = "Use '$' instead of '.' for inner classes " +
+                        "(or use only lowercase letters in package names); replace \"" +
+                        className + "\" with \"" + fixed + "\"";
+                Location location = context.getLocation(classNameNode);
+                context.report(INNERCLASS, element, location, message);
             }
         }
     }
@@ -352,7 +358,7 @@ public class MissingClassDetector extends LayoutDetector implements ClassScanner
                 }
 
                 String message = String.format(
-                        "Class referenced in the manifest, %1$s, was not found in the " +
+                        "Class referenced in the manifest, `%1$s`, was not found in the " +
                                 "project or the libraries", fqcn);
                 Location location = handle.resolve();
                 File parentFile = location.getFile().getParentFile();
@@ -361,21 +367,21 @@ public class MissingClassDetector extends LayoutDetector implements ClassScanner
                     ResourceFolderType type = ResourceFolderType.getFolderType(parent);
                     if (type == LAYOUT) {
                         message = String.format(
-                            "Class referenced in the layout file, %1$s, was not found in "
+                            "Class referenced in the layout file, `%1$s`, was not found in "
                                 + "the project or the libraries", fqcn);
                     } else if (type == XML) {
                         message = String.format(
-                                "Class referenced in the preference header file, %1$s, was not "
+                                "Class referenced in the preference header file, `%1$s`, was not "
                                         + "found in the project or the libraries", fqcn);
 
                     } else if (type == VALUES) {
                         message = String.format(
-                                "Class referenced in the analytics file, %1$s, was not "
+                                "Class referenced in the analytics file, `%1$s`, was not "
                                         + "found in the project or the libraries", fqcn);
                     }
                 }
 
-                context.report(MISSING, location, message, null);
+                context.report(MISSING, location, message);
             }
         }
     }
@@ -398,16 +404,14 @@ public class MissingClassDetector extends LayoutDetector implements ClassScanner
             if ((classNode.access & Opcodes.ACC_PUBLIC) == 0) {
                 context.report(INSTANTIATABLE, context.getLocation(classNode), String.format(
                         "This class should be public (%1$s)",
-                            ClassContext.createSignature(classNode.name, null, null)),
-                        null);
+                            ClassContext.createSignature(classNode.name, null, null)));
                 return;
             }
 
             if (classNode.name.indexOf('$') != -1 && !LintUtils.isStaticInnerClass(classNode)) {
                 context.report(INSTANTIATABLE, context.getLocation(classNode), String.format(
                         "This inner class should be static (%1$s)",
-                            ClassContext.createSignature(classNode.name, null, null)),
-                        null);
+                            ClassContext.createSignature(classNode.name, null, null)));
                 return;
             }
 
@@ -423,8 +427,7 @@ public class MissingClassDetector extends LayoutDetector implements ClassScanner
                             hasDefaultConstructor = true;
                         } else {
                             context.report(INSTANTIATABLE, context.getLocation(method, classNode),
-                                    "The default constructor must be public",
-                                    null);
+                                    "The default constructor must be public");
                             // Also mark that we have a constructor so we don't complain again
                             // below since we've already emitted a more specific error related
                             // to the default constructor
@@ -439,8 +442,7 @@ public class MissingClassDetector extends LayoutDetector implements ClassScanner
                 context.report(INSTANTIATABLE, context.getLocation(classNode), String.format(
                         "This class should provide a default constructor (a public " +
                         "constructor with no arguments) (%1$s)",
-                            ClassContext.createSignature(classNode.name, null, null)),
-                        null);
+                            ClassContext.createSignature(classNode.name, null, null)));
             }
         }
     }
@@ -478,5 +480,48 @@ public class MissingClassDetector extends LayoutDetector implements ClassScanner
             curr = curr.substring(0, index) + '$' + curr.substring(index + 1);
             mReferencedClasses.remove(curr);
         }
+    }
+
+    /**
+     * Given an error message produced by this lint detector for the given issue type,
+     * returns the old value to be replaced in the source code.
+     * <p>
+     * Intended for IDE quickfix implementations.
+     *
+     * @param issue the corresponding issue
+     * @param errorMessage the error message associated with the error
+     * @param format the format of the error message
+     * @return the corresponding old value, or null if not recognized
+     */
+    @Nullable
+    public static String getOldValue(@NonNull Issue issue, @NonNull String errorMessage,
+            @NonNull TextFormat format) {
+        if (issue == INNERCLASS) {
+            errorMessage = format.toText(errorMessage);
+            return LintUtils.findSubstring(errorMessage, " replace \"", "\"");
+        }
+
+        return null;
+    }
+
+    /**
+     * Given an error message produced by this lint detector for the given issue type,
+     * returns the new value to be put into the source code.
+     * <p>
+     * Intended for IDE quickfix implementations.
+     *
+     * @param issue the corresponding issue
+     * @param errorMessage the error message associated with the error
+     * @param format the format of the error message
+     * @return the corresponding new value, or null if not recognized
+     */
+    @Nullable
+    public static String getNewValue(@NonNull Issue issue, @NonNull String errorMessage,
+            @NonNull TextFormat format) {
+        if (issue == INNERCLASS) {
+            errorMessage = format.toText(errorMessage);
+            return LintUtils.findSubstring(errorMessage, " with \"", "\"");
+        }
+        return null;
     }
 }

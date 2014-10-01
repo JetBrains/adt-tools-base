@@ -16,7 +16,16 @@
 
 package com.android.tools.lint.checks;
 
+import static com.android.tools.lint.detector.api.TextFormat.RAW;
+import static com.android.tools.lint.detector.api.TextFormat.TEXT;
+
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Issue;
+import com.android.tools.lint.detector.api.Location;
+import com.android.tools.lint.detector.api.Severity;
 
 public class AppCompatCallDetectorTest extends AbstractCheckTest {
     public void testArguments() throws Exception {
@@ -58,6 +67,49 @@ public class AppCompatCallDetectorTest extends AbstractCheckTest {
                     "appcompat/ActionBarActivity.java.txt=>src/android/support/v7/app/ActionBarActivity.java",
                     "appcompat/ActionMode.java.txt=>src/android/support/v7/view/ActionMode.java"
             ));
+    }
+
+    public void testNoCallWarningsInPreferenceActivitySubclass() throws Exception {
+        // https://code.google.com/p/android/issues/detail?id=75700
+        assertEquals("No warnings.",
+            lintProject(
+                    "appcompat/AppCompatPrefTest.java.txt=>src/test/pkg/AppCompatPrefTest.java",
+                    "bytecode/classes.jar=>libs/appcompat-v7-18.0.0.jar",
+                    "appcompat/IntermediateActivity.java.txt=>src/test/pkg/IntermediateActivity.java",
+                    // Stubs just to be able to do type resolution without needing the full appcompat jar
+                    "appcompat/ActionBarActivity.java.txt=>src/android/support/v7/app/ActionBarActivity.java",
+                    "appcompat/ActionMode.java.txt=>src/android/support/v7/view/ActionMode.java"
+            ));
+    }
+
+    public void testGetOldCall() throws Exception {
+        assertEquals("setProgressBarVisibility", AppCompatCallDetector.getOldCall(
+            "Should use setSupportProgressBarVisibility instead of setProgressBarVisibility name",
+                TEXT));
+        assertEquals("getActionBar", AppCompatCallDetector.getOldCall(
+                "Should use getSupportActionBar instead of getActionBar name", TEXT));
+        assertNull(AppCompatCallDetector.getOldCall("No match", TEXT));
+        assertEquals("setProgressBarVisibility", AppCompatCallDetector.getOldCall(
+                "Should use `setSupportProgressBarVisibility` instead of `setProgressBarVisibility` name",
+                RAW));
+    }
+
+    public void testGetNewCall() throws Exception {
+        assertEquals("setSupportProgressBarVisibility", AppCompatCallDetector.getNewCall(
+                "Should use setSupportProgressBarVisibility instead of setProgressBarVisibility name",
+                TEXT));
+        assertEquals("getSupportActionBar", AppCompatCallDetector.getNewCall(
+                "Should use getSupportActionBar instead of getActionBar name", TEXT));
+        assertEquals("getSupportActionBar", AppCompatCallDetector.getNewCall(
+                "Should use `getSupportActionBar` instead of `getActionBar` name", RAW));
+        assertNull(AppCompatCallDetector.getNewCall("No match", TEXT));
+    }
+
+    @Override
+    protected void checkReportedError(@NonNull Context context, @NonNull Issue issue,
+            @NonNull Severity severity, @Nullable Location location, @NonNull String message) {
+        assertNotNull(message, AppCompatCallDetector.getOldCall(message, TEXT));
+        assertNotNull(message, AppCompatCallDetector.getNewCall(message, TEXT));
     }
 
     @Override

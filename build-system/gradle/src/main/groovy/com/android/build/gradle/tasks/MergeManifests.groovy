@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 package com.android.build.gradle.tasks
-
 import com.android.build.gradle.internal.dependency.ManifestDependencyImpl
+import com.android.build.gradle.internal.variant.ApkVariantOutputData
 import com.android.builder.core.VariantConfiguration
 import com.android.manifmerger.ManifestMerger2
 import com.google.common.collect.Lists
@@ -23,7 +23,6 @@ import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Optional
-
 /**
  * A task that processes the manifest
  */
@@ -47,12 +46,16 @@ public class MergeManifests extends ManifestProcessorTask {
 
     @Input
     int getVersionCode() {
-        variantConfiguration.getVersionCode();
+        if (variantOutputData!= null) {
+            return variantOutputData.versionCode
+        }
+
+        return variantConfiguration.versionCode;
     }
 
     @Input @Optional
     String getVersionName() {
-        variantConfiguration.getVersionName();
+        return variantConfiguration.getVersionName();
     }
 
     @Input @Optional
@@ -61,6 +64,9 @@ public class MergeManifests extends ManifestProcessorTask {
     @Input @Optional
     String targetSdkVersion
 
+    @Input @Optional
+    Integer maxSdkVersion
+
     /**
      * Return a serializable version of our map of key value pairs for placeholder substitution.
      * This serialized form is only used by gradle to compare past and present tasks to determine
@@ -68,11 +74,11 @@ public class MergeManifests extends ManifestProcessorTask {
      */
     @Input @Optional
     String getManifestPlaceholders() {
-
-        return serializeMap(variantConfiguration.getMergedFlavor().getManifestPlaceholders());
+        return serializeMap(variantConfiguration.getManifestPlaceholders());
     }
 
     VariantConfiguration variantConfiguration
+    ApkVariantOutputData variantOutputData
     List<ManifestDependencyImpl> libraries
 
     /**
@@ -106,8 +112,9 @@ public class MergeManifests extends ManifestProcessorTask {
                 getVersionName(),
                 getMinSdkVersion(),
                 getTargetSdkVersion(),
+                getMaxSdkVersion(),
                 getManifestOutputFile().absolutePath,
                 ManifestMerger2.MergeType.APPLICATION,
-                variantConfiguration.getMergedFlavor().getManifestPlaceholders())
+                variantConfiguration.getManifestPlaceholders())
     }
 }

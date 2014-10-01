@@ -43,7 +43,6 @@ public class LocaleFolderDetector extends Detector implements Detector.ResourceF
     public static final Issue ISSUE = Issue.create(
             "LocaleFolder", //$NON-NLS-1$
             "Wrong locale name",
-            "Using the new locale name",
             "From the `java.util.Locale` documentation:\n" +
             "\"Note that Java uses several deprecated two-letter codes. The Hebrew (\"he\") " +
             "language code is rewritten as \"iw\", Indonesian (\"id\") as \"in\", and " +
@@ -101,12 +100,11 @@ public class LocaleFolderDetector extends Detector implements Detector.ResourceF
 
                 if (replace != null) {
                     // TODO: Check for suppress somewhere other than lint.xml?
-                    String message = String.format("The locale folder \"%1$s\" should be "
-                                    + "called \"%2$s\" instead; see the "
-                                    + "java.util.Locale documentation",
-                            language, replace
-                    );
-                    context.report(ISSUE, Location.create(context.file), message, null);
+                    String message = String.format("The locale folder \"`%1$s`\" should be "
+                                    + "called \"`%2$s`\" instead; see the "
+                                    + "`java.util.Locale` documentation",
+                            language, replace);
+                    context.report(ISSUE, Location.create(context.file), message);
                 }
             }
         }

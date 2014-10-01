@@ -245,8 +245,9 @@ public class DeviceSchema {
      *         null if there is no schema for the requested version.
      */
     public static InputStream getXsdStream(int version) {
-        assert version >= 1 && version <= NS_LATEST_VERSION;
-        String rootElement = DeviceSchema.NODE_DEVICES;                                              //$NON-NLS-1$
+        assert version >= 1 && version <= NS_LATEST_VERSION
+                : "Unexpected schema version " + version;
+        String rootElement = NODE_DEVICES;                                           //$NON-NLS-1$
         String filename = String.format("%1$s-%2$d.xsd", rootElement, version);      //$NON-NLS-1$
 
         try {

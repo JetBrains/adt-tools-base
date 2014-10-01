@@ -23,7 +23,7 @@ import com.android.builder.core.BuilderConstants
 import com.android.builder.core.DefaultBuildType
 import com.android.builder.model.BuildType
 import com.android.builder.model.ClassField
-import com.android.builder.model.NdkConfig
+import com.android.builder.internal.NdkConfig
 import com.android.builder.model.SigningConfig
 import org.gradle.api.Action
 import org.gradle.api.Project

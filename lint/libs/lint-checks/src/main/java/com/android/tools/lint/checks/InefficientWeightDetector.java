@@ -71,7 +71,6 @@ public class InefficientWeightDetector extends LayoutDetector {
     public static final Issue INEFFICIENT_WEIGHT = Issue.create(
             "InefficientWeight", //$NON-NLS-1$
             "Inefficient layout weight",
-            "Looks for inefficient weight declarations in LinearLayouts",
             "When only a single widget in a LinearLayout defines a weight, it is more " +
             "efficient to assign a width/height of `0dp` to it since it will absorb all " +
             "the remaining space anyway. With a declared width/height of `0dp` it " +
@@ -85,7 +84,6 @@ public class InefficientWeightDetector extends LayoutDetector {
     public static final Issue NESTED_WEIGHTS = Issue.create(
             "NestedWeights", //$NON-NLS-1$
             "Nested layout weights",
-            "Looks for nested layout weights, which are costly",
             "Layout weights require a widget to be measured twice. When a LinearLayout with " +
             "non-zero weights is nested inside another LinearLayout with non-zero weights, " +
             "then the number of measurements increase exponentially.",
@@ -98,7 +96,6 @@ public class InefficientWeightDetector extends LayoutDetector {
     public static final Issue BASELINE_WEIGHTS = Issue.create(
             "DisableBaselineAlignment", //$NON-NLS-1$
             "Missing `baselineAligned` attribute",
-            "Looks for LinearLayouts which should set android:baselineAligned=false",
             "When a LinearLayout is used to distribute the space proportionally between " +
             "nested layouts, the baseline alignment property should be turned off to " +
             "make the layout computation faster.",
@@ -111,8 +108,6 @@ public class InefficientWeightDetector extends LayoutDetector {
     public static final Issue WRONG_0DP = Issue.create(
             "Suspicious0dp", //$NON-NLS-1$
             "Suspicious 0dp dimension",
-            "Looks for 0dp as the width in a vertical LinearLayout or as the height in a " +
-            "horizontal",
 
             "Using 0dp as the width in a horizontal LinearLayout with weights is a useful " +
             "trick to ensure that only the weights (and not the intrinsic sizes) are used " +
@@ -130,7 +125,6 @@ public class InefficientWeightDetector extends LayoutDetector {
     public static final Issue ORIENTATION = Issue.create(
             "Orientation", //$NON-NLS-1$
             "Missing explicit orientation",
-            "Checks that LinearLayouts with multiple children set the orientation",
 
             "The default orientation of a LinearLayout is horizontal. It's pretty easy to "
             + "believe that the layout is vertical, add multiple children to it, and wonder "
@@ -196,7 +190,7 @@ public class InefficientWeightDetector extends LayoutDetector {
                         Attr sizeNode = child.getAttributeNodeNS(ANDROID_URI, ATTR_LAYOUT_WEIGHT);
                         context.report(NESTED_WEIGHTS, sizeNode,
                                 context.getLocation(sizeNode),
-                                "Nested weights are bad for performance", null);
+                                "Nested weights are bad for performance");
                         // Don't warn again
                         checkNesting = false;
                     }
@@ -231,8 +225,8 @@ public class InefficientWeightDetector extends LayoutDetector {
             if (maxWidthSet && !element.hasAttribute(ATTR_STYLE)) {
                 String message = "Wrong orientation? No orientation specified, and the default "
                         + "is horizontal, yet this layout has multiple children where at "
-                        + "least one has layout_width=\"match_parent\"";
-                context.report(ORIENTATION, element, context.getLocation(element), message, null);
+                        + "least one has `layout_width=\"match_parent\"`";
+                context.report(ORIENTATION, element, context.getLocation(element), message);
             }
         } else if (children.isEmpty() && (orientation == null || orientation.isEmpty())
                 && context.isEnabled(ORIENTATION)
@@ -253,7 +247,7 @@ public class InefficientWeightDetector extends LayoutDetector {
             if (!ignore) {
                 String message = "No orientation specified, and the default is horizontal. "
                         + "This is a common source of bugs when children are added dynamically.";
-                context.report(ORIENTATION, element, context.getLocation(element), message, null);
+                context.report(ORIENTATION, element, context.getLocation(element), message);
             }
         }
 
@@ -279,8 +273,7 @@ public class InefficientWeightDetector extends LayoutDetector {
                 context.report(BASELINE_WEIGHTS,
                         element,
                         context.getLocation(element),
-                        "Set android:baselineAligned=\"false\" on this element for better performance",
-                        null);
+                        "Set `android:baselineAligned=\"false\"` on this element for better performance");
             }
         }
 
@@ -312,11 +305,11 @@ public class InefficientWeightDetector extends LayoutDetector {
             }
             if (!size.startsWith("0")) { //$NON-NLS-1$
                 String msg = String.format(
-                        "Use a %1$s of 0dp instead of %2$s for better performance",
+                        "Use a `%1$s` of `0dp` instead of `%2$s` for better performance",
                         dimension, size);
                 context.report(INEFFICIENT_WEIGHT,
                         weightChild,
-                        context.getLocation(sizeNode != null ? sizeNode : weightChild), msg, null);
+                        context.getLocation(sizeNode != null ? sizeNode : weightChild), msg);
 
             }
         }
@@ -372,21 +365,21 @@ public class InefficientWeightDetector extends LayoutDetector {
                 if (!hasWeight) {
                     context.report(WRONG_0DP, widthNode, context.getLocation(widthNode),
                         "Suspicious size: this will make the view invisible, should be " +
-                        "used with layout_weight", null);
+                        "used with `layout_weight`");
                 } else if (isVertical) {
                     context.report(WRONG_0DP, widthNode, context.getLocation(widthNode),
                         "Suspicious size: this will make the view invisible, probably " +
-                        "intended for layout_height", null);
+                        "intended for `layout_height`");
                 }
             } else {
                 if (!hasWeight) {
                     context.report(WRONG_0DP, widthNode, context.getLocation(heightNode),
                         "Suspicious size: this will make the view invisible, should be " +
-                        "used with layout_weight", null);
+                        "used with `layout_weight`");
                 } else if (!isVertical) {
                     context.report(WRONG_0DP, widthNode, context.getLocation(heightNode),
                         "Suspicious size: this will make the view invisible, probably " +
-                        "intended for layout_width", null);
+                        "intended for `layout_width`");
                 }
             }
         }

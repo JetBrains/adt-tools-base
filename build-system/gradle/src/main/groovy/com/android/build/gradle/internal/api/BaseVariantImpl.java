@@ -18,7 +18,9 @@ package com.android.build.gradle.internal.api;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.gradle.BasePlugin;
 import com.android.build.gradle.api.BaseVariant;
+import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.tasks.AidlCompile;
 import com.android.build.gradle.tasks.GenerateBuildConfig;
@@ -31,6 +33,7 @@ import com.android.build.gradle.tasks.RenderscriptCompile;
 import com.android.builder.core.DefaultBuildType;
 import com.android.builder.core.DefaultProductFlavor;
 import com.android.builder.model.SourceProvider;
+import com.google.common.collect.Lists;
 
 import org.gradle.api.Task;
 import org.gradle.api.tasks.Copy;
@@ -40,11 +43,29 @@ import java.io.File;
 import java.util.Collection;
 import java.util.List;
 
-
+/**
+ * Base class for variants.
+ *
+ * This is a wrapper around the internal data model, in order to control what is accessible
+ * through the external API.
+ */
 abstract class BaseVariantImpl implements BaseVariant {
 
     @NonNull
-    protected abstract BaseVariantData getVariantData();
+    protected BasePlugin plugin;
+
+    protected List<BaseVariantOutput> outputs = Lists.newArrayListWithExpectedSize(1);
+
+    BaseVariantImpl(@NonNull BasePlugin plugin) {
+        this.plugin = plugin;
+    }
+
+    @NonNull
+    protected abstract BaseVariantData<?> getVariantData();
+
+    public void addOutputs(@NonNull List<BaseVariantOutput> outputs) {
+       this.outputs.addAll(outputs);
+    }
 
     @Override
     @NonNull
@@ -76,6 +97,12 @@ abstract class BaseVariantImpl implements BaseVariant {
         return getVariantData().getVariantConfiguration().getFlavorName();
     }
 
+    @NonNull
+    @Override
+    public List<BaseVariantOutput> getOutputs() {
+        return outputs;
+    }
+
     @Override
     @NonNull
     public DefaultBuildType getBuildType() {
@@ -102,14 +129,8 @@ abstract class BaseVariantImpl implements BaseVariant {
 
     @Override
     @NonNull
-    public File getOutputFile() {
-        return getVariantData().getOutputFile();
-    }
-
-    @Override
-    @NonNull
-    public String getPackageName() {
-        return getVariantData().getPackageName();
+    public String getApplicationId() {
+        return getVariantData().getApplicationId();
     }
 
     @Override
@@ -122,12 +143,6 @@ abstract class BaseVariantImpl implements BaseVariant {
     @NonNull
     public Task getCheckManifest() {
         return getVariantData().checkManifestTask;
-    }
-
-    @Override
-    @NonNull
-    public ManifestProcessorTask getProcessManifest() {
-        return getVariantData().manifestProcessorTask;
     }
 
     @Override
@@ -153,12 +168,6 @@ abstract class BaseVariantImpl implements BaseVariant {
     }
 
     @Override
-    @NonNull
-    public ProcessAndroidResources getProcessResources() {
-        return getVariantData().processResourcesTask;
-    }
-
-    @Override
     public GenerateBuildConfig getGenerateBuildConfig() {
         return getVariantData().generateBuildConfigTask;
     }
@@ -181,6 +190,12 @@ abstract class BaseVariantImpl implements BaseVariant {
         return getVariantData().obfuscationTask;
     }
 
+    @Nullable
+    @Override
+    public File getMappingFile() {
+        return getVariantData().mappingFile;
+    }
+
     @Override
     @NonNull
     public Copy getProcessJavaResources() {
@@ -190,7 +205,7 @@ abstract class BaseVariantImpl implements BaseVariant {
     @Override
     @Nullable
     public Task getAssemble() {
-        return getVariantData().assembleTask;
+        return getVariantData().assembleVariantTask;
     }
 
     @Override
@@ -211,5 +226,88 @@ abstract class BaseVariantImpl implements BaseVariant {
     @Override
     public void registerJavaGeneratingTask(@NonNull Task task, @NonNull Collection<File> sourceFolders) {
         getVariantData().registerJavaGeneratingTask(task, sourceFolders);
+    }
+
+    // ---- Deprecated, will be removed in 1.0
+    //STOPSHIP
+
+    @Override
+    @NonNull
+    public String getPackageName() {
+        // deprecation warning.
+        plugin.displayDeprecationWarning("variant.getPackageName() is deprecated. Use getApplicationId() instead");
+        return getApplicationId();
+    }
+
+
+    @Override
+    @Deprecated
+    public void setOutputFile(@NonNull File outputFile) {
+        // if more than one output, refuse to use this method
+        if (outputs.size() > 1) {
+            throw new RuntimeException(String.format(
+                    "More than one output on variant '%s', cannot call setOutput() on it. Call it on one of its outputs instead.",
+                    getName()));
+        }
+
+        // deprecation warning.
+        plugin.displayDeprecationWarning("variant.setOutputFile() is deprecated. Call it on one of variant.getOutputs() instead.");
+
+        // use the single output for compatibility.
+        outputs.get(0).setOutputFile(outputFile);
+    }
+
+    @Override
+    @NonNull
+    @Deprecated
+    public File getOutputFile() {
+        // if more than one output, refuse to use this method
+        if (outputs.size() > 1) {
+            throw new RuntimeException(String.format(
+                    "More than one output on variant '%s', cannot call getOutputFile() on it. Call it on one of its outputs instead.",
+                    getName()));
+        }
+
+        // deprecation warning.
+        plugin.displayDeprecationWarning("variant.getOutputFile() is deprecated. Call it on one of variant.getOutputs() instead.");
+
+        // use the single output for compatibility.
+        return outputs.get(0).getOutputFile();
+    }
+
+    @Override
+    @NonNull
+    @Deprecated
+    public ManifestProcessorTask getProcessManifest() {
+        // if more than one output, refuse to use this method
+        if (outputs.size() > 1) {
+            throw new RuntimeException(String.format(
+                    "More than one output on variant '%s', cannot call getProcessManifest() on it. Call it on one of its outputs instead.",
+                    getName()));
+        }
+
+        // deprecation warning.
+        plugin.displayDeprecationWarning("variant.getProcessManifest() is deprecated. Call it on one of variant.getOutputs() instead.");
+
+        // use the single output for compatibility.
+        return outputs.get(0).getProcessManifest();
+    }
+
+    @Override
+    @NonNull
+    @Deprecated
+    public ProcessAndroidResources getProcessResources() {
+        // if more than one output, refuse to use this method
+        if (outputs.size() > 1) {
+            throw new RuntimeException(String.format(
+                    "More than one output on variant '%s', cannot call getProcessResources() on it. Call it on one of its outputs instead.",
+                    getName()));
+        }
+
+        // deprecation warning.
+        plugin.displayDeprecationWarning("variant.getProcessResources() is deprecated. Call it on one of variant.getOutputs() instead.");
+
+        // use the single output for compatibility.
+        return outputs.get(0).getProcessResources();
     }
 }

@@ -33,6 +33,7 @@ import com.google.common.base.Charsets;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
+import com.google.common.io.Closeables;
 
 import org.xml.sax.SAXException;
 
@@ -49,6 +50,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -68,10 +70,10 @@ public class DeviceManager {
     private static final Pattern PATH_PROPERTY_PATTERN =
         Pattern.compile('^' + PkgProps.EXTRA_PATH + '=' + DEVICE_PROFILES_PROP + '$');
     private ILogger mLog;
-    private List<Device> mVendorDevices;
-    private List<Device> mSysImgDevices;
-    private List<Device> mUserDevices;
-    private List<Device> mDefaultDevices;
+    private Collection<Device> mVendorDevices;
+    private Collection<Device> mSysImgDevices;
+    private Collection<Device> mUserDevices;
+    private Collection<Device> mDefaultDevices;
     private final Object mLock = new Object();
     private final List<DevicesChangedListener> sListeners = new ArrayList<DevicesChangedListener>();
     private final String mOsSdkPath;
@@ -196,7 +198,7 @@ public class DeviceManager {
     }
 
     @Nullable
-    private Device getDeviceImpl(@NonNull List<Device> devicesList,
+    private Device getDeviceImpl(@NonNull Iterable<Device> devicesList,
                                  @NonNull String id,
                                  @NonNull String manufacturer) {
         for (Device d : devicesList) {
@@ -214,7 +216,7 @@ public class DeviceManager {
      * @return A copy of the list of {@link Device}s. Can be empty but not null.
      */
     @NonNull
-    public List<Device> getDevices(@NonNull DeviceFilter deviceFilter) {
+    public Collection<Device> getDevices(@NonNull DeviceFilter deviceFilter) {
         return getDevices(EnumSet.of(deviceFilter));
     }
 
@@ -226,9 +228,9 @@ public class DeviceManager {
      * @return A copy of the list of {@link Device}s. Can be empty but not null.
      */
     @NonNull
-    public List<Device> getDevices(@NonNull EnumSet<DeviceFilter> deviceFilter) {
+    public Collection<Device> getDevices(@NonNull EnumSet<DeviceFilter> deviceFilter) {
         initDevicesLists();
-        List<Device> devices = new ArrayList<Device>();
+        LinkedHashSet<Device> devices = new LinkedHashSet<Device>();
         if (mUserDevices != null && (deviceFilter.contains(DeviceFilter.USER))) {
             devices.addAll(mUserDevices);
         }
@@ -241,7 +243,7 @@ public class DeviceManager {
         if (mSysImgDevices != null && (deviceFilter.contains(DeviceFilter.SYSTEM_IMAGES))) {
             devices.addAll(mSysImgDevices);
         }
-        return Collections.unmodifiableList(devices);
+        return Collections.unmodifiableSet(devices);
     }
 
     private void initDevicesLists() {
@@ -272,10 +274,10 @@ public class DeviceManager {
                 // The device builders can throw IllegalStateExceptions if
                 // build gets called before everything is properly setup
                 mLog.error(e, null);
-                mDefaultDevices = new ArrayList<Device>();
+                mDefaultDevices = new LinkedHashSet<Device>();
             } catch (Exception e) {
                 mLog.error(e, "Error reading default devices");
-                mDefaultDevices = new ArrayList<Device>();
+                mDefaultDevices = new LinkedHashSet<Device>();
             } finally {
                 if (stream != null) {
                     try {
@@ -298,7 +300,7 @@ public class DeviceManager {
                 return false;
             }
 
-            mVendorDevices = new ArrayList<Device>();
+            mVendorDevices = new LinkedHashSet<Device>();
 
             // Load builtin devices
             InputStream stream = null;
@@ -306,12 +308,40 @@ public class DeviceManager {
                 stream = DeviceManager.class.getResourceAsStream("nexus.xml");
                 mVendorDevices.addAll(DeviceParser.parse(stream));
             } catch (Exception e) {
-                mLog.error(e, null, "Could not load devices");
+                mLog.error(e, null, "Could not load nexus devices");
             } finally {
-                if (stream != null) {
-                    try {
-                        stream.close();
-                    } catch (IOException ignore) {}
+                try {
+                    Closeables.close(stream, true /* swallowIOException */);
+                } catch (IOException e) {
+                    // Cannot happen
+                }
+            }
+
+            stream = null;
+            try {
+                stream = DeviceManager.class.getResourceAsStream("wear.xml");
+                mVendorDevices.addAll(DeviceParser.parse(stream));
+            } catch (Exception e) {
+                mLog.error(e, null, "Could not load wear devices");
+            } finally {
+                try {
+                    Closeables.close(stream, true /* swallowIOException */);
+                } catch (IOException e) {
+                    // Cannot happen
+                }
+            }
+
+            stream = null;
+            try {
+                stream = DeviceManager.class.getResourceAsStream("tv.xml");
+                mVendorDevices.addAll(DeviceParser.parse(stream));
+            } catch (Exception e) {
+                mLog.error(e, null, "Could not load tv devices");
+            } finally {
+                try {
+                    Closeables.close(stream, true /* swallowIOException */);
+                } catch (IOException e) {
+                    // Cannot happen
                 }
             }
 
@@ -340,7 +370,7 @@ public class DeviceManager {
             if (mSysImgDevices != null) {
                 return false;
             }
-            mSysImgDevices = new ArrayList<Device>();
+            mSysImgDevices = new LinkedHashSet<Device>();
 
             if (mOsSdkPath == null) {
                 return false;
@@ -389,7 +419,7 @@ public class DeviceManager {
             }
             // User devices should be saved out to
             // $HOME/.android/devices.xml
-            mUserDevices = new ArrayList<Device>();
+            mUserDevices = new LinkedHashSet<Device>();
             File userDevicesFile = null;
             try {
                 userDevicesFile = new File(
@@ -647,12 +677,14 @@ public class DeviceManager {
             mLog.error(e, "Error parsing %1$s", deviceXml.getAbsolutePath());
         } catch (IOException e) {
             mLog.error(e, "Error reading %1$s", deviceXml.getAbsolutePath());
+        } catch (AssertionError e) {
+            mLog.error(e, "Error parsing %1$s", deviceXml.getAbsolutePath());
         } catch (IllegalStateException e) {
             // The device builders can throw IllegalStateExceptions if
             // build gets called before everything is properly setup
             mLog.error(e, null);
         }
-        return new ArrayList<Device>();
+        return new LinkedHashSet<Device>();
     }
 
     private void notifyListeners() {

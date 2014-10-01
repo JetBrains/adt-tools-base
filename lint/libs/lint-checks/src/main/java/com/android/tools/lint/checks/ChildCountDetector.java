@@ -54,7 +54,6 @@ public class ChildCountDetector extends LayoutDetector {
     public static final Issue SCROLLVIEW_ISSUE = Issue.create(
             "ScrollViewCount", //$NON-NLS-1$
             "ScrollViews can have only one child",
-            "Checks that ScrollViews have exactly one child widget",
             "ScrollViews can only have one child widget. If you want more children, wrap them " +
             "in a container layout.",
             Category.CORRECTNESS,
@@ -66,7 +65,6 @@ public class ChildCountDetector extends LayoutDetector {
     public static final Issue ADAPTER_VIEW_ISSUE = Issue.create(
             "AdapterViewChildren", //$NON-NLS-1$
             "AdapterViews cannot have children in XML",
-            "Checks that AdapterViews do not define their children in XML",
             "AdapterViews such as ListViews must be configured with data from Java code, " +
             "such as a ListAdapter.",
             Category.CORRECTNESS,
@@ -104,15 +102,14 @@ public class ChildCountDetector extends LayoutDetector {
         if (tagName.equals(SCROLL_VIEW) || tagName.equals(HORIZONTAL_SCROLL_VIEW)) {
             if (childCount > 1 && getAccurateChildCount(element) > 1) {
                 context.report(SCROLLVIEW_ISSUE, element,
-                        context.getLocation(element), "A scroll view can have only one child",
-                        null);
+                        context.getLocation(element), "A scroll view can have only one child");
             }
         } else {
             // Adapter view
             if (childCount > 0 && getAccurateChildCount(element) > 0) {
                 context.report(ADAPTER_VIEW_ISSUE, element,
                         context.getLocation(element),
-                        "A list/grid should have no children declared in XML", null);
+                        "A list/grid should have no children declared in XML");
             }
         }
     }

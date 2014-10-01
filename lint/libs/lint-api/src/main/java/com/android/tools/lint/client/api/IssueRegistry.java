@@ -65,7 +65,6 @@ public abstract class IssueRegistry {
     public static final Issue PARSER_ERROR = Issue.create(
             "ParserError", //$NON-NLS-1$
             "Parser Errors",
-            "Finds files that contain fatal parser errors",
             "Lint will ignore any files that contain fatal parsing errors. These may contain " +
             "other errors, or contain code which affects issues in other files.",
             Category.CORRECTNESS,
@@ -81,7 +80,6 @@ public abstract class IssueRegistry {
     public static final Issue LINT_ERROR = Issue.create(
             "LintError", //$NON-NLS-1$
             "Lint Failure",
-            "Issues related to running lint itself, such as failure to read files, etc",
             "This issue type represents a problem running lint itself. Examples include " +
             "failure to find bytecode for source files (which means certain detectors " +
             "could not be run), parsing errors in lint configuration files, etc." +
@@ -101,7 +99,6 @@ public abstract class IssueRegistry {
     public static final Issue CANCELLED = Issue.create(
             "LintCanceled", //$NON-NLS-1$
             "Lint Canceled",
-            "Lint canceled by user",
             "Lint canceled by user; the issue report may not be complete.",
 
             Category.LINT,

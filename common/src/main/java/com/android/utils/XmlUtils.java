@@ -20,6 +20,7 @@ import static com.android.SdkConstants.ANDROID_NS_NAME;
 import static com.android.SdkConstants.ANDROID_URI;
 import static com.android.SdkConstants.APOS_ENTITY;
 import static com.android.SdkConstants.APP_PREFIX;
+import static com.android.SdkConstants.GT_ENTITY;
 import static com.android.SdkConstants.LT_ENTITY;
 import static com.android.SdkConstants.QUOT_ENTITY;
 import static com.android.SdkConstants.XMLNS;
@@ -253,6 +254,7 @@ public class XmlUtils {
         workingString = workingString.replace(LT_ENTITY, "<");
         workingString = workingString.replace(APOS_ENTITY, "'");
         workingString = workingString.replace(AMP_ENTITY, "&");
+        workingString = workingString.replace(GT_ENTITY, ">");
 
         return workingString;
     }
@@ -520,6 +522,12 @@ public class XmlUtils {
                 break;
             case Node.TEXT_NODE: {
                 sb.append(toXmlTextValue(node.getNodeValue()));
+                break;
+            }
+            case Node.CDATA_SECTION_NODE: {
+                sb.append("<![CDATA["); //$NON-NLS-1$
+                sb.append(node.getNodeValue());
+                sb.append("]]>");       //$NON-NLS-1$
                 break;
             }
             case Node.ELEMENT_NODE: {

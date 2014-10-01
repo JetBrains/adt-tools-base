@@ -24,6 +24,7 @@ import static com.android.ide.common.rendering.api.RenderResources.REFERENCE_NUL
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.ide.common.rendering.api.ResourceValue;
 import com.android.resources.ResourceType;
 
 /**
@@ -65,6 +66,10 @@ public class ResourceUrl {
     public static ResourceUrl create(@NonNull ResourceType type, @NonNull String name,
             boolean framework, boolean create) {
         return new ResourceUrl(type, name, framework, create);
+    }
+
+    public static ResourceUrl create(@NonNull ResourceValue value) {
+        return create(value.getResourceType(), value.getName(), value.isFramework(), false);
     }
 
     /**
