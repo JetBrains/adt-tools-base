@@ -22,11 +22,15 @@ import static com.android.SdkConstants.CONSTRUCTOR_NAME;
 import static com.android.SdkConstants.DOT_CLASS;
 import static com.android.SdkConstants.DOT_JAR;
 import static com.android.SdkConstants.DOT_JAVA;
+import static com.android.SdkConstants.FD_GRADLE_WRAPPER;
+import static com.android.SdkConstants.FN_GRADLE_WRAPPER_PROPERTIES;
+import static com.android.SdkConstants.FN_LOCAL_PROPERTIES;
 import static com.android.SdkConstants.RES_FOLDER;
 import static com.android.SdkConstants.SUPPRESS_ALL;
 import static com.android.SdkConstants.SUPPRESS_LINT;
 import static com.android.SdkConstants.TOOLS_URI;
 import static com.android.tools.lint.detector.api.LintUtils.isAnonymousClass;
+import static java.io.File.separator;
 import static org.objectweb.asm.Opcodes.ASM4;
 
 import com.android.annotations.NonNull;
@@ -1116,16 +1120,23 @@ public class LintDriver {
     private void checkProperties(Project project, Project main) {
         List<Detector> detectors = mScopeDetectors.get(Scope.PROPERTY_FILE);
         if (detectors != null) {
-            File file = new File(project.getDir(), "local.properties");
-            if (file.exists()) {
-                Context context = new Context(this, project, main, file);
-                fireEvent(EventType.SCANNING_FILE, context);
-                for (Detector detector : detectors) {
-                    if (detector.appliesTo(context, file)) {
-                        detector.beforeCheckFile(context);
-                        detector.run(context);
-                        detector.afterCheckFile(context);
-                    }
+            checkPropertyFile(project, main, detectors, FN_LOCAL_PROPERTIES);
+            checkPropertyFile(project, main, detectors, FD_GRADLE_WRAPPER + separator +
+                    FN_GRADLE_WRAPPER_PROPERTIES);
+        }
+    }
+
+    private void checkPropertyFile(Project project, Project main, List<Detector> detectors,
+            String relativePath) {
+        File file = new File(project.getDir(), relativePath);
+        if (file.exists()) {
+            Context context = new Context(this, project, main, file);
+            fireEvent(EventType.SCANNING_FILE, context);
+            for (Detector detector : detectors) {
+                if (detector.appliesTo(context, file)) {
+                    detector.beforeCheckFile(context);
+                    detector.run(context);
+                    detector.afterCheckFile(context);
                 }
             }
         }
