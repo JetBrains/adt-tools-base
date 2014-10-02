@@ -56,11 +56,10 @@ public class PropertyFileDetectorTest extends AbstractCheckTest {
 
     public void testUseHttpInsteadOfHttps() throws Exception {
         assertEquals(""
-                + "gradle/wrapper/gradle-wrapper.properties:5: Error: Replace HTTP with HTTPS for better security; use https\\://services.gradle.org/distributions/gradle-2.1-all.zip [PropertyEscape]\n"
+                + "gradle/wrapper/gradle-wrapper.properties:5: Warning: Replace HTTP with HTTPS for better security; use https\\://services.gradle.org/distributions/gradle-2.1-all.zip [UsingHttp]\n"
                 + "distributionUrl=http\\://services.gradle.org/distributions/gradle-2.1-all.zip\n"
                 + "                ~~~~\n"
-                + "1 errors, 0 warnings\n"
-                + "",
+                + "0 errors, 1 warnings\n",
                 lintProject("gradle_http.properties=>gradle/wrapper/gradle-wrapper.properties"));
     }
 
