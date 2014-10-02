@@ -93,6 +93,17 @@ public class PropertyFileDetector extends Detector {
 
     private static void checkLine(@NonNull Context context, @NonNull String contents,
             @NonNull String line, int offset, int valueStart) {
+        String prefix = "distributionUrl=http\\";
+        if (line.startsWith(prefix)) {
+            String https = "https" + line.substring(prefix.length() - 1);
+            String message = String.format("Replace HTTP with HTTPS for better security; use %1$s",
+              https);
+            int startOffset = offset + valueStart;
+            int endOffset = startOffset + 4; // 4: "http".length()
+            Location location = Location.create(context.file, contents, startOffset, endOffset);
+            context.report(ISSUE, location, message);
+        }
+
         boolean escaped = false;
         boolean hadNonPathEscape = false;
         StringBuilder path = new StringBuilder();
