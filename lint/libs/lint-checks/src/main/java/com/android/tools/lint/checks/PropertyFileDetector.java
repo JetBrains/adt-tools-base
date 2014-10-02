@@ -42,7 +42,7 @@ import java.util.Iterator;
  */
 public class PropertyFileDetector extends Detector {
     /** Property file not escaped */
-    public static final Issue ISSUE = Issue.create(
+    public static final Issue ESCAPE = Issue.create(
             "PropertyEscape", //$NON-NLS-1$
             "Incorrect property escapes",
             "All backslashes and colons in .property files must be escaped with " +
@@ -53,6 +53,22 @@ public class PropertyFileDetector extends Detector {
             Category.CORRECTNESS,
             6,
             Severity.ERROR,
+            new Implementation(
+                    PropertyFileDetector.class,
+                    Scope.PROPERTY_SCOPE));
+
+    /** Using HTTP instead of HTTPS for the wrapper */
+    public static final Issue HTTP = Issue.create(
+            "UsingHttp", //$NON-NLS-1$
+            "Using HTTP instead of HTTPS",
+            "The Gradle Wrapper is available both via HTTP and HTTPS. HTTPS is more " +
+            "secure since it protects against man-in-the-middle attacks etc. Older " +
+            "projects created in Android Studio used HTTP but we now default to HTTPS " +
+            "and recommend upgrading existing projects.",
+
+            Category.SECURITY,
+            6,
+            Severity.WARNING,
             new Implementation(
                     PropertyFileDetector.class,
                     Scope.PROPERTY_SCOPE));
@@ -101,7 +117,7 @@ public class PropertyFileDetector extends Detector {
             int startOffset = offset + valueStart;
             int endOffset = startOffset + 4; // 4: "http".length()
             Location location = Location.create(context.file, contents, startOffset, endOffset);
-            context.report(ISSUE, location, message);
+            context.report(HTTP, location, message);
         }
 
         boolean escaped = false;
@@ -135,7 +151,7 @@ public class PropertyFileDetector extends Detector {
             int endOffset = offset + line.length();
             Location location = Location.create(context.file, contents, startOffset,
                     endOffset);
-            context.report(ISSUE, location, message);
+            context.report(ESCAPE, location, message);
         }
     }
 
