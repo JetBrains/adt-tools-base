@@ -24,8 +24,8 @@ import org.gradle.model.internal.core.ModelPath
 import org.gradle.model.internal.core.ModelType
 import org.gradle.nativeplatform.toolchain.Clang
 import org.gradle.nativeplatform.toolchain.Gcc
-import org.gradle.nativeplatform.toolchain.ToolChainRegistry
 import org.gradle.platform.base.PlatformContainer
+import org.gradle.platform.base.ToolChainRegistry
 
 /**
  * Action to configure toolchain for native binaries.

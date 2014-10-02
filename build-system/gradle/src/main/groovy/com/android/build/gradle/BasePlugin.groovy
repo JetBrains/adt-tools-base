@@ -193,8 +193,8 @@ import static java.io.File.separator
 public abstract class BasePlugin {
     public final static String DIR_BUNDLES = "bundles";
 
-    private static final String GRADLE_MIN_VERSION = "2.2-20140925010517+0000"
-    public static final String GRADLE_TEST_VERSION = "2.2-20140925010517+0000"
+    private static final String GRADLE_MIN_VERSION = "2.2-20141001220027+0000"
+    public static final String GRADLE_TEST_VERSION = "2.2-20141001220027+0000"
     public static final String[] GRADLE_SUPPORTED_VERSIONS = [ GRADLE_MIN_VERSION ]
 
     public static final String INSTALL_GROUP = "Install"

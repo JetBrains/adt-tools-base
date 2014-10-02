@@ -88,6 +88,8 @@ class NdkConfigurationAction implements Action<Project> {
             }
         }
         project.libraries.getByName(ndkExtension.getModuleName()) {
+            List<String> abiList = ndkHandler.getSupportedAbis()
+            targetPlatform abiList.toArray(new String[abiList.size()])
             binaries.withType(DefaultSharedLibraryBinarySpec) { DefaultSharedLibraryBinarySpec binary ->
                 if (binary.targetPlatform.name.equals("current")) {
                     return
