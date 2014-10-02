@@ -36,6 +36,7 @@ import org.gradle.api.specs.Spec
 import org.gradle.configuration.project.ProjectConfigurationActionContainer
 import org.gradle.internal.Actions
 import org.gradle.internal.reflect.Instantiator
+import org.gradle.nativeplatform.StaticLibraryBinary
 import org.gradle.nativeplatform.internal.DefaultSharedLibraryBinarySpec
 import org.gradle.nativeplatform.internal.DefaultStaticLibraryBinarySpec
 
@@ -108,10 +109,10 @@ class NdkPlugin implements Plugin<Project> {
                     }
                 }))
 
-        project.afterEvaluate {
-            if (extension.moduleName != null) {
-                hideUnwantedTasks()
-            }
+        // Remove static library tasks from assemble
+        project.binaries.withType(StaticLibraryBinary) {
+            // TODO: Determine how to hide these task from task list.
+            it.buildable = false
         }
     }
 
