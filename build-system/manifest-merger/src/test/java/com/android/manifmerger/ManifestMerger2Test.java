@@ -37,6 +37,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Tests for the {@link com.android.manifmerger.ManifestMerger2} class
@@ -271,8 +273,9 @@ public class ManifestMerger2Test extends ManifestMergerTest {
             String messageRecord = indexOfSuggestions != -1
                     ? record.getMessage().substring(0, indexOfSuggestions)
                     : record.getMessage();
-            if (messageRecord.replaceAll("\t", "    ").equals(message)
-                    && record.getSeverity() == Record.Severity.valueOf(severity)) {
+            Pattern pattern = Pattern.compile(message);
+            Matcher matcher = pattern.matcher(messageRecord.replaceAll("\t", "    "));
+            if (matcher.matches() && record.getSeverity() == Record.Severity.valueOf(severity)) {
                 records.remove(record);
                 return true;
             }

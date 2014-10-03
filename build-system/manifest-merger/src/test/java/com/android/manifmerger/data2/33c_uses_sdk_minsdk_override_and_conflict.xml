@@ -60,4 +60,4 @@ package="com.example.lib3">
 </manifest>
 
 @errors
-ERROR:uses-sdk:minSdkVersion 2 cannot be smaller than version 10 declared in library ManifestMerger2Test3_lib3.xml
+ERROR:uses-sdk:minSdkVersion 2 cannot be smaller than version 10 declared in library .*ManifestMerger2Test3_lib3.xml
