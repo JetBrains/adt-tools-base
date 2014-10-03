@@ -15,7 +15,7 @@
     android:versionName="1.0.0">
 
     <!-- This is the same as writing android:minSdkVersion="1" -->
-    <uses-sdk android:targetSdkVersion="14" tools:node="replace" />
+    <uses-sdk android:targetSdkVersion="14" tools:overrideLibrary="com.example"/>
 
     <!-- Ignore permissions elements from lib that would conflict because
          their definition is different. -->

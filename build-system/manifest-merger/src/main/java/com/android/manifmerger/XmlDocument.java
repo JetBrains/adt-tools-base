@@ -39,6 +39,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -366,6 +367,18 @@ public class XmlDocument {
             return;
         }
 
+        // check that the uses-sdk element does not have any tools:node instruction.
+        if (usesSdk.isPresent()) {
+            if (usesSdk.get().getOperationType() != NodeOperationType.MERGE) {
+                mergingReport
+                        .addMessage(getSourceLocation(), 0, 0, MergingReport.Record.Severity.ERROR,
+                                String.format(
+                                        "uses-sdk declaration at %1$s cannot have a \"tools:node\" attribute",
+                                        getSourceLocation().print(true))
+                        );
+                return;
+            }
+        }
         int thisTargetSdk = getApiLevelFromAttribute(getTargetSdkVersion());
         int libraryTargetSdk = getApiLevelFromAttribute(
                 lowerPriorityDocument.getTargetSdkVersion());
@@ -407,14 +420,16 @@ public class XmlDocument {
             }
         }
 
-        if (!checkUsesSdkMinVersion(lowerPriorityDocument)) {
+        if (!checkUsesSdkMinVersion(lowerPriorityDocument, mergingReport)) {
             mergingReport.addMessage(getSourceLocation(), 0, 0, MergingReport.Record.Severity.ERROR,
                     String.format(
                             "uses-sdk:minSdkVersion %1$s cannot be smaller than version "
-                                    + "%2$s declared in library %3$s",
+                                    + "%2$s declared in library %3$s\n"
+                                    + "\tSuggestion: use tools:overrideLibrary=\"%4$s\" to force usage",
                             getMinSdkVersion(),
                             lowerPriorityDocument.getRawMinSdkVersion(),
-                            lowerPriorityDocument.getSourceLocation().print(true)
+                            lowerPriorityDocument.getSourceLocation().print(true),
+                            lowerPriorityDocument.getPackageName()
                     )
             );
             return;
@@ -483,7 +498,8 @@ public class XmlDocument {
      * Returns true if the minSdkVersion of the application and the library are compatible, false
      * otherwise.
      */
-    private boolean checkUsesSdkMinVersion(XmlDocument lowerPriorityDocument) {
+    private boolean checkUsesSdkMinVersion(XmlDocument lowerPriorityDocument,
+            MergingReport.Builder mergingReport) {
 
         int thisMinSdk = getApiLevelFromAttribute(getMinSdkVersion());
         int libraryMinSdk = getApiLevelFromAttribute(
@@ -493,20 +509,20 @@ public class XmlDocument {
         if (thisMinSdk < libraryMinSdk) {
 
             // check if this higher priority document has any tools instructions for the node
-            // or the attribute.
             Optional<XmlElement> xmlElementOptional = getByTypeAndKey(USES_SDK, null);
             if (!xmlElementOptional.isPresent()) {
                 return false;
             }
             XmlElement xmlElement = xmlElementOptional.get();
 
-            if (!xmlElement.getOperationType().isOverriding()) {
-                // last chance, check the attribute.
-                if (xmlElement.getAttributeOperationType(XmlNode.fromXmlName(
-                        "android:minSdkVersion")) == AttributeOperationType.STRICT) {
-                    return false;
+            // if we find a selector that applies to this library. the users wants to explicitly
+            // allow this higher version library to be allowed.
+            for (Selector selector : xmlElement.getOverrideUsesSdkLibrarySelectors()) {
+                if (selector.appliesTo(lowerPriorityDocument.getRootNode())) {
+                    return true;
                 }
             }
+            return false;
         }
         return true;
     }
