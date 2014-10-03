@@ -53,7 +53,7 @@ public abstract class RenderParams {
      *
      * @param projectKey An Object identifying the project. This is used for the cache mechanism.
      * @param hardwareConfig the {@link HardwareConfig}.
-    * @param renderResources a {@link RenderResources} object providing access to the resources.
+     * @param renderResources a {@link RenderResources} object providing access to the resources.
      * @param projectCallback The {@link IProjectCallback} object to get information from
      * the project.
      * @param minSdkVersion the minSdkVersion of the project
