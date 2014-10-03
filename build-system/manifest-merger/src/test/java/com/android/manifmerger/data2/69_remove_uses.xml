@@ -140,4 +140,4 @@
 @result
 
 @errors
-ERROR:uses-sdk declaration at ManifestMerger2Test0_main.xml cannot have a "tools:node" attribute
+ERROR:uses-sdk element cannot have a "tools:node" attribute
