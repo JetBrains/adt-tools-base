@@ -369,13 +369,14 @@ public class XmlDocument {
 
         // check that the uses-sdk element does not have any tools:node instruction.
         if (usesSdk.isPresent()) {
-            if (usesSdk.get().getOperationType() != NodeOperationType.MERGE) {
+            XmlElement usesSdkElement = usesSdk.get();
+            if (usesSdkElement.getOperationType() != NodeOperationType.MERGE) {
                 mergingReport
-                        .addMessage(getSourceLocation(), 0, 0, MergingReport.Record.Severity.ERROR,
-                                String.format(
-                                        "uses-sdk declaration at %1$s cannot have a \"tools:node\" attribute",
-                                        getSourceLocation().print(true))
-                        );
+                        .addMessage(getSourceLocation(),
+                                usesSdkElement.getLine(),
+                                usesSdkElement.getColumn(),
+                                MergingReport.Record.Severity.ERROR,
+                                "uses-sdk element cannot have a \"tools:node\" attribute");
                 return;
             }
         }
@@ -421,14 +422,17 @@ public class XmlDocument {
         }
 
         if (!checkUsesSdkMinVersion(lowerPriorityDocument, mergingReport)) {
-            mergingReport.addMessage(getSourceLocation(), 0, 0, MergingReport.Record.Severity.ERROR,
+            mergingReport.addMessage(getSourceLocation(),
+                    usesSdk.isPresent() ? usesSdk.get().getLine() : 0,
+                    usesSdk.isPresent() ? usesSdk.get().getColumn() : 0,
+                    MergingReport.Record.Severity.ERROR,
                     String.format(
                             "uses-sdk:minSdkVersion %1$s cannot be smaller than version "
                                     + "%2$s declared in library %3$s\n"
                                     + "\tSuggestion: use tools:overrideLibrary=\"%4$s\" to force usage",
                             getMinSdkVersion(),
                             lowerPriorityDocument.getRawMinSdkVersion(),
-                            lowerPriorityDocument.getSourceLocation().print(true),
+                            lowerPriorityDocument.getSourceLocation().print(false),
                             lowerPriorityDocument.getPackageName()
                     )
             );
