@@ -252,15 +252,17 @@ public class ModelBuilder implements ToolingModelBuilder {
         List<AndroidArtifactOutput> outputs = Lists.newArrayListWithCapacity(variantOutputs.size())
 
         for (BaseVariantOutputData variantOutputData : variantOutputs) {
-            int versionCode = (variantOutputData instanceof ApkVariantOutputData) ?
+            Integer versionCode = (variantOutputData instanceof ApkVariantOutputData) ?
                     ((ApkVariantOutputData) variantOutputData).versionCode :
                     vC.mergedFlavor.versionCode
+
+            int intVersionCode = versionCode != null ? versionCode.intValue() : 1;
 
             AndroidArtifactOutput output = new AndroidArtifactOutputImpl(
                     variantOutputData.outputFile,
                     variantOutputData.assembleTask.name,
                     variantOutputData.manifestProcessorTask.manifestOutputFile,
-                    versionCode,
+                    intVersionCode,
                     variantOutputData.densityFilter,
                     variantOutputData.abiFilter
             );
@@ -290,7 +292,7 @@ public class ModelBuilder implements ToolingModelBuilder {
     private static List<String> getProductFlavorNames(@NonNull BaseVariantData variantData) {
         List<String> flavorNames = Lists.newArrayList()
 
-        for (DefaultProductFlavor flavor : variantData.variantConfiguration.flavorConfigs) {
+        for (DefaultProductFlavor flavor : variantData.variantConfiguration.productFlavors) {
             flavorNames.add(flavor.name)
         }
 

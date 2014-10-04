@@ -42,8 +42,9 @@ public class ApplicationVariantImpl extends ApkVariantImpl implements Applicatio
 
     public ApplicationVariantImpl(
             @NonNull ApplicationVariantData variantData,
-            @NonNull BasePlugin plugin) {
-        super(plugin);
+            @NonNull BasePlugin plugin,
+            @NonNull ReadOnlyObjectProvider readOnlyObjectProvider) {
+        super(plugin, readOnlyObjectProvider);
         this.variantData = variantData;
     }
 
