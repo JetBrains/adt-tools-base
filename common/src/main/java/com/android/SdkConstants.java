@@ -531,6 +531,7 @@ public final class SdkConstants {
     public static final String CLASS_SERVICE = "android.app.Service"; //$NON-NLS-1$
     public static final String CLASS_BROADCASTRECEIVER = "android.content.BroadcastReceiver"; //$NON-NLS-1$
     public static final String CLASS_CONTENTPROVIDER = "android.content.ContentProvider"; //$NON-NLS-1$
+    public static final String CLASS_ATTRIBUTE_SET = "android.util.AttributeSet"; //$NON-NLS-1$
     public static final String CLASS_INSTRUMENTATION = "android.app.Instrumentation"; //$NON-NLS-1$
     public static final String CLASS_INSTRUMENTATION_RUNNER =
         "android.test.InstrumentationTestRunner"; //$NON-NLS-1$
@@ -556,6 +557,8 @@ public final class SdkConstants {
     public static final String CLASS_PARCELABLE = "android.os.Parcelable"; //$NON-NLS-1$
     public static final String CLASS_FRAGMENT = "android.app.Fragment"; //$NON-NLS-1$
     public static final String CLASS_V4_FRAGMENT = "android.support.v4.app.Fragment"; //$NON-NLS-1$
+    public static final String CLASS_ACTION_PROVIDER = "android.view.ActionProvider"; //$NON-NLS-1$
+    public static final String CLASS_BACKUP_AGENT = "android.app.backup.BackupAgent"; //$NON-NLS-1$
     /** MockView is part of the layoutlib bridge and used to display classes that have
      * no rendering in the graphical layout editor. */
     public static final String CLASS_MOCK_VIEW = "com.android.layoutlib.bridge.MockView"; //$NON-NLS-1$
