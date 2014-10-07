@@ -19,6 +19,7 @@ package com.android.build.gradle.internal.model;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.model.BuildType;
+import com.android.builder.model.SigningConfig;
 
 import java.io.Serializable;
 
@@ -120,6 +121,12 @@ class BuildTypeImpl extends BaseConfigImpl implements BuildType, Serializable {
     @Override
     public boolean isEmbedMicroApp() {
         return embedMicroApp;
+    }
+
+    @Nullable
+    @Override
+    public SigningConfig getSigningConfig() {
+        return null;
     }
 
     @Override

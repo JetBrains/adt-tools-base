@@ -18,7 +18,7 @@ package com.android.build.gradle.internal.variant;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.BasePlugin;
-import com.android.builder.core.VariantConfiguration;
+import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 
 /**
  * Data about a variant that produce a Library bundle (.aar)
@@ -30,7 +30,7 @@ public class LibraryVariantData extends BaseVariantData<LibVariantOutputData> im
 
     public LibraryVariantData(
             @NonNull BasePlugin basePlugin,
-            @NonNull VariantConfiguration config) {
+            @NonNull GradleVariantConfiguration config) {
         super(basePlugin, config);
 
         // create default output

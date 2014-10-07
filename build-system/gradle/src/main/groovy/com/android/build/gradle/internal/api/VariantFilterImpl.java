@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal;
+package com.android.build.gradle.internal.api;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.gradle.api.GroupableProductFlavor;
 import com.android.build.gradle.api.VariantFilter;
 import com.android.builder.model.BuildType;
 import com.android.builder.model.ProductFlavor;
@@ -30,26 +31,30 @@ import java.util.List;
  */
 public class VariantFilterImpl implements VariantFilter {
 
+    @NonNull
+    private final ReadOnlyObjectProvider readOnlyObjectProvider;
+
     private boolean ignore;
 
     private ProductFlavor defaultConfig;
     private BuildType buildType;
-    private List<ProductFlavor> flavors;
+    private List<GroupableProductFlavor> flavors;
 
-    VariantFilterImpl() {
+    public VariantFilterImpl(@NonNull ReadOnlyObjectProvider readOnlyObjectProvider) {
+        this.readOnlyObjectProvider = readOnlyObjectProvider;
     }
 
-    void reset(
+    public void reset(
             @NonNull ProductFlavor defaultConfig,
             @NonNull BuildType buildType,
-            @Nullable List<ProductFlavor> flavors) {
+            @Nullable List<GroupableProductFlavor> flavors) {
         ignore = false;
         this.defaultConfig = defaultConfig;
         this.buildType = buildType;
         this.flavors = flavors;
     }
 
-    boolean isIgnore() {
+    public boolean isIgnore() {
         return ignore;
     }
 
@@ -61,18 +66,20 @@ public class VariantFilterImpl implements VariantFilter {
     @Override
     @NonNull
     public ProductFlavor getDefaultConfig() {
-        return defaultConfig;
+        return readOnlyObjectProvider.getDefaultConfig(defaultConfig);
     }
 
     @Override
     @NonNull
     public BuildType getBuildType() {
-        return buildType;
+        return readOnlyObjectProvider.getBuildType(buildType);
     }
 
     @NonNull
     @Override
-    public List<ProductFlavor> getFlavors() {
-        return flavors != null ? flavors : Collections.<ProductFlavor>emptyList();
+    public List<GroupableProductFlavor> getFlavors() {
+        return flavors != null ?
+                new ImmutableFlavorList(flavors, readOnlyObjectProvider) :
+                Collections.<GroupableProductFlavor>emptyList();
     }
 }

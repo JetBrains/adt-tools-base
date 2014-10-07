@@ -21,6 +21,7 @@ import com.android.annotations.VisibleForTesting;
 import com.android.build.gradle.BasePlugin;
 import com.android.build.gradle.api.AndroidSourceSet;
 import com.android.build.gradle.internal.StringHelper;
+import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.dependency.VariantDependencies;
 import com.android.build.gradle.internal.tasks.CheckManifest;
 import com.android.build.gradle.internal.tasks.GenerateApkDataTask;
@@ -33,7 +34,6 @@ import com.android.build.gradle.tasks.MergeResources;
 import com.android.build.gradle.tasks.NdkCompile;
 import com.android.build.gradle.tasks.ProcessAndroidResources;
 import com.android.build.gradle.tasks.RenderscriptCompile;
-import com.android.builder.core.VariantConfiguration;
 import com.android.builder.model.SourceProvider;
 import com.google.common.collect.Lists;
 
@@ -69,7 +69,7 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
     @NonNull
     protected final BasePlugin basePlugin;
     @NonNull
-    private final VariantConfiguration variantConfiguration;
+    private final GradleVariantConfiguration variantConfiguration;
 
     private VariantDependencies variantDependency;
 
@@ -114,14 +114,13 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
 
     public BaseVariantData(
             @NonNull BasePlugin basePlugin,
-            @NonNull VariantConfiguration variantConfiguration) {
+            @NonNull GradleVariantConfiguration variantConfiguration) {
         this.basePlugin = basePlugin;
         this.variantConfiguration = variantConfiguration;
 
         // eventually, this will require a more open ended comparison.
         mSplitHandlingPolicy =
-                variantConfiguration.getMinSdkVersion() != null
-                        && variantConfiguration.getMinSdkVersion().getApiString().equals("L")
+                variantConfiguration.getMinSdkVersion().getApiString().equals("L")
                     ? SplitHandlingPolicy.RELEASE_21_AND_AFTER_POLICY
                     : SplitHandlingPolicy.PRE_21_POLICY;
 
@@ -159,7 +158,7 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
     }
 
     @NonNull
-    public VariantConfiguration getVariantConfiguration() {
+    public GradleVariantConfiguration getVariantConfiguration() {
         return variantConfiguration;
     }
 
@@ -259,7 +258,7 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
             // for the other, there's no duplicate so no issue.
             sourceList.add(generateBuildConfigTask.getSourceOutputDir());
             sourceList.add(aidlCompileTask.getSourceOutputDir());
-            if (!variantConfiguration.getMergedFlavor().getRenderscriptNdkMode()) {
+            if (!variantConfiguration.getRenderscriptNdkMode()) {
                 sourceList.add(renderscriptCompileTask.getSourceOutputDir());
             }
 
@@ -297,7 +296,7 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
             sourceFolders.add(sourceFolder);
         }
 
-        if (!variantConfiguration.getMergedFlavor().getRenderscriptNdkMode()) {
+        if (!variantConfiguration.getRenderscriptNdkMode()) {
             sourceFolder = renderscriptCompileTask.getSourceOutputDir();
             if (sourceFolder.isDirectory()) {
                 sourceFolders.add(sourceFolder);

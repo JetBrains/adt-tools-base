@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 The Android Open Source Project
+ * Copyright (C) 2014 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,45 +14,19 @@
  * limitations under the License.
  */
 
-package com.android.builder.internal;
+package com.android.build.gradle.api;
 
 import com.android.annotations.Nullable;
-
-import java.util.Collection;
-import java.util.Set;
+import com.android.builder.model.ProductFlavor;
 
 /**
- * Base class for NDK config file.
+ * A product flavor that is associated with a flavor dimension.
  */
-public interface NdkConfig {
+public interface GroupableProductFlavor extends ProductFlavor {
 
     /**
-     * The module name
+     * Returns the flavor dimension or null if non are set.
      */
     @Nullable
-    public String getModuleName();
-
-    /**
-     * The C Flags
-     */
-    @Nullable
-    public String getcFlags();
-
-    /**
-     * The LD Libs
-     */
-    @Nullable
-    public Collection<String> getLdLibs();
-
-    /**
-     * The ABI Filters
-     */
-    @Nullable
-    public Set<String> getAbiFilters();
-
-    /**
-     * The APP_STL value
-     */
-    @Nullable
-    public String getStl();
+    String getFlavorDimension();
 }

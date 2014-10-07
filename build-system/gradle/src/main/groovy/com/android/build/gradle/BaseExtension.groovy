@@ -61,7 +61,7 @@ public abstract class BaseExtension {
     private String target
     private FullRevision buildToolsRevision
 
-    final DefaultProductFlavor defaultConfig
+    final ProductFlavorDsl defaultConfig
     final AaptOptionsImpl aaptOptions
     final LintOptionsImpl lintOptions
     final DexOptionsImpl dexOptions
@@ -226,7 +226,7 @@ public abstract class BaseExtension {
         sourceSetsContainer
     }
 
-    void defaultConfig(Action<DefaultProductFlavor> action) {
+    void defaultConfig(Action<ProductFlavorDsl> action) {
         plugin.checkTasksAlreadyCreated()
         action.execute(defaultConfig)
     }
