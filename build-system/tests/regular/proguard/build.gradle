@@ -18,6 +18,10 @@ buildscript {
 }
 apply plugin: 'com.android.application'
 
+repositories {
+    mavenCentral()
+}
+
 android {
     compileSdkVersion 19
     buildToolsVersion = rootProject.ext.buildToolsVersion
@@ -35,7 +39,8 @@ android {
         proguard.initWith(buildTypes.debug)
         proguard {
             runProguard true
-            proguardFile getDefaultProguardFile('proguard-android.txt')
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-spec.pro'
+            testCoverageEnabled true
         }
     }
 
