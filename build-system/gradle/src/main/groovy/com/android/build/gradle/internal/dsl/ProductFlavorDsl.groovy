@@ -24,7 +24,7 @@ import com.android.builder.core.DefaultApiVersion
 import com.android.builder.core.DefaultProductFlavor
 import com.android.builder.model.ApiVersion
 import com.android.builder.model.ClassField
-import com.android.builder.internal.NdkConfig
+import com.android.build.gradle.internal.core.NdkConfig
 import com.android.builder.model.ProductFlavor
 import org.gradle.api.Action
 import org.gradle.api.Project
@@ -52,7 +52,6 @@ class ProductFlavorDsl extends DefaultProductFlavor {
         ndkConfig = instantiator.newInstance(NdkConfigDsl.class)
     }
 
-    @Override
     @Nullable
     public NdkConfig getNdkConfig() {
         return ndkConfig;

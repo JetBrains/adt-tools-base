@@ -97,7 +97,7 @@ public class ApkVariantOutputData extends BaseVariantOutputData {
             return versionCodeOverride;
         }
 
-        return variantData.getVariantConfiguration().getMergedFlavor().getVersionCode();
+        return variantData.getVariantConfiguration().getVersionCode();
     }
 
     public void setVersionCodeOverride(int versionCodeOverride) {

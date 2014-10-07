@@ -20,7 +20,6 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.internal.BaseConfigImpl;
 import com.android.builder.model.BuildType;
-import com.android.builder.internal.NdkConfig;
 import com.android.builder.model.SigningConfig;
 import com.google.common.base.Objects;
 
@@ -186,14 +185,10 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
         return this;
     }
 
+    @Override
     @Nullable
     public SigningConfig getSigningConfig() {
         return mSigningConfig;
-    }
-
-    @Nullable
-    public NdkConfig getNdkConfig() {
-        return null;
     }
 
     @Override
@@ -272,6 +267,11 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
                 .add("zipAlign", mZipAlign)
                 .add("signingConfig", mSigningConfig)
                 .add("embedMicroApp", mEmbedMicroApp)
+                .add("mBuildConfigFields", getBuildConfigFields())
+                .add("mResValues", getResValues())
+                .add("mProguardFiles", getProguardFiles())
+                .add("mConsumerProguardFiles", getConsumerProguardFiles())
+                .add("mManifestPlaceholders", getManifestPlaceholders())
                 .toString();
     }
 }

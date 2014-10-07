@@ -69,19 +69,21 @@ public class DefaultProductFlavorTest extends TestCase {
     }
 
     public void testClone() {
-        ProductFlavor flavor = mCustom.clone();
+        ProductFlavor flavor = DefaultProductFlavor.clone(mCustom);
         assertEquals(mCustom, flavor);
     }
 
     public void testMergeOnDefault() {
-        ProductFlavor flavor = mCustom.mergeOver(mDefault);
+        ProductFlavor flavor = DefaultProductFlavor.mergeFlavors(mDefault, mCustom);
 
         assertNotNull(flavor.getMinSdkVersion());
         assertEquals(42, flavor.getMinSdkVersion().getApiLevel());
         assertNotNull(flavor.getTargetSdkVersion());
         assertEquals(43, flavor.getTargetSdkVersion().getApiLevel());
-        assertEquals(17, flavor.getRenderscriptTargetApi());
-        assertEquals(44, flavor.getVersionCode());
+        assertNotNull(flavor.getRenderscriptTargetApi());
+        assertEquals(17, flavor.getRenderscriptTargetApi().intValue());
+        assertNotNull(flavor.getVersionCode());
+        assertEquals(44, flavor.getVersionCode().intValue());
         assertEquals("42.0", flavor.getVersionName());
         assertEquals("com.forty.two", flavor.getApplicationId());
         assertEquals("com.forty.two.test", flavor.getTestApplicationId());
@@ -91,14 +93,16 @@ public class DefaultProductFlavorTest extends TestCase {
     }
 
     public void testMergeOnCustom() {
-        ProductFlavor flavor = mDefault.mergeOver(mCustom);
+        ProductFlavor flavor = DefaultProductFlavor.mergeFlavors(mDefault, mCustom);
 
         assertNotNull(flavor.getMinSdkVersion());
         assertEquals(42, flavor.getMinSdkVersion().getApiLevel());
         assertNotNull(flavor.getTargetSdkVersion());
         assertEquals(43, flavor.getTargetSdkVersion().getApiLevel());
-        assertEquals(17, flavor.getRenderscriptTargetApi());
-        assertEquals(44, flavor.getVersionCode());
+        assertNotNull(flavor.getRenderscriptTargetApi());
+        assertEquals(17, flavor.getRenderscriptTargetApi().intValue());
+        assertNotNull(flavor.getVersionCode());
+        assertEquals(44, flavor.getVersionCode().intValue());
         assertEquals("42.0", flavor.getVersionName());
         assertEquals("com.forty.two", flavor.getApplicationId());
         assertEquals("com.forty.two.test", flavor.getTestApplicationId());
@@ -108,12 +112,12 @@ public class DefaultProductFlavorTest extends TestCase {
     }
 
     public void testMergeDefaultOnDefault() {
-        ProductFlavor flavor = mDefault.mergeOver(mDefault2);
+        ProductFlavor flavor = DefaultProductFlavor.mergeFlavors(mDefault2, mDefault);
 
         assertNull(flavor.getMinSdkVersion());
         assertNull(flavor.getTargetSdkVersion());
-        assertEquals(-1, flavor.getRenderscriptTargetApi());
-        assertEquals(-1, flavor.getVersionCode());
+        assertNull(flavor.getRenderscriptTargetApi());
+        assertNull(flavor.getVersionCode());
         assertNull(flavor.getVersionName());
         assertNull(flavor.getApplicationId());
         assertNull(flavor.getTestApplicationId());
@@ -123,18 +127,18 @@ public class DefaultProductFlavorTest extends TestCase {
     }
 
     public void testResourceConfigMerge() {
-        ProductFlavor productflavor = mCustom.mergeOver(mCustom2);
+        ProductFlavor flavor = DefaultProductFlavor.mergeFlavors(mCustom2, mCustom);
 
-        Collection<String> configs = productflavor.getResourceConfigurations();
+        Collection<String> configs = flavor.getResourceConfigurations();
         assertEquals(2, configs.size());
         assertTrue(configs.contains("hdpi"));
         assertTrue(configs.contains("ldpi"));
     }
 
     public void testManifestPlaceholdersMerge() {
-        ProductFlavor productFlavor = mCustom.mergeOver(mCustom2);
+        ProductFlavor flavor = DefaultProductFlavor.mergeFlavors(mCustom2, mCustom);
 
-        Map<String, String> manifestPlaceholders = productFlavor.getManifestPlaceholders();
+        Map<String, String> manifestPlaceholders = flavor.getManifestPlaceholders();
         assertEquals(3, manifestPlaceholders.size());
         assertEquals("oneValue", manifestPlaceholders.get("one"));
         assertEquals("twoValue", manifestPlaceholders.get("two"));
@@ -143,9 +147,9 @@ public class DefaultProductFlavorTest extends TestCase {
     }
 
     public void testResValuesMerge() {
-        ProductFlavor productFlavor = mCustom.mergeOver(mCustom2);
+        ProductFlavor flavor = DefaultProductFlavor.mergeFlavors(mCustom2, mCustom);
 
-        Map<String, ClassField> resValues = productFlavor.getResValues();
+        Map<String, ClassField> resValues = flavor.getResValues();
         assertEquals(3, resValues.size());
         assertEquals("oneValue", resValues.get("one").getValue());
         assertEquals("twoValue", resValues.get("two").getValue());
@@ -153,9 +157,9 @@ public class DefaultProductFlavorTest extends TestCase {
     }
 
     public void testBuildConfigFieldMerge() {
-        ProductFlavor productFlavor = mCustom.mergeOver(mCustom2);
+        ProductFlavor flavor = DefaultProductFlavor.mergeFlavors(mCustom2, mCustom);
 
-        Map<String, ClassField> buildConfigFields = productFlavor.getBuildConfigFields();
+        Map<String, ClassField> buildConfigFields = flavor.getBuildConfigFields();
         assertEquals(3, buildConfigFields.size());
         assertEquals("oneValue", buildConfigFields.get("one").getValue());
         assertEquals("twoValue", buildConfigFields.get("two").getValue());

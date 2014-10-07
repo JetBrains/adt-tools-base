@@ -110,4 +110,10 @@ public interface BuildType extends BaseConfig {
      * Returns whether the variant embeds the micro app.
      */
     boolean isEmbedMicroApp();
+
+    /**
+     * Returns the associated signing config or null if none are set on the build type.
+     */
+    @Nullable
+    SigningConfig getSigningConfig();
 }

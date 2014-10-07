@@ -297,12 +297,10 @@ public class AndroidBuilder {
      * @return a non null, but possibly empty set.
      */
     @NonNull
-    public Set<File> getCompileClasspath(@NonNull VariantConfiguration variantConfiguration) {
+    public Set<File> getCompileClasspath(@NonNull VariantConfiguration<?,?,?> variantConfiguration) {
         Set<File> compileClasspath = variantConfiguration.getCompileClasspath();
 
-        ProductFlavor mergedFlavor = variantConfiguration.getMergedFlavor();
-
-        if (mergedFlavor.getRenderscriptSupportMode()) {
+        if (variantConfiguration.getRenderscriptSupportMode()) {
             File renderScriptSupportJar = getRenderScriptSupportJar();
 
             Set<File> fullJars = Sets.newHashSetWithExpectedSize(compileClasspath.size() + 1);
@@ -325,12 +323,10 @@ public class AndroidBuilder {
      * @return a non null, but possibly empty list.
      */
     @NonNull
-    public Set<File> getPackagedJars(@NonNull VariantConfiguration variantConfiguration) {
+    public Set<File> getPackagedJars(@NonNull VariantConfiguration<?,?,?> variantConfiguration) {
         Set<File> packagedJars = variantConfiguration.getPackagedJars();
 
-        ProductFlavor mergedFlavor = variantConfiguration.getMergedFlavor();
-
-        if (mergedFlavor.getRenderscriptSupportMode()) {
+        if (variantConfiguration.getRenderscriptSupportMode()) {
             File renderScriptSupportJar = getRenderScriptSupportJar();
 
             Set<File> fullJars = Sets.newHashSetWithExpectedSize(packagedJars.size() + 1);
@@ -1733,6 +1729,7 @@ public class AndroidBuilder {
 
         CertificateInfo certificateInfo = null;
         if (signingConfig != null && signingConfig.isSigningReady()) {
+            //noinspection ConstantConditions
             certificateInfo = KeystoreHelper.getCertificateInfo(signingConfig.getStoreType(),
                     signingConfig.getStoreFile(), signingConfig.getStorePassword(),
                     signingConfig.getKeyPassword(), signingConfig.getKeyAlias());

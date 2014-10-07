@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.builder.internal;
+package com.android.build.gradle.internal.core;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;

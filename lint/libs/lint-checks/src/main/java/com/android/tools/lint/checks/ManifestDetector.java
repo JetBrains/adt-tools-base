@@ -522,9 +522,9 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
                         // for 0.10 shortly but until 0.11 is available this is a stopgap measure
                     }
                 } else if (ATTR_VERSION_CODE.equals(attributeName)) {
-                    int versionCode = flavor.getVersionCode();
-                    if (versionCode != -1) {
-                        gradleValue = Integer.toString(versionCode);
+                    Integer versionCode = flavor.getVersionCode();
+                    if (versionCode != null) {
+                        gradleValue = versionCode.toString();
                     }
                 } else if (ATTR_VERSION_NAME.equals(attributeName)) {
                     gradleValue = flavor.getVersionName();

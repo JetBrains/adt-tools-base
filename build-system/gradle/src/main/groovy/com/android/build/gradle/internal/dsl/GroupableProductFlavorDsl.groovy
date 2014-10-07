@@ -17,13 +17,14 @@
 package com.android.build.gradle.internal.dsl
 import com.android.annotations.NonNull
 import com.android.build.gradle.BasePlugin
+import com.android.build.gradle.api.GroupableProductFlavor
 import org.gradle.api.Project
 import org.gradle.api.logging.Logger
 import org.gradle.internal.reflect.Instantiator
 /**
  * A version of ProductFlavorDsl that can receive a group name
  */
-public class GroupableProductFlavorDsl extends ProductFlavorDsl {
+public class GroupableProductFlavorDsl extends ProductFlavorDsl implements GroupableProductFlavor {
 
     String flavorDimension
 

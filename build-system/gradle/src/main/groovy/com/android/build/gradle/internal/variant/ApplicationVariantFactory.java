@@ -21,9 +21,11 @@ import com.android.annotations.Nullable;
 import com.android.build.gradle.BasePlugin;
 import com.android.build.gradle.api.BaseVariant;
 import com.android.build.gradle.api.BaseVariantOutput;
+import com.android.build.gradle.internal.api.ReadOnlyObjectProvider;
 import com.android.build.gradle.internal.api.ApkVariantImpl;
 import com.android.build.gradle.internal.api.ApkVariantOutputImpl;
 import com.android.build.gradle.internal.api.ApplicationVariantImpl;
+import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.builder.core.VariantConfiguration;
 import com.google.common.collect.Lists;
 
@@ -51,7 +53,7 @@ public class ApplicationVariantFactory implements VariantFactory<ApplicationVari
     @Override
     @NonNull
     public ApplicationVariantData createVariantData(
-            @NonNull VariantConfiguration variantConfiguration,
+            @NonNull GradleVariantConfiguration variantConfiguration,
             @NonNull Set<String> densities,
             @NonNull Set<String> abis,
             @NonNull Set<String> compatibleScreens) {
@@ -79,10 +81,12 @@ public class ApplicationVariantFactory implements VariantFactory<ApplicationVari
 
     @Override
     @NonNull
-    public BaseVariant createVariantApi(@NonNull BaseVariantData<? extends BaseVariantOutputData> variantData) {
+    public BaseVariant createVariantApi(
+            @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData,
+            @NonNull ReadOnlyObjectProvider readOnlyObjectProvider) {
         // create the base variant object.
         ApplicationVariantImpl variant = basePlugin.getInstantiator().newInstance(
-                ApplicationVariantImpl.class, variantData, basePlugin);
+                ApplicationVariantImpl.class, variantData, basePlugin, readOnlyObjectProvider);
 
         // now create the output objects
         createApkOutputApiObjects(basePlugin, variantData, variant);

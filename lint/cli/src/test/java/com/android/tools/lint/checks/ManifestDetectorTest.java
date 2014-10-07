@@ -572,7 +572,7 @@ public class ManifestDetectorTest extends AbstractCheckTest {
                                         "ManifestDetectorTest_testManifestPackagePlaceholder")) {
                                 expect(flavor.getMinSdkVersion()).andReturn(null).anyTimes();
                                 expect(flavor.getTargetSdkVersion()).andReturn(null).anyTimes();
-                                expect(flavor.getVersionCode()).andReturn(-1).anyTimes();
+                                expect(flavor.getVersionCode()).andReturn(null).anyTimes();
                                 expect(flavor.getVersionName()).andReturn(null).anyTimes();
                             } else {
                                 assertEquals(getName(), "ManifestDetectorTest_testGradleOverrides");

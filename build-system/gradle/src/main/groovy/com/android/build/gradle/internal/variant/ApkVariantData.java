@@ -18,8 +18,8 @@ package com.android.build.gradle.internal.variant;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.BasePlugin;
+import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.tasks.Dex;
-import com.android.builder.core.VariantConfiguration;
 
 import org.gradle.api.DefaultTask;
 
@@ -34,7 +34,7 @@ public abstract class ApkVariantData extends BaseVariantData<ApkVariantOutputDat
 
     protected ApkVariantData(
             @NonNull BasePlugin basePlugin,
-            @NonNull VariantConfiguration config) {
+            @NonNull GradleVariantConfiguration config) {
         super(basePlugin, config);
     }
 
