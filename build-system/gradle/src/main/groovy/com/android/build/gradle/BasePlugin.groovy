@@ -27,6 +27,7 @@ import com.android.build.gradle.internal.ProductFlavorData
 import com.android.build.gradle.internal.SdkHandler
 import com.android.build.gradle.internal.VariantManager
 import com.android.build.gradle.internal.api.DefaultAndroidSourceSet
+import com.android.build.gradle.internal.core.GradleVariantConfiguration
 import com.android.build.gradle.internal.coverage.JacocoInstrumentTask
 import com.android.build.gradle.internal.coverage.JacocoPlugin
 import com.android.build.gradle.internal.coverage.JacocoReportTask
@@ -40,6 +41,7 @@ import com.android.build.gradle.internal.dsl.BuildTypeDsl
 import com.android.build.gradle.internal.dsl.BuildTypeFactory
 import com.android.build.gradle.internal.dsl.GroupableProductFlavorDsl
 import com.android.build.gradle.internal.dsl.GroupableProductFlavorFactory
+import com.android.build.gradle.internal.dsl.ProductFlavorDsl
 import com.android.build.gradle.internal.dsl.SigningConfigDsl
 import com.android.build.gradle.internal.dsl.SigningConfigFactory
 import com.android.build.gradle.internal.model.ArtifactMetaDataImpl
@@ -96,7 +98,6 @@ import com.android.build.gradle.tasks.SplitZipAlign
 import com.android.build.gradle.tasks.ZipAlign
 import com.android.builder.core.AndroidBuilder
 import com.android.builder.core.DefaultBuildType
-import com.android.builder.core.DefaultProductFlavor
 import com.android.builder.core.VariantConfiguration
 import com.android.builder.dependency.DependencyContainer
 import com.android.builder.dependency.JarDependency
@@ -122,6 +123,7 @@ import com.android.ide.common.internal.ExecutorSingleton
 import com.android.resources.Density
 import com.android.sdklib.SdkVersionInfo
 import com.android.utils.ILogger
+import com.google.common.base.Predicate
 import com.google.common.collect.ArrayListMultimap
 import com.google.common.collect.ImmutableSet
 import com.google.common.collect.ListMultimap
@@ -129,7 +131,6 @@ import com.google.common.collect.Lists
 import com.google.common.collect.Maps
 import com.google.common.collect.Multimap
 import com.google.common.collect.Sets
-import com.google.common.base.Predicate
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.Project
@@ -222,7 +223,7 @@ public abstract class BasePlugin {
 
     private boolean hasCreatedTasks = false
 
-    private ProductFlavorData<DefaultProductFlavor> defaultConfigData
+    private ProductFlavorData<ProductFlavorDsl> defaultConfigData
     private final Collection<String> unresolvedDependencies = Sets.newHashSet();
 
     protected DefaultAndroidSourceSet mainSourceSet
@@ -388,7 +389,7 @@ public abstract class BasePlugin {
         mainSourceSet = (DefaultAndroidSourceSet) extension.sourceSets.create(extension.defaultConfig.name)
         testSourceSet = (DefaultAndroidSourceSet) extension.sourceSets.create(ANDROID_TEST)
 
-        defaultConfigData = new ProductFlavorData<DefaultProductFlavor>(
+        defaultConfigData = new ProductFlavorData<ProductFlavorDsl>(
                 extension.defaultConfig, mainSourceSet,
                 testSourceSet, project)
     }
@@ -489,7 +490,7 @@ public abstract class BasePlugin {
         }
     }
 
-    ProductFlavorData getDefaultConfigData() {
+    ProductFlavorData<ProductFlavorDsl> getDefaultConfigData() {
         return defaultConfigData
     }
 
@@ -871,7 +872,7 @@ public abstract class BasePlugin {
 
     public void createRenderscriptTask(
             @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData) {
-        VariantConfiguration config = variantData.variantConfiguration
+        GradleVariantConfiguration config = variantData.variantConfiguration
 
         // get single output for now.
         BaseVariantOutputData variantOutputData = variantData.outputs.get(0)
@@ -887,7 +888,7 @@ public abstract class BasePlugin {
         }
 
         ProductFlavor mergedFlavor = config.mergedFlavor
-        boolean ndkMode = mergedFlavor.renderscriptNdkMode
+        boolean ndkMode = config.renderscriptNdkMode
 
         variantData.resourceGenTask.dependsOn renderscriptTask
         // only put this dependency if rs will generate Java code
@@ -899,7 +900,8 @@ public abstract class BasePlugin {
         renderscriptTask.plugin = this
 
         renderscriptTask.conventionMapping.targetApi = {
-            int targetApi = mergedFlavor.renderscriptTargetApi
+            int targetApi = mergedFlavor.renderscriptTargetApi != null ?
+                    mergedFlavor.renderscriptTargetApi : -1
             ApiVersion apiVersion = config.getMinSdkVersion()
             if (apiVersion != null) {
                 int minSdk = apiVersion.apiLevel
@@ -913,7 +915,7 @@ public abstract class BasePlugin {
             return targetApi
         }
 
-        renderscriptTask.supportMode = mergedFlavor.renderscriptSupportMode
+        renderscriptTask.supportMode = config.renderscriptSupportMode
         renderscriptTask.ndkMode = ndkMode
         renderscriptTask.debugBuild = config.buildType.renderscriptDebugBuild
         renderscriptTask.optimLevel = config.buildType.renderscriptOptimLevel

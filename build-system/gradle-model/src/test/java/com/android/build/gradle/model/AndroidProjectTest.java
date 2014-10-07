@@ -1432,11 +1432,11 @@ public class AndroidProjectTest extends TestCase {
         @NonNull private final String name;
 
         private String applicationId = null;
-        private int versionCode = -1;
+        private Integer versionCode = null;
         private String versionName = null;
         private ApiVersion minSdkVersion = null;
         private ApiVersion targetSdkVersion = null;
-        private int renderscriptTargetApi = -1;
+        private Integer renderscriptTargetApi = null;
         private String testApplicationId = null;
         private String testInstrumentationRunner = null;
         private Boolean testHandleProfiling = null;
@@ -1452,7 +1452,7 @@ public class AndroidProjectTest extends TestCase {
             return this;
         }
 
-        ProductFlavorTester setVersionCode(int versionCode) {
+        ProductFlavorTester setVersionCode(Integer versionCode) {
             this.versionCode = versionCode;
             return this;
         }
@@ -1472,7 +1472,7 @@ public class AndroidProjectTest extends TestCase {
             return this;
         }
 
-        ProductFlavorTester setRenderscriptTargetApi(int renderscriptTargetApi) {
+        ProductFlavorTester setRenderscriptTargetApi(Integer renderscriptTargetApi) {
             this.renderscriptTargetApi = renderscriptTargetApi;
             return this;
         }

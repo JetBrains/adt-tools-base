@@ -28,12 +28,17 @@ import com.android.build.gradle.BaseExtension;
 import com.android.build.gradle.BasePlugin;
 import com.android.build.gradle.api.AndroidSourceSet;
 import com.android.build.gradle.api.BaseVariant;
+import com.android.build.gradle.api.GroupableProductFlavor;
+import com.android.build.gradle.internal.api.ReadOnlyObjectProvider;
 import com.android.build.gradle.internal.api.DefaultAndroidSourceSet;
 import com.android.build.gradle.internal.api.TestVariantImpl;
 import com.android.build.gradle.internal.api.TestedVariant;
+import com.android.build.gradle.internal.api.VariantFilterImpl;
+import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.dependency.VariantDependencies;
 import com.android.build.gradle.internal.dsl.BuildTypeDsl;
 import com.android.build.gradle.internal.dsl.GroupableProductFlavorDsl;
+import com.android.build.gradle.internal.dsl.ProductFlavorDsl;
 import com.android.build.gradle.internal.dsl.SigningConfigDsl;
 import com.android.build.gradle.internal.dsl.Splits;
 import com.android.build.gradle.internal.variant.ApplicationVariantFactory;
@@ -42,9 +47,7 @@ import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.internal.variant.TestVariantData;
 import com.android.build.gradle.internal.variant.TestedVariantData;
 import com.android.build.gradle.internal.variant.VariantFactory;
-import com.android.builder.core.DefaultProductFlavor;
 import com.android.builder.core.VariantConfiguration;
-import com.android.builder.model.ProductFlavor;
 import com.android.builder.model.SigningConfig;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
@@ -76,12 +79,19 @@ public class VariantManager {
     @NonNull
     private final VariantFactory variantFactory;
 
+    @NonNull
     private final Map<String, BuildTypeData> buildTypes = Maps.newHashMap();
+    @NonNull
     private final Map<String, ProductFlavorData<GroupableProductFlavorDsl>> productFlavors = Maps.newHashMap();
+    @NonNull
     private final Map<String, SigningConfig> signingConfigs = Maps.newHashMap();
 
-    private final VariantFilterImpl variantFilter = new VariantFilterImpl();
+    @NonNull
+    private final ReadOnlyObjectProvider readOnlyObjectProvider = new ReadOnlyObjectProvider();
+    @NonNull
+    private final VariantFilterImpl variantFilter = new VariantFilterImpl(readOnlyObjectProvider);
 
+    @NonNull
     private final List<BaseVariantData<? extends BaseVariantOutputData>> variantDataList = Lists.newArrayList();
 
     public VariantManager(
@@ -182,9 +192,9 @@ public class VariantManager {
         }
 
         for (BaseVariantData variantData : variantDataList) {
-            if (variantData.getVariantConfiguration().getType() == VariantConfiguration.Type.TEST) {
+            if (variantData.getVariantConfiguration().getType() == GradleVariantConfiguration.Type.TEST) {
                 ProductFlavorData defaultConfigData = basePlugin.getDefaultConfigData();
-                VariantConfiguration testVariantConfig = variantData.getVariantConfiguration();
+                GradleVariantConfiguration testVariantConfig = variantData.getVariantConfiguration();
                 BaseVariantData testedVariantData= (BaseVariantData) ((TestVariantData)variantData).getTestedVariantData();
 
                 // If the variant being tested is a library variant, VariantDependencies must be
@@ -218,15 +228,15 @@ public class VariantManager {
                             .getAssembleTask().dependsOn(variantData.assembleVariantTask);
 
                     // each flavor
-                    VariantConfiguration variantConfig = variantData.getVariantConfiguration();
-                    for (ProductFlavor flavor : variantConfig.getFlavorConfigs()) {
+                    GradleVariantConfiguration variantConfig = variantData.getVariantConfiguration();
+                    for (GroupableProductFlavorDsl flavor : variantConfig.getProductFlavors()) {
                         productFlavors.get(flavor.getName()).getAssembleTask()
                                 .dependsOn(variantData.assembleVariantTask);
                     }
 
                     Task assembleTask = null;
                     // assembleTask for this flavor(dimension), created on demand if needed.
-                    if (variantConfig.getFlavorConfigs().size() > 1) {
+                    if (variantConfig.getProductFlavors().size() > 1) {
                         String name = StringHelper.capitalize(variantConfig.getFlavorName());
                         assembleTask = project.getTasks().findByName("assemble" + name);
                         if (assembleTask == null) {
@@ -372,9 +382,9 @@ public class VariantManager {
 
         BaseVariantData<?> testedVariantData = null;
 
-        ProductFlavorData defaultConfigData = basePlugin.getDefaultConfigData();
+        ProductFlavorData<ProductFlavorDsl> defaultConfigData = basePlugin.getDefaultConfigData();
 
-        DefaultProductFlavor defaultConfig = defaultConfigData.getProductFlavor();
+        ProductFlavorDsl defaultConfig = defaultConfigData.getProductFlavor();
         DefaultAndroidSourceSet defaultConfigSourceSet = defaultConfigData.getSourceSet();
 
         Closure<Void> variantFilterClosure = basePlugin.getExtension().getVariantFilter();
@@ -391,7 +401,7 @@ public class VariantManager {
             }
 
             if (!ignore) {
-                VariantConfiguration variantConfig = new VariantConfiguration(
+                GradleVariantConfiguration variantConfig = new GradleVariantConfiguration(
                         defaultConfig,
                         defaultConfigSourceSet,
                         buildTypeData.getBuildType(),
@@ -423,9 +433,9 @@ public class VariantManager {
         }
 
         if (testedVariantData != null) {
-            VariantConfiguration testedConfig = testedVariantData.getVariantConfiguration();
+            GradleVariantConfiguration testedConfig = testedVariantData.getVariantConfiguration();
             // handle the test variant
-            VariantConfiguration testVariantConfig = new VariantConfiguration(
+            GradleVariantConfiguration testVariantConfig = new GradleVariantConfiguration(
                     defaultConfig,
                     defaultConfigData.getTestSourceSet(),
                     testData.getBuildType(),
@@ -457,7 +467,7 @@ public class VariantManager {
             @NonNull Set<String> densities,
             @NonNull Set<String> abis,
             @Nullable SigningConfig signingOverride,
-            @NonNull ProductFlavorData... flavorDataList) {
+            @NonNull ProductFlavorData<GroupableProductFlavorDsl>... flavorDataList) {
 
         BuildTypeData testData = buildTypes.get(extension.getTestBuildType());
         if (testData == null) {
@@ -467,14 +477,17 @@ public class VariantManager {
 
         BaseVariantData testedVariantData = null;
 
-        ProductFlavorData defaultConfigData = basePlugin.getDefaultConfigData();
-        DefaultProductFlavor defaultConfig = defaultConfigData.getProductFlavor();
+        ProductFlavorData<ProductFlavorDsl> defaultConfigData = basePlugin.getDefaultConfigData();
+        ProductFlavorDsl defaultConfig = defaultConfigData.getProductFlavor();
         DefaultAndroidSourceSet defaultConfigSourceSet = defaultConfigData.getSourceSet();
 
         final List<ConfigurationProvider> variantProviders = Lists.newArrayListWithCapacity(flavorDataList.length + 2);
 
         Closure<Void> variantFilterClosure = basePlugin.getExtension().getVariantFilter();
-        final List<ProductFlavor> productFlavorList = (variantFilterClosure != null) ? Lists.<ProductFlavor>newArrayListWithCapacity(flavorDataList.length) : null;
+        @SuppressWarnings("VariableNotUsedInsideIf")
+        final List<GroupableProductFlavor> productFlavorList = (variantFilterClosure != null) ?
+                Lists.<GroupableProductFlavor>newArrayListWithCapacity(flavorDataList.length) :
+                null;
 
         Set<String> compatibleScreens = basePlugin.getExtension().getSplits().getDensity().getCompatibleScreens();
 
@@ -482,7 +495,7 @@ public class VariantManager {
             boolean ignore = false;
             if (variantFilterClosure != null) {
                 productFlavorList.clear();
-                for (ProductFlavorData data : flavorDataList) {
+                for (ProductFlavorData<GroupableProductFlavorDsl> data : flavorDataList) {
                     productFlavorList.add(data.getProductFlavor());
                 }
                 variantFilter.reset(defaultConfig, buildTypeData.getBuildType(), productFlavorList);
@@ -497,7 +510,7 @@ public class VariantManager {
                 variantProviders.clear();
                 variantProviders.add(buildTypeData);
 
-                VariantConfiguration variantConfig = new VariantConfiguration(
+                GradleVariantConfiguration variantConfig = new GradleVariantConfiguration(
                         defaultConfig,
                         defaultConfigSourceSet,
                         buildTypeData.getBuildType(),
@@ -505,18 +518,18 @@ public class VariantManager {
                         variantFactory.getVariantConfigurationType(),
                         signingOverride);
 
-                for (ProductFlavorData data : flavorDataList) {
-                    String dimensionName = "";
-                    DefaultProductFlavor productFlavor = data.getProductFlavor();
+                for (ProductFlavorData<GroupableProductFlavorDsl> data : flavorDataList) {
+                    GroupableProductFlavorDsl productFlavor = data.getProductFlavor();
 
-                    if (productFlavor instanceof GroupableProductFlavorDsl) {
-                        dimensionName = ((GroupableProductFlavorDsl) productFlavor).getFlavorDimension();
+                    String dimensionName = productFlavor.getFlavorDimension();
+                    if (dimensionName == null) {
+                        dimensionName = "";
                     }
+
                     variantConfig.addProductFlavor(
                             productFlavor,
                             data.getSourceSet(),
-                            dimensionName
-                    );
+                            dimensionName);
                     variantProviders.add(data.getMainProvider());
                 }
 
@@ -562,10 +575,10 @@ public class VariantManager {
         }
 
         if (testedVariantData != null) {
-            VariantConfiguration testedConfig = testedVariantData.getVariantConfiguration();
+            GradleVariantConfiguration testedConfig = testedVariantData.getVariantConfiguration();
 
             // handle test variant
-            VariantConfiguration testVariantConfig = new VariantConfiguration(
+            GradleVariantConfiguration testVariantConfig = new GradleVariantConfiguration(
                     defaultConfig,
                     defaultConfigData.getTestSourceSet(),
                     testData.getBuildType(),
@@ -579,12 +592,12 @@ public class VariantManager {
             // flavors, defaultConfig. No build type for tests
             List<ConfigurationProvider> testVariantProviders = Lists.newArrayListWithExpectedSize(1 + flavorDataList.length);
 
-            for (ProductFlavorData data : flavorDataList) {
-                String dimensionName = "";
-                DefaultProductFlavor productFlavor = data.getProductFlavor();
+            for (ProductFlavorData<GroupableProductFlavorDsl> data : flavorDataList) {
+                GroupableProductFlavorDsl productFlavor = data.getProductFlavor();
 
-                if (productFlavor instanceof GroupableProductFlavorDsl) {
-                    dimensionName = ((GroupableProductFlavorDsl) productFlavor).getFlavorDimension();
+                String dimensionName = productFlavor.getFlavorDimension();
+                if (dimensionName == null) {
+                    dimensionName = "";
                 }
                 testVariantConfig.addProductFlavor(
                         productFlavor,
@@ -655,11 +668,13 @@ public class VariantManager {
             @NonNull Map<BaseVariantData, BaseVariant> map,
             @NonNull BaseVariantData<?> variantData,
             @Nullable TestVariantData testVariantData) {
-        BaseVariant variantApi = variantFactory.createVariantApi(variantData);
+        BaseVariant variantApi = variantFactory.createVariantApi(variantData,
+                readOnlyObjectProvider);
 
         TestVariantImpl testVariant = null;
         if (testVariantData != null) {
-            testVariant = basePlugin.getInstantiator().newInstance(TestVariantImpl.class, testVariantData, basePlugin);
+            testVariant = basePlugin.getInstantiator().newInstance(
+                    TestVariantImpl.class, testVariantData, basePlugin, readOnlyObjectProvider);
 
             // add the test output.
             ApplicationVariantFactory.createApkOutputApiObjects(basePlugin, testVariantData, testVariant);

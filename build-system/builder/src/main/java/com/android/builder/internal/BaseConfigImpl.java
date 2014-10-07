@@ -144,4 +144,15 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
         result = 31 * result + mManifestPlaceholders.hashCode();
         return result;
     }
+
+    @Override
+    public String toString() {
+        return "BaseConfigImpl{" +
+                "mBuildConfigFields=" + mBuildConfigFields +
+                ", mResValues=" + mResValues +
+                ", mProguardFiles=" + mProguardFiles +
+                ", mConsumerProguardFiles=" + mConsumerProguardFiles +
+                ", mManifestPlaceholders=" + mManifestPlaceholders +
+                '}';
+    }
 }
