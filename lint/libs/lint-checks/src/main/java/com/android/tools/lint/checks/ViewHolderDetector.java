@@ -43,6 +43,7 @@ import lombok.ast.MethodDeclaration;
 import lombok.ast.MethodInvocation;
 import lombok.ast.Node;
 import lombok.ast.StrictListAccessor;
+import lombok.ast.Switch;
 import lombok.ast.VariableDefinition;
 
 /**
@@ -180,7 +181,8 @@ public class ViewHolderDetector extends Detector implements Detector.JavaScanner
                     boolean insideIf = false;
                     Node p = node.getParent();
                     while (p != null) {
-                        if (p instanceof If || p instanceof InlineIfExpression) {
+                        if (p instanceof If || p instanceof InlineIfExpression
+                                || p instanceof Switch) {
                             insideIf = true;
                             mHaveConditional = true;
                             break;
