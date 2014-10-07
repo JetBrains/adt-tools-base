@@ -497,6 +497,10 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
             return findSubstring(errorMessage, "Replace '", "'");
         } else if (issue == PLUS) {
           return findSubstring(errorMessage, "(", ")");
+        } else if (issue == COMPATIBILITY) {
+            if (errorMessage.startsWith("Version 5.2.08")) {
+                return "5.2.08";
+            }
         }
 
         return null;
@@ -540,6 +544,10 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
             }
             // "Deprecated: Replace 'packageNameSuffix' with 'applicationIdSuffix'"
             return findSubstring(errorMessage, " with '", "'");
+        } else if (issue == COMPATIBILITY) {
+            if (errorMessage.startsWith("Version 5.2.08")) {
+                return findSubstring(errorMessage, "Use version ", " ");
+            }
         }
 
         return null;
@@ -697,6 +705,31 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
             return;
         } else if ("com.google.android.gms".equals(dependency.getGroupId()) &&
                 "play-services".equals(dependency.getArtifactId())) {
+
+            // 5.2.08 is not supported; special case and warn about this
+            if ("5.2.08".equals(dependency.getFullRevision()) && context.isEnabled(COMPATIBILITY)) {
+                // This specific version is actually a preview version which should
+                // not be used (https://code.google.com/p/android/issues/detail?id=75292)
+                String version = "6.1.11";
+                // Try to find a more recent available version, if one is available
+                File sdkHome = context.getClient().getSdkHome();
+                File repository = SdkMavenRepository.GOOGLE.getRepositoryLocation(sdkHome, true);
+                if (repository != null) {
+                    GradleCoordinate max = SdkMavenRepository.getHighestInstalledVersion(
+                            dependency.getGroupId(), dependency.getArtifactId(), repository,
+                            null, false);
+                    if (max != null) {
+                        if (COMPARE_PLUS_HIGHER.compare(dependency, max) < 0) {
+                            version = max.getFullRevision();
+                        }
+                    }
+                }
+                String message = String.format("Version `5.2.08` should not be used; the app "
+                        + "can not be published with this version. Use version `%1$s` "
+                        + "instead.", version);
+                report(context, cookie, COMPATIBILITY, message);
+            }
+
             checkPlayServices(context, dependency, cookie);
             return;
         }

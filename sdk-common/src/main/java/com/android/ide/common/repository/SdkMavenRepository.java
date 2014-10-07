@@ -163,7 +163,14 @@ public enum SdkMavenRepository {
                 }
                 GradleCoordinate gc = GradleCoordinate.parseCoordinateString(
                         groupId + ":" + artifactId + ":" + dir.getName());
+
                 if (gc != null && (allowPreview || !gc.getFullRevision().contains("-rc"))) {
+                    if (!allowPreview && "5.2.08".equals(gc.getFullRevision()) &&
+                            "play-services".equals(gc.getArtifactId())) {
+                        // This specific version is actually a preview version which should
+                        // not be used (https://code.google.com/p/android/issues/detail?id=75292)
+                        continue;
+                    }
                     FullRevision.parseRevision(gc.getFullRevision());
                     versionCoordinates.add(gc);
                 }
