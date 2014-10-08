@@ -913,7 +913,7 @@ public class AndroidProjectTest extends TestCase {
 
     public void testTestWithDep() {
         // Load the custom model for the project
-        ProjectData projectData = getModelForProject(FOLDER_TEST_MANUAL, "testWithDep");
+        ProjectData projectData = getModelForProject(FOLDER_TEST_REGULAR, "testWithDep");
 
         AndroidProject model = projectData.model;
 
@@ -1253,7 +1253,7 @@ public class AndroidProjectTest extends TestCase {
     }
 
     public void testAbiFilters() {
-        ProjectData projectData = getModelForProject("ndkPrebuilts");
+        ProjectData projectData = getModelForProject(FOLDER_TEST_REGULAR, "ndkPrebuilts");
 
         AndroidProject model = projectData.model;
 
