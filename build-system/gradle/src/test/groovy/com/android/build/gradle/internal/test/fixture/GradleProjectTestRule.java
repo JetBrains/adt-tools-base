@@ -113,14 +113,24 @@ public class GradleProjectTestRule implements TestRule {
                 assertTrue(sourceDir.mkdirs());
 
                 Files.write(
-                        "buildscript {\n" +
+                        "ext {\n" +
+                                "    buildToolsVersion = System.env.CUSTOM_BUILDTOOLS != null ? System.env.CUSTOM_BUILDTOOLS : '20.0.0'\n" +
+                                "}\n" +
+                                "\n" +
+                                "buildscript {\n" +
+                                "    def gradleVersion = System.env.CUSTOM_GRADLE != null ? System.env.CUSTOM_GRADLE : '" + ANDROID_GRADLE_VERSION + "'\n" +
+                                "\n" +
                                 "    repositories {\n" +
-                                "        maven { url '" + getRepoDir().toString() + "' }\n" +
+                                "        if (System.env.CUSTOM_REPO != null) {\n" +
+                                "            maven { url System.env.CUSTOM_REPO }\n" +
+                                "        } else {\n" +
+                                "            mavenCentral()\n" +
+                                "        }\n" +
                                 "    }\n" +
                                 "    dependencies {\n" +
-                                "        classpath 'com.android.tools.build:gradle:" + ANDROID_GRADLE_VERSION + "'\n" +
+                                "        classpath \"com.android.tools.build:gradle:$gradleVersion\"\n" +
                                 "    }\n" +
-                                "}\n",
+                                "}",
                         buildFile,
                         Charsets.UTF_8);
 

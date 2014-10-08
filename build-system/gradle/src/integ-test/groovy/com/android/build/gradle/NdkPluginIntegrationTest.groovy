@@ -42,7 +42,7 @@ apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion 19
-    buildToolsVersion "19.1.0"
+    buildToolsVersion rootProject.ext.buildToolsVersion
     useNewNativePlugin true
     ndk {
         moduleName "hello-jni"
