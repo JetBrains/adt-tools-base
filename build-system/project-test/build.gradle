@@ -22,3 +22,6 @@ applicationDistribution.from('build.xml')
 applicationDistribution.from(file('../tests/regular')) {
     into 'tests'
 }
+
+task dist << {}
+dist.dependsOn distZip
