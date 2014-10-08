@@ -17,6 +17,7 @@
 package com.android.ide.common.res2;
 
 import com.android.ide.common.rendering.api.AttrResourceValue;
+import com.android.ide.common.rendering.api.ItemResourceValue;
 import com.android.ide.common.rendering.api.ResourceValue;
 import com.android.ide.common.rendering.api.StyleResourceValue;
 import com.android.resources.ResourceFolderType;
@@ -188,23 +189,23 @@ public class ResourceRepositoryTest extends BaseTestCase {
 
         assertEquals("@android:style/Holo.Light", styleResourceValue.getParentStyle());
 
-        ResourceValue styleValue = styleResourceValue.findValue("singleLine", true /*framework*/);
+        ItemResourceValue styleValue = styleResourceValue.getItem("singleLine", true /*framework*/);
         assertNotNull(styleValue);
         assertEquals("true", styleValue.getValue());
 
-        styleValue = styleResourceValue.findValue("textAppearance", true /*framework*/);
+        styleValue = styleResourceValue.getItem("textAppearance", true /*framework*/);
         assertNotNull(styleValue);
         assertEquals("@style/TextAppearance.WindowTitle", styleValue.getValue());
 
-        styleValue = styleResourceValue.findValue("shadowColor", true /*framework*/);
+        styleValue = styleResourceValue.getItem("shadowColor", true /*framework*/);
         assertNotNull(styleValue);
         assertEquals("#BB000000", styleValue.getValue());
 
-        styleValue = styleResourceValue.findValue("shadowRadius", true /*framework*/);
+        styleValue = styleResourceValue.getItem("shadowRadius", true /*framework*/);
         assertNotNull(styleValue);
         assertEquals("2.75", styleValue.getValue());
 
-        styleValue = styleResourceValue.findValue("foo", false /*framework*/);
+        styleValue = styleResourceValue.getItem("foo", false /*framework*/);
         assertNotNull(styleValue);
         assertEquals("foo", styleValue.getValue());
     }
@@ -519,8 +520,6 @@ public class ResourceRepositoryTest extends BaseTestCase {
      *
      * Each set is [ setName, folder1, folder2, ...]
      *
-     * @param data
-     * @return
      */
     private static ResourceMerger createMerger(String[][] data) {
         ResourceMerger merger = new ResourceMerger();
@@ -702,16 +701,15 @@ public class ResourceRepositoryTest extends BaseTestCase {
                                 sb.append("  parentStyle=").append(srv.getParentStyle())
                                         .append("\n");
                                 for (String name : srv.getNames()) {
-                                    ResourceValue value1 = srv.findValue(name, false);
-                                    ResourceValue value2 = srv.findValue(name, true);
+                                    ItemResourceValue value1 = srv.getItem(name, false);
+                                    ItemResourceValue value2 = srv.getItem(name, true);
                                     if (value1 != null) {
                                         Boolean framework = false;
-                                        ResourceValue v = value1;
                                         sb.append("    ");
                                         sb.append(name).append(" ").append(framework).append(" ");
                                         sb.append(" = ");
                                         sb.append('"');
-                                        String strValue = v.getValue();
+                                        String strValue = value1.getValue();
                                         if (strValue != null) {
                                             sb.append(strValue.replace("\n", "\\n"));
                                         } else {
@@ -721,12 +719,11 @@ public class ResourceRepositoryTest extends BaseTestCase {
                                     }
                                     if (value2 != null) {
                                         Boolean framework = true;
-                                        ResourceValue v = value2;
                                         sb.append("    ");
                                         sb.append(name).append(" ").append(framework).append(" ");
                                         sb.append(" = ");
                                         sb.append('"');
-                                        String strValue = v.getValue();
+                                        String strValue = value2.getValue();
                                         if (strValue != null) {
                                             sb.append(strValue.replace("\n", "\\n"));
                                         } else {
