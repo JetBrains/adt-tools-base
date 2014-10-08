@@ -5,6 +5,7 @@ gradle/build
 lint-results
 tests/regular/*/build
 tests/manual/*/build
+tests/native/*/build
 tests/regular/api/*/build
 tests/regular/applibtest/*/build
 tests/regular/assets/*/build
