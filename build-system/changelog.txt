@@ -1,3 +1,7 @@
+0.14.0
+- Env var ANDROID_SERIAL (if present) restrict installation/execution of tests to device matching the serial number
+- BuildType/ProductFlavor/SigningConfig queried through the variant and variantFilter API are now read-only (except for the merged flavor).
+
 0.13.3
 - Added support for selectively allowing dependencies on libraries with incompatible uses-sdk
 - Fixed race condition in lint's resource folder cache which could trigger a build failure
