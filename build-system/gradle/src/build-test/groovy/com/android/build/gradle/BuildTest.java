@@ -51,8 +51,12 @@ abstract class BuildTest extends BaseTest {
       return IGNORED_GRADLE_VERSIONS.contains(gradleVersion);
     }
 
-    protected File buildProject(@NonNull String name, @NonNull String gradleVersion) {
+    protected File buildProject(
+            @NonNull String testFolder,
+            @NonNull String name,
+            @NonNull String gradleVersion) {
         return runTasksOn(
+                testFolder,
                 name,
                 gradleVersion,
                 "clean", "assembleDebug", "lint");

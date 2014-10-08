@@ -37,3 +37,7 @@ idea {
         scopes.COMPILE.plus += configurations.gradleRepo
     }
 }
+
+test {
+    environment("CUSTOM_REPO", rootProject.file("../out/repo"))
+}

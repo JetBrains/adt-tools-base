@@ -33,7 +33,7 @@ public class AppPluginDslTest extends BaseTest {
 
     public void testBasic() {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "basic")).build()
+                new File(testDir, "${FOLDER_TEST_REGULAR}/basic")).build()
 
         project.apply plugin: 'com.android.application'
 
@@ -62,7 +62,7 @@ public class AppPluginDslTest extends BaseTest {
      */
     public void testBasic2() {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "basic")).build()
+                new File(testDir, "${FOLDER_TEST_REGULAR}/basic")).build()
 
         project.apply plugin: 'com.android.application'
 
@@ -88,7 +88,7 @@ public class AppPluginDslTest extends BaseTest {
 
     public void testBasicWithStringTarget() {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "basic")).build()
+                new File(testDir, "${FOLDER_TEST_REGULAR}/basic")).build()
 
         project.apply plugin: 'com.android.application'
 
@@ -114,7 +114,7 @@ public class AppPluginDslTest extends BaseTest {
 
     public void testMultiRes() {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "multires")).build()
+                new File(testDir, "${FOLDER_TEST_REGULAR}/multires")).build()
 
         project.apply plugin: 'com.android.application'
 
@@ -135,7 +135,7 @@ public class AppPluginDslTest extends BaseTest {
 
     public void testBuildTypes() {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "basic")).build()
+                new File(testDir, "${FOLDER_TEST_REGULAR}/basic")).build()
 
         project.apply plugin: 'com.android.application'
 
@@ -172,7 +172,7 @@ public class AppPluginDslTest extends BaseTest {
 
     public void testFlavors() {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "basic")).build()
+                new File(testDir, "${FOLDER_TEST_REGULAR}/basic")).build()
 
         project.apply plugin: 'com.android.application'
 
@@ -212,7 +212,7 @@ public class AppPluginDslTest extends BaseTest {
 
     public void testMultiFlavors() {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "basic")).build()
+                new File(testDir, "${FOLDER_TEST_REGULAR}/basic")).build()
 
         project.apply plugin: 'com.android.application'
 
@@ -272,7 +272,7 @@ public class AppPluginDslTest extends BaseTest {
 
     public void testSourceSetsApi() {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "basic")).build()
+                new File(testDir, "${FOLDER_TEST_REGULAR}/basic")).build()
 
         project.apply plugin: 'com.android.application'
 
@@ -290,7 +290,7 @@ public class AppPluginDslTest extends BaseTest {
 
     public void testProguardMappingFile() {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "basic")).build()
+                new File(testDir, "${FOLDER_TEST_REGULAR}/basic")).build()
 
         project.apply plugin: 'com.android.application'
 
