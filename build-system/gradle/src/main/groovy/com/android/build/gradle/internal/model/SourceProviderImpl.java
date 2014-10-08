@@ -37,7 +37,8 @@ class SourceProviderImpl implements SourceProvider, Serializable {
     private Collection<File> resourcesDirs;
     private Collection<File> aidlDirs;
     private Collection<File> rsDirs;
-    private Collection<File> jniDirs;
+    private Collection<File> cDirs;
+    private Collection<File> cppDirs;
     private Collection<File> resDirs;
     private Collection<File> assetsDirs;
     private Collection<File> libsDirs;
@@ -52,7 +53,8 @@ class SourceProviderImpl implements SourceProvider, Serializable {
         sourceProviderClone.resourcesDirs = sourceProvider.getResourcesDirectories();
         sourceProviderClone.aidlDirs = sourceProvider.getAidlDirectories();
         sourceProviderClone.rsDirs = sourceProvider.getRenderscriptDirectories();
-        sourceProviderClone.jniDirs = sourceProvider.getJniDirectories();
+        sourceProviderClone.cDirs = sourceProvider.getCDirectories();
+        sourceProviderClone.cppDirs = sourceProvider.getCDirectories();
         sourceProviderClone.resDirs = sourceProvider.getResDirectories();
         sourceProviderClone.assetsDirs = sourceProvider.getAssetsDirectories();
         sourceProviderClone.libsDirs = sourceProvider.getJniLibsDirectories();
@@ -112,8 +114,14 @@ class SourceProviderImpl implements SourceProvider, Serializable {
 
     @NonNull
     @Override
-    public Collection<File> getJniDirectories() {
-        return jniDirs;
+    public Collection<File> getCDirectories() {
+        return cDirs;
+    }
+
+    @NonNull
+    @Override
+    public Collection<File> getCppDirectories() {
+        return cppDirs;
     }
 
     @NonNull
@@ -142,7 +150,8 @@ class SourceProviderImpl implements SourceProvider, Serializable {
                 ", resourcesDirs=" + resourcesDirs +
                 ", aidlDirs=" + aidlDirs +
                 ", rsDirs=" + rsDirs +
-                ", jniDirs=" + jniDirs +
+                ", cDirs=" + cDirs +
+                ", cppDirs=" + cppDirs +
                 ", resDirs=" + resDirs +
                 ", assetsDirs=" + assetsDirs +
                 ", libsDirs=" + libsDirs +
