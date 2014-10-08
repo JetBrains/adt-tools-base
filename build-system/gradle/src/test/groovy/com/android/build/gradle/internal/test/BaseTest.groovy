@@ -25,6 +25,10 @@ import java.security.CodeSource
  */
 public abstract class BaseTest extends TestCase {
 
+    public static final String FOLDER_TEST_REGULAR = "regular";
+    public static final String FOLDER_TEST_MANUAL = "manual";
+    public static final String FOLDER_TEST_NATIVE = "native";
+
     protected File sdkDir;
     protected File ndkDir;
 
@@ -124,10 +128,11 @@ public abstract class BaseTest extends TestCase {
     }
 
     protected File runTasksOn(
+            @NonNull String testFolder,
             @NonNull String name,
             @NonNull String gradleVersion,
             @NonNull String... tasks) {
-        File project = new File(testDir, name)
+        File project = new File(new File(testDir, testFolder), name)
 
         return runTasksOn(project, gradleVersion, Collections.<String>emptyList(), tasks);
     }
@@ -137,7 +142,6 @@ public abstract class BaseTest extends TestCase {
             @NonNull String gradleVersion,
             @NonNull String... tasks) {
         return runTasksOn(project, gradleVersion, Collections.<String>emptyList(), tasks);
-
     }
 
     protected File runTasksOn(
@@ -149,9 +153,8 @@ public abstract class BaseTest extends TestCase {
         File buildGradle = new File(project, "build.gradle");
         assertTrue("Missing file: " + buildGradle, buildGradle.isFile());
 
-        AndroidProjectConnector handler = new AndroidProjectConnector(sdkDir, ndkDir);
-
-        handler.runGradleTasks(project, gradleVersion, arguments, tasks)
+        AndroidProjectConnector connector = new AndroidProjectConnector(sdkDir, ndkDir);
+        connector.runGradleTasks(project, gradleVersion, arguments, tasks)
 
         return project;
     }

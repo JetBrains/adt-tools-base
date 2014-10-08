@@ -16,6 +16,7 @@
 
 package com.android.build.gradle;
 
+import com.android.build.gradle.internal.test.BaseTest;
 import com.google.common.collect.ImmutableList;
 
 import junit.framework.Test;
@@ -150,15 +151,15 @@ public class DeviceTest extends BuildTest {
         try {
             switch (testType) {
                 case CHECK:
-                    runTasksOn(projectName, gradleVersion,
+                    runTasksOn(BaseTest.FOLDER_TEST_REGULAR, projectName, gradleVersion,
                             "clean", "connectedCheck");
                     break;
                 case CHECK_AND_REPORT:
-                    runTasksOn(projectName, gradleVersion,
+                    runTasksOn(BaseTest.FOLDER_TEST_REGULAR, projectName, gradleVersion,
                             "clean", "connectedCheck", "mergeAndroidReports");
                     break;
                 case INSTALL:
-                    runTasksOn(projectName, gradleVersion,
+                    runTasksOn(BaseTest.FOLDER_TEST_REGULAR, projectName, gradleVersion,
                             "clean", "installDebug", "uninstallAll");
                     break;
             }

@@ -66,8 +66,18 @@ public class ManualBuildTest extends BuildTest {
     private static final int GREEN = 0xFF00FF00;
     private static final int BLUE = 0xFF0000FF;
 
+    protected File manualDir;
+    protected File regularDir;
+
+    @Override
+    protected void setUp() throws Exception {
+        super.setUp();
+        manualDir = new File(testDir, FOLDER_TEST_MANUAL);
+        regularDir = new File(testDir, FOLDER_TEST_REGULAR);
+    }
+
     public void testOverlay1Content() throws Exception {
-        File project = buildProject("overlay1", BasePlugin.GRADLE_TEST_VERSION);
+        File project = buildProject(FOLDER_TEST_REGULAR, "overlay1", BasePlugin.GRADLE_TEST_VERSION);
         File drawableOutput = new File(project, "build/" + FD_INTERMEDIATES + "/res/debug/drawable");
 
         checkImageColor(drawableOutput, "no_overlay.png", GREEN);
@@ -75,7 +85,7 @@ public class ManualBuildTest extends BuildTest {
     }
 
     public void testOverlay2Content() throws Exception {
-        File project = buildProject("overlay2", BasePlugin.GRADLE_TEST_VERSION);
+        File project = buildProject(FOLDER_TEST_REGULAR, "overlay2", BasePlugin.GRADLE_TEST_VERSION);
         File drawableOutput = new File(project, "build/" + FD_INTERMEDIATES + "/res/one/debug/drawable");
 
         checkImageColor(drawableOutput, "no_overlay.png", GREEN);
@@ -86,7 +96,7 @@ public class ManualBuildTest extends BuildTest {
     }
 
     public void testOverlay3Content() throws Exception {
-        File project = buildProject("overlay3", BasePlugin.GRADLE_TEST_VERSION);
+        File project = buildProject(FOLDER_TEST_REGULAR, "overlay3", BasePlugin.GRADLE_TEST_VERSION);
         File drawableOutput = new File(project, "build/" + FD_INTERMEDIATES + "/res/freebeta/debug/drawable");
 
         checkImageColor(drawableOutput, "no_overlay.png", GREEN);
@@ -119,7 +129,7 @@ public class ManualBuildTest extends BuildTest {
     }
 
     public void testRepo() {
-        File repo = new File(testDir, "repo");
+        File repo = new File(manualDir, "repo");
 
         try {
             runTasksOn(
@@ -146,7 +156,7 @@ public class ManualBuildTest extends BuildTest {
     }
 
     public void testLibsManifestMerging() throws Exception {
-        File project = new File(testDir, "libsTest");
+        File project = new File(regularDir, "libsTest");
         File fileOutput = new File(project, "libapp/build/" + FD_INTERMEDIATES + "/bundles/release/AndroidManifest.xml");
 
         runTasksOn(
@@ -158,7 +168,7 @@ public class ManualBuildTest extends BuildTest {
 
     // test whether a library project has its fields ProGuarded
     public void testLibProguard() throws Exception {
-        File project = new File(testDir, "libProguard");
+        File project = new File(regularDir, "libProguard");
         File fileOutput = new File(project, "build/" + FD_OUTPUTS + "/proguard/release");
 
         runTasksOn(
@@ -171,7 +181,7 @@ public class ManualBuildTest extends BuildTest {
 
     // test whether proguard.txt has been correctly merged
     public void testLibProguardConsumerFile() throws Exception {
-        File project = new File(testDir, "libProguardConsumerFiles");
+        File project = new File(regularDir, "libProguardConsumerFiles");
         File debugFileOutput = new File(project, "build/" + FD_INTERMEDIATES + "/bundles/debug");
         File releaseFileOutput = new File(project, "build/" + FD_INTERMEDIATES + "/bundles/release");
 
@@ -184,7 +194,7 @@ public class ManualBuildTest extends BuildTest {
     }
 
     public void testAnnotations() throws Exception {
-        File project = new File(testDir, "extractAnnotations");
+        File project = new File(regularDir, "extractAnnotations");
         File debugFileOutput = new File(project, "build/" + FD_INTERMEDIATES + "/annotations/debug");
 
         runTasksOn(
@@ -289,7 +299,7 @@ public class ManualBuildTest extends BuildTest {
     }
 
     public void testRsEnabledAnnotations() throws IOException {
-        File project = new File(testDir, "extractRsEnabledAnnotations");
+        File project = new File(regularDir, "extractRsEnabledAnnotations");
 
         runTasksOn(
                 project,
@@ -312,7 +322,7 @@ public class ManualBuildTest extends BuildTest {
     }
 
     public void testSimpleManifestMerger() throws IOException {
-        File project = new File(testDir, "simpleManifestMergingTask");
+        File project = new File(manualDir, "simpleManifestMergingTask");
 
         runTasksOn(
                 project,
@@ -325,13 +335,13 @@ public class ManualBuildTest extends BuildTest {
         // a fake DeviceProvider that doesn't use a device, but only record the calls made
         // to the DeviceProvider and the DeviceConnector.
         runTasksOn(
-                new File(testDir, "3rdPartyTests"),
+                new File(manualDir, "3rdPartyTests"),
                 BasePlugin.GRADLE_TEST_VERSION,
                 "clean", "deviceCheck");
     }
 
     public void testEmbedded() throws Exception {
-        File project = new File(testDir, "embedded");
+        File project = new File(regularDir, "embedded");
 
         runTasksOn(
                 project,
@@ -346,7 +356,7 @@ public class ManualBuildTest extends BuildTest {
     }
 
     public void testUserProvidedTestAndroidManifest() throws Exception {
-        File project = new File(testDir, "androidManifestInTest");
+        File project = new File(regularDir, "androidManifestInTest");
 
         runTasksOn(
                 project,
@@ -403,7 +413,7 @@ public class ManualBuildTest extends BuildTest {
     }
 
     public void testDensitySplits() throws Exception {
-        File project = new File(testDir, "densitySplit");
+        File project = new File(regularDir, "densitySplit");
 
         runTasksOn(
                 project,
@@ -421,7 +431,7 @@ public class ManualBuildTest extends BuildTest {
     }
 
     public void testDensitySplitWithOldMerger() throws Exception {
-        File project = new File(testDir, "densitySplitWithOldMerger");
+        File project = new File(regularDir, "densitySplitWithOldMerger");
 
         runTasksOn(
                 project,
@@ -439,7 +449,7 @@ public class ManualBuildTest extends BuildTest {
     }
 
     public void testAbiSplits() throws Exception {
-        File project = new File(testDir, "ndkJniLib");
+        File project = new File(regularDir, "ndkJniLib");
 
         runTasksOn(
                 project,
@@ -522,7 +532,7 @@ public class ManualBuildTest extends BuildTest {
     }
 
     public void testBasicWithSigningOverride() throws Exception {
-        File project = new File(testDir, "basic");
+        File project = new File(regularDir, "basic");
 
         // add prop args for signing override.
         List<String> args = Lists.newArrayListWithExpectedSize(4);
@@ -548,7 +558,7 @@ public class ManualBuildTest extends BuildTest {
     }
 
     public void testMaxSdkVersion() throws Exception {
-        File project = new File(testDir, "maxSdkVersion");
+        File project = new File(regularDir, "maxSdkVersion");
 
         runTasksOn(
                 project,

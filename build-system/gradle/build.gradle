@@ -83,12 +83,17 @@ apply from: "$rootDir/buildSrc/base/publish.gradle"
 
 jar.manifest.attributes("Plugin-Version": version)
 
+test {
+    environment("CUSTOM_REPO", rootProject.file("../out/repo"))
+}
+
 task buildTest(type: Test) {
     testClassesDir = sourceSets.buildTest.output.classesDir
     classpath = sourceSets.buildTest.runtimeClasspath
     description = "Runs the project build tests. This requires an SDK either from the Android source tree, under out/..., or an env var ANDROID_HOME."
     group = "verification"
     systemProperties['jar.path'] = jar.archivePath
+    environment("CUSTOM_REPO", rootProject.file("../out/repo"))
 }
 
 task integTest(type: Test) {
@@ -99,6 +104,7 @@ task integTest(type: Test) {
                     "source tree, under out/..., or an env var ANDROID_HOME and a device."
     group = "verification"
     systemProperties['jar.path'] = jar.archivePath
+    environment("CUSTOM_REPO", rootProject.file("../out/repo"))
 
     // Allow user to include/exclude categories from the command line.
     // e.g. add the following to skip device tests:
@@ -124,6 +130,7 @@ task deviceTest(type: Test) {
     description = "Runs the device tests. This requires a device."
     group = "verification"
     systemProperties['jar.path'] = jar.archivePath
+    environment("CUSTOM_REPO", rootProject.file("../out/repo"))
 }
 
 deviceTest.dependsOn ':publishLocal'
