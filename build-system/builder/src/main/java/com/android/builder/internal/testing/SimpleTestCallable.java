@@ -21,8 +21,7 @@ import com.android.annotations.Nullable;
 import com.android.builder.testing.TestData;
 import com.android.builder.testing.api.DeviceConnector;
 import com.android.builder.testing.api.DeviceException;
-import com.android.ddmlib.NullOutputReceiver;
-import com.android.ddmlib.testrunner.ITestRunListener;
+import com.android.ddmlib.MultiLineReceiver;
 import com.android.ddmlib.testrunner.RemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.TestIdentifier;
 import com.android.ddmlib.testrunner.TestRunResult;
@@ -220,13 +219,35 @@ public class SimpleTestCallable implements Callable<Boolean> {
             if (isInstalled) {
                 // Get the coverage if needed.
                 if (success && testData.isTestCoverageEnabled()) {
-                    device.executeShellCommand(
-                            "run-as " + testData.getTestedApplicationId() + " chmod 644 " + coverageFile,
-                            new NullOutputReceiver(),
+                    String temporaryCoverageCopy = "/data/local/tmp/"
+                            + testData.getTestedApplicationId() + "." + FILE_COVERAGE_EC;
+
+                    MultiLineReceiver outputReceiver = new MultiLineReceiver() {
+                        @Override
+                        public void processNewLines(String[] lines) {
+                            for (String line : lines) {
+                                logger.info(line);
+                            }
+                        }
+
+                        @Override
+                        public boolean isCancelled() {
+                            return false;
+                        }
+                    };
+
+                    logger.verbose("DeviceConnector '%s': fetching coverage data from %s",
+                            deviceName, coverageFile);
+                    device.executeShellCommand("run-as " + testData.getTestedApplicationId()
+                                    + " cat " + coverageFile + " > " + temporaryCoverageCopy,
+                            outputReceiver,
                             30, TimeUnit.SECONDS);
                     device.pullFile(
-                            coverageFile,
+                            temporaryCoverageCopy,
                             new File(coverageDir, FILE_COVERAGE_EC).getPath());
+                    device.executeShellCommand("rm " + temporaryCoverageCopy,
+                            outputReceiver,
+                            30, TimeUnit.SECONDS);
                 }
 
                 // uninstall the apps
