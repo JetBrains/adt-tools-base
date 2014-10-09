@@ -127,7 +127,11 @@ public class SourceProviderImpl implements SourceProvider, Serializable {
         return Collections.emptyList()
     }
 
-    Collection<File> getJniDirectories() {
+    Collection<File> getCDirectories() {
+        return Collections.emptyList()
+    }
+
+    Collection<File> getCppDirectories() {
         return Collections.emptyList()
     }
 
