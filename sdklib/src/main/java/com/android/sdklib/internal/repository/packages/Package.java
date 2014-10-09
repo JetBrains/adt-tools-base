@@ -786,10 +786,12 @@ public abstract class Package implements IDescription, IListDescription, Compara
             sb.append(4);
         } else if (this instanceof SamplePackage) {
             sb.append(5);
-        } else if (this instanceof SystemImagePackage) {
+        } else if ((this instanceof SystemImagePackage) && ((SystemImagePackage) this).isPlatform()) {
             sb.append(6);
         } else if (this instanceof AddonPackage) {
             sb.append(7);
+        } else if (this instanceof SystemImagePackage) {
+            sb.append(8);
         } else {
             // extras and everything else
             sb.append(9);
