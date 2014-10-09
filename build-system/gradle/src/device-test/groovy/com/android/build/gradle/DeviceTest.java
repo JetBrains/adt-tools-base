@@ -16,6 +16,7 @@
 
 package com.android.build.gradle;
 
+import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.test.BaseTest;
 import com.google.common.collect.ImmutableList;
 
@@ -39,6 +40,7 @@ import java.util.List;
  */
 public class DeviceTest extends BuildTest {
 
+    private String testFolder;
     private String projectName;
     private String gradleVersion;
     private TestType testType;
@@ -65,12 +67,9 @@ public class DeviceTest extends BuildTest {
             "migrated",
             "multires",
             "ndkSanAngeles",
-            "ndkStandaloneSo",
             "ndkJniLib",
-            "ndkJniLib2",
             "ndkPrebuilts",
             "ndkLibPrebuilts",
-            "ndkStl",
             "overlay1",
             "overlay2",
             "packagingOptions",
@@ -80,7 +79,7 @@ public class DeviceTest extends BuildTest {
             "sameNamedLibs"
     };
 
-    private static final List<String> ndkPluginTests = ImmutableList.of(
+    private static final List<String> sNdkPluginTests = ImmutableList.of(
             "ndkJniLib2",
             "ndkStandaloneSo",
             "ndkStl"
@@ -104,26 +103,32 @@ public class DeviceTest extends BuildTest {
             }
             // first the project we build on all available versions of Gradle
             for (String projectName : sBuiltProjects) {
-                // Disable NDK plugin tests on non-Linux platforms due to Gradle incorrectly
-                // setting arguments based on current OS instead of target OS.
-                if (!System.getProperty("os.name").equals("Linux") &&
-                        ndkPluginTests.contains(projectName)) {
-                    // TODO: Remove this when Gradle is fix.
-                    continue;
-                }
-
                 String testName = "check_" + projectName + "_" + gradleVersion;
 
                 DeviceTest test = (DeviceTest) TestSuite.createTest(DeviceTest.class, testName);
-                test.setProjectInfo(projectName, gradleVersion, TestType.CHECK);
+                test.setProjectInfo(FOLDER_TEST_REGULAR, projectName, gradleVersion,
+                        TestType.CHECK);
                 suite.addTest(test);
+            }
+
+            // some native tests that run only on linux for now.
+            if (System.getProperty("os.name").equals("Linux")) {
+                for (String projectName : sNdkPluginTests) {
+                    String testName = "check_" + projectName + "_" + gradleVersion;
+
+                    DeviceTest test = (DeviceTest) TestSuite.createTest(DeviceTest.class, testName);
+                    test.setProjectInfo(FOLDER_TEST_NATIVE, projectName, gradleVersion,
+                            TestType.CHECK);
+                    suite.addTest(test);
+                }
             }
 
             for (String projectName : sMergeReportProjects) {
                 String testName = "report_" + projectName + "_" + gradleVersion;
 
                 DeviceTest test = (DeviceTest) TestSuite.createTest(DeviceTest.class, testName);
-                test.setProjectInfo(projectName, gradleVersion, TestType.CHECK_AND_REPORT);
+                test.setProjectInfo(FOLDER_TEST_REGULAR, projectName, gradleVersion,
+                        TestType.CHECK_AND_REPORT);
                 suite.addTest(test);
             }
 
@@ -131,7 +136,8 @@ public class DeviceTest extends BuildTest {
                 String testName = "install_" + projectName + "_" + gradleVersion;
 
                 DeviceTest test = (DeviceTest) TestSuite.createTest(DeviceTest.class, testName);
-                test.setProjectInfo(projectName, gradleVersion, TestType.INSTALL);
+                test.setProjectInfo(FOLDER_TEST_REGULAR, projectName, gradleVersion,
+                        TestType.INSTALL);
                 suite.addTest(test);
             }
         }
@@ -139,7 +145,12 @@ public class DeviceTest extends BuildTest {
         return suite;
     }
 
-    private void setProjectInfo(String projectName, String gradleVersion, TestType testType) {
+    private void setProjectInfo(
+            @NonNull String testFolder,
+            @NonNull String projectName,
+            @NonNull String gradleVersion,
+            @NonNull TestType testType) {
+        this.testFolder = testFolder;
         this.projectName = projectName;
         this.gradleVersion = gradleVersion;
         this.testType = testType;
@@ -151,15 +162,17 @@ public class DeviceTest extends BuildTest {
         try {
             switch (testType) {
                 case CHECK:
-                    runTasksOn(BaseTest.FOLDER_TEST_REGULAR, projectName, gradleVersion,
+                    runTasksOn(testFolder, projectName, gradleVersion,
+                            "androidDependencies", "signingReport");
+                    runTasksOn(testFolder, projectName, gradleVersion,
                             "clean", "connectedCheck");
                     break;
                 case CHECK_AND_REPORT:
-                    runTasksOn(BaseTest.FOLDER_TEST_REGULAR, projectName, gradleVersion,
+                    runTasksOn(testFolder, projectName, gradleVersion,
                             "clean", "connectedCheck", "mergeAndroidReports");
                     break;
                 case INSTALL:
-                    runTasksOn(BaseTest.FOLDER_TEST_REGULAR, projectName, gradleVersion,
+                    runTasksOn(testFolder, projectName, gradleVersion,
                             "clean", "installDebug", "uninstallAll");
                     break;
             }
