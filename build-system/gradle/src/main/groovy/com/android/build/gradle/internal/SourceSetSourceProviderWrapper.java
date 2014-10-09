@@ -77,7 +77,13 @@ public class SourceSetSourceProviderWrapper implements SourceProvider {
 
     @NonNull
     @Override
-    public Collection<File> getJniDirectories() {
+    public Collection<File> getCDirectories() {
+        return Collections.emptyList();
+    }
+
+    @NonNull
+    @Override
+    public Collection<File> getCppDirectories() {
         return Collections.emptyList();
     }
 

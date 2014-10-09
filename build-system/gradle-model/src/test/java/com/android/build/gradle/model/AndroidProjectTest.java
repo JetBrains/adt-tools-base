@@ -1601,7 +1601,7 @@ public class AndroidProjectTest extends TestCase {
             testSinglePathCollection("assets", assetsDir, sourceProvider.getAssetsDirectories());
             testSinglePathCollection("aidl", aidlDir, sourceProvider.getAidlDirectories());
             testSinglePathCollection("rs", renderscriptDir, sourceProvider.getRenderscriptDirectories());
-            testSinglePathCollection("jni", jniDir, sourceProvider.getJniDirectories());
+            testSinglePathCollection("jni", jniDir, sourceProvider.getCDirectories());
 
             assertEquals("AndroidManifest",
                     new File(projectDir, manifestFile).getAbsolutePath(),
