@@ -25,6 +25,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import java.awt.Point;
+import java.io.File;
 import java.io.OutputStream;
 import java.util.Collection;
 import java.util.Locale;
@@ -233,6 +234,11 @@ public class DeviceWriter {
         addElement(doc, hardware, DeviceSchema.NODE_DOCK, sb.toString());
 
         addElement(doc, hardware, DeviceSchema.NODE_POWER_TYPE, hw.getChargeType().toString());
+
+        File skinFile = hw.getSkinFile();
+        if (skinFile != null) {
+            addElement(doc, hardware, DeviceSchema.NODE_SKIN, hw.getSkinFile().getAbsolutePath());
+        }
 
         return hardware;
     }
