@@ -180,7 +180,9 @@ public class ApplicationVariantFactory implements VariantFactory<ApplicationVari
                 BaseVariantData.SplitHandlingPolicy.RELEASE_21_AND_AFTER_POLICY) {
             basePlugin.createPackageSplitResTask(appVariantData);
         }
-        basePlugin.addPackageTasks(appVariantData, assembleTask, true /*publishApk*/);
+        basePlugin.createPostCompilationTasks(appVariantData);
+
+        basePlugin.createPackagingTask(appVariantData, assembleTask, true /*publishApk*/);
     }
 
     private void handleMicroApp(@NonNull BaseVariantData<?> variantData) {
