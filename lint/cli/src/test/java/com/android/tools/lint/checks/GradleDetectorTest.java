@@ -412,8 +412,10 @@ public class GradleDetectorTest extends AbstractCheckTest {
         }
 
         if (issue == COMPATIBILITY) {
-            assertNotNull("Could not extract message tokens from " + message,
-                    GradleDetector.getNewValue(issue, message, TEXT));
+            if (message.startsWith("Version ")) {
+                assertNotNull("Could not extract message tokens from " + message,
+                        GradleDetector.getNewValue(issue, message, TEXT));
+            }
         }
     }
 
