@@ -325,6 +325,17 @@ public class GradleDetectorTest extends AbstractCheckTest {
                 lintProject("gradle/AccidentalOctal.gradle=>build.gradle"));
     }
 
+    public void testBadPlayServicesVersion() throws Exception {
+        mEnabled = Collections.singleton(COMPATIBILITY);
+        assertEquals(""
+                + "build.gradle:5: Error: Version 5.2.08 should not be used; the app can not be published with this version. Use version 6.1.11 instead. [GradleCompatible]\n"
+                + "    compile 'com.google.android.gms:play-services:5.2.08'\n"
+                + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "1 errors, 0 warnings\n",
+
+                lintProject("gradle/PlayServices.gradle=>build.gradle"));
+    }
+
     public void testRemoteVersions() throws Exception {
         mEnabled = Collections.singleton(REMOTE_VERSION);
         try {
@@ -396,6 +407,11 @@ public class GradleDetectorTest extends AbstractCheckTest {
         if (issue == DEPENDENCY
                 || issue == STRING_INTEGER
                 || issue == DEPRECATED) {
+            assertNotNull("Could not extract message tokens from " + message,
+                    GradleDetector.getNewValue(issue, message, TEXT));
+        }
+
+        if (issue == COMPATIBILITY) {
             assertNotNull("Could not extract message tokens from " + message,
                     GradleDetector.getNewValue(issue, message, TEXT));
         }
