@@ -180,11 +180,15 @@ public class VariantManager {
     }
 
     public void createTasksForVariantData(TaskContainer tasks, BaseVariantData variantData) {
-        if (variantData.getVariantConfiguration().getType() == VariantConfiguration.Type.TEST) {
+        if (variantData.getVariantConfiguration().getType() == GradleVariantConfiguration.Type.TEST) {
             ProductFlavorData defaultConfigData = basePlugin.getDefaultConfigData();
             GradleVariantConfiguration testVariantConfig = variantData.getVariantConfiguration();
-            BaseVariantData testedVariantData= (BaseVariantData) ((TestVariantData)variantData).getTestedVariantData();
-            // dependencies for the test variant, they'll be resolved below
+            BaseVariantData testedVariantData = (BaseVariantData) ((TestVariantData) variantData)
+                    .getTestedVariantData();
+
+            // If the variant being tested is a library variant, VariantDependencies must be
+            // computed the tasks for the tested variant is created.  Therefore, the
+            // VariantDependencies is computed here instead of when the VariantData was created.
             VariantDependencies variantDep = VariantDependencies.compute(
                     project, testVariantConfig.getFullName(),
                     false /*publishVariant*/,
