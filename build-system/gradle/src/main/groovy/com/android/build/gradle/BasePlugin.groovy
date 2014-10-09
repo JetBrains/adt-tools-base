@@ -1537,7 +1537,9 @@ public abstract class BasePlugin {
             createNdkTasks(variantData)
         }
 
-        addPackageTasks(variantData, null, false /*publishApk*/)
+        createPostCompilationTasks(variantData)
+
+        createPackagingTask(variantData, null /*assembleTask*/, false /*publishApk*/)
 
         if (assembleTest != null) {
             assembleTest.dependsOn variantOutputData.assembleTask
@@ -1889,17 +1891,15 @@ public abstract class BasePlugin {
     }
 
     /**
-     * Creates the packaging tasks for the given Variant.
+     * Creates the post-compilation tasks for the given Variant.
+     *
+     * These tasks create the dex file from the .class files, plus optional intermediary steps
+     * like proguard and jacoco
+     *
      * @param variantData the variant data.
-     * @param assembleTask an optional assembleTask to be used. If null a new one is created. The
-     *                assembleTask is always set in the Variant.
-     * @param publishApk if true the generated APK gets published.
      */
-    public void addPackageTasks(
-            @NonNull ApkVariantData variantData,
-            @Nullable Task assembleTask,
-            boolean publishApk) {
-        VariantConfiguration config = variantData.variantConfiguration
+    public void createPostCompilationTasks(@NonNull ApkVariantData variantData) {
+        GradleVariantConfiguration config = variantData.variantConfiguration
 
         boolean runProguard = config.buildType.runProguard &&
                 (config.type != TEST ||
@@ -2013,6 +2013,20 @@ public abstract class BasePlugin {
                 }
             }
         }
+    }
+
+    /**
+     * Creates the final packaging task, and optionally the zipalign task (if the variant is signed)
+     * @param variantData
+     * @param assembleTask an optional assembleTask to be used. If null a new one is created. The
+     *                assembleTask is always set in the Variant.
+     * @param publishApk if true the generated APK gets published.
+     */
+    public void createPackagingTask(
+            @NonNull ApkVariantData variantData,
+            Task assembleTask,
+            boolean publishApk) {
+        GradleVariantConfiguration config = variantData.variantConfiguration
 
         boolean signedApk = variantData.isSigned()
         String projectBaseName = project.archivesBaseName
@@ -2035,10 +2049,11 @@ public abstract class BasePlugin {
             String outputBaseName = variantOutputData.baseName
 
             // Add a task to generate application package
-            PackageApplication packageApp = project.tasks.create("package${outputName.capitalize()}",
-                    PackageApplication)
+            PackageApplication packageApp = project.tasks.
+                    create("package${outputName.capitalize()}",
+                            PackageApplication)
             variantOutputData.packageApplicationTask = packageApp
-            packageApp.dependsOn variantOutputData.processResourcesTask, dexTask,
+            packageApp.dependsOn variantOutputData.processResourcesTask, variantData.dexTask,
                     variantData.processJavaResourcesTask
             if (variantOutputData.packageSplitResourcesTask != null) {
                 packageApp.dependsOn variantOutputData.packageSplitResourcesTask
@@ -2062,7 +2077,7 @@ public abstract class BasePlugin {
             packageApp.conventionMapping.resourceFile = {
                 variantOutputData.processResourcesTask.packageOutputFile
             }
-            packageApp.conventionMapping.dexFolder = { dexTask.outputFolder }
+            packageApp.conventionMapping.dexFolder = { variantData.dexTask.outputFolder }
             packageApp.conventionMapping.packagedJars =
                     { androidBuilder.getPackagedJars(config) }
             packageApp.conventionMapping.javaResourceDir = {
@@ -2125,7 +2140,7 @@ public abstract class BasePlugin {
 
             packageApp.conventionMapping.outputFile = {
                 // if this is the final task then the location is
-                // the potentially overriden one.
+                // the potentially overridden one.
                 if (!signedApk || !variantData.zipAlign) {
                     project.file("$apkLocation/${apkName}")
                 } else {
@@ -2191,7 +2206,8 @@ public abstract class BasePlugin {
                 if (assembleTask != null) {
                     variantData.assembleVariantTask = variantOutputData.assembleTask = assembleTask
                 } else {
-                    variantData.assembleVariantTask = variantOutputData.assembleTask = createAssembleTask(variantData)
+                    variantData.assembleVariantTask =
+                            variantOutputData.assembleTask = createAssembleTask(variantData)
                 }
             }
 
