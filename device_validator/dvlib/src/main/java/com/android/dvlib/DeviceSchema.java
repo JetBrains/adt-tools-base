@@ -223,6 +223,8 @@ public class DeviceSchema {
 
     public static final String NODE_PROP_VALUE = "prop-value";
 
+    public static final String NODE_SKIN = "skin";
+
     public static final String ATTR_DEFAULT = "default";
 
     public static final String ATTR_UNIT = "unit";

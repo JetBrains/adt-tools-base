@@ -22,6 +22,7 @@ import com.android.resources.Keyboard;
 import com.android.resources.Navigation;
 import com.android.resources.UiMode;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumSet;
@@ -45,6 +46,16 @@ public class Hardware {
     private EnumSet<Abi> mAbis = EnumSet.noneOf(Abi.class);
     private EnumSet<UiMode> mUiModes = EnumSet.noneOf(UiMode.class);
     private PowerType mPluggedIn;
+    private File mSkinFile;
+
+    public void setSkinFile(File skinFile) {
+      mSkinFile = skinFile;
+    }
+
+    @Nullable
+    public File getSkinFile() {
+        return mSkinFile;
+    }
 
     @NonNull
     public Set<Network> getNetworking() {
@@ -258,6 +269,7 @@ public class Hardware {
         hw.mAbis = mAbis.clone();
         hw.mUiModes = mUiModes.clone();
         hw.mPluggedIn = mPluggedIn;
+        hw.mSkinFile = mSkinFile;
         return hw;
     }
 
@@ -285,8 +297,9 @@ public class Hardware {
                 && mGpu.equals(hw.getGpu())
                 && mAbis.equals(hw.getSupportedAbis())
                 && mUiModes.equals(hw.getSupportedUiModes())
-                && mPluggedIn == hw.getChargeType();
-
+                && mPluggedIn == hw.getChargeType()
+                && ((mSkinFile != null && mSkinFile.equals(hw.getSkinFile()))
+                    || (mSkinFile != null && hw.getSkinFile() == null));
     }
 
     @Override
@@ -316,6 +329,9 @@ public class Hardware {
         hash = 31 * hash + mButtons.ordinal();
         hash = 31 * hash + mInternalStorage.hashCode();
         hash = 31 * hash + mRemovableStorage.hashCode();
+        if (mSkinFile != null) {
+            hash = 31 * hash + mSkinFile.hashCode();
+        }
 
         for (Character c : mCpu.toCharArray()) {
             hash = 31 * hash + c;
@@ -375,6 +391,8 @@ public class Hardware {
         sb.append(mUiModes);
         sb.append(", mPluggedIn=");
         sb.append(mPluggedIn);
+        sb.append(", mSkinPath=");
+        sb.append(mSkinFile);
         sb.append(">");
         return sb.toString();
     }
