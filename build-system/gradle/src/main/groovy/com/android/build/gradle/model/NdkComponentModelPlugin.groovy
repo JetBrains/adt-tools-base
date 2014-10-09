@@ -40,7 +40,7 @@ import org.gradle.nativeplatform.BuildTypeContainer
 import org.gradle.nativeplatform.NativeLibrarySpec
 import org.gradle.nativeplatform.StaticLibraryBinary
 import org.gradle.nativeplatform.internal.DefaultSharedLibraryBinarySpec
-import org.gradle.nativeplatform.toolchain.ToolChainRegistry
+import org.gradle.platform.base.ToolChainRegistry
 import org.gradle.platform.base.ComponentSpecContainer
 import org.gradle.platform.base.PlatformContainer
 
