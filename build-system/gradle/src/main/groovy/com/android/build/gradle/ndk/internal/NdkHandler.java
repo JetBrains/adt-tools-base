@@ -72,8 +72,6 @@ public class NdkHandler {
 
     private NdkExtension ndkExtension;
 
-    private Project project;
-
     private File ndkDirectory;
 
     static {
@@ -104,10 +102,9 @@ public class NdkHandler {
                 .build();
     }
 
-    public NdkHandler(Project project, NdkExtension ndkExtension) {
-        this.project = project;
+    public NdkHandler(File projectDir, NdkExtension ndkExtension) {
         this.ndkExtension = ndkExtension;
-        ndkDirectory = findNdkDirectory(project);
+        ndkDirectory = findNdkDirectory(projectDir);
     }
 
     /**
@@ -130,9 +127,8 @@ public class NdkHandler {
      * The NDK directory can be set in the local.properties file or using the ANDROID_NDK_HOME
      * environment variable.
      */
-    private static File findNdkDirectory(Project project) {
-        File rootDir = project.getRootDir();
-        File localProperties = new File(rootDir, FN_LOCAL_PROPERTIES);
+    private static File findNdkDirectory(File projectDir) {
+        File localProperties = new File(projectDir, FN_LOCAL_PROPERTIES);
 
         if (localProperties.isFile()) {
 
