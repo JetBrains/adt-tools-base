@@ -41,6 +41,7 @@ import com.android.sdklib.internal.repository.packages.ToolPackage;
 import com.android.sdklib.internal.repository.sources.SdkSource;
 import com.android.sdklib.internal.repository.sources.SdkSources;
 import com.android.sdklib.repository.FullRevision;
+import com.android.sdklib.repository.descriptors.IdDisplay;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -982,9 +983,10 @@ public class SdkUpdaterLogic {
     }
 
     /**
-     * Resolves dependencies on platform for an addon.
+     * Resolves dependencies on platform for an add-on.
+     * Resolves dependencies on a system-image on its base platform or add-on.
      *
-     * An addon depends on having a platform with the same API level.
+     * An add-on depends on having a platform with the same API level.
      *
      * Finds the platform dependency. If found, add it to the list of things to install.
      * Returns the archive info dependency, if any.
@@ -999,15 +1001,33 @@ public class SdkUpdaterLogic {
         // This is the requirement to match.
         AndroidVersion v = pkg.getAndroidVersion();
 
-        // Find a platform that would satisfy the requirement.
+
+        // The dependency package must be a PlatformPackage or an AddonPackage.
+        // For an add-on, we also need to have the same vendor and name-id.
+        Class<? extends Package> expectedClass = PlatformPackage.class;
+        IdDisplay addonVendor = null;
+        IdDisplay addonTag = null;
+        if (pkg instanceof SystemImagePackage && !((SystemImagePackage) pkg).isPlatform()) {
+            expectedClass = AddonPackage.class;
+            addonVendor = ((SystemImagePackage) pkg).getAddonVendor();
+            addonTag = ((SystemImagePackage) pkg).getTag();
+        }
+
+        // Find a platform or addon that would satisfy the requirement.
 
         // First look in locally installed packages.
         for (ArchiveInfo ai : localArchives) {
             Archive a = ai.getNewArchive();
             if (a != null) {
                 Package p = a.getParentPackage();
-                if (p instanceof PlatformPackage) {
-                    if (v.equals(((PlatformPackage) p).getAndroidVersion())) {
+                if (expectedClass.isInstance(p)) {
+                    if (v.equals(((IAndroidVersionProvider) p).getAndroidVersion())) {
+                        if (addonVendor != null && addonTag != null && p instanceof AddonPackage) {
+                            if (!((AddonPackage) p).getVendorId().equals(addonVendor.getId()) ||
+                                !((AddonPackage) p).getNameId().equals(addonTag.getId())) {
+                                continue;
+                            }
+                        }
                         // We found one already installed.
                         return null;
                     }
@@ -1020,8 +1040,14 @@ public class SdkUpdaterLogic {
             Archive a = ai.getNewArchive();
             if (a != null) {
                 Package p = a.getParentPackage();
-                if (p instanceof PlatformPackage) {
-                    if (v.equals(((PlatformPackage) p).getAndroidVersion())) {
+                if (expectedClass.isInstance(p)) {
+                    if (v.equals(((IAndroidVersionProvider) p).getAndroidVersion())) {
+                        if (addonVendor != null && addonTag != null && p instanceof AddonPackage) {
+                            if (!((AddonPackage) p).getVendorId().equals(addonVendor.getId()) ||
+                                !((AddonPackage) p).getNameId().equals(addonTag.getId())) {
+                                continue;
+                            }
+                        }
                         // The dependency is already scheduled for install, nothing else to do.
                         return ai;
                     }
@@ -1033,8 +1059,14 @@ public class SdkUpdaterLogic {
         if (selectedArchives != null) {
             for (Archive a : selectedArchives) {
                 Package p = a.getParentPackage();
-                if (p instanceof PlatformPackage) {
-                    if (v.equals(((PlatformPackage) p).getAndroidVersion())) {
+                if (expectedClass.isInstance(p)) {
+                    if (v.equals(((IAndroidVersionProvider) p).getAndroidVersion())) {
+                        if (addonVendor != null && addonTag != null && p instanceof AddonPackage) {
+                            if (!((AddonPackage) p).getVendorId().equals(addonVendor.getId()) ||
+                                !((AddonPackage) p).getNameId().equals(addonTag.getId())) {
+                                continue;
+                            }
+                        }
                         // It's not already in the list of things to install, so add it now
                         return insertArchive(a,
                                 outArchives,
@@ -1051,8 +1083,14 @@ public class SdkUpdaterLogic {
         // Finally nothing matched, so let's look at all available remote packages
         fetchRemotePackages(remotePkgs, remoteSources);
         for (Package p : remotePkgs) {
-            if (p instanceof PlatformPackage) {
-                if (v.equals(((PlatformPackage) p).getAndroidVersion())) {
+            if (expectedClass.isInstance(p)) {
+                if (v.equals(((IAndroidVersionProvider) p).getAndroidVersion())) {
+                    if (addonVendor != null && addonTag != null && p instanceof AddonPackage) {
+                        if (!((AddonPackage) p).getVendorId().equals(addonVendor.getId()) ||
+                            !((AddonPackage) p).getNameId().equals(addonTag.getId())) {
+                            continue;
+                        }
+                    }
                     // It's not already in the list of things to install, so add the
                     // first compatible archive we can find.
                     for (Archive a : p.getArchives()) {
