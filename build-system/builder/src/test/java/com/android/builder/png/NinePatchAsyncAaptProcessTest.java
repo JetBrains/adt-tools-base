@@ -35,6 +35,8 @@ public class NinePatchAsyncAaptProcessTest extends NinePatchAaptProcessorTest {
 
     public static Test suite() {
         TestSuite suite = new TestSuite();
+        // Ignore until aapt supports server mode.
+        /*
         suite.setName("NinePatchAsyncAaptProcessor");
 
         NinePatchAaptProcessorTest test = null;
@@ -51,7 +53,7 @@ public class NinePatchAsyncAaptProcessTest extends NinePatchAaptProcessorTest {
         if (test != null) {
             test.setIsFinal(true);
         }
-
+        */
         return suite;
     }
 
