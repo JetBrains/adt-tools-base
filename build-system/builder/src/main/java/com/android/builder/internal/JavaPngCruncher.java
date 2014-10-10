@@ -40,4 +40,9 @@ public class JavaPngCruncher implements PngCruncher {
             throw new IOException(e);
         }
     }
+
+    @Override
+    public void end() throws InterruptedException {
+        // nothing to do, it's all synchronous.
+    }
 }

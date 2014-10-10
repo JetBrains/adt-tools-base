@@ -28,7 +28,7 @@ public class AaptOptionsImpl implements AaptOptions {
     private List<String> noCompressList
 
     @Input
-    private boolean useAaptPngCruncher = true;
+    private boolean useQueuedAaptPngCruncher = false;
 
     @Input
     private boolean failOnMissingConfigEntry = false;
@@ -55,17 +55,17 @@ public class AaptOptionsImpl implements AaptOptions {
         return noCompressList
     }
 
-    public void useAaptPngCruncher(boolean value) {
-        useAaptPngCruncher = value;
+    public void useQueuedAaptPngCruncher(boolean value) {
+        useQueuedAaptPngCruncher = value;
     }
 
-    public void setUseAaptPngCruncher(boolean value) {
-        useAaptPngCruncher = value;
+    public void setUseQueuedAaptPngCruncher(boolean value) {
+        useQueuedAaptPngCruncher = value;
     }
 
     @Override
-    public boolean getUseAaptPngCruncher() {
-        return useAaptPngCruncher;
+    public boolean getUseQueuedAaptPngCruncher() {
+        return useQueuedAaptPngCruncher;
     }
 
     public void failOnMissingConfigEntry(boolean value) {
