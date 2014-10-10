@@ -967,7 +967,7 @@ public abstract class BasePlugin {
 
         mergeResourcesTask.process9Patch = process9Patch
 
-        mergeResourcesTask.conventionMapping.useAaptCruncher = { extension.aaptOptions.useAaptPngCruncher }
+        mergeResourcesTask.conventionMapping.useQueuedAaptPngCruncher = { extension.aaptOptions.useQueuedAaptPngCruncher }
 
         mergeResourcesTask.conventionMapping.inputResourceSets = {
             def generatedResFolders = [ variantData.renderscriptCompileTask.getResOutputDir(),

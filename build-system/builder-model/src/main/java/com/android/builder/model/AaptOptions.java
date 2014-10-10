@@ -33,9 +33,13 @@ public interface AaptOptions {
     Collection<String> getNoCompress();
 
     /**
-     * passes the --error-on-missing-config-entry parameter to the appt command, by default false.
+     * passes the --error-on-missing-config-entry parameter to the aapt command, by default false.
      */
     boolean getFailOnMissingConfigEntry();
 
-    boolean getUseAaptPngCruncher();
+    /**
+     * Uses the multi-threaded, queue based aapt cruncher, false by default.
+     * @return true if the queue based aapt cruncher should be used.
+     */
+    boolean getUseQueuedAaptPngCruncher();
 }

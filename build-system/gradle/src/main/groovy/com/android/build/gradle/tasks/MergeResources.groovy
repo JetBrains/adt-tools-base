@@ -17,6 +17,7 @@ package com.android.build.gradle.tasks
 
 import com.android.build.gradle.internal.tasks.IncrementalTask
 import com.android.builder.internal.JavaPngCruncher
+import com.android.builder.png.QueuedCruncher
 import com.android.ide.common.internal.PngCruncher
 import com.android.ide.common.res2.FileStatus
 import com.android.ide.common.res2.FileValidity
@@ -24,6 +25,7 @@ import com.android.ide.common.res2.MergedResourceWriter
 import com.android.ide.common.res2.MergingException
 import com.android.ide.common.res2.ResourceMerger
 import com.android.ide.common.res2.ResourceSet
+import com.android.sdklib.BuildToolInfo
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.OutputDirectory
@@ -47,7 +49,7 @@ public class MergeResources extends IncrementalTask {
     boolean process9Patch
 
     @Input
-    boolean useAaptCruncher
+    boolean useQueuedAaptPngCruncher;
 
     @Input
     boolean insertSourceMarkers = true
@@ -63,7 +65,10 @@ public class MergeResources extends IncrementalTask {
     }
 
     private PngCruncher getCruncher() {
-        return getUseAaptCruncher() ? builder.aaptCruncher : new JavaPngCruncher()
+        return getUseQueuedAaptPngCruncher() ? QueuedCruncher.Builder.INSTANCE.newCruncher(
+                builder.getTargetInfo().buildTools.getPath(
+                BuildToolInfo.PathId.AAPT), builder.getLogger())
+            : builder.aaptCruncher;
     }
 
     @Override
