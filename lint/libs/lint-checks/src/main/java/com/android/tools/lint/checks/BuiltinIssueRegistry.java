@@ -147,6 +147,7 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(NamespaceDetector.RES_AUTO);
         issues.add(NamespaceDetector.TYPO);
         issues.add(NamespaceDetector.UNUSED);
+        issues.add(NegativeMarginDetector.ISSUE);
         issues.add(NestedScrollingWidgetDetector.ISSUE);
         issues.add(NfcTechListDetector.ISSUE);
         issues.add(NonInternationalizedSmsDetector.ISSUE);
