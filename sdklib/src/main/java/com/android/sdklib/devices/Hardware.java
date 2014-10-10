@@ -21,6 +21,7 @@ import com.android.annotations.Nullable;
 import com.android.resources.Keyboard;
 import com.android.resources.Navigation;
 import com.android.resources.UiMode;
+import com.google.common.base.Objects;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -48,7 +49,7 @@ public class Hardware {
     private PowerType mPluggedIn;
     private File mSkinFile;
 
-    public void setSkinFile(File skinFile) {
+    public void setSkinFile(@Nullable File skinFile) {
       mSkinFile = skinFile;
     }
 
@@ -298,8 +299,7 @@ public class Hardware {
                 && mAbis.equals(hw.getSupportedAbis())
                 && mUiModes.equals(hw.getSupportedUiModes())
                 && mPluggedIn == hw.getChargeType()
-                && ((mSkinFile != null && mSkinFile.equals(hw.getSkinFile()))
-                    || (mSkinFile == null && hw.getSkinFile() == null));
+                && Objects.equal(mSkinFile, hw.getSkinFile());
     }
 
     @Override
@@ -391,7 +391,7 @@ public class Hardware {
         sb.append(mUiModes);
         sb.append(", mPluggedIn=");
         sb.append(mPluggedIn);
-        sb.append(", mSkinPath=");
+        sb.append(", mSkinFile=");
         sb.append(mSkinFile);
         sb.append(">");
         return sb.toString();

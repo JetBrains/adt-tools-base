@@ -340,7 +340,8 @@ public class DeviceParser {
                 mBuilder.addBootProp(mBootProp[0], mBootProp[1]);
                 mBootProp = null;
             } else if (DeviceSchema.NODE_SKIN.equals(localName)) {
-                mHardware.setSkinFile(new File(getString(mStringAccumulator)));
+                String path = getString(mStringAccumulator).replace('/', File.separatorChar);
+                mHardware.setSkinFile(new File(path));
             }
         }
 
