@@ -452,8 +452,12 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
         SetMultimap<IdDisplay, String> tagToAbiFound = TreeMultimap.create();
 
 
-        // Look in the system images folders: SDK/system-image/addon-id-tag/abi (many abi possible)
-        // Optional: look for skinds under SDK/system-image/addon-id-tag/abi/skins/skin-name
+        // Look in the system images folders:
+        // - SDK/system-image/platform/addon-id-tag/abi
+        // - SDK/system-image/addon-id-tag/abi (many abi possible)
+        // Optional: look for skins under
+        // - SDK/system-image/platform/addon-id-tag/abi/skins/skin-name
+        // - SDK/system-image/addon-id-tag/abi/skins/skin-name
         // If we find multiple occurrences of the same platform/abi, the first one read wins.
 
         LocalPkgInfo[] sysImgInfos = getLocalSdk().getPkgsInfos(PkgType.PKG_ADDON_SYS_IMAGE);
