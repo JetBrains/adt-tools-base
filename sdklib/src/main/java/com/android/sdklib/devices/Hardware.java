@@ -299,7 +299,7 @@ public class Hardware {
                 && mUiModes.equals(hw.getSupportedUiModes())
                 && mPluggedIn == hw.getChargeType()
                 && ((mSkinFile != null && mSkinFile.equals(hw.getSkinFile()))
-                    || (mSkinFile != null && hw.getSkinFile() == null));
+                    || (mSkinFile == null && hw.getSkinFile() == null));
     }
 
     @Override
