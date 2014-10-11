@@ -44,7 +44,7 @@ public class TestUtils {
         File root = null;
         for (String name : names) {
             if (root == null) {
-                root = new File("src/test/resources/testData/" + name);
+                root = new File("/Users/jedo/src/dev/tools/base/build-system/builder/src/test/resources/testData/" + name);
             } else {
                 root = new File(root, name);
             }
