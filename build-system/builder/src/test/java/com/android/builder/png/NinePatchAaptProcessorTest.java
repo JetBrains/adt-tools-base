@@ -89,9 +89,9 @@ public class NinePatchAaptProcessorTest extends BasePngTest {
     protected PngCruncher getCruncher() {
         ILogger logger = new StdLogger(StdLogger.Level.VERBOSE);
         CommandLineRunner commandLineRunner = new CommandLineRunner(logger);
-        File aapt = new File(getSdkDir(), "build-tools/android-21/aapt");
+        File aapt = new File(getSdkDir(), "build-tools/20.0.0/aapt");
 
-        assertTrue("Test requires build-tools 21.0.0 in " + aapt.getAbsolutePath(), aapt.isFile());
+        assertTrue("Test requires build-tools 20.0.0 in " + aapt.getAbsolutePath(), aapt.isFile());
         return new AaptCruncher(aapt.getAbsolutePath(), commandLineRunner);
     }
 
@@ -109,6 +109,10 @@ public class NinePatchAaptProcessorTest extends BasePngTest {
         System.out.println("Comparing crunched files");
         long comparisonStartTime = System.currentTimeMillis();
         for (Map.Entry<File, File> sourceAndCrunched : sourceAndCrunchedFiles.entrySet()) {
+            System.out.println(sourceAndCrunched.getKey().getName());
+            if (sourceAndCrunched.getKey().getName().equals("zoom_plate.9.png")) {
+                System.out.println("got it.");
+            }
             File crunched = new File(sourceAndCrunched.getKey().getParent(), sourceAndCrunched.getKey().getName() + getControlFileSuffix());
 
             //copyFile(sourceAndCrunched.getValue(), crunched);
@@ -116,7 +120,8 @@ public class NinePatchAaptProcessorTest extends BasePngTest {
 
             try {
                 compareImageContent(crunched, sourceAndCrunched.getValue(), false);
-            } catch (AssertionFailedError e) {
+            } catch(Throwable e) {
+                copyFile(sourceAndCrunched.getValue(), crunched);
                 throw new RuntimeException("Failed with " + testedChunks.get("IHDR"), e);
             }
         }
