@@ -110,9 +110,6 @@ public class NinePatchAaptProcessorTest extends BasePngTest {
         long comparisonStartTime = System.currentTimeMillis();
         for (Map.Entry<File, File> sourceAndCrunched : sourceAndCrunchedFiles.entrySet()) {
             System.out.println(sourceAndCrunched.getKey().getName());
-            if (sourceAndCrunched.getKey().getName().equals("zoom_plate.9.png")) {
-                System.out.println("got it.");
-            }
             File crunched = new File(sourceAndCrunched.getKey().getParent(), sourceAndCrunched.getKey().getName() + getControlFileSuffix());
 
             //copyFile(sourceAndCrunched.getValue(), crunched);
@@ -121,7 +118,6 @@ public class NinePatchAaptProcessorTest extends BasePngTest {
             try {
                 compareImageContent(crunched, sourceAndCrunched.getValue(), false);
             } catch(Throwable e) {
-                copyFile(sourceAndCrunched.getValue(), crunched);
                 throw new RuntimeException("Failed with " + testedChunks.get("IHDR"), e);
             }
         }
