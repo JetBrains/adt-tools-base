@@ -17,6 +17,8 @@
 package com.android.builder.dependency;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+import com.android.builder.model.MavenCoordinates;
 
 import java.io.File;
 
@@ -25,22 +27,36 @@ import java.io.File;
  */
 public class JarDependency {
 
+    @NonNull
     private final File mJarFile;
+
     private final boolean mCompiled;
     private boolean mPackaged;
     private final boolean mProguarded;
 
-    public JarDependency(@NonNull File jarFile, boolean compiled, boolean packaged,
-                         boolean proguarded) {
+    @Nullable
+    private final MavenCoordinates mResolvedCoordinates;
+
+    public JarDependency(
+            @NonNull File jarFile,
+            boolean compiled,
+            boolean packaged,
+            boolean proguarded,
+            @Nullable MavenCoordinates resolvedCoordinates) {
         mJarFile = jarFile;
         mCompiled = compiled;
         mPackaged = packaged;
         mProguarded = proguarded;
+        mResolvedCoordinates = resolvedCoordinates;
     }
 
 
-    public JarDependency(@NonNull File jarFile, boolean compiled, boolean packaged) {
-        this(jarFile, compiled, packaged, true);
+    public JarDependency(
+            @NonNull File jarFile,
+            boolean compiled,
+            boolean packaged,
+            @Nullable MavenCoordinates resolvedCoordinates) {
+        this(jarFile, compiled, packaged, true, resolvedCoordinates);
     }
 
     @NonNull
@@ -64,6 +80,11 @@ public class JarDependency {
         return mProguarded;
     }
 
+    @Nullable
+    public MavenCoordinates getResolvedCoordinates() {
+        return mResolvedCoordinates;
+    }
+
     @Override
     public String toString() {
         return "JarDependency{" +
@@ -71,6 +92,7 @@ public class JarDependency {
                 ", mCompiled=" + mCompiled +
                 ", mPackaged=" + mPackaged +
                 ", mProguarded=" + mProguarded +
+                ", mResolvedCoordinates=" + mResolvedCoordinates +
                 '}';
     }
 }

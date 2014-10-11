@@ -16,36 +16,41 @@
 
 package com.android.build.gradle.internal.model;
 
-import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.builder.model.JavaLibrary;
+import com.android.builder.model.Library;
 import com.android.builder.model.MavenCoordinates;
 
-import java.io.File;
 import java.io.Serializable;
-import java.util.Collections;
-import java.util.List;
 
-public class JavaLibraryImpl extends LibraryImpl implements JavaLibrary, Serializable {
-    private final File jarFile;
+/**
+ * Implementation of Library interface for the model.
+ */
+class LibraryImpl implements Library, Serializable {
+    private static final long serialVersionUID = 1L;
 
-    public JavaLibraryImpl(
-            @NonNull File jarFile,
+    @Nullable
+    private final MavenCoordinates requestedCoordinates;
+
+    @Nullable
+    private final MavenCoordinates resolvedCoordinates;
+
+    LibraryImpl(
             @Nullable MavenCoordinates requestedCoordinates,
             @Nullable MavenCoordinates resolvedCoordinates) {
-        super(requestedCoordinates, resolvedCoordinates);
-        this.jarFile = jarFile;
+
+        this.requestedCoordinates = requestedCoordinates;
+        this.resolvedCoordinates = resolvedCoordinates;
     }
 
-    @NonNull
+    @Nullable
     @Override
-    public File getJarFile() {
-        return jarFile;
+    public MavenCoordinates getRequestedCoordinates() {
+        return requestedCoordinates;
     }
 
-    @NonNull
+    @Nullable
     @Override
-    public List<? extends JavaLibrary> getDependencies() {
-        return Collections.emptyList();
+    public MavenCoordinates getResolvedCoordinates() {
+        return resolvedCoordinates;
     }
 }

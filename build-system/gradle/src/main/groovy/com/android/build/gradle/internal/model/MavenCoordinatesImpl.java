@@ -19,14 +19,21 @@ package com.android.build.gradle.internal.model;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.annotations.concurrency.Immutable;
 import com.android.builder.model.MavenCoordinates;
 import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 
+import org.gradle.api.artifacts.ResolvedArtifact;
+
 import java.io.Serializable;
 import java.util.List;
 
+/**
+ * Serializable implementation of MavenCoordinates for use in the model.
+ */
+@Immutable
 public class MavenCoordinatesImpl implements MavenCoordinates, Serializable {
     private final String groupId;
     private final String artifactId;
@@ -34,11 +41,20 @@ public class MavenCoordinatesImpl implements MavenCoordinates, Serializable {
     private final String packaging;
     private final String classifier;
 
-    public MavenCoordinatesImpl(String groupId, String artifactId, String version) {
+    public MavenCoordinatesImpl(@NonNull ResolvedArtifact resolvedArtifact) {
+        this(
+                resolvedArtifact.getModuleVersion().getId().getGroup(),
+                resolvedArtifact.getModuleVersion().getId().getName(),
+                resolvedArtifact.getModuleVersion().getId().getVersion(),
+                resolvedArtifact.getExtension(),
+                resolvedArtifact.getClassifier());
+    }
+
+    MavenCoordinatesImpl(String groupId, String artifactId, String version) {
         this(groupId, artifactId, version, null, null);
     }
 
-    public MavenCoordinatesImpl(String groupId, String artifactId, String version, String packaging,
+    MavenCoordinatesImpl(String groupId, String artifactId, String version, String packaging,
             String classifier) {
         this.groupId = groupId;
         this.artifactId = artifactId;

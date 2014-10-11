@@ -27,7 +27,7 @@ import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
 
-public class AndroidLibraryImpl implements AndroidLibrary, Serializable {
+public class AndroidLibraryImpl extends LibraryImpl implements AndroidLibrary, Serializable {
     private static final long serialVersionUID = 1L;
 
     @Nullable
@@ -61,10 +61,14 @@ public class AndroidLibraryImpl implements AndroidLibrary, Serializable {
     @NonNull
     private final List<AndroidLibrary> dependencies;
 
-    AndroidLibraryImpl(@NonNull LibraryDependency libraryDependency,
-                       @NonNull List<AndroidLibrary> dependencies,
-                       @Nullable String project,
-                       @Nullable String variant) {
+    AndroidLibraryImpl(
+            @NonNull LibraryDependency libraryDependency,
+            @NonNull List<AndroidLibrary> dependencies,
+            @Nullable String project,
+            @Nullable String variant,
+            @Nullable MavenCoordinates requestedCoordinates,
+            @Nullable MavenCoordinates resolvedCoordinates) {
+        super(requestedCoordinates, resolvedCoordinates);
         this.dependencies = dependencies;
         bundle = libraryDependency.getBundle();
         folder = libraryDependency.getFolder();
@@ -171,18 +175,5 @@ public class AndroidLibraryImpl implements AndroidLibrary, Serializable {
     @Override
     public File getLintJar() {
         return lintJar;
-    }
-
-
-    @Nullable
-    @Override
-    public MavenCoordinates getRequestedCoordinates() {
-        return null;
-    }
-
-    @Nullable
-    @Override
-    public MavenCoordinates getResolvedCoordinates() {
-        return null;
     }
 }

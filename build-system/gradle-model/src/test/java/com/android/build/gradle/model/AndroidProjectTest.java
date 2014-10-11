@@ -36,6 +36,7 @@ import com.android.builder.model.Dependencies;
 import com.android.builder.model.JavaArtifact;
 import com.android.builder.model.JavaCompileOptions;
 import com.android.builder.model.JavaLibrary;
+import com.android.builder.model.MavenCoordinates;
 import com.android.builder.model.ProductFlavor;
 import com.android.builder.model.ProductFlavorContainer;
 import com.android.builder.model.SigningConfig;
@@ -47,6 +48,7 @@ import com.android.prefs.AndroidLocation;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 
 import junit.framework.TestCase;
 
@@ -394,6 +396,41 @@ public class AndroidProjectTest extends TestCase {
         assertNotNull(debugMainOutput.getGeneratedManifest());
         assertEquals(12, debugMainOutput.getVersionCode());
 
+        // check debug dependencies
+        Dependencies debugDependencies = debugMainInfo.getDependencies();
+        assertNotNull(debugDependencies);
+        Collection<AndroidLibrary> debugLibraries = debugDependencies.getLibraries();
+        assertNotNull(debugLibraries);
+        assertEquals(1, debugLibraries.size());
+        assertTrue(debugDependencies.getProjects().isEmpty());
+
+        AndroidLibrary androidLibrary = debugLibraries.iterator().next();
+        assertNotNull(androidLibrary);
+        assertNotNull(androidLibrary.getBundle());
+        assertNotNull(androidLibrary.getFolder());
+        MavenCoordinates coord = androidLibrary.getResolvedCoordinates();
+        assertNotNull(coord);
+        assertEquals("com.google.android.gms:play-services:3.1.36",
+                coord.getGroupId() + ":" + coord.getArtifactId() + ":" + coord.getVersion());
+
+
+        Collection<JavaLibrary> javaLibraries = debugDependencies.getJavaLibraries();
+        assertNotNull(javaLibraries);
+        assertEquals(2, javaLibraries.size());
+
+        Set<String> javaLibs = Sets.newHashSet(
+                "com.android.support:support-v13:13.0.0",
+                "com.android.support:support-v4:13.0.0"
+        );
+
+        for (JavaLibrary javaLib : javaLibraries) {
+            coord = javaLib.getResolvedCoordinates();
+            assertNotNull(coord);
+            String lib = coord.getGroupId() + ":" + coord.getArtifactId() + ":" + coord.getVersion();
+            assertTrue(javaLibs.contains(lib));
+            javaLibs.remove(lib);
+        }
+
         // this variant is tested.
         Collection<AndroidArtifact> debugExtraAndroidArtifacts = debugVariant.getExtraAndroidArtifacts();
         AndroidArtifact debugTestInfo = getAndroidArtifact(debugExtraAndroidArtifacts,
@@ -434,7 +471,6 @@ public class AndroidProjectTest extends TestCase {
         assertEquals(1, resValues.size());
 
         assertEquals("foo", resValues.get("foo").getValue());
-
 
         // test on the debug build type.
         Collection<BuildTypeContainer> buildTypes = model.getBuildTypes();
@@ -499,18 +535,28 @@ public class AndroidProjectTest extends TestCase {
         AndroidArtifact relTestInfo = getAndroidArtifact(releaseExtraAndroidArtifacts, ARTIFACT_ANDROID_TEST);
         assertNull("Release test info null-check", relTestInfo);
 
-        // check debug dependencies
-        Dependencies dependencies = debugMainInfo.getDependencies();
-        assertNotNull(dependencies);
-        assertEquals(2, dependencies.getJavaLibraries().size());
-        assertEquals(1, dependencies.getLibraries().size());
+        // check release dependencies
+        Dependencies releaseDependencies = relMainInfo.getDependencies();
+        assertNotNull(releaseDependencies);
+        Collection<AndroidLibrary> releaseLibraries = releaseDependencies.getLibraries();
+        assertNotNull(releaseLibraries);
+        assertEquals(3, releaseLibraries.size());
 
-        AndroidLibrary lib = dependencies.getLibraries().iterator().next();
-        assertNotNull(lib);
-        assertNotNull(lib.getBundle());
-        assertNotNull(lib.getFolder());
+        javaLibs = Sets.newHashSet(
+                "com.android.support:support-v13:20.0.0",
+                "com.android.support:support-v4:20.0.0",
+                "com.google.android.gms:play-services:3.1.36"
+        );
 
-        assertTrue(dependencies.getProjects().isEmpty());
+        for (AndroidLibrary androidLib : releaseLibraries) {
+            assertNotNull(androidLib.getBundle());
+            assertNotNull(androidLib.getFolder());
+            coord = androidLib.getResolvedCoordinates();
+            assertNotNull(coord);
+            String lib = coord.getGroupId() + ":" + coord.getArtifactId() + ":" + coord.getVersion();
+            assertTrue(javaLibs.contains(lib));
+            javaLibs.remove(lib);
+        }
     }
 
     public void testBasicSigningConfigs() throws Exception {
@@ -1321,6 +1367,7 @@ public class AndroidProjectTest extends TestCase {
                 File f;
                 if (System.getenv("IDE_MODE") != null) {
                     f = dir.getParentFile().getParentFile().getParentFile();
+                    f = new File(f, "build-system");
                 } else {
                     f = dir.getParentFile().getParentFile().getParentFile().getParentFile().getParentFile().getParentFile().getParentFile();
                     f = new File(f, "tools" + File.separator + "base" + File.separator + "build-system");

@@ -31,7 +31,6 @@ import com.android.build.gradle.internal.core.GradleVariantConfiguration
 import com.android.build.gradle.internal.coverage.JacocoInstrumentTask
 import com.android.build.gradle.internal.coverage.JacocoPlugin
 import com.android.build.gradle.internal.coverage.JacocoReportTask
-import com.android.build.gradle.internal.dependency.ClassifiedJarDependency
 import com.android.build.gradle.internal.dependency.DependencyChecker
 import com.android.build.gradle.internal.dependency.LibraryDependencyImpl
 import com.android.build.gradle.internal.dependency.ManifestDependencyImpl
@@ -46,6 +45,7 @@ import com.android.build.gradle.internal.dsl.SigningConfigDsl
 import com.android.build.gradle.internal.dsl.SigningConfigFactory
 import com.android.build.gradle.internal.model.ArtifactMetaDataImpl
 import com.android.build.gradle.internal.model.JavaArtifactImpl
+import com.android.build.gradle.internal.model.MavenCoordinatesImpl
 import com.android.build.gradle.internal.model.ModelBuilder
 import com.android.build.gradle.internal.publishing.ApkPublishArtifact
 import com.android.build.gradle.internal.tasks.AndroidReportTask
@@ -2828,7 +2828,8 @@ public abstract class BasePlugin {
                     !(dep instanceof ProjectDependency)) {
                 Set<File> files = ((SelfResolvingDependency) dep).resolve()
                 for (File f : files) {
-                    localJars.put(f, new JarDependency(f, true /*compiled*/, false /*packaged*/))
+                    localJars.put(f, new JarDependency(f, true /*compiled*/, false /*packaged*/,
+                            null /*resolvedCoorinates*/))
                 }
             }
         }
@@ -2855,7 +2856,8 @@ public abstract class BasePlugin {
                 }
 
                 if (f.getName().toLowerCase().endsWith(".jar")) {
-                    jars.put(f, new JarDependency(f, false /*compiled*/, true /*packaged*/))
+                    jars.put(f, new JarDependency(f, false /*compiled*/, true /*packaged*/,
+                            null /*resolveCoordinates*/))
                 } else {
                     throw new RuntimeException("Package-only dependency '" +
                             f.absolutePath +
@@ -2929,6 +2931,7 @@ public abstract class BasePlugin {
                       Map<ModuleVersionIdentifier, List<LibraryDependencyImpl>> modules,
                       Map<ModuleVersionIdentifier, List<ResolvedArtifact>> artifacts,
                       Multimap<LibraryDependency, VariantDependencies> reverseMap) {
+
         ModuleVersionIdentifier id = moduleVersion.moduleVersion
         if (configDependencies.checker.excluded(id)) {
             return
@@ -2966,17 +2969,19 @@ public abstract class BasePlugin {
                     //def explodedDir = project.file("$project.rootProject.buildDir/${FD_INTERMEDIATES}/exploded-aar/$path")
                     def explodedDir = project.file("$project.buildDir/${FD_INTERMEDIATES}/exploded-aar/$path")
                     LibraryDependencyImpl adep = new LibraryDependencyImpl(
-                            artifact.file, explodedDir, nestedBundles, name, artifact.classifier)
+                            artifact.file, explodedDir, nestedBundles, name, artifact.classifier,
+                            null,
+                            new MavenCoordinatesImpl(artifact))
                     bundlesForThisModule << adep
                     reverseMap.put(adep, configDependencies)
                 } else {
                     jars.put(artifact.file,
-                            new ClassifiedJarDependency(
+                            new JarDependency(
                                     artifact.file,
                                     true /*compiled*/,
                                     false /*packaged*/,
                                     true /*proguarded*/,
-                                    artifact.classifier))
+                                    new MavenCoordinatesImpl(artifact)))
                 }
             }
 
