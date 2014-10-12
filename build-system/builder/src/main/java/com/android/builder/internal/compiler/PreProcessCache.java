@@ -172,7 +172,7 @@ public abstract class PreProcessCache<T extends PreProcessCache.Key> {
         @NonNull
         private final FullRevision mBuildToolsRevision;
 
-        private static Key of(@NonNull File sourceFile, @NonNull FullRevision buildToolsRevision) {
+        public static Key of(@NonNull File sourceFile, @NonNull FullRevision buildToolsRevision) {
             return new Key(sourceFile, buildToolsRevision);
         }
 

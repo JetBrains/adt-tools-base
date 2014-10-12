@@ -37,6 +37,7 @@ import com.android.builder.internal.SymbolLoader;
 import com.android.builder.internal.SymbolWriter;
 import com.android.builder.internal.TestManifestGenerator;
 import com.android.builder.internal.compiler.AidlProcessor;
+import com.android.builder.internal.compiler.JackConversionCache;
 import com.android.builder.internal.compiler.LeafFolderGatherer;
 import com.android.builder.internal.compiler.PreDexCache;
 import com.android.builder.internal.compiler.RenderScriptProcessor;
@@ -248,7 +249,39 @@ public class AndroidBuilder {
      * Helper method to get the boot classpath to be used during compilation.
      */
     @NonNull
-    public List<String> getBootClasspath() {
+    public List<File> getBootClasspath() {
+        checkState(mTargetInfo != null,
+                "Cannot call getBootClasspath() before setTargetInfo() is called.");
+
+        List<File> classpath = Lists.newArrayList();
+
+        IAndroidTarget target = mTargetInfo.getTarget();
+
+        for (String p : target.getBootClasspath()) {
+            classpath.add(new File(p));
+        }
+
+        // add optional libraries if any
+        IAndroidTarget.IOptionalLibrary[] libs = target.getOptionalLibraries();
+        if (libs != null) {
+            for (IAndroidTarget.IOptionalLibrary lib : libs) {
+                classpath.add(new File(lib.getJarPath()));
+            }
+        }
+
+        // add annotations.jar if needed.
+        if (target.getVersion().getApiLevel() <= 15) {
+            classpath.add(mSdkInfo.getAnnotationsJar());
+        }
+
+        return classpath;
+    }
+
+    /**
+     * Helper method to get the boot classpath to be used during compilation.
+     */
+    @NonNull
+    public List<String> getBootClasspathAsStrings() {
         checkState(mTargetInfo != null,
                 "Cannot call getBootClasspath() before setTargetInfo() is called.");
 
@@ -1688,6 +1721,65 @@ public class AndroidBuilder {
         command.add("--output");
         command.add(outFile.getAbsolutePath());
 
+        command.add(inputFile.getAbsolutePath());
+
+        commandLineRunner.runCmdLine(command, null);
+    }
+
+    /**
+     * Converts the bytecode of a library to the jack format
+     * @param inputFile the input file
+     * @param outFile the location of the output classes.dex file
+     * @param dexOptions dex options
+     *
+     * @throws IOException
+     * @throws InterruptedException
+     * @throws LoggedErrorException
+     */
+    public void convertLibraryToJack(
+            @NonNull File inputFile,
+            @NonNull File outFile,
+            @NonNull DexOptions dexOptions)
+            throws IOException, InterruptedException, LoggedErrorException {
+        checkState(mTargetInfo != null,
+                "Cannot call preJackLibrary() before setTargetInfo() is called.");
+
+        BuildToolInfo buildToolInfo = mTargetInfo.getBuildTools();
+
+        JackConversionCache.getCache().convertLibrary(inputFile, outFile, dexOptions, buildToolInfo,
+                mVerboseExec, mCmdLineRunner);
+    }
+
+    public static void convertLibraryToJack(
+            @NonNull File inputFile,
+            @NonNull File outFile,
+            @NonNull DexOptions dexOptions,
+            @NonNull BuildToolInfo buildToolInfo,
+            boolean verbose,
+            @NonNull CommandLineRunner commandLineRunner)
+            throws IOException, InterruptedException, LoggedErrorException {
+        checkNotNull(inputFile, "inputFile cannot be null.");
+        checkNotNull(outFile, "outFile cannot be null.");
+        checkNotNull(dexOptions, "dexOptions cannot be null.");
+
+        // launch dx: create the command line
+        ArrayList<String> command = Lists.newArrayList();
+
+        String jill = buildToolInfo.getPath(BuildToolInfo.PathId.JILL);
+        if (jill == null || !new File(jill).isFile()) {
+            throw new IllegalStateException("jill.jar is missing");
+        }
+
+        command.add("java");
+        if (dexOptions.getJavaMaxHeapSize() != null) {
+            command.add("-JXmx" + dexOptions.getJavaMaxHeapSize());
+        }
+        command.add("-jar");
+        command.add(jill);
+        command.add("--container");
+        command.add("zip");
+        command.add("--output");
+        command.add(outFile.getAbsolutePath());
         command.add(inputFile.getAbsolutePath());
 
         commandLineRunner.runCmdLine(command, null);

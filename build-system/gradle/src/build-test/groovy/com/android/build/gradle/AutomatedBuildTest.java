@@ -18,6 +18,7 @@ package com.android.build.gradle;
 
 import com.android.annotations.NonNull;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
@@ -37,7 +38,7 @@ public class AutomatedBuildTest extends BuildTest {
     private String gradleVersion;
     private TestType testType;
 
-    private static enum TestType { BUILD, REPORT }
+    private static enum TestType { BUILD, REPORT, JACK }
 
     private static final String[] sBuiltProjects = new String[] {
             "aidl",
@@ -95,7 +96,12 @@ public class AutomatedBuildTest extends BuildTest {
     );
 
     private static final String[] sReportProjects = new String[] {
-            "basic", "flavorlib"
+            "basic",
+            "flavorlib"
+    };
+
+    private static final String[] sJackProjects = new String[] {
+            "basic"
     };
 
     public static Test suite() {
@@ -139,6 +145,17 @@ public class AutomatedBuildTest extends BuildTest {
                         TestType.REPORT);
                 suite.addTest(test);
             }
+
+            if (System.getenv("TEST_JACK") != null) {
+                for (String projectName : sJackProjects) {
+                    String testName = "jack_" + projectName + "_" + gradleVersion;
+
+                    AutomatedBuildTest test = (AutomatedBuildTest) TestSuite.createTest(
+                            AutomatedBuildTest.class, testName);
+                    test.setProjectInfo(FOLDER_TEST_REGULAR, projectName, gradleVersion, TestType.JACK);
+                    suite.addTest(test);
+                }
+            }
         }
 
         return suite;
@@ -157,11 +174,20 @@ public class AutomatedBuildTest extends BuildTest {
 
     @Override
     protected void runTest() throws Throwable {
-        if (testType == TestType.BUILD) {
-            buildProject(testFolder, projectName, gradleVersion);
-        } else if (testType == TestType.REPORT) {
-            runTasksOn(testFolder, projectName, gradleVersion,
-                    "androidDependencies", "signingReport");
+        switch (testType) {
+            case BUILD:
+                buildProject(testFolder, projectName, gradleVersion);
+                break;
+            case JACK:
+                buildProject(testFolder, projectName, gradleVersion, Lists.newArrayList(
+                        "-PCUSTOM_JACK=1",
+                        "-PCUSTOM_BUILDTOOLS=21.1.0"
+                ));
+                break;
+            case REPORT:
+                runTasksOn(testFolder, projectName, gradleVersion,
+                        "androidDependencies", "signingReport");
+                break;
         }
     }
 }

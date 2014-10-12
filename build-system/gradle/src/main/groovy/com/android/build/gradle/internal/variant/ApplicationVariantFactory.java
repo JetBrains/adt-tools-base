@@ -169,7 +169,13 @@ public class ApplicationVariantFactory implements VariantFactory<ApplicationVari
         basePlugin.createAidlTask(variantData, null /*parcelableDir*/);
 
         // Add a compile task
-        basePlugin.createCompileTask(variantData, null /*testedVariant*/);
+        if (variantData.getVariantConfiguration().getBuildType().getUseJack()) {
+            basePlugin.createJackTask(appVariantData, null /*testedVariant*/);
+        } else{
+            basePlugin.createCompileTask(variantData, null /*testedVariant*/);
+
+            basePlugin.createPostCompilationTasks(appVariantData);
+        }
 
         // Add NDK tasks
         if (!basePlugin.getExtension().getUseNewNativePlugin()) {
@@ -180,7 +186,6 @@ public class ApplicationVariantFactory implements VariantFactory<ApplicationVari
                 BaseVariantData.SplitHandlingPolicy.RELEASE_21_AND_AFTER_POLICY) {
             basePlugin.createPackageSplitResTask(appVariantData);
         }
-        basePlugin.createPostCompilationTasks(appVariantData);
 
         basePlugin.createPackagingTask(appVariantData, assembleTask, true /*publishApk*/);
     }

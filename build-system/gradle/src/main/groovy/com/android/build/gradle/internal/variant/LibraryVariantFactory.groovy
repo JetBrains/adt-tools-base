@@ -432,7 +432,7 @@ public class LibraryVariantFactory implements VariantFactory<LibraryVariantData>
         // Setup the boot classpath just before the task actually runs since this will
         // force the sdk to be parsed. (Same as in compileTask)
         task.doFirst {
-            task.bootClasspath = basePlugin.getAndroidBuilder().getBootClasspath()
+            task.bootClasspath = basePlugin.getAndroidBuilder().getBootClasspathAsStrings()
         }
 
         return task

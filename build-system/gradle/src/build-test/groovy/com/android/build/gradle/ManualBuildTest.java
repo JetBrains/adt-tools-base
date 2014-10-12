@@ -545,6 +545,7 @@ public class ManualBuildTest extends BuildTest {
                 project,
                 BasePlugin.GRADLE_TEST_VERSION,
                 args,
+                Collections.<String, String>emptyMap(),
                 "clean", ":assembleRelease");
 
         // check that the output exist. Since the filename is tried to signing/zipaligning

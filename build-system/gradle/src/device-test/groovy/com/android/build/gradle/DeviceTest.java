@@ -17,8 +17,8 @@
 package com.android.build.gradle;
 
 import com.android.annotations.NonNull;
-import com.android.build.gradle.internal.test.BaseTest;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
@@ -46,7 +46,7 @@ public class DeviceTest extends BuildTest {
     private TestType testType;
 
 
-    private static enum TestType { CHECK, CHECK_AND_REPORT, INSTALL }
+    private static enum TestType { CHECK, CHECK_AND_REPORT, INSTALL, JACK }
 
     private static final String[] sBuiltProjects = new String[] {
             "api",
@@ -90,6 +90,10 @@ public class DeviceTest extends BuildTest {
     };
 
     private static final String[] sInstallProjects = new String[] {
+            "basic"
+    };
+
+    private static final String[] sJackProjects = new String[] {
             "basic"
     };
 
@@ -140,6 +144,17 @@ public class DeviceTest extends BuildTest {
                         TestType.INSTALL);
                 suite.addTest(test);
             }
+
+            if (System.getenv("TEST_JACK") != null) {
+                for (String projectName : sJackProjects) {
+                    String testName = "jack_" + projectName + "_" + gradleVersion;
+
+                    DeviceTest test = (DeviceTest) TestSuite.createTest(DeviceTest.class, testName);
+                    test.setProjectInfo(FOLDER_TEST_REGULAR, projectName, gradleVersion,
+                            TestType.JACK);
+                    suite.addTest(test);
+                }
+            }
         }
 
         return suite;
@@ -174,6 +189,13 @@ public class DeviceTest extends BuildTest {
                 case INSTALL:
                     runTasksOn(testFolder, projectName, gradleVersion,
                             "clean", "installDebug", "uninstallAll");
+                    break;
+                case JACK:
+                    runTasksOn(testFolder, projectName, gradleVersion,
+                            Lists.newArrayList(
+                                    "-PCUSTOM_JACK=1",
+                                    "-PCUSTOM_BUILDTOOLS=21.1.0"),
+                            "clean", "connectedCheck");
                     break;
             }
         } finally {

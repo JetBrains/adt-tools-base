@@ -22,6 +22,7 @@ import com.android.build.gradle.internal.test.BaseTest;
 import java.io.File;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 
 /**
  * Base class for build tests.
@@ -61,4 +62,18 @@ abstract class BuildTest extends BaseTest {
                 gradleVersion,
                 "clean", "assembleDebug", "lint");
     }
+
+    protected File buildProject(
+            @NonNull String testFolder,
+            @NonNull String name,
+            @NonNull String gradleVersion,
+            @NonNull List<String> arguments) {
+        return runTasksOn(
+                testFolder,
+                name,
+                gradleVersion,
+                arguments,
+                "clean", "assembleDebug", "lint");
+    }
+
 }
