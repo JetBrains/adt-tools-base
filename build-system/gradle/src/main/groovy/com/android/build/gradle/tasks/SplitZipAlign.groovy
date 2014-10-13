@@ -16,28 +16,24 @@
 
 package com.android.build.gradle.tasks
 
-import com.android.build.FilterData
-import com.android.build.gradle.api.ApkOutputFile
 import com.android.build.gradle.internal.tasks.OutputFileTask
-import com.google.common.collect.ImmutableCollection
-import com.google.common.collect.ImmutableList
-import com.google.common.util.concurrent.Callables
-import com.google.gson.Gson
-import com.google.gson.GsonBuilder
 import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.OutputDirectory
-import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
+
+import java.util.regex.Matcher
+import java.util.regex.Pattern
 
 /**
  * Task to zip align all the splits
  */
 class SplitZipAlign extends DefaultTask implements OutputFileTask{
 
-    @InputFile
-    File packagedSplitResListFile
+    @InputDirectory
+    File inputDirectory;
 
     @Input
     String outputBaseName;
@@ -45,43 +41,41 @@ class SplitZipAlign extends DefaultTask implements OutputFileTask{
     @OutputDirectory
     File outputFile;
 
-    @OutputFile
-    File alignedFileList
-
     @InputFile
     File zipAlignExe
 
     @TaskAction
     void splitZipAlign() {
 
-        ImmutableList<ApkOutputFile> splitVariantOutputs = ApkOutputFile.load(getPackagedSplitResListFile());
+        final Pattern unalignedPattern = Pattern.compile(
+                "${project.archivesBaseName}-${outputBaseName}-(.*)-unaligned.apk")
+        final Pattern unsignedPattern = Pattern.compile(
+                "${project.archivesBaseName}-${outputBaseName}-(.*)-unsigned.apk")
 
-        ImmutableCollection.Builder<ApkOutputFile> tmpOutputs =
-                ImmutableList.builder();
-        for (ApkOutputFile splitVariantOutput : splitVariantOutputs) {
-            File out = new File(getOutputFile(),
-                    "${project.archivesBaseName}_${outputBaseName}_${splitVariantOutput.splitIdentifiers}.apk")
-            project.exec {
-                executable = getZipAlignExe()
-                args '-f', '4'
-                args splitVariantOutput.getOutputFile()
-                args out
+        for (File file : inputDirectory.listFiles()) {
+            Matcher unaligned = unalignedPattern.matcher(file.getName())
+            if (unaligned.matches()) {
+                File out = new File(getOutputFile(),
+                        "${project.archivesBaseName}_${outputBaseName}_${unaligned.group(1)}.apk")
+                project.exec {
+                    executable = getZipAlignExe()
+                    args '-f', '4'
+                    args file.absolutePath
+                    args out
+                }
+            } else {
+                Matcher unsigned = unsignedPattern.matcher(file.getName())
+                if (unsigned.matches()) {
+                    File out = new File(getOutputFile(),
+                            "${project.archivesBaseName}_${outputBaseName}_${unsigned.group(1)}.apk")
+                    project.exec {
+                        executable = getZipAlignExe()
+                        args '-f', '4'
+                        args file.absolutePath
+                        args out
+                    }
+                }
             }
-
-            tmpOutputs.add(new ApkOutputFile(
-                    com.android.build.OutputFile.OutputType.SPLIT,
-                    ImmutableList.<FilterData>of(FilterData.Builder.build(
-                            com.android.build.OutputFile.DENSITY,
-                            splitVariantOutput.getFilterByType(
-                                    com.android.build.OutputFile.FilterType.DENSITY))),
-                    splitVariantOutput.suffix,
-                    Callables.returning(out)))
         }
-
-        GsonBuilder gsonBuilder = new GsonBuilder();
-        Gson gson = gsonBuilder.create()
-        FileWriter fileWriter = new FileWriter(alignedFileList)
-        fileWriter.write(gson.toJson(tmpOutputs.build().toArray()))
-        fileWriter.close()
     }
 }
