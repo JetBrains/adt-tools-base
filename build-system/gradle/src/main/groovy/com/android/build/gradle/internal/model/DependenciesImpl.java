@@ -19,7 +19,6 @@ package com.android.build.gradle.internal.model;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.BasePlugin;
-import com.android.build.gradle.internal.dependency.ClassifiedJarDependency;
 import com.android.build.gradle.internal.dependency.LibraryDependencyImpl;
 import com.android.build.gradle.internal.dependency.VariantDependencies;
 import com.android.build.gradle.internal.variant.BaseVariantData;
@@ -35,6 +34,7 @@ import org.gradle.api.Project;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -65,7 +65,6 @@ public class DependenciesImpl implements Dependencies, Serializable {
             @NonNull BaseVariantData variantData,
             @NonNull BasePlugin basePlugin,
             @NonNull Set<Project> gradleProjects) {
-
         VariantDependencies variantDependencies = variantData.getVariantDependency();
 
         List<AndroidLibrary> libraries;
@@ -86,26 +85,31 @@ public class DependenciesImpl implements Dependencies, Serializable {
         projects = Lists.newArrayList();
 
         for (JarDependency jarDep : jarDeps) {
-            boolean customArtifact = jarDep instanceof ClassifiedJarDependency &&
-                    ((ClassifiedJarDependency)jarDep).getClassifier() != null;
+            boolean customArtifact = jarDep.getResolvedCoordinates() != null &&
+                    jarDep.getResolvedCoordinates().getClassifier() != null;
 
             File jarFile = jarDep.getJarFile();
             Project projectMatch;
             if (!customArtifact && (projectMatch = getProject(jarFile, gradleProjects)) != null) {
                 projects.add(projectMatch.getPath());
             } else {
-                javaLibraries.add(new JavaLibraryImpl(jarFile));
+                javaLibraries.add(
+                        new JavaLibraryImpl(jarFile, null, jarDep.getResolvedCoordinates()));
             }
         }
 
         for (JarDependency jarDep : localDeps) {
-            javaLibraries.add(new JavaLibraryImpl(jarDep.getJarFile()));
+            javaLibraries.add(
+                    new JavaLibraryImpl(
+                            jarDep.getJarFile(),
+                            null,
+                            jarDep.getResolvedCoordinates()));
         }
 
         if (variantData.getVariantConfiguration().getRenderscriptSupportMode()) {
             File supportJar = basePlugin.getAndroidBuilder().getRenderScriptSupportJar();
             if (supportJar != null) {
-                javaLibraries.add(new JavaLibraryImpl(supportJar));
+                javaLibraries.add(new JavaLibraryImpl(supportJar, null, null));
             }
         }
 
@@ -128,13 +132,13 @@ public class DependenciesImpl implements Dependencies, Serializable {
 
     @NonNull
     @Override
-    public List<AndroidLibrary> getLibraries() {
+    public Collection<AndroidLibrary> getLibraries() {
         return libraries;
     }
 
     @NonNull
     @Override
-    public List<JavaLibrary> getJavaLibraries() {
+    public Collection<JavaLibrary> getJavaLibraries() {
         return javaLibraries;
     }
 
@@ -145,21 +149,26 @@ public class DependenciesImpl implements Dependencies, Serializable {
     }
 
     @NonNull
-    private static AndroidLibrary getAndroidLibrary(@NonNull LibraryDependency libImpl,
-                                                    @NonNull Set<Project> gradleProjects) {
-        File bundle = libImpl.getBundle();
+    private static AndroidLibrary getAndroidLibrary(
+            @NonNull LibraryDependency liblibraryDependency,
+            @NonNull Set<Project> gradleProjects) {
+        File bundle = liblibraryDependency.getBundle();
         Project projectMatch = getProject(bundle, gradleProjects);
 
-        List<LibraryDependency> deps = libImpl.getDependencies();
+        List<LibraryDependency> deps = liblibraryDependency.getDependencies();
         List<AndroidLibrary> clonedDeps = Lists.newArrayListWithCapacity(deps.size());
         for (LibraryDependency child : deps) {
             AndroidLibrary clonedLib = getAndroidLibrary(child, gradleProjects);
             clonedDeps.add(clonedLib);
         }
 
-        return new AndroidLibraryImpl(libImpl, clonedDeps,
+        return new AndroidLibraryImpl(
+                liblibraryDependency,
+                clonedDeps,
                 projectMatch != null ? projectMatch.getPath() : null,
-                libImpl.getProjectVariant());
+                liblibraryDependency.getProjectVariant(),
+                liblibraryDependency.getRequestedCoordinates(),
+                liblibraryDependency.getResolvedCoordinates());
     }
 
     @Nullable

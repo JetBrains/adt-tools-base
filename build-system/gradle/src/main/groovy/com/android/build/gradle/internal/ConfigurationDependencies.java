@@ -28,7 +28,6 @@ import org.gradle.api.artifacts.Configuration;
 import java.io.File;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -47,7 +46,7 @@ public class ConfigurationDependencies implements Dependencies {
 
     @NonNull
     @Override
-    public List<AndroidLibrary> getLibraries() {
+    public Collection<AndroidLibrary> getLibraries() {
         return Collections.emptyList();
     }
 
@@ -60,7 +59,7 @@ public class ConfigurationDependencies implements Dependencies {
         }
         Set<JavaLibrary> javaLibraries = Sets.newHashSet();
         for (File file : files) {
-            javaLibraries.add(new JavaLibraryImpl(file));
+            javaLibraries.add(new JavaLibraryImpl(file, null, null));
         }
         return javaLibraries;
     }
