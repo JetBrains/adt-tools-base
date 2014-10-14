@@ -23,7 +23,9 @@ import com.android.ide.common.rendering.api.Result.Status;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.util.Collections;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -53,11 +55,23 @@ public abstract class Bridge {
 
     /**
      * Returns an {@link EnumSet} of the supported {@link Capability}.
+     *
      * @return an {@link EnumSet} with the supported capabilities.
      *
+     * @deprecated use {@link #supports(int)}
      */
+    @Deprecated
     public EnumSet<Capability> getCapabilities() {
         return EnumSet.noneOf(Capability.class);
+    }
+
+    /**
+     * Returns true if the layout library supports the given feature.
+     *
+     * @see com.android.ide.common.rendering.api.Features
+     */
+    public boolean supports(int feature) {
+        return false;
     }
 
     /**

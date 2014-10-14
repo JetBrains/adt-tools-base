@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010 The Android Open Source Project
+ * Copyright (C) 2014 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,31 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.android.ide.common.rendering.api;
 
 /**
- * Enum describing the layout bridge capabilities.
- *
- * @deprecated use {@link com.android.ide.common.rendering.api.Features}
+ * List of features describing the LayoutLib capabilities.
  */
-@Deprecated
-public enum Capability {
+public class Features {
     /** Ability to render at full size, as required by the layout, and unbound by the screen */
-    UNBOUND_RENDERING,
+    public static final int UNBOUND_RENDERING = 0;
     /** Ability to override the background of the rendering with transparency using
      * {@link SessionParams#setOverrideBgColor(int)} */
-    CUSTOM_BACKGROUND_COLOR,
+    public static final int CUSTOM_BACKGROUND_COLOR = 1;
     /** Ability to call {@link RenderSession#render()} and {@link RenderSession#render(long)}. */
-    RENDER,
+    public static final int RENDER = 2;
     /** Ability to ask for a layout only with no rendering through
      * {@link SessionParams#setLayoutOnly()}
      */
-    LAYOUT_ONLY,
+    public static final int LAYOUT_ONLY = 3;
     /**
      * Ability to control embedded layout parsers through {@link ILayoutPullParser#getParser(String)}
      */
-    EMBEDDED_LAYOUT,
+    public static final int EMBEDDED_LAYOUT = 4;
     /** Ability to call<br>
      * {@link RenderSession#insertChild(Object, ILayoutPullParser, int, IAnimationListener)}<br>
      * {@link RenderSession#moveChild(Object, Object, int, java.util.Map, IAnimationListener)}<br>
@@ -45,39 +41,41 @@ public enum Capability {
      * The method that receives an animation listener can only use it if the
      * ANIMATED_VIEW_MANIPULATION, or FULL_ANIMATED_VIEW_MANIPULATION is also supported.
      */
-    VIEW_MANIPULATION,
+    public static final int VIEW_MANIPULATION = 5;
     /** Ability to play animations with<br>
      * {@link RenderSession#animate(Object, String, boolean, IAnimationListener)}
      */
-    PLAY_ANIMATION,
+    public static final int PLAY_ANIMATION = 6;
     /**
      * Ability to manipulate views with animation, as long as the view does not change parent.
      * {@link RenderSession#insertChild(Object, ILayoutPullParser, int, IAnimationListener)}<br>
      * {@link RenderSession#moveChild(Object, Object, int, java.util.Map, IAnimationListener)}<br>
      * {@link RenderSession#removeChild(Object, IAnimationListener)}<br>
      */
-    ANIMATED_VIEW_MANIPULATION,
+    public static final int ANIMATED_VIEW_MANIPULATION = 7;
     /**
      * Ability to move views (even into a different ViewGroup) with animation.
      * see {@link RenderSession#moveChild(Object, Object, int, java.util.Map, IAnimationListener)}
      */
-    FULL_ANIMATED_VIEW_MANIPULATION,
-    ADAPTER_BINDING,
-    EXTENDED_VIEWINFO,
+    public static final int FULL_ANIMATED_VIEW_MANIPULATION = 7;
+    public static final int ADAPTER_BINDING = 8;
+    public static final int EXTENDED_VIEWINFO = 9;
     /**
      * Ability to properly resize nine-patch assets.
      */
-    FIXED_SCALABLE_NINE_PATCH,
+    public static final int FIXED_SCALABLE_NINE_PATCH = 10;
     /**
      * Ability to render RTL layouts.
      */
-    RTL,
+    public static final int RTL = 11;
     /**
      * Ability to render ActionBar.
      */
-    ACTION_BAR,
+    public static final int ACTION_BAR = 12;
     /**
      * Ability to simulate older Platform Versions.
+     * <p/>
+     * This is the last feature supported by API 12.
      */
-   SIMULATE_PLATFORM,
+    public static final int SIMULATE_PLATFORM = 13;
 }

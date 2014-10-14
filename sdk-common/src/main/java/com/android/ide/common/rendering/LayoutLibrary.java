@@ -22,6 +22,7 @@ import com.android.annotations.VisibleForTesting;
 import com.android.ide.common.rendering.api.Bridge;
 import com.android.ide.common.rendering.api.Capability;
 import com.android.ide.common.rendering.api.DrawableParams;
+import com.android.ide.common.rendering.api.Features;
 import com.android.ide.common.rendering.api.ILayoutPullParser;
 import com.android.ide.common.rendering.api.LayoutLog;
 import com.android.ide.common.rendering.api.RenderSession;
@@ -65,7 +66,7 @@ import java.util.Map.Entry;
  * Use {@link #load(String, ILogger, String)} to load the jar file.
  * <p/>
  * Use the layout library with:
- * {@link #init}, {@link #supports(Capability)}, {@link #createSession(SessionParams)},
+ * {@link #init}, {@link #supports(int)}, {@link #createSession(SessionParams)},
  * {@link #dispose()}, {@link #clearCaches(Object)}.
  *
  * <p/>
@@ -262,17 +263,33 @@ public class LayoutLibrary {
      *
      * @see Bridge#getCapabilities()
      *
+     * @deprecated use {@link #supports(int)}
      */
+    @Deprecated
     public boolean supports(Capability capability) {
+        return supports(capability.ordinal());
+    }
+
+    /**
+     * Returns whether the LayoutLibrary supports a given {@link Features}.
+     *
+     * @see Bridge#supports(int)
+     */
+    public boolean supports(int capability) {
         if (mBridge != null) {
-            return mBridge.getCapabilities().contains(capability);
+            if (mBridge.getApiLevel() > 12) {
+                // Features were introduced in API level 13.
+                return mBridge.supports(capability);
+            } else {
+                return capability <= Features.SIMULATE_PLATFORM
+                        && mBridge.getCapabilities().contains(Capability.values()[capability]);
+            }
         }
 
+        //noinspection VariableNotUsedInsideIf
         if (mLegacyBridge != null) {
-            switch (capability) {
-                case UNBOUND_RENDERING:
-                    // legacy stops at 4. 5 is new API.
-                    return getLegacyApiLevel() == 4;
+            if (capability == Features.UNBOUND_RENDERING) {
+                return getLegacyApiLevel() == 4;
             }
         }
 
@@ -321,7 +338,7 @@ public class LayoutLibrary {
      * {@link RenderSession} on which further actions can be taken.
      * <p/>
      * Before taking further actions on the scene, it is recommended to use
-     * {@link #supports(Capability)} to check what the scene can do.
+     * {@link #supports(int)} to check what the scene can do.
      *
      * @return a new {@link RenderSession} object that contains the result of the scene creation and
      * first rendering or null if {@link #getStatus()} doesn't return {@link LoadStatus#LOADED}.
@@ -331,8 +348,7 @@ public class LayoutLibrary {
     public RenderSession createSession(SessionParams params) {
         if (mBridge != null) {
             RenderSession session = mBridge.createSession(params);
-            if (params.getExtendedViewInfoMode() &&
-                    mBridge.getCapabilities().contains(Capability.EXTENDED_VIEWINFO) == false) {
+            if (params.getExtendedViewInfoMode() && !supports(Features.EXTENDED_VIEWINFO)) {
                 // Extended view info was requested but the layoutlib does not support it.
                 // Add it manually.
                 List<ViewInfo> infoList = session.getRootViews();
@@ -427,7 +443,7 @@ public class LayoutLibrary {
      * @return true if the locale is right to left.
      */
     public boolean isRtl(String locale) {
-        return supports(Capability.RTL) ? mBridge.isRtl(locale) : false;
+        return supports(Features.RTL) && mBridge.isRtl(locale);
     }
 
     // ------ Implementation
