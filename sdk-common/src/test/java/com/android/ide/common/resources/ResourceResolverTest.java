@@ -187,7 +187,7 @@ public class ResourceResolverTest extends TestCase {
         //    check XML escaping in value resources
         StyleResourceValue randomStyle = (StyleResourceValue) resolver.findResValue(
                 "@style/RandomStyle", false);
-        assertEquals("\u00a9 Copyright", randomStyle.findValue("text", true).getValue());
+        assertEquals("\u00a9 Copyright", randomStyle.getItem("text", true).getValue());
         assertTrue(resolver.isTheme(resolver.findResValue("@style/MyTheme.Dotted2", false), null));
         assertFalse(resolver.isTheme(resolver.findResValue("@style/MyTheme.Dotted1", false),
                 null));

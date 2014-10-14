@@ -18,6 +18,7 @@ package com.android.ide.common.resources;
 
 import com.android.ide.common.rendering.api.AttrResourceValue;
 import com.android.ide.common.rendering.api.DeclareStyleableResourceValue;
+import com.android.ide.common.rendering.api.ItemResourceValue;
 import com.android.ide.common.rendering.api.ResourceValue;
 import com.android.ide.common.rendering.api.StyleResourceValue;
 import com.android.ide.common.res2.ValueXmlHelper;
@@ -140,8 +141,8 @@ public final class ValueResourceParser extends DefaultHandler {
                             isFrameworkAttr = true;
                         }
 
-                        mCurrentValue = new ResourceValue(null, name, mIsFramework);
-                        mCurrentStyle.addValue(mCurrentValue, isFrameworkAttr);
+                        mCurrentValue = new ItemResourceValue(name, isFrameworkAttr, mIsFramework);
+                        mCurrentStyle.addItem((ItemResourceValue)mCurrentValue);
                     } else if (mCurrentDeclareStyleable != null) {
                         // is the attribute in the android namespace?
                         boolean isFramework = mIsFramework;
