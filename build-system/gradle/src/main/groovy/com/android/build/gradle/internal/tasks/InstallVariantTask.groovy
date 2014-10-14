@@ -74,7 +74,7 @@ public class InstallVariantTask extends BaseTask {
                     } else {
                         System.out.println(
                                 "Installing '${output.baseName}' on '${device.getName()}'.");
-                        File apkFile = output.getOutputFile();
+                        File apkFile = output.outputDirectory();
                         device.installPackage(apkFile, getTimeOut(), plugin.logger)
                         foundDevice++
                     }

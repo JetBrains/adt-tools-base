@@ -1278,7 +1278,7 @@ public abstract class BasePlugin {
 
             return null
         }
-        zipAlign.outputFile = new File("$project.buildDir/outputs/apk")
+        zipAlign.outputDirectory = new File("$project.buildDir/outputs/apk")
         zipAlign.inputDirectory = variantOutputData.packageSplitResourcesTask.outputDirectory
         zipAlign.outputBaseName = config.fullName;
         ((ApkVariantOutputData) variantOutputData).splitZipAlign = zipAlign
