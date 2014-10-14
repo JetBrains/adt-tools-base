@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle
+package com.android.test.application
 
-import com.android.build.gradle.internal.test.fixture.GradleProjectTestRule
-import com.android.build.gradle.internal.test.fixture.app.HelloWorldApp
+import com.android.test.common.fixture.GradleTestProject
+import com.android.test.common.fixture.app.HelloWorldApp
 import com.google.common.collect.Sets
 import org.junit.Before
 import org.junit.Rule
@@ -30,10 +30,10 @@ import static org.junit.Assert.assertTrue
 
 class BuildToolsTest {
 
-    private static final Pattern UP_TO_DATE_PATTERN = Pattern.compile(":(\\S+)\\s+UP-TO-DATE");
+    private static final Pattern UP_TO_DATE_PATTERN = ~/:(\S+)\s+UP-TO-DATE/
 
-    private static final Pattern INPUT_CHANGED_PATTERN = Pattern.compile(
-            "Value of input property 'buildToolsVersion' has changed for task ':(\\S+)'");
+    private static final Pattern INPUT_CHANGED_PATTERN =
+            ~/Value of input property 'buildToolsVersion' has changed for task ':(\S+)'/
 
     private static final String[] tasks = [
             "preDexDebug", "dexDebug", "compileDebugAidl", "compileDebugRenderscript",
@@ -43,7 +43,7 @@ class BuildToolsTest {
     ]
 
     @Rule
-    public GradleProjectTestRule fixture = new GradleProjectTestRule();
+    public GradleTestProject fixture = new GradleTestProject()
 
     @Before
     public void setup() {
@@ -52,8 +52,8 @@ class BuildToolsTest {
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 19
-    buildToolsVersion "20.0.0"
+    compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
+    buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
 }
 """
     }
@@ -82,7 +82,7 @@ android {
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 19
+    compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
     buildToolsVersion "19.1.0"
 }
 """
@@ -97,7 +97,7 @@ android {
 
     private static Set<String> getTasksMatching(Pattern pattern, ByteArrayOutputStream output) {
         Set<String> result = Sets.newHashSet()
-        Matcher matcher = pattern.matcher(output.toString("UTF-8"))
+        Matcher matcher = (output.toString("UTF-8") =~ pattern)
         while (matcher.find()) {
             result.add(matcher.group(1))
         }

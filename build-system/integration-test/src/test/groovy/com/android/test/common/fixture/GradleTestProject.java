@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.test.fixture;
+package com.android.test.common.fixture;
 
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -55,7 +55,7 @@ import java.util.List;
  * The test directory is always deleted if it already exist at the start of the test to ensure a
  * clean environment.
  */
-public class GradleProjectTestRule implements TestRule {
+public class GradleTestProject implements TestRule {
 
     public static final int DEFAULT_COMPILE_SDK_VERSION = 19;
 
@@ -75,7 +75,7 @@ public class GradleProjectTestRule implements TestRule {
 
     private File sdkDir;
 
-    public GradleProjectTestRule() {
+    public GradleTestProject() {
         sdkDir = findSdkDir();
         ndkDir = findNdkDir();
         String buildDir = System.getenv("PROJECT_BUILD_DIR");
