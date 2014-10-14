@@ -55,6 +55,7 @@
             </d:abi>
             <d:dock> </d:dock>
             <d:power-type>plugged-in</d:power-type>
+            <d:skin>nexus_one</d:skin>
         </d:hardware>
         <d:software>
             <d:api-level>7-10</d:api-level>
@@ -137,6 +138,7 @@
             </d:abi>
             <d:dock> </d:dock>
             <d:power-type>plugged-in</d:power-type>
+            <d:skin>nexus_s</d:skin>
         </d:hardware>
         <d:software>
             <d:api-level>9-16</d:api-level>
@@ -253,6 +255,7 @@
             </d:dock>
             <!-- plugged in (never, charge, always) -->
             <d:power-type>battery</d:power-type>
+            <d:skin>galaxy_nexus</d:skin>
         </d:hardware>
         <d:software>
             <d:api-level>14-</d:api-level>
@@ -377,6 +380,7 @@
             </d:abi>
             <d:dock> </d:dock>
             <d:power-type>battery</d:power-type>
+            <d:skin>nexus_7</d:skin>
         </d:hardware>
 
         <d:software>
@@ -462,6 +466,7 @@
             </d:abi>
             <d:dock></d:dock>
             <d:power-type>battery</d:power-type>
+            <d:skin>nexus_4</d:skin>
         </d:hardware>
         <d:software>
             <d:api-level>16</d:api-level>
@@ -557,6 +562,7 @@
             </d:abi>
             <d:dock></d:dock>
             <d:power-type>battery</d:power-type>
+            <d:skin>nexus_10</d:skin>
         </d:hardware>
         <d:software>
             <d:api-level>16</d:api-level>
@@ -652,6 +658,7 @@
             </d:abi>
             <d:dock> </d:dock>
             <d:power-type>battery</d:power-type>
+            <d:skin>nexus_7_2013</d:skin>
         </d:hardware>
 
         <d:software>
@@ -754,6 +761,7 @@
       </d:abi>
       <d:dock></d:dock>
       <d:power-type>battery</d:power-type>
+      <d:skin>nexus_5</d:skin>
     </d:hardware>
     <d:software>
       <d:api-level>19</d:api-level>

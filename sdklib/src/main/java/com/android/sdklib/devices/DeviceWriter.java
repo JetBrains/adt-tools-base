@@ -235,9 +235,10 @@ public class DeviceWriter {
 
         addElement(doc, hardware, DeviceSchema.NODE_POWER_TYPE, hw.getChargeType().toString());
 
-        File skinFile = hw.getSkinFile();
-        if (skinFile != null) {
-            addElement(doc, hardware, DeviceSchema.NODE_SKIN, hw.getSkinFile().getAbsolutePath());
+        File skinPath = hw.getSkinFile();
+        if (skinPath != null) {
+            String canonicalPath = skinPath.getPath().replace(File.separatorChar, '/');
+            addElement(doc, hardware, DeviceSchema.NODE_SKIN, canonicalPath);
         }
 
         return hardware;
