@@ -78,4 +78,8 @@ public class Features {
      * This is the last feature supported by API 12.
      */
     public static final int SIMULATE_PLATFORM = 13;
+    /**
+     * Ability to render preferences.
+     */
+    public static final int PREFERENCES_RENDERING = 14;
 }

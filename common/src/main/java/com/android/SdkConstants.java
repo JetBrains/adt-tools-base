@@ -742,6 +742,8 @@ public final class SdkConstants {
 
     // Tags: XML
     public static final String TAG_HEADER = "header";                  //$NON-NLS-1$
+    public static final String TAG_APPWIDGET_PROVIDER = "appwidget-provider"; //$NON-NLS-1$
+    public static final String TAG_PREFERENCE_SCREEN = "PreferenceScreen"; //$NON-NLS-1$
 
     // Tags: Layouts
     public static final String VIEW_TAG = "view";                      //$NON-NLS-1$
