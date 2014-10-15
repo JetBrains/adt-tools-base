@@ -17,14 +17,16 @@
 package com.android.build.gradle.internal.variant;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
-import com.android.build.gradle.api.ApkOutput;
+import com.android.build.FilterData;
+import com.android.build.OutputFile;
+import com.android.build.gradle.api.ApkOutputFile;
 import com.android.build.gradle.tasks.PackageApplication;
 import com.android.build.gradle.tasks.SplitZipAlign;
 import com.android.build.gradle.tasks.ZipAlign;
 import com.google.common.collect.ImmutableList;
 
 import java.io.File;
+import java.util.Collection;
 
 /**
  * Base output data for a variant that generates an APK file.
@@ -38,10 +40,10 @@ public class ApkVariantOutputData extends BaseVariantOutputData {
     private int versionCodeOverride = -1;
 
     public ApkVariantOutputData(
-            @Nullable String densityFilter,
-            @Nullable String abiFilter,
+            @NonNull OutputFile.OutputType outputType,
+            @NonNull Collection<FilterData> filters,
             @NonNull BaseVariantData variantData) {
-        super(densityFilter, abiFilter, variantData);
+        super(outputType, filters, variantData);
     }
 
     @Override
@@ -65,12 +67,12 @@ public class ApkVariantOutputData extends BaseVariantOutputData {
 
     @NonNull
     @Override
-    public ImmutableList<ApkOutput> getOutputFiles() {
-        ImmutableList.Builder<ApkOutput> outputs = ImmutableList.builder();
+    public ImmutableList<ApkOutputFile> getOutputs() {
+        ImmutableList.Builder<ApkOutputFile> outputs = ImmutableList.builder();
+        outputs.add(getMainOutputFile());
         if (packageSplitResourcesTask != null) {
-            outputs.addAll(packageSplitResourcesTask.getOutputFiles());
+            outputs.addAll(packageSplitResourcesTask.getOutputSplitFiles());
         }
-        outputs.add(new ApkOutput.MainApkOutput(getOutputFile()));
         return outputs.build();
     }
 
@@ -98,6 +100,12 @@ public class ApkVariantOutputData extends BaseVariantOutputData {
         }
 
         return variantData.getVariantConfiguration().getVersionCode();
+    }
+
+    @NonNull
+    @Override
+    public File getSplitFolder() {
+        return getOutputFile().getParentFile();
     }
 
     public void setVersionCodeOverride(int versionCodeOverride) {

@@ -14,33 +14,25 @@
  * limitations under the License.
  */
 
-package com.android.builder.model;
+package com.android.build.gradle.api;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.OutputFile;
-import com.android.build.VariantOutput;
+import com.android.build.FilterData;
+import com.android.build.MainOutputFile;
 
 import java.io.File;
 import java.util.Collection;
+import java.util.concurrent.Callable;
 
 /**
- * The Actual output for a {@link AndroidArtifact}, which can be one file at the minimum or
- * several APKs in case of pure splits configuration.
+ * Created by jedo on 10/9/14.
  */
-public interface AndroidArtifactOutput extends VariantOutput {
+public class MainApkOutputFile extends ApkOutputFile implements MainOutputFile {
 
-    /**
-     * Returns the name of the task used to generate this artifact output.
-     *
-     * @return the name of the task.
-     */
-    @NonNull
-    String getAssembleTaskName();
-
-    /**
-     * The generated manifest for this variant's artifact's output.
-     */
-    @NonNull
-    File getGeneratedManifest();
+    public MainApkOutputFile(@NonNull OutputType outputType,
+            @NonNull Collection<FilterData> filters,
+            @Nullable String suffix, @NonNull Callable<File> outputFile) {
+        super(outputType, filters, suffix, outputFile);
+    }
 }

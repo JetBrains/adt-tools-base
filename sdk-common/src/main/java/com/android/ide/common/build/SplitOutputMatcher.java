@@ -18,10 +18,14 @@ package com.android.ide.common.build;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.SplitOutput;
+import com.android.build.MainOutputFile;
+import com.android.build.OutputFile;
+import com.android.build.VariantOutput;
 import com.android.resources.Density;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
+import java.io.File;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -33,7 +37,7 @@ import java.util.Set;
 public class SplitOutputMatcher {
 
     /**
-     * Returns which output to use based on given device density and abis.
+     * Determines and return the list of APKs to use based on given device density and abis.
      *
      * This uses the same logic as the store, using two passes:
      * First, find all the compatible outputs.
@@ -46,11 +50,11 @@ public class SplitOutputMatcher {
      *                          packaging.
      * @param deviceDensity the density of the device.
      * @param deviceAbis a list of ABIs supported by the device.
-     * @return the output to use or null if none are compatible.
+     * @return the list of APKs to install or null if none are compatible.
      */
-    @Nullable
-    public static SplitOutput computeBestOutput(
-            @NonNull List<? extends SplitOutput> outputs,
+    @NonNull
+    public static List<File> computeBestOutput(
+            @NonNull List<? extends VariantOutput> outputs,
             @Nullable Set<String> variantAbiFilters,
             int deviceDensity,
             @NonNull List<String> deviceAbis) {
@@ -64,36 +68,39 @@ public class SplitOutputMatcher {
         }
 
         // gather all compatible matches.
-        List<SplitOutput> matches = Lists.newArrayListWithExpectedSize(outputs.size());
+        List<VariantOutput> matches = Lists.newArrayListWithExpectedSize(outputs.size());
 
         // find a matching output.
-        for (SplitOutput output : outputs) {
-            String densityFilter = output.getDensityFilter();
-            String abiFilter = output.getAbiFilter();
+        for (VariantOutput variantOutput : outputs) {
+            for (OutputFile output : variantOutput.getOutputs()) {
+                String densityFilter = output.getFilter(OutputFile.DENSITY);
+                String abiFilter = output.getFilter(OutputFile.ABI);
 
-            if (densityFilter != null && !densityFilter.equals(densityValue)) {
-                continue;
+                if (densityFilter != null && !densityFilter.equals(densityValue)) {
+                    continue;
+                }
+
+                if (abiFilter != null && !deviceAbis.contains(abiFilter)) {
+                    continue;
+                }
+                matches.add(variantOutput);
             }
-
-            if (abiFilter != null && !deviceAbis.contains(abiFilter)) {
-                continue;
-            }
-
-            matches.add(output);
         }
 
         if (matches.isEmpty()) {
-            return null;
+            return ImmutableList.of();
         }
 
-        SplitOutput match = Collections.max(matches, new Comparator<SplitOutput>() {
+        VariantOutput match = Collections.max(matches, new Comparator<VariantOutput>() {
             @Override
-            public int compare(SplitOutput splitOutput, SplitOutput splitOutput2) {
+            public int compare(VariantOutput splitOutput, VariantOutput splitOutput2) {
                 return splitOutput.getVersionCode() - splitOutput2.getVersionCode();
             }
         });
 
-        if (match.getDensityFilter() == null && variantAbiFilters != null) {
+        // so far, we are not dealing with the pure split files...
+        MainOutputFile mainOutputFile = match.getMainOutputFile();
+        if (mainOutputFile.getFilter(OutputFile.DENSITY) == null && variantAbiFilters != null) {
             // if we have a match that has no abi filter, and we have variant-level filters, then
             // we need to make sure that the variant filters are compatible with the device abis.
             boolean foundMatch = false;
@@ -105,10 +112,10 @@ public class SplitOutputMatcher {
             }
 
             if (!foundMatch) {
-                return null;
+                return ImmutableList.of();
             }
         }
 
-        return match;
+        return ImmutableList.of(mainOutputFile.getOutputFile());
     }
 }

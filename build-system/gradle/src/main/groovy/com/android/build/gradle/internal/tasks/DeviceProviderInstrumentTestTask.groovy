@@ -60,7 +60,7 @@ public class DeviceProviderInstrumentTestTask extends BaseTask implements Androi
 
         String flavor = getFlavorName()
 
-        TestRunner testRunner = new SimpleTestRunner();
+        TestRunner testRunner = new SimpleTestRunner(getAdbExec());
         deviceProvider.init();
 
         boolean success = false;

@@ -49,4 +49,9 @@ public class LibraryVariantOutputImpl extends BaseVariantOutputImpl implements L
     public Zip getPackageLibrary() {
         return variantOutputData.packageLibTask;
     }
+
+    @Override
+    public int getVersionCode() {
+        throw new RuntimeException("Libraries are not versioned");
+    }
 }
