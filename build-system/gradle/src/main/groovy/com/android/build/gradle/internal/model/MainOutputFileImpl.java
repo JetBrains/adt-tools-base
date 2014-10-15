@@ -14,33 +14,32 @@
  * limitations under the License.
  */
 
-package com.android.builder.model;
+package com.android.build.gradle.internal.model;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
-import com.android.build.OutputFile;
-import com.android.build.VariantOutput;
+import com.android.build.FilterData;
+import com.android.build.MainOutputFile;
 
 import java.io.File;
 import java.util.Collection;
 
 /**
- * The Actual output for a {@link AndroidArtifact}, which can be one file at the minimum or
- * several APKs in case of pure splits configuration.
+ * Implementation of the {@link com.android.build.MainOutputFile} for the model.
  */
-public interface AndroidArtifactOutput extends VariantOutput {
+public class MainOutputFileImpl extends OutputFileImpl implements MainOutputFile {
 
-    /**
-     * Returns the name of the task used to generate this artifact output.
-     *
-     * @return the name of the task.
-     */
-    @NonNull
-    String getAssembleTaskName();
+    private final File outputFile;
 
-    /**
-     * The generated manifest for this variant's artifact's output.
-     */
+    public MainOutputFileImpl(Collection<FilterData> filters,
+            String type,
+            File outputFile) {
+        super(filters, type);
+        this.outputFile =  outputFile;
+    }
+
     @NonNull
-    File getGeneratedManifest();
+    @Override
+    public File getOutputFile() {
+        return outputFile;
+    }
 }

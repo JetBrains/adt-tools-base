@@ -16,7 +16,7 @@
 
 package com.android.build.gradle.internal.dsl;
 
-import static com.android.build.SplitOutput.NO_FILTER;
+import static com.android.build.OutputFile.NO_FILTER;
 
 import com.android.annotations.NonNull;
 

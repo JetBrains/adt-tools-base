@@ -16,12 +16,15 @@
 package com.android.build.gradle.internal.variant;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
+import com.android.build.FilterData;
+import com.android.build.OutputFile;
 import com.android.build.gradle.BasePlugin;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.tasks.Dex;
 
 import org.gradle.api.DefaultTask;
+
+import java.util.Collection;
 
 /**
  * Base data about a variant that generates an APK file.
@@ -41,9 +44,9 @@ public abstract class ApkVariantData extends BaseVariantData<ApkVariantOutputDat
     @Override
     @NonNull
     protected ApkVariantOutputData doCreateOutput(
-            @Nullable String densityFilter,
-            @Nullable String abiFilter) {
-        return new ApkVariantOutputData(densityFilter, abiFilter, this);
+            OutputFile.OutputType outputType,
+            Collection<FilterData> filters) {
+        return new ApkVariantOutputData(outputType, filters, this);
     }
 
     @Override

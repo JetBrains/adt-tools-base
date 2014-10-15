@@ -18,6 +18,7 @@ package com.android.build.gradle.internal.api;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.OutputFile;
 import com.android.build.gradle.api.ApkVariantOutput;
 import com.android.build.gradle.internal.variant.ApkVariantOutputData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
@@ -78,5 +79,10 @@ public class ApkVariantOutputImpl extends BaseVariantOutputImpl implements ApkVa
     @Override
     public int getVersionCode() {
         return variantOutputData.getVersionCode();
+    }
+
+    @Override
+    public String getFilter(OutputFile.FilterType filterType) {
+        return variantOutputData.getMainOutputFile().getFilter(filterType.name());
     }
 }

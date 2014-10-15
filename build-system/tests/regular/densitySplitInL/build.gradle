@@ -25,7 +25,7 @@ android {
 
   defaultConfig {
     versionCode 12
-    minSdkVersion 16
+    minSdkVersion 21
     targetSdkVersion 21
   }
 
@@ -37,13 +37,3 @@ android {
   }
 }
 
-// map for the version code
-ext.versionCodes = [all:1, mdpi:2, hdpi:3, xhdpi:4, xxhdpi:5]
-
-android.applicationVariants.all { variant ->
-  // assign different version code for each output
-  variant.outputs.each { output ->
-    def key = output.densityFilter == null ? "all" : output.densityFilter
-    output.versionCodeOverride = project.ext.versionCodes.get(key) * 100 + android.defaultConfig.versionCode
-  }
-}

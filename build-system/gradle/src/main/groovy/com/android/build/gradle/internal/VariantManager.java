@@ -16,7 +16,7 @@
 
 package com.android.build.gradle.internal;
 
-import static com.android.build.SplitOutput.NO_FILTER;
+import static com.android.build.OutputFile.NO_FILTER;
 import static com.android.builder.core.BuilderConstants.ANDROID_TEST;
 import static com.android.builder.core.BuilderConstants.DEBUG;
 import static com.android.builder.core.BuilderConstants.LINT;

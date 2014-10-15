@@ -16,10 +16,12 @@
 
 package com.android.build.gradle.tasks
 
-import com.android.build.gradle.api.ApkOutput
+import com.android.build.FilterData
+import com.android.build.gradle.api.ApkOutputFile
 import com.android.build.gradle.internal.tasks.OutputFileTask
 import com.google.common.collect.ImmutableCollection
 import com.google.common.collect.ImmutableList
+import com.google.common.util.concurrent.Callables
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import org.gradle.api.DefaultTask
@@ -52,13 +54,13 @@ class SplitZipAlign extends DefaultTask implements OutputFileTask{
     @TaskAction
     void splitZipAlign() {
 
-        ImmutableList<ApkOutput.SplitApkOutput> splitVariantOutputs = ApkOutput.load(getPackagedSplitResListFile());
+        ImmutableList<ApkOutputFile> splitVariantOutputs = ApkOutputFile.load(getPackagedSplitResListFile());
 
-        ImmutableCollection.Builder<ApkOutput> tmpOutputs =
+        ImmutableCollection.Builder<ApkOutputFile> tmpOutputs =
                 ImmutableList.builder();
-        for (ApkOutput.SplitApkOutput splitVariantOutput : splitVariantOutputs) {
+        for (ApkOutputFile splitVariantOutput : splitVariantOutputs) {
             File out = new File(getOutputFile(),
-                    "${project.archivesBaseName}_${outputBaseName}_${splitVariantOutput.splitIdentifier}.apk")
+                    "${project.archivesBaseName}_${outputBaseName}_${splitVariantOutput.splitIdentifiers}.apk")
             project.exec {
                 executable = getZipAlignExe()
                 args '-f', '4'
@@ -66,12 +68,14 @@ class SplitZipAlign extends DefaultTask implements OutputFileTask{
                 args out
             }
 
-            tmpOutputs.add(new ApkOutput.SplitApkOutput(
-                    ApkOutput.OutputType.SPLIT,
-                    ApkOutput.SplitType.DENSITY,
-                    splitVariantOutput.splitIdentifier,
-                    splitVariantOutput.splitSuffix,
-                    out))
+            tmpOutputs.add(new ApkOutputFile(
+                    com.android.build.OutputFile.OutputType.SPLIT,
+                    ImmutableList.<FilterData>of(FilterData.Builder.build(
+                            com.android.build.OutputFile.DENSITY,
+                            splitVariantOutput.getFilterByType(
+                                    com.android.build.OutputFile.FilterType.DENSITY))),
+                    splitVariantOutput.suffix,
+                    Callables.returning(out)))
         }
 
         GsonBuilder gsonBuilder = new GsonBuilder();

@@ -17,6 +17,7 @@
 package com.android.build.gradle
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
+import com.android.build.OutputFile
 import com.android.build.gradle.api.AndroidSourceSet
 import com.android.build.gradle.api.BaseVariant
 import com.android.build.gradle.internal.BadPluginException
@@ -587,7 +588,8 @@ public abstract class BasePlugin {
         // of the generated manifest
         for (BaseVariantOutputData vod : variantData.outputs) {
             final CompatibleScreensManifest csmTask =
-                    (vod.densityFilter != null && !screenSizes.isEmpty()) ?
+                    (vod.mainOutputFile.getFilter(OutputFile.DENSITY) != null
+                            && !screenSizes.isEmpty()) ?
                             createCompatibleScreensManifest(vod, screenSizes) :
                             null
 
@@ -678,7 +680,7 @@ public abstract class BasePlugin {
                 "create${variantOutputData.fullName.capitalize()}CompatibleScreensManifest",
                 CompatibleScreensManifest)
 
-        csmTask.screenDensity = variantOutputData.densityFilter
+        csmTask.screenDensity = variantOutputData.mainOutputFile.getFilter(OutputFile.DENSITY)
         csmTask.screenSizes = screenSizes
 
         csmTask.conventionMapping.manifestFile = {
@@ -1164,14 +1166,15 @@ public abstract class BasePlugin {
                         });
                 processResources.splits = filters;
                 processResources.conventionMapping.splitInfoOutputFile = {
-                    project.file("$project.buildDir/${FD_INTERMEDIATES}/res/splitInfoList.json")
+                    project.file("$project.buildDir/${FD_INTERMEDIATES}/res/split${outputName}InfoList.json")
                 }
             }
 
             // only generate code if the density filter is null, and if we haven't generated
             // it yet (if you have abi + density splits, then several abi output will have no
             // densityFilter)
-            if (variantOutputData.densityFilter == null && variantData.generateRClassTask == null) {
+            if (variantOutputData.mainOutputFile.getFilter(OutputFile.DENSITY) == null
+                    && variantData.generateRClassTask == null) {
                 variantData.generateRClassTask = processResources
                 variantData.sourceGenTask.dependsOn processResources
                 processResources.enforceUniquePackageName = extension.getEnforceUniquePackageName()
@@ -1226,14 +1229,14 @@ public abstract class BasePlugin {
             processResources.conventionMapping.aaptOptions = { extension.aaptOptions }
 
             processResources.conventionMapping.resourceConfigs = {
-                if (variantOutputData.densityFilter == null) {
+                if (variantOutputData.mainOutputFile.getFilter(OutputFile.DENSITY) == null) {
                     return config.mergedFlavor.resourceConfigurations
                 }
 
                 Collection<String> list = config.mergedFlavor.resourceConfigurations
                 List<String> resConfigs = Lists.newArrayListWithCapacity(list.size() + 1)
                 resConfigs.addAll(list)
-                resConfigs.add(variantOutputData.densityFilter)
+                resConfigs.add(variantOutputData.mainOutputFile.getFilter(OutputFile.DENSITY))
                 // when adding a density filter, also always add the nodpi option.
                 resConfigs.add(Density.NODPI.resourceValue)
 
@@ -2125,8 +2128,8 @@ public abstract class BasePlugin {
                 return set
             }
             packageApp.conventionMapping.abiFilters = {
-                if (variantOutputData.abiFilter != null) {
-                    return ImmutableSet.of(variantOutputData.abiFilter)
+                if (variantOutputData.mainOutputFile.getFilter(OutputFile.ABI) != null) {
+                    return ImmutableSet.of(variantOutputData.mainOutputFile.getFilter(OutputFile.ABI))
                 }
                 return config.supportedAbis
             }
@@ -2243,8 +2246,9 @@ public abstract class BasePlugin {
                     // classifier cannot just be the publishing config as we need
                     // to add the filters if needed.
                     String classifier = variantData.variantDependency.publishConfiguration.name
-                    if (variantOutputData.densityFilter != null) {
-                        classifier = classifier + '-' + variantOutputData.densityFilter
+                    if (variantOutputData.mainOutputFile.getFilter(OutputFile.DENSITY) != null) {
+                        classifier = classifier + '-'
+                            + variantOutputData.mainOutputFile.getFilter(OutputFile.DENSITY)
                     }
                     if (variantOutputData.abiFilter != null) {
                         classifier = classifier + '-' + variantOutputData.abiFilter
