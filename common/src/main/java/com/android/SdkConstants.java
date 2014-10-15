@@ -1346,11 +1346,11 @@ public final class SdkConstants {
     public static final String VALUE_HORIZONTAL = "horizontal"; //$NON-NLS-1$
 
     public static final String GRADLE_PLUGIN_NAME = "com.android.tools.build:gradle:";
-    public static final String GRADLE_MINIMUM_VERSION = "1.12";
+    public static final String GRADLE_MINIMUM_VERSION = "2.1";
     public static final String GRADLE_LATEST_VERSION = "2.1";
-    public static final String GRADLE_PLUGIN_MINIMUM_VERSION = "0.12.0";
-    public static final String GRADLE_PLUGIN_LATEST_VERSION = "0.13.+";
-    public static final String GRADLE_PLUGIN_RECOMMENDED_VERSION = "0.13.2";
+    public static final String GRADLE_PLUGIN_MINIMUM_VERSION = "0.14.0";
+    public static final String GRADLE_PLUGIN_LATEST_VERSION = "0.14.+";
+    public static final String GRADLE_PLUGIN_RECOMMENDED_VERSION = "0.14.0";
     public static final String MIN_BUILD_TOOLS_VERSION = "19.1.0";
     public static final String SUPPORT_LIB_ARTIFACT = "com.android.support:support-v4";
     public static final String APPCOMPAT_LIB_ARTIFACT = "com.android.support:appcompat-v7";
