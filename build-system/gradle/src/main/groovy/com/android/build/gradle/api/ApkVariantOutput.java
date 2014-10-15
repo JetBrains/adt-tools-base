@@ -18,6 +18,7 @@ package com.android.build.gradle.api;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.OutputFile;
 import com.android.build.gradle.tasks.PackageApplication;
 import com.android.build.gradle.tasks.ZipAlign;
 
@@ -72,4 +73,12 @@ public interface ApkVariantOutput extends BaseVariantOutput {
      * @return the version code.
      */
     int getVersionCode();
+
+    /**
+     * Returns a filter value for a filter type if present on this variant or null otherwise.
+     *
+     * @param filterType the type of the filter requested.
+     * @return the filter value.
+     */
+    String getFilter(OutputFile.FilterType filterType);
 }

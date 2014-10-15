@@ -17,13 +17,15 @@
 package com.android.build.gradle.internal.variant;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
-import com.android.build.gradle.api.ApkOutput;
+import com.android.build.FilterData;
+import com.android.build.OutputFile;
+import com.android.build.gradle.api.ApkOutputFile;
 import com.google.common.collect.ImmutableList;
 
 import org.gradle.api.tasks.bundling.Zip;
 
 import java.io.File;
+import java.util.Collection;
 
 /**
  * Output Data about a variant that produce a Library bundle (.aar)
@@ -33,10 +35,10 @@ public class LibVariantOutputData extends BaseVariantOutputData {
     public Zip packageLibTask;
 
     LibVariantOutputData(
-            @Nullable String densityFilter,
-            @Nullable String abiFilter,
+            @NonNull OutputFile.OutputType outputType,
+            @NonNull Collection<FilterData> filters,
             @NonNull BaseVariantData variantData) {
-        super(densityFilter, abiFilter, variantData);
+        super(outputType, filters, variantData);
     }
 
     @Override
@@ -45,9 +47,12 @@ public class LibVariantOutputData extends BaseVariantOutputData {
         packageLibTask.setArchiveName(file.getName());
     }
 
+
+
+    @NonNull
     @Override
-    public ImmutableList<ApkOutput> getOutputFiles() {
-        return ImmutableList.<ApkOutput>of(new ApkOutput.MainApkOutput(getOutputFile()));
+    public ImmutableList<ApkOutputFile> getOutputs() {
+        return ImmutableList.of();
     }
 
     @NonNull

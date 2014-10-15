@@ -18,6 +18,8 @@ package com.android.build.gradle.internal.variant;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
+import com.android.build.FilterData;
+import com.android.build.OutputFile;
 import com.android.build.gradle.BasePlugin;
 import com.android.build.gradle.api.AndroidSourceSet;
 import com.android.build.gradle.internal.StringHelper;
@@ -119,8 +121,7 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
         this.variantConfiguration = variantConfiguration;
 
         // eventually, this will require a more open ended comparison.
-        mSplitHandlingPolicy =
-                variantConfiguration.getMinSdkVersion().getApiString().equals("L")
+        mSplitHandlingPolicy = variantConfiguration.getMinSdkVersion().getApiLevel() == 21
                     ? SplitHandlingPolicy.RELEASE_21_AND_AFTER_POLICY
                     : SplitHandlingPolicy.PRE_21_POLICY;
 
@@ -133,11 +134,14 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
     }
 
     @NonNull
-    protected abstract T doCreateOutput(@Nullable String densityFilter, @Nullable String abiFilter);
+    protected abstract T doCreateOutput(
+            OutputFile.OutputType outputType,
+            Collection<FilterData> filters);
 
     @NonNull
-    public T createOutput(@Nullable String densityFilter, @Nullable String abiFilter) {
-        T data = doCreateOutput(densityFilter, abiFilter);
+    public T createOutput(OutputFile.OutputType outputType,
+            Collection<FilterData> filters) {
+        T data = doCreateOutput(outputType, filters);
 
         // if it's the first time we add an output, mark previous output as part of a multi-output
         // setup.
