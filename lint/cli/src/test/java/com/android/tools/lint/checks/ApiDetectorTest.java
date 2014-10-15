@@ -1162,6 +1162,32 @@ public class ApiDetectorTest extends AbstractCheckTest {
                 ));
     }
 
+    public void testPaddingStart() throws Exception {
+        assertEquals(""
+                + "res/layout/padding_start.xml:14: Error: Attribute paddingStart referenced here can result in a crash on some specific devices older than API 17 (current min is 4) [NewApi]\n"
+                + "            android:paddingStart=\"20dp\"\n"
+                + "            ~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "res/layout/padding_start.xml:21: Error: Attribute paddingStart referenced here can result in a crash on some specific devices older than API 17 (current min is 4) [NewApi]\n"
+                + "            android:paddingStart=\"20dp\"\n"
+                + "            ~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "res/layout/padding_start.xml:28: Error: Attribute paddingStart referenced here can result in a crash on some specific devices older than API 17 (current min is 4) [NewApi]\n"
+                + "            android:paddingStart=\"20dp\"\n"
+                + "            ~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "3 errors, 0 warnings\n",
+            lintProject(
+                    "apicheck/minsdk4.xml=>AndroidManifest.xml",
+                    "apicheck/padding_start.xml=>res/layout/padding_start.xml"
+            ));
+    }
+
+    public void testPaddingStartNotApplicable() throws Exception {
+        assertEquals("No warnings.",
+                lintProject(
+                        "apicheck/minsdk4.xml=>AndroidManifest.xml",
+                        "apicheck/padding_start.xml=>res/layout-v17/padding_start.xml"
+                ));
+    }
+
     public void testSwitch() throws Exception {
         assertEquals("No warnings.",
             lintProject(
