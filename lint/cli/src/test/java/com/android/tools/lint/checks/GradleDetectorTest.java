@@ -16,6 +16,7 @@
 
 package com.android.tools.lint.checks;
 
+import static com.android.SdkConstants.GRADLE_PLUGIN_MINIMUM_VERSION;
 import static com.android.SdkConstants.GRADLE_PLUGIN_RECOMMENDED_VERSION;
 import static com.android.tools.lint.checks.GradleDetector.ACCIDENTAL_OCTAL;
 import static com.android.tools.lint.checks.GradleDetector.COMPATIBILITY;
@@ -165,7 +166,7 @@ public class GradleDetectorTest extends AbstractCheckTest {
     public void testIncompatiblePlugin() throws Exception {
         mEnabled = Collections.singleton(GRADLE_PLUGIN_COMPATIBILITY);
         assertEquals(""
-                + "build.gradle:6: Error: You must use a newer version of the Android Gradle plugin. The minimum supported version is 0.12.0 and the recommended version is " + GRADLE_PLUGIN_RECOMMENDED_VERSION + " [AndroidGradlePluginVersion]\n"
+                + "build.gradle:6: Error: You must use a newer version of the Android Gradle plugin. The minimum supported version is " + GRADLE_PLUGIN_MINIMUM_VERSION + " and the recommended version is " + GRADLE_PLUGIN_RECOMMENDED_VERSION + " [AndroidGradlePluginVersion]\n"
                 + "    classpath 'com.android.tools.build:gradle:0.1.0'\n"
                 + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                 + "1 errors, 0 warnings\n",
