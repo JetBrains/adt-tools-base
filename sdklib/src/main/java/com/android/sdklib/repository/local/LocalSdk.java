@@ -292,10 +292,10 @@ public class LocalSdk {
             Collection<LocalDirInfo> dirInfos;
             synchronized (mLocalPackages) {
                 dirInfos = mVisitedDirs.get(filter);
-            }
-            for(LocalDirInfo dirInfo : dirInfos) {
-                if (dirInfo.hasChanged()) {
-                    return true;
+                for(LocalDirInfo dirInfo : dirInfos) {
+                    if (dirInfo.hasChanged()) {
+                        return true;
+                    }
                 }
             }
         }
