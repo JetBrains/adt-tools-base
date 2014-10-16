@@ -164,7 +164,7 @@ public abstract class GraphicGenerator {
             if (!density.isValidValueForDevice()) {
                 continue;
             }
-            if (density == Density.LOW || density == Density.TV ||
+            if (density == Density.LOW || !density.isRecommended() ||
                 density == Density.XXXHIGH) {
                 // TODO don't manually check and instead gracefully handle missing stencils.
                 // Not yet supported -- missing stencil image
