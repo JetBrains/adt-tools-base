@@ -79,13 +79,4 @@ public interface OutputFile {
      */
     @NonNull
     public Collection<FilterData> getFilters();
-
-    /**
-     * Returns the split identifier (like "hdpi" for a density split) given the split dimension.
-     * @param filterType the string representation of {@see SplitType} split dimension used to
-     *                   create the APK.
-     * @return the split identifier or null if there was not split of that dimension.
-     */
-    @Nullable
-    public String getFilter(@NonNull String filterType);
 }
