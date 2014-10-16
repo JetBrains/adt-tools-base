@@ -33,7 +33,7 @@ public class SdkVersionInfo {
     /**
      * Like {@link #HIGHEST_KNOWN_API} but does not include preview platforms
      */
-    public static final int HIGHEST_KNOWN_STABLE_API = 20;
+    public static final int HIGHEST_KNOWN_STABLE_API = 21;
 
    /**
     * The lowest active API level in the ecosystem. This number will change over time
@@ -73,8 +73,7 @@ public class SdkVersionInfo {
             case 18: return "API 18: Android 4.3 (Jelly Bean)";
             case 19: return "API 19: Android 4.4 (KitKat)";
             case 20: return "API 20: Android 4.4 (KitKat Wear)";
-            // TODO: Get final codename
-            case 21: return "API 21: Android 4.X (L Preview)";
+            case 21: return "API 21: Android 5.0 (Lollipop)";
             // If you add more versions here, also update #getBuildCodes and
             // #HIGHEST_KNOWN_API
 
@@ -131,8 +130,7 @@ public class SdkVersionInfo {
             case 18: return "JELLY_BEAN_MR2"; //$NON-NLS-1$
             case 19: return "KITKAT"; //$NON-NLS-1$
             case 20: return "KITKAT_WATCH"; //$NON-NLS-1$
-            // TODO: Get final codename
-            case 21: return "L"; //$NON-NLS-1$
+            case 21: return "LOLLIPOP"; //$NON-NLS-1$
             // If you add more versions here, also update #getAndroidName and
             // #HIGHEST_KNOWN_API
         }
@@ -157,6 +155,10 @@ public class SdkVersionInfo {
             if (code != null && code.equalsIgnoreCase(buildCode)) {
                 return api;
             }
+        }
+
+        if (buildCode.equalsIgnoreCase("L")) {
+            return 21; // For now the Build class also provides this as an alias to Lollipop
         }
 
         return recognizeUnknowns ? HIGHEST_KNOWN_API + 1 : -1;
