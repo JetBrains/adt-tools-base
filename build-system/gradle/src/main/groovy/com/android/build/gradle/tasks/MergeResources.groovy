@@ -45,6 +45,11 @@ public class MergeResources extends IncrementalTask {
     }
 
     @Input
+    String getBuildToolsVersion() {
+        plugin.extension.buildToolsRevision
+    }
+
+    @Input
     boolean process9Patch
 
     @Input

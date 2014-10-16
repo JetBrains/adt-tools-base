@@ -35,8 +35,11 @@ import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.security.CodeSource;
@@ -181,16 +184,27 @@ public class GradleProjectTestRule implements TestRule {
      * @param tasks Variadic list of tasks to execute.
      */
     public void execute(String ... tasks) {
-        execute(Collections.<String>emptyList(), tasks);
+        execute(Collections.<String>emptyList(), null, tasks);
+    }
+
+    /**
+     * Runs gradle on the project.  Throws exception on failure.
+     *
+     * @param stdout Stream to capture the standard output.
+     * @param tasks Variadic list of tasks to execute.
+     */
+    public void execute(OutputStream stdout, String ... tasks) {
+        execute(Collections.<String>emptyList(), stdout, tasks);
     }
 
     /**
      * Runs gradle on the project.  Throws exception on failure.
      *
      * @param arguments List of arguments for the gradle command.
+     * @param stdout Stream to capture the standard output.
      * @param tasks Variadic list of tasks to execute.
      */
-    public void execute(List<String> arguments, String ... tasks) {
+    public void execute(List<String> arguments, @Nullable OutputStream stdout, String ... tasks) {
         GradleConnector connector = GradleConnector.newConnector();
 
         ProjectConnection connection = connector
@@ -204,6 +218,7 @@ public class GradleProjectTestRule implements TestRule {
             args.addAll(arguments);
 
             connection.newBuild().forTasks(tasks)
+                    .setStandardOutput(stdout)
                     .withArguments(args.toArray(new String[args.size()])).run();
         } finally {
             connection.close();
