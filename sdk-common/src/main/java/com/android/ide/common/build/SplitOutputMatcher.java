@@ -18,6 +18,7 @@ package com.android.ide.common.build;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.FilterData;
 import com.android.build.MainOutputFile;
 import com.android.build.OutputFile;
 import com.android.build.VariantOutput;
@@ -73,8 +74,8 @@ public class SplitOutputMatcher {
         // find a matching output.
         for (VariantOutput variantOutput : outputs) {
             for (OutputFile output : variantOutput.getOutputs()) {
-                String densityFilter = output.getFilter(OutputFile.DENSITY);
-                String abiFilter = output.getFilter(OutputFile.ABI);
+                String densityFilter = getFilter(output, OutputFile.DENSITY);
+                String abiFilter = getFilter(output, OutputFile.ABI);
 
                 if (densityFilter != null && !densityFilter.equals(densityValue)) {
                     continue;
@@ -100,7 +101,7 @@ public class SplitOutputMatcher {
 
         // so far, we are not dealing with the pure split files...
         MainOutputFile mainOutputFile = match.getMainOutputFile();
-        if (mainOutputFile.getFilter(OutputFile.DENSITY) == null && variantAbiFilters != null) {
+        if (getFilter(mainOutputFile, OutputFile.DENSITY) == null && variantAbiFilters != null) {
             // if we have a match that has no abi filter, and we have variant-level filters, then
             // we need to make sure that the variant filters are compatible with the device abis.
             boolean foundMatch = false;
@@ -117,5 +118,15 @@ public class SplitOutputMatcher {
         }
 
         return ImmutableList.of(mainOutputFile.getOutputFile());
+    }
+
+    @Nullable
+    private static String getFilter(@NonNull OutputFile outputFile, @NonNull String filterType) {
+        for (FilterData filterData : outputFile.getFilters()) {
+            if (filterData.getFilterType().equals(filterType)) {
+                return filterData.getIdentifier();
+            }
+        }
+        return null;
     }
 }

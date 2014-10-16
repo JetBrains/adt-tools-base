@@ -61,15 +61,4 @@ public class OutputFileImpl implements OutputFile, Serializable {
     public Collection<FilterData> getFilters() {
         return filters;
     }
-
-    @Nullable
-    @Override
-    public String getFilter(@NonNull String filterType) {
-        for (FilterData filter : filters) {
-            if (filter.getFilterType().equals(filterType)) {
-                return filter.getIdentifier();
-            }
-        }
-        return null;
-    }
 }

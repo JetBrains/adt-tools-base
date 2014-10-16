@@ -618,7 +618,7 @@ public class AndroidProjectTest extends TestCase {
             assertEquals(1, outputFiles.size());
             assertNotNull(output.getMainOutputFile());
 
-            String densityFilter = output.getMainOutputFile().getFilter(OutputFile.DENSITY);
+            String densityFilter = getFilter(output.getMainOutputFile(), OutputFile.DENSITY);
             Integer value = expected.get(densityFilter);
             // this checks we're not getting an unexpected output.
             assertNotNull("Check Valid output: " + (densityFilter == null ? "universal"
@@ -631,6 +631,16 @@ public class AndroidProjectTest extends TestCase {
 
         // this checks we didn't miss any expected output.
         assertTrue(expected.isEmpty());
+    }
+
+    @Nullable
+    private static String getFilter(@NonNull OutputFile outputFile, @NonNull String filterType) {
+        for (FilterData filterData : outputFile.getFilters()) {
+            if (filterData.getFilterType().equals(filterType)) {
+                return filterData.getIdentifier();
+            }
+        }
+        return null;
     }
 
     public void testDensityPureSplitOutputs() throws Exception {
@@ -664,7 +674,7 @@ public class AndroidProjectTest extends TestCase {
         AndroidArtifactOutput output = debugOutputs.iterator().next();
         assertEquals(5, output.getOutputs().size());
         for (OutputFile outputFile : output.getOutputs()) {
-            String densityFilter = outputFile.getFilter(OutputFile.DENSITY);
+            String densityFilter = getFilter(outputFile, OutputFile.DENSITY);
             assertEquals(densityFilter == null ? OutputFile.MAIN : OutputFile.SPLIT,
                     outputFile.getOutputType());
 

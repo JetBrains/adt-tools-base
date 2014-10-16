@@ -91,17 +91,6 @@ public class SplitOutputMatcherTest extends TestCase {
             return splitTypeBuilder.build();
         }
 
-        @Nullable
-        @Override
-        public String getFilter(String filterType) {
-            if (densityFilter != null && filterType.equals(OutputFile.DENSITY)) {
-                return densityFilter;
-            } else if (abiFilter != null && filterType.equals(OutputFile.ABI)) {
-                return abiFilter;
-            }
-            return null;
-        }
-
         @NonNull
         @Override
         public Collection<FilterData> getFilters() {
