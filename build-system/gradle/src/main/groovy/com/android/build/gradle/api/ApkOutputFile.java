@@ -54,18 +54,15 @@ public class ApkOutputFile implements OutputFile, Serializable {
 
     @NonNull private final Collection<FilterData> filters;
     @NonNull private final Collection<String> filterTypes;
-    @NonNull private final Optional<String> splitSuffix;
     @NonNull private final OutputFile.OutputType outputType;
     @NonNull private final Callable<File> outputFile;
 
     public ApkOutputFile(
             @NonNull OutputType outputType,
             @NonNull Collection<FilterData> filters,
-            @Nullable String suffix,
             @NonNull Callable<File> outputFile) {
         this.outputType = outputType;
         this.outputFile = outputFile;
-        this.splitSuffix = Optional.fromNullable(suffix);
         this.filters = filters;
         ImmutableList.Builder<String> filterTypes = ImmutableList.builder();
         for (FilterData filter : filters) {
@@ -108,17 +105,6 @@ public class ApkOutputFile implements OutputFile, Serializable {
         }));
     }
 
-    /**
-     * AAPT can generate filenames that have a suffix passed the root file name + dimension
-     * identifier, this suffix is stored here to be able to identify it in the
-     *
-     * @return the generated file suffix.
-     */
-    @NonNull
-    public String getSuffix() {
-        return splitSuffix.or("");
-    }
-
     @Override
     @NonNull
     public Collection<FilterData> getFilters() {
@@ -137,7 +123,6 @@ public class ApkOutputFile implements OutputFile, Serializable {
                                 + ':' + splitData.getIdentifier() + ']';
                     }
                 }))
-                .add("SplitSuffix", splitSuffix)
                 .add("File", getOutputFile().getAbsolutePath())
                 .toString();
     }
@@ -173,68 +158,5 @@ public class ApkOutputFile implements OutputFile, Serializable {
     @Nullable
     public String getFilter(String filterType) {
         return getFilterByType(FilterType.valueOf(filterType));
-    }
-
-    public static class JsonSerializer implements com.google.gson.JsonSerializer<ApkOutputFile> {
-
-        @Override
-        public JsonElement serialize(ApkOutputFile apkOutputFile, Type type,
-                JsonSerializationContext jsonSerializationContext) {
-            JsonObject jsonObject = new JsonObject();
-            jsonObject.addProperty("outputType", apkOutputFile.getOutputType());
-            JsonArray filtersArray = new JsonArray();
-            for (FilterData filterData : apkOutputFile.getFilters()) {
-                JsonObject filter = new JsonObject();
-                filter.addProperty("filterType", filterData.getFilterType());
-                filter.addProperty("filterValue", filterData.getIdentifier());
-                filtersArray.add(filter);
-            }
-            jsonObject.add("filters", jsonObject);
-            jsonObject.addProperty("splitSuffix", apkOutputFile.getSuffix());
-            jsonObject.addProperty("outputFile", apkOutputFile.getOutputFile().getAbsolutePath());
-            return jsonObject;
-        }
-    }
-
-    /**
-     * JSON deserializer for loading previously saved instances...
-     */
-    public static class JsonDeserializer implements com.google.gson.JsonDeserializer<ApkOutputFile> {
-
-        @Override
-        public ApkOutputFile deserialize(JsonElement jsonElement, Type type,
-                JsonDeserializationContext jsonDeserializationContext)
-                throws JsonParseException {
-            ImmutableList.Builder<FilterData> filters = ImmutableList.builder();
-            JsonObject jsonObject = jsonElement.getAsJsonObject();
-            JsonArray jsonFilters = jsonObject.getAsJsonArray("filters");
-            for (JsonElement jsonFilter : jsonFilters) {
-                filters.add(FilterData.Builder.build(
-                        jsonFilter.getAsJsonObject().get("filterTye").getAsString(),
-                        jsonFilter.getAsJsonObject().get("filterValue").getAsString()));
-            }
-            return new ApkOutputFile(
-                    OutputFile.OutputType.valueOf(jsonObject.get("outputType").getAsString()),
-                    filters.build(),
-                    ((JsonObject) jsonElement).get("splitSuffix").getAsString(),
-                    Callables.returning(new File(jsonObject.get("outputFile").getAsString())));
-        }
-    }
-
-    public static ImmutableList<ApkOutputFile> load(File inputFile)
-            throws FileNotFoundException {
-
-        GsonBuilder gsonBuilder = new GsonBuilder();
-        gsonBuilder.registerTypeAdapter(ApkOutputFile.class,
-                new ApkOutputFile.JsonDeserializer());
-        Gson gson = gsonBuilder.create();
-
-        ImmutableList.Builder<ApkOutputFile> builder = ImmutableList.builder();
-
-        for (ApkOutputFile vo : gson.fromJson(new FileReader(inputFile),
-                ApkOutputFile[].class)) {
-            builder.add(vo);
-        }
-        return builder.build();
     }
 }

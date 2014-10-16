@@ -15,16 +15,10 @@
  */
 package com.android.build.gradle.tasks
 
-import com.android.build.FilterData
-import com.android.build.gradle.api.ApkOutputFile
 import com.android.build.gradle.internal.dependency.SymbolFileProviderImpl
 import com.android.build.gradle.internal.dsl.AaptOptionsImpl
 import com.android.build.gradle.internal.tasks.IncrementalTask
 import com.android.builder.core.VariantConfiguration
-import com.google.common.collect.ImmutableList
-import com.google.common.util.concurrent.Callables
-import com.google.common.util.concurrent.Futures
-import com.google.gson.Gson
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.InputFile
@@ -32,9 +26,6 @@ import org.gradle.api.tasks.Nested
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.OutputFile
-
-import java.util.regex.Matcher
-import java.util.regex.Pattern
 
 public class ProcessAndroidResources extends IncrementalTask {
 
@@ -60,9 +51,6 @@ public class ProcessAndroidResources extends IncrementalTask {
 
     @OutputFile @Optional
     File proguardOutputFile
-
-    @OutputFile @Optional
-    File splitInfoOutputFile
 
     @Input
     Collection<String> resourceConfigs
@@ -116,33 +104,5 @@ public class ProcessAndroidResources extends IncrementalTask {
                 getEnforceUniquePackageName(),
                 getSplits()
         )
-
-        if (resOutBaseNameFile != null && splits!=null) {
-            File resOutBaseDirectory = resOutBaseNameFile.getParentFile();
-            String resOutputBaseName = resOutBaseNameFile.getName();
-            final Pattern pattern = Pattern.compile("${resOutputBaseName}_([h|x|d|p|i|m]*)(.*)")
-
-            List<ApkOutputFile> variantOutputList = new ArrayList<ApkOutputFile>();
-            for (File f : resOutBaseDirectory.listFiles()) {
-
-                Matcher matcher = pattern.matcher(f.getName());
-                if (matcher.matches()) {
-                    ApkOutputFile variantOutput = new ApkOutputFile(
-                            com.android.build.OutputFile.OutputType.SPLIT,
-                            ImmutableList.<FilterData>of(FilterData.Builder.build(
-                                    com.android.build.OutputFile.DENSITY,
-                                    matcher.group(1))),
-                            matcher.group(2),
-                            Callables.returning(f));
-                    variantOutputList.add(variantOutput)
-                }
-            }
-            Gson gson = new Gson();
-            println gson.toJson(variantOutputList);
-            FileWriter fileWriter = new FileWriter(getSplitInfoOutputFile());
-            fileWriter.append(gson.toJson(variantOutputList));
-            fileWriter.close()
-        }
-
     }
 }

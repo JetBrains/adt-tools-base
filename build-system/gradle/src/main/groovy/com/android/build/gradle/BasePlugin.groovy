@@ -1165,9 +1165,6 @@ public abstract class BasePlugin {
                             }
                         });
                 processResources.splits = filters;
-                processResources.conventionMapping.splitInfoOutputFile = {
-                    project.file("$project.buildDir/${FD_INTERMEDIATES}/res/split${outputName}InfoList.json")
-                }
             }
 
             // only generate code if the density filter is null, and if we haven't generated
@@ -1279,24 +1276,16 @@ public abstract class BasePlugin {
                         PackageSplitRes);
         variantOutputData.packageSplitResourcesTask.inputDirectory =
                 new File("$project.buildDir/${FD_INTERMEDIATES}/res")
-        variantOutputData.packageSplitResourcesTask.inputSplitResListFile =
-                variantOutputData.processResourcesTask.splitInfoOutputFile
         variantOutputData.packageSplitResourcesTask.splits = filters
         variantOutputData.packageSplitResourcesTask.outputBaseName = config.fullName
         variantOutputData.packageSplitResourcesTask.signingConfig =
                 (SigningConfigDsl) config.signingConfig
         variantOutputData.packageSplitResourcesTask.outputDirectory =
-                new File("$project.buildDir/outputs/apk")
-        variantOutputData.packageSplitResourcesTask.outputPackagedSplitResListFile =
-                new File(variantOutputData.packageSplitResourcesTask.outputDirectory,
-                    "packaged${config.fullName.capitalize()}SplitInfo.json")
+                new File("$project.buildDir/${FD_INTERMEDIATES}/splits/${config.fullName}")
         variantOutputData.packageSplitResourcesTask.plugin = this
         variantOutputData.packageSplitResourcesTask.dependsOn variantOutputData.processResourcesTask
 
         SplitZipAlign zipAlign = project.tasks.create("zipAlign${config.fullName.capitalize()}SplitPackages", SplitZipAlign)
-        zipAlign.conventionMapping.packagedSplitResListFile = {
-            variantOutputData.packageSplitResourcesTask.outputPackagedSplitResListFile
-        }
         zipAlign.conventionMapping.zipAlignExe = {
             String path = androidBuilder.targetInfo?.buildTools?.getPath(ZIP_ALIGN)
             if (path != null) {
@@ -1305,10 +1294,8 @@ public abstract class BasePlugin {
 
             return null
         }
-        zipAlign.alignedFileList =
-                new File(variantOutputData.packageSplitResourcesTask.outputDirectory,
-                "aligned${config.fullName.capitalize()}PackagedSplitInfo.json")
         zipAlign.outputFile = new File("$project.buildDir/outputs/apk")
+        zipAlign.inputDirectory = variantOutputData.packageSplitResourcesTask.outputDirectory
         zipAlign.outputBaseName = config.fullName;
         ((ApkVariantOutputData) variantOutputData).splitZipAlign = zipAlign
         zipAlign.dependsOn(variantOutputData.packageSplitResourcesTask)
@@ -2228,6 +2215,19 @@ public abstract class BasePlugin {
                     variantData.assembleVariantTask =
                             variantOutputData.assembleTask = createAssembleTask(variantData)
                 }
+            }
+
+            if (!signedApk && variantOutputData.packageSplitResourcesTask != null) {
+                // in case we are not signing the resulting APKs and we have some pure splits
+                // we should manually copy them from the intermediate location to the final
+                // apk location unmodified.
+                Copy copyTask = project.tasks.create(
+                        "copySplit${outputName.capitalize()}",
+                        Copy)
+                copyTask.destinationDir = new File(apkLocation);
+                copyTask.from(variantOutputData.packageSplitResourcesTask.getOutputDirectory())
+                variantOutputData.assembleTask.dependsOn(copyTask)
+                copyTask.mustRunAfter(appTask)
             }
 
             variantOutputData.assembleTask.dependsOn appTask
