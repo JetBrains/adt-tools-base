@@ -183,6 +183,15 @@ public class DefaultConfiguration extends Configuration {
                 regexps = mRegexps.get(VALUE_ALL);
             }
             if (regexps != null && location != null) {
+                // Check message
+                for (Pattern regexp : regexps) {
+                    Matcher matcher = regexp.matcher(message);
+                    if (matcher.find()) {
+                        return true;
+                    }
+                }
+
+                // Check location
                 File file = location.getFile();
                 String relativePath = context.getProject().getRelativePath(file);
                 boolean checkUnixPath = false;
