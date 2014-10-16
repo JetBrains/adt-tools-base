@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.tasks
 
-import com.android.build.gradle.internal.tasks.OutputFileTask
 import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputDirectory
@@ -30,7 +29,7 @@ import java.util.regex.Pattern
 /**
  * Task to zip align all the splits
  */
-class SplitZipAlign extends DefaultTask implements OutputFileTask{
+class SplitZipAlign extends DefaultTask {
 
     @InputDirectory
     File inputDirectory;
@@ -39,7 +38,7 @@ class SplitZipAlign extends DefaultTask implements OutputFileTask{
     String outputBaseName;
 
     @OutputDirectory
-    File outputFile;
+    File outputDirectory;
 
     @InputFile
     File zipAlignExe
@@ -55,7 +54,7 @@ class SplitZipAlign extends DefaultTask implements OutputFileTask{
         for (File file : inputDirectory.listFiles()) {
             Matcher unaligned = unalignedPattern.matcher(file.getName())
             if (unaligned.matches()) {
-                File out = new File(getOutputFile(),
+                File out = new File(getOutputDirectory(),
                         "${project.archivesBaseName}_${outputBaseName}_${unaligned.group(1)}.apk")
                 project.exec {
                     executable = getZipAlignExe()
@@ -66,7 +65,7 @@ class SplitZipAlign extends DefaultTask implements OutputFileTask{
             } else {
                 Matcher unsigned = unsignedPattern.matcher(file.getName())
                 if (unsigned.matches()) {
-                    File out = new File(getOutputFile(),
+                    File out = new File(getOutputDirectory(),
                             "${project.archivesBaseName}_${outputBaseName}_${unsigned.group(1)}.apk")
                     project.exec {
                         executable = getZipAlignExe()

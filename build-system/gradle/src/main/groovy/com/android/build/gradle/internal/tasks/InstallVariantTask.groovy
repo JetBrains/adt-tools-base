@@ -86,7 +86,7 @@ public class InstallVariantTask extends BaseTask {
                     } else {
                         project.logger.lifecycle(
                                 "Installing '${output.baseName}' on '${device.getName()}'.");
-                        File apkFile = output.getOutputFile();
+                        File apkFile = output.outputDirectory();
                         device.installPackage(apkFile, getTimeOut(), plugin.logger)
                         successfulInstallCount++
                     }
