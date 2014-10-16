@@ -736,6 +736,7 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
 
         FullRevision version = null;
         Issue issue = DEPENDENCY;
+        boolean includeMicro = true;
         if ("com.android.tools.build".equals(dependency.getGroupId()) &&
                 "gradle".equals(dependency.getArtifactId())) {
             FullRevision v = FullRevision.parseRevision(GRADLE_PLUGIN_RECOMMENDED_VERSION);
@@ -747,9 +748,11 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
         } else if ("com.google.guava".equals(dependency.getGroupId()) &&
                 "guava".equals(dependency.getArtifactId())) {
             version = getNewerRevision(dependency, 18, 0, 0);
+            includeMicro = false;
         } else if ("com.google.code.gson".equals(dependency.getGroupId()) &&
                 "gson".equals(dependency.getArtifactId())) {
             version = getNewerRevision(dependency, 2, 3, 0);
+            includeMicro = false;
         } else if ("org.apache.httpcomponents".equals(dependency.getGroupId()) &&
                 "httpclient".equals(dependency.getArtifactId())) {
             version = getNewerRevision(dependency, 4, 3, 5);
@@ -766,14 +769,19 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
         }
 
         if (version != null) {
-            String message = getNewerVersionAvailableMessage(dependency, version);
+            String message = getNewerVersionAvailableMessage(dependency, version, includeMicro);
             report(context, cookie, issue, message);
         }
     }
 
     private static String getNewerVersionAvailableMessage(GradleCoordinate dependency,
-            FullRevision version) {
-        return getNewerVersionAvailableMessage(dependency, version.toString());
+            FullRevision version, boolean includeMicro) {
+        String versionString = includeMicro || version.getMicro() != 0 || version.isPreview()
+                ? version.toString()
+                // We can't use version#toShortString because that will turn 18.0 into 18
+                // which we don't want.
+                : (version.getMajor() + "." + version.getMinor());
+        return getNewerVersionAvailableMessage(dependency, versionString);
     }
 
     private static String getNewerVersionAvailableMessage(GradleCoordinate dependency,
