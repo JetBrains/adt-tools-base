@@ -29,7 +29,6 @@ dependencies {
     compile project(':base:builder')
     compile project(':base:lint')
     compile "net.sf.proguard:proguard-gradle:${project.ext.proguardVersion}"
-    compile "com.google.code.gson:gson:2.3"
 
     testCompile 'junit:junit:3.8.1'
     testCompile project(':base:project-test-lib')

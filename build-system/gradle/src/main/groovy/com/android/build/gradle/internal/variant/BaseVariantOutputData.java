@@ -67,7 +67,7 @@ public abstract class BaseVariantOutputData implements VariantOutput {
             @NonNull BaseVariantData<?> variantData) {
         this.variantData = variantData;
         this.mainApkOutputFile = new MainApkOutputFile(
-                outputType, filters, null /* prefix */, getOutputFilePromise());
+                outputType, filters, getOutputFilePromise());
     }
 
     @NonNull

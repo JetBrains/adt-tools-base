@@ -26,13 +26,14 @@ import java.util.Collection;
 import java.util.concurrent.Callable;
 
 /**
- * Created by jedo on 10/9/14.
+ * Implementation of the {@link com.android.build.gradle.api.ApkOutputFile} for the
+ * application's main APK file.
  */
 public class MainApkOutputFile extends ApkOutputFile implements MainOutputFile {
 
     public MainApkOutputFile(@NonNull OutputType outputType,
             @NonNull Collection<FilterData> filters,
-            @Nullable String suffix, @NonNull Callable<File> outputFile) {
-        super(outputType, filters, suffix, outputFile);
+            @NonNull Callable<File> outputFile) {
+        super(outputType, filters, outputFile);
     }
 }
