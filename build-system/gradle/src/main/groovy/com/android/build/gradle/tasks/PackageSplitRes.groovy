@@ -18,6 +18,7 @@ package com.android.build.gradle.tasks
 
 import com.android.annotations.NonNull
 import com.android.build.FilterData
+import com.android.build.OutputFile
 import com.android.build.gradle.api.ApkOutputFile
 import com.android.build.gradle.internal.dsl.SigningConfigDsl
 import com.android.build.gradle.internal.tasks.BaseTask
@@ -56,19 +57,19 @@ class PackageSplitRes extends BaseTask {
 
     @NonNull
     public synchronized  ImmutableList<ApkOutputFile> getOutputSplitFiles() {
+
         if (mOutputFiles == null) {
-
             ImmutableList.Builder<ApkOutputFile> builder = ImmutableList.builder();
-
             if (outputDirectory.exists() && outputDirectory.listFiles().length > 0) {
-                final Pattern pattern = Pattern.compile("${project.archivesBaseName}-${outputBaseName}-([h|x|d|p|i|m]*)(.*)")
+                final Pattern pattern = Pattern.compile(
+                        "${project.archivesBaseName}-${outputBaseName}-([h|x|d|p|i|m]*)(.*)")
                 for (File file : outputDirectory.listFiles()) {
                     Matcher matcher = pattern.matcher(file.getName());
                     if (matcher.matches()) {
                         builder.add(new ApkOutputFile(
-                                com.android.build.OutputFile.OutputType.SPLIT,
+                                OutputFile.OutputType.SPLIT,
                                 ImmutableList.<FilterData> of(FilterData.Builder.build(
-                                        com.android.build.OutputFile.DENSITY,
+                                        OutputFile.DENSITY,
                                         matcher.group(1))),
                                 Callables.returning(file)));
                     }
@@ -79,8 +80,10 @@ class PackageSplitRes extends BaseTask {
                 // to disambiguate.
                 for (String split : splits) {
                     ApkOutputFile apkOutput = new ApkOutputFile(
-                            com.android.build.OutputFile.OutputType.SPLIT,
-                            ImmutableList.<FilterData>of(FilterData.Builder.build(com.android.build.OutputFile.DENSITY, split)),
+                            OutputFile.OutputType.SPLIT,
+                            ImmutableList.<FilterData>of(
+                                    FilterData.Builder.build(OutputFile.DENSITY,
+                                            "${project.archivesBaseName}-${outputBaseName}-${split}")),
                             Callables.returning(new File(outputDirectory, split)))
                     builder.add(apkOutput)
                 }
@@ -94,19 +97,21 @@ class PackageSplitRes extends BaseTask {
     protected void doFullTaskAction() {
 
         // resources- and .ap_ should be shared in a setting somewhere. see BasePlugin:1206
-        final Pattern pattern = Pattern.compile("resources-${outputBaseName}.ap__([h|x|d|p|i|m]*)(.*)")
+        final Pattern pattern = Pattern.compile(
+                "resources-${outputBaseName}.ap__([h|x|d|p|i|m]*)(.*)")
         for (File file : inputDirectory.listFiles()) {
             Matcher matcher = pattern.matcher(file.getName());
             if (matcher.matches()) {
                 ApkOutputFile outputFile = new ApkOutputFile(
-                        com.android.build.OutputFile.OutputType.SPLIT,
+                        OutputFile.OutputType.SPLIT,
                         ImmutableList.<FilterData> of(FilterData.Builder.build(
-                                com.android.build.OutputFile.DENSITY,
+                                OutputFile.DENSITY,
                                 matcher.group(1))),
                         Callables.returning(file));
 
                 println "in package " + outputFile
-                String apkName = "${project.archivesBaseName}-${outputBaseName}-${outputFile.getSplitIdentifiers('-' as char)}"
+                String apkName = "${project.archivesBaseName}-${outputBaseName}-" +
+                        "${outputFile.getSplitIdentifiers('-' as char)}"
                 apkName = apkName + (signingConfig == null
                         ? "-unsigned.apk"
                         : "-unaligned.apk")
