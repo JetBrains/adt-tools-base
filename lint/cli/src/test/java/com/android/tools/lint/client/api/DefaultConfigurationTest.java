@@ -216,6 +216,45 @@ public class DefaultConfigurationTest extends AbstractCheckTest {
                 largeLocation, ""));
     }
 
+    public void testMessagePatternIgnore() throws Exception {
+        File projectDir = getProjectDir(null,
+                "res/layout/onclick.xml=>res/layout/onclick.xml"
+        );
+        LintClient client = new TestLintClient();
+        Project project = Project.create(client, projectDir, projectDir);
+        LintDriver driver = new LintDriver(new BuiltinIssueRegistry(), client);
+        File file = new File(projectDir,
+                "res" + File.separator + "layout" + File.separator + "onclick.xml");
+        assertTrue(file.exists());
+        Context plainContext = new Context(driver, project, project, file);
+        Location location = Location.create(file);
+
+        assertEquals(Severity.WARNING, ObsoleteLayoutParamsDetector.ISSUE.getDefaultSeverity());
+
+        DefaultConfiguration configuration = getConfiguration(""
+                + "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+                + "<lint>\n"
+                + "    <issue id=\"ObsoleteLayoutParam\">\n"
+                + "        <ignore regexp=\"sample_icon\\.gif\" />\n"
+                + "        <ignore regexp=\"javax\\.swing\" />\n"
+                + "    </issue>\n"
+                + "</lint>");
+
+        assertFalse(configuration.isIgnored(plainContext, ObsoleteLayoutParamsDetector.ISSUE,
+                location,
+                "Missing the following drawables in drawable-hdpi: some_random.gif (found in drawable-mdpi)"));
+        assertTrue(configuration.isIgnored(plainContext, ObsoleteLayoutParamsDetector.ISSUE,
+                location,
+                "Missing the following drawables in drawable-hdpi: sample_icon.gif (found in drawable-mdpi)"));
+
+        assertFalse(configuration.isIgnored(plainContext, ObsoleteLayoutParamsDetector.ISSUE,
+                location,
+                "Invalid package reference in library; not included in Android: java.awt. Referenced from test.pkg.LibraryClass."));
+        assertTrue(configuration.isIgnored(plainContext, ObsoleteLayoutParamsDetector.ISSUE,
+                location,
+                "Invalid package reference in library; not included in Android: javax.swing. Referenced from test.pkg.LibraryClass."));
+    }
+
     public void testWriteLintXml() throws Exception {
         DefaultConfiguration configuration = getConfiguration(""
                 + "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
