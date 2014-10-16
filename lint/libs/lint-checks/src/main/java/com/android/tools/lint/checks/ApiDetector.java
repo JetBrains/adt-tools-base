@@ -74,6 +74,7 @@ import com.android.tools.lint.detector.api.ResourceXmlDetector;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.Speed;
+import com.android.tools.lint.detector.api.TextFormat;
 import com.android.tools.lint.detector.api.XmlContext;
 import com.android.utils.Pair;
 import com.google.common.collect.Lists;
@@ -106,6 +107,8 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import lombok.ast.Annotation;
 import lombok.ast.AnnotationElement;
@@ -1932,6 +1935,22 @@ public class ApiDetector extends ResourceXmlDetector
                         }
                     }
                 }
+            }
+        }
+
+        return -1;
+    }
+
+    @Nullable
+    public static int getRequiredVersion(@NonNull Issue issue, @NonNull String errorMessage,
+            @NonNull TextFormat format) {
+        errorMessage = format.toText(errorMessage);
+
+        if (issue == UNSUPPORTED || issue == INLINED) {
+            Pattern pattern = Pattern.compile("\\s(\\d+)\\s"); //$NON-NLS-1$
+            Matcher matcher = pattern.matcher(errorMessage);
+            if (matcher.find()) {
+                return Integer.parseInt(matcher.group(1));
             }
         }
 

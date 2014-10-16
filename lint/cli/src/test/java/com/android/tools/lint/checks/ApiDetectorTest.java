@@ -16,9 +16,19 @@
 
 package com.android.tools.lint.checks;
 
+import static com.android.tools.lint.checks.ApiDetector.INLINED;
+import static com.android.tools.lint.checks.ApiDetector.UNSUPPORTED;
+import static com.android.tools.lint.detector.api.TextFormat.TEXT;
+
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+import com.android.sdklib.SdkVersionInfo;
+import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Issue;
+import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Project;
+import com.android.tools.lint.detector.api.Severity;
 
 import java.io.File;
 
@@ -1219,5 +1229,15 @@ public class ApiDetectorTest extends AbstractCheckTest {
             return false;
         }
         return super.ignoreSystemErrors();
+    }
+
+    @Override
+    protected void checkReportedError(@NonNull Context context, @NonNull Issue issue,
+            @NonNull Severity severity, @Nullable Location location, @NonNull String message) {
+        if (issue == UNSUPPORTED || issue == INLINED) {
+            int requiredVersion = ApiDetector.getRequiredVersion(issue, message, TEXT);
+            assertTrue("Could not extract message tokens from " + message,
+                    requiredVersion >= 1 && requiredVersion <= SdkVersionInfo.HIGHEST_KNOWN_API);
+        }
     }
 }
