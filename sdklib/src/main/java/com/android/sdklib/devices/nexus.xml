@@ -854,7 +854,6 @@
             </d:abi>
             <d:dock> </d:dock>
             <d:power-type>battery</d:power-type>
-            <d:skin>nexus_6</d:skin>
         </d:hardware>
         <d:software>
             <d:api-level>21</d:api-level>
@@ -972,7 +971,6 @@
             </d:abi>
             <d:dock> </d:dock>
             <d:power-type>battery</d:power-type>
-            <d:skin>nexus_9</d:skin>
         </d:hardware>
         <d:software>
             <d:api-level>21</d:api-level>
