@@ -31,6 +31,7 @@ import com.android.build.gradle.internal.tasks.PrepareDependenciesTask;
 import com.android.build.gradle.tasks.AidlCompile;
 import com.android.build.gradle.tasks.GenerateBuildConfig;
 import com.android.build.gradle.tasks.GenerateResValues;
+import com.android.build.gradle.tasks.JackTask;
 import com.android.build.gradle.tasks.MergeAssets;
 import com.android.build.gradle.tasks.MergeResources;
 import com.android.build.gradle.tasks.NdkCompile;
@@ -93,10 +94,11 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
     public Copy copyApkTask;
     public GenerateApkDataTask generateApkDataTask;
 
-    public JavaCompile javaCompileTask;
     public Copy processJavaResourcesTask;
     public NdkCompile ndkCompileTask;
 
+    public JavaCompile javaCompileTask;
+    public JackTask jackTask;
     public Task compileTask;
 
     public Task obfuscationTask;

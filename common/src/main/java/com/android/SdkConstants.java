@@ -219,6 +219,12 @@ public final class SdkConstants {
     public static final String FN_HPROF_CONV =
         "hprof-conv" + ext(".exe", "");                   //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 
+    /** jack.jar */
+    public static final String FN_JACK = "jack.jar";                                  //$NON-NLS-1$
+    /** jill.jar */
+    public static final String FN_JILL = "jill.jar";                                  //$NON-NLS-1$
+
+
     /** properties file for SDK Updater packages */
     public static final String FN_SOURCE_PROP = "source.properties";                  //$NON-NLS-1$
     /** properties file for content hash of installed packages */

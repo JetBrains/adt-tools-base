@@ -134,27 +134,53 @@ public abstract class BaseTest extends TestCase {
             @NonNull String... tasks) {
         File project = new File(new File(testDir, testFolder), name)
 
-        return runTasksOn(project, gradleVersion, Collections.<String>emptyList(), tasks);
+        return runTasksOn(
+                project,
+                gradleVersion,
+                Collections.<String>emptyList(),
+                Collections.<String, String>emptyMap(),
+                tasks);
+    }
+
+    protected File runTasksOn(
+            @NonNull String testFolder,
+            @NonNull String name,
+            @NonNull String gradleVersion,
+            @NonNull List<String> arguments,
+            @NonNull String... tasks) {
+        File project = new File(new File(testDir, testFolder), name)
+
+        return runTasksOn(project,
+                gradleVersion,
+                arguments,
+                Collections.<String, String>emptyMap(),
+                tasks);
     }
 
     protected File runTasksOn(
             @NonNull File project,
             @NonNull String gradleVersion,
             @NonNull String... tasks) {
-        return runTasksOn(project, gradleVersion, Collections.<String>emptyList(), tasks);
+        return runTasksOn(
+                project,
+                gradleVersion,
+                Collections.<String>emptyList(),
+                Collections.<String, String>emptyMap(),
+                tasks);
     }
 
     protected File runTasksOn(
             @NonNull File project,
             @NonNull String gradleVersion,
             @NonNull List<String> arguments,
+            @NonNull Map<String, String> jvmDefines,
             @NonNull String... tasks) {
 
         File buildGradle = new File(project, "build.gradle");
         assertTrue("Missing file: " + buildGradle, buildGradle.isFile());
 
         AndroidProjectConnector connector = new AndroidProjectConnector(sdkDir, ndkDir);
-        connector.runGradleTasks(project, gradleVersion, arguments, tasks)
+        connector.runGradleTasks(project, gradleVersion, arguments, jvmDefines, tasks)
 
         return project;
     }
