@@ -385,7 +385,7 @@ public abstract class BaseExtension {
         return plugin.getSdkFolder()
     }
 
-    public List<String> getBootClasspath() {
+    public List<File> getBootClasspath() {
         return plugin.getBootClasspath()
     }
 

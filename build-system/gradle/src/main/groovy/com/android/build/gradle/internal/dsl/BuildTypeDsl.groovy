@@ -42,6 +42,7 @@ public class BuildTypeDsl extends DefaultBuildType implements Serializable {
 
     private final NdkConfigDsl ndkConfig
 
+    private boolean useJack
 
     public BuildTypeDsl(@NonNull String name,
                         @NonNull Project project,
@@ -80,11 +81,18 @@ public class BuildTypeDsl extends DefaultBuildType implements Serializable {
         }
     }
 
+    int hashCode() {
+        int result = super.hashCode()
+        result = 31 * result + (useJack ? 1 : 0)
+        return result
+    }
+
     @Override
     boolean equals(o) {
         if (this.is(o)) return true
         if (getClass() != o.class) return false
         if (!super.equals(o)) return false
+        if (useJack != o.useJack) return false
 
         return true
     }
@@ -153,6 +161,28 @@ public class BuildTypeDsl extends DefaultBuildType implements Serializable {
 
     void ndk(Action<NdkConfigDsl> action) {
         action.execute(ndkConfig)
+    }
+
+    boolean getUseJack() {
+        return useJack
+    }
+
+    void setUseJack(boolean useJack) {
+        this.useJack = useJack
+    }
+
+    void useJack(boolean useJack) {
+        setUseJack(useJack)
+    }
+
+    @Override
+    public boolean isTestCoverageEnabled() {
+        return !useJack && super.isTestCoverageEnabled()
+    }
+
+    @Override
+    public boolean isRunProguard() {
+        return !useJack && super.isRunProguard();
     }
 
     // ---------------

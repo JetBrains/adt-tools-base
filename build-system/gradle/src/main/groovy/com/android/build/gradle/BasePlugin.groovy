@@ -81,6 +81,8 @@ import com.android.build.gradle.tasks.CompatibleScreensManifest
 import com.android.build.gradle.tasks.Dex
 import com.android.build.gradle.tasks.GenerateBuildConfig
 import com.android.build.gradle.tasks.GenerateResValues
+import com.android.build.gradle.tasks.JackTask
+import com.android.build.gradle.tasks.JillTask
 import com.android.build.gradle.tasks.Lint
 import com.android.build.gradle.tasks.MergeAssets
 import com.android.build.gradle.tasks.MergeManifests
@@ -103,6 +105,7 @@ import com.android.builder.core.VariantConfiguration
 import com.android.builder.dependency.DependencyContainer
 import com.android.builder.dependency.JarDependency
 import com.android.builder.dependency.LibraryDependency
+import com.android.builder.internal.compiler.JackConversionCache
 import com.android.builder.internal.compiler.PreDexCache
 import com.android.builder.internal.testing.SimpleTestCallable
 import com.android.builder.model.AndroidArtifact
@@ -371,6 +374,10 @@ public abstract class BasePlugin {
                     project.rootProject.file(
                             "${project.rootProject.buildDir}/${FD_INTERMEDIATES}/dex-cache/cache.xml"),
                     logger)
+            JackConversionCache.getCache().clear(
+                    project.rootProject.file(
+                            "${project.rootProject.buildDir}/${FD_INTERMEDIATES}/jack-cache/cache.xml"),
+                    logger)
             LibraryCache.getCache().unload()
         }
 
@@ -380,6 +387,11 @@ public abstract class BasePlugin {
                     PreDexCache.getCache().load(
                             project.rootProject.file(
                                     "${project.rootProject.buildDir}/${FD_INTERMEDIATES}/dex-cache/cache.xml"))
+                    break;
+                } else if (task instanceof JillTask) {
+                    JackConversionCache.getCache().load(
+                            project.rootProject.file(
+                                    "${project.rootProject.buildDir}/${FD_INTERMEDIATES}/jack-cache/cache.xml"))
                     break;
                 }
             }
@@ -531,10 +543,16 @@ public abstract class BasePlugin {
         return sdkHandler.getSdkInfo()
     }
 
-    public List<String> getBootClasspath() {
+    public List<File> getBootClasspath() {
         ensureTargetSetup()
 
         return androidBuilder.getBootClasspath()
+    }
+
+    public List<String> getBootClasspathAsStrings() {
+        ensureTargetSetup()
+
+        return androidBuilder.getBootClasspathAsStrings()
     }
 
     public List<BaseVariantData<? extends BaseVariantOutputData>> getVariantDataList() {
@@ -1388,7 +1406,7 @@ public abstract class BasePlugin {
         // setup the boot classpath just before the task actually runs since this will
         // force the sdk to be parsed.
         compileTask.doFirst {
-            compileTask.options.bootClasspath = androidBuilder.getBootClasspath().join(File.pathSeparator)
+            compileTask.options.bootClasspath = androidBuilder.getBootClasspathAsStrings().join(File.pathSeparator)
         }
     }
     public void createGenerateMicroApkDataTask(
@@ -1519,15 +1537,18 @@ public abstract class BasePlugin {
 
         createAidlTask(variantData, null /*parcelableDir*/)
 
-        // Add a task to compile the test application
-        createCompileTask(variantData, testedVariantData)
-
         // Add NDK tasks
         if (!extension.getUseNewNativePlugin()) {
             createNdkTasks(variantData)
         }
 
-        createPostCompilationTasks(variantData)
+        // Add a task to compile the test application
+        if (variantData.getVariantConfiguration().getBuildType().getUseJack()) {
+            createJackTask(variantData, testedVariantData);
+        } else{
+            createCompileTask(variantData, testedVariantData)
+            createPostCompilationTasks(variantData);
+        }
 
         createPackagingTask(variantData, null /*assembleTask*/, false /*publishApk*/)
 
@@ -1579,12 +1600,15 @@ public abstract class BasePlugin {
             }
 
             // wire the main lint task dependency.
-            lint.dependsOn baseVariantData.javaCompileTask, lintCompile
+            lint.dependsOn lintCompile
+            optionalDependsOn(lint, baseVariantData.javaCompileTask, baseVariantData.jackTask)
 
             String variantName = baseVariantData.variantConfiguration.fullName
             def capitalizedVariantName = variantName.capitalize()
             Lint variantLintCheck = project.tasks.create("lint" + capitalizedVariantName, Lint)
-            variantLintCheck.dependsOn baseVariantData.javaCompileTask, lintCompile
+            variantLintCheck.dependsOn lintCompile
+            optionalDependsOn(variantLintCheck, baseVariantData.javaCompileTask, baseVariantData.jackTask)
+
             // Note that we don't do "lint.dependsOn lintCheck"; the "lint" target will
             // on its own run through all variants (and compare results), it doesn't delegate
             // to the individual tasks (since it needs to coordinate data collection and
@@ -2005,6 +2029,101 @@ public abstract class BasePlugin {
         }
     }
 
+    public void createJackTask(
+            @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData,
+            @Nullable BaseVariantData<? extends BaseVariantOutputData> testedVariantData) {
+
+        VariantConfiguration config = variantData.variantConfiguration
+
+        // ----- Create Jill tasks -----
+        JillTask jillRuntimeTask = project.tasks.create(
+                "jill${variantData.variantConfiguration.fullName.capitalize()}RuntimeLibraries",
+                JillTask)
+
+        jillRuntimeTask.dependsOn variantData.variantDependency.packageConfiguration.buildDependencies
+        jillRuntimeTask.plugin = this
+        jillRuntimeTask.dexOptions = extension.dexOptions
+
+        jillRuntimeTask.conventionMapping.inputLibs = {
+            getBootClasspath()
+        }
+        jillRuntimeTask.conventionMapping.outputFolder = {
+            project.file(
+                    "${project.buildDir}/${FD_INTERMEDIATES}/jill/${variantData.variantConfiguration.dirName}/runtime")
+        }
+
+        // ----
+
+        JillTask jillPackagedTask = project.tasks.create(
+                "jill${variantData.variantConfiguration.fullName.capitalize()}PackagedLibraries",
+                JillTask)
+
+        jillPackagedTask.dependsOn variantData.variantDependency.packageConfiguration.buildDependencies
+        jillPackagedTask.plugin = this
+        jillPackagedTask.dexOptions = extension.dexOptions
+
+        jillPackagedTask.conventionMapping.inputLibs = {
+            androidBuilder.getPackagedJars(config)
+        }
+        jillPackagedTask.conventionMapping.outputFolder = {
+            project.file(
+                    "${project.buildDir}/${FD_INTERMEDIATES}/jill/${variantData.variantConfiguration.dirName}/packaged")
+        }
+
+
+        // ----- Create Jack Task -----
+        JackTask compileTask = project.tasks.create(
+                "compile${variantData.variantConfiguration.fullName.capitalize()}Java",
+                JackTask)
+        variantData.jackTask = compileTask
+        variantData.jackTask.dependsOn variantData.sourceGenTask, jillRuntimeTask, jillPackagedTask
+        variantData.compileTask.dependsOn variantData.jackTask
+        // TODO - dependency information for the compile classpath is being lost.
+        // Add a temporary approximation
+        compileTask.dependsOn variantData.variantDependency.compileConfiguration.buildDependencies
+
+        compileTask.plugin = this
+
+        compileTask.source = variantData.getJavaSources()
+
+        // if the tested variant is an app, add its classpath. For the libraries,
+        // it's done automatically since the classpath includes the library output as a normal
+        // dependency.
+        if (testedVariantData instanceof ApplicationVariantData) {
+            compileTask.conventionMapping.classpath =  {
+                project.fileTree(jillRuntimeTask.outputFolder) + testedVariantData.jackTask.classpath + project.fileTree(testedVariantData.jackTask.jackFile)
+            }
+        } else {
+            compileTask.conventionMapping.classpath =  {
+                project.fileTree(jillRuntimeTask.outputFolder)
+            }
+        }
+
+        compileTask.conventionMapping.packagedLibraries = {
+            project.fileTree(jillPackagedTask.outputFolder).files
+        }
+
+        compileTask.conventionMapping.destinationDir = {
+            project.file("$project.buildDir/${FD_INTERMEDIATES}/dex/${variantData.variantConfiguration.dirName}")
+        }
+
+        compileTask.conventionMapping.jackFile = {
+            project.file("$project.buildDir/${FD_INTERMEDIATES}/classes/${variantData.variantConfiguration.dirName}/classes.zip")
+        }
+
+        compileTask.conventionMapping.tempFolder = {
+            project.file("$project.buildDir/${FD_INTERMEDIATES}/tmp/jack/${variantData.variantConfiguration.dirName}")
+        }
+
+        // set source/target compatibility
+        compileTask.conventionMapping.sourceCompatibility = {
+            extension.compileOptions.sourceCompatibility.toString()
+        }
+        compileTask.conventionMapping.targetCompatibility = {
+            extension.compileOptions.targetCompatibility.toString()
+        }
+    }
+
     /**
      * Creates the final packaging task, and optionally the zipalign task (if the variant is signed)
      * @param variantData
@@ -2043,8 +2162,10 @@ public abstract class BasePlugin {
                     create("package${outputName.capitalize()}",
                             PackageApplication)
             variantOutputData.packageApplicationTask = packageApp
-            packageApp.dependsOn variantOutputData.processResourcesTask, variantData.dexTask,
-                    variantData.processJavaResourcesTask
+            packageApp.dependsOn variantOutputData.processResourcesTask, variantData.processJavaResourcesTask
+
+            optionalDependsOn(packageApp, variantData.dexTask, variantData.jackTask)
+
             if (variantOutputData.packageSplitResourcesTask != null) {
                 packageApp.dependsOn variantOutputData.packageSplitResourcesTask
             }
@@ -2067,7 +2188,17 @@ public abstract class BasePlugin {
             packageApp.conventionMapping.resourceFile = {
                 variantOutputData.processResourcesTask.packageOutputFile
             }
-            packageApp.conventionMapping.dexFolder = { variantData.dexTask.outputFolder }
+            packageApp.conventionMapping.dexFolder = {
+                if (variantData.dexTask != null) {
+                    return variantData.dexTask.outputFolder
+                }
+
+                if (variantData.jackTask != null) {
+                    return variantData.jackTask.getDestinationDir()
+                }
+
+                return null
+            }
             packageApp.conventionMapping.packagedJars =
                     { androidBuilder.getPackagedJars(config) }
             packageApp.conventionMapping.javaResourceDir = {
@@ -2473,7 +2604,7 @@ public abstract class BasePlugin {
         // libraryJars: the runtime jars. Do this in doFirst since the boot classpath isn't
         // available until the SDK is loaded in the prebuild task
         proguardTask.doFirst {
-            for (String runtimeJar : androidBuilder.getBootClasspath()) {
+            for (String runtimeJar : androidBuilder.getBootClasspathAsStrings()) {
                 proguardTask.libraryjars(runtimeJar)
             }
         }
@@ -3113,5 +3244,13 @@ public abstract class BasePlugin {
 
     private static String createWarning(String projectName, String message) {
         return "WARNING [Project: $projectName] $message"
+    }
+
+    private static void optionalDependsOn(@NonNull Task main, Task... dependencies) {
+        for (Task dependency : dependencies) {
+            if (dependency != null) {
+                main.dependsOn dependency
+            }
+        }
     }
 }
