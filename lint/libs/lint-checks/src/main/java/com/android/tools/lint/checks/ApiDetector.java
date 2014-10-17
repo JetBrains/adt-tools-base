@@ -285,6 +285,11 @@ public class ApiDetector extends ResourceXmlDetector
     private static final String ORDINAL_METHOD = "ordinal"; //$NON-NLS-1$
     public static final String ENUM_SWITCH_PREFIX = "$SwitchMap$";  //$NON-NLS-1$
 
+    private static final String TAG_RIPPLE = "ripple";
+    private static final String TAG_VECTOR = "vector";
+    private static final String TAG_ANIMATED_VECTOR = "animated-vector";
+    private static final String TAG_ANIMATED_SELECTOR = "animated-selector";
+
     protected ApiLookup mApiDatabase;
     private boolean mWarnedMissingDb;
     private int mMinApi = -1;
@@ -348,7 +353,8 @@ public class ApiDetector extends ResourceXmlDetector
                 int minSdk = getMinSdk(context);
                 if (attributeApiLevel > minSdk && attributeApiLevel > context.getFolderVersion()
                         && attributeApiLevel > getLocalMinSdk(attribute.getOwnerElement())
-                        && !isBenignUnusedAttribute(name)) {
+                        && !isBenignUnusedAttribute(name)
+                        && !isAlreadyWarnedDrawableFile(context, attribute, attributeApiLevel)) {
                     if (RtlDetector.isRtlAttributeName(name)) {
                         // No need to warn for example that
                         //  "layout_alignParentEnd will only be used in API level 17 and higher"
@@ -493,6 +499,28 @@ public class ApiDetector extends ResourceXmlDetector
     }
 
     /**
+     * Returns true if this attribute is in a drawable document with one of the
+     * root tags that require API 21
+     */
+    private static boolean isAlreadyWarnedDrawableFile(@NonNull XmlContext context,
+            @NonNull Attr attribute, int attributeApiLevel) {
+        // Don't complain if it's in a drawable file where we've already
+        // flagged the root drawable type as being unsupported
+        if (context.getResourceFolderType() == ResourceFolderType.DRAWABLE
+                && attributeApiLevel == 21) {
+            String root = attribute.getOwnerDocument().getDocumentElement().getTagName();
+            if (TAG_RIPPLE.equals(root)
+                    || TAG_VECTOR.equals(root)
+                    || TAG_ANIMATED_VECTOR.equals(root)
+                    || TAG_ANIMATED_SELECTOR.equals(root)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Is the given attribute a "benign" unused attribute, one we probably don't need to
      * flag to the user as not applicable on all versions? These are typically attributes
      * which add some nice platform behavior when available, but that are not critical
@@ -519,9 +547,10 @@ public class ApiDetector extends ResourceXmlDetector
         ResourceFolderType folderType = context.getResourceFolderType();
         if (folderType != ResourceFolderType.LAYOUT) {
             if (folderType == ResourceFolderType.DRAWABLE) {
-                checkElement(context, element, "ripple", 21, UNSUPPORTED);
-                checkElement(context, element, "vector", 21, UNSUPPORTED);
-                checkElement(context, element, "animated-selector", 21, UNSUPPORTED);
+                checkElement(context, element, TAG_RIPPLE, 21, UNSUPPORTED);
+                checkElement(context, element, TAG_VECTOR, 21, UNSUPPORTED);
+                checkElement(context, element, TAG_ANIMATED_SELECTOR, 21, UNSUPPORTED);
+                checkElement(context, element, TAG_ANIMATED_VECTOR, 21, UNSUPPORTED);
             }
             if (element.getParentNode().getNodeType() != Node.ELEMENT_NODE) {
                 // Root node
