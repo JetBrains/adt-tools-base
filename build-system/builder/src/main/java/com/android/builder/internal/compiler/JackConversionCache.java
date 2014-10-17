@@ -26,69 +26,64 @@ import com.android.sdklib.repository.FullRevision;
 import com.android.utils.Pair;
 import com.google.common.io.Files;
 
-import org.w3c.dom.Attr;
-import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
 
 import java.io.File;
 import java.io.IOException;
 
 /**
- * Pre Dexing cache.
+ * Cache for jar -> jack conversion, using the Jill tool.
  *
- * Since we cannot yet have a single task for each library that needs to be pre-dexed (because
- * there is no task-level parallelization), this class allows reusing the output of the pre-dexing
- * of a library in a project to write the output of the pre-dexing of the same library in
- * a different project.
+ * Since we cannot yet have a single task for each library that needs to be run through Jill
+ * (because there is no task-level parallelization), this class allows reusing the output of
+ * the jill process for a library in a project in other projects.
  *
- * Because different project could use different build-tools, both the library to pre-dex and the
- * version of the build tools are used as keys in the cache.
+ * Because different project could use different build-tools, both the library to be converted
+ * and the version of the build tools are used as keys in the cache.
  *
- * The API is fairly simple, just call {@link #preDexLibrary(java.io.File, java.io.File, com.android.builder.core.DexOptions, com.android.sdklib.BuildToolInfo, boolean, com.android.ide.common.internal.CommandLineRunner)}
+ * The API is fairly simple, just call {@link #convertLibrary(java.io.File, java.io.File, com.android.builder.core.DexOptions, com.android.sdklib.BuildToolInfo, boolean, com.android.ide.common.internal.CommandLineRunner)}
  *
- * The call will be blocking until the pre-dexing happened, either through actual pre-dexing or
- * through copying the output of a previous pre-dex run.
+ * The call will be blocking until the conversion happened, either through actually running Jill or
+ * through copying the output of a previous Jill run.
  *
  * After a build a call to {@link #clear(java.io.File, com.android.utils.ILogger)} with a file
- * will allow saving the known pre-dexed libraries for future reuse.
+ * will allow saving the known converted libraries for future reuse.
  */
-public class PreDexCache extends PreProcessCache<DexKey> {
+public class JackConversionCache extends PreProcessCache<PreProcessCache.Key> {
 
-    private static final String ATTR_JUMBO_MODE = "jumboMode";
+    private static final JackConversionCache sSingleton = new JackConversionCache();
 
-    private static final PreDexCache sSingleton = new PreDexCache();
-
-    public static PreDexCache getCache() {
+    public static JackConversionCache getCache() {
         return sSingleton;
     }
 
-    @Override
     @NonNull
-    protected KeyFactory<DexKey> getKeyFactory() {
-        return new KeyFactory<DexKey>() {
+    @Override
+    protected KeyFactory<Key> getKeyFactory() {
+        return new KeyFactory<Key>() {
             @Override
-            public DexKey of(@NonNull File sourceFile, @NonNull FullRevision revision,
+            public Key of(@NonNull File sourceFile, @NonNull FullRevision revision,
                     @NonNull NamedNodeMap attrMap) {
-                return DexKey.of(sourceFile, revision,
-                        Boolean.parseBoolean(attrMap.getNamedItem(ATTR_JUMBO_MODE).getNodeValue()));
+                return Key.of(sourceFile, revision);
             }
         };
     }
 
     /**
-     * Pre-dex a given library to a given output with a specific version of the build-tools.
+     * Converts a given library to a given output with Jill, using a specific version of the
+     * build-tools.
+     *
      * @param inputFile the jar to pre-dex
      * @param outFile the output file.
      * @param dexOptions the dex options to run pre-dex
      * @param buildToolInfo the build tools info
      * @param verbose verbose flag
      * @param commandLineRunner the command line runner.
-     * @throws IOException
-     * @throws LoggedErrorException
+     * @throws java.io.IOException
+     * @throws com.android.ide.common.internal.LoggedErrorException
      * @throws InterruptedException
      */
-    public void preDexLibrary(
+    public void convertLibrary(
             @NonNull File inputFile,
             @NonNull File outFile,
             @NonNull DexOptions dexOptions,
@@ -97,15 +92,15 @@ public class PreDexCache extends PreProcessCache<DexKey> {
             @NonNull CommandLineRunner commandLineRunner)
             throws IOException, LoggedErrorException, InterruptedException {
 
-        DexKey itemKey = DexKey.of(inputFile, buildToolInfo.getRevision(), dexOptions.getJumboMode());
+        Key itemKey = Key.of(inputFile, buildToolInfo.getRevision());
 
-        Pair<Item, Boolean> pair = getItem(itemKey, inputFile, outFile);
+        Pair<PreProcessCache.Item, Boolean> pair = getItem(itemKey, inputFile, outFile);
 
         // if this is a new item
         if (pair.getSecond()) {
             try {
                 // haven't process this file yet so do it and record it.
-                AndroidBuilder.preDexLibrary(inputFile, outFile, dexOptions, buildToolInfo,
+                AndroidBuilder.convertLibraryToJack(inputFile, outFile, dexOptions, buildToolInfo,
                         verbose, commandLineRunner);
 
                 incrementMisses();
@@ -142,19 +137,5 @@ public class PreDexCache extends PreProcessCache<DexKey> {
                 incrementHits();
             }
         }
-    }
-
-    @Override
-    protected Node createItemNode(
-            @NonNull Document document,
-            @NonNull DexKey itemKey,
-            @NonNull BaseItem item) throws IOException {
-        Node itemNode = super.createItemNode(document, itemKey, item);
-
-        Attr attr = document.createAttribute(ATTR_JUMBO_MODE);
-        attr.setValue(Boolean.toString(itemKey.isJumboMode()));
-        itemNode.getAttributes().setNamedItem(attr);
-
-        return itemNode;
     }
 }

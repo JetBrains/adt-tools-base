@@ -22,6 +22,8 @@ import static com.android.SdkConstants.FN_AIDL;
 import static com.android.SdkConstants.FN_BCC_COMPAT;
 import static com.android.SdkConstants.FN_DX;
 import static com.android.SdkConstants.FN_DX_JAR;
+import static com.android.SdkConstants.FN_JACK;
+import static com.android.SdkConstants.FN_JILL;
 import static com.android.SdkConstants.FN_LD_ARM;
 import static com.android.SdkConstants.FN_LD_MIPS;
 import static com.android.SdkConstants.FN_LD_X86;
@@ -95,7 +97,11 @@ public class BuildToolInfo {
         LD_MIPS("18.1.0"),
 
         // --- NEW IN 19.1.0 ---
-        ZIP_ALIGN("19.1.0");
+        ZIP_ALIGN("19.1.0"),
+
+        // --- NEW IN 21.x.y ---
+        JACK("21.1.0"),
+        JILL("21.1.0");
 
         /**
          * min revision this element was introduced.
@@ -150,6 +156,8 @@ public class BuildToolInfo {
         add(LD_X86, FN_LD_X86);
         add(LD_MIPS, FN_LD_MIPS);
         add(ZIP_ALIGN, FN_ZIPALIGN);
+        add(JACK, FN_JACK);
+        add(JILL, FN_JILL);
     }
 
     public BuildToolInfo(

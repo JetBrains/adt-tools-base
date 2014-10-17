@@ -102,6 +102,11 @@ public class ProjectTest extends TestCase {
     @Override
     protected void runTest() throws Throwable {
         AndroidProjectConnector connector = new AndroidProjectConnector(mSdkFolder, mNdkFolder);
-        connector.runGradleTasks(mProjectFolder, GRADLE_VERSION, Collections.<String>emptyList(), "clean", "assembleDebug");
+        connector.runGradleTasks(
+                mProjectFolder,
+                GRADLE_VERSION,
+                Collections.<String>emptyList(),
+                Collections.<String, String>emptyMap(),
+                "clean", "assembleDebug");
     }
 }

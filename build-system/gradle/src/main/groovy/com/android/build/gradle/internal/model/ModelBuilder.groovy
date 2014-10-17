@@ -51,6 +51,7 @@ import com.google.common.collect.Lists
 import com.google.common.util.concurrent.Callables
 import org.gradle.api.Project
 import org.gradle.api.plugins.UnknownPluginException
+import org.gradle.api.tasks.compile.AbstractCompile
 import org.gradle.tooling.provider.model.ToolingModelBuilder
 
 import java.util.jar.Attributes
@@ -82,7 +83,7 @@ public class ModelBuilder implements ToolingModelBuilder {
         signingConfigs = basePlugin.extension.signingConfigs
 
         // get the boot classpath. This will ensure the target is configured.
-        List<String> bootClasspath = basePlugin.bootClasspath
+        List<String> bootClasspath = basePlugin.bootClasspathAsStrings
 
         List<File> frameworkSource = Collections.emptyList();
 
@@ -279,6 +280,11 @@ public class ModelBuilder implements ToolingModelBuilder {
                     intVersionCode));
         }
 
+        AbstractCompile compileTask = variantData.javaCompileTask
+        if (compileTask == null) {
+            compileTask = variantData.jackTask
+        }
+
         return new AndroidArtifactImpl(
                 name,
                 outputs,
@@ -290,7 +296,7 @@ public class ModelBuilder implements ToolingModelBuilder {
                 variantData.compileTask.name,
                 getGeneratedSourceFolders(variantData),
                 getGeneratedResourceFolders(variantData),
-                variantData.javaCompileTask.destinationDir,
+                compileTask.destinationDir,
                 DependenciesImpl.cloneDependencies(variantData, basePlugin, gradleProjects),
                 variantSourceProvider,
                 multiFlavorSourceProvider,
