@@ -16,6 +16,8 @@
 
 package com.android.build.tests;
 
+import com.android.annotations.NonNull;
+
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -40,6 +42,11 @@ public class ProjectTest extends TestCase {
         File sdkFolder = getFolderFromEnvVar(TEST_SDK);
         File ndkFolder = getFolderFromEnvVar(TEST_NDK);
 
+        String taskName = "assembleDebug";
+        if (System.getenv("USE_DEVICE") != null) {
+            taskName = "connectedCheck";
+        }
+
         TestSuite suite = new TestSuite();
         suite.setName("ProjectTests");
 
@@ -48,7 +55,7 @@ public class ProjectTest extends TestCase {
         if (children != null) {
             for (File child : children) {
                 if (child.isDirectory()) {
-                    searchForProject(suite, child, sdkFolder, ndkFolder);
+                    searchForProject(suite, child, sdkFolder, ndkFolder, taskName);
                 }
             }
         }
@@ -56,7 +63,7 @@ public class ProjectTest extends TestCase {
         return suite;
     }
 
-    private static File getFolderFromEnvVar(String varName) {
+    private static File getFolderFromEnvVar(@NonNull String varName) {
         String path = System.getenv().get(varName);
         if (path == null) {
             path = System.getProperty(varName);
@@ -72,19 +79,28 @@ public class ProjectTest extends TestCase {
         return folder;
     }
 
-    private static void searchForProject(TestSuite suite, File folder, File sdkFolder, File ndkFolder) {
+    private static void searchForProject(
+            @NonNull TestSuite suite,
+            @NonNull File folder,
+            @NonNull File sdkFolder,
+            @NonNull File ndkFolder,
+            @NonNull String taskName) {
         // first check if this is a project.
         File buildGradle = new File(folder, "build.gradle");
         if (buildGradle.isFile()) {
-            suite.addTest(createTest(folder, sdkFolder, ndkFolder));
+            suite.addTest(createTest(folder, sdkFolder, ndkFolder, taskName));
         }
     }
 
-    private static ProjectTest createTest(File projectFolder, File sdkFolder, File ndkFolder) {
+    private static ProjectTest createTest(
+            @NonNull File projectFolder,
+            @NonNull File sdkFolder,
+            @NonNull File ndkFolder,
+            @NonNull String taskName) {
         String testName = "build_" + projectFolder.getName();
         ProjectTest test = (ProjectTest) TestSuite.createTest(
                 ProjectTest.class, testName);
-        test.setProjectInfo(projectFolder, sdkFolder, ndkFolder);
+        test.setProjectInfo(projectFolder, sdkFolder, ndkFolder, taskName);
 
         return test;
     }
@@ -92,11 +108,17 @@ public class ProjectTest extends TestCase {
     private File mProjectFolder;
     private File mSdkFolder;
     private File mNdkFolder;
+    private String mTaskName;
 
-    private void setProjectInfo(File projectFolder, File sdkFolder, File ndkFolder ) {
-        this.mProjectFolder = projectFolder;
-        this.mSdkFolder = sdkFolder;
-        this.mNdkFolder = ndkFolder;
+    private void setProjectInfo(
+            @NonNull File projectFolder,
+            @NonNull File sdkFolder,
+            @NonNull File ndkFolder,
+            @NonNull String taskName) {
+        mProjectFolder = projectFolder;
+        mSdkFolder = sdkFolder;
+        mNdkFolder = ndkFolder;
+        mTaskName = taskName;
     }
 
     @Override
@@ -107,6 +129,6 @@ public class ProjectTest extends TestCase {
                 GRADLE_VERSION,
                 Collections.<String>emptyList(),
                 Collections.<String, String>emptyMap(),
-                "clean", "assembleDebug");
+                "clean", mTaskName);
     }
 }
