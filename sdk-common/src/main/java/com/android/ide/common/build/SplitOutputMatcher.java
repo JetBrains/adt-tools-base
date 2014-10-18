@@ -101,7 +101,7 @@ public class SplitOutputMatcher {
 
         // so far, we are not dealing with the pure split files...
         MainOutputFile mainOutputFile = match.getMainOutputFile();
-        if (getFilter(mainOutputFile, OutputFile.DENSITY) == null && variantAbiFilters != null) {
+        if (getFilter(mainOutputFile, OutputFile.ABI) == null && variantAbiFilters != null) {
             // if we have a match that has no abi filter, and we have variant-level filters, then
             // we need to make sure that the variant filters are compatible with the device abis.
             boolean foundMatch = false;
