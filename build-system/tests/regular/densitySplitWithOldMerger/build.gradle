@@ -34,7 +34,7 @@ android {
   splits {
     density {
       enable true
-      exclude "ldpi", "tvdpi", "xxxhdpi"
+      exclude "ldpi", "tvdpi", "xxxhdpi", "400dpi", "560dpi"
     }
   }
 
