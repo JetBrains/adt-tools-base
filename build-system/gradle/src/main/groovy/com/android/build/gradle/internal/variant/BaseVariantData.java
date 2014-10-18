@@ -24,6 +24,7 @@ import com.android.build.gradle.BasePlugin;
 import com.android.build.gradle.api.AndroidSourceSet;
 import com.android.build.gradle.internal.StringHelper;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
+import com.android.build.gradle.internal.coverage.JacocoInstrumentTask;
 import com.android.build.gradle.internal.dependency.VariantDependencies;
 import com.android.build.gradle.internal.tasks.CheckManifest;
 import com.android.build.gradle.internal.tasks.GenerateApkDataTask;
@@ -100,7 +101,7 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
     public JavaCompile javaCompileTask;
     public JackTask jackTask;
     public Task compileTask;
-
+    public JacocoInstrumentTask jacocoInstrumentTask;
     public Task obfuscationTask;
     public File mappingFile;
 

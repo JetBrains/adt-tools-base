@@ -52,6 +52,7 @@ import org.gradle.tooling.BuildException
 import static com.android.SdkConstants.FN_ANNOTATIONS_ZIP
 import static com.android.SdkConstants.LIBS_FOLDER
 import static com.android.build.gradle.BasePlugin.DIR_BUNDLES
+import static com.android.build.gradle.BasePlugin.FILE_JACOCO_AGENT
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
 import static com.android.builder.model.AndroidProject.FD_OUTPUTS
 /**
@@ -243,9 +244,28 @@ public class LibraryVariantFactory implements VariantFactory<LibraryVariantData>
         def extract = variantData.variantDependency.annotationsPresent ? createExtractAnnotations(
                 fullName, project, variantData) : null
 
+        final boolean instrumented = variantConfig.buildType.isTestCoverageEnabled()
+
+        // if needed, instrument the code
+        JacocoInstrumentTask jacocoTask = null
+        Copy agentTask = null
+        File jacocoAgentJar = null
+        if (instrumented) {
+            jacocoTask = project.tasks.create(
+                    "instrument${variantConfig.fullName.capitalize()}", JacocoInstrumentTask)
+            jacocoTask.dependsOn variantData.javaCompileTask
+            jacocoTask.conventionMapping.jacocoClasspath = { project.configurations[JacocoPlugin.ANT_CONFIGURATION_NAME] }
+            jacocoTask.conventionMapping.inputDir = { variantData.javaCompileTask.destinationDir }
+            jacocoTask.conventionMapping.outputDir = { project.file("${project.buildDir}/${FD_INTERMEDIATES}/coverage-instrumented-classes/${variantConfig.dirName}") }
+            variantData.jacocoInstrumentTask = jacocoTask
+
+            agentTask = basePlugin.getJacocoAgentTask()
+            jacocoAgentJar = new File(agentTask.destinationDir, BasePlugin.FILE_JACOCO_AGENT)
+        }
+
         if (buildType.runProguard) {
             // run proguard on output of compile task
-            basePlugin.createProguardTasks(variantData, null)
+            basePlugin.createProguardTasks(variantData, null, agentTask, jacocoAgentJar)
 
             bundle.dependsOn packageRes, packageRenderscript, variantData.obfuscationTask,
                     mergeProGuardFileTask, lintCopy, packageJniLibs
@@ -253,22 +273,6 @@ public class LibraryVariantFactory implements VariantFactory<LibraryVariantData>
                 bundle.dependsOn(extract)
             }
         } else {
-            final boolean instrumented = variantConfig.buildType.isTestCoverageEnabled()
-
-            // if needed, instrument the code
-            JacocoInstrumentTask jacocoTask = null
-            Copy agentTask = null
-            if (instrumented) {
-                jacocoTask = project.tasks.create(
-                        "instrument${variantConfig.fullName.capitalize()}", JacocoInstrumentTask)
-                jacocoTask.dependsOn variantData.javaCompileTask
-                jacocoTask.conventionMapping.jacocoClasspath = { project.configurations[JacocoPlugin.ANT_CONFIGURATION_NAME] }
-                jacocoTask.conventionMapping.inputDir = { variantData.javaCompileTask.destinationDir }
-                jacocoTask.conventionMapping.outputDir = { project.file("${project.buildDir}/${FD_INTERMEDIATES}/coverage-instrumented-classes/${variantConfig.dirName}") }
-
-                agentTask = basePlugin.getJacocoAgentTask()
-            }
-
             // package the local jar in libs/
             Sync packageLocalJar = project.tasks.create(
                     "package${fullName.capitalize()}LocalJar",
@@ -276,7 +280,7 @@ public class LibraryVariantFactory implements VariantFactory<LibraryVariantData>
             packageLocalJar.from(BasePlugin.getLocalJarFileList(variantData.variantDependency))
             if (instrumented) {
                 packageLocalJar.dependsOn agentTask
-                packageLocalJar.from(new File(agentTask.destinationDir, BasePlugin.FILE_JACOCO_AGENT))
+                packageLocalJar.from(jacocoAgentJar)
             }
             packageLocalJar.into(project.file(
                     "$project.buildDir/${FD_INTERMEDIATES}/$DIR_BUNDLES/${dirName}/$LIBS_FOLDER"))
