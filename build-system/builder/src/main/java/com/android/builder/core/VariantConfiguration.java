@@ -1696,6 +1696,20 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
         return mergedFlavorsPlaceholders;
     }
 
+    public boolean getMultiDex() {
+        Boolean value = mBuildType.getMultiDex();
+        if (value != null) {
+            return value;
+        }
+
+        value = mMergedFlavor.getMultiDex();
+        if (value != null) {
+            return value;
+        }
+
+        return false;
+    }
+
     /**
      * Returns the renderscript support mode.
      */

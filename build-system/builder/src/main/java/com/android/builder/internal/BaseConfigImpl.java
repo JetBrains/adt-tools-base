@@ -17,6 +17,7 @@
 package com.android.builder.internal;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.builder.model.BaseConfig;
 import com.android.builder.model.ClassField;
 import com.google.common.collect.Lists;
@@ -38,6 +39,8 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
     private final List<File> mProguardFiles = Lists.newArrayList();
     private final List<File> mConsumerProguardFiles = Lists.newArrayList();
     private final Map<String, String> mManifestPlaceholders = Maps.newHashMap();
+    @Nullable
+    private Boolean mMultiDex;
 
     public void addBuildConfigField(@NonNull ClassField field) {
         mBuildConfigFields.put(field.getName(), field);
@@ -107,6 +110,8 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
 
         mManifestPlaceholders.clear();
         mManifestPlaceholders.putAll(that.getManifestPlaceholders());
+
+        mMultiDex = that.getMultiDex();
     }
 
     private void setBuildConfigFields(@NonNull Map<String, ClassField> fields) {
@@ -120,17 +125,44 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
     }
 
     @Override
+    @Nullable
+    public Boolean getMultiDex() {
+        return mMultiDex;
+    }
+
+    public void setMultiDex(@Nullable Boolean multiDex) {
+        mMultiDex = multiDex;
+    }
+
+    @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof BaseConfigImpl)) {
+            return false;
+        }
 
         BaseConfigImpl that = (BaseConfigImpl) o;
 
-        if (!mBuildConfigFields.equals(that.mBuildConfigFields)) return false;
-        if (!mResValues.equals(that.mResValues)) return false;
-        if (!mProguardFiles.equals(that.mProguardFiles)) return false;
-        if (!mConsumerProguardFiles.equals(that.mConsumerProguardFiles)) return false;
-        if (!mManifestPlaceholders.equals(that.getManifestPlaceholders())) return false;
+        if (!mBuildConfigFields.equals(that.mBuildConfigFields)) {
+            return false;
+        }
+        if (!mConsumerProguardFiles.equals(that.mConsumerProguardFiles)) {
+            return false;
+        }
+        if (!mManifestPlaceholders.equals(that.mManifestPlaceholders)) {
+            return false;
+        }
+        if (mMultiDex != null ? !mMultiDex.equals(that.mMultiDex) : that.mMultiDex != null) {
+            return false;
+        }
+        if (!mProguardFiles.equals(that.mProguardFiles)) {
+            return false;
+        }
+        if (!mResValues.equals(that.mResValues)) {
+            return false;
+        }
 
         return true;
     }
@@ -142,6 +174,7 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
         result = 31 * result + mProguardFiles.hashCode();
         result = 31 * result + mConsumerProguardFiles.hashCode();
         result = 31 * result + mManifestPlaceholders.hashCode();
+        result = 31 * result + (mMultiDex != null ? mMultiDex.hashCode() : 0);
         return result;
     }
 
@@ -153,6 +186,7 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
                 ", mProguardFiles=" + mProguardFiles +
                 ", mConsumerProguardFiles=" + mConsumerProguardFiles +
                 ", mManifestPlaceholders=" + mManifestPlaceholders +
+                ", mMultiDex=" + mMultiDex +
                 '}';
     }
 }

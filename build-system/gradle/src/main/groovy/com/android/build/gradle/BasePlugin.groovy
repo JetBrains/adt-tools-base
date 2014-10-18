@@ -1935,6 +1935,15 @@ public abstract class BasePlugin {
         }
         dexTask.dexOptions = extension.dexOptions
 
+        dexTask.conventionMapping.multiDex = {
+            ApiVersion minSdkVersion = config.minSdkVersion
+            if (minSdkVersion.apiLevel >= 21) {
+                return config.multiDex
+            }
+
+            return false
+        }
+
         JacocoInstrumentTask jacocoTask = null
         Copy agentTask = null
         File jacocoAgentJar = null

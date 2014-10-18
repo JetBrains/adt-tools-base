@@ -66,6 +66,7 @@ public class AutomatedBuildTest extends BuildTest {
             "localAarTest",
             "localJars",
             "migrated",
+            "multiDex",
             "multiproject",
             "multires",
             "ndkJniLib",
