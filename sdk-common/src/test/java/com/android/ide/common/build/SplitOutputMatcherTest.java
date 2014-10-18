@@ -65,12 +65,12 @@ public class SplitOutputMatcherTest extends TestCase {
 
         private final String densityFilter;
         private final String abiFilter;
-        private final int versionCode;
+        private final File file;
 
-        FakeSplitOutput(String densityFilter, String abiFilter, int versionCode) {
+        FakeSplitOutput(String densityFilter, String abiFilter) {
             this.densityFilter = densityFilter;
             this.abiFilter = abiFilter;
-            this.versionCode = versionCode;
+            file = new File(densityFilter + abiFilter);
         }
 
         @Override
@@ -107,21 +107,24 @@ public class SplitOutputMatcherTest extends TestCase {
         @NonNull
         @Override
         public File getOutputFile() {
-            throw new UnsupportedOperationException();
+            return file;
         }
 
         @Override
         public String toString() {
-            return "FilteredOutput{" + densityFilter + ':' + abiFilter + ':' + versionCode + '}';
+            return "FilteredOutput{" + densityFilter + ':' + abiFilter + '}';
         }
     }
 
     private static class FakeVariantOutput implements VariantOutput {
 
         private final MainOutputFile mainOutputFile;
+        private final int versionCode;
 
-        private FakeVariantOutput(MainOutputFile mainOutputFile) {
+        private FakeVariantOutput(MainOutputFile mainOutputFile,
+                int versionCode) {
             this.mainOutputFile = mainOutputFile;
+            this.versionCode = versionCode;
         }
 
         @NonNull
@@ -133,12 +136,12 @@ public class SplitOutputMatcherTest extends TestCase {
         @NonNull
         @Override
         public Collection<? extends OutputFile> getOutputs() {
-            return ImmutableList.of();
+            return ImmutableList.of(mainOutputFile);
         }
 
         @Override
         public int getVersionCode() {
-            return 0;
+            return versionCode;
         }
 
         @NonNull
@@ -359,29 +362,29 @@ public class SplitOutputMatcherTest extends TestCase {
 
         List<File> result = computeBestOutput(list, Sets.newHashSet("bar", "foo"), 320, "foo", "zzz");
 
-        assertEquals(0, result.size());
+        assertEquals(1, result.size());
     }
 
 
 
     private static VariantOutput getUniversalOutput(int versionCode) {
-        return new FakeVariantOutput(new FakeSplitOutput(null, null, versionCode));
+        return new FakeVariantOutput(new FakeSplitOutput(null, null), versionCode);
     }
 
     private static VariantOutput getDensityOutput(int densityFilter, int versionCode) {
         Density densityEnum = Density.getEnum(densityFilter);
         return new FakeVariantOutput(
-                new FakeSplitOutput(densityEnum.getResourceValue(), null, versionCode));
+                new FakeSplitOutput(densityEnum.getResourceValue(), null), versionCode);
     }
 
     private static VariantOutput getAbiOutput(String filter, int versionCode) {
         return new FakeVariantOutput(
-                new FakeSplitOutput( null, filter, versionCode));
+                new FakeSplitOutput( null, filter), versionCode);
     }
 
     private static VariantOutput getOutput(int densityFilter, String abiFilter, int versionCode) {
         Density densityEnum = Density.getEnum(densityFilter);
         return new FakeVariantOutput(
-                new FakeSplitOutput(densityEnum.getResourceValue(), abiFilter, versionCode));
+                new FakeSplitOutput(densityEnum.getResourceValue(), abiFilter), versionCode);
     }
 }
