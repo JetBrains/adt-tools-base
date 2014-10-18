@@ -15,7 +15,6 @@
  */
 package com.android.build.gradle.internal.tasks
 
-import com.android.build.OutputFile
 import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.build.gradle.internal.variant.BaseVariantOutputData
 import com.android.builder.core.VariantConfiguration
@@ -29,7 +28,6 @@ import com.google.common.base.Joiner
 import org.gradle.api.GradleException
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.TaskAction
-import org.gradle.api.tasks.TaskExecutionException
 
 /**
  * Task installing an app variant. It looks at connected device and install the best matching
@@ -73,22 +71,27 @@ public class InstallVariantTask extends BaseTask {
                         variantName)) {
 
                     // now look for a matching output file
-                    OutputFile output = SplitOutputMatcher.computeBestOutput(
+                    List<File> outputFiles = SplitOutputMatcher.computeBestOutput(
                             variantData.outputs,
                             variantData.variantConfiguration.getSupportedAbis(),
                             device.getDensity(), device.getAbis())
 
-                    if (output == null) {
+                    if (outputFiles.isEmpty()) {
                         project.logger.lifecycle(
                                 "Skipping device '${device.getName()}' for '${projectName}:${variantName}': " +
                                 "Could not find build of variant which supports density ${device.getDensity()} " +
                                 "and an ABI in " + Joiner.on(", ").join(device.getAbis()));
                     } else {
-                        project.logger.lifecycle(
-                                "Installing '${output.baseName}' on '${device.getName()}'.");
-                        File apkFile = output.outputDirectory();
-                        device.installPackage(apkFile, getTimeOut(), plugin.logger)
-                        successfulInstallCount++
+                        if (outputFiles.size() > 1) {
+                            project.logger.lifecycle("Multiple APK selected for installation " +
+                                    Joiner.on(", ").join(outputFiles));
+                        } else {
+                            File apkFile = outputFiles.get(0);
+                            project.logger.lifecycle(
+                                "Installing '${apkFile.getName()}' on '${device.getName()}'.");
+                            device.installPackage(apkFile, getTimeOut(), plugin.logger)
+                            successfulInstallCount++
+                        }
                     }
                 } // When InstallUtils.checkDeviceApiLevel returns false, it logs the reason.
             } else {
