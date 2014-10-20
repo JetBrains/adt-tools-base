@@ -339,7 +339,7 @@ public abstract class BasePlugin {
 
     private void createExtension() {
         def buildTypeContainer = project.container(DefaultBuildType,
-                new BuildTypeFactory(instantiator,  project, project.getLogger()))
+                new BuildTypeFactory(instantiator, project, project.getLogger()))
         def productFlavorContainer = project.container(GroupableProductFlavorDsl,
                 new GroupableProductFlavorFactory(instantiator, project, project.getLogger()))
         def signingConfigContainer = project.container(SigningConfig,
@@ -411,7 +411,6 @@ public abstract class BasePlugin {
         project.afterEvaluate {
             createAndroidTasks(false)
         }
-
     }
 
     protected void setBaseExtension(@NonNull BaseExtension extension) {
