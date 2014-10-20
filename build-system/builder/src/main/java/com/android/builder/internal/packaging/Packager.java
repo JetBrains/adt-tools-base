@@ -16,6 +16,9 @@
 
 package com.android.builder.internal.packaging;
 
+import static com.android.SdkConstants.FN_APK_CLASSES_DEX;
+import static com.android.SdkConstants.FN_APK_CLASSES_N_DEX;
+
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -26,8 +29,8 @@ import com.android.builder.packaging.PackagerException;
 import com.android.builder.packaging.SealedPackageException;
 import com.android.builder.signing.SignedJarBuilder;
 import com.android.builder.signing.SignedJarBuilder.IZipEntryFilter;
-import com.android.ide.common.signing.CertificateInfo;
 import com.android.ide.common.packaging.PackagingUtils;
+import com.android.ide.common.signing.CertificateInfo;
 import com.android.utils.ILogger;
 import com.google.common.collect.Sets;
 import com.google.common.io.Closeables;
@@ -210,6 +213,8 @@ public final class Packager implements IArchiveBuilder {
     private boolean mJniDebugMode = false;
     private boolean mIsSealed = false;
 
+    private int dexIndex = 1;
+
     private final NullZipFilter mNullFilter = new NullZipFilter();
     private final JavaAndNativeResourceFilter mFilter;
     private final HashMap<String, File> mAddedFiles = new HashMap<String, File>();
@@ -331,8 +336,25 @@ public final class Packager implements IArchiveBuilder {
 
         if (files != null && files.length > 0) {
             for (File file : files) {
-                addFile(file, file.getName());
+                addDexFile(file);
             }
+        }
+    }
+
+    public void addDexFile(@NonNull File dexFile)
+            throws DuplicateFileException, SealedPackageException, PackagerException {
+        addFile(dexFile, generateDexName());
+    }
+
+    private String generateDexName() {
+        try {
+            if (dexIndex == 1) {
+                return FN_APK_CLASSES_DEX;
+            }
+
+            return String.format(FN_APK_CLASSES_N_DEX, dexIndex);
+        } finally {
+            dexIndex++;
         }
     }
 

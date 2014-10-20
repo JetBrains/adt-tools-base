@@ -16,6 +16,7 @@
 
 package com.android.builder.core;
 
+import static com.android.SdkConstants.DOT_DEX;
 import static com.android.SdkConstants.DOT_XML;
 import static com.android.SdkConstants.FD_RES_XML;
 import static com.android.builder.core.BuilderConstants.ANDROID_WEAR;
@@ -93,6 +94,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -1670,7 +1672,8 @@ public class AndroidBuilder {
     /**
      * Converts the bytecode to Dalvik format
      * @param inputFile the input file
-     * @param outFile the location of the output classes.dex file
+     * @param outFile the output file or folder if multi-dex is enabled.
+     * @param multiDex whether multidex is enabled.
      * @param dexOptions dex options
      *
      * @throws IOException
@@ -1680,6 +1683,7 @@ public class AndroidBuilder {
     public void preDexLibrary(
             @NonNull File inputFile,
             @NonNull File outFile,
+                     boolean multiDex,
             @NonNull DexOptions dexOptions)
             throws IOException, InterruptedException, LoggedErrorException {
         checkState(mTargetInfo != null,
@@ -1687,13 +1691,30 @@ public class AndroidBuilder {
 
         BuildToolInfo buildToolInfo = mTargetInfo.getBuildTools();
 
-        PreDexCache.getCache().preDexLibrary(inputFile, outFile, dexOptions, buildToolInfo,
-                mVerboseExec, mCmdLineRunner);
+        PreDexCache.getCache().preDexLibrary(inputFile, outFile, multiDex, dexOptions,
+                buildToolInfo, mVerboseExec, mCmdLineRunner);
     }
 
-    public static void preDexLibrary(
+    /**
+     * Converts the bytecode to Dalvik format
+     *
+     * @param inputFile the input file
+     * @param outFile the output file or folder if multi-dex is enabled.
+     * @param multiDex whether multidex is enabled.
+     * @param dexOptions the dex options
+     * @param buildToolInfo the build tools info
+     * @param verbose verbose flag
+     * @param commandLineRunner the command line runner
+     * @return the list of generated files.
+     * @throws IOException
+     * @throws InterruptedException
+     * @throws LoggedErrorException
+     */
+    @NonNull
+    public static List<File> preDexLibrary(
             @NonNull File inputFile,
             @NonNull File outFile,
+            boolean multiDex,
             @NonNull DexOptions dexOptions,
             @NonNull BuildToolInfo buildToolInfo,
                      boolean verbose,
@@ -1727,12 +1748,33 @@ public class AndroidBuilder {
             command.add("--force-jumbo");
         }
 
+        if (multiDex) {
+            command.add("--multi-dex");
+        }
+
         command.add("--output");
         command.add(outFile.getAbsolutePath());
 
         command.add(inputFile.getAbsolutePath());
 
         commandLineRunner.runCmdLine(command, null);
+
+        if (multiDex) {
+            File[] files = outFile.listFiles(new FilenameFilter() {
+                @Override
+                public boolean accept(File file, String name) {
+                    return name.endsWith(DOT_DEX);
+                }
+            });
+
+            if (files == null || files.length == 0) {
+                throw new RuntimeException("No dex files created at " + outFile.getAbsolutePath());
+            }
+
+            return Lists.newArrayList(files);
+        } else {
+            return Collections.singletonList(outFile);
+        }
     }
 
     /**
@@ -1799,6 +1841,7 @@ public class AndroidBuilder {
      *
      * @param androidResPkgLocation the location of the packaged resource file
      * @param dexFolder the folder with the dex file.
+     * @param dexedLibraries optional collection of additional dex files to put in the apk.
      * @param packagedJars the jars that are packaged (libraries + jar dependencies)
      * @param javaResourcesLocation the processed Java resource folder
      * @param jniLibsFolders the folders containing jni shared libraries
@@ -1818,6 +1861,7 @@ public class AndroidBuilder {
     public void packageApk(
             @NonNull String androidResPkgLocation,
             @NonNull File dexFolder,
+            @Nullable Collection<File> dexedLibraries,
             @NonNull Collection<File> packagedJars,
             @Nullable String javaResourcesLocation,
             @Nullable Collection<File> jniLibsFolders,
@@ -1848,6 +1892,12 @@ public class AndroidBuilder {
             Packager packager = new Packager(
                     outApkLocation, androidResPkgLocation, dexFolder,
                     certificateInfo, mCreatedBy, packagingOptions, mLogger);
+
+            if (dexedLibraries != null) {
+                for (File dexedLibrary : dexedLibraries) {
+                    packager.addDexFile(dexedLibrary);
+                }
+            }
 
             packager.setJniDebugMode(jniDebugBuild);
 
