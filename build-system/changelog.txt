@@ -1,4 +1,6 @@
 0.14.0
+- Proguard and code coverage can now work together
+- Support for pulling coverage data from Android 5.0 devices
 - Env var ANDROID_SERIAL (if present) restrict installation/execution of tests to device matching the serial number
 - BuildType/ProductFlavor/SigningConfig queried through the variant and variantFilter API are now read-only (except for the merged flavor).
 
