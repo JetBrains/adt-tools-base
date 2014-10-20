@@ -241,6 +241,9 @@ public enum Scope {
     public static final EnumSet<Scope> PROGUARD_SCOPE = EnumSet.of(PROGUARD_FILE);
     /** Scope-set used for detectors which correspond to property files */
     public static final EnumSet<Scope> PROPERTY_SCOPE = EnumSet.of(PROPERTY_FILE);
+    /** Resource XML files and manifest files */
+    public static final EnumSet<Scope> MANIFEST_AND_RESOURCE_SCOPE =
+            EnumSet.of(Scope.MANIFEST, Scope.RESOURCE_FILE);
     /** Scope-set used for detectors which are affected by single XML and Java source files */
     public static final EnumSet<Scope> JAVA_AND_RESOURCE_FILES =
             EnumSet.of(RESOURCE_FILE, JAVA_FILE);

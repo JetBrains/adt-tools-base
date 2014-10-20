@@ -202,4 +202,14 @@ public class NamespaceDetectorTest extends AbstractCheckTest {
                     "multiproject/library-manifest.xml=>AndroidManifest.xml",
                     "multiproject/library.properties=>project.properties"));
     }
+
+    public void testWrongResUrl() throws Exception {
+        assertEquals(""
+            + "AndroidManifest.xml:2: Error: Suspicious namespace: should start with http:// [NamespaceTypo]\n"
+            + "<manifest xmlns:android=\"https://schemas.android.com/apk/res/android\"\n"
+            + "          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+            + "1 errors, 0 warnings\n",
+
+            lintFiles("https_namespace.xml=>AndroidManifest.xml"));
+    }
 }
