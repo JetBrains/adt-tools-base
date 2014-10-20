@@ -23,6 +23,9 @@ import com.android.build.OutputFile;
 import com.android.build.gradle.BasePlugin;
 import com.android.build.gradle.api.BaseVariant;
 import com.android.build.gradle.api.BaseVariantOutput;
+import com.android.build.gradle.internal.BuildTypeData;
+import com.android.build.gradle.internal.ProductFlavorData;
+import com.android.build.gradle.internal.VariantModel;
 import com.android.build.gradle.internal.api.ReadOnlyObjectProvider;
 import com.android.build.gradle.internal.api.ApkVariantImpl;
 import com.android.build.gradle.internal.api.ApkVariantOutputImpl;
@@ -38,6 +41,7 @@ import org.gradle.api.artifacts.Configuration;
 import java.io.File;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -202,6 +206,11 @@ public class ApplicationVariantFactory implements VariantFactory<ApplicationVari
         }
 
         basePlugin.createPackagingTask(appVariantData, assembleTask, true /*publishApk*/);
+    }
+
+    @Override
+    public void validateModel(VariantModel model){
+        // No additional checks for ApplicationVariantFactory, so just return.
     }
 
     private void handleMicroApp(@NonNull BaseVariantData<?> variantData) {
