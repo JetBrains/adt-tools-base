@@ -211,12 +211,18 @@ public class GradleDetectorTest extends AbstractCheckTest {
     public void testDependenciesMinSdkVersion() throws Exception {
         mEnabled = Collections.singleton(DEPENDENCY);
         assertEquals(""
-                + "build.gradle:13: Warning: Using the appcompat library when minSdkVersion >= 14 is not necessary [GradleDependency]\n"
+                + "build.gradle:13: Warning: Using the appcompat library when minSdkVersion >= 14 and compileSdkVersion < 21 is not necessary [GradleDependency]\n"
                 + "    compile 'com.android.support:appcompat-v7:+'\n"
                 + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                 + "0 errors, 1 warnings\n",
 
                 lintProject("gradle/Dependencies14.gradle=>build.gradle"));
+    }
+
+    public void testDependenciesMinSdkVersionLollipop() throws Exception {
+        mEnabled = Collections.singleton(DEPENDENCY);
+        assertEquals("No warnings.",
+                lintProject("gradle/Dependencies14_21.gradle=>build.gradle"));
     }
 
     public void testDependenciesNoMicroVersion() throws Exception {
