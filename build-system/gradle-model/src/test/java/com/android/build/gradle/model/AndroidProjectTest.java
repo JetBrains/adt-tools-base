@@ -643,7 +643,7 @@ public class AndroidProjectTest extends TestCase {
         return null;
     }
 
-    public void ureSplitOutputs() throws Exception {
+    public void testDensityPureSplitOutputs() throws Exception {
         // Load the custom model for the project
         ProjectData projectData = getModelForProject(FOLDER_TEST_REGULAR, "densitySplitInL");
 
