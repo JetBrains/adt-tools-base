@@ -698,9 +698,11 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
                 ("support-v4".equals(dependency.getArtifactId()) ||
                         "appcompat-v7".equals(dependency.getArtifactId()))) {
             checkSupportLibraries(context, dependency, cookie);
-            if (mMinSdkVersion >= 14 && "appcompat-v7".equals(dependency.getArtifactId())) {
+            if (mMinSdkVersion >= 14 && "appcompat-v7".equals(dependency.getArtifactId())
+                  && mCompileSdkVersion >= 1 && mCompileSdkVersion < 21) {
                 report(context, cookie, DEPENDENCY,
-                        "Using the appcompat library when minSdkVersion >= 14 is not necessary");
+                    "Using the appcompat library when minSdkVersion >= 14 and "
+                            + "compileSdkVersion < 21 is not necessary");
             }
             return;
         } else if ("com.google.android.gms".equals(dependency.getGroupId()) &&
