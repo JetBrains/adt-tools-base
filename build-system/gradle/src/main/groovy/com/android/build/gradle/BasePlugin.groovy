@@ -137,6 +137,7 @@ import com.google.common.collect.Multimap
 import com.google.common.collect.Sets
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
+import org.gradle.api.InvalidUserCodeException
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.artifacts.Configuration
@@ -272,7 +273,16 @@ public abstract class BasePlugin {
 
     protected void apply(Project project) {
         this.project = project
+        doApply();
+    }
 
+    protected void doApply() {
+        configureProject()
+        createExtension()
+        createTasks()
+    }
+
+    protected void configureProject() {
         checkGradleVersion()
         sdkHandler = new SdkHandler(project, logger)
         androidBuilder = new AndroidBuilder(
@@ -287,8 +297,48 @@ public abstract class BasePlugin {
         // Register a builder for the custom tooling model
         registry.register(new ModelBuilder());
 
+        project.tasks.assemble.description =
+                "Assembles all variants of all applications and secondary packages."
+
+        // call back on execution. This is called after the whole build is done (not
+        // after the current project is done).
+        // This is will be called for each (android) projects though, so this should support
+        // being called 2+ times.
+        project.gradle.buildFinished {
+            ExecutorSingleton.shutdown()
+            PngProcessor.clearCache()
+            sdkHandler.unload()
+            PreDexCache.getCache().clear(
+                    project.rootProject.file(
+                            "${project.rootProject.buildDir}/${FD_INTERMEDIATES}/dex-cache/cache.xml"),
+                    logger)
+            JackConversionCache.getCache().clear(
+                    project.rootProject.file(
+                            "${project.rootProject.buildDir}/${FD_INTERMEDIATES}/jack-cache/cache.xml"),
+                    logger)
+            LibraryCache.getCache().unload()
+        }
+
+        project.gradle.taskGraph.whenReady { taskGraph ->
+            for (Task task : taskGraph.allTasks) {
+                if (task instanceof PreDex) {
+                    PreDexCache.getCache().load(
+                            project.rootProject.file(
+                                    "${project.rootProject.buildDir}/${FD_INTERMEDIATES}/dex-cache/cache.xml"))
+                    break;
+                } else if (task instanceof JillTask) {
+                    JackConversionCache.getCache().load(
+                            project.rootProject.file(
+                                    "${project.rootProject.buildDir}/${FD_INTERMEDIATES}/jack-cache/cache.xml"))
+                    break;
+                }
+            }
+        }
+    }
+
+    private void createExtension() {
         def buildTypeContainer = project.container(DefaultBuildType,
-                new BuildTypeFactory(instantiator,  project, project.getLogger()))
+                new BuildTypeFactory(instantiator, project, project.getLogger()))
         def productFlavorContainer = project.container(GroupableProductFlavorDsl,
                 new GroupableProductFlavorFactory(instantiator, project, project.getLogger()))
         def signingConfigContainer = project.container(SigningConfig,
@@ -339,10 +389,9 @@ public abstract class BasePlugin {
         productFlavorContainer.whenObjectRemoved {
             throw new UnsupportedOperationException("Removing product flavors is not supported.")
         }
+    }
 
-        project.tasks.assemble.description =
-                "Assembles all variants of all applications and secondary packages."
-
+    private void createTasks() {
         uninstallAll = project.tasks.create("uninstallAll")
         uninstallAll.description = "Uninstall all applications."
         uninstallAll.group = INSTALL_GROUP
@@ -360,41 +409,6 @@ public abstract class BasePlugin {
 
         project.afterEvaluate {
             createAndroidTasks(false)
-        }
-
-        // call back on execution. This is called after the whole build is done (not
-        // after the current project is done).
-        // This is will be called for each (android) projects though, so this should support
-        // being called 2+ times.
-        project.gradle.buildFinished {
-            ExecutorSingleton.shutdown()
-            PngProcessor.clearCache()
-            sdkHandler.unload()
-            PreDexCache.getCache().clear(
-                    project.rootProject.file(
-                            "${project.rootProject.buildDir}/${FD_INTERMEDIATES}/dex-cache/cache.xml"),
-                    logger)
-            JackConversionCache.getCache().clear(
-                    project.rootProject.file(
-                            "${project.rootProject.buildDir}/${FD_INTERMEDIATES}/jack-cache/cache.xml"),
-                    logger)
-            LibraryCache.getCache().unload()
-        }
-
-        project.gradle.taskGraph.whenReady { taskGraph ->
-            for (Task task : taskGraph.allTasks) {
-                if (task instanceof PreDex) {
-                    PreDexCache.getCache().load(
-                            project.rootProject.file(
-                                    "${project.rootProject.buildDir}/${FD_INTERMEDIATES}/dex-cache/cache.xml"))
-                    break;
-                } else if (task instanceof JillTask) {
-                    JackConversionCache.getCache().load(
-                            project.rootProject.file(
-                                    "${project.rootProject.buildDir}/${FD_INTERMEDIATES}/jack-cache/cache.xml"))
-                    break;
-                }
-            }
         }
     }
 
@@ -3256,6 +3270,20 @@ public abstract class BasePlugin {
 
     private static String createWarning(String projectName, String message) {
         return "WARNING [Project: $projectName] $message"
+    }
+
+    /**
+     * Returns a plugin that is an instance of BasePlugin.  Returns null if a BasePlugin cannot
+     * be found, and throws an InvalidUserCodeException if more than one is found.
+     */
+    public static BasePlugin findBasePlugin(Project project) {
+        def plugin = project.plugins.withType(BasePlugin)
+        if (plugin.isEmpty()) {
+            return null
+        } else if (plugin.size() != 1) {
+            throw new InvalidUserCodeException("Cannot apply more than one Android plugins.")
+        }
+        return plugin[0]
     }
 
     private static void optionalDependsOn(@NonNull Task main, Task... dependencies) {
