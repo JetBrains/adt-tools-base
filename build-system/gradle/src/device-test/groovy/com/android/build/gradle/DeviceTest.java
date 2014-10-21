@@ -79,12 +79,6 @@ public class DeviceTest extends BuildTest {
             "sameNamedLibs"
     };
 
-    private static final List<String> sNdkPluginTests = ImmutableList.of(
-            "ndkJniLib2",
-            "ndkStandaloneSo",
-            "ndkStl"
-    );
-
     private static final String[] sMergeReportProjects = new String[] {
             "multiproject",
     };
@@ -113,18 +107,6 @@ public class DeviceTest extends BuildTest {
                 test.setProjectInfo(FOLDER_TEST_REGULAR, projectName, gradleVersion,
                         TestType.CHECK);
                 suite.addTest(test);
-            }
-
-            // some native tests that run only on linux for now.
-            if (System.getProperty("os.name").equals("Linux")) {
-                for (String projectName : sNdkPluginTests) {
-                    String testName = "check_" + projectName + "_" + gradleVersion;
-
-                    DeviceTest test = (DeviceTest) TestSuite.createTest(DeviceTest.class, testName);
-                    test.setProjectInfo(FOLDER_TEST_NATIVE, projectName, gradleVersion,
-                            TestType.CHECK);
-                    suite.addTest(test);
-                }
             }
 
             for (String projectName : sMergeReportProjects) {

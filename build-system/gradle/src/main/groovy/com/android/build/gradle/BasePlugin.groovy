@@ -75,7 +75,6 @@ import com.android.build.gradle.internal.variant.LibraryVariantData
 import com.android.build.gradle.internal.variant.TestVariantData
 import com.android.build.gradle.internal.variant.TestedVariantData
 import com.android.build.gradle.internal.variant.VariantFactory
-import com.android.build.gradle.ndk.NdkPlugin
 import com.android.build.gradle.tasks.AidlCompile
 import com.android.build.gradle.tasks.CompatibleScreensManifest
 import com.android.build.gradle.tasks.Dex
@@ -212,7 +211,6 @@ public abstract class BasePlugin {
     private ToolingModelBuilderRegistry registry
 
     protected JacocoPlugin jacocoPlugin
-    private NdkPlugin ndkPlugin
 
     private BaseExtension extension
     private VariantManager variantManager
@@ -349,15 +347,6 @@ public abstract class BasePlugin {
                 buildTypeContainer, productFlavorContainer, signingConfigContainer,
                 this instanceof LibraryPlugin)
         setBaseExtension(extension)
-
-        if (project.plugins.hasPlugin(NdkPlugin.class)) {
-            throw new BadPluginException(
-                    "Cannot apply Android native plugin before the Android plugin.")
-        }
-        project.apply plugin: NdkPlugin
-        ndkPlugin = project.plugins.getPlugin(NdkPlugin)
-
-        extension.setNdkExtension(ndkPlugin.getNdkExtension())
 
         variantManager = new VariantManager(project, this, extension, getVariantFactory())
 
@@ -2188,15 +2177,9 @@ public abstract class BasePlugin {
 
             // Add dependencies on NDK tasks if NDK plugin is applied.
             if (extension.getUseNewNativePlugin()) {
-                NdkPlugin ndkPlugin = project.plugins.getPlugin(NdkPlugin.class)
-                packageApp.dependsOn ndkPlugin.getBinaries(config)
+                throw new RuntimeException("useNewNativePlugin is currently not supported.")
             } else {
                 packageApp.dependsOn variantData.ndkCompileTask
-            }
-
-            if (extension.ndkLib != null) {
-                project.evaluationDependsOn(extension.ndkLib.targetProjectName)
-                packageApp.dependsOn extension.ndkLib.getBinaries(config)
             }
 
             packageApp.plugin = this
@@ -2224,17 +2207,13 @@ public abstract class BasePlugin {
                 // for now only the project's compilation output.
                 Set<File> set = Sets.newHashSet()
                 if (extension.getUseNewNativePlugin()) {
-                    NdkPlugin ndkPlugin = project.plugins.getPlugin(NdkPlugin.class)
-                    set.addAll(ndkPlugin.getOutputDirectories(config))
+                    throw new RuntimeException("useNewNativePlugin is currently not supported.")
                 } else {
                     set.addAll(variantData.ndkCompileTask.soFolder)
                 }
                 set.addAll(variantData.renderscriptCompileTask.libOutputDir)
                 set.addAll(config.libraryJniFolders)
                 set.addAll(config.jniLibsList)
-                if (extension.ndkLib != null) {
-                    set.addAll(extension.ndkLib.getOutputDirectories(config))
-                }
 
                 if (config.mergedFlavor.renderscriptSupportMode) {
                     File rsLibs = androidBuilder.getSupportNativeLibFolder()
