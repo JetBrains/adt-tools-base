@@ -727,14 +727,42 @@ public class ManualBuildTest extends BuildTest {
         runTasksOn(
                 project,
                 BasePlugin.GRADLE_TEST_VERSION,
-                "clean", ":main:assembleRelease");
+                "clean", ":main:assemble");
 
-        File mainApk = new File(project, "main/build/" + FD_OUTPUTS
-                + "/apk/main-release-unsigned.apk");
+        File mainOut = new File(project, "main/build/" + FD_OUTPUTS + "/apk");
+        String embeddedApkPath = FD_RES + '/' + FD_RES_RAW + '/' + ANDROID_WEAR_MICRO_APK + DOT_ANDROID_PACKAGE;
 
-        checkJar(mainApk, Collections.<String, String>singletonMap(
-                FD_RES + '/' + FD_RES_RAW + '/' + ANDROID_WEAR_MICRO_APK + DOT_ANDROID_PACKAGE,
-                null));
+        File aapt = new File(sdkDir, "build-tools/20.0.0/aapt");
+        assertTrue("Test requires build-tools 20.0.0", aapt.isFile());
+        CommandLineRunner commandLineRunner = new CommandLineRunner(new StdLogger(StdLogger.Level.ERROR));
+        ApkInfoParser parser = new ApkInfoParser(aapt, commandLineRunner);
+
+        // each micro app has a different version name to distinguish them from one another.
+        // here we record what we expect from which.
+        String[][] variantData = new String[][] {
+                new String[] { "main-flavor1-release-unsigned.apk", "flavor1" },
+                new String[] { "main-flavor2-release-unsigned.apk", "default" },
+                new String[] { "main-flavor1-custom-unsigned.apk",  "custom" },
+                new String[] { "main-flavor2-custom-unsigned.apk", "custom" },
+                new String[] { "main-flavor1-debug.apk", null },
+                new String[] { "main-flavor2-debug.apk", null },
+        };
+
+        for (String[] data : variantData) {
+            File fullApk = new File(mainOut, data[0]);
+            File embeddedApk = findAndExtractFromZip(fullApk, embeddedApkPath);
+
+            if (data[1] == null) {
+                assertNull("Expected no embedded app for " + data[0], embeddedApk);
+                break;
+            } else {
+                assertNotNull("Failed to find embedded micro app for " + data[0], embeddedApk);
+            }
+
+            // check for the versionName
+            ApkInfoParser.ApkInfo apkInfo = parser.parseApk(embeddedApk);
+            assertEquals("Wrong version name for app embedded in " + data[0], data[1], apkInfo.getVersionName());
+        }
     }
 
     public void testUserProvidedTestAndroidManifest() throws Exception {
@@ -1104,6 +1132,30 @@ public class ManualBuildTest extends BuildTest {
         for (String expectedContent : expectedContents) {
             assertTrue("File '" + f.getAbsolutePath() + "' does not contain: " + expectedContent,
                 contents.contains(expectedContent));
+        }
+    }
+
+    @Nullable
+    private static File findAndExtractFromZip(@NonNull File zipFile, @NonNull String entryPath) throws IOException {
+        ZipFile zip = null;
+        try {
+            zip = new ZipFile(zipFile);
+            ZipEntry entry = zip.getEntry(entryPath);
+            if (entry == null) {
+                return null;
+            }
+
+            // extract the file
+            File apk = File.createTempFile("findAndExtractFromZip", "apk");
+            apk.deleteOnExit();
+            Files.asByteSink(apk).writeFrom(zip.getInputStream(entry));
+            return apk;
+        } catch (IOException e) {
+            throw new IOException("Failed to open " + zipFile, e);
+        } finally {
+            if (zip != null) {
+                zip.close();
+            }
         }
     }
 

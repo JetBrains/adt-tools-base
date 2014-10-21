@@ -6,7 +6,7 @@ android {
 
     defaultConfig {
         versionCode 42
-        versionName "foo"
+        versionName "custom"
     }
 }
 
