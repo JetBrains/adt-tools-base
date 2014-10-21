@@ -122,6 +122,7 @@ buildTest.dependsOn ':publishLocal'
 check.dependsOn buildTest
 
 integTest.dependsOn ':publishLocal'
+check.dependsOn integTest
 
 task deviceTest(type: Test) {
     testClassesDir = sourceSets.deviceTest.output.classesDir
