@@ -358,8 +358,9 @@ public final class AvdInfo implements Comparable<AvdInfo> {
      * Returns whether an emulator is currently running the AVD.
      */
     public boolean isRunning() {
+        // this is a file on Unix, and a directory on Windows.
         File f = new File(mFolderPath, "userdata-qemu.img.lock");   //$NON-NLS-1$
-        return f.isFile();
+        return f.exists();
     }
 
     /**
