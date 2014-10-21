@@ -34,6 +34,7 @@ import com.android.build.gradle.internal.variant.LibraryVariantData
 import com.android.build.gradle.internal.variant.TestVariantData
 import com.android.builder.core.DefaultProductFlavor
 import com.android.builder.core.VariantConfiguration
+import com.android.builder.model.AaptOptions
 import com.android.builder.model.AndroidArtifact
 import com.android.builder.model.AndroidArtifactOutput
 import com.android.builder.model.AndroidProject
@@ -99,6 +100,8 @@ public class ModelBuilder implements ToolingModelBuilder {
 
         LintOptions lintOptions = LintOptionsImpl.create(basePlugin.extension.lintOptions)
 
+        AaptOptions aaptOptions = AaptOptionsImpl.create(basePlugin.extension.aaptOptions)
+
         //noinspection GroovyVariableNotAssigned
         DefaultAndroidProject androidProject = new DefaultAndroidProject(
                 getModelVersion(),
@@ -107,6 +110,7 @@ public class ModelBuilder implements ToolingModelBuilder {
                 bootClasspath,
                 frameworkSource,
                 cloneSigningConfigs(signingConfigs),
+                aaptOptions,
                 artifactMetaDataList,
                 basePlugin.unresolvedDependencies,
                 basePlugin.extension.compileOptions,

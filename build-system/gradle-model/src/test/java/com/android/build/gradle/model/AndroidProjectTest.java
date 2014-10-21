@@ -258,6 +258,12 @@ public class AndroidProjectTest extends TestCase {
         assertEquals("Compile Target", "android-19", model.getCompileTarget());
         assertFalse("Non empty bootclasspath", model.getBootClasspath().isEmpty());
 
+        assertNotNull("aaptOptions not null", model.getAaptOptions());
+        assertEquals("aaptOptions noCompress", 1, model.getAaptOptions().getNoCompress().size());
+        assertTrue("aaptOptions noCompress", model.getAaptOptions().getNoCompress().contains("txt"));
+        assertEquals("aaptOptions ignoreAssetsPattern", "!.svn:!.git:!.ds_store:!*.scc:.*:<dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~", model.getAaptOptions().getIgnoreAssets());
+        assertFalse("aaptOptions getFailOnMissingConfigEntry", model.getAaptOptions().getFailOnMissingConfigEntry());
+
         JavaCompileOptions javaCompileOptions = model.getJavaCompileOptions();
         assertEquals("1.6", javaCompileOptions.getSourceCompatibility());
         assertEquals("1.6", javaCompileOptions.getTargetCompatibility());
