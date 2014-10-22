@@ -59,13 +59,13 @@ public class XmlAttribute extends XmlNode {
         this.mAttributeModel = attributeModel;
         if (mAttributeModel != null && mAttributeModel.isPackageDependent()) {
             String value = mXml.getValue();
+            if (value == null || value.isEmpty()) return;
             // placeholders are never expanded.
             if (!PlaceholderHandler.isPlaceHolder(value)) {
-                String pkg = mOwnerElement.getDocument().getPackageName();
+                String pkg = mOwnerElement.getDocument().getPackageNameForAttributeExpansion();
                 // We know it's a shortened FQCN if it starts with a dot
                 // or does not contain any dot.
-                if (value != null && !value.isEmpty() &&
-                        (value.indexOf('.') == -1 || value.charAt(0) == '.')) {
+                if (value.indexOf('.') == -1 || value.charAt(0) == '.') {
                     if (value.charAt(0) == '.') {
                         value = pkg + value;
                     } else {

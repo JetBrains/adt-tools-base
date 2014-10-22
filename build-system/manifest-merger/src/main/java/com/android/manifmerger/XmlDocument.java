@@ -262,6 +262,22 @@ public class XmlDocument {
         return mMainManifestPackageName.or(mRootElement.getAttribute("package"));
     }
 
+    /**
+     * Returns the package name to use to expand the attributes values with the
+     * document's package name
+     * @return the package name to use for attribute expansion.
+     */
+    public String getPackageNameForAttributeExpansion() {
+        String aPackage = mRootElement.getAttribute("package");
+        if (aPackage != null) {
+            return aPackage;
+        }
+        if (mMainManifestPackageName.isPresent()) {
+            return mMainManifestPackageName.get();
+        }
+        throw new RuntimeException("No package present in overlay or main manifest file");
+    }
+
     public Optional<XmlAttribute> getPackage() {
         Optional<XmlAttribute> packageAttribute =
                 getRootNode().getAttribute(XmlNode.fromXmlName("package"));
