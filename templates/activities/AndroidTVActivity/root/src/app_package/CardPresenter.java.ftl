@@ -1,3 +1,17 @@
+/*
+ * Copyright (C) 2014 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ */
+
 package ${packageName};
 
 import android.content.Context;
@@ -15,6 +29,10 @@ import com.squareup.picasso.Target;
 
 import java.net.URI;
 
+/*
+ * A CardPresenter is used to generate Views and bind Objects to them on demand. 
+ * It contains an Image CardView
+ */
 public class CardPresenter extends Presenter {
     private static final String TAG = "CardPresenter";
 
@@ -50,8 +68,8 @@ public class CardPresenter extends Presenter {
         protected void updateCardViewImage(URI uri) {
             Picasso.with(mContext)
                     .load(uri.toString())
-                    .resize(CARD_WIDTH, CARD_HEIGHT)
-                    .centerCrop()
+                    .resize(Utils.convertDpToPixel(mContext, CARD_WIDTH),
+                            Utils.convertDpToPixel(mContext, CARD_HEIGHT))
                     .error(mDefaultCardImage)
                     .into(mImageCardViewTarget);
         }
@@ -79,8 +97,6 @@ public class CardPresenter extends Presenter {
             ((ViewHolder) viewHolder).mCardView.setTitleText(movie.getTitle());
             ((ViewHolder) viewHolder).mCardView.setContentText(movie.getStudio());
             ((ViewHolder) viewHolder).mCardView.setMainImageDimensions(CARD_WIDTH, CARD_HEIGHT);
-            //((ViewHolder) viewHolder).mCardView.setBadgeImage(mContext.getResources().getDrawable(
-            //        R.drawable.videos_by_google_icon));
             ((ViewHolder) viewHolder).updateCardViewImage(movie.getCardImageURI());
         }
     }
@@ -92,14 +108,14 @@ public class CardPresenter extends Presenter {
 
     @Override
     public void onViewAttachedToWindow(Presenter.ViewHolder viewHolder) {
-        Log.d(TAG, "onViewAttachedToWindow");
+        // TO DO
     }
 
     public static class PicassoImageCardViewTarget implements Target {
         private ImageCardView mImageCardView;
 
-        public PicassoImageCardViewTarget(ImageCardView mImageCardView) {
-            this.mImageCardView = mImageCardView;
+        public PicassoImageCardViewTarget(ImageCardView imageCardView) {
+            mImageCardView = imageCardView;
         }
 
         @Override
@@ -118,5 +134,4 @@ public class CardPresenter extends Presenter {
             // Do nothing, default_background manager has its own transitions
         }
     }
-
 }
