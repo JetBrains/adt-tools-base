@@ -21,6 +21,7 @@ import com.android.annotations.Nullable;
 import com.android.builder.dependency.LibraryDependency;
 import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.MavenCoordinates;
+import com.google.common.collect.Lists;
 
 import java.io.File;
 import java.io.Serializable;
@@ -64,6 +65,7 @@ public class AndroidLibraryImpl extends LibraryImpl implements AndroidLibrary, S
     AndroidLibraryImpl(
             @NonNull LibraryDependency libraryDependency,
             @NonNull List<AndroidLibrary> dependencies,
+            @NonNull Collection<File> localJarOverride,
             @Nullable String project,
             @Nullable String variant,
             @Nullable MavenCoordinates requestedCoordinates,
@@ -74,7 +76,7 @@ public class AndroidLibraryImpl extends LibraryImpl implements AndroidLibrary, S
         folder = libraryDependency.getFolder();
         manifest = libraryDependency.getManifest();
         jarFile = libraryDependency.getJarFile();
-        localJars = libraryDependency.getLocalJars();
+        localJars = Lists.newArrayList(localJarOverride);
         resFolder = libraryDependency.getResFolder();
         assetsFolder = libraryDependency.getAssetsFolder();
         jniFolder = libraryDependency.getJniFolder();
