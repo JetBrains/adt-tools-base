@@ -1,3 +1,17 @@
+/*
+ * Copyright (C) 2014 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ */
+
 package ${packageName};
 
 import java.net.URI;
@@ -15,12 +29,15 @@ import android.support.v17.leanback.app.BackgroundManager;
 import android.support.v17.leanback.app.BrowseFragment;
 import android.support.v17.leanback.widget.ArrayObjectAdapter;
 import android.support.v17.leanback.widget.HeaderItem;
+import android.support.v17.leanback.widget.ImageCardView;
 import android.support.v17.leanback.widget.ListRow;
 import android.support.v17.leanback.widget.ListRowPresenter;
-import android.support.v17.leanback.widget.OnItemClickedListener;
-import android.support.v17.leanback.widget.OnItemSelectedListener;
+import android.support.v17.leanback.widget.OnItemViewClickedListener;
+import android.support.v17.leanback.widget.OnItemViewSelectedListener;
 import android.support.v17.leanback.widget.Presenter;
 import android.support.v17.leanback.widget.Row;
+import android.support.v17.leanback.widget.RowPresenter;
+import android.support.v4.app.ActivityOptionsCompat;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Gravity;
@@ -36,6 +53,9 @@ import com.squareup.picasso.Target;
 public class ${mainFragment} extends BrowseFragment {
     private static final String TAG = "${mainFragment}";
 
+    private static final int BACKGROUND_UPDATE_DELAY = 300;
+    private static final int GRID_ITEM_WIDTH = 200;
+    private static final int GRID_ITEM_HEIGHT = 200;
     private static final int NUM_ROWS = 6;
     private static final int NUM_COLS = 15;
 
@@ -63,6 +83,15 @@ public class ${mainFragment} extends BrowseFragment {
         setupEventListeners();
     }
 
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        if (null != mBackgroundTimer) {
+            Log.d(TAG, "onDestroy: " + mBackgroundTimer.toString());
+            mBackgroundTimer.cancel();
+        }
+    }
+
     private void loadRows() {
         List<Movie> list = MovieList.setupMovies();
 
@@ -87,7 +116,7 @@ public class ${mainFragment} extends BrowseFragment {
         GridItemPresenter mGridPresenter = new GridItemPresenter();
         ArrayObjectAdapter gridRowAdapter = new ArrayObjectAdapter(mGridPresenter);
         gridRowAdapter.add(getResources().getString(R.string.grid_view));
-        gridRowAdapter.add(getResources().getString(R.string.send_feeback));
+        gridRowAdapter.add(getString(R.string.error_fragment));
         gridRowAdapter.add(getResources().getString(R.string.personal_settings));
         mRowsAdapter.add(new ListRow(gridHeader, gridRowAdapter));
 
@@ -122,46 +151,58 @@ public class ${mainFragment} extends BrowseFragment {
     }
 
     private void setupEventListeners() {
-        setOnItemSelectedListener(getDefaultItemSelectedListener());
-        setOnItemClickedListener(getDefaultItemClickedListener());
         setOnSearchClickedListener(new View.OnClickListener() {
+
             @Override
             public void onClick(View view) {
                 Toast.makeText(getActivity(), "Implement your own in-app search", Toast.LENGTH_LONG)
                         .show();
             }
         });
+
+        setOnItemViewClickedListener(new ItemViewClickedListener());
+        setOnItemViewSelectedListener(new ItemViewSelectedListener());
     }
 
-    protected OnItemSelectedListener getDefaultItemSelectedListener() {
-        return new OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(Object item, Row row) {
-                if (item instanceof Movie) {
-                    mBackgroundURI = ((Movie) item).getBackgroundImageURI();
-                    startBackgroundTimer();
-                }
-            }
-        };
-    }
+    private final class ItemViewClickedListener implements OnItemViewClickedListener {
+        @Override
+        public void onItemClicked(Presenter.ViewHolder itemViewHolder, Object item,
+                                  RowPresenter.ViewHolder rowViewHolder, Row row) {
 
-    protected OnItemClickedListener getDefaultItemClickedListener() {
-        return new OnItemClickedListener() {
-            @Override
-            public void onItemClicked(Object item, Row row) {
-                if (item instanceof Movie) {
-                    Movie movie = (Movie) item;
-                    Log.d(TAG, "Item: " + item.toString());
-                    Intent intent = new Intent(getActivity(), ${detailsActivity}.class);
-                    intent.putExtra(getString(R.string.movie), movie);
+            if (item instanceof Movie) {
+                Movie movie = (Movie) item;
+                Log.d(TAG, "Item: " + item.toString());
+                Intent intent = new Intent(getActivity(), ${detailsActivity}.class);
+                intent.putExtra(${detailsActivity}.MOVIE, movie);
+
+                Bundle bundle = ActivityOptionsCompat.makeSceneTransitionAnimation(
+                        getActivity(),
+                        ((ImageCardView) itemViewHolder.view).getMainImageView(),
+                        ${detailsActivity}.SHARED_ELEMENT_NAME).toBundle();
+                getActivity().startActivity(intent, bundle);
+            } else if (item instanceof String) {
+                if (((String) item).indexOf(getString(R.string.error_fragment)) >= 0) {
+                    Intent intent = new Intent(getActivity(), BrowseErrorActivity.class);
                     startActivity(intent);
-                }
-                else if (item instanceof String) {
-                    Toast.makeText(getActivity(), (String) item, Toast.LENGTH_SHORT)
+                } else {
+                    Toast.makeText(getActivity(), ((String) item), Toast.LENGTH_SHORT)
                             .show();
                 }
             }
-        };
+        }
+    }
+
+
+    private final class ItemViewSelectedListener implements OnItemViewSelectedListener {
+        @Override
+        public void onItemSelected(Presenter.ViewHolder itemViewHolder, Object item,
+                                   RowPresenter.ViewHolder rowViewHolder, Row row) {
+            if (item instanceof Movie) {
+                mBackgroundURI = ((Movie) item).getBackgroundImageURI();
+                startBackgroundTimer();
+            }
+
+        }
     }
 
     protected void setDefaultBackground(Drawable background) {
@@ -194,7 +235,7 @@ public class ${mainFragment} extends BrowseFragment {
             mBackgroundTimer.cancel();
         }
         mBackgroundTimer = new Timer();
-        mBackgroundTimer.schedule(new UpdateBackgroundTask(), 300);
+        mBackgroundTimer.schedule(new UpdateBackgroundTask(), BACKGROUND_UPDATE_DELAY);
     }
 
     private class UpdateBackgroundTask extends TimerTask {
@@ -217,7 +258,7 @@ public class ${mainFragment} extends BrowseFragment {
         @Override
         public ViewHolder onCreateViewHolder(ViewGroup parent) {
             TextView view = new TextView(parent.getContext());
-            view.setLayoutParams(new ViewGroup.LayoutParams(200, 200));
+            view.setLayoutParams(new ViewGroup.LayoutParams(GRID_ITEM_WIDTH, GRID_ITEM_HEIGHT));
             view.setFocusable(true);
             view.setFocusableInTouchMode(true);
             view.setBackgroundColor(getResources().getColor(R.color.default_background));
