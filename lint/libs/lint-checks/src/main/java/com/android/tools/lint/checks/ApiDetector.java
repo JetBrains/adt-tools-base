@@ -1423,6 +1423,14 @@ public class ApiDetector extends ResourceXmlDetector
             return true;
         }
 
+        // Gravity#START and Gravity#END are okay; these were specifically written to
+        // be backwards compatible (by using the same lower bits for START as LEFT and
+        // for END as RIGHT)
+        if ("android/view/Gravity".equals(owner)                   //$NON-NLS-1$
+                && ("START".equals(name) || "END".equals(name))) { //$NON-NLS-1$ //$NON-NLS-2$
+            return true;
+        }
+
         if (node == null) {
             return false;
         }
