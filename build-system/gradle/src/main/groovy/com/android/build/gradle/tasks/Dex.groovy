@@ -50,6 +50,9 @@ public class Dex extends BaseTask {
     @Nested
     DexOptionsImpl dexOptions
 
+    @Input
+    boolean multiDex = false
+
     /**
      * Actual entry point for the action.
      * Calls out to the doTaskAction as needed.
@@ -102,6 +105,7 @@ public class Dex extends BaseTask {
                 getInputFiles(),
                 getLibraries(),
                 outFolder,
+                getMultiDex(),
                 getDexOptions(),
                 getAdditionalParameters(),
                 incremental)

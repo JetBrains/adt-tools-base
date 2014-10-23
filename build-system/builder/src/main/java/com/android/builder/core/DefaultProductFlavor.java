@@ -366,6 +366,8 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
         flavor.addBuildConfigFields(base.getBuildConfigFields());
         flavor.addBuildConfigFields(overlay.getBuildConfigFields());
 
+        flavor.setMultiDex(chooseNotNull(overlay.getMultiDex(), base.getMultiDex()));
+
         return flavor;
     }
 
@@ -405,6 +407,8 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
 
         flavor.addResValues(productFlavor.getResValues());
         flavor.addBuildConfigFields(productFlavor.getBuildConfigFields());
+
+        flavor.setMultiDex(productFlavor.getMultiDex());
 
         return flavor;
     }
