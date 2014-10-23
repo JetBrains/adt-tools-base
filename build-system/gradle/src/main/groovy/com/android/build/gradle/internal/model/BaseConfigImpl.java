@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal.model;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.builder.model.BaseConfig;
 import com.android.builder.model.ClassField;
 import com.google.common.collect.ImmutableMap;
@@ -40,11 +41,14 @@ abstract class BaseConfigImpl implements BaseConfig, Serializable {
     private final Map<String, ClassField> mBuildConfigFields;
     @NonNull
     private final Map<String, ClassField> mResValues;
+    @Nullable
+    private Boolean mMultiDex;
 
     protected BaseConfigImpl(@NonNull BaseConfig baseConfig) {
         mManifestPlaceholders = ImmutableMap.copyOf(baseConfig.getManifestPlaceholders());
         mBuildConfigFields = ImmutableMap.copyOf(baseConfig.getBuildConfigFields());
         mResValues = ImmutableMap.copyOf(baseConfig.getResValues());
+        mMultiDex = baseConfig.getMultiDex();
     }
 
     @NonNull
@@ -78,11 +82,22 @@ abstract class BaseConfigImpl implements BaseConfig, Serializable {
     }
 
     @Override
+    @Nullable
+    public Boolean getMultiDex() {
+        return mMultiDex;
+    }
+
+    public void setMultiDex(@Nullable Boolean multiDex) {
+        mMultiDex = multiDex;
+    }
+
+    @Override
     public String toString() {
         return "BaseConfigImpl{" +
                 "mManifestPlaceholders=" + mManifestPlaceholders +
                 ", mBuildConfigFields=" + mBuildConfigFields +
                 ", mResValues=" + mResValues +
+                ", mMultiDex=" + mMultiDex +
                 '}';
     }
 }

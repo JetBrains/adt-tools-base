@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal.api;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.builder.model.BaseConfig;
 import com.android.builder.model.ClassField;
 import com.google.common.collect.ImmutableList;
@@ -83,5 +84,11 @@ abstract class ReadOnlyBaseConfig implements BaseConfig {
     @Override
     public Map<String, String> getManifestPlaceholders() {
         return ImmutableMap.copyOf(baseConfig.getManifestPlaceholders());
+    }
+
+    @Nullable
+    @Override
+    public Boolean getMultiDex() {
+        return baseConfig.getMultiDex();
     }
 }

@@ -48,7 +48,6 @@ import com.android.builder.internal.packaging.Packager;
 import com.android.builder.model.AaptOptions;
 import com.android.builder.model.ClassField;
 import com.android.builder.model.PackagingOptions;
-import com.android.builder.model.ProductFlavor;
 import com.android.builder.model.SigningConfig;
 import com.android.builder.packaging.DuplicateFileException;
 import com.android.builder.packaging.PackagerException;
@@ -114,11 +113,11 @@ import java.util.regex.Pattern;
  * create a builder with {@link #AndroidBuilder(String, String, ILogger, boolean)}
  *
  * then build steps can be done with
- * {@link #mergeManifests(java.io.File, java.util.List, java.util.List, String, int, String, String, String, String, com.android.manifmerger.ManifestMerger2.MergeType, java.util.Map)}
- * {@link #processTestManifest2(String, String, String, String, String, Boolean, Boolean, java.util.List, java.io.File)}
- * {@link #processResources(java.io.File, java.io.File, java.io.File, java.util.List, String, String, String, String, String, com.android.builder.core.VariantConfiguration.Type, boolean, com.android.builder.model.AaptOptions, java.util.Collection, boolean)}
+ * {@link #mergeManifests(java.io.File, java.util.List, java.util.List, String, int, String, String, String, Integer, String, com.android.manifmerger.ManifestMerger2.MergeType, java.util.Map)}
+ * {@link #processTestManifest2(String, String, String, String, String, Boolean, Boolean, java.io.File, java.util.List, java.io.File, java.io.File)}
+ * {@link #processResources(java.io.File, java.io.File, java.io.File, java.util.List, String, String, String, String, String, com.android.builder.core.VariantConfiguration.Type, boolean, com.android.builder.model.AaptOptions, java.util.Collection, boolean, java.util.Collection)}
  * {@link #compileAllAidlFiles(java.util.List, java.io.File, java.io.File, java.util.List, com.android.builder.compiling.DependencyFileProcessor)}
- * {@link #convertByteCode(Iterable, Iterable, java.io.File, DexOptions, java.util.List, boolean)}
+ * {@link #convertByteCode(Iterable, Iterable, java.io.File, boolean, DexOptions, java.util.List, boolean)}
  * {@link #packageApk(String, java.io.File, java.util.Collection, String, java.util.Collection, java.util.Set, boolean, com.android.builder.model.SigningConfig, com.android.builder.model.PackagingOptions, String)}
  *
  * Java compilation is not handled but the builder provides the bootclasspath with
@@ -127,6 +126,7 @@ import java.util.regex.Pattern;
 public class AndroidBuilder {
 
     private static final FullRevision MIN_BUILD_TOOLS_REV = new FullRevision(19, 1, 0);
+    private static final FullRevision MIN_MULTIDEX_BUILD_TOOLS_REV = new FullRevision(21, 0, 0);
 
     private static final DependencyFileProcessor sNoOpDependencyFileProcessor = new DependencyFileProcessor() {
         @Override
@@ -1560,7 +1560,7 @@ public class AndroidBuilder {
      * @param preDexedLibraries the list of pre-dexed libraries
      * @param outDexFolder the location of the output folder
      * @param dexOptions dex options
-     * @param additionalParameters
+     * @param additionalParameters list of additional parameters to give to dx
      * @param incremental true if it should attempt incremental dex if applicable
      *
      * @throws IOException
@@ -1571,6 +1571,7 @@ public class AndroidBuilder {
             @NonNull Iterable<File> inputs,
             @NonNull Iterable<File> preDexedLibraries,
             @NonNull File outDexFolder,
+                     boolean multidex,
             @NonNull DexOptions dexOptions,
             @Nullable List<String> additionalParameters,
             boolean incremental) throws IOException, InterruptedException, LoggedErrorException {
@@ -1583,6 +1584,10 @@ public class AndroidBuilder {
                 "Cannot call convertByteCode() before setTargetInfo() is called.");
 
         BuildToolInfo buildToolInfo = mTargetInfo.getBuildTools();
+
+        checkState(
+                !multidex || buildToolInfo.getRevision().compareTo(MIN_MULTIDEX_BUILD_TOOLS_REV) >= 0,
+                "Multi dex requires Build Tools " + MIN_MULTIDEX_BUILD_TOOLS_REV.toString() + " / Current: " + buildToolInfo.getRevision().toShortString());
 
         // launch dx: create the command line
         ArrayList<String> command = Lists.newArrayList();
@@ -1611,6 +1616,10 @@ public class AndroidBuilder {
         if (incremental) {
             command.add("--incremental");
             command.add("--no-strict");
+        }
+
+        if (multidex) {
+            command.add("--multi-dex");
         }
 
         /**
