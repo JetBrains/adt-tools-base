@@ -16,7 +16,7 @@
 
 package com.android.build.gradle.ndk.internal;
 
-import org.gradle.nativeplatform.NativeBinary;
+import org.gradle.nativeplatform.NativeBinarySpec;
 
 /**
  * An abstract class for NativeToolSpecification.
@@ -28,7 +28,7 @@ public abstract class AbstractNativeToolSpecification implements NativeToolSpeci
      * @param binary The binary to be configured.  It is assumed the 'c' and 'cpp' plugin is applied
      * such that the binary contains the cCompiler and cppCompiler extensions.
      */
-    void apply(NativeBinary binary) {
+    void apply(NativeBinarySpec binary) {
         for (String arg : getCFlags()) {
             binary.cCompiler.args(arg);
         }

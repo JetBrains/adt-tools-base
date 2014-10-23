@@ -19,7 +19,6 @@ package com.android.build.gradle.ndk.internal
 import com.android.build.gradle.ndk.NdkExtension
 import com.android.build.gradle.tasks.GdbSetupTask
 import com.android.builder.core.BuilderConstants
-import com.android.builder.model.AndroidProject
 import org.gradle.api.tasks.TaskContainer
 import org.gradle.language.base.ProjectSourceSet
 import org.gradle.language.base.FunctionalSourceSet
@@ -27,10 +26,12 @@ import org.gradle.language.c.CSourceSet
 import org.gradle.language.cpp.CppSourceSet
 import org.gradle.api.Task
 import org.gradle.api.tasks.Copy
+import org.gradle.nativeplatform.NativeBinarySpec
 import org.gradle.nativeplatform.NativeLibrarySpec
-import org.gradle.nativeplatform.internal.DefaultSharedLibraryBinarySpec
+import org.gradle.nativeplatform.SharedLibraryBinarySpec
 import org.gradle.language.c.tasks.CCompile
 import org.gradle.language.cpp.tasks.CppCompile
+import org.gradle.platform.base.BinarySpec
 
 /**
  * Configure settings used by the native binaries.
@@ -85,7 +86,7 @@ class NdkConfigurationAction {
         Collection<String> abiList = ndkHandler.getSupportedAbis()
         library.targetPlatform(abiList.toArray(new String[abiList.size()]))
 
-        library.binaries.withType(DefaultSharedLibraryBinarySpec) { DefaultSharedLibraryBinarySpec binary ->
+        library.binaries.withType(SharedLibraryBinarySpec) { binary ->
             sourceIfExist(binary, sources, "main")
             sourceIfExist(binary, sources, binary.flavor.name)
             sourceIfExist(binary, sources, binary.buildType.name)
@@ -97,22 +98,20 @@ class NdkConfigurationAction {
             cppCompiler.define "ANDROID_NDK"
 
             // Set output library filename.
-            sharedLibraryFile =
+            binary.sharedLibraryFile =
                     new File(buildDir, NdkNamingScheme.getOutputDirectoryName(binary) + "/" +
                             NdkNamingScheme.getSharedLibraryFileName(ndkExtension.getModuleName()))
 
             // Replace output directory of compile tasks.
-            binary.tasks.withType(CCompile) {
-                String sourceSetName = objectFileDir.name
-                objectFileDir =
-                        new File(buildDir, "$AndroidProject.FD_INTERMEDIATES/objectFiles/" +
-                                "${binary.namingScheme.outputDirectoryBase}/$sourceSetName")
+            binary.tasks.withType(CCompile) { task ->
+                String sourceSetName = task.objectFileDir.name
+                task.objectFileDir = NdkNamingScheme.getObjectFilesOutputDirectory(
+                        binary, buildDir, sourceSetName)
             }
-            binary.tasks.withType(CppCompile) {
-                String sourceSetName = objectFileDir.name
-                objectFileDir =
-                        new File(buildDir, "$AndroidProject.FD_INTERMEDIATES/objectFiles/" +
-                                "${binary.namingScheme.outputDirectoryBase}/$sourceSetName")
+            binary.tasks.withType(CppCompile) { task ->
+                String sourceSetName = task.objectFileDir.name
+                task.objectFileDir = NdkNamingScheme.getObjectFilesOutputDirectory(
+                                binary, buildDir, sourceSetName)
             }
 
             String sysroot = ndkHandler.getSysroot(binary.targetPlatform)
@@ -145,7 +144,7 @@ class NdkConfigurationAction {
 
     public static void createTasks(
             TaskContainer tasks,
-            DefaultSharedLibraryBinarySpec binary,
+            SharedLibraryBinarySpec binary,
             File buildDir,
             NdkExtension ndkExtension,
             NdkHandler ndkHandler) {
@@ -160,7 +159,7 @@ class NdkConfigurationAction {
      * Add the sourceSet with the specified name to the binary if such sourceSet is defined.
      */
     private static void sourceIfExist(
-            DefaultSharedLibraryBinarySpec binary,
+            BinarySpec binary,
             ProjectSourceSet projectSourceSet,
             String sourceSetName) {
         FunctionalSourceSet sourceSet = projectSourceSet.findByName(sourceSetName)
@@ -172,9 +171,14 @@ class NdkConfigurationAction {
     /**
      * Setup tasks to create gdb.setup and copy gdbserver for NDK debugging.
      */
-    private static void setupNdkGdbDebug(TaskContainer tasks, DefaultSharedLibraryBinarySpec binary, File buildDir, NdkExtension ndkExtension, NdkHandler handler) {
+    private static void setupNdkGdbDebug(
+            TaskContainer tasks,
+            NativeBinarySpec binary,
+            File buildDir,
+            NdkExtension ndkExtension,
+            NdkHandler handler) {
         Task copyGdbServerTask = tasks.create(
-                name: binary.namingScheme.getTaskName("copy", "GdbServer"),
+                name: NdkNamingScheme.getTaskName(binary, "copy", "GdbServer"),
                 type: Copy) {
             from(new File(
                     handler.getPrebuiltDirectory(binary.targetPlatform),
@@ -184,7 +188,7 @@ class NdkConfigurationAction {
         binary.builtBy copyGdbServerTask
 
         Task createGdbSetupTask = tasks.create(
-                name: binary.namingScheme.getTaskName("create", "Gdbsetup"),
+                name: NdkNamingScheme.getTaskName(binary, "create", "Gdbsetup"),
                 type: GdbSetupTask) { def task ->
             task.ndkHandler = handler
             task.extension = ndkExtension

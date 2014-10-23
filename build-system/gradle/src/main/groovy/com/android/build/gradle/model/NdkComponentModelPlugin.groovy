@@ -48,9 +48,9 @@ import org.gradle.nativeplatform.NativeLibraryBinarySpec
 import org.gradle.nativeplatform.NativeLibrarySpec
 import org.gradle.nativeplatform.SharedLibraryBinarySpec
 import org.gradle.nativeplatform.StaticLibraryBinary
-import org.gradle.nativeplatform.internal.DefaultSharedLibraryBinarySpec
 import org.gradle.nativeplatform.toolchain.NativeToolChainRegistry
 import org.gradle.platform.base.BinaryContainer
+import org.gradle.platform.base.BinarySpec
 import org.gradle.platform.base.ComponentSpecContainer
 import org.gradle.platform.base.PlatformContainer
 
@@ -159,7 +159,7 @@ class NdkComponentModelPlugin implements Plugin<Project> {
                 @Path("buildDir") File buildDir) {
             specs.withType(DefaultAndroidComponentSpec) { androidSpec ->
                 if (androidSpec.nativeLibrary != null) {
-                    androidSpec.nativeLibrary.binaries.withType(DefaultSharedLibraryBinarySpec) { binary ->
+                    androidSpec.nativeLibrary.binaries.withType(SharedLibraryBinarySpec) { binary ->
                         NdkConfigurationAction.createTasks(
                                 tasks, binary, buildDir, extension, ndkHandler)
                     }
@@ -270,15 +270,14 @@ class NdkComponentModelPlugin implements Plugin<Project> {
     /**
      * Return library binaries for a VariantConfiguration.
      */
-    public Collection<DefaultSharedLibraryBinarySpec> getBinaries(
-            VariantConfiguration variantConfig) {
+    public Collection<BinarySpec> getBinaries(VariantConfiguration variantConfig) {
         if (variantConfig.getType() == VariantConfiguration.Type.TEST) {
             // Do not return binaries for test variants as test source set is not supported at the
             // moment.
             return []
         }
 
-        project.binaries.withType(DefaultSharedLibraryBinarySpec).matching { binary ->
+        project.binaries.withType(SharedLibraryBinarySpec).matching { binary ->
             (binary.buildType.name.equals(variantConfig.getBuildType().getName())
                     && (binary.flavor.name.equals(variantConfig.getFlavorName())
                             || (binary.flavor.name.equals("default")

@@ -16,7 +16,7 @@
 
 package com.android.build.gradle.ndk.internal
 
-import org.gradle.nativeplatform.NativeBinary
+import org.gradle.nativeplatform.NativeBinarySpec
 
 /**
  * Interface for native binaries flag configurations.
@@ -29,5 +29,5 @@ interface NativeToolSpecification {
 
     public Iterable<String> getLdFlags()
 
-    public void apply(NativeBinary binary);
+    public void apply(NativeBinarySpec binary);
 }

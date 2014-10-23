@@ -22,6 +22,7 @@ import com.android.builder.core.VariantConfiguration;
 import org.gradle.api.InvalidUserDataException;
 import org.gradle.api.Project;
 import org.gradle.platform.base.Binary;
+import org.gradle.platform.base.BinarySpec;
 
 import java.io.File;
 import java.util.Collection;
@@ -55,7 +56,7 @@ public class NdkLibrarySpecification {
         this.targetProjectName = targetProjectName;
     }
 
-    public Collection<? extends Binary> getBinaries(VariantConfiguration variantConfig) {
+    public Collection<BinarySpec> getBinaries(VariantConfiguration variantConfig) {
         return getNdkPlugin().getBinaries(variantConfig);
     }
 
