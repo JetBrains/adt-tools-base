@@ -25,6 +25,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.FilterData;
 import com.android.build.OutputFile;
+import com.android.build.tests.AndroidProjectConnector;
 import com.android.builder.internal.StringHelper;
 import com.android.builder.model.AndroidArtifact;
 import com.android.builder.model.AndroidArtifactOutput;
@@ -46,6 +47,7 @@ import com.android.builder.model.SourceProvider;
 import com.android.builder.model.SourceProviderContainer;
 import com.android.builder.model.Variant;
 import com.android.ide.common.signing.KeystoreHelper;
+import com.android.io.StreamException;
 import com.android.prefs.AndroidLocation;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -57,21 +59,24 @@ import junit.framework.TestCase;
 import org.gradle.tooling.GradleConnector;
 import org.gradle.tooling.ProjectConnection;
 import org.gradle.tooling.UnknownModelException;
-import org.gradle.tooling.internal.consumer.DefaultGradleConnector;
 import org.gradle.tooling.model.GradleProject;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.security.CodeSource;
 import java.security.KeyStore;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
 public class AndroidProjectTest extends TestCase {
+
+    private static final String GRADLE_VERSION = "2.1";
 
     private static final String FOLDER_TEST_REGULAR = "regular";
     private static final String FOLDER_TEST_MANUAL = "manual";
@@ -167,14 +172,33 @@ public class AndroidProjectTest extends TestCase {
 
     }
 
-    private ProjectData getModelForProject(String testFolder, String projectName) {
+    private ProjectData getModelForProject(String testFolder, String projectName)
+            throws IOException, StreamException {
+        return getModelForProject(testFolder, projectName, false);
+    }
+
+    private ProjectData getModelForProject(String testFolder, String projectName, boolean cleanFirst)
+            throws IOException, StreamException {
         ProjectData projectData = sProjectModelMap.get(projectName);
 
-        if (projectData == null) {
+        if (projectData == null || cleanFirst) {
+            File projectDir = new File(getTestDir(testFolder), projectName);
+
+            if (cleanFirst) {
+                AndroidProjectConnector connector = new AndroidProjectConnector(
+                        getSdkDir(), getNdkDir());
+                connector.runGradleTasks(
+                        projectDir,
+                        GRADLE_VERSION,
+                        Collections.<String>emptyList(),
+                        Collections.<String, String>emptyMap(),
+                        "clean");
+
+            }
+
             // Configure the connector and create the connection
             GradleConnector connector = GradleConnector.newConnector();
 
-            File projectDir = new File(getTestDir(testFolder), projectName);
             connector.forProjectDirectory(projectDir);
 
             ProjectConnection connection = connector.connect();
@@ -197,6 +221,7 @@ public class AndroidProjectTest extends TestCase {
 
         return projectData;
     }
+
 
     private Map<String, ProjectData> getModelForMultiProject(String testFolder, String projectName)
             throws Exception {
@@ -248,7 +273,7 @@ public class AndroidProjectTest extends TestCase {
         return map;
     }
 
-    public void testBasic() {
+    public void testBasic() throws Exception {
         // Load the custom model for the project
         ProjectData projectData = getModelForProject(FOLDER_TEST_REGULAR, "basic");
 
@@ -359,7 +384,7 @@ public class AndroidProjectTest extends TestCase {
 
     public void testBasicVariantDetails() throws Exception {
         // Load the custom model for the project
-        ProjectData projectData = getModelForProject(FOLDER_TEST_REGULAR, "basic");
+        ProjectData projectData = getModelForProject(FOLDER_TEST_REGULAR, "basic", true /*cleanFirst*/);
 
         AndroidProject model = projectData.model;
 
@@ -545,21 +570,27 @@ public class AndroidProjectTest extends TestCase {
         assertNotNull(releaseLibraries);
         assertEquals(3, releaseLibraries.size());
 
-        javaLibs = Sets.newHashSet(
-                "com.android.support:support-v13:20.0.0",
-                "com.android.support:support-v4:20.0.0",
-                "com.google.android.gms:play-services:3.1.36"
-        );
-
+        // map for each aar we expect to find and how many local jars they each have.
+        Map<String, Integer> aarLibs = Maps.newHashMapWithExpectedSize(3);
+        aarLibs.put("com.android.support:support-v13:21.0.0", 1);
+        aarLibs.put("com.android.support:support-v4:21.0.0", 1);
+        aarLibs.put("com.google.android.gms:play-services:3.1.36", 0);
         for (AndroidLibrary androidLib : releaseLibraries) {
             assertNotNull(androidLib.getBundle());
             assertNotNull(androidLib.getFolder());
             coord = androidLib.getResolvedCoordinates();
             assertNotNull(coord);
             String lib = coord.getGroupId() + ":" + coord.getArtifactId() + ":" + coord.getVersion();
-            assertTrue(javaLibs.contains(lib));
-            javaLibs.remove(lib);
+
+            Integer localJarCount = aarLibs.get(lib);
+            assertNotNull("Check presense of " + lib, localJarCount);
+            assertEquals("Check local jar count for " + lib,
+                    localJarCount.intValue(), androidLib.getLocalJars().size());
+            System.out.println(">>" + androidLib.getLocalJars());
+            aarLibs.remove(lib);
         }
+
+        assertTrue("check for missing libs", aarLibs.isEmpty());
     }
 
     public void testBasicSigningConfigs() throws Exception {
@@ -804,7 +835,7 @@ public class AndroidProjectTest extends TestCase {
         }
     }
 
-    public void testFilteredOutBuildType() {
+    public void testFilteredOutBuildType() throws Exception {
         // Load the custom model for the project
         ProjectData projectData = getModelForProject(FOLDER_TEST_REGULAR, "filteredOutBuildType");
 
@@ -815,7 +846,7 @@ public class AndroidProjectTest extends TestCase {
         assertEquals("Variant name", "release", variant.getBuildType());
     }
 
-    public void testFilteredOutVariants() {
+    public void testFilteredOutVariants() throws Exception {
         // Load the custom model for the project
         ProjectData projectData = getModelForProject(FOLDER_TEST_REGULAR, "filteredOutVariants");
 
@@ -834,7 +865,7 @@ public class AndroidProjectTest extends TestCase {
         }
     }
 
-    public void testFlavors() {
+    public void testFlavors() throws Exception {
         // Load the custom model for the project
         ProjectData projectData = getModelForProject(FOLDER_TEST_REGULAR, "flavors");
 
@@ -1028,7 +1059,7 @@ public class AndroidProjectTest extends TestCase {
         assertEquals("jar dep count", 2, javaLibraries.size());
     }
 
-    public void testTestWithDep() {
+    public void testTestWithDep() throws Exception {
         // Load the custom model for the project
         ProjectData projectData = getModelForProject(FOLDER_TEST_REGULAR, "testWithDep");
 
@@ -1047,7 +1078,7 @@ public class AndroidProjectTest extends TestCase {
         assertEquals(1, testDependencies.getJavaLibraries().size());
     }
 
-    public void testLibTestDep() {
+    public void testLibTestDep() throws Exception {
         // Load the custom model for the project
         ProjectData projectData = getModelForProject(FOLDER_TEST_REGULAR, "libTestDep");
 
@@ -1270,7 +1301,8 @@ public class AndroidProjectTest extends TestCase {
 
     public void testCustomArtifact() throws Exception {
         // Load the custom model for the projects
-        Map<String, ProjectData> map = getModelForMultiProject(FOLDER_TEST_MANUAL, "customArtifactDep");
+        Map<String, ProjectData> map = getModelForMultiProject(FOLDER_TEST_MANUAL,
+                "customArtifactDep");
 
         ProjectData appModelData = map.get(":app");
         assertNotNull("Module app null-check", appModelData);
@@ -1321,14 +1353,14 @@ public class AndroidProjectTest extends TestCase {
         assertEquals(3, javaLibraries.size());
     }
 
-    public void testOutputFileNameUniquenessInApp() {
+    public void testOutputFileNameUniquenessInApp() throws Exception {
         ProjectData projectData = getModelForProject(FOLDER_TEST_REGULAR, "basic");
 
         // make sure that debug and release variant file output have different names.
         compareDebugAndReleaseOutput(projectData);
     }
 
-    public void testOutputFileNameUniquenessInLib() {
+    public void testOutputFileNameUniquenessInLib() throws Exception {
         ProjectData projectData = getModelForProject(FOLDER_TEST_REGULAR, "libTestDep");
 
         // make sure that debug and release variant file output have different names.
@@ -1369,7 +1401,7 @@ public class AndroidProjectTest extends TestCase {
                 debugFile.equals(releaseFile));
     }
 
-    public void testAbiFilters() {
+    public void testAbiFilters() throws Exception {
         ProjectData projectData = getModelForProject(FOLDER_TEST_REGULAR, "ndkPrebuilts");
 
         AndroidProject model = projectData.model;
@@ -1422,6 +1454,23 @@ public class AndroidProjectTest extends TestCase {
         }
 
         throw new IllegalStateException("SDK not defined with ANDROID_HOME");
+    }
+
+    /**
+     * Returns the SDK folder as built from the Android source tree.
+     */
+    protected static File getNdkDir() {
+        String androidHome = System.getenv("ANDROID_NDK_HOME");
+        if (androidHome != null) {
+            File f = new File(androidHome);
+            if (f.isDirectory()) {
+                return f;
+            } else {
+                System.out.println("Failed to find NDK in ANDROID_NDK_HOME=" + androidHome);
+            }
+        }
+
+        return null;
     }
 
     /**
