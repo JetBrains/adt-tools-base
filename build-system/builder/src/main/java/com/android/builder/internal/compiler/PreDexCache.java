@@ -16,6 +16,8 @@
 
 package com.android.builder.internal.compiler;
 
+import static com.google.common.base.Preconditions.checkState;
+
 import com.android.annotations.NonNull;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.DexOptions;
@@ -33,6 +35,7 @@ import org.w3c.dom.Node;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 
 /**
  * Pre Dexing cache.
@@ -45,7 +48,7 @@ import java.io.IOException;
  * Because different project could use different build-tools, both the library to pre-dex and the
  * version of the build tools are used as keys in the cache.
  *
- * The API is fairly simple, just call {@link #preDexLibrary(java.io.File, java.io.File, com.android.builder.core.DexOptions, com.android.sdklib.BuildToolInfo, boolean, com.android.ide.common.internal.CommandLineRunner)}
+ * The API is fairly simple, just call {@link #preDexLibrary(java.io.File, java.io.File, boolean, com.android.builder.core.DexOptions, com.android.sdklib.BuildToolInfo, boolean, com.android.ide.common.internal.CommandLineRunner)}
  *
  * The call will be blocking until the pre-dexing happened, either through actual pre-dexing or
  * through copying the output of a previous pre-dex run.
@@ -79,7 +82,8 @@ public class PreDexCache extends PreProcessCache<DexKey> {
     /**
      * Pre-dex a given library to a given output with a specific version of the build-tools.
      * @param inputFile the jar to pre-dex
-     * @param outFile the output file.
+     * @param outFile the output file or folder (if multi-dex is enabled). must exist
+     * @param multiDex whether mutli-dex is enabled.
      * @param dexOptions the dex options to run pre-dex
      * @param buildToolInfo the build tools info
      * @param verbose verbose flag
@@ -91,22 +95,35 @@ public class PreDexCache extends PreProcessCache<DexKey> {
     public void preDexLibrary(
             @NonNull File inputFile,
             @NonNull File outFile,
+                     boolean multiDex,
             @NonNull DexOptions dexOptions,
             @NonNull BuildToolInfo buildToolInfo,
             boolean verbose,
             @NonNull CommandLineRunner commandLineRunner)
             throws IOException, LoggedErrorException, InterruptedException {
+        checkState(!multiDex || outFile.isDirectory());
 
-        DexKey itemKey = DexKey.of(inputFile, buildToolInfo.getRevision(), dexOptions.getJumboMode());
+        DexKey itemKey = DexKey.of(
+                inputFile,
+                buildToolInfo.getRevision(),
+                dexOptions.getJumboMode());
 
-        Pair<Item, Boolean> pair = getItem(itemKey, inputFile, outFile);
+        Pair<Item, Boolean> pair = getItem(itemKey);
+        Item item = pair.getFirst();
 
         // if this is a new item
         if (pair.getSecond()) {
             try {
                 // haven't process this file yet so do it and record it.
-                AndroidBuilder.preDexLibrary(inputFile, outFile, dexOptions, buildToolInfo,
-                        verbose, commandLineRunner);
+                List<File> files = AndroidBuilder.preDexLibrary(
+                        inputFile,
+                        outFile,
+                        multiDex,
+                        dexOptions,
+                        buildToolInfo,
+                        verbose,
+                        commandLineRunner);
+                item.getOutputFiles().addAll(files);
 
                 incrementMisses();
             } catch (IOException exception) {
@@ -127,19 +144,29 @@ public class PreDexCache extends PreProcessCache<DexKey> {
             } finally {
                 // enable other threads to use the output of this pre-dex.
                 // if something was thrown they'll handle the missing output file.
-                pair.getFirst().getLatch().countDown();
+                item.getLatch().countDown();
             }
         } else {
             // wait until the file is pre-dexed by the first thread.
-            pair.getFirst().getLatch().await();
+            item.getLatch().await();
 
             // check that the generated file actually exists
-            File fromFile = pair.getFirst().getOutputFile();
+            if (item.areOutputFilesPresent()) {
+                if (multiDex) {
+                    // output should be a folder
+                    for (File sourceFile : item.getOutputFiles()) {
+                        Files.copy(sourceFile, new File(outFile, sourceFile.getName()));
+                    }
 
-            if (fromFile.isFile()) {
-                // file already pre-dex, just copy the output.
-                Files.copy(pair.getFirst().getOutputFile(), outFile);
+                } else {
+                    // file already pre-dex, just copy the output.
+                    if (item.getOutputFiles().isEmpty()) {
+                        throw new RuntimeException(item.toString());
+                    }
+                    Files.copy(item.getOutputFiles().get(0), outFile);
+                }
                 incrementHits();
+
             }
         }
     }

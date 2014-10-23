@@ -94,7 +94,8 @@ public class JackConversionCache extends PreProcessCache<PreProcessCache.Key> {
 
         Key itemKey = Key.of(inputFile, buildToolInfo.getRevision());
 
-        Pair<PreProcessCache.Item, Boolean> pair = getItem(itemKey, inputFile, outFile);
+        Pair<PreProcessCache.Item, Boolean> pair = getItem(itemKey);
+        Item item = pair.getFirst();
 
         // if this is a new item
         if (pair.getSecond()) {
@@ -122,18 +123,20 @@ public class JackConversionCache extends PreProcessCache<PreProcessCache.Key> {
             } finally {
                 // enable other threads to use the output of this pre-dex.
                 // if something was thrown they'll handle the missing output file.
-                pair.getFirst().getLatch().countDown();
+                item.getLatch().countDown();
             }
         } else {
             // wait until the file is pre-dexed by the first thread.
-            pair.getFirst().getLatch().await();
+            item.getLatch().await();
 
             // check that the generated file actually exists
-            File fromFile = pair.getFirst().getOutputFile();
+            // while the api allow for 2+ files, there's only ever one in this case.
+            File fromFile = item.getOutputFiles().get(0);
 
             if (fromFile.isFile()) {
                 // file already pre-dex, just copy the output.
-                Files.copy(pair.getFirst().getOutputFile(), outFile);
+                // while the api allow for 2+ files, there's only ever one in this case.
+                Files.copy(fromFile, outFile);
                 incrementHits();
             }
         }

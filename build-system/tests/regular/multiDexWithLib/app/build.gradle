@@ -1,0 +1,27 @@
+apply plugin: 'com.android.application'
+
+android {
+  compileSdkVersion 19
+  buildToolsVersion = rootProject.ext.buildToolsVersion
+
+  defaultConfig {
+    minSdkVersion 21
+
+    buildConfigField "String", "FOO", "\"foo\""
+
+    multiDex = true
+  }
+
+  buildTypes {
+    debug {
+      buildConfigField "String", "FOO", "\"bar\""
+      resValue "string", "foo", "foo2"
+
+      useJack rootProject.ext.useJack
+    }
+  }
+}
+
+dependencies {
+  compile project(':lib')
+}
