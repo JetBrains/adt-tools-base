@@ -1219,6 +1219,14 @@ public class ApiDetectorTest extends AbstractCheckTest {
             ));
     }
 
+    public void testGravity() throws Exception {
+        assertEquals("No warnings.",
+                lintProject(
+                        "apicheck/minsdk4.xml=>AndroidManifest.xml",
+                        "apicheck/GravityTest.java.txt=>src/test/pkg/GravityTest.java"
+                ));
+    }
+
     @Override
     protected TestLintClient createClient() {
         if (getName().equals("testMissingApiDatabase")) {
