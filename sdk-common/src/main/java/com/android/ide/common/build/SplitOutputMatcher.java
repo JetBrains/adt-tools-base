@@ -23,12 +23,12 @@ import com.android.build.MainOutputFile;
 import com.android.build.OutputFile;
 import com.android.build.VariantOutput;
 import com.android.resources.Density;
+import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
 
-import java.io.File;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -54,7 +54,7 @@ public class SplitOutputMatcher {
      * @return the list of APKs to install or null if none are compatible.
      */
     @NonNull
-    public static List<File> computeBestOutput(
+    public static List<OutputFile> computeBestOutput(
             @NonNull List<? extends VariantOutput> outputs,
             @Nullable Set<String> variantAbiFilters,
             int deviceDensity,
@@ -69,7 +69,7 @@ public class SplitOutputMatcher {
         }
 
         // gather all compatible matches.
-        List<VariantOutput> matches = Lists.newArrayListWithExpectedSize(outputs.size());
+        Set<VariantOutput> matches = new HashSet<VariantOutput>();
 
         // find a matching output.
         for (VariantOutput variantOutput : outputs) {
@@ -84,6 +84,7 @@ public class SplitOutputMatcher {
                 if (abiFilter != null && !deviceAbis.contains(abiFilter)) {
                     continue;
                 }
+                // variantOutput can be added several times to matches.
                 matches.add(variantOutput);
             }
         }
@@ -99,25 +100,72 @@ public class SplitOutputMatcher {
             }
         });
 
-        // so far, we are not dealing with the pure split files...
         MainOutputFile mainOutputFile = match.getMainOutputFile();
+        if (match.getOutputs().size() == 1) {
+            return isMainApkCompatibleWithDevice(mainOutputFile, variantAbiFilters, deviceAbis)
+                    ? ImmutableList.<OutputFile>of(mainOutputFile)
+                    : ImmutableList.<OutputFile>of();
+        } else {
+            // we are dealing with pure splits.
+            ImmutableList.Builder<OutputFile> apks = ImmutableList.builder();
+            apks.add(mainOutputFile);
+            Optional<OutputFile> abiCompatibleSplitApk = findAbiCompatibleSplitApk(match,
+                    deviceAbis);
+            if (abiCompatibleSplitApk.isPresent()) {
+                apks.add(abiCompatibleSplitApk.get());
+            }
+            Optional<OutputFile> densityCompatibleSplitApk = findDensityCompatibleSplitApk(match,
+                    densityValue);
+            if (densityCompatibleSplitApk.isPresent()) {
+                apks.add(densityCompatibleSplitApk.get());
+            }
+            return apks.build();
+        }
+    }
+
+    private static boolean isMainApkCompatibleWithDevice(
+            MainOutputFile mainOutputFile,
+            Set<String> variantAbiFilters,
+            List<String> deviceAbis) {
+        // so far, we are not dealing with the pure split files...
         if (getFilter(mainOutputFile, OutputFile.ABI) == null && variantAbiFilters != null) {
             // if we have a match that has no abi filter, and we have variant-level filters, then
             // we need to make sure that the variant filters are compatible with the device abis.
-            boolean foundMatch = false;
             for (String abi : deviceAbis) {
                 if (variantAbiFilters.contains(abi)) {
-                    foundMatch = true;
-                    break;
+                    return true;
                 }
             }
+            return false;
+        }
+        return true;
+    }
 
-            if (!foundMatch) {
-                return ImmutableList.of();
+    private static Optional<OutputFile> findAbiCompatibleSplitApk(
+            VariantOutput variantOutput,
+            List<String> deviceAbis) {
+
+        for (String deviceAbi : deviceAbis) {
+            for (OutputFile outputFile : variantOutput.getOutputs()) {
+                if (outputFile.getOutputType().equals(OutputFile.SPLIT)
+                        && deviceAbi.equals(getFilter(outputFile, OutputFile.ABI))) {
+                    return Optional.of(outputFile);
+                }
             }
         }
+        return Optional.absent();
+    }
 
-        return ImmutableList.of(mainOutputFile.getOutputFile());
+    private static Optional<OutputFile> findDensityCompatibleSplitApk(
+            VariantOutput variantOutput,
+            String densityValue) {
+        for (OutputFile outputFile : variantOutput.getOutputs()) {
+            if (outputFile.getOutputType().equals(OutputFile.SPLIT)
+                    && densityValue.equals(getFilter(outputFile, OutputFile.DENSITY))) {
+                return Optional.of(outputFile);
+            }
+        }
+        return Optional.absent();
     }
 
     @Nullable

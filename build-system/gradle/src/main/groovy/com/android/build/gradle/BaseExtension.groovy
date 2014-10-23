@@ -419,6 +419,16 @@ public abstract class BaseExtension {
         this.useOldManifestMerger = flag;
     }
 
+    // by default, we do not generate pure splits
+    boolean generatePureSplits = false;
+
+    void generatePureSplits(boolean flag) {
+        if (flag) {
+            plugin.getLogger().warning("Pure splits are not supported by PlayStore yet.")
+        }
+        this.generatePureSplits = flag;
+    }
+
     private boolean enforceUniquePackageName = true
 
     public void enforceUniquePackageName(boolean value) {

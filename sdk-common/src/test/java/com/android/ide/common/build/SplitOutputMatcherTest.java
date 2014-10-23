@@ -40,7 +40,7 @@ public class SplitOutputMatcherTest extends TestCase {
     /**
      * Helper to run InstallHelper.computeMatchingOutput with variable ABI list.
      */
-    private static List<File> computeBestOutput(
+    private static List<OutputFile> computeBestOutput(
             @NonNull List<? extends VariantOutput> outputs,
             int density,
             @NonNull String... abis) {
@@ -48,7 +48,7 @@ public class SplitOutputMatcherTest extends TestCase {
                 outputs, null, density, Arrays.asList(abis));
     }
 
-    private static List<File> computeBestOutput(
+    private static List<OutputFile> computeBestOutput(
             @NonNull List<? extends VariantOutput> outputs,
             @NonNull Set<String> variantAbis,
             int density,
@@ -157,10 +157,10 @@ public class SplitOutputMatcherTest extends TestCase {
 
         list.add(match = getUniversalOutput(1));
 
-        List<File> result = computeBestOutput(list, 160, "foo");
+        List<OutputFile> result = computeBestOutput(list, 160, "foo");
 
         assertEquals(1, result.size());
-        assertEquals(match.getMainOutputFile().getOutputFile(), result.get(0));
+        assertEquals(match.getMainOutputFile(), result.get(0));
     }
 
     public void testDensityOnlyWithMatch() {
@@ -171,10 +171,10 @@ public class SplitOutputMatcherTest extends TestCase {
         list.add(match = getDensityOutput(160, 2));
         list.add(getDensityOutput(320, 3));
 
-        List<File> result =  computeBestOutput(list, 160, "foo");
+        List<OutputFile> result =  computeBestOutput(list, 160, "foo");
 
         assertEquals(1, result.size());
-        assertEquals(match.getMainOutputFile().getOutputFile(), result.get(0));
+        assertEquals(match.getMainOutputFile(), result.get(0));
     }
 
     public void testDensityOnlyWithUniversalMatch() {
@@ -185,10 +185,10 @@ public class SplitOutputMatcherTest extends TestCase {
         list.add(getDensityOutput(320, 2));
         list.add(getDensityOutput(480, 1));
 
-        List<File> result = computeBestOutput(list, 160, "foo");
+        List<OutputFile> result = computeBestOutput(list, 160, "foo");
 
         assertEquals(1, result.size());
-        assertEquals(match.getMainOutputFile().getOutputFile(), result.get(0));
+        assertEquals(match.getMainOutputFile(), result.get(0));
     }
 
     public void testDensityOnlyWithNoMatch() {
@@ -197,7 +197,7 @@ public class SplitOutputMatcherTest extends TestCase {
         list.add(getDensityOutput(320, 1));
         list.add(getDensityOutput(480, 2));
 
-        List<File> result = computeBestOutput(list, 160, "foo");
+        List<OutputFile> result = computeBestOutput(list, 160, "foo");
 
         assertEquals(0, result.size());
     }
@@ -210,10 +210,10 @@ public class SplitOutputMatcherTest extends TestCase {
         list.add(getDensityOutput(320, 2));
         list.add(getDensityOutput(480, 3));
 
-        List<File> result = computeBestOutput(list, 1, "foo");
+        List<OutputFile> result = computeBestOutput(list, 1, "foo");
 
         assertEquals(1, result.size());
-        assertEquals(match.getMainOutputFile().getOutputFile(), result.get(0));
+        assertEquals(match.getMainOutputFile(), result.get(0));
     }
 
 
@@ -225,10 +225,10 @@ public class SplitOutputMatcherTest extends TestCase {
         list.add(match = getAbiOutput("foo", 2));
         list.add(getAbiOutput("bar", 3));
 
-        List<File> result = computeBestOutput(list, 160, "foo");
+        List<OutputFile> result = computeBestOutput(list, 160, "foo");
 
         assertEquals(1, result.size());
-        assertEquals(match.getMainOutputFile().getOutputFile(), result.get(0));
+        assertEquals(match.getMainOutputFile(), result.get(0));
     }
 
     public void testAbiOnlyWithMultiMatch() {
@@ -241,10 +241,10 @@ public class SplitOutputMatcherTest extends TestCase {
         list.add(match = getAbiOutput("bar", 3));
 
         // bar is preferred over foo
-        List<File> result = computeBestOutput(list, 160, "bar", "foo");
+        List<OutputFile> result = computeBestOutput(list, 160, "bar", "foo");
 
         assertEquals(1, result.size());
-        assertEquals(match.getMainOutputFile().getOutputFile(), result.get(0));
+        assertEquals(match.getMainOutputFile(), result.get(0));
     }
 
     public void testAbiOnlyWithMultiMatch2() {
@@ -257,10 +257,10 @@ public class SplitOutputMatcherTest extends TestCase {
         list.add(match = getAbiOutput("bar", 3));
 
         // bar is preferred over foo
-        List<File> result = computeBestOutput(list, 160, "foo", "bar");
+        List<OutputFile> result = computeBestOutput(list, 160, "foo", "bar");
 
         assertEquals(1, result.size());
-        assertEquals(match.getMainOutputFile().getOutputFile(), result.get(0));
+        assertEquals(match.getMainOutputFile(), result.get(0));
     }
 
     public void testAbiOnlyWithUniversalMatch() {
@@ -271,10 +271,10 @@ public class SplitOutputMatcherTest extends TestCase {
         list.add(getAbiOutput("foo", 2));
         list.add(getAbiOutput("bar", 3));
 
-        List<File> result = computeBestOutput(list, 160, "zzz");
+        List<OutputFile> result = computeBestOutput(list, 160, "zzz");
 
         assertEquals(1, result.size());
-        assertEquals(match.getMainOutputFile().getOutputFile(), result.get(0));
+        assertEquals(match.getMainOutputFile(), result.get(0));
     }
 
     public void testAbiOnlyWithNoMatch() {
@@ -283,7 +283,7 @@ public class SplitOutputMatcherTest extends TestCase {
         list.add(getAbiOutput("foo", 1));
         list.add(getAbiOutput("bar", 2));
 
-        List<File> result = computeBestOutput(list, 160, "zzz");
+        List<OutputFile> result = computeBestOutput(list, 160, "zzz");
 
         assertEquals(0, result.size());
     }
@@ -297,10 +297,10 @@ public class SplitOutputMatcherTest extends TestCase {
         list.add(match = getOutput(160, "foo", 4));
         list.add(getOutput(320, "foo", 3));
 
-        List<File> result = computeBestOutput(list, 160, "foo");
+        List<OutputFile> result = computeBestOutput(list, 160, "foo");
 
         assertEquals(1, result.size());
-        assertEquals(match.getMainOutputFile().getOutputFile(), result.get(0));
+        assertEquals(match.getMainOutputFile(), result.get(0));
     }
 
     public void testMultiFilterWithUniversalMatch() {
@@ -312,10 +312,10 @@ public class SplitOutputMatcherTest extends TestCase {
         list.add(getOutput(160, "bar", 2));
         list.add(getOutput(320, "foo", 1));
 
-        List<File> result = computeBestOutput(list, 160, "zzz");
+        List<OutputFile> result = computeBestOutput(list, 160, "zzz");
 
         assertEquals(1, result.size());
-        assertEquals(match.getMainOutputFile().getOutputFile(), result.get(0));
+        assertEquals(match.getMainOutputFile(), result.get(0));
     }
 
     public void testMultiFilterWithNoMatch() {
@@ -325,7 +325,7 @@ public class SplitOutputMatcherTest extends TestCase {
         list.add(getOutput(160, "bar", 2));
         list.add(getOutput(320, "foo", 3));
 
-        List<File> result = computeBestOutput(list, 160, "zzz");
+        List<OutputFile> result = computeBestOutput(list, 160, "zzz");
 
         assertEquals(0, result.size());
     }
@@ -335,10 +335,11 @@ public class SplitOutputMatcherTest extends TestCase {
         List<VariantOutput> list = Lists.newArrayList();
 
         list.add(match = getUniversalOutput(1));
-        List<File> result = computeBestOutput(list, Sets.newHashSet("bar", "foo"), 160, "foo", "zzz");
+        List<OutputFile> result = computeBestOutput(list, Sets.newHashSet("bar", "foo"), 160, "foo",
+                "zzz");
 
         assertEquals(1, result.size());
-        assertEquals(match.getMainOutputFile().getOutputFile(), result.get(0));
+        assertEquals(match.getMainOutputFile(), result.get(0));
     }
 
     public void testWrongVariantLevelAbiFilter() {
@@ -346,7 +347,7 @@ public class SplitOutputMatcherTest extends TestCase {
 
         list.add(getUniversalOutput(1));
 
-        List<File> result = computeBestOutput(list, Sets.newHashSet("bar", "foo"), 160, "zzz");
+        List<OutputFile> result = computeBestOutput(list, Sets.newHashSet("bar", "foo"), 160, "zzz");
 
         assertEquals(0, result.size());
     }
@@ -360,7 +361,7 @@ public class SplitOutputMatcherTest extends TestCase {
         list.add(match = getDensityOutput(320, 3));
         list.add(getDensityOutput(480, 4));
 
-        List<File> result = computeBestOutput(list, Sets.newHashSet("bar", "foo"), 320, "foo", "zzz");
+        List<OutputFile> result = computeBestOutput(list, Sets.newHashSet("bar", "foo"), 320, "foo", "zzz");
 
         assertEquals(1, result.size());
     }

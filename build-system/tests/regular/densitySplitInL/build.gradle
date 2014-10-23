@@ -21,9 +21,10 @@ apply plugin: 'com.android.application'
 
 android {
   compileSdkVersion 21
-  buildToolsVersion = rootProject.ext.buildToolsVersion
+    buildToolsVersion = rootProject.ext.buildToolsVersion
+    generatePureSplits true
 
-    defaultConfig {
+  defaultConfig {
     versionCode 12
     minSdkVersion 21
     targetSdkVersion 21

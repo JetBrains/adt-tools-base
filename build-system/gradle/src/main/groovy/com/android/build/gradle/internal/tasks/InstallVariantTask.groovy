@@ -15,6 +15,8 @@
  */
 package com.android.build.gradle.internal.tasks
 
+import com.android.build.OutputFile
+import com.android.build.gradle.api.ApkOutputFile
 import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.build.gradle.internal.variant.BaseVariantOutputData
 import com.android.builder.core.VariantConfiguration
@@ -71,7 +73,7 @@ public class InstallVariantTask extends BaseTask {
                         variantName)) {
 
                     // now look for a matching output file
-                    List<File> outputFiles = SplitOutputMatcher.computeBestOutput(
+                    List<OutputFile> outputFiles = SplitOutputMatcher.computeBestOutput(
                             variantData.outputs,
                             variantData.variantConfiguration.getSupportedAbis(),
                             device.getDensity(), device.getAbis())
@@ -86,7 +88,7 @@ public class InstallVariantTask extends BaseTask {
                             project.logger.lifecycle("Multiple APK selected for installation " +
                                     Joiner.on(", ").join(outputFiles));
                         } else {
-                            File apkFile = outputFiles.get(0);
+                            File apkFile = ((ApkOutputFile) outputFiles.get(0)).getOutputFile();
                             project.logger.lifecycle(
                                 "Installing '${apkFile.getName()}' on '${device.getName()}'.");
                             device.installPackage(apkFile, getTimeOut(), plugin.logger)
