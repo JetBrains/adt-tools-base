@@ -17,13 +17,10 @@
 package com.android.build.gradle;
 
 import com.android.annotations.NonNull;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
-
-import java.util.List;
 
 /**
  * Automated tests building a set of projects using a set of gradle versions.
@@ -59,8 +56,8 @@ public class AutomatedBuildTest extends BuildTest {
             "flavoredlib",
             "flavors",
             "genFolderApi",
-            "libProguardJarDep",
-            "libProguardLibDep",
+            "libMinifyJarDep",
+            "libMinifyLibDep",
             "libTestDep",
             "libsTest",
             "localAarTest",
@@ -78,8 +75,8 @@ public class AutomatedBuildTest extends BuildTest {
             "overlay1",
             "overlay2",
             "pkgOverride",
-            "proguard",
-            "proguardLib",
+            "minify",
+            "minifyLib",
             "renderscript",
             "renderscriptInLib",
             "renderscriptMultiSrc",
@@ -94,7 +91,8 @@ public class AutomatedBuildTest extends BuildTest {
     };
 
     private static final String[] sJackProjects = new String[] {
-            "basic"
+            "basic",
+            "minify"
     };
 
     public static Test suite() {

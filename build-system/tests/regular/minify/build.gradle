@@ -1,5 +1,6 @@
 ext {
-    buildToolsVersion = System.env.CUSTOM_BUILDTOOLS != null ? System.env.CUSTOM_BUILDTOOLS : '20.0.0'
+    buildToolsVersion = System.env.CUSTOM_BUILDTOOLS != null ? System.env.CUSTOM_BUILDTOOLS : (project.hasProperty("CUSTOM_BUILDTOOLS") ? project.CUSTOM_BUILDTOOLS : '20.0.0')
+    useJack = System.env.CUSTOM_JACK != null ? true : (project.hasProperty("CUSTOM_JACK") ? true : false)
 }
 
 buildscript {
@@ -26,7 +27,7 @@ android {
     compileSdkVersion 19
     buildToolsVersion = rootProject.ext.buildToolsVersion
 
-    testBuildType "proguard"
+    testBuildType rootProject.ext.useJack ? "debug" : "minified"
 
     defaultConfig {
         versionCode 12
@@ -36,9 +37,10 @@ android {
     }
 
     buildTypes {
-        proguard.initWith(buildTypes.debug)
-        proguard {
+        minified.initWith(buildTypes.debug)
+        minified {
             minifyEnabled true
+            useJack rootProject.ext.useJack
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-spec.pro'
             testCoverageEnabled true
         }

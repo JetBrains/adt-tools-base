@@ -166,17 +166,16 @@ public class ManualBuildTest extends BuildTest {
         assertTrue(fileOutput.exists());
     }
 
-    // test whether a library project has its fields ProGuarded
-    public void testLibProguard() throws Exception {
-        File project = new File(regularDir, "libProguard");
-        File fileOutput = new File(project, "build/" + FD_OUTPUTS + "/proguard/release");
+    // test whether a library project has its fields obfuscated
+    public void testLibMinify() throws Exception {
+        File project = new File(regularDir, "libMinify");
+        File fileOutput = new File(project, "build/" + FD_OUTPUTS + "/mapping/release");
 
         runTasksOn(
                 project,
                 BasePlugin.GRADLE_TEST_VERSION,
                 "clean", "build");
-        checkFile(fileOutput, "mapping.txt", new String[]{"int proguardInt -> a"});
-
+        checkFile(fileOutput, "mapping.txt", new String[]{"int obfuscatedInt -> a"});
     }
 
     // test whether proguard.txt has been correctly merged

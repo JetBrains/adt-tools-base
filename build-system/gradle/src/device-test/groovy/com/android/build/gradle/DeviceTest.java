@@ -17,13 +17,10 @@
 package com.android.build.gradle;
 
 import com.android.annotations.NonNull;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
-
-import java.util.List;
 
 /**
  * DeviceConnector tests.
@@ -60,8 +57,8 @@ public class DeviceTest extends BuildTest {
             "flavorlib",
             "flavoredlib",
             "flavors",
-            "libProguardJarDep",
-            "libProguardLibDep",
+            "lib<inifyJarDep",
+            "libMinifyLibDep",
             "libTestDep",
             "libsTest",
             "migrated",
@@ -75,8 +72,8 @@ public class DeviceTest extends BuildTest {
             "overlay2",
             "packagingOptions",
             "pkgOverride",
-            "proguard",
-            "proguardLib",
+            "minify",
+            "minifyLib",
             "sameNamedLibs"
     };
 
@@ -89,7 +86,8 @@ public class DeviceTest extends BuildTest {
     };
 
     private static final String[] sJackProjects = new String[] {
-            "basic"
+            "basic",
+            "minify",
     };
 
     public static Test suite() {

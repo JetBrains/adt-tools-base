@@ -15,6 +15,8 @@
  */
 
 package com.android.build.gradle.tasks
+
+import com.android.annotations.NonNull
 import com.android.build.gradle.BasePlugin
 import com.android.sdklib.BuildToolInfo
 import com.android.sdklib.repository.FullRevision
@@ -24,6 +26,7 @@ import com.google.common.io.Files
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.compile.AbstractCompile
@@ -45,6 +48,9 @@ public class JackTask extends AbstractCompile {
     @InputFiles
     Collection<File> packagedLibraries
 
+    @InputFiles @Optional
+    Collection<File> proguardFiles
+
     @Input
     boolean debug
 
@@ -52,6 +58,9 @@ public class JackTask extends AbstractCompile {
 
     @OutputFile
     File jackFile
+
+    @OutputFile @Optional
+    File mappingFile
 
     @TaskAction
     void compile() {
@@ -77,6 +86,10 @@ public class JackTask extends AbstractCompile {
 
         // temp workaround since --jack-output cannot be used
         // with the dex output.
+        /*
+        command << "--jack-output"
+        command << jackOutFolder.absolutePath
+        */
         command << "-D"
         command << "jack.jackfile.generate=true"
         command << "-D"
@@ -84,13 +97,27 @@ public class JackTask extends AbstractCompile {
         command << "-D"
         command << "jack.jackfile.output.zip=${getJackFile().absolutePath}".toString()
 
-        /*
-        command << "--jack-output"
-        command << jackOutFolder.absolutePath
-        */
-
         command << "-D"
         command << "jack.import.resource.policy=keep-first"
+
+        Collection<File> _proguardFiles = getProguardFiles()
+        if (_proguardFiles != null && !_proguardFiles.isEmpty()) {
+            for (File file : _proguardFiles) {
+                command << "--proguard-flags"
+                command << file.absolutePath
+            }
+
+            File _mappingFile = getMappingFile()
+            if (_mappingFile != null) {
+                // the normal property-based mechanism to output a mapping file
+                // doesn't work, so use a proguard file instead until this is
+                // fixed.
+                //command << "-D"
+                //command << "jack.obfuscation.mapping.dump.file=${_mappingFile.absolutePath}".toString()
+                command << "--proguard-flags"
+                command << createMappingFileCommand(_mappingFile)
+            }
+        }
 
         command << "--ecj"
         command << computeEcjOptionFile()
@@ -100,6 +127,7 @@ public class JackTask extends AbstractCompile {
 
     private String computeEcjOptionFile() {
         File folder = getTempFolder()
+        folder.mkdirs()
         File file = new File(folder, "ecj-options.txt");
 
         StringBuffer sb = new StringBuffer()
@@ -113,6 +141,17 @@ public class JackTask extends AbstractCompile {
         Files.write(sb.toString(), file, Charsets.UTF_8)
 
         return "@$file.absolutePath"
+    }
+
+    private String createMappingFileCommand(@NonNull File mappingFile) {
+        File folder = getTempFolder();
+        folder.mkdirs()
+        File file = new File(folder,"mapping.pro");
+
+        Files.write("-printmapping ${mappingFile.absolutePath}\n",
+                file, Charsets.UTF_8);
+
+        return file.absolutePath
     }
 
     private String computeBootClasspath() {
