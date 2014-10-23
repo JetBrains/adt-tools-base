@@ -88,15 +88,6 @@ public class AutomatedBuildTest extends BuildTest {
             "tictactoe"
     };
 
-    // these tests are excluded on mac/win
-    private static final List<String> sNdkPluginTests = ImmutableList.of(
-            "ndkJniLib2",
-            "ndkSanAngeles2",
-            "ndkStandaloneSo",
-            "ndkStl",
-            "ndkVariants"
-    );
-
     private static final String[] sReportProjects = new String[] {
             "basic",
             "flavorlib"
@@ -122,19 +113,6 @@ public class AutomatedBuildTest extends BuildTest {
                         AutomatedBuildTest.class, testName);
                 test.setProjectInfo(FOLDER_TEST_REGULAR, projectName, gradleVersion, TestType.BUILD);
                 suite.addTest(test);
-            }
-
-            // some native tests that run only on linux for now.
-            if (System.getProperty("os.name").equals("Linux")) {
-                for (String projectName : sNdkPluginTests) {
-                    String testName = "build_" + projectName + "_" + gradleVersion;
-
-                    AutomatedBuildTest test = (AutomatedBuildTest) TestSuite.createTest(
-                            AutomatedBuildTest.class, testName);
-                    test.setProjectInfo(FOLDER_TEST_NATIVE, projectName, gradleVersion,
-                            TestType.BUILD);
-                    suite.addTest(test);
-                }
             }
 
             // then the project to run reports on

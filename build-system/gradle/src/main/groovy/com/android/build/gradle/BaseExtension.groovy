@@ -21,7 +21,6 @@ import com.android.build.gradle.api.AndroidSourceSet
 import com.android.build.gradle.api.BaseVariant
 import com.android.build.gradle.api.TestVariant
 import com.android.build.gradle.internal.CompileOptions
-import com.android.build.gradle.internal.NdkLibrarySpecification
 import com.android.build.gradle.internal.SourceSetSourceProviderWrapper
 import com.android.build.gradle.internal.coverage.JacocoExtension
 import com.android.build.gradle.internal.dsl.AaptOptionsImpl
@@ -31,7 +30,6 @@ import com.android.build.gradle.internal.dsl.LintOptionsImpl
 import com.android.build.gradle.internal.dsl.PackagingOptionsImpl
 import com.android.build.gradle.internal.dsl.ProductFlavorDsl
 import com.android.build.gradle.internal.test.TestOptions
-import com.android.build.gradle.ndk.NdkExtension
 import com.android.build.gradle.internal.dsl.Splits
 import com.android.builder.core.BuilderConstants
 import com.android.builder.core.DefaultBuildType
@@ -83,8 +81,6 @@ public abstract class BaseExtension {
     private String defaultPublishConfig = "release"
     private boolean publishNonDefault = false
 
-    NdkLibrarySpecification ndkLib
-    private NdkExtension ndk
     private boolean useNewNativePlugin = false
 
     private Closure<Void> variantFilter
@@ -445,23 +441,11 @@ public abstract class BaseExtension {
         flavorDimensions(groups);
     }
 
-    public void ndk(Action<NdkExtension> action) {
-        action.execute(ndk)
-    }
-
     public boolean getUseNewNativePlugin() {
         return useNewNativePlugin
     }
 
     public void setUseNewNativePlugin(boolean value) {
         useNewNativePlugin = value
-    }
-
-    public setNdkExtension(NdkExtension extension) {
-        this.ndk = extension
-    }
-
-    public ndkLib(String targetProject) {
-        ndkLib = new NdkLibrarySpecification(plugin.project, targetProject);
     }
 }
