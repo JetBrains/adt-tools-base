@@ -66,6 +66,7 @@ public class DeviceTest extends BuildTest {
             "libsTest",
             "migrated",
             "multiDex",
+            "multiDexWithLib",
             "multires",
             "ndkSanAngeles",
             "ndkJniLib",

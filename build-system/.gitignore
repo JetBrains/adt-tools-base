@@ -23,6 +23,7 @@ tests/regular/libsTest/*/build
 tests/regular/multiproject/*/build
 tests/regular/localAarTest/*/build
 tests/regular/localJars/*/build
+tests/regular/multiDexWithLib/*/build
 tests/regular/ndkJniLib/*/build
 tests/regular/packagingOptions/jars/*/build
 tests/regular/proguardLib/*/build

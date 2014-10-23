@@ -1,0 +1,17 @@
+apply plugin: 'com.android.library'
+
+android {
+  compileSdkVersion 19
+  buildToolsVersion = rootProject.ext.buildToolsVersion
+
+  defaultConfig {
+    minSdkVersion 21
+  }
+
+  buildTypes {
+    debug {
+      // needed for the test app.
+      multiDex = true
+    }
+  }
+}

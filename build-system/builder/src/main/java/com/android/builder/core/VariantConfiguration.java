@@ -1026,6 +1026,7 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
         if (mTestedConfig != null) {
             return mTestedConfig.getMinSdkVersion();
         }
+
         ApiVersion minSdkVersion = mMergedFlavor.getMinSdkVersion();
         if (minSdkVersion == null) {
             // read it from the main manifest

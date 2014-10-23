@@ -67,6 +67,7 @@ public class AutomatedBuildTest extends BuildTest {
             "localJars",
             "migrated",
             "multiDex",
+            "multiDexWithLib",
             "multiproject",
             "multires",
             "ndkJniLib",

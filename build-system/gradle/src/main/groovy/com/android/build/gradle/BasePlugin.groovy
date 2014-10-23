@@ -1918,6 +1918,15 @@ public abstract class BasePlugin {
         return testTask
     }
 
+    static boolean isMultiDex(VariantConfiguration config) {
+        ApiVersion minSdkVersion = config.minSdkVersion
+        if (minSdkVersion.apiLevel >= 21) {
+            return config.multiDex
+        }
+
+        return false
+    }
+
     /**
      * Creates the post-compilation tasks for the given Variant.
      *
@@ -1950,12 +1959,7 @@ public abstract class BasePlugin {
         dexTask.dexOptions = extension.dexOptions
 
         dexTask.conventionMapping.multiDex = {
-            ApiVersion minSdkVersion = config.minSdkVersion
-            if (minSdkVersion.apiLevel >= 21) {
-                return config.multiDex
-            }
-
-            return false
+            isMultiDex(config)
         }
 
         JacocoInstrumentTask jacocoTask = null
@@ -1992,12 +1996,17 @@ public abstract class BasePlugin {
             PreDex preDexTask = null;
             boolean runPreDex = extension.dexOptions.preDexLibraries
             if (runPreDex) {
-                def preDexTaskName = "preDex${variantData.variantConfiguration.fullName.capitalize()}"
+                def preDexTaskName = "preDex${config.fullName.capitalize()}"
                 preDexTask = project.tasks.create(preDexTaskName, PreDex)
 
-                preDexTask.dependsOn variantData.variantDependency.packageConfiguration.buildDependencies
+                variantData.preDexTask = preDexTask
+                preDexTask.dependsOn variantData.prepareDependenciesTask
                 preDexTask.plugin = this
                 preDexTask.dexOptions = extension.dexOptions
+
+                preDexTask.conventionMapping.multiDex = {
+                    return isMultiDex(config)
+                }
 
                 preDexTask.conventionMapping.inputFiles = {
                     Set<File> set = androidBuilder.getPackagedJars(config)
@@ -2009,7 +2018,7 @@ public abstract class BasePlugin {
                 }
                 preDexTask.conventionMapping.outputFolder = {
                     project.file(
-                            "${project.buildDir}/${FD_INTERMEDIATES}/pre-dexed/${variantData.variantConfiguration.dirName}")
+                            "${project.buildDir}/${FD_INTERMEDIATES}/pre-dexed/${config.dirName}")
                 }
 
                 if (agentTask != null) {
@@ -2023,7 +2032,7 @@ public abstract class BasePlugin {
             if (runPreDex) {
                 dexTask.dependsOn preDexTask
             } else {
-                dexTask.dependsOn variantData.variantDependency.packageConfiguration.buildDependencies
+                dexTask.dependsOn variantData.prepareDependenciesTask
             }
 
             dexTask.conventionMapping.inputFiles = {
@@ -2034,10 +2043,18 @@ public abstract class BasePlugin {
                 variantData.javaCompileTask.outputs.files.files
             }
             if (runPreDex) {
+                // if multi-dex is enabled, then each library will just be added to the
+                // package task.
                 dexTask.conventionMapping.libraries = {
+                    if (isMultiDex(config)) {
+                        return Collections.emptyList()
+                    }
+
                     return project.fileTree(preDexTask.outputFolder).files
                 }
             } else {
+                // this is the case where we don't have proguard, so we need to manually
+                // regather the packaged lib and package them.
                 dexTask.conventionMapping.libraries = {
                     Set<File> set = androidBuilder.getPackagedJars(config)
                     if (agentTask != null) {
@@ -2062,10 +2079,9 @@ public abstract class BasePlugin {
 
         // ----- Create Jill tasks -----
         JillTask jillRuntimeTask = project.tasks.create(
-                "jill${variantData.variantConfiguration.fullName.capitalize()}RuntimeLibraries",
+                "jill${config.fullName.capitalize()}RuntimeLibraries",
                 JillTask)
 
-        jillRuntimeTask.dependsOn variantData.variantDependency.packageConfiguration.buildDependencies
         jillRuntimeTask.plugin = this
         jillRuntimeTask.dexOptions = extension.dexOptions
 
@@ -2074,16 +2090,16 @@ public abstract class BasePlugin {
         }
         jillRuntimeTask.conventionMapping.outputFolder = {
             project.file(
-                    "${project.buildDir}/${FD_INTERMEDIATES}/jill/${variantData.variantConfiguration.dirName}/runtime")
+                    "${project.buildDir}/${FD_INTERMEDIATES}/jill/${config.dirName}/runtime")
         }
 
         // ----
 
         JillTask jillPackagedTask = project.tasks.create(
-                "jill${variantData.variantConfiguration.fullName.capitalize()}PackagedLibraries",
+                "jill${config.fullName.capitalize()}PackagedLibraries",
                 JillTask)
 
-        jillPackagedTask.dependsOn variantData.variantDependency.packageConfiguration.buildDependencies
+        jillPackagedTask.dependsOn variantData.prepareDependenciesTask
         jillPackagedTask.plugin = this
         jillPackagedTask.dexOptions = extension.dexOptions
 
@@ -2092,13 +2108,13 @@ public abstract class BasePlugin {
         }
         jillPackagedTask.conventionMapping.outputFolder = {
             project.file(
-                    "${project.buildDir}/${FD_INTERMEDIATES}/jill/${variantData.variantConfiguration.dirName}/packaged")
+                    "${project.buildDir}/${FD_INTERMEDIATES}/jill/${config.dirName}/packaged")
         }
 
 
         // ----- Create Jack Task -----
         JackTask compileTask = project.tasks.create(
-                "compile${variantData.variantConfiguration.fullName.capitalize()}Java",
+                "compile${config.fullName.capitalize()}Java",
                 JackTask)
         variantData.jackTask = compileTask
         variantData.jackTask.dependsOn variantData.sourceGenTask, jillRuntimeTask, jillPackagedTask
@@ -2129,15 +2145,15 @@ public abstract class BasePlugin {
         }
 
         compileTask.conventionMapping.destinationDir = {
-            project.file("$project.buildDir/${FD_INTERMEDIATES}/dex/${variantData.variantConfiguration.dirName}")
+            project.file("$project.buildDir/${FD_INTERMEDIATES}/dex/${config.dirName}")
         }
 
         compileTask.conventionMapping.jackFile = {
-            project.file("$project.buildDir/${FD_INTERMEDIATES}/classes/${variantData.variantConfiguration.dirName}/classes.zip")
+            project.file("$project.buildDir/${FD_INTERMEDIATES}/classes/${config.dirName}/classes.zip")
         }
 
         compileTask.conventionMapping.tempFolder = {
-            project.file("$project.buildDir/${FD_INTERMEDIATES}/tmp/jack/${variantData.variantConfiguration.dirName}")
+            project.file("$project.buildDir/${FD_INTERMEDIATES}/tmp/jack/${config.dirName}")
         }
 
         // set source/target compatibility
@@ -2220,6 +2236,13 @@ public abstract class BasePlugin {
 
                 if (variantData.jackTask != null) {
                     return variantData.jackTask.getDestinationDir()
+                }
+
+                return null
+            }
+            packageApp.conventionMapping.dexedLibraries = {
+                if (isMultiDex(config) && variantData.preDexTask != null) {
+                    return project.fileTree(variantData.preDexTask.outputFolder).files
                 }
 
                 return null
