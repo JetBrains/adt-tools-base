@@ -137,8 +137,8 @@ public class SystemImagePackage extends MajorRevisionPackage
 
             desc = PkgDesc.Builder
                     .newAddonSysImg(mVersion,
-                                    mTag,
                                     vendor,
+                                    mTag,
                                     mAbi,
                                     (MajorRevision) getRevision())
                     .setDescriptions(this)
@@ -208,8 +208,8 @@ public class SystemImagePackage extends MajorRevisionPackage
 
             desc = PkgDesc.Builder
                     .newAddonSysImg(mVersion,
-                                    mTag,
                                     vendor,
+                                    mTag,
                                     mAbi,
                                     (MajorRevision) getRevision())
                     .setDescriptions(this)
