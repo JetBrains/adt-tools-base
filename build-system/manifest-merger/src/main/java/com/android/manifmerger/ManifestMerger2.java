@@ -587,8 +587,7 @@ public class ManifestMerger2 {
                 String value,
                 XmlElement to) {
 
-            String toolsPrefix = XmlUtils.lookupNamespacePrefix(
-                    to.getXml(), SdkConstants.ANDROID_URI, SdkConstants.ANDROID_NS_NAME, false);
+            String toolsPrefix = getAndroidPrefix(to.getXml());
             to.getXml().setAttributeNS(SdkConstants.ANDROID_URI,
                     toolsPrefix + XmlUtils.NS_SEPARATOR + systemProperty.toCamelCase(),
                     value);
@@ -620,6 +619,12 @@ public class ManifestMerger2 {
             NodeList usesSdks = manifest
                     .getElementsByTagName(ManifestModel.NodeTypes.USES_SDK.toXmlName());
             if (usesSdks.getLength() == 0) {
+                usesSdks = manifest
+                        .getElementsByTagNameNS(
+                                SdkConstants.ANDROID_URI,
+                                ManifestModel.NodeTypes.USES_SDK.toXmlName());
+            }
+            if (usesSdks.getLength() == 0) {
                 // create it first.
                 Element useSdk = manifest.getOwnerDocument().createElement(
                         ManifestModel.NodeTypes.USES_SDK.toXmlName());
@@ -638,6 +643,18 @@ public class ManifestMerger2 {
                 return new XmlElement((Element) usesSdks.item(0), document);
             }
         }
+    }
+
+    private static String getAndroidPrefix(Element xml) {
+        String toolsPrefix = XmlUtils.lookupNamespacePrefix(
+                xml, SdkConstants.ANDROID_URI, SdkConstants.ANDROID_NS_NAME, false);
+        if (!toolsPrefix.equals(SdkConstants.ANDROID_NS_NAME) && xml.getOwnerDocument()
+                .getDocumentElement().getAttribute("xmlns:" + toolsPrefix) == null) {
+            // this is weird, the document is using "android" prefix but it's not bound
+            // to our namespace. Add the proper xmlns declaration.
+            xml.setAttribute("xmlns:" + toolsPrefix, SdkConstants.ANDROID_URI);
+        }
+        return toolsPrefix;
     }
 
     /**
