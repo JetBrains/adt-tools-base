@@ -51,6 +51,7 @@ public class ManifestMerger2Test extends ManifestMergerTest {
             "03_inject_attributes.xml",
             "05_inject_package.xml",
             "05_inject_package_placeholder.xml",
+            "05_inject_package_with_overlays.xml",
             "06_inject_attributes_with_specific_prefix.xml",
             "07_no_package_provided.xml",
             "08_no_library_package_provided.xml",

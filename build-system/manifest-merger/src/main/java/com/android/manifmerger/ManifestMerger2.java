@@ -142,6 +142,7 @@ public class ManifestMerger2 {
         // force the re-parsing of the xml as elements may have been added through system
         // property injection.
         loadedMainManifestInfo = new LoadedManifestInfo(loadedMainManifestInfo,
+                loadedMainManifestInfo.getOriginalPackageName(),
                 loadedMainManifestInfo.getXmlDocument().reparse());
 
         // invariant : xmlDocumentOptional holds the higher priority document and we try to
@@ -159,8 +160,9 @@ public class ManifestMerger2 {
             Optional<XmlAttribute> packageAttribute =
                     overlayDocument.getXmlDocument().getPackage();
             // if both files declare a package name, it should be the same.
-            if (mainPackageAttribute.isPresent() && packageAttribute.isPresent()
-                    && !mainPackageAttribute.get().getValue().equals(
+            if (loadedMainManifestInfo.getOriginalPackageName().isPresent() &&
+                    packageAttribute.isPresent()
+                    && !loadedMainManifestInfo.getOriginalPackageName().get().equals(
                     packageAttribute.get().getValue())) {
                 // no suggestion for library since this is actually forbidden to change the
                 // the package name per flavor.
@@ -194,6 +196,8 @@ public class ManifestMerger2 {
                 return mergingReportBuilder.build();
             }
 
+            overlayDocument.getXmlDocument().getRootNode().getXml().setAttribute("package",
+                    mainPackageAttribute.get().getValue());
             xmlDocumentOptional = merge(xmlDocumentOptional, overlayDocument, mergingReportBuilder);
 
             if (!xmlDocumentOptional.isPresent()) {
@@ -341,6 +345,7 @@ public class ManifestMerger2 {
             throw new MergeFailureException(e);
         }
 
+        String originalPackageName = xmlDocument.getPackageName();
         MergingReport.Builder builder = manifestInfo.getType() == XmlDocument.Type.MAIN
                 ? mergingReportBuilder
                 : new MergingReport.Builder(mergingReportBuilder.getLogger());
@@ -352,7 +357,8 @@ public class ManifestMerger2 {
         // are used in key attributes.
         performPlaceHolderSubstitution(manifestInfo, xmlDocument, builder);
 
-        return new LoadedManifestInfo(manifestInfo, xmlDocument);
+        return new LoadedManifestInfo(manifestInfo,
+                Optional.fromNullable(originalPackageName), xmlDocument);
     }
 
     private void performPlaceHolderSubstitution(ManifestInfo manifestInfo,
@@ -454,7 +460,9 @@ public class ManifestMerger2 {
                 builder.build().log(mLogger);
             }
 
-            loadedLibraryDocuments.add(new LoadedManifestInfo(manifestInfo, libraryDocument));
+            loadedLibraryDocuments.add(new LoadedManifestInfo(manifestInfo,
+                    Optional.fromNullable(libraryDocument.getPackageName()),
+                    libraryDocument));
         }
         return loadedLibraryDocuments.build();
     }
@@ -958,18 +966,28 @@ public class ManifestMerger2 {
 
     private static class LoadedManifestInfo extends ManifestInfo {
 
-        private final XmlDocument mXmlDocument;
+        @NonNull private final XmlDocument mXmlDocument;
+        @NonNull private final Optional<String> mOriginalPackageName;
 
-        private LoadedManifestInfo(ManifestInfo manifestInfo ,XmlDocument xmlDocument) {
+        private LoadedManifestInfo(@NonNull ManifestInfo manifestInfo,
+                @NonNull Optional<String> originalPackageName,
+                @NonNull XmlDocument xmlDocument) {
             super(manifestInfo.mName,
                     manifestInfo.mLocation,
                     manifestInfo.mType,
                     manifestInfo.getMainManifestPackageName());
             mXmlDocument = xmlDocument;
+            mOriginalPackageName = originalPackageName;
         }
 
+        @NonNull
         public XmlDocument getXmlDocument() {
             return mXmlDocument;
+        }
+
+        @NonNull
+        public Optional<String> getOriginalPackageName() {
+            return mOriginalPackageName;
         }
     }
 
