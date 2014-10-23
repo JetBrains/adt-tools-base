@@ -430,24 +430,6 @@ public class ManualBuildTest extends BuildTest {
         checkVersionCode(project, null, expected, "densitySplit");
     }
 
-    public void testDensitySplitWithOldMerger() throws Exception {
-        File project = new File(regularDir, "densitySplitWithOldMerger");
-
-        runTasksOn(
-                project,
-                BasePlugin.GRADLE_TEST_VERSION,
-                "clean", "assembleDebug");
-
-        Map<String, Integer> expected = Maps.newHashMapWithExpectedSize(5);
-        expected.put("universal", 112);
-        expected.put("mdpi", 212);
-        expected.put("hdpi", 312);
-        expected.put("xhdpi", 412);
-        expected.put("xxhdpi", 512);
-
-        checkVersionCode(project, null, expected, "densitySplitWithOldMerger");
-    }
-
     public void testAbiSplits() throws Exception {
         File project = new File(regularDir, "ndkJniLib");
 

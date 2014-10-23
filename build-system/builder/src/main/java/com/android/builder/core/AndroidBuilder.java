@@ -64,10 +64,7 @@ import com.android.ide.common.internal.PngCruncher;
 import com.android.ide.common.signing.CertificateInfo;
 import com.android.ide.common.signing.KeystoreHelper;
 import com.android.ide.common.signing.KeytoolException;
-import com.android.manifmerger.ICallback;
-import com.android.manifmerger.ManifestMerger;
 import com.android.manifmerger.ManifestMerger2;
-import com.android.manifmerger.MergerLog;
 import com.android.manifmerger.MergingReport;
 import com.android.manifmerger.PlaceholderHandler;
 import com.android.manifmerger.XmlDocument;
@@ -76,7 +73,6 @@ import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.repository.FullRevision;
 import com.android.utils.ILogger;
 import com.android.utils.Pair;
-import com.android.utils.SdkUtils;
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
@@ -116,7 +112,7 @@ import java.util.regex.Pattern;
  *
  * then build steps can be done with
  * {@link #mergeManifests(java.io.File, java.util.List, java.util.List, String, int, String, String, String, Integer, String, com.android.manifmerger.ManifestMerger2.MergeType, java.util.Map)}
- * {@link #processTestManifest2(String, String, String, String, String, Boolean, Boolean, java.io.File, java.util.List, java.io.File, java.io.File)}
+ * {@link #processTestManifest(String, String, String, String, String, Boolean, Boolean, java.io.File, java.util.List, java.io.File, java.io.File)}
  * {@link #processResources(java.io.File, java.io.File, java.io.File, java.util.List, String, String, String, String, String, com.android.builder.core.VariantConfiguration.Type, boolean, com.android.builder.model.AaptOptions, java.util.Collection, boolean, java.util.Collection)}
  * {@link #compileAllAidlFiles(java.util.List, java.io.File, java.io.File, java.util.List, com.android.builder.compiling.DependencyFileProcessor)}
  * {@link #convertByteCode(Iterable, Iterable, java.io.File, boolean, DexOptions, java.util.List, boolean)}
@@ -566,202 +562,6 @@ public class AndroidBuilder {
     }
 
     /**
-     * Merges all the manifests into a single manifest
-     *
-     * @param mainManifest The main manifest of the application.
-     * @param manifestOverlays manifest overlays coming from flavors and build types
-     * @param libraries the library dependency graph
-     * @param packageOverride a package name override. Can be null.
-     * @param versionCode a version code to inject in the manifest or -1 to do nothing.
-     * @param versionName a version name to inject in the manifest or null to do nothing.
-     * @param minSdkVersion a minSdkVersion to inject in the manifest or -1 to do nothing.
-     * @param targetSdkVersion a targetSdkVersion to inject in the manifest or -1 to do nothing.
-     * @param outManifestLocation the output location for the merged manifest
-     *
-     * @see VariantConfiguration#getMainManifest()
-     * @see VariantConfiguration#getManifestOverlays()
-     * @see VariantConfiguration#getDirectLibraries()
-     * @see VariantConfiguration#getMergedFlavor()
-     * @see DefaultProductFlavor#getVersionCode()
-     * @see DefaultProductFlavor#getVersionName()
-     * @see DefaultProductFlavor#getMinSdkVersion()
-     * @see DefaultProductFlavor#getTargetSdkVersion()
-     */
-    public void processManifest(
-            @NonNull  File mainManifest,
-            @NonNull  List<File> manifestOverlays,
-            @NonNull  List<? extends ManifestDependency> libraries,
-                      String packageOverride,
-                      int versionCode,
-                      String versionName,
-            @Nullable String minSdkVersion,
-            @Nullable String targetSdkVersion,
-            @NonNull  String outManifestLocation) {
-        checkNotNull(mainManifest, "mainManifest cannot be null.");
-        checkNotNull(manifestOverlays, "manifestOverlays cannot be null.");
-        checkNotNull(libraries, "libraries cannot be null.");
-        checkNotNull(outManifestLocation, "outManifestLocation cannot be null.");
-        checkState(mTargetInfo != null,
-                "Cannot call processManifest() before setTargetInfo() is called.");
-
-        final IAndroidTarget target = mTargetInfo.getTarget();
-
-        ICallback callback = new ICallback() {
-            @Override
-            public int queryCodenameApiLevel(@NonNull String codename) {
-                if (codename.equals(target.getVersion().getCodename())) {
-                    return target.getVersion().getApiLevel();
-                }
-                return ICallback.UNKNOWN_CODENAME;
-            }
-        };
-
-        try {
-            Map<String, String> attributeInjection = getAttributeInjectionMap(
-                    versionCode, versionName, minSdkVersion, targetSdkVersion);
-
-            if (manifestOverlays.isEmpty() && libraries.isEmpty()) {
-                // if no manifest to merge, just copy to location, unless we have to inject
-                // attributes
-                if (attributeInjection.isEmpty() && packageOverride == null) {
-                    SdkUtils.copyXmlWithSourceReference(mainManifest,
-                            new File(outManifestLocation));
-                } else {
-                    ManifestMerger merger = new ManifestMerger(MergerLog.wrapSdkLog(mLogger),
-                            callback);
-                    doMerge(merger, new File(outManifestLocation), mainManifest,
-                            attributeInjection, packageOverride);
-                }
-            } else {
-                File outManifest = new File(outManifestLocation);
-
-                // first merge the app manifest.
-                if (!manifestOverlays.isEmpty()) {
-                    File mainManifestOut = outManifest;
-
-                    // if there is also libraries, put this in a temp file.
-                    if (!libraries.isEmpty()) {
-                        // TODO find better way of storing intermediary file?
-                        mainManifestOut = File.createTempFile("manifestMerge", ".xml");
-                        mainManifestOut.deleteOnExit();
-                    }
-
-                    ManifestMerger merger = new ManifestMerger(MergerLog.wrapSdkLog(mLogger),
-                            callback);
-                    doMerge(merger, mainManifestOut, mainManifest, manifestOverlays,
-                            attributeInjection, packageOverride);
-
-                    // now the main manifest is the newly merged one
-                    mainManifest = mainManifestOut;
-                    // and the attributes have been inject, no need to do it below
-                    attributeInjection = null;
-                }
-
-                if (!libraries.isEmpty()) {
-                    // recursively merge all manifests starting with the leaves and up toward the
-                    // root (the app)
-                    mergeLibraryManifests(mainManifest, libraries,
-                            new File(outManifestLocation), attributeInjection, packageOverride,
-                            callback);
-                }
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    /**
-     * Creates the manifest for a test variant
-     *
-     * @param testApplicationId the application id of the test application
-     * @param minSdkVersion the minSdkVersion of the test application
-     * @param targetSdkVersion the targetSdkVersion of the test application
-     * @param testedApplicationId the application id of the tested application
-     * @param instrumentationRunner the name of the instrumentation runner
-     * @param handleProfiling whether or not the Instrumentation object will turn profiling on and off
-     * @param functionalTest whether or not the Instrumentation class should run as a functional test
-     * @param libraries the library dependency graph
-     * @param outManifest the output location for the merged manifest
-     *
-     * @see VariantConfiguration#getApplicationId()
-     * @see VariantConfiguration#getTestedConfig()
-     * @see VariantConfiguration#getMinSdkVersion()
-     * @see VariantConfiguration#getTestedApplicationId()
-     * @see VariantConfiguration#getInstrumentationRunner()
-     * @see VariantConfiguration#getHandleProfiling()
-     * @see VariantConfiguration#getFunctionalTest()
-     * @see VariantConfiguration#getDirectLibraries()
-     */
-    public void processTestManifest(
-            @NonNull  String testApplicationId,
-            @Nullable String minSdkVersion,
-            @Nullable String targetSdkVersion,
-            @NonNull  String testedApplicationId,
-            @NonNull  String instrumentationRunner,
-            @NonNull  Boolean handleProfiling,
-            @NonNull  Boolean functionalTest,
-            @NonNull  List<? extends ManifestDependency> libraries,
-            @NonNull  File outManifest) {
-        checkNotNull(testApplicationId, "testApplicationId cannot be null.");
-        checkNotNull(testedApplicationId, "testedApplicationId cannot be null.");
-        checkNotNull(instrumentationRunner, "instrumentationRunner cannot be null.");
-        checkNotNull(handleProfiling, "handleProfiling cannot be null.");
-        checkNotNull(functionalTest, "functionalTest cannot be null.");
-        checkNotNull(libraries, "libraries cannot be null.");
-        checkNotNull(outManifest, "outManifestLocation cannot be null.");
-        checkState(mTargetInfo != null,
-                "Cannot call processTestManifest() before setTargetInfo() is called.");
-
-        final IAndroidTarget target = mTargetInfo.getTarget();
-
-        ICallback callback = new ICallback() {
-            @Override
-            public int queryCodenameApiLevel(@NonNull String codename) {
-                if (codename.equals(target.getVersion().getCodename())) {
-                    return target.getVersion().getApiLevel();
-                }
-                return ICallback.UNKNOWN_CODENAME;
-            }
-        };
-
-        if (!libraries.isEmpty()) {
-            try {
-                // create the test manifest, merge the libraries in it
-                File generatedTestManifest = File.createTempFile("manifestMerge", ".xml");
-
-                generateTestManifest(
-                        testApplicationId,
-                        minSdkVersion,
-                        targetSdkVersion,
-                        testedApplicationId,
-                        instrumentationRunner,
-                        handleProfiling,
-                        functionalTest,
-                        generatedTestManifest);
-
-                mergeLibraryManifests(
-                        generatedTestManifest,
-                        libraries,
-                        outManifest,
-                        null, null,
-                        callback);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        } else {
-            generateTestManifest(
-                    testApplicationId,
-                    minSdkVersion,
-                    targetSdkVersion,
-                    testedApplicationId,
-                    instrumentationRunner,
-                    handleProfiling,
-                    functionalTest,
-                    outManifest);
-        }
-    }
-
-    /**
      * Creates the manifest for a test variant
      *
      * @param testApplicationId the application id of the test application
@@ -784,18 +584,18 @@ public class AndroidBuilder {
      * @see VariantConfiguration#getFunctionalTest()
      * @see VariantConfiguration#getDirectLibraries()
      */
-    public void processTestManifest2(
-            @NonNull  String testApplicationId,
+    public void processTestManifest(
+            @NonNull String testApplicationId,
             @Nullable String minSdkVersion,
             @Nullable String targetSdkVersion,
-            @NonNull  String testedApplicationId,
-            @NonNull  String instrumentationRunner,
-            @NonNull  Boolean handleProfiling,
-            @NonNull  Boolean functionalTest,
+            @NonNull String testedApplicationId,
+            @NonNull String instrumentationRunner,
+            @NonNull Boolean handleProfiling,
+            @NonNull Boolean functionalTest,
             @Nullable File testManifestFile,
-            @NonNull  List<? extends ManifestDependency> libraries,
-            @NonNull  File outManifest,
-            @NonNull  File tmpDir) {
+            @NonNull List<? extends ManifestDependency> libraries,
+            @NonNull File outManifest,
+            @NonNull File tmpDir) {
         checkNotNull(testApplicationId, "testApplicationId cannot be null.");
         checkNotNull(testedApplicationId, "testedApplicationId cannot be null.");
         checkNotNull(instrumentationRunner, "instrumentationRunner cannot be null.");
@@ -943,57 +743,6 @@ public class AndroidBuilder {
                     targetSdkVersion);
         }
         return attributeInjection;
-    }
-
-    /**
-     * Merges library manifests into a main manifest.
-     * @param mainManifest the main manifest
-     * @param directLibraries the libraries to merge
-     * @param outManifest the output file
-     * @throws IOException
-     */
-    private void mergeLibraryManifests(
-            File mainManifest,
-            Iterable<? extends ManifestDependency> directLibraries,
-            File outManifest, Map<String, String> attributeInjection,
-            String packageOverride,
-            @NonNull ICallback callback)
-            throws IOException {
-
-        List<File> manifests = Lists.newArrayList();
-        for (ManifestDependency library : directLibraries) {
-            Collection<? extends ManifestDependency> subLibraries = library.getManifestDependencies();
-            if (subLibraries.isEmpty()) {
-                manifests.add(library.getManifest());
-            } else {
-                File mergeLibManifest = File.createTempFile("manifestMerge", ".xml");
-                mergeLibManifest.deleteOnExit();
-
-                // don't insert the attribute injection into libraries
-                mergeLibraryManifests(
-                        library.getManifest(), subLibraries, mergeLibManifest, null, null, callback);
-
-                manifests.add(mergeLibManifest);
-            }
-        }
-
-        ManifestMerger merger = new ManifestMerger(MergerLog.wrapSdkLog(mLogger), callback);
-        doMerge(merger, outManifest, mainManifest, manifests, attributeInjection, packageOverride);
-    }
-
-    private void doMerge(ManifestMerger merger, File output, File input,
-                               Map<String, String> injectionMap, String packageOverride) {
-        List<File> list = Collections.emptyList();
-        doMerge(merger, output, input, list, injectionMap, packageOverride);
-    }
-
-    private void doMerge(ManifestMerger merger, File output, File input, List<File> subManifests,
-                               Map<String, String> injectionMap, String packageOverride) {
-        if (!merger.process(output, input,
-                subManifests.toArray(new File[subManifests.size()]),
-                injectionMap, packageOverride)) {
-            throw new RuntimeException("Manifest merging failed. See console for more info.");
-        }
     }
 
     /**
