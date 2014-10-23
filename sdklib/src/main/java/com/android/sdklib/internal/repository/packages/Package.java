@@ -389,7 +389,7 @@ public abstract class Package implements IDescription, IListDescription, Compara
      * Can be empty but not null.
      */
     @NonNull
-    protected String getDescription() {
+    public String getDescription() {
         return mDescription;
     }
 
