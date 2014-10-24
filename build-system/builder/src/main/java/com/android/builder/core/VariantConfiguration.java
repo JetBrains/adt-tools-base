@@ -928,7 +928,7 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
      */
     public int getVersionCode() {
         int versionCode = mMergedFlavor.getVersionCode() != null ?
-                mMergedFlavor.getVersionCode() : 1;
+                mMergedFlavor.getVersionCode() : -1;
 
         if (versionCode == -1 && mType != Type.TEST) {
 
