@@ -91,4 +91,29 @@ abstract class ReadOnlyBaseConfig implements BaseConfig {
     public Boolean getMultiDex() {
         return baseConfig.getMultiDex();
     }
+
+    /**
+     * Some build scripts add dynamic properties to flavors declaration (and others) and expect
+     * to retrieve such properties values through this model. Delegate any property we don't
+     * know about to the {@see BaseConfig} groovy object which hopefully will know about the
+     * dynamic property.
+     * @param name the property name
+     * @return the property value if exists or an exception will be thrown.
+     */
+    def propertyMissing(String name) {
+        try {
+            baseConfig."$name"
+        } catch(MissingPropertyException e) {
+            // do not leak implementation types, replace the delegate with ourselves in the message
+            throw new MissingPropertyException("Could not find ${name} on ${this}")
+        }
+    }
+
+    /**
+     * Do not authorize setting dynamic properties values and provide a meaningful error message.
+     */
+    def propertyMissing(String name, value)  {
+        throw new RuntimeException("Cannot set property @{name} on read-only ${baseConfig.class}")
+    }
+
 }
