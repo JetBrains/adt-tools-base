@@ -234,6 +234,7 @@ public class XmlDocument {
         };
     }
 
+    @NonNull
     public XmlLoader.SourceLocation getSourceLocation() {
         return mSourceLocation;
     }
