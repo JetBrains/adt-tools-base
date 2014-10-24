@@ -112,6 +112,28 @@ public class GradleVariantConfiguration extends VariantConfiguration<BuildTypeDs
                 (type != TEST || (getTestedConfig().getType() != Type.LIBRARY));
     }
 
+    public boolean getUseJack() {
+        Boolean value = getBuildType().getUseJack();
+        if (value != null) {
+            return value;
+        }
+
+        // cant use merge flavor as useJack is not a prop on the base class.
+        for (ProductFlavorDsl productFlavorDsl : getProductFlavors()) {
+            value = productFlavorDsl.getUseJack();
+            if (value != null) {
+                return value;
+            }
+        }
+
+        value = getDefaultConfig().getUseJack();
+        if (value != null) {
+            return value;
+        }
+
+        return false;
+    }
+
     private void computeNdkConfig() {
         mMergedNdkConfig.reset();
 

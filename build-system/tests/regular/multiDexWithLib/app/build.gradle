@@ -5,19 +5,25 @@ android {
   buildToolsVersion = rootProject.ext.buildToolsVersion
 
   defaultConfig {
-    minSdkVersion 21
-
     buildConfigField "String", "FOO", "\"foo\""
 
-    multiDex = true
+    multiDexEnabled = true
+    useJack rootProject.ext.useJack
+  }
+
+  productFlavors {
+    ics {
+      minSdkVersion 14
+    }
+    lollipop {
+      minSdkVersion 21
+    }
   }
 
   buildTypes {
     debug {
       buildConfigField "String", "FOO", "\"bar\""
       resValue "string", "foo", "foo2"
-
-      useJack rootProject.ext.useJack
     }
   }
 }

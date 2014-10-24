@@ -222,7 +222,6 @@ public class AndroidProjectTest extends TestCase {
         return projectData;
     }
 
-
     private Map<String, ProjectData> getModelForMultiProject(String testFolder, String projectName)
             throws Exception {
         // Configure the connector and create the connection

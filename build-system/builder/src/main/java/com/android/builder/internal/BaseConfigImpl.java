@@ -40,7 +40,7 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
     private final List<File> mConsumerProguardFiles = Lists.newArrayList();
     private final Map<String, String> mManifestPlaceholders = Maps.newHashMap();
     @Nullable
-    private Boolean mMultiDex;
+    private Boolean mMultiDexEnabled;
 
     public void addBuildConfigField(@NonNull ClassField field) {
         mBuildConfigFields.put(field.getName(), field);
@@ -111,7 +111,7 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
         mManifestPlaceholders.clear();
         mManifestPlaceholders.putAll(that.getManifestPlaceholders());
 
-        mMultiDex = that.getMultiDex();
+        mMultiDexEnabled = that.getMultiDexEnabled();
     }
 
     private void setBuildConfigFields(@NonNull Map<String, ClassField> fields) {
@@ -126,12 +126,12 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
 
     @Override
     @Nullable
-    public Boolean getMultiDex() {
-        return mMultiDex;
+    public Boolean getMultiDexEnabled() {
+        return mMultiDexEnabled;
     }
 
-    public void setMultiDex(@Nullable Boolean multiDex) {
-        mMultiDex = multiDex;
+    public void setMultiDexEnabled(@Nullable Boolean multiDex) {
+        mMultiDexEnabled = multiDex;
     }
 
     @Override
@@ -154,7 +154,8 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
         if (!mManifestPlaceholders.equals(that.mManifestPlaceholders)) {
             return false;
         }
-        if (mMultiDex != null ? !mMultiDex.equals(that.mMultiDex) : that.mMultiDex != null) {
+        if (mMultiDexEnabled != null ? !mMultiDexEnabled.equals(that.mMultiDexEnabled) :
+                that.mMultiDexEnabled != null) {
             return false;
         }
         if (!mProguardFiles.equals(that.mProguardFiles)) {
@@ -174,7 +175,7 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
         result = 31 * result + mProguardFiles.hashCode();
         result = 31 * result + mConsumerProguardFiles.hashCode();
         result = 31 * result + mManifestPlaceholders.hashCode();
-        result = 31 * result + (mMultiDex != null ? mMultiDex.hashCode() : 0);
+        result = 31 * result + (mMultiDexEnabled != null ? mMultiDexEnabled.hashCode() : 0);
         return result;
     }
 
@@ -186,7 +187,7 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
                 ", mProguardFiles=" + mProguardFiles +
                 ", mConsumerProguardFiles=" + mConsumerProguardFiles +
                 ", mManifestPlaceholders=" + mManifestPlaceholders +
-                ", mMultiDex=" + mMultiDex +
+                ", mMultiDexEnabled=" + mMultiDexEnabled +
                 '}';
     }
 }

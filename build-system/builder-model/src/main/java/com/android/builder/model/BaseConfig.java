@@ -78,5 +78,5 @@ public interface BaseConfig {
      * This can be null if the flag is not set, in which case the default value is used.
      */
     @Nullable
-    Boolean getMultiDex();
+    Boolean getMultiDexEnabled();
 }

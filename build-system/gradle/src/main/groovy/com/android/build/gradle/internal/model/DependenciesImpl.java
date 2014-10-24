@@ -21,9 +21,11 @@ import static com.android.SdkConstants.DOT_JAR;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.BasePlugin;
+import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.dependency.LibraryDependencyImpl;
 import com.android.build.gradle.internal.dependency.VariantDependencies;
 import com.android.build.gradle.internal.variant.BaseVariantData;
+import com.android.builder.core.AndroidBuilder;
 import com.android.builder.dependency.JarDependency;
 import com.android.builder.dependency.LibraryDependency;
 import com.android.builder.model.AndroidLibrary;
@@ -112,8 +114,18 @@ public class DependenciesImpl implements Dependencies, Serializable {
                             jarDep.getResolvedCoordinates()));
         }
 
-        if (variantData.getVariantConfiguration().getRenderscriptSupportMode()) {
-            File supportJar = basePlugin.getAndroidBuilder().getRenderScriptSupportJar();
+        GradleVariantConfiguration variantConfig = variantData.getVariantConfiguration();
+        AndroidBuilder androidBuilder = basePlugin.getAndroidBuilder();
+
+        if (variantConfig.getRenderscriptSupportMode()) {
+            File supportJar = androidBuilder.getRenderScriptSupportJar();
+            if (supportJar != null) {
+                javaLibraries.add(new JavaLibraryImpl(supportJar, null, null));
+            }
+        }
+
+        if (variantConfig.isLegacyMultiDexMode()) {
+            File supportJar = androidBuilder.getMultiDexSupportJar();
             if (supportJar != null) {
                 javaLibraries.add(new JavaLibraryImpl(supportJar, null, null));
             }
