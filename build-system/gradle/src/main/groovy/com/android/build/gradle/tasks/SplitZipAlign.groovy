@@ -16,6 +16,13 @@
 
 package com.android.build.gradle.tasks
 
+import com.android.annotations.NonNull
+import com.android.build.FilterData
+import com.android.build.FilterDataImpl
+import com.android.build.OutputFile
+import com.android.build.gradle.api.ApkOutputFile
+import com.google.common.collect.ImmutableList
+import com.google.common.util.concurrent.Callables
 import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputDirectory
@@ -43,12 +50,44 @@ class SplitZipAlign extends DefaultTask {
     @InputFile
     File zipAlignExe
 
+    ImmutableList<ApkOutputFile> mOutputFiles;
+
+    @NonNull
+    public synchronized  ImmutableList<ApkOutputFile> getOutputSplitFiles() {
+
+        Pattern unalignedPattern = Pattern.compile(
+                "${project.archivesBaseName}-${outputBaseName}-(.*)-unaligned.apk")
+
+        if (mOutputFiles == null) {
+
+            Pattern splitPattern = Pattern.compile(
+                    "${project.archivesBaseName}_${outputBaseName}_(.*).apk")
+
+            ImmutableList.Builder<ApkOutputFile> builder = ImmutableList.builder();
+            for (File file : outputDirectory.listFiles()) {
+                Matcher unaligned = unalignedPattern.matcher(file.getName())
+                Matcher split = splitPattern.matcher(file.getName())
+                if (unaligned.matches() || split.matches()) {
+                    List<FilterData> filters = ImmutableList.of(
+                            FilterData.Builder.build(OutputFile.DENSITY,
+                                    split.matches() ? split.group(1) : unaligned.group(1)))
+                    builder.add(new ApkOutputFile(
+                            OutputFile.OutputType.SPLIT,
+                            filters,
+                            Callables.returning(file)));
+                }
+            }
+            mOutputFiles = builder.build();
+        }
+        return mOutputFiles;
+    }
+
     @TaskAction
     void splitZipAlign() {
 
-        final Pattern unalignedPattern = Pattern.compile(
+        Pattern unalignedPattern = Pattern.compile(
                 "${project.archivesBaseName}-${outputBaseName}-(.*)-unaligned.apk")
-        final Pattern unsignedPattern = Pattern.compile(
+        Pattern unsignedPattern = Pattern.compile(
                 "${project.archivesBaseName}-${outputBaseName}-(.*)-unsigned.apk")
 
         for (File file : inputDirectory.listFiles()) {

@@ -26,6 +26,7 @@ import com.android.ddmlib.testrunner.RemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.TestIdentifier;
 import com.android.ddmlib.testrunner.TestRunResult;
 import com.android.utils.ILogger;
+import com.google.common.base.Joiner;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
@@ -64,10 +65,8 @@ public class SimpleTestCallable implements Callable<Boolean> {
     private final File coverageDir;
     @NonNull
     private final File testApk;
-    @Nullable
-    private final File testedApk;
-    @Nullable
-    private final File[] splitApks;
+    @NonNull
+    private final List<File> testedApks;
     @NonNull
     private final File adbExec;
 
@@ -80,8 +79,7 @@ public class SimpleTestCallable implements Callable<Boolean> {
             @NonNull  String projectName,
             @NonNull  String flavorName,
             @NonNull  File testApk,
-            @Nullable File testedApk,
-            @Nullable File[] splitApks,
+            @NonNull List<File> testedApks,
             @NonNull  File adbExec,
             @NonNull  TestData testData,
             @NonNull  File resultsDir,
@@ -94,9 +92,8 @@ public class SimpleTestCallable implements Callable<Boolean> {
         this.resultsDir = resultsDir;
         this.coverageDir = coverageDir;
         this.testApk = testApk;
-        this.testedApk = testedApk;
+        this.testedApks = testedApks;
         this.testData = testData;
-        this.splitApks = splitApks;
         this.adbExec = adbExec;
         this.timeout = timeout;
         this.logger = logger;
@@ -119,18 +116,17 @@ public class SimpleTestCallable implements Callable<Boolean> {
         try {
             device.connect(timeout, logger);
 
-            if (testedApk != null) {
-                logger.verbose("DeviceConnector '%s': installing %s", deviceName, testedApk);
-                if (splitApks != null) {
+            if (!testedApks.isEmpty()) {
+                logger.verbose("DeviceConnector '%s': installing %s", deviceName, Joiner.on(',').join(testedApks));
+                if (testedApks.size() > 1) {
                     List<String> args = new ArrayList<String>();
                     args.add(adbExec.getAbsolutePath());
                     args.add("install-multiple");
                     args.add("-r");
-                    args.add(testedApk.getAbsolutePath());
-                    // for now, do a simple java exec adb
-                    for (File split : splitApks) {
-                        args.add(split.getAbsolutePath());
+                    for (File testedApk : testedApks) {
+                        args.add(testedApk.getAbsolutePath());
                     }
+                    // for now, do a simple java exec adb
                     ProcessBuilder processBuilder = new ProcessBuilder(args);
                     Process process = processBuilder.start();
                     //Read out dir output
@@ -151,7 +147,7 @@ public class SimpleTestCallable implements Callable<Boolean> {
                         e.printStackTrace();
                     }
                 } else {
-                    device.installPackage(testedApk, timeout, logger);
+                    device.installPackage(testedApks.get(0), timeout, logger);
                 }
             }
 
@@ -255,8 +251,10 @@ public class SimpleTestCallable implements Callable<Boolean> {
                 // would have broken before.
                 uninstall(testApk, testData.getApplicationId(), deviceName);
 
-                if (testedApk != null) {
-                   uninstall(testedApk, testData.getTestedApplicationId(), deviceName);
+                if (!testedApks.isEmpty()) {
+                    for (File testedApk : testedApks) {
+                        uninstall(testedApk, testData.getTestedApplicationId(), deviceName);
+                    }
                 }
             }
 
