@@ -2002,7 +2002,7 @@ public abstract class BasePlugin {
                 preDexTask = project.tasks.create(preDexTaskName, PreDex)
 
                 variantData.preDexTask = preDexTask
-                preDexTask.dependsOn variantData.prepareDependenciesTask
+                preDexTask.dependsOn variantData.variantDependency.packageConfiguration.buildDependencies
                 preDexTask.plugin = this
                 preDexTask.dexOptions = extension.dexOptions
 
@@ -2034,7 +2034,7 @@ public abstract class BasePlugin {
             if (runPreDex) {
                 dexTask.dependsOn preDexTask
             } else {
-                dexTask.dependsOn variantData.prepareDependenciesTask
+                dexTask.dependsOn variantData.variantDependency.packageConfiguration.buildDependencies
             }
 
             dexTask.conventionMapping.inputFiles = {
@@ -2101,7 +2101,7 @@ public abstract class BasePlugin {
                 "jill${config.fullName.capitalize()}PackagedLibraries",
                 JillTask)
 
-        jillPackagedTask.dependsOn variantData.prepareDependenciesTask
+        jillPackagedTask.dependsOn variantData.variantDependency.packageConfiguration.buildDependencies
         jillPackagedTask.plugin = this
         jillPackagedTask.dexOptions = extension.dexOptions
 
