@@ -266,7 +266,7 @@ public class AppModelPlugin extends BasePlugin implements Plugin<Project> {
             DefaultAndroidComponentSpec spec = (DefaultAndroidComponentSpec) componentSpec
 
             VariantManager variantManager = spec.getVariantManager()
-            variantManager.createBaseVariantData(spec.getSigningOverride())
+            variantManager.populateVariantDataList(spec.getSigningOverride())
 
             for (BaseVariantData variantData : variantManager.getVariantDataList()) {
                 binaries.create("${variantData.getName()}Binary", AndroidBinary ) { binary ->
