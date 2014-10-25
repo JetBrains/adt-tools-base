@@ -56,6 +56,10 @@ import java.util.List;
  */
 public class GradleProjectTestRule implements TestRule {
 
+    public static final int DEFAULT_COMPILE_SDK_VERSION = 19;
+
+    public static final String DEFAULT_BUILD_TOOL_VERSION = "20.0.0";
+
     private static final String ANDROID_GRADLE_VERSION = "0.14.0";
 
     private File testDir;
@@ -113,24 +117,14 @@ public class GradleProjectTestRule implements TestRule {
                 assertTrue(sourceDir.mkdirs());
 
                 Files.write(
-                        "ext {\n" +
-                                "    buildToolsVersion = System.env.CUSTOM_BUILDTOOLS != null ? System.env.CUSTOM_BUILDTOOLS : '20.0.0'\n" +
-                                "}\n" +
-                                "\n" +
-                                "buildscript {\n" +
-                                "    def gradleVersion = System.env.CUSTOM_GRADLE != null ? System.env.CUSTOM_GRADLE : '" + ANDROID_GRADLE_VERSION + "'\n" +
-                                "\n" +
-                                "    repositories {\n" +
-                                "        if (System.env.CUSTOM_REPO != null) {\n" +
-                                "            maven { url System.env.CUSTOM_REPO }\n" +
-                                "        } else {\n" +
-                                "            mavenCentral()\n" +
-                                "        }\n" +
-                                "    }\n" +
-                                "    dependencies {\n" +
-                                "        classpath \"com.android.tools.build:gradle:$gradleVersion\"\n" +
-                                "    }\n" +
-                                "}",
+                        "buildscript {\n" +
+                        "    repositories {\n" +
+                        "        maven { url '" + getRepoDir().toString() + "' }\n" +
+                        "    }\n" +
+                        "    dependencies {\n" +
+                        "        classpath \"com.android.tools.build:gradle:" + ANDROID_GRADLE_VERSION + "\"\n" +
+                        "    }\n" +
+                        "}\n",
                         buildFile,
                         Charsets.UTF_8);
 

@@ -70,7 +70,6 @@ public class DeviceTest extends BuildTest {
             "multires",
             "ndkSanAngeles",
             "ndkJniLib",
-            "ndkPrebuilts",
             "ndkLibPrebuilts",
             "overlay1",
             "overlay2",
