@@ -292,16 +292,9 @@ public class VariantManager {
         // Add a compile lint task
         basePlugin.createLintCompileTask();
 
-        Splits splits = basePlugin.getExtension().getSplits();
-        Set<String> densities = splits.getDensityFilters();
-        Set<String> abis = splits.getAbiFilters();
-
-        // check against potentially empty lists. We always need to generate at least one output
-        densities = densities.isEmpty() ? Collections.singleton(NO_FILTER) : densities;
-        abis = abis.isEmpty() ? Collections.singleton(NO_FILTER) : abis;
-
         if (productFlavors.isEmpty()) {
-            createVariantDataForDefaultBuild(densities, abis, signingOverride);
+            createVariantDataForProductFlavors(signingOverride,
+                    Collections.<GroupableProductFlavor>emptyList());
         } else {
             List<String> flavorDimensionList = extension.getFlavorDimensionList();
 
@@ -318,12 +311,12 @@ public class VariantManager {
                             });
 
             // Get a list of all combinations of product flavors.
-            List<ProductFlavorCombo> flavorGroupList = ProductFlavorCombo.createCombinations(
+            List<ProductFlavorCombo> flavorComboList = ProductFlavorCombo.createCombinations(
                     flavorDimensionList,
                     flavorDsl);
 
-            for (ProductFlavorCombo flavorGroup : flavorGroupList) {
-                createVariantDataForFlavoredBuild(densities, abis, signingOverride, flavorGroup.getFlavorList());
+            for (ProductFlavorCombo flavorCombo : flavorComboList) {
+                createVariantDataForProductFlavors(signingOverride, flavorCombo.getFlavorList());
             }
         }
     }
@@ -339,21 +332,19 @@ public class VariantManager {
         Set<String> densities = splits.getDensityFilters();
         Set<String> abis = splits.getAbiFilters();
 
+        // check against potentially empty lists. We always need to generate at least one output
+        densities = densities.isEmpty() ? Collections.singleton(NO_FILTER) : densities;
+        abis = abis.isEmpty() ? Collections.singleton(NO_FILTER) : abis;
+
         ProductFlavorData<ProductFlavorDsl> defaultConfigData = basePlugin.getDefaultConfigData();
+
         ProductFlavorDsl defaultConfig = defaultConfigData.getProductFlavor();
         DefaultAndroidSourceSet defaultConfigSourceSet = defaultConfigData.getSourceSet();
+
         BuildTypeData buildTypeData = buildTypes.get(buildType.getName());
 
         Set<String> compatibleScreens = basePlugin.getExtension().getSplits().getDensity()
                 .getCompatibleScreens();
-
-        final List<ConfigurationProvider> variantProviders = Lists.newArrayListWithCapacity(productFlavorList.size() + 2);
-
-        /// add the container of dependencies
-        // the order of the libraries is important. In descending order:
-        // build types, flavors, defaultConfig.
-        variantProviders.clear();
-        variantProviders.add(buildTypeData);
 
         GradleVariantConfiguration variantConfig = new GradleVariantConfiguration(
                 defaultConfig,
@@ -362,6 +353,14 @@ public class VariantManager {
                 buildTypeData.getSourceSet(),
                 variantFactory.getVariantConfigurationType(),
                 signingOverride);
+
+        // Add the container of dependencies.
+        // The order of the libraries is important, in descending order:
+        // build types, flavors, defaultConfig.
+        final List<ConfigurationProvider> variantProviders =
+                Lists.newArrayListWithCapacity(productFlavorList.size() + 2);
+
+        variantProviders.add(buildTypeData);
 
         for (GroupableProductFlavor productFlavor : productFlavorList) {
             ProductFlavorData<GroupableProductFlavorDsl> data = productFlavors.get(productFlavor.getName());
@@ -381,25 +380,31 @@ public class VariantManager {
         // now add the defaultConfig
         variantProviders.add(basePlugin.getDefaultConfigData().getMainProvider());
 
-        // create the variant and get its internal storage object.
-        BaseVariantData<?> variantData = variantFactory.createVariantData(variantConfig,
-                densities, abis, compatibleScreens);
-
+        // Create variant source sets if necessary.
         NamedDomainObjectContainer<AndroidSourceSet> sourceSetsContainer = extension
                 .getSourceSetsContainer();
 
-        DefaultAndroidSourceSet variantSourceSet = (DefaultAndroidSourceSet) sourceSetsContainer.maybeCreate(
-                variantConfig.getFullName());
-        variantConfig.setVariantSourceProvider(variantSourceSet);
-        // TODO: hmm this won't work
-        //variantProviders.add(new ConfigurationProviderImpl(project, variantSourceSet))
+        if (!productFlavorList.isEmpty()) {
+            DefaultAndroidSourceSet variantSourceSet =
+                    (DefaultAndroidSourceSet) sourceSetsContainer.maybeCreate(
+                            variantConfig.getFullName());
+            variantConfig.setVariantSourceProvider(variantSourceSet);
+            // TODO: hmm this won't work
+            //variantProviders.add(new ConfigurationProviderImpl(project, variantSourceSet))
+        }
 
         if (productFlavorList.size() > 1) {
-            DefaultAndroidSourceSet multiFlavorSourceSet = (DefaultAndroidSourceSet) sourceSetsContainer.maybeCreate(variantConfig.getFlavorName());
+            DefaultAndroidSourceSet multiFlavorSourceSet =
+                    (DefaultAndroidSourceSet) sourceSetsContainer.maybeCreate(
+                            variantConfig.getFlavorName());
             variantConfig.setMultiFlavorSourceProvider(multiFlavorSourceSet);
             // TODO: hmm this won't work
             //variantProviders.add(new ConfigurationProviderImpl(project, multiFlavorSourceSet))
         }
+
+        // create the variant and get its internal storage object.
+        BaseVariantData<?> variantData = variantFactory.createVariantData(variantConfig,
+                densities, abis, compatibleScreens);
 
         VariantDependencies variantDep = VariantDependencies.compute(
                 project, variantConfig.getFullName(),
@@ -415,113 +420,16 @@ public class VariantManager {
     }
 
     /**
-     * Creates VariantData for non-flavored build. This means assembleDebug, assembleRelease, and
-     * other assemble<Type> are directly building the <type> build instead of all build of the given
-     * <type>.
+     * Creates VariantData for a specified list of product flavor.
      *
-     * @param densities the list of density-specific apk to generate. null means universal apk.
-     * @param abis the list of abi-specific apk to generate. null means universal apk.
-     * @param signingOverride a signing override. Generally driven through the IDE.
-     */
-    private void createVariantDataForDefaultBuild(
-            @NonNull Set<String> densities,
-            @NonNull Set<String> abis,
-            @Nullable SigningConfig signingOverride) {
-        BuildTypeData testData = buildTypes.get(extension.getTestBuildType());
-        if (testData == null) {
-            throw new RuntimeException(String.format(
-                    "Test Build Type '%1$s' does not exist.", extension.getTestBuildType()));
-        }
-
-        BaseVariantData<?> testedVariantData = null;
-
-        ProductFlavorData<ProductFlavorDsl> defaultConfigData = basePlugin.getDefaultConfigData();
-
-        ProductFlavorDsl defaultConfig = defaultConfigData.getProductFlavor();
-        DefaultAndroidSourceSet defaultConfigSourceSet = defaultConfigData.getSourceSet();
-
-        Closure<Void> variantFilterClosure = basePlugin.getExtension().getVariantFilter();
-
-        Set<String> compatibleScreens = basePlugin.getExtension().getSplits().getDensity()
-                .getCompatibleScreens();
-
-        for (BuildTypeData buildTypeData : buildTypes.values()) {
-            boolean ignore = false;
-            if (variantFilterClosure != null) {
-                variantFilter.reset(defaultConfig, buildTypeData.getBuildType(), null);
-                variantFilterClosure.call(variantFilter);
-                ignore = variantFilter.isIgnore();
-            }
-
-            if (!ignore) {
-                GradleVariantConfiguration variantConfig = new GradleVariantConfiguration(
-                        defaultConfig,
-                        defaultConfigSourceSet,
-                        buildTypeData.getBuildType(),
-                        buildTypeData.getSourceSet(),
-                        variantFactory.getVariantConfigurationType(),
-                        signingOverride);
-
-                // create the variant, and outputs and get its internal storage object.
-                BaseVariantData<?> variantData = variantFactory.createVariantData(
-                        variantConfig, densities, abis, compatibleScreens);
-
-                // create its dependencies. They'll be resolved below.
-                VariantDependencies variantDep = VariantDependencies.compute(
-                        project, variantConfig.getFullName(),
-                        isVariantPublished(),
-                        variantFactory.isLibrary(),
-                        buildTypeData, defaultConfigData.getMainProvider());
-                variantData.setVariantDependency(variantDep);
-
-                if (buildTypeData == testData) {
-                    testedVariantData = variantData;
-                }
-
-                basePlugin.resolveDependencies(variantDep);
-                variantConfig.setDependencies(variantDep);
-
-                variantDataList.add(variantData);
-            }
-        }
-
-        if (testedVariantData != null) {
-            GradleVariantConfiguration testedConfig = testedVariantData.getVariantConfiguration();
-            // handle the test variant
-            GradleVariantConfiguration testVariantConfig = new GradleVariantConfiguration(
-                    defaultConfig,
-                    defaultConfigData.getTestSourceSet(),
-                    testData.getBuildType(),
-                    null,
-                    VariantConfiguration.Type.TEST, testedConfig,
-                    signingOverride);
-
-            // create the internal storage for this test variant.
-            TestVariantData testVariantData = new TestVariantData(
-                    basePlugin, testVariantConfig, (TestedVariantData) testedVariantData);
-
-            // link the testVariant to the tested variant in the other direction
-            ((TestedVariantData) testedVariantData).setTestVariantData(testVariantData);
-
-            variantDataList.add(testVariantData);
-        }
-    }
-
-    /**
-     * Creates VariantData for a given flavor. This will create tasks for all build types for the
-     * given flavor.
+     * This will create VariantData for all build types of the given flavors.
      *
-     * @param densities the list of density-specific apk to generate. null means universal apk.
-     * @param abis the list of abi-specific apk to generate. null means universal apk.
      * @param signingOverride a signing override. Generally driven through the IDE.
      * @param productFlavorList the flavor(s) to build.
      */
-    private void createVariantDataForFlavoredBuild(
-            @NonNull Set<String> densities,
-            @NonNull Set<String> abis,
+    private void createVariantDataForProductFlavors(
             @Nullable SigningConfig signingOverride,
             @NonNull List<GroupableProductFlavor> productFlavorList) {
-
         BuildTypeData testData = buildTypes.get(extension.getTestBuildType());
         if (testData == null) {
             throw new RuntimeException(String.format(
