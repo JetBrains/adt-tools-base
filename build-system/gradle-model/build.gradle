@@ -2,6 +2,8 @@ apply plugin: 'java'
 apply plugin: 'clone-artifacts'
 apply plugin: 'idea'
 
+def toolingApiVersion = gradle.gradleVersion
+
 // Custom config that cloneArtifact will not look into, since this
 // artifact is not in mavenCentral, but in the gradle repo instead.
 configurations{
@@ -21,8 +23,7 @@ dependencies {
     // this is technically testCompile, but we don't want
     // it in there to avoid breaking cloneArtifact.
     // we'll add it to the test compile classpath manually below
-    gradleRepo gradleApi()
-
+    gradleRepo "org.gradle:gradle-tooling-api:${toolingApiVersion}"
 }
 
 //Include custom for compilation
