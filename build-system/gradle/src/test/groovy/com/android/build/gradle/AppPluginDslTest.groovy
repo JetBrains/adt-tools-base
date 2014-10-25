@@ -288,7 +288,7 @@ public class AppPluginDslTest extends BaseTest {
         println project.android.sourceSets.main.assets.srcDirs
     }
 
-    public void testProguardMappingFile() {
+    public void testObfuscationMappingFile() {
         Project project = ProjectBuilder.builder().withProjectDir(
                 new File(testDir, "${FOLDER_TEST_REGULAR}/basic")).build()
 
@@ -299,7 +299,7 @@ public class AppPluginDslTest extends BaseTest {
 
             buildTypes {
                 release {
-                    runProguard true
+                    minifyEnabled true
                     proguardFile getDefaultProguardFile('proguard-android.txt')
                 }
             }
