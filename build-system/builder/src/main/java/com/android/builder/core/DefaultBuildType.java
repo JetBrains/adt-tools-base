@@ -34,7 +34,7 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
     private int mRenderscriptOptimLevel = 3;
     private String mApplicationIdSuffix = null;
     private String mVersionNameSuffix = null;
-    private boolean mRunProguard = false;
+    private boolean mMinifyEnabled = false;
     private SigningConfig mSigningConfig = null;
     private boolean mEmbedMicroApp = true;
 
@@ -54,7 +54,7 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
         setRenderscriptOptimLevel(that.getRenderscriptOptimLevel());
         setApplicationIdSuffix(that.getApplicationIdSuffix());
         setVersionNameSuffix(that.getVersionNameSuffix());
-        setRunProguard(that.isRunProguard());
+        setMinifyEnabled(that.isMinifyEnabled() );
         setZipAlign(that.isZipAlign());
         setSigningConfig(that.getSigningConfig());
         setEmbedMicroApp(that.isEmbedMicroApp());
@@ -154,16 +154,16 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
         return mVersionNameSuffix;
     }
 
-    /** Whether ProGuard is enabled for this build type. */
+    /** Whether Minify is enabled for this build type. */
     @NonNull
-    public BuildType setRunProguard(boolean runProguard) {
-        mRunProguard = runProguard;
+    public BuildType setMinifyEnabled(boolean enabled) {
+        mMinifyEnabled = enabled;
         return this;
     }
 
     @Override
-    public boolean isRunProguard() {
-        return mRunProguard;
+    public boolean isMinifyEnabled() {
+        return mMinifyEnabled;
     }
 
     /** Whether zipalign is enabled for this build type. */
@@ -214,7 +214,7 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
         if (mJniDebugBuild != buildType.mJniDebugBuild) return false;
         if (mRenderscriptDebugBuild != buildType.mRenderscriptDebugBuild) return false;
         if (mRenderscriptOptimLevel != buildType.mRenderscriptOptimLevel) return false;
-        if (mRunProguard != buildType.mRunProguard) return false;
+        if (mMinifyEnabled != buildType.mMinifyEnabled) return false;
         if (mZipAlign != buildType.mZipAlign) return false;
         if (mApplicationIdSuffix != null ?
                 !mApplicationIdSuffix.equals(buildType.mApplicationIdSuffix) :
@@ -244,7 +244,7 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
         result = 31 * result + mRenderscriptOptimLevel;
         result = 31 * result + (mApplicationIdSuffix != null ? mApplicationIdSuffix.hashCode() : 0);
         result = 31 * result + (mVersionNameSuffix != null ? mVersionNameSuffix.hashCode() : 0);
-        result = 31 * result + (mRunProguard ? 1 : 0);
+        result = 31 * result + (mMinifyEnabled ? 1 : 0);
         result = 31 * result + (mZipAlign ? 1 : 0);
         result = 31 * result + (mSigningConfig != null ? mSigningConfig.hashCode() : 0);
         result = 31 * result + (mEmbedMicroApp ? 1 : 0);
@@ -263,7 +263,7 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
                 .add("renderscriptOptimLevel", mRenderscriptOptimLevel)
                 .add("applicationIdSuffix", mApplicationIdSuffix)
                 .add("versionNameSuffix", mVersionNameSuffix)
-                .add("runProguard", mRunProguard)
+                .add("minify", mMinifyEnabled)
                 .add("zipAlign", mZipAlign)
                 .add("signingConfig", mSigningConfig)
                 .add("embedMicroApp", mEmbedMicroApp)

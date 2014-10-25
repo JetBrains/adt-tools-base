@@ -93,11 +93,11 @@ public interface BuildType extends BaseConfig {
     String getVersionNameSuffix();
 
     /**
-     * Returns whether proguard is enabled for this build type.
+     * Returns whether minification is enabled for this build type.
      *
-     * @return true if proguard is enabled.
+     * @return true if minification is enabled.
      */
-    boolean isRunProguard();
+    boolean isMinifyEnabled();
 
     /**
      * Return whether zipalign is enabled for this build type.
