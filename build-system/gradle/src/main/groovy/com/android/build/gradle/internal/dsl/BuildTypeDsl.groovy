@@ -181,20 +181,22 @@ public class BuildTypeDsl extends DefaultBuildType implements Serializable {
     }
 
     @Override
-    public boolean isRunProguard() {
-        return !useJack && super.isRunProguard();
+    public boolean isMinifyEnabled() {
+        return !useJack && super.isMinifyEnabled();
     }
 
     // ---------------
     // TEMP for compatibility
     // STOPSHIP Remove in 1.0
 
-    /**
-     * Sets the package name.
-     *
-     * @param packageName the package name
-     * @return the flavor object
-     */
+    public BuildType runProguard(boolean enabled) {
+        return setRunProguard(enabled);
+    }
+
+    public BuildType setRunProguard(boolean enabled) {
+        logger.warn("WARNING: runProguard is deprecated (and will soon stop working); change to \"minifyEnabled\" instead");
+        return setMinifyEnabled(enabled)
+    }
 
     /** Package name suffix applied to this build type. */
     @NonNull

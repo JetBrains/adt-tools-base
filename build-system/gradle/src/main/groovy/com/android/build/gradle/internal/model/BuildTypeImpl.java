@@ -38,7 +38,7 @@ class BuildTypeImpl extends BaseConfigImpl implements BuildType, Serializable {
     private int renderscriptOptimLevel;
     private String applicationIdSuffix;
     private String versionNameSuffix;
-    private boolean runProguard;
+    private boolean minifyEnabled;
     private boolean zipAlign;
     private boolean embedMicroApp;
 
@@ -54,7 +54,7 @@ class BuildTypeImpl extends BaseConfigImpl implements BuildType, Serializable {
         clonedBuildType.renderscriptOptimLevel = buildType.getRenderscriptOptimLevel();
         clonedBuildType.applicationIdSuffix = buildType.getApplicationIdSuffix();
         clonedBuildType.versionNameSuffix = buildType.getVersionNameSuffix();
-        clonedBuildType.runProguard = buildType.isRunProguard();
+        clonedBuildType.minifyEnabled = buildType.isMinifyEnabled();
         clonedBuildType.zipAlign = buildType.isZipAlign();
         clonedBuildType.embedMicroApp = buildType.isEmbedMicroApp();
 
@@ -109,8 +109,8 @@ class BuildTypeImpl extends BaseConfigImpl implements BuildType, Serializable {
     }
 
     @Override
-    public boolean isRunProguard() {
-        return runProguard;
+    public boolean isMinifyEnabled() {
+        return minifyEnabled;
     }
 
     @Override
@@ -140,7 +140,7 @@ class BuildTypeImpl extends BaseConfigImpl implements BuildType, Serializable {
                 ", renderscriptOptimLevel=" + renderscriptOptimLevel +
                 ", applicationIdSuffix='" + applicationIdSuffix + '\'' +
                 ", versionNameSuffix='" + versionNameSuffix + '\'' +
-                ", runProguard=" + runProguard +
+                ", minifyEnabled=" + minifyEnabled +
                 ", zipAlign=" + zipAlign +
                 ", embedMicroApp=" + embedMicroApp +
                 "} " + super.toString();

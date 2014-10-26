@@ -37,7 +37,7 @@ android {
         }
 
         release {
-            runProguard true
+            minifyEnabled true
             consumerProguardFiles 'B.txt', 'C.txt'
         }
     }

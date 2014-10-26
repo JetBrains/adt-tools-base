@@ -88,8 +88,8 @@ public class ReadOnlyBuildType extends ReadOnlyBaseConfig implements BuildType {
     }
 
     @Override
-    public boolean isRunProguard() {
-        return buildType.isRunProguard();
+    public boolean isMinifyEnabled() {
+        return buildType.isMinifyEnabled();
     }
 
     @Override

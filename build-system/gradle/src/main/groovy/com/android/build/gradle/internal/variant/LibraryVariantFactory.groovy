@@ -51,7 +51,6 @@ import org.gradle.tooling.BuildException
 import static com.android.SdkConstants.FN_ANNOTATIONS_ZIP
 import static com.android.SdkConstants.LIBS_FOLDER
 import static com.android.build.gradle.BasePlugin.DIR_BUNDLES
-import static com.android.build.gradle.BasePlugin.FILE_JACOCO_AGENT
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
 import static com.android.builder.model.AndroidProject.FD_OUTPUTS
 /**
@@ -260,7 +259,7 @@ public class LibraryVariantFactory implements VariantFactory<LibraryVariantData>
             jacocoAgentJar = new File(agentTask.destinationDir, BasePlugin.FILE_JACOCO_AGENT)
         }
 
-        if (buildType.runProguard) {
+        if (buildType.isMinifyEnabled()) {
             // run proguard on output of compile task
             basePlugin.createProguardTasks(variantData, null, agentTask, jacocoAgentJar)
 

@@ -1198,7 +1198,7 @@ public abstract class BasePlugin {
                     project.file(symbolLocation)
                 }
 
-                if (config.buildType.runProguard) {
+                if (config.buildType.isMinifyEnabled()) {
                     processResources.conventionMapping.proguardOutputFile = {
                         project.file(
                                 "$project.buildDir/${FD_INTERMEDIATES}/proguard/${config.dirName}/aapt_rules.txt")
@@ -1927,7 +1927,7 @@ public abstract class BasePlugin {
     public void createPostCompilationTasks(@NonNull ApkVariantData variantData) {
         GradleVariantConfiguration config = variantData.variantConfiguration
 
-        boolean runProguard = config.buildType.runProguard &&
+        boolean runProguard = config.buildType.isMinifyEnabled() &&
                 (config.type != TEST ||
                         (config.type == TEST &&
                                 config.testedConfig.type != VariantConfiguration.Type.LIBRARY))
