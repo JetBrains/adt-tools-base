@@ -19,6 +19,7 @@ dependencies {
 
     // Need an SLF4J implementation at runtime
     testRuntime 'org.slf4j:slf4j-simple:1.7.2'
+    testRuntime fileTree(dir: rootProject.file("base/build-system/tests"))
 
     // this is technically testCompile, but we don't want
     // it in there to avoid breaking cloneArtifact.
