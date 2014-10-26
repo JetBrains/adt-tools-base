@@ -53,6 +53,8 @@ class DefaultAndroidProject implements AndroidProject, Serializable {
     @NonNull
     private final Collection<SigningConfig> signingConfigs;
     @NonNull
+    private final AaptOptions aaptOptions;
+    @NonNull
     private final Collection<ArtifactMetaData> extraArtifacts;
     @NonNull
     private final Collection<String> unresolvedDependencies;
@@ -78,6 +80,7 @@ class DefaultAndroidProject implements AndroidProject, Serializable {
                           @NonNull Collection<String> bootClasspath,
                           @NonNull Collection<File> frameworkSource,
                           @NonNull Collection<SigningConfig> signingConfigs,
+                          @NonNull AaptOptions aaptOptions,
                           @NonNull Collection<ArtifactMetaData> extraArtifacts,
                           @NonNull Collection<String> unresolvedDependencies,
                           @NonNull CompileOptions compileOptions,
@@ -91,6 +94,7 @@ class DefaultAndroidProject implements AndroidProject, Serializable {
         this.bootClasspath = bootClasspath;
         this.frameworkSource = frameworkSource;
         this.signingConfigs = signingConfigs;
+        this.aaptOptions = aaptOptions;
         this.extraArtifacts = extraArtifacts;
         this.unresolvedDependencies = unresolvedDependencies;
         javaCompileOptions = new DefaultJavaCompileOptions(compileOptions);
@@ -199,7 +203,7 @@ class DefaultAndroidProject implements AndroidProject, Serializable {
     @Override
     @NonNull
     public AaptOptions getAaptOptions() {
-        return null;
+        return aaptOptions;
     }
 
     @Override

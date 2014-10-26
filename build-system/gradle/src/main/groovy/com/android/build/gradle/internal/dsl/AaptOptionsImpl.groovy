@@ -63,7 +63,6 @@ public class AaptOptionsImpl implements AaptOptions {
         useQueuedAaptPngCruncher = value;
     }
 
-    @Override
     public boolean getUseQueuedAaptPngCruncher() {
         return useQueuedAaptPngCruncher;
     }
