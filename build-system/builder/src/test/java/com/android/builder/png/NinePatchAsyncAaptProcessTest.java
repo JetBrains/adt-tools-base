@@ -16,8 +16,14 @@
 
 package com.android.builder.png;
 
+import com.android.annotations.NonNull;
+import com.android.ide.common.internal.CommandLineRunner;
 import com.android.ide.common.internal.PngCruncher;
+import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.mock.MockLog;
+import com.android.sdklib.repository.FullRevision;
+import com.android.utils.ILogger;
+import com.android.utils.StdLogger;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
@@ -67,10 +73,14 @@ public class NinePatchAsyncAaptProcessTest extends NinePatchAaptProcessorTest {
     }
 
     @Override
-    protected PngCruncher getCruncher() {
-        File aapt = new File(getSdkDir(), "build-tools/android-21/aapt");
+    protected File getAapt() {
+        return super.getAapt(FullRevision.parseRevision("21"));
+    }
 
-        assertTrue("Test requires build-tools 21.0.0", aapt.isFile());
+    @NonNull
+    @Override
+    protected PngCruncher getCruncher() {
+        File aapt = getAapt();
         return QueuedCruncher.Builder.INSTANCE.newCruncher(aapt.getAbsolutePath(), mLogger);
     }
 }
