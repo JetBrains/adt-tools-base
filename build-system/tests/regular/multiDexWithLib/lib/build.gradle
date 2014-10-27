@@ -5,13 +5,13 @@ android {
   buildToolsVersion = rootProject.ext.buildToolsVersion
 
   defaultConfig {
-    minSdkVersion 21
+    useJack rootProject.ext.useJack
   }
 
   buildTypes {
     debug {
       // needed for the test app.
-      multiDex = true
+      multiDexEnabled = true
     }
   }
 }
