@@ -33,6 +33,6 @@ android {
         minSdkVersion 14
         targetSdkVersion 19
         renderscriptTargetApi 18
-        renderscriptSupportMode true
+        renderscriptSupportModeEnabled true
    }
 }

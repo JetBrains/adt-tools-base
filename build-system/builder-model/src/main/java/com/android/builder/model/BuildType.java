@@ -58,7 +58,7 @@ public interface BuildType extends BaseConfig {
      *
      * @return true if the apk is debuggable
      */
-    boolean isJniDebugBuild();
+    boolean isJniDebuggable();
 
     /**
      * Returns whether the build type is configured to generate an apk with debuggable
@@ -66,7 +66,7 @@ public interface BuildType extends BaseConfig {
      *
      * @return true if the apk is debuggable
      */
-    boolean isRenderscriptDebugBuild();
+    boolean isRenderscriptDebuggable();
 
     /**
      * Returns the optimization level of the renderscript compilation.
@@ -104,7 +104,7 @@ public interface BuildType extends BaseConfig {
      *
      * @return true if zipalign is enabled.
      */
-    boolean isZipAlign();
+    boolean isZipAlignEnabled();
 
     /**
      * Returns whether the variant embeds the micro app.

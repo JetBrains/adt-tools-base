@@ -66,7 +66,7 @@ public class TestVariantData extends ApkVariantData {
     }
 
     @Override
-    public boolean getZipAlign() {
+    public boolean getZipAlignEnabled() {
         return false;
     }
 }

@@ -56,7 +56,7 @@ android {
     buildTypes {
         release
         debug {
-            jniDebugBuild true
+            jniDebuggable true
         }
     }
     productFlavors {
