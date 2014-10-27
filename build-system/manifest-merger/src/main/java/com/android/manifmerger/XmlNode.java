@@ -20,6 +20,7 @@ import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.concurrency.Immutable;
+import com.android.utils.ILogger;
 import com.android.utils.PositionXmlParser;
 import com.google.common.base.Function;
 import com.google.common.base.Objects;
@@ -51,6 +52,7 @@ public abstract class XmlNode {
     /**
      * Returns the element's position
      */
+    @NonNull
     public abstract PositionXmlParser.Position getPosition();
 
     /**
@@ -129,16 +131,14 @@ public abstract class XmlNode {
      * Return the line number in the original xml file this element or attribute was declared.
      */
     public int getLine() {
-        PositionXmlParser.Position position = getPosition();
-        return position != null ? position.getLine() : 0;
+        return getPosition().getLine();
     }
 
     /**
      * Return the column number in the original xml file this element or attribute was declared.
      */
     public int getColumn() {
-        PositionXmlParser.Position position = getPosition();
-        return position != null ? position.getColumn() : 0;
+        return getPosition().getColumn();
     }
 
     /**
@@ -153,13 +153,8 @@ public abstract class XmlNode {
 
     public String printPosition(boolean shortFormat) {
         PositionXmlParser.Position position = getPosition();
-        if (position == null) {
-            return UNKNOWN_POSITION;
-        }
         return new StringBuilder()
-                .append(getSourceLocation() != null
-                        ? getSourceLocation().print(shortFormat)
-                        : "Unknown location")
+                .append(getSourceLocation().print(shortFormat))
                 .append(":").append(position.getLine())
                 .append(":").append(position.getColumn())
                 .toString();
