@@ -245,7 +245,9 @@ public class XmlElement extends OrphanXmlElement {
 
 
         if (mSelector != null && !mSelector.isResolvable(getDocument().getSelectors())) {
-            mergingReport.addMessage(getSourceLocation(), getLine(), getColumn(),
+            mergingReport.addMessage(getSourceLocation(),
+                    getLine(),
+                    getColumn(),
                     MergingReport.Record.Severity.ERROR,
                     String.format("'tools:selector=\"%1$s\"' is not a valid library identifier, "
                             + "valid identifiers are : %2$s",
@@ -870,6 +872,9 @@ public class XmlElement extends OrphanXmlElement {
             MergingReport.Record.Severity severity,
             String message) {
         mergingReport.addMessage(getDocument().getSourceLocation(),
-                getLine(), getColumn(), severity, message);
+                getLine(),
+                getColumn(),
+                severity,
+                message);
     }
 }
