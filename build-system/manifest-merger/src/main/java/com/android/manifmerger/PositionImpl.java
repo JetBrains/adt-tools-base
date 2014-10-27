@@ -105,4 +105,13 @@ final class PositionImpl implements PositionXmlParser.Position {
     public int getColumn() {
         return mColumn;
     }
+
+    @Override
+    public String toString() {
+        if (mLine == 0 && mColumn ==0) {
+            return "(unknown)";
+        } else {
+            return mLine + ":" + mColumn;
+        }
+    }
 }

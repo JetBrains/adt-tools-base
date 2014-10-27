@@ -106,7 +106,11 @@ public class XmlAttribute extends XmlNode {
     @NonNull
     @Override
     public PositionXmlParser.Position getPosition() {
-        return mOwnerElement.getDocument().getNodePosition(this);
+        try {
+            return mOwnerElement.getDocument().getNodePosition(this);
+        } catch(Exception e) {
+            return PositionImpl.UNKNOWN;
+        }
     }
 
     @NonNull
@@ -347,14 +351,27 @@ public class XmlAttribute extends XmlNode {
                 getOwnerElement().getType().toXmlName(),
                 higherPriority.getOwnerElement().printPosition(true)
         );
-        higherPriority.addMessage(report, MergingReport.Record.Severity.ERROR, error);
+        higherPriority.addMessage(report,
+                attributeRecord != null
+                        ? attributeRecord.getActionLocation().getPosition()
+                        : PositionImpl.UNKNOWN,
+                MergingReport.Record.Severity.ERROR, error);
     }
 
     void addMessage(MergingReport.Builder report,
             MergingReport.Record.Severity severity,
             String message) {
+        addMessage(report, getPosition(), severity, message);
+    }
+
+    void addMessage(MergingReport.Builder report,
+            PositionXmlParser.Position position,
+            MergingReport.Record.Severity severity,
+            String message) {
         report.addMessage(getOwnerElement().getDocument().getSourceLocation(),
-                getLine(), getColumn(), severity, message);
+                position.getLine(),
+                position.getColumn(),
+                severity, message);
     }
 
     @NonNull
