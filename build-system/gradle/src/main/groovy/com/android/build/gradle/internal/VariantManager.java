@@ -461,6 +461,10 @@ public class VariantManager {
                 variantDataList.add(variantData);
 
                 if (buildTypeData == testData) {
+                    if (variantData.getVariantConfiguration().isMinifyEnabled() &&
+                            variantData.getVariantConfiguration().getBuildType().getUseJack()) {
+                        throw new RuntimeException("Cannot test proguarded variant when compiling with jack.");
+                    }
                     testedVariantData = variantData;
                 }
             }

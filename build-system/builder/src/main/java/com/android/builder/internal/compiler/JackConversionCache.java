@@ -30,6 +30,7 @@ import org.w3c.dom.NamedNodeMap;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 
 /**
  * Cache for jar -> jack conversion, using the Jill tool.
@@ -101,8 +102,14 @@ public class JackConversionCache extends PreProcessCache<PreProcessCache.Key> {
         if (pair.getSecond()) {
             try {
                 // haven't process this file yet so do it and record it.
-                AndroidBuilder.convertLibraryToJack(inputFile, outFile, dexOptions, buildToolInfo,
-                        verbose, commandLineRunner);
+                List<File> files = AndroidBuilder.convertLibraryToJack(
+                        inputFile,
+                        outFile,
+                        dexOptions,
+                        buildToolInfo,
+                        verbose,
+                        commandLineRunner);
+                item.getOutputFiles().addAll(files);
 
                 incrementMisses();
             } catch (IOException exception) {
