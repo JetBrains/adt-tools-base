@@ -366,7 +366,7 @@ public class AppPluginDslTest extends BaseTest {
             assertNotNull(variant.install)
 
             // tested variant are never zipAligned.
-            if (!isTestVariant && variant.buildType.zipAlign) {
+            if (!isTestVariant && variant.buildType.zipAlignEnabled) {
                 assertNotNull(variant.zipAlign)
             } else {
                 assertNull(variant.zipAlign)

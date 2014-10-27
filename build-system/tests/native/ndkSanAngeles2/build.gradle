@@ -28,7 +28,7 @@ android {
         versionCode = 123
     }
 
-    buildTypes.debug.jniDebugBuild true
+    buildTypes.debug.jniDebuggable true
 
     useNewNativePlugin = true
     ndk {

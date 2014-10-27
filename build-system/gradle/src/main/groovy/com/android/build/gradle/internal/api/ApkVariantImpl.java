@@ -123,12 +123,12 @@ public abstract class ApkVariantImpl extends BaseVariantImpl implements ApkVaria
         // if more than one output, refuse to use this method
         if (outputs.size() > 1) {
             throw new RuntimeException(String.format(
-                    "More than one output on variant '%s', cannot call getZipAlign() on it. Call it on one of its outputs instead.",
+                    "More than one output on variant '%s', cannot call getZipAlignEnabled() on it. Call it on one of its outputs instead.",
                     getName()));
         }
 
         // deprecation warning.
-        plugin.displayDeprecationWarning("variant.getZipAlign() is deprecated. Call it on one of variant.getOutputs() instead.");
+        plugin.displayDeprecationWarning("variant.getZipAlignEnabled() is deprecated. Call it on one of variant.getOutputs() instead.");
 
         // use the single output for compatibility.
         return ((ApkVariantOutputImpl) outputs.get(0)).getZipAlign();

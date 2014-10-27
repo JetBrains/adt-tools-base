@@ -68,8 +68,8 @@ class ProductFlavorImpl extends BaseConfigImpl implements ProductFlavor, Seriali
                 ? null /* we remove the maxSdkVersion when dealing with a preview release */
                 : productFlavor.getMaxSdkVersion();
         clonedFlavor.mRenderscriptTargetApi = productFlavor.getRenderscriptTargetApi();
-        clonedFlavor.mRenderscriptSupportMode = productFlavor.getRenderscriptSupportMode();
-        clonedFlavor.mRenderscriptNdkMode = productFlavor.getRenderscriptNdkMode();
+        clonedFlavor.mRenderscriptSupportMode = productFlavor.getRenderscriptSupportModeEnabled();
+        clonedFlavor.mRenderscriptNdkMode = productFlavor.getRenderscriptNdkModeEnabled();
 
         clonedFlavor.mVersionCode = productFlavor.getVersionCode();
         clonedFlavor.mVersionName = productFlavor.getVersionName();
@@ -139,13 +139,13 @@ class ProductFlavorImpl extends BaseConfigImpl implements ProductFlavor, Seriali
 
     @Override
     @Nullable
-    public Boolean getRenderscriptSupportMode() {
+    public Boolean getRenderscriptSupportModeEnabled() {
         return mRenderscriptSupportMode;
     }
 
     @Override
     @Nullable
-    public Boolean getRenderscriptNdkMode() {
+    public Boolean getRenderscriptNdkModeEnabled() {
         return mRenderscriptNdkMode;
     }
 

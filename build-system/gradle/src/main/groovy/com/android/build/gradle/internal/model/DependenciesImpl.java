@@ -117,7 +117,7 @@ public class DependenciesImpl implements Dependencies, Serializable {
         GradleVariantConfiguration variantConfig = variantData.getVariantConfiguration();
         AndroidBuilder androidBuilder = basePlugin.getAndroidBuilder();
 
-        if (variantConfig.getRenderscriptSupportMode()) {
+        if (variantConfig.getRenderscriptSupportModeEnabled()) {
             File supportJar = androidBuilder.getRenderScriptSupportJar();
             if (supportJar != null) {
                 javaLibraries.add(new JavaLibraryImpl(supportJar, null, null));

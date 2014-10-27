@@ -27,7 +27,7 @@ android {
     buildToolsVersion = rootProject.ext.buildToolsVersion
 
     buildTypes.debug {
-        zipAlign true
+        zipAlignEnabled true
     }
 }
 

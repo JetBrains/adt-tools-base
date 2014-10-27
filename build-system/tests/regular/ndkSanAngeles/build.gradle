@@ -36,7 +36,7 @@ android {
 
     }
 
-    buildTypes.debug.jniDebugBuild true
+    buildTypes.debug.jniDebuggable true
 
     splits {
         abi {

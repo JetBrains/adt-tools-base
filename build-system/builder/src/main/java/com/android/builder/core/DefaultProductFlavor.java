@@ -43,8 +43,8 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
     private ApiVersion mTargetSdkVersion;
     private Integer mMaxSdkVersion;
     private Integer mRenderscriptTargetApi;
-    private Boolean mRenderscriptSupportMode;
-    private Boolean mRenderscriptNdkMode;
+    private Boolean mRenderscriptSupportModeEnabled;
+    private Boolean mRenderscriptNdkModeEnabled;
     private Integer mVersionCode;
     private String mVersionName;
     private String mApplicationId;
@@ -175,27 +175,30 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
 
     @Override
     @Nullable
-    public Boolean getRenderscriptSupportMode() {
-        return mRenderscriptSupportMode;
+    public Boolean getRenderscriptSupportModeEnabled() {
+        return mRenderscriptSupportModeEnabled;
     }
 
     /**
      * Sets whether the renderscript code should be compiled in support mode to make it compatible
      * with older versions of Android.
      */
-    public void setRenderscriptSupportMode(Boolean renderscriptSupportMode) {
-        mRenderscriptSupportMode = renderscriptSupportMode;
+    public ProductFlavor setRenderscriptSupportModeEnabled(Boolean renderscriptSupportMode) {
+        mRenderscriptSupportModeEnabled = renderscriptSupportMode;
+        return this;
     }
 
     @Override
     @Nullable
-    public Boolean getRenderscriptNdkMode() {
-        return mRenderscriptNdkMode;
+    public Boolean getRenderscriptNdkModeEnabled() {
+        return mRenderscriptNdkModeEnabled;
     }
 
+
     /** Sets whether the renderscript code should be compiled to generate C/C++ bindings. */
-    public void setRenderscriptNdkMode(Boolean renderscriptNdkMode) {
-        mRenderscriptNdkMode = renderscriptNdkMode;
+    public ProductFlavor setRenderscriptNdkModeEnabled(Boolean renderscriptNdkMode) {
+        mRenderscriptNdkModeEnabled = renderscriptNdkMode;
+        return this;
     }
 
     /** Sets the test package name. */
@@ -323,12 +326,12 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
         flavor.mRenderscriptTargetApi = chooseNotNull(
                 overlay.getRenderscriptTargetApi(),
                 base.getRenderscriptTargetApi());
-        flavor.mRenderscriptSupportMode = chooseNotNull(
-                overlay.getRenderscriptSupportMode(),
-                base.getRenderscriptSupportMode());
-        flavor.mRenderscriptNdkMode = chooseNotNull(
-                overlay.getRenderscriptNdkMode(),
-                base.getRenderscriptNdkMode());
+        flavor.mRenderscriptSupportModeEnabled = chooseNotNull(
+                overlay.getRenderscriptSupportModeEnabled(),
+                base.getRenderscriptSupportModeEnabled());
+        flavor.mRenderscriptNdkModeEnabled = chooseNotNull(
+                overlay.getRenderscriptNdkModeEnabled(),
+                base.getRenderscriptNdkModeEnabled());
 
         flavor.mVersionCode = chooseNotNull(overlay.getVersionCode(), base.getVersionCode());
         flavor.mVersionName = chooseNotNull(overlay.getVersionName(), base.getVersionName());
@@ -388,8 +391,8 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
         flavor.mTargetSdkVersion = productFlavor.getTargetSdkVersion();
         flavor.mMaxSdkVersion = productFlavor.getMaxSdkVersion();
         flavor.mRenderscriptTargetApi = productFlavor.getRenderscriptTargetApi();
-        flavor.mRenderscriptSupportMode = productFlavor.getRenderscriptSupportMode();
-        flavor.mRenderscriptNdkMode = productFlavor.getRenderscriptNdkMode();
+        flavor.mRenderscriptSupportModeEnabled = productFlavor.getRenderscriptSupportModeEnabled();
+        flavor.mRenderscriptNdkModeEnabled = productFlavor.getRenderscriptNdkModeEnabled();
 
         flavor.mVersionCode = productFlavor.getVersionCode();
         flavor.mVersionName = productFlavor.getVersionName();
@@ -447,12 +450,14 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
         if (!mName.equals(that.mName)) {
             return false;
         }
-        if (mRenderscriptNdkMode != null ? !mRenderscriptNdkMode.equals(that.mRenderscriptNdkMode)
-                : that.mRenderscriptNdkMode != null) {
+        if (mRenderscriptNdkModeEnabled != null ? !mRenderscriptNdkModeEnabled
+                .equals(that.mRenderscriptNdkModeEnabled)
+                : that.mRenderscriptNdkModeEnabled != null) {
             return false;
         }
-        if (mRenderscriptSupportMode != null ? !mRenderscriptSupportMode
-                .equals(that.mRenderscriptSupportMode) : that.mRenderscriptSupportMode != null) {
+        if (mRenderscriptSupportModeEnabled != null ? !mRenderscriptSupportModeEnabled
+                .equals(that.mRenderscriptSupportModeEnabled) : that.mRenderscriptSupportModeEnabled
+                != null) {
             return false;
         }
         if (mRenderscriptTargetApi != null ? !mRenderscriptTargetApi
@@ -511,10 +516,10 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
         result = 31 * result + (mMaxSdkVersion != null ? mMaxSdkVersion.hashCode() : 0);
         result = 31 * result + (mRenderscriptTargetApi != null ? mRenderscriptTargetApi.hashCode()
                 : 0);
-        result = 31 * result + (mRenderscriptSupportMode != null ? mRenderscriptSupportMode
+        result = 31 * result + (mRenderscriptSupportModeEnabled != null ? mRenderscriptSupportModeEnabled
                 .hashCode()
                 : 0);
-        result = 31 * result + (mRenderscriptNdkMode != null ? mRenderscriptNdkMode.hashCode() : 0);
+        result = 31 * result + (mRenderscriptNdkModeEnabled != null ? mRenderscriptNdkModeEnabled.hashCode() : 0);
         result = 31 * result + (mVersionCode != null ? mVersionCode.hashCode() : 0);
         result = 31 * result + (mVersionName != null ? mVersionName.hashCode() : 0);
         result = 31 * result + (mApplicationId != null ? mApplicationId.hashCode() : 0);
@@ -537,8 +542,8 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
                 .add("minSdkVersion", mMinSdkVersion)
                 .add("targetSdkVersion", mTargetSdkVersion)
                 .add("renderscriptTargetApi", mRenderscriptTargetApi)
-                .add("renderscriptSupportMode", mRenderscriptSupportMode)
-                .add("renderscriptNdkMode", mRenderscriptNdkMode)
+                .add("renderscriptSupportModeEnabled", mRenderscriptSupportModeEnabled)
+                .add("renderscriptNdkModeEnabled", mRenderscriptNdkModeEnabled)
                 .add("versionCode", mVersionCode)
                 .add("versionName", mVersionName)
                 .add("applicationId", mApplicationId)
