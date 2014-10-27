@@ -183,7 +183,7 @@ public class ApplicationVariantFactory implements VariantFactory<ApplicationVari
         basePlugin.createAidlTask(variantData, null /*parcelableDir*/);
 
         // Add a compile task
-        if (variantData.getVariantConfiguration().getBuildType().getUseJack()) {
+        if (variantData.getVariantConfiguration().getUseJack()) {
             basePlugin.createJackTask(appVariantData, null /*testedVariant*/);
         } else{
             basePlugin.createCompileTask(variantData, null /*testedVariant*/);

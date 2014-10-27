@@ -1457,7 +1457,7 @@ public abstract class BasePlugin {
         }
 
         // Add a task to compile the test application
-        if (variantData.getVariantConfiguration().getBuildType().getUseJack()) {
+        if (variantData.getVariantConfiguration().useJack) {
             createJackTask(variantData, testedVariantData);
         } else{
             createCompileTask(variantData, testedVariantData)
@@ -1542,7 +1542,7 @@ public abstract class BasePlugin {
             def taskName = "lintVital" + capitalizedVariantName
             Lint lintReleaseCheck = project.tasks.create(taskName, Lint)
             // TODO: Make this task depend on lintCompile too (resolve initialization order first)
-            lintReleaseCheck.dependsOn variantData.javaCompileTask
+            optionalDependsOn(lintReleaseCheck, variantData.javaCompileTask)
             lintReleaseCheck.setPlugin(this)
             lintReleaseCheck.setVariantName(variantName)
             lintReleaseCheck.setFatalOnly(true)
@@ -1818,15 +1818,6 @@ public abstract class BasePlugin {
         return testTask
     }
 
-    static boolean isMultiDex(VariantConfiguration config) {
-        ApiVersion minSdkVersion = config.minSdkVersion
-        if (minSdkVersion.apiLevel >= 21) {
-            return config.multiDex
-        }
-
-        return false
-    }
-
     /**
      * Creates the post-compilation tasks for the given Variant.
      *
@@ -1837,6 +1828,10 @@ public abstract class BasePlugin {
      */
     public void createPostCompilationTasks(@NonNull ApkVariantData variantData) {
         GradleVariantConfiguration config = variantData.variantConfiguration
+
+        if (config.isLegacyMultiDexMode()) {
+            throw new RuntimeException("Legacy mode not supported yet. Use Jack.")
+        }
 
         boolean isMinifyEnabled = config.isMinifyEnabled()
 
@@ -1856,7 +1851,7 @@ public abstract class BasePlugin {
         dexTask.dexOptions = extension.dexOptions
 
         dexTask.conventionMapping.multiDex = {
-            isMultiDex(config)
+            config.isMultiDexEnabled()
         }
 
         JacocoInstrumentTask jacocoTask = null
@@ -1889,6 +1884,7 @@ public abstract class BasePlugin {
             dexTask.conventionMapping.inputFiles = { project.files(outFile).files }
             dexTask.conventionMapping.libraries = { Collections.emptyList() }
         } else {
+
             // if required, pre-dexing task.
             PreDex preDexTask = null;
             boolean runPreDex = extension.dexOptions.preDexLibraries
@@ -1902,7 +1898,7 @@ public abstract class BasePlugin {
                 preDexTask.dexOptions = extension.dexOptions
 
                 preDexTask.conventionMapping.multiDex = {
-                    return isMultiDex(config)
+                    return config.isMultiDexEnabled()
                 }
 
                 preDexTask.conventionMapping.inputFiles = {
@@ -1943,7 +1939,7 @@ public abstract class BasePlugin {
                 // if multi-dex is enabled, then each library will just be added to the
                 // package task.
                 dexTask.conventionMapping.libraries = {
-                    if (isMultiDex(config)) {
+                    if (config.isMultiDexEnabled()) {
                         return Collections.emptyList()
                     }
 
@@ -2023,6 +2019,9 @@ public abstract class BasePlugin {
         compileTask.plugin = this
 
         compileTask.source = variantData.getJavaSources()
+
+        compileTask.multiDexEnabled = config.isMultiDexEnabled()
+        compileTask.minSdkVersion = config.minSdkVersion.apiLevel
 
         // if the tested variant is an app, add its classpath. For the libraries,
         // it's done automatically since the classpath includes the library output as a normal
@@ -2159,7 +2158,7 @@ public abstract class BasePlugin {
                 return null
             }
             packageApp.conventionMapping.dexedLibraries = {
-                if (isMultiDex(config) && variantData.preDexTask != null) {
+                if (config.isMultiDexEnabled() && variantData.preDexTask != null) {
                     return project.fileTree(variantData.preDexTask.outputFolder).files
                 }
 

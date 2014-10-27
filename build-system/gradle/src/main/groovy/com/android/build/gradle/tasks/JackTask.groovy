@@ -62,6 +62,12 @@ public class JackTask extends AbstractCompile {
     @OutputFile @Optional
     File mappingFile
 
+    @Input
+    boolean multiDexEnabled
+
+    @Input
+    int minSdkVersion
+
     @TaskAction
     void compile() {
         FullRevision revision = plugin.androidBuilder.targetInfo.buildTools.revision
@@ -116,6 +122,16 @@ public class JackTask extends AbstractCompile {
                 //command << "jack.obfuscation.mapping.dump.file=${_mappingFile.absolutePath}".toString()
                 command << "--proguard-flags"
                 command << createMappingFileCommand(_mappingFile)
+            }
+        }
+
+        if (isMultiDexEnabled()) {
+            command << "-D"
+            command << "jack.dex.output.policy=multidex"
+
+            if (getMinSdkVersion() < 21) {
+                command << "-D"
+                command << "jack.dex.output.multidex.legacy=true"
             }
         }
 

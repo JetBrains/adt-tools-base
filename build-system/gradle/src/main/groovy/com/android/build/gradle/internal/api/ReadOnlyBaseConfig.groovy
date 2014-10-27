@@ -14,19 +14,13 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.api;
-
-import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
-import com.android.builder.model.BaseConfig;
-import com.android.builder.model.ClassField;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-
-import java.io.File;
-import java.util.Collection;
-import java.util.Map;
-
+package com.android.build.gradle.internal.api
+import com.android.annotations.NonNull
+import com.android.annotations.Nullable
+import com.android.builder.model.BaseConfig
+import com.android.builder.model.ClassField
+import com.google.common.collect.ImmutableList
+import com.google.common.collect.ImmutableMap
 /**
  * Read-only version of the BaseConfig wrapping another BaseConfig.
  *
@@ -43,53 +37,53 @@ import java.util.Map;
 abstract class ReadOnlyBaseConfig implements BaseConfig {
 
     @NonNull
-    private BaseConfig baseConfig;
+    private BaseConfig baseConfig
 
     protected ReadOnlyBaseConfig(@NonNull BaseConfig baseConfig) {
-        this.baseConfig = baseConfig;
+        this.baseConfig = baseConfig
     }
 
     @NonNull
     @Override
     public String getName() {
-        return baseConfig.getName();
+        return baseConfig.getName()
     }
 
     @NonNull
     @Override
     public Map<String, ClassField> getBuildConfigFields() {
         // TODO: cache immutable map?
-        return ImmutableMap.copyOf(baseConfig.getBuildConfigFields());
+        return ImmutableMap.copyOf(baseConfig.getBuildConfigFields())
     }
 
     @NonNull
     @Override
     public Map<String, ClassField> getResValues() {
-        return ImmutableMap.copyOf(baseConfig.getResValues());
+        return ImmutableMap.copyOf(baseConfig.getResValues())
     }
 
     @NonNull
     @Override
     public Collection<File> getProguardFiles() {
-        return ImmutableList.copyOf(baseConfig.getProguardFiles());
+        return ImmutableList.copyOf(baseConfig.getProguardFiles())
     }
 
     @NonNull
     @Override
     public Collection<File> getConsumerProguardFiles() {
-        return ImmutableList.copyOf(baseConfig.getConsumerProguardFiles());
+        return ImmutableList.copyOf(baseConfig.getConsumerProguardFiles())
     }
 
     @NonNull
     @Override
     public Map<String, String> getManifestPlaceholders() {
-        return ImmutableMap.copyOf(baseConfig.getManifestPlaceholders());
+        return ImmutableMap.copyOf(baseConfig.getManifestPlaceholders())
     }
 
     @Nullable
     @Override
-    public Boolean getMultiDex() {
-        return baseConfig.getMultiDex();
+    public Boolean getMultiDexEnabled() {
+        return baseConfig.getMultiDexEnabled()
     }
 
     /**
