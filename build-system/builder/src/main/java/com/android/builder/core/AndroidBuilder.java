@@ -1550,7 +1550,7 @@ public class AndroidBuilder {
                 mVerboseExec, mCmdLineRunner);
     }
 
-    public static void convertLibraryToJack(
+    public static List<File> convertLibraryToJack(
             @NonNull File inputFile,
             @NonNull File outFile,
             @NonNull DexOptions dexOptions,
@@ -1583,6 +1583,8 @@ public class AndroidBuilder {
         command.add(inputFile.getAbsolutePath());
 
         commandLineRunner.runCmdLine(command, null);
+
+        return Collections.singletonList(outFile);
     }
 
     /**

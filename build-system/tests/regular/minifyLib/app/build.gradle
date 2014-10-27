@@ -8,7 +8,7 @@ android {
     compileSdkVersion 19
     buildToolsVersion = rootProject.ext.buildToolsVersion
 
-    testBuildType "proguard"
+    testBuildType rootProject.ext.useJack ? "debug" : "minified"
 
     defaultConfig {
         versionCode 12
@@ -18,9 +18,10 @@ android {
     }
 
     buildTypes {
-        proguard.initWith(buildTypes.debug)
-        proguard {
+        minified.initWith(buildTypes.debug)
+        minified {
             minifyEnabled true
+            useJack rootProject.ext.useJack
             proguardFile getDefaultProguardFile('proguard-android.txt')
         }
     }
