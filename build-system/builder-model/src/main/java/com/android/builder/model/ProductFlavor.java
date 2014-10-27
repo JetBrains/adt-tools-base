@@ -108,20 +108,16 @@ public interface ProductFlavor extends BaseConfig {
      * make it compatible with older versions of Android.
      *
      * @return true if support mode is enabled, false if not, and null if not specified.
-     *
-     * TODO STOPSHIP: use enums instead of boolean
      */
     @Nullable
-    Boolean getRenderscriptSupportMode();
+    Boolean getRenderscriptSupportModeEnabled();
 
     /**
      * Returns whether the renderscript code should be compiled to generate C/C++ bindings.
      * @return true for C/C++ generation, false for Java, null if not specified.
-     *
-     * TODO STOPSHIP: use enums instead of boolean
      */
     @Nullable
-    Boolean getRenderscriptNdkMode();
+    Boolean getRenderscriptNdkModeEnabled();
 
     /**
      * Returns the test application id. This is only the value set on this product flavor.

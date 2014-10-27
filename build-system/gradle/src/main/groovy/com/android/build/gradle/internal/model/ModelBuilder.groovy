@@ -18,11 +18,9 @@ package com.android.build.gradle.internal.model
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
 import com.android.build.OutputFile
-import com.android.build.gradle.AppPlugin
 import com.android.build.gradle.BasePlugin
 import com.android.build.gradle.LibraryPlugin
 import com.android.build.gradle.api.ApkOutputFile
-import com.android.build.gradle.api.MainApkOutputFile
 import com.android.build.gradle.internal.BuildTypeData
 import com.android.build.gradle.internal.ProductFlavorData
 import com.android.build.gradle.internal.dsl.LintOptionsImpl
@@ -50,9 +48,7 @@ import com.android.sdklib.IAndroidTarget
 import com.google.common.collect.ImmutableCollection
 import com.google.common.collect.ImmutableList
 import com.google.common.collect.Lists
-import com.google.common.util.concurrent.Callables
 import org.gradle.api.Project
-import org.gradle.api.plugins.UnknownPluginException
 import org.gradle.api.tasks.compile.AbstractCompile
 import org.gradle.tooling.provider.model.ToolingModelBuilder
 
@@ -334,7 +330,7 @@ public class ModelBuilder implements ToolingModelBuilder {
 
         folders.add(variantData.aidlCompileTask.sourceOutputDir)
         folders.add(variantData.generateBuildConfigTask.sourceOutputDir)
-        if (!variantData.variantConfiguration.mergedFlavor.renderscriptNdkMode) {
+        if (!variantData.variantConfiguration.mergedFlavor.renderscriptNdkModeEnabled) {
             folders.add(variantData.renderscriptCompileTask.sourceOutputDir)
         }
 
