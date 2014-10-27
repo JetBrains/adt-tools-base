@@ -3,7 +3,7 @@ apply plugin: 'sdk-java-lib'
 
 
 dependencies {
-    compile 'com.google.guava:guava:15.0'
+    compile 'com.google.guava:guava:17.0'
 
     testCompile 'junit:junit:3.8.1'
 }
