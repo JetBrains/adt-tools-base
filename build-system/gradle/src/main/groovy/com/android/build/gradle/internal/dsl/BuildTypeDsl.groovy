@@ -42,7 +42,7 @@ public class BuildTypeDsl extends DefaultBuildType implements Serializable {
 
     private final NdkConfigDsl ndkConfig
 
-    private boolean useJack
+    private Boolean useJack
 
     public BuildTypeDsl(@NonNull String name,
                         @NonNull Project project,
@@ -163,21 +163,16 @@ public class BuildTypeDsl extends DefaultBuildType implements Serializable {
         action.execute(ndkConfig)
     }
 
-    boolean getUseJack() {
+    Boolean getUseJack() {
         return useJack
     }
 
-    void setUseJack(boolean useJack) {
+    void setUseJack(Boolean useJack) {
         this.useJack = useJack
     }
 
-    void useJack(boolean useJack) {
+    void useJack(Boolean useJack) {
         setUseJack(useJack)
-    }
-
-    @Override
-    public boolean isTestCoverageEnabled() {
-        return !useJack && super.isTestCoverageEnabled()
     }
 
     // ---------------

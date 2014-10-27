@@ -459,9 +459,9 @@ public class VariantManager {
                 variantDataList.add(variantData);
 
                 if (buildTypeData == testData) {
-                    if (variantData.getVariantConfiguration().isMinifyEnabled() &&
-                            variantData.getVariantConfiguration().getBuildType().getUseJack()) {
-                        throw new RuntimeException("Cannot test proguarded variant when compiling with jack.");
+                    GradleVariantConfiguration variantConfig = variantData.getVariantConfiguration();
+                    if (variantConfig.isMinifyEnabled() && variantConfig.getUseJack()) {
+                        throw new RuntimeException("Cannot test obfuscated variants when compiling with jack.");
                     }
                     testedVariantData = variantData;
                 }

@@ -42,6 +42,8 @@ class ProductFlavorDsl extends DefaultProductFlavor {
 
     private final NdkConfigDsl ndkConfig
 
+    private Boolean useJack
+
     ProductFlavorDsl(@NonNull String name,
                      @NonNull Project project,
                      @NonNull Instantiator instantiator,
@@ -216,6 +218,18 @@ class ProductFlavorDsl extends DefaultProductFlavor {
     }
     void resConfigs(@NonNull Collection<String> config) {
         addResourceConfigurations(config);
+    }
+
+    Boolean getUseJack() {
+        return useJack
+    }
+
+    void setUseJack(Boolean useJack) {
+        this.useJack = useJack
+    }
+
+    void useJack(Boolean useJack) {
+        setUseJack(useJack)
     }
 
     // ---------------
