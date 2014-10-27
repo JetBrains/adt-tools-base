@@ -57,7 +57,7 @@ public class DeviceTest extends BuildTest {
             "flavorlib",
             "flavoredlib",
             "flavors",
-            "lib<inifyJarDep",
+            "libMinifyJarDep",
             "libMinifyLibDep",
             "libTestDep",
             "libsTest",
