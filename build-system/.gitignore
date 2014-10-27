@@ -37,6 +37,7 @@ tests/manual/customArtifactDep/*/build
 tests/manual/3rdPartyTests/*/build
 tests/manual/flavorlibWithFailedTests/*/build
 tests/manual/shrink/*/build
+tests/manual/dependenciesWithVariants/*/build
 
 tests/native/ndkJniLib2/*/build
 tests/native/ndkStandaloneSo/*/build
