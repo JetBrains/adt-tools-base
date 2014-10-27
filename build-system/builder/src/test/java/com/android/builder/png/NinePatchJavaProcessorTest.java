@@ -16,6 +16,7 @@
 
 package com.android.builder.png;
 
+import com.android.annotations.NonNull;
 import com.android.builder.internal.JavaPngCruncher;
 import com.android.ide.common.internal.PngCruncher;
 
@@ -50,6 +51,7 @@ public class NinePatchJavaProcessorTest extends NinePatchAaptProcessorTest {
         return suite;
     }
 
+    @NonNull
     @Override
     protected PngCruncher getCruncher() {
         return new JavaPngCruncher();

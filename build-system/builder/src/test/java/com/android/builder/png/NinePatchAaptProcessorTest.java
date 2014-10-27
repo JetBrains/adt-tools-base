@@ -22,6 +22,9 @@ import com.android.ide.common.internal.AaptCruncher;
 import com.android.ide.common.internal.CommandLineRunner;
 import com.android.ide.common.internal.LoggedErrorException;
 import com.android.ide.common.internal.PngCruncher;
+import com.android.sdklib.BuildToolInfo;
+import com.android.sdklib.SdkManager;
+import com.android.sdklib.repository.FullRevision;
 import com.android.utils.ILogger;
 import com.android.utils.StdLogger;
 
@@ -86,12 +89,28 @@ public class NinePatchAaptProcessorTest extends BasePngTest {
         mIsFinal = isFinal;
     }
 
+    @NonNull
+    protected File getAapt() {
+        return getAapt(FullRevision.parseRevision("20"));
+    }
+
+    @NonNull
+    protected File getAapt(FullRevision fullRevision) {
+        ILogger logger = new StdLogger(StdLogger.Level.VERBOSE);
+        SdkManager sdkManager = SdkManager.createManager(getSdkDir().getAbsolutePath(), logger);
+        assert sdkManager != null;
+        BuildToolInfo buildToolInfo = sdkManager.getBuildTool(fullRevision);
+        if (buildToolInfo == null) {
+            throw new RuntimeException("Test requires build-tools 20");
+        }
+        return new File(buildToolInfo.getPath(BuildToolInfo.PathId.AAPT));
+    }
+
+    @NonNull
     protected PngCruncher getCruncher() {
         ILogger logger = new StdLogger(StdLogger.Level.VERBOSE);
         CommandLineRunner commandLineRunner = new CommandLineRunner(logger);
-        File aapt = new File(getSdkDir(), "build-tools/20.0.0/aapt");
-
-        assertTrue("Test requires build-tools 20.0.0 in " + aapt.getAbsolutePath(), aapt.isFile());
+        File aapt = getAapt();
         return new AaptCruncher(aapt.getAbsolutePath(), commandLineRunner);
     }
 
