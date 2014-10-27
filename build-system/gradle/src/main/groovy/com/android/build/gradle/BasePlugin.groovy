@@ -91,10 +91,8 @@ import com.android.build.gradle.tasks.PackageApplication
 import com.android.build.gradle.tasks.PackageSplitRes
 import com.android.build.gradle.tasks.PreDex
 import com.android.build.gradle.tasks.ProcessAndroidResources
-import com.android.build.gradle.tasks.ProcessAppManifest
 import com.android.build.gradle.tasks.ProcessManifest
 import com.android.build.gradle.tasks.ProcessTestManifest
-import com.android.build.gradle.tasks.ProcessTestManifest2
 import com.android.build.gradle.tasks.RenderscriptCompile
 import com.android.build.gradle.tasks.SplitZipAlign
 import com.android.build.gradle.tasks.ZipAlign
@@ -578,10 +576,6 @@ public abstract class BasePlugin {
 
     public void createMergeAppManifestsTask(
             @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData) {
-        if (extension.getUseOldManifestMerger()) {
-            createOldProcessManifestTask(variantData, "manifests");
-            return;
-        }
 
         VariantConfiguration config = variantData.variantConfiguration
         ProductFlavor mergedFlavor = config.mergedFlavor
@@ -701,14 +695,7 @@ public abstract class BasePlugin {
             @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData,
             @NonNull String manifestOutDir) {
         boolean multiOutput = variantData.outputs.size() > 1
-        if (multiOutput && extension.getUseOldManifestMerger()) {
-            throw new RuntimeException("Old Manifest merger cannot be used with new Splits mechanism")
-        }
 
-        if (extension.getUseOldManifestMerger()) {
-            createOldProcessManifestTask(variantData, manifestOutDir);
-            return;
-        }
         VariantConfiguration config = variantData.variantConfiguration
 
         // get single output for now.
@@ -755,96 +742,20 @@ public abstract class BasePlugin {
         }
     }
 
-    public void createOldProcessManifestTask(
-            @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData,
-            @NonNull String manifestOurDir) {
-        VariantConfiguration config = variantData.variantConfiguration
-        ProductFlavor mergedFlavor = config.mergedFlavor
-
-        // loop on all outputs. The only difference will be the name of the task, and location
-        // of the generated manifest
-        for (BaseVariantOutputData vod : variantData.outputs) {
-            // create final var inside the loop to ensure the closures will work.
-            final BaseVariantOutputData variantOutputData = vod
-
-            String outputName = variantOutputData.fullName.capitalize()
-            String outputDirName = variantOutputData.dirName
-
-            def processManifestTask = project.tasks.create(
-                    "merge${outputName}Manifests", ProcessAppManifest)
-
-            variantOutputData.manifestProcessorTask = processManifestTask
-            processManifestTask.dependsOn variantData.prepareDependenciesTask
-            if (config.type != TEST) {
-                processManifestTask.dependsOn variantData.checkManifestTask
-            }
-
-            processManifestTask.plugin = this
-
-            processManifestTask.conventionMapping.mainManifest = {
-                config.mainManifest
-            }
-            processManifestTask.conventionMapping.manifestOverlays = {
-                config.manifestOverlays
-            }
-            processManifestTask.conventionMapping.packageNameOverride = {
-                config.idOverride
-            }
-            processManifestTask.conventionMapping.versionName = {
-                config.versionName
-            }
-            processManifestTask.conventionMapping.libraries = {
-                getManifestDependencies(config.directLibraries)
-            }
-            processManifestTask.conventionMapping.versionCode = {
-                if (variantOutputData instanceof ApkVariantOutputData) {
-                    return ((ApkVariantOutputData) variantOutputData).versionCode
-                }
-
-                return config.versionCode
-            }
-            processManifestTask.conventionMapping.minSdkVersion = {
-                if (androidBuilder.isPreviewTarget()) {
-                    return androidBuilder.getTargetCodename()
-                }
-
-                mergedFlavor.minSdkVersion?.apiString
-            }
-
-            processManifestTask.conventionMapping.targetSdkVersion = {
-                if (androidBuilder.isPreviewTarget()) {
-                    return androidBuilder.getTargetCodename()
-                }
-
-                return mergedFlavor.targetSdkVersion?.apiString
-            }
-            processManifestTask.conventionMapping.manifestOutputFile = {
-                project.file(
-                        "$project.buildDir/${FD_INTERMEDIATES}/${manifestOurDir}/${outputDirName}/AndroidManifest.xml")
-            }
-        }
-    }
-
     protected void createProcessTestManifestTask(
             @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData,
             @NonNull String manifestOurDir) {
         def processTestManifestTask;
         VariantConfiguration config = variantData.variantConfiguration
-        if (extension.getUseOldManifestMerger()) {
-            processTestManifestTask = project.tasks.create(
-                    "process${variantData.variantConfiguration.fullName.capitalize()}Manifest",
-                    ProcessTestManifest)
-        } else {
-            processTestManifestTask = project.tasks.create(
-                    "process${variantData.variantConfiguration.fullName.capitalize()}Manifest",
-                    ProcessTestManifest2)
-            processTestManifestTask.conventionMapping.testManifestFile = {
-                config.getMainManifest()
-            }
-            processTestManifestTask.conventionMapping.tmpDir = {
-                project.file(
-                        "$project.buildDir/${FD_INTERMEDIATES}/${manifestOurDir}/tmp")
-            }
+        processTestManifestTask = project.tasks.create(
+                "process${variantData.variantConfiguration.fullName.capitalize()}Manifest",
+                ProcessTestManifest)
+        processTestManifestTask.conventionMapping.testManifestFile = {
+            config.getMainManifest()
+        }
+        processTestManifestTask.conventionMapping.tmpDir = {
+            project.file(
+                    "$project.buildDir/${FD_INTERMEDIATES}/${manifestOurDir}/tmp")
         }
 
         // get single output for now.

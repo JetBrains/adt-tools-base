@@ -409,16 +409,6 @@ public abstract class BaseExtension {
     // TEMP for compatibility
     // STOPSHIP Remove in 1.0
 
-    // by default, use the new manifest merger.
-    boolean useOldManifestMerger = false;
-
-    void useOldManifestMerger(boolean flag) {
-        if (flag) {
-            plugin.displayDeprecationWarning("Support for old manifest merger is deprecated and will be removed in 1.0")
-        }
-        this.useOldManifestMerger = flag;
-    }
-
     // by default, we do not generate pure splits
     boolean generatePureSplits = false;
 
