@@ -1,0 +1,11 @@
+<resources>
+
+    <!-- Base application theme. -->
+    <style name="AppTheme" parent="android:Theme.Holo.Light.DarkActionBar">
+        <item name="android:background">@drawable/used10</item>
+    </style>
+
+    <style name="UnusedTheme" parent="android:Theme.Holo.Light.DarkActionBar">
+        <item name="android:background">@drawable/unused11</item>
+    </style>
+</resources>

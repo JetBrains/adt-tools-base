@@ -777,6 +777,7 @@ public class AndroidBuilder {
      * @param libraries the flat list of libraries
      * @param packageForR Package override to generate the R class in a different package.
      * @param sourceOutputDir optional source folder to generate R.java
+     * @param symbolOutputDir the folder to write symbols into
      * @param resPackageOutput optional filepath for packaged resources
      * @param proguardOutput optional filepath for proguard file to generate
      * @param type the type of the variant being built

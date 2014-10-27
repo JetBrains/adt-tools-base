@@ -26,12 +26,14 @@ import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_KEY_ALIA
 import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_KEY_PASSWORD;
 import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_STORE_FILE;
 import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_STORE_PASSWORD;
+import static java.io.File.separator;
 
 import com.android.annotations.Nullable;
 import com.android.ide.common.internal.CommandLineRunner;
 import com.android.ide.common.internal.LoggedErrorException;
 import com.android.utils.StdLogger;
 import com.google.common.base.Charsets;
+import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -43,7 +45,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.jar.JarInputStream;
@@ -51,6 +55,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+import java.util.zip.ZipInputStream;
 
 import javax.imageio.ImageIO;
 
@@ -190,6 +195,178 @@ public class ManualBuildTest extends BuildTest {
                 "clean", "build");
         checkFile(debugFileOutput, "proguard.txt", new String[]{"A"});
         checkFile(releaseFileOutput, "proguard.txt", new String[]{"A", "B", "C"});
+    }
+
+    public void testShrinkResources() throws Exception {
+        File project = new File(manualDir, "shrink");
+        File output = new File(project, "build/" + FD_OUTPUTS);
+        File intermediates = new File(project, "build/" + FD_INTERMEDIATES);
+
+        runTasksOn(
+                project,
+                BasePlugin.GRADLE_TEST_VERSION,
+                "clean", "assembleRelease", "assembleDebug", "assembleProguardNoShrink");
+
+        // The release target has shrinking enabled.
+        // The proguardNoShrink target has proguard but no shrinking enabled.
+        // The debug target has neither proguard nor shrinking enabled.
+
+        File apkRelease = new File(output, "apk" + separator + "shrink-release-unsigned.apk");
+        File apkDebug = new File(output, "apk" + separator + "shrink-debug.apk");
+        File apkProguardOnly = new File(output, "apk" + separator + "shrink-proguardNoShrink-unsigned.apk");
+
+        assertTrue(apkDebug + " is not a file", apkDebug.isFile());
+        assertTrue(apkRelease + " is not a file", apkRelease.isFile());
+        assertTrue(apkProguardOnly + " is not a file", apkProguardOnly.isFile());
+
+        File compressed = new File(intermediates, "res" + separator + "resources-release-stripped.ap_");
+        File uncompressed = new File(intermediates, "res" + separator + "resources-release.ap_");
+        assertTrue(compressed + " is not a file", compressed.isFile());
+        assertTrue(uncompressed + " is not a file", uncompressed.isFile());
+
+        // Check that there is no shrinking in the other two targets:
+        assertTrue(new File(intermediates,
+                "res" + separator + "resources-debug.ap_").exists());
+        assertFalse(new File(intermediates,
+                "res" + separator + "resources-debug-stripped.ap_").exists());
+        assertTrue(new File(intermediates,
+                "res" + separator + "resources-proguardNoShrink.ap_").exists());
+        assertFalse(new File(intermediates,
+                "res" + separator + "resources-proguardNoShrink-stripped.ap_").exists());
+
+        String expectedUnstrippedApk = ""
+                + "AndroidManifest.xml\n"
+                + "classes.dex\n"
+                + "resources.arsc\n"
+                + "res/layout/unused1.xml\n"
+                + "res/layout/unused2.xml\n"
+                + "res/drawable/unused9.xml\n"
+                + "res/drawable/unused10.xml\n"
+                + "res/drawable/unused11.xml\n"
+                + "res/menu/unused12.xml\n"
+                + "res/layout/unused13.xml\n"
+                + "res/layout/used1.xml\n"
+                + "res/layout/used2.xml\n"
+                + "res/layout/used3.xml\n"
+                + "res/layout/used4.xml\n"
+                + "res/layout/used5.xml\n"
+                + "res/layout/used6.xml\n"
+                + "res/layout/used7.xml\n"
+                + "res/layout/used8.xml\n"
+                + "res/drawable/used9.xml\n"
+                + "res/drawable/used10.xml\n"
+                + "res/drawable/used11.xml\n"
+                + "res/drawable/used12.xml\n"
+                + "res/menu/used13.xml\n"
+                + "res/layout/used14.xml";
+
+        String expectedStrippedApkContents = ""
+                + "AndroidManifest.xml\n"
+                + "classes.dex\n"
+                + "resources.arsc\n"
+                + "res/layout/used1.xml\n"
+                + "res/layout/used2.xml\n"
+                + "res/layout/used3.xml\n"
+                + "res/layout/used4.xml\n"
+                + "res/layout/used5.xml\n"
+                + "res/layout/used6.xml\n"
+                + "res/layout/used7.xml\n"
+                + "res/layout/used8.xml\n"
+                + "res/drawable/used9.xml\n"
+                + "res/drawable/used10.xml\n"
+                + "res/drawable/used11.xml\n"
+                + "res/drawable/used12.xml\n"
+                + "res/menu/used13.xml\n"
+                + "res/layout/used14.xml";
+
+        // Should not have any unused resources in the compressed list
+        assertFalse(expectedStrippedApkContents, expectedStrippedApkContents.contains("unused"));
+        // Should have *all* the used resources, currently 1-14
+        for (int i = 1; i <= 14; i++) {
+            assertTrue("Missing used"+i + " in " + expectedStrippedApkContents,
+                    expectedStrippedApkContents.contains("/used" + i + "."));
+        }
+
+        // Check that the uncompressed resources (.ap_) for the release target have everything
+        // we expect
+        String expectedUncompressed = expectedUnstrippedApk.replace("classes.dex\n", "");
+        assertEquals(expectedUncompressed, dumpZipContents(uncompressed).trim());
+
+        // The debug target should have everything there in the APK
+        assertEquals(expectedUnstrippedApk, dumpZipContents(apkDebug));
+        assertEquals(expectedUnstrippedApk, dumpZipContents(apkProguardOnly));
+
+        // Check the compressed .ap_:
+        String actualCompressed = dumpZipContents(compressed);
+        String expectedCompressed = expectedStrippedApkContents.replace("classes.dex\n", "");
+        assertEquals(expectedCompressed, actualCompressed);
+        assertFalse(expectedCompressed, expectedCompressed.contains("unused"));
+        assertEquals(expectedStrippedApkContents, dumpZipContents(apkRelease));
+    }
+
+    private static List<String> getZipPaths(File zipFile) throws IOException {
+        List<String> lines = Lists.newArrayList();
+        FileInputStream fis = new FileInputStream(zipFile);
+        try {
+            ZipInputStream zis = new ZipInputStream(fis);
+            try {
+                ZipEntry entry = zis.getNextEntry();
+                while (entry != null) {
+                    lines.add(entry.getName());
+                    entry = zis.getNextEntry();
+                }
+            } finally {
+                zis.close();
+            }
+        } finally {
+            fis.close();
+        }
+
+        return lines;
+    }
+
+    private static String dumpZipContents(File zipFile) throws IOException {
+        List<String> lines = getZipPaths(zipFile);
+
+        // Remove META-INF statements
+        ListIterator<String> iterator = lines.listIterator();
+        while (iterator.hasNext()) {
+            if (iterator.next().startsWith("META-INF/")) {
+                iterator.remove();
+            }
+        }
+
+        // Sort by base name (and numeric sort such that unused10 comes after unused9)
+        final Pattern pattern = Pattern.compile("(.*[^\\d])(\\d+)\\..+");
+        Collections.sort(lines, new Comparator<String>() {
+            @Override
+            public int compare(String line1, String line2) {
+                String name1 = line1.substring(line1.lastIndexOf('/') + 1);
+                String name2 = line2.substring(line2.lastIndexOf('/') + 1);
+                int delta = name1.compareTo(name2);
+                if (delta != 0) {
+                    // Try to do numeric sort
+                    Matcher match1 = pattern.matcher(name1);
+                    if (match1.matches()) {
+                        Matcher match2 = pattern.matcher(name2);
+                        //noinspection ConstantConditions
+                        if (match2.matches() && match1.group(1).equals(match2.group(1))) {
+                            //noinspection ConstantConditions
+                            int num1 = Integer.parseInt(match1.group(2));
+                            //noinspection ConstantConditions
+                            int num2 = Integer.parseInt(match2.group(2));
+                            if (num1 != num2) {
+                                return num1 - num2;
+                            }
+                        }
+                    }
+                    return delta;
+                }
+                return line1.compareTo(line2);
+            }
+        });
+
+        return Joiner.on('\n').join(lines);
     }
 
     public void testAnnotations() throws Exception {
