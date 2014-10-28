@@ -179,4 +179,10 @@ public class LintGradleClient extends LintCliClient {
         Collections.sort(merged);
         return merged;
     }
+
+    @Override
+    protected void addProgressPrinter() {
+        // No progress printing from the Gradle lint task; gradle tasks
+        // do not really do that, even for long-running jobs.
+    }
 }

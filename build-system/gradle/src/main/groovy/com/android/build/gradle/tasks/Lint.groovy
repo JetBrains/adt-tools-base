@@ -84,10 +84,13 @@ public class Lint extends DefaultTask {
         }
 
         // Compute error matrix
+        def quiet = mPlugin.getExtension().lintOptions.quiet
+
+
         for (Map.Entry<Variant,List<Warning>> entry : warningMap.entrySet()) {
             def variant = entry.getKey()
             def warnings = entry.getValue()
-            if (!mFatalOnly) {
+            if (!mFatalOnly && !quiet) {
                 println "Ran lint on variant " + variant.getName() + ": " + warnings.size() +
                         " issues found"
             }
@@ -206,7 +209,7 @@ public class Lint extends DefaultTask {
             boolean fatalOnly) {
         options.syncTo(client, flags, variantName, project, report)
 
-        if (fatalOnly) {
+        if (fatalOnly || flags.quiet) {
             for (Reporter reporter : flags.getReporters()) {
                 reporter.setDisplayEmpty(false)
             }
