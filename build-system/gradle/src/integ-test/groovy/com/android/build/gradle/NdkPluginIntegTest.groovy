@@ -31,7 +31,7 @@ import java.util.zip.ZipFile
 /**
  * Basic integration test for native plugin.
  */
-class NdkPluginIntegrationTest {
+class NdkPluginIntegTest {
     @ClassRule static public GradleProjectTestRule fixture = new GradleProjectTestRule();
 
     @BeforeClass
@@ -41,8 +41,8 @@ class NdkPluginIntegrationTest {
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 19
-    buildToolsVersion rootProject.ext.buildToolsVersion
+    compileSdkVersion $GradleProjectTestRule.DEFAULT_COMPILE_SDK_VERSION
+    buildToolsVersion "$GradleProjectTestRule.DEFAULT_BUILD_TOOL_VERSION"
     useNewNativePlugin true
     ndk {
         moduleName "hello-jni"

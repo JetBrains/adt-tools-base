@@ -36,7 +36,7 @@ import static org.junit.Assert.fail
  * This unit test is parameterized and will be executed for various values of STL.
  */
 @RunWith(Parameterized.class)
-public class NativeStlTest {
+public class NdkStlIntegTest {
 
     @Parameterized.Parameters
     public static Collection<Object[]> data() {
@@ -56,7 +56,7 @@ public class NativeStlTest {
 
     private String stl;
 
-    NativeStlTest(String stl) {
+    NdkStlIntegTest(String stl) {
         this.stl = stl;
     }
 
@@ -70,8 +70,8 @@ public class NativeStlTest {
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 19
-    buildToolsVersion rootProject.ext.buildToolsVersion
+    compileSdkVersion $GradleProjectTestRule.DEFAULT_COMPILE_SDK_VERSION
+    buildToolsVersion "$GradleProjectTestRule.DEFAULT_BUILD_TOOL_VERSION"
     useNewNativePlugin true
     ndk {
         moduleName "hello-jni"
