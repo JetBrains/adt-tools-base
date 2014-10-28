@@ -17,11 +17,10 @@
 package com.android.build.gradle.ndk.internal
 
 import org.gradle.api.InvalidUserDataException;
-import org.gradle.api.Project;
 import org.gradle.api.Task;
 import org.gradle.api.tasks.Copy
-import org.gradle.api.tasks.TaskContainer;
-import org.gradle.nativeplatform.internal.DefaultSharedLibraryBinarySpec
+import org.gradle.api.tasks.TaskContainer
+import org.gradle.nativeplatform.SharedLibraryBinarySpec;
 
 /**
  * Configuration to setup STL for NDK.
@@ -92,15 +91,15 @@ public class StlConfiguration {
             String stl,
             TaskContainer tasks,
             File buildDir,
-            DefaultSharedLibraryBinarySpec binary) {
+            SharedLibraryBinarySpec binary) {
         StlNativeToolSpecification stlConfig =
                 new StlNativeToolSpecification(ndkHandler, stl, binary.targetPlatform)
         stlConfig.apply(binary)
 
         if (stl.endsWith("_shared")) {
             Task copySharedLib = tasks.create(
-                    name: binary.namingScheme.getTaskName("copy", "StlSo"),
-                    type:Copy) {
+                    name: NdkNamingScheme.getTaskName(binary, "copy", "StlSo"),
+                    type: Copy) {
                 from(stlConfig.getStlLib())
                 into(new File(buildDir, NdkNamingScheme.getOutputDirectoryName(binary)))
             }

@@ -16,6 +16,8 @@
 
 package com.android.build.gradle.ndk.internal;
 
+import com.android.annotations.Nullable;
+import com.android.build.gradle.internal.StringHelper;
 import com.android.builder.model.AndroidProject;
 import com.google.common.base.Joiner;
 
@@ -27,6 +29,45 @@ import java.io.File;
  * Naming scheme for NdkPlugin's outputs.
  */
 public class NdkNamingScheme {
+
+    public static File getObjectFilesOutputDirectory(
+            NativeBinarySpec binary,
+            File buildDir,
+            String sourceSetName) {
+        return new File(
+                buildDir,
+                String.format(
+                        "%s/objectFiles/%s/%s",
+                        AndroidProject.FD_INTERMEDIATES ,
+                        binary.getName(),
+                        sourceSetName));
+    }
+
+    public static String getTaskName(NativeBinarySpec binary, @Nullable String verb) {
+        return getTaskName(binary, verb, null);
+    }
+
+    public static String getTaskName(
+            NativeBinarySpec binary,
+            @Nullable String verb,
+            @Nullable String target) {
+        StringBuilder sb = new StringBuilder();
+        appendCamelCase(sb, verb);
+        appendCamelCase(sb, binary.getName());
+        appendCamelCase(sb, target);
+        return sb.toString();
+    }
+
+    private static void appendCamelCase(StringBuilder sb, @Nullable String word) {
+        if (word != null) {
+            if (sb.length() == 0) {
+                sb.append(word);
+            } else {
+                sb.append(StringHelper.capitalize(word));
+            }
+        }
+    }
+
     public static String getOutputDirectoryName(NativeBinarySpec binary) {
         return Joiner.on(File.separator).join(
                 AndroidProject.FD_INTERMEDIATES,
