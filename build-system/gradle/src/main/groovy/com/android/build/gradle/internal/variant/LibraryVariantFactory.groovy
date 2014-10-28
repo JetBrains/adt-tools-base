@@ -22,6 +22,9 @@ import com.android.build.gradle.BasePlugin
 import com.android.build.gradle.LibraryExtension
 import com.android.build.gradle.api.BaseVariant
 import com.android.build.gradle.api.BaseVariantOutput
+import com.android.build.gradle.internal.BuildTypeData
+import com.android.build.gradle.internal.ProductFlavorData
+import com.android.build.gradle.internal.VariantModel
 import com.android.build.gradle.internal.api.LibraryVariantImpl
 import com.android.build.gradle.internal.api.LibraryVariantOutputImpl
 import com.android.build.gradle.internal.api.ReadOnlyObjectProvider
@@ -41,6 +44,7 @@ import com.android.builder.dependency.ManifestDependency
 import com.android.builder.model.AndroidLibrary
 import com.android.builder.model.MavenCoordinates
 import com.google.common.collect.Lists
+import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.tasks.Copy
@@ -439,5 +443,29 @@ public class LibraryVariantFactory implements VariantFactory<LibraryVariantData>
         }
 
         return task
+    }
+
+    /***
+     * Prevent customization of applicationId or applicationIdSuffix.
+     */
+    @Override
+    public void validateModel(VariantModel model) {
+        for (BuildTypeData buildType : model.getBuildTypes().values()) {
+            if (buildType.getBuildType().getApplicationIdSuffix() != null) {
+                throw new GradleException("Library projects cannot set applicationId. " +
+                        "applicationIdSuffix is set to '" +
+                        buildType.getBuildType().getApplicationIdSuffix() +
+                        "' in build type '" + buildType.getBuildType().getName() + "'.");
+            }
+        }
+        for (ProductFlavorData productFlavor : model.getProductFlavors().values()) {
+            if (productFlavor.getProductFlavor().getApplicationId() != null) {
+                throw new GradleException("Library projects cannot set applicationId. " +
+                        "applicationId is set to '" +
+                        productFlavor.getProductFlavor().getApplicationId() + "' in flavor '" +
+                        productFlavor.getProductFlavor().getName() + "'.");
+            }
+        }
+
     }
 }

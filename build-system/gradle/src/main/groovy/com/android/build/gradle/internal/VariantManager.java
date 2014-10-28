@@ -49,12 +49,14 @@ import com.android.build.gradle.internal.variant.TestedVariantData;
 import com.android.build.gradle.internal.variant.VariantFactory;
 import com.android.builder.core.VariantConfiguration;
 import com.android.builder.model.BuildType;
+import com.android.builder.model.ProductFlavor;
 import com.android.builder.model.SigningConfig;
 import com.google.common.base.Function;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
+import org.gradle.api.GradleException;
 import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
@@ -70,7 +72,7 @@ import groovy.lang.Closure;
 /**
  * Class to create, manage variants.
  */
-public class VariantManager {
+public class VariantManager implements VariantModel {
 
     @NonNull
     private final Project project;
@@ -107,16 +109,19 @@ public class VariantManager {
         this.variantFactory = variantFactory;
     }
 
+    @Override
     @NonNull
     public Map<String, BuildTypeData> getBuildTypes() {
         return buildTypes;
     }
 
+    @Override
     @NonNull
     public Map<String, ProductFlavorData<GroupableProductFlavorDsl>> getProductFlavors() {
         return productFlavors;
     }
 
+    @Override
     @NonNull
     public Map<String, SigningConfig> getSigningConfigs() {
         return signingConfigs;
@@ -188,6 +193,8 @@ public class VariantManager {
      * Task creation entry point.
      */
     public void createAndroidTasks(@Nullable SigningConfig signingOverride) {
+        variantFactory.validateModel(this);
+
         if (!productFlavors.isEmpty()) {
             // there'll be more than one test app, so we need a top level assembleTest
             Task assembleTest = project.getTasks().create("assembleTest");
@@ -484,10 +491,12 @@ public class VariantManager {
             /// add the container of dependencies
             // the order of the libraries is important. In descending order:
             // flavors, defaultConfig. No build type for tests
-            List<ConfigurationProvider> testVariantProviders = Lists.newArrayListWithExpectedSize(1 + productFlavorList.size());
+            List<ConfigurationProvider> testVariantProviders = Lists
+                    .newArrayListWithExpectedSize(1 + productFlavorList.size());
 
             for (GroupableProductFlavor productFlavor : productFlavorList) {
-                ProductFlavorData<GroupableProductFlavorDsl> data = productFlavors.get(productFlavor.getName());
+                ProductFlavorData<GroupableProductFlavorDsl> data = productFlavors
+                        .get(productFlavor.getName());
 
                 String dimensionName = productFlavor.getFlavorDimension();
                 if (dimensionName == null) {
