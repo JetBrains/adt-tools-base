@@ -29,8 +29,6 @@ import com.android.build.gradle.internal.api.LibraryVariantImpl
 import com.android.build.gradle.internal.api.LibraryVariantOutputImpl
 import com.android.build.gradle.internal.api.ReadOnlyObjectProvider
 import com.android.build.gradle.internal.core.GradleVariantConfiguration
-import com.android.build.gradle.internal.coverage.JacocoInstrumentTask
-import com.android.build.gradle.internal.coverage.JacocoPlugin
 import com.android.build.gradle.internal.tasks.MergeFileTask
 import com.android.build.gradle.ndk.NdkPlugin
 import com.android.build.gradle.tasks.ExtractAnnotations
@@ -56,6 +54,7 @@ import org.gradle.tooling.BuildException
 import static com.android.SdkConstants.FN_ANNOTATIONS_ZIP
 import static com.android.SdkConstants.LIBS_FOLDER
 import static com.android.build.gradle.BasePlugin.DIR_BUNDLES
+import static com.android.build.gradle.BasePlugin.optionalDependsOn
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
 import static com.android.builder.model.AndroidProject.FD_OUTPUTS
 /**
@@ -246,57 +245,62 @@ public class LibraryVariantFactory implements VariantFactory<LibraryVariantData>
 
         def extract = variantData.variantDependency.annotationsPresent ? createExtractAnnotations(
                 fullName, project, variantData) : null
+        if (extract != null) {
+            bundle.dependsOn(extract)
+        }
 
         final boolean instrumented = variantConfig.buildType.isTestCoverageEnabled()
 
-        // if needed, instrument the code
-        JacocoInstrumentTask jacocoTask = null
-        Copy agentTask = null
-        File jacocoAgentJar = null
-        if (instrumented) {
-            jacocoTask = project.tasks.create(
-                    "instrument${variantConfig.fullName.capitalize()}", JacocoInstrumentTask)
-            jacocoTask.dependsOn variantData.javaCompileTask
-            jacocoTask.conventionMapping.jacocoClasspath = { project.configurations[JacocoPlugin.ANT_CONFIGURATION_NAME] }
-            jacocoTask.conventionMapping.inputDir = { variantData.javaCompileTask.destinationDir }
-            jacocoTask.conventionMapping.outputDir = { project.file("${project.buildDir}/${FD_INTERMEDIATES}/coverage-instrumented-classes/${variantConfig.dirName}") }
-            variantData.jacocoInstrumentTask = jacocoTask
 
-            agentTask = basePlugin.getJacocoAgentTask()
-            jacocoAgentJar = new File(agentTask.destinationDir, BasePlugin.FILE_JACOCO_AGENT)
+        // data holding dependencies and input for the dex. This gets updated as new
+        // post-compilation steps are inserted between the compilation and dx.
+        BasePlugin.PostCompilationData pcData = new BasePlugin.PostCompilationData()
+        pcData.classGeneratingTask = Collections.singletonList(variantData.javaCompileTask)
+        pcData.libraryGeneratingTask = Collections.singletonList(
+                variantData.variantDependency.packageConfiguration.buildDependencies)
+        pcData.inputFiles = {
+            return variantData.javaCompileTask.outputs.files.files
+        }
+        pcData.inputDir = {
+            return variantData.javaCompileTask.destinationDir
+        }
+        pcData.inputLibraries = {
+            return Collections.emptyList()
+        }
+
+        // if needed, instrument the code
+        if (instrumented) {
+            pcData = basePlugin.createJacocoTask(variantConfig, variantData, pcData)
         }
 
         if (buildType.isMinifyEnabled()) {
             // run proguard on output of compile task
-            basePlugin.createProguardTasks(variantData, null, agentTask, jacocoAgentJar)
-
-            bundle.dependsOn packageRes, packageRenderscript, variantData.obfuscationTask,
-                    mergeProGuardFileTask, lintCopy, packageJniLibs
-            if (extract != null) {
-                bundle.dependsOn(extract)
-            }
+            basePlugin.createProguardTasks(variantData, null, pcData)
         } else {
             // package the local jar in libs/
             Sync packageLocalJar = project.tasks.create(
                     "package${fullName.capitalize()}LocalJar",
                     Sync)
             packageLocalJar.from(BasePlugin.getLocalJarFileList(variantData.variantDependency))
-            if (instrumented) {
-                packageLocalJar.dependsOn agentTask
-                packageLocalJar.from(jacocoAgentJar)
-            }
             packageLocalJar.into(project.file(
                     "$project.buildDir/${FD_INTERMEDIATES}/$DIR_BUNDLES/${dirName}/$LIBS_FOLDER"))
 
+            // add the input libraries. This is only going to be the agent jar if applicable
+            // due to how inputLibraries is initialized.
+            // TODO: clean this.
+            packageLocalJar.from(pcData.inputLibraries)
+            basePlugin.optionalDependsOn(packageLocalJar, pcData.libraryGeneratingTask)
+            pcData.libraryGeneratingTask = Collections.singletonList(packageLocalJar)
+
             // jar the classes.
             Jar jar = project.tasks.create("package${fullName.capitalize()}Jar", Jar);
-            jar.dependsOn variantData.javaCompileTask, variantData.processJavaResourcesTask
-            if (instrumented) {
-                jar.dependsOn jacocoTask
-                jar.from({ jacocoTask.getOutputDir() });
-            } else {
-                jar.from(variantData.javaCompileTask.outputs);
-            }
+            jar.dependsOn variantData.processJavaResourcesTask
+
+            // add the class files (whether they are instrumented or not.
+            jar.from(pcData.inputDir)
+            optionalDependsOn(jar, pcData.classGeneratingTask)
+            pcData.classGeneratingTask = Collections.singletonList(jar)
+
             jar.from(variantData.processJavaResourcesTask.destinationDir)
 
             jar.destinationDir = project.file(
@@ -317,15 +321,15 @@ public class LibraryVariantFactory implements VariantFactory<LibraryVariantData>
                 jar.exclude(packageName + "/BuildConfig.class")
             }
 
-            bundle.dependsOn packageRes, jar, packageRenderscript, packageLocalJar,
-                    mergeProGuardFileTask, lintCopy, packageJniLibs
-
             if (extract != null) {
                 // In case extract annotations strips out private typedef annotation classes
                 jar.dependsOn extract
-                bundle.dependsOn extract
             }
         }
+
+        bundle.dependsOn packageRes, packageRenderscript, lintCopy, packageJniLibs, mergeProGuardFileTask
+        basePlugin.optionalDependsOn(bundle, pcData.classGeneratingTask)
+        basePlugin.optionalDependsOn(bundle, pcData.libraryGeneratingTask)
 
         bundle.setDescription("Assembles a bundle containing the library in ${fullName.capitalize()}.");
         bundle.destinationDir = project.file("$project.buildDir/${FD_OUTPUTS}/aar")
