@@ -45,6 +45,16 @@ class CreateManifestKeepList extends DefaultTask {
         Writer out = new BufferedWriter(new FileWriter(getOutputFile()))
         try {
             parser.parse(getManifest(), new ManifestHandler(out))
+
+            // add a couple of rules that cannot be easily parsed from the manifest.
+            out.write(
+"""-keep public class * extends android.app.backup.BackupAgent {
+    <init>();
+}
+-keep public class * extends java.lang.annotation.Annotation {
+    *;
+}""")
+
         } finally {
             out.close()
         }
