@@ -232,6 +232,25 @@ public class VariantManager implements VariantModel {
             BaseVariantData testedVariantData = (BaseVariantData) ((TestVariantData) variantData)
                     .getTestedVariantData();
 
+            /// add the container of dependencies
+            // the order of the libraries is important. In descending order:
+            // flavors, defaultConfig. No build type for tests
+            List<ConfigurationProvider> testVariantProviders = Lists.newArrayListWithExpectedSize(
+                    2 + testVariantConfig.getProductFlavors().size());
+
+            for (GroupableProductFlavor productFlavor : testVariantConfig.getProductFlavors()) {
+                ProductFlavorData<GroupableProductFlavorDsl> data = productFlavors.get(productFlavor.getName());
+                testVariantProviders.add(data.getTestProvider());
+            }
+
+            // now add the default config
+            testVariantProviders.add(basePlugin.getDefaultConfigData().getTestProvider());
+
+            assert(testVariantConfig.getTestedConfig() != null);
+            if (testVariantConfig.getTestedConfig().getType() == VariantConfiguration.Type.LIBRARY) {
+                testVariantProviders.add(testedVariantData.getVariantDependency());
+            }
+
             // If the variant being tested is a library variant, VariantDependencies must be
             // computed the tasks for the tested variant is created.  Therefore, the
             // VariantDependencies is computed here instead of when the VariantData was created.
@@ -239,10 +258,7 @@ public class VariantManager implements VariantModel {
                     project, testVariantConfig.getFullName(),
                     false /*publishVariant*/,
                     variantFactory.isLibrary(),
-                    defaultConfigData.getTestProvider(),
-                    testedVariantData.getVariantConfiguration().getType()
-                            == VariantConfiguration.Type.LIBRARY ?
-                            testedVariantData.getVariantDependency() : null);
+                    testVariantProviders.toArray(new ConfigurationProvider[testVariantProviders.size()]));
             variantData.setVariantDependency(variantDep);
 
             basePlugin.resolveDependencies(variantDep);
@@ -490,12 +506,6 @@ public class VariantManager implements VariantModel {
                     testedVariantData.getVariantConfiguration(),
                     signingOverride);
 
-            /// add the container of dependencies
-            // the order of the libraries is important. In descending order:
-            // flavors, defaultConfig. No build type for tests
-            List<ConfigurationProvider> testVariantProviders = Lists
-                    .newArrayListWithExpectedSize(1 + productFlavorList.size());
-
             for (GroupableProductFlavor productFlavor : productFlavorList) {
                 ProductFlavorData<GroupableProductFlavorDsl> data = productFlavors
                         .get(productFlavor.getName());
@@ -508,21 +518,13 @@ public class VariantManager implements VariantModel {
                         data.getProductFlavor(),
                         data.getTestSourceSet(),
                         dimensionName);
-                testVariantProviders.add(data.getTestProvider());
             }
-
-            // now add the default config
-            testVariantProviders.add(basePlugin.getDefaultConfigData().getTestProvider());
 
             // create the internal storage for this variant.
             TestVariantData testVariantData = new TestVariantData(
                     basePlugin, testVariantConfig, (TestedVariantData) testedVariantData);
             // link the testVariant to the tested variant in the other direction
             ((TestedVariantData) testedVariantData).setTestVariantData(testVariantData);
-
-            if (testedConfig.getType() == VariantConfiguration.Type.LIBRARY) {
-                testVariantProviders.add(testedVariantData.getVariantDependency());
-            }
 
             variantDataList.add(testVariantData);
         }
