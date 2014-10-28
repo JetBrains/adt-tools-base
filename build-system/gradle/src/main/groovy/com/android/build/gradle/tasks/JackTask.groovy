@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.tasks
 
-import com.android.annotations.NonNull
 import com.android.build.gradle.BasePlugin
 import com.android.sdklib.BuildToolInfo
 import com.android.sdklib.repository.FullRevision
@@ -84,58 +83,46 @@ public class JackTask extends AbstractCompile {
         command << "--classpath"
         command << computeBootClasspath()
         for (File lib : getPackagedLibraries()) {
-            command << "--import-jack"
+            command << "--import"
             command << lib.absolutePath
         }
-        command << "--output"
+        command << "--output-dex"
         command << getDestinationDir().absolutePath
 
-        // temp workaround since --jack-output cannot be used
-        // with the dex output.
-        /*
-        command << "--jack-output"
-        command << jackOutFolder.absolutePath
-        */
-        command << "-D"
-        command << "jack.jackfile.generate=true"
-        command << "-D"
-        command << "jack.jackfile.output.container=zip"
-        command << "-D"
-        command << "jack.jackfile.output.zip=${getJackFile().absolutePath}".toString()
+        command << "--output-jack"
+        command << getJackFile().absolutePath
 
         command << "-D"
         command << "jack.import.resource.policy=keep-first"
 
+        command << "-D"
+        command << "jack.reporter=sdk"
+
         Collection<File> _proguardFiles = getProguardFiles()
         if (_proguardFiles != null && !_proguardFiles.isEmpty()) {
             for (File file : _proguardFiles) {
-                command << "--proguard-flags"
+                command << "--config-proguard"
                 command << file.absolutePath
             }
 
             File _mappingFile = getMappingFile()
             if (_mappingFile != null) {
-                // the normal property-based mechanism to output a mapping file
-                // doesn't work, so use a proguard file instead until this is
-                // fixed.
-                //command << "-D"
-                //command << "jack.obfuscation.mapping.dump.file=${_mappingFile.absolutePath}".toString()
-                command << "--proguard-flags"
-                command << createMappingFileCommand(_mappingFile)
+                command << "-D"
+                command << "jack.obfuscation.mapping.dump=true"
+                command << "-D"
+                command << "jack.obfuscation.mapping.dump.file=${_mappingFile.absolutePath}".toString()
             }
         }
 
         if (isMultiDexEnabled()) {
-            command << "-D"
-            command << "jack.dex.output.policy=multidex"
-
+            command << "--multi-dex"
             if (getMinSdkVersion() < 21) {
-                command << "-D"
-                command << "jack.dex.output.multidex.legacy=true"
+                command << "legacy"
+            } else {
+                command << "native"
             }
         }
 
-        command << "--ecj"
         command << computeEcjOptionFile()
 
         plugin.androidBuilder.commandLineRunner.runCmdLine(command, null)
@@ -157,17 +144,6 @@ public class JackTask extends AbstractCompile {
         Files.write(sb.toString(), file, Charsets.UTF_8)
 
         return "@$file.absolutePath"
-    }
-
-    private String createMappingFileCommand(@NonNull File mappingFile) {
-        File folder = getTempFolder();
-        folder.mkdirs()
-        File file = new File(folder,"mapping.pro");
-
-        Files.write("-printmapping ${mappingFile.absolutePath}\n",
-                file, Charsets.UTF_8);
-
-        return file.absolutePath
     }
 
     private String computeBootClasspath() {

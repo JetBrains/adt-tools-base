@@ -64,6 +64,10 @@ import com.android.build.gradle.internal.tasks.SigningReportTask
 import com.android.build.gradle.internal.tasks.TestServerTask
 import com.android.build.gradle.internal.tasks.UninstallTask
 import com.android.build.gradle.internal.tasks.ValidateSigningTask
+import com.android.build.gradle.internal.tasks.multidex.CreateMainDexList
+import com.android.build.gradle.internal.tasks.multidex.CreateManifestKeepList
+import com.android.build.gradle.internal.tasks.multidex.JarMergingTask
+import com.android.build.gradle.internal.tasks.multidex.RetraceMainDexList
 import com.android.build.gradle.internal.test.report.ReportType
 import com.android.build.gradle.internal.variant.ApkVariantData
 import com.android.build.gradle.internal.variant.ApkVariantOutputData
@@ -1511,7 +1515,8 @@ public abstract class BasePlugin {
             @NonNull BaseVariantData<? extends BaseVariantOutputData> baseVariantData) {
         // Only create lint targets for variants like debug and release, not debugTest
         VariantConfiguration config = baseVariantData.variantConfiguration
-        return config.getType() != TEST;
+        // TODO: re-enable with Jack when possible
+        return config.getType() != TEST && !config.useJack;
     }
 
     // Add tasks for running lint on individual variants. We've already added a
@@ -1555,7 +1560,9 @@ public abstract class BasePlugin {
 
     private void createLintVitalTask(@NonNull ApkVariantData variantData) {
         assert extension.lintOptions.checkReleaseBuilds
-        if (!variantData.variantConfiguration.buildType.debuggable) {
+        // TODO: re-enable with Jack when possible
+        if (!variantData.variantConfiguration.buildType.debuggable &&
+                !variantData.variantConfiguration.useJack) {
             String variantName = variantData.variantConfiguration.fullName
             def capitalizedVariantName = variantName.capitalize()
             def taskName = "lintVital" + capitalizedVariantName
@@ -1681,7 +1688,11 @@ public abstract class BasePlugin {
                         new File(connectedTask.getCoverageDir(), SimpleTestCallable.FILE_COVERAGE_EC)
                     }
                     reportTask.conventionMapping.classDir = {
-                        baseVariantData.javaCompileTask.destinationDir
+                        if (baseVariantData.javaCompileTask != null) {
+                            return baseVariantData.javaCompileTask.destinationDir
+                        }
+
+                        return baseVariantData.jackTask.destinationDir
                     }
                     reportTask.conventionMapping.sourceDir = { baseVariantData.getJavaSourceFoldersForCoverage() }
 
@@ -1838,6 +1849,19 @@ public abstract class BasePlugin {
     }
 
     /**
+     * Class to hold data to setup the many optional
+     * post-compilation steps.
+     */
+    public static class PostCompilationData {
+        List<Object> classGeneratingTask
+        List<Object> libraryGeneratingTask
+
+        Closure<Collection<File>> inputFiles
+        Closure<File> inputDir
+        Closure<Collection<File>> inputLibraries
+    }
+
+    /**
      * Creates the post-compilation tasks for the given Variant.
      *
      * These tasks create the dex file from the .class files, plus optional intermediary steps
@@ -1848,142 +1872,271 @@ public abstract class BasePlugin {
     public void createPostCompilationTasks(@NonNull ApkVariantData variantData) {
         GradleVariantConfiguration config = variantData.variantConfiguration
 
-        if (config.isLegacyMultiDexMode()) {
-            throw new RuntimeException("Legacy mode not supported yet. Use Jack.")
-        }
-
         boolean isMinifyEnabled = config.isMinifyEnabled()
+        boolean isMultiDexEnabled = config.isMultiDexEnabled() && config.type != TEST
+        boolean isLegacyMultiDexMode = config.isLegacyMultiDexMode()
 
-        boolean runInstrumentation = config.buildType.isTestCoverageEnabled() &&
+        boolean isTestCoverageEnabled = config.buildType.isTestCoverageEnabled() &&
                 config.type != TEST
 
         // common dex task configuration
         String dexTaskName = "dex${config.fullName.capitalize()}"
         Dex dexTask = project.tasks.create(dexTaskName, Dex)
         variantData.dexTask = dexTask
-
         dexTask.plugin = this
-
         dexTask.conventionMapping.outputFolder = {
             project.file("${project.buildDir}/${FD_INTERMEDIATES}/dex/${config.dirName}")
         }
-        dexTask.dexOptions = extension.dexOptions
-
-        dexTask.conventionMapping.multiDex = {
-            config.isMultiDexEnabled()
-        }
-
         dexTask.tmpFolder = project.file("$project.buildDir/${FD_INTERMEDIATES}/tmp/dex/${config.dirName}")
+        dexTask.dexOptions = extension.dexOptions
+        dexTask.multiDexEnabled = isMultiDexEnabled
 
-        JacocoInstrumentTask jacocoTask = null
-        Copy agentTask = null
-        File jacocoAgentJar = null
-        if (runInstrumentation) {
-            jacocoTask = project.tasks.create(
-                    "instrument${config.fullName.capitalize()}", JacocoInstrumentTask)
-            jacocoTask.dependsOn variantData.javaCompileTask
-            jacocoTask.conventionMapping.jacocoClasspath = { project.configurations[JacocoPlugin.ANT_CONFIGURATION_NAME] }
-            jacocoTask.conventionMapping.inputDir = { variantData.javaCompileTask.destinationDir }
-            jacocoTask.conventionMapping.outputDir = {
-                project.file("${project.buildDir}/${FD_INTERMEDIATES}/coverage-instrumented-classes/${config.dirName}")
-            }
-            variantData.jacocoInstrumentTask = jacocoTask
-
-            dexTask.dependsOn jacocoTask
-
-            agentTask = getJacocoAgentTask()
-            jacocoAgentJar = new File(agentTask.destinationDir, FILE_JACOCO_AGENT)
+        // data holding dependencies and input for the dex. This gets updated as new
+        // post-compilation steps are inserted between the compilation and dx.
+        PostCompilationData pcData = new PostCompilationData()
+        pcData.classGeneratingTask = Collections.singletonList(variantData.javaCompileTask)
+        pcData.libraryGeneratingTask = Collections.singletonList(
+                variantData.variantDependency.packageConfiguration.buildDependencies)
+        pcData.inputFiles = {
+            return variantData.javaCompileTask.outputs.files.files
         }
+        pcData.inputDir = {
+            return variantData.javaCompileTask.destinationDir
+        }
+        pcData.inputLibraries = {
+            return androidBuilder.getPackagedJars(config)
+        }
+
+        // ---- Code Coverage first -----
+        if (isTestCoverageEnabled) {
+            createJacocoTask(config, variantData, pcData)
+        }
+
+        // ----- Minify next ----
 
         if (isMinifyEnabled) {
             // first proguard task.
             BaseVariantData<? extends BaseVariantOutputData> testedVariantData = variantData instanceof TestVariantData ? variantData.testedVariantData : null as BaseVariantData
-            createProguardTasks(variantData, testedVariantData, agentTask, jacocoAgentJar)
+            createProguardTasks(variantData, testedVariantData, pcData)
 
-            // then dexing task
-            dexTask.dependsOn variantData.obfuscationTask
-            def outFile = variantData.obfuscatedClassesJar
-            dexTask.conventionMapping.inputFiles = { project.files(outFile).files }
-            dexTask.conventionMapping.libraries = { Collections.emptyList() }
-        } else {
+        } else if ((extension.dexOptions.preDexLibraries && !isMultiDexEnabled) ||
+                (isMultiDexEnabled && !isLegacyMultiDexMode))  {
+            def preDexTaskName = "preDex${config.fullName.capitalize()}"
+            PreDex preDexTask = project.tasks.create(preDexTaskName, PreDex)
 
-            // if required, pre-dexing task.
-            PreDex preDexTask = null;
-            boolean runPreDex = extension.dexOptions.preDexLibraries
-            if (runPreDex) {
-                def preDexTaskName = "preDex${config.fullName.capitalize()}"
-                preDexTask = project.tasks.create(preDexTaskName, PreDex)
+            variantData.preDexTask = preDexTask
+            preDexTask.plugin = this
+            preDexTask.dexOptions = extension.dexOptions
+            preDexTask.multiDex = isMultiDexEnabled
 
-                variantData.preDexTask = preDexTask
-                preDexTask.dependsOn variantData.variantDependency.packageConfiguration.buildDependencies
-                preDexTask.plugin = this
-                preDexTask.dexOptions = extension.dexOptions
-
-                preDexTask.conventionMapping.multiDex = {
-                    return config.isMultiDexEnabled()
-                }
-
-                preDexTask.conventionMapping.inputFiles = {
-                    Set<File> set = androidBuilder.getPackagedJars(config)
-                    if (agentTask != null) {
-                        set.add(jacocoAgentJar)
-                    }
-
-                    return set
-                }
-                preDexTask.conventionMapping.outputFolder = {
-                    project.file(
-                            "${project.buildDir}/${FD_INTERMEDIATES}/pre-dexed/${config.dirName}")
-                }
-
-                if (agentTask != null) {
-                    preDexTask.dependsOn agentTask
-                }
+            preDexTask.conventionMapping.inputFiles = pcData.inputLibraries
+            preDexTask.conventionMapping.outputFolder = {
+                project.file(
+                        "${project.buildDir}/${FD_INTERMEDIATES}/pre-dexed/${config.dirName}")
             }
 
-            // then dexing task
-            dexTask.dependsOn variantData.javaCompileTask
+            // update dependency.
+            optionalDependsOn(preDexTask, pcData.libraryGeneratingTask)
+            pcData.libraryGeneratingTask = Collections.singletonList(preDexTask)
 
-            if (runPreDex) {
-                dexTask.dependsOn preDexTask
+            // update inputs
+            if (isMultiDexEnabled) {
+                pcData.inputLibraries = {
+                    return Collections.<File>emptyList()
+                }
+
             } else {
-                dexTask.dependsOn variantData.variantDependency.packageConfiguration.buildDependencies
-            }
-
-            dexTask.conventionMapping.inputFiles = {
-                if (jacocoTask != null) {
-                    return project.files(jacocoTask.getOutputDir()).files
-                }
-
-                variantData.javaCompileTask.outputs.files.files
-            }
-            if (runPreDex) {
-                // if multi-dex is enabled, then each library will just be added to the
-                // package task.
-                dexTask.conventionMapping.libraries = {
-                    if (config.isMultiDexEnabled()) {
-                        return Collections.emptyList()
-                    }
-
+                pcData.inputLibraries = {
                     return project.fileTree(preDexTask.outputFolder).files
-                }
-            } else {
-                // this is the case where we don't have proguard, so we need to manually
-                // regather the packaged lib and package them.
-                dexTask.conventionMapping.libraries = {
-                    Set<File> set = androidBuilder.getPackagedJars(config)
-                    if (agentTask != null) {
-                        set.add(project.file(jacocoAgentJar))
-                    }
-
-                    return set
-                }
-
-                if (agentTask != null) {
-                    dexTask.dependsOn agentTask
                 }
             }
         }
+
+        // ----- Multi-Dex support
+        if (isMultiDexEnabled && isLegacyMultiDexMode) {
+            if (!isMinifyEnabled) {
+                // create a task that will convert the output of the compilation
+                // into a jar. This is needed by the multi-dex input.
+                JarMergingTask jarMergingTask = project.tasks.create(
+                        "packageAll${config.fullName.capitalize()}ClassesForMultiDex",
+                        JarMergingTask)
+                jarMergingTask.conventionMapping.inputJars = pcData.inputLibraries
+                jarMergingTask.conventionMapping.inputDir = pcData.inputDir
+
+                jarMergingTask.jarFile = project.file(
+                        "$project.buildDir/${FD_INTERMEDIATES}/multi-dex/${config.dirName}/allclasses.jar")
+
+                // update dependencies
+                optionalDependsOn(jarMergingTask, pcData.classGeneratingTask)
+                optionalDependsOn(jarMergingTask, pcData.libraryGeneratingTask)
+                pcData.libraryGeneratingTask = pcData.classGeneratingTask =
+                        Collections.singletonList(jarMergingTask)
+
+                // Update the inputs
+                pcData.inputFiles = {
+                    return Collections.singletonList(jarMergingTask.jarFile)
+                }
+                pcData.inputDir = null
+                pcData.inputLibraries = {
+                    return Collections.emptyList()
+                }
+            }
+
+
+            // ----------
+            // Create a task to collect the list of manifest entry points which are
+            // needed in the primary dex
+            CreateManifestKeepList manifestKeepListTask = project.tasks.create(
+                    "collect${config.fullName.capitalize()}MultiDexComponents",
+                    CreateManifestKeepList)
+
+            // since all the output have the same manifest, besides the versionCode,
+            // we can take any of the output and use that.
+            final BaseVariantOutputData output = variantData.outputs.get(0)
+            manifestKeepListTask.dependsOn output.manifestProcessorTask
+            manifestKeepListTask.conventionMapping.manifest = {
+                output.manifestProcessorTask.manifestOutputFile
+            }
+
+            manifestKeepListTask.outputFile = project.file(
+                    "${project.buildDir}/${FD_INTERMEDIATES}/multi-dex/${config.dirName}/manifest_keep.txt")
+
+            //variant.ext.collectMultiDexComponents = manifestKeepListTask
+
+            // ----------
+            // Create a proguard task to shrink the classes to manifest components
+            ProGuardTask proguardComponentsTask = createShrinkingProGuardTask(project,
+                    "shrink${config.fullName.capitalize()}MultiDexComponents")
+
+            proguardComponentsTask.configuration(manifestKeepListTask.outputFile)
+
+            proguardComponentsTask.libraryjars( {
+                ensureTargetSetup()
+                return new File(getAndroidBuilder().getTargetInfo().buildTools.location, "multidex${File.separatorChar}shrinkedAndroid.jar")
+            })
+
+            proguardComponentsTask.injars(pcData.inputFiles.call().iterator().next())
+
+            File componentsJarFile = project.file(
+                    "${project.buildDir}/${FD_INTERMEDIATES}/multi-dex/${config.dirName}/componentClasses.jar")
+            proguardComponentsTask.outjars(componentsJarFile)
+
+            proguardComponentsTask.printconfiguration(
+                    "${project.buildDir}/${FD_INTERMEDIATES}/multi-dex/${config.dirName}/components.flags")
+
+            // update dependencies
+            proguardComponentsTask.dependsOn manifestKeepListTask
+            optionalDependsOn(proguardComponentsTask, pcData.classGeneratingTask)
+            optionalDependsOn(proguardComponentsTask, pcData.libraryGeneratingTask)
+
+            // ----------
+            // Compute the full list of classes for the main dex file
+            CreateMainDexList createMainDexListTask = project.tasks.create(
+                    "create${config.fullName.capitalize()}MainDexClassList",
+                    CreateMainDexList)
+            createMainDexListTask.plugin = this
+            createMainDexListTask.dependsOn proguardComponentsTask
+            //createMainDexListTask.dependsOn { proguardMainDexTask }
+
+            createMainDexListTask.allClassesJarFile = pcData.inputFiles.call().iterator().next()
+            createMainDexListTask.conventionMapping.componentsJarFile = { componentsJarFile }
+            //createMainDexListTask.conventionMapping.includeInMainDexJarFile = { mainDexJarFile }
+            createMainDexListTask.outputFile = project.file(
+                    "${project.buildDir}/${FD_INTERMEDIATES}/multi-dex/${config.dirName}/maindexlist.txt")
+
+            // update dependencies
+            dexTask.dependsOn createMainDexListTask
+
+            // ----------
+            // If proguard is on create a de-obfuscated list to aid debugging.
+            if (isMinifyEnabled) {
+                RetraceMainDexList retraceTask = project.tasks.create(
+                        "retrace${config.fullName.capitalize()}MainDexClassList",
+                        RetraceMainDexList)
+                retraceTask.dependsOn variantData.obfuscationTask, createMainDexListTask
+
+                retraceTask.conventionMapping.mainDexListFile = { createMainDexListTask.outputFile }
+                retraceTask.conventionMapping.mappingFile = { variantData.mappingFile }
+                retraceTask.outputFile = project.file(
+                        "${project.buildDir}/${FD_INTERMEDIATES}/multi-dex/${config.dirName}/maindexlist_deobfuscated.txt")
+                dexTask.dependsOn retraceTask
+            }
+
+            // configure the dex task to receive the generated class list.
+            dexTask.conventionMapping.mainDexListFile = { createMainDexListTask.outputFile }
+        }
+
+        // ----- Dex Task ----
+
+        // dependencies, some of these could be null
+        optionalDependsOn(dexTask, pcData.classGeneratingTask)
+        optionalDependsOn(dexTask, pcData.libraryGeneratingTask,)
+
+        // inputs
+        if (pcData.inputDir != null) {
+            dexTask.conventionMapping.inputDir = pcData.inputDir
+        } else {
+            dexTask.conventionMapping.inputFiles = pcData.inputFiles
+        }
+        dexTask.conventionMapping.libraries = pcData.inputLibraries
+    }
+
+    public PostCompilationData createJacocoTask(
+            @NonNull GradleVariantConfiguration config,
+            @NonNull BaseVariantData variantData,
+            @NonNull final PostCompilationData pcData) {
+        final JacocoInstrumentTask jacocoTask = project.tasks.create(
+                "instrument${config.fullName.capitalize()}", JacocoInstrumentTask)
+        jacocoTask.conventionMapping.jacocoClasspath =
+                { project.configurations[JacocoPlugin.ANT_CONFIGURATION_NAME] }
+        // can't directly use the existing inputFiles closure as we need the dir instead :\
+        jacocoTask.conventionMapping.inputDir = pcData.inputDir
+        jacocoTask.conventionMapping.outputDir = {
+            project.file(
+                    "${project.buildDir}/${FD_INTERMEDIATES}/coverage-instrumented-classes/${config.dirName}")
+        }
+        variantData.jacocoInstrumentTask = jacocoTask
+
+        Copy agentTask = getJacocoAgentTask()
+        jacocoTask.dependsOn agentTask
+
+        // update dependency.
+        PostCompilationData pcData2 = new PostCompilationData()
+        optionalDependsOn(jacocoTask, pcData.classGeneratingTask)
+        pcData2.classGeneratingTask = Collections.singletonList(jacocoTask)
+        List<Object> libTasks = Lists.<Object> newArrayList(pcData.libraryGeneratingTask)
+        libTasks.add(agentTask)
+        pcData2.libraryGeneratingTask = libTasks
+
+        // update inputs
+        pcData2.inputFiles = {
+            return project.files(jacocoTask.getOutputDir()).files
+        }
+        pcData2.inputDir = {
+            return jacocoTask.getOutputDir()
+        }
+        pcData2.inputLibraries = {
+            Set<File> set = Sets.newHashSet(pcData.inputLibraries.call())
+            set.add(new File(agentTask.destinationDir, FILE_JACOCO_AGENT))
+
+            return set
+        }
+
+        return pcData
+    }
+
+    private static ProGuardTask createShrinkingProGuardTask(
+            @NonNull Project project,
+            @NonNull String name) {
+        ProGuardTask task = project.tasks.create(name, ProGuardTask)
+
+        task.dontobfuscate()
+        task.dontoptimize()
+        task.dontpreverify()
+        task.dontwarn()
+        task.forceprocessing()
+
+        return task;
     }
 
     public void createJackTask(
@@ -2200,7 +2353,9 @@ public abstract class BasePlugin {
                 return null
             }
             packageApp.conventionMapping.dexedLibraries = {
-                if (config.isMultiDexEnabled() && variantData.preDexTask != null) {
+                if (config.isMultiDexEnabled() &&
+                        !config.isLegacyMultiDexMode() &&
+                        variantData.preDexTask != null) {
                     return project.fileTree(variantData.preDexTask.outputFolder).files
                 }
 
@@ -2486,11 +2641,10 @@ public abstract class BasePlugin {
      * @return outFile file outputted by proguard
      */
     @NonNull
-    public File createProguardTasks(
+    public void createProguardTasks(
             final @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData,
             final @Nullable BaseVariantData<? extends BaseVariantOutputData> testedVariantData,
-            final @Nullable Task agentTask,
-            final @Nullable File jacocoAgentJar) {
+            final @NonNull PostCompilationData pcData) {
         final VariantConfiguration variantConfig = variantData.variantConfiguration
 
         // use single output for now.
@@ -2499,7 +2653,6 @@ public abstract class BasePlugin {
         def proguardTask = project.tasks.create(
                 "proguard${variantData.variantConfiguration.fullName.capitalize()}",
                 ProGuardTask)
-        proguardTask.dependsOn variantData.javaCompileTask, variantData.variantDependency.packageConfiguration.buildDependencies
 
         if (testedVariantData != null) {
             proguardTask.dependsOn testedVariantData.obfuscationTask
@@ -2509,14 +2662,11 @@ public abstract class BasePlugin {
 
         // --- Output File ---
 
-        File outFile;
-        if (variantData instanceof LibraryVariantData) {
-            outFile = project.file(
-                    "${project.buildDir}/${FD_INTERMEDIATES}/$DIR_BUNDLES/${variantData.variantConfiguration.dirName}/classes.jar")
-        } else {
-            outFile = project.file(
+        final File outFile = variantData instanceof LibraryVariantData ?
+            project.file(
+                    "${project.buildDir}/${FD_INTERMEDIATES}/$DIR_BUNDLES/${variantData.variantConfiguration.dirName}/classes.jar") :
+            project.file(
                     "${project.buildDir}/${FD_INTERMEDIATES}/classes-proguard/${variantData.variantConfiguration.dirName}/classes.jar")
-        }
         variantData.obfuscatedClassesJar = outFile
 
         // --- Proguard Config ---
@@ -2549,8 +2699,6 @@ public abstract class BasePlugin {
         proguardTask.configuration(configFiles)
 
         // --- InJars / LibraryJars ---
-        String classesDir = (variantData.jacocoInstrumentTask != null) ?
-                variantData.jacocoInstrumentTask.outputDir : variantData.javaCompileTask.destinationDir
 
         if (variantData instanceof LibraryVariantData) {
             String packageName = variantConfig.getPackageFromManifest()
@@ -2568,11 +2716,11 @@ public abstract class BasePlugin {
                 exclude += (', !' + packageName + "/Manifest\$*.class")
                 exclude += (', !' + packageName + "/BuildConfig.class")
             }
-            proguardTask.injars(classesDir, filter: exclude)
+            proguardTask.injars(pcData.inputDir, filter: exclude)
 
             // include R files and such for compilation
             String include = exclude.replace('!', '')
-            proguardTask.libraryjars(classesDir, filter: include)
+            proguardTask.libraryjars(pcData.inputDir, filter: include)
 
             // injar: the local dependencies
             Closure inJars = {
@@ -2596,14 +2744,10 @@ public abstract class BasePlugin {
             proguardTask.keeppackagenames()
         } else {
             // injar: the compilation output
-            proguardTask.injars(classesDir)
+            proguardTask.injars(pcData.inputDir)
 
             // injar: the packaged dependencies
-            Closure inJars = {
-                androidBuilder.getPackagedJars(variantConfig)
-            }
-
-            proguardTask.injars(inJars, filter: '!META-INF/MANIFEST.MF')
+            proguardTask.injars(pcData.inputLibraries, filter: '!META-INF/MANIFEST.MF')
 
             // the provided-only jars as libraries.
             Closure libJars = {
@@ -2619,12 +2763,6 @@ public abstract class BasePlugin {
             for (String runtimeJar : androidBuilder.getBootClasspathAsStrings()) {
                 proguardTask.libraryjars(runtimeJar)
             }
-        }
-
-        // Add Jacoco runtime
-        if (agentTask != null) {
-            proguardTask.dependsOn agentTask
-            proguardTask.injars(project.file(jacocoAgentJar))
         }
 
         if (testedVariantData != null) {
@@ -2656,7 +2794,19 @@ public abstract class BasePlugin {
             proguardOut.mkdirs()
         }
 
-        return outFile
+        // update dependency.
+        optionalDependsOn(proguardTask, pcData.classGeneratingTask)
+        optionalDependsOn(proguardTask, pcData.libraryGeneratingTask)
+        pcData.libraryGeneratingTask = pcData.classGeneratingTask = Collections.singletonList(proguardTask)
+
+        // Update the inputs
+        pcData.inputFiles = {
+            return Collections.singletonList(outFile)
+        }
+        pcData.inputDir = null
+        pcData.inputLibraries = {
+            return Collections.emptyList()
+        }
     }
 
     private ShrinkResources createShrinkResourcesTask(ApkVariantOutputData variantOutputData) {
@@ -3302,8 +3452,16 @@ public abstract class BasePlugin {
         return plugin[0]
     }
 
-    private static void optionalDependsOn(@NonNull Task main, Task... dependencies) {
+    public static void optionalDependsOn(@NonNull Task main, Task... dependencies) {
         for (Task dependency : dependencies) {
+            if (dependency != null) {
+                main.dependsOn dependency
+            }
+        }
+    }
+
+    public static void optionalDependsOn(@NonNull Task main, @NonNull List<Object> dependencies) {
+        for (Object dependency : dependencies) {
             if (dependency != null) {
                 main.dependsOn dependency
             }

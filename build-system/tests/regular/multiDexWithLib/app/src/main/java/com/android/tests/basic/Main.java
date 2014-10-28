@@ -2,6 +2,7 @@ package com.android.tests.basic;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.widget.TextView;
 
 public class Main extends Activity
 {
@@ -21,5 +22,9 @@ public class Main extends Activity
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
+
+        TextView tv = (TextView) findViewById(R.id.text);
+        tv.setText("Found all classes");
+
     }
 }
