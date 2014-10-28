@@ -39,6 +39,7 @@ public class ApkVariantOutputData extends BaseVariantOutputData {
     public SplitZipAlign splitZipAlign;
 
     private int versionCodeOverride = -1;
+    private String versionNameOverride = null;
 
     public ApkVariantOutputData(
             @NonNull OutputFile.OutputType outputType,
@@ -113,11 +114,27 @@ public class ApkVariantOutputData extends BaseVariantOutputData {
         return getOutputFile().getParentFile();
     }
 
+    public String getVersionName() {
+        if (versionNameOverride != null) {
+            return versionNameOverride;
+        }
+
+        return variantData.getVariantConfiguration().getMergedFlavor().getVersionName();
+    }
+
     public void setVersionCodeOverride(int versionCodeOverride) {
         this.versionCodeOverride = versionCodeOverride;
     }
 
     public int getVersionCodeOverride() {
         return versionCodeOverride;
+    }
+
+    public void setVersionNameOverride(String versionNameOverride) {
+        this.versionNameOverride = versionNameOverride;
+    }
+
+    public String getVersionNameOverride() {
+        return versionNameOverride;
     }
 }

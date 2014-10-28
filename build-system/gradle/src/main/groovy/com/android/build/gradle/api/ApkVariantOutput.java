@@ -65,6 +65,26 @@ public interface ApkVariantOutput extends BaseVariantOutput {
     int getVersionCodeOverride();
 
     /**
+     * Sets the version name override. This version name will only affect this output.
+     *
+     * If the value is null, then the output will use the version name defined in the main
+     * merged flavors for this variant.
+     *
+     * @param versionNameOverride the version name override.
+     */
+    void setVersionNameOverride(String versionNameOverride);
+
+    /**
+     * Returns the version name override.
+     *
+     * If the value is null, then the output will use the version name defined in the main
+     * merged flavors for this variant.
+     *
+     * @return the version name override.
+     */
+    String getVersionNameOverride();
+
+    /**
      * Returns the version code for this output.
      *
      * This is convenient method that returns the final version code whether it's coming

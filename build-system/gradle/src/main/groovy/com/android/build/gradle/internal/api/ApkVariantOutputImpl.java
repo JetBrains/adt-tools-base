@@ -77,6 +77,16 @@ public class ApkVariantOutputImpl extends BaseVariantOutputImpl implements ApkVa
     }
 
     @Override
+    public void setVersionNameOverride(String versionNameOverride) {
+        variantOutputData.setVersionNameOverride(versionNameOverride);
+    }
+
+    @Override
+    public String getVersionNameOverride() {
+        return variantOutputData.getVersionNameOverride();
+    }
+
+    @Override
     public int getVersionCode() {
         return variantOutputData.getVersionCode();
     }
