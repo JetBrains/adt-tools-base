@@ -125,8 +125,8 @@ public interface LintOptions {
     public boolean isNoLines();
 
     /**
-     * Returns whether lint should be quiet (for example, not show progress dots for each analyzed
-     * file)
+     * Returns whether lint should be quiet (for example, not write informational messages
+     * such as paths to report files written)
      */
     public boolean isQuiet();
 

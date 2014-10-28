@@ -164,7 +164,8 @@ public class XmlReporter extends Reporter {
         mWriter.write("\n</issues>\n");       //$NON-NLS-1$
         mWriter.close();
 
-        if (mDisplayEmpty || errorCount > 0 || warningCount > 0) {
+        if (!mClient.getFlags().isQuiet()
+                && (mDisplayEmpty || errorCount > 0 || warningCount > 0)) {
             String path = mOutput.getAbsolutePath();
             System.out.println(String.format("Wrote XML report to %1$s", path));
         }

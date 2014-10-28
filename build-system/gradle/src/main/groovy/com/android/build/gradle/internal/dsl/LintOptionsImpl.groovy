@@ -57,7 +57,7 @@ public class LintOptionsImpl implements LintOptions, Serializable {
     @Input
     private boolean noLines
     @Input
-    private boolean quiet = true
+    private boolean quiet
     @Input
     private boolean checkAllWarnings
     @Input
@@ -261,16 +261,16 @@ public class LintOptionsImpl implements LintOptions, Serializable {
     }
 
     /**
-     * Returns whether lint should be quiet (for example, not show progress dots for each analyzed
-     * file)
+     * Returns whether lint should be quiet (for example, not write informational messages
+     * such as paths to report files written)
      */
     public boolean isQuiet() {
         return quiet
     }
 
     /**
-     * Sets whether lint should be quiet (for example, not show progress dots for each analyzed
-     * file)
+     * Sets whether lint should be quiet (for example, not write informational messages
+     * such as paths to report files written)
      */
     public void setQuiet(boolean quiet) {
         this.quiet = quiet
