@@ -64,6 +64,10 @@ import com.android.build.gradle.internal.tasks.SigningReportTask
 import com.android.build.gradle.internal.tasks.TestServerTask
 import com.android.build.gradle.internal.tasks.UninstallTask
 import com.android.build.gradle.internal.tasks.ValidateSigningTask
+import com.android.build.gradle.internal.tasks.multidex.CreateMainDexList
+import com.android.build.gradle.internal.tasks.multidex.CreateManifestKeepList
+import com.android.build.gradle.internal.tasks.multidex.JarMergingTask
+import com.android.build.gradle.internal.tasks.multidex.RetraceMainDexList
 import com.android.build.gradle.internal.test.report.ReportType
 import com.android.build.gradle.internal.variant.ApkVariantData
 import com.android.build.gradle.internal.variant.ApkVariantOutputData
@@ -1899,7 +1903,8 @@ public abstract class BasePlugin {
             BaseVariantData<? extends BaseVariantOutputData> testedVariantData = variantData instanceof TestVariantData ? variantData.testedVariantData : null as BaseVariantData
             createProguardTasks(variantData, testedVariantData, pcData)
 
-        } else if ((extension.dexOptions.preDexLibraries && !isMultiDexEnabled) || (isMultiDexEnabled && !isLegacyMultiDexMode))  {
+        } else if ((extension.dexOptions.preDexLibraries && !isMultiDexEnabled) ||
+                (isMultiDexEnabled && !isLegacyMultiDexMode))  {
             def preDexTaskName = "preDex${config.fullName.capitalize()}"
             PreDex preDexTask = project.tasks.create(preDexTaskName, PreDex)
 
@@ -1933,7 +1938,116 @@ public abstract class BasePlugin {
 
         // ----- Multi-Dex support
         if (isMultiDexEnabled && isLegacyMultiDexMode) {
+            if (!isMinifyEnabled) {
+                // create a task that will convert the output of the compilation
+                // into a jar. This is needed by the multi-dex input.
+                JarMergingTask jarMergingTask = project.tasks.create(
+                        "packageAll${config.fullName.capitalize()}ClassesForMultiDex",
+                        JarMergingTask)
+                jarMergingTask.conventionMapping.inputJars = pcData.inputLibraries
+                jarMergingTask.conventionMapping.inputDir = pcData.inputDir
 
+                jarMergingTask.jarFile = project.file(
+                        "$project.buildDir/${FD_INTERMEDIATES}/multi-dex/${config.dirName}/allclasses.jar")
+
+                // update dependencies
+                optionalDependsOn(jarMergingTask, pcData.classGeneratingTask)
+                optionalDependsOn(jarMergingTask, pcData.libraryGeneratingTask)
+                pcData.libraryGeneratingTask = pcData.classGeneratingTask =
+                        Collections.singletonList(jarMergingTask)
+
+                // Update the inputs
+                pcData.inputFiles = {
+                    return Collections.singletonList(jarMergingTask.jarFile)
+                }
+                pcData.inputDir = null
+                pcData.inputLibraries = {
+                    return Collections.emptyList()
+                }
+            }
+
+
+            // ----------
+            // Create a task to collect the list of manifest entry points which are
+            // needed in the primary dex
+            CreateManifestKeepList manifestKeepListTask = project.tasks.create(
+                    "collect${config.fullName.capitalize()}MultiDexComponents",
+                    CreateManifestKeepList)
+
+            // since all the output have the same manifest, besides the versionCode,
+            // we can take any of the output and use that.
+            final BaseVariantOutputData output = variantData.outputs.get(0)
+            manifestKeepListTask.dependsOn output.manifestProcessorTask
+            manifestKeepListTask.conventionMapping.manifest = {
+                output.manifestProcessorTask.manifestOutputFile
+            }
+
+            manifestKeepListTask.outputFile = project.file(
+                    "${project.buildDir}/${FD_INTERMEDIATES}/multi-dex/${config.dirName}/manifest_keep.txt")
+
+            //variant.ext.collectMultiDexComponents = manifestKeepListTask
+
+            // ----------
+            // Create a proguard task to shrink the classes to manifest components
+            ProGuardTask proguardComponentsTask = createShrinkingProGuardTask(project,
+                    "shrink${config.fullName.capitalize()}MultiDexComponents")
+
+            proguardComponentsTask.configuration(manifestKeepListTask.outputFile)
+
+            proguardComponentsTask.libraryjars( {
+                ensureTargetSetup()
+                return new File(getAndroidBuilder().getTargetInfo().buildTools.location, "multidex${File.separatorChar}shrinkedAndroid.jar")
+            })
+
+            proguardComponentsTask.injars(pcData.inputFiles.call().iterator().next())
+
+            File componentsJarFile = project.file(
+                    "${project.buildDir}/${FD_INTERMEDIATES}/multi-dex/${config.dirName}/componentClasses.jar")
+            proguardComponentsTask.outjars(componentsJarFile)
+
+            proguardComponentsTask.printconfiguration(
+                    "${project.buildDir}/${FD_INTERMEDIATES}/multi-dex/${config.dirName}/components.flags")
+
+            // update dependencies
+            proguardComponentsTask.dependsOn manifestKeepListTask
+            optionalDependsOn(proguardComponentsTask, pcData.classGeneratingTask)
+            optionalDependsOn(proguardComponentsTask, pcData.libraryGeneratingTask)
+
+            // ----------
+            // Compute the full list of classes for the main dex file
+            CreateMainDexList createMainDexListTask = project.tasks.create(
+                    "create${config.fullName.capitalize()}MainDexClassList",
+                    CreateMainDexList)
+            createMainDexListTask.plugin = this
+            createMainDexListTask.dependsOn proguardComponentsTask
+            //createMainDexListTask.dependsOn { proguardMainDexTask }
+
+            createMainDexListTask.allClassesJarFile = pcData.inputFiles.call().iterator().next()
+            createMainDexListTask.conventionMapping.componentsJarFile = { componentsJarFile }
+            //createMainDexListTask.conventionMapping.includeInMainDexJarFile = { mainDexJarFile }
+            createMainDexListTask.outputFile = project.file(
+                    "${project.buildDir}/${FD_INTERMEDIATES}/multi-dex/${config.dirName}/maindexlist.txt")
+
+            // update dependencies
+            dexTask.dependsOn createMainDexListTask
+
+            // ----------
+            // If proguard is on create a de-obfuscated list to aid debugging.
+            if (isMinifyEnabled) {
+                RetraceMainDexList retraceTask = project.tasks.create(
+                        "retrace${config.fullName.capitalize()}MainDexClassList",
+                        RetraceMainDexList)
+                retraceTask.dependsOn variantData.obfuscationTask, createMainDexListTask
+
+                retraceTask.conventionMapping.mainDexListFile = { createMainDexListTask.outputFile }
+                retraceTask.conventionMapping.mappingFile = { variantData.mappingFile }
+                retraceTask.outputFile = project.file(
+                        "${project.buildDir}/${FD_INTERMEDIATES}/multi-dex/${config.dirName}/maindexlist_deobfuscated.txt")
+                dexTask.dependsOn retraceTask
+            }
+
+            // configure the dex task to receive the generated class list.
+            dexTask.conventionMapping.mainDexListFile = { createMainDexListTask.outputFile }
         }
 
         // ----- Dex Task ----
@@ -1993,6 +2107,20 @@ public abstract class BasePlugin {
         }
 
         return pcData
+    }
+
+    private static ProGuardTask createShrinkingProGuardTask(
+            @NonNull Project project,
+            @NonNull String name) {
+        ProGuardTask task = project.tasks.create(name, ProGuardTask)
+
+        task.dontobfuscate()
+        task.dontoptimize()
+        task.dontpreverify()
+        task.dontwarn()
+        task.forceprocessing()
+
+        return task;
     }
 
     public void createJackTask(
