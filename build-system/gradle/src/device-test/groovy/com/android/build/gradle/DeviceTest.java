@@ -25,6 +25,8 @@ import junit.framework.TestSuite;
 
 import java.util.List;
 
+import java.util.List;
+
 /**
  * DeviceConnector tests.
  *

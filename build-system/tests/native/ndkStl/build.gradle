@@ -21,35 +21,47 @@ buildscript {
 // Create subproject with the same source directories.  Each subproject will use a different stl
 // library.
 subprojects {
-    apply plugin: 'com.android.application'
+    apply plugin: 'com.android.model.application'
 
-    android {
-        compileSdkVersion 19
-        buildToolsVersion = rootProject.ext.buildToolsVersion
+    model {
+        android {
+            compileSdkVersion 19
+            buildToolsVersion = rootProject.ext.buildToolsVersion
 
-        useNewNativePlugin true
-        ndk {
+            buildTypes.debug.jniDebugBuild true
+
+            sourceSets {
+                androidTest {
+                    java {
+                        srcDir '../src/androidTest/java'
+                    }
+                }
+                main {
+                    manifest.srcFile '../src/main/AndroidManifest.xml'
+                }
+            }
+        }
+
+        android.ndk {
             moduleName "hello-jni"
         }
 
-        buildTypes.debug.jniDebuggable true
-
-        sourceSets {
-            androidTest {
-                java {
-                    srcDir '../src/androidTest/java'
-                }
-            }
+        sources {
             main {
-                manifest.srcFile '../src/main/AndroidManifest.xml'
                 res {
-                    srcDir '../src/main/res'
+                    source {
+                        srcDir '../src/main/res'
+                    }
                 }
                 java {
-                    srcDir '../src/main/java'
+                    source {
+                        srcDir '../src/main/java'
+                    }
                 }
-                jni {
-                    srcDir '../src/main/jni'
+                cpp {
+                    source {
+                        srcDir '../src/main/jni'
+                    }
                 }
             }
         }

@@ -121,6 +121,6 @@ public class HelloWorldTest extends ActivityInstrumentationTestCase2<HelloWorld>
 """);
 
     public HelloWorldApp() {
-        addFile(javaSource, resValuesSource, resLayoutSource, manifest, androidTestSource);
+        addFiles(javaSource, resValuesSource, resLayoutSource, manifest, androidTestSource);
     }
 }

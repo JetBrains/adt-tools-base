@@ -79,7 +79,7 @@ import com.android.build.gradle.internal.variant.LibraryVariantData
 import com.android.build.gradle.internal.variant.TestVariantData
 import com.android.build.gradle.internal.variant.TestedVariantData
 import com.android.build.gradle.internal.variant.VariantFactory
-import com.android.build.gradle.ndk.NdkPlugin
+import com.android.build.gradle.model.NdkComponentModelPlugin
 import com.android.build.gradle.tasks.AidlCompile
 import com.android.build.gradle.tasks.CompatibleScreensManifest
 import com.android.build.gradle.tasks.Dex
@@ -215,7 +215,6 @@ public abstract class BasePlugin {
     protected ToolingModelBuilderRegistry registry
 
     protected JacocoPlugin jacocoPlugin
-    protected NdkPlugin ndkPlugin
 
     protected BaseExtension extension
     protected VariantManager variantManager
@@ -353,15 +352,6 @@ public abstract class BasePlugin {
                 buildTypeContainer, productFlavorContainer, signingConfigContainer,
                 this instanceof LibraryPlugin)
         setBaseExtension(extension)
-
-        if (project.plugins.hasPlugin(NdkPlugin.class)) {
-            throw new BadPluginException(
-                    "Cannot apply Android native plugin before the Android plugin.")
-        }
-        project.apply plugin: NdkPlugin
-        ndkPlugin = project.plugins.getPlugin(NdkPlugin)
-
-        extension.setNdkExtension(ndkPlugin.getNdkExtension())
 
         variantManager = new VariantManager(project, this, extension, getVariantFactory())
 
@@ -2311,7 +2301,7 @@ public abstract class BasePlugin {
 
             // Add dependencies on NDK tasks if NDK plugin is applied.
             if (extension.getUseNewNativePlugin()) {
-                NdkPlugin ndkPlugin = project.plugins.getPlugin(NdkPlugin.class)
+                NdkComponentModelPlugin ndkPlugin = project.plugins.getPlugin(NdkComponentModelPlugin.class)
                 packageApp.dependsOn ndkPlugin.getBinaries(config)
             } else {
                 packageApp.dependsOn variantData.ndkCompileTask
@@ -2370,7 +2360,7 @@ public abstract class BasePlugin {
                 // for now only the project's compilation output.
                 Set<File> set = Sets.newHashSet()
                 if (extension.getUseNewNativePlugin()) {
-                    NdkPlugin ndkPlugin = project.plugins.getPlugin(NdkPlugin.class)
+                    NdkComponentModelPlugin ndkPlugin = project.plugins.getPlugin(NdkComponentModelPlugin.class)
                     set.addAll(ndkPlugin.getOutputDirectories(config))
                 } else {
                     set.addAll(variantData.ndkCompileTask.soFolder)

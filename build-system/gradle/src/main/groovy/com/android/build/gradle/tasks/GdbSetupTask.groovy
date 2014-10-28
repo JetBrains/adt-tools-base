@@ -19,13 +19,15 @@ package com.android.build.gradle.tasks
 import com.android.build.gradle.ndk.NdkExtension
 import com.android.build.gradle.ndk.internal.NdkHandler
 import com.android.build.gradle.ndk.internal.StlConfiguration
-import com.android.builder.core.BuilderConstants
 import com.google.common.base.Charsets
+import com.google.common.collect.Sets
 import com.google.common.io.Files
 import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.TaskAction
-import org.gradle.nativeplatform.NativeBinary
+import org.gradle.language.c.CSourceSet
+import org.gradle.language.cpp.CppSourceSet
+import org.gradle.nativeplatform.NativeBinarySpec
 
 /**
  * Task to create gdb.setup for native code debugging.
@@ -38,7 +40,7 @@ class GdbSetupTask extends DefaultTask {
     NdkExtension extension
 
     @Input
-    NativeBinary binary
+    NativeBinarySpec binary
 
     @Input
     File outputDir
@@ -53,10 +55,14 @@ class GdbSetupTask extends DefaultTask {
         sb.append("directory ")
         sb.append("${ndkHandler.getSysroot(binary.targetPlatform)}/usr/include ")
 
-        // TODO: Add directory of variant specific source set.
-        Iterable<String> sources = (
-                extension.sourceSets.getByName(BuilderConstants.MAIN).srcDirs*.toString() +
-                        StlConfiguration.getStlSources(ndkHandler, extension.stl))
+        Set<String> sources = Sets.newHashSet();
+        binary.getSource().withType(CSourceSet) { sourceSet ->
+            sources.addAll(sourceSet.source.srcDirs*.toString())
+        }
+        binary.getSource().withType(CppSourceSet) { sourceSet ->
+            sources.addAll(sourceSet.source.srcDirs*.toString())
+        }
+        sources.addAll(StlConfiguration.getStlSources(ndkHandler, extension.stl))
         sb.append(sources.join(" "))
 
         if (!outputDir.exists()) {

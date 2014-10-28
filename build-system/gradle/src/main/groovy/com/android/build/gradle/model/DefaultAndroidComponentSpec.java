@@ -20,6 +20,8 @@ import com.android.build.gradle.BaseExtension;
 import com.android.build.gradle.internal.VariantManager;
 import com.android.builder.model.SigningConfig;
 
+import org.gradle.nativeplatform.NativeLibrary;
+import org.gradle.nativeplatform.NativeLibrarySpec;
 import org.gradle.platform.base.component.BaseComponentSpec;
 
 /**
@@ -31,6 +33,8 @@ public class DefaultAndroidComponentSpec extends BaseComponentSpec implements An
     VariantManager variantManager;
 
     SigningConfig signingOverride;
+
+    NativeLibrarySpec nativeLibrary;
 
     @Override
     public BaseExtension getExtension() {
@@ -56,5 +60,13 @@ public class DefaultAndroidComponentSpec extends BaseComponentSpec implements An
 
     public void setSigningOverride(SigningConfig signingOverride) {
         this.signingOverride = signingOverride;
+    }
+
+    public NativeLibrarySpec getNativeLibrary() {
+        return nativeLibrary;
+    }
+
+    public void setNativeLibrary(NativeLibrarySpec nativeLibrary) {
+        this.nativeLibrary = nativeLibrary;
     }
 }

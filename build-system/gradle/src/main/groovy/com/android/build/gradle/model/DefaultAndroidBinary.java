@@ -16,16 +16,48 @@
 
 package com.android.build.gradle.model;
 
+import com.android.build.gradle.api.GroupableProductFlavor;
 import com.android.build.gradle.internal.variant.BaseVariantData;
+import com.android.builder.model.BuildType;
+import com.google.common.collect.Lists;
 
+import org.gradle.nativeplatform.NativeLibraryBinarySpec;
 import org.gradle.platform.base.binary.BaseBinarySpec;
+
+import java.util.List;
 
 /**
  * Binary for Android.
  */
 public class DefaultAndroidBinary extends BaseBinarySpec implements AndroidBinary {
 
+    private BuildType buildType;
+
+    private List<? extends GroupableProductFlavor> productFlavors;
+
     private BaseVariantData variantData;
+
+    private List<NativeLibraryBinarySpec> nativeBinaries = Lists.newArrayList();
+
+    private List<String> targetAbi = Lists.newArrayList();
+
+    @Override
+    public BuildType getBuildType() {
+        return buildType;
+    }
+
+    public void setBuildType(BuildType buildType) {
+        this.buildType = buildType;
+    }
+
+    @Override
+    public List<? extends GroupableProductFlavor> getProductFlavors() {
+        return productFlavors;
+    }
+
+    public void setProductFlavors(List<? extends GroupableProductFlavor> productFlavors) {
+        this.productFlavors = productFlavors;
+    }
 
     public BaseVariantData getVariantData() {
         return variantData;
@@ -35,4 +67,11 @@ public class DefaultAndroidBinary extends BaseBinarySpec implements AndroidBinar
         this.variantData = variantData;
     }
 
+    public List<? extends NativeLibraryBinarySpec> getNativeBinaries() {
+        return nativeBinaries;
+    }
+
+    public List<String> getTargetAbi() {
+        return targetAbi;
+    }
 }

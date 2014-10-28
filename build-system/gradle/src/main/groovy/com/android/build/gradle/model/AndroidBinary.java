@@ -16,10 +16,19 @@
 
 package com.android.build.gradle.model;
 
+import com.android.build.gradle.api.GroupableProductFlavor;
+import com.android.builder.model.BuildType;
+import com.android.builder.model.ProductFlavor;
+
 import org.gradle.platform.base.BinarySpec;
+
+import java.util.List;
 
 /**
  * Binary interface for Android.
  */
 public interface AndroidBinary extends BinarySpec {
+    BuildType getBuildType();
+
+    List<? extends ProductFlavor> getProductFlavors();
 }

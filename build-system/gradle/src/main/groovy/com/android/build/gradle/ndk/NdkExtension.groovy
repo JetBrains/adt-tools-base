@@ -52,11 +52,7 @@ public class NdkExtension {
 
     private PatternSet cppFilePattern;
 
-    private NamedDomainObjectContainer<AndroidSourceDirectorySet> sourceSetsContainer
-
-    public NdkExtension(
-            @Nullable NamedDomainObjectContainer<AndroidSourceDirectorySet> sourceSetsContainer) {
-        this.sourceSetsContainer = sourceSetsContainer
+    public NdkExtension() {
         cFilePattern = new PatternSet()
         cppFilePattern = new PatternSet()
     }
@@ -178,14 +174,6 @@ public class NdkExtension {
 
     public void setRenderscriptNdkMode(boolean renderscriptNdkMode) {
         this.renderscriptNdkMode = renderscriptNdkMode;
-    }
-
-    void sourceSets(Action<NamedDomainObjectContainer<AndroidSourceDirectorySet>> action) {
-        action.execute(sourceSetsContainer)
-    }
-
-    NamedDomainObjectContainer<AndroidSourceDirectorySet> getSourceSets() {
-        sourceSetsContainer
     }
 
     public void cFilePattern(Action<PatternFilterable> action) {

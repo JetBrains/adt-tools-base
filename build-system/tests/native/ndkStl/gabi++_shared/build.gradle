@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-android {
-    ndk {
+model {
+    android.ndk {
         stl "gabi++_shared"
     }
 }

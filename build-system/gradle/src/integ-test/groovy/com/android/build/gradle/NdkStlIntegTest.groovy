@@ -67,24 +67,25 @@ public class NdkStlIntegTest {
     public void setup() {
         new HelloWorldJniApp().writeSources(fixture.getSourceDir())
         fixture.getBuildFile() << """
-apply plugin: 'com.android.application'
+apply plugin: 'com.android.model.application'
 
-android {
-    compileSdkVersion $GradleProjectTestRule.DEFAULT_COMPILE_SDK_VERSION
-    buildToolsVersion "$GradleProjectTestRule.DEFAULT_BUILD_TOOL_VERSION"
-    useNewNativePlugin true
-    ndk {
-        moduleName "hello-jni"
-        }
+model {
+    android {
+        compileSdkVersion $GradleProjectTestRule.DEFAULT_COMPILE_SDK_VERSION
+        buildToolsVersion "$GradleProjectTestRule.DEFAULT_BUILD_TOOL_VERSION"
     }
+    android.ndk {
+        moduleName "hello-jni"
+    }
+}
 """
     }
 
     @Test
     public void buildAppWithStl() {
         fixture.getBuildFile() << """
-android {
-    ndk {
+model {
+    android.ndk {
         stl "$stl"
     }
 }

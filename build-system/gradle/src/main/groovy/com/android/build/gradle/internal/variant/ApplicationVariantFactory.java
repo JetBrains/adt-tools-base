@@ -151,7 +151,6 @@ public class ApplicationVariantFactory implements VariantFactory<ApplicationVari
     public void createTasks(
             @NonNull BaseVariantData<?> variantData,
             @Nullable Task assembleTask) {
-
         assert variantData instanceof ApplicationVariantData;
         ApplicationVariantData appVariantData = (ApplicationVariantData) variantData;
 

@@ -25,6 +25,7 @@ import org.gradle.model.internal.core.ModelType
 import org.gradle.nativeplatform.platform.NativePlatform
 import org.gradle.nativeplatform.toolchain.Clang
 import org.gradle.nativeplatform.toolchain.Gcc
+import org.gradle.nativeplatform.toolchain.NativeToolChainRegistry
 import org.gradle.platform.base.PlatformContainer
 import org.gradle.platform.base.ToolChainRegistry
 
@@ -69,7 +70,7 @@ class ToolchainConfigurationAction implements Action<Project> {
     public static void configurePlatforms(PlatformContainer platforms, NdkHandler ndkHandler) {
         List<String> abiList = ndkHandler.getSupportedAbis();
         for (String abi : abiList) {
-            NativePlatform platform = (NativePlatform) platforms.maybeCreate(abi)
+            NativePlatform platform = platforms.maybeCreate(abi, NativePlatform)
 
             // All we care is the name of the platform.  It doesn't matter what the
             // architecture is, but it must be set to non-x86 so that it does not match
@@ -83,25 +84,16 @@ class ToolchainConfigurationAction implements Action<Project> {
      * Configure toolchain for a platform.
      */
     public static void configureToolchain(
-            ToolChainRegistry toolchains,
+            NativeToolChainRegistry toolchains,
             String toolchainName,
             String toolchainVersion,
             NdkHandler ndkHandler) {
-        List<String> abiList = ndkHandler.getSupportedAbis();
-        for (String abi: abiList) {
-            String platform = abi
-            String name = "$toolchainName-$toolchainVersion-$platform"
+        toolchains.create("ndk-" + toolchainName, toolchainName.equals("gcc") ? Gcc : Clang) {
+            // Configure each platform.
+            List<String> abiList = ndkHandler.getSupportedAbis();
+            for (String abi: abiList) {
+                String platform = abi
 
-            // Create toolchain for each ABI.
-            String bin = (
-                    ndkHandler.getToolchainPath(toolchainName, toolchainVersion, platform).
-                            toString()
-                            + "/bin")
-
-            toolchains.create(name, toolchainName.equals("gcc") ? Gcc : Clang) {
-                // TODO:  Gradle 2.2 allow customizing options for each target platform.
-                // Simplify the code to contain one toolchain for the project instead of one for
-                // each platform.
                 target(platform) {
                     if (toolchainName.equals("gcc")) {
                         cCompiler.setExecutable("${GCC_PREFIX[platform]}-gcc")
@@ -116,10 +108,14 @@ class ToolchainConfigurationAction implements Action<Project> {
                     linker.withArguments { List<String> args ->
                         args.removeAll("-Xlinker")
                     }
+
+                    String bin = (
+                            ndkHandler.getToolchainPath(toolchainName, toolchainVersion, platform).
+                                    toString()
+                                    + "/bin")
+                    path bin
                 }
-                path bin
             }
         }
     }
-
 }

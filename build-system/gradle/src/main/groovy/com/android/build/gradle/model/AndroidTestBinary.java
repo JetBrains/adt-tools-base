@@ -14,8 +14,18 @@
  * limitations under the License.
  */
 
-model {
-    android.ndk {
-        stl "gnustl_static"
-    }
+package com.android.build.gradle.model;
+
+import com.android.builder.model.BuildType;
+import com.android.builder.model.ProductFlavor;
+
+import org.gradle.platform.base.BinarySpec;
+
+import java.util.List;
+
+/**
+ * Binary interface for testing AndroidBinary.
+ */
+public interface AndroidTestBinary extends BinarySpec {
+    AndroidBinary getTestedBinary();
 }
