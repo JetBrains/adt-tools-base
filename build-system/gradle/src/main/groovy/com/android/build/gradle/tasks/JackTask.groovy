@@ -162,7 +162,7 @@ public class JackTask extends AbstractCompile {
     private String createMappingFileCommand(@NonNull File mappingFile) {
         File folder = getTempFolder();
         folder.mkdirs()
-        File file = new File(folder,"mapping.pro");
+        File file = new File(folder, "mapping.pro");
 
         Files.write("-printmapping ${mappingFile.absolutePath}\n",
                 file, Charsets.UTF_8);
