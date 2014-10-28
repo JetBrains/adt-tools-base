@@ -28,6 +28,7 @@ import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_STORE_FI
 import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_STORE_PASSWORD;
 import static java.io.File.separator;
 
+import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ide.common.internal.CommandLineRunner;
 import com.android.ide.common.internal.LoggedErrorException;
@@ -596,14 +597,14 @@ public class ManualBuildTest extends BuildTest {
                 BasePlugin.GRADLE_TEST_VERSION,
                 "clean", "assembleDebug");
 
-        Map<String, Integer> expected = Maps.newHashMapWithExpectedSize(5);
-        expected.put("universal", 112);
-        expected.put("mdpi", 212);
-        expected.put("hdpi", 312);
-        expected.put("xhdpi", 412);
-        expected.put("xxhdpi", 512);
+        Map<String, VersionData> expected = Maps.newHashMapWithExpectedSize(5);
+        expected.put("universal", VersionData.of(112, "version 112"));
+        expected.put("mdpi",      VersionData.of(212, "version 212"));
+        expected.put("hdpi",      VersionData.of(312, "version 312"));
+        expected.put("xhdpi",     VersionData.of(412, "version 412"));
+        expected.put("xxhdpi",    VersionData.of(512, "version 512"));
 
-        checkVersionCode(project, null, expected, "densitySplit");
+        checkVersion(project, null, expected, "densitySplit");
     }
 
     public void testAbiSplits() throws Exception {
@@ -614,24 +615,42 @@ public class ManualBuildTest extends BuildTest {
                 BasePlugin.GRADLE_TEST_VERSION,
                 "clean", "app:assembleDebug");
 
-        Map<String, Integer> expected = Maps.newHashMapWithExpectedSize(5);
-        expected.put("gingerbread-universal",        1000123);
-        expected.put("gingerbread-armeabi-v7a",      1100123);
-        expected.put("gingerbread-mips",             1200123);
-        expected.put("gingerbread-x86",              1300123);
-        expected.put("icecreamSandwich-universal",   2000123);
-        expected.put("icecreamSandwich-armeabi-v7a", 2100123);
-        expected.put("icecreamSandwich-mips",        2200123);
-        expected.put("icecreamSandwich-x86",         2300123);
+        Map<String, VersionData> expected = Maps.newHashMapWithExpectedSize(8);
+        expected.put("gingerbread-universal",        VersionData.of(1000123));
+        expected.put("gingerbread-armeabi-v7a",      VersionData.of(1100123));
+        expected.put("gingerbread-mips",             VersionData.of(1200123));
+        expected.put("gingerbread-x86",              VersionData.of(1300123));
+        expected.put("icecreamSandwich-universal",   VersionData.of(2000123));
+        expected.put("icecreamSandwich-armeabi-v7a", VersionData.of(2100123));
+        expected.put("icecreamSandwich-mips",        VersionData.of(2200123));
+        expected.put("icecreamSandwich-x86",         VersionData.of(2300123));
 
-        checkVersionCode(project, "app/", expected, "app");
+        checkVersion(project, "app/", expected, "app");
     }
 
-    private void checkVersionCode(
-            File project,
-            String outRoot,
-            Map<String, Integer> expected,
-            String baseName)
+    private static final class VersionData {
+        static VersionData of(int code, String name) {
+            VersionData versionData = new VersionData();
+            versionData.code = code;
+            versionData.name = name;
+            return versionData;
+        }
+
+        static VersionData of(int code) {
+            return of(code, null);
+        }
+
+        @Nullable
+        Integer code;
+        @Nullable
+        String name;
+    }
+
+    private void checkVersion(
+            @NonNull File project,
+            @Nullable String outRoot,
+            @NonNull Map<String, VersionData> expected,
+            @NonNull String baseName)
             throws IOException, InterruptedException, LoggedErrorException {
         File aapt = new File(sdkDir, "build-tools/20.0.0/aapt");
 
@@ -644,7 +663,7 @@ public class ManualBuildTest extends BuildTest {
 
         CommandLineRunner commandLineRunner = new CommandLineRunner(new StdLogger(StdLogger.Level.ERROR));
 
-        for (Map.Entry<String, Integer> entry : expected.entrySet()) {
+        for (Map.Entry<String, VersionData> entry : expected.entrySet()) {
             String path = "build/" + FD_OUTPUTS + "/apk/" + baseName + "-" + entry.getKey() + "-debug.apk";
             if (outRoot != null) {
                 path = outRoot + path;
@@ -673,19 +692,32 @@ public class ManualBuildTest extends BuildTest {
             Pattern p = Pattern.compile("^package: name='(.+)' versionCode='([0-9]*)' versionName='(.*)'$");
 
             String versionCode = null;
+            String versionName = null;
 
             for (String line : aaptOutput) {
                 Matcher m = p.matcher(line);
                 if (m.matches()) {
                     versionCode = m.group(2);
+                    versionName = m.group(3);
                     break;
                 }
             }
 
             assertNotNull("Unable to determine version code", versionCode);
+            assertNotNull("Unable to determine version name", versionName);
 
-            assertEquals("Unexpected version code for split: " + entry.getKey(),
-                    entry.getValue().intValue(), Integer.parseInt(versionCode));
+            VersionData versionData = entry.getValue();
+
+            if (versionData.code != null) {
+                assertEquals("Unexpected version code for split: " + entry.getKey(),
+                        versionData.code.intValue(), Integer.parseInt(versionCode));
+            }
+
+            if (versionData.name != null) {
+                assertEquals("Unexpected version code for split: " + entry.getKey(),
+                        versionData.name, versionName);
+
+            }
         }
     }
 

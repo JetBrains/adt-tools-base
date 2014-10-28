@@ -49,6 +49,8 @@ android.applicationVariants.all { variant ->
   // assign different version code for each output
   variant.outputs.each { output ->
     def key = output.getFilter(OutputFile.DENSITY) == null ? "all" : output.getFilter(OutputFile.DENSITY)
-    output.versionCodeOverride = project.ext.versionCodes.get(key) * 100 + android.defaultConfig.versionCode
+    def code = project.ext.versionCodes.get(key) * 100 + android.defaultConfig.versionCode
+    output.versionCodeOverride = code
+    output.versionNameOverride = "version ${code}"
   }
 }
