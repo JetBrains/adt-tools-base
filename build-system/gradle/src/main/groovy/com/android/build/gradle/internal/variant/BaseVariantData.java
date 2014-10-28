@@ -103,6 +103,7 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
     public Task compileTask;
     public JacocoInstrumentTask jacocoInstrumentTask;
     public Task obfuscationTask;
+    public File obfuscatedClassesJar;
     public File mappingFile;
 
     // Task to assemble the variant and all its output.

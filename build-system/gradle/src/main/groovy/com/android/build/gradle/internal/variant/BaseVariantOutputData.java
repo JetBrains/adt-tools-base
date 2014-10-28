@@ -46,7 +46,7 @@ public abstract class BaseVariantOutputData implements VariantOutput {
     private static final String UNIVERSAL = "universal";
 
     @NonNull
-    protected final BaseVariantData<?> variantData;
+    public final BaseVariantData<?> variantData;
 
     @NonNull
     private final MainApkOutputFile mainApkOutputFile;

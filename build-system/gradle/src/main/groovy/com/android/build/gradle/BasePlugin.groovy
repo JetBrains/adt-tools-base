@@ -95,6 +95,7 @@ import com.android.build.gradle.tasks.ProcessAndroidResources
 import com.android.build.gradle.tasks.ProcessManifest
 import com.android.build.gradle.tasks.ProcessTestManifest
 import com.android.build.gradle.tasks.RenderscriptCompile
+import com.android.build.gradle.tasks.ShrinkResources
 import com.android.build.gradle.tasks.SplitZipAlign
 import com.android.build.gradle.tasks.ZipAlign
 import com.android.builder.core.AndroidBuilder
@@ -1127,6 +1128,11 @@ public abstract class BasePlugin {
                         project.file(
                                 "$project.buildDir/${FD_INTERMEDIATES}/proguard-rules/${config.dirName}/aapt_rules.txt")
                     }
+                } else if (config.buildType.shrinkResources) {
+                    // This warning is temporary; we'll eventually make shrinking enabled by default
+                    // so users typically will only opt out of it, we won't have shrink=true, proguard=false
+                    displayWarning(logger, project,
+                            "WARNING: To shrink resources you must also enable ProGuard")
                 }
             }
 
@@ -1890,10 +1896,11 @@ public abstract class BasePlugin {
         if (isMinifyEnabled) {
             // first proguard task.
             BaseVariantData<? extends BaseVariantOutputData> testedVariantData = variantData instanceof TestVariantData ? variantData.testedVariantData : null as BaseVariantData
-            File outFile = createProguardTasks(variantData, testedVariantData, agentTask, jacocoAgentJar)
+            createProguardTasks(variantData, testedVariantData, agentTask, jacocoAgentJar)
 
             // then dexing task
             dexTask.dependsOn variantData.obfuscationTask
+            def outFile = variantData.obfuscatedClassesJar
             dexTask.conventionMapping.inputFiles = { project.files(outFile).files }
             dexTask.conventionMapping.libraries = { Collections.emptyList() }
         } else {
@@ -2162,8 +2169,22 @@ public abstract class BasePlugin {
 
             packageApp.plugin = this
 
-            packageApp.conventionMapping.resourceFile = {
-                variantOutputData.processResourcesTask.packageOutputFile
+            if (config.minifyEnabled && config.buildType.shrinkResources) {
+                def shrinkTask = createShrinkResourcesTask(vod)
+
+                // When shrinking resources, rather than having the packaging task
+                // directly map to the packageOutputFile of ProcessAndroidResources,
+                // we insert the ShrinkResources task into the chain, such that its
+                // input is the ProcessAndroidResources packageOutputFile, and its
+                // output is what the PackageApplication task reads.
+                packageApp.dependsOn shrinkTask
+                packageApp.conventionMapping.resourceFile = {
+                    shrinkTask.compressedResources
+                }
+            } else {
+                packageApp.conventionMapping.resourceFile = {
+                    variantOutputData.processResourcesTask.packageOutputFile
+                }
             }
             packageApp.conventionMapping.dexFolder = {
                 if (variantData.dexTask != null) {
@@ -2494,6 +2515,7 @@ public abstract class BasePlugin {
             outFile = project.file(
                     "${project.buildDir}/${FD_INTERMEDIATES}/classes-proguard/${variantData.variantConfiguration.dirName}/classes.jar")
         }
+        variantData.obfuscatedClassesJar = outFile
 
         // --- Proguard Config ---
 
@@ -2633,6 +2655,30 @@ public abstract class BasePlugin {
         }
 
         return outFile
+    }
+
+    private ShrinkResources createShrinkResourcesTask(ApkVariantOutputData variantOutputData) {
+        def variantData = variantOutputData.variantData
+        def task = project.tasks.create(
+                "shrink${variantData.variantConfiguration.fullName.capitalize()}Resources",
+                ShrinkResources)
+        task.plugin = this
+        task.variantOutputData = variantOutputData
+
+        String outputBaseName = variantOutputData.baseName
+        task.conventionMapping.compressedResources = {
+            project.file(
+                    "$project.buildDir/${FD_INTERMEDIATES}/res/resources-${outputBaseName}-stripped.ap_")
+        }
+
+        task.conventionMapping.uncompressedResources = {
+            variantOutputData.processResourcesTask.packageOutputFile
+        }
+
+        task.dependsOn variantData.obfuscationTask, variantOutputData.manifestProcessorTask,
+                variantOutputData.processResourcesTask
+
+        return task
     }
 
     private void createReportTasks() {

@@ -1,0 +1,6 @@
+<!-- Referenced AppTheme styles.xml -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_focused="true"
+        android:drawable="@drawable/used11" />
+    <item android:drawable="@drawable/used12" />
+</selector>
