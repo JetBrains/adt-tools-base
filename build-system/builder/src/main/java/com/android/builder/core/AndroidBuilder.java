@@ -78,6 +78,7 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
@@ -125,7 +126,7 @@ public class AndroidBuilder {
 
     private static final FullRevision MIN_BUILD_TOOLS_REV = new FullRevision(19, 1, 0);
     private static final FullRevision MIN_MULTIDEX_BUILD_TOOLS_REV = new FullRevision(21, 0, 0);
-
+    private static final FullRevision MIN_BUILD_TOOLS_REVISION_FOR_DEX_INPUT_LIST = new FullRevision(21, 0, 0);
     private static final DependencyFileProcessor sNoOpDependencyFileProcessor = new DependencyFileProcessor() {
         @Override
         public DependencyData processFile(@NonNull File dependencyFile) {
@@ -1349,12 +1350,15 @@ public class AndroidBuilder {
                      boolean multidex,
             @NonNull DexOptions dexOptions,
             @Nullable List<String> additionalParameters,
+            @NonNull File tmpFolder,
             boolean incremental) throws IOException, InterruptedException, LoggedErrorException {
         checkNotNull(inputs, "inputs cannot be null.");
         checkNotNull(preDexedLibraries, "preDexedLibraries cannot be null.");
         checkNotNull(outDexFolder, "outDexFolder cannot be null.");
         checkNotNull(dexOptions, "dexOptions cannot be null.");
+        checkNotNull(tmpFolder, "tmpFolder cannot be null");
         checkArgument(outDexFolder.isDirectory(), "outDexFolder must be a folder");
+        checkArgument(tmpFolder.isDirectory(), "tmpFolder must be a folder");
         checkState(mTargetInfo != null,
                 "Cannot call convertByteCode() before setTargetInfo() is called.");
 
@@ -1413,33 +1417,33 @@ public class AndroidBuilder {
         command.add("--output");
         command.add(outDexFolder.getAbsolutePath());
 
-        // clean up input list
-        List<String> inputList = Lists.newArrayList();
-        for (File f : inputs) {
-            if (f != null && f.exists()) {
-                inputList.add(f.getAbsolutePath());
-            }
-        }
-
-        if (!inputList.isEmpty()) {
-            mLogger.verbose("Dex inputs: " + inputList);
-            command.addAll(inputList);
-        }
-
-        // clean up and add library inputs.
-        List<String> libraryList = Lists.newArrayList();
-        for (File f : preDexedLibraries) {
-            if (f != null && f.exists()) {
-                libraryList.add(f.getAbsolutePath());
-            }
-        }
-
-        if (!libraryList.isEmpty()) {
-            mLogger.verbose("Dex pre-dexed inputs: " + libraryList);
-            command.addAll(libraryList);
-        }
+        Iterable<File> allInputs = Iterables.concat(preDexedLibraries, inputs);
+        command.addAll(getFilesToAdd(allInputs, buildToolInfo, tmpFolder));
 
         mCmdLineRunner.runCmdLine(command, null);
+    }
+
+    private List<String> getFilesToAdd(Iterable<File> includeFiles,
+            BuildToolInfo buildToolInfo, File tmpFolder) throws IOException {
+        // clean up and add library inputs.
+        List<String> filePathList = Lists.newArrayList();
+        for (File f : includeFiles) {
+            if (f != null && f.exists()) {
+                filePathList.add(f.getAbsolutePath());
+            }
+        }
+        if (filePathList.isEmpty()) {
+            throw new IOException("No files to pass to dex.");
+        }
+
+        if (buildToolInfo.getRevision().compareTo(MIN_BUILD_TOOLS_REVISION_FOR_DEX_INPUT_LIST) >= 0) {
+            File inputListFile = new File(tmpFolder, "libraryList.txt");
+            // Write each library line by line to file
+            Files.asCharSink(inputListFile, Charsets.UTF_8).writeLines(filePathList);
+            return Lists.newArrayList("--input-list=" + inputListFile.getAbsolutePath());
+        } else {
+            return filePathList;
+        }
     }
 
     /**
