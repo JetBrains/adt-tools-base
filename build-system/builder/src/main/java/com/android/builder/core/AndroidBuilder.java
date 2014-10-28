@@ -355,7 +355,7 @@ public class AndroidBuilder {
     public Set<File> getCompileClasspath(@NonNull VariantConfiguration<?,?,?> variantConfiguration) {
         Set<File> compileClasspath = variantConfiguration.getCompileClasspath();
 
-        if (variantConfiguration.getRenderscriptSupportMode()) {
+        if (variantConfiguration.getRenderscriptSupportModeEnabled()) {
             File renderScriptSupportJar = getRenderScriptSupportJar();
 
             Set<File> fullJars = Sets.newHashSetWithExpectedSize(compileClasspath.size() + 1);
@@ -381,7 +381,7 @@ public class AndroidBuilder {
     public Set<File> getPackagedJars(@NonNull VariantConfiguration<?,?,?> variantConfiguration) {
         Set<File> packagedJars = Sets.newHashSet(variantConfiguration.getPackagedJars());
 
-        if (variantConfiguration.getRenderscriptSupportMode()) {
+        if (variantConfiguration.getRenderscriptSupportModeEnabled()) {
             File renderScriptSupportJar = getRenderScriptSupportJar();
 
             if (renderScriptSupportJar != null) {

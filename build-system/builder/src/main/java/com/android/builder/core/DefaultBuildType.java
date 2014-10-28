@@ -29,8 +29,8 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
     private final String mName;
     private boolean mDebuggable = false;
     private boolean mTestCoverageEnabled = false;
-    private boolean mJniDebugBuild = false;
-    private boolean mRenderscriptDebugBuild = false;
+    private boolean mJniDebuggable = false;
+    private boolean mRenderscriptDebuggable = false;
     private int mRenderscriptOptimLevel = 3;
     private String mApplicationIdSuffix = null;
     private String mVersionNameSuffix = null;
@@ -38,7 +38,7 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
     private SigningConfig mSigningConfig = null;
     private boolean mEmbedMicroApp = true;
 
-    private boolean mZipAlign = true;
+    private boolean mZipAlignEnabled = true;
 
     public DefaultBuildType(@NonNull String name) {
         mName = name;
@@ -49,13 +49,13 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
 
         setDebuggable(that.isDebuggable());
         setTestCoverageEnabled(that.isTestCoverageEnabled());
-        setJniDebugBuild(that.isJniDebugBuild());
-        setRenderscriptDebugBuild(that.isRenderscriptDebugBuild());
+        setJniDebuggable(that.isJniDebuggable());
+        setRenderscriptDebuggable(that.isRenderscriptDebuggable());
         setRenderscriptOptimLevel(that.getRenderscriptOptimLevel());
         setApplicationIdSuffix(that.getApplicationIdSuffix());
         setVersionNameSuffix(that.getVersionNameSuffix());
         setMinifyEnabled(that.isMinifyEnabled() );
-        setZipAlign(that.isZipAlign());
+        setZipAlignEnabled(that.isZipAlignEnabled());
         setSigningConfig(that.getSigningConfig());
         setEmbedMicroApp(that.isEmbedMicroApp());
 
@@ -94,26 +94,27 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
      * Whether this build type is configured to generate an APK with debuggable native code.
      */
     @NonNull
-    public BuildType setJniDebugBuild(boolean jniDebugBuild) {
-        mJniDebugBuild = jniDebugBuild;
+    public BuildType setJniDebuggable(boolean jniDebugBuild) {
+        mJniDebuggable = jniDebugBuild;
         return this;
     }
 
     @Override
-    public boolean isJniDebugBuild() {
-        return mJniDebugBuild;
+    public boolean isJniDebuggable() {
+        return mJniDebuggable;
     }
 
     @Override
-    public boolean isRenderscriptDebugBuild() {
-        return mRenderscriptDebugBuild;
+    public boolean isRenderscriptDebuggable() {
+        return mRenderscriptDebuggable;
     }
 
     /**
      * Whether the build type is configured to generate an apk with debuggable RenderScript code.
      */
-    public void setRenderscriptDebugBuild(boolean renderscriptDebugBuild) {
-        mRenderscriptDebugBuild = renderscriptDebugBuild;
+    public BuildType setRenderscriptDebuggable(boolean renderscriptDebugBuild) {
+        mRenderscriptDebuggable = renderscriptDebugBuild;
+        return this;
     }
 
     @Override
@@ -166,16 +167,17 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
         return mMinifyEnabled;
     }
 
+
     /** Whether zipalign is enabled for this build type. */
     @NonNull
-    public BuildType setZipAlign(boolean zipAlign) {
-        mZipAlign = zipAlign;
+    public BuildType setZipAlignEnabled(boolean zipAlign) {
+        mZipAlignEnabled = zipAlign;
         return this;
     }
 
     @Override
-    public boolean isZipAlign() {
-        return mZipAlign;
+    public boolean isZipAlignEnabled() {
+        return mZipAlignEnabled;
     }
 
     /** Sets the signing configuration. e.g.: {@code signingConfig signingConfigs.myConfig} */
@@ -211,11 +213,11 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
         if (!mName.equals(buildType.mName)) return false;
         if (mDebuggable != buildType.mDebuggable) return false;
         if (mTestCoverageEnabled != buildType.mTestCoverageEnabled) return false;
-        if (mJniDebugBuild != buildType.mJniDebugBuild) return false;
-        if (mRenderscriptDebugBuild != buildType.mRenderscriptDebugBuild) return false;
+        if (mJniDebuggable != buildType.mJniDebuggable) return false;
+        if (mRenderscriptDebuggable != buildType.mRenderscriptDebuggable) return false;
         if (mRenderscriptOptimLevel != buildType.mRenderscriptOptimLevel) return false;
         if (mMinifyEnabled != buildType.mMinifyEnabled) return false;
-        if (mZipAlign != buildType.mZipAlign) return false;
+        if (mZipAlignEnabled != buildType.mZipAlignEnabled) return false;
         if (mApplicationIdSuffix != null ?
                 !mApplicationIdSuffix.equals(buildType.mApplicationIdSuffix) :
                 buildType.mApplicationIdSuffix != null)
@@ -239,13 +241,13 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
         result = 31 * result + (mName.hashCode());
         result = 31 * result + (mDebuggable ? 1 : 0);
         result = 31 * result + (mTestCoverageEnabled ? 1 : 0);
-        result = 31 * result + (mJniDebugBuild ? 1 : 0);
-        result = 31 * result + (mRenderscriptDebugBuild ? 1 : 0);
+        result = 31 * result + (mJniDebuggable ? 1 : 0);
+        result = 31 * result + (mRenderscriptDebuggable ? 1 : 0);
         result = 31 * result + mRenderscriptOptimLevel;
         result = 31 * result + (mApplicationIdSuffix != null ? mApplicationIdSuffix.hashCode() : 0);
         result = 31 * result + (mVersionNameSuffix != null ? mVersionNameSuffix.hashCode() : 0);
         result = 31 * result + (mMinifyEnabled ? 1 : 0);
-        result = 31 * result + (mZipAlign ? 1 : 0);
+        result = 31 * result + (mZipAlignEnabled ? 1 : 0);
         result = 31 * result + (mSigningConfig != null ? mSigningConfig.hashCode() : 0);
         result = 31 * result + (mEmbedMicroApp ? 1 : 0);
         return result;
@@ -258,13 +260,13 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
                 .add("name", mName)
                 .add("debuggable", mDebuggable)
                 .add("testCoverageEnabled", mTestCoverageEnabled)
-                .add("jniDebugBuild", mJniDebugBuild)
-                .add("renderscriptDebugBuild", mRenderscriptDebugBuild)
+                .add("jniDebuggable", mJniDebuggable)
+                .add("renderscriptDebuggable", mRenderscriptDebuggable)
                 .add("renderscriptOptimLevel", mRenderscriptOptimLevel)
                 .add("applicationIdSuffix", mApplicationIdSuffix)
                 .add("versionNameSuffix", mVersionNameSuffix)
-                .add("minify", mMinifyEnabled)
-                .add("zipAlign", mZipAlign)
+                .add("minifyEnabled", mMinifyEnabled)
+                .add("zipAlignEnabled", mZipAlignEnabled)
                 .add("signingConfig", mSigningConfig)
                 .add("embedMicroApp", mEmbedMicroApp)
                 .add("mBuildConfigFields", getBuildConfigFields())

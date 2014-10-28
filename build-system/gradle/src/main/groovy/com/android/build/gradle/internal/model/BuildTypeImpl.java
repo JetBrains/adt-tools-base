@@ -33,13 +33,13 @@ class BuildTypeImpl extends BaseConfigImpl implements BuildType, Serializable {
     private String name;
     private boolean debuggable;
     private boolean testCoverageEnabled;
-    private boolean jniDebugBuild;
-    private boolean renderscriptDebugBuild;
+    private boolean jniDebuggable;
+    private boolean renderscriptDebuggable;
     private int renderscriptOptimLevel;
     private String applicationIdSuffix;
     private String versionNameSuffix;
     private boolean minifyEnabled;
-    private boolean zipAlign;
+    private boolean zipAlignEnabled;
     private boolean embedMicroApp;
 
     @NonNull
@@ -49,13 +49,13 @@ class BuildTypeImpl extends BaseConfigImpl implements BuildType, Serializable {
         clonedBuildType.name = buildType.getName();
         clonedBuildType.debuggable = buildType.isDebuggable();
         clonedBuildType.testCoverageEnabled = buildType.isTestCoverageEnabled();
-        clonedBuildType.jniDebugBuild = buildType.isJniDebugBuild();
-        clonedBuildType.renderscriptDebugBuild = buildType.isRenderscriptDebugBuild();
+        clonedBuildType.jniDebuggable = buildType.isJniDebuggable();
+        clonedBuildType.renderscriptDebuggable = buildType.isRenderscriptDebuggable();
         clonedBuildType.renderscriptOptimLevel = buildType.getRenderscriptOptimLevel();
         clonedBuildType.applicationIdSuffix = buildType.getApplicationIdSuffix();
         clonedBuildType.versionNameSuffix = buildType.getVersionNameSuffix();
         clonedBuildType.minifyEnabled = buildType.isMinifyEnabled();
-        clonedBuildType.zipAlign = buildType.isZipAlign();
+        clonedBuildType.zipAlignEnabled = buildType.isZipAlignEnabled();
         clonedBuildType.embedMicroApp = buildType.isEmbedMicroApp();
 
         return clonedBuildType;
@@ -82,13 +82,13 @@ class BuildTypeImpl extends BaseConfigImpl implements BuildType, Serializable {
     }
 
     @Override
-    public boolean isJniDebugBuild() {
-        return jniDebugBuild;
+    public boolean isJniDebuggable() {
+        return jniDebuggable;
     }
 
     @Override
-    public boolean isRenderscriptDebugBuild() {
-        return renderscriptDebugBuild;
+    public boolean isRenderscriptDebuggable() {
+        return renderscriptDebuggable;
     }
 
     @Override
@@ -114,8 +114,8 @@ class BuildTypeImpl extends BaseConfigImpl implements BuildType, Serializable {
     }
 
     @Override
-    public boolean isZipAlign() {
-        return zipAlign;
+    public boolean isZipAlignEnabled() {
+        return zipAlignEnabled;
     }
 
     @Override
@@ -135,13 +135,13 @@ class BuildTypeImpl extends BaseConfigImpl implements BuildType, Serializable {
                 "name='" + name + '\'' +
                 ", debuggable=" + debuggable +
                 ", testCoverageEnabled=" + testCoverageEnabled +
-                ", jniDebugBuild=" + jniDebugBuild +
-                ", renderscriptDebugBuild=" + renderscriptDebugBuild +
+                ", jniDebuggable=" + jniDebuggable +
+                ", renderscriptDebuggable=" + renderscriptDebuggable +
                 ", renderscriptOptimLevel=" + renderscriptOptimLevel +
                 ", applicationIdSuffix='" + applicationIdSuffix + '\'' +
                 ", versionNameSuffix='" + versionNameSuffix + '\'' +
                 ", minifyEnabled=" + minifyEnabled +
-                ", zipAlign=" + zipAlign +
+                ", zipAlignEnabled=" + zipAlignEnabled +
                 ", embedMicroApp=" + embedMicroApp +
                 "} " + super.toString();
     }

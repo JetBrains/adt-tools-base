@@ -67,7 +67,7 @@ public abstract class ApkVariantData extends BaseVariantData<ApkVariantOutputDat
         return getVariantConfiguration().isSigningReady();
     }
 
-    public boolean getZipAlign() {
-        return getVariantConfiguration().getBuildType().isZipAlign();
+    public boolean getZipAlignEnabled() {
+        return getVariantConfiguration().getBuildType().isZipAlignEnabled();
     }
 }

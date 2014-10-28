@@ -61,13 +61,13 @@ public class ReadOnlyBuildType extends ReadOnlyBaseConfig implements BuildType {
     }
 
     @Override
-    public boolean isJniDebugBuild() {
-        return buildType.isJniDebugBuild();
+    public boolean isJniDebuggable() {
+        return buildType.isJniDebuggable();
     }
 
     @Override
-    public boolean isRenderscriptDebugBuild() {
-        return buildType.isRenderscriptDebugBuild();
+    public boolean isRenderscriptDebuggable() {
+        return buildType.isRenderscriptDebuggable();
     }
 
     @Override
@@ -93,8 +93,8 @@ public class ReadOnlyBuildType extends ReadOnlyBaseConfig implements BuildType {
     }
 
     @Override
-    public boolean isZipAlign() {
-        return buildType.isZipAlign();
+    public boolean isZipAlignEnabled() {
+        return buildType.isZipAlignEnabled();
     }
 
     @Override

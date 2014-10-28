@@ -836,7 +836,7 @@ public abstract class BasePlugin {
         }
 
         ProductFlavor mergedFlavor = config.mergedFlavor
-        boolean ndkMode = config.renderscriptNdkMode
+        boolean ndkMode = config.renderscriptNdkModeEnabled
 
         variantData.resourceGenTask.dependsOn renderscriptTask
         // only put this dependency if rs will generate Java code
@@ -863,9 +863,9 @@ public abstract class BasePlugin {
             return targetApi
         }
 
-        renderscriptTask.supportMode = config.renderscriptSupportMode
+        renderscriptTask.supportMode = config.renderscriptSupportModeEnabled
         renderscriptTask.ndkMode = ndkMode
-        renderscriptTask.debugBuild = config.buildType.renderscriptDebugBuild
+        renderscriptTask.debugBuild = config.buildType.renderscriptDebuggable
         renderscriptTask.optimLevel = config.buildType.renderscriptOptimLevel
 
         renderscriptTask.conventionMapping.sourceDirs = { config.renderscriptSourceList }
@@ -1386,7 +1386,7 @@ public abstract class BasePlugin {
 
         VariantConfiguration variantConfig = variantData.variantConfiguration
 
-        if (variantConfig.mergedFlavor.renderscriptNdkMode) {
+        if (variantConfig.mergedFlavor.renderscriptNdkModeEnabled) {
             ndkCompile.ndkRenderScriptMode = true
             ndkCompile.dependsOn variantData.renderscriptCompileTask
         } else {
@@ -1395,7 +1395,7 @@ public abstract class BasePlugin {
 
         ndkCompile.conventionMapping.sourceFolders = {
             List<File> sourceList = variantConfig.jniSourceList
-            if (variantConfig.mergedFlavor.renderscriptNdkMode) {
+            if (variantConfig.mergedFlavor.renderscriptNdkModeEnabled) {
                 sourceList.add(variantData.renderscriptCompileTask.sourceOutputDir)
             }
 
@@ -1409,7 +1409,7 @@ public abstract class BasePlugin {
         ndkCompile.conventionMapping.ndkConfig = { variantConfig.ndkConfig }
 
         ndkCompile.conventionMapping.debuggable = {
-            variantConfig.buildType.jniDebugBuild
+            variantConfig.buildType.jniDebuggable
         }
 
         ndkCompile.conventionMapping.objFolder = {
@@ -2225,7 +2225,7 @@ public abstract class BasePlugin {
                     set.addAll(extension.ndkLib.getOutputDirectories(config))
                 }
 
-                if (config.mergedFlavor.renderscriptSupportMode) {
+                if (config.mergedFlavor.renderscriptSupportModeEnabled) {
                     File rsLibs = androidBuilder.getSupportNativeLibFolder()
                     if (rsLibs != null && rsLibs.isDirectory()) {
                         set.add(rsLibs);
@@ -2240,7 +2240,7 @@ public abstract class BasePlugin {
                 }
                 return config.supportedAbis
             }
-            packageApp.conventionMapping.jniDebugBuild = { config.buildType.jniDebugBuild }
+            packageApp.conventionMapping.jniDebugBuild = { config.buildType.jniDebuggable }
 
             packageApp.conventionMapping.signingConfig = { sc }
             if (sc != null) {
@@ -2267,7 +2267,7 @@ public abstract class BasePlugin {
             packageApp.conventionMapping.outputFile = {
                 // if this is the final task then the location is
                 // the potentially overridden one.
-                if (!signedApk || !variantData.zipAlign) {
+                if (!signedApk || !variantData.zipAlignEnabled) {
                     project.file("$apkLocation/${apkName}")
                 } else {
                     // otherwise default one.
@@ -2279,7 +2279,7 @@ public abstract class BasePlugin {
             OutputFileTask outputFileTask = packageApp
 
             if (signedApk) {
-                if (variantData.zipAlign) {
+                if (variantData.zipAlignEnabled) {
                     // Add a task to zip align application package
                     def zipAlignTask = project.tasks.create(
                             "zipalign${outputName.capitalize()}",

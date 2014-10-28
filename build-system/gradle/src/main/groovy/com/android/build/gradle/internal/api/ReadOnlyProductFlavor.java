@@ -97,14 +97,14 @@ public class ReadOnlyProductFlavor extends ReadOnlyBaseConfig implements Product
 
     @Nullable
     @Override
-    public Boolean getRenderscriptSupportMode() {
-        return productFlavor.getRenderscriptSupportMode();
+    public Boolean getRenderscriptSupportModeEnabled() {
+        return productFlavor.getRenderscriptSupportModeEnabled();
     }
 
     @Nullable
     @Override
-    public Boolean getRenderscriptNdkMode() {
-        return productFlavor.getRenderscriptNdkMode();
+    public Boolean getRenderscriptNdkModeEnabled() {
+        return productFlavor.getRenderscriptNdkModeEnabled();
     }
 
     @Nullable

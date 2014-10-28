@@ -37,6 +37,7 @@ class ProductFlavorDsl extends DefaultProductFlavor {
 
     @NonNull
     protected final Project project
+
     @NonNull
     protected final Logger logger
 
@@ -45,9 +46,9 @@ class ProductFlavorDsl extends DefaultProductFlavor {
     private Boolean useJack
 
     ProductFlavorDsl(@NonNull String name,
-                     @NonNull Project project,
-                     @NonNull Instantiator instantiator,
-                     @NonNull Logger logger) {
+            @NonNull Project project,
+            @NonNull Instantiator instantiator,
+            @NonNull Logger logger) {
         super(name)
         this.project = project
         this.logger = logger
@@ -216,6 +217,7 @@ class ProductFlavorDsl extends DefaultProductFlavor {
     void resConfigs(@NonNull String... config) {
         addResourceConfigurations(config);
     }
+
     void resConfigs(@NonNull Collection<String> config) {
         addResourceConfigurations(config);
     }
@@ -244,7 +246,8 @@ class ProductFlavorDsl extends DefaultProductFlavor {
      */
     @NonNull
     public ProductFlavor setPackageName(String packageName) {
-        BasePlugin.displayDeprecationWarning(logger, project, "\"packageName\" is deprecated (and will soon stop working); change to \"applicationId\" instead");
+        BasePlugin.displayDeprecationWarning(logger, project,
+                "\"packageName\" is deprecated (and will soon stop working); change to \"applicationId\" instead");
         return setApplicationId(packageName);
     }
 
@@ -255,19 +258,40 @@ class ProductFlavorDsl extends DefaultProductFlavor {
 
     @Nullable
     public String getPackageName() {
-        BasePlugin.displayDeprecationWarning(logger, project, "\"packageName\" is deprecated (and will soon stop working); change to \"applicationId\" instead");
+        BasePlugin.displayDeprecationWarning(logger, project,
+                "\"packageName\" is deprecated (and will soon stop working); change to \"applicationId\" instead");
         return getApplicationId();
     }
 
     @Nullable
     public String getTestPackageName() {
-        BasePlugin.displayDeprecationWarning(logger, project, "\"testPackageName\" is deprecated (and will soon stop working); change to \"testApplicationId\" instead");
+        BasePlugin.displayDeprecationWarning(logger, project,
+                "\"testPackageName\" is deprecated (and will soon stop working); change to \"testApplicationId\" instead");
         return getTestApplicationId();
     }
 
     @Nullable
     public ProductFlavor setTestPackageName(String packageName) {
-        BasePlugin.displayDeprecationWarning(logger, project, "\"testPackageName\" is deprecated (and will soon stop working); change to \"testApplicationId\" instead");
+        BasePlugin.displayDeprecationWarning(logger, project,
+                "\"testPackageName\" is deprecated (and will soon stop working); change to \"testApplicationId\" instead");
         return setTestApplicationId(packageName);
+    }
+
+    /**
+     * Sets whether the renderscript code should be compiled in support mode to make it compatible
+     * with older versions of Android.
+     */
+    public ProductFlavor setRenderscriptSupportMode(Boolean renderscriptSupportMode) {
+        BasePlugin.displayDeprecationWarning(logger, project,
+                "\"renderscriptSupportMode\" is deprecated (and will soon stop working); change to \"renderscriptSupportModeEnabled\" instead");
+        return setRenderscriptNdkModeEnabled(renderscriptSupportMode);
+    }
+
+    /** Sets whether the renderscript code should be compiled to generate C/C++ bindings. */
+    public ProductFlavor setRenderscriptNdkMode(Boolean renderscriptNdkMode) {
+        BasePlugin.displayDeprecationWarning(logger, project,
+                "\"renderscriptNdkMode\" is deprecated (and will soon stop working); change to \"renderscriptNdkModeEnabled\" instead");
+
+        return super.setRenderscriptNdkModeEnabled(renderscriptNdkMode);
     }
 }
