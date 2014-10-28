@@ -761,6 +761,15 @@ public class ManualBuildTest extends BuildTest {
                 new File(project, "build/" + FD_OUTPUTS + "/apk/maxSdkVersion-f2-debug.apk"), "19");
     }
 
+    public void testVariantConfigurationDependencies() throws Exception {
+        File project = new File(manualDir, "dependenciesWithVariants");
+
+        runTasksOn(
+                project,
+                BasePlugin.GRADLE_TEST_VERSION,
+                "clean", "assembleDebug", "assembleTest");
+    }
+
     private void checkMaxSdkVersion(File testApk, String version)
             throws InterruptedException, LoggedErrorException, IOException {
 
