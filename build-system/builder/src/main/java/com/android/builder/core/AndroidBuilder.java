@@ -116,7 +116,7 @@ import java.util.regex.Pattern;
  * {@link #processTestManifest(String, String, String, String, String, Boolean, Boolean, java.io.File, java.util.List, java.io.File, java.io.File)}
  * {@link #processResources(java.io.File, java.io.File, java.io.File, java.util.List, String, String, String, String, String, com.android.builder.core.VariantConfiguration.Type, boolean, com.android.builder.model.AaptOptions, java.util.Collection, boolean, java.util.Collection)}
  * {@link #compileAllAidlFiles(java.util.List, java.io.File, java.io.File, java.util.List, com.android.builder.compiling.DependencyFileProcessor)}
- * {@link #convertByteCode(Iterable, Iterable, java.io.File, boolean, java.io.File, DexOptions, java.util.List, boolean)}
+ * {@link #convertByteCode(Iterable, Iterable, java.io.File, boolean, java.io.File, DexOptions, java.util.List, java.io.File, boolean)}
  * {@link #packageApk(String, java.io.File, java.util.Collection, java.util.Collection, String, java.util.Collection, java.util.Set, boolean, com.android.builder.model.SigningConfig, com.android.builder.model.PackagingOptions, String)}
  *
  * Java compilation is not handled but the builder provides the bootclasspath with
@@ -333,25 +333,6 @@ public class AndroidBuilder {
     }
 
     /**
-     * Returns the jar file for the multi-dex legacy mode.
-     *
-     * This may return null if the SDK has not been loaded yet.
-     *
-     * @return the jar file, or null.
-     *
-     * @see #setTargetInfo(com.android.builder.sdk.SdkInfo, com.android.builder.sdk.TargetInfo)
-     */
-    @Nullable
-    public File getMultiDexSupportJar() {
-        if (mTargetInfo != null) {
-            return new File(mTargetInfo.getBuildTools().getLocation().getAbsolutePath(),
-                    "multidex" + File.separator + "android-support-multidex.jar");
-        }
-
-        return null;
-    }
-
-    /**
      * Returns the compile classpath for this config. If the config tests a library, this
      * will include the classpath of the tested config.
      *
@@ -394,13 +375,6 @@ public class AndroidBuilder {
 
             if (renderScriptSupportJar != null) {
                 packagedJars.add(renderScriptSupportJar);
-            }
-        }
-
-        if (variantConfiguration.isLegacyMultiDexMode()) {
-            File supportJar = getMultiDexSupportJar();
-            if (supportJar != null) {
-                packagedJars.add(supportJar);
             }
         }
 

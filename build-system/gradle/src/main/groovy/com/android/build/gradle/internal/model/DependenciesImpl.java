@@ -124,13 +124,6 @@ public class DependenciesImpl implements Dependencies, Serializable {
             }
         }
 
-        if (variantConfig.isLegacyMultiDexMode()) {
-            File supportJar = androidBuilder.getMultiDexSupportJar();
-            if (supportJar != null) {
-                javaLibraries.add(new JavaLibraryImpl(supportJar, null, null));
-            }
-        }
-
         return new DependenciesImpl(libraries, javaLibraries, projects);
     }
 
