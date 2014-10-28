@@ -1617,11 +1617,9 @@ public class AndroidBuilder {
         }
         command.add("-jar");
         command.add(jill);
-        command.add("--container");
-        command.add("zip");
+        command.add(inputFile.getAbsolutePath());
         command.add("--output");
         command.add(outFile.getAbsolutePath());
-        command.add(inputFile.getAbsolutePath());
 
         commandLineRunner.runCmdLine(command, null);
 
