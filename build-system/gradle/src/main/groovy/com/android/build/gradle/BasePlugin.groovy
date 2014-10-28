@@ -1515,7 +1515,8 @@ public abstract class BasePlugin {
             @NonNull BaseVariantData<? extends BaseVariantOutputData> baseVariantData) {
         // Only create lint targets for variants like debug and release, not debugTest
         VariantConfiguration config = baseVariantData.variantConfiguration
-        return config.getType() != TEST;
+        // TODO: re-enable with Jack when possible
+        return config.getType() != TEST && !config.useJack;
     }
 
     // Add tasks for running lint on individual variants. We've already added a
@@ -1559,7 +1560,9 @@ public abstract class BasePlugin {
 
     private void createLintVitalTask(@NonNull ApkVariantData variantData) {
         assert extension.lintOptions.checkReleaseBuilds
-        if (!variantData.variantConfiguration.buildType.debuggable) {
+        // TODO: re-enable with Jack when possible
+        if (!variantData.variantConfiguration.buildType.debuggable &&
+                !variantData.variantConfiguration.useJack) {
             String variantName = variantData.variantConfiguration.fullName
             def capitalizedVariantName = variantName.capitalize()
             def taskName = "lintVital" + capitalizedVariantName
@@ -1870,7 +1873,7 @@ public abstract class BasePlugin {
         GradleVariantConfiguration config = variantData.variantConfiguration
 
         boolean isMinifyEnabled = config.isMinifyEnabled()
-        boolean isMultiDexEnabled = config.isMultiDexEnabled()
+        boolean isMultiDexEnabled = config.isMultiDexEnabled() && config.type != TEST
         boolean isLegacyMultiDexMode = config.isLegacyMultiDexMode()
 
         boolean isTestCoverageEnabled = config.buildType.isTestCoverageEnabled() &&

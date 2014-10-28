@@ -45,4 +45,8 @@ android {
       resValue "string", "foo", "foo2"
     }
   }
+
+  lintOptions {
+    abortOnError !rootProject.ext.useJack
+  }
 }
