@@ -40,6 +40,7 @@ import com.android.sdklib.repository.descriptors.IdDisplay;
 import com.android.sdklib.repository.descriptors.PkgDesc;
 import com.android.sdklib.repository.descriptors.PkgType;
 import com.android.utils.Pair;
+import com.google.common.base.Objects;
 import com.google.common.collect.SetMultimap;
 import com.google.common.collect.TreeMultimap;
 
@@ -466,7 +467,8 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
             if (pkg instanceof LocalAddonSysImgPkgInfo &&
                     d.hasVendor() &&
                     mAddonDesc.getVendor().equals(d.getVendor()) &&
-                    mAddonDesc.getName().equals(d.getTag())) {
+                    mAddonDesc.getName().equals(d.getTag()) &&
+                    Objects.equal(mAddonDesc.getAndroidVersion(), pkg.getDesc().getAndroidVersion())) {
                 final IdDisplay tag = mAddonDesc.getName();
                 final String abi = d.getPath();
                 if (abi != null && !tagToAbiFound.containsEntry(tag, abi)) {
