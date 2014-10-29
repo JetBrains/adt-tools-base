@@ -79,6 +79,7 @@ import com.android.build.gradle.internal.variant.LibraryVariantData
 import com.android.build.gradle.internal.variant.TestVariantData
 import com.android.build.gradle.internal.variant.TestedVariantData
 import com.android.build.gradle.internal.variant.VariantFactory
+import com.android.build.gradle.model.BaseComponentModelPlugin
 import com.android.build.gradle.model.NdkComponentModelPlugin
 import com.android.build.gradle.tasks.AidlCompile
 import com.android.build.gradle.tasks.CompatibleScreensManifest
@@ -201,8 +202,8 @@ import static java.io.File.separator
 public abstract class BasePlugin {
     public final static String DIR_BUNDLES = "bundles";
 
-    private static final String GRADLE_MIN_VERSION = "2.3-20141014220018+0000"
-    public static final String GRADLE_TEST_VERSION = "2.3-20141014220018+0000"
+    private static final String GRADLE_MIN_VERSION = "2.3-20141027230029+0000"
+    public static final String GRADLE_TEST_VERSION = "2.3-20141027230029+0000"
     public static final String[] GRADLE_SUPPORTED_VERSIONS = [ GRADLE_MIN_VERSION ]
 
     public static final String INSTALL_GROUP = "Install"
@@ -3433,13 +3434,16 @@ public abstract class BasePlugin {
      * be found, and throws an InvalidUserCodeException if more than one is found.
      */
     public static BasePlugin findBasePlugin(Project project) {
-        def plugin = project.plugins.withType(BasePlugin)
-        if (plugin.isEmpty()) {
-            return null
-        } else if (plugin.size() != 1) {
-            throw new InvalidUserCodeException("Cannot apply more than one Android plugins.")
+        BasePlugin plugin = project.plugins.findPlugin(AppPlugin)
+        if (plugin != null) {
+            return plugin
         }
-        return plugin[0]
+        plugin = project.plugins.findPlugin(LibraryPlugin)
+        if (plugin != null) {
+            return plugin
+        }
+        plugin = project.plugins.findPlugin(BaseComponentModelPlugin)
+        return plugin
     }
 
     public static void optionalDependsOn(@NonNull Task main, Task... dependencies) {
