@@ -33,6 +33,8 @@ import java.text.DecimalFormatSymbols;
 import java.text.ParseException;
 
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathFactory;
 
 /**
  * Custom test reporter based on Gradle's DefaultTestReport
@@ -91,9 +93,10 @@ public class TestReport {
             NodeList propertiesList = document.getElementsByTagName("properties");
             for (int i = 0; i < propertiesList.getLength(); i++) {
                 Element properties = (Element) propertiesList.item(i);
-                deviceName = properties.getAttribute("device");
-                projectName = properties.getAttribute("project");
-                flavorName = properties.getAttribute("flavor");
+                XPath xPath = XPathFactory.newInstance().newXPath();
+                deviceName = xPath.evaluate("property[@name='device']/@value",properties);
+                projectName = xPath.evaluate("property[@name='project']/@value",properties);
+                flavorName = xPath.evaluate("property[@name='flavor']/@value",properties);
             }
 
             NodeList testCases = document.getElementsByTagName("testcase");
