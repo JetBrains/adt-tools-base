@@ -22,6 +22,8 @@ import com.android.ddmlib.testrunner.TestIdentifier;
 import com.android.ddmlib.testrunner.TestResult;
 import com.android.ddmlib.testrunner.XmlTestRunListener;
 import com.android.utils.ILogger;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.kxml2.io.KXmlSerializer;
 
@@ -75,13 +77,12 @@ public class CustomTestRunListener extends XmlTestRunListener {
     }
 
     @Override
-    protected void setPropertiesAttributes(KXmlSerializer serializer, String namespace)
-            throws IOException {
-        super.setPropertiesAttributes(serializer, namespace);
-
-        serializer.attribute(null, "device", mDeviceName);
-        serializer.attribute(null, "flavor", mFlavorName);
-        serializer.attribute(null, "project", mProjectName);
+    protected Map<String, String> getPropertiesAttributes() {
+        Map<String, String> propertiesAttributes = Maps.newLinkedHashMap(super.getPropertiesAttributes());
+        propertiesAttributes.put("device", mDeviceName);
+        propertiesAttributes.put("flavor", mFlavorName);
+        propertiesAttributes.put("project", mProjectName);
+        return ImmutableMap.copyOf(propertiesAttributes);
     }
 
     @Override
