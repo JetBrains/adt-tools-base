@@ -104,24 +104,24 @@ public class WorkQueue<T> implements Runnable {
         // eventually we would want to put some limit to the size of the pending jobs
         // queue so it does not grow out of control.
         mPendingJobs.put(task);
-
-        if (mWorkThreads.isEmpty()
-                || (mPendingJobs.size() / mWorkThreads.size() > mGrowthTriggerRation)) {
-            addWorkforce();
-        }
+        checkWorkforce();
     }
 
-    private void addWorkforce() {
-        mLogger.verbose("Incrementing workforce from " + mWorkThreads.size());
-        if (mWorkThreads.size() >= MAX_WORKFORCE_SIZE) {
-            mLogger.verbose("Refused to allocate more threads.");
-            return;
-        }
-        for (int i=0;i< mMWorkforceIncrement;i++) {
-            Thread t = new Thread(this, mName + "_" + mThreadId.incrementAndGet());
-            t.setDaemon(true);
-            mWorkThreads.add(t);
-            t.start();
+    private synchronized void checkWorkforce() {
+        if (mWorkThreads.isEmpty()
+                || (mPendingJobs.size() / mWorkThreads.size() > mGrowthTriggerRation)) {
+            mLogger.verbose("Request to incrementing workforce from %1$d", mWorkThreads.size());
+            if (mWorkThreads.size() >= MAX_WORKFORCE_SIZE) {
+                mLogger.verbose("Refused to allocate more threads.");
+                return;
+            }
+            for (int i = 0; i < mMWorkforceIncrement; i++) {
+                Thread t = new Thread(this, mName + "_" + mThreadId.incrementAndGet());
+                t.setDaemon(true);
+                mWorkThreads.add(t);
+                t.start();
+            }
+            mLogger.verbose("thread-pool size=%1$d", mWorkThreads.size());
         }
     }
 
@@ -149,6 +149,8 @@ public class WorkQueue<T> implements Runnable {
         for (Thread t : mWorkThreads) {
             t.join();
         }
+        mWorkThreads.clear();
+        mQueueThreadContext.shutdown();
     }
 
     /**
@@ -189,6 +191,7 @@ public class WorkQueue<T> implements Runnable {
             while(true) {
                 final QueueTask<T> queueTask = mPendingJobs.take();
                 if (queueTask.actionType== QueueTask.ActionType.Death) {
+                    mLogger.verbose("Thread(%1$s): Death requested", threadName);
                     // we are done.
                     return;
                 }
@@ -199,7 +202,7 @@ public class WorkQueue<T> implements Runnable {
                             "I got a null pending job out of the priority queue");
                     return;
                 }
-                mLogger.warning("Thread(%1$s): scheduling %2$s", threadName, job.getJobTitle());
+                mLogger.verbose("Thread(%1$s): scheduling %2$s", threadName, job.getJobTitle());
 
                 try {
                     mQueueThreadContext.runTask(job);

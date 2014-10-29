@@ -16,6 +16,8 @@
 
 package com.android.builder.tasks;
 
+import com.google.common.base.Objects;
+
 import java.util.concurrent.locks.AbstractQueuedSynchronizer;
 
 /**
@@ -45,5 +47,13 @@ public class BooleanLatch {
     public void signal()         { sync.releaseShared(1); }
     public void await() throws InterruptedException {
         sync.acquireSharedInterruptibly(1);
+    }
+
+    @Override
+    public String toString() {
+        return Objects.toStringHelper(this)
+                .add("signaled", isSignalled())
+                .toString();
+
     }
 }
