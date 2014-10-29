@@ -17,9 +17,12 @@
 package com.android.ddmlib.testrunner;
 
 import com.android.SdkConstants;
+import com.android.annotations.NonNull;
 import com.android.ddmlib.Log;
 import com.android.ddmlib.Log.LogLevel;
 import com.android.ddmlib.testrunner.TestResult.TestStatus;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
 
 import org.kxml2.io.KXmlSerializer;
 
@@ -64,6 +67,7 @@ public class XmlTestRunListener implements ITestRunListener {
     //private static final String ATTR_TYPE = "type";
     //private static final String ATTR_MESSAGE = "message";
     private static final String PROPERTIES = "properties";
+    private static final String PROPERTY = "property";
     private static final String ATTR_CLASSNAME = "classname";
     private static final String TIMESTAMP = "timestamp";
     private static final String HOSTNAME = "hostname";
@@ -243,7 +247,12 @@ public class XmlTestRunListener implements ITestRunListener {
         serializer.attribute(ns, HOSTNAME, mHostName);
 
         serializer.startTag(ns, PROPERTIES);
-        setPropertiesAttributes(serializer, ns);
+        for (Map.Entry<String,String> entry: getPropertiesAttributes().entrySet()) {
+            serializer.startTag(ns, PROPERTY);
+            serializer.attribute(ns, "name", entry.getKey());
+            serializer.attribute(ns, "value", entry.getValue());
+            serializer.endTag(ns, PROPERTY);
+        }
         serializer.endTag(ns, PROPERTIES);
 
         Map<TestIdentifier, TestResult> testResults = mRunResult.getTestResults();
@@ -255,13 +264,11 @@ public class XmlTestRunListener implements ITestRunListener {
     }
 
     /**
-     * Sets the attributes on properties.
-     * @param serializer the serializer
-     * @param namespace the namespace
-     * @throws IOException
+     * Get the properties attributes as key value pairs to be included in the test report.
      */
-    protected void setPropertiesAttributes(KXmlSerializer serializer, String namespace)
-            throws IOException {
+    @NonNull
+    protected Map<String, String> getPropertiesAttributes() {
+        return  ImmutableMap.of();
     }
 
     protected String getTestName(TestIdentifier testId) {

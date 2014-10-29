@@ -129,15 +129,12 @@ abstract class PageRenderer<T extends CompositeTestResults> extends TabbedPageRe
                 }
             }
 
-            htmlWriter.startElement("td").attribute("class", test.getStatusClass());
-            htmlWriter.endElement();
-
-            htmlWriter.startElement("td")
+            htmlWriter.startElement("td").attribute("class", test.getStatusClass())
                 .startElement("a").attribute("href", String.format("%s.html", test.getClassResults().getFilename(reportType)))
                     .characters(test.getClassResults().getSimpleName()).endElement()
             .endElement();
 
-            htmlWriter.startElement("td")
+            htmlWriter.startElement("td").attribute("class", test.getStatusClass())
                     .startElement("a").attribute("href", String.format("%s.html#s", test.getClassResults().getFilename(reportType), test.getName()))
                     .characters(test.getName()).endElement()
                     .endElement();
