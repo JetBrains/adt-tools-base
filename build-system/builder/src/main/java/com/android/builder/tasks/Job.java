@@ -16,6 +16,8 @@
 
 package com.android.builder.tasks;
 
+import com.google.common.base.Objects;
+
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -55,7 +57,17 @@ public class Job<T> {
     }
 
     public boolean await() throws InterruptedException {
+
         mBooleanLatch.await();
         return mResult.get();
+    }
+
+    @Override
+    public String toString() {
+        return Objects.toStringHelper(this)
+                .add("title", mJobTitle)
+                .add("latch", mBooleanLatch)
+                .add("result", mResult.get())
+                .toString();
     }
 }

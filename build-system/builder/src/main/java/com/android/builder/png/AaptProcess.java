@@ -22,6 +22,8 @@ import com.android.builder.tasks.BooleanLatch;
 import com.android.builder.tasks.Job;
 import com.android.utils.GrabProcessOutput;
 import com.android.utils.ILogger;
+import com.google.common.base.Objects;
+import com.google.common.base.Strings;
 
 import java.io.File;
 import java.io.IOException;
@@ -81,7 +83,16 @@ public class AaptProcess {
         mWriter.write(out.getAbsolutePath());
         mWriter.write("\n");
         mWriter.flush();
-        mMessages.add("Process(" + mProcess.hashCode() + ") processed " + in.getName());
+        mMessages.add("Process(" + mProcess.hashCode() + ") processed " + in.getName() +
+            "job: " + job.toString());
+    }
+
+    @Override
+    public String toString() {
+        return Objects.toStringHelper(this)
+                .add("ready", mReady.get())
+                .add("process", mProcess.hashCode())
+                .toString();
     }
 
     /**
@@ -145,19 +156,35 @@ public class AaptProcess {
 
         @Override
         public synchronized void out(@Nullable String line) {
-            mLogger.verbose("AAPT out(%1$s): %2$s", mProcess.hashCode(), line);
+
+            // an empty message or aapt startup message are ignored.
+            if (Strings.isNullOrEmpty(line) || line.equals("Ready")) {
+                return;
+            }
             NotifierProcessOutput delegate = getNotifier();
+            mLogger.verbose("AAPT out(%1$s): %2$s", mProcess.hashCode(), line);
             if (delegate != null) {
+                mLogger.verbose("AAPT out(%1$s): -> %2$s", mProcess.hashCode(), delegate.mJob);
                 delegate.out(line);
+            } else {
+                mLogger.error(null, "AAPT out(%1$s) : No Delegate set : lost message:%2$s",
+                        mProcess.hashCode(), line);
             }
         }
 
         @Override
         public synchronized void err(@Nullable String line) {
-            mLogger.verbose("AAPT err(%1$s): %2$s", mProcess.hashCode(), line);
+
+            if (Strings.isNullOrEmpty(line)) {
+                return;
+            }
             NotifierProcessOutput delegate = getNotifier();
             if (delegate != null) {
+                mLogger.verbose("AAPT err(%1$s): %2$s -> %3$s", mProcess.hashCode(), line, delegate.mJob);
                 delegate.err(line);
+            } else {
+                mLogger.error(null, "AAPT err(%1$s) : No Delegate set : lost message:%2$s",
+                        mProcess.hashCode(), line);
             }
         }
     }
@@ -180,13 +207,15 @@ public class AaptProcess {
         @Override
         public void out(@Nullable String line) {
             if (line != null) {
-                mLogger.verbose(line);
+                mLogger.verbose("AAPT notify(%1$s): %2$s", mJob, line);
                 if (line.equalsIgnoreCase("Done")) {
                     mOwner.reset();
                     mJob.finished();
                 } else if (line.equalsIgnoreCase("Error")) {
                     mOwner.reset();
                     mJob.error();
+                } else {
+                    mLogger.verbose("AAPT(%1$s) discarded: %2$s", mJob, line);
                 }
             }
         }
@@ -194,7 +223,7 @@ public class AaptProcess {
         @Override
         public void err(@Nullable String line) {
             if (line != null) {
-                mLogger.warning(line);
+                mLogger.warning("AAPT warning(%1$s): %2$s", mJob, line);
             }
         }
     }
