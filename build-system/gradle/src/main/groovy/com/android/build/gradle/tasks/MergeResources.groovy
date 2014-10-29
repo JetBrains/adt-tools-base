@@ -16,7 +16,6 @@
 package com.android.build.gradle.tasks
 
 import com.android.build.gradle.internal.tasks.IncrementalTask
-import com.android.builder.internal.JavaPngCruncher
 import com.android.builder.png.QueuedCruncher
 import com.android.ide.common.internal.PngCruncher
 import com.android.ide.common.res2.FileStatus
@@ -49,7 +48,7 @@ public class MergeResources extends IncrementalTask {
     boolean process9Patch
 
     @Input
-    boolean useQueuedAaptPngCruncher;
+    boolean useNewCruncher;
 
     @Input
     boolean insertSourceMarkers = true
@@ -65,7 +64,7 @@ public class MergeResources extends IncrementalTask {
     }
 
     private PngCruncher getCruncher() {
-        return getUseQueuedAaptPngCruncher() ? QueuedCruncher.Builder.INSTANCE.newCruncher(
+        return getUseNewCruncher() ? QueuedCruncher.Builder.INSTANCE.newCruncher(
                 builder.getTargetInfo().buildTools.getPath(
                 BuildToolInfo.PathId.AAPT), builder.getLogger())
             : builder.aaptCruncher;
