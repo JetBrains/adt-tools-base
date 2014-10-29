@@ -21,13 +21,15 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.model.ClassField;
+import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
 import com.google.common.io.Closer;
 import com.squareup.javawriter.JavaWriter;
 
 import java.io.File;
-import java.io.FileWriter;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.List;
@@ -103,7 +105,8 @@ public class BuildConfigGenerator {
 
         Closer closer = Closer.create();
         try {
-            FileWriter out = closer.register(new FileWriter(buildConfigJava));
+            FileOutputStream fos = closer.register(new FileOutputStream(buildConfigJava));
+            OutputStreamWriter out = closer.register(new OutputStreamWriter(fos, Charsets.UTF_8));
             JavaWriter writer = closer.register(new JavaWriter(out));
 
             writer.emitJavadoc("Automatically generated file. DO NOT MODIFY")
