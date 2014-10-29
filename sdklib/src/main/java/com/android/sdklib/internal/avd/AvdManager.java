@@ -664,52 +664,6 @@ public class AvdManager {
             boolean removePrevious,
             boolean editExisting,
             @NonNull ILogger log) {
-        return createAvd(avdFolder, avdName, target, tag, abiType, skinFolder, skinName, sdcard, hardwareConfig,
-                bootProps, createSnapshot, removePrevious, removePrevious, editExisting, log);
-    }
-    /**
-     * Creates a new AVD. It is expected that there is no existing AVD with this name already.
-     *
-     * @param avdFolder the data folder for the AVD. It will be created as needed.
-     *   Unless you want to locate it in a specific directory, the ideal default is
-     *   {@code AvdManager.AvdInfo.getAvdFolder}.
-     * @param avdName the name of the AVD
-     * @param target the target of the AVD
-     * @param tag the tag of the AVD
-     * @param abiType the abi type of the AVD
-     * @param skinFolder the skin folder path to use, if specified. Can be null.
-     * @param skinName the name of the skin. Can be null. Must have been verified by caller.
-     *          Can be a size in the form "NNNxMMM" or a directory name matching skinFolder.
-     * @param sdcard the parameter value for the sdCard. Can be null. This is either a path to
-     *        an existing sdcard image or a sdcard size (\d+, \d+K, \dM).
-     * @param hardwareConfig the hardware setup for the AVD. Can be null to use defaults.
-     * @param bootProps the optional boot properties for the AVD. Can be null.
-     * @param createSnapshot If true copy a blank snapshot image into the AVD.
-     * @param removePrevious If true remove the previous data directory.
-     * @param removePreviousIni If true remove the previous ini file.
-     * @param editExisting If true, edit an existing AVD, changing only the minimum required.
-     *          This won't remove files unless required or unless {@code removePrevious} is set.
-     * @param log the log object to receive action logs. Cannot be null.
-     * @return The new {@link AvdInfo} in case of success (which has just been added to the
-     *         internal list) or null in case of failure.
-     */
-    @Nullable
-    public AvdInfo createAvd(
-            @NonNull  File avdFolder,
-            @NonNull  String avdName,
-            @NonNull  IAndroidTarget target,
-            @NonNull  IdDisplay tag,
-            @NonNull  String abiType,
-            @Nullable File skinFolder,
-            @Nullable String skinName,
-            @Nullable String sdcard,
-            @Nullable Map<String,String> hardwareConfig,
-            @Nullable Map<String,String> bootProps,
-            boolean createSnapshot,
-            boolean removePrevious,
-            boolean removePreviousIni,
-            boolean editExisting,
-            @NonNull ILogger log) {
         if (log == null) {
             throw new IllegalArgumentException("log cannot be null");
         }
@@ -742,7 +696,7 @@ public class AvdManager {
             }
 
             // actually write the ini file
-            iniFile = createAvdIniFile(avdName, avdFolder, target, removePreviousIni);
+            iniFile = createAvdIniFile(avdName, avdFolder, target, removePrevious);
 
             // writes the userdata.img in it.
 
