@@ -42,6 +42,16 @@ public interface AndroidTestApp {
     Collection<TestSourceFile> getAllSourceFiles();
 
     /**
+     * Add an additional source file to the test app.
+     */
+    void addFile(TestSourceFile file);
+
+    /**
+     * Remove a source file from the test app.
+     */
+    boolean removeFile(TestSourceFile file);
+
+    /**
      * Create all source files in the specified directory.
      *
      * @param sourceDir Directory to create the source files in.
