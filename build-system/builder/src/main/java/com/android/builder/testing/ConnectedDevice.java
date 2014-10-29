@@ -31,6 +31,7 @@ import com.android.utils.ILogger;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -99,6 +100,12 @@ public class ConnectedDevice extends DeviceConnector {
                                     throws TimeoutException, AdbCommandRejectedException,
                                     ShellCommandUnresponsiveException, IOException {
         iDevice.executeShellCommand(command, receiver, maxTimeToOutputResponse, maxTimeUnits);
+    }
+
+    @NonNull
+    @Override
+    public Future<String> getSystemProperty(@NonNull String name) {
+        return iDevice.getSystemProperty(name);
     }
 
     @Override
