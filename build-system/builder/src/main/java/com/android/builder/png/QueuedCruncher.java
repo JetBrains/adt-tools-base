@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * implementation of {@link com.android.ide.common.internal.PngCruncher} that queues request and
@@ -73,7 +74,8 @@ public class QueuedCruncher implements PngCruncher {
     // Queue responsible for handling all passed jobs with a pool of worker threads.
     @NonNull private final WorkQueue<AaptProcess> mCrunchingRequests;
     // list of outstanding jobs.
-    @NonNull private final ImmutableList.Builder<Job<AaptProcess>> mOutstandingJobs = new ImmutableList.Builder<Job<AaptProcess>>();
+    @NonNull private final ConcurrentLinkedQueue<Job<AaptProcess>> mOutstandingJobs =
+            new ConcurrentLinkedQueue<Job<AaptProcess>>();
 
 
     private QueuedCruncher(
@@ -113,8 +115,27 @@ public class QueuedCruncher implements PngCruncher {
                     mLogger.verbose("Thread(%1$s): notify aapt slave shutdown",
                             Thread.currentThread().getName());
                     aaptProcess.shutdown();
-                    mAaptProcesses.remove(aaptProcess);
+                    mAaptProcesses.remove(t.getName());
+                    mLogger.verbose("Thread(%1$s): after shutdown queue_size=%2$d",
+                            Thread.currentThread().getName(), mAaptProcesses.size());
                 }
+            }
+
+            @Override
+            public void shutdown() {
+                if (!mAaptProcesses.isEmpty()) {
+                    mLogger.warning("Process list not empty");
+                    for (Map.Entry<String, AaptProcess> aaptProcessEntry : mAaptProcesses
+                            .entrySet()) {
+                        mLogger.warning("Thread(%1$s): queue not cleaned", aaptProcessEntry.getKey());
+                        try {
+                            aaptProcessEntry.getValue().shutdown();
+                        } catch (Exception e) {
+                            mLogger.error(e, "while shutting down" + aaptProcessEntry.getKey());
+                        }
+                    }
+                }
+                mAaptProcesses.clear();
             }
         };
         mCrunchingRequests = new WorkQueue<AaptProcess>(mLogger, queueThreadContext, "png-cruncher", 5, 2);
@@ -141,11 +162,15 @@ public class QueuedCruncher implements PngCruncher {
 
     public void waitForAll() throws InterruptedException {
         mLogger.verbose("Thread(%1$s): begin waitForAll", Thread.currentThread().getName());
-        for (Job<AaptProcess> aaptProcessJob : mOutstandingJobs.build()) {
+        Job<AaptProcess> aaptProcessJob = mOutstandingJobs.poll();
+        while (aaptProcessJob != null) {
+            mLogger.verbose("Thread(%1$s) : wait for {%2$s)", Thread.currentThread().getName(),
+                    aaptProcessJob.toString());
             if (!aaptProcessJob.await()) {
                 throw new RuntimeException(
                         "Crunching " + aaptProcessJob.getJobTitle() + " failed, see logs");
             }
+            aaptProcessJob = mOutstandingJobs.poll();
         }
         mLogger.verbose("Thread(%1$s): end waitForAll", Thread.currentThread().getName());
     }
@@ -155,6 +180,7 @@ public class QueuedCruncher implements PngCruncher {
         long startTime = System.currentTimeMillis();
         try {
             waitForAll();
+            mOutstandingJobs.clear();
             mLogger.verbose("Job finished in %1$d", System.currentTimeMillis() - startTime);
         } finally {
             // even if we have failures, we need to shutdown property the sub processes.
