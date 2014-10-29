@@ -202,7 +202,7 @@ public abstract class BasePlugin {
 
     private static final String GRADLE_MIN_VERSION = "2.1"
     public static final String GRADLE_TEST_VERSION = "2.1"
-    public static final String[] GRADLE_SUPPORTED_VERSIONS = [ GRADLE_MIN_VERSION ]
+    public static final String[] GRADLE_SUPPORTED_VERSIONS = [ GRADLE_MIN_VERSION, "2.2" ]
 
     public static final String INSTALL_GROUP = "Install"
 
