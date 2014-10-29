@@ -978,18 +978,24 @@ final class Device implements IDevice {
     @NonNull
     @Override
     public List<String> getAbis() {
-        List<String> abis = Lists.newArrayListWithExpectedSize(2);
-        String abi = getProperty(IDevice.PROP_DEVICE_CPU_ABI);
-        if (abi != null) {
-            abis.add(abi);
-        }
+        /* Try abiList (implemented in L onwards) otherwise fall back to abi and abi2. */
+        String abiList = getProperty(IDevice.PROP_DEVICE_CPU_ABI_LIST);
+        if(abiList != null) {
+            return Lists.newArrayList(abiList.split(","));
+        } else {
+            List<String> abis = Lists.newArrayListWithExpectedSize(2);
+            String abi = getProperty(IDevice.PROP_DEVICE_CPU_ABI);
+            if (abi != null) {
+                abis.add(abi);
+            }
 
-        abi = getProperty(IDevice.PROP_DEVICE_CPU_ABI2);
-        if (abi != null) {
-            abis.add(abi);
-        }
+            abi = getProperty(IDevice.PROP_DEVICE_CPU_ABI2);
+            if (abi != null) {
+                abis.add(abi);
+            }
 
-        return abis;
+            return abis;
+        }
     }
 
     @Override

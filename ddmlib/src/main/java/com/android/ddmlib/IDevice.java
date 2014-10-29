@@ -37,6 +37,7 @@ public interface IDevice extends IShellEnabledDevice {
     public static final String PROP_BUILD_CODENAME = "ro.build.version.codename";
     public static final String PROP_DEVICE_MODEL = "ro.product.model";
     public static final String PROP_DEVICE_MANUFACTURER = "ro.product.manufacturer";
+    public static final String PROP_DEVICE_CPU_ABI_LIST = "ro.product.cpu.abilist";
     public static final String PROP_DEVICE_CPU_ABI = "ro.product.cpu.abi";
     public static final String PROP_DEVICE_CPU_ABI2 = "ro.product.cpu.abi2";
     public static final String PROP_BUILD_CHARACTERISTICS = "ro.build.characteristics";
