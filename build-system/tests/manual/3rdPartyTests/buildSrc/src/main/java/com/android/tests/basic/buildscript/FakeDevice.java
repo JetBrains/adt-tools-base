@@ -10,11 +10,13 @@ import com.android.ddmlib.ShellCommandUnresponsiveException;
 import com.android.ddmlib.TimeoutException;
 import com.android.utils.ILogger;
 import com.google.common.collect.Lists;
+import com.google.common.util.concurrent.SettableFuture;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 
@@ -208,5 +210,9 @@ public class FakeDevice extends DeviceConnector {
     public String getProperty(String propertyName) {
         if ("ro.sf.lcd_density".equals(propertyName)) return "160";
         return null;
+    }
+
+    public Future<String> getSystemProperty(@NonNull String name) {
+        return SettableFuture.create();
     }
 }
