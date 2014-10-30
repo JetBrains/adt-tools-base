@@ -222,15 +222,6 @@ public interface IDevice extends IShellEnabledDevice {
     public String getPropertyCacheOrSync(String name) throws TimeoutException,
             AdbCommandRejectedException, ShellCommandUnresponsiveException, IOException;
 
-    /**
-     * Do a potential asynchronous query for a system property.
-     *
-     * @param name the name of the value to return.
-     * @return a {@link Future} which can be used to retrieve value of property. Future#get() can
-     *         return null if property can not be retrieved.
-     */
-    public @NonNull Future<String> getSystemProperty(@NonNull String name);
-
     /** Returns whether this device supports the given software feature. */
     boolean supportsFeature(@NonNull Feature feature);
 

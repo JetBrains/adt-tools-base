@@ -174,6 +174,12 @@ public interface IRemoteAndroidTestRunner {
     public void setCoverage(boolean coverage);
 
     /**
+     * Sets this test run to test collection mode. If true, will skip test execution and will set
+     * all appropriate runner arguments required for a successful test collection.
+     */
+    public void setTestCollection (boolean collection);
+
+    /**
      * @deprecated Use {@link #setMaxTimeToOutputResponse(long, java.util.concurrent.TimeUnit)}.
      */
     @Deprecated
