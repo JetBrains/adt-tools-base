@@ -327,13 +327,14 @@ final class Device implements IDevice {
         return null;
     }
 
+    @NonNull
     @Override
-    public @NonNull Future<String> getSystemProperty(@NonNull String name) {
+    public Future<String> getSystemProperty(@NonNull String name) {
         return mPropFetcher.getProperty(name);
     }
 
     @Override
-    public boolean supportsFeature(Feature feature) {
+    public boolean supportsFeature(@NonNull Feature feature) {
         switch (feature) {
             case SCREEN_RECORD:
                 if (getApiLevel() < 19) {

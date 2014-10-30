@@ -73,6 +73,6 @@ public interface IShellEnabledDevice {
      * @return a {@link java.util.concurrent.Future} which can be used to retrieve value of property. Future#get() can
      *         return null if property can not be retrieved.
      */
-    public @NonNull
-    Future<String> getSystemProperty(@NonNull String name);
+    @NonNull
+    public Future<String> getSystemProperty(@NonNull String name);
 }
