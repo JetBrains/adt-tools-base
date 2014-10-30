@@ -1978,7 +1978,6 @@ public class ApiDetector extends ResourceXmlDetector
         return -1;
     }
 
-    @Nullable
     public static int getRequiredVersion(@NonNull Issue issue, @NonNull String errorMessage,
             @NonNull TextFormat format) {
         errorMessage = format.toText(errorMessage);
