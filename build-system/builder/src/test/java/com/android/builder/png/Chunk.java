@@ -51,6 +51,9 @@ import java.util.zip.CRC32;
  */
 class Chunk {
 
+    /** Chunk type for the Image-Header chunk. */
+    public static final byte[] IHDR = new byte[] { 'I', 'H', 'D', 'R' };
+
     @NonNull
     private final byte[] mType;
     @Nullable
@@ -174,7 +177,7 @@ class Chunk {
 
     @Override
     public String toString() {
-        if (Arrays.equals(mType, PngWriter.IHDR)) {
+        if (Arrays.equals(mType, IHDR)) {
             ByteBuffer buffer = ByteBuffer.wrap(mData);
             return "Chunk{" +
                     "mType=" + getTypeAsString() +
