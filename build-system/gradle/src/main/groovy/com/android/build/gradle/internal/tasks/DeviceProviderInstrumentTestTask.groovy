@@ -14,10 +14,13 @@
  * limitations under the License.
  */
 package com.android.build.gradle.internal.tasks
+
+import com.android.build.gradle.internal.core.GradleVariantConfiguration
 import com.android.build.gradle.internal.test.TestDataImpl
 import com.android.build.gradle.internal.test.report.ReportType
 import com.android.build.gradle.internal.test.report.TestReport
 import com.android.build.gradle.internal.variant.TestVariantData
+import com.android.builder.internal.testing.SimpleTestCallable
 import com.android.builder.testing.SimpleTestRunner
 import com.android.builder.testing.TestRunner
 import com.android.builder.testing.api.DeviceProvider
@@ -56,23 +59,33 @@ public class DeviceProviderInstrumentTestTask extends BaseTask implements Androi
         if (testVariantData.outputs.size() > 1) {
             throw new RuntimeException("Multi-output in test variant not yet supported")
         }
-        File testApk = testVariantData.outputs.get(0).getOutputFile()
-
-        String flavor = getFlavorName()
-
-        TestRunner testRunner = new SimpleTestRunner(getAdbExec());
-        deviceProvider.init();
 
         boolean success = false;
-        try {
-            success = testRunner.runTests(project.name, flavor,
-                    testApk, new TestDataImpl(testVariantData),
-                    deviceProvider.devices,
-                    deviceProvider.getMaxThreads(),
-                    deviceProvider.getTimeout(),
-                    resultsOutDir, coverageOutDir, plugin.logger);
-        } finally {
-            deviceProvider.terminate();
+        // If there are tests to run, and the test runner returns with no results, we fail (since
+        // this is most likely a problem with the device setup). If no, the task will succeed.
+        if (!testsFound()) {
+            logger.info("No tests found, nothing to do.")
+            // If we don't create the coverage file, createXxxCoverageReport task will fail.
+            File emptyCoverageFile = new File(coverageOutDir, SimpleTestCallable.FILE_COVERAGE_EC)
+            emptyCoverageFile.createNewFile()
+            success = true;
+        } else {
+            File testApk = testVariantData.outputs.get(0).getOutputFile()
+            String flavor = getFlavorName()
+            TestRunner testRunner = new SimpleTestRunner(getAdbExec());
+            deviceProvider.init();
+
+            try {
+                success = testRunner.runTests(project.name, flavor,
+                        testApk, new TestDataImpl(testVariantData),
+                        deviceProvider.devices,
+                        deviceProvider.getMaxThreads(),
+                        deviceProvider.getTimeout(),
+                        resultsOutDir, coverageOutDir, plugin.logger);
+            } finally {
+                deviceProvider.terminate();
+            }
+
         }
 
         // run the report from the results.
@@ -88,8 +101,7 @@ public class DeviceProviderInstrumentTestTask extends BaseTask implements Androi
                     new File(reportOutDir, "index.html"));
             String message = "There were failing tests. See the report at: " + reportUrl;
             if (getIgnoreFailures()) {
-                getLogger().warn(message)
-
+                logger.warn(message)
                 return
             } else {
                 throw new GradleException(message)
@@ -97,5 +109,19 @@ public class DeviceProviderInstrumentTestTask extends BaseTask implements Androi
         }
 
         testFailed = false
+    }
+
+    /**
+     * Determines if there are any tests to run.
+     *
+     * @return true if there are some tests to run, false otherwise
+     */
+    private boolean testsFound() {
+        // For now we check if there are any test sources. We could inspect the test classes and
+        // apply JUnit logic to see if there's something to run, but that would not catch the case
+        // where user makes a typo in a test name or forgets to inherit from a JUnit class
+        GradleVariantConfiguration variantConfiguration = testVariantData.variantConfiguration
+        def javaDirectories = variantConfiguration.sortedSourceProviders*.javaDirectories
+        !project.files(javaDirectories).asFileTree.empty
     }
 }
