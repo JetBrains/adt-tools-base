@@ -91,7 +91,7 @@ public class NinePatchAaptProcessorTest extends BasePngTest {
 
     @NonNull
     protected File getAapt() {
-        return getAapt(FullRevision.parseRevision("20"));
+        return getAapt(FullRevision.parseRevision("21"));
     }
 
     @NonNull
