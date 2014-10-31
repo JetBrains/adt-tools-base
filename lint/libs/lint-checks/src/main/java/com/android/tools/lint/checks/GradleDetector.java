@@ -617,10 +617,12 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
             sMajorBuildTools = major;
 
             List<FullRevision> revisions = Lists.newArrayList();
-            if (major == 20) {
-                revisions.add(new FullRevision(20, 0, 0));
+            if (major == 21) {
+                revisions.add(new FullRevision(21, 1));
+            } else if (major == 20) {
+                revisions.add(new FullRevision(20));
             } else if (major == 19) {
-                revisions.add(new FullRevision(19, 1, 0));
+                revisions.add(new FullRevision(19, 1));
             } else if (major == 18) {
                 revisions.add(new FullRevision(18, 1, 1));
             }
@@ -738,26 +740,23 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
 
         FullRevision version = null;
         Issue issue = DEPENDENCY;
-        boolean includeMicro = true;
         if ("com.android.tools.build".equals(dependency.getGroupId()) &&
                 "gradle".equals(dependency.getArtifactId())) {
             FullRevision v = FullRevision.parseRevision(GRADLE_PLUGIN_RECOMMENDED_VERSION);
             try {
-                version = getNewerRevision(dependency, v.getMajor(), v.getMinor(), v.getMicro());
+                version = getNewerRevision(dependency, v);
             } catch (NumberFormatException e) {
                 context.log(e, null);
             }
         } else if ("com.google.guava".equals(dependency.getGroupId()) &&
                 "guava".equals(dependency.getArtifactId())) {
-            version = getNewerRevision(dependency, 18, 0, 0);
-            includeMicro = false;
+            version = getNewerRevision(dependency, new FullRevision(18, 0));
         } else if ("com.google.code.gson".equals(dependency.getGroupId()) &&
                 "gson".equals(dependency.getArtifactId())) {
-            version = getNewerRevision(dependency, 2, 3, 0);
-            includeMicro = false;
+            version = getNewerRevision(dependency, new FullRevision(2, 3));
         } else if ("org.apache.httpcomponents".equals(dependency.getGroupId()) &&
                 "httpclient".equals(dependency.getArtifactId())) {
-            version = getNewerRevision(dependency, 4, 3, 5);
+            version = getNewerRevision(dependency, new FullRevision(4, 3, 5));
         }
 
         // Network check for really up to date libraries? Only done in batch mode
@@ -771,19 +770,14 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
         }
 
         if (version != null) {
-            String message = getNewerVersionAvailableMessage(dependency, version, includeMicro);
+            String message = getNewerVersionAvailableMessage(dependency, version);
             report(context, cookie, issue, message);
         }
     }
 
     private static String getNewerVersionAvailableMessage(GradleCoordinate dependency,
-            FullRevision version, boolean includeMicro) {
-        String versionString = includeMicro || version.getMicro() != 0 || version.isPreview()
-                ? version.toString()
-                // We can't use version#toShortString because that will turn 18.0 into 18
-                // which we don't want.
-                : (version.getMajor() + "." + version.getMinor());
-        return getNewerVersionAvailableMessage(dependency, versionString);
+            FullRevision version) {
+        return getNewerVersionAvailableMessage(dependency, version.toString());
     }
 
     private static String getNewerVersionAvailableMessage(GradleCoordinate dependency,
@@ -1015,13 +1009,13 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
     }
 
     private static FullRevision getNewerRevision(@NonNull GradleCoordinate dependency,
-            int major, int minor, int micro) {
+            FullRevision revision) {
         assert dependency.getGroupId() != null;
         assert dependency.getArtifactId() != null;
         if (COMPARE_PLUS_HIGHER.compare(dependency,
-                new GradleCoordinate(dependency.getGroupId(),
-                        dependency.getArtifactId(), major, minor, micro)) < 0) {
-            return new FullRevision(major, minor, micro);
+                new GradleCoordinate(dependency.getGroupId(), dependency.getArtifactId(),
+                        revision.getMajor(), revision.getMinor(), revision.getMicro())) < 0) {
+            return revision;
         } else {
             return null;
         }
