@@ -1999,7 +1999,14 @@ public abstract class BasePlugin {
 
             proguardComponentsTask.libraryjars( {
                 ensureTargetSetup()
-                return new File(getAndroidBuilder().getTargetInfo().buildTools.location, "multidex${File.separatorChar}shrinkedAndroid.jar")
+                File shrinkedAndroid = new File(getAndroidBuilder().getTargetInfo().buildTools.location, "lib${File.separatorChar}shrinkedAndroid.jar")
+
+                // TODO remove in 1.0
+                // STOPSHIP
+                if (!shrinkedAndroid.isFile()) {
+                    shrinkedAndroid = new File(getAndroidBuilder().getTargetInfo().buildTools.location, "multidex${File.separatorChar}shrinkedAndroid.jar")
+                }
+                return shrinkedAndroid
             })
 
             proguardComponentsTask.injars(pcData.inputFiles.call().iterator().next())
