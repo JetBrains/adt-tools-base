@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle
+package com.android.build.gradle.model
 
 import com.android.build.gradle.internal.test.fixture.GradleProjectTestRule
 import com.android.build.gradle.internal.test.fixture.app.HelloWorldJniApp

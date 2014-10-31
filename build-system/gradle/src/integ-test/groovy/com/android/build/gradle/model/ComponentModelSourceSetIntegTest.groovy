@@ -56,8 +56,8 @@ apply plugin: "com.android.model.application"
 
 model {
     android {
-        compileSdkVersion 19
-        buildToolsVersion "19.1.0"
+        compileSdkVersion $GradleProjectTestRule.DEFAULT_COMPILE_SDK_VERSION
+        buildToolsVersion "$GradleProjectTestRule.DEFAULT_BUILD_TOOL_VERSION"
     }
     android.ndk {
         moduleName "hello-jni"

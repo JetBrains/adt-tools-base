@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle
+package com.android.build.gradle.model
 
 import static org.junit.Assert.assertNotNull
 
