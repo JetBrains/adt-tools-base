@@ -56,6 +56,10 @@ public class ProcessAndroidResources extends IncrementalTask {
     Collection<String> resourceConfigs
 
     // ----- PRIVATE TASK API -----
+    @Input
+    String getBuildToolsVersion() {
+        plugin.extension.buildToolsRevision
+    }
 
     @Nested @Optional
     List<SymbolFileProviderImpl> libraries
