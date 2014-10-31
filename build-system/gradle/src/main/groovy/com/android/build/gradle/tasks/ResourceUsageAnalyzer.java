@@ -936,7 +936,7 @@ public class ResourceUsageAnalyzer {
     private Resource getResource(@NonNull ResourceType type, @NonNull String name) {
         Map<String, Resource> nameMap = mTypeToName.get(type);
         if (nameMap != null) {
-            return nameMap.get(name);
+            return nameMap.get(getFieldName(name));
         }
         return null;
     }
