@@ -35,7 +35,6 @@ import static com.android.tools.lint.detector.api.TextFormat.TEXT;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.sdklib.SdkVersionInfo;
 import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.DefaultPosition;
@@ -349,7 +348,7 @@ public class GradleDetectorTest extends AbstractCheckTest {
     public void testBadPlayServicesVersion() throws Exception {
         mEnabled = Collections.singleton(COMPATIBILITY);
         assertEquals(""
-                + "build.gradle:5: Error: Version 5.2.08 should not be used; the app can not be published with this version. Use version 6.1.11 instead. [GradleCompatible]\n"
+                + "build.gradle:5: Error: Version 5.2.08 should not be used; the app can not be published with this version. Use version 6.1.71 instead. [GradleCompatible]\n"
                 + "    compile 'com.google.android.gms:play-services:5.2.08'\n"
                 + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                 + "1 errors, 0 warnings\n",
