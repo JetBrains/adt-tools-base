@@ -46,8 +46,6 @@ import java.util.regex.Pattern;
  * A Device. It can be a physical device or an emulator.
  */
 final class Device implements IDevice {
-    private static final int INSTALL_TIMEOUT = 2*60*1000; //2min
-
     /** Emulator Serial Number regexp. */
     static final String RE_EMULATOR_SN = "emulator-(\\d+)"; //$NON-NLS-1$
 
@@ -77,6 +75,21 @@ final class Device implements IDevice {
     private static final String LOG_TAG = "Device";
     private static final char SEPARATOR = '-';
     private static final String UNKNOWN_PACKAGE = "";   //$NON-NLS-1$
+
+    private static final long INSTALL_TIMEOUT_MINUTES;
+
+    static {
+        String installTimeout = System.getenv("ADB_INSTALL_TIMEOUT");
+        long time = 4;
+        if (installTimeout != null) {
+            try {
+                time = Long.parseLong(installTimeout);
+            } catch (NumberFormatException e) {
+                // use default value
+            }
+        }
+        INSTALL_TIMEOUT_MINUTES = time;
+    }
 
     /**
      * Socket for the connection monitoring client connection/disconnection.
@@ -888,7 +901,7 @@ final class Device implements IDevice {
             }
             String cmd = String.format("pm install %1$s \"%2$s\"", optionString.toString(),
                     remoteFilePath);
-            executeShellCommand(cmd, receiver, INSTALL_TIMEOUT);
+            executeShellCommand(cmd, receiver, INSTALL_TIMEOUT_MINUTES, TimeUnit.MINUTES);
             return receiver.getErrorMessage();
         } catch (TimeoutException e) {
             throw new InstallException(e);
@@ -905,7 +918,7 @@ final class Device implements IDevice {
     public void removeRemotePackage(String remoteFilePath) throws InstallException {
         try {
             executeShellCommand(String.format("rm \"%1$s\"", remoteFilePath),
-                    new NullOutputReceiver(), INSTALL_TIMEOUT);
+                    new NullOutputReceiver(), INSTALL_TIMEOUT_MINUTES, TimeUnit.MINUTES);
         } catch (IOException e) {
             throw new InstallException(e);
         } catch (TimeoutException e) {
@@ -921,7 +934,8 @@ final class Device implements IDevice {
     public String uninstallPackage(String packageName) throws InstallException {
         try {
             InstallReceiver receiver = new InstallReceiver();
-            executeShellCommand("pm uninstall " + packageName, receiver, INSTALL_TIMEOUT);
+            executeShellCommand("pm uninstall " + packageName, receiver, INSTALL_TIMEOUT_MINUTES,
+                    TimeUnit.MINUTES);
             return receiver.getErrorMessage();
         } catch (TimeoutException e) {
             throw new InstallException(e);
