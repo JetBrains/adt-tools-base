@@ -1896,7 +1896,7 @@ public abstract class BasePlugin {
 
         // ---- Code Coverage first -----
         if (isTestCoverageEnabled) {
-            createJacocoTask(config, variantData, pcData)
+            pcData = createJacocoTask(config, variantData, pcData)
         }
 
         // ----- Minify next ----
@@ -2109,7 +2109,7 @@ public abstract class BasePlugin {
             return set
         }
 
-        return pcData
+        return pcData2
     }
 
     private static ProGuardTask createShrinkingProGuardTask(
