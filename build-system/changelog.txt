@@ -7,6 +7,9 @@
   * multiDexEnabled = true on defaultConfig, ProductFlavor, or BuildType
   * Works for minSdkVersion 21+ (native) or <21 (legacy mode, with automatic dependency on com.android.support:multidex:1.0.0)
   * See multidex samples.
+- Support for automatic removal of unused resources
+  * Off by default for now, enable by setting shrinkResources to true in your
+    release build types. Requires minifyEnabled as well.
 - DSL/API changes:
   * Renamed a few properties to make things more consistent.
      - BuildType.runProguard ->  minifyEnabled
