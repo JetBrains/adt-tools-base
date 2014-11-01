@@ -28,6 +28,7 @@ import com.android.ide.common.res2.FileStatus
 import com.google.common.collect.Lists
 import com.google.common.collect.Multimap
 import org.gradle.api.file.FileTree
+import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
@@ -51,6 +52,10 @@ public class AidlCompile extends IncrementalTask {
     File aidlParcelableDir
 
     // ----- PRIVATE TASK API -----
+    @Input
+    String getBuildToolsVersion() {
+        plugin.extension.buildToolsRevision
+    }
 
     List<File> sourceDirs
 
