@@ -70,7 +70,6 @@ public abstract class BaseTest extends TestCase {
 
     /**
      * Returns the SDK folder as built from the Android source tree.
-     * @return
      */
     protected File getSdkDir() {
         String androidHome = System.getenv("ANDROID_HOME");
