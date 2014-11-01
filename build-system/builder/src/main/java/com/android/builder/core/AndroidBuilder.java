@@ -715,41 +715,6 @@ public class AndroidBuilder {
         }
     }
 
-    @NonNull
-    private static Map<String, String> getAttributeInjectionMap(
-                      int versionCode,
-            @Nullable String versionName,
-            @Nullable String minSdkVersion,
-            @Nullable String targetSdkVersion) {
-
-        Map<String, String> attributeInjection = Maps.newHashMap();
-
-        if (versionCode != -1) {
-            attributeInjection.put(
-                    "/manifest|http://schemas.android.com/apk/res/android versionCode",
-                    Integer.toString(versionCode));
-        }
-
-        if (versionName != null) {
-            attributeInjection.put(
-                    "/manifest|http://schemas.android.com/apk/res/android versionName",
-                    versionName);
-        }
-
-        if (minSdkVersion != null) {
-            attributeInjection.put(
-                    "/manifest/uses-sdk|http://schemas.android.com/apk/res/android minSdkVersion",
-                    minSdkVersion);
-        }
-
-        if (targetSdkVersion != null) {
-            attributeInjection.put(
-                    "/manifest/uses-sdk|http://schemas.android.com/apk/res/android targetSdkVersion",
-                    targetSdkVersion);
-        }
-        return attributeInjection;
-    }
-
     /**
      * Process the resources and generate R.java and/or the packaged resources.
      *
