@@ -101,6 +101,9 @@ final class AdbHelper {
         } catch (IOException e) {
             adbChan.close();
             throw e;
+        } catch (AdbCommandRejectedException e) {
+            adbChan.close();
+            throw e;
         }
 
         return adbChan;
@@ -146,6 +149,9 @@ final class AdbHelper {
             adbChan.close();
             throw e;
         } catch (IOException e) {
+            adbChan.close();
+            throw e;
+        } catch (AdbCommandRejectedException e) {
             adbChan.close();
             throw e;
         }
