@@ -63,15 +63,15 @@ public class TextFormatTest extends TestCase {
             assertEquals("", convertMarkup("", HTML));
             assertEquals("", convertMarkup("", HTML));
             assertEquals("This is <b>bold</b>", convertMarkup("This is *bold*", HTML));
-            assertEquals("Visit <a href=\"http://google.com\">http://google.com</a>.",
+            assertEquals("Visit <nobr><a href=\"http://google.com\">http://google.com</a></nobr>.",
                     convertMarkup("Visit http://google.com.", HTML));
             assertEquals("This is <code>monospace</code>!", convertMarkup("This is `monospace`!",
                     HTML));
             assertEquals(
-                    "See <a href=\"http://developer.android.com/reference/android/view/" +
+                    "See <nobr><a href=\"http://developer.android.com/reference/android/view/" +
                     "WindowManager.LayoutParams.html#FLAG_KEEP_SCREEN_ON\">http://developer." +
                     "android.com/reference/android/view/WindowManager.LayoutParams.html#" +
-                    "FLAG_KEEP_SCREEN_ON</a>.",
+                    "FLAG_KEEP_SCREEN_ON</a></nobr>.",
                 convertMarkup(
                   "See http://developer.android.com/reference/android/view/WindowManager.Layout" +
                   "Params.html#FLAG_KEEP_SCREEN_ON.", HTML));
@@ -129,9 +129,9 @@ public class TextFormatTest extends TestCase {
             "test your app to make sure everything works correctly. You may want to consult " +
             "the compatibility notes to see what changes apply to each version you are adding " +
             "support for: " +
-            "<a href=\"http://developer.android.com/reference/android/os/Build.VERSION_CODES." +
+            "<nobr><a href=\"http://developer.android.com/reference/android/os/Build.VERSION_CODES." +
             "html\">http://developer.android.com/reference/android/os/Build.VERSION_CODES.html" +
-            "</a>",
+            "</a></nobr>",
             convertMarkup(explanation, HTML));
     }
 
@@ -147,8 +147,8 @@ public class TextFormatTest extends TestCase {
         assertEquals(
             "When using a custom view with custom attributes in a library project, the layout " +
             "must use the special namespace " +
-            "<a href=\"http://schemas.android.com/apk/res-auto\">" +
-            "http://schemas.android.com/apk/res-auto</a> " +
+            "<nobr><a href=\"http://schemas.android.com/apk/res-auto\">" +
+            "http://schemas.android.com/apk/res-auto</a></nobr> " +
             "instead of a URI which includes the library project's own package. " +
             "This will be used to automatically adjust the namespace of the attributes when " +
             "the library resources are merged into the application project.",
