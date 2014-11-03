@@ -1,3 +1,8 @@
+0.14.1
+- Fix coverage support.
+- Fix resource shrinking for style references
+- Exclude embedded Wear micro-app from resource shrinking.
+
 0.14.0
 - Proguard and code coverage can now work together
 - Support for pulling coverage data from Android 5.0 devices
