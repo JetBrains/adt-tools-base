@@ -988,6 +988,29 @@ public class ResourceUsageAnalyzer {
                         from.addReference(resource);
                     }
                 }
+
+                // Android Wear. We *could* limit ourselves to only doing this in files
+                // referenced from a manifest meta-data element, e.g.
+                // <meta-data android:name="com.google.android.wearable.beta.app"
+                //    android:resource="@xml/wearable_app_desc"/>
+                // but given that that property has "beta" in the name, it seems likely
+                // to change and therefore hardcoding it for that key risks breakage
+                // in the future.
+                if ("rawPathResId".equals(element.getTagName())) {
+                    StringBuilder sb = new StringBuilder();
+                    NodeList children = node.getChildNodes();
+                    for (int i = 0, n = children.getLength(); i < n; i++) {
+                        Node child = children.item(i);
+                        if (child.getNodeType() == Element.TEXT_NODE
+                                || child.getNodeType() == Element.CDATA_SECTION_NODE) {
+                            sb.append(child.getNodeValue());
+                        }
+                    }
+                    if (sb.length() > 0) {
+                        Resource resource = getResource(ResourceType.RAW, sb.toString().trim());
+                        from.addReference(resource);
+                    }
+                }
             }
 
             Resource definition = getResource(element);
