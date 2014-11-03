@@ -89,18 +89,22 @@ public class ResourceUsageAnalyzerTest extends TestCase {
                 + "    @dimen/activity_vertical_margin\n"
                 + "    @dimen/activity_horizontal_margin\n"
                 + "    @string/hello_world\n"
+                + "    @style/MyStyle_Child\n"
                 + "@menu/main : reachable=true\n"
                 + "    @id/action_settings\n"
                 + "    @string/action_settings\n"
+                + "@raw/android_wear_micro_apk : reachable=true\n"
                 + "@string/action_settings : reachable=true\n"
                 + "@string/alias : reachable=false\n"
                 + "    @string/app_name\n"
                 + "@string/app_name : reachable=true\n"
                 + "@string/hello_world : reachable=true\n"
                 + "@style/AppTheme : reachable=false\n"
-                + "@style/MyStyle : reachable=false\n"
-                + "@style/MyStyle_Child : reachable=false\n"
-                + "    @style/MyStyle\n",
+                + "@style/MyStyle : reachable=true\n"
+                + "@style/MyStyle_Child : reachable=true\n"
+                + "    @style/MyStyle\n"
+                + "@xml/android_wear_micro_apk : reachable=true\n"
+                + "    @raw/android_wear_micro_apk\n",
                 analyzer.dumpResourceModel());
 
         File unusedBitmap = new File(resources, "drawable-xxhdpi" + separatorChar + "unused.png");
@@ -185,8 +189,8 @@ public class ResourceUsageAnalyzerTest extends TestCase {
             zos.close();
             fos.close();
 
-            assertEquals(
-                    "res/drawable-hdpi\n"
+            assertEquals(""
+                    + "res/drawable-hdpi\n"
                     + "res/drawable-hdpi/ic_launcher.png\n"
                     + "res/drawable-mdpi\n"
                     + "res/drawable-mdpi/ic_launcher.png\n"
@@ -197,8 +201,12 @@ public class ResourceUsageAnalyzerTest extends TestCase {
                     + "res/layout/activity_main.xml\n"
                     + "res/menu\n"
                     + "res/menu/main.xml\n"
+                    + "res/raw\n"
+                    + "res/raw/android_wear_micro_apk.apk\n"
                     + "res/values\n"
-                    + "resources.arsc\n",
+                    + "resources.arsc\n"
+                    + "res/xml\n"
+                    + "res/xml/android_wear_micro_apk.xml\n",
                     dumpZipContents(uncompressedFile));
 
             System.out.println(uncompressedFile);
@@ -220,8 +228,12 @@ public class ResourceUsageAnalyzerTest extends TestCase {
                     + "res/layout/activity_main.xml\n"
                     + "res/menu\n"
                     + "res/menu/main.xml\n"
+                    + "res/raw\n"
+                    + "res/raw/android_wear_micro_apk.apk\n"
                     + "res/values\n"
-                    + "resources.arsc\n",
+                    + "resources.arsc\n"
+                    + "res/xml\n"
+                    + "res/xml/android_wear_micro_apk.xml\n",
                     dumpZipContents(compressedFile));
 
             uncompressedFile.delete();
@@ -267,7 +279,7 @@ public class ResourceUsageAnalyzerTest extends TestCase {
     }
 
     private static File createResourceFolder(File dir) throws IOException {
-        File resources = new File(dir, "app/build/res/all/release/values".replace('/', separatorChar));
+        File resources = new File(dir, "app/build/res/all/release".replace('/', separatorChar));
         //noinspection ResultOfMethodCallIgnored
         resources.mkdirs();
 
@@ -331,6 +343,19 @@ public class ResourceUsageAnalyzerTest extends TestCase {
                 + "    </style>\n"
                 + "\n"
                 + "</resources>");
+
+        createFile(resources, "raw/android_wear_micro_apk.apk",
+                "<binary data>");
+
+        createFile(resources, "xml/android_wear_micro_apk.xml", ""
+                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                + "<wearableApp package=\"com.example.shrinkunittest.app\">\n"
+                + "    <versionCode>1</versionCode>\n"
+                + "    <versionName>1.0' platformBuildVersionName='5.0-1521886</versionName>\n"
+                + "    <rawPathResId>android_wear_micro_apk</rawPathResId>\n"
+                + "</wearableApp>");
+
+
         return resources;
     }
 
@@ -347,6 +372,9 @@ public class ResourceUsageAnalyzerTest extends TestCase {
                     + "                <category android:name=\"android.intent.category.LAUNCHER\"/>\n"
                     + "            </intent-filter>\n"
                     + "        </activity>\n"
+                    + "        <meta-data\n"
+                    + "            android:name=\"com.google.android.wearable.beta.app\"\n"
+                    + "            android:resource=\"@xml/android_wear_micro_apk\" />"
                     + "    </application>\n"
                     + "\n"
                     + "</manifest>");
@@ -403,6 +431,9 @@ public class ResourceUsageAnalyzerTest extends TestCase {
                 + "    public static final class menu {\n"
                 + "        public static final int main=0x7f070000;\n"
                 + "    }\n"
+                + "    public static final class raw {\n"
+                + "        public static final int android_wear_micro_apk=0x7f090000;\n"
+                + "    }"
                 + "    public static final class string {\n"
                 + "        public static final int action_settings=0x7f050000;\n"
                 + "        public static final int alias=0x7f050001;\n"
@@ -414,6 +445,9 @@ public class ResourceUsageAnalyzerTest extends TestCase {
                 + "        public static final int MyStyle=0x7f060001;\n"
                 + "        public static final int MyStyle_Child=0x7f060002;\n"
                 + "    }\n"
+                + "    public static final class xml {\n"
+                + "        public static final int android_wear_micro_apk=0x7f0a0000;\n"
+                + "    }"
                 + "}");
         return rDir;
     }
