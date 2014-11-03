@@ -259,7 +259,8 @@ public class ManualBuildTest extends BuildTest {
                 + "res/drawable/used11.xml\n"
                 + "res/drawable/used12.xml\n"
                 + "res/menu/used13.xml\n"
-                + "res/layout/used14.xml";
+                + "res/layout/used14.xml\n"
+                + "res/drawable/used15.xml";
 
         String expectedStrippedApkContents = ""
                 + "AndroidManifest.xml\n"
@@ -278,7 +279,8 @@ public class ManualBuildTest extends BuildTest {
                 + "res/drawable/used11.xml\n"
                 + "res/drawable/used12.xml\n"
                 + "res/menu/used13.xml\n"
-                + "res/layout/used14.xml";
+                + "res/layout/used14.xml\n"
+                + "res/drawable/used15.xml";
 
         // Should not have any unused resources in the compressed list
         assertFalse(expectedStrippedApkContents, expectedStrippedApkContents.contains("unused"));
