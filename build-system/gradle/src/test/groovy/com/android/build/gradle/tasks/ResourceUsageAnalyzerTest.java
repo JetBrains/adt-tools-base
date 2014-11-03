@@ -89,6 +89,7 @@ public class ResourceUsageAnalyzerTest extends TestCase {
                 + "    @dimen/activity_vertical_margin\n"
                 + "    @dimen/activity_horizontal_margin\n"
                 + "    @string/hello_world\n"
+                + "    @style/MyStyle_Child\n"
                 + "@menu/main : reachable=true\n"
                 + "    @id/action_settings\n"
                 + "    @string/action_settings\n"
@@ -98,8 +99,8 @@ public class ResourceUsageAnalyzerTest extends TestCase {
                 + "@string/app_name : reachable=true\n"
                 + "@string/hello_world : reachable=true\n"
                 + "@style/AppTheme : reachable=false\n"
-                + "@style/MyStyle : reachable=false\n"
-                + "@style/MyStyle_Child : reachable=false\n"
+                + "@style/MyStyle : reachable=true\n"
+                + "@style/MyStyle_Child : reachable=true\n"
                 + "    @style/MyStyle\n",
                 analyzer.dumpResourceModel());
 
