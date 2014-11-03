@@ -63,7 +63,7 @@ public class GradleProjectTestRule implements TestRule {
 
     public static final String DEFAULT_BUILD_TOOL_VERSION = "20.0.0";
 
-    private static final String ANDROID_GRADLE_VERSION = "0.14.0";
+    private static final String ANDROID_GRADLE_VERSION = "0.14.1";
 
     private File testDir;
 
