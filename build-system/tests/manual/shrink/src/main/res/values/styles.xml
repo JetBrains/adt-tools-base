@@ -8,4 +8,11 @@
     <style name="UnusedTheme" parent="android:Theme.Holo.Light.DarkActionBar">
         <item name="android:background">@drawable/unused11</item>
     </style>
+
+    <style name="BaseTheme" parent="android:Theme.Holo.Light.DarkActionBar">
+        <item name="android:windowBackground">@drawable/used15</item>
+    </style>
+    <style name="BaseTheme.MyTheme">
+    </style>
+
 </resources>
