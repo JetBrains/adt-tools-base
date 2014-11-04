@@ -75,6 +75,34 @@ public class FakeDevice extends DeviceConnector {
         installCalled = true;
     }
 
+    public void installPackages(@NonNull List<File> apkFiles, int timeout, ILogger logger)
+            throws DeviceException {
+
+        if (apkFiles == null || apkFiles.isEmpty()) {
+            throw new NullPointerException("Null testApks");
+        }
+        for (File apkFile : apkFiles) {
+            System.out.println(String.format("\t(%s)ApkFile: %s", name, apkFile.getAbsolutePath()));
+
+            if (!apkFile.isFile()) {
+                throw new RuntimeException("Missing file: " + apkFile.getAbsolutePath());
+            }
+
+            if (!apkFile.getAbsolutePath().endsWith(".apk")) {
+                throw new RuntimeException("Wrong extension: " + apkFile.getAbsolutePath());
+            }
+
+            if (installedApks.contains(apkFile)) {
+                throw new RuntimeException("Already added: " + apkFile.getAbsolutePath());
+            }
+
+            installedApks.add(apkFile);
+        }
+
+        installCalled = true;
+
+    }
+
     @Override
     public void uninstallPackage(@NonNull String packageName, int timeout, ILogger logger) throws DeviceException {
         logger.info("UNINSTALL(%S) CALLED", name);

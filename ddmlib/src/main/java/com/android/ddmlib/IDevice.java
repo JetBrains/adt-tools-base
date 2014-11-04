@@ -479,6 +479,18 @@ public interface IDevice extends IShellEnabledDevice {
             throws InstallException;
 
     /**
+     * Installs an Android application made of serveral APK files (one main and 0..n split packages)
+     *
+     * @param apkFilePaths list of absolute file system path to files on local host to install
+     * @param reinstall set to <code>true</code> if re-install of app should be performed
+     * @param extraArgs optional extra arguments to pass. See 'adb shell pm install --help' for
+     *            available options.
+     * @throws InstallException if the installation fails.
+     */
+
+    public void installPackages(List<String> apkFilePaths, int timeOut,
+            boolean reinstall, String... extraArgs) throws InstallException;
+    /**
      * Pushes a file to device
      *
      * @param localFilePath the absolute path to file on local host

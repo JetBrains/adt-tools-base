@@ -16,9 +16,12 @@
 
 package com.android.ddmlib;
 
+import com.android.annotations.Nullable;
 import com.android.ddmlib.log.LogReceiver;
 
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
@@ -381,6 +384,58 @@ final class AdbHelper {
         TimeUnit maxTimeUnits) throws TimeoutException, AdbCommandRejectedException,
         ShellCommandUnresponsiveException, IOException {
 
+        executeRemoteCommand(adbSockAddr, AdbService.SHELL, command, device, rcvr, maxTimeToOutputResponse,
+                maxTimeUnits, null /* inputStream */);
+    }
+
+    /**
+     * Identify which adb service the command should target.
+     */
+    public enum AdbService {
+        /**
+         * the shell service
+         */
+        SHELL,
+
+        /**
+         * The exec service.
+         */
+        EXEC
+    }
+
+    /**
+     * Executes a remote command on the device and retrieve the output. The output is
+     * handed to <var>rcvr</var> as it arrives. The command is execute by the remote service
+     * identified by the adbService parameter.
+     *
+     * @param adbSockAddr the {@link InetSocketAddress} to adb.
+     * @param adbService the {@link com.android.ddmlib.AdbHelper.AdbService} to use to run the
+     *                   command.
+     * @param command the shell command to execute
+     * @param device the {@link IDevice} on which to execute the command.
+     * @param rcvr the {@link IShellOutputReceiver} that will receives the output of the shell
+     *            command
+     * @param maxTimeToOutputResponse max time between command output. If more time passes
+     *            between command output, the method will throw
+     *            {@link ShellCommandUnresponsiveException}. A value of 0 means the method will
+     *            wait forever for command output and never throw.
+     * @param maxTimeUnits Units for non-zero {@code maxTimeToOutputResponse} values.
+     * @param is a optional {@link InputStream} to be streamed up after invoking the command
+     *           and before retrieving the response.
+     * @throws TimeoutException in case of timeout on the connection when sending the command.
+     * @throws AdbCommandRejectedException if adb rejects the command
+     * @throws ShellCommandUnresponsiveException in case the shell command doesn't send any output
+     *            for a period longer than <var>maxTimeToOutputResponse</var>.
+     * @throws IOException in case of I/O error on the connection.
+     *
+     * @see DdmPreferences#getTimeOut()
+     */
+    static void executeRemoteCommand(InetSocketAddress adbSockAddr, AdbService adbService,
+            String command, IDevice device, IShellOutputReceiver rcvr, long maxTimeToOutputResponse,
+            TimeUnit maxTimeUnits,
+            @Nullable InputStream is) throws TimeoutException, AdbCommandRejectedException,
+            ShellCommandUnresponsiveException, IOException {
+
         long maxTimeToOutputMs = 0;
         if (maxTimeToOutputResponse > 0) {
             if (maxTimeUnits == null) {
@@ -401,7 +456,7 @@ final class AdbHelper {
             // to a specific device
             setDevice(adbChan, device);
 
-            byte[] request = formAdbRequest("shell:" + command); //$NON-NLS-1$
+            byte[] request = formAdbRequest(adbService.name().toLowerCase() + ":" + command); //$NON-NLS-1$
             write(adbChan, request);
 
             AdbResponse resp = readAdbResponse(adbChan, false /* readDiagString */);
@@ -411,7 +466,26 @@ final class AdbHelper {
             }
 
             byte[] data = new byte[16384];
+
+            // stream the input file if present.
+            if (is != null) {
+                int read;
+                while ((read = is.read(data)) != -1) {
+                    ByteBuffer buf = ByteBuffer.wrap(data, 0, read);
+                    int written = 0;
+                    while (buf.hasRemaining()) {
+                        written += adbChan.write(buf);
+                    }
+                    if (written != read) {
+                        Log.e("ddms",
+                                "ADB write inconsistency, wrote " + written + "expected " + read);
+                        throw new AdbCommandRejectedException("write failed");
+                    }
+                }
+            }
+
             ByteBuffer buf = ByteBuffer.wrap(data);
+            buf.clear();
             long timeToResponseCount = 0;
             while (true) {
                 int count;
