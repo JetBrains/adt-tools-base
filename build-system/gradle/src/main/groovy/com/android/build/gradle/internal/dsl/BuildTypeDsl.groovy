@@ -18,14 +18,14 @@ package com.android.build.gradle.internal.dsl
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
 import com.android.annotations.VisibleForTesting
-import com.android.build.gradle.tasks.ShrinkResources
 import com.android.build.gradle.BasePlugin
+import com.android.build.gradle.internal.core.NdkConfig
 import com.android.builder.core.AndroidBuilder
 import com.android.builder.core.BuilderConstants
 import com.android.builder.core.DefaultBuildType
+import com.android.builder.model.BaseConfig
 import com.android.builder.model.BuildType
 import com.android.builder.model.ClassField
-import com.android.build.gradle.internal.core.NdkConfig
 import com.android.builder.model.SigningConfig
 import org.gradle.api.Action
 import org.gradle.api.Project
@@ -83,9 +83,17 @@ public class BuildTypeDsl extends DefaultBuildType implements Serializable {
         }
     }
 
+    @Override
+    protected void _initWith(@NonNull BaseConfig that) {
+        super._initWith(that)
+        shrinkResources = that.shrinkResources
+        useJack = that.useJack
+    }
+
     int hashCode() {
         int result = super.hashCode()
-        result = 31 * result + (useJack ? 1 : 0)
+        result = 31 * result + (useJack != null ? useJack.hashCode() : 0)
+        result = 31 * result + (shrinkResources ? 1 : 0)
         return result
     }
 
@@ -95,6 +103,7 @@ public class BuildTypeDsl extends DefaultBuildType implements Serializable {
         if (getClass() != o.class) return false
         if (!super.equals(o)) return false
         if (useJack != o.useJack) return false
+        if (shrinkResources != o.shrinkResources) return false
 
         return true
     }
