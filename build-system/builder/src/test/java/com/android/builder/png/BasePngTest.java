@@ -36,14 +36,12 @@ import javax.imageio.ImageIO;
  */
 public abstract class BasePngTest extends TestCase {
 
-    @NonNull
-    protected static File crunch(@NonNull File file) throws IOException, NinePatchException {
-        File outFile = File.createTempFile("pngWriterTest", ".png");
-        outFile.deleteOnExit();
+    /**
+     * Signature of a PNG file.
+     */
+    public static final byte[] SIGNATURE = new byte[] {
+            (byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A };
 
-        PngProcessor.process(file, outFile);
-        return outFile;
-    }
 
     protected static void compareImageContent(@NonNull File originalFile, @NonNull File createdFile,
             boolean is9Patch)
@@ -97,7 +95,7 @@ public abstract class BasePngTest extends TestCase {
         byte[] sig = new byte[8];
         buffer.get(sig);
 
-        assertTrue(Arrays.equals(sig, PngWriter.SIGNATURE));
+        assertTrue(Arrays.equals(sig, SIGNATURE));
 
         byte[] data, type;
         int len;
