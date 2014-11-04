@@ -209,6 +209,7 @@ public abstract class BasePlugin {
     public static File TEST_SDK_DIR;
 
     public static final String FILE_JACOCO_AGENT = 'jacocoagent.jar'
+    public static final String DEFAULT_PROGUARD_CONFIG_FILE = 'proguard-android.txt'
 
     protected Instantiator instantiator
     private ToolingModelBuilderRegistry registry
@@ -2226,7 +2227,8 @@ public abstract class BasePlugin {
                 // to query for a proguard file.
                 BaseVariantOutputData variantOutputData = variantData.outputs.get(0)
 
-                List<File> proguardFiles = config.getProguardFiles(true /*includeLibs*/)
+                List<File> proguardFiles = config.getProguardFiles(true /*includeLibs*/,
+                        [extension.getDefaultProguardFile(DEFAULT_PROGUARD_CONFIG_FILE)])
                 File proguardResFile = variantOutputData.processResourcesTask.proguardOutputFile
                 if (proguardResFile != null) {
                     proguardFiles.add(proguardResFile)
@@ -2669,7 +2671,8 @@ public abstract class BasePlugin {
         }
 
         Closure configFiles = {
-            List<File> proguardFiles = variantConfig.getProguardFiles(true /*includeLibs*/)
+            List<File> proguardFiles = variantConfig.getProguardFiles(true /*includeLibs*/,
+                    [extension.getDefaultProguardFile(DEFAULT_PROGUARD_CONFIG_FILE)])
             proguardFiles.add(variantOutputData.processResourcesTask.proguardOutputFile)
             // for tested app, we only care about their aapt config since the base
             // configs are the same files anyway.
