@@ -34,6 +34,7 @@ class BuildTypeImpl extends BaseConfigImpl implements BuildType, Serializable {
     private boolean debuggable;
     private boolean testCoverageEnabled;
     private boolean jniDebuggable;
+    private boolean pseudoLocalesEnabled;
     private boolean renderscriptDebuggable;
     private int renderscriptOptimLevel;
     private String applicationIdSuffix;
@@ -57,6 +58,7 @@ class BuildTypeImpl extends BaseConfigImpl implements BuildType, Serializable {
         clonedBuildType.minifyEnabled = buildType.isMinifyEnabled();
         clonedBuildType.zipAlignEnabled = buildType.isZipAlignEnabled();
         clonedBuildType.embedMicroApp = buildType.isEmbedMicroApp();
+        clonedBuildType.pseudoLocalesEnabled = buildType.isPseudoLocalesEnabled();
 
         return clonedBuildType;
     }
@@ -89,6 +91,11 @@ class BuildTypeImpl extends BaseConfigImpl implements BuildType, Serializable {
     @Override
     public boolean isRenderscriptDebuggable() {
         return renderscriptDebuggable;
+    }
+
+    @Override
+    public boolean isPseudoLocalesEnabled() {
+        return pseudoLocalesEnabled;
     }
 
     @Override

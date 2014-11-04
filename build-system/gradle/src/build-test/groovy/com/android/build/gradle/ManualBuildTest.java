@@ -723,6 +723,58 @@ public class ManualBuildTest extends BuildTest {
         }
     }
 
+    public void testPseudolocalization() throws Exception {
+        File project = new File(regularDir, "pseudolocalized");
+
+        runTasksOn(
+                project,
+                BasePlugin.GRADLE_TEST_VERSION,
+                "clean", "assembleDebug");
+
+        File aapt = new File(sdkDir, "build-tools/21.0.0/aapt");
+
+        assertTrue("Test requires build-tools 21.0.0", aapt.isFile());
+
+        File apk = new File(project, "build/" + FD_OUTPUTS + "/apk/pseudolocalized-debug.apk");
+
+        String[] command = new String[4];
+        command[0] = aapt.getPath();
+        command[1] = "dump";
+        command[2] = "badging";
+        command[3] = apk.getPath();
+
+        CommandLineRunner commandLineRunner = new CommandLineRunner(new StdLogger(StdLogger.Level.ERROR));
+
+        class TestOutput extends CommandLineRunner.CommandLineOutput {
+            public boolean pseudolocalized = false;
+            private Pattern p = Pattern.compile("^locales:.*'en[_-]XA'.*'ar[_-]XB'.*");
+
+            @Override
+            public void out(@Nullable String line) {
+                if (line != null) {
+                    Matcher m = p.matcher(line);
+                    if (m.matches()) {
+                      pseudolocalized = true;
+                    }
+                }
+            }
+            @Override
+            public void err(@Nullable String line) {
+                super.err(line);
+
+            }
+
+            public boolean getPseudolocalized() {
+                return pseudolocalized;
+            }
+        };
+
+        TestOutput handler = new TestOutput();
+        commandLineRunner.runCmdLine(command, handler, null /*env vars*/);
+
+        assertTrue("Pseudo locales were not added", handler.getPseudolocalized());
+    }
+
     public void testBasicWithSigningOverride() throws Exception {
         File project = new File(regularDir, "basic");
 
