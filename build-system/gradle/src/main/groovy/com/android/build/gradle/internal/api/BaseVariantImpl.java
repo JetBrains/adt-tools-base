@@ -323,4 +323,14 @@ abstract class BaseVariantImpl implements BaseVariant {
         // use the single output for compatibility.
         return outputs.get(0).getProcessResources();
     }
+
+    @Override
+    public void setOutputsAreSigned(boolean isSigned) {
+        getVariantData().outputsAreSigned = isSigned;
+    }
+
+    @Override
+    public boolean getOutputsAreSigned() {
+        return getVariantData().outputsAreSigned;
+    }
 }
