@@ -160,6 +160,6 @@ public class HelloJniTest extends ActivityInstrumentationTestCase<HelloJni> {
         this(false);
     }
     public HelloWorldJniApp(boolean useCppSource) {
-        addFile(javaSource, useCppSource ? cSource : cppSource, resSource, manifest, androidTestSource);
+        addFiles(javaSource, useCppSource ? cppSource : cSource, resSource, manifest, androidTestSource);
     }
 }

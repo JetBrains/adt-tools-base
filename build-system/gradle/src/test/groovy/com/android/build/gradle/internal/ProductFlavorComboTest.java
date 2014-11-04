@@ -170,7 +170,7 @@ public class ProductFlavorComboTest {
         assertEquals(expected.size(), actual.size());
         for (int i = 0; i < expected.size(); i++) {
             assertArrayEquals(
-                    "Unexpected value for ProductFlavorGroup " + i,
+                    "Unexpected value for ProductFlavorCombo " + i,
                     expected.get(i).getFlavorList().toArray(),
                     actual.get(i).getFlavorList().toArray());
         }
