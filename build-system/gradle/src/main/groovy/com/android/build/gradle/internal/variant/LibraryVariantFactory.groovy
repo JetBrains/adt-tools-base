@@ -67,6 +67,8 @@ public class LibraryVariantFactory implements VariantFactory<LibraryVariantData>
     @NonNull
     private final LibraryExtension extension
 
+    private Task assembleDefault;
+
     public LibraryVariantFactory(@NonNull BasePlugin basePlugin,
             @NonNull LibraryExtension extension) {
         this.extension = extension
@@ -118,6 +120,13 @@ public class LibraryVariantFactory implements VariantFactory<LibraryVariantData>
     @Override
     boolean isLibrary() {
         return true
+    }
+
+    private Task getAssembleDefault() {
+        if (assembleDefault == null) {
+            assembleDefault = basePlugin.project.tasks.findByName("assembleDefault");
+        }
+        return assembleDefault
     }
 
     @Override
@@ -352,7 +361,7 @@ public class LibraryVariantFactory implements VariantFactory<LibraryVariantData>
             // add the artifact that will be published
             project.artifacts.add("default", bundle)
 
-            basePlugin.assembleDefault.dependsOn variantData.assembleVariantTask
+            getAssembleDefault().dependsOn variantData.assembleVariantTask
         }
 
         // also publish the artifact with its full config name

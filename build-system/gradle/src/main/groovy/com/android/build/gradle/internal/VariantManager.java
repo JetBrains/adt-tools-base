@@ -453,6 +453,53 @@ public class VariantManager implements VariantModel {
     }
 
     /**
+     * Create a TestVariantData for the specified testedVariantData.
+     */
+    public TestVariantData createTestVariantData(
+            BaseVariantData testedVariantData,
+            SigningConfig signingOverride) {
+        BuildTypeData testData = buildTypes.get(extension.getTestBuildType());
+
+        ProductFlavorData<ProductFlavorDsl> defaultConfigData = basePlugin.getDefaultConfigData();
+        ProductFlavorDsl defaultConfig = defaultConfigData.getProductFlavor();
+
+        GradleVariantConfiguration testedConfig = testedVariantData.getVariantConfiguration();
+        List<? extends GroupableProductFlavor> productFlavorList = testedConfig.getProductFlavors();
+
+        // handle test variant
+        GradleVariantConfiguration testVariantConfig = new GradleVariantConfiguration(
+                defaultConfig,
+                defaultConfigData.getTestSourceSet(),
+                testData.getBuildType(),
+                null,
+                VariantConfiguration.Type.TEST,
+                testedVariantData.getVariantConfiguration(),
+                signingOverride);
+
+        for (GroupableProductFlavor productFlavor : productFlavorList) {
+            ProductFlavorData<GroupableProductFlavorDsl> data = productFlavors
+                    .get(productFlavor.getName());
+
+            String dimensionName = productFlavor.getFlavorDimension();
+            if (dimensionName == null) {
+                dimensionName = "";
+            }
+            testVariantConfig.addProductFlavor(
+                    data.getProductFlavor(),
+                    data.getTestSourceSet(),
+                    dimensionName);
+        }
+
+        // create the internal storage for this variant.
+        TestVariantData testVariantData = new TestVariantData(
+                basePlugin, testVariantConfig, (TestedVariantData) testedVariantData);
+        // link the testVariant to the tested variant in the other direction
+        ((TestedVariantData) testedVariantData).setTestVariantData(testVariantData);
+
+        return testVariantData;
+    }
+
+    /**
      * Creates VariantData for a specified list of product flavor.
      *
      * This will create VariantData for all build types of the given flavors.
@@ -502,38 +549,8 @@ public class VariantManager implements VariantModel {
         }
 
         if (testedVariantData != null) {
-            GradleVariantConfiguration testedConfig = testedVariantData.getVariantConfiguration();
-
-            // handle test variant
-            GradleVariantConfiguration testVariantConfig = new GradleVariantConfiguration(
-                    defaultConfig,
-                    defaultConfigData.getTestSourceSet(),
-                    testData.getBuildType(),
-                    null,
-                    VariantConfiguration.Type.TEST,
-                    testedVariantData.getVariantConfiguration(),
-                    signingOverride);
-
-            for (GroupableProductFlavor productFlavor : productFlavorList) {
-                ProductFlavorData<GroupableProductFlavorDsl> data = productFlavors
-                        .get(productFlavor.getName());
-
-                String dimensionName = productFlavor.getFlavorDimension();
-                if (dimensionName == null) {
-                    dimensionName = "";
-                }
-                testVariantConfig.addProductFlavor(
-                        data.getProductFlavor(),
-                        data.getTestSourceSet(),
-                        dimensionName);
-            }
-
-            // create the internal storage for this variant.
-            TestVariantData testVariantData = new TestVariantData(
-                    basePlugin, testVariantConfig, (TestedVariantData) testedVariantData);
-            // link the testVariant to the tested variant in the other direction
-            ((TestedVariantData) testedVariantData).setTestVariantData(testVariantData);
-
+            TestVariantData testVariantData =
+                    createTestVariantData(testedVariantData, signingOverride);
             variantDataList.add(testVariantData);
         }
     }

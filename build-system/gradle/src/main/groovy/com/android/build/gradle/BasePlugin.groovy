@@ -3424,16 +3424,15 @@ public abstract class BasePlugin {
 
     /**
      * Returns a plugin that is an instance of BasePlugin.  Returns null if a BasePlugin cannot
-     * be found, and throws an InvalidUserCodeException if more than one is found.
+     * be found.
      */
     public static BasePlugin findBasePlugin(Project project) {
-        def plugin = project.plugins.withType(BasePlugin)
-        if (plugin.isEmpty()) {
-            return null
-        } else if (plugin.size() != 1) {
-            throw new InvalidUserCodeException("Cannot apply more than one Android plugins.")
+        BasePlugin plugin = project.plugins.findPlugin(AppPlugin)
+        if (plugin != null) {
+            return plugin
         }
-        return plugin[0]
+        plugin = project.plugins.findPlugin(LibraryPlugin)
+        return plugin
     }
 
     public static void optionalDependsOn(@NonNull Task main, Task... dependencies) {
