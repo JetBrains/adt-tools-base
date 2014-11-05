@@ -718,212 +718,46 @@ public class AndroidBuilder {
     /**
      * Process the resources and generate R.java and/or the packaged resources.
      *
-     * @param manifestFile the location of the manifest file
-     * @param resFolder the merged res folder
-     * @param assetsDir the merged asset folder
-     * @param libraries the flat list of libraries
-     * @param packageForR Package override to generate the R class in a different package.
-     * @param sourceOutputDir optional source folder to generate R.java
-     * @param symbolOutputDir the folder to write symbols into
-     * @param resPackageOutput optional filepath for packaged resources
-     * @param proguardOutput optional filepath for proguard file to generate
-     * @param type the type of the variant being built
-     * @param debuggable whether the app is debuggable
-     * @param options the {@link com.android.builder.model.AaptOptions}
-     * @param resourceConfigs a list of resource config filters to pass to aapt.
-     * @param enforceUniquePackageName if true method will fail if some libraries share the same
+     *  @param aaptCommand aapt command invocation parameters.
+     *  @param enforceUniquePackageName if true method will fail if some libraries share the same
      *                                 package name
-     * @param splits optional list of split dimensions values (like a density or an abi). This
-     *               will be used by aapt to generate the corresponding pure split apks.
      *
      * @throws IOException
      * @throws InterruptedException
      * @throws LoggedErrorException
      */
     public void processResources(
-            @NonNull  File manifestFile,
-            @NonNull  File resFolder,
-            @Nullable File assetsDir,
-            @Nullable  List<? extends SymbolFileProvider> libraries,
-            @Nullable String packageForR,
-            @Nullable String sourceOutputDir,
-            @Nullable String symbolOutputDir,
-            @Nullable String resPackageOutput,
-            @Nullable String proguardOutput,
-                      VariantConfiguration.Type type,
-                      boolean debuggable,
-                      boolean pseudoLocalesEnabled,
-            @NonNull  AaptOptions options,
-            @NonNull  Collection<String> resourceConfigs,
-                      boolean enforceUniquePackageName,
-            @Nullable Collection<String> splits)
+            @NonNull AaptPackageCommandBuilder aaptCommand,
+            boolean enforceUniquePackageName)
             throws IOException, InterruptedException, LoggedErrorException {
 
-        checkNotNull(manifestFile, "manifestFile cannot be null.");
-        checkNotNull(resFolder, "resFolder cannot be null.");
-        checkNotNull(options, "options cannot be null.");
-        // if both output types are empty, then there's nothing to do and this is an error
-        checkArgument(sourceOutputDir != null || resPackageOutput != null,
-                "No output provided for aapt task");
         checkState(mTargetInfo != null,
                 "Cannot call processResources() before setTargetInfo() is called.");
-        if (symbolOutputDir != null || sourceOutputDir != null) {
-            checkNotNull(libraries, "libraries cannot be null if symbolOutputDir or sourceOutputDir is non-null");
-        }
-
-        BuildToolInfo buildToolInfo = mTargetInfo.getBuildTools();
-        IAndroidTarget target = mTargetInfo.getTarget();
 
         // launch aapt: create the command line
-        ArrayList<String> command = Lists.newArrayList();
-
-        String aapt = buildToolInfo.getPath(BuildToolInfo.PathId.AAPT);
-        if (aapt == null || !new File(aapt).isFile()) {
-            throw new IllegalStateException("aapt is missing");
-        }
-
-        command.add(aapt);
-        command.add("package");
-
-        if (mVerboseExec) {
-            command.add("-v");
-        }
-
-        command.add("-f");
-        command.add("--no-crunch");
-
-        // inputs
-        command.add("-I");
-        command.add(target.getPath(IAndroidTarget.ANDROID_JAR));
-
-        command.add("-M");
-        command.add(manifestFile.getAbsolutePath());
-
-        if (resFolder.isDirectory()) {
-            command.add("-S");
-            command.add(resFolder.getAbsolutePath());
-        }
-
-        if (assetsDir != null && assetsDir.isDirectory()) {
-            command.add("-A");
-            command.add(assetsDir.getAbsolutePath());
-        }
-
-        // outputs
-
-        if (sourceOutputDir != null) {
-            command.add("-m");
-            command.add("-J");
-            command.add(sourceOutputDir);
-        }
-
-        if (resPackageOutput != null) {
-            command.add("-F");
-            command.add(resPackageOutput);
-        }
-
-        if (proguardOutput != null) {
-            command.add("-G");
-            command.add(proguardOutput);
-        }
-
-        if (splits != null) {
-            for (String split : splits) {
-
-                command.add("--split");
-                command.add(split);
-            }
-        }
-
-        // options controlled by build variants
-
-        if (debuggable) {
-            command.add("--debug-mode");
-        }
-
-        if (pseudoLocalesEnabled) {
-            if (buildToolInfo.getRevision().getMajor() >= 21) {
-                command.add("--pseudo-localize");
-            } else {
-                throw new RuntimeException(
-                    "Pseudolocalization is only available since Build Tools version 21.0.0, please upgrade or turn it off.");
-            }
-        }
-
-        if (type != VariantConfiguration.Type.TEST) {
-            if (packageForR != null) {
-                command.add("--custom-package");
-                command.add(packageForR);
-                mLogger.verbose("Custom package for R class: '%s'", packageForR);
-            }
-        }
-
-        // library specific options
-        if (type == VariantConfiguration.Type.LIBRARY) {
-            command.add("--non-constant-id");
-        }
-
-        // AAPT options
-        String ignoreAssets = options.getIgnoreAssets();
-        if (ignoreAssets != null) {
-            command.add("--ignore-assets");
-            command.add(ignoreAssets);
-        }
-
-        if (options.getFailOnMissingConfigEntry()) {
-            if (buildToolInfo.getRevision().getMajor() > 20) {
-                command.add("--error-on-missing-config-entry");
-            } else {
-                throw new IllegalStateException("aaptOptions:failOnMissingConfigEntry cannot be used"
-                        + " with SDK Build Tools revision earlier than 21.0.0");
-            }
-        }
-
-        // never compress apks.
-        command.add("-0");
-        command.add("apk");
-
-        // add custom no-compress extensions
-        Collection<String> noCompressList = options.getNoCompress();
-        if (noCompressList != null) {
-            for (String noCompress : noCompressList) {
-                command.add("-0");
-                command.add(noCompress);
-            }
-        }
-
-        if (!resourceConfigs.isEmpty()) {
-            command.add("-c");
-
-            Joiner joiner = Joiner.on(',');
-            command.add(joiner.join(resourceConfigs));
-        }
-
-        if (symbolOutputDir != null &&
-                (type == VariantConfiguration.Type.LIBRARY || !libraries.isEmpty())) {
-            command.add("--output-text-symbols");
-            command.add(symbolOutputDir);
-        }
-
+        List<String> command = aaptCommand.build(
+                mTargetInfo.getBuildTools(), mTargetInfo.getTarget(), mLogger);
         mCmdLineRunner.runCmdLine(command, null);
 
         // now if the project has libraries, R needs to be created for each libraries,
         // but only if the current project is not a library.
-        if (sourceOutputDir != null && type != VariantConfiguration.Type.LIBRARY && !libraries.isEmpty()) {
+        if (aaptCommand.getSourceOutputDir() != null
+                && aaptCommand.getType() != VariantConfiguration.Type.LIBRARY
+                && !aaptCommand.getLibraries().isEmpty()) {
             SymbolLoader fullSymbolValues = null;
 
             // First pass processing the libraries, collecting them by packageName,
             // and ignoring the ones that have the same package name as the application
             // (since that R class was already created).
-            String appPackageName = packageForR;
+            String appPackageName = aaptCommand.getPackageForR();
             if (appPackageName == null) {
-                appPackageName = VariantConfiguration.getManifestPackage(manifestFile);
+                appPackageName = VariantConfiguration.getManifestPackage(aaptCommand.getManifestFile());
             }
 
             // list of all the symbol loaders per package names.
             Multimap<String, SymbolLoader> libMap = ArrayListMultimap.create();
 
-            for (SymbolFileProvider lib : libraries) {
+            for (SymbolFileProvider lib : aaptCommand.getLibraries()) {
                 String packageName = VariantConfiguration.getManifestPackage(lib.getManifest());
                 if (appPackageName == null) {
                     continue;
@@ -952,7 +786,7 @@ public class AndroidBuilder {
                     // Doing it lazily allow us to support the case where there's no
                     // resources anywhere.
                     if (fullSymbolValues == null) {
-                        fullSymbolValues = new SymbolLoader(new File(symbolOutputDir, "R.txt"),
+                        fullSymbolValues = new SymbolLoader(new File(aaptCommand.getSymbolOutputDir(), "R.txt"),
                                 mLogger);
                         fullSymbolValues.load();
                     }
@@ -978,7 +812,7 @@ public class AndroidBuilder {
                     throw new RuntimeException(msg);
                 }
 
-                SymbolWriter writer = new SymbolWriter(sourceOutputDir, packageName,
+                SymbolWriter writer = new SymbolWriter(aaptCommand.getSourceOutputDir(), packageName,
                         fullSymbolValues);
                 for (SymbolLoader symbolLoader : symbols) {
                     writer.addSymbolsToWrite(symbolLoader);
@@ -1598,7 +1432,7 @@ public class AndroidBuilder {
      */
     public void packageApk(
             @NonNull String androidResPkgLocation,
-            @NonNull File dexFolder,
+            @Nullable File dexFolder,
             @Nullable Collection<File> dexedLibraries,
             @NonNull Collection<File> packagedJars,
             @Nullable String javaResourcesLocation,
@@ -1611,8 +1445,6 @@ public class AndroidBuilder {
             throws DuplicateFileException, FileNotFoundException,
             KeytoolException, PackagerException, SigningException {
         checkNotNull(androidResPkgLocation, "androidResPkgLocation cannot be null.");
-        checkNotNull(dexFolder, "dexFolder cannot be null.");
-        checkArgument(dexFolder.isDirectory(), "dexFolder is not a directory");
         checkNotNull(outApkLocation, "outApkLocation cannot be null.");
 
         CertificateInfo certificateInfo = null;
@@ -1628,8 +1460,16 @@ public class AndroidBuilder {
 
         try {
             Packager packager = new Packager(
-                    outApkLocation, androidResPkgLocation, dexFolder,
+                    outApkLocation, androidResPkgLocation,
                     certificateInfo, mCreatedBy, packagingOptions, mLogger);
+
+            // add dex folder to the apk root.
+            if (dexFolder != null) {
+                if (!dexFolder.isDirectory()) {
+                    throw new IllegalArgumentException("dexFolder must be a directory");
+                }
+                packager.addDexFolder(dexFolder);
+            }
 
             if (dexedLibraries != null) {
                 for (File dexedLibrary : dexedLibraries) {

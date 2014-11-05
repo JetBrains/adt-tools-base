@@ -84,6 +84,7 @@ import com.android.build.gradle.tasks.CompatibleScreensManifest
 import com.android.build.gradle.tasks.Dex
 import com.android.build.gradle.tasks.GenerateBuildConfig
 import com.android.build.gradle.tasks.GenerateResValues
+import com.android.build.gradle.tasks.GenerateSplitAbiRes
 import com.android.build.gradle.tasks.JackTask
 import com.android.build.gradle.tasks.JillTask
 import com.android.build.gradle.tasks.Lint
@@ -92,6 +93,7 @@ import com.android.build.gradle.tasks.MergeManifests
 import com.android.build.gradle.tasks.MergeResources
 import com.android.build.gradle.tasks.NdkCompile
 import com.android.build.gradle.tasks.PackageApplication
+import com.android.build.gradle.tasks.PackageSplitAbi
 import com.android.build.gradle.tasks.PackageSplitRes
 import com.android.build.gradle.tasks.PreDex
 import com.android.build.gradle.tasks.ProcessAndroidResources
@@ -1176,7 +1178,7 @@ public abstract class BasePlugin {
      * @param variantData the variant configuration.
      */
 
-    public void createPackageSplitResTask(
+    public void createSplitResourcesTasks(
             @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData) {
 
         assert variantData.getSplitHandlingPolicy() ==
@@ -1208,7 +1210,7 @@ public abstract class BasePlugin {
         variantOutputData.packageSplitResourcesTask.signingConfig =
                 (SigningConfigDsl) config.signingConfig
         variantOutputData.packageSplitResourcesTask.outputDirectory =
-                new File("$project.buildDir/${FD_INTERMEDIATES}/splits/${config.fullName}")
+                new File("$project.buildDir/${FD_INTERMEDIATES}/splits/${config.dirName}")
         variantOutputData.packageSplitResourcesTask.plugin = this
         variantOutputData.packageSplitResourcesTask.dependsOn variantOutputData.processResourcesTask
 
@@ -1226,6 +1228,105 @@ public abstract class BasePlugin {
         zipAlign.outputBaseName = config.fullName;
         ((ApkVariantOutputData) variantOutputData).splitZipAlign = zipAlign
         zipAlign.dependsOn(variantOutputData.packageSplitResourcesTask)
+    }
+
+    public void createSplitAbiTasks(
+            @NonNull ApplicationVariantData variantData) {
+
+        assert variantData.getSplitHandlingPolicy() ==
+                BaseVariantData.SplitHandlingPolicy.RELEASE_21_AND_AFTER_POLICY;
+
+        VariantConfiguration config = variantData.variantConfiguration
+        Set<String> filters = Sets.filter(getExtension().getSplits().getAbiFilters(),
+                new Predicate<? super String>() {
+
+                    @Override
+                    boolean apply(Object o) {
+                        return o != null;
+                    }
+                });
+        if (filters.isEmpty()) {
+            return;
+        }
+        def outputs = variantData.outputs;
+        if (outputs.size() != 1) {
+            throw new RuntimeException("In release 21 and later, there can be only one main APK, " +
+                    "found " + outputs.size());
+        }
+
+        BaseVariantOutputData variantOutputData = outputs.get(0);
+        // first create the split APK resources.
+        GenerateSplitAbiRes generateSplitAbiRes = project.tasks.
+                create("generate${config.fullName.capitalize()}SplitAbiRes",
+                        GenerateSplitAbiRes)
+        generateSplitAbiRes.plugin = this
+
+        generateSplitAbiRes.outputDirectory =
+                new File("$project.buildDir/${FD_INTERMEDIATES}/abi/${config.dirName}")
+        generateSplitAbiRes.splits = filters
+        generateSplitAbiRes.outputBaseName = config.fullName
+        generateSplitAbiRes.applicationId = config.getApplicationId()
+        generateSplitAbiRes.versionCode = config.getVersionCode()
+        generateSplitAbiRes.versionName = config.getVersionName()
+        generateSplitAbiRes.debuggable = {
+            config.buildType.debuggable }
+        generateSplitAbiRes.conventionMapping.aaptOptions = {
+            extension.aaptOptions
+        }
+        generateSplitAbiRes.dependsOn variantOutputData.processResourcesTask
+
+        // then package those resources witth the appropriate JNI libraries.
+        variantOutputData.packageSplitAbiTask =
+                project.tasks.create("package${config.fullName.capitalize()}SplitAbi",
+                        PackageSplitAbi);
+        variantOutputData.packageSplitAbiTask
+        variantOutputData.packageSplitAbiTask.inputDirectory = generateSplitAbiRes.outputDirectory
+        variantOutputData.packageSplitAbiTask.splits = filters
+        variantOutputData.packageSplitAbiTask.outputBaseName = config.fullName
+        variantOutputData.packageSplitAbiTask.signingConfig =
+                (SigningConfigDsl) config.signingConfig
+        variantOutputData.packageSplitAbiTask.outputDirectory =
+                new File("$project.buildDir/${FD_INTERMEDIATES}/splits/${config.dirName}")
+        variantOutputData.packageSplitAbiTask.plugin = this
+        variantOutputData.packageSplitAbiTask.dependsOn generateSplitAbiRes
+
+        variantOutputData.packageSplitAbiTask.conventionMapping.jniFolders = {
+            getJniFolders(variantData);
+        }
+        variantOutputData.packageSplitAbiTask.conventionMapping.jniDebuggable = { config.buildType.jniDebuggable }
+        variantOutputData.packageSplitAbiTask.conventionMapping.packagingOptions = { extension.packagingOptions }
+
+        ((ApkVariantOutputData) variantOutputData).splitZipAlign.dependsOn variantOutputData.packageSplitAbiTask
+    }
+
+    /**
+     * Calculate the list of folders that can contain jni artifacts for this variant.
+     * @param variantData the variant
+     * @return a potentially empty list of directories that exist or not and that may contains
+     * native resources.
+     */
+    @NonNull
+    public Set<File> getJniFolders(@NonNull ApkVariantData variantData) {
+        VariantConfiguration config = variantData.variantConfiguration
+        // for now only the project's compilation output.
+        Set<File> set = Sets.newHashSet()
+        if (extension.getUseNewNativePlugin()) {
+            throw new RuntimeException("useNewNativePlugin is currently not supported.")
+        } else {
+            set.addAll(variantData.ndkCompileTask.soFolder)
+        }
+        set.addAll(variantData.renderscriptCompileTask.libOutputDir)
+        set.addAll(config.libraryJniFolders)
+        set.addAll(config.jniLibsList)
+
+        if (config.mergedFlavor.renderscriptSupportModeEnabled) {
+            File rsLibs = androidBuilder.getSupportNativeLibFolder()
+            if (rsLibs != null && rsLibs.isDirectory()) {
+                set.add(rsLibs);
+            }
+        }
+
+        return set
     }
 
     public void createProcessJavaResTask(
@@ -2304,6 +2405,9 @@ public abstract class BasePlugin {
             if (variantOutputData.packageSplitResourcesTask != null) {
                 packageApp.dependsOn variantOutputData.packageSplitResourcesTask
             }
+            if (variantOutputData.packageSplitAbiTask != null) {
+                packageApp.dependsOn variantOutputData.packageSplitAbiTask
+            }
 
             // Add dependencies on NDK tasks if NDK plugin is applied.
             if (extension.getUseNewNativePlugin()) {
@@ -2357,25 +2461,7 @@ public abstract class BasePlugin {
                 getOptionalDir(variantData.processJavaResourcesTask.destinationDir)
             }
             packageApp.conventionMapping.jniFolders = {
-                // for now only the project's compilation output.
-                Set<File> set = Sets.newHashSet()
-                if (extension.getUseNewNativePlugin()) {
-                    throw new RuntimeException("useNewNativePlugin is currently not supported.")
-                } else {
-                    set.addAll(variantData.ndkCompileTask.soFolder)
-                }
-                set.addAll(variantData.renderscriptCompileTask.libOutputDir)
-                set.addAll(config.libraryJniFolders)
-                set.addAll(config.jniLibsList)
-
-                if (config.mergedFlavor.renderscriptSupportModeEnabled) {
-                    File rsLibs = androidBuilder.getSupportNativeLibFolder()
-                    if (rsLibs != null && rsLibs.isDirectory()) {
-                        set.add(rsLibs);
-                    }
-                }
-
-                return set
+                getJniFolders(variantData);
             }
             packageApp.conventionMapping.abiFilters = {
                 if (variantOutputData.mainOutputFile.getFilter(OutputFile.ABI) != null) {

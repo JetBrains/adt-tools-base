@@ -606,7 +606,7 @@ public class ManualBuildTest extends BuildTest {
         expected.put("xhdpi",     VersionData.of(412, "version 412"));
         expected.put("xxhdpi",    VersionData.of(512, "version 512"));
 
-        checkVersion(project, null, expected, "densitySplit");
+        checkVersion(project, null, expected, "densitySplit", "-debug");
     }
 
     public void testAbiSplits() throws Exception {
@@ -627,7 +627,26 @@ public class ManualBuildTest extends BuildTest {
         expected.put("icecreamSandwich-mips",        VersionData.of(2200123));
         expected.put("icecreamSandwich-x86",         VersionData.of(2300123));
 
-        checkVersion(project, "app/", expected, "app");
+        checkVersion(project, "app/", expected, "app", "-debug");
+    }
+
+    public void testPureAbiSplits() throws Exception {
+        File project = new File(regularDir, "ndkJniPureSplitLib");
+
+        runTasksOn(
+                project,
+                BasePlugin.GRADLE_TEST_VERSION,
+                "clean", "app:assembleDebug");
+
+        Map<String, VersionData> expected = Maps.newHashMapWithExpectedSize(8);
+        expected.put("freeDebug-armeabi-v7a",      VersionData.of(123));
+        expected.put("freeDebug-mips",             VersionData.of(123));
+        expected.put("freeDebug-x86",              VersionData.of(123));
+        expected.put("paidDebug-armeabi-v7a",      VersionData.of(123));
+        expected.put("paidDebug-mips",             VersionData.of(123));
+        expected.put("paidDebug-x86",              VersionData.of(123));
+
+        checkVersion(project, "app/", expected, "app", null /* suffix */);
     }
 
     private static final class VersionData {
@@ -652,7 +671,8 @@ public class ManualBuildTest extends BuildTest {
             @NonNull File project,
             @Nullable String outRoot,
             @NonNull Map<String, VersionData> expected,
-            @NonNull String baseName)
+            @NonNull String baseName,
+            @Nullable String suffix)
             throws IOException, InterruptedException, LoggedErrorException {
         File aapt = new File(sdkDir, "build-tools/20.0.0/aapt");
 
@@ -666,7 +686,10 @@ public class ManualBuildTest extends BuildTest {
         CommandLineRunner commandLineRunner = new CommandLineRunner(new StdLogger(StdLogger.Level.ERROR));
 
         for (Map.Entry<String, VersionData> entry : expected.entrySet()) {
-            String path = "build/" + FD_OUTPUTS + "/apk/" + baseName + "-" + entry.getKey() + "-debug.apk";
+            if (suffix == null) {
+                suffix = "";
+            }
+            String path = "build/" + FD_OUTPUTS + "/apk/" + baseName + "-" + entry.getKey() + suffix + ".apk";
             if (outRoot != null) {
                 path = outRoot + path;
             }
