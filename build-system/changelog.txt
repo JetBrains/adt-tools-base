@@ -1,3 +1,10 @@
+0.14.2
+- Fix versionNameSuffix support
+- Fix BuildType.initWith to copy shrinkResources flag
+- setup default proguard rule file if none are provided (SDK/tools/proguard/proguard-android.txt)
+- BuildType.pseudoLocalesEnabled flag to include fake locales in apk.
+
+
 0.14.1
 - Fix coverage support.
 - Fix resource shrinking for style references
