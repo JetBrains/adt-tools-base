@@ -81,7 +81,7 @@ public class AndroidProjectTest extends TestCase {
     private static final String FOLDER_TEST_REGULAR = "regular";
     private static final String FOLDER_TEST_MANUAL = "manual";
 
-    private static final String MODEL_VERSION = "0.14.1";
+    private static final String MODEL_VERSION = "0.14.2";
 
     private static final Map<String, ProjectData> sProjectModelMap = Maps.newHashMap();
 
