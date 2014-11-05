@@ -222,9 +222,9 @@ public class ModelBuilder implements ToolingModelBuilder {
             @NonNull BaseVariantData variantData,
             @NonNull BasePlugin basePlugin,
             @NonNull Set<Project> gradleProjects) {
-        VariantConfiguration vC = variantData.variantConfiguration
+        VariantConfiguration variantConfiguration = variantData.variantConfiguration
 
-        SigningConfig signingConfig = vC.signingConfig
+        SigningConfig signingConfig = variantConfiguration.signingConfig
         String signingConfigName = null
         if (signingConfig != null) {
             signingConfigName = signingConfig.name
@@ -255,7 +255,7 @@ public class ModelBuilder implements ToolingModelBuilder {
         for (BaseVariantOutputData variantOutputData : variantOutputs) {
             Integer versionCode = (variantOutputData instanceof ApkVariantOutputData) ?
                     ((ApkVariantOutputData) variantOutputData).versionCode :
-                    vC.mergedFlavor.versionCode
+                    variantConfiguration.mergedFlavor.versionCode
 
             int intVersionCode = versionCode != null ? versionCode.intValue() : 1;
 
@@ -290,9 +290,9 @@ public class ModelBuilder implements ToolingModelBuilder {
                 name,
                 outputs,
                 variantData.assembleVariantTask.name,
-                vC.isSigningReady(),
+                variantConfiguration.isSigningReady() || variantData.outputsAreSigned,
                 signingConfigName,
-                vC.applicationId,
+                variantConfiguration.applicationId,
                 variantData.sourceGenTask.name,
                 variantData.compileTask.name,
                 getGeneratedSourceFolders(variantData),
@@ -301,7 +301,7 @@ public class ModelBuilder implements ToolingModelBuilder {
                 DependenciesImpl.cloneDependencies(variantData, basePlugin, gradleProjects),
                 variantSourceProvider,
                 multiFlavorSourceProvider,
-                vC.supportedAbis)
+                variantConfiguration.supportedAbis)
     }
 
     @NonNull

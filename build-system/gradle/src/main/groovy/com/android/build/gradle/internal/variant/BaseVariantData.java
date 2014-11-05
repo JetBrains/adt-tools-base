@@ -115,6 +115,12 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
 
     private final List<T> outputs = Lists.newArrayListWithExpectedSize(4);
 
+    /**
+     * If true, variant outputs will be considered signed. Only set if you manually set the outputs
+     * to point to signed files built by other tasks.
+     */
+    public boolean outputsAreSigned = false;
+
     private SplitHandlingPolicy mSplitHandlingPolicy;
 
 
