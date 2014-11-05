@@ -157,6 +157,20 @@ public class GradleProjectTestRule implements TestRule {
     }
 
     /**
+     * Returns the SDK dir
+     */
+    public File getSdkDir() {
+        return sdkDir;
+    }
+
+    /**
+     * Returns the NDK dir
+     */
+    public File getNdkDir() {
+        return ndkDir;
+    }
+
+    /**
      * Return the directory of the repository containing the necessary plugins for testing.
      */
     private File getRepoDir() {
