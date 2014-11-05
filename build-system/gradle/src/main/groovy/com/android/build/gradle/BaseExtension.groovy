@@ -68,6 +68,7 @@ public abstract class BaseExtension {
     final PackagingOptionsImpl packagingOptions
     final JacocoExtension jacoco
     final Splits splits
+    final boolean isLibrary
 
     final NamedDomainObjectContainer<DefaultProductFlavor> productFlavors
     final NamedDomainObjectContainer<DefaultBuildType> buildTypes
@@ -105,11 +106,12 @@ public abstract class BaseExtension {
             @NonNull NamedDomainObjectContainer<DefaultBuildType> buildTypes,
             @NonNull NamedDomainObjectContainer<DefaultProductFlavor> productFlavors,
             @NonNull NamedDomainObjectContainer<SigningConfig> signingConfigs,
-                     final boolean isLibrary) {
+            boolean isLibrary) {
         this.plugin = plugin
         this.buildTypes = buildTypes
         this.productFlavors = productFlavors
         this.signingConfigs = signingConfigs
+        this.isLibrary = isLibrary
 
         defaultConfig = instantiator.newInstance(ProductFlavorDsl, BuilderConstants.MAIN,
                 project, instantiator, project.getLogger())
