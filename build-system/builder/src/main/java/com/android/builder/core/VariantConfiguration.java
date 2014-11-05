@@ -1641,7 +1641,7 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
      * @return a non null list of proguard files.
      */
     @NonNull
-    public List<File> getProguardFiles(boolean includeLibraries) {
+    public List<File> getProguardFiles(boolean includeLibraries, List<File> defaultProguardConfig) {
         List<File> fullList = Lists.newArrayList();
 
         // add the config files from the build type, main config and flavors
@@ -1650,6 +1650,10 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
 
         for (F flavor : mFlavors) {
             fullList.addAll(flavor.getProguardFiles());
+        }
+
+        if (fullList.isEmpty()) {
+            fullList.addAll(defaultProguardConfig);
         }
 
         // now add the one coming from the library dependencies
