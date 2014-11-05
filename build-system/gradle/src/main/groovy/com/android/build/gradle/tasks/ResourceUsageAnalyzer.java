@@ -36,6 +36,8 @@ import static com.android.SdkConstants.TAG_STYLE;
 import static com.android.utils.SdkUtils.endsWith;
 import static com.android.utils.SdkUtils.endsWithIgnoreCase;
 import static com.google.common.base.Charsets.UTF_8;
+import static org.objectweb.asm.ClassReader.SKIP_DEBUG;
+import static org.objectweb.asm.ClassReader.SKIP_FRAMES;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
@@ -59,8 +61,10 @@ import com.google.common.io.ByteStreams;
 import com.google.common.io.Closeables;
 import com.google.common.io.Files;
 
+import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.w3c.dom.Attr;
@@ -1144,7 +1148,7 @@ public class ResourceUsageAnalyzer {
                         byte[] bytes = ByteStreams.toByteArray(zis);
                         if (bytes != null) {
                             ClassReader classReader = new ClassReader(bytes);
-                            classReader.accept(new UsageVisitor(), 0);
+                            classReader.accept(new UsageVisitor(), SKIP_DEBUG | SKIP_FRAMES);
                         }
                     }
 
@@ -1403,6 +1407,12 @@ public class ResourceUsageAnalyzer {
         }
     }
 
+    /**
+     * Class visitor responsible for looking for resource references in code.
+     * It looks for R.type.name references (as well as inlined constants for these,
+     * in the case of non-library code), as well as looking both for Resources#getIdentifier
+     * calls and recording string literals, used to handle dynamic lookup of resources.
+     */
     private class UsageVisitor extends ClassVisitor {
         public UsageVisitor() {
             super(Opcodes.ASM4);
@@ -1414,13 +1424,7 @@ public class ResourceUsageAnalyzer {
             return new MethodVisitor(Opcodes.ASM4) {
                 @Override
                 public void visitLdcInsn(Object cst) {
-                    if (cst instanceof Integer) {
-                        Integer value = (Integer)cst;
-                        markReachable(mValueToResource.get(value));
-                    } else if (cst instanceof String) {
-                        String string = (String)cst;
-                        referencedString(string);
-                    }
+                    handleCodeConstant(cst);
                 }
 
                 @Override
@@ -1449,7 +1453,78 @@ public class ResourceUsageAnalyzer {
                         // rather than having to check the whole string pool!
                     }
                 }
+
+                @Override
+                public AnnotationVisitor visitAnnotationDefault() {
+                    return new AnnotationUsageVisitor();
+                }
+
+                @Override
+                public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
+                    return new AnnotationUsageVisitor();
+                }
+
+                @Override
+                public AnnotationVisitor visitParameterAnnotation(int parameter, String desc,
+                        boolean visible) {
+                    return new AnnotationUsageVisitor();
+                }
             };
+        }
+
+        @Override
+        public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
+            return new AnnotationUsageVisitor();
+        }
+
+        @Override
+        public FieldVisitor visitField(int access, String name, String desc, String signature,
+                Object value) {
+            handleCodeConstant(value);
+            return new FieldVisitor(Opcodes.ASM4) {
+                @Override
+                public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
+                    return new AnnotationUsageVisitor();
+                }
+            };
+        }
+    }
+
+    private class AnnotationUsageVisitor extends AnnotationVisitor {
+        public AnnotationUsageVisitor() {
+            super(Opcodes.ASM4);
+        }
+
+        @Override
+        public AnnotationVisitor visitAnnotation(String name, String desc) {
+            return new AnnotationUsageVisitor();
+        }
+
+        @Override
+        public AnnotationVisitor visitArray(String name) {
+            return new AnnotationUsageVisitor();
+        }
+
+        @Override
+        public void visit(String name, Object value) {
+            handleCodeConstant(value);
+            super.visit(name, value);
+        }
+    }
+
+    /** Invoked when an ASM visitor encounters a constant: record corresponding reference */
+    private void handleCodeConstant(@Nullable Object cst) {
+        if (cst instanceof Integer) {
+            Integer value = (Integer) cst;
+            markReachable(mValueToResource.get(value));
+        } else if (cst instanceof int[]) {
+            int[] values = (int[]) cst;
+            for (int value : values) {
+                markReachable(mValueToResource.get(value));
+            }
+        } else if (cst instanceof String) {
+            String string = (String) cst;
+            referencedString(string);
         }
     }
 
