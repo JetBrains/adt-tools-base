@@ -35,11 +35,9 @@ import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.security.CodeSource;
@@ -63,7 +61,7 @@ public class GradleProjectTestRule implements TestRule {
 
     public static final String DEFAULT_BUILD_TOOL_VERSION = "20.0.0";
 
-    private static final String ANDROID_GRADLE_VERSION = "0.14.1";
+    private static final String ANDROID_GRADLE_VERSION = "0.14.2";
 
     private File testDir;
 
