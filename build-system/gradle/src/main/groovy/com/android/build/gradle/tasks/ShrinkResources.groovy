@@ -18,6 +18,7 @@ package com.android.build.gradle.tasks
 
 import com.android.build.gradle.internal.tasks.BaseTask
 import com.android.build.gradle.internal.variant.BaseVariantOutputData
+import com.android.builder.core.AaptPackageCommandBuilder
 import org.gradle.api.logging.LogLevel
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.OutputFile
@@ -97,22 +98,23 @@ public class ShrinkResources extends BaseTask {
                 String sourceOutputPath = null
 
                 // Repackage the resources:
+                AaptPackageCommandBuilder aaptPackageCommandBuilder =
+                        new AaptPackageCommandBuilder(processResourcesTask.getManifestFile(),
+                                processResourcesTask.getAaptOptions())
+                                .setAssetsFolder(processResourcesTask.getAssetsDir())
+                                .setResFolder(destination)
+                                .setLibraries(processResourcesTask.getLibraries())
+                                .setPackageForR(processResourcesTask.getPackageForR())
+                                .setSourceOutputDir(sourceOutputPath)
+                                .setResPackageOutput(getCompressedResources().absolutePath)
+                                .setType(processResourcesTask.getType())
+                                .setDebuggable(processResourcesTask.getDebuggable())
+                                .setResourceConfigs(processResourcesTask.getResourceConfigs())
+                                .setSplits(processResourcesTask.getSplits())
+
                 getBuilder().processResources(
-                        processResourcesTask.getManifestFile(),
-                        destination,
-                        processResourcesTask.getAssetsDir(),
-                        processResourcesTask.getLibraries(),
-                        processResourcesTask.getPackageForR(),
-                        sourceOutputPath,
-                        null,
-                        getCompressedResources().absolutePath,
-                        null,
-                        processResourcesTask.getType(),
-                        processResourcesTask.getDebuggable(),
-                        processResourcesTask.getAaptOptions(),
-                        processResourcesTask.getResourceConfigs(),
+                        aaptPackageCommandBuilder,
                         processResourcesTask.getEnforceUniquePackageName(),
-                        processResourcesTask.getSplits()
                 )
             } else {
                 // Just rewrite the .ap_ file to strip out the res/ files for unused resources

@@ -19,6 +19,7 @@
     <orderEntry type="module" module-name="sdk-common" exported="" />
     <orderEntry type="library" exported="" name="javawriter" level="project" />
     <orderEntry type="library" exported="" name="bouncy-castle" level="project" />
+    <orderEntry type="library" name="mockito" level="project" />
   </component>
 </module>
 

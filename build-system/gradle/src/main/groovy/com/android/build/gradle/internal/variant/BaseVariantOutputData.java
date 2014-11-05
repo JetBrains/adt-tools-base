@@ -25,6 +25,7 @@ import com.android.build.gradle.api.ApkOutputFile;
 import com.android.build.gradle.api.MainApkOutputFile;
 import com.android.build.gradle.internal.StringHelper;
 import com.android.build.gradle.tasks.ManifestProcessorTask;
+import com.android.build.gradle.tasks.PackageSplitAbi;
 import com.android.build.gradle.tasks.PackageSplitRes;
 import com.android.build.gradle.tasks.ProcessAndroidResources;
 import com.google.common.collect.ImmutableList;
@@ -58,6 +59,8 @@ public abstract class BaseVariantOutputData implements VariantOutput {
     public ProcessAndroidResources processResourcesTask;
 
     public PackageSplitRes packageSplitResourcesTask;
+
+    public PackageSplitAbi packageSplitAbiTask;
 
     public Task assembleTask;
 
