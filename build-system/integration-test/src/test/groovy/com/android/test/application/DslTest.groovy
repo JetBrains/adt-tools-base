@@ -31,12 +31,12 @@ import static org.junit.Assert.assertNotNull
 class DslTest {
 
     @Rule
-    public GradleTestProject fixture = new GradleTestProject();
+    public GradleTestProject project = GradleTestProject.builder().create();
 
     @Before
     public void setup() {
-        new HelloWorldApp().writeSources(fixture.getSourceDir())
-        fixture.getBuildFile() << """
+        new HelloWorldApp().writeSources(project.getSourceDir())
+        project.getBuildFile() << """
 apply plugin: 'com.android.application'
 
 android {
@@ -48,7 +48,7 @@ android {
 
     @Test
     public void versionNameSuffix() {
-        fixture.getBuildFile() << """
+        project.getBuildFile() << """
 android {
     defaultConfig {
         versionName 'foo'
@@ -62,9 +62,9 @@ android {
 }
 """
         // no need to do a full build. Let's just run the manifest task.
-        fixture.execute("processDebugManifest")
+        project.execute("processDebugManifest")
 
-        File manifestFile = fixture.file(
+        File manifestFile = project.file(
                 "build/intermediates/manifests/full/debug/AndroidManifest.xml")
 
         GPathResult xml = new XmlSlurper().parse(manifestFile).declareNamespace(
