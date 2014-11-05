@@ -81,8 +81,7 @@ public class AaptPackageCommandBuilderTest extends TestCase {
 
         assertTrue("/path/to/non/existent/file".equals(command.get(command.indexOf("-M") + 1)));
         assertTrue("/path/to/non/existent/dir".equals(command.get(command.indexOf("-F") + 1)));
-        assertTrue("/Users/jedo/oss/adt/sdk/platforms/android-21/android.jar".equals(
-                command.get(command.indexOf("-I") + 1)));
+        assertTrue(command.get(command.indexOf("-I") + 1).contains("android.jar"));
     }
 
     public void testResourcesPackaging() {
@@ -109,8 +108,7 @@ public class AaptPackageCommandBuilderTest extends TestCase {
 
         assertTrue("/path/to/non/existent/file".equals(command.get(command.indexOf("-M") + 1)));
         assertTrue("/path/to/non/existent/dir".equals(command.get(command.indexOf("-F") + 1)));
-        assertTrue("/Users/jedo/oss/adt/sdk/platforms/android-21/android.jar".equals(
-                command.get(command.indexOf("-I") + 1)));
+        assertTrue(command.get(command.indexOf("-I") + 1).contains("android.jar"));
         assertTrue("/path/to/res/folder".equals(command.get(command.indexOf("-S") + 1)));
         assertTrue("/path/to/assets/folder".equals(command.get(command.indexOf("-A") + 1)));
         assertTrue("path/to/source/output/dir".equals(command.get(command.indexOf("-J") + 1)));
@@ -146,8 +144,7 @@ public class AaptPackageCommandBuilderTest extends TestCase {
 
         assertTrue("/path/to/non/existent/file".equals(command.get(command.indexOf("-M") + 1)));
         assertTrue("/path/to/non/existent/dir".equals(command.get(command.indexOf("-F") + 1)));
-        assertTrue("/Users/jedo/oss/adt/sdk/platforms/android-21/android.jar".equals(
-                command.get(command.indexOf("-I") + 1)));
+        assertTrue(command.get(command.indexOf("-I") + 1).contains("android.jar"));
         assertTrue("/path/to/res/folder".equals(command.get(command.indexOf("-S") + 1)));
         assertTrue("/path/to/assets/folder".equals(command.get(command.indexOf("-A") + 1)));
         assertTrue("path/to/source/output/dir".equals(command.get(command.indexOf("-J") + 1)));
@@ -183,8 +180,7 @@ public class AaptPackageCommandBuilderTest extends TestCase {
 
         assertTrue("/path/to/non/existent/file".equals(command.get(command.indexOf("-M") + 1)));
         assertTrue("/path/to/non/existent/dir".equals(command.get(command.indexOf("-F") + 1)));
-        assertTrue("/Users/jedo/oss/adt/sdk/platforms/android-21/android.jar".equals(
-                command.get(command.indexOf("-I") + 1)));
+        assertTrue(command.get(command.indexOf("-I") + 1).contains("android.jar"));
         assertTrue("/path/to/res/folder".equals(command.get(command.indexOf("-S") + 1)));
         assertTrue("/path/to/assets/folder".equals(command.get(command.indexOf("-A") + 1)));
         assertTrue("path/to/source/output/dir".equals(command.get(command.indexOf("-J") + 1)));
@@ -223,8 +219,7 @@ public class AaptPackageCommandBuilderTest extends TestCase {
 
         assertTrue("/path/to/non/existent/file".equals(command.get(command.indexOf("-M") + 1)));
         assertTrue("/path/to/non/existent/dir".equals(command.get(command.indexOf("-F") + 1)));
-        assertTrue("/Users/jedo/oss/adt/sdk/platforms/android-21/android.jar".equals(
-                command.get(command.indexOf("-I") + 1)));
+        assertTrue(command.get(command.indexOf("-I") + 1).contains("android.jar"));
         assertTrue("/path/to/res/folder".equals(command.get(command.indexOf("-S") + 1)));
         assertTrue("/path/to/assets/folder".equals(command.get(command.indexOf("-A") + 1)));
         assertTrue("path/to/source/output/dir".equals(command.get(command.indexOf("-J") + 1)));
