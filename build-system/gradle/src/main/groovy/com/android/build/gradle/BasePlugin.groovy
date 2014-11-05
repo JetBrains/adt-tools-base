@@ -2477,7 +2477,7 @@ public abstract class BasePlugin {
                     return project.fileTree(variantData.preDexTask.outputFolder).files
                 }
 
-                return null
+                return Collections.<File>emptyList()
             }
             packageApp.conventionMapping.packagedJars =
                     { androidBuilder.getPackagedJars(config) }
