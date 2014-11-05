@@ -86,6 +86,8 @@ public class BuildTypeDslTest extends BaseTest {
         object1.setMinifyEnabled(true)
         object1.setSigningConfig(new SigningConfigDsl("blah"))
         object1.setZipAlignEnabled(false)
+        object1.setShrinkResources(true)
+        object1.setUseJack(Boolean.FALSE)
 
         BuildTypeDsl object2 = new BuildTypeDsl(object1.name, project, project.getLogger())
         object2.initWith(object1)
