@@ -276,6 +276,17 @@ public interface BaseVariant {
     void setOutputFile(@NonNull File outputFile);
 
     /**
+     * If true, variant outputs will be considered signed. Only set if you manually set the outputs
+     * to point to signed files built by other tasks.
+     */
+    void setOutputsAreSigned(boolean isSigned);
+
+    /**
+     * @see #setOutputsAreSigned(boolean)
+     */
+    boolean getOutputsAreSigned();
+
+    /**
      * @deprecated use version on the variant's outputs.
      */
     @NonNull

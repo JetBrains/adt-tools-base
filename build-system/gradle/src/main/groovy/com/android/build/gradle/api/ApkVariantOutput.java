@@ -85,16 +85,6 @@ public interface ApkVariantOutput extends BaseVariantOutput {
     String getVersionNameOverride();
 
     /**
-     * Returns the version code for this output.
-     *
-     * This is convenient method that returns the final version code whether it's coming
-     * from the override set in the output or from the variant's merged flavor.
-     *
-     * @return the version code.
-     */
-    int getVersionCode();
-
-    /**
      * Returns a filter value for a filter type if present on this variant or null otherwise.
      *
      * @param filterType the type of the filter requested.
