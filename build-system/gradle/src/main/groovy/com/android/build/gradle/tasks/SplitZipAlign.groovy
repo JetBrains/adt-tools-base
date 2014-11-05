@@ -94,7 +94,7 @@ class SplitZipAlign extends DefaultTask {
             Matcher unaligned = unalignedPattern.matcher(file.getName())
             if (unaligned.matches()) {
                 File out = new File(getOutputDirectory(),
-                        "${project.archivesBaseName}_${outputBaseName}_${unaligned.group(1)}.apk")
+                        "${project.archivesBaseName}-${outputBaseName}-${unaligned.group(1)}.apk")
                 project.exec {
                     executable = getZipAlignExe()
                     args '-f', '4'
@@ -105,7 +105,7 @@ class SplitZipAlign extends DefaultTask {
                 Matcher unsigned = unsignedPattern.matcher(file.getName())
                 if (unsigned.matches()) {
                     File out = new File(getOutputDirectory(),
-                            "${project.archivesBaseName}_${outputBaseName}_${unsigned.group(1)}.apk")
+                            "${project.archivesBaseName}-${outputBaseName}-${unsigned.group(1)}.apk")
                     project.exec {
                         executable = getZipAlignExe()
                         args '-f', '4'
