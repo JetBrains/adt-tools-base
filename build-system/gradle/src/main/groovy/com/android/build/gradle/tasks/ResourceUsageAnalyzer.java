@@ -33,6 +33,7 @@ import static com.android.SdkConstants.STYLE_RESOURCE_PREFIX;
 import static com.android.SdkConstants.TAG_ITEM;
 import static com.android.SdkConstants.TAG_RESOURCES;
 import static com.android.SdkConstants.TAG_STYLE;
+import static com.android.SdkConstants.TOOLS_URI;
 import static com.android.utils.SdkUtils.endsWith;
 import static com.android.utils.SdkUtils.endsWithIgnoreCase;
 import static com.google.common.base.Charsets.UTF_8;
@@ -186,6 +187,9 @@ public class ResourceUsageAnalyzer {
     @SuppressWarnings("SpellCheckingInspection") // arsc
     public static final boolean TWO_PASS_AAPT = false;
     public static final int TYPICAL_RESOURCE_COUNT = 200;
+
+    /** Name of keep attribute in XML */
+    private static final String ATTR_KEEP = "keep";
 
     private final File mResourceClassDir;
     private final File mProguardMapping;
@@ -673,6 +677,10 @@ public class ResourceUsageAnalyzer {
         }
 
         mUnused = unused;
+
+        if (mDebug) {
+            System.out.println(dumpResourceModel());
+        }
     }
 
     private static void visit(Resource root, Map<Resource, Boolean> seen) {
@@ -989,6 +997,15 @@ public class ResourceUsageAnalyzer {
                     Attr attr = (Attr) attributes.item(i);
                     Resource resource = getResource(attr.getValue());
                     if (resource != null) {
+                        // Ignore tools: namespace attributes, unless it's
+                        // a keep attribute
+                        if (TOOLS_URI.equals(attr.getNamespaceURI())) {
+                            if (ATTR_KEEP.equals(attr.getLocalName())) {
+                                markReachable(resource);
+                            } else {
+                                continue;
+                            }
+                        }
                         from.addReference(resource);
                     }
                 }
