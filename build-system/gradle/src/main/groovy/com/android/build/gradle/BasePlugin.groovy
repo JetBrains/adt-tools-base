@@ -1154,6 +1154,8 @@ public abstract class BasePlugin {
             processResources.conventionMapping.debuggable =
                     { config.buildType.debuggable }
             processResources.conventionMapping.aaptOptions = { extension.aaptOptions }
+            processResources.conventionMapping.pseudoLocalesEnabled =
+                    { config.buildType.pseudoLocalesEnabled }
 
             processResources.conventionMapping.resourceConfigs = {
                 if (variantOutputData.mainOutputFile.getFilter(OutputFile.DENSITY) == null) {
