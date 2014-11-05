@@ -501,9 +501,7 @@ public class VariantManager implements VariantModel {
     }
 
     /**
-     * Creates VariantData for non-flavored build. This means assembleDebug, assembleRelease, and
-     * other assemble<Type> are directly building the <type> build instead of all build of the given
-     * <type>.
+     * Creates VariantData for a specified list of product flavor.
      *
      * This will create VariantData for all build types of the given flavors.
      *
