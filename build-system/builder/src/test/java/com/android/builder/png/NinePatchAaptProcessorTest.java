@@ -164,7 +164,7 @@ public class NinePatchAaptProcessorTest extends BasePngTest {
 
     @NonNull
     protected File crunchFile(@NonNull File file)
-            throws IOException, NinePatchException, DataFormatException, InterruptedException,
+            throws IOException, DataFormatException, InterruptedException,
             LoggedErrorException {
         File outFile = File.createTempFile("pngWriterTest", ".png");
         outFile.deleteOnExit();

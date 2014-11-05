@@ -119,7 +119,6 @@ import com.android.builder.model.ProductFlavor
 import com.android.builder.model.SigningConfig
 import com.android.builder.model.SourceProvider
 import com.android.builder.model.SourceProviderContainer
-import com.android.builder.png.PngProcessor
 import com.android.builder.sdk.SdkInfo
 import com.android.builder.sdk.TargetInfo
 import com.android.builder.testing.ConnectedDeviceProvider
@@ -307,7 +306,6 @@ public abstract class BasePlugin {
         // being called 2+ times.
         project.gradle.buildFinished {
             ExecutorSingleton.shutdown()
-            PngProcessor.clearCache()
             sdkHandler.unload()
             PreDexCache.getCache().clear(
                     project.rootProject.file(
