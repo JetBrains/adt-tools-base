@@ -20,9 +20,12 @@ import com.android.annotations.NonNull
 import com.android.build.FilterData
 import com.android.build.OutputFile
 import com.android.build.gradle.api.ApkOutputFile
+import com.android.build.gradle.internal.dsl.PackagingOptionsImpl
 import com.android.build.gradle.internal.dsl.SigningConfigDsl
 import com.android.build.gradle.internal.tasks.BaseTask
+import com.google.common.base.Joiner
 import com.google.common.collect.ImmutableList
+import com.google.common.collect.ImmutableSet
 import com.google.common.util.concurrent.Callables
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Nested
@@ -34,11 +37,11 @@ import java.util.regex.Matcher
 import java.util.regex.Pattern
 
 /**
- * Package each split resources into a specific signed apk file.
+ * Package a abi dimension specific split APK
  */
-class PackageSplitRes extends BaseTask {
+class PackageSplitAbi extends BaseTask {
 
-    ImmutableList<ApkOutputFile> mOutputFiles;
+    ImmutableList<ApkOutputFile> outputFiles;
 
     @Input
     File inputDirectory
@@ -52,24 +55,33 @@ class PackageSplitRes extends BaseTask {
     @Input
     String outputBaseName
 
+    @Input
+    boolean jniDebuggable
+
     @Nested @Optional
     SigningConfigDsl signingConfig
+
+    @Nested
+    PackagingOptionsImpl packagingOptions
+
+    @Input
+    Collection<File> jniFolders;
 
     @NonNull
     public synchronized  ImmutableList<ApkOutputFile> getOutputSplitFiles() {
 
-        if (mOutputFiles == null) {
+        if (outputFiles == null) {
             ImmutableList.Builder<ApkOutputFile> builder = ImmutableList.builder();
             if (outputDirectory.exists() && outputDirectory.listFiles().length > 0) {
                 final Pattern pattern = Pattern.compile(
-                        "${project.archivesBaseName}-${outputBaseName}-([h|x|d|p|i|m]*)(.*)")
+                        "${project.archivesBaseName}-${outputBaseName}-(.*)")
                 for (File file : outputDirectory.listFiles()) {
                     Matcher matcher = pattern.matcher(file.getName());
-                    if (matcher.matches()) {
+                    if (matcher.matches() && isAbiSplit(file.getName())) {
                         builder.add(new ApkOutputFile(
                                 OutputFile.OutputType.SPLIT,
                                 ImmutableList.<FilterData> of(FilterData.Builder.build(
-                                        OutputFile.DENSITY,
+                                        OutputFile.ABI,
                                         matcher.group(1))),
                                 Callables.returning(file)));
                     }
@@ -82,15 +94,24 @@ class PackageSplitRes extends BaseTask {
                     ApkOutputFile apkOutput = new ApkOutputFile(
                             OutputFile.OutputType.SPLIT,
                             ImmutableList.<FilterData>of(
-                                    FilterData.Builder.build(OutputFile.DENSITY,
+                                    FilterData.Builder.build(OutputFile.ABI,
                                             "${project.archivesBaseName}-${outputBaseName}-${split}")),
                             Callables.returning(new File(outputDirectory, split)))
                     builder.add(apkOutput)
                 }
             }
-            mOutputFiles = builder.build()
+            outputFiles = builder.build()
         }
-        return mOutputFiles;
+        return outputFiles;
+    }
+
+    private boolean isAbiSplit(String fileName) {
+        for (String abi : getSplits()) {
+            if (fileName.contains(abi)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @TaskAction
@@ -98,26 +119,46 @@ class PackageSplitRes extends BaseTask {
 
         // resources- and .ap_ should be shared in a setting somewhere. see BasePlugin:1206
         final Pattern pattern = Pattern.compile(
-                "resources-${outputBaseName}.ap__([h|x|d|p|i|m]*)(.*)")
-        for (File file : inputDirectory.listFiles()) {
+                "resources-${getOutputBaseName()}-(.*).ap_")
+        List<String> unprocessedSplits = new ArrayList(splits);
+        for (File file : getInputDirectory().listFiles()) {
             Matcher matcher = pattern.matcher(file.getName());
-            if (matcher.matches()) {
+            if (matcher.matches() && isAbiSplit(file.getName())) {
                 ApkOutputFile outputFile = new ApkOutputFile(
                         OutputFile.OutputType.SPLIT,
                         ImmutableList.<FilterData> of(FilterData.Builder.build(
-                                OutputFile.DENSITY,
+                                OutputFile.ABI,
                                 matcher.group(1))),
                         Callables.returning(file));
 
-                String apkName = "${project.archivesBaseName}-${outputBaseName}-" +
+
+                String apkName = "${project.archivesBaseName}-${getOutputBaseName()}-" +
                         "${outputFile.getSplitIdentifiers('-' as char)}"
-                apkName = apkName + (signingConfig == null
+                apkName = apkName + (getSigningConfig() == null
                         ? "-unsigned.apk"
                         : "-unaligned.apk")
 
-                File outFile = new File(outputDirectory, apkName);
-                getBuilder().signApk(outputFile.getOutputFile(), signingConfig, outFile)
+                File outFile = new File(getOutputDirectory(), apkName);
+                getBuilder().packageApk(
+                        file.absolutePath,
+                        null, /* dexFolder */
+                        null, /* dexedLibraries */
+                        ImmutableList.of(),
+                        null, /* getJavaResourceDir */
+                        getJniFolders(),
+                        ImmutableSet.of(matcher.group(1)),
+                        getJniDebuggable(),
+                        getSigningConfig(),
+                        getPackagingOptions(),
+                        outFile.absolutePath)
+                unprocessedSplits.remove(matcher.group(1));
             }
+        }
+        if (!unprocessedSplits.isEmpty()) {
+            String message = String.format("Could not find resource package for %1$s",
+                    Joiner.on(',').join(unprocessedSplits));
+            logger.error(message);
+            throw new IllegalStateException(message);
         }
     }
 }

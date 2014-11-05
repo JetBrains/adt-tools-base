@@ -280,7 +280,6 @@ public final class Packager implements IArchiveBuilder {
     public Packager(
             @NonNull String apkLocation,
             @NonNull String resLocation,
-            @NonNull File dexFolder,
             CertificateInfo certificateInfo,
             @Nullable String createdBy,
             @Nullable PackagingOptions packagingOptions,
@@ -308,10 +307,6 @@ public final class Packager implements IArchiveBuilder {
             // add the resources
             addZipFile(resFile);
 
-            // add the class dex file at the root of the apk
-
-            addDexFolder(dexFolder);
-
         } catch (PackagerException e) {
             if (mBuilder != null) {
                 mBuilder.cleanUp();
@@ -325,7 +320,7 @@ public final class Packager implements IArchiveBuilder {
         }
     }
 
-    private void addDexFolder(@NonNull File dexFolder)
+    public void addDexFolder(@NonNull File dexFolder)
             throws DuplicateFileException, SealedPackageException, PackagerException {
         File[] files = dexFolder.listFiles(new FilenameFilter() {
             @Override
