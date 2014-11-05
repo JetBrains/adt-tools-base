@@ -20,7 +20,6 @@ import com.android.annotations.NonNull;
 import com.android.build.FilterData;
 import com.android.build.OutputFile;
 import com.android.build.gradle.api.ApkOutputFile;
-import com.android.build.gradle.api.MainApkOutputFile;
 import com.android.build.gradle.tasks.PackageApplication;
 import com.android.build.gradle.tasks.SplitZipAlign;
 import com.android.build.gradle.tasks.ZipAlign;
@@ -119,7 +118,7 @@ public class ApkVariantOutputData extends BaseVariantOutputData {
             return versionNameOverride;
         }
 
-        return variantData.getVariantConfiguration().getMergedFlavor().getVersionName();
+        return variantData.getVariantConfiguration().getVersionName();
     }
 
     public void setVersionCodeOverride(int versionCodeOverride) {

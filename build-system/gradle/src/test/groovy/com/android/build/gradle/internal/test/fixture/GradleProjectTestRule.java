@@ -35,11 +35,9 @@ import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.security.CodeSource;
@@ -156,6 +154,20 @@ public class GradleProjectTestRule implements TestRule {
      */
     public File getSourceDir() {
         return sourceDir;
+    }
+
+    /**
+     * Returns the SDK dir
+     */
+    public File getSdkDir() {
+        return sdkDir;
+    }
+
+    /**
+     * Returns the NDK dir
+     */
+    public File getNdkDir() {
+        return ndkDir;
     }
 
     /**
