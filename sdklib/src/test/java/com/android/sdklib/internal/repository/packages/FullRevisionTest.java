@@ -25,10 +25,42 @@ import junit.framework.TestCase;
 public class FullRevisionTest extends TestCase {
 
     public final void testFullRevision() {
+
+        assertEquals("5", FullRevision.parseRevision("5").toString());
+        assertEquals("5.0", FullRevision.parseRevision("5.0").toString());
+        assertEquals("5.0.0", FullRevision.parseRevision("5.0.0").toString());
+        assertEquals("5.1.4", FullRevision.parseRevision("5.1.4").toString());
+
         FullRevision p = new FullRevision(5);
         assertEquals(5, p.getMajor());
         assertEquals(FullRevision.IMPLICIT_MINOR_REV, p.getMinor());
         assertEquals(FullRevision.IMPLICIT_MICRO_REV, p.getMicro());
+        assertEquals(FullRevision.NOT_A_PREVIEW, p.getPreview());
+        assertFalse (p.isPreview());
+        assertEquals("5", p.toShortString());
+        assertEquals(p, FullRevision.parseRevision("5"));
+        assertEquals("5", p.toString());
+        assertEquals(p, FullRevision.parseRevision("5"));
+        assertEquals("[5, 0, 0]",    Arrays.toString(p.toIntArray(false /*includePreview*/)));
+        assertEquals("[5, 0, 0, 0]", Arrays.toString(p.toIntArray(true  /*includePreview*/)));
+
+        p = new FullRevision(5, 0);
+        assertEquals(5, p.getMajor());
+        assertEquals(0, p.getMinor());
+        assertEquals(FullRevision.IMPLICIT_MICRO_REV, p.getMicro());
+        assertEquals(FullRevision.NOT_A_PREVIEW, p.getPreview());
+        assertFalse (p.isPreview());
+        assertEquals("5", p.toShortString());
+        assertEquals(p, FullRevision.parseRevision("5"));
+        assertEquals("5.0", p.toString());
+        assertEquals(p, FullRevision.parseRevision("5.0"));
+        assertEquals("[5, 0, 0]",    Arrays.toString(p.toIntArray(false /*includePreview*/)));
+        assertEquals("[5, 0, 0, 0]", Arrays.toString(p.toIntArray(true  /*includePreview*/)));
+
+        p = new FullRevision(5, 0, 0);
+        assertEquals(5, p.getMajor());
+        assertEquals(0, p.getMinor());
+        assertEquals(0, p.getMicro());
         assertEquals(FullRevision.NOT_A_PREVIEW, p.getPreview());
         assertFalse (p.isPreview());
         assertEquals("5", p.toShortString());
@@ -156,5 +188,4 @@ public class FullRevisionTest extends TestCase {
         assertTrue (c5.compareTo(o5)  > 0);     // 5.1.0-6  > 5.0.0-7
         assertTrue (o5.compareTo(o5) == 0);     // 5.0.0-7  > 5.0.0-7
     }
-
 }
