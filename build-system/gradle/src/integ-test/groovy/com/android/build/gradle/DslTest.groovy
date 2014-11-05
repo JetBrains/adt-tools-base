@@ -40,8 +40,8 @@ class DslTest {
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 19
-    buildToolsVersion "20.0.0"
+    compileSdkVersion $GradleProjectTestRule.DEFAULT_COMPILE_SDK_VERSION
+    buildToolsVersion "$GradleProjectTestRule.DEFAULT_BUILD_TOOL_VERSION"
 }
 """
     }
