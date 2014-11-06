@@ -1185,14 +1185,12 @@ public abstract class BasePlugin {
                 BaseVariantData.SplitHandlingPolicy.RELEASE_21_AND_AFTER_POLICY;
 
         VariantConfiguration config = variantData.variantConfiguration
-        Set<String> filters = Sets.filter(getExtension().getSplits().getDensityFilters(),
-                new Predicate<? super String>() {
-
-                    @Override
-                    boolean apply(Object o) {
-                        return o != null;
-                    }
-                });
+        Set<String> filters = new HashSet<String>();
+        for (String density : getExtension().getSplits().getDensityFilters()) {
+            if (density != null) {
+                filters.add(density);
+            }
+        }
         def outputs = variantData.outputs;
         if (outputs.size() != 1) {
             throw new RuntimeException("In release 21 and later, there can be only one main APK, " +
@@ -1237,14 +1235,12 @@ public abstract class BasePlugin {
                 BaseVariantData.SplitHandlingPolicy.RELEASE_21_AND_AFTER_POLICY;
 
         VariantConfiguration config = variantData.variantConfiguration
-        Set<String> filters = Sets.filter(getExtension().getSplits().getAbiFilters(),
-                new Predicate<? super String>() {
-
-                    @Override
-                    boolean apply(Object o) {
-                        return o != null;
-                    }
-                });
+        Set<String> filters = new HashSet<String>();
+        for (String abi : getExtension().getSplits().getAbiFilters()) {
+            if (abi != null) {
+                filters.add(abi);
+            }
+        }
         if (filters.isEmpty()) {
             return;
         }

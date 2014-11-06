@@ -49,7 +49,7 @@ class PackageSplitAbi extends BaseTask {
     @OutputDirectory
     File outputDirectory
 
-    @Nested
+    @Input
     Set<String> splits
 
     @Input
