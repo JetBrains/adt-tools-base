@@ -2380,13 +2380,27 @@ public abstract class BasePlugin {
             if (setExplicitly) {
                 fromDsl.toString()
             } else {
+                JavaVersion languageLevelToUse
                 switch (sdkVersionNumber) {
                     case null:  // Default to 1.6 if we fail to parse compile SDK version.
                     case 0..20:
-                        return JavaVersion.VERSION_1_6.toString()
+                        languageLevelToUse = JavaVersion.VERSION_1_6
                     default:
-                        return JavaVersion.VERSION_1_7.toString()
+                        languageLevelToUse = JavaVersion.VERSION_1_7
                 }
+
+                def jdkVersion = JavaVersion.toVersion(
+                        System.getProperty("java.specification.version"))
+
+                if (jdkVersion < languageLevelToUse) {
+                    logger.info(
+                            "Default language level for 'compileSdkVersion %d' is %s, but the " +
+                            "JDK used is %s, so the JDK language level will be used.",
+                            sdkVersionNumber, languageLevelToUse, jdkVersion)
+                    languageLevelToUse = jdkVersion
+                }
+
+                return languageLevelToUse.toString()
             }
         }
 
