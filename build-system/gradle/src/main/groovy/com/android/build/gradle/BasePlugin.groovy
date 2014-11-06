@@ -485,15 +485,26 @@ public abstract class BasePlugin {
      * only artifacts.
      */
     private void checkDependencies() {
+        // TODO: Use VariantManager instead, to only check relevant configurations.
+        def shouldBeChecked = {
+            switch (it.name) {
+                case 'wearApp':
+                case {it.startsWith '_'}:
+                    return false
+                default:
+                    return true
+            }
+        }
+
         // All projects need to be evaluated to make this check.
         project.gradle.projectsEvaluated {
             // Skip "internal" configurations that we create.
-            project.configurations.matching({!it.name.startsWith('_')}).all { configuration ->
+            project.configurations.matching(shouldBeChecked).all { configuration ->
                 configuration.dependencies.withType(ProjectDependency) { dependency ->
                     Project dp = dependency.dependencyProject
                     if (dp.plugins.findPlugin(AppPlugin)) {
                         throw new GradleException(
-                            "Configuration '${configuration.name}' depends on an Android " +
+                            "${configuration} depends on an Android " +
                             "application project '${dp.name}'. Only Android library projects " +
                             "can act as dependencies of other projects.")
                     }
