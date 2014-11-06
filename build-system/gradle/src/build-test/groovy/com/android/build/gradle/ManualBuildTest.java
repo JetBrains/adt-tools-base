@@ -344,6 +344,51 @@ public class ManualBuildTest extends BuildTest {
                 + "res/layout/unused.xml\n"
                 + "res/layout/used.xml",
                 dumpZipContents(uncompressed));
+
+        // Check WebView string handling (android_res strings etc)
+
+        //noinspection SpellCheckingInspection
+        uncompressed = new File(project,
+                "webview/build/intermediates/res/resources-release.ap_"
+                        .replace('/', separatorChar));
+        //noinspection SpellCheckingInspection
+        compressed = new File(project,
+                "webview/build/intermediates/res/resources-release-stripped.ap_"
+                        .replace('/', separatorChar));
+        assertTrue(uncompressed + " is not a file", uncompressed.isFile());
+        assertTrue(compressed + " is not a file", compressed.isFile());
+
+        //noinspection SpellCheckingInspection
+        assertEquals(""
+                + "AndroidManifest.xml\n"
+                + "resources.arsc\n"
+                + "res/raw/unused_icon.png\n"
+                + "res/raw/unused_index.html\n"
+                + "res/drawable/used1.xml\n"
+                + "res/raw/used_icon.png\n"
+                + "res/raw/used_icon2.png\n"
+                + "res/raw/used_index.html\n"
+                + "res/raw/used_index2.html\n"
+                + "res/raw/used_index3.html\n"
+                + "res/raw/used_script.js\n"
+                + "res/raw/used_styles.css\n"
+                + "res/layout/webview.xml",
+                dumpZipContents(uncompressed));
+
+        //noinspection SpellCheckingInspection
+        assertEquals(""
+                + "AndroidManifest.xml\n"
+                + "resources.arsc\n"
+                + "res/drawable/used1.xml\n"
+                + "res/raw/used_icon.png\n"
+                + "res/raw/used_icon2.png\n"
+                + "res/raw/used_index.html\n"
+                + "res/raw/used_index2.html\n"
+                + "res/raw/used_index3.html\n"
+                + "res/raw/used_script.js\n"
+                + "res/raw/used_styles.css\n"
+                + "res/layout/webview.xml",
+                dumpZipContents(compressed));
     }
 
     private static List<String> getZipPaths(File zipFile) throws IOException {
@@ -566,7 +611,8 @@ public class ManualBuildTest extends BuildTest {
                 BasePlugin.GRADLE_TEST_VERSION,
                 "clean", ":main:assembleRelease");
 
-        File mainApk = new File(project, "main/build/" + FD_OUTPUTS + "/apk/main-release-unsigned.apk");
+        File mainApk = new File(project, "main/build/" + FD_OUTPUTS
+                + "/apk/main-release-unsigned.apk");
 
         checkJar(mainApk, Collections.<String, String>singletonMap(
                 FD_RES + '/' + FD_RES_RAW + '/' + ANDROID_WEAR_MICRO_APK + DOT_ANDROID_PACKAGE,
