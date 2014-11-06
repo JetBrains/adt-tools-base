@@ -128,6 +128,7 @@ import com.android.builder.testing.api.DeviceProvider
 import com.android.builder.testing.api.TestServer
 import com.android.ide.common.internal.ExecutorSingleton
 import com.android.resources.Density
+import com.android.sdklib.AndroidTargetHash
 import com.android.sdklib.SdkVersionInfo
 import com.android.utils.ILogger
 import com.google.common.base.Predicate
@@ -140,6 +141,7 @@ import com.google.common.collect.Multimap
 import com.google.common.collect.Sets
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
+import org.gradle.api.JavaVersion
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.artifacts.Configuration
@@ -158,6 +160,7 @@ import org.gradle.api.plugins.JavaBasePlugin
 import org.gradle.api.plugins.JavaPlugin
 import org.gradle.api.specs.Specs
 import org.gradle.api.tasks.Copy
+import org.gradle.api.tasks.compile.AbstractCompile
 import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.internal.reflect.Instantiator
 import org.gradle.language.jvm.tasks.ProcessResources
@@ -1443,13 +1446,7 @@ public abstract class BasePlugin {
             project.file("$project.buildDir/${FD_INTERMEDIATES}/dependency-cache/${variantData.variantConfiguration.dirName}")
         }
 
-        // set source/target compatibility
-        compileTask.conventionMapping.sourceCompatibility = {
-            extension.compileOptions.sourceCompatibility.toString()
-        }
-        compileTask.conventionMapping.targetCompatibility = {
-            extension.compileOptions.targetCompatibility.toString()
-        }
+        configureLanguageLevel(compileTask)
         compileTask.options.encoding = extension.compileOptions.encoding
 
         // setup the boot classpath just before the task actually runs since this will
@@ -2374,12 +2371,47 @@ public abstract class BasePlugin {
                     "${project.buildDir}/${FD_OUTPUTS}/mapping/${variantData.variantConfiguration.dirName}/mapping.txt")
         }
 
-        // set source/target compatibility
+        configureLanguageLevel(compileTask)
+    }
+
+    /**
+     * Configures the source and target language level of a compile task. If the user has set it
+     * explicitly, we obey the setting. Otherwise we change the default language level based on the
+     * compile SDK version.
+     */
+    private void configureLanguageLevel(AbstractCompile compileTask) {
+        def getJavaVersion = { sdkVersionNumber, fromDsl, setExplicitly ->
+            if (setExplicitly) {
+                fromDsl.toString()
+            } else {
+                switch (sdkVersionNumber) {
+                    case null:  // Default to 1.6 if we fail to parse compile SDK version.
+                    case 0..20:
+                        return JavaVersion.VERSION_1_6.toString()
+                    default:
+                        return JavaVersion.VERSION_1_7.toString()
+                }
+            }
+        }
+
+        /**
+         * Returns the platform number, or null if we can't determine it.
+         */
+        Closure<Integer> getCompileSdkNumber = {
+            return AndroidTargetHash.getVersionFromHash(it)?.apiLevel
+        }
+
         compileTask.conventionMapping.sourceCompatibility = {
-            extension.compileOptions.sourceCompatibility.toString()
+            getJavaVersion(
+                    getCompileSdkNumber(extension.compileSdkVersion),
+                    extension.compileOptions.sourceCompatibility,
+                    extension.compileOptions.setExplicitly)
         }
         compileTask.conventionMapping.targetCompatibility = {
-            extension.compileOptions.targetCompatibility.toString()
+            getJavaVersion(
+                    getCompileSdkNumber(extension.compileSdkVersion),
+                    extension.compileOptions.targetCompatibility,
+                    extension.compileOptions.setExplicitly)
         }
     }
 
