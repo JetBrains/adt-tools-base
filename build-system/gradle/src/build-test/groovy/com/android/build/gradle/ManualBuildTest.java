@@ -947,6 +947,11 @@ public class ManualBuildTest extends BuildTest {
         compareApkEntry(apk, "classes.dex", classesDex);
     }
 
+    public void testMultiDexDontObfuscate() throws Exception {
+        File project = new File(regularDir, "multiDex");
+        runTasksOn(project, BasePlugin.GRADLE_TEST_VERSION, "assembleIcsProguard");
+    }
+
     private void checkMaxSdkVersion(File testApk, String version)
             throws InterruptedException, LoggedErrorException, IOException {
 
@@ -986,8 +991,6 @@ public class ManualBuildTest extends BuildTest {
         }
         fail("Could not find uses-sdk:maxSdkVersion set to " + version + " in apk dump");
     }
-
-
 
     private static void checkImageColor(File folder, String fileName, int expectedColor)
             throws IOException {
