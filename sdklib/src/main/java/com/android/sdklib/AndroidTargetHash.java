@@ -16,11 +16,12 @@
 
 package com.android.sdklib;
 
-import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.sdklib.repository.descriptors.IdDisplay;
+import com.google.common.base.Splitter;
 
+import java.util.List;
 
 
 /**
@@ -97,6 +98,37 @@ public abstract class AndroidTargetHash {
         }
 
         return null;
+    }
+
+    @Nullable
+    public static AndroidVersion getAddOnVersion(@NonNull String hashString) {
+        List<String> parts = Splitter.on(':').splitToList(hashString);
+        if (parts.size() != 3) {
+            return null;
+        }
+
+        String apiLevelPart = parts.get(2);
+        try {
+            int apiLevel = Integer.parseInt(apiLevelPart);
+            return new AndroidVersion(apiLevel, null);
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    /**
+     * Gets the API level from a hash string, either a platform version or add-on version.
+     *
+     * @see #getAddOnVersion(String)
+     * @see #getPlatformVersion(String)
+     */
+    @Nullable
+    public static AndroidVersion getVersionFromHash(@NonNull String hashString) {
+        if (isPlatform(hashString)) {
+            return getPlatformVersion(hashString);
+        } else {
+            return getAddOnVersion(hashString);
+        }
     }
 
     /**
