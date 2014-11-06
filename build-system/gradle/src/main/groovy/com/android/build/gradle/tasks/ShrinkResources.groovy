@@ -58,6 +58,10 @@ public class ShrinkResources extends BaseTask {
     @OutputFile
     File compressedResources
 
+    /** Whether we've already warned about how to turn off shrinking. Used to avoid
+     * repeating the same multi-line message for every repeated abi split. */
+    private static ourWarned;
+
     @SuppressWarnings("GroovyUnusedDeclaration")
     @TaskAction
     void shrink() {
@@ -138,15 +142,19 @@ public class ShrinkResources extends BaseTask {
                         append(toKbString(before)).
                         append("KB to ").
                         append(toKbString(after)).
-                        append("KB: Removed " + percent + "%\n");
-                sb.append("Note: If necessary, you can disable resource shrinking by adding\n" +
-                          "android {\n" +
-                          "    buildTypes {\n" +
-                          "        " + variantData.variantConfiguration.buildType.name + " {\n" +
-                          "            shrinkResources false\n" +
-                          "        }\n" +
-                          "    }\n" +
-                          "}")
+                        append("KB: Removed " + percent + "%");
+                if (!ourWarned) {
+                    ourWarned = true;
+                    sb.append(
+                        "\nNote: If necessary, you can disable resource shrinking by adding\n" +
+                        "android {\n" +
+                        "    buildTypes {\n" +
+                        "        " + variantData.variantConfiguration.buildType.name + " {\n" +
+                        "            shrinkResources false\n" +
+                        "        }\n" +
+                        "    }\n" +
+                        "}")
+                }
 
                 println sb.toString();
             }
