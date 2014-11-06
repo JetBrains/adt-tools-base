@@ -56,6 +56,7 @@ import com.google.common.collect.Sets;
 
 import junit.framework.TestCase;
 
+import org.gradle.tooling.BuildException;
 import org.gradle.tooling.GradleConnector;
 import org.gradle.tooling.ProjectConnection;
 import org.gradle.tooling.UnknownModelException;
@@ -1442,6 +1443,16 @@ public class AndroidProjectTest extends TestCase {
                 assertTrue("Check " + abi + " present in artifact abi for " + variantName,
                         actualAbis.contains(abi));
             }
+        }
+    }
+
+    public void testInvalidAppDependencies() throws Exception {
+        try {
+            getModelForProject(FOLDER_TEST_MANUAL, "invalidDependencyOnAppProject");
+            fail("Should fail.");
+        } catch (BuildException e) {
+            assertTrue(e.getCause().getMessage().contains(
+                    "Only Android library projects can act as dependencies of other projects."));
         }
     }
 
