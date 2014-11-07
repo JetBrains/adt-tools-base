@@ -1433,7 +1433,7 @@ public class AndroidBuilder {
     public void packageApk(
             @NonNull String androidResPkgLocation,
             @Nullable File dexFolder,
-            @Nullable Collection<File> dexedLibraries,
+            @NonNull Collection<File> dexedLibraries,
             @NonNull Collection<File> packagedJars,
             @Nullable String javaResourcesLocation,
             @Nullable Collection<File> jniLibsFolders,
@@ -1468,13 +1468,7 @@ public class AndroidBuilder {
                 if (!dexFolder.isDirectory()) {
                     throw new IllegalArgumentException("dexFolder must be a directory");
                 }
-                packager.addDexFolder(dexFolder);
-            }
-
-            if (dexedLibraries != null) {
-                for (File dexedLibrary : dexedLibraries) {
-                    packager.addDexFile(dexedLibrary);
-                }
+                packager.addDexFiles(dexFolder, dexedLibraries);
             }
 
             packager.setJniDebugMode(jniDebugBuild);

@@ -40,7 +40,7 @@ public class PackageApplication extends IncrementalTask implements OutputFileTas
     @InputDirectory
     File dexFolder
 
-    @InputFiles @Optional
+    @InputFiles
     Collection<File> dexedLibraries
 
     @InputDirectory @Optional
