@@ -350,10 +350,23 @@ public class AppPluginDslTest extends BaseTest {
         }
 
         for (useJack in [true, false]) {
-            testLanguageLevel(15, JavaVersion.VERSION_1_6, useJack)
-            testLanguageLevel(21, JavaVersion.VERSION_1_7, useJack)
-            testLanguageLevel('android-21', JavaVersion.VERSION_1_7, useJack)
-            testLanguageLevel('Google:GoogleInc:22', JavaVersion.VERSION_1_7, useJack)
+            def propName = 'java.specification.version'
+            String originalVersion = System.getProperty(propName)
+            try{
+                System.setProperty(propName, '1.7')
+                testLanguageLevel(15, JavaVersion.VERSION_1_6, useJack)
+                testLanguageLevel(21, JavaVersion.VERSION_1_7, useJack)
+                testLanguageLevel('android-21', JavaVersion.VERSION_1_7, useJack)
+                testLanguageLevel('Google:GoogleInc:22', JavaVersion.VERSION_1_7, useJack)
+
+                System.setProperty(propName, '1.6')
+                testLanguageLevel(15, JavaVersion.VERSION_1_6, useJack)
+                testLanguageLevel(21, JavaVersion.VERSION_1_6, useJack)
+                testLanguageLevel('android-21', JavaVersion.VERSION_1_6, useJack)
+                testLanguageLevel('Google:GoogleInc:22', JavaVersion.VERSION_1_6, useJack)
+            } finally {
+                System.setProperty(propName, originalVersion)
+            }
         }
     }
 
