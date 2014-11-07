@@ -46,7 +46,6 @@ import com.android.builder.internal.compiler.SourceSearcher;
 import com.android.builder.internal.incremental.DependencyData;
 import com.android.builder.internal.packaging.JavaResourceProcessor;
 import com.android.builder.internal.packaging.Packager;
-import com.android.builder.model.AaptOptions;
 import com.android.builder.model.ClassField;
 import com.android.builder.model.PackagingOptions;
 import com.android.builder.model.SigningConfig;
@@ -74,13 +73,11 @@ import com.android.sdklib.repository.FullRevision;
 import com.android.utils.ILogger;
 import com.android.utils.Pair;
 import com.google.common.base.Charsets;
-import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import com.google.common.hash.HashCode;
@@ -100,8 +97,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * This is the main builder class. It is given all the data to process the build (such as
@@ -831,54 +826,16 @@ public class AndroidBuilder {
         // need to run aapt to get apk information
         BuildToolInfo buildToolInfo = mTargetInfo.getBuildTools();
 
-        // launch aapt: create the command line
-        ArrayList<String> command = Lists.newArrayList();
-
         String aapt = buildToolInfo.getPath(BuildToolInfo.PathId.AAPT);
-        if (aapt == null || !new File(aapt).isFile()) {
-            throw new IllegalStateException("aapt is missing");
+        if (aapt == null) {
+            throw new IllegalStateException(
+                    "Unable to get aapt location from Build Tools " + buildToolInfo.getRevision());
         }
 
-        command.add(aapt);
-        command.add("dump");
-        command.add("badging");
-        command.add(apkFile.getPath());
+        ApkInfoParser parser = new ApkInfoParser(new File(aapt), mCmdLineRunner);
+        ApkInfoParser.ApkInfo apkInfo = parser.parseApk(apkFile);
 
-        final List<String> aaptOutput = Lists.newArrayList();
-
-        mCmdLineRunner.runCmdLine(command, new CommandLineRunner.CommandLineOutput() {
-            @Override
-            public void out(@Nullable String line) {
-                if (line != null) {
-                    aaptOutput.add(line);
-                }
-            }
-            @Override
-            public void err(@Nullable String line) {
-                super.err(line);
-
-            }
-        }, null /*env vars*/);
-
-        Pattern p = Pattern.compile("^package: name='(.+)' versionCode='([0-9]*)' versionName='(.*)'$");
-
-        String pkgName = null, versionCode = null, versionName = null;
-
-        for (String line : aaptOutput) {
-            Matcher m = p.matcher(line);
-            if (m.matches()) {
-                pkgName = m.group(1);
-                versionCode = m.group(2);
-                versionName = m.group(3);
-                break;
-            }
-        }
-
-        if (pkgName == null) {
-            throw new RuntimeException("Failed to find apk information with aapt");
-        }
-
-        if (!pkgName.equals(mainPkgName)) {
+        if (!apkInfo.getPackageName().equals(mainPkgName)) {
             throw new RuntimeException("The main and the micro apps do not have the same package name.");
         }
 
@@ -888,7 +845,11 @@ public class AndroidBuilder {
                 "    <versionCode>%2$s</versionCode>\n" +
                 "    <versionName>%3$s</versionName>\n" +
                 "    <rawPathResId>%4$s</rawPathResId>\n" +
-                "</wearableApp>", pkgName, versionCode, versionName, resName);
+                "</wearableApp>",
+                apkInfo.getPackageName(),
+                apkInfo.getVersionCode(),
+                apkInfo.getVersionName(),
+                resName);
 
         // xml folder
         File resXmlFile = new File(outResFolder, FD_RES_XML);
