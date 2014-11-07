@@ -747,12 +747,12 @@ public class ManualBuildTest extends BuildTest {
                 "clean", "app:assembleDebug");
 
         Map<String, VersionData> expected = Maps.newHashMapWithExpectedSize(8);
-        expected.put("freeDebug-armeabi-v7a",      VersionData.of(123));
-        expected.put("freeDebug-mips",             VersionData.of(123));
-        expected.put("freeDebug-x86",              VersionData.of(123));
-        expected.put("paidDebug-armeabi-v7a",      VersionData.of(123));
-        expected.put("paidDebug-mips",             VersionData.of(123));
-        expected.put("paidDebug-x86",              VersionData.of(123));
+        expected.put("free-debug_armeabi-v7a",      VersionData.of(123));
+        expected.put("free-debug_mips",             VersionData.of(123));
+        expected.put("free-debug_x86",              VersionData.of(123));
+        expected.put("paid-debug_armeabi-v7a",      VersionData.of(123));
+        expected.put("paid-debug_mips",             VersionData.of(123));
+        expected.put("paid-debug_x86",              VersionData.of(123));
 
         checkVersion(project, "app/", expected, "app", null /* suffix */);
     }

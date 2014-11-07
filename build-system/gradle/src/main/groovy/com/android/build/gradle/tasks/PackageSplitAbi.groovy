@@ -74,7 +74,7 @@ class PackageSplitAbi extends BaseTask {
             ImmutableList.Builder<ApkOutputFile> builder = ImmutableList.builder();
             if (outputDirectory.exists() && outputDirectory.listFiles().length > 0) {
                 final Pattern pattern = Pattern.compile(
-                        "${project.archivesBaseName}-${outputBaseName}-(.*)")
+                        "${project.archivesBaseName}-${outputBaseName}_(.*)")
                 for (File file : outputDirectory.listFiles()) {
                     Matcher matcher = pattern.matcher(file.getName());
                     if (matcher.matches() && isAbiSplit(file.getName())) {
@@ -95,7 +95,7 @@ class PackageSplitAbi extends BaseTask {
                             OutputFile.OutputType.SPLIT,
                             ImmutableList.<FilterData>of(
                                     FilterData.Builder.build(OutputFile.ABI,
-                                            "${project.archivesBaseName}-${outputBaseName}-${split}")),
+                                            "${project.archivesBaseName}-${outputBaseName}_${split}")),
                             Callables.returning(new File(outputDirectory, split)))
                     builder.add(apkOutput)
                 }
@@ -124,16 +124,8 @@ class PackageSplitAbi extends BaseTask {
         for (File file : getInputDirectory().listFiles()) {
             Matcher matcher = pattern.matcher(file.getName());
             if (matcher.matches() && isAbiSplit(file.getName())) {
-                ApkOutputFile outputFile = new ApkOutputFile(
-                        OutputFile.OutputType.SPLIT,
-                        ImmutableList.<FilterData> of(FilterData.Builder.build(
-                                OutputFile.ABI,
-                                matcher.group(1))),
-                        Callables.returning(file));
-
-
-                String apkName = "${project.archivesBaseName}-${getOutputBaseName()}-" +
-                        "${outputFile.getSplitIdentifiers('-' as char)}"
+                String apkName = "${project.archivesBaseName}-${getOutputBaseName()}_" +
+                        "${matcher.group(1)}"
                 apkName = apkName + (getSigningConfig() == null
                         ? "-unsigned.apk"
                         : "-unaligned.apk")

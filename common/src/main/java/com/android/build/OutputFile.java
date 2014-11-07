@@ -50,7 +50,7 @@ public interface OutputFile {
     /**
      * Split dimension type
      */
-    enum FilterType {
+    public enum FilterType {
         DENSITY, ABI, LANGUAGE
     }
 
