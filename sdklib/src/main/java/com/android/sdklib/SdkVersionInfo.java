@@ -16,6 +16,7 @@
 package com.android.sdklib;
 
 import com.android.annotations.Nullable;
+import com.google.common.base.Strings;
 
 import java.util.Locale;
 
@@ -258,7 +259,7 @@ public class SdkVersionInfo {
     public static AndroidVersion getVersion(
             @Nullable String apiOrPreviewName,
             @Nullable IAndroidTarget[] targets) {
-        if (apiOrPreviewName == null || apiOrPreviewName.isEmpty()) {
+        if (Strings.isNullOrEmpty(apiOrPreviewName)) {
             return null;
         }
 

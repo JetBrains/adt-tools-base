@@ -26,6 +26,7 @@ import com.android.builder.model.ApiVersion
 import com.android.builder.model.ClassField
 import com.android.build.gradle.internal.core.NdkConfig
 import com.android.builder.model.ProductFlavor
+import com.google.common.base.Strings
 import org.gradle.api.Action
 import org.gradle.api.Project
 import org.gradle.api.logging.Logger
@@ -116,7 +117,7 @@ class ProductFlavorDsl extends DefaultProductFlavor {
 
     @Nullable
     private static ApiVersion getApiVersion(@Nullable String value) {
-        if (value != null && !value.isEmpty()) {
+        if (!Strings.isNullOrEmpty(value)) {
             if (Character.isDigit(value.charAt(0))) {
                 try {
                     int apiLevel = Integer.valueOf(value)

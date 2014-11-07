@@ -19,6 +19,7 @@ import com.android.build.gradle.api.ApkVariant
 import com.android.build.gradle.api.ApplicationVariant
 import com.android.build.gradle.api.TestVariant
 import com.android.build.gradle.internal.test.BaseTest
+import org.gradle.api.JavaVersion
 import org.gradle.api.Project
 import org.gradle.testfixtures.ProjectBuilder
 /**
@@ -325,6 +326,78 @@ public class AppPluginDslTest extends BaseTest {
         }
     }
 
+    public void testSettingLanguageLevelFromCompileSdk() {
+        def testLanguageLevel = { version, expectedLanguageLevel, useJack ->
+            Project project = ProjectBuilder.builder().withProjectDir(
+                    new File(testDir, "${FOLDER_TEST_REGULAR}/basic")).build()
+
+            project.apply plugin: 'com.android.application'
+            project.android {
+                compileSdkVersion version
+            }
+
+            AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
+            plugin.createAndroidTasks(false)
+
+            assertEquals(
+                    "target compatibility for ${version}",
+                    expectedLanguageLevel.toString(),
+                    project.compileReleaseJava.targetCompatibility)
+            assertEquals(
+                    "source compatibility for ${version}",
+                    expectedLanguageLevel.toString(),
+                    project.compileReleaseJava.sourceCompatibility)
+        }
+
+        for (useJack in [true, false]) {
+            testLanguageLevel(15, JavaVersion.VERSION_1_6, useJack)
+            testLanguageLevel(21, JavaVersion.VERSION_1_7, useJack)
+            testLanguageLevel('android-21', JavaVersion.VERSION_1_7, useJack)
+            testLanguageLevel('Google:GoogleInc:22', JavaVersion.VERSION_1_7, useJack)
+        }
+    }
+
+    public void testSettingLanguageLevelFromCompileSdk_dontOverride() {
+        Project project = ProjectBuilder.builder().withProjectDir(
+                new File(testDir, "${FOLDER_TEST_REGULAR}/basic")).build()
+
+        project.apply plugin: 'com.android.application'
+        project.android {
+            compileSdkVersion 21
+            compileOptions {
+                sourceCompatibility JavaVersion.VERSION_1_6
+                targetCompatibility JavaVersion.VERSION_1_6
+            }
+        }
+        AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
+        plugin.createAndroidTasks(false)
+
+        assertEquals(
+                JavaVersion.VERSION_1_6.toString(),
+                project.compileReleaseJava.targetCompatibility)
+        assertEquals(
+                JavaVersion.VERSION_1_6.toString(),
+                project.compileReleaseJava.sourceCompatibility)
+    }
+
+    public void testSettingLanguageLevelFromCompileSdk_unknownVersion() {
+        Project project = ProjectBuilder.builder().withProjectDir(
+                new File(testDir, "${FOLDER_TEST_REGULAR}/basic")).build()
+
+        project.apply plugin: 'com.android.application'
+        project.android {
+            compileSdkVersion 'foo'
+        }
+        AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
+        plugin.createAndroidTasks(false)
+
+        assertEquals(
+                JavaVersion.VERSION_1_6.toString(),
+                project.compileReleaseJava.targetCompatibility)
+        assertEquals(
+                JavaVersion.VERSION_1_6.toString(),
+                project.compileReleaseJava.sourceCompatibility)
+    }
 
     private static void checkTestedVariant(@NonNull String variantName,
                                            @NonNull String testedVariantName,
