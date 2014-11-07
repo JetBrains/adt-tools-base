@@ -19,7 +19,6 @@ package com.android.build.gradle.model
 
 import com.android.build.gradle.api.GroupableProductFlavor
 import com.android.build.gradle.internal.ProductFlavorCombo
-import com.android.build.gradle.internal.dsl.GroupableProductFlavorDsl
 import com.android.build.gradle.ndk.NdkExtension
 import com.android.build.gradle.ndk.internal.NdkConfiguration
 import com.android.build.gradle.ndk.internal.NdkExtensionConvention
@@ -189,7 +188,7 @@ class NdkComponentModelPlugin implements Plugin<Project> {
         void configureNativeSourceSet(
                 ProjectSourceSet sources,
                 NamedDomainObjectContainer<DefaultBuildType> buildTypes,
-                NamedDomainObjectContainer<GroupableProductFlavorDsl> flavors,
+                NamedDomainObjectContainer<com.android.build.gradle.internal.dsl.GroupableProductFlavor> flavors,
                 List<ProductFlavorCombo> flavorGroups,
                 NdkExtension ndkExtension) {
             NdkConfiguration.configureSources(sources, "main", ndkExtension)

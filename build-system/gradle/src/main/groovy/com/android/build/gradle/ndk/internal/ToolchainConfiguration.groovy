@@ -79,9 +79,10 @@ class ToolchainConfiguration {
             List<String> abiList = ndkHandler.getSupportedAbis();
             for (String abi: abiList) {
                 String platform = abi
+                String localToolchainVersion = toolchainVersion
 
-                if (toolchainVersion.equals(NdkExtensionConvention.DEFAULT_TOOLCHAIN_VERSION)) {
-                    toolchainVersion = getDefaultToolchainVersion(toolchainName, abi);
+                if (localToolchainVersion.equals(NdkExtensionConvention.DEFAULT_TOOLCHAIN_VERSION)) {
+                    localToolchainVersion = getDefaultToolchainVersion(toolchainName, platform);
                 }
 
                 target(platform) {
@@ -100,7 +101,7 @@ class ToolchainConfiguration {
                     }
 
                     String bin = (
-                            ndkHandler.getToolchainPath(toolchainName, toolchainVersion, platform).
+                            ndkHandler.getToolchainPath(toolchainName, localToolchainVersion, platform).
                                     toString()
                                     + "/bin")
                     path bin

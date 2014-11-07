@@ -35,7 +35,7 @@ class NdkComponentModelIntegTest {
 
     @BeforeClass
     public static void setup() {
-        new HelloWorldJniApp().writeSources(project.getSourceDir())
+        new HelloWorldJniApp().writeSources(project.testDir)
         project.getBuildFile() << """
 import com.android.build.gradle.model.NdkComponentModelPlugin
 apply plugin: NdkComponentModelPlugin

@@ -34,9 +34,6 @@ public class AppComponentModelPlugin implements Plugin<Project> {
     void apply(Project project) {
         project.plugins.apply(InitializationPlugin)
         project.plugins.apply(BaseComponentModelPlugin)
-
-        // create the config to link a wear apk.
-        project.configurations.create(ApplicationVariantFactory.CONFIG_WEAR_APP)
     }
 
     private static class InitializationPlugin implements Plugin<Project> {

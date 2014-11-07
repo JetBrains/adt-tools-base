@@ -45,12 +45,12 @@ class ComponentModelSourceSetIntegTest {
         TestSourceFile cSource = app.getFile("hello-jni.c");
         app.removeFile(cSource);
         app.addFile(
-                new TestSourceFile("release/jni", cSource.name, cSource.content))
+                new TestSourceFile("src/release/jni", cSource.name, cSource.content))
         app.addFile(
-                new TestSourceFile("flavor1/jni/hello-jni.c", cSource.name, cSource.content))
-        app.addFile(new TestSourceFile("flavor2Debug/jni/hello-jni.c", cSource.name,
+                new TestSourceFile("src/flavor1/jni/hello-jni.c", cSource.name, cSource.content))
+        app.addFile(new TestSourceFile("src/flavor2Debug/jni/hello-jni.c", cSource.name,
                 cSource.content))
-        app.writeSources(project.getSourceDir())
+        app.writeSources(project.testDir)
 
         project.buildFile << """
 apply plugin: "com.android.model.application"
