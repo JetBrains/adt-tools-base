@@ -79,4 +79,10 @@ public interface BaseConfig {
      */
     @Nullable
     Boolean getMultiDexEnabled();
+
+    @Nullable
+    File getMultiDexKeepFile();
+
+    @Nullable
+    File getMultiDexKeepProguard();
 }

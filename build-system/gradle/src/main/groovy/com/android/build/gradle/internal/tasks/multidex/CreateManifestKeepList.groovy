@@ -18,8 +18,11 @@
 
 package com.android.build.gradle.internal.tasks.multidex
 
+import com.google.common.base.Charsets
+import com.google.common.io.Files
 import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.InputFile
+import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 import org.xml.sax.Attributes
@@ -35,6 +38,9 @@ class CreateManifestKeepList extends DefaultTask {
 
     @OutputFile
     File outputFile
+
+    @InputFile @Optional
+    File proguardFile
 
     Closure filter
 
@@ -53,8 +59,12 @@ class CreateManifestKeepList extends DefaultTask {
 }
 -keep public class * extends java.lang.annotation.Annotation {
     *;
-}""")
+}
+""")
 
+            if (proguardFile != null) {
+                out.write(Files.toString(proguardFile, Charsets.UTF_8))
+            }
         } finally {
             out.close()
         }
