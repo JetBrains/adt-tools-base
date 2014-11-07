@@ -142,7 +142,6 @@ import com.google.common.collect.Multimap
 import com.google.common.collect.Sets
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
-import org.gradle.api.InvalidUserCodeException
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.artifacts.Configuration
@@ -279,13 +278,14 @@ public abstract class BasePlugin {
 
     protected void apply(Project project) {
         this.project = project
-        doApply();
+        doApply()
     }
 
     protected void doApply() {
         configureProject()
         createExtension()
         createTasks()
+        checkDependencies()
     }
 
     protected void configureProject() {
@@ -475,6 +475,30 @@ public abstract class BasePlugin {
             project.gradle.taskGraph.whenReady { taskGraph ->
                 if (taskGraph.hasTask(lintAll)) {
                     lintVital.setEnabled(false)
+                }
+            }
+        }
+    }
+
+    /**
+     * Registers a callback to check if this project depends on another android application project.
+     * This is a common mistake and it doesn't work, since application projects generate APKs as the
+     * only artifacts.
+     */
+    private void checkDependencies() {
+        // All projects need to be evaluated to make this check.
+        project.gradle.projectsEvaluated {
+            // Skip "internal" configurations that we create.
+            project.configurations.matching{ !it.name.startsWith('_') }.all { configuration ->
+                configuration.dependencies.matching{it in ProjectDependency}.all { dependency ->
+                    Project dp = dependency.dependencyProject
+                    BaseExtension android = dp.properties['android']
+                    if (android && !android.isLibrary) {
+                        throw new GradleException(
+                            "Configuration '${configuration.name}' depends on an Android " +
+                            "application project '${dp.name}'. Only Android library projects " +
+                            "can act as dependencies of other projects.")
+                    }
                 }
             }
         }
