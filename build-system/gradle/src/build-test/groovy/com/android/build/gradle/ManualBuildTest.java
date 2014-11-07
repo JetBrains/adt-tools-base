@@ -31,6 +31,7 @@ import static java.io.File.separatorChar;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.builder.core.ApkInfoParser;
 import com.android.ide.common.internal.CommandLineRunner;
 import com.android.ide.common.internal.LoggedErrorException;
 import com.android.utils.StdLogger;
@@ -782,16 +783,14 @@ public class ManualBuildTest extends BuildTest {
             @NonNull String baseName,
             @Nullable String suffix)
             throws IOException, InterruptedException, LoggedErrorException {
-        File aapt = new File(sdkDir, "build-tools/20.0.0/aapt");
 
+
+        File aapt = new File(sdkDir, "build-tools/20.0.0/aapt");
         assertTrue("Test requires build-tools 20.0.0", aapt.isFile());
 
-        String[] command = new String[4];
-        command[0] = aapt.getPath();
-        command[1] = "dump";
-        command[2] = "badging";
-
         CommandLineRunner commandLineRunner = new CommandLineRunner(new StdLogger(StdLogger.Level.ERROR));
+
+        ApkInfoParser parser = new ApkInfoParser(aapt, commandLineRunner);
 
         for (Map.Entry<String, VersionData> entry : expected.entrySet()) {
             if (suffix == null) {
@@ -804,52 +803,18 @@ public class ManualBuildTest extends BuildTest {
 
             File apk = new File(project, path);
 
-            command[3] = apk.getPath();
-
-            final List<String> aaptOutput = Lists.newArrayList();
-
-            commandLineRunner.runCmdLine(command, new CommandLineRunner.CommandLineOutput() {
-                @Override
-                public void out(@Nullable String line) {
-                    if (line != null) {
-                        aaptOutput.add(line);
-                    }
-                }
-                @Override
-                public void err(@Nullable String line) {
-                    super.err(line);
-
-                }
-            }, null /*env vars*/);
-
-            Pattern p = Pattern.compile("^package: name='(.+)' versionCode='([0-9]*)' versionName='(.*)'$");
-
-            String versionCode = null;
-            String versionName = null;
-
-            for (String line : aaptOutput) {
-                Matcher m = p.matcher(line);
-                if (m.matches()) {
-                    versionCode = m.group(2);
-                    versionName = m.group(3);
-                    break;
-                }
-            }
-
-            assertNotNull("Unable to determine version code", versionCode);
-            assertNotNull("Unable to determine version name", versionName);
+            ApkInfoParser.ApkInfo apkInfo = parser.parseApk(apk);
 
             VersionData versionData = entry.getValue();
 
             if (versionData.code != null) {
                 assertEquals("Unexpected version code for split: " + entry.getKey(),
-                        versionData.code.intValue(), Integer.parseInt(versionCode));
+                        versionData.code, apkInfo.getVersionCode());
             }
 
             if (versionData.name != null) {
                 assertEquals("Unexpected version code for split: " + entry.getKey(),
-                        versionData.name, versionName);
-
+                        versionData.name, apkInfo.getVersionName());
             }
         }
     }
