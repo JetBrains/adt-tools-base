@@ -52,9 +52,11 @@ import com.android.ide.common.xml.XmlPrettyPrinter;
 import com.android.resources.FolderTypeRelationship;
 import com.android.resources.ResourceFolderType;
 import com.android.resources.ResourceType;
+import com.android.tools.lint.client.api.DefaultConfiguration;
 import com.android.utils.XmlUtils;
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
+import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -90,6 +92,8 @@ import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 import java.util.jar.JarOutputStream;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -1570,17 +1574,19 @@ public class ResourceUsageAnalyzer {
                 NamedNodeMap attributes = element.getAttributes();
                 for (int i = 0, n = attributes.getLength(); i < n; i++) {
                     Attr attr = (Attr) attributes.item(i);
+
+                    // Ignore tools: namespace attributes, unless it's
+                    // a keep attribute
+                    if (TOOLS_URI.equals(attr.getNamespaceURI())) {
+                        if (ATTR_KEEP.equals(attr.getLocalName())) {
+                            handleKeepAttribute(attr.getValue());
+                        }
+                        // Skip all other tools: attributes
+                        continue;
+                    }
+
                     Resource resource = getResourceFromUrl(attr.getValue());
                     if (resource != null) {
-                        // Ignore tools: namespace attributes, unless it's
-                        // a keep attribute
-                        if (TOOLS_URI.equals(attr.getNamespaceURI())) {
-                            if (ATTR_KEEP.equals(attr.getLocalName())) {
-                                markReachable(resource);
-                            } else {
-                                continue;
-                            }
-                        }
                         from.addReference(resource);
                     }
                 }
@@ -1606,6 +1612,11 @@ public class ResourceUsageAnalyzer {
                         Resource resource = getResource(ResourceType.RAW, sb.toString().trim());
                         from.addReference(resource);
                     }
+                }
+            } else {
+                // Look for keep attributes everywhere else since they don't require a source
+                if (element.hasAttributeNS(TOOLS_URI, ATTR_KEEP)) {
+                    handleKeepAttribute(element.getAttributeNS(TOOLS_URI, ATTR_KEEP));
                 }
             }
 
@@ -1692,6 +1703,60 @@ public class ResourceUsageAnalyzer {
     private static void markReachable(@Nullable Resource resource) {
         if (resource != null) {
             resource.reachable = true;
+        }
+    }
+
+    /**
+     * Called for a tools:keep attribute containing a resource URL where that resource name
+     * is not referencing a known resource
+     *
+     * @param value The keep value
+     */
+    private void handleKeepAttribute(@NonNull String value) {
+        // Handle comma separated lists of URLs and globs
+        if (value.indexOf(',') != -1) {
+            for (String portion : Splitter.on(',').omitEmptyStrings().trimResults().split(value)) {
+                handleKeepAttribute(portion);
+            }
+            return;
+        }
+
+        ResourceUrl url = ResourceUrl.parse(value);
+        if (url == null || url.framework) {
+            return;
+        }
+
+        Resource resource = getResource(url.type, url.name);
+        if (resource != null) {
+            if (mDebug) {
+                System.out.println("Marking " + resource + " used because it "
+                        + "matches keep attribute " + value);
+            }
+            markReachable(resource);
+        } else if (url.name.contains("*") || url.name.contains("?")) {
+            // Look for globbing patterns
+            String regexp = DefaultConfiguration.globToRegexp(getFieldName(url.name));
+            try {
+                Pattern pattern = Pattern.compile(regexp);
+                Map<String, Resource> nameMap = mTypeToName.get(url.type);
+                if (nameMap != null) {
+                    for (Resource r : nameMap.values()) {
+                        if (pattern.matcher(r.name).matches()) {
+                            if (mDebug) {
+                                System.out.println("Marking " + r + " used because it "
+                                        + "matches keep globbing pattern " + url.name);
+                            }
+
+                            markReachable(r);
+                        }
+                    }
+                }
+            } catch (PatternSyntaxException ignored) {
+                if (mDebug) {
+                    System.out.println("Could not compute keep globbing pattern for " +
+                            url.name + ": tried regexp " + regexp + "(" + ignored + ")");
+                }
+            }
         }
     }
 
