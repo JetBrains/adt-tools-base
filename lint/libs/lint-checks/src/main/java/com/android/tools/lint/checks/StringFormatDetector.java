@@ -683,7 +683,7 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
     }
 
     // See java.util.Formatter docs
-    private static final Pattern FORMAT = Pattern.compile(
+    public static final Pattern FORMAT = Pattern.compile(
             // Generic format:
             //   %[argument_index$][flags][width][.precision]conversion
             //
