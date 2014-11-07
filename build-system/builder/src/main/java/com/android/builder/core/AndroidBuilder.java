@@ -1137,6 +1137,7 @@ public class AndroidBuilder {
             @NonNull Iterable<File> preDexedLibraries,
             @NonNull File outDexFolder,
                      boolean multidex,
+                     boolean multidexLegacy,
             @Nullable File mainDexList,
             @NonNull DexOptions dexOptions,
             @Nullable List<String> additionalParameters,
@@ -1193,6 +1194,20 @@ public class AndroidBuilder {
             if (mainDexList != null ) {
                 command.add("--main-dex-list");
                 command.add(mainDexList.getAbsolutePath());
+            }
+
+            if (multidexLegacy) {
+                // This sets the method ref count threshold at which dex overflow
+                // occurs.  On the one hand, we want this number to be as large as
+                // possible, to provide maximum room for code which must reside in
+                // the primary dex.  On the other hand, making this number too big
+                // results in LinearAlloc capacity being exceeded on Gingerbread
+                // devices.  (Experience has shown that a value of 65100 yields
+                // LinearAlloc failures on a large percentage of GB devices.)
+                // Basically, making this number smaller can break builds, while
+                // making it bigger can break devices.  THINK VERY HARD BEFORE
+                // CHANGING THIS VALUE!
+                command.add("--set-max-idx-number=60000");
             }
         }
 
