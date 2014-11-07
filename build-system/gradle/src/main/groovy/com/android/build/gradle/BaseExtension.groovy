@@ -30,8 +30,8 @@ import com.android.build.gradle.internal.dsl.DexOptionsImpl
 import com.android.build.gradle.internal.dsl.LintOptionsImpl
 import com.android.build.gradle.internal.dsl.PackagingOptionsImpl
 import com.android.build.gradle.internal.dsl.ProductFlavorDsl
-import com.android.build.gradle.internal.test.TestOptions
 import com.android.build.gradle.internal.dsl.Splits
+import com.android.build.gradle.internal.test.TestOptions
 import com.android.builder.core.BuilderConstants
 import com.android.builder.core.DefaultBuildType
 import com.android.builder.core.DefaultProductFlavor
@@ -83,6 +83,7 @@ public abstract class BaseExtension {
     private boolean publishNonDefault = false
 
     NdkLibrarySpecification ndkLib
+
     private boolean useNewNativePlugin = false
 
     private Closure<Void> variantFilter
@@ -252,6 +253,7 @@ public abstract class BaseExtension {
     void compileOptions(Action<CompileOptions> action) {
         plugin.checkTasksAlreadyCreated()
         action.execute(compileOptions)
+        compileOptions.setExplicitly = true
     }
 
     void packagingOptions(Action<PackagingOptionsImpl> action) {
