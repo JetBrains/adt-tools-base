@@ -485,15 +485,26 @@ public abstract class BasePlugin {
      * only artifacts.
      */
     private void checkDependencies() {
+        // TODO: Use VariantManager instead, to only check relevant configurations.
+        def shouldBeChecked = {
+            switch (it.name) {
+                case 'wearApp':
+                case {it.startsWith '_'}:
+                    return false
+                default:
+                    return true
+            }
+        }
+
         // All projects need to be evaluated to make this check.
         project.gradle.projectsEvaluated {
             // Skip "internal" configurations that we create.
-            project.configurations.matching({!it.name.startsWith('_')}).all { configuration ->
+            project.configurations.matching(shouldBeChecked).all { configuration ->
                 configuration.dependencies.withType(ProjectDependency) { dependency ->
                     Project dp = dependency.dependencyProject
                     if (dp.plugins.findPlugin(AppPlugin)) {
                         throw new GradleException(
-                            "Configuration '${configuration.name}' depends on an Android " +
+                            "${configuration} depends on an Android " +
                             "application project '${dp.name}'. Only Android library projects " +
                             "can act as dependencies of other projects.")
                     }
@@ -2380,13 +2391,27 @@ public abstract class BasePlugin {
             if (setExplicitly) {
                 fromDsl.toString()
             } else {
+                JavaVersion languageLevelToUse
                 switch (sdkVersionNumber) {
                     case null:  // Default to 1.6 if we fail to parse compile SDK version.
                     case 0..20:
-                        return JavaVersion.VERSION_1_6.toString()
+                        languageLevelToUse = JavaVersion.VERSION_1_6
                     default:
-                        return JavaVersion.VERSION_1_7.toString()
+                        languageLevelToUse = JavaVersion.VERSION_1_7
                 }
+
+                def jdkVersion = JavaVersion.toVersion(
+                        System.getProperty("java.specification.version"))
+
+                if (jdkVersion < languageLevelToUse) {
+                    logger.info(
+                            "Default language level for 'compileSdkVersion %d' is %s, but the " +
+                            "JDK used is %s, so the JDK language level will be used.",
+                            sdkVersionNumber, languageLevelToUse, jdkVersion)
+                    languageLevelToUse = jdkVersion
+                }
+
+                return languageLevelToUse.toString()
             }
         }
 
