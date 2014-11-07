@@ -41,7 +41,7 @@ android {
         minified {
             minifyEnabled true
             useJack rootProject.ext.useJack
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-spec.pro'
+            proguardFile getDefaultProguardFile('proguard-android.txt')
             testCoverageEnabled true
         }
     }
