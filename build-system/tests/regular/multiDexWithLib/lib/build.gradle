@@ -6,6 +6,7 @@ android {
 
   defaultConfig {
     useJack rootProject.ext.useJack
+    minSdkVersion 4
   }
 
   buildTypes {
