@@ -51,3 +51,8 @@ android {
         incremental false
     }
 }
+
+dependencies {
+    compile 'com.android.support:support-annotations:+'
+    compile 'com.android.support:support-v4:+'
+}

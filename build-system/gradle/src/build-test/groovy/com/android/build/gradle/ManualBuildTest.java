@@ -27,6 +27,7 @@ import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_KEY_PASS
 import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_STORE_FILE;
 import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_STORE_PASSWORD;
 import static java.io.File.separator;
+import static java.io.File.separatorChar;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -318,6 +319,31 @@ public class ManualBuildTest extends BuildTest {
         assertEquals(expectedCompressed, actualCompressed);
         assertFalse(expectedCompressed, expectedCompressed.contains("unused"));
         assertEquals(expectedStrippedApkContents, dumpZipContents(apkRelease));
+
+        // Check splits -- just sample one of them
+        //noinspection SpellCheckingInspection
+        compressed = new File(project,
+                "abisplits/build/intermediates/res/resources-arm64-v8a-release-stripped.ap_"
+                        .replace('/', separatorChar));
+        //noinspection SpellCheckingInspection
+        uncompressed = new File(project,
+                "abisplits/build/intermediates/res/resources-arm64-v8a-release.ap_"
+                        .replace('/', separatorChar));
+        assertTrue(compressed + " is not a file", compressed.isFile());
+        assertTrue(uncompressed + " is not a file", uncompressed.isFile());
+        //noinspection SpellCheckingInspection
+        assertEquals(""
+                + "AndroidManifest.xml\n"
+                + "resources.arsc\n"
+                + "res/layout/used.xml",
+                dumpZipContents(compressed));
+        //noinspection SpellCheckingInspection
+        assertEquals(""
+                + "AndroidManifest.xml\n"
+                + "resources.arsc\n"
+                + "res/layout/unused.xml\n"
+                + "res/layout/used.xml",
+                dumpZipContents(uncompressed));
     }
 
     private static List<String> getZipPaths(File zipFile) throws IOException {

@@ -2899,7 +2899,7 @@ public abstract class BasePlugin {
     private ShrinkResources createShrinkResourcesTask(ApkVariantOutputData variantOutputData) {
         def variantData = variantOutputData.variantData
         def task = project.tasks.create(
-                "shrink${variantData.variantConfiguration.fullName.capitalize()}Resources",
+                "shrink${variantOutputData.fullName.capitalize()}Resources",
                 ShrinkResources)
         task.plugin = this
         task.variantOutputData = variantOutputData
