@@ -2392,8 +2392,10 @@ public abstract class BasePlugin {
                     case null:  // Default to 1.6 if we fail to parse compile SDK version.
                     case 0..20:
                         languageLevelToUse = JavaVersion.VERSION_1_6
+                        break
                     default:
                         languageLevelToUse = JavaVersion.VERSION_1_7
+                        break
                 }
 
                 def jdkVersion = JavaVersion.toVersion(
