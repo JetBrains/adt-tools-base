@@ -17,7 +17,6 @@
 
 
 package com.android.build.gradle.internal.tasks.multidex
-
 import com.google.common.base.Charsets
 import com.google.common.base.Joiner
 import com.google.common.collect.Maps
@@ -28,7 +27,6 @@ import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
-
 /**
  * Take a list of classes for the main dex (that was computed before obfuscation),
  * a proguard-generated mapping file and create a new list of classes with the new
@@ -39,11 +37,26 @@ class RetraceMainDexList extends DefaultTask {
     @InputFile
     File mainDexListFile
 
-    @InputFile @Optional
-    File mappingFile
-
     @OutputFile
     File outputFile
+
+    /**
+     * Gradle doesn't really handle optional inputs as being a file that
+     * doesn't exist. Optional means the task field is null. So we do some
+     * custom logic to return null if the file doesn't exist since we cannot
+     * know ahead of time without parsing the proguard config rule files.
+     */
+    @InputFile @Optional
+    File getMappingFileInput() {
+        File file = getMappingFile()
+        if (file != null && file.isFile()) {
+            return file
+        }
+
+        return null
+    }
+
+    File mappingFile
 
     @TaskAction
     void retrace() {
@@ -51,7 +64,7 @@ class RetraceMainDexList extends DefaultTask {
         File mapping = getMappingFile()
         // if there is no mapping file or if it doesn't exist, then we just copy from the main
         // dex list ot the output.
-        if (mapping == null) {
+        if (mapping == null || !mapping.isFile()) {
             Files.copy(getMainDexListFile(), getOutputFile())
             return
         }
