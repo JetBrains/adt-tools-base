@@ -17,6 +17,7 @@
 package com.android.build.gradle.tasks;
 
 import static com.android.build.gradle.tasks.ResourceUsageAnalyzer.Resource;
+import static com.android.build.gradle.tasks.ResourceUsageAnalyzer.convertFormatStringToRegexp;
 import static java.io.File.separatorChar;
 
 import com.android.annotations.NonNull;
@@ -33,6 +34,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
@@ -906,6 +908,17 @@ public class ResourceUsageAnalyzerTest extends TestCase {
                 + "    void onCreate(android.os.Bundle) -> onCreate\n"
                 + "    boolean onCreateOptionsMenu(android.view.Menu) -> onCreateOptionsMenu\n"
                 + "    boolean onOptionsItemSelected(android.view.MenuItem) -> onOptionsItemSelected");
+    }
+
+    public void testFormatStringRegexp() {
+        assertEquals("", convertFormatStringToRegexp(""));
+        assertEquals("\\Qfoo_\\E", convertFormatStringToRegexp("foo_"));
+        assertEquals("\\Qfoo\\E.*\\Q_\\E.*\\Qend\\E", convertFormatStringToRegexp("foo%s_%1$send"));
+        assertEquals("\\Qescape!.()\\E", convertFormatStringToRegexp("escape!.()"));
+
+        assertTrue("foo_".matches(convertFormatStringToRegexp("foo_")));
+        assertTrue("fooA_BBend".matches(convertFormatStringToRegexp("foo%s_%1$send")));
+        assertFalse("A_BBend".matches(convertFormatStringToRegexp("foo%s_%1$send")));
     }
 
     /** Utility method to generate byte array literal dump (used by classesJarBytecode above) */
