@@ -492,8 +492,7 @@ public abstract class BasePlugin {
             project.configurations.matching{ !it.name.startsWith('_') }.all { configuration ->
                 configuration.dependencies.matching{it in ProjectDependency}.all { dependency ->
                     Project dp = dependency.dependencyProject
-                    BaseExtension android = dp.properties['android']
-                    if (android && !android.isLibrary) {
+                    if (dp.plugins.findPlugin(AppPlugin)) {
                         throw new GradleException(
                             "Configuration '${configuration.name}' depends on an Android " +
                             "application project '${dp.name}'. Only Android library projects " +
