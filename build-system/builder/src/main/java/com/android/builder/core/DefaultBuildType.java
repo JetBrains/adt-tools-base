@@ -79,7 +79,8 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
 
     @Override
     public boolean isDebuggable() {
-        return mDebuggable;
+        // Accessing coverage data requires a debuggable package.
+        return mDebuggable || mTestCoverageEnabled;
     }
 
 
