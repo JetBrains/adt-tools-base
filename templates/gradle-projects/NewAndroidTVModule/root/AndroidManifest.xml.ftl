@@ -5,7 +5,7 @@
         android:label="@string/app_name"<#if copyIcons>
         android:icon="@drawable/ic_launcher"<#else>
         android:icon="@drawable/${assetName}"</#if>
-        android:theme="@style/AppTheme">
+        android:theme="@style/Theme.Leanback">
 
     </application>
 
