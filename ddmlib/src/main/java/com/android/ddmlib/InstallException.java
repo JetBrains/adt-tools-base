@@ -26,6 +26,10 @@ public class InstallException extends CanceledException {
         super(cause.getMessage(), cause);
     }
 
+    public InstallException(String message) {
+        super(message);
+    }
+
     public InstallException(String message, Throwable cause) {
         super(message, cause);
     }
