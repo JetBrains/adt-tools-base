@@ -51,9 +51,23 @@ public abstract class DeviceConnector implements IShellEnabledDevice {
      * Installs the given APK on the device.
      * @param apkFile the APK file to install.
      * @param timeout the time out.
+     * @param logger the logger to use to log debug, warnings and errors.
      * @throws DeviceException
      */
-    public abstract void installPackage(@NonNull File apkFile, int timeout, ILogger logger) throws DeviceException;
+    public abstract void installPackage(@NonNull File apkFile, int timeout, ILogger logger)
+            throws DeviceException;
+
+    /**
+     * Installs the given APK files on the device. It requires a device with API level 21+ otherwise
+     * a {@link com.android.builder.testing.api.DeviceException} will be thrown.
+     *
+     * @param apkFiles the APK files to install.
+     * @param timeout the time out.
+     * @param logger the logger to use to log debug, warnings and errors.
+     * @throws DeviceException
+     */
+    public abstract void installPackages(@NonNull List<File> apkFiles, int timeout, ILogger logger)
+            throws DeviceException;
 
     /**
      * Uninstall the given package name from the device
@@ -61,7 +75,8 @@ public abstract class DeviceConnector implements IShellEnabledDevice {
      * @param timeout the time out
      * @throws DeviceException
      */
-    public abstract void uninstallPackage(@NonNull String packageName, int timeout, ILogger logger) throws DeviceException;
+    public abstract void uninstallPackage(@NonNull String packageName, int timeout, ILogger logger)
+            throws DeviceException;
 
     /**
      * Pulls a single file.
