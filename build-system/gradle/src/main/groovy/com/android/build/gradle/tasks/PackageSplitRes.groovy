@@ -102,21 +102,14 @@ class PackageSplitRes extends BaseTask {
         for (File file : inputDirectory.listFiles()) {
             Matcher matcher = pattern.matcher(file.getName());
             if (matcher.matches()) {
-                ApkOutputFile outputFile = new ApkOutputFile(
-                        OutputFile.OutputType.SPLIT,
-                        ImmutableList.<FilterData> of(FilterData.Builder.build(
-                                OutputFile.DENSITY,
-                                matcher.group(1))),
-                        Callables.returning(file));
-
-                String apkName = "${project.archivesBaseName}-${outputBaseName}-" +
-                        "${outputFile.getSplitIdentifiers('-' as char)}"
+                String apkName = "${project.archivesBaseName}-${outputBaseName}_" +
+                        "${matcher.group(1)}"
                 apkName = apkName + (signingConfig == null
                         ? "-unsigned.apk"
                         : "-unaligned.apk")
 
                 File outFile = new File(outputDirectory, apkName);
-                getBuilder().signApk(outputFile.getOutputFile(), signingConfig, outFile)
+                getBuilder().signApk(file, signingConfig, outFile)
             }
         }
     }

@@ -1218,10 +1218,16 @@ public abstract class BasePlugin {
                 BaseVariantData.SplitHandlingPolicy.RELEASE_21_AND_AFTER_POLICY;
 
         VariantConfiguration config = variantData.variantConfiguration
-        Set<String> filters = new HashSet<String>();
+        Set<String> densityFilters = new HashSet<String>();
         for (String density : getExtension().getSplits().getDensityFilters()) {
             if (density != null) {
-                filters.add(density);
+                densityFilters.add(density);
+            }
+        }
+        Set<String> abiFilters = new HashSet<String>();
+        for (String abi : getExtension().getSplits().getAbiFilters()) {
+            if (abi != null) {
+                abiFilters.add(abi);
             }
         }
         def outputs = variantData.outputs;
@@ -1236,8 +1242,8 @@ public abstract class BasePlugin {
                         PackageSplitRes);
         variantOutputData.packageSplitResourcesTask.inputDirectory =
                 new File("$project.buildDir/${FD_INTERMEDIATES}/res")
-        variantOutputData.packageSplitResourcesTask.splits = filters
-        variantOutputData.packageSplitResourcesTask.outputBaseName = config.fullName
+        variantOutputData.packageSplitResourcesTask.splits = densityFilters
+        variantOutputData.packageSplitResourcesTask.outputBaseName = config.baseName
         variantOutputData.packageSplitResourcesTask.signingConfig =
                 (SigningConfigDsl) config.signingConfig
         variantOutputData.packageSplitResourcesTask.outputDirectory =
@@ -1256,7 +1262,9 @@ public abstract class BasePlugin {
         }
         zipAlign.outputDirectory = new File("$project.buildDir/outputs/apk")
         zipAlign.inputDirectory = variantOutputData.packageSplitResourcesTask.outputDirectory
-        zipAlign.outputBaseName = config.fullName;
+        zipAlign.outputBaseName = config.baseName;
+        zipAlign.abiFilters = abiFilters;
+        zipAlign.densityFilters = densityFilters;
         ((ApkVariantOutputData) variantOutputData).splitZipAlign = zipAlign
         zipAlign.dependsOn(variantOutputData.packageSplitResourcesTask)
     }
@@ -1293,7 +1301,7 @@ public abstract class BasePlugin {
         generateSplitAbiRes.outputDirectory =
                 new File("$project.buildDir/${FD_INTERMEDIATES}/abi/${config.dirName}")
         generateSplitAbiRes.splits = filters
-        generateSplitAbiRes.outputBaseName = config.fullName
+        generateSplitAbiRes.outputBaseName = config.baseName
         generateSplitAbiRes.applicationId = config.getApplicationId()
         generateSplitAbiRes.versionCode = config.getVersionCode()
         generateSplitAbiRes.versionName = config.getVersionName()
@@ -1311,7 +1319,7 @@ public abstract class BasePlugin {
         variantOutputData.packageSplitAbiTask
         variantOutputData.packageSplitAbiTask.inputDirectory = generateSplitAbiRes.outputDirectory
         variantOutputData.packageSplitAbiTask.splits = filters
-        variantOutputData.packageSplitAbiTask.outputBaseName = config.fullName
+        variantOutputData.packageSplitAbiTask.outputBaseName = config.baseName
         variantOutputData.packageSplitAbiTask.signingConfig =
                 (SigningConfigDsl) config.signingConfig
         variantOutputData.packageSplitAbiTask.outputDirectory =
