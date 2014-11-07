@@ -103,6 +103,9 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
         return this;
     }
 
+    /**
+     * Version code, or -1 if not set.
+     */
     @Override
     @Nullable
     public Integer getVersionCode() {
@@ -121,19 +124,27 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
         return this;
     }
 
+    /**
+     * Version name.
+     */
     @Override
     @Nullable
     public String getVersionName() {
         return mVersionName;
     }
 
-    /** Sets the minSdkVersion to the given value. */
+    /**
+     * Sets the minSdkVersion to the given value.
+     */
     @NonNull
     public ProductFlavor setMinSdkVersion(ApiVersion minSdkVersion) {
         mMinSdkVersion = minSdkVersion;
         return this;
     }
 
+    /**
+     * Min SDK version.
+     */
     @Override
     public ApiVersion getMinSdkVersion() {
         return mMinSdkVersion;
@@ -146,6 +157,9 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
         return this;
     }
 
+    /**
+     * Target SDK version.
+     */
     @Override
     public ApiVersion getTargetSdkVersion() {
         return mTargetSdkVersion;
