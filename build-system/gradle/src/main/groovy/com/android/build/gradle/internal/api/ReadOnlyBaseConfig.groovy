@@ -86,6 +86,18 @@ abstract class ReadOnlyBaseConfig implements BaseConfig {
         return baseConfig.getMultiDexEnabled()
     }
 
+    @Nullable
+    @Override
+    public File getMultiDexKeepFile() {
+        return baseConfig.getMultiDexKeepFile()
+    }
+
+    @Nullable
+    @Override
+    public File getMultiDexKeepProguard() {
+        return baseConfig.getMultiDexKeepProguard()
+    }
+
     /**
      * Some build scripts add dynamic properties to flavors declaration (and others) and expect
      * to retrieve such properties values through this model. Delegate any property we don't
