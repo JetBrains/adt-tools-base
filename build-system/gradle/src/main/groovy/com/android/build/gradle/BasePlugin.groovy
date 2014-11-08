@@ -2018,6 +2018,7 @@ public abstract class BasePlugin {
         dexTask.tmpFolder = project.file("$project.buildDir/${FD_INTERMEDIATES}/tmp/dex/${config.dirName}")
         dexTask.dexOptions = extension.dexOptions
         dexTask.multiDexEnabled = isMultiDexEnabled
+        dexTask.legacyMultiDexMode = isLegacyMultiDexMode
 
         // data holding dependencies and input for the dex. This gets updated as new
         // post-compilation steps are inserted between the compilation and dx.
