@@ -207,7 +207,7 @@ class ClangNativeToolSpecification extends AbstractNativeToolSpecification {
                 "-gcc-toolchain",
                 ndkHandler.getToolchainPath(
                         "gcc",
-                        ndkHandler.getGccToolchainVersion(),
+                        ndkHandler.getGccToolchainVersion(platform.name),
                         platform.name),
                 "-target",
                 TARGET_TRIPLE[platform.name]

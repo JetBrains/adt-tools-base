@@ -154,7 +154,7 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
 
         @Mutate
         void forwardCompileSdkVersion(NdkExtension ndkExtension, BaseExtension baseExtension) {
-            if (ndkExtension.compileSdkVersion == null) {
+            if (ndkExtension.compileSdkVersion.isEmpty()) {
                 ndkExtension.compileSdkVersion(baseExtension.compileSdkVersion);
             }
         }

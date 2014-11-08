@@ -17,22 +17,20 @@
 package com.android.build.gradle.ndk.internal
 
 import com.android.SdkConstants
-import com.android.build.gradle.ndk.NdkExtension
-import org.gradle.api.Action
-import org.gradle.api.Project
-import org.gradle.model.internal.core.ModelPath
-import org.gradle.model.internal.core.ModelType
 import org.gradle.nativeplatform.platform.NativePlatform
 import org.gradle.nativeplatform.toolchain.Clang
 import org.gradle.nativeplatform.toolchain.Gcc
 import org.gradle.nativeplatform.toolchain.NativeToolChainRegistry
 import org.gradle.platform.base.PlatformContainer
-import org.gradle.platform.base.ToolChainRegistry
 
 /**
  * Action to configure toolchain for native binaries.
  */
-class ToolchainConfigurationAction implements Action<Project> {
+class ToolchainConfiguration {
+
+    private static final String DEFAULT_GCC32_VERSION="4.6"
+    private static final String DEFAULT_GCC64_VERSION="4.9"
+    private static final String DEFAULT_LLVM_VERSION="3.5"
 
     private static final GCC_PREFIX = [
             (SdkConstants.ABI_INTEL_ATOM) : "i686-linux-android",
@@ -44,29 +42,6 @@ class ToolchainConfigurationAction implements Action<Project> {
             (SdkConstants.ABI_MIPS64) : "mips64el-linux-android"
     ]
 
-    private NdkHandler ndkHandler
-
-    private NdkExtension ndkExtension
-
-    public ToolchainConfigurationAction(NdkHandler ndkHandler, NdkExtension ndkExtension) {
-        this.ndkHandler = ndkHandler
-        this.ndkExtension = ndkExtension
-    }
-
-    public void execute(Project project) {
-        // Create android platforms.
-        configurePlatforms(
-                project.modelRegistry.get(ModelPath.path("platforms"), ModelType.of(PlatformContainer)),
-                ndkHandler)
-
-        // Create toolchain for each ABI.
-        configureToolchain(
-                project.modelRegistry.get(ModelPath.path("toolChains"), ModelType.of(ToolChainRegistry)),
-                ndkExtension.getToolchain(),
-                ndkExtension.getToolchainVersion(),
-                ndkHandler)
-    }
-
     public static void configurePlatforms(PlatformContainer platforms, NdkHandler ndkHandler) {
         List<String> abiList = ndkHandler.getSupportedAbis();
         for (String abi : abiList) {
@@ -77,6 +52,17 @@ class ToolchainConfigurationAction implements Action<Project> {
             // the default supported platform.
             platform.architecture "ppc"
             platform.operatingSystem "linux"
+        }
+    }
+
+    /**
+     * Return the default version of the specified toolchain for a target abi.
+     */
+    public static String getDefaultToolchainVersion(String toolchain, String abi) {
+        if (NdkHandler.is64Bits(abi)) {
+            return (toolchain.equals("gcc")) ? DEFAULT_GCC64_VERSION : DEFAULT_LLVM_VERSION
+        } else {
+            return (toolchain.equals("gcc")) ? DEFAULT_GCC32_VERSION : DEFAULT_LLVM_VERSION
         }
     }
 
@@ -93,6 +79,10 @@ class ToolchainConfigurationAction implements Action<Project> {
             List<String> abiList = ndkHandler.getSupportedAbis();
             for (String abi: abiList) {
                 String platform = abi
+
+                if (toolchainVersion.equals(NdkExtensionConvention.DEFAULT_TOOLCHAIN_VERSION)) {
+                    toolchainVersion = getDefaultToolchainVersion(toolchainName, abi);
+                }
 
                 target(platform) {
                     if (toolchainName.equals("gcc")) {

@@ -36,16 +36,7 @@ import org.gradle.platform.base.BinarySpec
 /**
  * Configure settings used by the native binaries.
  */
-class NdkConfigurationAction {
-
-    NdkExtension ndkExtension
-
-    NdkHandler ndkHandler
-
-    NdkConfigurationAction(NdkHandler ndkHandler, NdkExtension ndkExtension) {
-        this.ndkExtension = ndkExtension
-        this.ndkHandler = ndkHandler
-    }
+class NdkConfiguration {
 
     public static void configureSources(
             ProjectSourceSet sources,
