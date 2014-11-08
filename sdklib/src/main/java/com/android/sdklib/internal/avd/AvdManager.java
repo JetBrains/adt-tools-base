@@ -591,7 +591,7 @@ public class AvdManager {
                 return Pair.of(AvdConflict.CONFLICT_EXISTING_PATH, file.getPath());
             }
 
-            file = AvdInfo.getDefaultAvdFolder(this, name);
+            file = AvdInfo.getDefaultAvdFolder(this, name, false);
             if (file.exists()) {
                 return Pair.of(AvdConflict.CONFLICT_EXISTING_PATH, file.getPath());
             }
