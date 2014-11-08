@@ -48,6 +48,9 @@ public class CreateMainDexList extends BaseTask {
     @InputFile @Optional
     File includeInMainDexJarFile
 
+    @InputFile @Optional
+    File mainDexListFile
+
     @InputFile
     File getDxJar() {
         plugin.ensureTargetSetup()
@@ -78,6 +81,11 @@ public class CreateMainDexList extends BaseTask {
             // interface classes.  Note that doing so brings in other unnecessary
             // stuff, too; next time we're low on main dex space, revisit this!
             mainDexClasses.addAll(callDx(_allClassesJarFile, _includeInMainDexJarFile))
+        }
+
+        if (mainDexListFile != null) {
+            Set<String> mainDexList = new HashSet<String>(Files.readLines(mainDexListFile, Charsets.UTF_8))
+            mainDexClasses.addAll(mainDexList)
         }
 
         String fileContent = Joiner.on(System.getProperty("line.separator")).join(mainDexClasses)

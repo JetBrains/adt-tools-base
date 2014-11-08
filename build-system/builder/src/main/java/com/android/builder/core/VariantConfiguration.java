@@ -1715,6 +1715,34 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
         return false;
     }
 
+    public File getMultiDexKeepFile() {
+        File value = mBuildType.getMultiDexKeepFile();
+        if (value != null) {
+            return value;
+        }
+
+        value = mMergedFlavor.getMultiDexKeepFile();
+        if (value != null) {
+            return value;
+        }
+
+        return null;
+    }
+
+    public File getMultiDexKeepProguard() {
+        File value = mBuildType.getMultiDexKeepProguard();
+        if (value != null) {
+            return value;
+        }
+
+        value = mMergedFlavor.getMultiDexKeepProguard();
+        if (value != null) {
+            return value;
+        }
+
+        return null;
+    }
+
     public boolean isLegacyMultiDexMode() {
         return isMultiDexEnabled() && getMinSdkVersion().getApiLevel() < 21;
     }

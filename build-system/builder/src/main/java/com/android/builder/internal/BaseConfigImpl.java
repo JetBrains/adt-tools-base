@@ -42,6 +42,12 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
     @Nullable
     private Boolean mMultiDexEnabled;
 
+    @Nullable
+    private File mMultiDexKeepProguard;
+
+    @Nullable
+    private File mMultiDexKeepFile;
+
     public void addBuildConfigField(@NonNull ClassField field) {
         mBuildConfigFields.put(field.getName(), field);
     }
@@ -112,6 +118,9 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
         mManifestPlaceholders.putAll(that.getManifestPlaceholders());
 
         mMultiDexEnabled = that.getMultiDexEnabled();
+
+        mMultiDexKeepFile = that.getMultiDexKeepFile();
+        mMultiDexKeepProguard = that.getMultiDexKeepProguard();
     }
 
     private void setBuildConfigFields(@NonNull Map<String, ClassField> fields) {
@@ -132,6 +141,26 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
 
     public void setMultiDexEnabled(@Nullable Boolean multiDex) {
         mMultiDexEnabled = multiDex;
+    }
+
+    @Override
+    @Nullable
+    public File getMultiDexKeepFile() {
+        return mMultiDexKeepFile;
+    }
+
+    public void setMultiDexKeepFile(@Nullable File file) {
+        mMultiDexKeepFile = file;
+    }
+
+    @Override
+    @Nullable
+    public File getMultiDexKeepProguard() {
+        return mMultiDexKeepProguard;
+    }
+
+    public void setMultiDexKeepProguard(@Nullable File file) {
+        mMultiDexKeepProguard = file;
     }
 
     @Override
@@ -158,6 +187,14 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
                 that.mMultiDexEnabled != null) {
             return false;
         }
+        if (mMultiDexKeepFile != null ? !mMultiDexKeepFile.equals(that.mMultiDexKeepFile) :
+                that.mMultiDexKeepFile != null) {
+            return false;
+        }
+        if (mMultiDexKeepProguard != null ? !mMultiDexKeepProguard.equals(that.mMultiDexKeepProguard) :
+                that.mMultiDexKeepProguard != null) {
+            return false;
+        }
         if (!mProguardFiles.equals(that.mProguardFiles)) {
             return false;
         }
@@ -176,6 +213,8 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
         result = 31 * result + mConsumerProguardFiles.hashCode();
         result = 31 * result + mManifestPlaceholders.hashCode();
         result = 31 * result + (mMultiDexEnabled != null ? mMultiDexEnabled.hashCode() : 0);
+        result = 31 * result + (mMultiDexKeepFile != null ? mMultiDexKeepFile.hashCode() : 0);
+        result = 31 * result + (mMultiDexKeepProguard != null ? mMultiDexKeepProguard.hashCode() : 0);
         return result;
     }
 
@@ -188,6 +227,8 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
                 ", mConsumerProguardFiles=" + mConsumerProguardFiles +
                 ", mManifestPlaceholders=" + mManifestPlaceholders +
                 ", mMultiDexEnabled=" + mMultiDexEnabled +
+                ", mMultiDexKeepFile=" + mMultiDexKeepFile +
+                ", mMultiDexKeepProguard=" + mMultiDexKeepProguard +
                 '}';
     }
 }
