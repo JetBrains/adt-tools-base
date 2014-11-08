@@ -17,6 +17,7 @@
 package com.android.build.gradle.tasks
 
 import com.android.annotations.NonNull
+import com.android.annotations.Nullable
 import com.android.build.FilterData
 import com.android.build.FilterDataImpl
 import com.android.build.OutputFile
@@ -44,6 +45,12 @@ class SplitZipAlign extends DefaultTask {
     @Input
     String outputBaseName;
 
+    @Input
+    Set<String> densityFilters;
+
+    @Input
+    Set<String> abiFilters;
+
     @OutputDirectory
     File outputDirectory;
 
@@ -55,46 +62,47 @@ class SplitZipAlign extends DefaultTask {
     @NonNull
     public synchronized  ImmutableList<ApkOutputFile> getOutputSplitFiles() {
 
-        Pattern unalignedPattern = Pattern.compile(
-                "${project.archivesBaseName}-${outputBaseName}-(.*)-unaligned.apk")
-
         if (mOutputFiles == null) {
-
-            Pattern splitPattern = Pattern.compile(
-                    "${project.archivesBaseName}_${outputBaseName}_(.*).apk")
-
             ImmutableList.Builder<ApkOutputFile> builder = ImmutableList.builder();
-            for (File file : outputDirectory.listFiles()) {
-                Matcher unaligned = unalignedPattern.matcher(file.getName())
-                Matcher split = splitPattern.matcher(file.getName())
-                if (unaligned.matches() || split.matches()) {
-                    List<FilterData> filters = ImmutableList.of(
-                            FilterData.Builder.build(OutputFile.DENSITY,
-                                    split.matches() ? split.group(1) : unaligned.group(1)))
-                    builder.add(new ApkOutputFile(
-                            OutputFile.OutputType.SPLIT,
-                            filters,
-                            Callables.returning(file)));
-                }
-            }
+            processFilters(densityFilters, OutputFile.FilterType.DENSITY, builder);
+            processFilters(abiFilters, OutputFile.FilterType.ABI, builder);
             mOutputFiles = builder.build();
         }
         return mOutputFiles;
+    }
+
+
+    private void processFilters(Set<String> filters, OutputFile.FilterType filterType,
+            ImmutableList.Builder<ApkOutputFile> builder) {
+        if (filters != null) {
+            for (String filter : filters) {
+                String fileName = "${project.archivesBaseName}-${outputBaseName}_${filter}.apk"
+                File outputFile = new File(outputDirectory, fileName);
+                if (outputFile.exists()) {
+                    List<FilterData> filtersData = ImmutableList.of(
+                            FilterData.Builder.build(filterType.name(), filter))
+                    builder.add(new ApkOutputFile(
+                            OutputFile.OutputType.SPLIT,
+                            filtersData,
+                            Callables.returning(outputFile)));
+                }
+            }
+        }
     }
 
     @TaskAction
     void splitZipAlign() {
 
         Pattern unalignedPattern = Pattern.compile(
-                "${project.archivesBaseName}-${outputBaseName}-(.*)-unaligned.apk")
+                "${project.archivesBaseName}-${outputBaseName}_(.*)-unaligned.apk")
         Pattern unsignedPattern = Pattern.compile(
-                "${project.archivesBaseName}-${outputBaseName}-(.*)-unsigned.apk")
+                "${project.archivesBaseName}-${outputBaseName}_(.*)-unsigned.apk")
 
         for (File file : inputDirectory.listFiles()) {
             Matcher unaligned = unalignedPattern.matcher(file.getName())
             if (unaligned.matches()) {
                 File out = new File(getOutputDirectory(),
-                        "${project.archivesBaseName}-${outputBaseName}-${unaligned.group(1)}.apk")
+                        "${project.archivesBaseName}-${outputBaseName}_${unaligned.group(1)}.apk")
                 project.exec {
                     executable = getZipAlignExe()
                     args '-f', '4'
@@ -105,7 +113,7 @@ class SplitZipAlign extends DefaultTask {
                 Matcher unsigned = unsignedPattern.matcher(file.getName())
                 if (unsigned.matches()) {
                     File out = new File(getOutputDirectory(),
-                            "${project.archivesBaseName}-${outputBaseName}-${unsigned.group(1)}.apk")
+                            "${project.archivesBaseName}-${outputBaseName}_${unsigned.group(1)}.apk")
                     project.exec {
                         executable = getZipAlignExe()
                         args '-f', '4'
