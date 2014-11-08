@@ -52,6 +52,7 @@ import com.android.ide.common.xml.XmlPrettyPrinter;
 import com.android.resources.FolderTypeRelationship;
 import com.android.resources.ResourceFolderType;
 import com.android.resources.ResourceType;
+import com.android.tools.lint.checks.StringFormatDetector;
 import com.android.tools.lint.client.api.DefaultConfiguration;
 import com.android.tools.lint.detector.api.LintUtils;
 import com.android.utils.XmlUtils;
@@ -92,6 +93,7 @@ import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 import java.util.jar.JarOutputStream;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import java.util.zip.ZipEntry;
@@ -798,16 +800,21 @@ public class ResourceUsageAnalyzer {
                 }
             }
 
+            // Look for normal getIdentifier resource URLs
             int n = string.length();
             boolean justName = true;
+            boolean formatting = false;
             boolean haveSlash = false;
             for (int i = 0; i < n; i++) {
                 char c = string.charAt(i);
                 if (c == '/') {
                     haveSlash = true;
                     justName = false;
-                } else if (c == '.' || c == ':') {
+                } else if (c == '.' || c == ':' || c == '%') {
                     justName = false;
+                    if (c == '%') {
+                        formatting = true;
+                    }
                 } else if (!Character.isJavaIdentifierPart(c)) {
                     // This shouldn't happen; we've filtered out these strings in
                     // the {@link #referencedString} method
@@ -820,7 +827,45 @@ public class ResourceUsageAnalyzer {
             if (justName) {
                 // Check name (below)
                 name = string;
+
+                // Check for a simple prefix match, e.g. as in
+                // getResources().getIdentifier("ic_video_codec_" + codecName, "drawable", ...)
+                for (Map<String, Resource> map : mTypeToName.values()) {
+                    for (Resource resource : map.values()) {
+                        if (resource.name.startsWith(name)) {
+                            if (mDebug) {
+                                System.out.println("Marking " + resource + " used because its "
+                                        + "prefix matches string pool constant " + string);
+                            }
+                            markReachable(resource);
+                        }
+                    }
+                }
             } else if (!haveSlash) {
+                if (formatting) {
+                    // Possibly a formatting string, e.g.
+                    //   String name = String.format("my_prefix_%1d", index);
+                    //   int res = getContext().getResources().getIdentifier(name, "drawable", ...)
+
+                    try {
+                        Pattern pattern = Pattern.compile(convertFormatStringToRegexp(string));
+                        for (Map<String, Resource> map : mTypeToName.values()) {
+                            for (Resource resource : map.values()) {
+                                if (pattern.matcher(resource.name).matches()) {
+                                    if (mDebug) {
+                                        System.out.println("Marking " + resource + " used because "
+                                                + "it format-string matches string pool constant "
+                                                + string);
+                                    }
+                                    markReachable(resource);
+                                }
+                            }
+                        }
+                    } catch (PatternSyntaxException ignored) {
+                        // Might not have been a formatting string after all!
+                    }
+                }
+
                 // If we have more than just a symbol name, we expect to also see a slash
                 //noinspection UnnecessaryContinue
                 continue;
@@ -877,6 +922,27 @@ public class ResourceUsageAnalyzer {
                 }
             }
         }
+    }
+
+    @VisibleForTesting
+    static String convertFormatStringToRegexp(String formatString) {
+        StringBuilder regexp = new StringBuilder();
+        int from = 0;
+        Matcher matcher = StringFormatDetector.FORMAT.matcher(formatString);
+        while (matcher.find(from)) {
+            int start = matcher.start();
+            int end = matcher.end();
+            if (start > from) {
+                regexp.append(Pattern.quote(formatString.substring(from, start)));
+            }
+            regexp.append(".*");
+            from = end;
+        }
+        if (from < formatString.length()) {
+            regexp.append(Pattern.quote(formatString.substring(from, formatString.length())));
+        }
+
+        return regexp.toString();
     }
 
     private void recordResources(File resDir)
@@ -1847,6 +1913,7 @@ public class ResourceUsageAnalyzer {
     private void referencedString(@NonNull String string) {
         // See if the string is at all eligible; ignore strings that aren't
         // identifiers (has java identifier chars and nothing but .:/), or are empty or too long
+        // We also allow "%", used for formatting strings.
         if (string.isEmpty() || string.length() > 80) {
             return;
         }
@@ -1854,7 +1921,7 @@ public class ResourceUsageAnalyzer {
         for (int i = 0, n = string.length(); i < n; i++) {
             char c = string.charAt(i);
             boolean identifierChar = Character.isJavaIdentifierPart(c);
-            if (!identifierChar && c != '.' && c != ':' && c != '/') {
+            if (!identifierChar && c != '.' && c != ':' && c != '/' && c != '%') {
                 // .:/ are for the fully qualified resource names, or for resource URLs or
                 // relative file names
                 return;

@@ -28,6 +28,24 @@ public class RootActivity extends Activity {
         for (int id : layout_ids) {
             System.out.println(id);
         }
+
+        dynamicResourceNames(1);
+    }
+
+    public void dynamicResourceNames(int version) {
+        // Normal string concatenation:
+        String versionNumber = String.valueOf(version);
+        int res = getResources().getIdentifier("prefix_used_" + version, "layout",
+            getPackageName());
+        System.out.println(res);
+
+       String name = String.format("prefix_used_%1d", version + 1);
+       res = getResources().getIdentifier(name, "layout", getPackageName());
+        System.out.println(res);
+
+        name = String.format("prefix_%1$s_suffix", version + 2);
+        res = getResources().getIdentifier(name, "layout", getPackageName());
+        System.out.println(res);
     }
 
     public void unusedMethod() {
