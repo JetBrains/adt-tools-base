@@ -492,8 +492,8 @@ public abstract class BasePlugin {
         // All projects need to be evaluated to make this check.
         project.gradle.projectsEvaluated {
             // Skip "internal" configurations that we create.
-            project.configurations.matching{ !it.name.startsWith('_') }.all { configuration ->
-                configuration.dependencies.matching{it in ProjectDependency}.all { dependency ->
+            project.configurations.matching({!it.name.startsWith('_')}).all { configuration ->
+                configuration.dependencies.withType(ProjectDependency) { dependency ->
                     Project dp = dependency.dependencyProject
                     if (dp.plugins.findPlugin(AppPlugin)) {
                         throw new GradleException(
