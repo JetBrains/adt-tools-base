@@ -50,7 +50,6 @@ import org.gradle.internal.reflect.Instantiator
 import org.gradle.internal.service.ServiceRegistry
 import org.gradle.language.base.FunctionalSourceSet
 import org.gradle.language.base.LanguageSourceSet
-import org.gradle.language.base.ProjectSourceSet
 import org.gradle.language.base.internal.LanguageRegistration
 import org.gradle.language.base.internal.LanguageRegistry
 import org.gradle.language.base.internal.SourceTransformTaskConfig
@@ -104,21 +103,6 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
 
         project.plugins.apply(NdkComponentModelPlugin)
 
-        // Setup Android's FunctionalSourceSet.
-        project.getExtensions().getByType(LanguageRegistry.class).add(new AndroidSource());
-        project.sources.create("main")
-        project.sources.all {
-                resources(AndroidLanguageSourceSet)
-                java(AndroidLanguageSourceSet)
-                manifest(AndroidLanguageSourceSet)
-                res(AndroidLanguageSourceSet)
-                assets(AndroidLanguageSourceSet)
-                aidl(AndroidLanguageSourceSet)
-                renderscript(AndroidLanguageSourceSet)
-                jni(AndroidLanguageSourceSet)
-                jniLibs(AndroidLanguageSourceSet)
-        }
-
         project.modelRegistry.create(
                 ModelCreators.of(ModelReference.of("androidBasePlugin", BasePlugin.class), this)
                         .simpleDescriptor("Android BaseComponentModelPlugin.")
@@ -127,6 +111,12 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
 
     @RuleSource
     static class Rules {
+
+        @Mutate
+        void registerLanguage(LanguageRegistry languages) {
+            languages.add(new AndroidSource())
+        }
+
         @Model("android")
         BaseExtension androidapp(
                 ServiceRegistry serviceRegistry,
@@ -171,7 +161,7 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
         }
 
         @Mutate
-        void closeProjectSourceSet(ProjectSourceSet sources) {
+        void closeProjectSourceSet(AndroidComponentModelSourceSet sources) {
         }
 
         @Mutate
@@ -181,7 +171,7 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
                 NamedDomainObjectContainer<DefaultBuildType> buildTypeContainer,
                 NamedDomainObjectContainer<GroupableProductFlavor> productFlavorContainer,
                 NamedDomainObjectContainer<SigningConfig> signingConfigContainer,
-                ProjectSourceSet sources,
+                AndroidComponentModelSourceSet sources,
                 VariantFactory variantFactory,
                 BasePlugin plugin) {
             VariantManager variantManager = new VariantManager(
@@ -321,7 +311,7 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
 
         private static void applyProjectSourceSet(
                 AndroidComponentSpec androidSpec,
-                ProjectSourceSet sources,
+                AndroidComponentModelSourceSet sources,
                 BasePlugin plugin) {
             DefaultAndroidComponentSpec spec = (DefaultAndroidComponentSpec)androidSpec
             VariantManager variantManager = spec.variantManager
@@ -423,7 +413,7 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
         }
 
         public boolean applyToBinary(BinarySpec binary) {
-            return binary instanceof AndroidBinary
+            return false
         }
     }
 }

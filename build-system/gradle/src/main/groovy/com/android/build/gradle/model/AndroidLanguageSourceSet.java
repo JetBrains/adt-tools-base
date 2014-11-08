@@ -29,7 +29,7 @@ import javax.inject.Inject;
  */
 public class AndroidLanguageSourceSet extends AbstractLanguageSourceSet implements LanguageSourceSet {
     @Inject
-    public AndroidLanguageSourceSet(String name, FunctionalSourceSet parent, FileResolver fileResolver) {
+    public AndroidLanguageSourceSet(String name, String parent, FileResolver fileResolver) {
         super(name, parent, "Android source", new DefaultSourceDirectorySet("source", fileResolver));
     }
 }
