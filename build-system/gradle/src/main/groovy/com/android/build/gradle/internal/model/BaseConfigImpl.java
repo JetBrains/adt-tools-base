@@ -43,12 +43,18 @@ abstract class BaseConfigImpl implements BaseConfig, Serializable {
     private final Map<String, ClassField> mResValues;
     @Nullable
     private Boolean mMultiDexEnabled;
+    @Nullable
+    private File mMultiDexKeepFile;
+    @Nullable
+    private File mMultiDexKeepProguard;
 
     protected BaseConfigImpl(@NonNull BaseConfig baseConfig) {
         mManifestPlaceholders = ImmutableMap.copyOf(baseConfig.getManifestPlaceholders());
         mBuildConfigFields = ImmutableMap.copyOf(baseConfig.getBuildConfigFields());
         mResValues = ImmutableMap.copyOf(baseConfig.getResValues());
         mMultiDexEnabled = baseConfig.getMultiDexEnabled();
+        mMultiDexKeepFile = baseConfig.getMultiDexKeepFile();
+        mMultiDexKeepProguard = baseConfig.getMultiDexKeepProguard();
     }
 
     @NonNull
@@ -85,6 +91,18 @@ abstract class BaseConfigImpl implements BaseConfig, Serializable {
     @Nullable
     public Boolean getMultiDexEnabled() {
         return mMultiDexEnabled;
+    }
+
+    @Nullable
+    @Override
+    public File getMultiDexKeepFile() {
+        return mMultiDexKeepFile;
+    }
+
+    @Nullable
+    @Override
+    public File getMultiDexKeepProguard() {
+        return mMultiDexKeepProguard;
     }
 
     @Override
