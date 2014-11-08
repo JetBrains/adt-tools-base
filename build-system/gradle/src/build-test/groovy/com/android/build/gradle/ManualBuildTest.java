@@ -39,6 +39,7 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import com.google.common.io.ByteSource;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;
 
@@ -932,6 +933,20 @@ public class ManualBuildTest extends BuildTest {
                 "clean", "assembleDebug", "assembleTest");
     }
 
+    public void testLegacyMultiDex() throws Exception {
+        File project = new File(regularDir, "multiDex");
+
+        runTasksOn(project, BasePlugin.GRADLE_TEST_VERSION, "assembleIcsDebug");
+
+        // manually inspcet the apk to ensure that the classes.dex that was created is the same
+        // one in the apk. This tests that the packaging didn't rename the multiple dex files
+        // around when we packaged them.
+        File classesDex = new File(project, "build/" + FD_INTERMEDIATES + "/dex/ics/debug/classes.dex");
+        File apk = new File(project, "build/" + FD_OUTPUTS + "/apk/multiDex-ics-debug.apk");
+
+        compareApkEntry(apk, "classes.dex", classesDex);
+    }
+
     private void checkMaxSdkVersion(File testApk, String version)
             throws InterruptedException, LoggedErrorException, IOException {
 
@@ -1038,5 +1053,46 @@ public class ManualBuildTest extends BuildTest {
 
         assertTrue("Did not find the following paths in the " + jar.getPath() + " file: " +
             notFound, notFound.isEmpty());
+    }
+
+    private static void compareApkEntry(
+            @NonNull File jar,
+            @NonNull String pathInZip,
+            @NonNull File compareTo) throws IOException {
+        assertTrue("File '" + jar.getPath() + "' does not exist.", jar.isFile());
+        JarInputStream zis = null;
+        FileInputStream fis;
+
+        fis = new FileInputStream(jar);
+        try {
+            zis = new JarInputStream(fis);
+
+            ZipEntry entry = zis.getNextEntry();
+            while (entry != null) {
+                String name = entry.getName();
+
+                if (pathInZip.equals(name)) {
+                    if (!entry.isDirectory()) {
+                        byte[] bytes = ByteStreams.toByteArray(zis);
+                        if (bytes != null) {
+                            ByteSource actual = ByteSource.wrap(bytes);
+                            ByteSource expected = Files.asByteSource(compareTo);
+
+                            assertTrue(expected.contentEquals(actual));
+
+                            return;
+                        }
+                    }
+                }
+                entry = zis.getNextEntry();
+            }
+        } finally {
+            fis.close();
+            if (zis != null) {
+                zis.close();
+            }
+        }
+
+        fail("Did not find the following paths in the " + jar.getPath() + " file: " + pathInZip);
     }
 }
