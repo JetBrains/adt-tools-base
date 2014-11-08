@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <globals>
-    <global id="appCompat" type="boolean" value="${(minApiLevel lt 14)?string}" />
-    <global id="Support" value="${(minApiLevel lt 14)?string('Support','')}" />
+    <global id="appCompat" type="boolean" value="${(hasDependency('com.android.support:appcompat-v7'))?string}" />
+    <global id="Support" value="${(hasDependency('com.android.support:appcompat-v7'))?string('Support','')}" />
     <global id="projectOut" value="." />
     <global id="manifestOut" value="${manifestDir}" />
     <global id="srcOut" value="${srcDir}/${slashedPackageName(packageName)}" />
