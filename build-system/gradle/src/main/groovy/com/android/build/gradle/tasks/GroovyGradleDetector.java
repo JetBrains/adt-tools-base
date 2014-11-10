@@ -178,6 +178,17 @@ public class GroovyGradleDetector extends GradleDetector {
 
     @NonNull
     private static Pair<Integer, Integer> getOffsets(ASTNode node, Context context) {
+        if (node.getLastLineNumber() == -1 && node instanceof TupleExpression) {
+            // Workaround: TupleExpressions yield bogus offsets, so use its
+            // children instead
+            TupleExpression exp = (TupleExpression) node;
+            List<Expression> expressions = exp.getExpressions();
+            if (!expressions.isEmpty()) {
+                return Pair.of(
+                        getOffsets(expressions.get(0), context).getFirst(),
+                        getOffsets(expressions.get(expressions.size() - 1), context).getSecond());
+            }
+        }
         String source = context.getContents();
         assert source != null; // because we successfully parsed
         int start = 0;
