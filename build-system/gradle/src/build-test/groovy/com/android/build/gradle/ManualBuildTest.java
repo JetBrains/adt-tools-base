@@ -45,6 +45,7 @@ import com.google.common.io.Files;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Collections;
@@ -755,6 +756,24 @@ public class ManualBuildTest extends BuildTest {
         expected.put("paidDebug-x86",              VersionData.of(123));
 
         checkVersion(project, "app/", expected, "app", null /* suffix */);
+    }
+
+    public void testManifestMergerReports() throws Exception {
+        File project = new File(regularDir, "flavors");
+
+        runTasksOn(
+                project,
+                BasePlugin.GRADLE_TEST_VERSION,
+                "clean", "assemble");
+
+        File file = new File(project, "build/" + FD_OUTPUTS + "/apk/");
+        File[] reports = file.listFiles(new FileFilter() {
+            @Override
+            public boolean accept(File file) {
+                return file.getName().startsWith("manifest-merger");
+            }
+        });
+        assertEquals(8, reports.length);
     }
 
     private static final class VersionData {

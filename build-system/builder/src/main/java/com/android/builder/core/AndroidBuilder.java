@@ -438,7 +438,8 @@ public class AndroidBuilder {
             @Nullable Integer maxSdkVersion,
             @NonNull String outManifestLocation,
             ManifestMerger2.MergeType mergeType,
-            Map<String, String> placeHolders) {
+            Map<String, String> placeHolders,
+            @Nullable File reportFile) {
 
         try {
             Invoker manifestMergerInvoker =
@@ -446,7 +447,8 @@ public class AndroidBuilder {
                     .setPlaceHolderValues(placeHolders)
                     .addFlavorAndBuildTypeManifests(
                             manifestOverlays.toArray(new File[manifestOverlays.size()]))
-                    .addLibraryManifests(collectLibraries(libraries));
+                    .addLibraryManifests(collectLibraries(libraries))
+                    .setMergeReportFile(reportFile);
 
             if (mergeType == ManifestMerger2.MergeType.APPLICATION) {
                 manifestMergerInvoker.withFeatures(Invoker.Feature.REMOVE_TOOLS_DECLARATIONS);
