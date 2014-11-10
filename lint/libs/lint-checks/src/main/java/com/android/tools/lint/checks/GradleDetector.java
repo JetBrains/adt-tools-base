@@ -42,6 +42,7 @@ import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.Speed;
 import com.android.tools.lint.detector.api.TextFormat;
+import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
 
 import java.io.BufferedReader;
@@ -407,6 +408,9 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
                 }
             } else {
                 String dependency = getStringLiteralValue(value);
+                if (dependency == null) {
+                    dependency = getNamedDependency(value);
+                }
                 // If the dependency is a GString (i.e. it uses Groovy variable substitution,
                 // with a $variable_name syntax) then don't try to parse it.
                 if (dependency != null && !dependency.contains("$")) {
@@ -437,6 +441,57 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
                 report(context, valueCookie, PATH, message);
             }
         }
+    }
+
+    // Convert a long-hand dependency, like
+    //    group: 'com.android.support', name: 'support-v4', version: '21.0.+'
+    // into an equivalent short-hand dependency, like
+    //   com.android.support:support-v4:21.0.+
+    @VisibleForTesting
+    @Nullable
+    static String getNamedDependency(@NonNull String expression) {
+        //if (value.startsWith("group: 'com.android.support', name: 'support-v4', version: '21.0.+'"))
+        if (expression.indexOf(',') != -1 && expression.contains("version:")) {
+            String artifact = null;
+            String group = null;
+            String version = null;
+            Splitter splitter = Splitter.on(',').omitEmptyStrings().trimResults();
+            for (String property : splitter.split(expression)) {
+                int colon = property.indexOf(':');
+                if (colon == -1) {
+                    return null;
+                }
+                char quote = '\'';
+                int valueStart = property.indexOf(quote, colon + 1);
+                if (valueStart == -1) {
+                    quote = '"';
+                    valueStart = property.indexOf(quote, colon + 1);
+                }
+                if (valueStart == -1) {
+                    // For example, "transitive: false"
+                    continue;
+                }
+                valueStart++;
+                int valueEnd = property.indexOf(quote, valueStart);
+                if (valueEnd == -1) {
+                    return null;
+                }
+                String value = property.substring(valueStart, valueEnd);
+                if (property.startsWith("group:")) {
+                    group = value;
+                } else if (property.startsWith("name:")) {
+                    artifact = value;
+                } else if (property.startsWith("version:")) {
+                    version = value;
+                }
+            }
+
+            if (artifact != null && group != null && version != null) {
+                return group + ':' + artifact + ':' + version;
+            }
+        }
+
+        return null;
     }
 
     private void checkIntegerAsString(Context context, String value, Object valueCookie) {
