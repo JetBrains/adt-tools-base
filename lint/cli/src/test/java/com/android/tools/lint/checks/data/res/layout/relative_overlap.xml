@@ -37,6 +37,14 @@
             android:layout_height="wrap_content"
             android:text="@string/label2_text"
             android:ellipsize="end" />
+        <TextView
+            android:id="@id/circular3"
+            android:layout_alignParentBottom="true"
+            android:layout_toRightOf="@id/circular1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/label2_text"
+            android:ellipsize="end" />
     </RelativeLayout>
     <RelativeLayout
         android:layout_width="match_parent"
