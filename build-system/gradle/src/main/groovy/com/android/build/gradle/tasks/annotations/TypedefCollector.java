@@ -25,7 +25,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 import org.eclipse.jdt.internal.compiler.ASTVisitor;
-import org.eclipse.jdt.internal.compiler.ClassFile;
 import org.eclipse.jdt.internal.compiler.ast.Annotation;
 import org.eclipse.jdt.internal.compiler.ast.CompilationUnitDeclaration;
 import org.eclipse.jdt.internal.compiler.ast.Javadoc;
@@ -109,7 +108,7 @@ public class TypedefCollector extends ASTVisitor {
                                 javadoc.print(0, stringBuffer);
                                 String documentation = stringBuffer.toString();
                                 if (!documentation.contains("@hide")) {
-                                    Extractor.display(getFileName()
+                                    Extractor.warning(getFileName()
                                             + ": The typedef annotation " + fqn
                                             + " should specify @hide in a doc comment");
                                 }
@@ -117,9 +116,9 @@ public class TypedefCollector extends ASTVisitor {
                         }
                         if (mRequireSourceRetention
                                 && !Extractor.hasSourceRetention(annotations)) {
-                            Extractor.display(getFileName()
+                            Extractor.warning(getFileName()
                                     + ": The typedef annotation " + fqn
-                                    + " must have @Retention(RetentionPolicy.SOURCE)");
+                                    + " should have @Retention(RetentionPolicy.SOURCE)");
                         }
                         if (declaration.binding != null
                                 && (declaration.modifiers & ClassFileConstants.AccPublic) == 0) {

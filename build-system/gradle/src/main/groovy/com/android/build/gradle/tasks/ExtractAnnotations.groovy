@@ -32,6 +32,7 @@ import org.eclipse.jdt.internal.compiler.impl.CompilerOptions
 import org.eclipse.jdt.internal.compiler.util.Util
 import org.gradle.api.file.EmptyFileVisitor
 import org.gradle.api.file.FileVisitDetails
+import org.gradle.api.logging.LogLevel
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.Optional
@@ -127,7 +128,8 @@ class ExtractAnnotations extends AbstractCompile {
             }
         }
 
-        Extractor extractor = new Extractor(database, classDir);
+        Extractor extractor = new Extractor(database, classDir,
+                project.logger.isEnabled(LogLevel.INFO));
         extractor.extractFromProjectSource(parsedUnits)
         if (mergeJars != null) {
             for (File jar : mergeJars) {
