@@ -33,7 +33,6 @@ import static com.android.tools.lint.detector.api.LintUtils.assertionsEnabled;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.tools.lint.detector.api.LintUtils;
 import com.android.utils.XmlUtils;
 import com.google.common.base.Charsets;
 import com.google.common.base.Splitter;
@@ -77,7 +76,6 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import java.io.File;
@@ -85,7 +83,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -170,7 +167,9 @@ public class Extractor {
     private Map<String, Map<String, List<Item>>> itemMap = Maps.newHashMap();
 
     @Nullable
-    private ApiDatabase apiFilter;
+    private final ApiDatabase apiFilter;
+
+    private final boolean displayInfo;
 
     private Map<String,Integer> stats = Maps.newHashMap();
     private int filteredCount;
@@ -181,10 +180,11 @@ public class Extractor {
     private Map<String,Annotation> typedefs;
     private List<File> classFiles;
 
-    public Extractor(@Nullable ApiDatabase apiFilter, @Nullable File classDir) {
+    public Extractor(@Nullable ApiDatabase apiFilter, @Nullable File classDir, boolean displayInfo) {
         this.apiFilter = apiFilter;
         this.listIgnored = apiFilter != null;
         this.classDir = classDir;
+        this.displayInfo = displayInfo;
     }
 
     public void extractFromProjectSource(Collection<CompilationUnitDeclaration> units) {
@@ -214,7 +214,7 @@ public class Extractor {
                     }
                 }
             }
-            display("Deleted " + count + " typedef annotation classes");
+            info("Deleted " + count + " typedef annotation classes");
         }
     }
 
@@ -226,11 +226,15 @@ public class Extractor {
             }
         } else if (writeOutputFile(output)) {
             writeStats();
-            display("Annotations written to " + output);
+            info("Annotations written to " + output);
         }
     }
 
     public void writeStats() {
+        if (!displayInfo) {
+            return;
+        }
+
         if (!stats.isEmpty()) {
             List<String> annotations = Lists.newArrayList(stats.keySet());
             Collections.sort(annotations, new Comparator<String>() {
@@ -269,21 +273,23 @@ public class Extractor {
                 sb.append(Integer.toString(stats.get(fqn)));
             }
             if (sb.length() > 0) {
-                display(sb.toString());
+                info(sb.toString());
             }
         }
 
         if (filteredCount > 0) {
-            display(filteredCount + " of these were filtered out (not in API database file)");
+            info(filteredCount + " of these were filtered out (not in API database file)");
         }
         if (mergedCount > 0) {
-            display(mergedCount + " additional annotations were merged in");
+            info(mergedCount + " additional annotations were merged in");
         }
     }
 
     @SuppressWarnings("UseOfSystemOutOrSystemErr")
-    static void display(final String message) {
-        System.out.println(message);
+    void info(final String message) {
+        if (displayInfo) {
+            System.out.println(message);
+        }
     }
 
     @SuppressWarnings("UseOfSystemOutOrSystemErr")
@@ -291,8 +297,9 @@ public class Extractor {
         System.err.println("Error: " + message);
     }
 
+    @SuppressWarnings("UseOfSystemOutOrSystemErr")
     static void warning(String message) {
-        display("Warning: " + message);
+        System.out.println("Warning: " + message);
     }
 
     private void analyze(CompilationUnitDeclaration unit) {
@@ -505,7 +512,7 @@ public class Extractor {
                                             new String(fb.declaringClass.readableName()),
                                             new String(fb.name))) {
                                 if (isListIgnored()) {
-                                    display("Filtering out typedef constant "
+                                    info("Filtering out typedef constant "
                                             + new String(fb.declaringClass.readableName()) + "."
                                             + new String(fb.name) + "");
                                 }
@@ -755,7 +762,7 @@ public class Extractor {
         // Not part of the API?
         if (apiFilter != null && item.isFiltered(apiFilter)) {
             if (isListIgnored()) {
-                display("Skipping API because it is not part of the API file: " + item);
+                info("Skipping API because it is not part of the API file: " + item);
             }
 
             filteredCount++;
@@ -939,7 +946,7 @@ public class Extractor {
         if (apiFilter != null &&
                 !apiFilter.hasField(containingClass, fieldName)) {
             if (isListIgnored()) {
-                display("Skipping imported element because it is not part of the API file: "
+                info("Skipping imported element because it is not part of the API file: "
                         + containingClass + "#" + fieldName);
             }
             filteredCount++;
@@ -962,7 +969,7 @@ public class Extractor {
         if (apiFilter != null &&
                 !apiFilter.hasMethod(containingClass, methodName, parameters)) {
             if (isListIgnored()) {
-                display("Skipping imported element because it is not part of the API file: "
+                info("Skipping imported element because it is not part of the API file: "
                         + containingClass + "#" + methodName + "(" + parameters + ")");
             }
             filteredCount++;
@@ -1027,7 +1034,7 @@ public class Extractor {
             if (!ignoredAnnotations.contains(annotation.name)) {
                 ignoredAnnotations.add(annotation.name);
                 if (isListIgnored()) {
-                    display("(Ignoring merge annotation " + annotation.name + ")");
+                    info("(Ignoring merge annotation " + annotation.name + ")");
                 }
             }
         }
@@ -1203,7 +1210,7 @@ public class Extractor {
                 }
                 sb.append(fqn);
             } else if (isListIgnored()) {
-                display("Skipping constant from typedef because it is not part of the SDK: " + fqn);
+                info("Skipping constant from typedef because it is not part of the SDK: " + fqn);
             }
         }
         sb.append('}');
