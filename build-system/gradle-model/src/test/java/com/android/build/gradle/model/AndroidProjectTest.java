@@ -1456,6 +1456,28 @@ public class AndroidProjectTest extends TestCase {
         }
     }
 
+    public void testCustomSigning() throws Exception {
+        // Load the custom model for the project
+        ProjectData projectData = getModelForProject(FOLDER_TEST_REGULAR, "basic");
+
+        AndroidProject model = projectData.model;
+
+        Collection<Variant> variants = model.getVariants();
+
+        for (Variant variant : variants) {
+            // Release variant doesn't specify the signing config, so it should not be considered
+            // signed.
+            if (variant.getName().equals("release")) {
+                assertFalse(variant.getMainArtifact().isSigned());
+            }
+
+            // customSigning is identical to release, but overrides the signing check.
+            if (variant.getName().equals("customSigning")) {
+                assertTrue(variant.getMainArtifact().isSigned());
+            }
+        }
+    }
+
     /**
      * Returns the SDK folder as built from the Android source tree.
      * @return the SDK
