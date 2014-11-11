@@ -2831,6 +2831,14 @@ public abstract class BasePlugin {
 
         // --- Proguard Config ---
 
+        if (variantConfig.isTestCoverageEnabled()) {
+            // when collecting coverage, don't remove the JaCoCo runtime
+            proguardTask.keep("class com.vladium.** {*;}")
+            proguardTask.keep("class org.jacoco.** {*;}")
+            proguardTask.keep("interface org.jacoco.** {*;}")
+            proguardTask.dontwarn("org.jacoco.**")
+        }
+
         if (testedVariantData != null) {
 
             // don't remove any code in tested app
