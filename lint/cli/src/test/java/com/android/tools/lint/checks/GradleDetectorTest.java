@@ -29,6 +29,7 @@ import static com.android.tools.lint.checks.GradleDetector.PATH;
 import static com.android.tools.lint.checks.GradleDetector.PLUS;
 import static com.android.tools.lint.checks.GradleDetector.REMOTE_VERSION;
 import static com.android.tools.lint.checks.GradleDetector.STRING_INTEGER;
+import static com.android.tools.lint.checks.GradleDetector.getNamedDependency;
 import static com.android.tools.lint.checks.GradleDetector.getNewValue;
 import static com.android.tools.lint.checks.GradleDetector.getOldValue;
 import static com.android.tools.lint.detector.api.TextFormat.TEXT;
@@ -206,6 +207,16 @@ public class GradleDetectorTest extends AbstractCheckTest {
                 lintProject("gradle/Dependencies.gradle=>build.gradle"));
     }
 
+    public void testLongHandDependencies() throws Exception {
+        mEnabled = Collections.singleton(DEPENDENCY);
+        assertEquals(""
+                + "build.gradle:9: Warning: A newer version of com.android.support:support-v4 than 19.0 is available: 21.0.0 [GradleDependency]\n"
+                + "    compile group: 'com.android.support', name: 'support-v4', version: '19.0'\n"
+                + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "0 errors, 1 warnings\n",
+
+                lintProject("gradle/DependenciesProps.gradle=>build.gradle"));
+    }
 
     public void testDependenciesMinSdkVersion() throws Exception {
         mEnabled = Collections.singleton(DEPENDENCY);
@@ -281,7 +292,10 @@ public class GradleDetectorTest extends AbstractCheckTest {
                 + "build.gradle:9: Warning: Avoid using + in version numbers; can lead to unpredictable and unrepeatable builds (com.android.support:appcompat-v7:+) [GradleDynamicVersion]\n"
                 + "    compile 'com.android.support:appcompat-v7:+'\n"
                 + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-                + "0 errors, 1 warnings\n",
+                + "build.gradle:10: Warning: Avoid using + in version numbers; can lead to unpredictable and unrepeatable builds (com.android.support:support-v4:21.0.+) [GradleDynamicVersion]\n"
+                + "    compile group: 'com.android.support', name: 'support-v4', version: '21.0.+'\n"
+                + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "0 errors, 2 warnings\n",
 
                 lintProject("gradle/Plus.gradle=>build.gradle"));
     }
@@ -437,6 +451,30 @@ public class GradleDetectorTest extends AbstractCheckTest {
                         GradleDetector.getNewValue(issue, message, TEXT));
             }
         }
+    }
+
+    public void testGetNamedDependency() {
+        assertEquals("com.android.support:support-v4:21.0.+", getNamedDependency(
+                "group: 'com.android.support', name: 'support-v4', version: '21.0.+'"
+        ));
+        assertEquals("com.android.support:support-v4:21.0.+", getNamedDependency(
+                "name:'support-v4', group: \"com.android.support\", version: '21.0.+'"
+        ));
+        assertEquals("junit:junit:4.+", getNamedDependency(
+                "group: 'junit', name: 'junit', version: '4.+'"
+        ));
+        assertEquals("com.android.support:support-v4:19.0.+", getNamedDependency(
+                "group: 'com.android.support', name: 'support-v4', version: '19.0.+'"
+        ));
+        assertEquals("com.google.guava:guava:11.0.1", getNamedDependency(
+                "group: 'com.google.guava', name: 'guava', version: '11.0.1', transitive: false"
+        ));
+        assertEquals("com.google.api-client:google-api-client:1.6.0-beta", getNamedDependency(
+                "group: 'com.google.api-client', name: 'google-api-client', version: '1.6.0-beta', transitive: false"
+        ));
+        assertEquals("org.robolectric:robolectric:2.3-SNAPSHOT", getNamedDependency(
+                "group: 'org.robolectric', name: 'robolectric', version: '2.3-SNAPSHOT'"
+        ));
     }
 
     // -------------------------------------------------------------------------------------------
@@ -608,6 +646,17 @@ public class GradleDetectorTest extends AbstractCheckTest {
 
         @NonNull
         private static Pair<Integer, Integer> getOffsets(ASTNode node, Context context) {
+            if (node.getLastLineNumber() == -1 && node instanceof TupleExpression) {
+                // Workaround: TupleExpressions yield bogus offsets, so use its
+                // children instead
+                TupleExpression exp = (TupleExpression) node;
+                List<Expression> expressions = exp.getExpressions();
+                if (!expressions.isEmpty()) {
+                    return Pair.of(
+                        getOffsets(expressions.get(0), context).getFirst(),
+                        getOffsets(expressions.get(expressions.size() - 1), context).getSecond());
+                }
+            }
             String source = context.getContents();
             assert source != null; // because we successfully parsed
             int start = 0;
