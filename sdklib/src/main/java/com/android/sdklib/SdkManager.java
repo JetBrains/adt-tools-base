@@ -78,6 +78,15 @@ public class SdkManager {
     }
 
     /**
+     * Creates an @{linkplain SdkManager} for an existing @{link LocalSdk}.
+     *
+     * @param localSdk the SDK to use with the SDK manager
+     */
+    private SdkManager(@NonNull LocalSdk localSdk) {
+        mLocalSdk = localSdk;
+    }
+
+    /**
      * Creates an {@link SdkManager} for a given sdk location.
      * @param osSdkPath the location of the SDK.
      * @param log the ILogger object receiving warning/error from the parsing.
@@ -97,6 +106,16 @@ public class SdkManager {
         }
 
         return null;
+    }
+
+    /**
+     * Creates an @{linkplain SdkManager} for an existing @{link LocalSdk}.
+     *
+     * @param localSdk the SDK to use with the SDK manager
+     */
+    @NonNull
+    public static SdkManager createManager(@NonNull LocalSdk localSdk) {
+        return new SdkManager(localSdk);
     }
 
     @NonNull
