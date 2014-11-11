@@ -15,6 +15,7 @@
  */
 package com.android.sdklib;
 
+import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.google.common.base.Strings;
 
@@ -82,6 +83,7 @@ public class SdkVersionInfo {
         }
     }
 
+    @Nullable
     public static String getCodeName(int api) {
         String s = getAndroidName(api);
         if (s != null) {
@@ -150,7 +152,7 @@ public class SdkVersionInfo {
      * @return the API level, or -1 if not recognized (unless recognizeUnknowns is true, in which
      * {@link #HIGHEST_KNOWN_API} plus one is returned
      */
-    public static int getApiByBuildCode(String buildCode, boolean recognizeUnknowns) {
+    public static int getApiByBuildCode(@NonNull String buildCode, boolean recognizeUnknowns) {
         for (int api = 1; api <= HIGHEST_KNOWN_API; api++) {
             String code = getBuildCode(api);
             if (code != null && code.equalsIgnoreCase(buildCode)) {
@@ -176,7 +178,7 @@ public class SdkVersionInfo {
      * @return the API level, or -1 if not recognized (unless recognizeUnknowns is true, in which
      * {@link #HIGHEST_KNOWN_API} plus one is returned
      */
-    public static int getApiByPreviewName(String previewName, boolean recognizeUnknowns) {
+    public static int getApiByPreviewName(@NonNull String previewName, boolean recognizeUnknowns) {
         // JellyBean => JELLY_BEAN
         String codeName = camelCaseToUnderlines(previewName).toUpperCase(Locale.US);
         return getApiByBuildCode(codeName, recognizeUnknowns);
@@ -188,7 +190,8 @@ public class SdkVersionInfo {
      * @param string the CamelCase version of the word
      * @return the underlined version of the word
      */
-    public static String camelCaseToUnderlines(String string) {
+    @NonNull
+    public static String camelCaseToUnderlines(@NonNull String string) {
         if (string.isEmpty()) {
             return string;
         }
@@ -216,7 +219,8 @@ public class SdkVersionInfo {
      * @param string the underlined word to convert
      * @return the CamelCase version of the word
      */
-    public static String underlinesToCamelCase(String string) {
+    @NonNull
+    public static String underlinesToCamelCase(@NonNull String string) {
         StringBuilder sb = new StringBuilder(string.length());
         int n = string.length();
 
