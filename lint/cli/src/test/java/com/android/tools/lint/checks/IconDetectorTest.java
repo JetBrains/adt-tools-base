@@ -16,15 +16,30 @@
 
 package com.android.tools.lint.checks;
 
+import static org.easymock.EasyMock.createNiceMock;
+import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.replay;
+
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+import com.android.builder.model.AndroidProject;
+import com.android.builder.model.ApiVersion;
+import com.android.builder.model.ProductFlavor;
+import com.android.builder.model.ProductFlavorContainer;
+import com.android.builder.model.Variant;
 import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.client.api.LintDriver;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.Project;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 
+import java.io.File;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @SuppressWarnings("javadoc")
@@ -83,7 +98,7 @@ public class IconDetectorTest extends AbstractCheckTest {
             "    res/drawable-mdpi/ic_launcher.png: <No location-specific message\n" +
             "res/drawable/ic_launcher.png: Warning: Found bitmap drawable res/drawable/ic_launcher.png in densityless folder [IconLocation]\n" +
             "res/drawable-hdpi: Warning: Missing the following drawables in drawable-hdpi: sample_icon.gif (found in drawable-mdpi) [IconDensities]\n" +
-            "res: Warning: Missing density variation folders in res: drawable-xhdpi, drawable-xxhdpi [IconMissingDensityFolder]\n" +
+            "res: Warning: Missing density variation folders in res: drawable-xhdpi, drawable-xxhdpi, drawable-xxxhdpi [IconMissingDensityFolder]\n" +
             "0 errors, 5 warnings\n" +
             "",
 
@@ -130,9 +145,8 @@ public class IconDetectorTest extends AbstractCheckTest {
             "    res/drawable-hdpi/appwidget_bg.9.png: <No location-specific message\n" +
             "res/drawable-hdpi/unrelated.png: Warning: The following unrelated icon files have identical contents: ic_launcher.png, unrelated.png [IconDuplicates]\n" +
             "    res/drawable-hdpi/ic_launcher.png: <No location-specific message\n" +
-            "res: Warning: Missing density variation folders in res: drawable-mdpi, drawable-xhdpi, drawable-xxhdpi [IconMissingDensityFolder]\n" +
-            "0 errors, 3 warnings\n" +
-            "",
+            "res: Warning: Missing density variation folders in res: drawable-mdpi, drawable-xhdpi, drawable-xxhdpi, drawable-xxxhdpi [IconMissingDensityFolder]\n" +
+            "0 errors, 3 warnings\n",
 
             lintProject(
                     "res/drawable-hdpi/unrelated.png",
@@ -150,7 +164,7 @@ public class IconDetectorTest extends AbstractCheckTest {
             "res/drawable-xlarge-nodpi-v11/frame.png: Warning: The frame.png icon has identical contents in the following configuration folders: drawable-mdpi, drawable-nodpi, drawable-xlarge-nodpi-v11 [IconDuplicatesConfig]\n" +
             "    res/drawable-nodpi/frame.png: <No location-specific message\n" +
             "    res/drawable-mdpi/frame.png: <No location-specific message\n" +
-            "res: Warning: Missing density variation folders in res: drawable-hdpi, drawable-xhdpi, drawable-xxhdpi [IconMissingDensityFolder]\n" +
+            "res: Warning: Missing density variation folders in res: drawable-hdpi, drawable-xhdpi, drawable-xxhdpi, drawable-xxxhdpi [IconMissingDensityFolder]\n" +
             "0 errors, 3 warnings\n" +
             "",
 
@@ -164,12 +178,14 @@ public class IconDetectorTest extends AbstractCheckTest {
         mEnabled = ALL;
         // Having additional icon names in the no-dpi folder should not cause any complaints
         assertEquals(
-            "res/drawable-xxhdpi/frame.png: Warning: The image frame.png varies significantly in its density-independent (dip) size across the various density versions: drawable-ldpi/frame.png: 629x387 dp (472x290 px), drawable-mdpi/frame.png: 472x290 dp (472x290 px), drawable-hdpi/frame.png: 315x193 dp (472x290 px), drawable-xhdpi/frame.png: 236x145 dp (472x290 px), drawable-xxhdpi/frame.png: 157x97 dp (472x290 px) [IconDipSize]\n" +
+            "res/drawable-xxxhdpi/frame.png: Warning: The image frame.png varies significantly in its density-independent (dip) size across the various density versions: drawable-ldpi/frame.png: 629x387 dp (472x290 px), drawable-mdpi/frame.png: 472x290 dp (472x290 px), drawable-hdpi/frame.png: 315x193 dp (472x290 px), drawable-xhdpi/frame.png: 236x145 dp (472x290 px), drawable-xxhdpi/frame.png: 157x97 dp (472x290 px), drawable-xxxhdpi/frame.png: 118x73 dp (472x290 px) [IconDipSize]\n" +
+            "    res/drawable-xxhdpi/frame.png: <No location-specific message\n" +
             "    res/drawable-xhdpi/frame.png: <No location-specific message\n" +
             "    res/drawable-hdpi/frame.png: <No location-specific message\n" +
             "    res/drawable-mdpi/frame.png: <No location-specific message\n" +
             "    res/drawable-ldpi/frame.png: <No location-specific message\n" +
-            "res/drawable-xxhdpi/frame.png: Warning: The following unrelated icon files have identical contents: frame.png, frame.png, frame.png, file1.png, file2.png, frame.png, frame.png [IconDuplicates]\n" +
+            "res/drawable-xxxhdpi/frame.png: Warning: The following unrelated icon files have identical contents: frame.png, frame.png, frame.png, file1.png, file2.png, frame.png, frame.png, frame.png [IconDuplicates]\n" +
+            "    res/drawable-xxhdpi/frame.png: <No location-specific message\n" +
             "    res/drawable-xhdpi/frame.png: <No location-specific message\n" +
             "    res/drawable-nodpi/file2.png: <No location-specific message\n" +
             "    res/drawable-nodpi/file1.png: <No location-specific message\n" +
@@ -185,6 +201,7 @@ public class IconDetectorTest extends AbstractCheckTest {
                     "res/drawable-mdpi/frame.png=>res/drawable-ldpi/frame.png",
                     "res/drawable-mdpi/frame.png=>res/drawable-xhdpi/frame.png",
                     "res/drawable-mdpi/frame.png=>res/drawable-xxhdpi/frame.png",
+                    "res/drawable-mdpi/frame.png=>res/drawable-xxxhdpi/frame.png",
                     "res/drawable-mdpi/frame.png=>res/drawable-nodpi/file1.png",
                     "res/drawable-mdpi/frame.png=>res/drawable-nodpi/file2.png"));
     }
@@ -196,7 +213,7 @@ public class IconDetectorTest extends AbstractCheckTest {
             "    res/drawable-mdpi/frame.png: <No location-specific message\n" +
             "res/drawable-nodpi/frame.xml: Warning: The following images appear both as density independent .xml files and as bitmap files: res/drawable-mdpi/frame.png, res/drawable-nodpi/frame.xml [IconXmlAndPng]\n" +
             "    res/drawable-mdpi/frame.png: <No location-specific message\n" +
-            "res: Warning: Missing density variation folders in res: drawable-hdpi, drawable-xhdpi, drawable-xxhdpi [IconMissingDensityFolder]\n" +
+            "res: Warning: Missing density variation folders in res: drawable-hdpi, drawable-xhdpi, drawable-xxhdpi, drawable-xxxhdpi [IconMissingDensityFolder]\n" +
             "0 errors, 3 warnings\n",
 
             lintProject(
@@ -212,7 +229,8 @@ public class IconDetectorTest extends AbstractCheckTest {
         // drawable-hdpi: Warning: Missing the following drawables in drawable-hdpi: f.png (found in drawable-mdpi)
         // drawable-xhdpi: Warning: Missing the following drawables in drawable-xhdpi: f.png (found in drawable-mdpi)
         assertEquals(
-            "res/drawable-xxhdpi/f.xml: Warning: The following images appear both as density independent .xml files and as bitmap files: res/drawable-hdpi/f.xml, res/drawable-mdpi/f.png [IconXmlAndPng]\n" +
+            "res/drawable-xxxhdpi/f.xml: Warning: The following images appear both as density independent .xml files and as bitmap files: res/drawable-hdpi/f.xml, res/drawable-mdpi/f.png [IconXmlAndPng]\n" +
+            "    res/drawable-xxhdpi/f.xml: <No location-specific message\n" +
             "    res/drawable-xhdpi/f.xml: <No location-specific message\n" +
             "    res/drawable-mdpi/f.png: <No location-specific message\n" +
             "    res/drawable-hdpi/f.xml: <No location-specific message\n" +
@@ -222,7 +240,8 @@ public class IconDetectorTest extends AbstractCheckTest {
                     "res/drawable-mdpi/frame.png=>res/drawable-mdpi/f.png",
                     "res/drawable/states.xml=>res/drawable-hdpi/f.xml",
                     "res/drawable/states.xml=>res/drawable-xhdpi/f.xml",
-                    "res/drawable/states.xml=>res/drawable-xxhdpi/f.xml"));
+                    "res/drawable/states.xml=>res/drawable-xxhdpi/f.xml",
+                    "res/drawable/states.xml=>res/drawable-xxxhdpi/f.xml"));
     }
 
     public void testMisleadingFileName() throws Exception {
@@ -491,5 +510,156 @@ public class IconDetectorTest extends AbstractCheckTest {
                         "apicheck/minsdk14.xml=>AndroidManifest.xml",
                         "res/drawable-xhdpi/ic_stat_notify.png=>res/drawable-xhdpi/ic_stat_notify.png"
                 ));
+    }
+
+    public void testResConfigs1() throws Exception {
+        // resConfigs in the Gradle model sets up the specific set of resource configs
+        // that are included in the packaging: we use this to limit the set of required
+        // densities
+        mEnabled = Sets.newHashSet(IconDetector.ICON_DENSITIES, IconDetector.ICON_MISSING_FOLDER);
+        assertEquals(""
+                + "res: Warning: Missing density variation folders in res: drawable-hdpi [IconMissingDensityFolder]\n"
+                + "0 errors, 1 warnings\n",
+
+                lintProject(
+                        "res/drawable-mdpi/frame.png",
+                        "res/drawable-nodpi/frame.png",
+                        "res/drawable-xlarge-nodpi-v11/frame.png"));
+    }
+
+    public void testResConfigs2() throws Exception {
+        mEnabled = Sets.newHashSet(IconDetector.ICON_DENSITIES, IconDetector.ICON_MISSING_FOLDER);
+        assertEquals(""
+                + "res/drawable-hdpi: Warning: Missing the following drawables in drawable-hdpi: sample_icon.gif (found in drawable-mdpi) [IconDensities]\n"
+                + "0 errors, 1 warnings\n",
+
+                lintProject(
+                        // Use minSDK4 to ensure that we get warnings about missing drawables
+                        "apicheck/minsdk4.xml=>AndroidManifest.xml",
+                        "res/drawable/ic_launcher.png",
+                        "res/drawable/ic_launcher.png=>res/drawable-mdpi/ic_launcher.png",
+                        "res/drawable/ic_launcher.png=>res/drawable-xhdpi/ic_launcher.png",
+                        "res/drawable-mdpi/sample_icon.gif",
+                        "res/drawable-hdpi/ic_launcher.png"));
+    }
+
+    @Override
+    protected TestLintClient createClient() {
+        if (!getName().startsWith("testResConfigs")) {
+            return super.createClient();
+        }
+
+        // Set up a mock project model for the resource configuration test(s)
+        // where we provide a subset of densities to be included
+
+        return new TestLintClient() {
+            @NonNull
+            @Override
+            protected Project createProject(@NonNull File dir, @NonNull File referenceDir) {
+                return new Project(this, dir, referenceDir) {
+                    @Override
+                    public boolean isGradleProject() {
+                        return true;
+                    }
+
+                    @Nullable
+                    @Override
+                    public AndroidProject getGradleProjectModel() {
+                        /*
+                        Simulate variant freeBetaDebug in this setup:
+                            defaultConfig {
+                                ...
+                                resConfigs "mdpi"
+                            }
+                            flavorDimensions  "pricing", "releaseType"
+                            productFlavors {
+                                beta {
+                                    flavorDimension "releaseType"
+                                    resConfig "en"
+                                    resConfigs "nodpi", "hdpi"
+                                }
+                                normal { flavorDimension "releaseType" }
+                                free { flavorDimension "pricing" }
+                                paid { flavorDimension "pricing" }
+                            }
+                         */
+                        ProductFlavor flavorFree = createNiceMock(ProductFlavor.class);
+                        expect(flavorFree.getName()).andReturn("free").anyTimes();
+                        expect(flavorFree.getResourceConfigurations())
+                                .andReturn(Collections.<String>emptyList()).anyTimes();
+                        replay(flavorFree);
+
+                        ProductFlavor flavorNormal = createNiceMock(ProductFlavor.class);
+                        expect(flavorNormal.getName()).andReturn("normal").anyTimes();
+                        expect(flavorNormal.getResourceConfigurations())
+                                .andReturn(Collections.<String>emptyList()).anyTimes();
+                        replay(flavorNormal);
+
+                        ProductFlavor flavorPaid = createNiceMock(ProductFlavor.class);
+                        expect(flavorPaid.getName()).andReturn("paid").anyTimes();
+                        expect(flavorPaid.getResourceConfigurations())
+                                .andReturn(Collections.<String>emptyList()).anyTimes();
+                        replay(flavorPaid);
+
+                        ProductFlavor flavorBeta = createNiceMock(ProductFlavor.class);
+                        expect(flavorBeta.getName()).andReturn("beta").anyTimes();
+                        List<String> resConfigs = Arrays.asList("hdpi", "en", "nodpi");
+                        expect(flavorBeta.getResourceConfigurations()).andReturn(resConfigs).anyTimes();
+                        replay(flavorBeta);
+
+                        ProductFlavor defaultFlavor = createNiceMock(ProductFlavor.class);
+                        expect(defaultFlavor.getName()).andReturn("main").anyTimes();
+                        expect(defaultFlavor.getResourceConfigurations()).andReturn(
+                                Collections.singleton("mdpi")).anyTimes();
+                        replay(defaultFlavor);
+
+                        ProductFlavorContainer containerBeta =
+                                createNiceMock(ProductFlavorContainer.class);
+                        expect(containerBeta.getProductFlavor()).andReturn(flavorBeta).anyTimes();
+                        replay(containerBeta);
+
+                        ProductFlavorContainer containerFree =
+                                createNiceMock(ProductFlavorContainer.class);
+                        expect(containerFree.getProductFlavor()).andReturn(flavorFree).anyTimes();
+                        replay(containerFree);
+
+                        ProductFlavorContainer containerPaid =
+                                createNiceMock(ProductFlavorContainer.class);
+                        expect(containerPaid.getProductFlavor()).andReturn(flavorPaid).anyTimes();
+                        replay(containerPaid);
+
+                        ProductFlavorContainer containerNormal =
+                                createNiceMock(ProductFlavorContainer.class);
+                        expect(containerNormal.getProductFlavor()).andReturn(flavorNormal).anyTimes();
+                        replay(containerNormal);
+
+                        ProductFlavorContainer defaultContainer =
+                                createNiceMock(ProductFlavorContainer.class);
+                        expect(defaultContainer.getProductFlavor()).andReturn(defaultFlavor).anyTimes();
+                        replay(defaultContainer);
+
+                        List<ProductFlavorContainer> containers = Arrays.asList(
+                                containerPaid, containerFree, containerNormal, containerBeta
+                        );
+
+                        AndroidProject project = createNiceMock(AndroidProject.class);
+                        expect(project.getProductFlavors()).andReturn(containers).anyTimes();
+                        expect(project.getDefaultConfig()).andReturn(defaultContainer).anyTimes();
+                        replay(project);
+                        return project;
+                    }
+
+                    @Nullable
+                    @Override
+                    public Variant getCurrentVariant() {
+                        List<String> productFlavorNames = Arrays.asList("free", "beta");
+                        Variant mock = createNiceMock(Variant.class);
+                        expect(mock.getProductFlavors()).andReturn(productFlavorNames).anyTimes();
+                        replay(mock);
+                        return mock;
+                    }
+                };
+            }
+        };
     }
 }

@@ -157,7 +157,6 @@ public interface ProductFlavor extends BaseConfig {
 
     /**
      * Returns the resource configuration for this variant.
-     * TODO implement this.
      *
      * This is the list of -c parameters for aapt.
      *
