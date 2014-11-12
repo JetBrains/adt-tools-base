@@ -23,10 +23,28 @@ import org.gradle.api.JavaVersion
  */
 class CompileOptions {
 
-    JavaVersion sourceCompatibility = JavaVersion.VERSION_1_6
-    JavaVersion targetCompatibility = JavaVersion.VERSION_1_6
+    private JavaVersion sourceCompatibility = JavaVersion.VERSION_1_6
+    private JavaVersion targetCompatibility = JavaVersion.VERSION_1_6
     String encoding = "UTF-8"
-    boolean setExplicitly = false
 
+    void setSourceCompatibility(JavaVersion sourceCompatibility) {
+        this.sourceCompatibility = sourceCompatibility
+        setExplicitly = true
+    }
+
+    JavaVersion getSourceCompatibility() {
+        return sourceCompatibility
+    }
+
+    void setTargetCompatibility(JavaVersion targetCompatibility) {
+        this.targetCompatibility = targetCompatibility
+        setExplicitly = true
+    }
+
+    JavaVersion getTargetCompatibility() {
+        return targetCompatibility
+    }
+
+    boolean setExplicitly = false
     boolean ndkCygwinMode = false
 }
