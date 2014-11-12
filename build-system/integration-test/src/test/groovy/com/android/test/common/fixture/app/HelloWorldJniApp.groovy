@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.test.fixture.app
+package com.android.test.common.fixture.app
 /**
  * Simple test application that uses JNI to print a "hello world!".
  *
