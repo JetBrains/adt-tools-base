@@ -33,6 +33,7 @@ import static com.android.SdkConstants.DRAWABLE_MDPI;
 import static com.android.SdkConstants.DRAWABLE_PREFIX;
 import static com.android.SdkConstants.DRAWABLE_XHDPI;
 import static com.android.SdkConstants.DRAWABLE_XXHDPI;
+import static com.android.SdkConstants.DRAWABLE_XXXHDPI;
 import static com.android.SdkConstants.MENU_TYPE;
 import static com.android.SdkConstants.R_CLASS;
 import static com.android.SdkConstants.R_DRAWABLE_PREFIX;
@@ -46,6 +47,11 @@ import static com.android.tools.lint.detector.api.LintUtils.endsWith;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.builder.model.AndroidProject;
+import com.android.builder.model.ProductFlavor;
+import com.android.builder.model.ProductFlavorContainer;
+import com.android.builder.model.Variant;
+import com.android.resources.Density;
 import com.android.resources.ResourceFolderType;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
@@ -125,14 +131,16 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
 
     /** Pattern for the expected density folders to be found in the project */
     private static final Pattern DENSITY_PATTERN = Pattern.compile(
-            "^drawable-(nodpi|xxhdpi|xhdpi|hdpi|mdpi"     //$NON-NLS-1$
+            "^drawable-(nodpi|xxxhdpi|xxhdpi|xhdpi|hdpi|mdpi"     //$NON-NLS-1$
                 + (INCLUDE_LDPI ? "|ldpi" : "") + ")$");  //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 
-    private static final String[] REQUIRED_DENSITIES = INCLUDE_LDPI
-            ? new String[] {
-                DRAWABLE_LDPI, DRAWABLE_MDPI, DRAWABLE_HDPI, DRAWABLE_XHDPI, DRAWABLE_XXHDPI }
-            : new String[] { DRAWABLE_MDPI, DRAWABLE_HDPI, DRAWABLE_XHDPI, DRAWABLE_XXHDPI };
+    /** Cache for {@link #getRequiredDensityFolders(Context)} */
+    private List<String> mCachedRequiredDensities;
+    /** Cache key for {@link #getRequiredDensityFolders(Context)} */
+    private Project mCachedDensitiesForProject;
 
+    // TODO: Convert this over to using the Density enum and FolderConfiguration
+    // for qualifier lookup
     private static final String[] DENSITY_QUALIFIERS =
         new String[] {
             "-ldpi",  //$NON-NLS-1$
@@ -140,6 +148,7 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
             "-hdpi",  //$NON-NLS-1$
             "-xhdpi", //$NON-NLS-1$
             "-xxhdpi",//$NON-NLS-1$
+            "-xxxhdpi",//$NON-NLS-1$
     };
 
     /** Scope needed to detect the types of icons (which involves scanning .java files,
@@ -866,7 +875,7 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
         }
     }
 
-    private static void checkDensities(Context context, File res,
+    private void checkDensities(Context context, File res,
             Map<File, Set<String>> folderToNames,
             Map<File, Set<String>> nonDpiFolderNames) {
         // TODO: Is there a way to look at the manifest and figure out whether
@@ -885,8 +894,7 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
         // should also define -hdpi and -xhdpi.
         if (context.isEnabled(ICON_MISSING_FOLDER)) {
             List<String> missing = new ArrayList<String>();
-            // TODO: If it's a launcher icon, also insist on xxxhdpi!
-            for (String density : REQUIRED_DENSITIES) {
+            for (String density : getRequiredDensityFolders(context)) {
                 if (!definedDensities.contains(density)) {
                     missing.add(density);
                 }
@@ -1050,13 +1058,90 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
                         }
                     }
 
+                    // Irrelevant folder?
+                    String folder = file.getName();
+                    if (!getRequiredDensityFolders(context).contains(folder)) {
+                        continue;
+                    }
+
                     context.report(ICON_DENSITIES, Location.create(file),
                             String.format(
                                     "Missing the following drawables in `%1$s`: %2$s%3$s",
-                                    file.getName(),
+                                    folder,
                                     LintUtils.formatList(delta,
                                             context.getDriver().isAbbreviating() ? 5 : -1),
                                     foundIn));
+                }
+            }
+        }
+    }
+
+    private List<String> getRequiredDensityFolders(@NonNull Context context) {
+        if (mCachedRequiredDensities == null
+                || context.getProject() != mCachedDensitiesForProject) {
+            mCachedDensitiesForProject = context.getProject();
+            mCachedRequiredDensities = Lists.newArrayListWithExpectedSize(10);
+
+            // Use the gradle API to set up relevant densities. For example, if the
+            // build.gradle file contains this:
+            // android {
+            //     defaultConfig {
+            //         resConfigs "nodpi", "hdpi"
+            //     }
+            // }
+            // ...then we should only enforce hdpi densities, not all these others!
+            Project project = context.getProject();
+            if (project.isGradleProject() && project.getGradleProjectModel() != null &&
+                    project.getCurrentVariant() != null) {
+                Set<String> relevantDensities = Sets.newHashSet();
+                Variant variant = project.getCurrentVariant();
+                List<String> variantFlavors = variant.getProductFlavors();
+                AndroidProject gradleProjectModel = project.getGradleProjectModel();
+
+                addResConfigsFromFlavor(relevantDensities, null,
+                        project.getGradleProjectModel().getDefaultConfig());
+                for (ProductFlavorContainer container : gradleProjectModel.getProductFlavors()) {
+                    addResConfigsFromFlavor(relevantDensities, variantFlavors, container);
+                }
+                if (!relevantDensities.isEmpty()) {
+                    for (String density : relevantDensities) {
+                        String folder = ResourceFolderType.DRAWABLE.getName() + '-' + density;
+                        mCachedRequiredDensities.add(folder);
+                    }
+                    Collections.sort(mCachedRequiredDensities);
+                    return mCachedRequiredDensities;
+                }
+            }
+
+            if (INCLUDE_LDPI) {
+                mCachedRequiredDensities.add(DRAWABLE_LDPI);
+            }
+            mCachedRequiredDensities.add(DRAWABLE_MDPI);
+            mCachedRequiredDensities.add(DRAWABLE_HDPI);
+            mCachedRequiredDensities.add(DRAWABLE_XHDPI);
+            mCachedRequiredDensities.add(DRAWABLE_XXHDPI);
+            mCachedRequiredDensities.add(DRAWABLE_XXXHDPI);
+        }
+
+        return mCachedRequiredDensities;
+    }
+
+    /**
+     * Adds in the resConfig values specified by the given flavor container, assuming
+     * it's in one of the relevant variantFlavors, into the given set
+     */
+    private static void addResConfigsFromFlavor(@NonNull Set<String> relevantDensities,
+            @Nullable List<String> variantFlavors,
+            @NonNull ProductFlavorContainer container) {
+        ProductFlavor flavor = container.getProductFlavor();
+        if (variantFlavors == null || variantFlavors.contains(flavor.getName())) {
+            if (!flavor.getResourceConfigurations().isEmpty()) {
+                for (String densityName : flavor.getResourceConfigurations()) {
+                    Density density = Density.getEnum(densityName);
+                    if (density != null && density.isRecommended()
+                            && density != Density.NODPI) {
+                        relevantDensities.add(densityName);
+                    }
                 }
             }
         }
@@ -1647,6 +1732,8 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
             return 2.0f;
         } else if (folderName.contains("-xxhdpi")) {   //$NON-NLS-1$
             return 3.0f;
+        } else if (folderName.contains("-xxxhdpi")) {   //$NON-NLS-1$
+            return 4.0f;
         } else if (folderName.contains("-ldpi")) {     //$NON-NLS-1$
             return 0.75f;
         } else {
