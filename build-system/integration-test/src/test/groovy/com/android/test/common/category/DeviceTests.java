@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.test.category;
+package com.android.test.common.category;
 
 /**
  * JUnit category used to label tests that requires a connected device.

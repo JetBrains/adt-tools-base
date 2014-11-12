@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle
+package com.android.test.ndk
 
-import com.android.build.gradle.internal.test.category.DeviceTests
+import com.android.test.common.category.DeviceTests
 
 import static org.junit.Assert.assertNotNull
 import static org.junit.Assert.assertNull
 
-import com.android.build.gradle.internal.test.fixture.GradleProjectTestRule
-import com.android.build.gradle.internal.test.fixture.app.HelloWorldJniApp
+import com.android.test.common.fixture.GradleTestProject
+import com.android.test.common.fixture.app.HelloWorldJniApp
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
@@ -36,7 +36,7 @@ import java.util.zip.ZipFile
 class NdkVariantIntegTest {
 
     @ClassRule
-    static public GradleProjectTestRule fixture = new GradleProjectTestRule();
+    static public GradleTestProject fixture = new GradleTestProject();
 
     @BeforeClass
     static public void setup() {
@@ -46,8 +46,8 @@ class NdkVariantIntegTest {
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion $GradleProjectTestRule.DEFAULT_COMPILE_SDK_VERSION
-    buildToolsVersion "$GradleProjectTestRule.DEFAULT_BUILD_TOOL_VERSION"
+    compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
+    buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
     defaultConfig {
         ndk {
             moduleName "hello-jni"
