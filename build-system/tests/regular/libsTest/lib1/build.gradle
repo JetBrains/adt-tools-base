@@ -6,7 +6,7 @@ dependencies {
 
 android {
     resourcePrefix 'lib1_'
-    compileSdkVersion 19
+    compileSdkVersion 21
     buildToolsVersion = rootProject.ext.buildToolsVersion
 
     defaultConfig {

@@ -23,7 +23,7 @@ repositories {
 }
 
 android {
-    compileSdkVersion 19
+    compileSdkVersion 21
     buildToolsVersion = rootProject.ext.buildToolsVersion
 
     buildTypes.debug {
