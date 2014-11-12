@@ -43,12 +43,12 @@ class BuildToolsTest {
     ]
 
     @Rule
-    public GradleTestProject fixture = new GradleTestProject()
+    public GradleTestProject project = GradleTestProject.builder().create();
 
     @Before
     public void setup() {
-        new HelloWorldApp().writeSources(fixture.getSourceDir())
-        fixture.getBuildFile() << """
+        new HelloWorldApp().writeSources(project.getSourceDir())
+        project.getBuildFile() << """
 apply plugin: 'com.android.application'
 
 android {
@@ -62,8 +62,8 @@ android {
     public void nullBuild() {
         ByteArrayOutputStream output = new ByteArrayOutputStream()
 
-        fixture.execute("assemble")
-        fixture.execute(output, "assemble")
+        project.execute("assemble")
+        project.execute(output, "assemble")
 
         Set<String> skippedTasks = getTasksMatching(UP_TO_DATE_PATTERN, output)
         for (String task : tasks) {
@@ -76,9 +76,9 @@ android {
     public void invalidateBuildTools() {
         ByteArrayOutputStream output = new ByteArrayOutputStream()
 
-        fixture.execute("assemble");
+        project.execute("assemble");
 
-        fixture.getBuildFile() << """
+        project.getBuildFile() << """
 apply plugin: 'com.android.application'
 
 android {
@@ -87,7 +87,7 @@ android {
 }
 """
 
-        fixture.execute(output, "assemble");
+        project.execute(output, "assemble");
         Set<String> affectedTasks = getTasksMatching(INPUT_CHANGED_PATTERN, output)
         for (String task : tasks) {
             assertTrue(String.format("Expecting task %s to be invalidated", task),
