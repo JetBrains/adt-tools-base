@@ -253,7 +253,6 @@ public abstract class BaseExtension {
     void compileOptions(Action<CompileOptions> action) {
         plugin.checkTasksAlreadyCreated()
         action.execute(compileOptions)
-        compileOptions.setExplicitly = true
     }
 
     void packagingOptions(Action<PackagingOptionsImpl> action) {
