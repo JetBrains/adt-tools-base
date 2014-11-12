@@ -36,13 +36,13 @@ import java.util.zip.ZipFile
 class NdkVariantIntegTest {
 
     @ClassRule
-    static public GradleTestProject fixture = new GradleTestProject();
+    static public GradleTestProject project = GradleTestProject.builder().create();
 
     @BeforeClass
     static public void setup() {
-        new HelloWorldJniApp().writeSources(fixture.getSourceDir())
+        new HelloWorldJniApp().writeSources(project.getSourceDir())
 
-        fixture.getBuildFile() << """
+        project.getBuildFile() << """
 apply plugin: 'com.android.application'
 
 android {
@@ -82,10 +82,10 @@ android {
 
     @Test
     public void assembleX86Release() {
-        fixture.execute("assembleX86Release");
+        project.execute("assembleX86Release");
         ZipFile apk = new ZipFile(
-                fixture.file(
-                        "build/outputs/apk/${fixture.testDir.getName()}-x86-release-unsigned.apk"));
+                project.file(
+                        "build/outputs/apk/${project.name}-x86-release-unsigned.apk"));
 
         // Verify .so are built for all platform.
         assertNotNull(apk.getEntry("lib/x86/libhello-jni.so"));
@@ -96,10 +96,10 @@ android {
 
     @Test
     public void assembleArmRelease() {
-        fixture.execute("assembleArmRelease");
+        project.execute("assembleArmRelease");
         ZipFile apk = new ZipFile(
-                fixture.file(
-                        "build/outputs/apk/${fixture.testDir.getName()}-arm-release-unsigned.apk"));
+                project.file(
+                        "build/outputs/apk/${project.name}-arm-release-unsigned.apk"));
 
         // Verify .so are built for all platform.
         assertNull(apk.getEntry("lib/x86/libhello-jni.so"));
@@ -110,10 +110,10 @@ android {
 
     @Test
     public void assembleMipsRelease() {
-        fixture.execute("assembleMipsRelease");
+        project.execute("assembleMipsRelease");
         ZipFile apk = new ZipFile(
-                fixture.file(
-                        "build/outputs/apk/${fixture.testDir.getName()}-mips-release-unsigned.apk"));
+                project.file(
+                        "build/outputs/apk/${project.name}-mips-release-unsigned.apk"));
 
         // Verify .so are built for all platform.
         assertNull(apk.getEntry("lib/x86/libhello-jni.so"));
@@ -125,6 +125,6 @@ android {
     @Test
     @Category(DeviceTests.class)
     public void connectedAndroidTest() {
-        fixture.execute("connectedAndroidTestArmDebug");
+        project.execute("connectedAndroidTestArmDebug");
     }
 }
