@@ -48,6 +48,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -413,9 +414,83 @@ public class ManualBuildTest extends BuildTest {
                 + "res/raw/used_styles.css\n"
                 + "res/layout/webview.xml",
                 dumpZipContents(compressed));
+
+        // Check stored vs deflated state:
+        // This is the state of the original source _ap file:
+        assertEquals(""
+                + "  stored  resources.arsc\n"
+                + "deflated  AndroidManifest.xml\n"
+                + "deflated  res/xml/my_xml.xml\n"
+                + "deflated  res/raw/unknown\n"
+                + "  stored  res/raw/unused_icon.png\n"
+                + "deflated  res/raw/unused_index.html\n"
+                + "deflated  res/drawable/used1.xml\n"
+                + "  stored  res/raw/used_icon.png\n"
+                + "  stored  res/raw/used_icon2.png\n"
+                + "deflated  res/raw/used_index.html\n"
+                + "deflated  res/raw/used_index2.html\n"
+                + "deflated  res/raw/used_index3.html\n"
+                + "deflated  res/layout/used_layout1.xml\n"
+                + "deflated  res/layout/used_layout2.xml\n"
+                + "deflated  res/layout/used_layout3.xml\n"
+                + "deflated  res/raw/used_script.js\n"
+                + "deflated  res/raw/used_styles.css\n"
+                + "deflated  res/layout/webview.xml",
+                dumpZipContents(uncompressed, true));
+
+        // This is the state of the rewritten ap_ file: the zip states should match
+        assertEquals(""
+                + "  stored  resources.arsc\n"
+                + "deflated  AndroidManifest.xml\n"
+                + "deflated  res/raw/unknown\n"
+                + "deflated  res/drawable/used1.xml\n"
+                + "  stored  res/raw/used_icon.png\n"
+                + "  stored  res/raw/used_icon2.png\n"
+                + "deflated  res/raw/used_index.html\n"
+                + "deflated  res/raw/used_index2.html\n"
+                + "deflated  res/raw/used_index3.html\n"
+                + "deflated  res/layout/used_layout1.xml\n"
+                + "deflated  res/layout/used_layout2.xml\n"
+                + "deflated  res/layout/used_layout3.xml\n"
+                + "deflated  res/raw/used_script.js\n"
+                + "deflated  res/raw/used_styles.css\n"
+                + "deflated  res/layout/webview.xml",
+                dumpZipContents(compressed, true));
+
+        // Make sure the (remaining) binary contents of the files in the compressed APK are
+        // identical to the ones in uncompressed:
+        FileInputStream fis1 = new FileInputStream(compressed);
+        JarInputStream zis1 = new JarInputStream(fis1);
+        FileInputStream fis2 = new FileInputStream(uncompressed);
+        JarInputStream zis2 = new JarInputStream(fis2);
+
+        ZipEntry entry1 = zis1.getNextEntry();
+        ZipEntry entry2 = zis2.getNextEntry();
+        while (entry1 != null) {
+            String name1 = entry1.getName();
+            String name2 = entry2.getName();
+            while (!name1.equals(name2)) {
+                // uncompressed should contain a superset of all the names in compressed
+                entry2 = zis2.getNextJarEntry();
+                name2 = entry2.getName();
+            }
+            assertEquals(name1, name2);
+            if (!entry1.isDirectory()) {
+                byte[] bytes1 = ByteStreams.toByteArray(zis1);
+                byte[] bytes2 = ByteStreams.toByteArray(zis2);
+                assertTrue(name1, Arrays.equals(bytes1, bytes2));
+            } else {
+                assertTrue(entry2.isDirectory());
+            }
+            entry1 = zis1.getNextEntry();
+            entry2 = zis2.getNextEntry();
+        }
+
+        zis1.close();
+        zis2.close();
     }
 
-    private static List<String> getZipPaths(File zipFile) throws IOException {
+    private static List<String> getZipPaths(File zipFile, boolean includeMethod) throws IOException {
         List<String> lines = Lists.newArrayList();
         FileInputStream fis = new FileInputStream(zipFile);
         try {
@@ -423,7 +498,17 @@ public class ManualBuildTest extends BuildTest {
             try {
                 ZipEntry entry = zis.getNextEntry();
                 while (entry != null) {
-                    lines.add(entry.getName());
+                    String path = entry.getName();
+                    if (includeMethod) {
+                        String method;
+                        switch (entry.getMethod()) {
+                            case ZipEntry.STORED:   method = "  stored"; break;
+                            case ZipEntry.DEFLATED: method = "deflated"; break;
+                            default:                method = " unknown"; break;
+                        }
+                        path = method + "  " + path;
+                    }
+                    lines.add(path);
                     entry = zis.getNextEntry();
                 }
             } finally {
@@ -437,7 +522,11 @@ public class ManualBuildTest extends BuildTest {
     }
 
     private static String dumpZipContents(File zipFile) throws IOException {
-        List<String> lines = getZipPaths(zipFile);
+        return dumpZipContents(zipFile, false);
+    }
+
+    private static String dumpZipContents(File zipFile, final boolean includeMethod) throws IOException {
+        List<String> lines = getZipPaths(zipFile, includeMethod);
 
         // Remove META-INF statements
         ListIterator<String> iterator = lines.listIterator();
@@ -448,7 +537,7 @@ public class ManualBuildTest extends BuildTest {
         }
 
         // Sort by base name (and numeric sort such that unused10 comes after unused9)
-        final Pattern pattern = Pattern.compile("(.*[^\\d])(\\d+)\\..+");
+        final Pattern pattern = Pattern.compile("(.*[^\\d])(\\d+)(\\..+)?");
         Collections.sort(lines, new Comparator<String>() {
             @Override
             public int compare(String line1, String line2) {
@@ -472,6 +561,11 @@ public class ManualBuildTest extends BuildTest {
                         }
                     }
                     return delta;
+                }
+
+                if (includeMethod) {
+                    line1 = line1.substring(10);
+                    line2 = line2.substring(10);
                 }
                 return line1.compareTo(line2);
             }
