@@ -63,6 +63,8 @@ public class GradleProjectTestRule implements TestRule {
 
     private static final String ANDROID_GRADLE_VERSION = "0.14.2";
 
+    private File outDir;
+
     private File testDir;
 
     private File sourceDir;
@@ -76,6 +78,8 @@ public class GradleProjectTestRule implements TestRule {
     public GradleProjectTestRule() {
         sdkDir = findSdkDir();
         ndkDir = findNdkDir();
+        String buildDir = System.getenv("PROJECT_BUILD_DIR");
+        outDir = (buildDir == null) ? new File("build/tests") : new File(buildDir, "tests");
     }
 
     /**
@@ -86,8 +90,11 @@ public class GradleProjectTestRule implements TestRule {
     private static void deleteRecursive(File root) {
         if (root.exists()) {
             if (root.isDirectory()) {
-                for (File file : root.listFiles()) {
-                    deleteRecursive(file);
+                File files[] = root.listFiles();
+                if (files != null) {
+                    for (File file : files) {
+                        deleteRecursive(file);
+                    }
                 }
             }
             assertTrue(root.delete());
@@ -96,8 +103,7 @@ public class GradleProjectTestRule implements TestRule {
 
     @Override
     public Statement apply(final Statement base, Description description) {
-        testDir = new File("build/tmp/tests/" +
-                description.getTestClass().getName());
+        testDir = new File(outDir, description.getTestClass().getName());
 
         // Create separate directory based on test method name if @Rule is used.
         // getMethodName() is null if this rule is used as a @ClassRule.
