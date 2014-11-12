@@ -16,7 +16,7 @@
 
 
 
-package com.android.build.gradle.internal.test.fixture.app
+package com.android.test.common.fixture.app
 /**
  * Simple test application that prints "hello world!".
  */

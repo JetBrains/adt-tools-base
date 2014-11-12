@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.test.fixture.app;
+package com.android.test.common.fixture.app;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Predicate;
