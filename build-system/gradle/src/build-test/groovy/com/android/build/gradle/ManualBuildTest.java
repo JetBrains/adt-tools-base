@@ -939,6 +939,16 @@ public class ManualBuildTest extends BuildTest {
         runTasksOn(project, BasePlugin.GRADLE_TEST_VERSION, "assembleIcsProguard");
     }
 
+    public void testRenamedApk() throws Exception {
+        File project = new File(regularDir, "renamedApk");
+        runTasksOn(project, BasePlugin.GRADLE_TEST_VERSION, "assembleDebug");
+
+        File output = new File(project, "build");
+        File debugApk = new File(output, "debug.apk");
+
+        assertTrue("Check output file: " + debugApk.getName(), debugApk.isFile());
+    }
+
     private void checkMaxSdkVersion(File testApk, String version)
             throws InterruptedException, LoggedErrorException, IOException {
 
