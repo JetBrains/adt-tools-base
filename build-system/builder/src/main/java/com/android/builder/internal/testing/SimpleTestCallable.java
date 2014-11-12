@@ -210,7 +210,7 @@ public class SimpleTestCallable implements Callable<Boolean> {
                     logger.verbose("DeviceConnector '%s': fetching coverage data from %s",
                             deviceName, coverageFile);
                     device.executeShellCommand("run-as " + testData.getTestedApplicationId()
-                                    + " cat " + coverageFile + " > " + temporaryCoverageCopy,
+                                    + " cat " + coverageFile + " | cat > " + temporaryCoverageCopy,
                             outputReceiver,
                             30, TimeUnit.SECONDS);
                     device.pullFile(
