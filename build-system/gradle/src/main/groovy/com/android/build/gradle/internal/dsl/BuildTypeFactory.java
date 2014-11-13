@@ -17,7 +17,6 @@
 package com.android.build.gradle.internal.dsl;
 
 import com.android.annotations.NonNull;
-import com.android.builder.core.DefaultBuildType;
 
 import org.gradle.api.NamedDomainObjectFactory;
 import org.gradle.api.Project;
@@ -27,7 +26,7 @@ import org.gradle.internal.reflect.Instantiator;
 /**
  * Factory to create BuildType object using an {@link Instantiator} to add the DSL methods.
  */
-public class BuildTypeFactory implements NamedDomainObjectFactory<DefaultBuildType> {
+public class BuildTypeFactory implements NamedDomainObjectFactory<BuildTypeDsl> {
 
     @NonNull
     private final Instantiator instantiator;
@@ -46,7 +45,7 @@ public class BuildTypeFactory implements NamedDomainObjectFactory<DefaultBuildTy
     }
 
     @Override
-    public DefaultBuildType create(String name) {
+    public BuildTypeDsl create(String name) {
         return instantiator.newInstance(BuildTypeDsl.class, name, project, instantiator, logger);
     }
 }
