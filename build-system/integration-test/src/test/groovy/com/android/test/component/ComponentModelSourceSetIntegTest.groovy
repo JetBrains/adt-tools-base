@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.model
+package com.android.test.component
 
-import com.android.build.gradle.internal.test.fixture.GradleProjectTestRule
-import com.android.build.gradle.internal.test.fixture.app.AndroidTestApp
-import com.android.build.gradle.internal.test.fixture.app.HelloWorldJniApp
-import com.android.build.gradle.internal.test.fixture.app.TestSourceFile
+import com.android.test.common.fixture.GradleTestProject
+import com.android.test.common.fixture.app.AndroidTestApp
+import com.android.test.common.fixture.app.HelloWorldJniApp
+import com.android.test.common.fixture.app.TestSourceFile
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
@@ -32,8 +32,9 @@ import static org.junit.Assert.assertNotNull
  * Integration tests for different configuration of source sets.
  */
 class ComponentModelSourceSetIntegTest {
+
     @ClassRule
-    public static GradleProjectTestRule fixture = new GradleProjectTestRule();
+    public static GradleTestProject project = GradleTestProject.builder().create();
 
     @BeforeClass
     public static void setup() {
@@ -49,15 +50,15 @@ class ComponentModelSourceSetIntegTest {
                 new TestSourceFile("flavor1/jni/hello-jni.c", cSource.name, cSource.content))
         app.addFile(new TestSourceFile("flavor2Debug/jni/hello-jni.c", cSource.name,
                 cSource.content))
-        app.writeSources(fixture.getSourceDir())
+        app.writeSources(project.getSourceDir())
 
-        fixture.buildFile << """
+        project.buildFile << """
 apply plugin: "com.android.model.application"
 
 model {
     android {
-        compileSdkVersion $GradleProjectTestRule.DEFAULT_COMPILE_SDK_VERSION
-        buildToolsVersion "$GradleProjectTestRule.DEFAULT_BUILD_TOOL_VERSION"
+        compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
+        buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
     }
     android.ndk {
         moduleName "hello-jni"
@@ -82,33 +83,33 @@ model {
 
     @Test
     void defaultBuildTypeSourceDirectory() {
-        fixture.execute("assembleFlavor2Release");
+        project.execute("assembleFlavor2Release");
         ZipFile apk = new ZipFile(
-                fixture.file("build/outputs/apk/${fixture.testDir.getName()}-flavor2-release-unsigned.apk"));
+                project.file("build/outputs/apk/${project.name}-flavor2-release-unsigned.apk"));
         assertNotNull(apk.getEntry("lib/x86/libhello-jni.so"));
     }
 
     @Test
     void defaultProductFlavorSourceDirectory() {
-        fixture.execute("assembleFlavor1Debug");
+        project.execute("assembleFlavor1Debug");
         ZipFile apk = new ZipFile(
-                fixture.file("build/outputs/apk/${fixture.testDir.getName()}-flavor1-debug.apk"));
+                project.file("build/outputs/apk/${project.name}-flavor1-debug.apk"));
         assertNotNull(apk.getEntry("lib/x86/libhello-jni.so"));
     }
 
     @Test
     void defaultVariantSourceDirectory() {
-        fixture.execute("assembleFlavor2Debug");
+        project.execute("assembleFlavor2Debug");
         ZipFile apk = new ZipFile(
-                fixture.file("build/outputs/apk/${fixture.testDir.getName()}-flavor2-debug.apk"));
+                project.file("build/outputs/apk/${project.name}-flavor2-debug.apk"));
         assertNotNull(apk.getEntry("lib/x86/libhello-jni.so"));
     }
 
     @Test
     void nonDefaultSourceDirectory() {
-        fixture.execute("assembleFlavor3Debug");
+        project.execute("assembleFlavor3Debug");
         ZipFile apk = new ZipFile(
-                fixture.file("build/outputs/apk/${fixture.testDir.getName()}-flavor3-debug.apk"));
+                project.file("build/outputs/apk/${project.name}-flavor3-debug.apk"));
         assertNotNull(apk.getEntry("lib/x86/libhello-jni.so"));
     }
 }

@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.model
+package com.android.test.component
 
 /**
  * Tests for NdkComponentModelPlugin
  */
-import com.android.build.gradle.internal.test.fixture.GradleProjectTestRule
-import com.android.build.gradle.internal.test.fixture.app.HelloWorldJniApp
+import com.android.test.common.fixture.GradleTestProject
+import com.android.test.common.fixture.app.HelloWorldJniApp
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
@@ -29,18 +29,20 @@ import org.junit.Test
  * Basic integration test for ndk component plugin.
  */
 class NdkComponentModelIntegTest {
-    @ClassRule static public GradleProjectTestRule fixture = new GradleProjectTestRule();
+
+    @ClassRule
+    public static GradleTestProject project = GradleTestProject.builder().create();
 
     @BeforeClass
-    static public void setup() {
-        new HelloWorldJniApp().writeSources(fixture.getSourceDir())
-        fixture.getBuildFile() << """
+    public static void setup() {
+        new HelloWorldJniApp().writeSources(project.getSourceDir())
+        project.getBuildFile() << """
 import com.android.build.gradle.model.NdkComponentModelPlugin
 apply plugin: NdkComponentModelPlugin
 
 model {
     android.ndk {
-        compileSdkVersion $GradleProjectTestRule.DEFAULT_COMPILE_SDK_VERSION
+        compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
         moduleName "hello-jni"
     }
 }
@@ -49,6 +51,6 @@ model {
 
     @Test
     public void assemble() {
-        fixture.execute("assemble");
+        project.execute("assemble");
     }
 }

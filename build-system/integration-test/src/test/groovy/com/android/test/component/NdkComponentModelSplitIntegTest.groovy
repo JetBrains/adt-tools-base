@@ -14,19 +14,11 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.model
+package com.android.test.component
 
-import com.android.build.gradle.BasePlugin
-import org.gradle.tooling.GradleConnector
-import org.gradle.tooling.ProjectConnection
-import org.gradle.tooling.model.GradleProject
-
-//import static org.junit.Assert.assertNotNull
-import static org.junit.Assert.*
-
-import com.android.build.gradle.internal.test.category.DeviceTests
-import com.android.build.gradle.internal.test.fixture.GradleProjectTestRule
-import com.android.build.gradle.internal.test.fixture.app.HelloWorldJniApp
+import com.android.test.common.category.DeviceTests
+import com.android.test.common.fixture.GradleTestProject
+import com.android.test.common.fixture.app.HelloWorldJniApp
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
@@ -34,25 +26,35 @@ import org.junit.experimental.categories.Category
 
 import java.util.zip.ZipFile
 
+import static org.junit.Assert.assertNotNull
+import static org.junit.Assert.assertNull
+
 /**
  * Integration test of the native plugin with multiple variants.
  */
-class NdkComponentModelVariantIntegTest {
+class NdkComponentModelSplitIntegTest {
 
     @ClassRule
-    static public GradleProjectTestRule fixture = new GradleProjectTestRule();
+    public static GradleTestProject project = GradleTestProject.builder().create();
 
     @BeforeClass
-    static public void setup() {
-        new HelloWorldJniApp().writeSources(fixture.getSourceDir())
+    public static void setup() {
+        new HelloWorldJniApp().writeSources(project.getSourceDir())
 
-        fixture.getBuildFile() << """
+        project.getBuildFile() << """
 apply plugin: 'com.android.model.application'
 
 model {
     android {
-        compileSdkVersion $GradleProjectTestRule.DEFAULT_COMPILE_SDK_VERSION
-        buildToolsVersion "$GradleProjectTestRule.DEFAULT_BUILD_TOOL_VERSION"
+        compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
+        buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
+        splits {
+            abi {
+                enable true
+                reset()
+                include "x86", "armeabi-v7a", "mips"
+            }
+        }
     }
     android.ndk {
         moduleName "hello-jni"
@@ -62,33 +64,16 @@ model {
             jniDebuggable true
         }
     }
-    android.productFlavors {
-        x86 {
-            ndk {
-                abiFilter "x86"
-            }
-        }
-        arm {
-            ndk {
-                abiFilters "armeabi-v7a", "armeabi"
-            }
-        }
-        mips {
-            ndk {
-                abiFilter "mips"
-            }
-        }
-    }
 }
 """
     }
 
     @Test
     public void assembleX86Debug() {
-        fixture.execute("assembleX86Debug");
+        project.execute("assembleX86Debug");
         ZipFile apk = new ZipFile(
-                fixture.file(
-                        "build/outputs/apk/${fixture.testDir.getName()}-x86-debug.apk"));
+                project.file(
+                        "build/outputs/apk/${project.name}-x86-debug.apk"));
 
         // Verify .so are built for all platform.
         assertNotNull(apk.getEntry("lib/x86/libhello-jni.so"));
@@ -100,24 +85,24 @@ model {
     @Test
     public void assembleArmDebug() {
 
-        GradleProject project = fixture.execute("assembleArmDebug");
+        project.execute("assembleArmeabi-v7aDebug");
         ZipFile apk = new ZipFile(
-                fixture.file(
-                        "build/outputs/apk/${fixture.testDir.getName()}-arm-debug.apk"));
+                project.file(
+                        "build/outputs/apk/${project.name}-armeabi-v7a-debug.apk"));
 
         // Verify .so are built for all platform.
         assertNull(apk.getEntry("lib/x86/libhello-jni.so"));
         assertNull(apk.getEntry("lib/mips/libhello-jni.so"));
-        assertNotNull(apk.getEntry("lib/armeabi/libhello-jni.so"));
+        assertNull(apk.getEntry("lib/armeabi/libhello-jni.so"));
         assertNotNull(apk.getEntry("lib/armeabi-v7a/libhello-jni.so"));
     }
 
     @Test
     public void assembleMipsDebug() {
-        fixture.execute("assembleMipsDebug");
+        project.execute("assembleMipsDebug");
         ZipFile apk = new ZipFile(
-                fixture.file(
-                        "build/outputs/apk/${fixture.testDir.getName()}-mips-debug.apk"));
+                project.file(
+                        "build/outputs/apk/${project.name}-mips-debug.apk"));
 
         // Verify .so are built for all platform.
         assertNull(apk.getEntry("lib/x86/libhello-jni.so"));
@@ -129,6 +114,6 @@ model {
     @Test
     @Category(DeviceTests.class)
     public void connectedAndroidTest() {
-        fixture.execute("connectedAndroidTestArmDebug");
+        project.execute("connectedAndroidTest");
     }
 }

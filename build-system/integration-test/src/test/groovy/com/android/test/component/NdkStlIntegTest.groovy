@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.model
+package com.android.test.component
 
-import com.android.build.gradle.internal.test.fixture.GradleProjectTestRule
-import com.android.build.gradle.internal.test.fixture.app.HelloWorldJniApp
+import com.android.test.common.fixture.GradleTestProject
+import com.android.test.common.fixture.app.HelloWorldJniApp
 import org.gradle.tooling.BuildException
 import org.junit.Before
 import org.junit.Rule
@@ -61,18 +61,18 @@ public class NdkStlIntegTest {
     }
 
     @Rule
-    public GradleProjectTestRule fixture = new GradleProjectTestRule();
+    public GradleTestProject project = GradleTestProject.builder().create();
 
     @Before
     public void setup() {
-        new HelloWorldJniApp().writeSources(fixture.getSourceDir())
-        fixture.getBuildFile() << """
+        new HelloWorldJniApp().writeSources(project.getSourceDir())
+        project.getBuildFile() << """
 apply plugin: 'com.android.model.application'
 
 model {
     android {
-        compileSdkVersion $GradleProjectTestRule.DEFAULT_COMPILE_SDK_VERSION
-        buildToolsVersion "$GradleProjectTestRule.DEFAULT_BUILD_TOOL_VERSION"
+        compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
+        buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
     }
     android.ndk {
         moduleName "hello-jni"
@@ -83,7 +83,7 @@ model {
 
     @Test
     public void buildAppWithStl() {
-        fixture.getBuildFile() << """
+        project.getBuildFile() << """
 model {
     android.ndk {
         stl "$stl"
@@ -91,10 +91,10 @@ model {
 }
 """
         if (!stl.equals("invalid")) {
-            fixture.execute("assembleDebug");
+            project.execute("assembleDebug");
 
             ZipFile apk = new ZipFile(
-                    fixture.file("build/outputs/apk/${fixture.testDir.name}-debug.apk"));
+                    project.file("build/outputs/apk/${project.testDir.name}-debug.apk"));
             assertNotNull(apk.getEntry("lib/x86/libhello-jni.so"));
             assertNotNull(apk.getEntry("lib/mips/libhello-jni.so"));
             assertNotNull(apk.getEntry("lib/armeabi/libhello-jni.so"));
@@ -102,7 +102,7 @@ model {
         } else {
             // Fail if it's invalid.
             try {
-                fixture.execute("assembleDebug");
+                project.execute("assembleDebug");
                 fail();
             } catch (BuildException ignored) {
             }
