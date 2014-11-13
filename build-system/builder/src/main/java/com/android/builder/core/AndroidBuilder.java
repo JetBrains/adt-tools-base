@@ -73,10 +73,10 @@ import com.android.sdklib.repository.FullRevision;
 import com.android.utils.ILogger;
 import com.android.utils.Pair;
 import com.google.common.base.Charsets;
+import com.google.common.base.Predicate;
 import com.google.common.base.Strings;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
@@ -94,6 +94,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -1094,8 +1095,8 @@ public class AndroidBuilder {
      * @throws LoggedErrorException
      */
     public void convertByteCode(
-            @NonNull Iterable<File> inputs,
-            @NonNull Iterable<File> preDexedLibraries,
+            @NonNull Collection<File> inputs,
+            @NonNull Collection<File> preDexedLibraries,
             @NonNull File outDexFolder,
                      boolean multidex,
                      boolean multidexLegacy,
@@ -1193,30 +1194,57 @@ public class AndroidBuilder {
         command.add("--output");
         command.add(outDexFolder.getAbsolutePath());
 
-        Iterable<File> allInputs = Iterables.concat(preDexedLibraries, inputs);
+        Set<File> allInputs = Sets.newHashSetWithExpectedSize(preDexedLibraries.size() + inputs.size());
+        allInputs.addAll(preDexedLibraries);
+        allInputs.addAll(inputs);
         command.addAll(getFilesToAdd(allInputs, buildToolInfo, tmpFolder));
 
         mCmdLineRunner.runCmdLine(command, null);
     }
 
-    private List<String> getFilesToAdd(Iterable<File> includeFiles,
+    private static List<String> getFilesToAdd(Set<File> includeFiles,
             BuildToolInfo buildToolInfo, File tmpFolder) throws IOException {
-        // clean up and add library inputs.
-        List<String> filePathList = Lists.newArrayList();
-        for (File f : includeFiles) {
-            if (f != null && f.exists()) {
-                filePathList.add(f.getAbsolutePath());
+        // remove non-existing files.
+        Set<File> existingFiles = Sets.filter(includeFiles, new Predicate<File>() {
+            @Override
+            public boolean apply(@Nullable File input) {
+                return input != null && input.exists();
             }
-        }
-        if (filePathList.isEmpty()) {
+        });
+
+        if (existingFiles.isEmpty()) {
             throw new IOException("No files to pass to dex.");
         }
 
-        if (buildToolInfo.getRevision().compareTo(MIN_BUILD_TOOLS_REVISION_FOR_DEX_INPUT_LIST) >= 0) {
-            File inputListFile = new File(tmpFolder, "libraryList.txt");
+        // sort the inputs
+        List<File> sortedList = Lists.newArrayList(existingFiles);
+        Collections.sort(sortedList, new Comparator<File>() {
+            @Override
+            public int compare(File file, File file2) {
+                if (file.isDirectory()) {
+                    return -1;
+                } else if (file2.isDirectory()) {
+                    return 1;
+                } else if (file.length() > file2.length()) {
+                    return 1;
+                }
+
+                return -1;
+            }
+        });
+
+        // convert to String-based paths.
+        List<String> filePathList = Lists.newArrayListWithCapacity(sortedList.size());
+        for (File f : sortedList) {
+            filePathList.add(f.getAbsolutePath());
+        }
+
+        if (buildToolInfo.getRevision()
+                .compareTo(MIN_BUILD_TOOLS_REVISION_FOR_DEX_INPUT_LIST) >= 0) {
+            File inputListFile = new File(tmpFolder, "inputList.txt");
             // Write each library line by line to file
             Files.asCharSink(inputListFile, Charsets.UTF_8).writeLines(filePathList);
-            return Lists.newArrayList("--input-list=" + inputListFile.getAbsolutePath());
+            return Collections.singletonList("--input-list=" + inputListFile.getAbsolutePath());
         } else {
             return filePathList;
         }
