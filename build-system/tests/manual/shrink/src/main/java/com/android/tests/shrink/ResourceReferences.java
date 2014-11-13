@@ -18,6 +18,11 @@ public class ResourceReferences {
 
         int dynamicId4 = resources.getIdentifier("com.android.tests.shrink:string/unused2", null, null);
         System.out.println(dynamicId4);
+
+        // These literal strings really match everything, which is why the resource shrinker should
+        // ignore it:
+        System.out.println(String.format("%5d", 5));
+        System.out.println(String.format("%x", 15));
     }
 
     public static String getType() {
