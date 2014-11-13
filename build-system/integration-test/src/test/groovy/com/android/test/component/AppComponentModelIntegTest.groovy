@@ -14,14 +14,12 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.model
+package com.android.test.component
 
-import com.android.build.gradle.internal.test.category.DeviceTests
-import com.android.build.gradle.internal.test.fixture.GradleProjectTestRule
-import com.android.build.gradle.internal.test.fixture.app.HelloWorldApp
+import com.android.test.common.category.DeviceTests
+import com.android.test.common.fixture.GradleTestProject
+import com.android.test.common.fixture.app.HelloWorldApp
 import org.junit.Before
-import org.junit.BeforeClass
-import org.junit.ClassRule
 import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
@@ -30,19 +28,20 @@ import org.junit.experimental.categories.Category
  * Basic integration test for AppComponentModelPlugin.
  */
 class AppComponentModelIntegTest {
+
     @Rule
-    public GradleProjectTestRule fixture = new GradleProjectTestRule();
+    public GradleTestProject project = GradleTestProject.builder().create();
 
     @Before
     public void setup() {
-        new HelloWorldApp().writeSources(fixture.getSourceDir())
-        fixture.buildFile << """
+        new HelloWorldApp().writeSources(project.getSourceDir())
+        project.buildFile << """
 apply plugin: "com.android.model.application"
 
 model {
     android {
-        compileSdkVersion $GradleProjectTestRule.DEFAULT_COMPILE_SDK_VERSION
-        buildToolsVersion "$GradleProjectTestRule.DEFAULT_BUILD_TOOL_VERSION"
+        compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
+        buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
     }
 }
 """
@@ -50,12 +49,12 @@ model {
 
     @Test
     public void basicAssemble() {
-        fixture.execute("assembleDebug");
+        project.execute("assembleDebug");
     }
 
     @Test
     public void flavors() {
-        fixture.buildFile << """
+        project.buildFile << """
 model {
     android.buildTypes {
         b1
@@ -67,7 +66,7 @@ model {
 }
 """
         // Runs all assemble tasks and ensure all combinations of assemble* tasks are created.
-        fixture.execute(
+        project.execute(
                 "assemble",
                 "assembleB1",
                 "assembleDebug",
@@ -88,6 +87,6 @@ model {
     @Test
     @Category(DeviceTests.class)
     public void connnectedAndroidTest() {
-        fixture.execute("connectedAndroidTest");
+        project.execute("connectedAndroidTest");
     }
 }

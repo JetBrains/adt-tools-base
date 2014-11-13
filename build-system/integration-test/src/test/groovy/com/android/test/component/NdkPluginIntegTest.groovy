@@ -14,13 +14,11 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.model
+package com.android.test.component
 
-import static org.junit.Assert.assertNotNull
-
-import com.android.build.gradle.internal.test.category.DeviceTests
-import com.android.build.gradle.internal.test.fixture.GradleProjectTestRule
-import com.android.build.gradle.internal.test.fixture.app.HelloWorldJniApp
+import com.android.test.common.category.DeviceTests
+import com.android.test.common.fixture.GradleTestProject
+import com.android.test.common.fixture.app.HelloWorldJniApp
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
@@ -28,22 +26,26 @@ import org.junit.experimental.categories.Category
 
 import java.util.zip.ZipFile
 
+import static org.junit.Assert.assertNotNull
+
 /**
  * Basic integration test for native plugin.
  */
 class NdkPluginIntegTest {
-    @ClassRule static public GradleProjectTestRule fixture = new GradleProjectTestRule();
+
+    @ClassRule
+    public static GradleTestProject project = GradleTestProject.builder().create();
 
     @BeforeClass
-    static public void setup() {
-        new HelloWorldJniApp(true /* useCppSource */).writeSources(fixture.getSourceDir())
-        fixture.getBuildFile() << """
+    public static void setup() {
+        new HelloWorldJniApp(true /* useCppSource */).writeSources(project.getSourceDir())
+        project.getBuildFile() << """
 apply plugin: 'com.android.model.application'
 
 model {
     android {
-        compileSdkVersion $GradleProjectTestRule.DEFAULT_COMPILE_SDK_VERSION
-        buildToolsVersion "$GradleProjectTestRule.DEFAULT_BUILD_TOOL_VERSION"
+        compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
+        buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
     }
     android.ndk {
         moduleName "hello-jni"
@@ -59,14 +61,14 @@ model {
 
     @Test
     public void assemble() {
-        fixture.execute("assemble");
+        project.execute("assemble");
     }
 
     @Test
     public void assembleRelease() {
-        fixture.execute("assembleRelease");
+        project.execute("assembleRelease");
         ZipFile apk = new ZipFile(
-                fixture.file("build/outputs/apk/${fixture.testDir.getName()}-release-unsigned.apk"));
+                project.file("build/outputs/apk/${project.name}-release-unsigned.apk"));
 
         // Verify .so are built for all platform.
         assertNotNull(apk.getEntry("lib/x86/libhello-jni.so"));
@@ -77,9 +79,9 @@ model {
 
     @Test
     public void assembleDebug() {
-        fixture.execute("assembleDebug");
+        project.execute("assembleDebug");
         ZipFile apk = new ZipFile(
-                fixture.file("build/outputs/apk/${fixture.testDir.getName()}-debug.apk"));
+                project.file("build/outputs/apk/${project.name}-debug.apk"));
 
         // Verify .so are built for all platform.
         assertNotNull(apk.getEntry("lib/x86/libhello-jni.so"));
@@ -99,6 +101,6 @@ model {
     @Test
     @Category(DeviceTests.class)
     public void connnectedAndroidTest() {
-        fixture.execute("connectedAndroidTest");
+        project.execute("connectedAndroidTest");
     }
 }
