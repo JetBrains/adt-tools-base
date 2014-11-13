@@ -135,7 +135,7 @@ public abstract class PreProcessCache<T extends PreProcessCache.Key> {
 
         @Override
         public boolean areOutputFilesPresent() {
-            boolean filesOk = true;
+            boolean filesOk = !mOutputFiles.isEmpty();
             for (File outputFile : mOutputFiles) {
                 filesOk &= outputFile.isFile();
             }
