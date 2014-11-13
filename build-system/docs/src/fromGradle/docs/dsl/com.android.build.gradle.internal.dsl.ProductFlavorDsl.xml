@@ -13,6 +13,24 @@
             <tr>
                 <td>versionName</td>
             </tr>
+            <tr>
+                <td>applicationId</td>
+            </tr>
+            <tr>
+                <td>testApplicationId</td>
+            </tr>
+            <tr>
+                <td>testInstrumentationRunner</td>
+            </tr>
+            <tr>
+                <td>signingConfig</td>
+            </tr>
+            <tr>
+                <td>testHandleProfiling</td>
+            </tr>
+            <tr>
+                <td>testFunctionalTest</td>
+            </tr>
         </table>
     </section>
     <section>
@@ -28,6 +46,15 @@
             </tr>
             <tr>
                 <td>minSdkVersion</td>
+            </tr>
+            <tr>
+                <td>proguardFile</td>
+            </tr>
+            <tr>
+                <td>proguardFiles</td>
+            </tr>
+            <tr>
+                <td>setProguardFiles</td>
             </tr>
         </table>
     </section>

@@ -13,6 +13,18 @@
             <tr>
                 <td>sourceSets</td>
             </tr>
+            <tr>
+                <td>defaultPublishConfig</td>
+            </tr>
+            <tr>
+                <td>publishNonDefault</td>
+            </tr>
+            <tr>
+                <td>compileSdkVersion</td>
+            </tr>
+            <tr>
+                <td>testOptions</td>
+            </tr>
         </table>
     </section>
     <section>
@@ -33,7 +45,10 @@
                 <td>defaultConfig</td>
             </tr>
             <tr>
-                <td>buildToolsVersion</td>
+                <td>buildTypes</td>
+            </tr>
+            <tr>
+                <td>testOptions</td>
             </tr>
         </table>
     </section>

@@ -32,7 +32,7 @@ import org.gradle.api.Project
 import org.gradle.api.logging.Logger
 import org.gradle.internal.reflect.Instantiator
 /**
- * DSL overlay to make methods that accept String... work.
+ * DSL object used to configure product flavors.
  */
 class ProductFlavorDsl extends DefaultProductFlavor {
 
@@ -69,6 +69,9 @@ class ProductFlavorDsl extends DefaultProductFlavor {
 
     /**
      * Sets minimum SDK version.
+     *
+     * <p>See <a href="http://developer.android.com/guide/topics/manifest/uses-sdk-element.html">
+     * uses-sdk element documentation</a>.
      */
     @NonNull
     public ProductFlavor minSdkVersion(int minSdkVersion) {
@@ -84,6 +87,9 @@ class ProductFlavorDsl extends DefaultProductFlavor {
 
     /**
      * Sets minimum SDK version.
+     *
+     * <p>See <a href="http://developer.android.com/guide/topics/manifest/uses-sdk-element.html">
+     * uses-sdk element documentation</a>.
      */
     @NonNull
     public ProductFlavor minSdkVersion(String minSdkVersion) {
@@ -98,7 +104,10 @@ class ProductFlavorDsl extends DefaultProductFlavor {
     }
 
     /**
-     * Sets target SDK version.
+     * Sets the target SDK version to the given value.
+     *
+     * <p>See <a href="http://developer.android.com/guide/topics/manifest/uses-sdk-element.html">
+     * uses-sdk element documentation</a>.
      */
     @NonNull
     public ProductFlavor targetSdkVersion(int targetSdkVersion) {
@@ -113,7 +122,10 @@ class ProductFlavorDsl extends DefaultProductFlavor {
     }
 
     /**
-     * Sets target SDK version.
+     * Sets the target SDK version to the given value.
+     *
+     * <p>See <a href="http://developer.android.com/guide/topics/manifest/uses-sdk-element.html">
+     * uses-sdk element documentation</a>.
      */
     @NonNull
     public ProductFlavor targetSdkVersion(String targetSdkVersion) {
@@ -183,18 +195,37 @@ class ProductFlavorDsl extends DefaultProductFlavor {
         addResValue(AndroidBuilder.createClassField(type, name, value));
     }
 
+    /**
+     * Adds a new ProGuard configuration file.
+     *
+     * <p><code>proguardFile getDefaultProguardFile('proguard-android.txt')</code></p>
+     *
+     * <p>There are 2 default rules files
+     * <ul>
+     *     <li>proguard-android.txt
+     *     <li>proguard-android-optimize.txt
+     * </ul>
+     * <p>They are located in the SDK. Using <code>getDefaultProguardFile(String filename)</code> will return the
+     * full path to the files. They are identical except for enabling optimizations.
+     */
     @NonNull
     public ProductFlavorDsl proguardFile(Object proguardFile) {
         proguardFiles.add(project.file(proguardFile))
         return this
     }
 
+    /**
+     * Adds new ProGuard configuration files.
+     */
     @NonNull
-    public ProductFlavorDsl proguardFiles(Object... proguardFileArray) {
-        proguardFiles.addAll(project.files(proguardFileArray).files)
+    public ProductFlavorDsl proguardFiles(Object... proguardFiles) {
+        proguardFiles.addAll(project.files(proguardFiles).files)
         return this
     }
 
+    /**
+     * Sets the ProGuard configuration files.
+     */
     @NonNull
     public ProductFlavorDsl setProguardFiles(Iterable<?> proguardFileIterable) {
         proguardFiles.clear()
