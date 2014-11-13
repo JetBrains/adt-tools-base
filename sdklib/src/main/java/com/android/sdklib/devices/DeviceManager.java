@@ -308,7 +308,7 @@ public class DeviceManager {
                 stream = DeviceManager.class.getResourceAsStream("nexus.xml");
                 mVendorDevices.addAll(DeviceParser.parse(stream));
             } catch (Exception e) {
-                mLog.error(e, null, "Could not load nexus devices");
+                mLog.error(e, "Could not load nexus devices");
             } finally {
                 try {
                     Closeables.close(stream, true /* swallowIOException */);
@@ -322,7 +322,7 @@ public class DeviceManager {
                 stream = DeviceManager.class.getResourceAsStream("wear.xml");
                 mVendorDevices.addAll(DeviceParser.parse(stream));
             } catch (Exception e) {
-                mLog.error(e, null, "Could not load wear devices");
+                mLog.error(e, "Could not load wear devices");
             } finally {
                 try {
                     Closeables.close(stream, true /* swallowIOException */);
@@ -336,7 +336,7 @@ public class DeviceManager {
                 stream = DeviceManager.class.getResourceAsStream("tv.xml");
                 mVendorDevices.addAll(DeviceParser.parse(stream));
             } catch (Exception e) {
-                mLog.error(e, null, "Could not load tv devices");
+                mLog.error(e, "Could not load tv devices");
             } finally {
                 try {
                     Closeables.close(stream, true /* swallowIOException */);

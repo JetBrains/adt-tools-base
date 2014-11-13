@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.model.ApiVersion;
 import com.android.builder.model.ProductFlavor;
+import com.android.builder.model.SigningConfig;
 import com.google.common.collect.ImmutableSet;
 
 import java.io.Serializable;
@@ -37,10 +38,10 @@ class ProductFlavorImpl extends BaseConfigImpl implements ProductFlavor, Seriali
     private ApiVersion mMinSdkVersion = null;
     private ApiVersion mTargetSdkVersion = null;
     private Integer mMaxSdkVersion = null;
-    private int mRenderscriptTargetApi = -1;
-    private boolean mRenderscriptSupportMode = false;
-    private boolean mRenderscriptNdkMode = false;
-    private int mVersionCode = -1;
+    private Integer mRenderscriptTargetApi = null;
+    private Boolean mRenderscriptSupportMode = null;
+    private Boolean mRenderscriptNdkMode = null;
+    private Integer mVersionCode = null;
     private String mVersionName = null;
     private String mApplicationId = null;
     private String mTestApplicationId = null;
@@ -67,8 +68,8 @@ class ProductFlavorImpl extends BaseConfigImpl implements ProductFlavor, Seriali
                 ? null /* we remove the maxSdkVersion when dealing with a preview release */
                 : productFlavor.getMaxSdkVersion();
         clonedFlavor.mRenderscriptTargetApi = productFlavor.getRenderscriptTargetApi();
-        clonedFlavor.mRenderscriptSupportMode = productFlavor.getRenderscriptSupportMode();
-        clonedFlavor.mRenderscriptNdkMode = productFlavor.getRenderscriptNdkMode();
+        clonedFlavor.mRenderscriptSupportMode = productFlavor.getRenderscriptSupportModeEnabled();
+        clonedFlavor.mRenderscriptNdkMode = productFlavor.getRenderscriptNdkModeEnabled();
 
         clonedFlavor.mVersionCode = productFlavor.getVersionCode();
         clonedFlavor.mVersionName = productFlavor.getVersionName();
@@ -103,7 +104,8 @@ class ProductFlavorImpl extends BaseConfigImpl implements ProductFlavor, Seriali
     }
 
     @Override
-    public int getVersionCode() {
+    @Nullable
+    public Integer getVersionCode() {
         return mVersionCode;
     }
 
@@ -130,17 +132,20 @@ class ProductFlavorImpl extends BaseConfigImpl implements ProductFlavor, Seriali
     public Integer getMaxSdkVersion() { return mMaxSdkVersion; }
 
     @Override
-    public int getRenderscriptTargetApi() {
+    @Nullable
+    public Integer getRenderscriptTargetApi() {
         return mRenderscriptTargetApi;
     }
 
     @Override
-    public boolean getRenderscriptSupportMode() {
+    @Nullable
+    public Boolean getRenderscriptSupportModeEnabled() {
         return mRenderscriptSupportMode;
     }
 
     @Override
-    public boolean getRenderscriptNdkMode() {
+    @Nullable
+    public Boolean getRenderscriptNdkModeEnabled() {
         return mRenderscriptNdkMode;
     }
 
@@ -172,6 +177,12 @@ class ProductFlavorImpl extends BaseConfigImpl implements ProductFlavor, Seriali
     @Override
     public Collection<String> getResourceConfigurations() {
         return mResourceConfigurations;
+    }
+
+    @Nullable
+    @Override
+    public SigningConfig getSigningConfig() {
+        return null;
     }
 
     @Override

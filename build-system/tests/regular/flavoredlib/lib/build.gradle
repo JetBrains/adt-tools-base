@@ -1,0 +1,18 @@
+apply plugin: 'com.android.library'
+
+android {
+    compileSdkVersion 21
+    buildToolsVersion = rootProject.ext.buildToolsVersion
+
+    defaultPublishConfig "flavor1Release"
+    publishNonDefault true
+
+    productFlavors {
+        flavor1 { }
+        flavor2 { }
+    }
+
+    libraryVariants.all { variant ->
+        assert variant.productFlavors.size() != 0
+    }
+}

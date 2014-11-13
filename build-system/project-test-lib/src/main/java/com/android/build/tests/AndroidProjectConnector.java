@@ -22,13 +22,16 @@ import com.android.builder.model.AndroidProject;
 import com.android.io.StreamException;
 import com.google.common.collect.Lists;
 
+import org.gradle.tooling.BuildLauncher;
 import org.gradle.tooling.GradleConnector;
 import org.gradle.tooling.ProjectConnection;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -50,6 +53,7 @@ public class AndroidProjectConnector {
             @NonNull File project,
             @NonNull String gradleVersion,
             @NonNull List<String> arguments,
+            @NonNull Map<String, String> jvmDefines,
             @NonNull String... tasks) throws IOException, StreamException {
         File localProp = createLocalProp(project);
 
@@ -66,7 +70,20 @@ public class AndroidProjectConnector {
                 args.add("-u");
                 args.addAll(arguments);
 
-                connection.newBuild().forTasks(tasks).withArguments(args.toArray(new String[args.size()])).run();
+                BuildLauncher build = connection.newBuild().forTasks(tasks).withArguments(
+                        args.toArray(new String[args.size()]));
+
+                if (!jvmDefines.isEmpty()) {
+                    String[] jvmArgs = new String[jvmDefines.size()];
+                    int index = 0;
+                    for (Map.Entry<String, String> entry : jvmDefines.entrySet()) {
+                        jvmArgs[index++] = "-D" + entry.getKey() + "=" + entry.getValue();
+                    }
+
+                    build.setJvmArguments(jvmArgs);
+                }
+
+                build.run();
             } finally {
                 connection.close();
             }

@@ -18,19 +18,26 @@ package com.android.build.gradle.internal.variant;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.FilterData;
+import com.android.build.OutputFile;
 import com.android.build.gradle.BasePlugin;
 import com.android.build.gradle.api.BaseVariant;
 import com.android.build.gradle.api.BaseVariantOutput;
+import com.android.build.gradle.internal.VariantModel;
+import com.android.build.gradle.internal.api.ReadOnlyObjectProvider;
 import com.android.build.gradle.internal.api.ApkVariantImpl;
 import com.android.build.gradle.internal.api.ApkVariantOutputImpl;
 import com.android.build.gradle.internal.api.ApplicationVariantImpl;
+import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.builder.core.VariantConfiguration;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
 import org.gradle.api.Task;
 import org.gradle.api.artifacts.Configuration;
 
 import java.io.File;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -51,7 +58,7 @@ public class ApplicationVariantFactory implements VariantFactory<ApplicationVari
     @Override
     @NonNull
     public ApplicationVariantData createVariantData(
-            @NonNull VariantConfiguration variantConfiguration,
+            @NonNull GradleVariantConfiguration variantConfiguration,
             @NonNull Set<String> densities,
             @NonNull Set<String> abis,
             @NonNull Set<String> compatibleScreens) {
@@ -67,11 +74,21 @@ public class ApplicationVariantFactory implements VariantFactory<ApplicationVari
             // create its outputs
             for (String density : densities) {
                 for (String abi : abis) {
-                    variant.createOutput(density, abi);
+                    ImmutableList.Builder<FilterData> builder = ImmutableList.builder();
+                    if (density != null) {
+                        builder.add(FilterData.Builder.build(OutputFile.DENSITY, density));
+                    }
+                    if (abi != null) {
+                        builder.add(FilterData.Builder.build(OutputFile.ABI, abi));
+                    }
+                    variant.createOutput(
+                            OutputFile.OutputType.FULL_SPLIT,
+                            builder.build());
                 }
             }
         } else {
-            variant.createOutput(null, null);
+            variant.createOutput(OutputFile.OutputType.MAIN,
+                    Collections.<FilterData>emptyList());
         }
 
         return variant;
@@ -79,10 +96,12 @@ public class ApplicationVariantFactory implements VariantFactory<ApplicationVari
 
     @Override
     @NonNull
-    public BaseVariant createVariantApi(@NonNull BaseVariantData<? extends BaseVariantOutputData> variantData) {
+    public BaseVariant createVariantApi(
+            @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData,
+            @NonNull ReadOnlyObjectProvider readOnlyObjectProvider) {
         // create the base variant object.
         ApplicationVariantImpl variant = basePlugin.getInstantiator().newInstance(
-                ApplicationVariantImpl.class, variantData, basePlugin);
+                ApplicationVariantImpl.class, variantData, basePlugin, readOnlyObjectProvider);
 
         // now create the output objects
         createApkOutputApiObjects(basePlugin, variantData, variant);
@@ -165,7 +184,13 @@ public class ApplicationVariantFactory implements VariantFactory<ApplicationVari
         basePlugin.createAidlTask(variantData, null /*parcelableDir*/);
 
         // Add a compile task
-        basePlugin.createCompileTask(variantData, null /*testedVariant*/);
+        if (variantData.getVariantConfiguration().getUseJack()) {
+            basePlugin.createJackTask(appVariantData, null /*testedVariant*/);
+        } else{
+            basePlugin.createCompileTask(variantData, null /*testedVariant*/);
+
+            basePlugin.createPostCompilationTasks(appVariantData);
+        }
 
         // Add NDK tasks
         if (!basePlugin.getExtension().getUseNewNativePlugin()) {
@@ -174,9 +199,16 @@ public class ApplicationVariantFactory implements VariantFactory<ApplicationVari
 
         if (variantData.getSplitHandlingPolicy() ==
                 BaseVariantData.SplitHandlingPolicy.RELEASE_21_AND_AFTER_POLICY) {
-            basePlugin.createPackageSplitResTask(appVariantData);
+            basePlugin.createSplitResourcesTasks(appVariantData);
+            basePlugin.createSplitAbiTasks(appVariantData);
         }
-        basePlugin.addPackageTasks(appVariantData, assembleTask, true /*publishApk*/);
+
+        basePlugin.createPackagingTask(appVariantData, assembleTask, true /*publishApk*/);
+    }
+
+    @Override
+    public void validateModel(VariantModel model){
+        // No additional checks for ApplicationVariantFactory, so just return.
     }
 
     private void handleMicroApp(@NonNull BaseVariantData<?> variantData) {

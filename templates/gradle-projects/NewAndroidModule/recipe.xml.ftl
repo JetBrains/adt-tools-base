@@ -2,7 +2,7 @@
 <recipe>
 
 
-    <#if appCompat?has_content><dependency mavenUrl="com.android.support:appcompat-v7:${targetApi}.+"/></#if>
+    <#if appCompat><dependency mavenUrl="com.android.support:appcompat-v7:${targetApi}.+"/></#if>
 
 <#if !createActivity>
     <mkdir at="${escapeXmlAttribute(srcOut)}" />
@@ -39,7 +39,7 @@
 <#if !(isLibraryProject??) || !isLibraryProject>
     <instantiate from="res/values/styles.xml.ftl"
                    to="${escapeXmlAttribute(resOut)}/values/styles.xml" />
-<#if buildApi gte 21>
+<#if buildApi gte 21 && !(appCompat)>
     <copy from="res/values-v21/styles.xml"
           to="${escapeXmlAttribute(resOut)}/values-v21/styles.xml" />
 </#if>

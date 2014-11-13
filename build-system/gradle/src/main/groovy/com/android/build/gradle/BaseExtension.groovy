@@ -21,7 +21,6 @@ import com.android.build.gradle.api.AndroidSourceSet
 import com.android.build.gradle.api.BaseVariant
 import com.android.build.gradle.api.TestVariant
 import com.android.build.gradle.internal.CompileOptions
-import com.android.build.gradle.internal.NdkLibrarySpecification
 import com.android.build.gradle.internal.SourceSetSourceProviderWrapper
 import com.android.build.gradle.internal.coverage.JacocoExtension
 import com.android.build.gradle.internal.dsl.AaptOptionsImpl
@@ -30,9 +29,8 @@ import com.android.build.gradle.internal.dsl.DexOptionsImpl
 import com.android.build.gradle.internal.dsl.LintOptionsImpl
 import com.android.build.gradle.internal.dsl.PackagingOptionsImpl
 import com.android.build.gradle.internal.dsl.ProductFlavorDsl
-import com.android.build.gradle.internal.test.TestOptions
-import com.android.build.gradle.ndk.NdkExtension
 import com.android.build.gradle.internal.dsl.Splits
+import com.android.build.gradle.internal.test.TestOptions
 import com.android.builder.core.BuilderConstants
 import com.android.builder.core.DefaultBuildType
 import com.android.builder.core.DefaultProductFlavor
@@ -61,7 +59,7 @@ public abstract class BaseExtension {
     private String target
     private FullRevision buildToolsRevision
 
-    final DefaultProductFlavor defaultConfig
+    final ProductFlavorDsl defaultConfig
     final AaptOptionsImpl aaptOptions
     final LintOptionsImpl lintOptions
     final DexOptionsImpl dexOptions
@@ -82,9 +80,6 @@ public abstract class BaseExtension {
 
     private String defaultPublishConfig = "release"
     private boolean publishNonDefault = false
-
-    NdkLibrarySpecification ndkLib
-    private NdkExtension ndk
     private boolean useNewNativePlugin = false
 
     private Closure<Void> variantFilter
@@ -109,7 +104,7 @@ public abstract class BaseExtension {
             @NonNull NamedDomainObjectContainer<DefaultBuildType> buildTypes,
             @NonNull NamedDomainObjectContainer<DefaultProductFlavor> productFlavors,
             @NonNull NamedDomainObjectContainer<SigningConfig> signingConfigs,
-                     final boolean isLibrary) {
+            boolean isLibrary) {
         this.plugin = plugin
         this.buildTypes = buildTypes
         this.productFlavors = productFlavors
@@ -226,7 +221,7 @@ public abstract class BaseExtension {
         sourceSetsContainer
     }
 
-    void defaultConfig(Action<DefaultProductFlavor> action) {
+    void defaultConfig(Action<ProductFlavorDsl> action) {
         plugin.checkTasksAlreadyCreated()
         action.execute(defaultConfig)
     }
@@ -254,6 +249,7 @@ public abstract class BaseExtension {
     void compileOptions(Action<CompileOptions> action) {
         plugin.checkTasksAlreadyCreated()
         action.execute(compileOptions)
+        compileOptions.setExplicitly = true
     }
 
     void packagingOptions(Action<PackagingOptionsImpl> action) {
@@ -385,7 +381,7 @@ public abstract class BaseExtension {
         return plugin.getSdkFolder()
     }
 
-    public List<String> getBootClasspath() {
+    public List<File> getBootClasspath() {
         return plugin.getBootClasspath()
     }
 
@@ -413,14 +409,14 @@ public abstract class BaseExtension {
     // TEMP for compatibility
     // STOPSHIP Remove in 1.0
 
-    // by default, use the new manifest merger.
-    boolean useOldManifestMerger = false;
+    // by default, we do not generate pure splits
+    boolean generatePureSplits = false;
 
-    void useOldManifestMerger(boolean flag) {
+    void generatePureSplits(boolean flag) {
         if (flag) {
-            plugin.displayDeprecationWarning("Support for old manifest merger is deprecated and will be removed in 1.0")
+            plugin.getLogger().warning("Pure splits are not supported by PlayStore yet.")
         }
-        this.useOldManifestMerger = flag;
+        this.generatePureSplits = flag;
     }
 
     private boolean enforceUniquePackageName = true
@@ -445,23 +441,11 @@ public abstract class BaseExtension {
         flavorDimensions(groups);
     }
 
-    public void ndk(Action<NdkExtension> action) {
-        action.execute(ndk)
-    }
-
     public boolean getUseNewNativePlugin() {
         return useNewNativePlugin
     }
 
     public void setUseNewNativePlugin(boolean value) {
         useNewNativePlugin = value
-    }
-
-    public setNdkExtension(NdkExtension extension) {
-        this.ndk = extension
-    }
-
-    public ndkLib(String targetProject) {
-        ndkLib = new NdkLibrarySpecification(plugin.project, targetProject);
     }
 }

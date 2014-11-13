@@ -26,6 +26,7 @@ import com.android.ddmlib.IDevice;
 import com.android.ddmlib.testrunner.TestIdentifier;
 import com.android.ide.common.internal.WaitableExecutor;
 import com.android.utils.ILogger;
+import com.google.common.collect.ImmutableList;
 
 import java.io.File;
 import java.util.Collections;
@@ -69,11 +70,11 @@ public class SimpleTestRunner implements TestRunner {
                         device, testData.getMinSdkVersion(), logger, projectName, variantName)) {
 
                     // now look for a matching output file
-                    File testedApk = null;
+                    ImmutableList<File> testedApks = ImmutableList.of();
                     if (!testData.isLibrary()) {
-                        testedApk = testData.getTestedApk(device.getDensity(), device.getAbis());
+                        testedApks = testData.getTestedApks(device.getDensity(), device.getAbis());
 
-                        if (testedApk == null) {
+                        if (testedApks.isEmpty()) {
                             logger.info("Skipping device '%1$s' for '%2$s:%3$s': No matching output file",
                                     device.getName(), projectName, variantName);
                             continue;
@@ -82,7 +83,7 @@ public class SimpleTestRunner implements TestRunner {
 
                     compatibleDevices++;
                     executor.execute(new SimpleTestCallable(device, projectName, variantName,
-                            testApk, testedApk, testData.getSplitApks(), mAdbExec, testData,
+                            testApk, testedApks, mAdbExec, testData,
                             resultsDir, coverageDir, timeout, logger));
                 }
             } else {

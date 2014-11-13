@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal.model;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.builder.model.BaseConfig;
 import com.android.builder.model.ClassField;
 import com.google.common.collect.ImmutableMap;
@@ -40,11 +41,20 @@ abstract class BaseConfigImpl implements BaseConfig, Serializable {
     private final Map<String, ClassField> mBuildConfigFields;
     @NonNull
     private final Map<String, ClassField> mResValues;
+    @Nullable
+    private Boolean mMultiDexEnabled;
+    @Nullable
+    private File mMultiDexKeepFile;
+    @Nullable
+    private File mMultiDexKeepProguard;
 
     protected BaseConfigImpl(@NonNull BaseConfig baseConfig) {
         mManifestPlaceholders = ImmutableMap.copyOf(baseConfig.getManifestPlaceholders());
         mBuildConfigFields = ImmutableMap.copyOf(baseConfig.getBuildConfigFields());
         mResValues = ImmutableMap.copyOf(baseConfig.getResValues());
+        mMultiDexEnabled = baseConfig.getMultiDexEnabled();
+        mMultiDexKeepFile = baseConfig.getMultiDexKeepFile();
+        mMultiDexKeepProguard = baseConfig.getMultiDexKeepProguard();
     }
 
     @NonNull
@@ -78,11 +88,30 @@ abstract class BaseConfigImpl implements BaseConfig, Serializable {
     }
 
     @Override
+    @Nullable
+    public Boolean getMultiDexEnabled() {
+        return mMultiDexEnabled;
+    }
+
+    @Nullable
+    @Override
+    public File getMultiDexKeepFile() {
+        return mMultiDexKeepFile;
+    }
+
+    @Nullable
+    @Override
+    public File getMultiDexKeepProguard() {
+        return mMultiDexKeepProguard;
+    }
+
+    @Override
     public String toString() {
         return "BaseConfigImpl{" +
                 "mManifestPlaceholders=" + mManifestPlaceholders +
                 ", mBuildConfigFields=" + mBuildConfigFields +
                 ", mResValues=" + mResValues +
+                ", mMultiDexEnabled=" + mMultiDexEnabled +
                 '}';
     }
 }

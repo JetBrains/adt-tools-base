@@ -21,20 +21,17 @@ import com.android.annotations.Nullable;
 import com.android.builder.testing.TestData;
 import com.android.builder.testing.api.DeviceConnector;
 import com.android.builder.testing.api.DeviceException;
-import com.android.ddmlib.NullOutputReceiver;
-import com.android.ddmlib.testrunner.ITestRunListener;
+import com.android.ddmlib.InstallException;
+import com.android.ddmlib.MultiLineReceiver;
 import com.android.ddmlib.testrunner.RemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.TestIdentifier;
 import com.android.ddmlib.testrunner.TestRunResult;
 import com.android.utils.ILogger;
+import com.google.common.base.Joiner;
 
-import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.PrintWriter;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -65,10 +62,8 @@ public class SimpleTestCallable implements Callable<Boolean> {
     private final File coverageDir;
     @NonNull
     private final File testApk;
-    @Nullable
-    private final File testedApk;
-    @Nullable
-    private final File[] splitApks;
+    @NonNull
+    private final List<File> testedApks;
     @NonNull
     private final File adbExec;
 
@@ -81,8 +76,7 @@ public class SimpleTestCallable implements Callable<Boolean> {
             @NonNull  String projectName,
             @NonNull  String flavorName,
             @NonNull  File testApk,
-            @Nullable File testedApk,
-            @Nullable File[] splitApks,
+            @NonNull List<File> testedApks,
             @NonNull  File adbExec,
             @NonNull  TestData testData,
             @NonNull  File resultsDir,
@@ -95,9 +89,8 @@ public class SimpleTestCallable implements Callable<Boolean> {
         this.resultsDir = resultsDir;
         this.coverageDir = coverageDir;
         this.testApk = testApk;
-        this.testedApk = testedApk;
+        this.testedApks = testedApks;
         this.testData = testData;
-        this.splitApks = splitApks;
         this.adbExec = adbExec;
         this.timeout = timeout;
         this.logger = logger;
@@ -120,39 +113,16 @@ public class SimpleTestCallable implements Callable<Boolean> {
         try {
             device.connect(timeout, logger);
 
-            if (testedApk != null) {
-                logger.verbose("DeviceConnector '%s': installing %s", deviceName, testedApk);
-                if (splitApks != null) {
-                    List<String> args = new ArrayList<String>();
-                    args.add(adbExec.getAbsolutePath());
-                    args.add("install-multiple");
-                    args.add("-r");
-                    args.add(testedApk.getAbsolutePath());
-                    // for now, do a simple java exec adb
-                    for (File split : splitApks) {
-                        args.add(split.getAbsolutePath());
+            if (!testedApks.isEmpty()) {
+                logger.verbose("DeviceConnector '%s': installing %s", deviceName, Joiner.on(',').join(testedApks));
+                if (testedApks.size() > 1) {
+                    if (device.getApiLevel() < 21) {
+                        throw new InstallException("Internal error, file a bug, multi-apk applications"
+                                + " require a device with API level 21+");
                     }
-                    ProcessBuilder processBuilder = new ProcessBuilder(args);
-                    Process process = processBuilder.start();
-                    //Read out dir output
-                    InputStream is = process.getErrorStream();
-                    InputStreamReader isr = new InputStreamReader(is);
-                    BufferedReader br = new BufferedReader(isr);
-                    String line;
-                    while ((line = br.readLine()) != null) {
-                        logger.verbose("adb output is :" + line);
-                    }
-
-                    //Wait to get exit value
-                    try {
-                        int exitValue = process.waitFor();
-                        logger.verbose("\n\nExit Value is " + exitValue);
-                    } catch (InterruptedException e) {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
-                    }
+                    device.installPackages(testedApks, timeout, logger);
                 } else {
-                    device.installPackage(testedApk, timeout, logger);
+                    device.installPackage(testedApks.get(0), timeout, logger);
                 }
             }
 
@@ -220,13 +190,35 @@ public class SimpleTestCallable implements Callable<Boolean> {
             if (isInstalled) {
                 // Get the coverage if needed.
                 if (success && testData.isTestCoverageEnabled()) {
-                    device.executeShellCommand(
-                            "run-as " + testData.getTestedApplicationId() + " chmod 644 " + coverageFile,
-                            new NullOutputReceiver(),
+                    String temporaryCoverageCopy = "/data/local/tmp/"
+                            + testData.getTestedApplicationId() + "." + FILE_COVERAGE_EC;
+
+                    MultiLineReceiver outputReceiver = new MultiLineReceiver() {
+                        @Override
+                        public void processNewLines(String[] lines) {
+                            for (String line : lines) {
+                                logger.info(line);
+                            }
+                        }
+
+                        @Override
+                        public boolean isCancelled() {
+                            return false;
+                        }
+                    };
+
+                    logger.verbose("DeviceConnector '%s': fetching coverage data from %s",
+                            deviceName, coverageFile);
+                    device.executeShellCommand("run-as " + testData.getTestedApplicationId()
+                                    + " cat " + coverageFile + " > " + temporaryCoverageCopy,
+                            outputReceiver,
                             30, TimeUnit.SECONDS);
                     device.pullFile(
-                            coverageFile,
+                            temporaryCoverageCopy,
                             new File(coverageDir, FILE_COVERAGE_EC).getPath());
+                    device.executeShellCommand("rm " + temporaryCoverageCopy,
+                            outputReceiver,
+                            30, TimeUnit.SECONDS);
                 }
 
                 // uninstall the apps
@@ -234,8 +226,10 @@ public class SimpleTestCallable implements Callable<Boolean> {
                 // would have broken before.
                 uninstall(testApk, testData.getApplicationId(), deviceName);
 
-                if (testedApk != null) {
-                   uninstall(testedApk, testData.getTestedApplicationId(), deviceName);
+                if (!testedApks.isEmpty()) {
+                    for (File testedApk : testedApks) {
+                        uninstall(testedApk, testData.getTestedApplicationId(), deviceName);
+                    }
                 }
             }
 

@@ -17,14 +17,16 @@
 package com.android.build.gradle.internal.variant;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
-import com.android.build.gradle.api.ApkOutput;
+import com.android.build.FilterData;
+import com.android.build.OutputFile;
+import com.android.build.gradle.api.ApkOutputFile;
 import com.android.build.gradle.tasks.PackageApplication;
 import com.android.build.gradle.tasks.SplitZipAlign;
 import com.android.build.gradle.tasks.ZipAlign;
 import com.google.common.collect.ImmutableList;
 
 import java.io.File;
+import java.util.Collection;
 
 /**
  * Base output data for a variant that generates an APK file.
@@ -36,12 +38,13 @@ public class ApkVariantOutputData extends BaseVariantOutputData {
     public SplitZipAlign splitZipAlign;
 
     private int versionCodeOverride = -1;
+    private String versionNameOverride = null;
 
     public ApkVariantOutputData(
-            @Nullable String densityFilter,
-            @Nullable String abiFilter,
+            @NonNull OutputFile.OutputType outputType,
+            @NonNull Collection<FilterData> filters,
             @NonNull BaseVariantData variantData) {
-        super(densityFilter, abiFilter, variantData);
+        super(outputType, filters, variantData);
     }
 
     @Override
@@ -65,12 +68,16 @@ public class ApkVariantOutputData extends BaseVariantOutputData {
 
     @NonNull
     @Override
-    public ImmutableList<ApkOutput> getOutputFiles() {
-        ImmutableList.Builder<ApkOutput> outputs = ImmutableList.builder();
-        if (packageSplitResourcesTask != null) {
-            outputs.addAll(packageSplitResourcesTask.getOutputFiles());
+    public ImmutableList<ApkOutputFile> getOutputs() {
+        ImmutableList.Builder<ApkOutputFile> outputs = ImmutableList.builder();
+        outputs.add(getMainOutputFile());
+        if (splitZipAlign != null) {
+            outputs.addAll(splitZipAlign.getOutputSplitFiles());
+        } else {
+            if (packageSplitResourcesTask != null) {
+                outputs.addAll(packageSplitResourcesTask.getOutputSplitFiles());
+            }
         }
-        outputs.add(new ApkOutput.MainApkOutput(getOutputFile()));
         return outputs.build();
     }
 
@@ -97,7 +104,21 @@ public class ApkVariantOutputData extends BaseVariantOutputData {
             return versionCodeOverride;
         }
 
-        return variantData.getVariantConfiguration().getMergedFlavor().getVersionCode();
+        return variantData.getVariantConfiguration().getVersionCode();
+    }
+
+    @NonNull
+    @Override
+    public File getSplitFolder() {
+        return getOutputFile().getParentFile();
+    }
+
+    public String getVersionName() {
+        if (versionNameOverride != null) {
+            return versionNameOverride;
+        }
+
+        return variantData.getVariantConfiguration().getVersionName();
     }
 
     public void setVersionCodeOverride(int versionCodeOverride) {
@@ -106,5 +127,13 @@ public class ApkVariantOutputData extends BaseVariantOutputData {
 
     public int getVersionCodeOverride() {
         return versionCodeOverride;
+    }
+
+    public void setVersionNameOverride(String versionNameOverride) {
+        this.versionNameOverride = versionNameOverride;
+    }
+
+    public String getVersionNameOverride() {
+        return versionNameOverride;
     }
 }

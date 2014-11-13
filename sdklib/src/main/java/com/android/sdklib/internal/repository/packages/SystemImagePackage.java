@@ -137,8 +137,8 @@ public class SystemImagePackage extends MajorRevisionPackage
 
             desc = PkgDesc.Builder
                     .newAddonSysImg(mVersion,
-                                    mTag,
                                     vendor,
+                                    mTag,
                                     mAbi,
                                     (MajorRevision) getRevision())
                     .setDescriptions(this)
@@ -208,8 +208,8 @@ public class SystemImagePackage extends MajorRevisionPackage
 
             desc = PkgDesc.Builder
                     .newAddonSysImg(mVersion,
-                                    mTag,
                                     vendor,
+                                    mTag,
                                     mAbi,
                                     (MajorRevision) getRevision())
                     .setDescriptions(this)
@@ -634,6 +634,7 @@ public class SystemImagePackage extends MajorRevisionPackage
         int pos = s.indexOf("|r:");                 //$NON-NLS-1$
         assert pos > 0;
         s = s.substring(0, pos) +
+            "|vend:" + (mAddonVendor == null ? "" : mAddonVendor.getId()) + //$NON-NLS-1$ //$NON-NLS-2$
             "|tag:" + getTag().getId() +            //$NON-NLS-1$
             "|abi:" + getAbiDisplayName() +         //$NON-NLS-1$
             s.substring(pos);

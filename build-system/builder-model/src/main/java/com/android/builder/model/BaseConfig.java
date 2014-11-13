@@ -17,6 +17,7 @@
 package com.android.builder.model;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 
 import java.io.File;
 import java.util.Collection;
@@ -70,4 +71,18 @@ public interface BaseConfig {
      */
     @NonNull
     Map<String, String> getManifestPlaceholders();
+
+    /**
+     * Returns whether multi-dex is enabled.
+     *
+     * This can be null if the flag is not set, in which case the default value is used.
+     */
+    @Nullable
+    Boolean getMultiDexEnabled();
+
+    @Nullable
+    File getMultiDexKeepFile();
+
+    @Nullable
+    File getMultiDexKeepProguard();
 }

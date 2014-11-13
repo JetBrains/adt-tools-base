@@ -22,12 +22,14 @@ import com.android.build.gradle.BasePlugin
 import com.android.build.gradle.LibraryExtension
 import com.android.build.gradle.api.BaseVariant
 import com.android.build.gradle.api.BaseVariantOutput
+import com.android.build.gradle.internal.BuildTypeData
+import com.android.build.gradle.internal.ProductFlavorData
+import com.android.build.gradle.internal.VariantModel
 import com.android.build.gradle.internal.api.LibraryVariantImpl
 import com.android.build.gradle.internal.api.LibraryVariantOutputImpl
-import com.android.build.gradle.internal.coverage.JacocoInstrumentTask
-import com.android.build.gradle.internal.coverage.JacocoPlugin
+import com.android.build.gradle.internal.api.ReadOnlyObjectProvider
+import com.android.build.gradle.internal.core.GradleVariantConfiguration
 import com.android.build.gradle.internal.tasks.MergeFileTask
-import com.android.build.gradle.ndk.NdkPlugin
 import com.android.build.gradle.tasks.ExtractAnnotations
 import com.android.build.gradle.tasks.MergeResources
 import com.android.builder.core.BuilderConstants
@@ -39,6 +41,7 @@ import com.android.builder.dependency.ManifestDependency
 import com.android.builder.model.AndroidLibrary
 import com.android.builder.model.MavenCoordinates
 import com.google.common.collect.Lists
+import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.tasks.Copy
@@ -50,6 +53,7 @@ import org.gradle.tooling.BuildException
 import static com.android.SdkConstants.FN_ANNOTATIONS_ZIP
 import static com.android.SdkConstants.LIBS_FOLDER
 import static com.android.build.gradle.BasePlugin.DIR_BUNDLES
+import static com.android.build.gradle.BasePlugin.optionalDependsOn
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
 import static com.android.builder.model.AndroidProject.FD_OUTPUTS
 /**
@@ -63,6 +67,8 @@ public class LibraryVariantFactory implements VariantFactory<LibraryVariantData>
     @NonNull
     private final LibraryExtension extension
 
+    private Task assembleDefault;
+
     public LibraryVariantFactory(@NonNull BasePlugin basePlugin,
             @NonNull LibraryExtension extension) {
         this.extension = extension
@@ -72,7 +78,7 @@ public class LibraryVariantFactory implements VariantFactory<LibraryVariantData>
     @Override
     @NonNull
     public LibraryVariantData createVariantData(
-            @NonNull VariantConfiguration variantConfiguration,
+            @NonNull GradleVariantConfiguration variantConfiguration,
             @NonNull Set<String> densities,
             @NonNull Set<String> abis,
             @NonNull Set<String> compatibleScreens) {
@@ -81,8 +87,11 @@ public class LibraryVariantFactory implements VariantFactory<LibraryVariantData>
 
     @Override
     @NonNull
-    public BaseVariant createVariantApi(@NonNull BaseVariantData<? extends BaseVariantOutputData> variantData) {
-        LibraryVariantImpl variant = basePlugin.getInstantiator().newInstance(LibraryVariantImpl.class, variantData, basePlugin)
+    public BaseVariant createVariantApi(
+            @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData,
+            @NonNull ReadOnlyObjectProvider readOnlyObjectProvider) {
+        LibraryVariantImpl variant = basePlugin.getInstantiator().newInstance(
+                LibraryVariantImpl.class, variantData, basePlugin, readOnlyObjectProvider)
 
         // now create the output objects
         List<? extends BaseVariantOutputData> outputList = variantData.getOutputs();
@@ -113,12 +122,19 @@ public class LibraryVariantFactory implements VariantFactory<LibraryVariantData>
         return true
     }
 
+    private Task getAssembleDefault() {
+        if (assembleDefault == null) {
+            assembleDefault = basePlugin.project.tasks.findByName("assembleDefault");
+        }
+        return assembleDefault
+    }
+
     @Override
     public void createTasks(
             @NonNull BaseVariantData<?> variantData,
             @Nullable Task assembleTask) {
         LibraryVariantData libVariantData = variantData as LibraryVariantData
-        VariantConfiguration variantConfig = variantData.variantConfiguration
+        GradleVariantConfiguration variantConfig = variantData.variantConfiguration
         DefaultBuildType buildType = variantConfig.buildType
 
         String fullName = variantConfig.fullName
@@ -188,9 +204,7 @@ public class LibraryVariantFactory implements VariantFactory<LibraryVariantData>
 
         // Add dependencies on NDK tasks if NDK plugin is applied.
         if (extension.getUseNewNativePlugin()) {
-            NdkPlugin ndkPlugin = project.plugins.getPlugin(NdkPlugin.class)
-            packageJniLibs.dependsOn ndkPlugin.getBinaries(variantConfig)
-            packageJniLibs.from(ndkPlugin.getOutputDirectories(variantConfig)).include("**/*.so")
+            throw new RuntimeException("useNewNativePlugin is currently not supported.")
         } else {
             // Add NDK tasks
             basePlugin.createNdkTasks(variantData);
@@ -237,54 +251,62 @@ public class LibraryVariantFactory implements VariantFactory<LibraryVariantData>
 
         def extract = variantData.variantDependency.annotationsPresent ? createExtractAnnotations(
                 fullName, project, variantData) : null
+        if (extract != null) {
+            bundle.dependsOn(extract)
+        }
 
-        if (buildType.runProguard) {
+        final boolean instrumented = variantConfig.buildType.isTestCoverageEnabled()
+
+
+        // data holding dependencies and input for the dex. This gets updated as new
+        // post-compilation steps are inserted between the compilation and dx.
+        BasePlugin.PostCompilationData pcData = new BasePlugin.PostCompilationData()
+        pcData.classGeneratingTask = Collections.singletonList(variantData.javaCompileTask)
+        pcData.libraryGeneratingTask = Collections.singletonList(
+                variantData.variantDependency.packageConfiguration.buildDependencies)
+        pcData.inputFiles = {
+            return variantData.javaCompileTask.outputs.files.files
+        }
+        pcData.inputDir = {
+            return variantData.javaCompileTask.destinationDir
+        }
+        pcData.inputLibraries = {
+            return Collections.emptyList()
+        }
+
+        // if needed, instrument the code
+        if (instrumented) {
+            pcData = basePlugin.createJacocoTask(variantConfig, variantData, pcData)
+        }
+
+        if (buildType.isMinifyEnabled()) {
             // run proguard on output of compile task
-            basePlugin.createProguardTasks(variantData, null)
-
-            bundle.dependsOn packageRes, packageRenderscript, variantData.obfuscationTask,
-                    mergeProGuardFileTask, lintCopy, packageJniLibs
-            if (extract != null) {
-                bundle.dependsOn(extract)
-            }
+            basePlugin.createProguardTasks(variantData, null, pcData)
         } else {
-            final boolean instrumented = variantConfig.buildType.isTestCoverageEnabled()
-
-            // if needed, instrument the code
-            JacocoInstrumentTask jacocoTask = null
-            Copy agentTask = null
-            if (instrumented) {
-                jacocoTask = project.tasks.create(
-                        "instrument${variantConfig.fullName.capitalize()}", JacocoInstrumentTask)
-                jacocoTask.dependsOn variantData.javaCompileTask
-                jacocoTask.conventionMapping.jacocoClasspath = { project.configurations[JacocoPlugin.ANT_CONFIGURATION_NAME] }
-                jacocoTask.conventionMapping.inputDir = { variantData.javaCompileTask.destinationDir }
-                jacocoTask.conventionMapping.outputDir = { project.file("${project.buildDir}/${FD_INTERMEDIATES}/coverage-instrumented-classes/${variantConfig.dirName}") }
-
-                agentTask = basePlugin.getJacocoAgentTask()
-            }
-
             // package the local jar in libs/
             Sync packageLocalJar = project.tasks.create(
                     "package${fullName.capitalize()}LocalJar",
                     Sync)
             packageLocalJar.from(BasePlugin.getLocalJarFileList(variantData.variantDependency))
-            if (instrumented) {
-                packageLocalJar.dependsOn agentTask
-                packageLocalJar.from(new File(agentTask.destinationDir, BasePlugin.FILE_JACOCO_AGENT))
-            }
             packageLocalJar.into(project.file(
                     "$project.buildDir/${FD_INTERMEDIATES}/$DIR_BUNDLES/${dirName}/$LIBS_FOLDER"))
 
+            // add the input libraries. This is only going to be the agent jar if applicable
+            // due to how inputLibraries is initialized.
+            // TODO: clean this.
+            packageLocalJar.from(pcData.inputLibraries)
+            basePlugin.optionalDependsOn(packageLocalJar, pcData.libraryGeneratingTask)
+            pcData.libraryGeneratingTask = Collections.singletonList(packageLocalJar)
+
             // jar the classes.
             Jar jar = project.tasks.create("package${fullName.capitalize()}Jar", Jar);
-            jar.dependsOn variantData.javaCompileTask, variantData.processJavaResourcesTask
-            if (instrumented) {
-                jar.dependsOn jacocoTask
-                jar.from({ jacocoTask.getOutputDir() });
-            } else {
-                jar.from(variantData.javaCompileTask.outputs);
-            }
+            jar.dependsOn variantData.processJavaResourcesTask
+
+            // add the class files (whether they are instrumented or not.
+            jar.from(pcData.inputDir)
+            optionalDependsOn(jar, pcData.classGeneratingTask)
+            pcData.classGeneratingTask = Collections.singletonList(jar)
+
             jar.from(variantData.processJavaResourcesTask.destinationDir)
 
             jar.destinationDir = project.file(
@@ -305,15 +327,15 @@ public class LibraryVariantFactory implements VariantFactory<LibraryVariantData>
                 jar.exclude(packageName + "/BuildConfig.class")
             }
 
-            bundle.dependsOn packageRes, jar, packageRenderscript, packageLocalJar,
-                    mergeProGuardFileTask, lintCopy, packageJniLibs
-
             if (extract != null) {
                 // In case extract annotations strips out private typedef annotation classes
                 jar.dependsOn extract
-                bundle.dependsOn extract
             }
         }
+
+        bundle.dependsOn packageRes, packageRenderscript, lintCopy, packageJniLibs, mergeProGuardFileTask
+        basePlugin.optionalDependsOn(bundle, pcData.classGeneratingTask)
+        basePlugin.optionalDependsOn(bundle, pcData.libraryGeneratingTask)
 
         bundle.setDescription("Assembles a bundle containing the library in ${fullName.capitalize()}.");
         bundle.destinationDir = project.file("$project.buildDir/${FD_OUTPUTS}/aar")
@@ -339,7 +361,7 @@ public class LibraryVariantFactory implements VariantFactory<LibraryVariantData>
             // add the artifact that will be published
             project.artifacts.add("default", bundle)
 
-            basePlugin.assembleDefault.dependsOn variantData.assembleVariantTask
+            getAssembleDefault().dependsOn variantData.assembleVariantTask
         }
 
         // also publish the artifact with its full config name
@@ -402,7 +424,7 @@ public class LibraryVariantFactory implements VariantFactory<LibraryVariantData>
 
     public Task createExtractAnnotations(
             String fullName, Project project, BaseVariantData variantData) {
-        VariantConfiguration config = variantData.variantConfiguration
+        GradleVariantConfiguration config = variantData.variantConfiguration
         String dirName = config.dirName
 
         ExtractAnnotations task = project.tasks.create(
@@ -427,9 +449,33 @@ public class LibraryVariantFactory implements VariantFactory<LibraryVariantData>
         // Setup the boot classpath just before the task actually runs since this will
         // force the sdk to be parsed. (Same as in compileTask)
         task.doFirst {
-            task.bootClasspath = basePlugin.getAndroidBuilder().getBootClasspath()
+            task.bootClasspath = basePlugin.getAndroidBuilder().getBootClasspathAsStrings()
         }
 
         return task
+    }
+
+    /***
+     * Prevent customization of applicationId or applicationIdSuffix.
+     */
+    @Override
+    public void validateModel(VariantModel model) {
+        for (BuildTypeData buildType : model.getBuildTypes().values()) {
+            if (buildType.getBuildType().getApplicationIdSuffix() != null) {
+                throw new GradleException("Library projects cannot set applicationId. " +
+                        "applicationIdSuffix is set to '" +
+                        buildType.getBuildType().getApplicationIdSuffix() +
+                        "' in build type '" + buildType.getBuildType().getName() + "'.");
+            }
+        }
+        for (ProductFlavorData productFlavor : model.getProductFlavors().values()) {
+            if (productFlavor.getProductFlavor().getApplicationId() != null) {
+                throw new GradleException("Library projects cannot set applicationId. " +
+                        "applicationId is set to '" +
+                        productFlavor.getProductFlavor().getApplicationId() + "' in flavor '" +
+                        productFlavor.getProductFlavor().getName() + "'.");
+            }
+        }
+
     }
 }

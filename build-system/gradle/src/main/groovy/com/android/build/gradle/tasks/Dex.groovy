@@ -14,10 +14,14 @@
  * limitations under the License.
  */
 package com.android.build.gradle.tasks
+
 import com.android.SdkConstants
+import com.android.annotations.Nullable
 import com.android.build.gradle.internal.dsl.DexOptionsImpl
 import com.android.build.gradle.internal.tasks.BaseTask
 import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputDirectory
+import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Nested
 import org.gradle.api.tasks.Optional
@@ -40,9 +44,15 @@ public class Dex extends BaseTask {
     boolean enableIncremental = true
 
     // ----- PRIVATE TASK API -----
+    @Input
+    String getBuildToolsVersion() {
+        plugin.extension.buildToolsRevision
+    }
 
-    @InputFiles
+    @InputFiles @Optional
     Collection<File> inputFiles
+    @InputDirectory @Optional
+    File inputDir
 
     @InputFiles
     Collection<File> libraries
@@ -50,20 +60,40 @@ public class Dex extends BaseTask {
     @Nested
     DexOptionsImpl dexOptions
 
+    @Input
+    boolean multiDexEnabled = false
+
+    @Input
+    boolean legacyMultiDexMode = false
+
+    @Input
+    boolean optimize = true
+
+    @InputFile @Optional
+    File mainDexListFile
+
+    File tmpFolder
+
     /**
      * Actual entry point for the action.
      * Calls out to the doTaskAction as needed.
      */
     @TaskAction
     void taskAction(IncrementalTaskInputs inputs) {
+        Collection<File> _inputFiles = getInputFiles()
+        File _inputDir = getInputDir()
+        if (_inputFiles == null && _inputDir == null) {
+            throw new RuntimeException("Dex task '${getName()}: inputDir and inputFiles cannot both be null");
+        }
+
         if (!dexOptions.incremental || !enableIncremental) {
-            doTaskAction(false /*incremental*/)
+            doTaskAction(_inputFiles, _inputDir, false /*incremental*/)
             return
         }
 
         if (!inputs.isIncremental()) {
             project.logger.info("Unable to do incremental execution: full task run.")
-            doTaskAction(false /*incremental*/)
+            doTaskAction(_inputFiles, _inputDir, false /*incremental*/)
             return
         }
 
@@ -88,22 +118,37 @@ public class Dex extends BaseTask {
             }
         }
 
-        doTaskAction(!forceFullRun.get())
+        doTaskAction(_inputFiles, _inputDir, !forceFullRun.get())
     }
 
-    private void doTaskAction(boolean incremental) {
+    private void doTaskAction(
+            @Nullable Collection<File> inputFiles,
+            @Nullable File inputDir,
+            boolean incremental) {
         File outFolder = getOutputFolder()
-
         if (!incremental) {
             emptyFolder(outFolder)
         }
 
+        File tmpFolder = getTmpFolder()
+        tmpFolder.mkdirs()
+
+        if (inputDir != null) {
+            inputFiles = project.files(inputDir).files
+        }
+
         getBuilder().convertByteCode(
-                getInputFiles(),
+                inputFiles,
                 getLibraries(),
                 outFolder,
+                getMultiDexEnabled(),
+                getLegacyMultiDexMode(),
+                getMainDexListFile(),
                 getDexOptions(),
                 getAdditionalParameters(),
-                incremental)
+                tmpFolder,
+                incremental,
+                getOptimize(),
+                )
     }
 }

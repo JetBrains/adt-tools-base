@@ -27,10 +27,14 @@ import com.android.ddmlib.ShellCommandUnresponsiveException;
 import com.android.ddmlib.SyncException;
 import com.android.ddmlib.TimeoutException;
 import com.android.utils.ILogger;
+import com.google.common.base.Function;
+import com.google.common.base.Joiner;
+import com.google.common.collect.Lists;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -84,6 +88,24 @@ public class ConnectedDevice extends DeviceConnector {
     }
 
     @Override
+    public void installPackages(@NonNull List<File> splitApkFiles, int timeout, ILogger logger)
+            throws DeviceException {
+
+        List<String> apkFileNames = Lists.transform(splitApkFiles, new Function<File, String>() {
+            @Override
+            public String apply(@Nullable File input) {
+                return input != null ? input.getAbsolutePath() : null;
+            }
+        });
+        try {
+            iDevice.installPackages(apkFileNames, timeout, true /*reinstall*/);
+        } catch (Exception e) {
+            logger.error(e, "Unable to install " + Joiner.on(',').join(apkFileNames));
+            throw new DeviceException(e);
+        }
+    }
+
+    @Override
     public void uninstallPackage(@NonNull String packageName, int timeout, ILogger logger) throws DeviceException {
         try {
             iDevice.uninstallPackage(packageName);
@@ -99,6 +121,12 @@ public class ConnectedDevice extends DeviceConnector {
                                     throws TimeoutException, AdbCommandRejectedException,
                                     ShellCommandUnresponsiveException, IOException {
         iDevice.executeShellCommand(command, receiver, maxTimeToOutputResponse, maxTimeUnits);
+    }
+
+    @NonNull
+    @Override
+    public Future<String> getSystemProperty(@NonNull String name) {
+        return iDevice.getSystemProperty(name);
     }
 
     @Override
@@ -178,5 +206,11 @@ public class ConnectedDevice extends DeviceConnector {
     @Override
     public int getWidth() {
         return 0;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    @NonNull
+    public String getProperty(String propertyName) {
+        return iDevice.getProperty(propertyName);
     }
 }

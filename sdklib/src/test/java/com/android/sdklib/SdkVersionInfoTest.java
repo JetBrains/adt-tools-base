@@ -41,6 +41,8 @@ public class SdkVersionInfoTest extends TestCase {
     public void testGetApiByPreviewName() {
         assertEquals(5, getApiByPreviewName("Eclair", false));
         assertEquals(18, getApiByPreviewName("JellyBeanMR2", false));
+        assertEquals(21, getApiByPreviewName("Lollipop", false));
+        assertEquals(21, getApiByPreviewName("L", false));
         assertEquals(-1, getApiByPreviewName("UnknownName", false));
         assertEquals(HIGHEST_KNOWN_API + 1, getApiByPreviewName("UnknownName", true));
     }
@@ -62,6 +64,7 @@ public class SdkVersionInfoTest extends TestCase {
         assertNull(getCodeName(2));
         assertEquals("Cupcake", getCodeName(3));
         assertEquals("KitKat", getCodeName(19));
+        assertEquals("Lollipop", getCodeName(21));
     }
 
     public void testCamelCaseToUnderlines() {

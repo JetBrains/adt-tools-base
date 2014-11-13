@@ -19,10 +19,16 @@ package com.android.build.gradle.internal.variant;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.api.BaseVariant;
+import com.android.build.gradle.internal.BuildTypeData;
+import com.android.build.gradle.internal.ProductFlavorData;
+import com.android.build.gradle.internal.VariantModel;
+import com.android.build.gradle.internal.api.ReadOnlyObjectProvider;
+import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.builder.core.VariantConfiguration;
 
 import org.gradle.api.Task;
 
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -34,13 +40,16 @@ import java.util.Set;
 public interface VariantFactory<T extends BaseVariantData<? extends BaseVariantOutputData>> {
 
     @NonNull
-    T createVariantData(@NonNull VariantConfiguration variantConfiguration,
+    T createVariantData(
+            @NonNull GradleVariantConfiguration variantConfiguration,
             @NonNull Set<String> densities,
             @NonNull Set<String> abi,
             @NonNull Set<String> compatibleScreens);
 
     @NonNull
-    BaseVariant createVariantApi(@NonNull BaseVariantData<? extends BaseVariantOutputData> variantData);
+    BaseVariant createVariantApi(
+            @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData,
+            @NonNull ReadOnlyObjectProvider readOnlyObjectProvider);
 
     @NonNull
     VariantConfiguration.Type getVariantConfigurationType();
@@ -55,4 +64,11 @@ public interface VariantFactory<T extends BaseVariantData<? extends BaseVariantO
     void createTasks(
             @NonNull BaseVariantData<?> variantData,
             @Nullable Task assembleTask);
+
+    /**
+     * Fail if the model is configured incorrectly.
+     * @param model the non-null model to validate, as implemented by the VariantManager.
+     * @throws org.gradle.api.GradleException when the model does not validate.
+     */
+    void validateModel(@NonNull VariantModel model);
 }

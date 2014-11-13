@@ -20,14 +20,14 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.tasks.AidlCompile;
 import com.android.build.gradle.tasks.GenerateBuildConfig;
+import com.android.build.gradle.tasks.ManifestProcessorTask;
 import com.android.build.gradle.tasks.MergeAssets;
 import com.android.build.gradle.tasks.MergeResources;
 import com.android.build.gradle.tasks.NdkCompile;
 import com.android.build.gradle.tasks.ProcessAndroidResources;
-import com.android.build.gradle.tasks.ManifestProcessorTask;
 import com.android.build.gradle.tasks.RenderscriptCompile;
-import com.android.builder.core.DefaultBuildType;
-import com.android.builder.core.DefaultProductFlavor;
+import com.android.builder.model.BuildType;
+import com.android.builder.model.ProductFlavor;
 import com.android.builder.model.SourceProvider;
 
 import org.gradle.api.Task;
@@ -94,14 +94,14 @@ public interface BaseVariant {
      * Returns the {@link com.android.builder.core.DefaultBuildType} for this build variant.
      */
     @NonNull
-    DefaultBuildType getBuildType();
+    BuildType getBuildType();
 
     /**
      * Returns a {@link com.android.builder.core.DefaultProductFlavor} that represents the merging
      * of the default config and the flavors of this build variant.
      */
     @NonNull
-    DefaultProductFlavor getMergedFlavor();
+    ProductFlavor getMergedFlavor();
 
     /**
      * Returns the list of {@link com.android.builder.core.DefaultProductFlavor} for this build variant.
@@ -109,7 +109,7 @@ public interface BaseVariant {
      * This is always non-null but could be empty.
      */
     @NonNull
-    List<DefaultProductFlavor> getProductFlavors();
+    List<GroupableProductFlavor> getProductFlavors();
 
     /**
      * Returns a list of sorted SourceProvider in order of ascending order, meaning, the earlier
@@ -274,6 +274,17 @@ public interface BaseVariant {
      */
     @Deprecated
     void setOutputFile(@NonNull File outputFile);
+
+    /**
+     * If true, variant outputs will be considered signed. Only set if you manually set the outputs
+     * to point to signed files built by other tasks.
+     */
+    void setOutputsAreSigned(boolean isSigned);
+
+    /**
+     * @see #setOutputsAreSigned(boolean)
+     */
+    boolean getOutputsAreSigned();
 
     /**
      * @deprecated use version on the variant's outputs.

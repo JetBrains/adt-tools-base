@@ -16,9 +16,19 @@
 
 package com.android.tools.lint.checks;
 
+import static com.android.tools.lint.checks.ApiDetector.INLINED;
+import static com.android.tools.lint.checks.ApiDetector.UNSUPPORTED;
+import static com.android.tools.lint.detector.api.TextFormat.TEXT;
+
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+import com.android.sdklib.SdkVersionInfo;
+import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Issue;
+import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Project;
+import com.android.tools.lint.detector.api.Severity;
 
 import java.io.File;
 
@@ -1110,10 +1120,7 @@ public class ApiDetectorTest extends AbstractCheckTest {
                 + "res/drawable/ripple.xml:1: Error: <ripple> requires API level 21 (current min is 14) [NewApi]\n"
                 + "<ripple\n"
                 + "^\n"
-                + "res/drawable/ripple.xml:4: Warning: Attribute tintMode is only used in API level 21 and higher (current min is 14) [UnusedAttribute]\n"
-                + "    android:tintMode=\"src_over\"\n"
-                + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-                + "1 errors, 1 warnings\n",
+                + "1 errors, 0 warnings\n",
                 lintProject(
                         "apicheck/minsdk14.xml=>AndroidManifest.xml",
                         "apicheck/ripple.xml=>res/drawable/ripple.xml"
@@ -1140,25 +1147,64 @@ public class ApiDetectorTest extends AbstractCheckTest {
 
     public void testVector() throws Exception {
         assertEquals(""
-                + "res/drawable/vector.xml:1: Error: <vector> requires API level 21 (current min is 1) [NewApi]\n"
+                + "res/drawable/vector.xml:1: Error: <vector> requires API level 21 (current min is 4) [NewApi]\n"
                 + "<vector xmlns:android=\"http://schemas.android.com/apk/res/android\" >\n"
                 + "^\n"
-                + "AndroidManifest.xml:8: Warning: Attribute viewportHeight is only used in API level 21 and higher (current min is 1) [UnusedAttribute]\n"
-                + "        android:viewportHeight=\"24\"\n"
-                + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-                + "AndroidManifest.xml:9: Warning: Attribute viewportWidth is only used in API level 21 and higher (current min is 1) [UnusedAttribute]\n"
-                + "        android:viewportWidth=\"24\" />\n"
-                + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-                + "res/drawable/vector.xml:8: Warning: Attribute viewportHeight is only used in API level 21 and higher (current min is 1) [UnusedAttribute]\n"
-                + "        android:viewportHeight=\"24\"\n"
-                + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-                + "res/drawable/vector.xml:9: Warning: Attribute viewportWidth is only used in API level 21 and higher (current min is 1) [UnusedAttribute]\n"
-                + "        android:viewportWidth=\"24\" />\n"
-                + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-                + "1 errors, 4 warnings\n",
+                + "1 errors, 0 warnings\n",
+
                 lintProject(
-                        "apicheck/vector.xml=>AndroidManifest.xml",
+                        "apicheck/minsdk4.xml=>AndroidManifest.xml",
                         "apicheck/vector.xml=>res/drawable/vector.xml"
+                ));
+    }
+
+    public void testAnimatedSelector() throws Exception {
+        assertEquals(""
+                + "res/drawable/animated_selector.xml:1: Error: <animated-selector> requires API level 21 (current min is 14) [NewApi]\n"
+                + "<animated-selector xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "^\n"
+                + "1 errors, 0 warnings\n",
+                lintProject(
+                        "apicheck/minsdk14.xml=>AndroidManifest.xml",
+                        "apicheck/animated_selector.xml=>res/drawable/animated_selector.xml"
+                ));
+    }
+
+    public void testAnimatedVector() throws Exception {
+        assertEquals(""
+                + "res/drawable/animated_vector.xml:1: Error: <animated-vector> requires API level 21 (current min is 14) [NewApi]\n"
+                + "<animated-vector xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "^\n"
+                + "1 errors, 0 warnings\n",
+                lintProject(
+                        "apicheck/minsdk14.xml=>AndroidManifest.xml",
+                        "apicheck/animated_vector.xml=>res/drawable/animated_vector.xml"
+                ));
+    }
+
+    public void testPaddingStart() throws Exception {
+        assertEquals(""
+                + "res/layout/padding_start.xml:14: Error: Attribute paddingStart referenced here can result in a crash on some specific devices older than API 17 (current min is 4) [NewApi]\n"
+                + "            android:paddingStart=\"20dp\"\n"
+                + "            ~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "res/layout/padding_start.xml:21: Error: Attribute paddingStart referenced here can result in a crash on some specific devices older than API 17 (current min is 4) [NewApi]\n"
+                + "            android:paddingStart=\"20dp\"\n"
+                + "            ~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "res/layout/padding_start.xml:28: Error: Attribute paddingStart referenced here can result in a crash on some specific devices older than API 17 (current min is 4) [NewApi]\n"
+                + "            android:paddingStart=\"20dp\"\n"
+                + "            ~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "3 errors, 0 warnings\n",
+            lintProject(
+                    "apicheck/minsdk4.xml=>AndroidManifest.xml",
+                    "apicheck/padding_start.xml=>res/layout/padding_start.xml"
+            ));
+    }
+
+    public void testPaddingStartNotApplicable() throws Exception {
+        assertEquals("No warnings.",
+                lintProject(
+                        "apicheck/minsdk4.xml=>AndroidManifest.xml",
+                        "apicheck/padding_start.xml=>res/layout-v17/padding_start.xml"
                 ));
     }
 
@@ -1171,6 +1217,14 @@ public class ApiDetectorTest extends AbstractCheckTest {
                     "apicheck/TargetApiTest.class.data=>bin/classes/test/pkg/TargetApiTest.class",
                     "apicheck/TargetApiTest$1.class.data=>bin/classes/test/pkg/TargetApiTest$1.class"
             ));
+    }
+
+    public void testGravity() throws Exception {
+        assertEquals("No warnings.",
+                lintProject(
+                        "apicheck/minsdk4.xml=>AndroidManifest.xml",
+                        "apicheck/GravityTest.java.txt=>src/test/pkg/GravityTest.java"
+                ));
     }
 
     @Override
@@ -1193,5 +1247,15 @@ public class ApiDetectorTest extends AbstractCheckTest {
             return false;
         }
         return super.ignoreSystemErrors();
+    }
+
+    @Override
+    protected void checkReportedError(@NonNull Context context, @NonNull Issue issue,
+            @NonNull Severity severity, @Nullable Location location, @NonNull String message) {
+        if (issue == UNSUPPORTED || issue == INLINED) {
+            int requiredVersion = ApiDetector.getRequiredVersion(issue, message, TEXT);
+            assertTrue("Could not extract message tokens from " + message,
+                    requiredVersion >= 1 && requiredVersion <= SdkVersionInfo.HIGHEST_KNOWN_API);
+        }
     }
 }

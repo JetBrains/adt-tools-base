@@ -56,6 +56,12 @@ public class SessionParams extends RenderParams {
     private final int mSimulatedPlatformVersion;
 
     /**
+     * A flexible map to pass additional flags to LayoutLib. LayoutLib will ignore flags that it
+     * doesn't recognize.
+     */
+    private Map<Key, Object> mFlags;
+
+    /**
      *
      * @param layoutDescription the {@link ILayoutPullParser} letting the LayoutLib Bridge visit the
      * layout file.
@@ -124,6 +130,9 @@ public class SessionParams extends RenderParams {
                     params.mAdapterBindingMap);
         }
         mExtendedViewInfoMode = params.mExtendedViewInfoMode;
+        if (params.mFlags != null) {
+            mFlags = new HashMap<Key, Object>(params.mFlags);
+        }
     }
 
     public ILayoutPullParser getLayoutDescription() {
@@ -168,5 +177,51 @@ public class SessionParams extends RenderParams {
 
     public int getSimulatedPlatformVersion() {
         return mSimulatedPlatformVersion;
+    }
+
+    public <T> void setFlag(Key<T> key, T value) {
+        if (mFlags == null) {
+            mFlags = new HashMap<Key, Object>();
+        }
+        mFlags.put(key, value);
+    }
+
+    public <T> T getFlag(Key<T> key) {
+
+        // noinspection since the values in the map can be added only by setFlag which ensures that
+        // the types match.
+        //noinspection unchecked
+        return mFlags == null ? null : (T) mFlags.get(key);
+    }
+
+    public static class Key<T> {
+        public final Class<T> mExpectedClass;
+        public final String mName;
+
+        public Key(String name, Class<T> expectedClass) {
+            assert name != null;
+            assert expectedClass != null;
+
+            mExpectedClass = expectedClass;
+            mName = name;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = mExpectedClass.hashCode();
+            return 31 * result + mName.hashCode();
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj != null && getClass() == obj.getClass()) {
+                Key k = (Key) obj;
+                return mExpectedClass.equals(k.mExpectedClass) && mName.equals(k.mName);
+            }
+            return false;
+        }
     }
 }

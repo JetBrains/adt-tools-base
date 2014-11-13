@@ -21,17 +21,18 @@ import com.android.annotations.Nullable;
 import com.android.build.gradle.BasePlugin;
 import com.android.build.gradle.api.BaseVariant;
 import com.android.build.gradle.api.BaseVariantOutput;
+import com.android.build.gradle.api.GroupableProductFlavor;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.tasks.AidlCompile;
 import com.android.build.gradle.tasks.GenerateBuildConfig;
+import com.android.build.gradle.tasks.ManifestProcessorTask;
 import com.android.build.gradle.tasks.MergeAssets;
 import com.android.build.gradle.tasks.MergeResources;
 import com.android.build.gradle.tasks.NdkCompile;
 import com.android.build.gradle.tasks.ProcessAndroidResources;
-import com.android.build.gradle.tasks.ManifestProcessorTask;
 import com.android.build.gradle.tasks.RenderscriptCompile;
-import com.android.builder.core.DefaultBuildType;
-import com.android.builder.core.DefaultProductFlavor;
+import com.android.builder.model.BuildType;
+import com.android.builder.model.ProductFlavor;
 import com.android.builder.model.SourceProvider;
 import com.google.common.collect.Lists;
 
@@ -51,13 +52,22 @@ import java.util.List;
  */
 abstract class BaseVariantImpl implements BaseVariant {
 
+    /**
+     * STOPSHIP remove when we don't need to display deprecation warnings
+     */
     @NonNull
     protected BasePlugin plugin;
 
+    @NonNull
+    protected ReadOnlyObjectProvider readOnlyObjectProvider;
+
     protected List<BaseVariantOutput> outputs = Lists.newArrayListWithExpectedSize(1);
 
-    BaseVariantImpl(@NonNull BasePlugin plugin) {
+    BaseVariantImpl(
+            @NonNull BasePlugin plugin,
+            @NonNull ReadOnlyObjectProvider readOnlyObjectProvider) {
         this.plugin = plugin;
+        this.readOnlyObjectProvider = readOnlyObjectProvider;
     }
 
     @NonNull
@@ -105,19 +115,22 @@ abstract class BaseVariantImpl implements BaseVariant {
 
     @Override
     @NonNull
-    public DefaultBuildType getBuildType() {
-        return getVariantData().getVariantConfiguration().getBuildType();
+    public BuildType getBuildType() {
+        return readOnlyObjectProvider.getBuildType(
+                getVariantData().getVariantConfiguration().getBuildType());
     }
 
     @Override
     @NonNull
-    public List<DefaultProductFlavor> getProductFlavors() {
-        return getVariantData().getVariantConfiguration().getFlavorConfigs();
+    public List<GroupableProductFlavor> getProductFlavors() {
+        return new ImmutableFlavorList(
+                getVariantData().getVariantConfiguration().getProductFlavors(),
+                readOnlyObjectProvider);
     }
 
     @Override
     @NonNull
-    public DefaultProductFlavor getMergedFlavor() {
+    public ProductFlavor getMergedFlavor() {
         return getVariantData().getVariantConfiguration().getMergedFlavor();
     }
 
@@ -309,5 +322,15 @@ abstract class BaseVariantImpl implements BaseVariant {
 
         // use the single output for compatibility.
         return outputs.get(0).getProcessResources();
+    }
+
+    @Override
+    public void setOutputsAreSigned(boolean isSigned) {
+        getVariantData().outputsAreSigned = isSigned;
+    }
+
+    @Override
+    public boolean getOutputsAreSigned() {
+        return getVariantData().outputsAreSigned;
     }
 }

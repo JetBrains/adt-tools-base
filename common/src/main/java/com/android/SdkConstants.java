@@ -79,6 +79,8 @@ public final class SdkConstants {
     public static final String FN_CLASSES_JAR = "classes.jar";                        //$NON-NLS-1$
     /** Dex filename inside the APK. i.e. "classes.dex" */
     public static final String FN_APK_CLASSES_DEX = "classes.dex";                    //$NON-NLS-1$
+    /** Dex filename inside the APK. i.e. "classes.dex" */
+    public static final String FN_APK_CLASSES_N_DEX = "classes%d.dex";                //$NON-NLS-1$
 
     /** An SDK Project's build.xml file */
     public static final String FN_BUILD_XML = "build.xml";                            //$NON-NLS-1$
@@ -218,6 +220,12 @@ public final class SdkConstants {
     /** hprof-conv executable (with extension for the current OS) */
     public static final String FN_HPROF_CONV =
         "hprof-conv" + ext(".exe", "");                   //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+
+    /** jack.jar */
+    public static final String FN_JACK = "jack.jar";                                  //$NON-NLS-1$
+    /** jill.jar */
+    public static final String FN_JILL = "jill.jar";                                  //$NON-NLS-1$
+
 
     /** properties file for SDK Updater packages */
     public static final String FN_SOURCE_PROP = "source.properties";                  //$NON-NLS-1$
@@ -531,6 +539,7 @@ public final class SdkConstants {
     public static final String CLASS_SERVICE = "android.app.Service"; //$NON-NLS-1$
     public static final String CLASS_BROADCASTRECEIVER = "android.content.BroadcastReceiver"; //$NON-NLS-1$
     public static final String CLASS_CONTENTPROVIDER = "android.content.ContentProvider"; //$NON-NLS-1$
+    public static final String CLASS_ATTRIBUTE_SET = "android.util.AttributeSet"; //$NON-NLS-1$
     public static final String CLASS_INSTRUMENTATION = "android.app.Instrumentation"; //$NON-NLS-1$
     public static final String CLASS_INSTRUMENTATION_RUNNER =
         "android.test.InstrumentationTestRunner"; //$NON-NLS-1$
@@ -556,6 +565,8 @@ public final class SdkConstants {
     public static final String CLASS_PARCELABLE = "android.os.Parcelable"; //$NON-NLS-1$
     public static final String CLASS_FRAGMENT = "android.app.Fragment"; //$NON-NLS-1$
     public static final String CLASS_V4_FRAGMENT = "android.support.v4.app.Fragment"; //$NON-NLS-1$
+    public static final String CLASS_ACTION_PROVIDER = "android.view.ActionProvider"; //$NON-NLS-1$
+    public static final String CLASS_BACKUP_AGENT = "android.app.backup.BackupAgent"; //$NON-NLS-1$
     /** MockView is part of the layoutlib bridge and used to display classes that have
      * no rendering in the graphical layout editor. */
     public static final String CLASS_MOCK_VIEW = "com.android.layoutlib.bridge.MockView"; //$NON-NLS-1$
@@ -739,6 +750,8 @@ public final class SdkConstants {
 
     // Tags: XML
     public static final String TAG_HEADER = "header";                  //$NON-NLS-1$
+    public static final String TAG_APPWIDGET_PROVIDER = "appwidget-provider"; //$NON-NLS-1$
+    public static final String TAG_PREFERENCE_SCREEN = "PreferenceScreen"; //$NON-NLS-1$
 
     // Tags: Layouts
     public static final String VIEW_TAG = "view";                      //$NON-NLS-1$
@@ -1097,6 +1110,7 @@ public final class SdkConstants {
     public static final String DRAWABLE_FOLDER = "drawable";           //$NON-NLS-1$
     public static final String DRAWABLE_XHDPI = "drawable-xhdpi";      //$NON-NLS-1$
     public static final String DRAWABLE_XXHDPI = "drawable-xxhdpi";    //$NON-NLS-1$
+    public static final String DRAWABLE_XXXHDPI = "drawable-xxxhdpi";    //$NON-NLS-1$
     public static final String DRAWABLE_HDPI = "drawable-hdpi";        //$NON-NLS-1$
     public static final String DRAWABLE_MDPI = "drawable-mdpi";        //$NON-NLS-1$
     public static final String DRAWABLE_LDPI = "drawable-ldpi";        //$NON-NLS-1$
@@ -1341,11 +1355,11 @@ public final class SdkConstants {
     public static final String VALUE_HORIZONTAL = "horizontal"; //$NON-NLS-1$
 
     public static final String GRADLE_PLUGIN_NAME = "com.android.tools.build:gradle:";
-    public static final String GRADLE_MINIMUM_VERSION = "1.12";
+    public static final String GRADLE_MINIMUM_VERSION = "2.1";
     public static final String GRADLE_LATEST_VERSION = "2.1";
-    public static final String GRADLE_PLUGIN_MINIMUM_VERSION = "0.12.0";
-    public static final String GRADLE_PLUGIN_LATEST_VERSION = "0.13.+";
-    public static final String GRADLE_PLUGIN_RECOMMENDED_VERSION = "0.13.0";
+    public static final String GRADLE_PLUGIN_MINIMUM_VERSION = "0.14.0";
+    public static final String GRADLE_PLUGIN_LATEST_VERSION = "0.14.+";
+    public static final String GRADLE_PLUGIN_RECOMMENDED_VERSION = "0.14.2";
     public static final String MIN_BUILD_TOOLS_VERSION = "19.1.0";
     public static final String SUPPORT_LIB_ARTIFACT = "com.android.support:support-v4";
     public static final String APPCOMPAT_LIB_ARTIFACT = "com.android.support:appcompat-v7";

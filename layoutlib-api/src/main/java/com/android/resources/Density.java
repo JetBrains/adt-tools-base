@@ -24,7 +24,9 @@ package com.android.resources;
  */
 public enum Density implements ResourceEnum {
     XXXHIGH("xxxhdpi", "XXX-High Density", 640, 18), //$NON-NLS-1$
+    DPI_560("560dpi",  "560 DPI Density",  560,  1), //$NON-NLS-1$
     XXHIGH( "xxhdpi",  "XX-High Density",  480, 16), //$NON-NLS-1$
+    DPI_400("400dpi",  "400 DPI Density",  400,  1), //$NON-NLS-1$
     XHIGH(  "xhdpi",   "X-High Density",   320,  8), //$NON-NLS-1$
     HIGH(   "hdpi",    "High Density",     240,  4), //$NON-NLS-1$
     TV(     "tvdpi",   "TV Density",       213, 13), //$NON-NLS-1$
@@ -126,6 +128,14 @@ public enum Density implements ResourceEnum {
             return values[index];
         }
         return null;
+    }
+
+    /**
+     * Returns true if this density is relevant for app developers (e.g.
+     * a density you should consider providing resources for)
+     */
+    public boolean isRecommended() {
+        return this != TV && this != DPI_400 && this != DPI_560;
     }
 
     @Override

@@ -18,9 +18,7 @@ package com.android.builder.model;
 
 import com.android.annotations.NonNull;
 
-import java.io.File;
 import java.util.Collection;
-import java.util.List;
 
 /**
  * A set of dependencies for an {@link AndroidArtifact}.
@@ -34,7 +32,7 @@ public interface Dependencies {
      * @return the list of libraries.
      */
     @NonNull
-    List<AndroidLibrary> getLibraries();
+    Collection<AndroidLibrary> getLibraries();
 
     /**
      * The list of Java library dependencies. This only includes external dependencies.

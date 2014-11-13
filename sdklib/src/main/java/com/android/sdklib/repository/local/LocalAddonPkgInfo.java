@@ -40,6 +40,7 @@ import com.android.sdklib.repository.descriptors.IdDisplay;
 import com.android.sdklib.repository.descriptors.PkgDesc;
 import com.android.sdklib.repository.descriptors.PkgType;
 import com.android.utils.Pair;
+import com.google.common.base.Objects;
 import com.google.common.collect.SetMultimap;
 import com.google.common.collect.TreeMultimap;
 
@@ -452,8 +453,12 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
         SetMultimap<IdDisplay, String> tagToAbiFound = TreeMultimap.create();
 
 
-        // Look in the system images folders: SDK/system-image/addon-id-tag/abi (many abi possible)
-        // Optional: look for skinds under SDK/system-image/addon-id-tag/abi/skins/skin-name
+        // Look in the system images folders:
+        // - SDK/system-image/platform/addon-id-tag/abi
+        // - SDK/system-image/addon-id-tag/abi (many abi possible)
+        // Optional: look for skins under
+        // - SDK/system-image/platform/addon-id-tag/abi/skins/skin-name
+        // - SDK/system-image/addon-id-tag/abi/skins/skin-name
         // If we find multiple occurrences of the same platform/abi, the first one read wins.
 
         LocalPkgInfo[] sysImgInfos = getLocalSdk().getPkgsInfos(PkgType.PKG_ADDON_SYS_IMAGE);
@@ -462,7 +467,8 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
             if (pkg instanceof LocalAddonSysImgPkgInfo &&
                     d.hasVendor() &&
                     mAddonDesc.getVendor().equals(d.getVendor()) &&
-                    mAddonDesc.getName().equals(d.getTag())) {
+                    mAddonDesc.getName().equals(d.getTag()) &&
+                    Objects.equal(mAddonDesc.getAndroidVersion(), pkg.getDesc().getAndroidVersion())) {
                 final IdDisplay tag = mAddonDesc.getName();
                 final String abi = d.getPath();
                 if (abi != null && !tagToAbiFound.containsEntry(tag, abi)) {

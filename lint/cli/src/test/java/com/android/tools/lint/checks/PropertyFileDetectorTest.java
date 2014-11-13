@@ -17,14 +17,21 @@
 package com.android.tools.lint.checks;
 
 import static com.android.tools.lint.detector.api.TextFormat.TEXT;
+import static org.easymock.EasyMock.createNiceMock;
+import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.replay;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.builder.model.AndroidProject;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.Location;
+import com.android.tools.lint.detector.api.Project;
 import com.android.tools.lint.detector.api.Severity;
+
+import java.io.File;
 
 public class PropertyFileDetectorTest extends AbstractCheckTest {
     @Override
@@ -47,9 +54,43 @@ public class PropertyFileDetectorTest extends AbstractCheckTest {
                 TEXT));
     }
 
+    public void testUseHttpInsteadOfHttps() throws Exception {
+        assertEquals(""
+                + "gradle/wrapper/gradle-wrapper.properties:5: Warning: Replace HTTP with HTTPS for better security; use https\\://services.gradle.org/distributions/gradle-2.1-all.zip [UsingHttp]\n"
+                + "distributionUrl=http\\://services.gradle.org/distributions/gradle-2.1-all.zip\n"
+                + "                ~~~~\n"
+                + "0 errors, 1 warnings\n",
+                lintProject("gradle_http.properties=>gradle/wrapper/gradle-wrapper.properties"));
+    }
+
     @Override
     protected void checkReportedError(@NonNull Context context, @NonNull Issue issue,
             @NonNull Severity severity, @Nullable Location location, @NonNull String message) {
         assertNotNull(message, PropertyFileDetector.getSuggestedEscape(message, TEXT));
+    }
+
+    @Override
+    protected TestLintClient createClient() {
+        return new TestLintClient() {
+            @NonNull
+            @Override
+            protected Project createProject(@NonNull File dir, @NonNull File referenceDir) {
+                return new Project(this, dir, referenceDir) {
+                    @Override
+                    public boolean isGradleProject() {
+                        return true;
+                    }
+
+                    @Nullable
+                    @Override
+                    public AndroidProject getGradleProjectModel() {
+                        AndroidProject project = createNiceMock(AndroidProject.class);
+                        expect(project.getResourcePrefix()).andReturn("unit_test_prefix_").anyTimes();
+                        replay(project);
+                        return project;
+                    }
+                };
+            }
+        };
     }
 }

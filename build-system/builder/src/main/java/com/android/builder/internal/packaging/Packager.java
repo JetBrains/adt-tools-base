@@ -16,6 +16,8 @@
 
 package com.android.builder.internal.packaging;
 
+import static com.android.SdkConstants.FN_APK_CLASSES_N_DEX;
+
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -26,8 +28,8 @@ import com.android.builder.packaging.PackagerException;
 import com.android.builder.packaging.SealedPackageException;
 import com.android.builder.signing.SignedJarBuilder;
 import com.android.builder.signing.SignedJarBuilder.IZipEntryFilter;
-import com.android.ide.common.signing.CertificateInfo;
 import com.android.ide.common.packaging.PackagingUtils;
+import com.android.ide.common.signing.CertificateInfo;
 import com.android.utils.ILogger;
 import com.google.common.collect.Sets;
 import com.google.common.io.Closeables;
@@ -41,6 +43,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -267,7 +270,6 @@ public final class Packager implements IArchiveBuilder {
      *
      * @param apkLocation the file to create
      * @param resLocation the file representing the packaged resource file.
-     * @param dexFolder the folder containing the dex file.
      * @param certificateInfo the signing information used to sign the package. Optional the OS path to the debug keystore, if needed or null.
      * @param logger the logger.
      * @throws com.android.builder.packaging.PackagerException
@@ -275,7 +277,6 @@ public final class Packager implements IArchiveBuilder {
     public Packager(
             @NonNull String apkLocation,
             @NonNull String resLocation,
-            @NonNull File dexFolder,
             CertificateInfo certificateInfo,
             @Nullable String createdBy,
             @Nullable PackagingOptions packagingOptions,
@@ -303,10 +304,6 @@ public final class Packager implements IArchiveBuilder {
             // add the resources
             addZipFile(resFile);
 
-            // add the class dex file at the root of the apk
-
-            addDexFolder(dexFolder);
-
         } catch (PackagerException e) {
             if (mBuilder != null) {
                 mBuilder.cleanUp();
@@ -320,18 +317,28 @@ public final class Packager implements IArchiveBuilder {
         }
     }
 
-    private void addDexFolder(@NonNull File dexFolder)
+    public void addDexFiles(@NonNull File mainDexFolder, @NonNull Collection<File> extraDexFiles)
             throws DuplicateFileException, SealedPackageException, PackagerException {
-        File[] files = dexFolder.listFiles(new FilenameFilter() {
+
+        File[] mainDexFiles = mainDexFolder.listFiles(new FilenameFilter() {
             @Override
             public boolean accept(File file, String name) {
                 return name.endsWith(SdkConstants.DOT_DEX);
             }
         });
 
-        if (files != null && files.length > 0) {
-            for (File file : files) {
-                addFile(file, file.getName());
+        if (mainDexFiles != null && mainDexFiles.length > 0) {
+            // Never rename the dex files in the main dex folder, in case we are in legacy mode
+            // we requires the main dex files to not be renamed.
+            for (File dexFile : mainDexFiles) {
+                addFile(dexFile, dexFile.getName());
+            }
+
+            // prepare the index for the next files.
+            int dexIndex = mainDexFiles.length + 1;
+
+            for (File dexFile : extraDexFiles) {
+                addFile(dexFile, String.format(FN_APK_CLASSES_N_DEX, dexIndex++));
             }
         }
     }

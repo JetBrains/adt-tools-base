@@ -47,35 +47,32 @@ public class InstallUtils {
         }
 
         int minSdkVersion = appMinSdkVersion.getApiLevel();
+
+        // Convert codename to API version.
         if (appMinSdkVersion.getCodename() != null) {
             String deviceCodeName = device.getApiCodeName();
             if (deviceCodeName != null) {
-                if (deviceCodeName.equals(appMinSdkVersion.getCodename())) {
-                    logger.info("Skipping device '%1$s', due to different API preview '%2$s' and '%3$s'",
+                if (!deviceCodeName.equals(appMinSdkVersion.getCodename())) {
+                    logger.info(
+                            "Skipping device '%1$s', due to different API preview '%2$s' and '%3$s'",
                             device.getName(), deviceCodeName, appMinSdkVersion.getCodename());
                     return false;
                 }
             } else {
                 minSdkVersion = SdkVersionInfo.getApiByBuildCode(
                         appMinSdkVersion.getCodename(), true);
-
-                if (minSdkVersion > deviceApiLevel) {
-                    logger.info("Skipping device '%s' for '%s:%s'",
-                            device.getName(), projectName, variantName);
-
-                    return false;
-                }
-            }
-
-        } else {
-            if (minSdkVersion > deviceApiLevel) {
-                logger.info("Skipping device '%s' for '%s:%s'",
-                        device.getName(), projectName, variantName);
-
-                return false;
             }
         }
 
-        return true;
+        if (minSdkVersion > deviceApiLevel) {
+            logger.info(
+                    "Skipping device '%s' for '%s:%s': minSdkVersion [%s] > deviceApiLevel [%d]",
+                    device.getName(), projectName, variantName, appMinSdkVersion.getApiString(),
+                    deviceApiLevel);
+
+            return false;
+        } else {
+            return true;
+        }
     }
 }

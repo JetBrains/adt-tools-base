@@ -253,7 +253,7 @@ public class ResourceResolver extends RenderResources {
 
     private ResourceValue findItemInStyle(StyleResourceValue style, String itemName,
                                           boolean isFrameworkAttr, int depth) {
-        ResourceValue item = style.findValue(itemName, isFrameworkAttr);
+        ResourceValue item = style.getItem(itemName, isFrameworkAttr);
 
         // if we didn't find it, we look in the parent style (if applicable)
         //noinspection VariableNotUsedInsideIf

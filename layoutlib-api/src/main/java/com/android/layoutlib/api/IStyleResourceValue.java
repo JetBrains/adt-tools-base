@@ -34,7 +34,7 @@ public interface IStyleResourceValue extends IResourceValue {
      * Find an item in the list by name
      * @param name the name of the resource
      *
-     * @deprecated use {@link StyleResourceValue#findValue(String)}
+     * @deprecated use {@link StyleResourceValue#getItem(String, boolean)}
      */
     @Deprecated
     IResourceValue findItem(String name);

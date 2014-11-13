@@ -34,6 +34,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.ApiVersion;
+import com.android.ide.common.rendering.api.ItemResourceValue;
 import com.android.ide.common.rendering.api.ResourceValue;
 import com.android.ide.common.rendering.api.StyleResourceValue;
 import com.android.ide.common.res2.AbstractResourceRepository;
@@ -860,7 +861,7 @@ public class LintUtils {
                     ResourceValue rv = item.getResourceValue(false);
                     if (rv instanceof StyleResourceValue) {
                         StyleResourceValue srv = (StyleResourceValue) rv;
-                        ResourceValue value = srv.findValue(attribute, isFrameworkAttribute);
+                        ItemResourceValue value = srv.getItem(attribute, isFrameworkAttribute);
                         if (value != null) {
                             if (result == null) {
                                 result = Lists.newArrayList();

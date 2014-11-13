@@ -18,67 +18,85 @@ package com.android.build.gradle.internal.variant;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.SplitOutput;
-import com.android.build.gradle.api.ApkOutput;
+import com.android.build.FilterData;
+import com.android.build.OutputFile;
+import com.android.build.VariantOutput;
+import com.android.build.gradle.api.ApkOutputFile;
+import com.android.build.gradle.api.MainApkOutputFile;
 import com.android.build.gradle.internal.StringHelper;
 import com.android.build.gradle.tasks.ManifestProcessorTask;
+import com.android.build.gradle.tasks.PackageSplitAbi;
 import com.android.build.gradle.tasks.PackageSplitRes;
 import com.android.build.gradle.tasks.ProcessAndroidResources;
 import com.google.common.collect.ImmutableList;
+import com.google.common.util.concurrent.Futures;
 
 import org.gradle.api.Task;
 
 import java.io.File;
+import java.util.Collection;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 /**
  * Base output data about a variant.
  */
-public abstract class BaseVariantOutputData implements SplitOutput {
+public abstract class BaseVariantOutputData implements VariantOutput {
 
     private static final String UNIVERSAL = "universal";
 
     @NonNull
-    protected final BaseVariantData<?> variantData;
+    public final BaseVariantData<?> variantData;
 
-    @Nullable
-    private final String densityFilter;
-    @Nullable
-    private final String abiFilter;
+    @NonNull
+    private final MainApkOutputFile mainApkOutputFile;
 
     private boolean multiOutput = false;
 
     public ManifestProcessorTask manifestProcessorTask;
+
     public ProcessAndroidResources processResourcesTask;
+
     public PackageSplitRes packageSplitResourcesTask;
+
+    public PackageSplitAbi packageSplitAbiTask;
+
     public Task assembleTask;
 
     public BaseVariantOutputData(
-            @Nullable String densityFilter,
-            @Nullable String abiFilter,
+            @NonNull OutputFile.OutputType outputType,
+            @NonNull Collection<FilterData> filters,
             @NonNull BaseVariantData<?> variantData) {
-        this.densityFilter = densityFilter;
-        this.abiFilter = abiFilter;
         this.variantData = variantData;
+        this.mainApkOutputFile = new MainApkOutputFile(
+                outputType, filters, getOutputFilePromise());
     }
 
+    @NonNull
     @Override
-    @Nullable
-    public String getDensityFilter() {
-        return densityFilter;
+    public MainApkOutputFile getMainOutputFile() {
+        return mainApkOutputFile;
     }
 
-    @Override
-    @Nullable
-    public String getAbiFilter() {
-        return abiFilter;
+    private Callable<File> getOutputFilePromise() {
+        return new Callable<File>() {
+            @Override
+            public File call() throws Exception {
+                return getOutputFile();
+            }
+        };
     }
+
 
     public abstract void setOutputFile(@NonNull File file);
 
     @NonNull
     public abstract File getOutputFile();
 
-    public abstract ImmutableList<ApkOutput> getOutputFiles();
+    @NonNull
+    @Override
+    public abstract ImmutableList<ApkOutputFile> getOutputs();
 
     @NonNull
     public String getFullName() {
@@ -101,20 +119,23 @@ public abstract class BaseVariantOutputData implements SplitOutput {
         if (!multiOutput) {
             return variantData.getVariantConfiguration().getDirName();
         }
-        return variantData.getVariantConfiguration().computeDirNameWithSplits(densityFilter,
-                abiFilter);
+        return variantData.getVariantConfiguration().computeDirNameWithSplits(
+                mainApkOutputFile.getFilter(OutputFile.DENSITY),
+                mainApkOutputFile.getFilter(OutputFile.ABI));
     }
 
     @NonNull
     private String getFilterName() {
-        if (densityFilter == null && abiFilter == null) {
+        if (mainApkOutputFile.getFilters().isEmpty()) {
             return UNIVERSAL;
         }
 
         StringBuilder sb = new StringBuilder();
+        String densityFilter = mainApkOutputFile.getFilter(OutputFile.DENSITY);
         if (densityFilter != null) {
             sb.append(densityFilter);
         }
+        String abiFilter = mainApkOutputFile.getFilter(OutputFile.ABI);
         if (abiFilter != null) {
             if (sb.length() > 0) {
                 sb.append(StringHelper.capitalize(abiFilter));
@@ -124,6 +145,12 @@ public abstract class BaseVariantOutputData implements SplitOutput {
         }
 
         return sb.toString();
+    }
+
+    @NonNull
+    @Override
+    public File getSplitFolder() {
+        return getOutputFile().getParentFile();
     }
 
     void setMultiOutput(boolean multiOutput) {

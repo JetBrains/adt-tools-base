@@ -18,7 +18,7 @@ package com.android.build.gradle.internal.variant;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.BasePlugin;
-import com.android.builder.core.VariantConfiguration;
+import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 
 import java.util.Collections;
 import java.util.Set;
@@ -35,7 +35,7 @@ public class ApplicationVariantData extends ApkVariantData implements TestedVari
 
     public ApplicationVariantData(
             @NonNull BasePlugin basePlugin,
-            @NonNull VariantConfiguration config) {
+            @NonNull GradleVariantConfiguration config) {
         super(basePlugin, config);
     }
 

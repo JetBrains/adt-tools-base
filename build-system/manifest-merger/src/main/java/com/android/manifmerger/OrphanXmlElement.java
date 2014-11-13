@@ -105,6 +105,7 @@ public class OrphanXmlElement extends XmlNode {
         return mType.getNodeKeyResolver().getKey(mXml);
     }
 
+    @NonNull
     @Override
     public PositionXmlParser.Position getPosition() {
         return PositionImpl.UNKNOWN;

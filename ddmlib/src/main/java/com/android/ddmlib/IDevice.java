@@ -37,6 +37,7 @@ public interface IDevice extends IShellEnabledDevice {
     public static final String PROP_BUILD_CODENAME = "ro.build.version.codename";
     public static final String PROP_DEVICE_MODEL = "ro.product.model";
     public static final String PROP_DEVICE_MANUFACTURER = "ro.product.manufacturer";
+    public static final String PROP_DEVICE_CPU_ABI_LIST = "ro.product.cpu.abilist";
     public static final String PROP_DEVICE_CPU_ABI = "ro.product.cpu.abi";
     public static final String PROP_DEVICE_CPU_ABI2 = "ro.product.cpu.abi2";
     public static final String PROP_BUILD_CHARACTERISTICS = "ro.build.characteristics";
@@ -220,15 +221,6 @@ public interface IDevice extends IShellEnabledDevice {
     @Deprecated
     public String getPropertyCacheOrSync(String name) throws TimeoutException,
             AdbCommandRejectedException, ShellCommandUnresponsiveException, IOException;
-
-    /**
-     * Do a potential asynchronous query for a system property.
-     *
-     * @param name the name of the value to return.
-     * @return a {@link Future} which can be used to retrieve value of property. Future#get() can
-     *         return null if property can not be retrieved.
-     */
-    public @NonNull Future<String> getSystemProperty(@NonNull String name);
 
     /** Returns whether this device supports the given software feature. */
     boolean supportsFeature(@NonNull Feature feature);
@@ -486,6 +478,18 @@ public interface IDevice extends IShellEnabledDevice {
     public String installPackage(String packageFilePath, boolean reinstall, String... extraArgs)
             throws InstallException;
 
+    /**
+     * Installs an Android application made of serveral APK files (one main and 0..n split packages)
+     *
+     * @param apkFilePaths list of absolute file system path to files on local host to install
+     * @param reinstall set to <code>true</code> if re-install of app should be performed
+     * @param extraArgs optional extra arguments to pass. See 'adb shell pm install --help' for
+     *            available options.
+     * @throws InstallException if the installation fails.
+     */
+
+    public void installPackages(List<String> apkFilePaths, int timeOut,
+            boolean reinstall, String... extraArgs) throws InstallException;
     /**
      * Pushes a file to device
      *

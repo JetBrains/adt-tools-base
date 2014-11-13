@@ -1,0 +1,153 @@
+ext {
+    buildToolsVersion = System.env.CUSTOM_BUILDTOOLS != null ? System.env.CUSTOM_BUILDTOOLS : '20.0.0'
+}
+
+buildscript {
+    def gradleVersion = System.env.CUSTOM_GRADLE != null ? System.env.CUSTOM_GRADLE : '0.14.2'
+
+    repositories {
+        if (System.env.CUSTOM_REPO != null) {
+            maven { url System.env.CUSTOM_REPO }
+        } else {
+            mavenCentral()
+        }
+    }
+    dependencies {
+        classpath "com.android.tools.build:gradle:$gradleVersion"
+    }
+}
+
+apply plugin: 'com.android.application'
+
+import com.android.builder.model.ArtifactMetaData
+import com.android.builder.model.SourceProvider
+
+// create a configuration to allow dependencies specific to the Java artifact
+configurations {
+   foo
+}
+
+// Register an artifact type and tie it to the name "__test__".
+// This name will show up in Studio. It must be unique
+android.registerArtifactType("__test__", false, ArtifactMetaData.TYPE_JAVA)
+
+// register a new SourceProvider per build type, and associate it with the artifact
+// registered above.
+android.buildTypes.all { type ->
+    project.android.registerBuildTypeSourceProvider(
+           "__test__",                              // registered name of the artifact type
+           type,                                    // associate it with a BuildType
+           getProvider("buildType:$type.name"))     // the source provider
+}
+
+// Same with ProductFlavor
+android.productFlavors.all { flavor ->
+    project.android.registerProductFlavorSourceProvider(
+            "__test__",                                  // registered name of the artifact type
+            flavor,                                      // associate it with a ProductFlavor
+            getProvider("productFlavor:$flavor.name"))   // the source provider
+}
+
+// now register a new (java) artifact for each variant, still associated
+// with the artifact type registered above.
+android.applicationVariants.all { variant ->
+    project.android.registerJavaArtifact(
+            "__test__",                                  // registered name of the artifact type
+            variant,                                     // associate it with a variant
+            "assemble:$variant.name",                    // name of the assemble task for this artifact
+            "compile:$variant.name",                     // name of the java compile task for this artifact
+            configurations.foo,
+            new File("classesFolder:$variant.name"),     // location of the classes folder (compile output)
+            getProvider("provider:$variant.name"))       // source provider specific to this variant for the artifact.
+}
+
+
+// after the artifact is created, add a dependency
+dependencies {
+   foo files('libs/util-1.0.jar')
+}
+
+
+android {
+    compileSdkVersion 19
+    buildToolsVersion = rootProject.ext.buildToolsVersion
+
+    flavorDimensions  "pricing", "releaseType"
+
+    productFlavors {
+
+        beta {
+            flavorDimension "releaseType"
+        }
+
+        normal {
+            flavorDimension "releaseType"
+        }
+
+        free {
+            flavorDimension "pricing"
+        }
+
+        paid {
+            flavorDimension "pricing"
+        }
+    }
+}
+
+public class SourceProviderImpl implements SourceProvider, Serializable {
+    private static final long serialVersionUID = 1L;
+
+    private final String name;
+
+    SourceProviderImpl(String name) {
+        this.name = name
+    }
+
+    String getName() {
+        return name
+    }
+
+    File getManifestFile() {
+        return new File(name)
+    }
+
+    Collection<File> getJavaDirectories() {
+        return Collections.emptyList()
+    }
+
+    Collection<File> getResourcesDirectories() {
+        return Collections.emptyList()
+    }
+
+    Collection<File> getAidlDirectories() {
+        return Collections.emptyList()
+    }
+
+    Collection<File> getRenderscriptDirectories() {
+        return Collections.emptyList()
+    }
+
+    Collection<File> getCDirectories() {
+        return Collections.emptyList()
+    }
+
+    Collection<File> getCppDirectories() {
+        return Collections.emptyList()
+    }
+
+    Collection<File> getJniLibsDirectories() {
+        return Collections.emptyList()
+    }
+
+    Collection<File> getResDirectories() {
+        return Collections.emptyList()
+    }
+
+    Collection<File> getAssetsDirectories() {
+        return Collections.emptyList()
+    }
+}
+
+SourceProvider getProvider(String name) {
+   return new SourceProviderImpl(name)
+}

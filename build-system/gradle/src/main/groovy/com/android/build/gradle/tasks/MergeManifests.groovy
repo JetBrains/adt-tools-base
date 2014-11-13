@@ -55,6 +55,9 @@ public class MergeManifests extends ManifestProcessorTask {
 
     @Input @Optional
     String getVersionName() {
+        if (variantOutputData!= null) {
+            return variantOutputData.versionName
+        }
         return variantConfiguration.getVersionName();
     }
 

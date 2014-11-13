@@ -48,9 +48,11 @@ import java.util.Map;
  */
 public class NamespaceDetector extends LayoutDetector {
 
+    @SuppressWarnings("unchecked")
     private static final Implementation IMPLEMENTATION = new Implementation(
             NamespaceDetector.class,
-            Scope.RESOURCE_FILE_SCOPE);
+            Scope.MANIFEST_AND_RESOURCE_SCOPE,
+            Scope.RESOURCE_FILE_SCOPE, Scope.MANIFEST_SCOPE);
 
     /** Typos in the namespace */
     public static final Issue TYPO = Issue.create(
@@ -109,7 +111,6 @@ public class NamespaceDetector extends LayoutDetector {
             9,
             Severity.FATAL,
             IMPLEMENTATION);
-
 
     /** Prefix relevant for custom namespaces */
     private static final String XMLNS_ANDROID = "xmlns:android";                    //$NON-NLS-1$

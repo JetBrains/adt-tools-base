@@ -335,7 +335,8 @@ public class HtmlReporter extends Reporter {
         mWriter.write("\n</body>\n</html>");                             //$NON-NLS-1$
         mWriter.close();
 
-        if (mDisplayEmpty || errorCount > 0 || warningCount > 0) {
+        if (!mClient.getFlags().isQuiet()
+                && (mDisplayEmpty || errorCount > 0 || warningCount > 0)) {
             String url = SdkUtils.fileToUrlString(mOutput.getAbsoluteFile());
             System.out.println(String.format("Wrote HTML report to %1$s", url));
         }

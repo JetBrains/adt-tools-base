@@ -24,4 +24,7 @@
     <string name="issue39599_2">"\nto</string>
     <!-- not translatable -->
     <string name="translatable" translatable="false">"Andriod</string>
+    <!-- don't spell check resource references; not user visible anyway -->
+    <string name="issue77269_1">@android:string/ok</string>
+    <string name="issue77269_2"> @string/cmoputer </string>
 </resources>

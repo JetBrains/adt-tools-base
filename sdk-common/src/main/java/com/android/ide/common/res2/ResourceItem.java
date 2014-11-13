@@ -39,6 +39,7 @@ import com.android.ide.common.rendering.api.ArrayResourceValue;
 import com.android.ide.common.rendering.api.AttrResourceValue;
 import com.android.ide.common.rendering.api.DeclareStyleableResourceValue;
 import com.android.ide.common.rendering.api.DensityBasedResourceValue;
+import com.android.ide.common.rendering.api.ItemResourceValue;
 import com.android.ide.common.rendering.api.PluralsResourceValue;
 import com.android.ide.common.rendering.api.ResourceValue;
 import com.android.ide.common.rendering.api.StyleResourceValue;
@@ -283,11 +284,8 @@ public class ResourceItem extends DataItem<ResourceFile>
 
         ResourceItem that = (ResourceItem) o;
 
-        if (mType != that.mType) {
-            return false;
-        }
+        return mType == that.mType;
 
-        return true;
     }
 
     @Override
@@ -391,11 +389,11 @@ public class ResourceItem extends DataItem<ResourceFile>
                         isFrameworkAttr = true;
                     }
 
-                    ResourceValue resValue = new ResourceValue(null, name,
+                    ItemResourceValue resValue = new ItemResourceValue(name, isFrameworkAttr,
                             styleValue.isFramework());
                     String text = getTextNode(child.getChildNodes());
                     resValue.setValue(ValueXmlHelper.unescapeResourceString(text, false, true));
-                    styleValue.addValue(resValue, isFrameworkAttr);
+                    styleValue.addItem(resValue);
                 }
             }
         }

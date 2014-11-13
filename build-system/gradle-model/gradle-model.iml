@@ -10,7 +10,7 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" scope="TEST" name="JUnit3" level="project" />
-    <orderEntry type="library" name="gradle-tooling-api-1.9" level="project" />
+    <orderEntry type="library" name="gradle-tooling-api-2.2" level="project" />
     <orderEntry type="library" name="slf4j-api" level="project" />
     <orderEntry type="library" scope="TEST" name="slf4j-simple" level="project" />
     <orderEntry type="module-library" exported="">
@@ -70,6 +70,7 @@
       </library>
     </orderEntry>
     <orderEntry type="module" module-name="builder" scope="TEST" />
+    <orderEntry type="module" module-name="project-test-lib" scope="TEST" />
   </component>
 </module>
 

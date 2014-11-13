@@ -110,9 +110,7 @@ public class LintCliClient extends LintClient {
 
 
         mDriver.setAbbreviating(!mFlags.isShowEverything());
-        if (!mFlags.isQuiet()) {
-            mDriver.addLintListener(new ProgressPrinter());
-        }
+        addProgressPrinter();
 
         mDriver.analyze(createLintRequest(files));
 
@@ -132,6 +130,12 @@ public class LintCliClient extends LintClient {
         }
 
         return mFlags.isSetExitCode() ? (mHasErrors ? ERRNO_ERRORS : ERRNO_SUCCESS) : ERRNO_SUCCESS;
+    }
+
+    protected void addProgressPrinter() {
+        if (!mFlags.isQuiet()) {
+            mDriver.addLintListener(new ProgressPrinter());
+        }
     }
 
     /** Creates a lint request */
@@ -665,6 +669,11 @@ public class LintCliClient extends LintClient {
         }
 
         return null;
+    }
+
+    @NonNull
+    public LintCliFlags getFlags() {
+        return mFlags;
     }
 
     public boolean haveErrors() {

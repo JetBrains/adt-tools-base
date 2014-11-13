@@ -1,3 +1,51 @@
+0.14.2
+- Fix versionNameSuffix support
+- Fix BuildType.initWith to copy shrinkResources flag
+- setup default proguard rule file if none are provided (SDK/tools/proguard/proguard-android.txt)
+- BuildType.pseudoLocalesEnabled flag to include fake locales in apk.
+
+
+0.14.1
+- Fix coverage support.
+- Fix resource shrinking for style references
+- Exclude embedded Wear micro-app from resource shrinking.
+
+0.14.0
+- Proguard and code coverage can now work together
+- Support for pulling coverage data from Android 5.0 devices
+- Env var ANDROID_SERIAL (if present) restrict installation/execution of tests to device matching the serial number
+- Multi-Dex support.
+  * Requires Build-Tools 21.1.0, and Support repository rev 8.
+  * multiDexEnabled = true on defaultConfig, ProductFlavor, or BuildType
+  * Works for minSdkVersion 21+ (native) or <21 (legacy mode, with automatic dependency on com.android.support:multidex:1.0.0)
+  * See multidex samples.
+- Support for automatic removal of unused resources
+  * Off by default for now, enable by setting shrinkResources to true in your
+    release build types. Requires minifyEnabled as well.
+- DSL/API changes:
+  * Renamed a few properties to make things more consistent.
+     - BuildType.runProguard ->  minifyEnabled
+     - BuildType.zipAlign                    -> zipAlignEnabled
+     - BuildType.jniDebugBuild               -> jniDebuggable
+     - BuildType.renderscriptDebug           -> renderscriptDebuggable
+     - ProductFlavor.renderscriptSupportMode -> renderscriptSupportModeEnabled
+     - ProductFlavor.renderscriptNdkMode     -> renderscriptNdkModeEnabled
+  * BuildType/ProductFlavor/SigningConfig queried through the variant and variantFilter API are now read-only.
+     - These objects have always been global and changing them would have side effects in other variants
+     - Merged flavor is still per-variant and can me modified
+  * Variant / VariantOutput API change
+     - Getting the value of the density or ABI filter is done with
+         output.getFilter(com.android.build.OutputFile.DENSITY)
+         output.getFilter(com.android.build.OutputFile.ABI)
+     - See densitySplit sample
+
+0.13.3
+- Added support for selectively allowing dependencies on libraries with incompatible uses-sdk
+- Fixed race condition in lint's resource folder cache which could trigger a build failure
+
+0.13.2
+- Fixed issue in manifest merger that could put wrong uses-sdk node in the manifest.
+
 0.13.1
 - Added ability to merge Instrumentation element from test
 - Fix uninstallAll task

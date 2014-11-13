@@ -17,7 +17,7 @@
     <string name="popular_header">Popular Videos</string>
     <string name="preferences">PREFERENCES</string>
     <string name="grid_view">Grid View</string>
-    <string name="send_feeback">Send Feedback</string>
+    <string name="error_fragment">Error Fragment</string>
     <string name="personal_settings">Personal Settings</string>
     <string name="watch_trailer_1">Watch trailer</string>
     <string name="watch_trailer_2">FREE</string>
@@ -32,7 +32,9 @@
 
     <!-- Error messages -->
     <string name="video_error_media_load_timeout">Media loading timed out</string>
-    <string name="video_error_server_unaccessible">Media server was not reachable</string>
+    <string name="video_error_server_inaccessible">Media server was not reachable</string>
     <string name="video_error_unknown_error">Failed to load video</string>
+    <string name="error_fragment_message">An error occurred</string>
+    <string name="dismiss_error">Dismiss</string>
     <string name="oops">Oops</string>
 </resources>

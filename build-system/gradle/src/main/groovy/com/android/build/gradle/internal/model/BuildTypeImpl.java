@@ -19,6 +19,7 @@ package com.android.build.gradle.internal.model;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.model.BuildType;
+import com.android.builder.model.SigningConfig;
 
 import java.io.Serializable;
 
@@ -32,13 +33,14 @@ class BuildTypeImpl extends BaseConfigImpl implements BuildType, Serializable {
     private String name;
     private boolean debuggable;
     private boolean testCoverageEnabled;
-    private boolean jniDebugBuild;
-    private boolean renderscriptDebugBuild;
+    private boolean jniDebuggable;
+    private boolean pseudoLocalesEnabled;
+    private boolean renderscriptDebuggable;
     private int renderscriptOptimLevel;
     private String applicationIdSuffix;
     private String versionNameSuffix;
-    private boolean runProguard;
-    private boolean zipAlign;
+    private boolean minifyEnabled;
+    private boolean zipAlignEnabled;
     private boolean embedMicroApp;
 
     @NonNull
@@ -48,14 +50,15 @@ class BuildTypeImpl extends BaseConfigImpl implements BuildType, Serializable {
         clonedBuildType.name = buildType.getName();
         clonedBuildType.debuggable = buildType.isDebuggable();
         clonedBuildType.testCoverageEnabled = buildType.isTestCoverageEnabled();
-        clonedBuildType.jniDebugBuild = buildType.isJniDebugBuild();
-        clonedBuildType.renderscriptDebugBuild = buildType.isRenderscriptDebugBuild();
+        clonedBuildType.jniDebuggable = buildType.isJniDebuggable();
+        clonedBuildType.renderscriptDebuggable = buildType.isRenderscriptDebuggable();
         clonedBuildType.renderscriptOptimLevel = buildType.getRenderscriptOptimLevel();
         clonedBuildType.applicationIdSuffix = buildType.getApplicationIdSuffix();
         clonedBuildType.versionNameSuffix = buildType.getVersionNameSuffix();
-        clonedBuildType.runProguard = buildType.isRunProguard();
-        clonedBuildType.zipAlign = buildType.isZipAlign();
+        clonedBuildType.minifyEnabled = buildType.isMinifyEnabled();
+        clonedBuildType.zipAlignEnabled = buildType.isZipAlignEnabled();
         clonedBuildType.embedMicroApp = buildType.isEmbedMicroApp();
+        clonedBuildType.pseudoLocalesEnabled = buildType.isPseudoLocalesEnabled();
 
         return clonedBuildType;
     }
@@ -81,13 +84,18 @@ class BuildTypeImpl extends BaseConfigImpl implements BuildType, Serializable {
     }
 
     @Override
-    public boolean isJniDebugBuild() {
-        return jniDebugBuild;
+    public boolean isJniDebuggable() {
+        return jniDebuggable;
     }
 
     @Override
-    public boolean isRenderscriptDebugBuild() {
-        return renderscriptDebugBuild;
+    public boolean isRenderscriptDebuggable() {
+        return renderscriptDebuggable;
+    }
+
+    @Override
+    public boolean isPseudoLocalesEnabled() {
+        return pseudoLocalesEnabled;
     }
 
     @Override
@@ -108,18 +116,24 @@ class BuildTypeImpl extends BaseConfigImpl implements BuildType, Serializable {
     }
 
     @Override
-    public boolean isRunProguard() {
-        return runProguard;
+    public boolean isMinifyEnabled() {
+        return minifyEnabled;
     }
 
     @Override
-    public boolean isZipAlign() {
-        return zipAlign;
+    public boolean isZipAlignEnabled() {
+        return zipAlignEnabled;
     }
 
     @Override
     public boolean isEmbedMicroApp() {
         return embedMicroApp;
+    }
+
+    @Nullable
+    @Override
+    public SigningConfig getSigningConfig() {
+        return null;
     }
 
     @Override
@@ -128,13 +142,13 @@ class BuildTypeImpl extends BaseConfigImpl implements BuildType, Serializable {
                 "name='" + name + '\'' +
                 ", debuggable=" + debuggable +
                 ", testCoverageEnabled=" + testCoverageEnabled +
-                ", jniDebugBuild=" + jniDebugBuild +
-                ", renderscriptDebugBuild=" + renderscriptDebugBuild +
+                ", jniDebuggable=" + jniDebuggable +
+                ", renderscriptDebuggable=" + renderscriptDebuggable +
                 ", renderscriptOptimLevel=" + renderscriptOptimLevel +
                 ", applicationIdSuffix='" + applicationIdSuffix + '\'' +
                 ", versionNameSuffix='" + versionNameSuffix + '\'' +
-                ", runProguard=" + runProguard +
-                ", zipAlign=" + zipAlign +
+                ", minifyEnabled=" + minifyEnabled +
+                ", zipAlignEnabled=" + zipAlignEnabled +
                 ", embedMicroApp=" + embedMicroApp +
                 "} " + super.toString();
     }

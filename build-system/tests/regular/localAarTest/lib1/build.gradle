@@ -1,0 +1,17 @@
+configurations.create("default")
+artifacts.add("default", file('lib1.aar'))
+
+/* uncomment to generate lib1.aar
+
+apply plugin: 'com.android.library'
+
+android {
+    compileSdkVersion 21
+    buildToolsVersion = rootProject.ext.buildToolsVersion
+
+    defaultConfig {
+        minSdkVersion 14
+        targetSdkVersion 15
+    }
+}
+*/

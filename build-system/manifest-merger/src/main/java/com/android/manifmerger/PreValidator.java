@@ -161,7 +161,7 @@ public class PreValidator {
 
         Attr selectorAttribute =
                 element.getXml().getAttributeNodeNS(SdkConstants.TOOLS_URI, Selector.SELECTOR_LOCAL_NAME);
-        if (selectorAttribute!=null && !element.getOperationType().isSelectable()) {
+        if (selectorAttribute!=null && !element.supportsSelector()) {
             String message = String.format(
                     "Unsupported tools:selector=\"%1$s\" found on node %2$s at %3$s",
                     selectorAttribute.getValue(),

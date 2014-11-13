@@ -20,8 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.test.BaseTest;
 
 import java.io.File;
-import java.util.Collection;
-import java.util.Collections;
+import java.util.List;
 
 /**
  * Base class for build tests.
@@ -30,7 +29,6 @@ import java.util.Collections;
  * Android Source tree under out/host/<platform>/sdk/... (result of 'make sdk')
  */
 abstract class BuildTest extends BaseTest {
-    private static final Collection<String> IGNORED_GRADLE_VERSIONS = Collections.emptyList();
 
     protected File testDir;
 
@@ -48,13 +46,31 @@ abstract class BuildTest extends BaseTest {
      * @return {@code true} if the given Gradle version should be ignored, {@code false} otherwise.
      */
     protected static boolean isIgnoredGradleVersion(String gradleVersion) {
-      return IGNORED_GRADLE_VERSIONS.contains(gradleVersion);
+        return !BasePlugin.GRADLE_TEST_VERSION.equals(gradleVersion);
     }
 
-    protected File buildProject(@NonNull String name, @NonNull String gradleVersion) {
+    protected File buildProject(
+            @NonNull String testFolder,
+            @NonNull String name,
+            @NonNull String gradleVersion) {
         return runTasksOn(
+                testFolder,
                 name,
                 gradleVersion,
                 "clean", "assembleDebug", "lint");
     }
+
+    protected File buildProject(
+            @NonNull String testFolder,
+            @NonNull String name,
+            @NonNull String gradleVersion,
+            @NonNull List<String> arguments) {
+        return runTasksOn(
+                testFolder,
+                name,
+                gradleVersion,
+                arguments,
+                "clean", "assembleDebug", "lint");
+    }
+
 }

@@ -1,7 +1,0 @@
-apply plugin: 'com.android.library'
-
-android {
-    resourcePrefix 'libapp_'
-    compileSdkVersion 19
-    buildToolsVersion '19.1.0'
-}

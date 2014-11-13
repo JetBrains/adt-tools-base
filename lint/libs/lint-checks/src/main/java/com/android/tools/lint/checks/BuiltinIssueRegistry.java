@@ -30,7 +30,7 @@ import java.util.List;
 /** Registry which provides a list of checks to be performed on an Android project */
 public class BuiltinIssueRegistry extends IssueRegistry {
     private static final List<Issue> sIssues;
-    static final int INITIAL_CAPACITY = 198;
+    static final int INITIAL_CAPACITY = 200;
 
     static {
         List<Issue> issues = new ArrayList<Issue>(INITIAL_CAPACITY);
@@ -147,6 +147,7 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(NamespaceDetector.RES_AUTO);
         issues.add(NamespaceDetector.TYPO);
         issues.add(NamespaceDetector.UNUSED);
+        issues.add(NegativeMarginDetector.ISSUE);
         issues.add(NestedScrollingWidgetDetector.ISSUE);
         issues.add(NfcTechListDetector.ISSUE);
         issues.add(NonInternationalizedSmsDetector.ISSUE);
@@ -164,7 +165,8 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(PrivateResourceDetector.ISSUE);
         issues.add(ProguardDetector.SPLIT_CONFIG);
         issues.add(ProguardDetector.WRONG_KEEP);
-        issues.add(PropertyFileDetector.ISSUE);
+        issues.add(PropertyFileDetector.ESCAPE);
+        issues.add(PropertyFileDetector.HTTP);
         issues.add(PxUsageDetector.DP_ISSUE);
         issues.add(PxUsageDetector.IN_MM_ISSUE);
         issues.add(PxUsageDetector.PX_ISSUE);

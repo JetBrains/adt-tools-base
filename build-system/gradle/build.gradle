@@ -29,7 +29,6 @@ dependencies {
     compile project(':base:builder')
     compile project(':base:lint')
     compile "net.sf.proguard:proguard-gradle:${project.ext.proguardVersion}"
-    compile "com.google.code.gson:gson:2.3"
 
     testCompile 'junit:junit:3.8.1'
     testCompile project(':base:project-test-lib')
@@ -83,12 +82,21 @@ apply from: "$rootDir/buildSrc/base/publish.gradle"
 
 jar.manifest.attributes("Plugin-Version": version)
 
+test {
+    environment("CUSTOM_REPO", rootProject.file("../out/repo"))
+
+    testLogging {
+        events "failed"
+    }
+}
+
 task buildTest(type: Test) {
     testClassesDir = sourceSets.buildTest.output.classesDir
     classpath = sourceSets.buildTest.runtimeClasspath
     description = "Runs the project build tests. This requires an SDK either from the Android source tree, under out/..., or an env var ANDROID_HOME."
     group = "verification"
     systemProperties['jar.path'] = jar.archivePath
+    environment("CUSTOM_REPO", rootProject.file("../out/repo"))
 }
 
 task integTest(type: Test) {
@@ -99,6 +107,7 @@ task integTest(type: Test) {
                     "source tree, under out/..., or an env var ANDROID_HOME and a device."
     group = "verification"
     systemProperties['jar.path'] = jar.archivePath
+    environment("CUSTOM_REPO", rootProject.file("../out/repo"))
 
     // Allow user to include/exclude categories from the command line.
     // e.g. add the following to skip device tests:
@@ -117,6 +126,7 @@ buildTest.dependsOn ':publishLocal'
 check.dependsOn buildTest
 
 integTest.dependsOn ':publishLocal'
+check.dependsOn integTest
 
 task deviceTest(type: Test) {
     testClassesDir = sourceSets.deviceTest.output.classesDir
@@ -124,6 +134,7 @@ task deviceTest(type: Test) {
     description = "Runs the device tests. This requires a device."
     group = "verification"
     systemProperties['jar.path'] = jar.archivePath
+    environment("CUSTOM_REPO", rootProject.file("../out/repo"))
 }
 
 deviceTest.dependsOn ':publishLocal'

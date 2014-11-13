@@ -15,7 +15,7 @@
     android:versionName="1.0.0">
 
     <!-- This is the same as writing android:minSdkVersion="1" -->
-    <uses-sdk android:targetSdkVersion="14" tools:node="remove" />
+    <uses-sdk tools:node="removeAll"/>
 
     <!-- Ignore permissions elements from lib that would conflict because
          their definition is different. -->
@@ -139,31 +139,5 @@
 
 @result
 
-<manifest
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example"
-    android:versionCode="100"
-    android:versionName="1.0.0">
-
-    <!-- This is the same as writing android:minSdkVersion="1" -->
-
-    <!-- Ignore permissions elements from lib that would conflict because
-         their definition is different. -->
-
-    <!-- uses-feature is never merged, only checked, so tools:merge=remove does nothing. -->
-    <!-- Ignore uses-feature from library, which would change required to
-         true if it were merged. -->
-
-    <!-- supports-screens is never merged, only checked, so tools:merge=remove does nothing. -->
-
-    <!-- supports-gl-texture-screens-feature is never merged, only checked, so tools:merge=remove does nothing. -->
-
-    <application android:name="com.example.TheApp" >
-        <!-- Ignore uses-library from library, which would change required to
-             true if it were merged. -->
-
-    </application>
-
-</manifest>
-
 @errors
+ERROR:uses-sdk element cannot have a "tools:node" attribute

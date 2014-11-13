@@ -1,0 +1,58 @@
+ext {
+    buildToolsVersion = System.env.CUSTOM_BUILDTOOLS != null ? System.env.CUSTOM_BUILDTOOLS : '20.0.0'
+}
+
+buildscript {
+    def gradleVersion = System.env.CUSTOM_GRADLE != null ? System.env.CUSTOM_GRADLE : '0.14.2'
+
+    repositories {
+        if (System.env.CUSTOM_REPO != null) {
+            maven { url System.env.CUSTOM_REPO }
+        } else {
+            mavenCentral()
+        }
+    }
+    dependencies {
+        classpath "com.android.tools.build:gradle:$gradleVersion"
+    }
+}
+
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 19
+    buildToolsVersion '19.1.0'
+
+    defaultConfig {
+        versionCode 12
+        versionName "2.0"
+        minSdkVersion 16
+        targetSdkVersion 16
+    }
+
+    buildTypes {
+        debug {
+            shrinkResources false
+            minifyEnabled false
+        }
+        proguardNoShrink {
+            shrinkResources false
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+        release {
+            shrinkResources true
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    dexOptions {
+        incremental false
+    }
+}
+
+dependencies {
+    compile 'com.android.support:support-annotations:+'
+    compile 'com.android.support:support-v4:+'
+}
