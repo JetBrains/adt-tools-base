@@ -930,6 +930,12 @@ public class ResourceUsageAnalyzer {
         while (matcher.find(from)) {
             int start = matcher.start();
             int end = matcher.end();
+            if (start == 0 && end == formatString.length()) {
+                // Don't match if the entire string literal starts with % and ends with
+                // the a formatting character, such as just "%d": this just matches absolutely
+                // everything and is unlikely to be used in a resource lookup
+                return "nomatch";
+            }
             if (start > from) {
                 regexp.append(Pattern.quote(formatString.substring(from, start)));
             }
