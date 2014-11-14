@@ -59,7 +59,7 @@ import java.util.List;
 public class GradleTestProject implements TestRule {
 
     public static class Builder {
-        private static final File SAMPLE_PROJECT_DIR = new File("../tests");
+        private static final File SAMPLE_PROJECT_DIR = new File("test-projects");
 
         private String name;
 
