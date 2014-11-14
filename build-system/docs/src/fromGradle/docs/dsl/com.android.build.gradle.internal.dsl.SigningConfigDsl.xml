@@ -3,9 +3,7 @@
         <title>Properties</title>
         <table>
             <thead>
-                <tr>
-                    <td>Name</td>
-                </tr>
+                <tr><td>Name</td></tr>
             </thead>
             <tr><td>storeFile</td></tr>
             <tr><td>storePassword</td></tr>
@@ -18,9 +16,7 @@
         <title>Methods</title>
         <table>
             <thead>
-                <tr>
-                    <td>Name</td>
-                </tr>
+                <tr><td>Name</td></tr>
             </thead>
         </table>
     </section>

@@ -32,6 +32,12 @@ class CompileOptions {
         setExplicitly = true
     }
 
+    /**
+     * Language level of the source code.
+     *
+     * <p>Similar to what <a href="http://www.gradle.org/docs/current/userguide/java_plugin.html">
+     * Gradle Java plugin</a> uses.
+     */
     JavaVersion getSourceCompatibility() {
         return sourceCompatibility
     }
@@ -41,6 +47,12 @@ class CompileOptions {
         setExplicitly = true
     }
 
+    /**
+     * Version of the generated Java bytecode.
+     *
+     * <p>Similar to what <a href="http://www.gradle.org/docs/current/userguide/java_plugin.html">
+     * Gradle Java plugin</a> uses.
+     */
     JavaVersion getTargetCompatibility() {
         return targetCompatibility
     }

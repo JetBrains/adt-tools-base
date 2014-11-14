@@ -42,18 +42,30 @@ public class Splits {
         abi = instantiator.newInstance(AbiSplitData.class);
     }
 
+    /**
+     * Density settings.
+     */
     public DensitySplitData getDensity() {
         return density;
     }
 
+    /**
+     * Configures density split settings.
+     */
     public void density(Action<DensitySplitData> action) {
         action.execute(density);
     }
 
+    /**
+     * ABI settings.
+     */
     public AbiSplitData getAbi() {
         return abi;
     }
 
+    /**
+     * Configures ABI split settings.
+     */
     public void abi(Action<AbiSplitData> action) {
         action.execute(abi);
     }
@@ -61,7 +73,7 @@ public class Splits {
     /**
      * Returns the list of Density filters used for multi-apk.
      *
-     * null value is allowed, indicating the need to generate an apk with all densities.
+     * <p>null value is allowed, indicating the need to generate an apk with all densities.
      *
      * @return a set of filters.
      */
@@ -81,7 +93,7 @@ public class Splits {
     /**
      * Returns the list of ABI filters used for multi-apk.
      *
-     * null value is allowed, indicating the need to generate an apk with all abis.
+     * <p>null value is allowed, indicating the need to generate an apk with all abis.
      *
      * @return a set of filters.
      */

@@ -20,6 +20,9 @@ import com.android.builder.core.DexOptions
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Optional
 
+/**
+ * DSL object for configuring dx options.
+ */
 public class DexOptionsImpl implements DexOptions {
 
     @Input
@@ -41,11 +44,17 @@ public class DexOptionsImpl implements DexOptions {
         isIncrementalFlag = isIncremental
     }
 
+    /**
+     * TODO: Document.
+     */
     @Override
     boolean getIncremental() {
         return isIncrementalFlag
     }
 
+    /**
+     * TODO: Document.
+     */
     @Override
     boolean getPreDexLibraries() {
         return isPreDexLibrariesFlag
@@ -59,6 +68,9 @@ public class DexOptionsImpl implements DexOptions {
         isJumboModeFlag = flag
     }
 
+    /**
+     * TODO: Document.
+     */
     @Override
     boolean getJumboMode() {
         return isJumboModeFlag
@@ -73,6 +85,9 @@ public class DexOptionsImpl implements DexOptions {
         }
     }
 
+    /**
+     * TODO: Document.
+     */
     @Override
     public String getJavaMaxHeapSize() {
         return javaMaxHeapSize
@@ -82,6 +97,9 @@ public class DexOptionsImpl implements DexOptions {
         this.threadCount = threadCount
     }
 
+    /**
+     * TODO: Document.
+     */
     @Override
     int getThreadCount() {
         return threadCount

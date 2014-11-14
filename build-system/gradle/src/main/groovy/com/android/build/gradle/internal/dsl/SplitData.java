@@ -34,6 +34,9 @@ public class SplitData {
     private Set<String> exclude;
     private Set<String> include;
 
+    /**
+     * Whether to split in this dimension.
+     */
     public boolean isEnable() {
         return enable;
     }
@@ -42,6 +45,23 @@ public class SplitData {
         this.enable = enable;
     }
 
+    /**
+     * Collection of exclude patterns.
+     */
+    public Set<String> getExclude() {
+        return exclude;
+    }
+
+    /**
+     * Collection of include patterns.
+     */
+    public Set<String> getInclude() {
+        return include;
+    }
+
+    /**
+     * Collection of exclude patterns.
+     */
     public void setExclude(@NonNull List<String> list) {
         exclude = Sets.newHashSet(list);
     }
@@ -68,6 +88,9 @@ public class SplitData {
         include.addAll(Arrays.asList(includes));
     }
 
+    /**
+     * TODO: Document.
+     */
     public void reset() {
         reset = true;
     }
