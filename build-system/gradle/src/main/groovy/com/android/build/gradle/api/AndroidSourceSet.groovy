@@ -15,10 +15,7 @@
  */
 
 package com.android.build.gradle.api
-
 import com.android.annotations.NonNull
-import org.gradle.api.file.SourceDirectorySet
-
 /**
  * A {@code AndroidSourceSet} represents a logical group of Java, aidl, renderscript source
  * as well as Android and non-Android resources.
@@ -94,6 +91,13 @@ public interface AndroidSourceSet {
      */
     @NonNull
     String getProvidedConfigurationName();
+
+    /**
+     * Returns the name of the wearApp configuration for this source set.
+     * @return The configuration name
+     */
+    @NonNull
+    String getWearAppConfigurationName();
 
     /**
      * The Android Manifest file for this source set.

@@ -42,9 +42,6 @@ class AppPlugin extends BasePlugin implements Plugin<Project> {
     @Override
     void apply(Project project) {
         super.apply(project)
-
-        // create the config to link a wear apk.
-        project.configurations.create(ApplicationVariantFactory.CONFIG_WEAR_APP)
     }
 
     @Override

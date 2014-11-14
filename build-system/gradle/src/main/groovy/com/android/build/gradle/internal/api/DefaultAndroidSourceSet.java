@@ -144,6 +144,16 @@ public class DefaultAndroidSourceSet implements AndroidSourceSet, SourceProvider
         }
     }
 
+    @NonNull
+    @Override
+    public String getWearAppConfigurationName() {
+        if (name.equals(SourceSet.MAIN_SOURCE_SET_NAME)) {
+            return "wearApp";
+        } else {
+            return String.format("%sWearApp", name);
+        }
+    }
+
     @Override
     @NonNull
     public AndroidSourceFile getManifest() {
