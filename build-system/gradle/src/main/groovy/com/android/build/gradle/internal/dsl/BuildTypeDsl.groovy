@@ -32,7 +32,7 @@ import org.gradle.api.Project
 import org.gradle.api.logging.Logger
 import org.gradle.internal.reflect.Instantiator
 /**
- * DSL overlay to make methods that accept String... work.
+ * DSL object to configure build types.
  */
 public class BuildTypeDsl extends DefaultBuildType implements Serializable {
     private static final long serialVersionUID = 1L
@@ -134,18 +134,37 @@ public class BuildTypeDsl extends DefaultBuildType implements Serializable {
         addResValue(AndroidBuilder.createClassField(type, name, value));
     }
 
+    /**
+     * Adds a new ProGuard configuration file.
+     *
+     * <p><code>proguardFile getDefaultProguardFile('proguard-android.txt')</code></p>
+     *
+     * <p>There are 2 default rules files
+     * <ul>
+     *     <li>proguard-android.txt
+     *     <li>proguard-android-optimize.txt
+     * </ul>
+     * <p>They are located in the SDK. Using <code>getDefaultProguardFile(String filename)</code> will return the
+     * full path to the files. They are identical except for enabling optimizations.
+     */
     @NonNull
     public BuildTypeDsl proguardFile(Object proguardFile) {
         proguardFiles.add(project.file(proguardFile));
         return this;
     }
 
+    /**
+     * Adds new ProGuard configuration files.
+     */
     @NonNull
     public BuildTypeDsl proguardFiles(Object... proguardFileArray) {
         proguardFiles.addAll(project.files(proguardFileArray).files);
         return this;
     }
 
+    /**
+     * Sets the ProGuard configuration files.
+     */
     @NonNull
     public BuildTypeDsl setProguardFiles(Iterable<?> proguardFileIterable) {
         proguardFiles.clear();

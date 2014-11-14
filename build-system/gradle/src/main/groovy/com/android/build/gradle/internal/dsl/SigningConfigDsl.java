@@ -64,47 +64,67 @@ public class SigningConfigDsl extends DefaultSigningConfig implements Serializab
     }
 
     /**
-     * Store file getter override to annotate it with Gradle's input annotation.
+     * Store file used when signing.
+     *
+     * <p>See <a href="http://developer.android.com/tools/publishing/app-signing.html">
+     * Signing Your Applications</a>
      */
     @Override
     @InputFile @Optional
     public File getStoreFile() {
+        // Getter override to annotate it with Gradle's input annotation.
         return super.getStoreFile();
     }
 
     /**
-     * Store password getter override to annotate it with Gradle's input annotation.
+     * Store password used when signing.
+     *
+     * <p>See <a href="http://developer.android.com/tools/publishing/app-signing.html">
+     * Signing Your Applications</a>
      */
     @Override
     @Input
     public String getStorePassword() {
+        // Getter override to annotate it with Gradle's input annotation.
         return super.getStorePassword();
     }
 
     /**
-     * Key alias getter override to annotate it with Gradle's input annotation.
+     * Key alias used when signing.
+     *
+     * <p>See <a href="http://developer.android.com/tools/publishing/app-signing.html">
+     * Signing Your Applications</a>
      */
     @Override
     @Input
     public String getKeyAlias() {
+        // Getter override to annotate it with Gradle's input annotation.
         return super.getKeyAlias();
     }
 
     /**
-     * Key password getter override to annotate it with Gradle's input annotation.
+     * Key password used when signing.
+     *
+     * <p>See <a href="http://developer.android.com/tools/publishing/app-signing.html">
+     * Signing Your Applications</a>
      */
     @Override
     @Input
     public String getKeyPassword() {
+        // Getter override to annotate it with Gradle's input annotation.
         return super.getKeyPassword();
     }
 
     /**
-     * Store Type getter override to annotate it with Gradle's input annotation.
+     * Store type used when signing.
+     *
+     * <p>See <a href="http://developer.android.com/tools/publishing/app-signing.html">
+     * Signing Your Applications</a>
      */
     @Override
     @Input
     public String getStoreType() {
+        // Getter override to annotate it with Gradle's input annotation.
         return super.getStoreType();
     }
 

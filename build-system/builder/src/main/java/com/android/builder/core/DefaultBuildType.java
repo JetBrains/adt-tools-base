@@ -77,6 +77,7 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
         return this;
     }
 
+    /** Whether this build type should generate a debuggable apk. */
     @Override
     public boolean isDebuggable() {
         // Accessing coverage data requires a debuggable package.
@@ -101,6 +102,7 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
     public boolean isPseudoLocalesEnabled() {
         return mPseudoLocalesEnabled;
     }
+
     /**
      * Whether this build type is configured to generate an APK with debuggable native code.
      */
@@ -110,11 +112,17 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
         return this;
     }
 
+    /**
+     * Whether this build type is configured to generate an APK with debuggable native code.
+     */
     @Override
     public boolean isJniDebuggable() {
         return mJniDebuggable;
     }
 
+    /**
+     * Whether the build type is configured to generate an apk with debuggable RenderScript code.
+     */
     @Override
     public boolean isRenderscriptDebuggable() {
         return mRenderscriptDebuggable;
@@ -128,6 +136,7 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
         return this;
     }
 
+    /** Optimization level to use by the renderscript compiler. */
     @Override
     public int getRenderscriptOptimLevel() {
         return mRenderscriptOptimLevel;
@@ -147,6 +156,9 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
         return this;
     }
 
+    /**
+     * Application id suffix applied to this build type.
+     */
     @Override
     @Nullable
     public String getApplicationIdSuffix() {
@@ -160,6 +172,7 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
         return this;
     }
 
+    /** Version name suffix. */
     @Override
     @Nullable
     public String getVersionNameSuffix() {
@@ -173,6 +186,7 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
         return this;
     }
 
+    /** Whether Minify is enabled for this build type. */
     @Override
     public boolean isMinifyEnabled() {
         return mMinifyEnabled;
@@ -186,6 +200,7 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
         return this;
     }
 
+    /** Whether zipalign is enabled for this build type. */
     @Override
     public boolean isZipAlignEnabled() {
         return mZipAlignEnabled;
@@ -198,6 +213,7 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
         return this;
     }
 
+    /** Sets the signing configuration. e.g.: {@code signingConfig signingConfigs.myConfig} */
     @Override
     @Nullable
     public SigningConfig getSigningConfig() {
