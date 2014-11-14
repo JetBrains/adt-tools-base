@@ -14,15 +14,17 @@
  * limitations under the License.
  */
 package com.android.build.gradle
+
 import com.android.build.gradle.api.ApplicationVariant
 import com.android.build.gradle.api.BaseVariant
-import com.android.builder.core.DefaultBuildType
-import com.android.builder.core.DefaultProductFlavor
-import com.android.builder.model.SigningConfig
+import com.android.build.gradle.internal.dsl.BuildTypeDsl
+import com.android.build.gradle.internal.dsl.GroupableProductFlavorDsl
+import com.android.build.gradle.internal.dsl.SigningConfigDsl
 import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.internal.DefaultDomainObjectSet
 import org.gradle.api.internal.project.ProjectInternal
 import org.gradle.internal.reflect.Instantiator
+
 /**
  * Extension for 'application' project.
  */
@@ -32,9 +34,9 @@ public class AppExtension extends BaseExtension {
         new DefaultDomainObjectSet<ApplicationVariant>(ApplicationVariant.class)
 
     AppExtension(AppPlugin plugin, ProjectInternal project, Instantiator instantiator,
-                 NamedDomainObjectContainer<DefaultBuildType> buildTypes,
-                 NamedDomainObjectContainer<DefaultProductFlavor> productFlavors,
-                 NamedDomainObjectContainer<SigningConfig> signingConfigs,
+                 NamedDomainObjectContainer<BuildTypeDsl> buildTypes,
+                 NamedDomainObjectContainer<GroupableProductFlavorDsl> productFlavors,
+                 NamedDomainObjectContainer<SigningConfigDsl> signingConfigs,
                  boolean isLibrary) {
         super(plugin, project, instantiator, buildTypes, productFlavors, signingConfigs, isLibrary)
     }

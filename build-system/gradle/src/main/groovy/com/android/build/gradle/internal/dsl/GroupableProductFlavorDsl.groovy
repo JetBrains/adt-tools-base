@@ -21,11 +21,13 @@ import com.android.build.gradle.api.GroupableProductFlavor
 import org.gradle.api.Project
 import org.gradle.api.logging.Logger
 import org.gradle.internal.reflect.Instantiator
+
 /**
- * A version of ProductFlavorDsl that can receive a group name
+ * A version of {@link ProductFlavorDsl} that can receive a dimension name.
  */
 public class GroupableProductFlavorDsl extends ProductFlavorDsl implements GroupableProductFlavor {
 
+    /** Name of the dimension this product flavor belongs to. */
     String flavorDimension
 
     public GroupableProductFlavorDsl(
