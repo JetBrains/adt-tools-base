@@ -142,7 +142,8 @@ public class MultiProjectHtmlReporter extends HtmlReporter {
             closer.close();
         }
 
-        if (mDisplayEmpty || errorCount > 0 || warningCount > 0) {
+        if (!mClient.getFlags().isQuiet()
+                && (mDisplayEmpty || errorCount > 0 || warningCount > 0)) {
             File index = new File(mDir, INDEX_NAME);
             String url = SdkUtils.fileToUrlString(index.getAbsoluteFile());
             System.out.println(String.format("Wrote overview index to %1$s", url));

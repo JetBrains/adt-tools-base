@@ -25,6 +25,10 @@ import java.security.CodeSource
  */
 public abstract class BaseTest extends TestCase {
 
+    public static final String FOLDER_TEST_REGULAR = "regular";
+    public static final String FOLDER_TEST_MANUAL = "manual";
+    public static final String FOLDER_TEST_NATIVE = "native";
+
     protected File sdkDir;
     protected File ndkDir;
 
@@ -66,7 +70,6 @@ public abstract class BaseTest extends TestCase {
 
     /**
      * Returns the SDK folder as built from the Android source tree.
-     * @return
      */
     protected File getSdkDir() {
         String androidHome = System.getenv("ANDROID_HOME");
@@ -124,34 +127,59 @@ public abstract class BaseTest extends TestCase {
     }
 
     protected File runTasksOn(
+            @NonNull String testFolder,
             @NonNull String name,
             @NonNull String gradleVersion,
             @NonNull String... tasks) {
-        File project = new File(testDir, name)
+        File project = new File(new File(testDir, testFolder), name)
 
-        return runTasksOn(project, gradleVersion, Collections.<String>emptyList(), tasks);
+        return runTasksOn(
+                project,
+                gradleVersion,
+                Collections.<String>emptyList(),
+                Collections.<String, String>emptyMap(),
+                tasks);
+    }
+
+    protected File runTasksOn(
+            @NonNull String testFolder,
+            @NonNull String name,
+            @NonNull String gradleVersion,
+            @NonNull List<String> arguments,
+            @NonNull String... tasks) {
+        File project = new File(new File(testDir, testFolder), name)
+
+        return runTasksOn(project,
+                gradleVersion,
+                arguments,
+                Collections.<String, String>emptyMap(),
+                tasks);
     }
 
     protected File runTasksOn(
             @NonNull File project,
             @NonNull String gradleVersion,
             @NonNull String... tasks) {
-        return runTasksOn(project, gradleVersion, Collections.<String>emptyList(), tasks);
-
+        return runTasksOn(
+                project,
+                gradleVersion,
+                Collections.<String>emptyList(),
+                Collections.<String, String>emptyMap(),
+                tasks);
     }
 
     protected File runTasksOn(
             @NonNull File project,
             @NonNull String gradleVersion,
             @NonNull List<String> arguments,
+            @NonNull Map<String, String> jvmDefines,
             @NonNull String... tasks) {
 
         File buildGradle = new File(project, "build.gradle");
         assertTrue("Missing file: " + buildGradle, buildGradle.isFile());
 
-        AndroidProjectConnector handler = new AndroidProjectConnector(sdkDir, ndkDir);
-
-        handler.runGradleTasks(project, gradleVersion, arguments, tasks)
+        AndroidProjectConnector connector = new AndroidProjectConnector(sdkDir, ndkDir);
+        connector.runGradleTasks(project, gradleVersion, arguments, jvmDefines, tasks)
 
         return project;
     }

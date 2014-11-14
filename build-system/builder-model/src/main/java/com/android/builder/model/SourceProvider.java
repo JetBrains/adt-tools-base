@@ -76,12 +76,20 @@ public interface SourceProvider {
     Collection<File> getRenderscriptDirectories();
 
     /**
-     * Returns the jni source folders.
+     * Returns the C source folders.
      *
      * @return a list of folders. They may not all exist.
      */
     @NonNull
-    Collection<File> getJniDirectories();
+    Collection<File> getCDirectories();
+
+    /**
+     * Returns the C++ source folders.
+     *
+     * @return a list of folders. They may not all exist.
+     */
+    @NonNull
+    Collection<File> getCppDirectories();
 
     /**
      * Returns the android resources folders.

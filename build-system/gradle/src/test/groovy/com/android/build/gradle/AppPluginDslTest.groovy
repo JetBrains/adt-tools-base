@@ -19,6 +19,7 @@ import com.android.build.gradle.api.ApkVariant
 import com.android.build.gradle.api.ApplicationVariant
 import com.android.build.gradle.api.TestVariant
 import com.android.build.gradle.internal.test.BaseTest
+import org.gradle.api.JavaVersion
 import org.gradle.api.Project
 import org.gradle.testfixtures.ProjectBuilder
 /**
@@ -33,7 +34,7 @@ public class AppPluginDslTest extends BaseTest {
 
     public void testBasic() {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "basic")).build()
+                new File(testDir, "${FOLDER_TEST_REGULAR}/basic")).build()
 
         project.apply plugin: 'com.android.application'
 
@@ -62,7 +63,7 @@ public class AppPluginDslTest extends BaseTest {
      */
     public void testBasic2() {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "basic")).build()
+                new File(testDir, "${FOLDER_TEST_REGULAR}/basic")).build()
 
         project.apply plugin: 'com.android.application'
 
@@ -88,7 +89,7 @@ public class AppPluginDslTest extends BaseTest {
 
     public void testBasicWithStringTarget() {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "basic")).build()
+                new File(testDir, "${FOLDER_TEST_REGULAR}/basic")).build()
 
         project.apply plugin: 'com.android.application'
 
@@ -114,7 +115,7 @@ public class AppPluginDslTest extends BaseTest {
 
     public void testMultiRes() {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "multires")).build()
+                new File(testDir, "${FOLDER_TEST_REGULAR}/multires")).build()
 
         project.apply plugin: 'com.android.application'
 
@@ -135,7 +136,7 @@ public class AppPluginDslTest extends BaseTest {
 
     public void testBuildTypes() {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "basic")).build()
+                new File(testDir, "${FOLDER_TEST_REGULAR}/basic")).build()
 
         project.apply plugin: 'com.android.application'
 
@@ -172,7 +173,7 @@ public class AppPluginDslTest extends BaseTest {
 
     public void testFlavors() {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "basic")).build()
+                new File(testDir, "${FOLDER_TEST_REGULAR}/basic")).build()
 
         project.apply plugin: 'com.android.application'
 
@@ -212,7 +213,7 @@ public class AppPluginDslTest extends BaseTest {
 
     public void testMultiFlavors() {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "basic")).build()
+                new File(testDir, "${FOLDER_TEST_REGULAR}/basic")).build()
 
         project.apply plugin: 'com.android.application'
 
@@ -272,7 +273,7 @@ public class AppPluginDslTest extends BaseTest {
 
     public void testSourceSetsApi() {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "basic")).build()
+                new File(testDir, "${FOLDER_TEST_REGULAR}/basic")).build()
 
         project.apply plugin: 'com.android.application'
 
@@ -288,9 +289,9 @@ public class AppPluginDslTest extends BaseTest {
         println project.android.sourceSets.main.assets.srcDirs
     }
 
-    public void testProguardMappingFile() {
+    public void testObfuscationMappingFile() {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "basic")).build()
+                new File(testDir, "${FOLDER_TEST_REGULAR}/basic")).build()
 
         project.apply plugin: 'com.android.application'
 
@@ -299,7 +300,7 @@ public class AppPluginDslTest extends BaseTest {
 
             buildTypes {
                 release {
-                    runProguard true
+                    minifyEnabled true
                     proguardFile getDefaultProguardFile('proguard-android.txt')
                 }
             }
@@ -325,6 +326,91 @@ public class AppPluginDslTest extends BaseTest {
         }
     }
 
+    public void testSettingLanguageLevelFromCompileSdk() {
+        def testLanguageLevel = { version, expectedLanguageLevel, useJack ->
+            Project project = ProjectBuilder.builder().withProjectDir(
+                    new File(testDir, "${FOLDER_TEST_REGULAR}/basic")).build()
+
+            project.apply plugin: 'com.android.application'
+            project.android {
+                compileSdkVersion version
+            }
+
+            AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
+            plugin.createAndroidTasks(false)
+
+            assertEquals(
+                    "target compatibility for ${version}",
+                    expectedLanguageLevel.toString(),
+                    project.compileReleaseJava.targetCompatibility)
+            assertEquals(
+                    "source compatibility for ${version}",
+                    expectedLanguageLevel.toString(),
+                    project.compileReleaseJava.sourceCompatibility)
+        }
+
+        for (useJack in [true, false]) {
+            def propName = 'java.specification.version'
+            String originalVersion = System.getProperty(propName)
+            try{
+                System.setProperty(propName, '1.7')
+                testLanguageLevel(15, JavaVersion.VERSION_1_6, useJack)
+                testLanguageLevel(21, JavaVersion.VERSION_1_7, useJack)
+                testLanguageLevel('android-21', JavaVersion.VERSION_1_7, useJack)
+                testLanguageLevel('Google:GoogleInc:22', JavaVersion.VERSION_1_7, useJack)
+
+                System.setProperty(propName, '1.6')
+                testLanguageLevel(15, JavaVersion.VERSION_1_6, useJack)
+                testLanguageLevel(21, JavaVersion.VERSION_1_6, useJack)
+                testLanguageLevel('android-21', JavaVersion.VERSION_1_6, useJack)
+                testLanguageLevel('Google:GoogleInc:22', JavaVersion.VERSION_1_6, useJack)
+            } finally {
+                System.setProperty(propName, originalVersion)
+            }
+        }
+    }
+
+    public void testSettingLanguageLevelFromCompileSdk_dontOverride() {
+        Project project = ProjectBuilder.builder().withProjectDir(
+                new File(testDir, "${FOLDER_TEST_REGULAR}/basic")).build()
+
+        project.apply plugin: 'com.android.application'
+        project.android {
+            compileSdkVersion 21
+            compileOptions {
+                sourceCompatibility JavaVersion.VERSION_1_6
+                targetCompatibility JavaVersion.VERSION_1_6
+            }
+        }
+        AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
+        plugin.createAndroidTasks(false)
+
+        assertEquals(
+                JavaVersion.VERSION_1_6.toString(),
+                project.compileReleaseJava.targetCompatibility)
+        assertEquals(
+                JavaVersion.VERSION_1_6.toString(),
+                project.compileReleaseJava.sourceCompatibility)
+    }
+
+    public void testSettingLanguageLevelFromCompileSdk_unknownVersion() {
+        Project project = ProjectBuilder.builder().withProjectDir(
+                new File(testDir, "${FOLDER_TEST_REGULAR}/basic")).build()
+
+        project.apply plugin: 'com.android.application'
+        project.android {
+            compileSdkVersion 'foo'
+        }
+        AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
+        plugin.createAndroidTasks(false)
+
+        assertEquals(
+                JavaVersion.VERSION_1_6.toString(),
+                project.compileReleaseJava.targetCompatibility)
+        assertEquals(
+                JavaVersion.VERSION_1_6.toString(),
+                project.compileReleaseJava.sourceCompatibility)
+    }
 
     private static void checkTestedVariant(@NonNull String variantName,
                                            @NonNull String testedVariantName,
@@ -366,7 +452,7 @@ public class AppPluginDslTest extends BaseTest {
             assertNotNull(variant.install)
 
             // tested variant are never zipAligned.
-            if (!isTestVariant && variant.buildType.zipAlign) {
+            if (!isTestVariant && variant.buildType.zipAlignEnabled) {
                 assertNotNull(variant.zipAlign)
             } else {
                 assertNull(variant.zipAlign)

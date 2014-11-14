@@ -18,12 +18,14 @@ package com.android.build.gradle.internal.dsl
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
 import com.android.annotations.VisibleForTesting
+import com.android.build.gradle.BasePlugin
+import com.android.build.gradle.internal.core.NdkConfig
 import com.android.builder.core.AndroidBuilder
 import com.android.builder.core.BuilderConstants
 import com.android.builder.core.DefaultBuildType
+import com.android.builder.model.BaseConfig
 import com.android.builder.model.BuildType
 import com.android.builder.model.ClassField
-import com.android.builder.internal.NdkConfig
 import com.android.builder.model.SigningConfig
 import org.gradle.api.Action
 import org.gradle.api.Project
@@ -42,6 +44,7 @@ public class BuildTypeDsl extends DefaultBuildType implements Serializable {
 
     private final NdkConfigDsl ndkConfig
 
+    private Boolean useJack
 
     public BuildTypeDsl(@NonNull String name,
                         @NonNull Project project,
@@ -63,7 +66,6 @@ public class BuildTypeDsl extends DefaultBuildType implements Serializable {
         ndkConfig = null
     }
 
-    @Override
     @Nullable
     public NdkConfig getNdkConfig() {
         return ndkConfig;
@@ -82,10 +84,26 @@ public class BuildTypeDsl extends DefaultBuildType implements Serializable {
     }
 
     @Override
+    protected void _initWith(@NonNull BaseConfig that) {
+        super._initWith(that)
+        shrinkResources = that.shrinkResources
+        useJack = that.useJack
+    }
+
+    int hashCode() {
+        int result = super.hashCode()
+        result = 31 * result + (useJack != null ? useJack.hashCode() : 0)
+        result = 31 * result + (shrinkResources ? 1 : 0)
+        return result
+    }
+
+    @Override
     boolean equals(o) {
         if (this.is(o)) return true
         if (getClass() != o.class) return false
         if (!super.equals(o)) return false
+        if (useJack != o.useJack) return false
+        if (shrinkResources != o.shrinkResources) return false
 
         return true
     }
@@ -156,21 +174,41 @@ public class BuildTypeDsl extends DefaultBuildType implements Serializable {
         action.execute(ndkConfig)
     }
 
+    Boolean getUseJack() {
+        return useJack
+    }
+
+    void setUseJack(Boolean useJack) {
+        this.useJack = useJack
+    }
+
+    void useJack(Boolean useJack) {
+        setUseJack(useJack)
+    }
+
+    boolean shrinkResources = false // opt-in for now until we've validated it in the field
+
+    void shrinkResources(boolean flag) {
+        this.shrinkResources = flag
+    }
+
     // ---------------
     // TEMP for compatibility
     // STOPSHIP Remove in 1.0
 
-    /**
-     * Sets the package name.
-     *
-     * @param packageName the package name
-     * @return the flavor object
-     */
+    public BuildType runProguard(boolean enabled) {
+        return setRunProguard(enabled);
+    }
+
+    public BuildType setRunProguard(boolean enabled) {
+        BasePlugin.displayDeprecationWarning(logger, project, "WARNING: runProguard is deprecated (and will soon stop working); change to \"minifyEnabled\" instead");
+        return setMinifyEnabled(enabled)
+    }
 
     /** Package name suffix applied to this build type. */
     @NonNull
     public BuildType setPackageNameSuffix(@Nullable String packageNameSuffix) {
-        logger.warn("WARNING: packageNameSuffix is deprecated (and will soon stop working); change to \"applicationIdSuffix\" instead");
+        BasePlugin.displayDeprecationWarning(logger, project, "WARNING: packageNameSuffix is deprecated (and will soon stop working); change to \"applicationIdSuffix\" instead");
         return setApplicationIdSuffix(packageNameSuffix);
     }
 
@@ -181,7 +219,31 @@ public class BuildTypeDsl extends DefaultBuildType implements Serializable {
 
     @Nullable
     public String getPackageNameSuffix() {
-        logger.warn("WARNING: packageNameSuffix is deprecated (and will soon stop working); change to \"applicationIdSuffix\" instead");
+        BasePlugin.displayDeprecationWarning(logger, project, "WARNING: packageNameSuffix is deprecated (and will soon stop working); change to \"applicationIdSuffix\" instead");
         return getApplicationIdSuffix();
+    }
+
+    /**
+     * Whether this build type is configured to generate an APK with debuggable native code.
+     */
+    @NonNull
+    public BuildType setJniDebugBuild(boolean jniDebugBuild) {
+        BasePlugin.displayDeprecationWarning(logger, project, "WARNING: jniDebugBuild is deprecated (and will soon stop working); change to \"jniDebuggable\" instead");
+        return super.setJniDebuggable(jniDebugBuild);
+    }
+
+    /**
+     * Whether the build type is configured to generate an apk with debuggable RenderScript code.
+     */
+    public BuildType setRenderscriptDebugBuild(boolean renderscriptDebugBuild) {
+        BasePlugin.displayDeprecationWarning(logger, project, "WARNING: renderscriptDebugBuild is deprecated (and will soon stop working); change to \"renderscriptDebuggable\" instead");
+        return setRenderscriptDebuggable(renderscriptDebugBuild);
+    }
+
+    /** Whether zipalign is enabled for this build type. */
+    @NonNull
+    public BuildType setZipAlign(boolean zipAlign) {
+        BasePlugin.displayDeprecationWarning(logger, project, "WARNING: zipAlign is deprecated (and will soon stop working); change to \"zipAlignEnabled\" instead");
+        return setZipAlignEnabled(zipAlign);
     }
 }

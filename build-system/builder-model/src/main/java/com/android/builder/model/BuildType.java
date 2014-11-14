@@ -54,11 +54,18 @@ public interface BuildType extends BaseConfig {
     boolean isTestCoverageEnabled();
 
     /**
+     * Returns whether the build type is configured to be build with support for pseudolocales.
+     *
+     * @return true if code coverage is enabled.
+     */
+    boolean isPseudoLocalesEnabled();
+
+    /**
      * Returns whether the build type is configured to generate an apk with debuggable native code.
      *
      * @return true if the apk is debuggable
      */
-    boolean isJniDebugBuild();
+    boolean isJniDebuggable();
 
     /**
      * Returns whether the build type is configured to generate an apk with debuggable
@@ -66,7 +73,7 @@ public interface BuildType extends BaseConfig {
      *
      * @return true if the apk is debuggable
      */
-    boolean isRenderscriptDebugBuild();
+    boolean isRenderscriptDebuggable();
 
     /**
      * Returns the optimization level of the renderscript compilation.
@@ -93,21 +100,27 @@ public interface BuildType extends BaseConfig {
     String getVersionNameSuffix();
 
     /**
-     * Returns whether proguard is enabled for this build type.
+     * Returns whether minification is enabled for this build type.
      *
-     * @return true if proguard is enabled.
+     * @return true if minification is enabled.
      */
-    boolean isRunProguard();
+    boolean isMinifyEnabled();
 
     /**
      * Return whether zipalign is enabled for this build type.
      *
      * @return true if zipalign is enabled.
      */
-    boolean isZipAlign();
+    boolean isZipAlignEnabled();
 
     /**
      * Returns whether the variant embeds the micro app.
      */
     boolean isEmbedMicroApp();
+
+    /**
+     * Returns the associated signing config or null if none are set on the build type.
+     */
+    @Nullable
+    SigningConfig getSigningConfig();
 }

@@ -62,6 +62,7 @@
             </d:abi>
             <d:dock/>
             <d:power-type>plugged-in</d:power-type>
+            <d:skin>tv_1080p</d:skin>
         </d:hardware>
         <d:software>
             <d:api-level>20-</d:api-level>
@@ -132,6 +133,7 @@
             </d:abi>
             <d:dock/>
             <d:power-type>plugged-in</d:power-type>
+            <d:skin>tv_720p</d:skin>
         </d:hardware>
         <d:software>
             <d:api-level>20-</d:api-level>

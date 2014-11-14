@@ -213,6 +213,25 @@ public class ManifestDetectorTest extends AbstractCheckTest {
                     "res/values/strings.xml"));
     }
 
+    public void testDuplicateActivityAcrossSourceSets() throws Exception {
+        mEnabled = Collections.singleton(ManifestDetector.DUPLICATE_ACTIVITY);
+        File master = getProjectDir("MasterProject",
+                // Master project
+                "AndroidManifest.xml=>AndroidManifest.xml",
+                "multiproject/main-merge.properties=>project.properties",
+                "multiproject/MainCode.java.txt=>src/foo/main/MainCode.java"
+        );
+        File library = getProjectDir("LibraryProject",
+                // Library project
+                "AndroidManifest.xml=>AndroidManifest.xml",
+                "multiproject/library.properties=>project.properties",
+                "multiproject/LibraryCode.java.txt=>src/foo/library/LibraryCode.java",
+                "multiproject/strings.xml=>res/values/strings.xml"
+        );
+        assertEquals("No warnings.",
+                checkLint(Arrays.asList(master, library)));
+    }
+
     public void testIgnoreDuplicateActivity() throws Exception {
         mEnabled = Collections.singleton(ManifestDetector.DUPLICATE_ACTIVITY);
         assertEquals(
@@ -553,7 +572,7 @@ public class ManifestDetectorTest extends AbstractCheckTest {
                                         "ManifestDetectorTest_testManifestPackagePlaceholder")) {
                                 expect(flavor.getMinSdkVersion()).andReturn(null).anyTimes();
                                 expect(flavor.getTargetSdkVersion()).andReturn(null).anyTimes();
-                                expect(flavor.getVersionCode()).andReturn(-1).anyTimes();
+                                expect(flavor.getVersionCode()).andReturn(null).anyTimes();
                                 expect(flavor.getVersionName()).andReturn(null).anyTimes();
                             } else {
                                 assertEquals(getName(), "ManifestDetectorTest_testGradleOverrides");

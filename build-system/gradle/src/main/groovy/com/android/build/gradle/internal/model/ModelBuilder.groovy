@@ -17,9 +17,10 @@
 package com.android.build.gradle.internal.model
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
-import com.android.build.gradle.AppPlugin
+import com.android.build.OutputFile
 import com.android.build.gradle.BasePlugin
 import com.android.build.gradle.LibraryPlugin
+import com.android.build.gradle.api.ApkOutputFile
 import com.android.build.gradle.internal.BuildTypeData
 import com.android.build.gradle.internal.ProductFlavorData
 import com.android.build.gradle.internal.dsl.LintOptionsImpl
@@ -31,6 +32,7 @@ import com.android.build.gradle.internal.variant.LibraryVariantData
 import com.android.build.gradle.internal.variant.TestVariantData
 import com.android.builder.core.DefaultProductFlavor
 import com.android.builder.core.VariantConfiguration
+import com.android.builder.model.AaptOptions
 import com.android.builder.model.AndroidArtifact
 import com.android.builder.model.AndroidArtifactOutput
 import com.android.builder.model.AndroidProject
@@ -43,9 +45,11 @@ import com.android.builder.model.SourceProvider
 import com.android.builder.model.SourceProviderContainer
 import com.android.sdklib.AndroidVersion
 import com.android.sdklib.IAndroidTarget
+import com.google.common.collect.ImmutableCollection
+import com.google.common.collect.ImmutableList
 import com.google.common.collect.Lists
 import org.gradle.api.Project
-import org.gradle.api.plugins.UnknownPluginException
+import org.gradle.api.tasks.compile.AbstractCompile
 import org.gradle.tooling.provider.model.ToolingModelBuilder
 
 import java.util.jar.Attributes
@@ -65,15 +69,9 @@ public class ModelBuilder implements ToolingModelBuilder {
 
     @Override
     public Object buildAll(String modelName, Project project) {
-        AppPlugin appPlugin = getPlugin(project, AppPlugin.class)
-        LibraryPlugin libPlugin = null
-        BasePlugin basePlugin = appPlugin
-
         Collection<SigningConfig> signingConfigs
 
-        if (appPlugin == null) {
-            basePlugin = libPlugin = getPlugin(project, LibraryPlugin.class)
-        }
+        BasePlugin basePlugin = BasePlugin.findBasePlugin(project);
 
         if (basePlugin == null) {
             project.logger.error("Failed to find Android plugin for project " + project.name)
@@ -83,7 +81,7 @@ public class ModelBuilder implements ToolingModelBuilder {
         signingConfigs = basePlugin.extension.signingConfigs
 
         // get the boot classpath. This will ensure the target is configured.
-        List<String> bootClasspath = basePlugin.bootClasspath
+        List<String> bootClasspath = basePlugin.bootClasspathAsStrings
 
         List<File> frameworkSource = Collections.emptyList();
 
@@ -98,6 +96,8 @@ public class ModelBuilder implements ToolingModelBuilder {
 
         LintOptions lintOptions = LintOptionsImpl.create(basePlugin.extension.lintOptions)
 
+        AaptOptions aaptOptions = AaptOptionsImpl.create(basePlugin.extension.aaptOptions)
+
         //noinspection GroovyVariableNotAssigned
         DefaultAndroidProject androidProject = new DefaultAndroidProject(
                 getModelVersion(),
@@ -106,13 +106,14 @@ public class ModelBuilder implements ToolingModelBuilder {
                 bootClasspath,
                 frameworkSource,
                 cloneSigningConfigs(signingConfigs),
+                aaptOptions,
                 artifactMetaDataList,
                 basePlugin.unresolvedDependencies,
                 basePlugin.extension.compileOptions,
                 lintOptions,
                 project.getBuildDir(),
                 basePlugin.extension.resourcePrefix,
-                libPlugin != null)
+                basePlugin instanceof LibraryPlugin)
                     .setDefaultConfig(ProductFlavorContainerImpl.createPFC(
                         basePlugin.defaultConfigData,
                         basePlugin.getExtraFlavorSourceProviders(basePlugin.defaultConfigData.productFlavor.name)))
@@ -221,9 +222,9 @@ public class ModelBuilder implements ToolingModelBuilder {
             @NonNull BaseVariantData variantData,
             @NonNull BasePlugin basePlugin,
             @NonNull Set<Project> gradleProjects) {
-        VariantConfiguration vC = variantData.variantConfiguration
+        VariantConfiguration variantConfiguration = variantData.variantConfiguration
 
-        SigningConfig signingConfig = vC.signingConfig
+        SigningConfig signingConfig = variantConfiguration.signingConfig
         String signingConfigName = null
         if (signingConfig != null) {
             signingConfigName = signingConfig.name
@@ -252,45 +253,62 @@ public class ModelBuilder implements ToolingModelBuilder {
         List<AndroidArtifactOutput> outputs = Lists.newArrayListWithCapacity(variantOutputs.size())
 
         for (BaseVariantOutputData variantOutputData : variantOutputs) {
-            int versionCode = (variantOutputData instanceof ApkVariantOutputData) ?
+            Integer versionCode = (variantOutputData instanceof ApkVariantOutputData) ?
                     ((ApkVariantOutputData) variantOutputData).versionCode :
-                    vC.mergedFlavor.versionCode
+                    variantConfiguration.mergedFlavor.versionCode
 
-            AndroidArtifactOutput output = new AndroidArtifactOutputImpl(
-                    variantOutputData.outputFile,
+            int intVersionCode = versionCode != null ? versionCode.intValue() : 1;
+
+            ImmutableCollection.Builder<OutputFile> outputFiles = ImmutableList.builder();
+
+            // add the main APK
+            outputFiles.add(new MainOutputFileImpl(
+                    variantOutputData.mainOutputFile.filters,
+                    variantOutputData.mainOutputFile.getType().name(),
+                    variantOutputData.outputFile));
+
+            for (ApkOutputFile splitApk : variantOutputData.outputs) {
+                if (splitApk.getType() == OutputFile.OutputType.SPLIT) {
+                    outputFiles.add(new OutputFileImpl(splitApk.getFilters(), OutputFile.SPLIT));
+                }
+            }
+
+            // add the main APK.
+            outputs.add(new AndroidArtifactOutputImpl(
+                    outputFiles.build(),
                     variantOutputData.assembleTask.name,
                     variantOutputData.manifestProcessorTask.manifestOutputFile,
-                    versionCode,
-                    variantOutputData.densityFilter,
-                    variantOutputData.abiFilter
-            );
+                    intVersionCode));
+        }
 
-            outputs.add(output)
+        AbstractCompile compileTask = variantData.javaCompileTask
+        if (compileTask == null) {
+            compileTask = variantData.jackTask
         }
 
         return new AndroidArtifactImpl(
                 name,
                 outputs,
                 variantData.assembleVariantTask.name,
-                vC.isSigningReady(),
+                variantConfiguration.isSigningReady() || variantData.outputsAreSigned,
                 signingConfigName,
-                vC.applicationId,
+                variantConfiguration.applicationId,
                 variantData.sourceGenTask.name,
                 variantData.compileTask.name,
                 getGeneratedSourceFolders(variantData),
                 getGeneratedResourceFolders(variantData),
-                variantData.javaCompileTask.destinationDir,
+                compileTask.destinationDir,
                 DependenciesImpl.cloneDependencies(variantData, basePlugin, gradleProjects),
                 variantSourceProvider,
                 multiFlavorSourceProvider,
-                vC.supportedAbis)
+                variantConfiguration.supportedAbis)
     }
 
     @NonNull
     private static List<String> getProductFlavorNames(@NonNull BaseVariantData variantData) {
         List<String> flavorNames = Lists.newArrayList()
 
-        for (DefaultProductFlavor flavor : variantData.variantConfiguration.flavorConfigs) {
+        for (DefaultProductFlavor flavor : variantData.variantConfiguration.productFlavors) {
             flavorNames.add(flavor.name)
         }
 
@@ -312,7 +330,7 @@ public class ModelBuilder implements ToolingModelBuilder {
 
         folders.add(variantData.aidlCompileTask.sourceOutputDir)
         folders.add(variantData.generateBuildConfigTask.sourceOutputDir)
-        if (!variantData.variantConfiguration.mergedFlavor.renderscriptNdkMode) {
+        if (!variantData.variantConfiguration.mergedFlavor.renderscriptNdkModeEnabled) {
             folders.add(variantData.renderscriptCompileTask.sourceOutputDir)
         }
 
@@ -358,21 +376,5 @@ public class ModelBuilder implements ToolingModelBuilder {
         }
 
         return null;
-    }
-
-    /**
-     * Safely queries a project for a given plugin class.
-     * @param project the project to query
-     * @param pluginClass the plugin class.
-     * @return the plugin instance or null if it is not applied.
-     */
-    private static <T> T getPlugin(@NonNull Project project, @NonNull Class<T> pluginClass) {
-        try {
-            return project.getPlugins().findPlugin(pluginClass)
-        } catch (UnknownPluginException ignored) {
-            // ignore, return null below.
-        }
-
-        return null
     }
 }

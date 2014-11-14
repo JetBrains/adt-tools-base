@@ -12,13 +12,14 @@
 
     <!--
     This layout is a two-pane layout for the ${objectKindPlural}
-    master/detail flow. See res/values-large/refs.xml and
+    master/detail flow.
+    <#if minApiLevel lt 13>See res/values-large/refs.xml and
     res/values-sw600dp/refs.xml for an example of layout aliases
     that replace the single-pane version of the layout with
     this two-pane version.
 
     For more on layout aliases, see:
-    http://developer.android.com/training/multiscreen/screensizes.html#TaskUseAliasFilters
+    http://developer.android.com/training/multiscreen/screensizes.html#TaskUseAliasFilters</#if>
     -->
 
     <fragment

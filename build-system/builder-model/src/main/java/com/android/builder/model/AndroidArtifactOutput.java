@@ -17,14 +17,18 @@
 package com.android.builder.model;
 
 import com.android.annotations.NonNull;
-import com.android.build.SplitOutput;
+import com.android.annotations.Nullable;
+import com.android.build.OutputFile;
+import com.android.build.VariantOutput;
 
 import java.io.File;
+import java.util.Collection;
 
 /**
- * The Actual output for a {@link AndroidArtifact}
+ * The Actual output for a {@link AndroidArtifact}, which can be one file at the minimum or
+ * several APKs in case of pure splits configuration.
  */
-public interface AndroidArtifactOutput extends SplitOutput {
+public interface AndroidArtifactOutput extends VariantOutput {
 
     /**
      * Returns the name of the task used to generate this artifact output.

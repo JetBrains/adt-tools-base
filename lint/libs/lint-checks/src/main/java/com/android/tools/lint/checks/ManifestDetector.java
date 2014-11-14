@@ -367,10 +367,10 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
     private int mSeenUsesSdk;
 
     /** Activities we've encountered */
-    private final Set<String> mActivities = new HashSet<String>();
+    private Set<String> mActivities;
 
     /** Features we've encountered */
-    private final Set<String> mUsesFeatures = new HashSet<String>();
+    private Set<String> mUsesFeatures;
 
     /** Permission basenames */
     private Map<String, String> mPermissionNames;
@@ -401,6 +401,8 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
     public void beforeCheckFile(@NonNull Context context) {
         mSeenApplication = false;
         mSeenUsesSdk = 0;
+        mActivities = new HashSet<String>();
+        mUsesFeatures = new HashSet<String>();
     }
 
     @Override
@@ -520,9 +522,9 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
                         // for 0.10 shortly but until 0.11 is available this is a stopgap measure
                     }
                 } else if (ATTR_VERSION_CODE.equals(attributeName)) {
-                    int versionCode = flavor.getVersionCode();
-                    if (versionCode != -1) {
-                        gradleValue = Integer.toString(versionCode);
+                    Integer versionCode = flavor.getVersionCode();
+                    if (versionCode != null) {
+                        gradleValue = versionCode.toString();
                     }
                 } else if (ATTR_VERSION_NAME.equals(attributeName)) {
                     gradleValue = flavor.getVersionName();

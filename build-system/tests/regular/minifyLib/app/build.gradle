@@ -1,0 +1,32 @@
+apply plugin: 'com.android.application'
+
+dependencies {
+    compile project(':lib')
+}
+
+android {
+    compileSdkVersion 21
+    buildToolsVersion = rootProject.ext.buildToolsVersion
+
+    testBuildType rootProject.ext.useJack ? "debug" : "minified"
+
+    defaultConfig {
+        versionCode 12
+        versionName "2.0"
+        minSdkVersion 16
+        targetSdkVersion 16
+    }
+
+    buildTypes {
+        minified.initWith(buildTypes.debug)
+        minified {
+            minifyEnabled true
+            useJack rootProject.ext.useJack
+            proguardFile getDefaultProguardFile('proguard-android.txt')
+        }
+    }
+
+    dexOptions {
+        incremental false
+    }
+}

@@ -16,13 +16,16 @@
 
 package com.android.build.gradle.internal.model;
 
+import static com.android.SdkConstants.DOT_JAR;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.BasePlugin;
-import com.android.build.gradle.internal.dependency.ClassifiedJarDependency;
+import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.dependency.LibraryDependencyImpl;
 import com.android.build.gradle.internal.dependency.VariantDependencies;
 import com.android.build.gradle.internal.variant.BaseVariantData;
+import com.android.builder.core.AndroidBuilder;
 import com.android.builder.dependency.JarDependency;
 import com.android.builder.dependency.LibraryDependency;
 import com.android.builder.model.AndroidLibrary;
@@ -33,11 +36,16 @@ import com.google.common.collect.Lists;
 import org.gradle.api.Project;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Set;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 /**
  */
@@ -65,7 +73,6 @@ public class DependenciesImpl implements Dependencies, Serializable {
             @NonNull BaseVariantData variantData,
             @NonNull BasePlugin basePlugin,
             @NonNull Set<Project> gradleProjects) {
-
         VariantDependencies variantDependencies = variantData.getVariantDependency();
 
         List<AndroidLibrary> libraries;
@@ -86,26 +93,34 @@ public class DependenciesImpl implements Dependencies, Serializable {
         projects = Lists.newArrayList();
 
         for (JarDependency jarDep : jarDeps) {
-            boolean customArtifact = jarDep instanceof ClassifiedJarDependency &&
-                    ((ClassifiedJarDependency)jarDep).getClassifier() != null;
+            boolean customArtifact = jarDep.getResolvedCoordinates() != null &&
+                    jarDep.getResolvedCoordinates().getClassifier() != null;
 
             File jarFile = jarDep.getJarFile();
             Project projectMatch;
             if (!customArtifact && (projectMatch = getProject(jarFile, gradleProjects)) != null) {
                 projects.add(projectMatch.getPath());
             } else {
-                javaLibraries.add(new JavaLibraryImpl(jarFile));
+                javaLibraries.add(
+                        new JavaLibraryImpl(jarFile, null, jarDep.getResolvedCoordinates()));
             }
         }
 
         for (JarDependency jarDep : localDeps) {
-            javaLibraries.add(new JavaLibraryImpl(jarDep.getJarFile()));
+            javaLibraries.add(
+                    new JavaLibraryImpl(
+                            jarDep.getJarFile(),
+                            null,
+                            jarDep.getResolvedCoordinates()));
         }
 
-        if (variantData.getVariantConfiguration().getMergedFlavor().getRenderscriptSupportMode()) {
-            File supportJar = basePlugin.getAndroidBuilder().getRenderScriptSupportJar();
+        GradleVariantConfiguration variantConfig = variantData.getVariantConfiguration();
+        AndroidBuilder androidBuilder = basePlugin.getAndroidBuilder();
+
+        if (variantConfig.getRenderscriptSupportModeEnabled()) {
+            File supportJar = androidBuilder.getRenderScriptSupportJar();
             if (supportJar != null) {
-                javaLibraries.add(new JavaLibraryImpl(supportJar));
+                javaLibraries.add(new JavaLibraryImpl(supportJar, null, null));
             }
         }
 
@@ -128,13 +143,13 @@ public class DependenciesImpl implements Dependencies, Serializable {
 
     @NonNull
     @Override
-    public List<AndroidLibrary> getLibraries() {
+    public Collection<AndroidLibrary> getLibraries() {
         return libraries;
     }
 
     @NonNull
     @Override
-    public List<JavaLibrary> getJavaLibraries() {
+    public Collection<JavaLibrary> getJavaLibraries() {
         return javaLibraries;
     }
 
@@ -145,21 +160,83 @@ public class DependenciesImpl implements Dependencies, Serializable {
     }
 
     @NonNull
-    private static AndroidLibrary getAndroidLibrary(@NonNull LibraryDependency libImpl,
-                                                    @NonNull Set<Project> gradleProjects) {
-        File bundle = libImpl.getBundle();
+    private static AndroidLibrary getAndroidLibrary(
+            @NonNull LibraryDependency liblibraryDependency,
+            @NonNull Set<Project> gradleProjects) {
+        File bundle = liblibraryDependency.getBundle();
         Project projectMatch = getProject(bundle, gradleProjects);
 
-        List<LibraryDependency> deps = libImpl.getDependencies();
+        List<LibraryDependency> deps = liblibraryDependency.getDependencies();
         List<AndroidLibrary> clonedDeps = Lists.newArrayListWithCapacity(deps.size());
         for (LibraryDependency child : deps) {
             AndroidLibrary clonedLib = getAndroidLibrary(child, gradleProjects);
             clonedDeps.add(clonedLib);
         }
 
-        return new AndroidLibraryImpl(libImpl, clonedDeps,
+        // compute local jar even if the bundle isn't exploded.
+        Collection<File> localJarOverride = findLocalJar(liblibraryDependency);
+
+        return new AndroidLibraryImpl(
+                liblibraryDependency,
+                clonedDeps,
+                localJarOverride,
                 projectMatch != null ? projectMatch.getPath() : null,
-                libImpl.getProjectVariant());
+                liblibraryDependency.getProjectVariant(),
+                liblibraryDependency.getRequestedCoordinates(),
+                liblibraryDependency.getResolvedCoordinates());
+    }
+
+    /**
+     * Finds the local jar for an aar.
+     *
+     * Since the model can be queried before the aar are exploded, we attempt to get them
+     * from inside the aar.
+     *
+     * @param library the library.
+     * @return its local jars.
+     */
+    @NonNull
+    private static Collection<File> findLocalJar(LibraryDependency library) {
+        // if the library is exploded, just use the normal method.
+        File explodedFolder = library.getFolder();
+        if (explodedFolder.isDirectory()) {
+            return library.getLocalJars();
+        }
+
+        // if the aar file is present, search inside it for jar files under libs/
+        File aarFile = library.getBundle();
+        if (aarFile.isFile()) {
+            List<File> jarList = Lists.newArrayList();
+
+            ZipFile zipFile = null;
+            try {
+                //noinspection IOResourceOpenedButNotSafelyClosed
+                zipFile = new ZipFile(aarFile);
+
+                for (Enumeration<? extends ZipEntry> e = zipFile.entries(); e.hasMoreElements();) {
+                    ZipEntry zipEntry = e.nextElement();
+                    String name = zipEntry.getName();
+                    if (name.startsWith("libs/") && name.endsWith(DOT_JAR)) {
+                        jarList.add(new File(explodedFolder, name.replace('/', File.separatorChar)));
+                    }
+                }
+
+                return jarList;
+            } catch (FileNotFoundException ignored) {
+                // should not happen since we check ahead of time
+            } catch (IOException e) {
+                // we'll return an empty list below
+            } finally {
+                if (zipFile != null) {
+                    try {
+                        zipFile.close();
+                    } catch (IOException ignored) {
+                    }
+                }
+            }
+        }
+
+        return Collections.emptyList();
     }
 
     @Nullable

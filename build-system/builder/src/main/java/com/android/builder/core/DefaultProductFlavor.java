@@ -20,7 +20,6 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.internal.BaseConfigImpl;
 import com.android.builder.model.ApiVersion;
-import com.android.builder.internal.NdkConfig;
 import com.android.builder.model.ProductFlavor;
 import com.android.builder.model.SigningConfig;
 import com.google.common.base.Objects;
@@ -28,7 +27,6 @@ import com.google.common.collect.Sets;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -41,22 +39,21 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
     private static final long serialVersionUID = 1L;
 
     private final String mName;
-    private ApiVersion mMinSdkVersion = null;
-    private ApiVersion mTargetSdkVersion = null;
-    private Integer mMaxSdkVersion = null;
-    private int mRenderscriptTargetApi = -1;
-    private Boolean mRenderscriptSupportMode;
-    private Boolean mRenderscriptNdkMode;
-    private int mVersionCode = -1;
-    private String mVersionName = null;
-    private String mApplicationId = null;
-    private String mTestApplicationId = null;
-    private String mTestInstrumentationRunner = null;
-    private Boolean mTestHandleProfiling = null;
-    private Boolean mTestFunctionalTest = null;
-    private SigningConfig mSigningConfig = null;
-    private Set<String> mResourceConfiguration = null;
-    private Map<String, String> mManifestPlaceholders = null;
+    private ApiVersion mMinSdkVersion;
+    private ApiVersion mTargetSdkVersion;
+    private Integer mMaxSdkVersion;
+    private Integer mRenderscriptTargetApi;
+    private Boolean mRenderscriptSupportModeEnabled;
+    private Boolean mRenderscriptNdkModeEnabled;
+    private Integer mVersionCode;
+    private String mVersionName;
+    private String mApplicationId;
+    private String mTestApplicationId;
+    private String mTestInstrumentationRunner;
+    private Boolean mTestHandleProfiling;
+    private Boolean mTestFunctionalTest;
+    private SigningConfig mSigningConfig;
+    private Set<String> mResourceConfiguration;
 
     /**
      * Creates a ProductFlavor with a given name.
@@ -101,13 +98,14 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
      * @return the flavor object
      */
     @NonNull
-    public ProductFlavor setVersionCode(int versionCode) {
+    public ProductFlavor setVersionCode(Integer versionCode) {
         mVersionCode = versionCode;
         return this;
     }
 
     @Override
-    public int getVersionCode() {
+    @Nullable
+    public Integer getVersionCode() {
         return mVersionCode;
     }
 
@@ -165,38 +163,42 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
     }
 
     @Override
-    public int getRenderscriptTargetApi() {
+    @Nullable
+    public Integer getRenderscriptTargetApi() {
         return mRenderscriptTargetApi;
     }
 
     /** Sets the renderscript target API to the given value. */
-    public void setRenderscriptTargetApi(int renderscriptTargetApi) {
+    public void setRenderscriptTargetApi(Integer renderscriptTargetApi) {
         mRenderscriptTargetApi = renderscriptTargetApi;
     }
 
     @Override
-    public boolean getRenderscriptSupportMode() {
-        // default is false
-        return mRenderscriptSupportMode != null && mRenderscriptSupportMode.booleanValue();
+    @Nullable
+    public Boolean getRenderscriptSupportModeEnabled() {
+        return mRenderscriptSupportModeEnabled;
     }
 
     /**
      * Sets whether the renderscript code should be compiled in support mode to make it compatible
      * with older versions of Android.
      */
-    public void setRenderscriptSupportMode(boolean renderscriptSupportMode) {
-        mRenderscriptSupportMode = renderscriptSupportMode;
+    public ProductFlavor setRenderscriptSupportModeEnabled(Boolean renderscriptSupportMode) {
+        mRenderscriptSupportModeEnabled = renderscriptSupportMode;
+        return this;
     }
 
     @Override
-    public boolean getRenderscriptNdkMode() {
-        // default is false
-        return mRenderscriptNdkMode != null && mRenderscriptNdkMode.booleanValue();
+    @Nullable
+    public Boolean getRenderscriptNdkModeEnabled() {
+        return mRenderscriptNdkModeEnabled;
     }
 
+
     /** Sets whether the renderscript code should be compiled to generate C/C++ bindings. */
-    public void setRenderscriptNdkMode(boolean renderscriptNdkMode) {
-        mRenderscriptNdkMode = renderscriptNdkMode;
+    public ProductFlavor setRenderscriptNdkModeEnabled(Boolean renderscriptNdkMode) {
+        mRenderscriptNdkModeEnabled = renderscriptNdkMode;
+        return this;
     }
 
     /** Sets the test package name. */
@@ -249,6 +251,7 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
         return this;
     }
 
+    @Override
     @Nullable
     public SigningConfig getSigningConfig() {
         return mSigningConfig;
@@ -259,11 +262,6 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
     public ProductFlavor setSigningConfig(SigningConfig signingConfig) {
         mSigningConfig = signingConfig;
         return this;
-    }
-
-    @Nullable
-    public NdkConfig getNdkConfig() {
-        return null;
     }
 
     public void addResourceConfiguration(@NonNull String configuration) {
@@ -301,142 +299,218 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
     }
 
     /**
-     * Merges the flavor on top of a base platform and returns a new object with the result.
+     * Merges two flavors on top of one another and returns a new object with the result.
+     *
+     * The behavior is that if a value is present in the overlay, then it is used, otherwise
+     * we use the value from the base.
+     *
      * @param base the flavor to merge on top of
-     * @return a new merged product flavor
+     * @param overlay the flavor to apply on top of the base.
+     *
+     * @return a new ProductFlavor that represents the merge.
      */
     @NonNull
-    DefaultProductFlavor mergeOver(@NonNull DefaultProductFlavor base) {
+    static ProductFlavor mergeFlavors(@NonNull ProductFlavor base, @NonNull ProductFlavor overlay) {
         DefaultProductFlavor flavor = new DefaultProductFlavor("");
 
-        flavor.mMinSdkVersion =
-                mMinSdkVersion != null ? mMinSdkVersion : base.mMinSdkVersion;
-        flavor.mTargetSdkVersion =
-                mTargetSdkVersion != null ? mTargetSdkVersion : base.mTargetSdkVersion;
-        flavor.mMaxSdkVersion =
-                mMaxSdkVersion != null ? mMaxSdkVersion : base.mMaxSdkVersion;
-        flavor.mRenderscriptTargetApi = chooseInt(mRenderscriptTargetApi,
-                base.mRenderscriptTargetApi);
-        flavor.mRenderscriptSupportMode = chooseBoolean(mRenderscriptSupportMode,
-                base.mRenderscriptSupportMode);
-        flavor.mRenderscriptNdkMode = chooseBoolean(mRenderscriptNdkMode,
-                base.mRenderscriptNdkMode);
+        flavor.mMinSdkVersion = chooseNotNull(
+                overlay.getMinSdkVersion(),
+                base.getMinSdkVersion());
+        flavor.mTargetSdkVersion = chooseNotNull(
+                overlay.getTargetSdkVersion(),
+                base.getTargetSdkVersion());
+        flavor.mMaxSdkVersion = chooseNotNull(
+                overlay.getMaxSdkVersion(),
+                base.getMaxSdkVersion());
 
-        flavor.mVersionCode = chooseInt(mVersionCode, base.mVersionCode);
-        flavor.mVersionName = chooseString(mVersionName, base.mVersionName);
+        flavor.mRenderscriptTargetApi = chooseNotNull(
+                overlay.getRenderscriptTargetApi(),
+                base.getRenderscriptTargetApi());
+        flavor.mRenderscriptSupportModeEnabled = chooseNotNull(
+                overlay.getRenderscriptSupportModeEnabled(),
+                base.getRenderscriptSupportModeEnabled());
+        flavor.mRenderscriptNdkModeEnabled = chooseNotNull(
+                overlay.getRenderscriptNdkModeEnabled(),
+                base.getRenderscriptNdkModeEnabled());
 
-        flavor.mApplicationId = chooseString(mApplicationId, base.mApplicationId);
+        flavor.mVersionCode = chooseNotNull(overlay.getVersionCode(), base.getVersionCode());
+        flavor.mVersionName = chooseNotNull(overlay.getVersionName(), base.getVersionName());
 
-        flavor.mTestApplicationId = chooseString(mTestApplicationId, base.mTestApplicationId);
-        flavor.mTestInstrumentationRunner = chooseString(mTestInstrumentationRunner,
-                base.mTestInstrumentationRunner);
+        flavor.mApplicationId = chooseNotNull(overlay.getApplicationId(), base.getApplicationId());
 
-        flavor.mTestHandleProfiling = chooseBoolean(mTestHandleProfiling,
-                base.mTestHandleProfiling);
+        flavor.mTestApplicationId = chooseNotNull(
+                overlay.getTestApplicationId(),
+                base.getTestApplicationId());
+        flavor.mTestInstrumentationRunner = chooseNotNull(
+                overlay.getTestInstrumentationRunner(),
+                base.getTestInstrumentationRunner());
 
-        flavor.mTestFunctionalTest = chooseBoolean(mTestFunctionalTest,
-                base.mTestFunctionalTest);
+        flavor.mTestHandleProfiling = chooseNotNull(
+                overlay.getTestHandleProfiling(),
+                base.getTestHandleProfiling());
 
-        flavor.mSigningConfig =
-                mSigningConfig != null ? mSigningConfig : base.mSigningConfig;
+        flavor.mTestFunctionalTest = chooseNotNull(
+                overlay.getTestFunctionalTest(),
+                base.getTestFunctionalTest());
+
+        flavor.mSigningConfig = chooseNotNull(
+                overlay.getSigningConfig(),
+                base.getSigningConfig());
 
         flavor.addResourceConfigurations(base.getResourceConfigurations());
-        flavor.addResourceConfigurations(getResourceConfigurations());
+        flavor.addResourceConfigurations(overlay.getResourceConfigurations());
 
         flavor.addManifestPlaceHolders(base.getManifestPlaceholders());
-        flavor.addManifestPlaceHolders(getManifestPlaceholders());
+        flavor.addManifestPlaceHolders(overlay.getManifestPlaceholders());
 
         flavor.addResValues(base.getResValues());
-        flavor.addResValues(getResValues());
+        flavor.addResValues(overlay.getResValues());
 
         flavor.addBuildConfigFields(base.getBuildConfigFields());
-        flavor.addBuildConfigFields(getBuildConfigFields());
+        flavor.addBuildConfigFields(overlay.getBuildConfigFields());
 
+        flavor.setMultiDexEnabled(chooseNotNull(
+                overlay.getMultiDexEnabled(), base.getMultiDexEnabled()));
+
+        flavor.setMultiDexKeepFile(chooseNotNull(
+                overlay.getMultiDexKeepFile(), base.getMultiDexKeepFile()));
+
+        flavor.setMultiDexKeepProguard(chooseNotNull(
+                overlay.getMultiDexKeepProguard(), base.getMultiDexKeepProguard()));
         return flavor;
     }
 
     /**
-     * Clones the productFlavor.
+     * Clone a given product flavor.
+     *
+     * @param productFlavor the flavor to clone.
+     *
+     * @return a new instance that is a clone of the flavor.
      */
-    @Override
     @NonNull
-    public DefaultProductFlavor clone() {
-        DefaultProductFlavor flavor = new DefaultProductFlavor(getName());
-        flavor._initWith(this);
+    static ProductFlavor clone(@NonNull ProductFlavor productFlavor) {
+        DefaultProductFlavor flavor = new DefaultProductFlavor(productFlavor.getName());
+        flavor._initWith(productFlavor);
 
-        flavor.mMinSdkVersion = mMinSdkVersion;
-        flavor.mTargetSdkVersion =mTargetSdkVersion;
-        flavor.mMaxSdkVersion = mMaxSdkVersion;
-        flavor.mRenderscriptTargetApi = mRenderscriptTargetApi;
-        flavor.mRenderscriptSupportMode = mRenderscriptSupportMode;
-        flavor.mRenderscriptNdkMode = mRenderscriptNdkMode;
+        flavor.mMinSdkVersion = productFlavor.getMinSdkVersion();
+        flavor.mTargetSdkVersion = productFlavor.getTargetSdkVersion();
+        flavor.mMaxSdkVersion = productFlavor.getMaxSdkVersion();
+        flavor.mRenderscriptTargetApi = productFlavor.getRenderscriptTargetApi();
+        flavor.mRenderscriptSupportModeEnabled = productFlavor.getRenderscriptSupportModeEnabled();
+        flavor.mRenderscriptNdkModeEnabled = productFlavor.getRenderscriptNdkModeEnabled();
 
-        flavor.mVersionCode = mVersionCode;
-        flavor.mVersionName = mVersionName;
+        flavor.mVersionCode = productFlavor.getVersionCode();
+        flavor.mVersionName = productFlavor.getVersionName();
 
-        flavor.mApplicationId = mApplicationId;
+        flavor.mApplicationId = productFlavor.getApplicationId();
 
-        flavor.mTestApplicationId = mTestApplicationId;
-        flavor.mTestInstrumentationRunner = mTestInstrumentationRunner;
-        flavor.mTestHandleProfiling = mTestHandleProfiling;
-        flavor.mTestFunctionalTest = mTestFunctionalTest;
+        flavor.mTestApplicationId = productFlavor.getTestApplicationId();
+        flavor.mTestInstrumentationRunner = productFlavor.getTestInstrumentationRunner();
+        flavor.mTestHandleProfiling = productFlavor.getTestHandleProfiling();
+        flavor.mTestFunctionalTest = productFlavor.getTestFunctionalTest();
 
-        flavor.mSigningConfig = mSigningConfig;
+        flavor.mSigningConfig = productFlavor.getSigningConfig();
 
-        flavor.addResourceConfigurations(getResourceConfigurations());
-        flavor.addManifestPlaceHolders(getManifestPlaceholders());
+        flavor.addResourceConfigurations(productFlavor.getResourceConfigurations());
+        flavor.addManifestPlaceHolders(productFlavor.getManifestPlaceholders());
+
+        flavor.addResValues(productFlavor.getResValues());
+        flavor.addBuildConfigFields(productFlavor.getBuildConfigFields());
+
+        flavor.setMultiDexEnabled(productFlavor.getMultiDexEnabled());
+
+        flavor.setMultiDexKeepFile(productFlavor.getMultiDexKeepFile());
+        flavor.setMultiDexKeepProguard(productFlavor.getMultiDexKeepProguard());
 
         return flavor;
     }
 
-    private int chooseInt(int overlay, int base) {
-        return overlay != -1 ? overlay : base;
-    }
-
-    @Nullable
-    private String chooseString(String overlay, String base) {
-        return overlay != null ? overlay : base;
-    }
-
-    private Boolean chooseBoolean(Boolean overlay, Boolean base) {
+    private static <T> T chooseNotNull(T overlay, T base) {
         return overlay != null ? overlay : base;
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        if (!super.equals(o)) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
 
         DefaultProductFlavor that = (DefaultProductFlavor) o;
 
-        if (mMinSdkVersion != null ? !mMinSdkVersion.equals(that.mMinSdkVersion) : that.mMinSdkVersion != null)
+        if (mApplicationId != null ? !mApplicationId.equals(that.mApplicationId)
+                : that.mApplicationId != null) {
             return false;
-        if (mRenderscriptTargetApi != that.mRenderscriptTargetApi) return false;
-        if (mTargetSdkVersion != null ? !mTargetSdkVersion.equals(that.mTargetSdkVersion) : that.mTargetSdkVersion != null)
+        }
+        if (mMaxSdkVersion != null ? !mMaxSdkVersion.equals(that.mMaxSdkVersion)
+                : that.mMaxSdkVersion != null) {
             return false;
-        if (mVersionCode != that.mVersionCode) return false;
-        if (!mName.equals(that.mName)) return false;
-        if (mApplicationId != null ? !mApplicationId.equals(that.mApplicationId) : that.mApplicationId != null)
+        }
+        if (mMinSdkVersion != null ? !mMinSdkVersion.equals(that.mMinSdkVersion)
+                : that.mMinSdkVersion != null) {
             return false;
-        if (mRenderscriptNdkMode != null ? !mRenderscriptNdkMode.equals(that.mRenderscriptNdkMode) : that.mRenderscriptNdkMode != null)
+        }
+        if (!mName.equals(that.mName)) {
             return false;
-        if (mRenderscriptSupportMode != null ? !mRenderscriptSupportMode.equals(that.mRenderscriptSupportMode) : that.mRenderscriptSupportMode != null)
+        }
+        if (mRenderscriptNdkModeEnabled != null ? !mRenderscriptNdkModeEnabled
+                .equals(that.mRenderscriptNdkModeEnabled)
+                : that.mRenderscriptNdkModeEnabled != null) {
             return false;
-        if (mResourceConfiguration != null ? !mResourceConfiguration.equals(that.mResourceConfiguration) : that.mResourceConfiguration != null)
+        }
+        if (mRenderscriptSupportModeEnabled != null ? !mRenderscriptSupportModeEnabled
+                .equals(that.mRenderscriptSupportModeEnabled) : that.mRenderscriptSupportModeEnabled
+                != null) {
             return false;
-        if (mSigningConfig != null ? !mSigningConfig.equals(that.mSigningConfig) : that.mSigningConfig != null)
+        }
+        if (mRenderscriptTargetApi != null ? !mRenderscriptTargetApi
+                .equals(that.mRenderscriptTargetApi)
+                : that.mRenderscriptTargetApi != null) {
             return false;
-        if (mTestFunctionalTest != null ? !mTestFunctionalTest.equals(that.mTestFunctionalTest) : that.mTestFunctionalTest != null)
+        }
+        if (mResourceConfiguration != null ? !mResourceConfiguration
+                .equals(that.mResourceConfiguration)
+                : that.mResourceConfiguration != null) {
             return false;
-        if (mTestHandleProfiling != null ? !mTestHandleProfiling.equals(that.mTestHandleProfiling) : that.mTestHandleProfiling != null)
+        }
+        if (mSigningConfig != null ? !mSigningConfig.equals(that.mSigningConfig)
+                : that.mSigningConfig != null) {
             return false;
-        if (mTestInstrumentationRunner != null ? !mTestInstrumentationRunner.equals(that.mTestInstrumentationRunner) : that.mTestInstrumentationRunner != null)
+        }
+        if (mTargetSdkVersion != null ? !mTargetSdkVersion.equals(that.mTargetSdkVersion)
+                : that.mTargetSdkVersion != null) {
             return false;
-        if (mTestApplicationId != null ? !mTestApplicationId.equals(that.mTestApplicationId) : that.mTestApplicationId != null)
+        }
+        if (mTestApplicationId != null ? !mTestApplicationId.equals(that.mTestApplicationId)
+                : that.mTestApplicationId != null) {
             return false;
-        if (mVersionName != null ? !mVersionName.equals(that.mVersionName) : that.mVersionName != null)
+        }
+        if (mTestFunctionalTest != null ? !mTestFunctionalTest.equals(that.mTestFunctionalTest)
+                : that.mTestFunctionalTest != null) {
             return false;
+        }
+        if (mTestHandleProfiling != null ? !mTestHandleProfiling.equals(that.mTestHandleProfiling)
+                : that.mTestHandleProfiling != null) {
+            return false;
+        }
+        if (mTestInstrumentationRunner != null ? !mTestInstrumentationRunner
+                .equals(that.mTestInstrumentationRunner)
+                : that.mTestInstrumentationRunner != null) {
+            return false;
+        }
+        if (mVersionCode != null ? !mVersionCode.equals(that.mVersionCode)
+                : that.mVersionCode != null) {
+            return false;
+        }
+        if (mVersionName != null ? !mVersionName.equals(that.mVersionName)
+                : that.mVersionName != null) {
+            return false;
+        }
 
         return true;
     }
@@ -447,18 +521,24 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
         result = 31 * result + mName.hashCode();
         result = 31 * result + (mMinSdkVersion != null ? mMinSdkVersion.hashCode() : 0);
         result = 31 * result + (mTargetSdkVersion != null ? mTargetSdkVersion.hashCode() : 0);
-        result = 31 * result + mRenderscriptTargetApi;
-        result = 31 * result + (mRenderscriptSupportMode != null ? mRenderscriptSupportMode.hashCode() : 0);
-        result = 31 * result + (mRenderscriptNdkMode != null ? mRenderscriptNdkMode.hashCode() : 0);
-        result = 31 * result + mVersionCode;
+        result = 31 * result + (mMaxSdkVersion != null ? mMaxSdkVersion.hashCode() : 0);
+        result = 31 * result + (mRenderscriptTargetApi != null ? mRenderscriptTargetApi.hashCode()
+                : 0);
+        result = 31 * result + (mRenderscriptSupportModeEnabled != null ? mRenderscriptSupportModeEnabled
+                .hashCode()
+                : 0);
+        result = 31 * result + (mRenderscriptNdkModeEnabled != null ? mRenderscriptNdkModeEnabled.hashCode() : 0);
+        result = 31 * result + (mVersionCode != null ? mVersionCode.hashCode() : 0);
         result = 31 * result + (mVersionName != null ? mVersionName.hashCode() : 0);
         result = 31 * result + (mApplicationId != null ? mApplicationId.hashCode() : 0);
         result = 31 * result + (mTestApplicationId != null ? mTestApplicationId.hashCode() : 0);
-        result = 31 * result + (mTestInstrumentationRunner != null ? mTestInstrumentationRunner.hashCode() : 0);
+        result = 31 * result + (mTestInstrumentationRunner != null ? mTestInstrumentationRunner
+                .hashCode() : 0);
         result = 31 * result + (mTestHandleProfiling != null ? mTestHandleProfiling.hashCode() : 0);
         result = 31 * result + (mTestFunctionalTest != null ? mTestFunctionalTest.hashCode() : 0);
         result = 31 * result + (mSigningConfig != null ? mSigningConfig.hashCode() : 0);
-        result = 31 * result + (mResourceConfiguration != null ? mResourceConfiguration.hashCode() : 0);
+        result = 31 * result + (mResourceConfiguration != null ? mResourceConfiguration.hashCode()
+                : 0);
         return result;
     }
 
@@ -470,8 +550,8 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
                 .add("minSdkVersion", mMinSdkVersion)
                 .add("targetSdkVersion", mTargetSdkVersion)
                 .add("renderscriptTargetApi", mRenderscriptTargetApi)
-                .add("renderscriptSupportMode", mRenderscriptSupportMode)
-                .add("renderscriptNdkMode", mRenderscriptNdkMode)
+                .add("renderscriptSupportModeEnabled", mRenderscriptSupportModeEnabled)
+                .add("renderscriptNdkModeEnabled", mRenderscriptNdkModeEnabled)
                 .add("versionCode", mVersionCode)
                 .add("versionName", mVersionName)
                 .add("applicationId", mApplicationId)
@@ -481,6 +561,11 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
                 .add("testFunctionalTest", mTestFunctionalTest)
                 .add("signingConfig", mSigningConfig)
                 .add("resConfig", mResourceConfiguration)
+                .add("mBuildConfigFields", getBuildConfigFields())
+                .add("mResValues", getResValues())
+                .add("mProguardFiles", getProguardFiles())
+                .add("mConsumerProguardFiles", getConsumerProguardFiles())
+                .add("mManifestPlaceholders", getManifestPlaceholders())
                 .toString();
     }
 }

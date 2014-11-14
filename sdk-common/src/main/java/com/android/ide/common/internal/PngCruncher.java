@@ -27,8 +27,11 @@ import java.io.IOException;
 public interface PngCruncher {
 
     /**
-     * Crunch a given file into another given file.
-     *
+     * Crunch a given file into another given file. This may be implemented synchronously or
+     * asynchronously. Therefore the output file may not be present until {@link #end()} is called
+     * and returned. When implemented asynchronously, this act like queueing a crunching request.
+     * So {@link #crunchPng(java.io.File, java.io.File)} can be called multiple times and when
+     * {@link #end()} is called and returned, all output files will be present.
      *
      * @param from the file to crunch
      * @param to the output file
@@ -39,4 +42,11 @@ public interface PngCruncher {
      */
     void crunchPng(@NonNull File from, @NonNull File to)
             throws InterruptedException, LoggedErrorException, IOException;
+
+    /**
+     * Wait until all Png crunching requests have been executed.
+     *
+     * @throws InterruptedException
+     */
+    void end() throws InterruptedException;
 }

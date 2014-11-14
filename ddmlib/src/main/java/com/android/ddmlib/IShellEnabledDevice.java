@@ -16,7 +16,10 @@
 
 package com.android.ddmlib;
 
+import com.android.annotations.NonNull;
+
 import java.io.IOException;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -62,4 +65,14 @@ public interface IShellEnabledDevice {
             long maxTimeToOutputResponse, TimeUnit maxTimeUnits)
             throws TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException,
             IOException;
+
+    /**
+     * Do a potential asynchronous query for a system property.
+     *
+     * @param name the name of the value to return.
+     * @return a {@link java.util.concurrent.Future} which can be used to retrieve value of property. Future#get() can
+     *         return null if property can not be retrieved.
+     */
+    @NonNull
+    public Future<String> getSystemProperty(@NonNull String name);
 }

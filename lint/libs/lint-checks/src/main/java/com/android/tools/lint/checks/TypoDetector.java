@@ -253,6 +253,19 @@ public class TypoDetector extends ResourceXmlDetector {
         int lastWordBegin = -1;
         int lastWordEnd = -1;
         boolean checkedTypos = false;
+
+        for (; index < max; index++) {
+            char c = text.charAt(index);
+            if (!Character.isWhitespace(c)) {
+                if (c == '@' || (c == '?')) {
+                    // Don't look for typos in resource references; they are not
+                    // user visible anyway
+                    return;
+                }
+                break;
+            }
+        }
+
         while (index < max) {
             for (; index < max; index++) {
                 char c = text.charAt(index);

@@ -126,6 +126,13 @@
             <xsd:element name="abi"               type= "c:abiType" />
             <xsd:element name="dock"              type= "c:dockType" />
             <xsd:element name="power-type"        type= "c:powerType" />
+            <xsd:element name="skin"              minOccurs="0">
+                <xsd:annotation>
+                    <xsd:documentation xml:lang="en">
+                        Path to a custom skin directory.
+                    </xsd:documentation>
+                </xsd:annotation>
+            </xsd:element>
         </xsd:sequence>
     </xsd:complexType>
 

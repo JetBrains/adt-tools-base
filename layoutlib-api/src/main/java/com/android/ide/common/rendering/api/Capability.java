@@ -19,7 +19,9 @@ package com.android.ide.common.rendering.api;
 /**
  * Enum describing the layout bridge capabilities.
  *
+ * @deprecated use {@link com.android.ide.common.rendering.api.Features}
  */
+@Deprecated
 public enum Capability {
     /** Ability to render at full size, as required by the layout, and unbound by the screen */
     UNBOUND_RENDERING,

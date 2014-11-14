@@ -27,7 +27,6 @@ import static com.android.SdkConstants.ATTR_PACKAGE;
 import static com.android.SdkConstants.ATTR_STYLE;
 import static com.android.SdkConstants.TOOLS_URI;
 import static com.android.SdkConstants.VIEW_TAG;
-import static com.android.SdkConstants.XMLNS_PREFIX;
 import static com.android.resources.ResourceFolderType.ANIM;
 import static com.android.resources.ResourceFolderType.ANIMATOR;
 import static com.android.resources.ResourceFolderType.COLOR;
@@ -52,7 +51,6 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
 import java.util.Collection;
-import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -79,7 +77,7 @@ public class DetectMissingPrefix extends LayoutDetector {
             Severity.ERROR,
             new Implementation(
                     DetectMissingPrefix.class,
-                    EnumSet.of(Scope.MANIFEST, Scope.RESOURCE_FILE),
+                    Scope.MANIFEST_AND_RESOURCE_SCOPE,
                     Scope.MANIFEST_SCOPE, Scope.RESOURCE_FILE_SCOPE));
 
     private static final Set<String> NO_PREFIX_ATTRS = new HashSet<String>();

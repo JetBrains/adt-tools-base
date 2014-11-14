@@ -16,6 +16,8 @@
 
 package com.android.tools.lint.checks;
 
+import static com.android.SdkConstants.CLASS_ATTRIBUTE_SET;
+import static com.android.SdkConstants.CLASS_CONTEXT;
 import static com.android.tools.lint.client.api.JavaParser.ResolvedClass;
 import static com.android.tools.lint.client.api.JavaParser.ResolvedMethod;
 
@@ -87,13 +89,13 @@ public class ViewConstructorDetector extends Detector implements Detector.JavaSc
         if (argumentCount == 0 || argumentCount > 3) {
             return false;
         }
-        if (!method.getArgumentType(0).matchesName("android.content.Context")) {
+        if (!method.getArgumentType(0).matchesName(CLASS_CONTEXT)) {
             return false;
         }
         if (argumentCount == 1) {
             return true;
         }
-        if (!method.getArgumentType(1).matchesName("android.util.AttributeSet")) {
+        if (!method.getArgumentType(1).matchesName(CLASS_ATTRIBUTE_SET)) {
             return false;
         }
         //noinspection SimplifiableIfStatement

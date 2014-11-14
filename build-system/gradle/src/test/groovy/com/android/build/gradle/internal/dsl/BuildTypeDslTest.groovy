@@ -43,11 +43,11 @@ public class BuildTypeDslTest extends BaseTest {
         DefaultBuildType type = plugin.variantManager.buildTypes.get(BuilderConstants.DEBUG).buildType
 
         assertTrue(type.isDebuggable())
-        assertFalse(type.isJniDebugBuild())
-        assertFalse(type.isRenderscriptDebugBuild())
+        assertFalse(type.isJniDebuggable())
+        assertFalse(type.isRenderscriptDebuggable())
         assertNotNull(type.getSigningConfig())
         assertTrue(type.getSigningConfig().isSigningReady())
-        assertTrue(type.isZipAlign())
+        assertTrue(type.isZipAlignEnabled())
     }
 
     public void testRelease() {
@@ -65,9 +65,9 @@ public class BuildTypeDslTest extends BaseTest {
         DefaultBuildType type = plugin.variantManager.buildTypes.get(BuilderConstants.RELEASE).buildType
 
         assertFalse(type.isDebuggable())
-        assertFalse(type.isJniDebugBuild())
-        assertFalse(type.isRenderscriptDebugBuild())
-        assertTrue(type.isZipAlign())
+        assertFalse(type.isJniDebuggable())
+        assertFalse(type.isRenderscriptDebuggable())
+        assertTrue(type.isZipAlignEnabled())
     }
 
     public void testInitWith() {
@@ -78,14 +78,16 @@ public class BuildTypeDslTest extends BaseTest {
 
         // change every value from their default.
         object1.setDebuggable(true)
-        object1.setJniDebugBuild(true)
-        object1.setRenderscriptDebugBuild(true)
+        object1.setJniDebuggable(true)
+        object1.setRenderscriptDebuggable(true)
         object1.setRenderscriptOptimLevel(0)
         object1.setPackageNameSuffix("foo")
         object1.setVersionNameSuffix("foo")
-        object1.setRunProguard(true)
+        object1.setMinifyEnabled(true)
         object1.setSigningConfig(new SigningConfigDsl("blah"))
-        object1.setZipAlign(false)
+        object1.setZipAlignEnabled(false)
+        object1.setShrinkResources(true)
+        object1.setUseJack(Boolean.FALSE)
 
         BuildTypeDsl object2 = new BuildTypeDsl(object1.name, project, project.getLogger())
         object2.initWith(object1)

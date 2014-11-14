@@ -134,4 +134,4 @@
 
 
 @errors
-ERROR:uses-sdk:minSdkVersion 1 cannot be smaller than version 4 declared in library ManifestMerger2Test1_lib1.xml
+ERROR:uses-sdk:minSdkVersion 1 cannot be smaller than version 4 declared in library .*ManifestMerger2Test1_lib1.xml

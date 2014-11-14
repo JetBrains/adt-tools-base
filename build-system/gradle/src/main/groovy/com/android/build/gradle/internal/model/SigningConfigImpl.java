@@ -56,14 +56,14 @@ class SigningConfigImpl implements SigningConfig, Serializable {
                 signingConfig.isSigningReady());
     }
 
-    private SigningConfigImpl(@NonNull  String name,
-                      @Nullable File storeFile,
-                      @Nullable String storePassword,
-                      @Nullable String keyAlias,
-                      @Nullable String keyPassword,
-                      @Nullable String storeType,
-                                boolean signingReady) {
-
+    private SigningConfigImpl(
+            @NonNull  String name,
+            @Nullable File storeFile,
+            @Nullable String storePassword,
+            @Nullable String keyAlias,
+            @Nullable String keyPassword,
+            @Nullable String storeType,
+            boolean signingReady) {
         this.name = name;
         this.storeFile = storeFile;
         this.storePassword = storePassword;

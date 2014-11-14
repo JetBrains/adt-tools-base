@@ -16,6 +16,7 @@
 
 package com.android.builder.core;
 
+import static com.android.SdkConstants.DOT_DEX;
 import static com.android.SdkConstants.DOT_XML;
 import static com.android.SdkConstants.FD_RES_XML;
 import static com.android.builder.core.BuilderConstants.ANDROID_WEAR;
@@ -37,6 +38,7 @@ import com.android.builder.internal.SymbolLoader;
 import com.android.builder.internal.SymbolWriter;
 import com.android.builder.internal.TestManifestGenerator;
 import com.android.builder.internal.compiler.AidlProcessor;
+import com.android.builder.internal.compiler.JackConversionCache;
 import com.android.builder.internal.compiler.LeafFolderGatherer;
 import com.android.builder.internal.compiler.PreDexCache;
 import com.android.builder.internal.compiler.RenderScriptProcessor;
@@ -44,10 +46,8 @@ import com.android.builder.internal.compiler.SourceSearcher;
 import com.android.builder.internal.incremental.DependencyData;
 import com.android.builder.internal.packaging.JavaResourceProcessor;
 import com.android.builder.internal.packaging.Packager;
-import com.android.builder.model.AaptOptions;
 import com.android.builder.model.ClassField;
 import com.android.builder.model.PackagingOptions;
-import com.android.builder.model.ProductFlavor;
 import com.android.builder.model.SigningConfig;
 import com.android.builder.packaging.DuplicateFileException;
 import com.android.builder.packaging.PackagerException;
@@ -63,10 +63,7 @@ import com.android.ide.common.internal.PngCruncher;
 import com.android.ide.common.signing.CertificateInfo;
 import com.android.ide.common.signing.KeystoreHelper;
 import com.android.ide.common.signing.KeytoolException;
-import com.android.manifmerger.ICallback;
-import com.android.manifmerger.ManifestMerger;
 import com.android.manifmerger.ManifestMerger2;
-import com.android.manifmerger.MergerLog;
 import com.android.manifmerger.MergingReport;
 import com.android.manifmerger.PlaceholderHandler;
 import com.android.manifmerger.XmlDocument;
@@ -75,14 +72,12 @@ import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.repository.FullRevision;
 import com.android.utils.ILogger;
 import com.android.utils.Pair;
-import com.android.utils.SdkUtils;
 import com.google.common.base.Charsets;
-import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import com.google.common.hash.HashCode;
@@ -93,6 +88,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -101,8 +97,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * This is the main builder class. It is given all the data to process the build (such as
@@ -113,12 +107,12 @@ import java.util.regex.Pattern;
  * create a builder with {@link #AndroidBuilder(String, String, ILogger, boolean)}
  *
  * then build steps can be done with
- * {@link #mergeManifests(java.io.File, java.util.List, java.util.List, String, int, String, String, String, String, com.android.manifmerger.ManifestMerger2.MergeType, java.util.Map)}
- * {@link #processTestManifest2(String, String, String, String, String, Boolean, Boolean, java.util.List, java.io.File)}
- * {@link #processResources(java.io.File, java.io.File, java.io.File, java.util.List, String, String, String, String, String, com.android.builder.core.VariantConfiguration.Type, boolean, com.android.builder.model.AaptOptions, java.util.Collection, boolean)}
+ * {@link #mergeManifests(java.io.File, java.util.List, java.util.List, String, int, String, String, String, Integer, String, com.android.manifmerger.ManifestMerger2.MergeType, java.util.Map)}
+ * {@link #processTestManifest(String, String, String, String, String, Boolean, Boolean, java.io.File, java.util.List, java.io.File, java.io.File)}
+ * {@link #processResources(java.io.File, java.io.File, java.io.File, java.util.List, String, String, String, String, String, com.android.builder.core.VariantConfiguration.Type, boolean, com.android.builder.model.AaptOptions, java.util.Collection, boolean, java.util.Collection)}
  * {@link #compileAllAidlFiles(java.util.List, java.io.File, java.io.File, java.util.List, com.android.builder.compiling.DependencyFileProcessor)}
- * {@link #convertByteCode(Iterable, Iterable, java.io.File, DexOptions, java.util.List, boolean)}
- * {@link #packageApk(String, java.io.File, java.util.Collection, String, java.util.Collection, java.util.Set, boolean, com.android.builder.model.SigningConfig, com.android.builder.model.PackagingOptions, String)}
+ * {@link #convertByteCode(Iterable, Iterable, java.io.File, boolean, java.io.File, DexOptions, java.util.List, java.io.File, boolean)}
+ * {@link #packageApk(String, java.io.File, java.util.Collection, java.util.Collection, String, java.util.Collection, java.util.Set, boolean, com.android.builder.model.SigningConfig, com.android.builder.model.PackagingOptions, String)}
  *
  * Java compilation is not handled but the builder provides the bootclasspath with
  * {@link #getBootClasspath()}.
@@ -126,7 +120,8 @@ import java.util.regex.Pattern;
 public class AndroidBuilder {
 
     private static final FullRevision MIN_BUILD_TOOLS_REV = new FullRevision(19, 1, 0);
-
+    private static final FullRevision MIN_MULTIDEX_BUILD_TOOLS_REV = new FullRevision(21, 0, 0);
+    private static final FullRevision MIN_BUILD_TOOLS_REVISION_FOR_DEX_INPUT_LIST = new FullRevision(21, 0, 0);
     private static final DependencyFileProcessor sNoOpDependencyFileProcessor = new DependencyFileProcessor() {
         @Override
         public DependencyData processFile(@NonNull File dependencyFile) {
@@ -134,12 +129,12 @@ public class AndroidBuilder {
         }
     };
 
-    private final String mProjectId;
-    private final ILogger mLogger;
-    private final CommandLineRunner mCmdLineRunner;
+    @NonNull private final String mProjectId;
+    @NonNull private final ILogger mLogger;
+    @NonNull private final CommandLineRunner mCmdLineRunner;
     private final boolean mVerboseExec;
 
-    private String mCreatedBy;
+    @Nullable private String mCreatedBy;
 
     private SdkInfo mSdkInfo;
     private TargetInfo mTargetInfo;
@@ -214,6 +209,11 @@ public class AndroidBuilder {
         return mTargetInfo;
     }
 
+    @NonNull
+    public ILogger getLogger() {
+        return mLogger;
+    }
+
     /**
      * Returns the compilation target, if set.
      */
@@ -239,11 +239,50 @@ public class AndroidBuilder {
         return mTargetInfo.getTarget().getVersion().getCodename();
     }
 
+    @NonNull
+    public File getDxJar() {
+        checkState(mTargetInfo != null,
+                "Cannot call getDxJar() before setTargetInfo() is called.");
+        return new File(mTargetInfo.getBuildTools().getPath(BuildToolInfo.PathId.DX_JAR));
+    }
+
     /**
      * Helper method to get the boot classpath to be used during compilation.
      */
     @NonNull
-    public List<String> getBootClasspath() {
+    public List<File> getBootClasspath() {
+        checkState(mTargetInfo != null,
+                "Cannot call getBootClasspath() before setTargetInfo() is called.");
+
+        List<File> classpath = Lists.newArrayList();
+
+        IAndroidTarget target = mTargetInfo.getTarget();
+
+        for (String p : target.getBootClasspath()) {
+            classpath.add(new File(p));
+        }
+
+        // add optional libraries if any
+        IAndroidTarget.IOptionalLibrary[] libs = target.getOptionalLibraries();
+        if (libs != null) {
+            for (IAndroidTarget.IOptionalLibrary lib : libs) {
+                classpath.add(new File(lib.getJarPath()));
+            }
+        }
+
+        // add annotations.jar if needed.
+        if (target.getVersion().getApiLevel() <= 15) {
+            classpath.add(mSdkInfo.getAnnotationsJar());
+        }
+
+        return classpath;
+    }
+
+    /**
+     * Helper method to get the boot classpath to be used during compilation.
+     */
+    @NonNull
+    public List<String> getBootClasspathAsStrings() {
         checkState(mTargetInfo != null,
                 "Cannot call getBootClasspath() before setTargetInfo() is called.");
 
@@ -297,12 +336,10 @@ public class AndroidBuilder {
      * @return a non null, but possibly empty set.
      */
     @NonNull
-    public Set<File> getCompileClasspath(@NonNull VariantConfiguration variantConfiguration) {
+    public Set<File> getCompileClasspath(@NonNull VariantConfiguration<?,?,?> variantConfiguration) {
         Set<File> compileClasspath = variantConfiguration.getCompileClasspath();
 
-        ProductFlavor mergedFlavor = variantConfiguration.getMergedFlavor();
-
-        if (mergedFlavor.getRenderscriptSupportMode()) {
+        if (variantConfiguration.getRenderscriptSupportModeEnabled()) {
             File renderScriptSupportJar = getRenderScriptSupportJar();
 
             Set<File> fullJars = Sets.newHashSetWithExpectedSize(compileClasspath.size() + 1);
@@ -325,20 +362,15 @@ public class AndroidBuilder {
      * @return a non null, but possibly empty list.
      */
     @NonNull
-    public Set<File> getPackagedJars(@NonNull VariantConfiguration variantConfiguration) {
-        Set<File> packagedJars = variantConfiguration.getPackagedJars();
+    public Set<File> getPackagedJars(@NonNull VariantConfiguration<?,?,?> variantConfiguration) {
+        Set<File> packagedJars = Sets.newHashSet(variantConfiguration.getPackagedJars());
 
-        ProductFlavor mergedFlavor = variantConfiguration.getMergedFlavor();
-
-        if (mergedFlavor.getRenderscriptSupportMode()) {
+        if (variantConfiguration.getRenderscriptSupportModeEnabled()) {
             File renderScriptSupportJar = getRenderScriptSupportJar();
 
-            Set<File> fullJars = Sets.newHashSetWithExpectedSize(packagedJars.size() + 1);
-            fullJars.addAll(packagedJars);
             if (renderScriptSupportJar != null) {
-                fullJars.add(renderScriptSupportJar);
+                packagedJars.add(renderScriptSupportJar);
             }
-            packagedJars = fullJars;
         }
 
         return packagedJars;
@@ -530,202 +562,6 @@ public class AndroidBuilder {
     }
 
     /**
-     * Merges all the manifests into a single manifest
-     *
-     * @param mainManifest The main manifest of the application.
-     * @param manifestOverlays manifest overlays coming from flavors and build types
-     * @param libraries the library dependency graph
-     * @param packageOverride a package name override. Can be null.
-     * @param versionCode a version code to inject in the manifest or -1 to do nothing.
-     * @param versionName a version name to inject in the manifest or null to do nothing.
-     * @param minSdkVersion a minSdkVersion to inject in the manifest or -1 to do nothing.
-     * @param targetSdkVersion a targetSdkVersion to inject in the manifest or -1 to do nothing.
-     * @param outManifestLocation the output location for the merged manifest
-     *
-     * @see VariantConfiguration#getMainManifest()
-     * @see VariantConfiguration#getManifestOverlays()
-     * @see VariantConfiguration#getDirectLibraries()
-     * @see VariantConfiguration#getMergedFlavor()
-     * @see DefaultProductFlavor#getVersionCode()
-     * @see DefaultProductFlavor#getVersionName()
-     * @see DefaultProductFlavor#getMinSdkVersion()
-     * @see DefaultProductFlavor#getTargetSdkVersion()
-     */
-    public void processManifest(
-            @NonNull  File mainManifest,
-            @NonNull  List<File> manifestOverlays,
-            @NonNull  List<? extends ManifestDependency> libraries,
-                      String packageOverride,
-                      int versionCode,
-                      String versionName,
-            @Nullable String minSdkVersion,
-            @Nullable String targetSdkVersion,
-            @NonNull  String outManifestLocation) {
-        checkNotNull(mainManifest, "mainManifest cannot be null.");
-        checkNotNull(manifestOverlays, "manifestOverlays cannot be null.");
-        checkNotNull(libraries, "libraries cannot be null.");
-        checkNotNull(outManifestLocation, "outManifestLocation cannot be null.");
-        checkState(mTargetInfo != null,
-                "Cannot call processManifest() before setTargetInfo() is called.");
-
-        final IAndroidTarget target = mTargetInfo.getTarget();
-
-        ICallback callback = new ICallback() {
-            @Override
-            public int queryCodenameApiLevel(@NonNull String codename) {
-                if (codename.equals(target.getVersion().getCodename())) {
-                    return target.getVersion().getApiLevel();
-                }
-                return ICallback.UNKNOWN_CODENAME;
-            }
-        };
-
-        try {
-            Map<String, String> attributeInjection = getAttributeInjectionMap(
-                    versionCode, versionName, minSdkVersion, targetSdkVersion);
-
-            if (manifestOverlays.isEmpty() && libraries.isEmpty()) {
-                // if no manifest to merge, just copy to location, unless we have to inject
-                // attributes
-                if (attributeInjection.isEmpty() && packageOverride == null) {
-                    SdkUtils.copyXmlWithSourceReference(mainManifest,
-                            new File(outManifestLocation));
-                } else {
-                    ManifestMerger merger = new ManifestMerger(MergerLog.wrapSdkLog(mLogger),
-                            callback);
-                    doMerge(merger, new File(outManifestLocation), mainManifest,
-                            attributeInjection, packageOverride);
-                }
-            } else {
-                File outManifest = new File(outManifestLocation);
-
-                // first merge the app manifest.
-                if (!manifestOverlays.isEmpty()) {
-                    File mainManifestOut = outManifest;
-
-                    // if there is also libraries, put this in a temp file.
-                    if (!libraries.isEmpty()) {
-                        // TODO find better way of storing intermediary file?
-                        mainManifestOut = File.createTempFile("manifestMerge", ".xml");
-                        mainManifestOut.deleteOnExit();
-                    }
-
-                    ManifestMerger merger = new ManifestMerger(MergerLog.wrapSdkLog(mLogger),
-                            callback);
-                    doMerge(merger, mainManifestOut, mainManifest, manifestOverlays,
-                            attributeInjection, packageOverride);
-
-                    // now the main manifest is the newly merged one
-                    mainManifest = mainManifestOut;
-                    // and the attributes have been inject, no need to do it below
-                    attributeInjection = null;
-                }
-
-                if (!libraries.isEmpty()) {
-                    // recursively merge all manifests starting with the leaves and up toward the
-                    // root (the app)
-                    mergeLibraryManifests(mainManifest, libraries,
-                            new File(outManifestLocation), attributeInjection, packageOverride,
-                            callback);
-                }
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    /**
-     * Creates the manifest for a test variant
-     *
-     * @param testApplicationId the application id of the test application
-     * @param minSdkVersion the minSdkVersion of the test application
-     * @param targetSdkVersion the targetSdkVersion of the test application
-     * @param testedApplicationId the application id of the tested application
-     * @param instrumentationRunner the name of the instrumentation runner
-     * @param handleProfiling whether or not the Instrumentation object will turn profiling on and off
-     * @param functionalTest whether or not the Instrumentation class should run as a functional test
-     * @param libraries the library dependency graph
-     * @param outManifest the output location for the merged manifest
-     *
-     * @see VariantConfiguration#getApplicationId()
-     * @see VariantConfiguration#getTestedConfig()
-     * @see VariantConfiguration#getMinSdkVersion()
-     * @see VariantConfiguration#getTestedApplicationId()
-     * @see VariantConfiguration#getInstrumentationRunner()
-     * @see VariantConfiguration#getHandleProfiling()
-     * @see VariantConfiguration#getFunctionalTest()
-     * @see VariantConfiguration#getDirectLibraries()
-     */
-    public void processTestManifest(
-            @NonNull  String testApplicationId,
-            @Nullable String minSdkVersion,
-            @Nullable String targetSdkVersion,
-            @NonNull  String testedApplicationId,
-            @NonNull  String instrumentationRunner,
-            @NonNull  Boolean handleProfiling,
-            @NonNull  Boolean functionalTest,
-            @NonNull  List<? extends ManifestDependency> libraries,
-            @NonNull  File outManifest) {
-        checkNotNull(testApplicationId, "testApplicationId cannot be null.");
-        checkNotNull(testedApplicationId, "testedApplicationId cannot be null.");
-        checkNotNull(instrumentationRunner, "instrumentationRunner cannot be null.");
-        checkNotNull(handleProfiling, "handleProfiling cannot be null.");
-        checkNotNull(functionalTest, "functionalTest cannot be null.");
-        checkNotNull(libraries, "libraries cannot be null.");
-        checkNotNull(outManifest, "outManifestLocation cannot be null.");
-        checkState(mTargetInfo != null,
-                "Cannot call processTestManifest() before setTargetInfo() is called.");
-
-        final IAndroidTarget target = mTargetInfo.getTarget();
-
-        ICallback callback = new ICallback() {
-            @Override
-            public int queryCodenameApiLevel(@NonNull String codename) {
-                if (codename.equals(target.getVersion().getCodename())) {
-                    return target.getVersion().getApiLevel();
-                }
-                return ICallback.UNKNOWN_CODENAME;
-            }
-        };
-
-        if (!libraries.isEmpty()) {
-            try {
-                // create the test manifest, merge the libraries in it
-                File generatedTestManifest = File.createTempFile("manifestMerge", ".xml");
-
-                generateTestManifest(
-                        testApplicationId,
-                        minSdkVersion,
-                        targetSdkVersion,
-                        testedApplicationId,
-                        instrumentationRunner,
-                        handleProfiling,
-                        functionalTest,
-                        generatedTestManifest);
-
-                mergeLibraryManifests(
-                        generatedTestManifest,
-                        libraries,
-                        outManifest,
-                        null, null,
-                        callback);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        } else {
-            generateTestManifest(
-                    testApplicationId,
-                    minSdkVersion,
-                    targetSdkVersion,
-                    testedApplicationId,
-                    instrumentationRunner,
-                    handleProfiling,
-                    functionalTest,
-                    outManifest);
-        }
-    }
-
-    /**
      * Creates the manifest for a test variant
      *
      * @param testApplicationId the application id of the test application
@@ -748,18 +584,18 @@ public class AndroidBuilder {
      * @see VariantConfiguration#getFunctionalTest()
      * @see VariantConfiguration#getDirectLibraries()
      */
-    public void processTestManifest2(
-            @NonNull  String testApplicationId,
+    public void processTestManifest(
+            @NonNull String testApplicationId,
             @Nullable String minSdkVersion,
             @Nullable String targetSdkVersion,
-            @NonNull  String testedApplicationId,
-            @NonNull  String instrumentationRunner,
-            @NonNull  Boolean handleProfiling,
-            @NonNull  Boolean functionalTest,
+            @NonNull String testedApplicationId,
+            @NonNull String instrumentationRunner,
+            @NonNull Boolean handleProfiling,
+            @NonNull Boolean functionalTest,
             @Nullable File testManifestFile,
-            @NonNull  List<? extends ManifestDependency> libraries,
-            @NonNull  File outManifest,
-            @NonNull  File tmpDir) {
+            @NonNull List<? extends ManifestDependency> libraries,
+            @NonNull File outManifest,
+            @NonNull File tmpDir) {
         checkNotNull(testApplicationId, "testApplicationId cannot be null.");
         checkNotNull(testedApplicationId, "testedApplicationId cannot be null.");
         checkNotNull(instrumentationRunner, "instrumentationRunner cannot be null.");
@@ -874,291 +710,49 @@ public class AndroidBuilder {
         }
     }
 
-    @NonNull
-    private static Map<String, String> getAttributeInjectionMap(
-                      int versionCode,
-            @Nullable String versionName,
-            @Nullable String minSdkVersion,
-            @Nullable String targetSdkVersion) {
-
-        Map<String, String> attributeInjection = Maps.newHashMap();
-
-        if (versionCode != -1) {
-            attributeInjection.put(
-                    "/manifest|http://schemas.android.com/apk/res/android versionCode",
-                    Integer.toString(versionCode));
-        }
-
-        if (versionName != null) {
-            attributeInjection.put(
-                    "/manifest|http://schemas.android.com/apk/res/android versionName",
-                    versionName);
-        }
-
-        if (minSdkVersion != null) {
-            attributeInjection.put(
-                    "/manifest/uses-sdk|http://schemas.android.com/apk/res/android minSdkVersion",
-                    minSdkVersion);
-        }
-
-        if (targetSdkVersion != null) {
-            attributeInjection.put(
-                    "/manifest/uses-sdk|http://schemas.android.com/apk/res/android targetSdkVersion",
-                    targetSdkVersion);
-        }
-        return attributeInjection;
-    }
-
-    /**
-     * Merges library manifests into a main manifest.
-     * @param mainManifest the main manifest
-     * @param directLibraries the libraries to merge
-     * @param outManifest the output file
-     * @throws IOException
-     */
-    private void mergeLibraryManifests(
-            File mainManifest,
-            Iterable<? extends ManifestDependency> directLibraries,
-            File outManifest, Map<String, String> attributeInjection,
-            String packageOverride,
-            @NonNull ICallback callback)
-            throws IOException {
-
-        List<File> manifests = Lists.newArrayList();
-        for (ManifestDependency library : directLibraries) {
-            Collection<? extends ManifestDependency> subLibraries = library.getManifestDependencies();
-            if (subLibraries.isEmpty()) {
-                manifests.add(library.getManifest());
-            } else {
-                File mergeLibManifest = File.createTempFile("manifestMerge", ".xml");
-                mergeLibManifest.deleteOnExit();
-
-                // don't insert the attribute injection into libraries
-                mergeLibraryManifests(
-                        library.getManifest(), subLibraries, mergeLibManifest, null, null, callback);
-
-                manifests.add(mergeLibManifest);
-            }
-        }
-
-        ManifestMerger merger = new ManifestMerger(MergerLog.wrapSdkLog(mLogger), callback);
-        doMerge(merger, outManifest, mainManifest, manifests, attributeInjection, packageOverride);
-    }
-
-    private void doMerge(ManifestMerger merger, File output, File input,
-                               Map<String, String> injectionMap, String packageOverride) {
-        List<File> list = Collections.emptyList();
-        doMerge(merger, output, input, list, injectionMap, packageOverride);
-    }
-
-    private void doMerge(ManifestMerger merger, File output, File input, List<File> subManifests,
-                               Map<String, String> injectionMap, String packageOverride) {
-        if (!merger.process(output, input,
-                subManifests.toArray(new File[subManifests.size()]),
-                injectionMap, packageOverride)) {
-            throw new RuntimeException("Manifest merging failed. See console for more info.");
-        }
-    }
-
     /**
      * Process the resources and generate R.java and/or the packaged resources.
      *
-     * @param manifestFile the location of the manifest file
-     * @param resFolder the merged res folder
-     * @param assetsDir the merged asset folder
-     * @param libraries the flat list of libraries
-     * @param packageForR Package override to generate the R class in a different package.
-     * @param sourceOutputDir optional source folder to generate R.java
-     * @param resPackageOutput optional filepath for packaged resources
-     * @param proguardOutput optional filepath for proguard file to generate
-     * @param type the type of the variant being built
-     * @param debuggable whether the app is debuggable
-     * @param options the {@link com.android.builder.model.AaptOptions}
-     * @param resourceConfigs a list of resource config filters to pass to aapt.
-     * @param enforceUniquePackageName if true method will fail if some libraries share the same
+     *  @param aaptCommand aapt command invocation parameters.
+     *  @param enforceUniquePackageName if true method will fail if some libraries share the same
      *                                 package name
-     * @param splits optional list of split dimensions values (like a density or an abi). This
-     *               will be used by aapt to generate the corresponding pure split apks.
      *
      * @throws IOException
      * @throws InterruptedException
      * @throws LoggedErrorException
      */
     public void processResources(
-            @NonNull  File manifestFile,
-            @NonNull  File resFolder,
-            @Nullable File assetsDir,
-            @Nullable  List<? extends SymbolFileProvider> libraries,
-            @Nullable String packageForR,
-            @Nullable String sourceOutputDir,
-            @Nullable String symbolOutputDir,
-            @Nullable String resPackageOutput,
-            @Nullable String proguardOutput,
-                      VariantConfiguration.Type type,
-                      boolean debuggable,
-            @NonNull  AaptOptions options,
-            @NonNull  Collection<String> resourceConfigs,
-                      boolean enforceUniquePackageName,
-            @Nullable Collection<String> splits)
+            @NonNull AaptPackageCommandBuilder aaptCommand,
+            boolean enforceUniquePackageName)
             throws IOException, InterruptedException, LoggedErrorException {
 
-        checkNotNull(manifestFile, "manifestFile cannot be null.");
-        checkNotNull(resFolder, "resFolder cannot be null.");
-        checkNotNull(options, "options cannot be null.");
-        // if both output types are empty, then there's nothing to do and this is an error
-        checkArgument(sourceOutputDir != null || resPackageOutput != null,
-                "No output provided for aapt task");
         checkState(mTargetInfo != null,
                 "Cannot call processResources() before setTargetInfo() is called.");
-        if (symbolOutputDir != null || sourceOutputDir != null) {
-            checkNotNull(libraries, "libraries cannot be null if symbolOutputDir or sourceOutputDir is non-null");
-        }
-
-        BuildToolInfo buildToolInfo = mTargetInfo.getBuildTools();
-        IAndroidTarget target = mTargetInfo.getTarget();
 
         // launch aapt: create the command line
-        ArrayList<String> command = Lists.newArrayList();
-
-        String aapt = buildToolInfo.getPath(BuildToolInfo.PathId.AAPT);
-        if (aapt == null || !new File(aapt).isFile()) {
-            throw new IllegalStateException("aapt is missing");
-        }
-
-        command.add(aapt);
-        command.add("package");
-
-        if (mVerboseExec) {
-            command.add("-v");
-        }
-
-        command.add("-f");
-        command.add("--no-crunch");
-
-        // inputs
-        command.add("-I");
-        command.add(target.getPath(IAndroidTarget.ANDROID_JAR));
-
-        command.add("-M");
-        command.add(manifestFile.getAbsolutePath());
-
-        if (resFolder.isDirectory()) {
-            command.add("-S");
-            command.add(resFolder.getAbsolutePath());
-        }
-
-        if (assetsDir != null && assetsDir.isDirectory()) {
-            command.add("-A");
-            command.add(assetsDir.getAbsolutePath());
-        }
-
-        // outputs
-
-        if (sourceOutputDir != null) {
-            command.add("-m");
-            command.add("-J");
-            command.add(sourceOutputDir);
-        }
-
-        if (resPackageOutput != null) {
-            command.add("-F");
-            command.add(resPackageOutput);
-        }
-
-        if (proguardOutput != null) {
-            command.add("-G");
-            command.add(proguardOutput);
-        }
-
-        if (splits != null) {
-            for (String split : splits) {
-
-                command.add("--split");
-                command.add(split);
-            }
-        }
-
-        // options controlled by build variants
-
-        if (debuggable) {
-            command.add("--debug-mode");
-        }
-
-
-        if (type != VariantConfiguration.Type.TEST) {
-            if (packageForR != null) {
-                command.add("--custom-package");
-                command.add(packageForR);
-                mLogger.verbose("Custom package for R class: '%s'", packageForR);
-            }
-        }
-
-        // library specific options
-        if (type == VariantConfiguration.Type.LIBRARY) {
-            command.add("--non-constant-id");
-        }
-
-        // AAPT options
-        String ignoreAssets = options.getIgnoreAssets();
-        if (ignoreAssets != null) {
-            command.add("--ignore-assets");
-            command.add(ignoreAssets);
-        }
-
-        if (options.getFailOnMissingConfigEntry()) {
-            if (buildToolInfo.getRevision().getMajor() > 20) {
-                command.add("--error-on-missing-config-entry");
-            } else {
-                throw new IllegalStateException("aaptOptions:failOnMissingConfigEntry cannot be used"
-                        + " with SDK Build Tools revision earlier than 21.0.0");
-            }
-        }
-
-        // never compress apks.
-        command.add("-0");
-        command.add("apk");
-
-        // add custom no-compress extensions
-        Collection<String> noCompressList = options.getNoCompress();
-        if (noCompressList != null) {
-            for (String noCompress : noCompressList) {
-                command.add("-0");
-                command.add(noCompress);
-            }
-        }
-
-        if (!resourceConfigs.isEmpty()) {
-            command.add("-c");
-
-            Joiner joiner = Joiner.on(',');
-            command.add(joiner.join(resourceConfigs));
-        }
-
-        if (symbolOutputDir != null &&
-                (type == VariantConfiguration.Type.LIBRARY || !libraries.isEmpty())) {
-            command.add("--output-text-symbols");
-            command.add(symbolOutputDir);
-        }
-
+        List<String> command = aaptCommand.build(
+                mTargetInfo.getBuildTools(), mTargetInfo.getTarget(), mLogger);
         mCmdLineRunner.runCmdLine(command, null);
 
         // now if the project has libraries, R needs to be created for each libraries,
         // but only if the current project is not a library.
-        if (sourceOutputDir != null && type != VariantConfiguration.Type.LIBRARY && !libraries.isEmpty()) {
+        if (aaptCommand.getSourceOutputDir() != null
+                && aaptCommand.getType() != VariantConfiguration.Type.LIBRARY
+                && !aaptCommand.getLibraries().isEmpty()) {
             SymbolLoader fullSymbolValues = null;
 
             // First pass processing the libraries, collecting them by packageName,
             // and ignoring the ones that have the same package name as the application
             // (since that R class was already created).
-            String appPackageName = packageForR;
+            String appPackageName = aaptCommand.getPackageForR();
             if (appPackageName == null) {
-                appPackageName = VariantConfiguration.getManifestPackage(manifestFile);
+                appPackageName = VariantConfiguration.getManifestPackage(aaptCommand.getManifestFile());
             }
 
             // list of all the symbol loaders per package names.
             Multimap<String, SymbolLoader> libMap = ArrayListMultimap.create();
 
-            for (SymbolFileProvider lib : libraries) {
+            for (SymbolFileProvider lib : aaptCommand.getLibraries()) {
                 String packageName = VariantConfiguration.getManifestPackage(lib.getManifest());
                 if (appPackageName == null) {
                     continue;
@@ -1187,7 +781,7 @@ public class AndroidBuilder {
                     // Doing it lazily allow us to support the case where there's no
                     // resources anywhere.
                     if (fullSymbolValues == null) {
-                        fullSymbolValues = new SymbolLoader(new File(symbolOutputDir, "R.txt"),
+                        fullSymbolValues = new SymbolLoader(new File(aaptCommand.getSymbolOutputDir(), "R.txt"),
                                 mLogger);
                         fullSymbolValues.load();
                     }
@@ -1213,7 +807,7 @@ public class AndroidBuilder {
                     throw new RuntimeException(msg);
                 }
 
-                SymbolWriter writer = new SymbolWriter(sourceOutputDir, packageName,
+                SymbolWriter writer = new SymbolWriter(aaptCommand.getSourceOutputDir(), packageName,
                         fullSymbolValues);
                 for (SymbolLoader symbolLoader : symbols) {
                     writer.addSymbolsToWrite(symbolLoader);
@@ -1232,54 +826,16 @@ public class AndroidBuilder {
         // need to run aapt to get apk information
         BuildToolInfo buildToolInfo = mTargetInfo.getBuildTools();
 
-        // launch aapt: create the command line
-        ArrayList<String> command = Lists.newArrayList();
-
         String aapt = buildToolInfo.getPath(BuildToolInfo.PathId.AAPT);
-        if (aapt == null || !new File(aapt).isFile()) {
-            throw new IllegalStateException("aapt is missing");
+        if (aapt == null) {
+            throw new IllegalStateException(
+                    "Unable to get aapt location from Build Tools " + buildToolInfo.getRevision());
         }
 
-        command.add(aapt);
-        command.add("dump");
-        command.add("badging");
-        command.add(apkFile.getPath());
+        ApkInfoParser parser = new ApkInfoParser(new File(aapt), mCmdLineRunner);
+        ApkInfoParser.ApkInfo apkInfo = parser.parseApk(apkFile);
 
-        final List<String> aaptOutput = Lists.newArrayList();
-
-        mCmdLineRunner.runCmdLine(command, new CommandLineRunner.CommandLineOutput() {
-            @Override
-            public void out(@Nullable String line) {
-                if (line != null) {
-                    aaptOutput.add(line);
-                }
-            }
-            @Override
-            public void err(@Nullable String line) {
-                super.err(line);
-
-            }
-        }, null /*env vars*/);
-
-        Pattern p = Pattern.compile("^package: name='(.+)' versionCode='([0-9]*)' versionName='(.*)'$");
-
-        String pkgName = null, versionCode = null, versionName = null;
-
-        for (String line : aaptOutput) {
-            Matcher m = p.matcher(line);
-            if (m.matches()) {
-                pkgName = m.group(1);
-                versionCode = m.group(2);
-                versionName = m.group(3);
-                break;
-            }
-        }
-
-        if (pkgName == null) {
-            throw new RuntimeException("Failed to find apk information with aapt");
-        }
-
-        if (!pkgName.equals(mainPkgName)) {
+        if (!apkInfo.getPackageName().equals(mainPkgName)) {
             throw new RuntimeException("The main and the micro apps do not have the same package name.");
         }
 
@@ -1289,7 +845,11 @@ public class AndroidBuilder {
                 "    <versionCode>%2$s</versionCode>\n" +
                 "    <versionName>%3$s</versionName>\n" +
                 "    <rawPathResId>%4$s</rawPathResId>\n" +
-                "</wearableApp>", pkgName, versionCode, versionName, resName);
+                "</wearableApp>",
+                apkInfo.getPackageName(),
+                apkInfo.getVersionCode(),
+                apkInfo.getVersionName(),
+                resName);
 
         // xml folder
         File resXmlFile = new File(outResFolder, FD_RES_XML);
@@ -1526,7 +1086,7 @@ public class AndroidBuilder {
      * @param preDexedLibraries the list of pre-dexed libraries
      * @param outDexFolder the location of the output folder
      * @param dexOptions dex options
-     * @param additionalParameters
+     * @param additionalParameters list of additional parameters to give to dx
      * @param incremental true if it should attempt incremental dex if applicable
      *
      * @throws IOException
@@ -1537,18 +1097,29 @@ public class AndroidBuilder {
             @NonNull Iterable<File> inputs,
             @NonNull Iterable<File> preDexedLibraries,
             @NonNull File outDexFolder,
+                     boolean multidex,
+                     boolean multidexLegacy,
+            @Nullable File mainDexList,
             @NonNull DexOptions dexOptions,
             @Nullable List<String> additionalParameters,
-            boolean incremental) throws IOException, InterruptedException, LoggedErrorException {
+            @NonNull File tmpFolder,
+            boolean incremental,
+            boolean optimize) throws IOException, InterruptedException, LoggedErrorException {
         checkNotNull(inputs, "inputs cannot be null.");
         checkNotNull(preDexedLibraries, "preDexedLibraries cannot be null.");
         checkNotNull(outDexFolder, "outDexFolder cannot be null.");
         checkNotNull(dexOptions, "dexOptions cannot be null.");
+        checkNotNull(tmpFolder, "tmpFolder cannot be null");
         checkArgument(outDexFolder.isDirectory(), "outDexFolder must be a folder");
+        checkArgument(tmpFolder.isDirectory(), "tmpFolder must be a folder");
         checkState(mTargetInfo != null,
                 "Cannot call convertByteCode() before setTargetInfo() is called.");
 
         BuildToolInfo buildToolInfo = mTargetInfo.getBuildTools();
+
+        checkState(
+                !multidex || buildToolInfo.getRevision().compareTo(MIN_MULTIDEX_BUILD_TOOLS_REV) >= 0,
+                "Multi dex requires Build Tools " + MIN_MULTIDEX_BUILD_TOOLS_REV.toString() + " / Current: " + buildToolInfo.getRevision().toShortString());
 
         // launch dx: create the command line
         ArrayList<String> command = Lists.newArrayList();
@@ -1579,6 +1150,33 @@ public class AndroidBuilder {
             command.add("--no-strict");
         }
 
+        if (!optimize) {
+            command.add("--no-optimize");
+        }
+
+        if (multidex) {
+            command.add("--multi-dex");
+
+            if (mainDexList != null ) {
+                command.add("--main-dex-list");
+                command.add(mainDexList.getAbsolutePath());
+            }
+
+            if (multidexLegacy) {
+                // This sets the method ref count threshold at which dex overflow
+                // occurs.  On the one hand, we want this number to be as large as
+                // possible, to provide maximum room for code which must reside in
+                // the primary dex.  On the other hand, making this number too big
+                // results in LinearAlloc capacity being exceeded on Gingerbread
+                // devices.  (Experience has shown that a value of 65100 yields
+                // LinearAlloc failures on a large percentage of GB devices.)
+                // Basically, making this number smaller can break builds, while
+                // making it bigger can break devices.  THINK VERY HARD BEFORE
+                // CHANGING THIS VALUE!
+                command.add("--set-max-idx-number=60000");
+            }
+        }
+
         /**
          * This seems to trigger some error in dx, so disable for now.
         if (dexOptions.getThreadCount() > 1) {
@@ -1595,39 +1193,40 @@ public class AndroidBuilder {
         command.add("--output");
         command.add(outDexFolder.getAbsolutePath());
 
-        // clean up input list
-        List<String> inputList = Lists.newArrayList();
-        for (File f : inputs) {
-            if (f != null && f.exists()) {
-                inputList.add(f.getAbsolutePath());
-            }
-        }
-
-        if (!inputList.isEmpty()) {
-            mLogger.verbose("Dex inputs: " + inputList);
-            command.addAll(inputList);
-        }
-
-        // clean up and add library inputs.
-        List<String> libraryList = Lists.newArrayList();
-        for (File f : preDexedLibraries) {
-            if (f != null && f.exists()) {
-                libraryList.add(f.getAbsolutePath());
-            }
-        }
-
-        if (!libraryList.isEmpty()) {
-            mLogger.verbose("Dex pre-dexed inputs: " + libraryList);
-            command.addAll(libraryList);
-        }
+        Iterable<File> allInputs = Iterables.concat(preDexedLibraries, inputs);
+        command.addAll(getFilesToAdd(allInputs, buildToolInfo, tmpFolder));
 
         mCmdLineRunner.runCmdLine(command, null);
+    }
+
+    private List<String> getFilesToAdd(Iterable<File> includeFiles,
+            BuildToolInfo buildToolInfo, File tmpFolder) throws IOException {
+        // clean up and add library inputs.
+        List<String> filePathList = Lists.newArrayList();
+        for (File f : includeFiles) {
+            if (f != null && f.exists()) {
+                filePathList.add(f.getAbsolutePath());
+            }
+        }
+        if (filePathList.isEmpty()) {
+            throw new IOException("No files to pass to dex.");
+        }
+
+        if (buildToolInfo.getRevision().compareTo(MIN_BUILD_TOOLS_REVISION_FOR_DEX_INPUT_LIST) >= 0) {
+            File inputListFile = new File(tmpFolder, "libraryList.txt");
+            // Write each library line by line to file
+            Files.asCharSink(inputListFile, Charsets.UTF_8).writeLines(filePathList);
+            return Lists.newArrayList("--input-list=" + inputListFile.getAbsolutePath());
+        } else {
+            return filePathList;
+        }
     }
 
     /**
      * Converts the bytecode to Dalvik format
      * @param inputFile the input file
-     * @param outFile the location of the output classes.dex file
+     * @param outFile the output file or folder if multi-dex is enabled.
+     * @param multiDex whether multidex is enabled.
      * @param dexOptions dex options
      *
      * @throws IOException
@@ -1637,6 +1236,7 @@ public class AndroidBuilder {
     public void preDexLibrary(
             @NonNull File inputFile,
             @NonNull File outFile,
+                     boolean multiDex,
             @NonNull DexOptions dexOptions)
             throws IOException, InterruptedException, LoggedErrorException {
         checkState(mTargetInfo != null,
@@ -1644,13 +1244,30 @@ public class AndroidBuilder {
 
         BuildToolInfo buildToolInfo = mTargetInfo.getBuildTools();
 
-        PreDexCache.getCache().preDexLibrary(inputFile, outFile, dexOptions, buildToolInfo,
-                mVerboseExec, mCmdLineRunner);
+        PreDexCache.getCache().preDexLibrary(inputFile, outFile, multiDex, dexOptions,
+                buildToolInfo, mVerboseExec, mCmdLineRunner);
     }
 
-    public static void preDexLibrary(
+    /**
+     * Converts the bytecode to Dalvik format
+     *
+     * @param inputFile the input file
+     * @param outFile the output file or folder if multi-dex is enabled.
+     * @param multiDex whether multidex is enabled.
+     * @param dexOptions the dex options
+     * @param buildToolInfo the build tools info
+     * @param verbose verbose flag
+     * @param commandLineRunner the command line runner
+     * @return the list of generated files.
+     * @throws IOException
+     * @throws InterruptedException
+     * @throws LoggedErrorException
+     */
+    @NonNull
+    public static List<File> preDexLibrary(
             @NonNull File inputFile,
             @NonNull File outFile,
+            boolean multiDex,
             @NonNull DexOptions dexOptions,
             @NonNull BuildToolInfo buildToolInfo,
                      boolean verbose,
@@ -1684,12 +1301,92 @@ public class AndroidBuilder {
             command.add("--force-jumbo");
         }
 
+        if (multiDex) {
+            command.add("--multi-dex");
+        }
+
         command.add("--output");
         command.add(outFile.getAbsolutePath());
 
         command.add(inputFile.getAbsolutePath());
 
         commandLineRunner.runCmdLine(command, null);
+
+        if (multiDex) {
+            File[] files = outFile.listFiles(new FilenameFilter() {
+                @Override
+                public boolean accept(File file, String name) {
+                    return name.endsWith(DOT_DEX);
+                }
+            });
+
+            if (files == null || files.length == 0) {
+                throw new RuntimeException("No dex files created at " + outFile.getAbsolutePath());
+            }
+
+            return Lists.newArrayList(files);
+        } else {
+            return Collections.singletonList(outFile);
+        }
+    }
+
+    /**
+     * Converts the bytecode of a library to the jack format
+     * @param inputFile the input file
+     * @param outFile the location of the output classes.dex file
+     * @param dexOptions dex options
+     *
+     * @throws IOException
+     * @throws InterruptedException
+     * @throws LoggedErrorException
+     */
+    public void convertLibraryToJack(
+            @NonNull File inputFile,
+            @NonNull File outFile,
+            @NonNull DexOptions dexOptions)
+            throws IOException, InterruptedException, LoggedErrorException {
+        checkState(mTargetInfo != null,
+                "Cannot call preJackLibrary() before setTargetInfo() is called.");
+
+        BuildToolInfo buildToolInfo = mTargetInfo.getBuildTools();
+
+        JackConversionCache.getCache().convertLibrary(inputFile, outFile, dexOptions, buildToolInfo,
+                mVerboseExec, mCmdLineRunner);
+    }
+
+    public static List<File> convertLibraryToJack(
+            @NonNull File inputFile,
+            @NonNull File outFile,
+            @NonNull DexOptions dexOptions,
+            @NonNull BuildToolInfo buildToolInfo,
+            boolean verbose,
+            @NonNull CommandLineRunner commandLineRunner)
+            throws IOException, InterruptedException, LoggedErrorException {
+        checkNotNull(inputFile, "inputFile cannot be null.");
+        checkNotNull(outFile, "outFile cannot be null.");
+        checkNotNull(dexOptions, "dexOptions cannot be null.");
+
+        // launch dx: create the command line
+        ArrayList<String> command = Lists.newArrayList();
+
+        String jill = buildToolInfo.getPath(BuildToolInfo.PathId.JILL);
+        if (jill == null || !new File(jill).isFile()) {
+            throw new IllegalStateException("jill.jar is missing");
+        }
+
+        command.add("java");
+        if (dexOptions.getJavaMaxHeapSize() != null) {
+            command.add("-JXmx" + dexOptions.getJavaMaxHeapSize());
+        }
+        command.add("-jar");
+        command.add(jill);
+        command.add(inputFile.getAbsolutePath());
+        command.add("--output");
+        command.add(outFile.getAbsolutePath());
+
+        commandLineRunner.runCmdLine(command, null);
+
+        return Collections.singletonList(outFile);
     }
 
     /**
@@ -1697,6 +1394,7 @@ public class AndroidBuilder {
      *
      * @param androidResPkgLocation the location of the packaged resource file
      * @param dexFolder the folder with the dex file.
+     * @param dexedLibraries optional collection of additional dex files to put in the apk.
      * @param packagedJars the jars that are packaged (libraries + jar dependencies)
      * @param javaResourcesLocation the processed Java resource folder
      * @param jniLibsFolders the folders containing jni shared libraries
@@ -1715,7 +1413,8 @@ public class AndroidBuilder {
      */
     public void packageApk(
             @NonNull String androidResPkgLocation,
-            @NonNull File dexFolder,
+            @Nullable File dexFolder,
+            @NonNull Collection<File> dexedLibraries,
             @NonNull Collection<File> packagedJars,
             @Nullable String javaResourcesLocation,
             @Nullable Collection<File> jniLibsFolders,
@@ -1727,12 +1426,11 @@ public class AndroidBuilder {
             throws DuplicateFileException, FileNotFoundException,
             KeytoolException, PackagerException, SigningException {
         checkNotNull(androidResPkgLocation, "androidResPkgLocation cannot be null.");
-        checkNotNull(dexFolder, "dexFolder cannot be null.");
-        checkArgument(dexFolder.isDirectory(), "dexFolder is not a directory");
         checkNotNull(outApkLocation, "outApkLocation cannot be null.");
 
         CertificateInfo certificateInfo = null;
         if (signingConfig != null && signingConfig.isSigningReady()) {
+            //noinspection ConstantConditions
             certificateInfo = KeystoreHelper.getCertificateInfo(signingConfig.getStoreType(),
                     signingConfig.getStoreFile(), signingConfig.getStorePassword(),
                     signingConfig.getKeyPassword(), signingConfig.getKeyAlias());
@@ -1743,8 +1441,16 @@ public class AndroidBuilder {
 
         try {
             Packager packager = new Packager(
-                    outApkLocation, androidResPkgLocation, dexFolder,
+                    outApkLocation, androidResPkgLocation,
                     certificateInfo, mCreatedBy, packagingOptions, mLogger);
+
+            // add dex folder to the apk root.
+            if (dexFolder != null) {
+                if (!dexFolder.isDirectory()) {
+                    throw new IllegalArgumentException("dexFolder must be a directory");
+                }
+                packager.addDexFiles(dexFolder, dexedLibraries);
+            }
 
             packager.setJniDebugMode(jniDebugBuild);
 

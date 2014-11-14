@@ -113,7 +113,7 @@ public abstract class LibraryBundle implements LibraryDependency {
         List<File> jars = getLocalJars();
         List<JarDependency> localDependencies = Lists.newArrayListWithCapacity(jars.size());
         for (File jar : jars) {
-            localDependencies.add(new JarDependency(jar, true, true));
+            localDependencies.add(new JarDependency(jar, true, true, null));
         }
 
         return localDependencies;

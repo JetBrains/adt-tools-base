@@ -16,6 +16,9 @@
 
 package com.android.build.gradle.internal;
 
+import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
+import static java.io.File.separator;
+
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -88,6 +91,18 @@ public class LintGradleClient extends LintCliClient {
             return sdkHome;
         }
         return super.getSdkHome();
+    }
+
+    @Override
+    @Nullable
+    public File getCacheDir(boolean create) {
+        File dir = new File(mPlugin.getProject().getRootProject().getBuildDir(),
+                FD_INTERMEDIATES + separator + "lint-cache"); //$NON-NLS-1$
+        if (dir.exists() || create && dir.mkdirs()) {
+            return dir;
+        }
+
+        return super.getCacheDir(create);
     }
 
     @Override
@@ -178,5 +193,11 @@ public class LintGradleClient extends LintCliClient {
 
         Collections.sort(merged);
         return merged;
+    }
+
+    @Override
+    protected void addProgressPrinter() {
+        // No progress printing from the Gradle lint task; gradle tasks
+        // do not really do that, even for long-running jobs.
     }
 }

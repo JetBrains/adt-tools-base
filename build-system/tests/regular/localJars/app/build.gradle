@@ -1,0 +1,15 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 21
+    buildToolsVersion = rootProject.ext.buildToolsVersion
+
+    packagingOptions {
+        exclude 'META-INF/exclude.txt'
+        exclude 'META-INF/LICENSE'
+    }
+}
+
+dependencies {
+    compile project(':library')
+}

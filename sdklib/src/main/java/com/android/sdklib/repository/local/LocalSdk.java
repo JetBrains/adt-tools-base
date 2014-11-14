@@ -292,10 +292,10 @@ public class LocalSdk {
             Collection<LocalDirInfo> dirInfos;
             synchronized (mLocalPackages) {
                 dirInfos = mVisitedDirs.get(filter);
-            }
-            for(LocalDirInfo dirInfo : dirInfos) {
-                if (dirInfo.hasChanged()) {
-                    return true;
+                for(LocalDirInfo dirInfo : dirInfos) {
+                    if (dirInfo.hasChanged()) {
+                        return true;
+                    }
                 }
             }
         }
@@ -476,7 +476,7 @@ public class LocalSdk {
 
             File uniqueDir = new File(mSdkRoot, filter.getFolderName());
 
-            if (!mVisitedDirs.containsEntry(filter, uniqueDir)) {
+            if (!mVisitedDirs.containsEntry(filter, new LocalDirInfo.MapComparator(uniqueDir))) {
                 switch(filter) {
                 case PKG_TOOLS:
                     info = scanTools(uniqueDir);
@@ -563,7 +563,7 @@ public class LocalSdk {
 
                     File subDir = new File(mSdkRoot, filter.getFolderName());
 
-                    if (!mVisitedDirs.containsEntry(filter, subDir)) {
+                    if (!mVisitedDirs.containsEntry(filter, new LocalDirInfo.MapComparator(subDir))) {
                         switch(filter) {
                         case PKG_BUILD_TOOLS:
                             scanBuildTools(subDir, existing);
@@ -860,7 +860,7 @@ public class LocalSdk {
             return false;
         }
         synchronized (mLocalPackages) {
-            if (mVisitedDirs.containsEntry(pkgType, directory)) {
+            if (mVisitedDirs.containsEntry(pkgType, new LocalDirInfo.MapComparator(directory))) {
                 return false;
             }
             mVisitedDirs.put(pkgType, new LocalDirInfo(mFileOp, directory));
@@ -979,19 +979,21 @@ public class LocalSdk {
             Collection<LocalPkgInfo> outCollection,
             boolean scanAddons) {
         List<File> propFiles = Lists.newArrayList();
+        PkgType type = scanAddons ? PkgType.PKG_ADDON_SYS_IMAGE : PkgType.PKG_SYS_IMAGE;
 
-        // Create a list of folders that contains a source.properties file matching these pattenrs:
+        // Create a list of folders that contains a source.properties file matching these patterns:
         // sys-img/target/tag/abi
         // sys-img/target/abis
         // sys-img/add-on-target/abi
+        // sys-img/target/add-on/abi
         for (File platformDir : mFileOp.listFiles(collectionDir)) {
-            if (!shouldVisitDir(PkgType.PKG_SYS_IMAGE, platformDir)) {
+            if (!shouldVisitDir(type, platformDir)) {
                 continue;
             }
 
             for (File dir1 : mFileOp.listFiles(platformDir)) {
                 // dir1 might be either a tag or an abi folder.
-                if (!shouldVisitDir(PkgType.PKG_SYS_IMAGE, dir1)) {
+                if (!shouldVisitDir(type, dir1)) {
                     continue;
                 }
 
@@ -1005,7 +1007,7 @@ public class LocalSdk {
                     File[] dir1Files = mFileOp.listFiles(dir1);
                     for (File dir2 : dir1Files) {
                         // dir2 should be an abi folder in a tag folder.
-                        if (!shouldVisitDir(PkgType.PKG_SYS_IMAGE, dir2)) {
+                        if (!shouldVisitDir(type, dir2)) {
                             continue;
                         }
 

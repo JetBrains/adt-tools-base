@@ -24,9 +24,8 @@ import com.android.build.gradle.api.LibraryVariantOutput;
 import com.android.build.gradle.api.TestVariant;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.LibraryVariantData;
-import org.gradle.api.tasks.bundling.Zip;
 
-import java.io.File;
+import org.gradle.api.tasks.bundling.Zip;
 
 /**
  * implementation of the {@link LibraryVariant} interface around a
@@ -44,8 +43,9 @@ public class LibraryVariantImpl extends BaseVariantImpl implements LibraryVarian
 
     public LibraryVariantImpl(
             @NonNull LibraryVariantData variantData,
-            @NonNull BasePlugin plugin) {
-        super(plugin);
+            @NonNull BasePlugin plugin,
+            @NonNull ReadOnlyObjectProvider readOnlyObjectProvider) {
+        super(plugin, readOnlyObjectProvider);
         this.variantData = variantData;
     }
 

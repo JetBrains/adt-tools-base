@@ -40,6 +40,9 @@ public class PackageApplication extends IncrementalTask implements OutputFileTas
     @InputDirectory
     File dexFolder
 
+    @InputFiles
+    Collection<File> dexedLibraries
+
     @InputDirectory @Optional
     File javaResourceDir
 
@@ -81,6 +84,7 @@ public class PackageApplication extends IncrementalTask implements OutputFileTas
             getBuilder().packageApk(
                     getResourceFile().absolutePath,
                     getDexFolder(),
+                    getDexedLibraries(),
                     getPackagedJars(),
                     getJavaResourceDir()?.absolutePath,
                     getJniFolders(),

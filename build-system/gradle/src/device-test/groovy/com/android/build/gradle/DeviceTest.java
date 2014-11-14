@@ -16,12 +16,11 @@
 
 package com.android.build.gradle;
 
-import com.google.common.collect.ImmutableList;
+import com.android.annotations.NonNull;
+import com.google.common.collect.Lists;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
-
-import java.util.List;
 
 /**
  * DeviceConnector tests.
@@ -38,12 +37,13 @@ import java.util.List;
  */
 public class DeviceTest extends BuildTest {
 
+    private String testFolder;
     private String projectName;
     private String gradleVersion;
     private TestType testType;
 
 
-    private static enum TestType { CHECK, CHECK_AND_REPORT, INSTALL }
+    private static enum TestType { CHECK, CHECK_AND_REPORT, INSTALL, JACK }
 
     private static final String[] sBuiltProjects = new String[] {
             "api",
@@ -57,33 +57,25 @@ public class DeviceTest extends BuildTest {
             "flavorlib",
             "flavoredlib",
             "flavors",
-            "libProguardJarDep",
-            "libProguardLibDep",
+            "libMinifyJarDep",
+            "libMinifyLibDep",
             "libTestDep",
             "libsTest",
             "migrated",
+            "multiDex",
+            "multiDexWithLib",
             "multires",
             "ndkSanAngeles",
-            "ndkStandaloneSo",
             "ndkJniLib",
-            "ndkJniLib2",
-            "ndkPrebuilts",
             "ndkLibPrebuilts",
-            "ndkStl",
             "overlay1",
             "overlay2",
             "packagingOptions",
             "pkgOverride",
-            "proguard",
-            "proguardLib",
+            "minify",
+            "minifyLib",
             "sameNamedLibs"
     };
-
-    private static final List<String> ndkPluginTests = ImmutableList.of(
-            "ndkJniLib2",
-            "ndkStandaloneSo",
-            "ndkStl"
-    );
 
     private static final String[] sMergeReportProjects = new String[] {
             "multiproject",
@@ -91,6 +83,12 @@ public class DeviceTest extends BuildTest {
 
     private static final String[] sInstallProjects = new String[] {
             "basic"
+    };
+
+    private static final String[] sJackProjects = new String[] {
+            "basic",
+            "minify",
+            "multiDex",
     };
 
     public static Test suite() {
@@ -103,18 +101,11 @@ public class DeviceTest extends BuildTest {
             }
             // first the project we build on all available versions of Gradle
             for (String projectName : sBuiltProjects) {
-                // Disable NDK plugin tests on non-Linux platforms due to Gradle incorrectly
-                // setting arguments based on current OS instead of target OS.
-                if (!System.getProperty("os.name").equals("Linux") &&
-                        ndkPluginTests.contains(projectName)) {
-                    // TODO: Remove this when Gradle is fix.
-                    continue;
-                }
-
                 String testName = "check_" + projectName + "_" + gradleVersion;
 
                 DeviceTest test = (DeviceTest) TestSuite.createTest(DeviceTest.class, testName);
-                test.setProjectInfo(projectName, gradleVersion, TestType.CHECK);
+                test.setProjectInfo(FOLDER_TEST_REGULAR, projectName, gradleVersion,
+                        TestType.CHECK);
                 suite.addTest(test);
             }
 
@@ -122,7 +113,8 @@ public class DeviceTest extends BuildTest {
                 String testName = "report_" + projectName + "_" + gradleVersion;
 
                 DeviceTest test = (DeviceTest) TestSuite.createTest(DeviceTest.class, testName);
-                test.setProjectInfo(projectName, gradleVersion, TestType.CHECK_AND_REPORT);
+                test.setProjectInfo(FOLDER_TEST_REGULAR, projectName, gradleVersion,
+                        TestType.CHECK_AND_REPORT);
                 suite.addTest(test);
             }
 
@@ -130,15 +122,32 @@ public class DeviceTest extends BuildTest {
                 String testName = "install_" + projectName + "_" + gradleVersion;
 
                 DeviceTest test = (DeviceTest) TestSuite.createTest(DeviceTest.class, testName);
-                test.setProjectInfo(projectName, gradleVersion, TestType.INSTALL);
+                test.setProjectInfo(FOLDER_TEST_REGULAR, projectName, gradleVersion,
+                        TestType.INSTALL);
                 suite.addTest(test);
+            }
+
+            if (System.getenv("TEST_JACK") != null) {
+                for (String projectName : sJackProjects) {
+                    String testName = "jack_" + projectName + "_" + gradleVersion;
+
+                    DeviceTest test = (DeviceTest) TestSuite.createTest(DeviceTest.class, testName);
+                    test.setProjectInfo(FOLDER_TEST_REGULAR, projectName, gradleVersion,
+                            TestType.JACK);
+                    suite.addTest(test);
+                }
             }
         }
 
         return suite;
     }
 
-    private void setProjectInfo(String projectName, String gradleVersion, TestType testType) {
+    private void setProjectInfo(
+            @NonNull String testFolder,
+            @NonNull String projectName,
+            @NonNull String gradleVersion,
+            @NonNull TestType testType) {
+        this.testFolder = testFolder;
         this.projectName = projectName;
         this.gradleVersion = gradleVersion;
         this.testType = testType;
@@ -150,16 +159,25 @@ public class DeviceTest extends BuildTest {
         try {
             switch (testType) {
                 case CHECK:
-                    runTasksOn(projectName, gradleVersion,
+                    runTasksOn(testFolder, projectName, gradleVersion,
+                            "androidDependencies", "signingReport");
+                    runTasksOn(testFolder, projectName, gradleVersion,
                             "clean", "connectedCheck");
                     break;
                 case CHECK_AND_REPORT:
-                    runTasksOn(projectName, gradleVersion,
+                    runTasksOn(testFolder, projectName, gradleVersion,
                             "clean", "connectedCheck", "mergeAndroidReports");
                     break;
                 case INSTALL:
-                    runTasksOn(projectName, gradleVersion,
+                    runTasksOn(testFolder, projectName, gradleVersion,
                             "clean", "installDebug", "uninstallAll");
+                    break;
+                case JACK:
+                    runTasksOn(testFolder, projectName, gradleVersion,
+                            Lists.newArrayList(
+                                    "-PCUSTOM_JACK=1",
+                                    "-PCUSTOM_BUILDTOOLS=21.1.0"),
+                            "clean", "connectedCheck");
                     break;
             }
         } finally {

@@ -227,7 +227,7 @@ public class TextReporter extends Reporter {
             if (mClose) {
                 mWriter.close();
 
-                if (mOutput != null) {
+                if (!mClient.getFlags().isQuiet() && mOutput != null) {
                     String path = mOutput.getAbsolutePath();
                     System.out.println(String.format("Wrote text report to %1$s", path));
                 }

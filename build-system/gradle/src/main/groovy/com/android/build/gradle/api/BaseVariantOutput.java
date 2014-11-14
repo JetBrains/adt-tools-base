@@ -18,6 +18,8 @@ package com.android.build.gradle.api;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.OutputFile;
+import com.android.build.VariantOutput;
 import com.android.build.gradle.tasks.ManifestProcessorTask;
 import com.android.build.gradle.tasks.ProcessAndroidResources;
 import com.google.common.collect.ImmutableList;
@@ -30,7 +32,7 @@ import java.io.File;
  * A Build variant output and all its public data. This is the base class for items common to apps,
  * test apps, and libraries
  */
-public interface BaseVariantOutput {
+public interface BaseVariantOutput extends VariantOutput {
 
     /**
      * Returns the output file for this build variants. Depending on the configuration, this could
@@ -42,9 +44,6 @@ public interface BaseVariantOutput {
     File getOutputFile();
 
     void setOutputFile(@NonNull File outputFile);
-
-    @NonNull
-    ImmutableList<ApkOutput> getOutputFiles();
 
     /**
      * Returns the Android Resources processing task.
@@ -63,18 +62,6 @@ public interface BaseVariantOutput {
      */
     @Nullable
     Task getAssemble();
-
-    /**
-     * Returns the density filter for this output. Can be null.
-     */
-    @Nullable
-    String getDensityFilter();
-
-    /**
-     * Returns the abi filter for this output. Can be null.
-     */
-    @Nullable
-    String getAbiFilter();
 
     /**
      * Returns the name of the variant. Guaranteed to be unique.

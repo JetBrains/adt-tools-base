@@ -21,6 +21,7 @@ import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
+
 /**
  * Task to compile Renderscript files. Supports incremental update.
  */
@@ -42,6 +43,10 @@ public class RenderscriptCompile extends NdkTask {
 
 
     // ----- PRIVATE TASK API -----
+    @Input
+    String getBuildToolsVersion() {
+        plugin.extension.buildToolsRevision
+    }
 
     @InputFiles
     List<File> sourceDirs

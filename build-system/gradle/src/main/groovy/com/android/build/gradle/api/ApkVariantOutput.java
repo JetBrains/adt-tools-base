@@ -18,6 +18,7 @@ package com.android.build.gradle.api;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.OutputFile;
 import com.android.build.gradle.tasks.PackageApplication;
 import com.android.build.gradle.tasks.ZipAlign;
 
@@ -64,12 +65,30 @@ public interface ApkVariantOutput extends BaseVariantOutput {
     int getVersionCodeOverride();
 
     /**
-     * Returns the version code for this output.
+     * Sets the version name override. This version name will only affect this output.
      *
-     * This is convenient method that returns the final version code whether it's coming
-     * from the override set in the output or from the variant's merged flavor.
+     * If the value is null, then the output will use the version name defined in the main
+     * merged flavors for this variant.
      *
-     * @return the version code.
+     * @param versionNameOverride the version name override.
      */
-    int getVersionCode();
+    void setVersionNameOverride(String versionNameOverride);
+
+    /**
+     * Returns the version name override.
+     *
+     * If the value is null, then the output will use the version name defined in the main
+     * merged flavors for this variant.
+     *
+     * @return the version name override.
+     */
+    String getVersionNameOverride();
+
+    /**
+     * Returns a filter value for a filter type if present on this variant or null otherwise.
+     *
+     * @param filterType the type of the filter requested.
+     * @return the filter value.
+     */
+    String getFilter(OutputFile.FilterType filterType);
 }

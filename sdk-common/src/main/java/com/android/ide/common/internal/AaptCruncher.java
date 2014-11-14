@@ -57,4 +57,9 @@ public class AaptCruncher implements PngCruncher {
 
         mCommandLineRunner.runCmdLine(command, null);
     }
+
+    @Override
+    public void end() throws InterruptedException {
+        // nothing to do, it's all synchronous.
+    }
 }

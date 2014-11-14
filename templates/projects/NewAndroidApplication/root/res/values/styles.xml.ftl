@@ -5,7 +5,7 @@
         by AppBaseTheme from res/values-vXX/styles.xml on newer devices.
     -->
     <style name="AppBaseTheme" parent="<#if
-        appCompat?has_content>Theme.AppCompat<#else>android:Theme</#if><#if
+        appCompat>Theme.AppCompat<#else>android:Theme</#if><#if
         baseTheme?contains("light")>.Light</#if>">
         <!--
             Theme customizations available in newer API levels can go in

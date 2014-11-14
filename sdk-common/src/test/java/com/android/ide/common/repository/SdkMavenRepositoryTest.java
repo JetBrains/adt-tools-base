@@ -62,14 +62,17 @@ public class SdkMavenRepositoryTest extends TestCase {
         assertEquals(GradleCoordinate.parseCoordinateString(
                 "com.android.support:support-v4:20.0.0"), gc2);
 
+        /* These tests only applied when 21 was marked as a preview release; it no longer
+           is. Re-enable when we get another preview platform.
         GradleCoordinate gc3 = SdkMavenRepository.ANDROID.getHighestInstalledVersion(
-                sdkHome, "com.android.support", "support-v4", "21", false);
+                sdkHome, "com.android.support", "support-v4", "22", false);
         assertNull(gc3);
 
         GradleCoordinate gc4 = SdkMavenRepository.ANDROID.getHighestInstalledVersion(
                 sdkHome, "com.android.support", "support-v4", "21", true);
         assertEquals(GradleCoordinate.parseCoordinateString(
                 "com.android.support:support-v4:21.0.0-rc1"), gc4);
+        */
     }
 
     public void testIsInstalled() {

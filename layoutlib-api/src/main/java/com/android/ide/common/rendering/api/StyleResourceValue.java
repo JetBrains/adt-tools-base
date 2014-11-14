@@ -16,12 +16,13 @@
 
 package com.android.ide.common.rendering.api;
 
+import com.android.ide.common.rendering.api.ItemResourceValue.Attribute;
 import com.android.layoutlib.api.IResourceValue;
 import com.android.layoutlib.api.IStyleResourceValue;
 import com.android.resources.ResourceType;
-import com.android.util.Pair;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,7 +34,8 @@ import java.util.Map;
 public final class StyleResourceValue extends ResourceValue implements IStyleResourceValue {
 
     private String mParentStyle = null;
-    private Map<Pair<String, Boolean>, ResourceValue> mItems = new HashMap<Pair<String, Boolean>, ResourceValue>();
+    private final Map<Attribute, ItemResourceValue> mItems
+            = new HashMap<Attribute, ItemResourceValue>();
 
     public StyleResourceValue(ResourceType type, String name, boolean isFramework) {
         super(type, name, isFramework);
@@ -57,34 +59,55 @@ public final class StyleResourceValue extends ResourceValue implements IStyleRes
      * Finds a value in the list by name
      * @param name the name of the resource
      *
-     * @deprecated use {@link #findValue(String, boolean)}
+     * @deprecated use {@link #getItem(String, boolean)}
      */
     @Deprecated
     public ResourceValue findValue(String name) {
-        return mItems.get(Pair.of(name, isFramework()));
+        return getItem(name, isFramework());
     }
 
     /**
      * Finds a value in the list by name
      * @param name the name of the resource
+     *
+     * @deprecated use {@link #getItem(String, boolean)}
      */
+    @Deprecated
     public ResourceValue findValue(String name, boolean isFrameworkAttr) {
-        return mItems.get(Pair.of(name, isFrameworkAttr));
+        return getItem(name, isFrameworkAttr);
     }
 
+    /**
+     * Finds a value in the list of items by name.
+     * @param name the name of the resource
+     * @param isFrameworkAttr is it in the framework namespace
+     */
+    public ItemResourceValue getItem(String name, boolean isFrameworkAttr) {
+        return mItems.get(new Attribute(name, isFrameworkAttr));
+    }
+
+    /**
+     * @deprecated use {@link #addItem(ItemResourceValue)}
+     */
+    @Deprecated
     public void addValue(ResourceValue value, boolean isFrameworkAttr) {
-        mItems.put(Pair.of(value.getName(), isFrameworkAttr), value);
+        addItem(ItemResourceValue.fromResourceValue(value, isFrameworkAttr));
+    }
+
+    public void addItem(ItemResourceValue value) {
+        mItems.put(value.getAttribute(), value);
     }
 
     @Override
     public void replaceWith(ResourceValue value) {
-        assert value instanceof StyleResourceValue;
+        assert value instanceof StyleResourceValue :
+                value.getClass() + " is not StyleResourceValue";
         super.replaceWith(value);
 
         //noinspection ConstantConditions
         if (value instanceof StyleResourceValue) {
             mItems.clear();
-            mItems.putAll(((StyleResourceValue)value).mItems);
+            mItems.putAll(((StyleResourceValue) value).mItems);
         }
     }
 
@@ -95,15 +118,27 @@ public final class StyleResourceValue extends ResourceValue implements IStyleRes
     @Override
     @Deprecated
     public IResourceValue findItem(String name) {
-        return mItems.get(Pair.of(name, true));
+        return mItems.get(new Attribute(name, true));
     }
 
     /** Returns the names available in this style, intended for diagnostic purposes */
     public List<String> getNames() {
         List<String> names = new ArrayList<String>();
-        for (Pair<String, Boolean> item : mItems.keySet()) {
-            names.add(item.getFirst());
+        for (Attribute item : mItems.keySet()) {
+            String name = item.mName;
+            if (item.mIsFrameworkAttr) {
+                name = "android:" + name;
+            }
+            names.add(name);
         }
         return names;
+    }
+
+    /**
+     * Returns a list of all values defined in this Style. This doesn't return the values
+     * inherited from the parent.
+     */
+    public Collection<ItemResourceValue> getValues() {
+        return mItems.values();
     }
 }

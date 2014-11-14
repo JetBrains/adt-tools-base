@@ -109,4 +109,9 @@ public enum NodeOperationType implements ConvertibleName {
      * Local xml name of node operation types.
      */
     static final String NODE_LOCAL_NAME = "node"; //$NON-NLS-1$
+
+    /**
+     * local xml name for overriding uses-sdk operation types.
+     */
+    static final String OVERRIDE_USES_SDK = "overrideLibrary";
 }

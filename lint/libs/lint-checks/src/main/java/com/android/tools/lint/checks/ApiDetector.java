@@ -25,13 +25,17 @@ import static com.android.SdkConstants.ATTR_LABEL_FOR;
 import static com.android.SdkConstants.ATTR_LAYOUT_HEIGHT;
 import static com.android.SdkConstants.ATTR_LAYOUT_WIDTH;
 import static com.android.SdkConstants.ATTR_NAME;
+import static com.android.SdkConstants.ATTR_PADDING_START;
 import static com.android.SdkConstants.ATTR_PARENT;
 import static com.android.SdkConstants.ATTR_TARGET_API;
 import static com.android.SdkConstants.ATTR_TEXT_IS_SELECTABLE;
+import static com.android.SdkConstants.BUTTON;
+import static com.android.SdkConstants.CHECK_BOX;
 import static com.android.SdkConstants.CLASS_CONSTRUCTOR;
 import static com.android.SdkConstants.CONSTRUCTOR_NAME;
 import static com.android.SdkConstants.PREFIX_ANDROID;
 import static com.android.SdkConstants.R_CLASS;
+import static com.android.SdkConstants.SWITCH;
 import static com.android.SdkConstants.TAG;
 import static com.android.SdkConstants.TAG_ITEM;
 import static com.android.SdkConstants.TAG_STYLE;
@@ -45,6 +49,7 @@ import static com.android.tools.lint.detector.api.Location.SearchDirection.BACKW
 import static com.android.tools.lint.detector.api.Location.SearchDirection.FORWARD;
 import static com.android.tools.lint.detector.api.Location.SearchDirection.NEAREST;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.resources.ResourceFolderType;
@@ -69,6 +74,7 @@ import com.android.tools.lint.detector.api.ResourceXmlDetector;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.Speed;
+import com.android.tools.lint.detector.api.TextFormat;
 import com.android.tools.lint.detector.api.XmlContext;
 import com.android.utils.Pair;
 import com.google.common.collect.Lists;
@@ -101,6 +107,8 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import lombok.ast.Annotation;
 import lombok.ast.AnnotationElement;
@@ -172,7 +180,7 @@ public class ApiDetector extends ResourceXmlDetector
             "file's minimum SDK as the required API level.\n" +
             "\n" +
             "If you are deliberately setting `android:` attributes in style definitions, " +
-            "make sure you place this in a `values-v11` folder in order to avoid running " +
+            "make sure you place this in a `values-vNN` folder in order to avoid running " +
             "into runtime conflicts on certain devices where manufacturers have added " +
             "custom attributes whose ids conflict with the new ones on later platforms.\n" +
             "\n" +
@@ -277,6 +285,11 @@ public class ApiDetector extends ResourceXmlDetector
     private static final String ORDINAL_METHOD = "ordinal"; //$NON-NLS-1$
     public static final String ENUM_SWITCH_PREFIX = "$SwitchMap$";  //$NON-NLS-1$
 
+    private static final String TAG_RIPPLE = "ripple";
+    private static final String TAG_VECTOR = "vector";
+    private static final String TAG_ANIMATED_VECTOR = "animated-vector";
+    private static final String TAG_ANIMATED_SELECTOR = "animated-selector";
+
     protected ApiLookup mApiDatabase;
     private boolean mWarnedMissingDb;
     private int mMinApi = -1;
@@ -341,16 +354,35 @@ public class ApiDetector extends ResourceXmlDetector
                 if (attributeApiLevel > minSdk && attributeApiLevel > context.getFolderVersion()
                         && attributeApiLevel > getLocalMinSdk(attribute.getOwnerElement())
                         && !isBenignUnusedAttribute(name)
+                        && !isAlreadyWarnedDrawableFile(context, attribute, attributeApiLevel)) {
+                    if (RtlDetector.isRtlAttributeName(name)) {
                         // No need to warn for example that
-                        //  "layout_alignParentStart will only be used in API level 17 and higher"
+                        //  "layout_alignParentEnd will only be used in API level 17 and higher"
                         // since we have a dedicated RTL lint rule dealing with those attributes
-                        && !RtlDetector.isRtlAttributeName(name)) {
-                    Location location = context.getLocation(attribute);
-                    String message = String.format(
-                            "Attribute `%1$s` is only used in API level %2$d and higher "
-                                    + "(current min is %3$d)",
-                            attribute.getLocalName(), attributeApiLevel, minSdk);
-                    context.report(UNUSED, attribute, location, message);
+
+                        // However, paddingStart in particular is known to cause crashes
+                        // when used on TextViews (and subclasses of TextViews), on some
+                        // devices, because vendor specific attributes conflict with the
+                        // later-added framework resources, and these are apparently read
+                        // by the text views:
+                        if (name.equals(ATTR_PADDING_START) &&
+                                viewMayExtendTextView(attribute.getOwnerElement())) {
+                            Location location = context.getLocation(attribute);
+                            String message = String.format(
+                                    "Attribute `%1$s` referenced here can result in a crash on "
+                                            + "some specific devices older than API %2$d "
+                                            + "(current min is %3$d)",
+                                    attribute.getLocalName(), attributeApiLevel, minSdk);
+                            context.report(UNSUPPORTED, attribute, location, message);
+                        }
+                    } else {
+                        Location location = context.getLocation(attribute);
+                        String message = String.format(
+                                "Attribute `%1$s` is only used in API level %2$d and higher "
+                                        + "(current min is %3$d)",
+                                attribute.getLocalName(), attributeApiLevel, minSdk);
+                        context.report(UNUSED, attribute, location, message);
+                    }
                 }
             }
 
@@ -438,6 +470,57 @@ public class ApiDetector extends ResourceXmlDetector
     }
 
     /**
+     * Returns true if the view tag is possibly a text view. It may not be certain,
+     * but will err on the side of caution (for example, any custom view is considered
+     * to be a potential text view.)
+     */
+    private static boolean viewMayExtendTextView(@NonNull Element element) {
+        String tag = element.getTagName();
+        if (tag.equals(SdkConstants.VIEW_TAG)) {
+            tag = element.getAttribute(ATTR_CLASS);
+            if (tag == null || tag.isEmpty()) {
+                return false;
+            }
+        }
+
+        //noinspection SimplifiableIfStatement
+        if (tag.indexOf('.') != -1) {
+            // Custom views: not sure. Err on the side of caution.
+            return true;
+
+        }
+
+        return tag.contains("Text")  // TextView, EditText, etc
+                || tag.contains(BUTTON)  // Button, ToggleButton, etc
+                || tag.equals("DigitalClock")
+                || tag.equals("Chronometer")
+                || tag.equals(CHECK_BOX)
+                || tag.equals(SWITCH);
+    }
+
+    /**
+     * Returns true if this attribute is in a drawable document with one of the
+     * root tags that require API 21
+     */
+    private static boolean isAlreadyWarnedDrawableFile(@NonNull XmlContext context,
+            @NonNull Attr attribute, int attributeApiLevel) {
+        // Don't complain if it's in a drawable file where we've already
+        // flagged the root drawable type as being unsupported
+        if (context.getResourceFolderType() == ResourceFolderType.DRAWABLE
+                && attributeApiLevel == 21) {
+            String root = attribute.getOwnerDocument().getDocumentElement().getTagName();
+            if (TAG_RIPPLE.equals(root)
+                    || TAG_VECTOR.equals(root)
+                    || TAG_ANIMATED_VECTOR.equals(root)
+                    || TAG_ANIMATED_SELECTOR.equals(root)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Is the given attribute a "benign" unused attribute, one we probably don't need to
      * flag to the user as not applicable on all versions? These are typically attributes
      * which add some nice platform behavior when available, but that are not critical
@@ -464,9 +547,10 @@ public class ApiDetector extends ResourceXmlDetector
         ResourceFolderType folderType = context.getResourceFolderType();
         if (folderType != ResourceFolderType.LAYOUT) {
             if (folderType == ResourceFolderType.DRAWABLE) {
-                checkElement(context, element, "ripple", 21, UNSUPPORTED);
-                checkElement(context, element, "vector", 21, UNSUPPORTED);
-                checkElement(context, element, "animated-selector", 21, UNSUPPORTED);
+                checkElement(context, element, TAG_RIPPLE, 21, UNSUPPORTED);
+                checkElement(context, element, TAG_VECTOR, 21, UNSUPPORTED);
+                checkElement(context, element, TAG_ANIMATED_SELECTOR, 21, UNSUPPORTED);
+                checkElement(context, element, TAG_ANIMATED_VECTOR, 21, UNSUPPORTED);
             }
             if (element.getParentNode().getNodeType() != Node.ELEMENT_NODE) {
                 // Root node
@@ -1339,6 +1423,14 @@ public class ApiDetector extends ResourceXmlDetector
             return true;
         }
 
+        // Gravity#START and Gravity#END are okay; these were specifically written to
+        // be backwards compatible (by using the same lower bits for START as LEFT and
+        // for END as RIGHT)
+        if ("android/view/Gravity".equals(owner)                   //$NON-NLS-1$
+                && ("START".equals(name) || "END".equals(name))) { //$NON-NLS-1$ //$NON-NLS-2$
+            return true;
+        }
+
         if (node == null) {
             return false;
         }
@@ -1880,6 +1972,21 @@ public class ApiDetector extends ResourceXmlDetector
                         }
                     }
                 }
+            }
+        }
+
+        return -1;
+    }
+
+    public static int getRequiredVersion(@NonNull Issue issue, @NonNull String errorMessage,
+            @NonNull TextFormat format) {
+        errorMessage = format.toText(errorMessage);
+
+        if (issue == UNSUPPORTED || issue == INLINED) {
+            Pattern pattern = Pattern.compile("\\s(\\d+)\\s"); //$NON-NLS-1$
+            Matcher matcher = pattern.matcher(errorMessage);
+            if (matcher.find()) {
+                return Integer.parseInt(matcher.group(1));
             }
         }
 

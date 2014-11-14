@@ -17,6 +17,7 @@
 package com.android.builder.internal;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.builder.model.BaseConfig;
 import com.android.builder.model.ClassField;
 import com.google.common.collect.Lists;
@@ -38,6 +39,14 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
     private final List<File> mProguardFiles = Lists.newArrayList();
     private final List<File> mConsumerProguardFiles = Lists.newArrayList();
     private final Map<String, String> mManifestPlaceholders = Maps.newHashMap();
+    @Nullable
+    private Boolean mMultiDexEnabled;
+
+    @Nullable
+    private File mMultiDexKeepProguard;
+
+    @Nullable
+    private File mMultiDexKeepFile;
 
     public void addBuildConfigField(@NonNull ClassField field) {
         mBuildConfigFields.put(field.getName(), field);
@@ -107,6 +116,11 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
 
         mManifestPlaceholders.clear();
         mManifestPlaceholders.putAll(that.getManifestPlaceholders());
+
+        mMultiDexEnabled = that.getMultiDexEnabled();
+
+        mMultiDexKeepFile = that.getMultiDexKeepFile();
+        mMultiDexKeepProguard = that.getMultiDexKeepProguard();
     }
 
     private void setBuildConfigFields(@NonNull Map<String, ClassField> fields) {
@@ -120,17 +134,73 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
     }
 
     @Override
+    @Nullable
+    public Boolean getMultiDexEnabled() {
+        return mMultiDexEnabled;
+    }
+
+    public void setMultiDexEnabled(@Nullable Boolean multiDex) {
+        mMultiDexEnabled = multiDex;
+    }
+
+    @Override
+    @Nullable
+    public File getMultiDexKeepFile() {
+        return mMultiDexKeepFile;
+    }
+
+    public void setMultiDexKeepFile(@Nullable File file) {
+        mMultiDexKeepFile = file;
+    }
+
+    @Override
+    @Nullable
+    public File getMultiDexKeepProguard() {
+        return mMultiDexKeepProguard;
+    }
+
+    public void setMultiDexKeepProguard(@Nullable File file) {
+        mMultiDexKeepProguard = file;
+    }
+
+    @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof BaseConfigImpl)) {
+            return false;
+        }
 
         BaseConfigImpl that = (BaseConfigImpl) o;
 
-        if (!mBuildConfigFields.equals(that.mBuildConfigFields)) return false;
-        if (!mResValues.equals(that.mResValues)) return false;
-        if (!mProguardFiles.equals(that.mProguardFiles)) return false;
-        if (!mConsumerProguardFiles.equals(that.mConsumerProguardFiles)) return false;
-        if (!mManifestPlaceholders.equals(that.getManifestPlaceholders())) return false;
+        if (!mBuildConfigFields.equals(that.mBuildConfigFields)) {
+            return false;
+        }
+        if (!mConsumerProguardFiles.equals(that.mConsumerProguardFiles)) {
+            return false;
+        }
+        if (!mManifestPlaceholders.equals(that.mManifestPlaceholders)) {
+            return false;
+        }
+        if (mMultiDexEnabled != null ? !mMultiDexEnabled.equals(that.mMultiDexEnabled) :
+                that.mMultiDexEnabled != null) {
+            return false;
+        }
+        if (mMultiDexKeepFile != null ? !mMultiDexKeepFile.equals(that.mMultiDexKeepFile) :
+                that.mMultiDexKeepFile != null) {
+            return false;
+        }
+        if (mMultiDexKeepProguard != null ? !mMultiDexKeepProguard.equals(that.mMultiDexKeepProguard) :
+                that.mMultiDexKeepProguard != null) {
+            return false;
+        }
+        if (!mProguardFiles.equals(that.mProguardFiles)) {
+            return false;
+        }
+        if (!mResValues.equals(that.mResValues)) {
+            return false;
+        }
 
         return true;
     }
@@ -142,6 +212,23 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
         result = 31 * result + mProguardFiles.hashCode();
         result = 31 * result + mConsumerProguardFiles.hashCode();
         result = 31 * result + mManifestPlaceholders.hashCode();
+        result = 31 * result + (mMultiDexEnabled != null ? mMultiDexEnabled.hashCode() : 0);
+        result = 31 * result + (mMultiDexKeepFile != null ? mMultiDexKeepFile.hashCode() : 0);
+        result = 31 * result + (mMultiDexKeepProguard != null ? mMultiDexKeepProguard.hashCode() : 0);
         return result;
+    }
+
+    @Override
+    public String toString() {
+        return "BaseConfigImpl{" +
+                "mBuildConfigFields=" + mBuildConfigFields +
+                ", mResValues=" + mResValues +
+                ", mProguardFiles=" + mProguardFiles +
+                ", mConsumerProguardFiles=" + mConsumerProguardFiles +
+                ", mManifestPlaceholders=" + mManifestPlaceholders +
+                ", mMultiDexEnabled=" + mMultiDexEnabled +
+                ", mMultiDexKeepFile=" + mMultiDexKeepFile +
+                ", mMultiDexKeepProguard=" + mMultiDexKeepProguard +
+                '}';
     }
 }

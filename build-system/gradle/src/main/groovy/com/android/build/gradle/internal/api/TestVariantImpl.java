@@ -41,8 +41,11 @@ public class TestVariantImpl extends ApkVariantImpl implements TestVariant {
     @NonNull
     private BaseVariant testedVariant;
 
-    public TestVariantImpl(@NonNull TestVariantData variantData, @NonNull BasePlugin plugin) {
-        super(plugin);
+    public TestVariantImpl(
+            @NonNull TestVariantData variantData,
+            @NonNull BasePlugin plugin,
+            @NonNull ReadOnlyObjectProvider readOnlyObjectProvider) {
+        super(plugin, readOnlyObjectProvider);
         this.variantData = variantData;
     }
 

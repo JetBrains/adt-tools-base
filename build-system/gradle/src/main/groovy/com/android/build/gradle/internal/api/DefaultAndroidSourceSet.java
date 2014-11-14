@@ -311,7 +311,15 @@ public class DefaultAndroidSourceSet implements AndroidSourceSet, SourceProvider
 
     @Override
     @NonNull
-    public Set<File> getJniDirectories() {
+    public Set<File> getCDirectories() {
+        return getJni().getSrcDirs();
+    }
+
+    @Override
+    @NonNull
+    public Set<File> getCppDirectories() {
+        // The C and C++ directories are currently the same.  This may change in the future when
+        // we use Gradle's native source sets.
         return getJni().getSrcDirs();
     }
 

@@ -16,68 +16,112 @@
 
 package com.android.build.gradle.tasks
 
-import com.android.build.gradle.api.ApkOutput
-import com.android.build.gradle.internal.tasks.OutputFileTask
-import com.google.common.collect.ImmutableCollection
+import com.android.annotations.NonNull
+import com.android.annotations.Nullable
+import com.android.build.FilterData
+import com.android.build.FilterDataImpl
+import com.android.build.OutputFile
+import com.android.build.gradle.api.ApkOutputFile
 import com.google.common.collect.ImmutableList
-import com.google.gson.Gson
-import com.google.gson.GsonBuilder
+import com.google.common.util.concurrent.Callables
 import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.OutputDirectory
-import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
+
+import java.util.regex.Matcher
+import java.util.regex.Pattern
 
 /**
  * Task to zip align all the splits
  */
-class SplitZipAlign extends DefaultTask implements OutputFileTask{
+class SplitZipAlign extends DefaultTask {
 
-    @InputFile
-    File packagedSplitResListFile
+    @InputDirectory
+    File inputDirectory;
 
     @Input
     String outputBaseName;
 
-    @OutputDirectory
-    File outputFile;
+    @Input
+    Set<String> densityFilters;
 
-    @OutputFile
-    File alignedFileList
+    @Input
+    Set<String> abiFilters;
+
+    @OutputDirectory
+    File outputDirectory;
 
     @InputFile
     File zipAlignExe
 
+    ImmutableList<ApkOutputFile> mOutputFiles;
+
+    @NonNull
+    public synchronized  ImmutableList<ApkOutputFile> getOutputSplitFiles() {
+
+        if (mOutputFiles == null) {
+            ImmutableList.Builder<ApkOutputFile> builder = ImmutableList.builder();
+            processFilters(densityFilters, OutputFile.FilterType.DENSITY, builder);
+            processFilters(abiFilters, OutputFile.FilterType.ABI, builder);
+            mOutputFiles = builder.build();
+        }
+        return mOutputFiles;
+    }
+
+
+    private void processFilters(Set<String> filters, OutputFile.FilterType filterType,
+            ImmutableList.Builder<ApkOutputFile> builder) {
+        if (filters != null) {
+            for (String filter : filters) {
+                String fileName = "${project.archivesBaseName}-${outputBaseName}_${filter}.apk"
+                File outputFile = new File(outputDirectory, fileName);
+                if (outputFile.exists()) {
+                    List<FilterData> filtersData = ImmutableList.of(
+                            FilterData.Builder.build(filterType.name(), filter))
+                    builder.add(new ApkOutputFile(
+                            OutputFile.OutputType.SPLIT,
+                            filtersData,
+                            Callables.returning(outputFile)));
+                }
+            }
+        }
+    }
+
     @TaskAction
     void splitZipAlign() {
 
-        ImmutableList<ApkOutput.SplitApkOutput> splitVariantOutputs = ApkOutput.load(getPackagedSplitResListFile());
+        Pattern unalignedPattern = Pattern.compile(
+                "${project.archivesBaseName}-${outputBaseName}_(.*)-unaligned.apk")
+        Pattern unsignedPattern = Pattern.compile(
+                "${project.archivesBaseName}-${outputBaseName}_(.*)-unsigned.apk")
 
-        ImmutableCollection.Builder<ApkOutput> tmpOutputs =
-                ImmutableList.builder();
-        for (ApkOutput.SplitApkOutput splitVariantOutput : splitVariantOutputs) {
-            File out = new File(getOutputFile(),
-                    "${project.archivesBaseName}_${outputBaseName}_${splitVariantOutput.splitIdentifier}.apk")
-            project.exec {
-                executable = getZipAlignExe()
-                args '-f', '4'
-                args splitVariantOutput.getOutputFile()
-                args out
+        for (File file : inputDirectory.listFiles()) {
+            Matcher unaligned = unalignedPattern.matcher(file.getName())
+            if (unaligned.matches()) {
+                File out = new File(getOutputDirectory(),
+                        "${project.archivesBaseName}-${outputBaseName}_${unaligned.group(1)}.apk")
+                project.exec {
+                    executable = getZipAlignExe()
+                    args '-f', '4'
+                    args file.absolutePath
+                    args out
+                }
+            } else {
+                Matcher unsigned = unsignedPattern.matcher(file.getName())
+                if (unsigned.matches()) {
+                    File out = new File(getOutputDirectory(),
+                            "${project.archivesBaseName}-${outputBaseName}_${unsigned.group(1)}.apk")
+                    project.exec {
+                        executable = getZipAlignExe()
+                        args '-f', '4'
+                        args file.absolutePath
+                        args out
+                    }
+                }
             }
-
-            tmpOutputs.add(new ApkOutput.SplitApkOutput(
-                    ApkOutput.OutputType.SPLIT,
-                    ApkOutput.SplitType.DENSITY,
-                    splitVariantOutput.splitIdentifier,
-                    splitVariantOutput.splitSuffix,
-                    out))
         }
-
-        GsonBuilder gsonBuilder = new GsonBuilder();
-        Gson gson = gsonBuilder.create()
-        FileWriter fileWriter = new FileWriter(alignedFileList)
-        fileWriter.write(gson.toJson(tmpOutputs.build().toArray()))
-        fileWriter.close()
     }
 }

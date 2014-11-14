@@ -179,6 +179,7 @@ public class PreDexCacheTest extends TestCase {
 
         PreDexCache.getCache().preDexLibrary(
                 input, output,
+                false /*multidex*/,
                 new FakeDexOptions(), mBuildToolInfo,
                 false /*verbose*/, new FakeCommandLineRunner(new StdLogger(StdLogger.Level.INFO)));
 
@@ -208,6 +209,7 @@ public class PreDexCacheTest extends TestCase {
 
                         PreDexCache.getCache().preDexLibrary(
                                 input, output,
+                                false /*multidex*/,
                                 dexOptions, mBuildToolInfo, false /*verbose*/, clr);
                     } catch (Exception ignored) {
 
@@ -260,6 +262,7 @@ public class PreDexCacheTest extends TestCase {
 
                         PreDexCache.getCache().preDexLibrary(
                                 input, output,
+                                false /*multidex*/,
                                 dexOptions, mBuildToolInfo, false /*verbose*/,
                                 ii == 0 ? clrWithError : clr);
                     } catch (Exception ignored) {
@@ -295,6 +298,7 @@ public class PreDexCacheTest extends TestCase {
 
         PreDexCache.getCache().preDexLibrary(
                 input, output,
+                false /*multidex*/,
                 dexOptions, mBuildToolInfo, false /*verbose*/, clr);
 
         checkOutputFile(content, output);
@@ -313,6 +317,7 @@ public class PreDexCacheTest extends TestCase {
 
         PreDexCache.getCache().preDexLibrary(
                 input, output2,
+                false /*multidex*/,
                 dexOptions, mBuildToolInfo, false /*verbose*/, clr);
 
         // check the output

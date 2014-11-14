@@ -23,16 +23,19 @@ import com.android.ide.common.rendering.api.Result.Status;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.util.Collections;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Map;
 
 /**
  * Entry point of the Layout Library. Extensions of this class provide a method to compute
  * and render a layout.
  */
+@SuppressWarnings({"MethodMayBeStatic", "UnusedDeclaration"})
 public abstract class Bridge {
 
-    public static final int API_CURRENT = 12;
+    public static final int API_CURRENT = 13;
 
     /**
      * Returns the API level of the layout library.
@@ -47,17 +50,30 @@ public abstract class Bridge {
      * Returns the revision of the library inside a given (layoutlib) API level.
      * The true revision number of the library is {@link #getApiLevel()}.{@link #getRevision()}
      */
+    @SuppressWarnings("JavaDoc")  // javadoc pointing to itself.
     public int getRevision() {
         return 0;
     }
 
     /**
      * Returns an {@link EnumSet} of the supported {@link Capability}.
+     *
      * @return an {@link EnumSet} with the supported capabilities.
      *
+     * @deprecated use {@link #supports(int)}
      */
+    @Deprecated
     public EnumSet<Capability> getCapabilities() {
         return EnumSet.noneOf(Capability.class);
+    }
+
+    /**
+     * Returns true if the layout library supports the given feature.
+     *
+     * @see com.android.ide.common.rendering.api.Features
+     */
+    public boolean supports(int feature) {
+        return false;
     }
 
     /**

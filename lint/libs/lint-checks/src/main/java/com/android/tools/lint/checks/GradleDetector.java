@@ -16,6 +16,8 @@
 package com.android.tools.lint.checks;
 
 import static com.android.SdkConstants.FD_BUILD_TOOLS;
+import static com.android.SdkConstants.GRADLE_PLUGIN_MINIMUM_VERSION;
+import static com.android.SdkConstants.GRADLE_PLUGIN_RECOMMENDED_VERSION;
 import static com.android.ide.common.repository.GradleCoordinate.COMPARE_PLUS_HIGHER;
 import static com.android.tools.lint.checks.ManifestDetector.TARGET_NEWER;
 import static com.android.tools.lint.detector.api.LintUtils.findSubstring;
@@ -40,6 +42,7 @@ import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.Speed;
 import com.android.tools.lint.detector.api.TextFormat;
+import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
 
 import java.io.BufferedReader;
@@ -405,6 +408,9 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
                 }
             } else {
                 String dependency = getStringLiteralValue(value);
+                if (dependency == null) {
+                    dependency = getNamedDependency(value);
+                }
                 // If the dependency is a GString (i.e. it uses Groovy variable substitution,
                 // with a $variable_name syntax) then don't try to parse it.
                 if (dependency != null && !dependency.contains("$")) {
@@ -435,6 +441,57 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
                 report(context, valueCookie, PATH, message);
             }
         }
+    }
+
+    // Convert a long-hand dependency, like
+    //    group: 'com.android.support', name: 'support-v4', version: '21.0.+'
+    // into an equivalent short-hand dependency, like
+    //   com.android.support:support-v4:21.0.+
+    @VisibleForTesting
+    @Nullable
+    static String getNamedDependency(@NonNull String expression) {
+        //if (value.startsWith("group: 'com.android.support', name: 'support-v4', version: '21.0.+'"))
+        if (expression.indexOf(',') != -1 && expression.contains("version:")) {
+            String artifact = null;
+            String group = null;
+            String version = null;
+            Splitter splitter = Splitter.on(',').omitEmptyStrings().trimResults();
+            for (String property : splitter.split(expression)) {
+                int colon = property.indexOf(':');
+                if (colon == -1) {
+                    return null;
+                }
+                char quote = '\'';
+                int valueStart = property.indexOf(quote, colon + 1);
+                if (valueStart == -1) {
+                    quote = '"';
+                    valueStart = property.indexOf(quote, colon + 1);
+                }
+                if (valueStart == -1) {
+                    // For example, "transitive: false"
+                    continue;
+                }
+                valueStart++;
+                int valueEnd = property.indexOf(quote, valueStart);
+                if (valueEnd == -1) {
+                    return null;
+                }
+                String value = property.substring(valueStart, valueEnd);
+                if (property.startsWith("group:")) {
+                    group = value;
+                } else if (property.startsWith("name:")) {
+                    artifact = value;
+                } else if (property.startsWith("version:")) {
+                    version = value;
+                }
+            }
+
+            if (artifact != null && group != null && version != null) {
+                return group + ':' + artifact + ':' + version;
+            }
+        }
+
+        return null;
     }
 
     private void checkIntegerAsString(Context context, String value, Object valueCookie) {
@@ -495,6 +552,10 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
             return findSubstring(errorMessage, "Replace '", "'");
         } else if (issue == PLUS) {
           return findSubstring(errorMessage, "(", ")");
+        } else if (issue == COMPATIBILITY) {
+            if (errorMessage.startsWith("Version 5.2.08")) {
+                return "5.2.08";
+            }
         }
 
         return null;
@@ -538,6 +599,10 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
             }
             // "Deprecated: Replace 'packageNameSuffix' with 'applicationIdSuffix'"
             return findSubstring(errorMessage, " with '", "'");
+        } else if (issue == COMPATIBILITY) {
+            if (errorMessage.startsWith("Version 5.2.08")) {
+                return findSubstring(errorMessage, "Use version ", " ");
+            }
         }
 
         return null;
@@ -688,28 +753,63 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
                 ("support-v4".equals(dependency.getArtifactId()) ||
                         "appcompat-v7".equals(dependency.getArtifactId()))) {
             checkSupportLibraries(context, dependency, cookie);
-            if (mMinSdkVersion >= 14 && "appcompat-v7".equals(dependency.getArtifactId())) {
+            if (mMinSdkVersion >= 14 && "appcompat-v7".equals(dependency.getArtifactId())
+                  && mCompileSdkVersion >= 1 && mCompileSdkVersion < 21) {
                 report(context, cookie, DEPENDENCY,
-                        "Using the appcompat library when minSdkVersion >= 14 is not necessary");
+                    "Using the appcompat library when minSdkVersion >= 14 and "
+                            + "compileSdkVersion < 21 is not necessary");
             }
             return;
         } else if ("com.google.android.gms".equals(dependency.getGroupId()) &&
                 "play-services".equals(dependency.getArtifactId())) {
+
+            // 5.2.08 is not supported; special case and warn about this
+            if ("5.2.08".equals(dependency.getFullRevision()) && context.isEnabled(COMPATIBILITY)) {
+                // This specific version is actually a preview version which should
+                // not be used (https://code.google.com/p/android/issues/detail?id=75292)
+                String version = "6.1.11";
+                // Try to find a more recent available version, if one is available
+                File sdkHome = context.getClient().getSdkHome();
+                File repository = SdkMavenRepository.GOOGLE.getRepositoryLocation(sdkHome, true);
+                if (repository != null) {
+                    GradleCoordinate max = SdkMavenRepository.getHighestInstalledVersion(
+                            dependency.getGroupId(), dependency.getArtifactId(), repository,
+                            null, false);
+                    if (max != null) {
+                        if (COMPARE_PLUS_HIGHER.compare(dependency, max) < 0) {
+                            version = max.getFullRevision();
+                        }
+                    }
+                }
+                String message = String.format("Version `5.2.08` should not be used; the app "
+                        + "can not be published with this version. Use version `%1$s` "
+                        + "instead.", version);
+                report(context, cookie, COMPATIBILITY, message);
+            }
+
             checkPlayServices(context, dependency, cookie);
             return;
         }
 
         FullRevision version = null;
         Issue issue = DEPENDENCY;
+        boolean includeMicro = true;
         if ("com.android.tools.build".equals(dependency.getGroupId()) &&
                 "gradle".equals(dependency.getArtifactId())) {
-            version = getNewerRevision(dependency, 0, 13, 0);
+            FullRevision v = FullRevision.parseRevision(GRADLE_PLUGIN_RECOMMENDED_VERSION);
+            try {
+                version = getNewerRevision(dependency, v.getMajor(), v.getMinor(), v.getMicro());
+            } catch (NumberFormatException e) {
+                context.log(e, null);
+            }
         } else if ("com.google.guava".equals(dependency.getGroupId()) &&
                 "guava".equals(dependency.getArtifactId())) {
             version = getNewerRevision(dependency, 18, 0, 0);
+            includeMicro = false;
         } else if ("com.google.code.gson".equals(dependency.getGroupId()) &&
                 "gson".equals(dependency.getArtifactId())) {
             version = getNewerRevision(dependency, 2, 3, 0);
+            includeMicro = false;
         } else if ("org.apache.httpcomponents".equals(dependency.getGroupId()) &&
                 "httpclient".equals(dependency.getArtifactId())) {
             version = getNewerRevision(dependency, 4, 3, 5);
@@ -726,14 +826,19 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
         }
 
         if (version != null) {
-            String message = getNewerVersionAvailableMessage(dependency, version);
+            String message = getNewerVersionAvailableMessage(dependency, version, includeMicro);
             report(context, cookie, issue, message);
         }
     }
 
     private static String getNewerVersionAvailableMessage(GradleCoordinate dependency,
-            FullRevision version) {
-        return getNewerVersionAvailableMessage(dependency, version.toString());
+            FullRevision version, boolean includeMicro) {
+        String versionString = includeMicro || version.getMicro() != 0 || version.isPreview()
+                ? version.toString()
+                // We can't use version#toShortString because that will turn 18.0 into 18
+                // which we don't want.
+                : (version.getMajor() + "." + version.getMinor());
+        return getNewerVersionAvailableMessage(dependency, versionString);
     }
 
     private static String getNewerVersionAvailableMessage(GradleCoordinate dependency,
@@ -892,11 +997,11 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
             Object cookie) {
         GradleCoordinate latestPlugin = GradleCoordinate.parseCoordinateString(
                 SdkConstants.GRADLE_PLUGIN_NAME +
-                        SdkConstants.GRADLE_PLUGIN_MINIMUM_VERSION);
+                        GRADLE_PLUGIN_MINIMUM_VERSION);
         if (GradleCoordinate.COMPARE_PLUS_HIGHER.compare(dependency, latestPlugin) < 0) {
             String message = "You must use a newer version of the Android Gradle plugin. The "
-                    + "minimum supported version is " + SdkConstants.GRADLE_PLUGIN_MINIMUM_VERSION +
-                    " and the recommended version is " + SdkConstants.GRADLE_PLUGIN_RECOMMENDED_VERSION;
+                    + "minimum supported version is " + GRADLE_PLUGIN_MINIMUM_VERSION +
+                    " and the recommended version is " + GRADLE_PLUGIN_RECOMMENDED_VERSION;
             report(context, cookie, GRADLE_PLUGIN_COMPATIBILITY, message);
             return true;
         }

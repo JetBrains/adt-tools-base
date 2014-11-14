@@ -60,7 +60,7 @@ public class XmlAttributeTest extends TestCase {
 
         when(mXmlElement.getType()).thenReturn(ManifestModel.NodeTypes.ACTIVITY);
         when(mXmlElement.getDocument()).thenReturn(mXmlDocument);
-        when(mXmlDocument.getPackageName()).thenReturn("com.foo.bar");
+        when(mXmlDocument.getPackageNameForAttributeExpansion()).thenReturn("com.foo.bar");
     }
 
     public void testPackageSubstitution_noDot() {

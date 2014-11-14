@@ -1,0 +1,12 @@
+<merge xmlns:tools="http://schemas.android.com/tools">
+    <!-- referenced by RootLayout -->
+    <include layout="@layout/used2"/>
+
+    <!-- tools attribute: should not count as a keep reference -->
+    <include tools:layout="@layout/unused14"
+             layout="@layout/used2" />
+
+    <!-- Explicit keep reference -->
+    <include tools:keep="@layout/used21"
+             layout="@layout/used2"/>
+</merge>

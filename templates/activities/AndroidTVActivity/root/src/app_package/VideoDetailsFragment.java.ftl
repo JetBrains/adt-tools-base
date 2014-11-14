@@ -19,11 +19,15 @@ import android.support.v17.leanback.widget.ClassPresenterSelector;
 import android.support.v17.leanback.widget.DetailsOverviewRow;
 import android.support.v17.leanback.widget.DetailsOverviewRowPresenter;
 import android.support.v17.leanback.widget.HeaderItem;
+import android.support.v17.leanback.widget.ImageCardView;
 import android.support.v17.leanback.widget.ListRow;
 import android.support.v17.leanback.widget.ListRowPresenter;
 import android.support.v17.leanback.widget.OnActionClickedListener;
-import android.support.v17.leanback.widget.OnItemClickedListener;
+import android.support.v17.leanback.widget.OnItemViewClickedListener;
+import android.support.v17.leanback.widget.Presenter;
 import android.support.v17.leanback.widget.Row;
+import android.support.v17.leanback.widget.RowPresenter;
+import android.support.v4.app.ActivityOptionsCompat;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.widget.Toast;
@@ -45,16 +49,21 @@ public class ${detailsFragment} extends DetailsFragment {
 
     private static final String MOVIE = "Movie";
 
-    private Movie selectedMovie;
+    private Movie mSelectedMovie;
 
     private Drawable mDefaultBackground;
     private Target mBackgroundTarget;
     private DisplayMetrics mMetrics;
+    private DetailsOverviewRowPresenter mDorPresenter;
+    private DetailRowBuilderTask mDetailRowBuilderTask;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         Log.i(TAG, "onCreate DetailsFragment");
         super.onCreate(savedInstanceState);
+
+        mDorPresenter =
+                new DetailsOverviewRowPresenter(new DetailsDescriptionPresenter());
 
         BackgroundManager backgroundManager = BackgroundManager.getInstance(getActivity());
         backgroundManager.attach(getActivity().getWindow());
@@ -65,25 +74,34 @@ public class ${detailsFragment} extends DetailsFragment {
         mMetrics = new DisplayMetrics();
         getActivity().getWindowManager().getDefaultDisplay().getMetrics(mMetrics);
 
-        selectedMovie = (Movie) getActivity().getIntent().getSerializableExtra(MOVIE);
-        new DetailRowBuilderTask().execute(selectedMovie);
+        mSelectedMovie = (Movie) getActivity().getIntent().getSerializableExtra(MOVIE);
+        mDetailRowBuilderTask = (DetailRowBuilderTask) new DetailRowBuilderTask().execute(mSelectedMovie);
+        mDorPresenter.setSharedElementEnterTransition(getActivity(),
+                ${detailsActivity}.SHARED_ELEMENT_NAME);
 
-        setOnItemClickedListener(getDefaultItemClickedListener());
-        updateBackground(selectedMovie.getBackgroundImageURI());
 
+        updateBackground(mSelectedMovie.getBackgroundImageURI());
+        setOnItemViewClickedListener(new ItemViewClickedListener());
+
+    }
+
+    @Override
+    public void onStop() {
+        mDetailRowBuilderTask.cancel(true);
+        super.onStop();
     }
 
     private class DetailRowBuilderTask extends AsyncTask<Movie, Integer, DetailsOverviewRow> {
         @Override
         protected DetailsOverviewRow doInBackground(Movie... movies) {
-            selectedMovie = movies[0];
+            mSelectedMovie = movies[0];
 
-            DetailsOverviewRow row = new DetailsOverviewRow(selectedMovie);
+            DetailsOverviewRow row = new DetailsOverviewRow(mSelectedMovie);
             try {
                 Bitmap poster = Picasso.with(getActivity())
-                        .load(selectedMovie.getCardImageUrl())
-                        .resize(dpToPx(DETAIL_THUMB_WIDTH, getActivity().getApplicationContext()),
-                                dpToPx(DETAIL_THUMB_HEIGHT, getActivity().getApplicationContext()))
+                        .load(mSelectedMovie.getCardImageUrl())
+                        .resize(Utils.convertDpToPixel(getActivity().getApplicationContext(), DETAIL_THUMB_WIDTH),
+                                Utils.convertDpToPixel(getActivity().getApplicationContext(), DETAIL_THUMB_HEIGHT))
                         .centerCrop()
                         .get();
                 row.setImageBitmap(getActivity(), poster);
@@ -102,17 +120,15 @@ public class ${detailsFragment} extends DetailsFragment {
         @Override
         protected void onPostExecute(DetailsOverviewRow detailRow) {
             ClassPresenterSelector ps = new ClassPresenterSelector();
-            DetailsOverviewRowPresenter dorPresenter =
-                    new DetailsOverviewRowPresenter(new DetailsDescriptionPresenter());
             // set detail background and style
-            dorPresenter.setBackgroundColor(getResources().getColor(R.color.detail_background));
-            dorPresenter.setStyleLarge(true);
-            dorPresenter.setOnActionClickedListener(new OnActionClickedListener() {
+            mDorPresenter.setBackgroundColor(getResources().getColor(R.color.detail_background));
+            mDorPresenter.setStyleLarge(true);
+            mDorPresenter.setOnActionClickedListener(new OnActionClickedListener() {
                 @Override
                 public void onActionClicked(Action action) {
                     if (action.getId() == ACTION_WATCH_TRAILER) {
-                        Intent intent = new Intent(getActivity(), PlayerActivity.class);
-                        intent.putExtra(getResources().getString(R.string.movie), selectedMovie);
+                        Intent intent = new Intent(getActivity(), PlaybackOverlayActivity.class);
+                        intent.putExtra(getResources().getString(R.string.movie), mSelectedMovie);
                         intent.putExtra(getResources().getString(R.string.should_start), true);
                         startActivity(intent);
                     }
@@ -122,7 +138,7 @@ public class ${detailsFragment} extends DetailsFragment {
                 }
             });
 
-            ps.addClassPresenter(DetailsOverviewRow.class, dorPresenter);
+            ps.addClassPresenter(DetailsOverviewRow.class, mDorPresenter);
             ps.addClassPresenter(ListRow.class,
                     new ListRowPresenter());
 
@@ -147,18 +163,24 @@ public class ${detailsFragment} extends DetailsFragment {
 
     }
 
-    protected OnItemClickedListener getDefaultItemClickedListener() {
-        return new OnItemClickedListener() {
-            @Override
-            public void onItemClicked(Object item, Row row) {
-                if (item instanceof Movie) {
-                    Movie movie = (Movie) item;
-                    Intent intent = new Intent(getActivity(), ${detailsActivity}.class);
-                    intent.putExtra(MOVIE, movie);
-                    startActivity(intent);
-                }
+    private final class ItemViewClickedListener implements OnItemViewClickedListener {
+        @Override
+        public void onItemClicked(Presenter.ViewHolder itemViewHolder, Object item,
+                                  RowPresenter.ViewHolder rowViewHolder, Row row) {
+
+            if (item instanceof Movie) {
+                Movie movie = (Movie) item;
+                Log.d(TAG, "Item: " + item.toString());
+                Intent intent = new Intent(getActivity(), ${detailsActivity}.class);
+                intent.putExtra(${detailsActivity}.MOVIE, movie);
+
+                Bundle bundle = ActivityOptionsCompat.makeSceneTransitionAnimation(
+                        getActivity(),
+                        ((ImageCardView) itemViewHolder.view).getMainImageView(),
+                        ${detailsActivity}.SHARED_ELEMENT_NAME).toBundle();
+                getActivity().startActivity(intent, bundle);
             }
-        };
+        }
     }
 
     protected void updateBackground(URI uri) {
@@ -171,8 +193,4 @@ public class ${detailsFragment} extends DetailsFragment {
                 .into(mBackgroundTarget);
     }
 
-    public static int dpToPx(int dp, Context ctx) {
-        float density = ctx.getResources().getDisplayMetrics().density;
-        return Math.round((float) dp * density);
-    }
 }

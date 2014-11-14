@@ -111,6 +111,13 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
     @Override
     public void end() throws ConsumerException {
         super.end();
+        try {
+            if (mCruncher != null) {
+                mCruncher.end();
+            }
+        } catch (InterruptedException e) {
+            throw new ConsumerException(e);
+        }
 
         mValuesResMap = null;
         mQualifierWithDeletedValues = null;

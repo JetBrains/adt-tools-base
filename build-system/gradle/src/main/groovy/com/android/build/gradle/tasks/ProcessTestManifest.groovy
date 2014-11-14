@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 The Android Open Source Project
+ * Copyright (C) 2014 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,9 +14,11 @@
  * limitations under the License.
  */
 package com.android.build.gradle.tasks
+
 import com.android.build.gradle.internal.dependency.ManifestDependencyImpl
 import com.google.common.collect.Lists
 import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Optional
 
@@ -24,6 +26,12 @@ import org.gradle.api.tasks.Optional
  * A task that processes the manifest
  */
 public class ProcessTestManifest extends ManifestProcessorTask {
+
+    @InputFile
+    @Optional
+    File testManifestFile
+
+    File tmpDir
 
     // ----- PRIVATE TASK API -----
 
@@ -81,22 +89,6 @@ public class ProcessTestManifest extends ManifestProcessorTask {
         return files;
     }
 
-    @Override
-    protected void doFullTaskAction() {
-        migrateProperties()
-
-        getBuilder().processTestManifest(
-                getTestApplicationId(),
-                getMinSdkVersion(),
-                getTargetSdkVersion(),
-                getTestedApplicationId(),
-                getInstrumentationRunner(),
-                getHandleProfiling(),
-                getFunctionalTest(),
-                getLibraries(),
-                getManifestOutputFile())
-    }
-
     protected void migrateProperties() {
         if (getTestApplicationId() == null && getTestPackageName() != null) {
             logger.warn(
@@ -109,5 +101,23 @@ public class ProcessTestManifest extends ManifestProcessorTask {
                     "WARNING: testedPackageName is deprecated; change to \"testedApplicationId\" instead");
             testedApplicationId = getTestedPackageName();
         }
+    }
+
+    @Override
+    protected void doFullTaskAction() {
+        migrateProperties()
+
+        getBuilder().processTestManifest(
+                getTestApplicationId(),
+                getMinSdkVersion(),
+                getTargetSdkVersion(),
+                getTestedApplicationId(),
+                getInstrumentationRunner(),
+                getHandleProfiling(),
+                getFunctionalTest(),
+                getTestManifestFile(),
+                getLibraries(),
+                getManifestOutputFile(),
+                getTmpDir())
     }
 }

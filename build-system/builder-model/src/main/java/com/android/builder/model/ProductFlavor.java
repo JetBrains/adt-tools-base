@@ -51,12 +51,14 @@ public interface ProductFlavor extends BaseConfig {
     String getApplicationId();
 
     /**
-     * Returns the version code. This is only the value set on this product flavor.
-     * To get the final value, use {@link Variant#getMergedFlavor()}
+     * Returns the version code associated with this flavor or null if none have been set.
+     * This is only the value set on this product flavor, not necessarily the actual
+     * version code used.
      *
-     * @return the version code, or -1 if not specified
+     * @return the version code, or null if not specified
      */
-    int getVersionCode();
+    @Nullable
+    Integer getVersionCode();
 
     /**
      * Returns the version name. This is only the value set on this product flavor.
@@ -96,23 +98,26 @@ public interface ProductFlavor extends BaseConfig {
      * Returns the renderscript target api. This is only the value set on this product flavor.
      * TODO: make final renderscript target api available through the model
      *
-     * @return the renderscript target api, or -1 if not specified
+     * @return the renderscript target api, or null if not specified
      */
-    int getRenderscriptTargetApi();
+    @Nullable
+    Integer getRenderscriptTargetApi();
 
     /**
      * Returns whether the renderscript code should be compiled in support mode to
      * make it compatible with older versions of Android.
      *
-     * @return true if support mode is enabled.
+     * @return true if support mode is enabled, false if not, and null if not specified.
      */
-    boolean getRenderscriptSupportMode();
+    @Nullable
+    Boolean getRenderscriptSupportModeEnabled();
 
     /**
      * Returns whether the renderscript code should be compiled to generate C/C++ bindings.
-     * @return true for C/C++ generation, false for Java
+     * @return true for C/C++ generation, false for Java, null if not specified.
      */
-    boolean getRenderscriptNdkMode();
+    @Nullable
+    Boolean getRenderscriptNdkModeEnabled();
 
     /**
      * Returns the test application id. This is only the value set on this product flavor.
@@ -152,7 +157,6 @@ public interface ProductFlavor extends BaseConfig {
 
     /**
      * Returns the resource configuration for this variant.
-     * TODO implement this.
      *
      * This is the list of -c parameters for aapt.
      *
@@ -161,4 +165,9 @@ public interface ProductFlavor extends BaseConfig {
     @NonNull
     Collection<String> getResourceConfigurations();
 
+    /**
+     * Returns the associated signing config or null if none are set on the product flavor.
+     */
+    @Nullable
+    SigningConfig getSigningConfig();
 }

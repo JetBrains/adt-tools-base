@@ -18,10 +18,15 @@ package com.android.build.gradle.internal.model;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.FilterData;
+import com.android.build.MainOutputFile;
+import com.android.build.OutputFile;
 import com.android.builder.model.AndroidArtifactOutput;
+import com.google.common.collect.ImmutableList;
 
 import java.io.File;
 import java.io.Serializable;
+import java.util.Collection;
 
 /**
  * Implementation of AndroidArtifactOutput that is serializable
@@ -30,36 +35,43 @@ public class AndroidArtifactOutputImpl implements AndroidArtifactOutput, Seriali
     private static final long serialVersionUID = 1L;
 
     @NonNull
-    private final File outputFile;
-    @NonNull
     private final File generatedManifest;
     @NonNull
     private final String assembleTaskName;
     private final int versionCode;
-    @Nullable
-    private final String densityFilter;
-    @Nullable
-    private final String abiFilter;
+    private final Collection<OutputFile> outputFiles;
+    private final MainOutputFile mainOutputFile;
 
     AndroidArtifactOutputImpl(
-            @NonNull File outputFile,
+            @NonNull Collection<OutputFile> outputFiles,
             @NonNull String assembleTaskName,
             @NonNull File generatedManifest,
-            int versionCode,
-            @Nullable String densityFilter,
-            @Nullable String abiFilter) {
-        this.outputFile = outputFile;
+            int versionCode) {
         this.generatedManifest = generatedManifest;
         this.assembleTaskName = assembleTaskName;
         this.versionCode = versionCode;
-        this.densityFilter = densityFilter;
-        this.abiFilter = abiFilter;
+        this.outputFiles = outputFiles;
+        // check that we have the a main output file.
+        for (OutputFile outputFile : outputFiles) {
+            if (outputFile.getOutputType().equals(OutputFile.MAIN)
+                    || outputFile.getOutputType().equals(OutputFile.FULL_SPLIT)) {
+                mainOutputFile = (MainOutputFile) outputFile;
+                return;
+            }
+        }
+        throw new IllegalStateException("No main output file for variant");
     }
 
     @NonNull
     @Override
-    public File getOutputFile() {
-        return outputFile;
+    public MainOutputFile getMainOutputFile() {
+        return mainOutputFile;
+    }
+
+    @NonNull
+    @Override
+    public Collection<OutputFile> getOutputs() {
+        return outputFiles;
     }
 
     @NonNull
@@ -79,15 +91,9 @@ public class AndroidArtifactOutputImpl implements AndroidArtifactOutput, Seriali
         return versionCode;
     }
 
-    @Nullable
+    @NonNull
     @Override
-    public String getDensityFilter() {
-        return densityFilter;
-    }
-
-    @Nullable
-    @Override
-    public String getAbiFilter() {
-        return abiFilter;
+    public File getSplitFolder() {
+        return getMainOutputFile().getOutputFile().getParentFile();
     }
 }

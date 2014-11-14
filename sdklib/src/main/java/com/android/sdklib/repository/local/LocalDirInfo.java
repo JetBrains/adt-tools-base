@@ -216,6 +216,60 @@ class LocalDirInfo {
      */
     @Override
     public boolean equals(Object obj) {
-        return mDir.equals(obj);
+        if (obj instanceof File) {
+            return mDir.equals(obj);
+        } else if (obj instanceof LocalDirInfo) {
+            return mDir.equals(((LocalDirInfo) obj).mDir);
+        } else if (obj instanceof MapComparator) {
+            return mDir.equals(((MapComparator) obj).mDir);
+        }
+        return false;
     };
+
+    /**
+     * Helper for Map.contains() to make sure we're comparing the inner directory File
+     * object and not the outer wrapper itself.
+     */
+    public static class MapComparator {
+        private final File mDir;
+
+        public MapComparator(File dir) {
+            mDir = dir;
+        }
+
+        /**
+         * Returns the hashCode of the underlying File object.
+         * <p/>
+         * When a {@link LocalDirInfo} is placed in a map, what matters is to use the underlying
+         * File object as the key so {@link #hashCode()} and {@link #equals(Object)} both
+         * return the properties of the underlying File object.
+         *
+         * @see File#hashCode()
+         */
+        @Override
+        public int hashCode() {
+            return mDir.hashCode();
+        }
+
+        /**
+         * Checks equality of the underlying File object.
+         * <p/>
+         * When a {@link LocalDirInfo} is placed in a map, what matters is to use the underlying
+         * File object as the key so {@link #hashCode()} and {@link #equals(Object)} both
+         * return the properties of the underlying File object.
+         *
+         * @see File#equals(Object)
+         */
+        @Override
+        public boolean equals(Object obj) {
+            if (obj instanceof File) {
+                return mDir.equals(obj);
+            } else if (obj instanceof LocalDirInfo) {
+                return mDir.equals(((LocalDirInfo) obj).mDir);
+            } else if (obj instanceof MapComparator) {
+                return mDir.equals(((MapComparator) obj).mDir);
+            }
+            return false;
+        };
+    }
 }

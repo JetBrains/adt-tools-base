@@ -67,9 +67,11 @@ public class ProductFlavorData<T extends DefaultProductFlavor> {
 
     final Task assembleTask
 
-    ProductFlavorData(T productFlavor,
-                      DefaultAndroidSourceSet sourceSet, DefaultAndroidSourceSet testSourceSet,
-                      Project project) {
+    ProductFlavorData(
+            T productFlavor,
+            DefaultAndroidSourceSet sourceSet,
+            DefaultAndroidSourceSet testSourceSet,
+            Project project) {
         this.productFlavor = productFlavor
         this.sourceSet = sourceSet
         this.testSourceSet = testSourceSet

@@ -18,7 +18,7 @@ package com.android.build.gradle.internal.dsl;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.builder.internal.NdkConfig;
+import com.android.build.gradle.internal.core.NdkConfig;
 import com.google.common.collect.Sets;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.Optional;

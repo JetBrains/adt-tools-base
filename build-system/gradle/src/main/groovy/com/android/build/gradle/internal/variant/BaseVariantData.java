@@ -18,9 +18,13 @@ package com.android.build.gradle.internal.variant;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
+import com.android.build.FilterData;
+import com.android.build.OutputFile;
 import com.android.build.gradle.BasePlugin;
 import com.android.build.gradle.api.AndroidSourceSet;
 import com.android.build.gradle.internal.StringHelper;
+import com.android.build.gradle.internal.core.GradleVariantConfiguration;
+import com.android.build.gradle.internal.coverage.JacocoInstrumentTask;
 import com.android.build.gradle.internal.dependency.VariantDependencies;
 import com.android.build.gradle.internal.tasks.CheckManifest;
 import com.android.build.gradle.internal.tasks.GenerateApkDataTask;
@@ -28,12 +32,12 @@ import com.android.build.gradle.internal.tasks.PrepareDependenciesTask;
 import com.android.build.gradle.tasks.AidlCompile;
 import com.android.build.gradle.tasks.GenerateBuildConfig;
 import com.android.build.gradle.tasks.GenerateResValues;
+import com.android.build.gradle.tasks.JackTask;
 import com.android.build.gradle.tasks.MergeAssets;
 import com.android.build.gradle.tasks.MergeResources;
 import com.android.build.gradle.tasks.NdkCompile;
 import com.android.build.gradle.tasks.ProcessAndroidResources;
 import com.android.build.gradle.tasks.RenderscriptCompile;
-import com.android.builder.core.VariantConfiguration;
 import com.android.builder.model.SourceProvider;
 import com.google.common.collect.Lists;
 
@@ -69,7 +73,7 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
     @NonNull
     protected final BasePlugin basePlugin;
     @NonNull
-    private final VariantConfiguration variantConfiguration;
+    private final GradleVariantConfiguration variantConfiguration;
 
     private VariantDependencies variantDependency;
 
@@ -91,13 +95,15 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
     public Copy copyApkTask;
     public GenerateApkDataTask generateApkDataTask;
 
-    public JavaCompile javaCompileTask;
     public Copy processJavaResourcesTask;
     public NdkCompile ndkCompileTask;
 
+    public JavaCompile javaCompileTask;
+    public JackTask jackTask;
     public Task compileTask;
-
+    public JacocoInstrumentTask jacocoInstrumentTask;
     public Task obfuscationTask;
+    public File obfuscatedClassesJar;
     public File mappingFile;
 
     // Task to assemble the variant and all its output.
@@ -109,19 +115,25 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
 
     private final List<T> outputs = Lists.newArrayListWithExpectedSize(4);
 
+    /**
+     * If true, variant outputs will be considered signed. Only set if you manually set the outputs
+     * to point to signed files built by other tasks.
+     */
+    public boolean outputsAreSigned = false;
+
     private SplitHandlingPolicy mSplitHandlingPolicy;
 
 
     public BaseVariantData(
             @NonNull BasePlugin basePlugin,
-            @NonNull VariantConfiguration variantConfiguration) {
+            @NonNull GradleVariantConfiguration variantConfiguration) {
         this.basePlugin = basePlugin;
         this.variantConfiguration = variantConfiguration;
 
         // eventually, this will require a more open ended comparison.
         mSplitHandlingPolicy =
-                variantConfiguration.getMinSdkVersion() != null
-                        && variantConfiguration.getMinSdkVersion().getApiString().equals("L")
+                basePlugin.getExtension().getGeneratePureSplits()
+                    && variantConfiguration.getMinSdkVersion().getApiLevel() == 21
                     ? SplitHandlingPolicy.RELEASE_21_AND_AFTER_POLICY
                     : SplitHandlingPolicy.PRE_21_POLICY;
 
@@ -134,11 +146,14 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
     }
 
     @NonNull
-    protected abstract T doCreateOutput(@Nullable String densityFilter, @Nullable String abiFilter);
+    protected abstract T doCreateOutput(
+            OutputFile.OutputType outputType,
+            Collection<FilterData> filters);
 
     @NonNull
-    public T createOutput(@Nullable String densityFilter, @Nullable String abiFilter) {
-        T data = doCreateOutput(densityFilter, abiFilter);
+    public T createOutput(OutputFile.OutputType outputType,
+            Collection<FilterData> filters) {
+        T data = doCreateOutput(outputType, filters);
 
         // if it's the first time we add an output, mark previous output as part of a multi-output
         // setup.
@@ -159,7 +174,7 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
     }
 
     @NonNull
-    public VariantConfiguration getVariantConfiguration() {
+    public GradleVariantConfiguration getVariantConfiguration() {
         return variantConfiguration;
     }
 
@@ -259,7 +274,7 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
             // for the other, there's no duplicate so no issue.
             sourceList.add(generateBuildConfigTask.getSourceOutputDir());
             sourceList.add(aidlCompileTask.getSourceOutputDir());
-            if (!variantConfiguration.getMergedFlavor().getRenderscriptNdkMode()) {
+            if (!variantConfiguration.getRenderscriptNdkModeEnabled()) {
                 sourceList.add(renderscriptCompileTask.getSourceOutputDir());
             }
 
@@ -297,7 +312,7 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
             sourceFolders.add(sourceFolder);
         }
 
-        if (!variantConfiguration.getMergedFlavor().getRenderscriptNdkMode()) {
+        if (!variantConfiguration.getRenderscriptNdkModeEnabled()) {
             sourceFolder = renderscriptCompileTask.getSourceOutputDir();
             if (sourceFolder.isDirectory()) {
                 sourceFolders.add(sourceFolder);

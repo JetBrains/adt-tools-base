@@ -26,10 +26,14 @@ import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;
 
-public class JavaLibraryImpl implements JavaLibrary, Serializable {
+public class JavaLibraryImpl extends LibraryImpl implements JavaLibrary, Serializable {
     private final File jarFile;
 
-    public JavaLibraryImpl(@NonNull File jarFile) {
+    public JavaLibraryImpl(
+            @NonNull File jarFile,
+            @Nullable MavenCoordinates requestedCoordinates,
+            @Nullable MavenCoordinates resolvedCoordinates) {
+        super(requestedCoordinates, resolvedCoordinates);
         this.jarFile = jarFile;
     }
 
@@ -43,17 +47,5 @@ public class JavaLibraryImpl implements JavaLibrary, Serializable {
     @Override
     public List<? extends JavaLibrary> getDependencies() {
         return Collections.emptyList();
-    }
-
-    @Nullable
-    @Override
-    public MavenCoordinates getRequestedCoordinates() {
-        return null;
-    }
-
-    @Nullable
-    @Override
-    public MavenCoordinates getResolvedCoordinates() {
-        return null;
     }
 }

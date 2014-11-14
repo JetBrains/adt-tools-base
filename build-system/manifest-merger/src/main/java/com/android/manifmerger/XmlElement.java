@@ -70,12 +70,16 @@ public class XmlElement extends OrphanXmlElement {
     private final ImmutableList<XmlElement> mMergeableChildren;
     // optional selector declared on this xml element.
     @Nullable private final Selector mSelector;
+    // optional list of libraries that we should ignore the minSdk version
+    @NonNull private final List<Selector> mOverrideUsesSdkLibrarySelectors;
+
 
     public XmlElement(@NonNull Element xml, @NonNull XmlDocument document) {
         super(xml);
 
         mDocument = Preconditions.checkNotNull(document);
         Selector selector = null;
+        List<Selector> overrideUsesSdkLibrarySelectors = ImmutableList.of();
 
         ImmutableMap.Builder<NodeName, AttributeOperationType> attributeOperationTypeBuilder =
                 ImmutableMap.builder();
@@ -93,6 +97,13 @@ public class XmlElement extends OrphanXmlElement {
                                     attribute.getNodeValue()));
                 } else if (instruction.equals(Selector.SELECTOR_LOCAL_NAME)) {
                     selector = new Selector(attribute.getNodeValue());
+                } else if (instruction.equals(NodeOperationType.OVERRIDE_USES_SDK)) {
+                    String nodeValue = attribute.getNodeValue();
+                    ImmutableList.Builder<Selector> builder = ImmutableList.builder();
+                    for (String selectorValue : Splitter.on(',').split(nodeValue)) {
+                        builder.add(new Selector(selectorValue.trim()));
+                    }
+                    overrideUsesSdkLibrarySelectors = builder.build();
                 } else {
                     AttributeOperationType attributeOperationType;
                     try {
@@ -143,6 +154,7 @@ public class XmlElement extends OrphanXmlElement {
         mAttributes = attributesListBuilder.build();
         mMergeableChildren = initMergeableChildren();
         mSelector = selector;
+        mOverrideUsesSdkLibrarySelectors = overrideUsesSdkLibrarySelectors;
     }
 
     /**
@@ -200,6 +212,11 @@ public class XmlElement extends OrphanXmlElement {
         return mAttributesOperationTypes.entrySet();
     }
 
+    @NonNull
+    public List<Selector> getOverrideUsesSdkLibrarySelectors() {
+        return mOverrideUsesSdkLibrarySelectors;
+    }
+
 
     @NonNull
     @Override
@@ -228,7 +245,9 @@ public class XmlElement extends OrphanXmlElement {
 
 
         if (mSelector != null && !mSelector.isResolvable(getDocument().getSelectors())) {
-            mergingReport.addMessage(getSourceLocation(), getLine(), getColumn(),
+            mergingReport.addMessage(getSourceLocation(),
+                    getLine(),
+                    getColumn(),
                     MergingReport.Record.Severity.ERROR,
                     String.format("'tools:selector=\"%1$s\"' is not a valid library identifier, "
                             + "valid identifiers are : %2$s",
@@ -346,6 +365,13 @@ public class XmlElement extends OrphanXmlElement {
             }
             mergeChild(lowerPriorityChild, mergingReport);
         }
+    }
+
+    /**
+     * Returns true if this element supports having a tools:selector decoration, false otherwise.
+     */
+    public boolean supportsSelector() {
+        return getOperationType().isSelectable();
     }
 
     // merge a child of a lower priority node into this higher priority node.
@@ -586,7 +612,7 @@ public class XmlElement extends OrphanXmlElement {
         NodeOperationType operationType = higherPriority.getOperationType();
         // if the operation's selector exists and the lower priority node is not selected,
         // we revert to default operation type which is merge.
-        if (operationType.isSelectable()
+        if (higherPriority.supportsSelector()
                 && higherPriority.mSelector != null
                 && !higherPriority.mSelector.appliesTo(lowerPriority)) {
             operationType = NodeOperationType.MERGE;
@@ -621,6 +647,14 @@ public class XmlElement extends OrphanXmlElement {
 
     public boolean isEquals(XmlElement otherNode) {
         return !compareTo(otherNode).isPresent();
+    }
+
+    /**
+     * Returns a potentially null (if not present) selector decoration on this element.
+     */
+    @Nullable
+    public Selector getSelector() {
+        return mSelector;
     }
 
     /**
@@ -838,6 +872,9 @@ public class XmlElement extends OrphanXmlElement {
             MergingReport.Record.Severity severity,
             String message) {
         mergingReport.addMessage(getDocument().getSourceLocation(),
-                getLine(), getColumn(), severity, message);
+                getLine(),
+                getColumn(),
+                severity,
+                message);
     }
 }

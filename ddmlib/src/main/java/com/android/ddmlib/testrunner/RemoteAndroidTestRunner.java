@@ -18,6 +18,8 @@ package com.android.ddmlib.testrunner;
 
 import com.android.annotations.NonNull;
 import com.android.ddmlib.AdbCommandRejectedException;
+import com.android.ddmlib.CollectingOutputReceiver;
+import com.android.ddmlib.IDevice;
 import com.android.ddmlib.IShellEnabledDevice;
 import com.android.ddmlib.Log;
 import com.android.ddmlib.ShellCommandUnresponsiveException;
@@ -29,6 +31,8 @@ import java.util.Collection;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -62,7 +66,10 @@ public class RemoteAndroidTestRunner implements IRemoteAndroidTestRunner  {
     private static final String COVERAGE_ARG_NAME = "coverage";
     private static final String PACKAGE_ARG_NAME = "package";
     private static final String SIZE_ARG_NAME = "size";
+    private static final String DELAY_MSEC_ARG_NAME = "delay_msec";
     private String mRunOptions = "";
+
+    private static final int TEST_COLLECTION_TIMEOUT = 2 * 60 * 1000; //2 min
 
     /**
      * Creates a remote Android test runner.
@@ -180,6 +187,42 @@ public class RemoteAndroidTestRunner implements IRemoteAndroidTestRunner  {
     @Override
     public void setTestSize(TestSize size) {
         addInstrumentationArg(SIZE_ARG_NAME, size.getRunnerValue());
+    }
+
+    @Override
+    public void setTestCollection(boolean collect) {
+        if (collect) {
+            // skip test execution
+            setLogOnly(true);
+            // force a timeout for test collection
+            setMaxTimeToOutputResponse(TEST_COLLECTION_TIMEOUT, TimeUnit.MILLISECONDS);
+            if (getApiLevel() < 16 ) {
+                // On older platforms, collecting tests can fail for large volume of tests.
+                // Insert a small delay between each test to prevent this
+                addInstrumentationArg(DELAY_MSEC_ARG_NAME, "15" /* ms */);
+            }
+        } else {
+            setLogOnly(false);
+            // restore timeout to its original set value
+            setMaxTimeToOutputResponse(mMaxTimeToOutputResponse, TimeUnit.MILLISECONDS);
+            if (getApiLevel() < 16 ) {
+                // remove delay
+                removeInstrumentationArg(DELAY_MSEC_ARG_NAME);
+            }
+        }
+    }
+
+    /**
+     * Attempts to retrieve the Api level of the Android device
+     * @return the api level or -1 if the communication with the device wasn't successful
+     */
+    private int getApiLevel() {
+        try {
+            return Integer.parseInt(mRemoteDevice.getSystemProperty(
+                    IDevice.PROP_BUILD_API_LEVEL).get());
+        } catch (Exception e) {
+            return -1;
+        }
     }
 
     @Override

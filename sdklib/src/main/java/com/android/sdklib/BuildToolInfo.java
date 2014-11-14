@@ -16,6 +16,23 @@
 
 package com.android.sdklib;
 
+import static com.android.SdkConstants.FD_LIB;
+import static com.android.SdkConstants.FN_AAPT;
+import static com.android.SdkConstants.FN_AIDL;
+import static com.android.SdkConstants.FN_BCC_COMPAT;
+import static com.android.SdkConstants.FN_DX;
+import static com.android.SdkConstants.FN_DX_JAR;
+import static com.android.SdkConstants.FN_JACK;
+import static com.android.SdkConstants.FN_JILL;
+import static com.android.SdkConstants.FN_LD_ARM;
+import static com.android.SdkConstants.FN_LD_MIPS;
+import static com.android.SdkConstants.FN_LD_X86;
+import static com.android.SdkConstants.FN_RENDERSCRIPT;
+import static com.android.SdkConstants.FN_ZIPALIGN;
+import static com.android.SdkConstants.OS_FRAMEWORK_RS;
+import static com.android.SdkConstants.OS_FRAMEWORK_RS_CLANG;
+import static com.android.sdklib.BuildToolInfo.PathId.*;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
@@ -83,7 +100,11 @@ public class BuildToolInfo {
         LD_MIPS("18.1.0"),
 
         // --- NEW IN 19.1.0 ---
-        ZIP_ALIGN("19.1.0");
+        ZIP_ALIGN("19.1.0"),
+
+        // --- NEW IN 21.x.y ---
+        JACK("21.1.0"),
+        JILL("21.1.0");
 
         /**
          * min revision this element was introduced.
@@ -138,6 +159,8 @@ public class BuildToolInfo {
         add(LD_X86, FN_LD_X86);
         add(LD_MIPS, FN_LD_MIPS);
         add(ZIP_ALIGN, FN_ZIPALIGN);
+        add(JACK, FN_JACK);
+        add(JILL, FN_JILL);
     }
 
     public BuildToolInfo(

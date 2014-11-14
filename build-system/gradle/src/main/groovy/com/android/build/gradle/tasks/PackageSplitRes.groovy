@@ -17,26 +17,28 @@
 package com.android.build.gradle.tasks
 
 import com.android.annotations.NonNull
-import com.android.build.gradle.api.ApkOutput
+import com.android.build.FilterData
+import com.android.build.OutputFile
+import com.android.build.gradle.api.ApkOutputFile
 import com.android.build.gradle.internal.dsl.SigningConfigDsl
 import com.android.build.gradle.internal.tasks.BaseTask
-import com.google.common.collect.ImmutableCollection
 import com.google.common.collect.ImmutableList
-import com.google.gson.Gson
-import com.google.gson.GsonBuilder
+import com.google.common.util.concurrent.Callables
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Nested
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
-import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
+
+import java.util.regex.Matcher
+import java.util.regex.Pattern
 
 /**
  * Package each split resources into a specific signed apk file.
  */
 class PackageSplitRes extends BaseTask {
 
-    ImmutableList<ApkOutput> mOutputFiles;
+    ImmutableList<ApkOutputFile> mOutputFiles;
 
     @Input
     File inputDirectory
@@ -44,35 +46,47 @@ class PackageSplitRes extends BaseTask {
     @OutputDirectory
     File outputDirectory
 
-    @Nested
+    @Input
     Set<String> splits
 
     @Input
     String outputBaseName
 
-    @Input
-    File inputSplitResListFile
-
     @Nested @Optional
     SigningConfigDsl signingConfig
 
-    @OutputFile
-    File outputPackagedSplitResListFile
-
     @NonNull
-    public synchronized  ImmutableList<ApkOutput> getOutputFiles() {
+    public synchronized  ImmutableList<ApkOutputFile> getOutputSplitFiles() {
+
         if (mOutputFiles == null) {
-            GsonBuilder gsonBuilder = new GsonBuilder();
-            gsonBuilder.registerTypeAdapter(ApkOutput.SplitApkOutput,
-                    new ApkOutput.SplitApkOutput.JsonDeserializer())
-            Gson gson = gsonBuilder.create()
-
-            ImmutableList.Builder<ApkOutput> builder = ImmutableList.builder();
-
-            for (ApkOutput vo : gson.fromJson(
-                    new FileReader(getOutputPackagedSplitResListFile()),
-                    ApkOutput.SplitApkOutput[].class)) {
-                builder.add(vo);
+            ImmutableList.Builder<ApkOutputFile> builder = ImmutableList.builder();
+            if (outputDirectory.exists() && outputDirectory.listFiles().length > 0) {
+                final Pattern pattern = Pattern.compile(
+                        "${project.archivesBaseName}-${outputBaseName}-([h|x|d|p|i|m]*)(.*)")
+                for (File file : outputDirectory.listFiles()) {
+                    Matcher matcher = pattern.matcher(file.getName());
+                    if (matcher.matches()) {
+                        builder.add(new ApkOutputFile(
+                                OutputFile.OutputType.SPLIT,
+                                ImmutableList.<FilterData> of(FilterData.Builder.build(
+                                        OutputFile.DENSITY,
+                                        matcher.group(1))),
+                                Callables.returning(file)));
+                    }
+                }
+            } else {
+                // the project has not been built yet so we extrapolate what the package step result
+                // might look like. So far, we only handle density splits, eventually we will need
+                // to disambiguate.
+                for (String split : splits) {
+                    ApkOutputFile apkOutput = new ApkOutputFile(
+                            OutputFile.OutputType.SPLIT,
+                            ImmutableList.<FilterData>of(
+                                    FilterData.Builder.build(OutputFile.DENSITY,
+                                            "${project.archivesBaseName}-${outputBaseName}-${split}")),
+                            Callables.returning(new File(outputDirectory, split)))
+                    builder.add(apkOutput)
+                }
             }
             mOutputFiles = builder.build()
         }
@@ -82,36 +96,21 @@ class PackageSplitRes extends BaseTask {
     @TaskAction
     protected void doFullTaskAction() {
 
-        GsonBuilder gsonBuilder = new GsonBuilder();
-        gsonBuilder.registerTypeAdapter(ApkOutput.SplitApkOutput,
-                new ApkOutput.SplitApkOutput.JsonDeserializer())
-        Gson gson = gsonBuilder.create()
+        // resources- and .ap_ should be shared in a setting somewhere. see BasePlugin:1206
+        final Pattern pattern = Pattern.compile(
+                "resources-${outputBaseName}.ap__([h|x|d|p|i|m]*)(.*)")
+        for (File file : inputDirectory.listFiles()) {
+            Matcher matcher = pattern.matcher(file.getName());
+            if (matcher.matches()) {
+                String apkName = "${project.archivesBaseName}-${outputBaseName}_" +
+                        "${matcher.group(1)}"
+                apkName = apkName + (signingConfig == null
+                        ? "-unsigned.apk"
+                        : "-unaligned.apk")
 
-        ImmutableCollection.Builder<ApkOutput> tmpOutputs =
-                ImmutableList.builder();
-
-        ApkOutput.SplitApkOutput[] variantOutputs = gson.fromJson(
-                new FileReader(getInputSplitResListFile()), ApkOutput.SplitApkOutput[].class)
-
-        for (ApkOutput.SplitApkOutput variantOutput : variantOutputs) {
-            println "in package " + variantOutput
-            String apkName = "${project.archivesBaseName}-${outputBaseName}-${variantOutput.splitIdentifier}"
-            apkName = apkName + (signingConfig == null
-                    ? "-unsigned.apk"
-                    : "-unaligned.apk")
-
-            File outFile = new File(outputDirectory, apkName);
-            getBuilder().signApk(variantOutput.getOutputFile(), signingConfig, outFile)
-            tmpOutputs.add(new ApkOutput.SplitApkOutput(
-                    ApkOutput.OutputType.SPLIT,
-                    ApkOutput.SplitType.DENSITY,
-                    variantOutput.splitIdentifier,
-                    variantOutput.splitSuffix,
-                    outFile))
+                File outFile = new File(outputDirectory, apkName);
+                getBuilder().signApk(file, signingConfig, outFile)
+            }
         }
-
-        FileWriter fileWriter = new FileWriter(outputPackagedSplitResListFile)
-        fileWriter.write(gson.toJson(tmpOutputs.build().toArray()))
-        fileWriter.close()
     }
 }

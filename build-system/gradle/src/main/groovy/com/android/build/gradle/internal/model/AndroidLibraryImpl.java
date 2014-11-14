@@ -21,13 +21,14 @@ import com.android.annotations.Nullable;
 import com.android.builder.dependency.LibraryDependency;
 import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.MavenCoordinates;
+import com.google.common.collect.Lists;
 
 import java.io.File;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
 
-public class AndroidLibraryImpl implements AndroidLibrary, Serializable {
+public class AndroidLibraryImpl extends LibraryImpl implements AndroidLibrary, Serializable {
     private static final long serialVersionUID = 1L;
 
     @Nullable
@@ -61,16 +62,21 @@ public class AndroidLibraryImpl implements AndroidLibrary, Serializable {
     @NonNull
     private final List<AndroidLibrary> dependencies;
 
-    AndroidLibraryImpl(@NonNull LibraryDependency libraryDependency,
-                       @NonNull List<AndroidLibrary> dependencies,
-                       @Nullable String project,
-                       @Nullable String variant) {
+    AndroidLibraryImpl(
+            @NonNull LibraryDependency libraryDependency,
+            @NonNull List<AndroidLibrary> dependencies,
+            @NonNull Collection<File> localJarOverride,
+            @Nullable String project,
+            @Nullable String variant,
+            @Nullable MavenCoordinates requestedCoordinates,
+            @Nullable MavenCoordinates resolvedCoordinates) {
+        super(requestedCoordinates, resolvedCoordinates);
         this.dependencies = dependencies;
         bundle = libraryDependency.getBundle();
         folder = libraryDependency.getFolder();
         manifest = libraryDependency.getManifest();
         jarFile = libraryDependency.getJarFile();
-        localJars = libraryDependency.getLocalJars();
+        localJars = Lists.newArrayList(localJarOverride);
         resFolder = libraryDependency.getResFolder();
         assetsFolder = libraryDependency.getAssetsFolder();
         jniFolder = libraryDependency.getJniFolder();
@@ -171,18 +177,5 @@ public class AndroidLibraryImpl implements AndroidLibrary, Serializable {
     @Override
     public File getLintJar() {
         return lintJar;
-    }
-
-
-    @Nullable
-    @Override
-    public MavenCoordinates getRequestedCoordinates() {
-        return null;
-    }
-
-    @Nullable
-    @Override
-    public MavenCoordinates getResolvedCoordinates() {
-        return null;
     }
 }

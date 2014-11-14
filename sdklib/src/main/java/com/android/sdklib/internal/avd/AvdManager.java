@@ -591,7 +591,7 @@ public class AvdManager {
                 return Pair.of(AvdConflict.CONFLICT_EXISTING_PATH, file.getPath());
             }
 
-            file = AvdInfo.getDefaultAvdFolder(this, name);
+            file = AvdInfo.getDefaultAvdFolder(this, name, false);
             if (file.exists()) {
                 return Pair.of(AvdConflict.CONFLICT_EXISTING_PATH, file.getPath());
             }
@@ -1689,22 +1689,24 @@ public class AvdManager {
     private static void writeIniFile(File iniFile, Map<String, String> values, boolean addEncoding)
             throws IOException {
 
-        Charset charset = Charsets.ISO_8859_1;
+        Charset charset = Charsets.UTF_8;
         OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(iniFile), charset);
+        try {
+            if (addEncoding) {
+                // Write down the charset used in case we want to use it later.
+                writer.write(String.format("%1$s=%2$s\n", AVD_INI_ENCODING, charset.name()));
+            }
 
-        if (addEncoding) {
-            // Write down the charset used in case we want to use it later.
-            writer.write(String.format("%1$s=%2$s\n", AVD_INI_ENCODING, charset.name()));
+            ArrayList<String> keys = new ArrayList<String>(values.keySet());
+            Collections.sort(keys);
+
+            for (String key : keys) {
+                String value = values.get(key);
+                writer.write(String.format("%1$s=%2$s\n", key, value));
+            }
+        } finally {
+            writer.close();
         }
-
-        ArrayList<String> keys = new ArrayList<String>(values.keySet());
-        Collections.sort(keys);
-
-        for (String key : keys) {
-            String value = values.get(key);
-            writer.write(String.format("%1$s=%2$s\n", key, value));
-        }
-        writer.close();
     }
 
     /**
@@ -1746,7 +1748,7 @@ public class AvdManager {
         try {
             boolean canChangeCharset = false;
             if (charset == null) {
-                canChangeCharset = false;
+                canChangeCharset = true;
                 charset = Charsets.ISO_8859_1;
             }
             reader = new BufferedReader(new InputStreamReader(propFile.getContents(), charset));

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <d:devices xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-           xmlns:d="http://schemas.android.com/sdk/devices/1">
+           xmlns:d="http://schemas.android.com/sdk/devices/2">
 
     <d:device>
         <d:name>Nexus One</d:name>
@@ -55,6 +55,7 @@
             </d:abi>
             <d:dock> </d:dock>
             <d:power-type>plugged-in</d:power-type>
+            <d:skin>nexus_one</d:skin>
         </d:hardware>
         <d:software>
             <d:api-level>7-10</d:api-level>
@@ -137,6 +138,7 @@
             </d:abi>
             <d:dock> </d:dock>
             <d:power-type>plugged-in</d:power-type>
+            <d:skin>nexus_s</d:skin>
         </d:hardware>
         <d:software>
             <d:api-level>9-16</d:api-level>
@@ -253,6 +255,7 @@
             </d:dock>
             <!-- plugged in (never, charge, always) -->
             <d:power-type>battery</d:power-type>
+            <d:skin>galaxy_nexus</d:skin>
         </d:hardware>
         <d:software>
             <d:api-level>14-</d:api-level>
@@ -377,6 +380,7 @@
             </d:abi>
             <d:dock> </d:dock>
             <d:power-type>battery</d:power-type>
+            <d:skin>nexus_7</d:skin>
         </d:hardware>
 
         <d:software>
@@ -462,6 +466,7 @@
             </d:abi>
             <d:dock></d:dock>
             <d:power-type>battery</d:power-type>
+            <d:skin>nexus_4</d:skin>
         </d:hardware>
         <d:software>
             <d:api-level>16</d:api-level>
@@ -557,6 +562,7 @@
             </d:abi>
             <d:dock></d:dock>
             <d:power-type>battery</d:power-type>
+            <d:skin>nexus_10</d:skin>
         </d:hardware>
         <d:software>
             <d:api-level>16</d:api-level>
@@ -650,8 +656,9 @@
                 armeabi-v7a
                 armeabi
             </d:abi>
-            <d:dock> </d:dock>
+            <d:dock></d:dock>
             <d:power-type>battery</d:power-type>
+            <d:skin>nexus_7_2013</d:skin>
         </d:hardware>
 
         <d:software>
@@ -754,6 +761,7 @@
       </d:abi>
       <d:dock></d:dock>
       <d:power-type>battery</d:power-type>
+      <d:skin>nexus_5</d:skin>
     </d:hardware>
     <d:software>
       <d:api-level>19</d:api-level>
@@ -792,5 +800,274 @@
       <d:nav-state>nonav</d:nav-state>
     </d:state>
   </d:device>
+
+    <d:device>
+        <d:name>Nexus 6</d:name>
+        <d:id>Nexus 6</d:id>
+        <d:manufacturer>Google</d:manufacturer>
+        <d:hardware>
+            <d:screen>
+                <d:screen-size>normal</d:screen-size>
+                <d:diagonal-length>5.96</d:diagonal-length>
+                <d:pixel-density>560dpi</d:pixel-density>
+                <d:screen-ratio>notlong</d:screen-ratio>
+                <d:dimensions>
+                    <d:x-dimension>1440</d:x-dimension>
+                    <d:y-dimension>2560</d:y-dimension>
+                </d:dimensions>
+                <d:xdpi>493</d:xdpi>
+                <d:ydpi>493</d:ydpi>
+                <d:touch>
+                    <d:multitouch>jazz-hands</d:multitouch>
+                    <d:mechanism>finger</d:mechanism>
+                    <d:screen-type>capacitive</d:screen-type>
+                </d:touch>
+            </d:screen>
+            <d:networking>
+                Wifi
+                Bluetooth
+                NFC
+            </d:networking>
+            <d:sensors>
+                Accelerometer
+                Barometer
+                Compass
+                GPS
+                Gyroscope
+                LightSensor
+                ProximitySensor
+            </d:sensors>
+            <d:mic>true</d:mic>
+            <d:camera>
+                <d:location>back</d:location>
+                <d:autofocus>true</d:autofocus>
+                <d:flash>true</d:flash>
+            </d:camera>
+            <d:camera>
+                <d:location>front</d:location>
+                <d:autofocus>false</d:autofocus>
+                <d:flash>false</d:flash>
+            </d:camera>
+            <d:keyboard>nokeys</d:keyboard>
+            <d:nav>nonav</d:nav>
+            <d:ram unit="GiB">3</d:ram>
+            <d:buttons>soft</d:buttons>
+            <d:internal-storage unit="MiB">1968</d:internal-storage>
+            <d:removable-storage unit="MiB">0</d:removable-storage>
+            <d:cpu>Quad core Krait 450 CPU 2.7GHz (Qualcomm Snapdragon 805 SOC)</d:cpu>
+            <d:gpu>Adreno 420</d:gpu>
+            <d:abi>
+                armeabi-v7a
+                armeabi
+            </d:abi>
+            <d:dock> </d:dock>
+            <d:power-type>battery</d:power-type>
+            <d:skin>nexus_6</d:skin>
+        </d:hardware>
+        <d:software>
+            <d:api-level>21</d:api-level>
+            <d:live-wallpaper-support>true</d:live-wallpaper-support>
+            <d:bluetooth-profiles> </d:bluetooth-profiles>
+            <d:gl-version>3.0</d:gl-version>
+            <d:gl-extensions>
+                GL_EXT_debug_marker GL_OES_EGL_image
+                GL_OES_EGL_image_external GL_OES_EGL_sync
+                GL_OES_vertex_half_float GL_OES_framebuffer_object
+                GL_OES_rgb8_rgba8 GL_OES_compressed_ETC1_RGB8_texture
+                GL_AMD_compressed_ATC_texture
+                GL_KHR_texture_compression_astc_ldr
+                GL_OES_texture_npot GL_EXT_texture_filter_anisotropic
+                GL_EXT_texture_format_BGRA8888 GL_OES_texture_3D
+                GL_EXT_color_buffer_float
+                GL_EXT_color_buffer_half_float GL_QCOM_alpha_test
+                GL_OES_depth24 GL_OES_packed_depth_stencil
+                GL_OES_depth_texture GL_OES_depth_texture_cube_map
+                GL_EXT_sRGB GL_OES_texture_float
+                GL_OES_texture_float_linear GL_OES_texture_half_float
+                GL_OES_texture_half_float_linear
+                GL_EXT_texture_type_2_10_10_10_REV
+                GL_EXT_texture_sRGB_decode GL_OES_element_index_uint
+                GL_EXT_copy_image GL_EXT_geometry_shader
+                GL_EXT_tessellation_shader GL_OES_texture_stencil8
+                GL_EXT_shader_io_blocks GL_OES_shader_image_atomic
+                GL_OES_sample_variables GL_EXT_texture_border_clamp
+                GL_EXT_multisampled_render_to_texture
+                GL_OES_shader_multisample_interpolation
+                GL_EXT_draw_buffers_indexed GL_EXT_gpu_shader5
+                GL_EXT_robustness GL_EXT_texture_buffer
+                GL_OES_texture_storage_multisample_2d_array
+                GL_OES_sample_shading GL_OES_get_program_binary
+                GL_EXT_debug_label GL_KHR_blend_equation_advanced
+                GL_KHR_blend_equation_advanced_coherent
+                GL_QCOM_tiled_rendering
+                GL_ANDROID_extension_pack_es31a
+                GL_EXT_primitive_bounding_box
+                GL_OES_standard_derivatives GL_OES_vertex_array_object
+                GL_KHR_debug
+            </d:gl-extensions>
+            <d:status-bar>true</d:status-bar>
+        </d:software>
+        <d:state name="Portrait" default="true">
+            <d:description>The phone in portrait view</d:description>
+            <d:screen-orientation>port</d:screen-orientation>
+            <d:keyboard-state>keyssoft</d:keyboard-state>
+            <d:nav-state>nonav</d:nav-state>
+        </d:state>
+        <d:state name="Landscape">
+            <d:description>The phone in landscape view</d:description>
+            <d:screen-orientation>land</d:screen-orientation>
+            <d:keyboard-state>keyssoft</d:keyboard-state>
+            <d:nav-state>nonav</d:nav-state>
+        </d:state>
+    </d:device>
+
+    <d:device>
+        <d:name>Nexus 9</d:name>
+        <d:id>Nexus 9</d:id>
+        <d:manufacturer>Google</d:manufacturer>
+        <d:hardware>
+            <d:screen>
+                <d:screen-size>xlarge</d:screen-size>
+                <d:diagonal-length>8.86</d:diagonal-length>
+                <d:pixel-density>xhdpi</d:pixel-density>
+                <d:screen-ratio>notlong</d:screen-ratio>
+                <d:dimensions>
+                    <d:x-dimension>2048</d:x-dimension>
+                    <d:y-dimension>1536</d:y-dimension>
+                </d:dimensions>
+                <d:xdpi>288.9949951171875</d:xdpi>
+                <d:ydpi>288.9949951171875</d:ydpi>
+                <d:touch>
+                    <d:multitouch>jazz-hands</d:multitouch>
+                    <d:mechanism>finger</d:mechanism>
+                    <d:screen-type>capacitive</d:screen-type>
+                </d:touch>
+            </d:screen>
+            <d:networking>
+                Wifi
+                Bluetooth
+                NFC
+            </d:networking>
+            <d:sensors>
+                Accelerometer
+                Barometer
+                Compass
+                GPS
+                Gyroscope
+                LightSensor
+            </d:sensors>
+            <d:mic>true</d:mic>
+            <d:camera>
+                <d:location>back</d:location>
+                <d:autofocus>true</d:autofocus>
+                <d:flash>true</d:flash>
+            </d:camera>
+            <d:camera>
+                <d:location>front</d:location>
+                <d:autofocus>false</d:autofocus>
+                <d:flash>false</d:flash>
+            </d:camera>
+            <d:keyboard>nokeys</d:keyboard>
+            <d:nav>nonav</d:nav>
+            <d:ram unit="KiB">1879968</d:ram>
+            <d:buttons>soft</d:buttons>
+            <d:internal-storage unit="MiB">1545</d:internal-storage>
+            <d:removable-storage unit="MiB">0</d:removable-storage>
+            <d:cpu>64-bit NVIDIA Tegra K1 Dual Denver @ 2.3GHz</d:cpu>
+            <d:gpu>192-core Kepler GPU</d:gpu>
+            <d:abi>
+                arm64-v8a
+            </d:abi>
+            <d:dock> </d:dock>
+            <d:power-type>battery</d:power-type>
+            <d:skin>nexus_9</d:skin>
+        </d:hardware>
+        <d:software>
+            <d:api-level>21</d:api-level>
+            <d:live-wallpaper-support>true</d:live-wallpaper-support>
+            <d:bluetooth-profiles> </d:bluetooth-profiles>
+            <d:gl-version>3.1</d:gl-version>
+            <d:gl-extensions>
+                GL_EXT_debug_marker GL_EXT_blend_minmax
+                GL_EXT_color_buffer_float
+                GL_EXT_color_buffer_half_float GL_EXT_copy_image
+                GL_EXT_debug_label GL_EXT_draw_buffers_indexed
+                GL_EXT_frag_depth GL_EXT_geometry_point_size
+                GL_EXT_geometry_shader GL_EXT_gpu_shader5
+                GL_EXT_map_buffer_range GL_EXT_occlusion_query_boolean
+                GL_EXT_primitive_bounding_box GL_EXT_robustness
+                GL_EXT_separate_shader_objects
+                GL_EXT_shader_implicit_conversions
+                GL_EXT_shader_integer_mix GL_EXT_shader_io_blocks
+                GL_EXT_shadow_samplers GL_EXT_sRGB
+                GL_EXT_sRGB_write_control
+                GL_EXT_tessellation_point_size
+                GL_EXT_tessellation_shader GL_EXT_texture_border_clamp
+                GL_EXT_texture_buffer GL_EXT_texture_compression_dxt1
+                GL_EXT_texture_compression_s3tc
+                GL_EXT_texture_cube_map_array
+                GL_EXT_texture_filter_anisotropic
+                GL_EXT_texture_format_BGRA8888 GL_EXT_texture_rg
+                GL_EXT_texture_sRGB_decode GL_EXT_texture_storage
+                GL_EXT_texture_view GL_EXT_unpack_subimage
+                GL_KHR_debug GL_KHR_texture_compression_astc_ldr
+                GL_NV_bgr GL_NV_bindless_texture
+                GL_NV_blend_equation_advanced
+                GL_NV_blend_equation_advanced_coherent
+                GL_NV_copy_buffer GL_NV_copy_image GL_NV_draw_buffers
+                GL_NV_draw_instanced GL_NV_draw_texture
+                GL_NV_EGL_stream_consumer_external
+                GL_NV_explicit_attrib_location
+                GL_NV_fbo_color_attachments GL_NV_framebuffer_blit
+                GL_NV_framebuffer_multisample
+                GL_NV_generate_mipmap_sRGB GL_NV_instanced_arrays
+                GL_NV_occlusion_query_samples
+                GL_NV_non_square_matrices GL_NV_pack_subimage
+                GL_NV_packed_float GL_NV_packed_float_linear
+                GL_NV_path_rendering GL_NV_pixel_buffer_object
+                GL_NV_read_buffer GL_NV_read_depth
+                GL_NV_read_depth_stencil GL_NV_read_stencil
+                GL_NV_secure_context GL_NV_shadow_samplers_array
+                GL_NV_shadow_samplers_cube GL_NV_sRGB_formats
+                GL_NV_texture_array GL_NV_texture_border_clamp
+                GL_NV_texture_compression_latc
+                GL_NV_texture_compression_s3tc
+                GL_NV_texture_compression_s3tc_update
+                GL_NV_timer_query GL_KHR_blend_equation_advanced
+                GL_KHR_blend_equation_advanced_coherent
+                GL_OES_compressed_ETC1_RGB8_texture GL_OES_depth24
+                GL_OES_depth32 GL_OES_depth_texture
+                GL_OES_depth_texture_cube_map GL_OES_EGL_image
+                GL_OES_EGL_image_external GL_OES_EGL_sync
+                GL_OES_element_index_uint GL_OES_fbo_render_mipmap
+                GL_OES_get_program_binary GL_OES_mapbuffer
+                GL_OES_packed_depth_stencil GL_OES_rgb8_rgba8
+                GL_OES_sample_shading GL_OES_sample_variables
+                GL_OES_shader_image_atomic
+                GL_OES_shader_multisample_interpolation
+                GL_OES_standard_derivatives GL_OES_surfaceless_context
+                GL_OES_texture_npot GL_OES_texture_float
+                GL_OES_texture_float_linear GL_OES_texture_half_float
+                GL_OES_texture_half_float_linear
+                GL_OES_texture_stencil8
+                GL_OES_texture_storage_multisample_2d_array
+                GL_OES_vertex_array_object GL_OES_vertex_half_float
+                GL_ANDROID_extension_pack_es31a
+            </d:gl-extensions>
+            <d:status-bar>true</d:status-bar>
+        </d:software>
+        <d:state name="Portrait">
+            <d:description>The tablet in portrait view</d:description>
+            <d:screen-orientation>port</d:screen-orientation>
+            <d:keyboard-state>keyssoft</d:keyboard-state>
+            <d:nav-state>nonav</d:nav-state>
+        </d:state>
+        <d:state name="Landscape" default="true">
+            <d:description>The tablet in landscape view</d:description>
+            <d:screen-orientation>land</d:screen-orientation>
+            <d:keyboard-state>keyssoft</d:keyboard-state>
+            <d:nav-state>nonav</d:nav-state>
+        </d:state>
+    </d:device>
 
 </d:devices>

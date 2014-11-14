@@ -1,0 +1,14 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 15
+    buildToolsVersion = rootProject.ext.buildToolsVersion
+
+    defaultConfig {
+        renderscriptTargetApi = 11
+    }
+}
+
+dependencies {
+    compile project(':lib')
+}

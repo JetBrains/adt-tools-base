@@ -1,0 +1,27 @@
+apply plugin: 'java'
+apply plugin: 'clone-artifacts'
+apply plugin: 'idea'
+apply plugin: 'application'
+
+dependencies {
+    compile project(':base:project-test-lib')
+
+    // Need an SLF4J implementation at runtime
+    runtime 'org.slf4j:slf4j-simple:1.7.2'
+
+    compile 'junit:junit:3.8.1'
+}
+
+// this is needed by the app plugin but not used at runtime
+// (since we run this as unit tests), so the class name doesn't matter.
+mainClassName = "org.gradle.sample.Main"
+
+distZip.setDestinationDir(rootProject.ext.androidHostDist)
+
+applicationDistribution.from('build.xml')
+applicationDistribution.from(file('../tests/regular')) {
+    into 'tests'
+}
+
+task dist << {}
+dist.dependsOn distZip

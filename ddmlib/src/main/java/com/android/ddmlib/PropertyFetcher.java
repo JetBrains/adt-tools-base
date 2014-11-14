@@ -107,6 +107,7 @@ class PropertyFetcher {
      * @param name the property name to retrieve
      * @return a {@link Future} that can be used to retrieve the prop value
      */
+    @NonNull
     public synchronized Future<String> getProperty(@NonNull String name) {
         SettableFuture<String> result;
         if (mCacheState.equals(CacheState.FETCHING)) {

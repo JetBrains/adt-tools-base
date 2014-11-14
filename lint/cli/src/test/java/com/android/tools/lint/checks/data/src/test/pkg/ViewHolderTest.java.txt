@@ -134,4 +134,22 @@ public abstract class ViewHolderTest extends BaseAdapter {
             return v;
         }
     }
+
+    public static class Adapter7 extends ViewHolderTest {
+        LayoutInflater inflater;
+
+        @Override
+        public View getView(final int position, final View convertView, final ViewGroup parent) {
+            View rootView = convertView;
+            final int itemViewType = getItemViewType(position);
+            switch (itemViewType) {
+                case 0:
+                    if (rootView != null)
+                        return rootView;
+                    rootView = inflater.inflate(android.R.layout.simple_list_item_1, parent, false);
+                    break;
+            }
+            return rootView;
+        }
+    }
 }
