@@ -23,6 +23,10 @@ import org.junit.ClassRule
 import org.junit.Test
 import org.junit.experimental.categories.Category
 
+import java.util.zip.ZipFile
+
+import static org.junit.Assert.*
+
 /**
  * Assemble tests for packagingOptions.
  */
@@ -34,16 +38,20 @@ class PackagingOptionsTest {
 
     @BeforeClass
     static void setup() {
-        project.execute("clean", "assembleDebug");
+        project.execute("clean", "assembleDebug")
     }
 
     @Test
-    void assembleDebug() {
+    void lint() {
+        project.execute("lint")
+        println project.getApk("debug")
+        ZipFile apk = new ZipFile(project.getApk("debug"))
+        assertNotNull(apk.getEntry("first_pick.txt"))
     }
 
     @Test
     @Category(DeviceTests.class)
     void connectedCheck() {
-        project.execute("connectedCheck");
+        project.execute("connectedCheck")
     }
 }

@@ -16,10 +16,12 @@
 
 package com.android.build.gradle.integration.library
 
+import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
+import org.junit.experimental.categories.Category
 
 /**
  * Assemble tests for multiproject.
@@ -36,6 +38,13 @@ class MultiprojectTest {
     }
 
     @Test
-    void assembleDebug() {
+    void lint() {
+        project.execute("lint")
+    }
+
+    @Test
+    @Category(DeviceTests.class)
+    void connectedCheckAndReport() {
+        project.execute("connectedCheck", "mergeAndroidReports")
     }
 }

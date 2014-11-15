@@ -27,6 +27,7 @@ import com.android.io.StreamException;
 import com.android.sdklib.internal.project.ProjectProperties;
 import com.android.sdklib.internal.project.ProjectPropertiesWorkingCopy;
 import com.google.common.base.Charsets;
+import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 
@@ -42,6 +43,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.security.CodeSource;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -259,6 +261,29 @@ public class GradleTestProject implements TestRule {
     }
 
     /**
+     * Return the output directory from Android plugins.
+     */
+    public File getOutputDir() {
+        return new File(testDir,
+                Joiner.on(File.separator).join("build", AndroidProject.FD_OUTPUTS));
+    }
+
+    public File getOutputFile(String path) {
+        return new File(getOutputDir(), path);
+    }
+
+    /**
+     * Return the output APK File from the application plugin for the given dimension.
+     */
+    public File getApk(String ... dimensions) {
+        // TODO: Add overload for tests and splits.
+        List<String> dimensionList = Lists.newArrayListWithExpectedSize(1 + dimensions.length);
+        dimensionList.add(getName());
+        dimensionList.addAll(Arrays.asList(dimensions));
+        return getOutputFile("apk/" + Joiner.on("-").join(dimensionList) + ".apk");
+    }
+
+    /**
      * Returns the SDK dir
      */
     public File getSdkDir() {
@@ -299,6 +324,10 @@ public class GradleTestProject implements TestRule {
      */
     public void execute(String ... tasks) {
         execute(Collections.<String>emptyList(), false, tasks);
+    }
+
+    public void execute(@NonNull List<String> arguments, String ... tasks) {
+        execute(arguments, false, tasks);
     }
 
     /**

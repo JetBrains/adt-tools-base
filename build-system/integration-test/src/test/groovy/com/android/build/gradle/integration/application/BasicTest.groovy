@@ -34,16 +34,23 @@ class BasicTest {
 
     @BeforeClass
     static void setup() {
-        project.execute("clean", "assembleDebug");
+        project.execute("clean", "assembleDebug")
     }
 
     @Test
-    void assembleDebug() {
+    void report() {
+        project.execute("androidDependencies", "signingReport")
+    }
+
+    @Test
+    @Category(DeviceTests.class)
+    void install() {
+        project.execute("installDebug", "uninstallAll");
     }
 
     @Test
     @Category(DeviceTests.class)
     void connectedCheck() {
-        project.execute("connectedCheck");
+        project.execute("connectedCheck")
     }
 }
