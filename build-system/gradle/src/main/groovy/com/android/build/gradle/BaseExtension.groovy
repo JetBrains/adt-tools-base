@@ -25,18 +25,18 @@ import com.android.build.gradle.internal.SourceSetSourceProviderWrapper
 import com.android.build.gradle.internal.coverage.JacocoExtension
 import com.android.build.gradle.internal.dsl.AaptOptionsImpl
 import com.android.build.gradle.internal.dsl.AndroidSourceSetFactory
+import com.android.build.gradle.internal.dsl.BuildTypeDsl
 import com.android.build.gradle.internal.dsl.DexOptionsImpl
+import com.android.build.gradle.internal.dsl.GroupableProductFlavorDsl
 import com.android.build.gradle.internal.dsl.LintOptionsImpl
 import com.android.build.gradle.internal.dsl.PackagingOptionsImpl
 import com.android.build.gradle.internal.dsl.ProductFlavorDsl
+import com.android.build.gradle.internal.dsl.SigningConfigDsl
 import com.android.build.gradle.internal.dsl.Splits
 import com.android.build.gradle.internal.test.TestOptions
 import com.android.builder.core.BuilderConstants
-import com.android.builder.core.DefaultBuildType
-import com.android.builder.core.DefaultProductFlavor
 import com.android.builder.model.BuildType
 import com.android.builder.model.ProductFlavor
-import com.android.builder.model.SigningConfig
 import com.android.builder.model.SourceProvider
 import com.android.builder.testing.api.DeviceProvider
 import com.android.builder.testing.api.TestServer
@@ -71,9 +71,11 @@ public abstract class BaseExtension {
     final JacocoExtension jacoco
     final Splits splits
 
-    final NamedDomainObjectContainer<DefaultProductFlavor> productFlavors
-    final NamedDomainObjectContainer<DefaultBuildType> buildTypes
-    final NamedDomainObjectContainer<SigningConfig> signingConfigs
+    /** All product flavors used by this project. */
+    final NamedDomainObjectContainer<GroupableProductFlavorDsl> productFlavors
+    /** Build types used by this project. */
+    final NamedDomainObjectContainer<BuildTypeDsl> buildTypes
+    final NamedDomainObjectContainer<SigningConfigDsl> signingConfigs
 
     String resourcePrefix
 
@@ -103,9 +105,9 @@ public abstract class BaseExtension {
             @NonNull BasePlugin plugin,
             @NonNull ProjectInternal project,
             @NonNull Instantiator instantiator,
-            @NonNull NamedDomainObjectContainer<DefaultBuildType> buildTypes,
-            @NonNull NamedDomainObjectContainer<DefaultProductFlavor> productFlavors,
-            @NonNull NamedDomainObjectContainer<SigningConfig> signingConfigs,
+            @NonNull NamedDomainObjectContainer<BuildTypeDsl> buildTypes,
+            @NonNull NamedDomainObjectContainer<GroupableProductFlavorDsl> productFlavors,
+            @NonNull NamedDomainObjectContainer<SigningConfigDsl> signingConfigs,
             boolean isLibrary) {
         this.plugin = plugin
         this.buildTypes = buildTypes
@@ -205,17 +207,20 @@ public abstract class BaseExtension {
     /**
      * Configures the build types.
      */
-    void buildTypes(Action<? super NamedDomainObjectContainer<DefaultBuildType>> action) {
+    void buildTypes(Action<? super NamedDomainObjectContainer<BuildTypeDsl>> action) {
         plugin.checkTasksAlreadyCreated()
         action.execute(buildTypes)
     }
 
-    void productFlavors(Action<? super NamedDomainObjectContainer<DefaultProductFlavor>> action) {
+    /**
+     * Configures the product flavors.
+     */
+    void productFlavors(Action<? super NamedDomainObjectContainer<GroupableProductFlavorDsl>> action) {
         plugin.checkTasksAlreadyCreated()
         action.execute(productFlavors)
     }
 
-    void signingConfigs(Action<? super NamedDomainObjectContainer<SigningConfig>> action) {
+    void signingConfigs(Action<? super NamedDomainObjectContainer<SigningConfigDsl>> action) {
         plugin.checkTasksAlreadyCreated()
         action.execute(signingConfigs)
     }
@@ -245,7 +250,7 @@ public abstract class BaseExtension {
     /**
      * The default configuration, inherited by all build flavors (if any are defined).
      */
-    void defaultConfig(Action<ProductFlavorDsl> action) {
+    void defaultConfig(Action<GroupableProductFlavorDsl> action) {
         plugin.checkTasksAlreadyCreated()
         action.execute(defaultConfig)
     }

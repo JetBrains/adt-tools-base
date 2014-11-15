@@ -25,6 +25,12 @@
             <tr>
                 <td>testOptions</td>
             </tr>
+            <tr>
+                <td>buildTypes</td>
+            </tr>
+            <tr>
+                <td>productFlavors</td>
+            </tr>
         </table>
     </section>
     <section>
@@ -49,6 +55,9 @@
             </tr>
             <tr>
                 <td>testOptions</td>
+            </tr>
+            <tr>
+                <td>productFlavors</td>
             </tr>
         </table>
     </section>
