@@ -60,6 +60,7 @@ public abstract class BaseExtension {
     private String target
     private FullRevision buildToolsRevision
 
+    /** Default config, shared by all flavors. */
     final ProductFlavorDsl defaultConfig
     final AaptOptionsImpl aaptOptions
     final LintOptionsImpl lintOptions
@@ -170,11 +171,18 @@ public abstract class BaseExtension {
         }
     }
 
-    void compileSdkVersion(String target) {
+    /**
+     * Sets the compile SDK version, based on full SDK version string, e.g.
+     * <code>android-21</code> for Lollipop.
+     */
+    void compileSdkVersion(String version) {
         plugin.checkTasksAlreadyCreated()
-        this.target = target
+        this.target = version
     }
 
+    /**
+     * Sets the compile SDK version, based on API level, e.g. 21 for Lollipop.
+     */
     void compileSdkVersion(int apiLevel) {
         compileSdkVersion("android-" + apiLevel)
     }
@@ -187,6 +195,7 @@ public abstract class BaseExtension {
         compileSdkVersion(target)
     }
 
+    /** Sets the build tools version. */
     void buildToolsVersion(String version) {
         plugin.checkTasksAlreadyCreated()
         buildToolsRevision = FullRevision.parseRevision(version)
@@ -216,15 +225,24 @@ public abstract class BaseExtension {
         flavorDimensionList = Arrays.asList(dimensions)
     }
 
+    /**
+     * Configures the source sets.
+     */
     void sourceSets(Action<NamedDomainObjectContainer<AndroidSourceSet>> action) {
         plugin.checkTasksAlreadyCreated()
         action.execute(sourceSetsContainer)
     }
 
+    /**
+     * All source sets.
+     */
     NamedDomainObjectContainer<AndroidSourceSet> getSourceSets() {
         sourceSetsContainer
     }
 
+    /**
+     * The default config.
+     */
     void defaultConfig(Action<ProductFlavorDsl> action) {
         plugin.checkTasksAlreadyCreated()
         action.execute(defaultConfig)
