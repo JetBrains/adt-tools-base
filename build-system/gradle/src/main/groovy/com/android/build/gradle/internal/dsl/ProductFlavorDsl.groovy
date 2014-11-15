@@ -67,6 +67,9 @@ class ProductFlavorDsl extends DefaultProductFlavor {
         return this;
     }
 
+    /**
+     * Sets minimum SDK version.
+     */
     @NonNull
     public ProductFlavor minSdkVersion(int minSdkVersion) {
         setMinSdkVersion(minSdkVersion);
@@ -79,6 +82,9 @@ class ProductFlavorDsl extends DefaultProductFlavor {
         return this;
     }
 
+    /**
+     * Sets minimum SDK version.
+     */
     @NonNull
     public ProductFlavor minSdkVersion(String minSdkVersion) {
         setMinSdkVersion(minSdkVersion);
@@ -91,6 +97,9 @@ class ProductFlavorDsl extends DefaultProductFlavor {
         return this;
     }
 
+    /**
+     * Sets target SDK version.
+     */
     @NonNull
     public ProductFlavor targetSdkVersion(int targetSdkVersion) {
         setTargetSdkVersion(targetSdkVersion);
@@ -103,6 +112,9 @@ class ProductFlavorDsl extends DefaultProductFlavor {
         return this;
     }
 
+    /**
+     * Sets target SDK version.
+     */
     @NonNull
     public ProductFlavor targetSdkVersion(String targetSdkVersion) {
         setTargetSdkVersion(targetSdkVersion);
