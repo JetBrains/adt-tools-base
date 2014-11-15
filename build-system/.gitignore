@@ -14,6 +14,7 @@ tests/regular/basic/lint-report*
 tests/regular/dependencies/jarProject/build
 tests/regular/dependencies/jarProject2/build
 tests/regular/embedded/*/build
+tests/regular/embedded/micro-apps/*/build
 tests/regular/flavoredlib/*/build
 tests/regular/flavorlib/*/build
 tests/regular/libMinifyJarDep/*/build

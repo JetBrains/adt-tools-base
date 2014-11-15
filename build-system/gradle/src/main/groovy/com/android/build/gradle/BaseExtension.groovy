@@ -132,42 +132,46 @@ public abstract class BaseExtension {
         sourceSetsContainer.whenObjectAdded { AndroidSourceSet sourceSet ->
             ConfigurationContainer configurations = project.getConfigurations()
 
-            Configuration compileConfiguration = configurations.findByName(
-                    sourceSet.getCompileConfigurationName())
-            if (compileConfiguration == null) {
-                compileConfiguration = configurations.create(sourceSet.getCompileConfigurationName())
-            }
-            compileConfiguration.setVisible(false);
-            compileConfiguration.setDescription(
-                    String.format("Classpath for compiling the %s sources.", sourceSet.getName()))
+            createConfiguration(
+                    configurations,
+                    sourceSet.getCompileConfigurationName(),
+                    "Classpath for compiling the ${sourceSet.name} sources.")
 
-            Configuration packageConfiguration = configurations.findByName(
-                    sourceSet.getPackageConfigurationName())
-            if (packageConfiguration == null) {
-                packageConfiguration = configurations.create(sourceSet.getPackageConfigurationName())
-            }
-            packageConfiguration.setVisible(false)
+            String packageConfigDescription
             if (isLibrary) {
-                packageConfiguration.setDescription(
-                        String.format("Classpath only used for publishing.",
-                                sourceSet.getName()));
+                packageConfigDescription = "Classpath only used when publishing '${sourceSet.name}'."
             } else {
-                packageConfiguration.setDescription(
-                        String.format("Classpath packaged with the compiled %s classes.",
-                                sourceSet.getName()));
+                packageConfigDescription = "Classpath packaged with the compiled '${sourceSet.name}' classes."
             }
+            createConfiguration(
+                    configurations,
+                    sourceSet.getPackageConfigurationName(),
+                    packageConfigDescription)
 
-            Configuration providedConfiguration = configurations.findByName(
-                    sourceSet.getProvidedConfigurationName())
-            if (providedConfiguration == null) {
-                providedConfiguration = configurations.create(sourceSet.getProvidedConfigurationName())
-            }
-            providedConfiguration.setVisible(false);
-            providedConfiguration.setDescription(
-                    String.format("Classpath for only compiling the %s sources.", sourceSet.getName()))
+            createConfiguration(
+                    configurations,
+                    sourceSet.getProvidedConfigurationName(),
+                    "Classpath for only compiling the ${sourceSet.name} sources.")
+
+            createConfiguration(
+                    configurations,
+                    sourceSet.getWearAppConfigurationName(),
+                    "Link to a wear app to embed for object '${sourceSet.name}'.")
 
             sourceSet.setRoot(String.format("src/%s", sourceSet.getName()))
         }
+    }
+
+    protected static void createConfiguration(
+            @NonNull ConfigurationContainer configurations,
+            @NonNull String configurationName,
+            @NonNull String configurationDescription) {
+        Configuration configuration = configurations.findByName(configurationName)
+        if (configuration == null) {
+            configuration = configurations.create(configurationName)
+        }
+        configuration.setVisible(false);
+        configuration.setDescription(configurationDescription)
     }
 
     /**
