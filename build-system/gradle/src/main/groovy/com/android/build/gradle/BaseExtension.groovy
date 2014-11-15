@@ -65,6 +65,7 @@ public abstract class BaseExtension {
     final AaptOptionsImpl aaptOptions
     final LintOptionsImpl lintOptions
     final DexOptionsImpl dexOptions
+    /** Options for running tests. */
     final TestOptions testOptions
     final CompileOptions compileOptions
     final PackagingOptionsImpl packagingOptions
@@ -205,6 +206,9 @@ public abstract class BaseExtension {
         buildToolsVersion(version)
     }
 
+    /**
+     * Configures the build types.
+     */
     void buildTypes(Action<? super NamedDomainObjectContainer<DefaultBuildType>> action) {
         plugin.checkTasksAlreadyCreated()
         action.execute(buildTypes)
@@ -226,7 +230,8 @@ public abstract class BaseExtension {
     }
 
     /**
-     * Configures the source sets.
+     * Configures the source sets. Note that the Android plugin uses its own implementation of
+     * source sets, {@link AndroidSourceSet}.
      */
     void sourceSets(Action<NamedDomainObjectContainer<AndroidSourceSet>> action) {
         plugin.checkTasksAlreadyCreated()
@@ -234,14 +239,15 @@ public abstract class BaseExtension {
     }
 
     /**
-     * All source sets.
+     * All source sets. Note that the Android plugin uses its own implementation of
+     * source sets, {@link AndroidSourceSet}.
      */
     NamedDomainObjectContainer<AndroidSourceSet> getSourceSets() {
         sourceSetsContainer
     }
 
     /**
-     * The default config.
+     * The default configuration, inherited by all build flavors (if any are defined).
      */
     void defaultConfig(Action<ProductFlavorDsl> action) {
         plugin.checkTasksAlreadyCreated()
@@ -263,6 +269,7 @@ public abstract class BaseExtension {
         action.execute(lintOptions)
     }
 
+    /** Configures the test options. */
     void testOptions(Action<TestOptions> action) {
         plugin.checkTasksAlreadyCreated()
         action.execute(testOptions)
@@ -308,17 +315,33 @@ public abstract class BaseExtension {
     }
 
     public void defaultPublishConfig(String value) {
-        defaultPublishConfig = value
+        setDefaultPublishConfig(value)
     }
 
     public void publishNonDefault(boolean value) {
         publishNonDefault = value
     }
 
+    /**
+     * Name of the configuration used to build the default artifact of this project.
+     *
+     * <p>See <a href="http://tools.android.com/tech-docs/new-build-system/user-guide#TOC-Referencing-a-Library">
+     * Referencing a Library</a>
+     */
     public String getDefaultPublishConfig() {
         return defaultPublishConfig
     }
 
+    public void setDefaultPublishConfig(String value) {
+        defaultPublishConfig = value
+    }
+
+    /**
+     * Whether to publish artifacts for all configurations, not just the default one.
+     *
+     * <p>See <a href="http://tools.android.com/tech-docs/new-build-system/user-guide#TOC-Referencing-a-Library">
+     * Referencing a Library</a>
+     */
     public boolean getPublishNonDefault() {
         return publishNonDefault
     }
@@ -390,6 +413,7 @@ public abstract class BaseExtension {
         return new SourceSetSourceProviderWrapper(sourceSet)
     }
 
+    /** Compile SDK version. */
     public String getCompileSdkVersion() {
         return target
     }

@@ -16,6 +16,39 @@
             <tr>
                 <td>manifest</td>
             </tr>
+            <tr>
+                <td>java</td>
+            </tr>
+            <tr>
+                <td>compileConfigurationName</td>
+            </tr>
+            <tr>
+                <td>packageConfigurationName</td>
+            </tr>
+            <tr>
+                <td>providedConfigurationName</td>
+            </tr>
+            <tr>
+                <td>manifest</td>
+            </tr>
+            <tr>
+                <td>res</td>
+            </tr>
+            <tr>
+                <td>assets</td>
+            </tr>
+            <tr>
+                <td>aidl</td>
+            </tr>
+            <tr>
+                <td>renderscript</td>
+            </tr>
+            <tr>
+                <td>jni</td>
+            </tr>
+            <tr>
+                <td>jniLibs</td>
+            </tr>
         </table>
     </section>
     <section>
@@ -31,6 +64,33 @@
             </tr>
             <tr>
                 <td>manifest</td>
+            </tr>
+            <tr>
+                <td>java</td>
+            </tr>
+            <tr>
+                <td>manifest</td>
+            </tr>
+            <tr>
+                <td>res</td>
+            </tr>
+            <tr>
+                <td>assets</td>
+            </tr>
+            <tr>
+                <td>aidl</td>
+            </tr>
+            <tr>
+                <td>renderscript</td>
+            </tr>
+            <tr>
+                <td>jni</td>
+            </tr>
+            <tr>
+                <td>jniLibs</td>
+            </tr>
+            <tr>
+                <td>setRoot</td>
             </tr>
         </table>
     </section>
