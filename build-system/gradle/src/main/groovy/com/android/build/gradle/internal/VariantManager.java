@@ -29,6 +29,7 @@ import com.android.build.gradle.BasePlugin;
 import com.android.build.gradle.api.AndroidSourceSet;
 import com.android.build.gradle.api.BaseVariant;
 import com.android.build.gradle.api.GroupableProductFlavor;
+import com.android.build.gradle.internal.ProductFlavorData.ConfigurationProviderImpl;
 import com.android.build.gradle.internal.api.DefaultAndroidSourceSet;
 import com.android.build.gradle.internal.api.ReadOnlyObjectProvider;
 import com.android.build.gradle.internal.api.TestVariantImpl;
@@ -380,16 +381,15 @@ public class VariantManager implements VariantModel {
                 variantFactory.getVariantConfigurationType(),
                 signingOverride);
 
-        // Add the container of dependencies.
-        // The order of the libraries is important, in descending order:
-        // build types, flavors, defaultConfig.
-        final List<ConfigurationProvider> variantProviders =
-                Lists.newArrayListWithCapacity(productFlavorList.size() + 2);
+        // sourceSetContainer in case we are creating variant specific sourceSets.
+        NamedDomainObjectContainer<AndroidSourceSet> sourceSetsContainer = extension
+                .getSourceSetsContainer();
 
-        variantProviders.add(buildTypeData);
-
+        // We must first add the flavors to the variant config, in order to get the proper
+        // variant-specific and multi-flavor name as we add/create the variant providers later.
         for (GroupableProductFlavor productFlavor : productFlavorList) {
-            ProductFlavorData<GroupableProductFlavorDsl> data = productFlavors.get(productFlavor.getName());
+            ProductFlavorData<GroupableProductFlavorDsl> data = productFlavors.get(
+                    productFlavor.getName());
 
             String dimensionName = productFlavor.getFlavorDimension();
             if (dimensionName == null) {
@@ -400,35 +400,47 @@ public class VariantManager implements VariantModel {
                     data.getProductFlavor(),
                     data.getSourceSet(),
                     dimensionName);
-            variantProviders.add(data.getMainProvider());
         }
 
-        // now add the defaultConfig
-        variantProviders.add(defaultConfigData.getMainProvider());
+        // Add the container of dependencies.
+        // The order of the libraries is important, in descending order:
+        // variant-specific, build type, multi-flavor, flavor1, flavor2, ..., defaultConfig.
+        // variant-specific if the full combo of flavors+build type. Does not exist if no flavors.
+        // multi-flavor is the combination of all flavor dimensions. Does not exist if <2 dimension.
 
-        // Create variant source sets if necessary.
-        NamedDomainObjectContainer<AndroidSourceSet> sourceSetsContainer = extension
-                .getSourceSetsContainer();
+        final List<ConfigurationProvider> variantProviders =
+                Lists.newArrayListWithExpectedSize(productFlavorList.size() + 4);
 
+        // 1. add the variant-specific if applicable.
         if (!productFlavorList.isEmpty()) {
             DefaultAndroidSourceSet variantSourceSet =
                     (DefaultAndroidSourceSet) sourceSetsContainer.maybeCreate(
                             variantConfig.getFullName());
             variantConfig.setVariantSourceProvider(variantSourceSet);
-            // TODO: hmm this won't work
-            //variantProviders.add(new ConfigurationProviderImpl(project, variantSourceSet))
+            variantProviders.add(new ConfigurationProviderImpl(project, variantSourceSet));
         }
 
+        // 2. the build type.
+        variantProviders.add(buildTypeData);
+
+        // 3. the multi-flavor combination
         if (productFlavorList.size() > 1) {
             DefaultAndroidSourceSet multiFlavorSourceSet =
                     (DefaultAndroidSourceSet) sourceSetsContainer.maybeCreate(
                             variantConfig.getFlavorName());
             variantConfig.setMultiFlavorSourceProvider(multiFlavorSourceSet);
-            // TODO: hmm this won't work
-            //variantProviders.add(new ConfigurationProviderImpl(project, multiFlavorSourceSet))
+            variantProviders.add(new ConfigurationProviderImpl(project, multiFlavorSourceSet));
         }
 
-        // create the variant and get its internal storage object.
+        // 4. the flavors.
+        for (GroupableProductFlavor productFlavor : productFlavorList) {
+            variantProviders.add(productFlavors.get(productFlavor.getName()).getMainProvider());
+        }
+
+        // 5. The defaultConfig
+        variantProviders.add(defaultConfigData.getMainProvider());
+
+        // Done. Create the variant and get its internal storage object.
         BaseVariantData<?> variantData = variantFactory.createVariantData(variantConfig,
                 densities, abis, compatibleScreens);
 

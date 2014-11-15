@@ -22,6 +22,7 @@ import static org.junit.Assert.fail;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.BasePlugin;
+import com.android.builder.model.AndroidProject;
 import com.android.io.StreamException;
 import com.android.sdklib.internal.project.ProjectProperties;
 import com.android.sdklib.internal.project.ProjectPropertiesWorkingCopy;
@@ -92,9 +93,9 @@ public class GradleTestProject implements TestRule {
 
     private static final String DEFAULT_TEST_PROJECT_NAME = "project";
 
-    public static final int DEFAULT_COMPILE_SDK_VERSION = 19;
+    public static final int DEFAULT_COMPILE_SDK_VERSION = 21;
 
-    public static final String DEFAULT_BUILD_TOOL_VERSION = "20.0.0";
+    public static final String DEFAULT_BUILD_TOOL_VERSION = "21.0.1";
 
     private static final String ANDROID_GRADLE_VERSION = "0.14.2";
 
@@ -306,12 +307,7 @@ public class GradleTestProject implements TestRule {
      * @param tasks Variadic list of tasks to execute.
      */
     public void execute(List<String> arguments, @Nullable OutputStream stdout, String ... tasks) {
-        GradleConnector connector = GradleConnector.newConnector();
-
-        ProjectConnection connection = connector
-                .useGradleVersion(BasePlugin.GRADLE_TEST_VERSION)
-                .forProjectDirectory(testDir)
-                .connect();
+        ProjectConnection connection = getProjectConnection();
         try {
             List<String> args = Lists.newArrayListWithCapacity(2 + arguments.size());
             args.add("-i");
@@ -321,6 +317,19 @@ public class GradleTestProject implements TestRule {
             connection.newBuild().forTasks(tasks)
                     .setStandardOutput(stdout)
                     .withArguments(args.toArray(new String[args.size()])).run();
+        } finally {
+            connection.close();
+        }
+    }
+
+    /**
+     * Returns the project model
+     */
+    @NonNull
+    public AndroidProject getModel() {
+        ProjectConnection connection = getProjectConnection();
+        try {
+            return connection.getModel(AndroidProject.class);
         } finally {
             connection.close();
         }
@@ -370,6 +379,19 @@ public class GradleTestProject implements TestRule {
             }
         }
         return null;
+    }
+
+    /**
+     * Returns a Gradle project Connection
+     */
+    @NonNull
+    private ProjectConnection getProjectConnection() {
+        GradleConnector connector = GradleConnector.newConnector();
+
+        return connector
+                .useGradleVersion(BasePlugin.GRADLE_TEST_VERSION)
+                .forProjectDirectory(testDir)
+                .connect();
     }
 
     private static File createLocalProp(
