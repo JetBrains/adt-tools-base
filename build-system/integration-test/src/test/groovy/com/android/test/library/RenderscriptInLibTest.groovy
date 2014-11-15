@@ -16,12 +16,10 @@
 
 package com.android.test.library
 
-import com.android.test.common.category.DeviceTests
 import com.android.test.common.fixture.GradleTestProject
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
-import org.junit.experimental.categories.Category
 
 /**
  * Assemble tests for renderscriptInLib.
@@ -38,6 +36,6 @@ class RenderscriptInLibTest {
     }
 
     @Test
-    void "assembleDebug succeeds"() {
+    void assembleDebug() {
     }
 }

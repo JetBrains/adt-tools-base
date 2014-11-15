@@ -38,7 +38,7 @@ class LibsTestTest {
     }
 
     @Test
-    void "assembleDebug succeeds"() {
+    void assembleDebug() {
     }
 
     @Test

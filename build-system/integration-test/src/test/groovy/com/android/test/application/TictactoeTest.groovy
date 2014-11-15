@@ -14,14 +14,12 @@
  * limitations under the License.
  */
 
-package com.android.test
+package com.android.test.application
 
-import com.android.test.common.category.DeviceTests
 import com.android.test.common.fixture.GradleTestProject
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
-import org.junit.experimental.categories.Category
 
 /**
  * Assemble tests for tictactoe.
@@ -38,6 +36,6 @@ class TictactoeTest {
     }
 
     @Test
-    void "assembleDebug succeeds"() {
+    void assembleDebug() {
     }
 }

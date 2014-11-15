@@ -38,7 +38,7 @@ class ApiTest {
     }
 
     @Test
-    void "assembleDebug succeeds"() {
+    void assembleDebug() {
     }
 
     @Test
