@@ -17,10 +17,6 @@
 package com.android.test.ndk
 
 import com.android.test.common.category.DeviceTests
-
-import static org.junit.Assert.assertNotNull
-import static org.junit.Assert.assertNull
-
 import com.android.test.common.fixture.GradleTestProject
 import com.android.test.common.fixture.app.HelloWorldJniApp
 import org.junit.BeforeClass
@@ -29,6 +25,9 @@ import org.junit.Test
 import org.junit.experimental.categories.Category
 
 import java.util.zip.ZipFile
+
+import static org.junit.Assert.assertNotNull
+import static org.junit.Assert.assertNull
 
 /**
  * Integration test of the native plugin with multiple variants.

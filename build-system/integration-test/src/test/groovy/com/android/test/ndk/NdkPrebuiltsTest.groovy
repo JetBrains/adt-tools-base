@@ -16,12 +16,10 @@
 
 package com.android.test.ndk
 
-import com.android.test.common.category.DeviceTests
 import com.android.test.common.fixture.GradleTestProject
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
-import org.junit.experimental.categories.Category
 
 /**
  * Assemble tests for ndkPrebuilts.
@@ -38,6 +36,6 @@ class NdkPrebuiltsTest {
     }
 
     @Test
-    void "assembleDebug succeeds"() {
+    void assembleDebug() {
     }
 }
