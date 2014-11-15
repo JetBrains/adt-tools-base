@@ -241,6 +241,12 @@ abstract class BaseVariantImpl implements BaseVariant {
         getVariantData().registerJavaGeneratingTask(task, sourceFolders);
     }
 
+    @Override
+    public void buildConfigField(@NonNull String type, @NonNull String name,
+            @NonNull String value) {
+        getVariantData().getVariantConfiguration().addBuildConfigField(type, name, value);
+    }
+
     // ---- Deprecated, will be removed in 1.0
     //STOPSHIP
 
