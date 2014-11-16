@@ -17,12 +17,8 @@
 package com.android.build.gradle.internal.model;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
-import com.android.build.FilterData;
-import com.android.build.MainOutputFile;
 import com.android.build.OutputFile;
 import com.android.builder.model.AndroidArtifactOutput;
-import com.google.common.collect.ImmutableList;
 
 import java.io.File;
 import java.io.Serializable;
@@ -40,7 +36,7 @@ public class AndroidArtifactOutputImpl implements AndroidArtifactOutput, Seriali
     private final String assembleTaskName;
     private final int versionCode;
     private final Collection<OutputFile> outputFiles;
-    private final MainOutputFile mainOutputFile;
+    private final OutputFile mainOutputFile;
 
     AndroidArtifactOutputImpl(
             @NonNull Collection<OutputFile> outputFiles,
@@ -55,7 +51,7 @@ public class AndroidArtifactOutputImpl implements AndroidArtifactOutput, Seriali
         for (OutputFile outputFile : outputFiles) {
             if (outputFile.getOutputType().equals(OutputFile.MAIN)
                     || outputFile.getOutputType().equals(OutputFile.FULL_SPLIT)) {
-                mainOutputFile = (MainOutputFile) outputFile;
+                mainOutputFile = outputFile;
                 return;
             }
         }
@@ -64,7 +60,7 @@ public class AndroidArtifactOutputImpl implements AndroidArtifactOutput, Seriali
 
     @NonNull
     @Override
-    public MainOutputFile getMainOutputFile() {
+    public OutputFile getMainOutputFile() {
         return mainOutputFile;
     }
 

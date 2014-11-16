@@ -33,7 +33,7 @@ public interface VariantOutput {
      * {@link com.android.build.OutputFile.OutputType#FULL_SPLIT}
      */
     @NonNull
-    MainOutputFile getMainOutputFile();
+    OutputFile getMainOutputFile();
 
     /**
      * All the output files for this artifacts, contains the main APK and optionally a list of
