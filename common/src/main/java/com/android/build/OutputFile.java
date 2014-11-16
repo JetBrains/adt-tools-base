@@ -79,4 +79,17 @@ public interface OutputFile {
      */
     @NonNull
     public Collection<FilterData> getFilters();
+
+    /**
+     * Returns the output file for this artifact's output.
+     * Depending on whether the project is an app or a library project, this could be an apk or
+     * an aar file. If this {@link com.android.build.OutputFile} has filters, this is a split
+     * APK.
+     *
+     * For test artifact for a library project, this would also be an apk.
+     *
+     * @return the output file.
+     */
+    @NonNull
+    File getOutputFile();
 }

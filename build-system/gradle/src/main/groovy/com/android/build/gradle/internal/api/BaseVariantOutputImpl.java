@@ -18,7 +18,6 @@ package com.android.build.gradle.internal.api;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.MainOutputFile;
 import com.android.build.OutputFile;
 import com.android.build.gradle.api.ApkOutputFile;
 import com.android.build.gradle.api.BaseVariantOutput;
@@ -56,7 +55,7 @@ public abstract class BaseVariantOutputImpl implements BaseVariantOutput {
 
     @NonNull
     @Override
-    public MainOutputFile getMainOutputFile() {
+    public OutputFile getMainOutputFile() {
         return getVariantOutputData().getMainOutputFile();
     }
 
