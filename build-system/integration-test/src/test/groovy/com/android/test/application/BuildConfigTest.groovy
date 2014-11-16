@@ -101,14 +101,12 @@ class BuildConfigTest {
             }
             """.stripIndent()
 
-        project.execute(
+        model = project.executeAndReturnModel(
                 'clean',
                 'generateFlavor1DebugBuildConfig',
                 'generateFlavor1ReleaseBuildConfig',
                 'generateFlavor2DebugBuildConfig',
                 'generateFlavor2ReleaseBuildConfig')
-
-        model = project.getModel()
     }
 
     @Test
