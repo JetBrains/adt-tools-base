@@ -111,13 +111,6 @@ public class GenerateBuildConfig extends BaseTask {
             .addField("String", "VERSION_NAME", "\"${vn}\"")
             .addItems(getItems())
 
-        // Add the legacy PACKAGE_NAME field.
-        // TODO remove prior to v1.0
-        generator.addItems(ImmutableList.of(
-                new ClassFieldImpl("String", "PACKAGE_NAME", "\"${getAppPackageName()}\"",
-                        ImmutableSet.of(Deprecated.class.getCanonicalName()),
-                        "@deprecated Use {@link #APPLICATION_ID}")))
-
         List<String> flavors = getFlavorNamesWithDimensionNames()
         int count = flavors.size()
         if (count > 1) {

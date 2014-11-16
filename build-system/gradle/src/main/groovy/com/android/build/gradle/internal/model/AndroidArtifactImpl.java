@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.model.AndroidArtifact;
 import com.android.builder.model.AndroidArtifactOutput;
+import com.android.builder.model.ClassField;
 import com.android.builder.model.Dependencies;
 import com.android.builder.model.SourceProvider;
 
@@ -27,6 +28,7 @@ import java.io.File;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -50,6 +52,10 @@ public class AndroidArtifactImpl extends BaseArtifactImpl implements AndroidArti
     private final List<File> generatedResourceFolders;
     @Nullable
     private final Set<String> abiFilters;
+    @NonNull
+    private final Map<String, ClassField> buildConfigFields;
+    @NonNull
+    private final Map<String, ClassField> resValues;
 
     AndroidArtifactImpl(
             @NonNull String name,
@@ -66,7 +72,9 @@ public class AndroidArtifactImpl extends BaseArtifactImpl implements AndroidArti
             @NonNull Dependencies dependencies,
             @Nullable SourceProvider variantSourceProvider,
             @Nullable SourceProvider multiFlavorSourceProviders,
-            @Nullable Set<String> abiFilters) {
+            @Nullable Set<String> abiFilters,
+            @NonNull Map<String,ClassField> buildConfigFields,
+            @NonNull Map<String,ClassField> resValues) {
         super(name, assembleTaskName, compileTaskName, classesFolder, dependencies,
                 variantSourceProvider, multiFlavorSourceProviders);
 
@@ -78,6 +86,8 @@ public class AndroidArtifactImpl extends BaseArtifactImpl implements AndroidArti
         this.generatedSourceFolders = generatedSourceFolders;
         this.generatedResourceFolders = generatedResourceFolders;
         this.abiFilters = abiFilters;
+        this.buildConfigFields = buildConfigFields;
+        this.resValues = resValues;
     }
 
     @NonNull
@@ -125,5 +135,17 @@ public class AndroidArtifactImpl extends BaseArtifactImpl implements AndroidArti
     @Override
     public Set<String> getAbiFilters() {
         return abiFilters;
+    }
+
+    @NonNull
+    @Override
+    public Map<String, ClassField> getBuildConfigFields() {
+        return buildConfigFields;
+    }
+
+    @NonNull
+    @Override
+    public Map<String, ClassField> getResValues() {
+        return resValues;
     }
 }
