@@ -65,23 +65,4 @@ public class LibraryVariantImpl extends BaseVariantImpl implements LibraryVarian
     public TestVariant getTestVariant() {
         return testVariant;
     }
-
-    // ---- Deprecated, will be removed in 1.0
-    //STOPSHIP
-
-    @Override
-    public Zip getPackageLibrary() {
-        // if more than one output, refuse to use this method
-        if (outputs.size() > 1) {
-            throw new RuntimeException(String.format(
-                    "More than one output on variant '%s', cannot call getPackageLibrary() on it. Call it on one of its outputs instead.",
-                    getName()));
-        }
-
-        // deprecation warning.
-        plugin.displayDeprecationWarning("variant.getPackageLibrary() is deprecated. Call it on one of variant.getOutputs() instead.");
-
-        // use the single output for compatibility.
-        return ((LibraryVariantOutput) outputs.get(0)).getPackageLibrary();
-    }
 }
