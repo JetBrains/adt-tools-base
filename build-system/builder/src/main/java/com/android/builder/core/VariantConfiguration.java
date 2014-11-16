@@ -136,9 +136,13 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
     private final List<LibraryDependency> mFlatLibraries = Lists.newArrayList();
 
     /**
-     * Variant-specific build Config
+     * Variant-specific build Config fields
      */
     private final Map<String, ClassField> mBuildConfigFields = Maps.newTreeMap();
+    /**
+     * Variant-specific res values
+     */
+    private final Map<String, ClassField> mResValues = Maps.newTreeMap();
 
     /**
      * Signing Override to be used instead of any signing config provided by Build Type or
@@ -506,7 +510,8 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
      * @throws java.lang.RuntimeException if a dup is found.
      */
     public void checkSourceProviders() {
-        List<SourceProvider> providers = Lists.newArrayListWithExpectedSize(4 + mFlavorSourceProviders.size());
+        List<SourceProvider> providers = Lists.newArrayListWithExpectedSize(
+                4 + mFlavorSourceProviders.size());
 
         providers.add(mDefaultSourceProvider);
         if (mBuildTypeSourceProvider != null) {
@@ -1526,6 +1531,17 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
     }
 
     /**
+     * Adds a variant-specific res value.
+     * @param type the type of the field
+     * @param name the name of the field
+     * @param value the value of the field
+     */
+    public void addResValue(@NonNull String type, @NonNull String name, @NonNull String value) {
+        ClassField classField = AndroidBuilder.createClassField(type, name, value);
+        mResValues.put(name, classField);
+    }
+
+    /**
      * Returns a list of items for the BuildConfig class.
      *
      * Items can be either fields (instance of {@link com.android.builder.model.ClassField})
@@ -1572,6 +1588,58 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
     }
 
     /**
+     * Return the merged build config fields for the variant.
+     *
+     * This is made of of the variant-specific fields overlayed on top of the build type ones,
+     * the flavors ones, and the default config ones.
+     *
+     * @return a map of merged fields
+     */
+    @NonNull
+    public Map<String, ClassField> getMergedBuildConfigFields() {
+        Map<String, ClassField> mergedMap = Maps.newHashMap();
+
+        // start from the lowest priority and just add it all. Higher priority fields
+        // will replace lower priority ones.
+
+        mergedMap.putAll(mDefaultConfig.getBuildConfigFields());
+        for (int i = mFlavors.size() - 1; i >= 0 ; i--) {
+            mergedMap.putAll(mFlavors.get(i).getBuildConfigFields());
+        }
+
+        mergedMap.putAll(mBuildType.getBuildConfigFields());
+        mergedMap.putAll(mBuildConfigFields);
+
+        return mergedMap;
+    }
+
+    /**
+     * Return the merged res values for the variant.
+     *
+     * This is made of of the variant-specific fields overlayed on top of the build type ones,
+     * the flavors ones, and the default config ones.
+     *
+     * @return a map of merged fields
+     */
+    @NonNull
+    public Map<String, ClassField> getMergedResValues() {
+        Map<String, ClassField> mergedMap = Maps.newHashMap();
+
+        // start from the lowest priority and just add it all. Higher priority fields
+        // will replace lower priority ones.
+
+        mergedMap.putAll(mDefaultConfig.getResValues());
+        for (int i = mFlavors.size() - 1; i >= 0 ; i--) {
+            mergedMap.putAll(mFlavors.get(i).getResValues());
+        }
+
+        mergedMap.putAll(mBuildType.getResValues());
+        mergedMap.putAll(mResValues);
+
+        return mergedMap;
+    }
+
+    /**
      * Fills a list of Object from a given list of ClassField only if the name isn't in a set.
      * Each new item added adds its name to the list.
      * @param outList the out list
@@ -1603,15 +1671,21 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
     public List<Object> getResValues() {
         List<Object> fullList = Lists.newArrayList();
 
+        // keep track of the names already added. This is because we show where the items
+        // come from so we cannot just put everything a map and let the new ones override the
+        // old ones.
         Set<String> usedFieldNames = Sets.newHashSet();
 
-        Collection<ClassField> list = mBuildType.getResValues().values();
+        Collection<ClassField> list = mResValues.values();
+        if (!list.isEmpty()) {
+            fullList.add("Values from the variant");
+            fillFieldList(fullList, usedFieldNames, list);
+        }
+
+        list = mBuildType.getResValues().values();
         if (!list.isEmpty()) {
             fullList.add("Values from build type: " + mBuildType.getName());
-            for (ClassField f : list) {
-                usedFieldNames.add(f.getName());
-                fullList.add(f);
-            }
+            fillFieldList(fullList, usedFieldNames, list);
         }
 
         for (F flavor : mFlavors) {

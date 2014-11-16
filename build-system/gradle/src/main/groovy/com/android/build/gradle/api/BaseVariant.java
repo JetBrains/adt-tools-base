@@ -260,7 +260,15 @@ public interface BaseVariant {
      */
     void buildConfigField(@NonNull String type, @NonNull String name, @NonNull String value);
 
-        // ---- Deprecated, will be removed in 1.0
+    /**
+     * Adds a variant-specific res value.
+     * @param type the type of the field
+     * @param name the name of the field
+     * @param value the value of the field
+     */
+    void resValue(@NonNull String type, @NonNull String name, @NonNull String value);
+
+    // ---- Deprecated, will be removed in 1.0
     //STOPSHIP
 
     /**

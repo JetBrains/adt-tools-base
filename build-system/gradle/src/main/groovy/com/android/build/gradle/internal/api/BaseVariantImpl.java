@@ -247,6 +247,11 @@ abstract class BaseVariantImpl implements BaseVariant {
         getVariantData().getVariantConfiguration().addBuildConfigField(type, name, value);
     }
 
+    @Override
+    public void resValue(@NonNull String type, @NonNull String name, @NonNull String value) {
+        getVariantData().getVariantConfiguration().addResValue(type, name, value);
+    }
+
     // ---- Deprecated, will be removed in 1.0
     //STOPSHIP
 

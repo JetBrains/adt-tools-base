@@ -302,7 +302,9 @@ public class ModelBuilder implements ToolingModelBuilder {
                 DependenciesImpl.cloneDependencies(variantData, basePlugin, gradleProjects),
                 variantSourceProvider,
                 multiFlavorSourceProvider,
-                variantConfiguration.supportedAbis)
+                variantConfiguration.supportedAbis,
+                variantConfiguration.getMergedBuildConfigFields(),
+                variantConfiguration.getMergedResValues())
     }
 
     @NonNull

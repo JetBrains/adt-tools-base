@@ -19,11 +19,8 @@ package com.android.test.application
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
 import com.android.builder.model.AndroidArtifact
-import com.android.builder.model.AndroidLibrary
 import com.android.builder.model.AndroidProject
 import com.android.builder.model.ClassField
-import com.android.builder.model.Dependencies
-import com.android.builder.model.MavenCoordinates
 import com.android.builder.model.Variant
 import com.android.test.common.fixture.GradleTestProject
 import com.android.test.common.fixture.app.HelloWorldApp
@@ -38,19 +35,13 @@ import org.junit.Test
 
 import static junit.framework.Assert.assertEquals
 import static org.junit.Assert.assertEquals
-import static org.junit.Assert.assertFalse
 import static org.junit.Assert.assertNotNull
-import static org.junit.Assert.assertNotNull
-import static org.junit.Assert.assertNotNull
-import static org.junit.Assert.assertNotNull
-import static org.junit.Assert.assertNotNull
-import static org.junit.Assert.assertTrue
 
 /**
- * Test for BuildConfig field declared in build type, flavors, and variant and how they
+ * Test for Res Values declared in build type, flavors, and variant and how they
  * override each other
  */
-class BuildConfigTest {
+class ResValueTest {
     @ClassRule
     public static GradleTestProject project = GradleTestProject.builder().create()
 
@@ -67,35 +58,35 @@ class BuildConfigTest {
                 buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
 
                 defaultConfig {
-                    buildConfigField "int", "VALUE_DEFAULT", "1"
-                    buildConfigField "int", "VALUE_DEBUG",   "1"
-                    buildConfigField "int", "VALUE_FLAVOR",  "1"
-                    buildConfigField "int", "VALUE_VARIANT", "1"
+                    resValue "string", "VALUE_DEFAULT", "1"
+                    resValue "string", "VALUE_DEBUG",   "1"
+                    resValue "string", "VALUE_FLAVOR",  "1"
+                    resValue "string", "VALUE_VARIANT", "1"
                 }
 
                 buildTypes {
                     debug {
-                        buildConfigField "int", "VALUE_DEBUG",   "100"
-                        buildConfigField "int", "VALUE_VARIANT", "100"
+                        resValue "string", "VALUE_DEBUG",   "100"
+                        resValue "string", "VALUE_VARIANT", "100"
                     }
                 }
 
                 productFlavors {
                     flavor1 {
-                        buildConfigField "int", "VALUE_DEBUG",   "10"
-                        buildConfigField "int", "VALUE_FLAVOR",  "10"
-                        buildConfigField "int", "VALUE_VARIANT", "10"
+                        resValue "string", "VALUE_DEBUG",   "10"
+                        resValue "string", "VALUE_FLAVOR",  "10"
+                        resValue "string", "VALUE_VARIANT", "10"
                     }
                     flavor2 {
-                        buildConfigField "int", "VALUE_DEBUG",   "20"
-                        buildConfigField "int", "VALUE_FLAVOR",  "20"
-                        buildConfigField "int", "VALUE_VARIANT", "20"
+                        resValue "string", "VALUE_DEBUG",   "20"
+                        resValue "string", "VALUE_FLAVOR",  "20"
+                        resValue "string", "VALUE_VARIANT", "20"
                     }
                 }
 
                 applicationVariants.all { variant ->
                     if (variant.buildType.name == "debug") {
-                        variant.buildConfigField "int", "VALUE_VARIANT", "1000"
+                        variant.resValue "string", "VALUE_VARIANT", "1000"
                     }
                 }
             }
@@ -103,10 +94,10 @@ class BuildConfigTest {
 
         project.execute(
                 'clean',
-                'generateFlavor1DebugBuildConfig',
-                'generateFlavor1ReleaseBuildConfig',
-                'generateFlavor2DebugBuildConfig',
-                'generateFlavor2ReleaseBuildConfig')
+                'generateFlavor1DebugResValue',
+                'generateFlavor1ReleaseResValue',
+                'generateFlavor2DebugResValue',
+                'generateFlavor2ReleaseResValue')
 
         model = project.getModel()
     }
@@ -114,27 +105,21 @@ class BuildConfigTest {
     @Test
     void builFlavor1Debug() {
         String expected =
-"""/**
- * Automatically generated file. DO NOT MODIFY
- */
-package com.example.helloworld;
+"""<?xml version="1.0" encoding="utf-8"?>
+<resources>
 
-public final class BuildConfig {
-  public static final boolean DEBUG = Boolean.parseBoolean("true");
-  public static final String APPLICATION_ID = "com.example.helloworld";
-  public static final String BUILD_TYPE = "debug";
-  public static final String FLAVOR = "flavor1";
-  public static final int VERSION_CODE = 1;
-  public static final String VERSION_NAME = "";
-  // Fields from the variant
-  public static final int VALUE_VARIANT = 1000;
-  // Fields from build type: debug
-  public static final int VALUE_DEBUG = 100;
-  // Fields from product flavor: flavor1
-  public static final int VALUE_FLAVOR = 10;
-  // Fields from default config.
-  public static final int VALUE_DEFAULT = 1;
-}
+    <!-- Automatically generated file. DO NOT MODIFY -->
+
+    <!-- Values from the variant -->
+    <item name="VALUE_VARIANT" type="string">1000</item>
+    <!-- Values from build type: debug -->
+    <item name="VALUE_DEBUG" type="string">100</item>
+    <!-- Values from product flavor: flavor1 -->
+    <item name="VALUE_FLAVOR" type="string">10</item>
+    <!-- Values from default config. -->
+    <item name="VALUE_DEFAULT" type="string">1</item>
+
+</resources>
 """
         checkBuildConfig(expected, 'flavor1/debug')
     }
@@ -152,27 +137,21 @@ public final class BuildConfig {
     @Test
     void buildFlavor2Debug() {
         String expected =
-"""/**
- * Automatically generated file. DO NOT MODIFY
- */
-package com.example.helloworld;
+"""<?xml version="1.0" encoding="utf-8"?>
+<resources>
 
-public final class BuildConfig {
-  public static final boolean DEBUG = Boolean.parseBoolean("true");
-  public static final String APPLICATION_ID = "com.example.helloworld";
-  public static final String BUILD_TYPE = "debug";
-  public static final String FLAVOR = "flavor2";
-  public static final int VERSION_CODE = 1;
-  public static final String VERSION_NAME = "";
-  // Fields from the variant
-  public static final int VALUE_VARIANT = 1000;
-  // Fields from build type: debug
-  public static final int VALUE_DEBUG = 100;
-  // Fields from product flavor: flavor2
-  public static final int VALUE_FLAVOR = 20;
-  // Fields from default config.
-  public static final int VALUE_DEFAULT = 1;
-}
+    <!-- Automatically generated file. DO NOT MODIFY -->
+
+    <!-- Values from the variant -->
+    <item name="VALUE_VARIANT" type="string">1000</item>
+    <!-- Values from build type: debug -->
+    <item name="VALUE_DEBUG" type="string">100</item>
+    <!-- Values from product flavor: flavor2 -->
+    <item name="VALUE_FLAVOR" type="string">20</item>
+    <!-- Values from default config. -->
+    <item name="VALUE_DEFAULT" type="string">1</item>
+
+</resources>
 """
         checkBuildConfig(expected, 'flavor2/debug')
     }
@@ -190,25 +169,19 @@ public final class BuildConfig {
     @Test
     void buildFlavor1Release() {
         String expected =
-                """/**
- * Automatically generated file. DO NOT MODIFY
- */
-package com.example.helloworld;
+"""<?xml version="1.0" encoding="utf-8"?>
+<resources>
 
-public final class BuildConfig {
-  public static final boolean DEBUG = false;
-  public static final String APPLICATION_ID = "com.example.helloworld";
-  public static final String BUILD_TYPE = "release";
-  public static final String FLAVOR = "flavor1";
-  public static final int VERSION_CODE = 1;
-  public static final String VERSION_NAME = "";
-  // Fields from product flavor: flavor1
-  public static final int VALUE_DEBUG = 10;
-  public static final int VALUE_FLAVOR = 10;
-  public static final int VALUE_VARIANT = 10;
-  // Fields from default config.
-  public static final int VALUE_DEFAULT = 1;
-}
+    <!-- Automatically generated file. DO NOT MODIFY -->
+
+    <!-- Values from product flavor: flavor1 -->
+    <item name="VALUE_DEBUG" type="string">10</item>
+    <item name="VALUE_FLAVOR" type="string">10</item>
+    <item name="VALUE_VARIANT" type="string">10</item>
+    <!-- Values from default config. -->
+    <item name="VALUE_DEFAULT" type="string">1</item>
+
+</resources>
 """
         checkBuildConfig(expected, 'flavor1/release')
     }
@@ -226,25 +199,19 @@ public final class BuildConfig {
     @Test
     void buildFlavor2Release() {
         String expected =
-                """/**
- * Automatically generated file. DO NOT MODIFY
- */
-package com.example.helloworld;
+"""<?xml version="1.0" encoding="utf-8"?>
+<resources>
 
-public final class BuildConfig {
-  public static final boolean DEBUG = false;
-  public static final String APPLICATION_ID = "com.example.helloworld";
-  public static final String BUILD_TYPE = "release";
-  public static final String FLAVOR = "flavor2";
-  public static final int VERSION_CODE = 1;
-  public static final String VERSION_NAME = "";
-  // Fields from product flavor: flavor2
-  public static final int VALUE_DEBUG = 20;
-  public static final int VALUE_FLAVOR = 20;
-  public static final int VALUE_VARIANT = 20;
-  // Fields from default config.
-  public static final int VALUE_DEFAULT = 1;
-}
+    <!-- Automatically generated file. DO NOT MODIFY -->
+
+    <!-- Values from product flavor: flavor2 -->
+    <item name="VALUE_DEBUG" type="string">20</item>
+    <item name="VALUE_FLAVOR" type="string">20</item>
+    <item name="VALUE_VARIANT" type="string">20</item>
+    <!-- Values from default config. -->
+    <item name="VALUE_DEFAULT" type="string">1</item>
+
+</resources>
 """
         checkBuildConfig(expected, 'flavor2/release')
     }
@@ -261,7 +228,7 @@ public final class BuildConfig {
 
     private static void checkBuildConfig(@NonNull String expected, @NonNull String variantDir) {
         File outputFile = new File(project.getTestDir(),
-                "build/generated/source/buildConfig/$variantDir/com/example/helloworld/BuildConfig.java")
+                "build/generated/res/generated/$variantDir/values/generated.xml")
         Assert.assertTrue("Missing file: " + outputFile, outputFile.isFile());
         assertEquals(expected, Files.asByteSource(outputFile).asCharSource(Charsets.UTF_8).read())
     }
@@ -276,7 +243,7 @@ public final class BuildConfig {
         AndroidArtifact artifact = variant.getMainArtifact()
         assertNotNull("${variantName} main artifact null-check", artifact)
 
-        Map<String, ClassField> value = artifact.getBuildConfigFields()
+        Map<String, ClassField> value = artifact.getResValues()
         assertNotNull(value)
 
         // check the map against the expected one.
