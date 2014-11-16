@@ -22,6 +22,7 @@ import com.android.build.FilterData;
 import com.android.build.OutputFile;
 import com.google.common.collect.ImmutableList;
 
+import java.io.File;
 import java.io.Serializable;
 import java.util.Collection;
 
@@ -33,8 +34,9 @@ public class OutputFileImpl implements OutputFile, Serializable {
     private final Collection<FilterData> filters;
     private final Collection<String> filterTypes;
     private final String type;
+    private final File outputFile;
 
-    public OutputFileImpl(Collection<FilterData> filters, String type) {
+    public OutputFileImpl(Collection<FilterData> filters, String type, File file) {
         this.filters = filters;
         this.type = type;
         ImmutableList.Builder<String> filterTypes = ImmutableList.builder();
@@ -42,6 +44,7 @@ public class OutputFileImpl implements OutputFile, Serializable {
             filterTypes.add(filter.getFilterType());
         }
         this.filterTypes = filterTypes.build();
+        this.outputFile = file;
     }
 
     @NonNull
@@ -60,5 +63,11 @@ public class OutputFileImpl implements OutputFile, Serializable {
     @Override
     public Collection<FilterData> getFilters() {
         return filters;
+    }
+
+    @NonNull
+    @Override
+    public File getOutputFile() {
+        return outputFile;
     }
 }
