@@ -113,11 +113,6 @@ public final class BuildConfig {
   public static final int VALUE_FLAVOR = 10;
   // Fields from default config.
   public static final int VALUE_DEFAULT = 1;
-  /**
-   * @deprecated Use {@link #APPLICATION_ID}
-   */
-  @Deprecated
-  public static final String PACKAGE_NAME = "com.example.helloworld";
 }
 """
         checkBuildConfig(expected, 'flavor1/debug')
@@ -146,11 +141,6 @@ public final class BuildConfig {
   public static final int VALUE_FLAVOR = 20;
   // Fields from default config.
   public static final int VALUE_DEFAULT = 1;
-  /**
-   * @deprecated Use {@link #APPLICATION_ID}
-   */
-  @Deprecated
-  public static final String PACKAGE_NAME = "com.example.helloworld";
 }
 """
         checkBuildConfig(expected, 'flavor2/debug')
@@ -177,11 +167,6 @@ public final class BuildConfig {
   public static final int VALUE_VARIANT = 10;
   // Fields from default config.
   public static final int VALUE_DEFAULT = 1;
-  /**
-   * @deprecated Use {@link #APPLICATION_ID}
-   */
-  @Deprecated
-  public static final String PACKAGE_NAME = "com.example.helloworld";
 }
 """
         checkBuildConfig(expected, 'flavor1/release')
@@ -208,11 +193,6 @@ public final class BuildConfig {
   public static final int VALUE_VARIANT = 20;
   // Fields from default config.
   public static final int VALUE_DEFAULT = 1;
-  /**
-   * @deprecated Use {@link #APPLICATION_ID}
-   */
-  @Deprecated
-  public static final String PACKAGE_NAME = "com.example.helloworld";
 }
 """
         checkBuildConfig(expected, 'flavor2/release')
