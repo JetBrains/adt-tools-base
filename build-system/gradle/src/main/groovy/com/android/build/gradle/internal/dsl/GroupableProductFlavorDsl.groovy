@@ -37,17 +37,4 @@ public class GroupableProductFlavorDsl extends ProductFlavorDsl implements Group
             @NonNull Logger logger) {
         super(name, project, instantiator, logger)
     }
-
-    // ---------------
-    // TEMP for compatibility
-    // STOPSHIP Remove in 1.0
-
-    public void flavorGroup(String value) {
-        BasePlugin.displayDeprecationWarning(logger, project, "'flavorGroup' has been renamed 'flavorDimension'. It will be removed in 1.0")
-        flavorDimension = value
-    }
-
-    public void setFlavorGroup(String value) {
-        flavorGroup(value)
-    }
 }

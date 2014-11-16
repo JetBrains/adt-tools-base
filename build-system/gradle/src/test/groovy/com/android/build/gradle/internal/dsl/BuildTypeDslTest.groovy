@@ -81,7 +81,7 @@ public class BuildTypeDslTest extends BaseTest {
         object1.setJniDebuggable(true)
         object1.setRenderscriptDebuggable(true)
         object1.setRenderscriptOptimLevel(0)
-        object1.setPackageNameSuffix("foo")
+        object1.setApplicationIdSuffix("foo")
         object1.setVersionNameSuffix("foo")
         object1.setMinifyEnabled(true)
         object1.setSigningConfig(new SigningConfigDsl("blah"))

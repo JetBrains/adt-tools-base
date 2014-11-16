@@ -268,29 +268,6 @@ public interface BaseVariant {
      */
     void resValue(@NonNull String type, @NonNull String name, @NonNull String value);
 
-    // ---- Deprecated, will be removed in 1.0
-    //STOPSHIP
-
-    /**
-     * @deprecated Use getApplicationId()
-     */
-    @NonNull
-    @Deprecated
-    String getPackageName();
-
-    /**
-     * @deprecated use version on the variant's outputs.
-     */
-    @NonNull
-    @Deprecated
-    File getOutputFile();
-
-    /**
-     * @deprecated use version on the variant's outputs.
-     */
-    @Deprecated
-    void setOutputFile(@NonNull File outputFile);
-
     /**
      * If true, variant outputs will be considered signed. Only set if you manually set the outputs
      * to point to signed files built by other tasks.
@@ -301,18 +278,4 @@ public interface BaseVariant {
      * @see #setOutputsAreSigned(boolean)
      */
     boolean getOutputsAreSigned();
-
-    /**
-     * @deprecated use version on the variant's outputs.
-     */
-    @NonNull
-    @Deprecated
-    ProcessAndroidResources getProcessResources();
-
-    /**
-     * @deprecated use version on the variant's outputs.
-     */
-    @NonNull
-    @Deprecated
-    ManifestProcessorTask getProcessManifest();
 }
