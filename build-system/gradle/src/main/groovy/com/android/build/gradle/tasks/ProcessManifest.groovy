@@ -65,6 +65,9 @@ class ProcessManifest extends ManifestProcessorTask {
         return variantConfiguration.getManifestOverlays();
     }
 
+    @Input @Optional
+    File reportFile;
+
     /**
      * Return a serializable version of our map of key value pairs for placeholder substitution.
      * This serialized form is only used by gradle to compare past and present tasks to determine
@@ -90,6 +93,7 @@ class ProcessManifest extends ManifestProcessorTask {
                 getMaxSdkVersion(),
                 getManifestOutputFile().absolutePath,
                 ManifestMerger2.MergeType.LIBRARY,
-                variantConfiguration.getManifestPlaceholders())
+                variantConfiguration.getManifestPlaceholders(),
+                getReportFile())
     }
 }
