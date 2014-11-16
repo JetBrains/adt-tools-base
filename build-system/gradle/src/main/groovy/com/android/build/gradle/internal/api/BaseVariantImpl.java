@@ -52,9 +52,6 @@ import java.util.List;
  */
 abstract class BaseVariantImpl implements BaseVariant {
 
-    /**
-     * STOPSHIP remove when we don't need to display deprecation warnings
-     */
     @NonNull
     protected BasePlugin plugin;
 
@@ -250,89 +247,6 @@ abstract class BaseVariantImpl implements BaseVariant {
     @Override
     public void resValue(@NonNull String type, @NonNull String name, @NonNull String value) {
         getVariantData().getVariantConfiguration().addResValue(type, name, value);
-    }
-
-    // ---- Deprecated, will be removed in 1.0
-    //STOPSHIP
-
-    @Override
-    @NonNull
-    public String getPackageName() {
-        // deprecation warning.
-        plugin.displayDeprecationWarning("variant.getPackageName() is deprecated. Use getApplicationId() instead");
-        return getApplicationId();
-    }
-
-
-    @Override
-    @Deprecated
-    public void setOutputFile(@NonNull File outputFile) {
-        // if more than one output, refuse to use this method
-        if (outputs.size() > 1) {
-            throw new RuntimeException(String.format(
-                    "More than one output on variant '%s', cannot call setOutput() on it. Call it on one of its outputs instead.",
-                    getName()));
-        }
-
-        // deprecation warning.
-        plugin.displayDeprecationWarning("variant.setOutputFile() is deprecated. Call it on one of variant.getOutputs() instead.");
-
-        // use the single output for compatibility.
-        outputs.get(0).setOutputFile(outputFile);
-    }
-
-    @Override
-    @NonNull
-    @Deprecated
-    public File getOutputFile() {
-        // if more than one output, refuse to use this method
-        if (outputs.size() > 1) {
-            throw new RuntimeException(String.format(
-                    "More than one output on variant '%s', cannot call getOutputFile() on it. Call it on one of its outputs instead.",
-                    getName()));
-        }
-
-        // deprecation warning.
-        plugin.displayDeprecationWarning("variant.getOutputFile() is deprecated. Call it on one of variant.getOutputs() instead.");
-
-        // use the single output for compatibility.
-        return outputs.get(0).getOutputFile();
-    }
-
-    @Override
-    @NonNull
-    @Deprecated
-    public ManifestProcessorTask getProcessManifest() {
-        // if more than one output, refuse to use this method
-        if (outputs.size() > 1) {
-            throw new RuntimeException(String.format(
-                    "More than one output on variant '%s', cannot call getProcessManifest() on it. Call it on one of its outputs instead.",
-                    getName()));
-        }
-
-        // deprecation warning.
-        plugin.displayDeprecationWarning("variant.getProcessManifest() is deprecated. Call it on one of variant.getOutputs() instead.");
-
-        // use the single output for compatibility.
-        return outputs.get(0).getProcessManifest();
-    }
-
-    @Override
-    @NonNull
-    @Deprecated
-    public ProcessAndroidResources getProcessResources() {
-        // if more than one output, refuse to use this method
-        if (outputs.size() > 1) {
-            throw new RuntimeException(String.format(
-                    "More than one output on variant '%s', cannot call getProcessResources() on it. Call it on one of its outputs instead.",
-                    getName()));
-        }
-
-        // deprecation warning.
-        plugin.displayDeprecationWarning("variant.getProcessResources() is deprecated. Call it on one of variant.getOutputs() instead.");
-
-        // use the single output for compatibility.
-        return outputs.get(0).getProcessResources();
     }
 
     @Override
