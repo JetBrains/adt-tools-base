@@ -262,14 +262,15 @@ public class ModelBuilder implements ToolingModelBuilder {
             ImmutableCollection.Builder<OutputFile> outputFiles = ImmutableList.builder();
 
             // add the main APK
-            outputFiles.add(new MainOutputFileImpl(
+            outputFiles.add(new OutputFileImpl(
                     variantOutputData.mainOutputFile.filters,
                     variantOutputData.mainOutputFile.getType().name(),
                     variantOutputData.outputFile));
 
             for (ApkOutputFile splitApk : variantOutputData.outputs) {
                 if (splitApk.getType() == OutputFile.OutputType.SPLIT) {
-                    outputFiles.add(new OutputFileImpl(splitApk.getFilters(), OutputFile.SPLIT));
+                    outputFiles.add(new OutputFileImpl(
+                            splitApk.getFilters(), OutputFile.SPLIT, splitApk.getOutputFile()));
                 }
             }
 
