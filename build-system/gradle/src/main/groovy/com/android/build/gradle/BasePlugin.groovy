@@ -2022,7 +2022,6 @@ public abstract class BasePlugin {
         dexTask.legacyMultiDexMode = isLegacyMultiDexMode
         dexTask.optimize = !variantData.variantConfiguration.buildType.debuggable
 
-
         // data holding dependencies and input for the dex. This gets updated as new
         // post-compilation steps are inserted between the compilation and dx.
         PostCompilationData pcData = new PostCompilationData()
