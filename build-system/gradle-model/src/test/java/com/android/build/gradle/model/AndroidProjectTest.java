@@ -1292,7 +1292,7 @@ public class AndroidProjectTest extends TestCase {
             JavaArtifact javaArtifact = javaArtifacts.iterator().next();
             assertEquals("__test__", javaArtifact.getName());
             assertEquals("assemble:" + name, javaArtifact.getAssembleTaskName());
-            assertEquals("compile:" + name, javaArtifact.getJavaCompileTaskName());
+            assertEquals("compile:" + name, javaArtifact.getCompileTaskName());
             assertEquals(new File("classesFolder:" + name), javaArtifact.getClassesFolder());
 
             SourceProvider variantSourceProvider = javaArtifact.getVariantSourceProvider();

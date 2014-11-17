@@ -16,7 +16,9 @@
 package com.android.build.gradle
 import com.android.annotations.NonNull
 import com.android.build.gradle.api.ApkVariant
+import com.android.build.gradle.api.ApkVariantOutput
 import com.android.build.gradle.api.ApplicationVariant
+import com.android.build.gradle.api.BaseVariantOutput
 import com.android.build.gradle.api.TestVariant
 import com.android.build.gradle.internal.test.BaseTest
 import org.gradle.api.JavaVersion
@@ -434,28 +436,39 @@ public class AppPluginDslTest extends BaseTest {
     private static void checkTasks(@NonNull ApkVariant variant) {
         boolean isTestVariant = variant instanceof TestVariant;
 
-        assertNotNull(variant.processManifest)
         assertNotNull(variant.aidlCompile)
         assertNotNull(variant.mergeResources)
         assertNotNull(variant.mergeAssets)
-        assertNotNull(variant.processResources)
         assertNotNull(variant.generateBuildConfig)
         assertNotNull(variant.javaCompile)
         assertNotNull(variant.processJavaResources)
         assertNotNull(variant.dex)
-        assertNotNull(variant.packageApplication)
-
         assertNotNull(variant.assemble)
         assertNotNull(variant.uninstall)
+
+        assertFalse(variant.outputs.isEmpty())
+
+        for (BaseVariantOutput baseVariantOutput : variant.outputs) {
+            assertTrue(baseVariantOutput instanceof ApkVariantOutput)
+            ApkVariantOutput apkVariantOutput = (ApkVariantOutput) baseVariantOutput
+
+            assertNotNull(apkVariantOutput.processManifest)
+            assertNotNull(apkVariantOutput.processResources)
+            assertNotNull(apkVariantOutput.packageApplication)
+        }
 
         if (variant.isSigningReady()) {
             assertNotNull(variant.install)
 
-            // tested variant are never zipAligned.
-            if (!isTestVariant && variant.buildType.zipAlignEnabled) {
-                assertNotNull(variant.zipAlign)
-            } else {
-                assertNull(variant.zipAlign)
+            for (BaseVariantOutput baseVariantOutput : variant.outputs) {
+                ApkVariantOutput apkVariantOutput = (ApkVariantOutput) baseVariantOutput
+
+                // tested variant are never zipAligned.
+                if (!isTestVariant && variant.buildType.zipAlignEnabled) {
+                    assertNotNull(apkVariantOutput.zipAlign)
+                } else {
+                    assertNull(apkVariantOutput.zipAlign)
+                }
             }
         } else {
             assertNull(variant.install)

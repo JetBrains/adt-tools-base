@@ -490,11 +490,6 @@ public abstract class BaseExtension {
         return enforceUniquePackageName
     }
 
-    public void flavorGroups(String... groups) {
-        plugin.displayDeprecationWarning("'flavorGroups' has been renamed 'flavorDimensions'. It will be removed in 1.0")
-        flavorDimensions(groups);
-    }
-
     public boolean getUseNewNativePlugin() {
         return useNewNativePlugin
     }

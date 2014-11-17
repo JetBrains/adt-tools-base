@@ -14,7 +14,8 @@ android.libraryVariants.all { variant ->
     }
 
     // now make the package task depend on it
-    variant.packageLibrary.dependsOn copyBlahTask
+    // only one output for libraries
+    variant.outputs.get(0).packageLibrary.dependsOn copyBlahTask
 }
 
 project.afterEvaluate {
