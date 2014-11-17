@@ -84,17 +84,14 @@ public class InstallVariantTask extends BaseTask {
                                 "Could not find build of variant which supports density ${device.getDensity()} " +
                                 "and an ABI in " + Joiner.on(", ").join(device.getAbis()));
                     } else {
-                        if (outputFiles.size() > 1) {
-                            List<File> apkFiles = ((List<ApkOutputFile>) outputFiles)*.getOutputFile()
-                            project.logger.lifecycle("Installing multiple APK '${Joiner.on(", ").join(apkFiles*.getName())}'" +
-                                    " on '${device.getName()}'")
+                        List<File> apkFiles = ((List<ApkOutputFile>) outputFiles)*.getOutputFile()
+                        project.logger.lifecycle("Installing APK '${Joiner.on(", ").join(apkFiles*.getName())}'" +
+                                " on '${device.getName()}'")
+                        if (outputFiles.size() > 1 || device.getApiLevel() >= 21) {
                             device.installPackages(apkFiles, getTimeOut(), plugin.logger);
                             successfulInstallCount++
                         } else {
-                            File apkFile = ((ApkOutputFile) outputFiles.get(0)).getOutputFile();
-                            project.logger.lifecycle(
-                                "Installing '${apkFile.getName()}' on '${device.getName()}'.");
-                            device.installPackage(apkFile, getTimeOut(), plugin.logger)
+                            device.installPackage(apkFiles.get(0), getTimeOut(), plugin.logger)
                             successfulInstallCount++
                         }
                     }
