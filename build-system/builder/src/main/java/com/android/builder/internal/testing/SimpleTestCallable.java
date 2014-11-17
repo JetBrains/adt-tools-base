@@ -115,7 +115,7 @@ public class SimpleTestCallable implements Callable<Boolean> {
 
             if (!testedApks.isEmpty()) {
                 logger.verbose("DeviceConnector '%s': installing %s", deviceName, Joiner.on(',').join(testedApks));
-                if (testedApks.size() > 1) {
+                if (testedApks.size() > 1 || device.getApiLevel() >= 21) {
                     if (device.getApiLevel() < 21) {
                         throw new InstallException("Internal error, file a bug, multi-apk applications"
                                 + " require a device with API level 21+");
