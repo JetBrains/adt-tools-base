@@ -536,7 +536,12 @@ public abstract class PreProcessCache<T extends PreProcessCache.Key> {
 
         HashCode hashCode = item.getSourceHash();
         if (hashCode == null) {
-            hashCode = Files.hash(item.getSourceFile(), Hashing.sha1());
+            try {
+                hashCode = Files.hash(item.getSourceFile(), Hashing.sha1());
+            } catch (IOException ex) {
+                // If we can't compute the hash for whatever reason, simply skip this entry.
+                return null;
+            }
         }
         attr = document.createAttribute(ATTR_SHA1);
         attr.setValue(hashCode.toString());
