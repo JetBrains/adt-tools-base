@@ -1,7 +1,3 @@
-ext {
-    buildToolsVersion = System.env.CUSTOM_BUILDTOOLS != null ? System.env.CUSTOM_BUILDTOOLS : '20.0.0'
-}
-
 buildscript {
     def gradleVersion = System.env.CUSTOM_GRADLE != null ? System.env.CUSTOM_GRADLE : '0.14.2'
     repositories {
@@ -20,7 +16,7 @@ apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion 21
-    buildToolsVersion = rootProject.ext.buildToolsVersion
+    buildToolsVersion = System.env.CUSTOM_BUILDTOOLS != null ? System.env.CUSTOM_BUILDTOOLS : '21.0.0'
 
     testBuildType "debug"
 
