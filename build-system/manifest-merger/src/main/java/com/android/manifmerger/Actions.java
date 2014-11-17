@@ -38,6 +38,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
@@ -134,6 +135,19 @@ public class Actions {
      * @param logger logger to log to at INFO level.
      */
     void log(ILogger logger) {
+        logger.verbose(getLogs());
+    }
+
+    /**
+     * Dump merging tool actions to a text file.
+     * @param fileWriter the file to write all actions into.
+     * @throws IOException
+     */
+    void log(FileWriter fileWriter) throws IOException {
+        fileWriter.append(getLogs());
+    }
+
+    private String getLogs() {
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append(HEADER);
         for (Map.Entry<XmlNode.NodeKey, Actions.DecisionTreeRecord> record : mRecords.entrySet()) {
@@ -153,7 +167,7 @@ public class Actions {
 
             }
         }
-        logger.verbose(stringBuilder.toString());
+        return stringBuilder.toString();
     }
 
     /**
