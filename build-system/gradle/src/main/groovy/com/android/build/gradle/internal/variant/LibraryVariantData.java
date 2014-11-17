@@ -21,7 +21,11 @@ import com.android.build.FilterData;
 import com.android.build.OutputFile;
 import com.android.build.gradle.BasePlugin;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
+import com.android.build.gradle.tasks.ExtractAnnotations;
 
+import org.gradle.api.Task;
+
+import java.io.File;
 import java.util.Collection;
 import java.util.Collections;
 
@@ -32,6 +36,9 @@ public class LibraryVariantData extends BaseVariantData<LibVariantOutputData> im
 
     @Nullable
     private TestVariantData testVariantData = null;
+
+    @Nullable
+    public ExtractAnnotations generateAnnotationsTask = null;
 
     public LibraryVariantData(
             @NonNull BasePlugin basePlugin,
@@ -72,5 +79,27 @@ public class LibraryVariantData extends BaseVariantData<LibVariantOutputData> im
     @Nullable
     public TestVariantData getTestVariantData() {
         return testVariantData;
+    }
+
+    // Overridden to add source folders to a generateAnnotationsTask, if it exists.
+    @Override
+    public void registerJavaGeneratingTask(@NonNull Task task, @NonNull File... generatedSourceFolders) {
+        super.registerJavaGeneratingTask(task, generatedSourceFolders);
+        if (generateAnnotationsTask != null) {
+            for (File f : generatedSourceFolders) {
+                generateAnnotationsTask.source(f);
+            }
+        }
+    }
+
+    // Overridden to add source folders to a generateAnnotationsTask, if it exists.
+    @Override
+    public void registerJavaGeneratingTask(@NonNull Task task, @NonNull Collection<File> generatedSourceFolders) {
+        super.registerJavaGeneratingTask(task, generatedSourceFolders);
+        if (generateAnnotationsTask != null) {
+            for (File f : generatedSourceFolders) {
+                generateAnnotationsTask.source(f);
+            }
+        }
     }
 }
