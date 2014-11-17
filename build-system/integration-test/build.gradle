@@ -23,7 +23,7 @@ task integrationTest(type: Test) {
     environment("CUSTOM_REPO", rootProject.file("../out/repo"))
 
     useJUnit {
-        excludeCategories "com.android.test.common.category.DeviceTests"
+        excludeCategories "com.android.build.gradle.integration.common.category.DeviceTests"
     }
 }
 
