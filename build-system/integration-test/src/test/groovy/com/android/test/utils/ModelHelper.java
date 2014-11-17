@@ -20,7 +20,6 @@ import static org.junit.Assert.assertNotNull;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.MainOutputFile;
 import com.android.build.OutputFile;
 import com.android.builder.model.AndroidArtifact;
 import com.android.builder.model.AndroidArtifactOutput;
@@ -103,7 +102,7 @@ public class ModelHelper {
                 outputFiles.size());
 
         // get the main output file
-        MainOutputFile mainOutputFile = output.getMainOutputFile();
+        OutputFile mainOutputFile = output.getMainOutputFile();
         assertNotNull(
                 "variantName '" + variantName + "' mainOutputFile null-check",
                 mainOutputFile);
