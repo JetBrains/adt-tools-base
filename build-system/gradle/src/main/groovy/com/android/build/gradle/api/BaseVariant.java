@@ -252,6 +252,22 @@ public interface BaseVariant {
      */
     void registerJavaGeneratingTask(@NonNull Task task, @NonNull Collection<File> sourceFolders);
 
+    /**
+     * Adds a variant-specific BuildConfig field.
+     * @param type the type of the field
+     * @param name the name of the field
+     * @param value the value of the field
+     */
+    void buildConfigField(@NonNull String type, @NonNull String name, @NonNull String value);
+
+    /**
+     * Adds a variant-specific res value.
+     * @param type the type of the field
+     * @param name the name of the field
+     * @param value the value of the field
+     */
+    void resValue(@NonNull String type, @NonNull String name, @NonNull String value);
+
     // ---- Deprecated, will be removed in 1.0
     //STOPSHIP
 
