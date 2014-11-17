@@ -47,6 +47,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.logging.Logger;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -328,6 +329,13 @@ public abstract class PreProcessCache<T extends PreProcessCache.Key> {
                 // check the sha1 is still valid, and the pre-dex files are still there.
                 if (storedItem.areOutputFilesPresent() &&
                         storedItem.getSourceHash().equals(getHash(inputFile))) {
+
+                    Logger.getAnonymousLogger().info("Cached result for getItem(" + inputFile + "): "
+                            + storedItem.getOutputFiles());
+                    for (File f : storedItem.getOutputFiles()) {
+                        Logger.getAnonymousLogger().info(
+                                String.format("%s l:%d ts:%d", f, f.length(), f.lastModified()));
+                    }
 
                     // create an item where the outFile is the one stored since it
                     // represent the pre-dexed library already.
