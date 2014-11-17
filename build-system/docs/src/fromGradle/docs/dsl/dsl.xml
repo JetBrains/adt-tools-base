@@ -27,6 +27,8 @@
             <title>Android configuration blocks</title>
             <tr><td>defaultConfig</td></tr>
             <tr><td>sourceSets</td></tr>
+            <tr><td>buildTypes</td></tr>
+            <tr><td>productFlavors</td></tr>
             <tr><td>testOptions</td></tr>
         </table>
         <para>Lorem ipsum.
@@ -46,6 +48,9 @@
             </tr>
             <tr>
                 <td>com.android.build.gradle.internal.dsl.ProductFlavorDsl</td>
+            </tr>
+            <tr>
+                <td>com.android.build.gradle.internal.dsl.GroupableProductFlavorDsl</td>
             </tr>
             <tr>
                 <td>com.android.build.gradle.internal.dsl.BuildTypeDsl</td>

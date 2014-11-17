@@ -345,11 +345,11 @@ public abstract class BasePlugin {
     }
 
     private void createExtension() {
-        def buildTypeContainer = project.container(DefaultBuildType,
+        def buildTypeContainer = project.container(BuildTypeDsl,
                 new BuildTypeFactory(instantiator, project, project.getLogger()))
         def productFlavorContainer = project.container(GroupableProductFlavorDsl,
                 new GroupableProductFlavorFactory(instantiator, project, project.getLogger()))
-        def signingConfigContainer = project.container(SigningConfig,
+        def signingConfigContainer = project.container(SigningConfigDsl,
                 new SigningConfigFactory(instantiator))
 
         extension = project.extensions.create('android', getExtensionClass(),
