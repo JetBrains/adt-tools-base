@@ -92,14 +92,12 @@ class ResValueTest {
             }
             """.stripIndent()
 
-        project.execute(
+        model = project.executeAndReturnModel(
                 'clean',
                 'generateFlavor1DebugResValue',
                 'generateFlavor1ReleaseResValue',
                 'generateFlavor2DebugResValue',
                 'generateFlavor2ReleaseResValue')
-
-        model = project.getModel()
     }
 
     @Test

@@ -286,7 +286,18 @@ public class GradleTestProject implements TestRule {
      * @param tasks Variadic list of tasks to execute.
      */
     public void execute(String ... tasks) {
-        execute(Collections.<String>emptyList(), null, tasks);
+        execute(Collections.<String>emptyList(), null, false, tasks);
+    }
+
+    /**
+     * Runs gradle on the project, and returns the project model.  Throws exception on failure.
+     *
+     * @param tasks Variadic list of tasks to execute.
+     *
+     * @return the AndroidProject model for the project.
+     */
+    public AndroidProject executeAndReturnModel(String ... tasks) {
+        return execute(Collections.<String>emptyList(), null, true, tasks);
     }
 
     /**
@@ -296,7 +307,7 @@ public class GradleTestProject implements TestRule {
      * @param tasks Variadic list of tasks to execute.
      */
     public void execute(OutputStream stdout, String ... tasks) {
-        execute(Collections.<String>emptyList(), stdout, tasks);
+        execute(Collections.<String>emptyList(), stdout, false, tasks);
     }
 
     /**
@@ -304,9 +315,17 @@ public class GradleTestProject implements TestRule {
      *
      * @param arguments List of arguments for the gradle command.
      * @param stdout Stream to capture the standard output.
+     * @param returnModel whether the model should be queried and returned.
      * @param tasks Variadic list of tasks to execute.
+     *
+     * @return the model, if <var>returnModel</var> was true, null otherwise
      */
-    public void execute(List<String> arguments, @Nullable OutputStream stdout, String ... tasks) {
+    @Nullable
+    private AndroidProject execute(
+            @NonNull List<String> arguments,
+            @Nullable OutputStream stdout,
+            boolean returnModel,
+            @NonNull String ... tasks) {
         ProjectConnection connection = getProjectConnection();
         try {
             List<String> args = Lists.newArrayListWithCapacity(2 + arguments.size());
@@ -317,9 +336,15 @@ public class GradleTestProject implements TestRule {
             connection.newBuild().forTasks(tasks)
                     .setStandardOutput(stdout)
                     .withArguments(args.toArray(new String[args.size()])).run();
+
+            if (returnModel) {
+                return connection.getModel(AndroidProject.class);
+            }
         } finally {
             connection.close();
         }
+
+        return null;
     }
 
     /**
