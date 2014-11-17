@@ -119,7 +119,7 @@ public class GradleTestProject implements TestRule {
         this(null, null);
     }
 
-    public GradleTestProject(@Nullable String name, @Nullable File projectSourceDir) {
+    private GradleTestProject(@Nullable String name, @Nullable File projectSourceDir) {
         sdkDir = findSdkDir();
         ndkDir = findNdkDir();
         String buildDir = System.getenv("PROJECT_BUILD_DIR");
