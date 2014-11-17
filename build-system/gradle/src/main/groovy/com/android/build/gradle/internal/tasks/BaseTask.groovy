@@ -27,7 +27,11 @@ public abstract class BaseTask extends DefaultTask {
     }
 
     protected void emptyFolder(File folder) {
-        plugin.logger.info("deleteDir(" + folder + ") returned: " + folder.deleteDir());
+        if (plugin!= null && plugin.logger != null) {
+            plugin.logger.info("deleteDir(" + folder + ") returned: " + folder.deleteDir());
+        } else {
+            folder.deleteDir();
+        }
         folder.mkdirs()
     }
 }
