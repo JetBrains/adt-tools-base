@@ -15,19 +15,12 @@
  */
 
 package com.android.build.gradle.integration.application
-
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
-import com.android.build.gradle.integration.common.fixture.app.TestSourceFile
-import com.google.common.base.Joiner
-import org.gradle.api.tasks.TaskAction
-import org.gradle.api.tasks.incremental.IncrementalTaskInputs
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
 
 import static org.junit.Assert.assertFalse
-import static org.junit.Assert.fail
 
 class GenerateAnnotationsClassPathTest {
     @ClassRule
