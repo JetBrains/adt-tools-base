@@ -5,7 +5,8 @@
             <thead>
                 <tr><td>Name</td></tr>
             </thead>
-            <tr><td>flavorDimension</td></tr>
+            <tr><td>excludes</td></tr>
+            <tr><td>pickFirsts</td></tr>
         </table>
     </section>
     <section>

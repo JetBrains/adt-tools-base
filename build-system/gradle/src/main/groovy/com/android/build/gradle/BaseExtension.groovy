@@ -62,20 +62,38 @@ public abstract class BaseExtension {
 
     /** Default config, shared by all flavors. */
     final ProductFlavorDsl defaultConfig
+
+    /** Options for aapt, tool for packaging resources. */
     final AaptOptionsImpl aaptOptions
+
+    /** Lint options. */
     final LintOptionsImpl lintOptions
+
+    /** Dex options. */
     final DexOptionsImpl dexOptions
+
     /** Options for running tests. */
     final TestOptions testOptions
+
+    /** Compile options */
     final CompileOptions compileOptions
+
+    /** Packaging options. */
     final PackagingOptionsImpl packagingOptions
+
+    /** JaCoCo options. */
     final JacocoExtension jacoco
+
+    /** APK splits */
     final Splits splits
 
     /** All product flavors used by this project. */
     final NamedDomainObjectContainer<GroupableProductFlavorDsl> productFlavors
+
     /** Build types used by this project. */
     final NamedDomainObjectContainer<BuildTypeDsl> buildTypes
+
+    /** Signing configs used by this project. */
     final NamedDomainObjectContainer<SigningConfigDsl> signingConfigs
 
     String resourcePrefix
@@ -228,6 +246,9 @@ public abstract class BaseExtension {
         action.execute(productFlavors)
     }
 
+    /**
+     * Configures the signing configs.
+     */
     void signingConfigs(Action<? super NamedDomainObjectContainer<SigningConfigDsl>> action) {
         plugin.checkTasksAlreadyCreated()
         action.execute(signingConfigs)
@@ -263,16 +284,26 @@ public abstract class BaseExtension {
         action.execute(defaultConfig)
     }
 
+    /**
+     * Configures aapt options.
+     */
     void aaptOptions(Action<AaptOptionsImpl> action) {
         plugin.checkTasksAlreadyCreated()
         action.execute(aaptOptions)
     }
 
+    /**
+     * Configures dex options.
+     * @param action
+     */
     void dexOptions(Action<DexOptionsImpl> action) {
         plugin.checkTasksAlreadyCreated()
         action.execute(dexOptions)
     }
 
+    /**
+     * Configure lint options.
+     */
     void lintOptions(Action<LintOptionsImpl> action) {
         plugin.checkTasksAlreadyCreated()
         action.execute(lintOptions)
@@ -284,20 +315,33 @@ public abstract class BaseExtension {
         action.execute(testOptions)
     }
 
+    /**
+     * Configures compile options.
+     */
     void compileOptions(Action<CompileOptions> action) {
         plugin.checkTasksAlreadyCreated()
         action.execute(compileOptions)
     }
 
+    /**
+     * Configures packaging options.
+     */
     void packagingOptions(Action<PackagingOptionsImpl> action) {
         plugin.checkTasksAlreadyCreated()
         action.execute(packagingOptions)
     }
 
+    /**
+     * Configures JaCoCo options.
+     */
     void jacoco(Action<JacocoExtension> action) {
         plugin.checkTasksAlreadyCreated()
         action.execute(jacoco)
     }
+
+    /**
+     * Configures APK splits.
+     */
     void splits(Action<Splits> action) {
         plugin.checkTasksAlreadyCreated()
         action.execute(splits)
