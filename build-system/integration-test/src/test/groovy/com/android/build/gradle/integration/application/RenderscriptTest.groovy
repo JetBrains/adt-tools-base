@@ -27,7 +27,7 @@ import org.junit.Test
 class RenderscriptTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("regular/renderscript")
+            .fromSample("renderscript")
             .create()
 
     @BeforeClass

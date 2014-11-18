@@ -27,7 +27,7 @@ import org.junit.Test
 class LocalAarTestTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("regular/localAarTest")
+            .fromSample("localAarTest")
             .create()
 
     @BeforeClass

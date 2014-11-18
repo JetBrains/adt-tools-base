@@ -77,18 +77,18 @@ public class ManualBuildTest extends BuildTest {
     private static final int GREEN = 0xFF00FF00;
     private static final int BLUE = 0xFF0000FF;
 
-    protected File manualDir;
-    protected File regularDir;
+    protected File sampleDir;
+    protected File testProjectDir;
 
     @Override
     protected void setUp() throws Exception {
         super.setUp();
-        manualDir = new File(testDir, FOLDER_TEST_MANUAL);
-        regularDir = new File(testDir, FOLDER_TEST_REGULAR);
+        sampleDir = new File(testDir, FOLDER_TEST_PROJECTS);
+        testProjectDir = new File(testDir, FOLDER_TEST_SAMPLES);
     }
 
     public void testOverlay1Content() throws Exception {
-        File project = buildProject(FOLDER_TEST_REGULAR, "overlay1", BasePlugin.GRADLE_TEST_VERSION);
+        File project = buildProject(FOLDER_TEST_SAMPLES, "overlay1", BasePlugin.GRADLE_TEST_VERSION);
         File drawableOutput = new File(project, "build/" + FD_INTERMEDIATES + "/res/debug/drawable");
 
         checkImageColor(drawableOutput, "no_overlay.png", GREEN);
@@ -96,7 +96,7 @@ public class ManualBuildTest extends BuildTest {
     }
 
     public void testOverlay2Content() throws Exception {
-        File project = buildProject(FOLDER_TEST_REGULAR, "overlay2", BasePlugin.GRADLE_TEST_VERSION);
+        File project = buildProject(FOLDER_TEST_SAMPLES, "overlay2", BasePlugin.GRADLE_TEST_VERSION);
         File drawableOutput = new File(project, "build/" + FD_INTERMEDIATES + "/res/one/debug/drawable");
 
         checkImageColor(drawableOutput, "no_overlay.png", GREEN);
@@ -107,7 +107,7 @@ public class ManualBuildTest extends BuildTest {
     }
 
     public void testOverlay3Content() throws Exception {
-        File project = buildProject(FOLDER_TEST_REGULAR, "overlay3", BasePlugin.GRADLE_TEST_VERSION);
+        File project = buildProject(FOLDER_TEST_SAMPLES, "overlay3", BasePlugin.GRADLE_TEST_VERSION);
         File drawableOutput = new File(project, "build/" + FD_INTERMEDIATES + "/res/freebeta/debug/drawable");
 
         checkImageColor(drawableOutput, "no_overlay.png", GREEN);
@@ -140,7 +140,7 @@ public class ManualBuildTest extends BuildTest {
     }
 
     public void testRepo() {
-        File repo = new File(manualDir, "repo");
+        File repo = new File(sampleDir, "repo");
 
         try {
             runTasksOn(
@@ -167,7 +167,7 @@ public class ManualBuildTest extends BuildTest {
     }
 
     public void testLibsManifestMerging() throws Exception {
-        File project = new File(regularDir, "libsTest");
+        File project = new File(testProjectDir, "libsTest");
         File fileOutput = new File(project, "libapp/build/" + FD_INTERMEDIATES + "/bundles/release/AndroidManifest.xml");
 
         runTasksOn(
@@ -179,7 +179,7 @@ public class ManualBuildTest extends BuildTest {
 
     // test whether a library project has its fields obfuscated
     public void testLibMinify() throws Exception {
-        File project = new File(regularDir, "libMinify");
+        File project = new File(testProjectDir, "libMinify");
         File fileOutput = new File(project, "build/" + FD_OUTPUTS + "/mapping/release");
 
         runTasksOn(
@@ -191,7 +191,7 @@ public class ManualBuildTest extends BuildTest {
 
     // test whether proguard.txt has been correctly merged
     public void testLibProguardConsumerFile() throws Exception {
-        File project = new File(regularDir, "libProguardConsumerFiles");
+        File project = new File(testProjectDir, "libProguardConsumerFiles");
         File debugFileOutput = new File(project, "build/" + FD_INTERMEDIATES + "/bundles/debug");
         File releaseFileOutput = new File(project, "build/" + FD_INTERMEDIATES + "/bundles/release");
 
@@ -204,7 +204,7 @@ public class ManualBuildTest extends BuildTest {
     }
 
     public void testShrinkResources() throws Exception {
-        File project = new File(manualDir, "shrink");
+        File project = new File(sampleDir, "shrink");
         File output = new File(project, "build/" + FD_OUTPUTS);
         File intermediates = new File(project, "build/" + FD_INTERMEDIATES);
 
@@ -576,7 +576,7 @@ public class ManualBuildTest extends BuildTest {
     }
 
     public void testAnnotations() throws Exception {
-        File project = new File(regularDir, "extractAnnotations");
+        File project = new File(testProjectDir, "extractAnnotations");
         File debugFileOutput = new File(project, "build/" + FD_INTERMEDIATES + "/annotations/debug");
 
         runTasksOn(
@@ -681,7 +681,7 @@ public class ManualBuildTest extends BuildTest {
     }
 
     public void testRsEnabledAnnotations() throws IOException {
-        File project = new File(regularDir, "extractRsEnabledAnnotations");
+        File project = new File(testProjectDir, "extractRsEnabledAnnotations");
 
         runTasksOn(
                 project,
@@ -704,7 +704,7 @@ public class ManualBuildTest extends BuildTest {
     }
 
     public void testSimpleManifestMerger() throws IOException {
-        File project = new File(manualDir, "simpleManifestMergingTask");
+        File project = new File(sampleDir, "simpleManifestMergingTask");
 
         runTasksOn(
                 project,
@@ -717,13 +717,13 @@ public class ManualBuildTest extends BuildTest {
         // a fake DeviceProvider that doesn't use a device, but only record the calls made
         // to the DeviceProvider and the DeviceConnector.
         runTasksOn(
-                new File(manualDir, "3rdPartyTests"),
+                new File(sampleDir, "3rdPartyTests"),
                 BasePlugin.GRADLE_TEST_VERSION,
                 "clean", "deviceCheck");
     }
 
     public void testEmbedded() throws Exception {
-        File project = new File(regularDir, "embedded");
+        File project = new File(testProjectDir, "embedded");
 
         runTasksOn(
                 project,
@@ -767,7 +767,7 @@ public class ManualBuildTest extends BuildTest {
     }
 
     public void testUserProvidedTestAndroidManifest() throws Exception {
-        File project = new File(regularDir, "androidManifestInTest");
+        File project = new File(testProjectDir, "androidManifestInTest");
 
         runTasksOn(
                 project,
@@ -824,7 +824,7 @@ public class ManualBuildTest extends BuildTest {
     }
 
     public void testDensitySplits() throws Exception {
-        File project = new File(regularDir, "densitySplit");
+        File project = new File(testProjectDir, "densitySplit");
 
         runTasksOn(
                 project,
@@ -842,7 +842,7 @@ public class ManualBuildTest extends BuildTest {
     }
 
     public void testAbiSplits() throws Exception {
-        File project = new File(regularDir, "ndkJniLib");
+        File project = new File(testProjectDir, "ndkJniLib");
 
         runTasksOn(
                 project,
@@ -863,7 +863,7 @@ public class ManualBuildTest extends BuildTest {
     }
 
     public void testPureAbiSplits() throws Exception {
-        File project = new File(regularDir, "ndkJniPureSplitLib");
+        File project = new File(testProjectDir, "ndkJniPureSplitLib");
 
         runTasksOn(
                 project,
@@ -882,7 +882,7 @@ public class ManualBuildTest extends BuildTest {
     }
 
     public void testManifestMergerReports() throws Exception {
-        File project = new File(regularDir, "flavors");
+        File project = new File(testProjectDir, "flavors");
 
         runTasksOn(
                 project,
@@ -961,7 +961,7 @@ public class ManualBuildTest extends BuildTest {
     }
 
     public void testPseudolocalization() throws Exception {
-        File project = new File(regularDir, "pseudolocalized");
+        File project = new File(testProjectDir, "pseudolocalized");
 
         runTasksOn(
                 project,
@@ -1013,11 +1013,12 @@ public class ManualBuildTest extends BuildTest {
     }
 
     public void testBasicWithSigningOverride() throws Exception {
-        File project = new File(regularDir, "basic");
+        File project = new File(testProjectDir, "basic");
 
         // add prop args for signing override.
         List<String> args = Lists.newArrayListWithExpectedSize(4);
-        args.add("-P" + PROPERTY_SIGNING_STORE_FILE + "=" + new File(project, "debug.keystore").getPath());
+        args.add("-P" + PROPERTY_SIGNING_STORE_FILE + "=" + new File(project, "debug.keystore")
+                .getPath());
         args.add("-P" + PROPERTY_SIGNING_STORE_PASSWORD + "=android");
         args.add("-P" + PROPERTY_SIGNING_KEY_ALIAS + "=AndroidDebugKey");
         args.add("-P" + PROPERTY_SIGNING_KEY_PASSWORD + "=android");
@@ -1040,7 +1041,7 @@ public class ManualBuildTest extends BuildTest {
     }
 
     public void testMaxSdkVersion() throws Exception {
-        File project = new File(regularDir, "maxSdkVersion");
+        File project = new File(testProjectDir, "maxSdkVersion");
 
         runTasksOn(
                 project,
@@ -1053,7 +1054,7 @@ public class ManualBuildTest extends BuildTest {
     }
 
     public void testVariantConfigurationDependencies() throws Exception {
-        File project = new File(manualDir, "dependenciesWithVariants");
+        File project = new File(sampleDir, "dependenciesWithVariants");
 
         runTasksOn(
                 project,
@@ -1062,7 +1063,7 @@ public class ManualBuildTest extends BuildTest {
     }
 
     public void testLegacyMultiDex() throws Exception {
-        File project = new File(regularDir, "multiDex");
+        File project = new File(testProjectDir, "multiDex");
 
         runTasksOn(project, BasePlugin.GRADLE_TEST_VERSION, "assembleIcsDebug");
 
@@ -1076,12 +1077,12 @@ public class ManualBuildTest extends BuildTest {
     }
 
     public void testMultiDexDontObfuscate() throws Exception {
-        File project = new File(regularDir, "multiDex");
+        File project = new File(testProjectDir, "multiDex");
         runTasksOn(project, BasePlugin.GRADLE_TEST_VERSION, "assembleIcsProguard");
     }
 
     public void testRenamedApk() throws Exception {
-        File project = new File(regularDir, "renamedApk");
+        File project = new File(testProjectDir, "renamedApk");
         runTasksOn(project, BasePlugin.GRADLE_TEST_VERSION, "assembleDebug");
 
         File output = new File(project, "build");
@@ -1138,7 +1139,7 @@ public class ManualBuildTest extends BuildTest {
         BufferedImage image = ImageIO.read(f);
         int rgb = image.getRGB(0, 0);
         assertEquals(String.format("Expected: 0x%08X, actual: 0x%08X for file %s",
-                expectedColor, rgb, f),
+                        expectedColor, rgb, f),
                 expectedColor, rgb);
     }
 

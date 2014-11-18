@@ -27,7 +27,7 @@ import org.junit.Test
 class GenFolderApiTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("regular/genFolderApi")
+            .fromSample("genFolderApi")
             .create()
 
     @BeforeClass
