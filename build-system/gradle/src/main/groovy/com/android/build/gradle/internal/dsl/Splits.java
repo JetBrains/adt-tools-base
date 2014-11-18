@@ -31,42 +31,42 @@ import java.util.Set;
  */
 public class Splits {
 
-    private final DensitySplitData density;
-    private final AbiSplitData abi;
+    private final DensitySplitOptions density;
+    private final AbiSplitOptions abi;
 
     private static final Set<String> ABI_LIST = ImmutableSet.of(
             "armeabi", "armeabi-v7a", "arm64-v8a","x86", "x86_64", "mips", "mips64");
 
     public Splits(@NonNull Instantiator instantiator) {
-        density = instantiator.newInstance(DensitySplitData.class);
-        abi = instantiator.newInstance(AbiSplitData.class);
+        density = instantiator.newInstance(DensitySplitOptions.class);
+        abi = instantiator.newInstance(AbiSplitOptions.class);
     }
 
     /**
      * Density settings.
      */
-    public DensitySplitData getDensity() {
+    public DensitySplitOptions getDensity() {
         return density;
     }
 
     /**
      * Configures density split settings.
      */
-    public void density(Action<DensitySplitData> action) {
+    public void density(Action<DensitySplitOptions> action) {
         action.execute(density);
     }
 
     /**
      * ABI settings.
      */
-    public AbiSplitData getAbi() {
+    public AbiSplitOptions getAbi() {
         return abi;
     }
 
     /**
      * Configures ABI split settings.
      */
-    public void abi(Action<AbiSplitData> action) {
+    public void abi(Action<AbiSplitOptions> action) {
         action.execute(abi);
     }
 

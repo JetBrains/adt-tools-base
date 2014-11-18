@@ -38,12 +38,12 @@ import com.android.build.gradle.internal.dependency.LibraryDependencyImpl
 import com.android.build.gradle.internal.dependency.ManifestDependencyImpl
 import com.android.build.gradle.internal.dependency.SymbolFileProviderImpl
 import com.android.build.gradle.internal.dependency.VariantDependencies
-import com.android.build.gradle.internal.dsl.BuildTypeDsl
+import com.android.build.gradle.internal.dsl.BuildType
 import com.android.build.gradle.internal.dsl.BuildTypeFactory
-import com.android.build.gradle.internal.dsl.GroupableProductFlavorDsl
+import com.android.build.gradle.internal.dsl.GroupableProductFlavor
 import com.android.build.gradle.internal.dsl.GroupableProductFlavorFactory
-import com.android.build.gradle.internal.dsl.ProductFlavorDsl
-import com.android.build.gradle.internal.dsl.SigningConfigDsl
+import com.android.build.gradle.internal.dsl.ProductFlavor
+import com.android.build.gradle.internal.dsl.SigningConfig
 import com.android.build.gradle.internal.dsl.SigningConfigFactory
 import com.android.build.gradle.internal.model.ArtifactMetaDataImpl
 import com.android.build.gradle.internal.model.JavaArtifactImpl
@@ -116,10 +116,7 @@ import com.android.builder.internal.testing.SimpleTestCallable
 import com.android.builder.model.AndroidArtifact
 import com.android.builder.model.ApiVersion
 import com.android.builder.model.ArtifactMetaData
-import com.android.builder.model.BuildType
 import com.android.builder.model.JavaArtifact
-import com.android.builder.model.ProductFlavor
-import com.android.builder.model.SigningConfig
 import com.android.builder.model.SourceProvider
 import com.android.builder.model.SourceProviderContainer
 import com.android.builder.sdk.SdkInfo
@@ -236,7 +233,7 @@ public abstract class BasePlugin {
 
     private boolean hasCreatedTasks = false
 
-    private ProductFlavorData<ProductFlavorDsl> defaultConfigData
+    private ProductFlavorData<ProductFlavor> defaultConfigData
     private final Collection<String> unresolvedDependencies = Sets.newHashSet();
 
     protected DefaultAndroidSourceSet mainSourceSet
@@ -344,11 +341,11 @@ public abstract class BasePlugin {
     }
 
     private void createExtension() {
-        def buildTypeContainer = project.container(BuildTypeDsl,
+        def buildTypeContainer = project.container(BuildType,
                 new BuildTypeFactory(instantiator, project, project.getLogger()))
-        def productFlavorContainer = project.container(GroupableProductFlavorDsl,
+        def productFlavorContainer = project.container(GroupableProductFlavor,
                 new GroupableProductFlavorFactory(instantiator, project, project.getLogger()))
-        def signingConfigContainer = project.container(SigningConfigDsl,
+        def signingConfigContainer = project.container(SigningConfig,
                 new SigningConfigFactory(instantiator))
 
         extension = project.extensions.create('android', getExtensionClass(),
@@ -361,14 +358,14 @@ public abstract class BasePlugin {
 
         // map the whenObjectAdded callbacks on the containers.
         signingConfigContainer.whenObjectAdded { SigningConfig signingConfig ->
-            variantManager.addSigningConfig((SigningConfigDsl) signingConfig)
+            variantManager.addSigningConfig((SigningConfig) signingConfig)
         }
 
         buildTypeContainer.whenObjectAdded { DefaultBuildType buildType ->
-            variantManager.addBuildType((BuildTypeDsl) buildType)
+            variantManager.addBuildType((BuildType) buildType)
         }
 
-        productFlavorContainer.whenObjectAdded { GroupableProductFlavorDsl productFlavor ->
+        productFlavorContainer.whenObjectAdded { GroupableProductFlavor productFlavor ->
             variantManager.addProductFlavor(productFlavor)
         }
 
@@ -414,7 +411,7 @@ public abstract class BasePlugin {
         mainSourceSet = (DefaultAndroidSourceSet) extension.sourceSets.create(extension.defaultConfig.name)
         testSourceSet = (DefaultAndroidSourceSet) extension.sourceSets.create(ANDROID_TEST)
 
-        defaultConfigData = new ProductFlavorData<ProductFlavorDsl>(
+        defaultConfigData = new ProductFlavorData<ProductFlavor>(
                 extension.defaultConfig, mainSourceSet,
                 testSourceSet, project)
     }
@@ -487,7 +484,7 @@ public abstract class BasePlugin {
                 project.hasProperty(PROPERTY_SIGNING_KEY_ALIAS) &&
                 project.hasProperty(PROPERTY_SIGNING_KEY_PASSWORD)) {
 
-            SigningConfigDsl signingConfigDsl = new SigningConfigDsl("externalOverride")
+            SigningConfig signingConfigDsl = new SigningConfig("externalOverride")
             Map<String, ?> props = project.getProperties();
 
             signingConfigDsl.setStoreFile(new File((String) props.get(PROPERTY_SIGNING_STORE_FILE)))
@@ -515,7 +512,7 @@ public abstract class BasePlugin {
         }
     }
 
-    ProductFlavorData<ProductFlavorDsl> getDefaultConfigData() {
+    ProductFlavorData<ProductFlavor> getDefaultConfigData() {
         return defaultConfigData
     }
 
@@ -589,7 +586,7 @@ public abstract class BasePlugin {
             @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData) {
 
         VariantConfiguration config = variantData.variantConfiguration
-        ProductFlavor mergedFlavor = config.mergedFlavor
+        com.android.builder.model.ProductFlavor mergedFlavor = config.mergedFlavor
 
         ApplicationVariantData appVariantData = variantData as ApplicationVariantData
         Set<String> screenSizes = appVariantData.getCompatibleScreens()
@@ -716,8 +713,6 @@ public abstract class BasePlugin {
     public void createMergeLibManifestsTask(
             @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData,
             @NonNull String manifestOutDir) {
-        boolean multiOutput = variantData.outputs.size() > 1
-
         VariantConfiguration config = variantData.variantConfiguration
 
         // get single output for now.
@@ -732,7 +727,7 @@ public abstract class BasePlugin {
         processManifest.dependsOn variantData.prepareDependenciesTask
         processManifest.variantConfiguration = config
 
-        ProductFlavor mergedFlavor = config.mergedFlavor
+        com.android.builder.model.ProductFlavor mergedFlavor = config.mergedFlavor
 
         processManifest.conventionMapping.minSdkVersion = {
             if (androidBuilder.isPreviewTarget()) {
@@ -843,7 +838,7 @@ public abstract class BasePlugin {
             renderscriptTask.dependsOn variantData.checkManifestTask
         }
 
-        ProductFlavor mergedFlavor = config.mergedFlavor
+        com.android.builder.model.ProductFlavor mergedFlavor = config.mergedFlavor
         boolean ndkMode = config.renderscriptNdkModeEnabled
 
         variantData.resourceGenTask.dependsOn renderscriptTask
@@ -1228,7 +1223,7 @@ public abstract class BasePlugin {
         variantOutputData.packageSplitResourcesTask.splits = densityFilters
         variantOutputData.packageSplitResourcesTask.outputBaseName = config.baseName
         variantOutputData.packageSplitResourcesTask.signingConfig =
-                (SigningConfigDsl) config.signingConfig
+                (SigningConfig) config.signingConfig
         variantOutputData.packageSplitResourcesTask.outputDirectory =
                 new File("$project.buildDir/${FD_INTERMEDIATES}/splits/${config.dirName}")
         variantOutputData.packageSplitResourcesTask.plugin = this
@@ -1304,7 +1299,7 @@ public abstract class BasePlugin {
         variantOutputData.packageSplitAbiTask.splits = filters
         variantOutputData.packageSplitAbiTask.outputBaseName = config.baseName
         variantOutputData.packageSplitAbiTask.signingConfig =
-                (SigningConfigDsl) config.signingConfig
+                (SigningConfig) config.signingConfig
         variantOutputData.packageSplitAbiTask.outputDirectory =
                 new File("$project.buildDir/${FD_INTERMEDIATES}/splits/${config.dirName}")
         variantOutputData.packageSplitAbiTask.plugin = this
@@ -1800,10 +1795,6 @@ public abstract class BasePlugin {
                     reportTask.conventionMapping.sourceDir = { baseVariantData.getJavaSourceFoldersForCoverage() }
 
                     reportTask.conventionMapping.reportDir = {
-                        String rootLocation = extension.testOptions.reportDir != null ?
-                                extension.testOptions.reportDir :
-                                "$project.buildDir/${FD_OUTPUTS}/$FD_REPORTS/$FD_ANDROID_TESTS"
-
                         project.file(
                                 "$project.buildDir/${FD_OUTPUTS}/$FD_REPORTS/coverage/${baseVariantData.variantConfiguration.dirName}")
                     }
@@ -2023,7 +2014,8 @@ public abstract class BasePlugin {
 
         if (isMinifyEnabled) {
             // first proguard task.
-            BaseVariantData<? extends BaseVariantOutputData> testedVariantData = variantData instanceof TestVariantData ? variantData.testedVariantData : null as BaseVariantData
+            BaseVariantData<? extends BaseVariantOutputData> testedVariantData =
+                    variantData instanceof TestVariantData ? variantData.testedVariantData : null as BaseVariantData
             createProguardTasks(variantData, testedVariantData, pcData)
 
         } else if ((extension.dexOptions.preDexLibraries && !isMultiDexEnabled) ||
@@ -2451,7 +2443,7 @@ public abstract class BasePlugin {
         if (project.hasProperty(PROPERTY_APK_LOCATION)) {
             apkLocation = project.getProperties().get(PROPERTY_APK_LOCATION)
         }
-        SigningConfigDsl sc = (SigningConfigDsl) config.signingConfig
+        SigningConfig sc = (SigningConfig) config.signingConfig
 
         boolean multiOutput = variantData.outputs.size() > 1
 

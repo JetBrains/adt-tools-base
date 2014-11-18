@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.internal.tasks
 
-import com.android.build.gradle.internal.dsl.SigningConfigDsl
 import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.builder.model.SigningConfig
 import com.android.ide.common.signing.CertificateInfo
@@ -59,7 +58,7 @@ class SigningReportTask extends BaseTask {
             textOutput.println()
 
             // get the data
-            SigningConfigDsl signingConfig = (SigningConfigDsl) variant.variantConfiguration.signingConfig
+            com.android.build.gradle.internal.dsl.SigningConfig signingConfig = (com.android.build.gradle.internal.dsl.SigningConfig) variant.variantConfiguration.signingConfig
             if (signingConfig == null) {
                 textOutput.withStyle(Identifier).text("Config: ")
                 textOutput.withStyle(Normal).text("none")

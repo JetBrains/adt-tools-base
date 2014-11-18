@@ -16,21 +16,20 @@
 
 package com.android.build.gradle.internal.dsl
 import com.android.annotations.NonNull
-import com.android.build.gradle.BasePlugin
-import com.android.build.gradle.api.GroupableProductFlavor
 import org.gradle.api.Project
 import org.gradle.api.logging.Logger
 import org.gradle.internal.reflect.Instantiator
 
 /**
- * A version of {@link ProductFlavorDsl} that can receive a dimension name.
+ * A version of {@link ProductFlavor} that can receive a dimension name.
  */
-public class GroupableProductFlavorDsl extends ProductFlavorDsl implements GroupableProductFlavor {
+public class GroupableProductFlavor
+        extends ProductFlavor implements com.android.build.gradle.api.GroupableProductFlavor {
 
     /** Name of the dimension this product flavor belongs to. */
     String flavorDimension
 
-    public GroupableProductFlavorDsl(
+    public GroupableProductFlavor(
             @NonNull String name,
             @NonNull Project project,
             @NonNull Instantiator instantiator,

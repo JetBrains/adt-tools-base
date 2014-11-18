@@ -18,7 +18,7 @@ package com.android.build.gradle.internal;
 
 import static org.junit.Assert.*;
 
-import com.android.build.gradle.internal.dsl.GroupableProductFlavorDsl;
+import com.android.build.gradle.internal.dsl.GroupableProductFlavor;
 import com.google.common.collect.ImmutableList;
 
 import org.gradle.api.Project;
@@ -41,26 +41,26 @@ public class ProductFlavorComboTest {
     private static final String DIMENSION1 = "dimension1";
     private static final String DIMENSION2 = "dimension2";
 
-    private GroupableProductFlavorDsl f1;
-    private GroupableProductFlavorDsl f2;
-    private GroupableProductFlavorDsl f1d1;
-    private GroupableProductFlavorDsl f2d1;
-    private GroupableProductFlavorDsl f1d2;
-    private GroupableProductFlavorDsl f2d2;
+    private GroupableProductFlavor f1;
+    private GroupableProductFlavor f2;
+    private GroupableProductFlavor f1d1;
+    private GroupableProductFlavor f2d1;
+    private GroupableProductFlavor f1d2;
+    private GroupableProductFlavor f2d2;
 
     @Before
     public void setup() {
-        f1 = new GroupableProductFlavorDsl("flavor1", project, instantiator, logger);
-        f2 = new GroupableProductFlavorDsl("flavor2", project, instantiator, logger);
+        f1 = new GroupableProductFlavor("flavor1", project, instantiator, logger);
+        f2 = new GroupableProductFlavor("flavor2", project, instantiator, logger);
 
-        f1d1 = new GroupableProductFlavorDsl("flavor1", project, instantiator, logger);
+        f1d1 = new GroupableProductFlavor("flavor1", project, instantiator, logger);
         f1d1.setFlavorDimension(DIMENSION1);
-        f2d1 = new GroupableProductFlavorDsl("flavor2", project, instantiator, logger);
+        f2d1 = new GroupableProductFlavor("flavor2", project, instantiator, logger);
         f2d1.setFlavorDimension(DIMENSION1);
 
-        f1d2 = new GroupableProductFlavorDsl("flavor1", project, instantiator, logger);
+        f1d2 = new GroupableProductFlavor("flavor1", project, instantiator, logger);
         f1d2.setFlavorDimension(DIMENSION2);
-        f2d2 = new GroupableProductFlavorDsl("flavor2", project, instantiator, logger);
+        f2d2 = new GroupableProductFlavor("flavor2", project, instantiator, logger);
         f2d2.setFlavorDimension(DIMENSION2);
     }
 
@@ -85,7 +85,7 @@ public class ProductFlavorComboTest {
                 ImmutableList.<ProductFlavorCombo>of(),
                 ProductFlavorCombo.createCombinations(
                         Collections.<String>emptyList(),
-                        Collections.<GroupableProductFlavorDsl>emptyList()));
+                        Collections.<GroupableProductFlavor>emptyList()));
     }
 
     @Test

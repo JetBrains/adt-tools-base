@@ -17,9 +17,9 @@ package com.android.build.gradle
 
 import com.android.build.gradle.api.BaseVariant
 import com.android.build.gradle.api.LibraryVariant
-import com.android.build.gradle.internal.dsl.BuildTypeDsl
-import com.android.build.gradle.internal.dsl.GroupableProductFlavorDsl
-import com.android.build.gradle.internal.dsl.SigningConfigDsl
+import com.android.build.gradle.internal.dsl.BuildType
+import com.android.build.gradle.internal.dsl.GroupableProductFlavor
+import com.android.build.gradle.internal.dsl.SigningConfig
 import groovy.transform.CompileStatic
 import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.internal.DefaultDomainObjectSet
@@ -36,9 +36,9 @@ public class LibraryExtension extends BaseExtension {
         new DefaultDomainObjectSet<LibraryVariant>(LibraryVariant.class)
 
     LibraryExtension(LibraryPlugin plugin, ProjectInternal project, Instantiator instantiator,
-            NamedDomainObjectContainer<BuildTypeDsl> buildTypes,
-            NamedDomainObjectContainer<GroupableProductFlavorDsl> productFlavors,
-            NamedDomainObjectContainer<SigningConfigDsl> signingConfigs,
+            NamedDomainObjectContainer<BuildType> buildTypes,
+            NamedDomainObjectContainer<GroupableProductFlavor> productFlavors,
+            NamedDomainObjectContainer<SigningConfig> signingConfigs,
             boolean isLibrary) {
         super(plugin, project, instantiator, buildTypes, productFlavors, signingConfigs, isLibrary)
     }
