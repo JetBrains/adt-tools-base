@@ -640,20 +640,21 @@ public class UpdaterData implements IUpdaterData {
     protected void notifyToolsNeedsToBeRestarted(int flags) {
 
         String msg = null;
-        if ((flags & TOOLS_MSG_UPDATED_FROM_ADT) != 0) {
+        if ((flags & TOOLS_MSG_UPDATED_FROM_ADT) == TOOLS_MSG_UPDATED_FROM_ADT) {
             msg =
             "The Android SDK and AVD Manager that you are currently using has been updated. " +
             "Please also run Eclipse > Help > Check for Updates to see if the Android " +
             "plug-in needs to be updated.";
 
-        } else if ((flags & TOOLS_MSG_UPDATED_FROM_SDKMAN) != 0) {
+        } else if ((flags & TOOLS_MSG_UPDATED_FROM_SDKMAN) == TOOLS_MSG_UPDATED_FROM_SDKMAN) {
             msg =
             "The Android SDK and AVD Manager that you are currently using has been updated. " +
             "It is recommended that you now close the manager window and re-open it. " +
             "If you use Eclipse, please run Help > Check for Updates to see if the Android " +
             "plug-in needs to be updated.";
+        } else if ((flags & NO_TOOLS_MSG) == NO_TOOLS_MSG) {
+            return;
         }
-
         mSdkLog.info("%s", msg);  //$NON-NLS-1$
     }
 
