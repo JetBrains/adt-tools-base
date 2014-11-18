@@ -49,7 +49,7 @@ class BuildConfigTest {
 
     @BeforeClass
     static void setup() {
-        new HelloWorldApp().writeSources(project.getSourceDir())
+        new HelloWorldApp().writeSources(project.testDir)
         project.getBuildFile() << """
             apply plugin: 'com.android.application'
 

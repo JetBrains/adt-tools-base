@@ -22,12 +22,16 @@ import static org.junit.Assert.fail;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.BasePlugin;
+import com.android.build.gradle.integration.common.fixture.app.AbstractAndroidTestApp;
+import com.android.build.gradle.integration.common.fixture.app.AndroidTestApp;
+import com.android.build.gradle.integration.common.fixture.app.TestSourceFile;
 import com.android.builder.model.AndroidProject;
 import com.android.io.StreamException;
 import com.android.sdklib.internal.project.ProjectProperties;
 import com.android.sdklib.internal.project.ProjectPropertiesWorkingCopy;
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
+import com.google.common.base.Predicate;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 
@@ -65,15 +69,17 @@ public class GradleTestProject implements TestRule {
 
         private static final File TEST_PROJECT_DIR = new File("test-projects");
 
+        @Nullable
         private String name;
 
-        private File projectDir;
+        @Nullable
+        private AndroidTestApp testApp = null;
 
         /**
          * Create a GradleTestProject.
          */
         public GradleTestProject create()  {
-            return new GradleTestProject(name, projectDir);
+            return new GradleTestProject(name, testApp);
         }
 
         /**
@@ -87,19 +93,35 @@ public class GradleTestProject implements TestRule {
         }
 
         /**
+         * Create GradleTestProject from an AndroidTestApp.
+         */
+        public Builder fromTestApp(@NonNull AndroidTestApp testApp) {
+            this.testApp = testApp;
+            return this;
+        }
+
+        /**
          * Create GradleTestProjectBase from an existing sample project.
          */
         public Builder fromSample(@NonNull String project) {
-            projectDir = new File(SAMPLE_PROJECT_DIR, project);
-            return this;
+            // Create a new AndroidTestApp with all files in the project.
+            AndroidTestApp app = new EmptyTestApp();
+            File projectDir = new File(SAMPLE_PROJECT_DIR, project);
+            addAllFiles(app, projectDir);
+            return fromTestApp(app);
         }
 
         /**
          * Create GradleTestProject from an existing test project.
          */
         public Builder fromTestProject(@NonNull String project) {
-            projectDir = new File(TEST_PROJECT_DIR, project);
-            return this;
+            AndroidTestApp app = new EmptyTestApp();
+            File projectDir = new File(TEST_PROJECT_DIR, project);
+            addAllFiles(app, projectDir);
+            return fromTestApp(app);
+        }
+
+        static class EmptyTestApp extends AbstractAndroidTestApp {
         }
     }
 
@@ -128,19 +150,19 @@ public class GradleTestProject implements TestRule {
     private ByteArrayOutputStream stdout = new ByteArrayOutputStream();
 
     @Nullable
-    private File projectSourceDir;
+    private AndroidTestApp testApp;
 
-    public GradleTestProject() {
+    private GradleTestProject() {
         this(null, null);
     }
 
-    private GradleTestProject(@Nullable String name, @Nullable File projectSourceDir) {
+    private GradleTestProject(@Nullable String name, @Nullable AndroidTestApp testApp) {
         sdkDir = findSdkDir();
         ndkDir = findNdkDir();
         String buildDir = System.getenv("PROJECT_BUILD_DIR");
         outDir = (buildDir == null) ? new File("build/tests") : new File(buildDir, "tests");
         this.name = (name == null) ? DEFAULT_TEST_PROJECT_NAME : name;
-        this.projectSourceDir = projectSourceDir;
+        this.testApp = testApp;
     }
 
     public static Builder builder() {
@@ -166,23 +188,26 @@ public class GradleTestProject implements TestRule {
         }
     }
 
-    private static void copyRecursive(File src, File dest) {
-        if (src.isDirectory()) {
-            // If directory does not exists, create it
-            if (!dest.exists()) {
-                assertTrue(dest.mkdir());
-            }
-
-            // Recursively copy each file in directory.
-            for (String file : src.list()) {
-                File srcFile = new File(src, file);
-                File destFile = new File(dest, file);
-                copyRecursive(srcFile, destFile);
-            }
-        } else {
+    /**
+     * Add all files in a directory to an AndroidTestApp.
+     */
+    private static void addAllFiles(AndroidTestApp app, File projectDir) {
+        for (File src : Files.fileTreeTraverser().preOrderTraversal(projectDir).filter(
+                new Predicate<File>() {
+                    @Override
+                    public boolean apply(@Nullable File file) {
+                        return file != null && !file.isDirectory();
+                    }
+                })) {
+            File relativePath = new File(src.toString().replace(projectDir.toString(), ""));
             try {
-                Files.copy(src, dest);
-            } catch (Exception ignore) {
+                app.addFile(
+                        new TestSourceFile(
+                                relativePath.getParent(),
+                                src.getName(),
+                                Files.toByteArray(src)));
+            } catch (Exception e) {
+                fail(e.toString());
             }
         }
     }
@@ -210,8 +235,8 @@ public class GradleTestProject implements TestRule {
                 assertTrue(testDir.mkdirs());
                 assertTrue(sourceDir.mkdirs());
 
-                if (projectSourceDir != null) {
-                    copyRecursive(projectSourceDir, testDir);
+                if (testApp != null) {
+                    testApp.writeSources(testDir);
                 } else {
                     Files.write(
                             "buildscript {\n" +
@@ -268,6 +293,9 @@ public class GradleTestProject implements TestRule {
                 Joiner.on(File.separator).join("build", AndroidProject.FD_OUTPUTS));
     }
 
+    /**
+     * Return a File under the output directory from Android plugins.
+     */
     public File getOutputFile(String path) {
         return new File(getOutputDir(), path);
     }
