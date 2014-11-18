@@ -23,7 +23,7 @@ package com.android.build.gradle.integration.common.fixture.app
 public class HelloWorldApp extends AbstractAndroidTestApp implements AndroidTestApp {
 
     static private final TestSourceFile javaSource =
-            new TestSourceFile("main/java/com/example/helloworld", "HelloWorld.java",
+            new TestSourceFile("src/main/java/com/example/helloworld", "HelloWorld.java",
     """
 package com.example.helloworld;
 
@@ -41,7 +41,7 @@ public class HelloWorld extends Activity {
 """);
 
     static private final TestSourceFile resValuesSource =
-            new TestSourceFile("main/res/values", "strings.xml",
+            new TestSourceFile("src/main/res/values", "strings.xml",
 """<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HelloWorld</string>
@@ -49,7 +49,7 @@ public class HelloWorld extends Activity {
 """);
 
     static private final TestSourceFile resLayoutSource =
-            new TestSourceFile("main/res/layout", "main.xml",
+            new TestSourceFile("src/main/res/layout", "main.xml",
 """<?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="vertical"
@@ -66,7 +66,7 @@ public class HelloWorld extends Activity {
 """);
 
     static private final TestSourceFile manifest =
-            new TestSourceFile("main", "AndroidManifest.xml",
+            new TestSourceFile("src/main", "AndroidManifest.xml",
 """<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
       package="com.example.helloworld"
@@ -88,7 +88,7 @@ public class HelloWorld extends Activity {
 
 
     static private final TestSourceFile androidTestSource =
-            new TestSourceFile("androidTest/java/com/example/helloworld", "HelloWorldTest.java",
+            new TestSourceFile("src/androidTest/java/com/example/helloworld", "HelloWorldTest.java",
 """
 package com.example.helloworld;
 

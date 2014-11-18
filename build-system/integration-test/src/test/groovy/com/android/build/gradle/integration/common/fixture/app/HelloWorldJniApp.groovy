@@ -23,7 +23,7 @@ package com.android.build.gradle.integration.common.fixture.app
 public class HelloWorldJniApp extends AbstractAndroidTestApp implements AndroidTestApp {
 
     static private final TestSourceFile javaSource =
-            new TestSourceFile("main/java/com/example/hellojni", "HelloJni.java",
+            new TestSourceFile("src/main/java/com/example/hellojni", "HelloJni.java",
     """
 package com.example.hellojni;
 
@@ -54,7 +54,7 @@ public class HelloJni extends Activity {
 
     // JNI Implementation in C.
     static private final TestSourceFile cSource =
-            new TestSourceFile("main/jni", "hello-jni.c",
+            new TestSourceFile("src/main/jni", "hello-jni.c",
 """
 #include <string.h>
 #include <jni.h>
@@ -70,7 +70,7 @@ Java_com_example_hellojni_HelloJni_stringFromJNI(JNIEnv* env, jobject thiz)
 
     // JNI Implementation in C++.
     static private final TestSourceFile cppSource =
-            new TestSourceFile("main/jni", "hello-jni.cpp",
+            new TestSourceFile("src/main/jni", "hello-jni.cpp",
 """
 #include <string.h>
 #include <jni.h>
@@ -94,7 +94,7 @@ Java_com_example_hellojni_HelloJni_stringFromJNI(JNIEnv* env, jobject thiz)
 
 
     static private final TestSourceFile resSource =
-            new TestSourceFile("main/res/values", "strings.xml",
+            new TestSourceFile("src/main/res/values", "strings.xml",
                     """<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HelloJni</string>
@@ -102,7 +102,7 @@ Java_com_example_hellojni_HelloJni_stringFromJNI(JNIEnv* env, jobject thiz)
 """);
 
     static private final TestSourceFile manifest =
-            new TestSourceFile("main", "AndroidManifest.xml",
+            new TestSourceFile("src/main", "AndroidManifest.xml",
 """<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
       package="com.example.hellojni"
@@ -123,7 +123,7 @@ Java_com_example_hellojni_HelloJni_stringFromJNI(JNIEnv* env, jobject thiz)
 """);
 
     static private final TestSourceFile androidTestSource =
-            new TestSourceFile("androidTest/java/com/example/hellojni", "HelloJniTest.java",
+            new TestSourceFile("src/androidTest/java/com/example/hellojni", "HelloJniTest.java",
 """
 package com.example.hellojni;
 
