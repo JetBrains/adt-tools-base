@@ -29,12 +29,16 @@ import java.io.IOException;
 public class TestSourceFile {
     private final String path;
     private final String name;
-    private final String content;
+    private final byte[] content;
 
-    public TestSourceFile(String path, String name, String content) {
+    public TestSourceFile(String path, String name, byte[] content) {
         this.path = path;
         this.name = name;
         this.content = content;
+    }
+
+    public TestSourceFile(String path, String name, String content) {
+        this(path, name, content.getBytes());
     }
 
     public String getPath() {
@@ -45,7 +49,7 @@ public class TestSourceFile {
         return name;
     }
 
-    public String getContent() {
+    public byte[] getContent() {
         return content;
     }
 
@@ -59,7 +63,7 @@ public class TestSourceFile {
         if (!file.exists()) {
             Files.createParentDirs(file);
         }
-        Files.append(content, file, Charsets.UTF_8);
+        Files.write(content, file);
     }
 }
 
