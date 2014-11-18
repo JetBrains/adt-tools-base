@@ -16,20 +16,35 @@
 
 package com.android.build.gradle.internal
 
+import com.android.annotations.NonNull
+import com.android.annotations.Nullable
+import com.google.common.base.Charsets
+import groovy.transform.CompileStatic
 import org.gradle.api.JavaVersion
 
 /**
- * Compilation options
+ * Compilation options.
  */
+@CompileStatic
 class CompileOptions {
+    @Nullable
+    private JavaVersion sourceCompatibility
 
-    private JavaVersion sourceCompatibility = JavaVersion.VERSION_1_6
-    private JavaVersion targetCompatibility = JavaVersion.VERSION_1_6
-    String encoding = "UTF-8"
+    @Nullable
+    private JavaVersion targetCompatibility
 
-    void setSourceCompatibility(JavaVersion sourceCompatibility) {
+    String encoding = Charsets.UTF_8.name()
+
+    /**
+     * Default Java version that will be used if the source and target compatibility levels will
+     * not be set explicitly.
+     */
+    JavaVersion defaultJavaVersion = JavaVersion.VERSION_1_6
+
+    boolean ndkCygwinMode = false
+
+    void setSourceCompatibility(@NonNull JavaVersion sourceCompatibility) {
         this.sourceCompatibility = sourceCompatibility
-        setExplicitly = true
     }
 
     /**
@@ -38,13 +53,13 @@ class CompileOptions {
      * <p>Similar to what <a href="http://www.gradle.org/docs/current/userguide/java_plugin.html">
      * Gradle Java plugin</a> uses.
      */
+    @NonNull
     JavaVersion getSourceCompatibility() {
-        return sourceCompatibility
+        sourceCompatibility?: defaultJavaVersion
     }
 
-    void setTargetCompatibility(JavaVersion targetCompatibility) {
+    void setTargetCompatibility(@NonNull JavaVersion targetCompatibility) {
         this.targetCompatibility = targetCompatibility
-        setExplicitly = true
     }
 
     /**
@@ -53,10 +68,8 @@ class CompileOptions {
      * <p>Similar to what <a href="http://www.gradle.org/docs/current/userguide/java_plugin.html">
      * Gradle Java plugin</a> uses.
      */
+    @NonNull
     JavaVersion getTargetCompatibility() {
-        return targetCompatibility
+        targetCompatibility?: defaultJavaVersion
     }
-
-    boolean setExplicitly = false
-    boolean ndkCygwinMode = false
 }
