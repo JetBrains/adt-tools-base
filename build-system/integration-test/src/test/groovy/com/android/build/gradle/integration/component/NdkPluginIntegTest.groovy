@@ -38,7 +38,7 @@ class NdkPluginIntegTest {
 
     @BeforeClass
     public static void setup() {
-        new HelloWorldJniApp(true /* useCppSource */).writeSources(project.getSourceDir())
+        new HelloWorldJniApp(true /* useCppSource */).writeSources(project.testDir)
         project.getBuildFile() << """
 apply plugin: 'com.android.model.application'
 
@@ -52,7 +52,7 @@ model {
     }
     android.buildTypes {
         debug {
-            jniDebugBuild true
+            jniDebuggable true
         }
     }
 }

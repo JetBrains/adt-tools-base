@@ -283,8 +283,8 @@ public class NdkHandler {
      * If clang is used, then it depends the target abi.
      */
     public String getGccToolchainVersion(String abi) {
-        if (ndkExtension.getToolchain().equals("gcc")) {
-            String toolchain = ndkExtension.getToolchain();
+        String toolchain = ndkExtension.getToolchain();
+        if (toolchain.equals("gcc")) {
             return (toolchain.equals(NdkExtensionConvention.DEFAULT_TOOLCHAIN))
                     ? ToolchainConfiguration.getDefaultToolchainVersion(toolchain, abi)
                     : ndkExtension.getToolchainVersion();

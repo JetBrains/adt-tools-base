@@ -39,7 +39,7 @@ class NdkComponentModelVariantIntegTest {
 
     @BeforeClass
     public static void setup() {
-        new HelloWorldJniApp().writeSources(project.getSourceDir())
+        new HelloWorldJniApp().writeSources(project.testDir)
 
         project.getBuildFile() << """
 apply plugin: 'com.android.model.application'

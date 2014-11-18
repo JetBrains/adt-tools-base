@@ -34,7 +34,7 @@ class AppComponentModelIntegTest {
 
     @Before
     public void setup() {
-        new HelloWorldApp().writeSources(project.getSourceDir())
+        new HelloWorldApp().writeSources(project.testDir)
         project.buildFile << """
 apply plugin: "com.android.model.application"
 
