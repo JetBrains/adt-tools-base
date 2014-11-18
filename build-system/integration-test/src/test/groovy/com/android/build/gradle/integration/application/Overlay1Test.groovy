@@ -29,7 +29,7 @@ import org.junit.experimental.categories.Category
 class Overlay1Test {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("regular/overlay1")
+            .fromSample("overlay1")
             .create()
 
     @BeforeClass

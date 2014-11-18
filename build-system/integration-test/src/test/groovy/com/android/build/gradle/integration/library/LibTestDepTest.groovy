@@ -29,7 +29,7 @@ import org.junit.experimental.categories.Category
 class LibTestDepTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("regular/libTestDep")
+            .fromSample("libTestDep")
             .create()
 
     @BeforeClass
