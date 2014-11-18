@@ -36,6 +36,7 @@ import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -112,6 +113,8 @@ public class GradleTestProject implements TestRule {
     private File ndkDir;
 
     private File sdkDir;
+
+    private ByteArrayOutputStream stdout = new ByteArrayOutputStream();
 
     @Nullable
     private File projectSourceDir;
@@ -286,7 +289,7 @@ public class GradleTestProject implements TestRule {
      * @param tasks Variadic list of tasks to execute.
      */
     public void execute(String ... tasks) {
-        execute(Collections.<String>emptyList(), null, false, tasks);
+        execute(Collections.<String>emptyList(), false, tasks);
     }
 
     /**
@@ -297,24 +300,13 @@ public class GradleTestProject implements TestRule {
      * @return the AndroidProject model for the project.
      */
     public AndroidProject executeAndReturnModel(String ... tasks) {
-        return execute(Collections.<String>emptyList(), null, true, tasks);
-    }
-
-    /**
-     * Runs gradle on the project.  Throws exception on failure.
-     *
-     * @param stdout Stream to capture the standard output.
-     * @param tasks Variadic list of tasks to execute.
-     */
-    public void execute(OutputStream stdout, String ... tasks) {
-        execute(Collections.<String>emptyList(), stdout, false, tasks);
+        return execute(Collections.<String>emptyList(), true, tasks);
     }
 
     /**
      * Runs gradle on the project.  Throws exception on failure.
      *
      * @param arguments List of arguments for the gradle command.
-     * @param stdout Stream to capture the standard output.
      * @param returnModel whether the model should be queried and returned.
      * @param tasks Variadic list of tasks to execute.
      *
@@ -323,7 +315,6 @@ public class GradleTestProject implements TestRule {
     @Nullable
     private AndroidProject execute(
             @NonNull List<String> arguments,
-            @Nullable OutputStream stdout,
             boolean returnModel,
             @NonNull String ... tasks) {
         ProjectConnection connection = getProjectConnection();
@@ -358,6 +349,13 @@ public class GradleTestProject implements TestRule {
         } finally {
             connection.close();
         }
+    }
+
+    /**
+     * Return the stdout from all execute command.
+     */
+    public ByteArrayOutputStream getStdout() {
+        return stdout;
     }
 
     /**
