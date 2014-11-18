@@ -11,10 +11,6 @@ sourceSets {
         groovy.srcDir file('src/build-test/groovy')
         resources.srcDir file('src/build-test/resources')
     }
-    deviceTest {
-        groovy.srcDir file('src/device-test/groovy')
-        resources.srcDir file('src/device-test/resources')
-    }
 }
 
 ext.proguardVersion = "5.1"
@@ -33,12 +29,6 @@ dependencies {
     buildTestCompile sourceSets.test.output
     buildTestCompile configurations.testCompile
     buildTestCompile configurations.testRuntime
-
-    deviceTestCompile sourceSets.main.output
-    deviceTestCompile sourceSets.test.output
-    deviceTestCompile sourceSets.buildTest.output
-    deviceTestCompile configurations.testCompile
-    deviceTestCompile configurations.testRuntime
 }
 
 // configuration for dependencies provided by the runtime,
@@ -92,18 +82,6 @@ task buildTest(type: Test) {
 
 buildTest.dependsOn ':publishLocal'
 check.dependsOn buildTest
-
-task deviceTest(type: Test) {
-    testClassesDir = sourceSets.deviceTest.output.classesDir
-    classpath = sourceSets.deviceTest.runtimeClasspath
-    description = "Runs the device tests. This requires a device."
-    group = "verification"
-    systemProperties['jar.path'] = jar.archivePath
-    environment("CUSTOM_REPO", rootProject.file("../out/repo"))
-}
-
-deviceTest.dependsOn ':publishLocal'
-
 
 groovydoc {
     exclude     "**/internal/**"

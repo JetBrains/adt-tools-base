@@ -38,7 +38,8 @@ class SameNamedLibsTest {
     }
 
     @Test
-    void assembleDebug() {
+    void lint() {
+        project.execute("lint")
     }
 
     @Test
