@@ -252,10 +252,10 @@ public class LibraryVariantFactory implements VariantFactory<LibraryVariantData>
                 "bundle${fullName.capitalize()}",
                 Zip)
 
-        def extract = variantData.variantDependency.annotationsPresent ? createExtractAnnotations(
+        libVariantData.generateAnnotationsTask = variantData.variantDependency.annotationsPresent ? createExtractAnnotations(
                 fullName, project, variantData) : null
-        if (extract != null) {
-            bundle.dependsOn(extract)
+        if (libVariantData.generateAnnotationsTask != null) {
+            bundle.dependsOn(libVariantData.generateAnnotationsTask)
         }
 
         final boolean instrumented = variantConfig.buildType.isTestCoverageEnabled()
@@ -330,9 +330,9 @@ public class LibraryVariantFactory implements VariantFactory<LibraryVariantData>
                 jar.exclude(packageName + "/BuildConfig.class")
             }
 
-            if (extract != null) {
+            if (libVariantData.generateAnnotationsTask != null) {
                 // In case extract annotations strips out private typedef annotation classes
-                jar.dependsOn extract
+                jar.dependsOn libVariantData.generateAnnotationsTask
             }
         }
 
