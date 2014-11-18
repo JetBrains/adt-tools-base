@@ -17,7 +17,6 @@
 package com.android.build.gradle.internal.dsl;
 
 import com.android.annotations.NonNull;
-import com.android.builder.model.PackagingOptions;
 import com.google.common.collect.Sets;
 import org.gradle.api.tasks.Input;
 
@@ -27,7 +26,7 @@ import java.util.Set;
 /**
  * DSL objects for configuring APK packaging options.
  */
-public class PackagingOptionsImpl implements PackagingOptions {
+public class PackagingOptions implements com.android.builder.model.PackagingOptions {
 
     private Set<String> excludes;
     private Set<String> pickFirsts;

@@ -20,8 +20,8 @@ import com.android.annotations.NonNull
 import com.android.build.FilterData
 import com.android.build.OutputFile
 import com.android.build.gradle.api.ApkOutputFile
-import com.android.build.gradle.internal.dsl.PackagingOptionsImpl
-import com.android.build.gradle.internal.dsl.SigningConfigDsl
+import com.android.build.gradle.internal.dsl.PackagingOptions
+import com.android.build.gradle.internal.dsl.SigningConfig
 import com.android.build.gradle.internal.tasks.BaseTask
 import com.google.common.base.Joiner
 import com.google.common.collect.ImmutableList
@@ -59,10 +59,10 @@ class PackageSplitAbi extends BaseTask {
     boolean jniDebuggable
 
     @Nested @Optional
-    SigningConfigDsl signingConfig
+    SigningConfig signingConfig
 
     @Nested
-    PackagingOptionsImpl packagingOptions
+    PackagingOptions packagingOptions
 
     @Input
     Collection<File> jniFolders;

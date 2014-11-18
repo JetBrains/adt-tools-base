@@ -29,9 +29,9 @@ import java.util.Collections;
 import java.util.Set;
 
 /**
- * Implementation of NdkConfig to be used in the gradle DSL.
+ * DSL object for NDK-related settings.
  */
-public class NdkConfigDsl implements NdkConfig, Serializable {
+public class NdkOptions implements NdkConfig, Serializable {
     private static final long serialVersionUID = 1L;
 
     private String moduleName;
@@ -40,10 +40,10 @@ public class NdkConfigDsl implements NdkConfig, Serializable {
     private Set<String> abiFilters;
     private String stl;
 
-    public NdkConfigDsl() {
+    public NdkOptions() {
     }
 
-    public NdkConfigDsl(@NonNull NdkConfigDsl ndkConfig) {
+    public NdkOptions(@NonNull NdkOptions ndkConfig) {
         moduleName = ndkConfig.moduleName;
         cFlags = ndkConfig.cFlags;
         setLdLibs(ndkConfig.ldLibs);
@@ -77,7 +77,7 @@ public class NdkConfigDsl implements NdkConfig, Serializable {
     }
 
     @NonNull
-    public NdkConfigDsl ldLibs(String lib) {
+    public NdkOptions ldLibs(String lib) {
         if (ldLibs == null) {
             ldLibs = Sets.newHashSet();
         }
@@ -86,7 +86,7 @@ public class NdkConfigDsl implements NdkConfig, Serializable {
     }
 
     @NonNull
-    public NdkConfigDsl ldLibs(String... libs) {
+    public NdkOptions ldLibs(String... libs) {
         if (ldLibs == null) {
             ldLibs = Sets.newHashSetWithExpectedSize(libs.length);
         }
@@ -95,7 +95,7 @@ public class NdkConfigDsl implements NdkConfig, Serializable {
     }
 
     @NonNull
-    public NdkConfigDsl setLdLibs(Collection<String> libs) {
+    public NdkOptions setLdLibs(Collection<String> libs) {
         if (libs != null) {
             if (abiFilters == null) {
                 abiFilters = Sets.newHashSetWithExpectedSize(libs.size());
@@ -119,7 +119,7 @@ public class NdkConfigDsl implements NdkConfig, Serializable {
     }
 
     @NonNull
-    public NdkConfigDsl abiFilter(String filter) {
+    public NdkOptions abiFilter(String filter) {
         if (abiFilters == null) {
             abiFilters = Sets.newHashSetWithExpectedSize(2);
         }
@@ -128,7 +128,7 @@ public class NdkConfigDsl implements NdkConfig, Serializable {
     }
 
     @NonNull
-    public NdkConfigDsl abiFilters(String... filters) {
+    public NdkOptions abiFilters(String... filters) {
         if (abiFilters == null) {
             abiFilters = Sets.newHashSetWithExpectedSize(2);
         }
@@ -137,7 +137,7 @@ public class NdkConfigDsl implements NdkConfig, Serializable {
     }
 
     @NonNull
-    public NdkConfigDsl setAbiFilters(Collection<String> filters) {
+    public NdkOptions setAbiFilters(Collection<String> filters) {
         if (filters != null) {
             if (abiFilters == null) {
                 abiFilters = Sets.newHashSetWithExpectedSize(filters.size());

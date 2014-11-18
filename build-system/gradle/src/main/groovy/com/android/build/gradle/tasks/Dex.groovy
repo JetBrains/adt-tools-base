@@ -17,7 +17,7 @@ package com.android.build.gradle.tasks
 
 import com.android.SdkConstants
 import com.android.annotations.Nullable
-import com.android.build.gradle.internal.dsl.DexOptionsImpl
+import com.android.build.gradle.internal.dsl.DexOptions
 import com.android.build.gradle.internal.tasks.BaseTask
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputDirectory
@@ -58,7 +58,7 @@ public class Dex extends BaseTask {
     Collection<File> libraries
 
     @Nested
-    DexOptionsImpl dexOptions
+    DexOptions dexOptions
 
     @Input
     boolean multiDexEnabled = false

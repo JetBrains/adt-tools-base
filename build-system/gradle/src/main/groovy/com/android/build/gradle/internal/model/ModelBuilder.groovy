@@ -23,7 +23,6 @@ import com.android.build.gradle.LibraryPlugin
 import com.android.build.gradle.api.ApkOutputFile
 import com.android.build.gradle.internal.BuildTypeData
 import com.android.build.gradle.internal.ProductFlavorData
-import com.android.build.gradle.internal.dsl.LintOptionsImpl
 import com.android.build.gradle.internal.variant.ApkVariantOutputData
 import com.android.build.gradle.internal.variant.ApplicationVariantData
 import com.android.build.gradle.internal.variant.BaseVariantData
@@ -94,7 +93,7 @@ public class ModelBuilder implements ToolingModelBuilder {
                         true /*isTest*/,
                         ArtifactMetaData.TYPE_ANDROID));
 
-        LintOptions lintOptions = LintOptionsImpl.create(basePlugin.extension.lintOptions)
+        LintOptions lintOptions = com.android.build.gradle.internal.dsl.LintOptions.create(basePlugin.extension.lintOptions)
 
         AaptOptions aaptOptions = AaptOptionsImpl.create(basePlugin.extension.aaptOptions)
 

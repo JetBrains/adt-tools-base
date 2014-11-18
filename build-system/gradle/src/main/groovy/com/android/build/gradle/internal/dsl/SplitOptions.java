@@ -27,7 +27,7 @@ import java.util.Set;
 /**
  * Base data representing how an APK should be split for a given dimension (density, abi).
  */
-public class SplitData {
+public class SplitOptions {
 
     private boolean enable = false;
     private boolean reset = false;

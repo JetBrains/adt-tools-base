@@ -18,7 +18,6 @@ package com.android.build.gradle.internal.dsl;
 
 import com.android.annotations.NonNull;
 import com.android.builder.core.BuilderConstants;
-import com.android.builder.model.SigningConfig;
 import com.android.builder.signing.DefaultSigningConfig;
 import com.android.prefs.AndroidLocation;
 import com.google.common.base.Objects;
@@ -34,7 +33,7 @@ import java.io.Serializable;
 /**
  * DSL object for configuring signing configs.
  */
-public class SigningConfigDsl extends DefaultSigningConfig implements Serializable, Named {
+public class SigningConfig extends DefaultSigningConfig implements Serializable, Named {
     private static final long serialVersionUID = 1L;
 
     /**
@@ -43,7 +42,7 @@ public class SigningConfigDsl extends DefaultSigningConfig implements Serializab
      * @param name the name of the signingConfig.
      *
      */
-    public SigningConfigDsl(@NonNull String name) {
+    public SigningConfig(@NonNull String name) {
         super(name);
 
         if (BuilderConstants.DEBUG.equals(name)) {
@@ -55,7 +54,7 @@ public class SigningConfigDsl extends DefaultSigningConfig implements Serializab
         }
     }
 
-    public SigningConfigDsl initWith(SigningConfig that) {
+    public SigningConfig initWith(com.android.builder.model.SigningConfig that) {
         setStoreFile(that.getStoreFile());
         setStorePassword(that.getStorePassword());
         setKeyAlias(that.getKeyAlias());
@@ -134,7 +133,7 @@ public class SigningConfigDsl extends DefaultSigningConfig implements Serializab
         if (o == null || getClass() != o.getClass()) return false;
         if (!super.equals(o)) return false;
 
-        SigningConfigDsl that = (SigningConfigDsl) o;
+        SigningConfig that = (SigningConfig) o;
 
         if (!mName.equals(that.mName)) return false;
 

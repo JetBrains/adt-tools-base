@@ -24,20 +24,18 @@ import com.android.build.gradle.internal.CompileOptions
 import com.android.build.gradle.internal.NdkLibrarySpecification
 import com.android.build.gradle.internal.SourceSetSourceProviderWrapper
 import com.android.build.gradle.internal.coverage.JacocoExtension
-import com.android.build.gradle.internal.dsl.AaptOptionsImpl
+import com.android.build.gradle.internal.dsl.AaptOptions
 import com.android.build.gradle.internal.dsl.AndroidSourceSetFactory
-import com.android.build.gradle.internal.dsl.BuildTypeDsl
-import com.android.build.gradle.internal.dsl.DexOptionsImpl
-import com.android.build.gradle.internal.dsl.GroupableProductFlavorDsl
-import com.android.build.gradle.internal.dsl.LintOptionsImpl
-import com.android.build.gradle.internal.dsl.PackagingOptionsImpl
-import com.android.build.gradle.internal.dsl.ProductFlavorDsl
-import com.android.build.gradle.internal.dsl.SigningConfigDsl
+import com.android.build.gradle.internal.dsl.BuildType
+import com.android.build.gradle.internal.dsl.DexOptions
+import com.android.build.gradle.internal.dsl.GroupableProductFlavor
+import com.android.build.gradle.internal.dsl.LintOptions
+import com.android.build.gradle.internal.dsl.PackagingOptions
+import com.android.build.gradle.internal.dsl.ProductFlavor
+import com.android.build.gradle.internal.dsl.SigningConfig
 import com.android.build.gradle.internal.dsl.Splits
 import com.android.build.gradle.internal.test.TestOptions
 import com.android.builder.core.BuilderConstants
-import com.android.builder.model.BuildType
-import com.android.builder.model.ProductFlavor
 import com.android.builder.model.SourceProvider
 import com.android.builder.testing.api.DeviceProvider
 import com.android.builder.testing.api.TestServer
@@ -61,16 +59,16 @@ public abstract class BaseExtension {
     private FullRevision buildToolsRevision
 
     /** Default config, shared by all flavors. */
-    final ProductFlavorDsl defaultConfig
+    final ProductFlavor defaultConfig
 
     /** Options for aapt, tool for packaging resources. */
-    final AaptOptionsImpl aaptOptions
+    final AaptOptions aaptOptions
 
     /** Lint options. */
-    final LintOptionsImpl lintOptions
+    final LintOptions lintOptions
 
     /** Dex options. */
-    final DexOptionsImpl dexOptions
+    final DexOptions dexOptions
 
     /** Options for running tests. */
     final TestOptions testOptions
@@ -79,7 +77,7 @@ public abstract class BaseExtension {
     final CompileOptions compileOptions
 
     /** Packaging options. */
-    final PackagingOptionsImpl packagingOptions
+    final PackagingOptions packagingOptions
 
     /** JaCoCo options. */
     final JacocoExtension jacoco
@@ -88,13 +86,13 @@ public abstract class BaseExtension {
     final Splits splits
 
     /** All product flavors used by this project. */
-    final NamedDomainObjectContainer<GroupableProductFlavorDsl> productFlavors
+    final NamedDomainObjectContainer<GroupableProductFlavor> productFlavors
 
     /** Build types used by this project. */
-    final NamedDomainObjectContainer<BuildTypeDsl> buildTypes
+    final NamedDomainObjectContainer<BuildType> buildTypes
 
     /** Signing configs used by this project. */
-    final NamedDomainObjectContainer<SigningConfigDsl> signingConfigs
+    final NamedDomainObjectContainer<SigningConfig> signingConfigs
 
     String resourcePrefix
 
@@ -127,24 +125,24 @@ public abstract class BaseExtension {
             @NonNull BasePlugin plugin,
             @NonNull ProjectInternal project,
             @NonNull Instantiator instantiator,
-            @NonNull NamedDomainObjectContainer<BuildTypeDsl> buildTypes,
-            @NonNull NamedDomainObjectContainer<GroupableProductFlavorDsl> productFlavors,
-            @NonNull NamedDomainObjectContainer<SigningConfigDsl> signingConfigs,
+            @NonNull NamedDomainObjectContainer<BuildType> buildTypes,
+            @NonNull NamedDomainObjectContainer<GroupableProductFlavor> productFlavors,
+            @NonNull NamedDomainObjectContainer<SigningConfig> signingConfigs,
             boolean isLibrary) {
         this.plugin = plugin
         this.buildTypes = buildTypes
         this.productFlavors = productFlavors
         this.signingConfigs = signingConfigs
 
-        defaultConfig = instantiator.newInstance(ProductFlavorDsl, BuilderConstants.MAIN,
+        defaultConfig = instantiator.newInstance(ProductFlavor, BuilderConstants.MAIN,
                 project, instantiator, project.getLogger())
 
-        aaptOptions = instantiator.newInstance(AaptOptionsImpl)
-        dexOptions = instantiator.newInstance(DexOptionsImpl)
-        lintOptions = instantiator.newInstance(LintOptionsImpl)
+        aaptOptions = instantiator.newInstance(AaptOptions)
+        dexOptions = instantiator.newInstance(DexOptions)
+        lintOptions = instantiator.newInstance(LintOptions)
         testOptions = instantiator.newInstance(TestOptions)
         compileOptions = instantiator.newInstance(CompileOptions)
-        packagingOptions = instantiator.newInstance(PackagingOptionsImpl)
+        packagingOptions = instantiator.newInstance(PackagingOptions)
         jacoco = instantiator.newInstance(JacocoExtension)
         splits = instantiator.newInstance(Splits, instantiator)
 
@@ -233,7 +231,7 @@ public abstract class BaseExtension {
     /**
      * Configures the build types.
      */
-    void buildTypes(Action<? super NamedDomainObjectContainer<BuildTypeDsl>> action) {
+    void buildTypes(Action<? super NamedDomainObjectContainer<BuildType>> action) {
         plugin.checkTasksAlreadyCreated()
         action.execute(buildTypes)
     }
@@ -241,7 +239,7 @@ public abstract class BaseExtension {
     /**
      * Configures the product flavors.
      */
-    void productFlavors(Action<? super NamedDomainObjectContainer<GroupableProductFlavorDsl>> action) {
+    void productFlavors(Action<? super NamedDomainObjectContainer<GroupableProductFlavor>> action) {
         plugin.checkTasksAlreadyCreated()
         action.execute(productFlavors)
     }
@@ -249,7 +247,7 @@ public abstract class BaseExtension {
     /**
      * Configures the signing configs.
      */
-    void signingConfigs(Action<? super NamedDomainObjectContainer<SigningConfigDsl>> action) {
+    void signingConfigs(Action<? super NamedDomainObjectContainer<SigningConfig>> action) {
         plugin.checkTasksAlreadyCreated()
         action.execute(signingConfigs)
     }
@@ -279,7 +277,7 @@ public abstract class BaseExtension {
     /**
      * The default configuration, inherited by all build flavors (if any are defined).
      */
-    void defaultConfig(Action<GroupableProductFlavorDsl> action) {
+    void defaultConfig(Action<ProductFlavor> action) {
         plugin.checkTasksAlreadyCreated()
         action.execute(defaultConfig)
     }
@@ -287,7 +285,7 @@ public abstract class BaseExtension {
     /**
      * Configures aapt options.
      */
-    void aaptOptions(Action<AaptOptionsImpl> action) {
+    void aaptOptions(Action<AaptOptions> action) {
         plugin.checkTasksAlreadyCreated()
         action.execute(aaptOptions)
     }
@@ -296,7 +294,7 @@ public abstract class BaseExtension {
      * Configures dex options.
      * @param action
      */
-    void dexOptions(Action<DexOptionsImpl> action) {
+    void dexOptions(Action<DexOptions> action) {
         plugin.checkTasksAlreadyCreated()
         action.execute(dexOptions)
     }
@@ -304,7 +302,7 @@ public abstract class BaseExtension {
     /**
      * Configure lint options.
      */
-    void lintOptions(Action<LintOptionsImpl> action) {
+    void lintOptions(Action<LintOptions> action) {
         plugin.checkTasksAlreadyCreated()
         action.execute(lintOptions)
     }
@@ -326,7 +324,7 @@ public abstract class BaseExtension {
     /**
      * Configures packaging options.
      */
-    void packagingOptions(Action<PackagingOptionsImpl> action) {
+    void packagingOptions(Action<PackagingOptions> action) {
         plugin.checkTasksAlreadyCreated()
         action.execute(packagingOptions)
     }
