@@ -36,6 +36,7 @@ class NoPreDexTest {
     }
 
     @Test
-    void assembleDebug() {
+    void lint() {
+        project.execute("lint")
     }
 }

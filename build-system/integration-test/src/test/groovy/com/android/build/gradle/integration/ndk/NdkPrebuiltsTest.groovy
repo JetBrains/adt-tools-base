@@ -36,6 +36,7 @@ class NdkPrebuiltsTest {
     }
 
     @Test
-    void assembleDebug() {
+    void lint() {
+        project.execute("lint")
     }
 }
