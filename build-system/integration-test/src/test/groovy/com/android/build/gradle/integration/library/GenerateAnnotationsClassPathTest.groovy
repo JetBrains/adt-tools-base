@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.integration.application
+package com.android.build.gradle.integration.library
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import org.junit.BeforeClass
 import org.junit.ClassRule
@@ -25,7 +25,7 @@ import static org.junit.Assert.assertFalse
 class GenerateAnnotationsClassPathTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("regular/extractAnnotations").create()
+            .fromSample("extractAnnotations").create()
 
     @BeforeClass
     static public void setUpProject() {
@@ -44,29 +44,11 @@ public class HelloWorld {
     }
 }"""
 
-        project.getBuildFile() << '''
-
-import org.gradle.api.tasks.incremental.IncrementalTaskInputs
-import com.android.build.gradle.*
-import com.android.build.gradle.api.BaseVariant
+        project.getBuildFile().append('''
 import com.google.common.base.Joiner
 
-
-class JavaGeneratingPlugin implements Plugin<Project> {
-    @Override
-    void apply(Project project) {
-        System.err.println('Plugin applied')
-
-        project.plugins.withType(LibraryPlugin) {
-            def androidPlugin = project.plugins.getPlugin(LibraryPlugin)
-            def variants = ((LibraryExtension) androidPlugin.extension).libraryVariants
-            variants.all { BaseVariant variant -> registerTask(project, variant) }
-        }
-
-    }
-
-    private void registerTask(Project project, BaseVariant variant) {
-        def outDir = project.file("$project.buildDir/generated/source/testplugin/$variant.name");
+android.libraryVariants.all { variant ->
+    def outDir = project.file("$project.buildDir/generated/source/testplugin/$variant.name");
         def task = project.task(
                 "generateJavaFromPlugin${variant.name.capitalize()}",
                 dependsOn: [variant.mergeResources],
@@ -74,10 +56,7 @@ class JavaGeneratingPlugin implements Plugin<Project> {
             outputDirectory = outDir
         }
         variant.registerJavaGeneratingTask(task, outDir)
-    }
 }
-
-
 
 public class JavaGeneratingTask extends DefaultTask {
     @OutputDirectory
@@ -103,9 +82,9 @@ public class GeneratedClass {
     """
     }
 }
-apply plugin: JavaGeneratingPlugin
 
-'''
+
+''')
     }
 
     /**
@@ -114,12 +93,11 @@ apply plugin: JavaGeneratingPlugin
      */
     @Test
     public void "check javaGeneratingTask adds output dir to generate annotations classpath"() {
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream()
-        project.execute(outputStream, "clean", "assembleDebug")
-        String output = outputStream.toString("UTF-8")
+        project.stdout.reset()
+        project.execute("clean", "assembleDebug")
         assertFalse(
                 "Extract annotation should get generated class on path.",
-                output.contains("Not extracting annotations (compilation problems encountered)"))
+                project.stdout.toString().contains("Not extracting annotations (compilation problems encountered)"))
     }
 
 }
