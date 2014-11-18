@@ -39,7 +39,6 @@ import org.junit.runners.model.Statement;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.security.CodeSource;
@@ -86,7 +85,7 @@ public class GradleTestProject implements TestRule {
         }
 
         /**
-         * Create GradleTestProject from an existing sample project.
+         * Create GradleTestProjectBase from an existing sample project.
          */
         public Builder fromSample(@NonNull String project) {
             projectDir = new File(SAMPLE_PROJECT_DIR, project);
@@ -108,7 +107,7 @@ public class GradleTestProject implements TestRule {
 
     public static final String DEFAULT_BUILD_TOOL_VERSION = "21.0.1";
 
-    private static final String ANDROID_GRADLE_VERSION = "0.14.2";
+    private static final String ANDROID_GRADLE_VERSION = "0.14.3";
 
     private String name;
 
