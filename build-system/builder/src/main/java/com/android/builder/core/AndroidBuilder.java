@@ -1166,6 +1166,9 @@ public class AndroidBuilder {
             }
 
             if (multidexLegacy) {
+                // minimal dex size
+                command.add("--minimal-main-dex");
+
                 // This sets the method ref count threshold at which dex overflow
                 // occurs.  On the one hand, we want this number to be as large as
                 // possible, to provide maximum room for code which must reside in
@@ -1178,6 +1181,7 @@ public class AndroidBuilder {
                 // CHANGING THIS VALUE!
                 command.add("--set-max-idx-number=60000");
             }
+
         }
 
         /**
