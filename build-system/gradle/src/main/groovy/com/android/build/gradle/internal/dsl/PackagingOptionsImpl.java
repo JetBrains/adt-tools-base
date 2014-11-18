@@ -24,11 +24,17 @@ import org.gradle.api.tasks.Input;
 import java.util.Collections;
 import java.util.Set;
 
+/**
+ * DSL objects for configuring APK packaging options.
+ */
 public class PackagingOptionsImpl implements PackagingOptions {
 
     private Set<String> excludes;
     private Set<String> pickFirsts;
 
+    /**
+     * TODO: Document.
+     */
     @Override
     @NonNull
     @Input
@@ -47,6 +53,9 @@ public class PackagingOptionsImpl implements PackagingOptions {
         excludes.add(path);
     }
 
+    /**
+     * TODO: Document.
+     */
     @Override
     @NonNull
     @Input

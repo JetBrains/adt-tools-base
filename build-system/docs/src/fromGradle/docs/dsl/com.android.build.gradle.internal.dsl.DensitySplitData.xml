@@ -5,7 +5,8 @@
             <thead>
                 <tr><td>Name</td></tr>
             </thead>
-            <tr><td>flavorDimension</td></tr>
+            <tr><td>strict</td></tr>
+            <tr><td>compatibleScreens</td></tr>
         </table>
     </section>
     <section>

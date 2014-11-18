@@ -34,6 +34,9 @@ public class DensitySplitData extends SplitData {
     private boolean strict = true;
     private Set<String> compatibleScreens;
 
+    /**
+     * TODO: Document.
+     */
     public boolean isStrict() {
         return strict;
     }
@@ -55,6 +58,9 @@ public class DensitySplitData extends SplitData {
         compatibleScreens.addAll(Arrays.asList(sizes));
     }
 
+    /**
+     * TODO: Document.
+     */
     @NonNull
     public Set<String> getCompatibleScreens() {
         if (compatibleScreens == null) {
