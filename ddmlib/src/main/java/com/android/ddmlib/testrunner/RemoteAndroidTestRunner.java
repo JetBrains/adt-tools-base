@@ -204,7 +204,7 @@ public class RemoteAndroidTestRunner implements IRemoteAndroidTestRunner  {
         } else {
             setLogOnly(false);
             // restore timeout to its original set value
-            setMaxTimeToOutputResponse(mMaxTimeToOutputResponse, TimeUnit.MILLISECONDS);
+            setMaxTimeToOutputResponse(mMaxTimeToOutputResponse, mMaxTimeUnits);
             if (getApiLevel() < 16 ) {
                 // remove delay
                 removeInstrumentationArg(DELAY_MSEC_ARG_NAME);
