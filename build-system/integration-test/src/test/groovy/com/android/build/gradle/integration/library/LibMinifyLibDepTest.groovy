@@ -38,7 +38,8 @@ class LibMinifyLibDepTest {
     }
 
     @Test
-    void assembleDebug() {
+    void lint() {
+        project.execute("lint")
     }
 
     @Test
