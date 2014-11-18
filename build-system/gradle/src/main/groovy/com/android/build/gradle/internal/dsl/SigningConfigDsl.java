@@ -32,7 +32,7 @@ import java.io.File;
 import java.io.Serializable;
 
 /**
- * DSL overlay for {@link DefaultSigningConfig}.
+ * DSL object for configuring signing configs.
  */
 public class SigningConfigDsl extends DefaultSigningConfig implements Serializable, Named {
     private static final long serialVersionUID = 1L;

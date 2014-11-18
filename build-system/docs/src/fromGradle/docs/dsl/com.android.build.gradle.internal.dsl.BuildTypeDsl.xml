@@ -3,9 +3,7 @@
         <title>Properties</title>
         <table>
             <thead>
-                <tr>
-                    <td>Name</td>
-                </tr>
+                <tr><td>Name</td></tr>
             </thead>
             <tr><td>debuggable</td></tr>
             <tr><td>jniDebuggable</td></tr>
@@ -22,9 +20,7 @@
         <title>Methods</title>
         <table>
             <thead>
-                <tr>
-                    <td>Name</td>
-                </tr>
+                <tr><td>Name</td></tr>
             </thead>
             <tr><td>proguardFile</td></tr>
             <tr><td>proguardFiles</td></tr>

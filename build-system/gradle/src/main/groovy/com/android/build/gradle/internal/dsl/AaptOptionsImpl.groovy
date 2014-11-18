@@ -19,6 +19,9 @@ package com.android.build.gradle.internal.dsl;
 import com.android.builder.model.AaptOptions
 import org.gradle.api.tasks.Input
 
+/**
+ * DSL object for configuring aapt options.
+ */
 public class AaptOptionsImpl implements AaptOptions {
 
     @Input
@@ -37,6 +40,11 @@ public class AaptOptionsImpl implements AaptOptions {
         this.ignoreAssetsPattern = ignoreAssetsPattern
     }
 
+    /**
+     * Pattern describing assets to be ignore.
+     *
+     * <p>See <code>aapt --help</code>
+     */
     @Override
     String getIgnoreAssets() {
         return ignoreAssetsPattern
@@ -50,6 +58,9 @@ public class AaptOptionsImpl implements AaptOptions {
         noCompressList = Arrays.asList(noCompress)
     }
 
+    /**
+     * Extensions of files that will not be stored compressed in the APK.
+     */
     @Override
     Collection<String> getNoCompress() {
         return noCompressList
@@ -63,6 +74,11 @@ public class AaptOptionsImpl implements AaptOptions {
         useNewCruncher = value;
     }
 
+    /**
+     * Whether to use the new cruncher.
+     *
+     * <p>TODO: Document.
+     */
     public boolean getUseNewCruncher() {
         return useNewCruncher;
     }
@@ -75,6 +91,9 @@ public class AaptOptionsImpl implements AaptOptions {
         failOnMissingConfigEntry = value;
     }
 
+    /**
+     * Forces aapt to return an error if it fails to find an entry for a configuration.
+     */
     @Override
     public boolean getFailOnMissingConfigEntry() {
         return failOnMissingConfigEntry;

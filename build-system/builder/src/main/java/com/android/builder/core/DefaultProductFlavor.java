@@ -251,6 +251,9 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
      *
      * <p>This is a fully qualified class name of the runner, e.g.
      * <code>android.test.InstrumentationTestRunner</code>
+     *
+     * <p>See <a href="http://developer.android.com/guide/topics/manifest/instrumentation-element.html">
+     * instrumentation</a>.
      */
     @Override
     @Nullable
@@ -259,7 +262,8 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
     }
 
     /**
-     * TODO: Document.
+     * See <a href="http://developer.android.com/guide/topics/manifest/instrumentation-element.html">
+     * instrumentation</a>.
      */
     @Override
     @Nullable
@@ -274,7 +278,8 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
     }
 
     /**
-     * TODO: Document.
+     * See <a href="http://developer.android.com/guide/topics/manifest/instrumentation-element.html">
+     * instrumentation</a>.
      */
     @Override
     @Nullable

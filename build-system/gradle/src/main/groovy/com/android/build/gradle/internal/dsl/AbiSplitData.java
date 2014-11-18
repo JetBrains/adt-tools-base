@@ -29,6 +29,9 @@ public class AbiSplitData extends SplitData {
 
     private boolean universalApk = false;
 
+    /**
+     * TODO: Document.
+     */
     public boolean isUniversalApk() {
         return universalApk;
     }

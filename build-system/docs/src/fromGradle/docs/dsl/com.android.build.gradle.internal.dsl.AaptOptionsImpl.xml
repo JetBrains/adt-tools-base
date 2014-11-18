@@ -5,7 +5,10 @@
             <thead>
                 <tr><td>Name</td></tr>
             </thead>
-            <tr><td>flavorDimension</td></tr>
+            <tr><td>ignoreAssets</td></tr>
+            <tr><td>noCompress</td></tr>
+            <tr><td>failOnMissingConfigEntry</td></tr>
+            <tr><td>useNewCruncher</td></tr>
         </table>
     </section>
     <section>

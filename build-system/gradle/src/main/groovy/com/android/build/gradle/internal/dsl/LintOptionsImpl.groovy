@@ -39,6 +39,9 @@ import org.gradle.api.tasks.OutputFile
 
 import static com.android.SdkConstants.DOT_XML
 
+/**
+ * DSL object for configuring lint options.
+ */
 public class LintOptionsImpl implements LintOptions, Serializable {
     public static final String STDOUT = "stdout"
     public static final String STDERR = "stderr"
@@ -185,7 +188,7 @@ public class LintOptionsImpl implements LintOptions, Serializable {
 
     /**
      * Returns the set of issue id's to enable. Callers are allowed to modify this collection.
-     * To enable a given issue, add the {@link com.android.tools.lint.detector.api.Issue#getId()} to the returned set.
+     * To enable a given issue, add the issue ID to the returned set.
      */
     @NonNull
     public Set<String> getEnable() {
@@ -306,6 +309,8 @@ public class LintOptionsImpl implements LintOptions, Serializable {
         this.warningsAsErrors = allErrors
     }
 
+    /** Returns whether lint should include explanations for issue errors. (Note that
+     * HTML and XML reports intentionally do this unconditionally, ignoring this setting.) */
     public boolean isExplainIssues() {
         return explainIssues
     }
@@ -330,6 +335,10 @@ public class LintOptionsImpl implements LintOptions, Serializable {
         this.showAll = showAll
     }
 
+    /**
+     * Returns whether lint should check for fatal errors during release builds. Default is true.
+     * If issues with severity "fatal" are found, the release build is aborted.
+     */
     @Override
     public boolean isCheckReleaseBuilds() {
         return checkReleaseBuilds;
@@ -346,6 +355,8 @@ public class LintOptionsImpl implements LintOptions, Serializable {
         return lintConfig
     }
 
+    /** Whether we should write an text report. Default false. The location can be
+     * controlled by {@link #getTextOutput()}. */
     @Override
     boolean getTextReport() {
         return textReport
@@ -353,10 +364,6 @@ public class LintOptionsImpl implements LintOptions, Serializable {
 
     void setTextReport(boolean textReport) {
         this.textReport = textReport
-    }
-
-    void setTextOutput(@NonNull File textOutput) {
-        this.textOutput = textOutput
     }
 
     void setHtmlReport(boolean htmlReport) {
@@ -375,26 +382,36 @@ public class LintOptionsImpl implements LintOptions, Serializable {
         this.xmlOutput = xmlOutput
     }
 
+    /**
+     * The optional path to where a text report should be written. The special value
+     * "stdout" can be used to point to standard output.
+     */
     @Override
     File getTextOutput() {
         return textOutput
     }
 
+    /** Whether we should write an HTML report. Default true. The location can be
+     * controlled by {@link #getHtmlOutput()}. */
     @Override
     boolean getHtmlReport() {
         return htmlReport
     }
 
+    /** The optional path to where an HTML report should be written */
     @Override
     File getHtmlOutput() {
         return htmlOutput
     }
 
+    /** Whether we should write an XML report. Default true. The location can be
+     * controlled by {@link #getXmlOutput()}. */
     @Override
     boolean getXmlReport() {
         return xmlReport
     }
 
+    /** The optional path to where an XML report should be written */
     @Override
     File getXmlOutput() {
         return xmlOutput
@@ -550,6 +567,14 @@ public class LintOptionsImpl implements LintOptions, Serializable {
         return new File(project.buildDir, base.toString())
     }
 
+    /**
+     * An optional map of severity overrides. The map maps from issue id's to the corresponding
+     * severity to use, which must be "fatal", "error", "warning", or "ignore".
+     *
+     * @return a map of severity overrides, or null. The severities are one of the constants
+     *  {@link #SEVERITY_FATAL}, {@link #SEVERITY_ERROR}, {@link #SEVERITY_WARNING},
+     *  {@link #SEVERITY_INFORMATIONAL}, {@link #SEVERITY_IGNORE}
+     */
     @Override
     @Nullable
     public Map<String, Integer> getSeverityOverrides() {
@@ -568,33 +593,51 @@ public class LintOptionsImpl implements LintOptions, Serializable {
 
     // -- DSL Methods.
 
+    /**
+     * Adds the id to the set of issues to check.
+     */
     public void check(String id) {
         check.add(id)
     }
 
+    /**
+     * Adds the ids to the set of issues to check.
+     */
     public void check(String... ids) {
         for (String id : ids) {
             check(id);
         }
     }
 
+    /**
+     * Adds the id to the set of issues to enable.
+     */
     public void enable(String id) {
         enable.add(id)
         def issue = new BuiltinIssueRegistry().getIssue(id)
         severities.put(id, issue != null ? issue.defaultSeverity : Severity.WARNING)
     }
 
+    /**
+     * Adds the ids to the set of issues to enable.
+     */
     public void enable(String... ids) {
         for (String id : ids) {
             enable(id);
         }
     }
 
+    /**
+     * Adds the id to the set of issues to enable.
+     */
     public void disable(String id) {
         disable.add(id)
         severities.put(id, Severity.IGNORE)
     }
 
+    /**
+     * Adds the ids to the set of issues to enable.
+     */
     public void disable(String... ids) {
         for (String id : ids) {
             disable(id);
@@ -611,40 +654,64 @@ public class LintOptionsImpl implements LintOptions, Serializable {
         this.textOutput = textOutput;
     }
 
+    /**
+     * Adds a severity override for the given issues.
+     */
     public void fatal(String id) {
         severities.put(id, Severity.FATAL)
     }
 
+    /**
+     * Adds a severity override for the given issues.
+     */
     public void fatal(String... ids) {
         for (String id : ids) {
             fatal(id);
         }
     }
 
+    /**
+     * Adds a severity override for the given issues.
+     */
     public void error(String id) {
         severities.put(id, Severity.ERROR)
     }
 
+    /**
+     * Adds a severity override for the given issues.
+     */
     public void error(String... ids) {
         for (String id : ids) {
             error(id);
         }
     }
 
+    /**
+     * Adds a severity override for the given issues.
+     */
     public void warning(String id) {
         severities.put(id, Severity.WARNING)
     }
 
+    /**
+     * Adds a severity override for the given issues.
+     */
     public void warning(String... ids) {
         for (String id : ids) {
             warning(id);
         }
     }
 
+    /**
+     * Adds a severity override for the given issues.
+     */
     public void ignore(String id) {
         severities.put(id, Severity.IGNORE)
     }
 
+    /**
+     * Adds a severity override for the given issues.
+     */
     public void ignore(String... ids) {
         for (String id : ids) {
             ignore(id);
