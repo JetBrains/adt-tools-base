@@ -1004,7 +1004,12 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
     public String getPackageFromManifest() {
         assert mType != Type.TEST;
         File manifestLocation = mDefaultSourceProvider.getManifestFile();
-        return sManifestParser.getPackage(manifestLocation);
+        String packageName = sManifestParser.getPackage(manifestLocation);
+        if (packageName == null) {
+            throw new RuntimeException(String.format("Cannot read packageName from %1$s",
+                    mDefaultSourceProvider.getManifestFile().getAbsolutePath()));
+        }
+        return packageName;
     }
 
     /**
