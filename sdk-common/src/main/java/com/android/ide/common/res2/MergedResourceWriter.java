@@ -170,12 +170,7 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
                             }
                         }
 
-                        ResourceType itemType = item.getType();
-                        String folderName = itemType.getName();
-                        String qualifiers = resourceFile.getQualifiers();
-                        if (!qualifiers.isEmpty()) {
-                            folderName = folderName + RES_QUALIFIER_SEP + qualifiers;
-                        }
+                        String folderName = getFolderName(item);
 
                         File typeFolder = new File(getRootFolder(), folderName);
                         try {
@@ -187,7 +182,7 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
                         File outFile = new File(typeFolder, filename);
 
                         try {
-                            if (itemType == ResourceType.RAW) {
+                            if (item.getType() == ResourceType.RAW) {
                                 // Don't crunch, don't insert source comments, etc - leave alone.
                                 Files.copy(file, outFile);
                             } else if (mCruncher != null && filename.endsWith(DOT_PNG)) {
@@ -229,7 +224,7 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
             // The case of both single type is above, so here either, there is no replacement
             // or the replacement is multi. We always need to remove the old file.
             // if replacedType is non-null, then it was values, if not,
-            removeOutFile(removedItem.getSource());
+            removeOutFile(removedItem);
         } else {
             // removed type is multi.
             // whether the new type is single or doesn't exist, we always need to mark the qualifier
@@ -332,17 +327,18 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
     /**
      * Removes a file that already exists in the out res folder. This has to be a non value file.
      *
-     * @param resourceFile the source file that created the file to remove.
+     * @param resourceItem the source item that created the file to remove.
      * @return true if success.
      */
-    private boolean removeOutFile(ResourceFile resourceFile) {
+    private boolean removeOutFile(ResourceItem resourceItem) {
+        ResourceFile resourceFile = resourceItem.getSource();
         if (resourceFile.getType() == ResourceFile.FileType.MULTI) {
             throw new IllegalArgumentException("SourceFile cannot be a FileType.MULTI");
         }
 
         File file = resourceFile.getFile();
         String fileName = file.getName();
-        String folderName = file.getParentFile().getName();
+        String folderName = getFolderName(resourceItem);
 
         return removeOutFile(folderName, fileName);
     }
@@ -364,5 +360,21 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
         if (!folder.isDirectory() && !folder.mkdirs()) {
             throw new IOException("Failed to create directory: " + folder);
         }
+    }
+
+    /**
+     * Calculates the right folder name give a resource item.
+     * @param resourceItem the resource item to calculate the folder name from.
+     * @return a relative folder name
+     */
+    @NonNull
+    private static String getFolderName(ResourceItem resourceItem) {
+        ResourceType itemType = resourceItem.getType();
+        String folderName = itemType.getName();
+        String qualifiers = resourceItem.getSource().getQualifiers();
+        if (!qualifiers.isEmpty()) {
+            folderName = folderName + RES_QUALIFIER_SEP + qualifiers;
+        }
+        return folderName;
     }
 }
