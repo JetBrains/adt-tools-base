@@ -60,12 +60,11 @@ android {
 
     @Test
     public void nullBuild() {
-        ByteArrayOutputStream output = new ByteArrayOutputStream()
-
         project.execute("assemble")
-        project.execute(output, "assemble")
+        project.stdout.reset()
+        project.execute("assemble")
 
-        Set<String> skippedTasks = getTasksMatching(UP_TO_DATE_PATTERN, output)
+        Set<String> skippedTasks = getTasksMatching(UP_TO_DATE_PATTERN, project.stdout)
         for (String task : tasks) {
             assertTrue(String.format("Expecting task %s to be UP-TO-DATE" , task),
                     skippedTasks.contains(task))
@@ -74,8 +73,6 @@ android {
 
     @Test
     public void invalidateBuildTools() {
-        ByteArrayOutputStream output = new ByteArrayOutputStream()
-
         project.execute("assemble");
 
         project.getBuildFile() << """
@@ -87,8 +84,9 @@ android {
 }
 """
 
-        project.execute(output, "assemble");
-        Set<String> affectedTasks = getTasksMatching(INPUT_CHANGED_PATTERN, output)
+        project.stdout.reset()
+        project.execute("assemble");
+        Set<String> affectedTasks = getTasksMatching(INPUT_CHANGED_PATTERN, project.stdout)
         for (String task : tasks) {
             assertTrue(String.format("Expecting task %s to be invalidated", task),
                     affectedTasks.contains(task))
