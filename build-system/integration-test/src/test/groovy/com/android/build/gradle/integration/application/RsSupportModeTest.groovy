@@ -27,7 +27,7 @@ import org.junit.Test
 class RsSupportModeTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("regular/rsSupportMode")
+            .fromSample("rsSupportMode")
             .create()
 
     @BeforeClass

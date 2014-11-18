@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package com.android.test.component
+package com.android.build.gradle.integration.component
 
-import com.android.test.common.category.DeviceTests
-import com.android.test.common.fixture.GradleTestProject
-import com.android.test.common.fixture.app.HelloWorldApp
+import com.android.build.gradle.integration.common.category.DeviceTests
+import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test

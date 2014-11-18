@@ -29,7 +29,7 @@ import org.junit.experimental.categories.Category
 class AssetsTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("regular/assets")
+            .fromSample("assets")
             .create()
 
     @BeforeClass

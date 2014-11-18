@@ -27,7 +27,7 @@ import org.junit.Test
 class TictactoeTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("regular/tictactoe")
+            .fromSample("tictactoe")
             .create()
 
     @BeforeClass

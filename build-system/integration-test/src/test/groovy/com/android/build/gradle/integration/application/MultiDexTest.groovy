@@ -29,7 +29,7 @@ import org.junit.experimental.categories.Category
 class MultiDexTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("regular/multiDex")
+            .fromSample("multiDex")
             .create()
 
     @BeforeClass

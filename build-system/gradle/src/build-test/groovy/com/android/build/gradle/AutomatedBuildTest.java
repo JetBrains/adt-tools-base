@@ -120,7 +120,7 @@ public class AutomatedBuildTest extends BuildTest {
 
                 AutomatedBuildTest test = (AutomatedBuildTest) TestSuite.createTest(
                         AutomatedBuildTest.class, testName);
-                test.setProjectInfo(FOLDER_TEST_REGULAR, projectName, gradleVersion, TestType.BUILD);
+                test.setProjectInfo(FOLDER_TEST_SAMPLES, projectName, gradleVersion, TestType.BUILD);
                 suite.addTest(test);
             }
 
@@ -143,7 +143,7 @@ public class AutomatedBuildTest extends BuildTest {
 
                 AutomatedBuildTest test = (AutomatedBuildTest) TestSuite.createTest(
                         AutomatedBuildTest.class, testName);
-                test.setProjectInfo(FOLDER_TEST_REGULAR, projectName, gradleVersion,
+                test.setProjectInfo(FOLDER_TEST_SAMPLES, projectName, gradleVersion,
                         TestType.REPORT);
                 suite.addTest(test);
             }
@@ -154,7 +154,7 @@ public class AutomatedBuildTest extends BuildTest {
 
                     AutomatedBuildTest test = (AutomatedBuildTest) TestSuite.createTest(
                             AutomatedBuildTest.class, testName);
-                    test.setProjectInfo(FOLDER_TEST_REGULAR, projectName, gradleVersion, TestType.JACK);
+                    test.setProjectInfo(FOLDER_TEST_SAMPLES, projectName, gradleVersion, TestType.JACK);
                     suite.addTest(test);
                 }
             }
