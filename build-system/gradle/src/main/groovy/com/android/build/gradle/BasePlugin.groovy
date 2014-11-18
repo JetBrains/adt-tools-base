@@ -2378,56 +2378,41 @@ public abstract class BasePlugin {
      * Configures the source and target language level of a compile task. If the user has set it
      * explicitly, we obey the setting. Otherwise we change the default language level based on the
      * compile SDK version.
+     *
+     * <p>This method modifies extension.compileOptions, to propagate the language level to Studio.
      */
     private void configureLanguageLevel(AbstractCompile compileTask) {
-        def getJavaVersion = { sdkVersionNumber, fromDsl, setExplicitly ->
-            if (setExplicitly) {
-                fromDsl.toString()
-            } else {
-                JavaVersion languageLevelToUse
-                switch (sdkVersionNumber) {
-                    case null:  // Default to 1.6 if we fail to parse compile SDK version.
-                    case 0..20:
-                        languageLevelToUse = JavaVersion.VERSION_1_6
-                        break
-                    default:
-                        languageLevelToUse = JavaVersion.VERSION_1_7
-                        break
-                }
+        def compileOptions = extension.compileOptions
+        JavaVersion javaVersionToUse
 
-                def jdkVersion = JavaVersion.toVersion(
-                        System.getProperty("java.specification.version"))
+        Integer compileSdkLevel =
+                AndroidTargetHash.getVersionFromHash(extension.compileSdkVersion)?.apiLevel
+        switch (compileSdkLevel) {
+            case null:  // Default to 1.6 if we fail to parse compile SDK version.
+            case 0..20:
+                javaVersionToUse = JavaVersion.VERSION_1_6
+                break
+            default:
+                javaVersionToUse = JavaVersion.VERSION_1_7
+                break
+        }
 
-                if (jdkVersion < languageLevelToUse) {
-                    logger.info(
-                            "Default language level for 'compileSdkVersion %d' is %s, but the " +
+        def jdkVersion = JavaVersion.toVersion(System.getProperty("java.specification.version"))
+        if (jdkVersion < javaVersionToUse) {
+            logger.info(
+                    "Default language level for 'compileSdkVersion %d' is %s, but the " +
                             "JDK used is %s, so the JDK language level will be used.",
-                            sdkVersionNumber, languageLevelToUse, jdkVersion)
-                    languageLevelToUse = jdkVersion
-                }
-
-                return languageLevelToUse.toString()
-            }
+                    compileSdkLevel, javaVersionToUse, jdkVersion)
+            javaVersionToUse = jdkVersion
         }
 
-        /**
-         * Returns the platform number, or null if we can't determine it.
-         */
-        Closure<Integer> getCompileSdkNumber = {
-            return AndroidTargetHash.getVersionFromHash(it)?.apiLevel
-        }
+        compileOptions.defaultJavaVersion = javaVersionToUse
 
         compileTask.conventionMapping.sourceCompatibility = {
-            getJavaVersion(
-                    getCompileSdkNumber(extension.compileSdkVersion),
-                    extension.compileOptions.sourceCompatibility,
-                    extension.compileOptions.setExplicitly)
+            compileOptions.sourceCompatibility.toString()
         }
         compileTask.conventionMapping.targetCompatibility = {
-            getJavaVersion(
-                    getCompileSdkNumber(extension.compileSdkVersion),
-                    extension.compileOptions.targetCompatibility,
-                    extension.compileOptions.setExplicitly)
+            compileOptions.targetCompatibility.toString()
         }
     }
 
