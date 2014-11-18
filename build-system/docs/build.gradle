@@ -313,3 +313,6 @@ task docsAll {
     group = 'documentation'
 }
 
+// Make sure all the references are valid and up-to-date. Hopefully this will mark the build
+// red in Jenkins if they get out of sync.
+check.dependsOn dslHtml
