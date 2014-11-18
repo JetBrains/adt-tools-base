@@ -72,7 +72,7 @@ public class PackagingBuildTest extends BuildTest {
 
     @Override
     protected void runTest() throws Throwable {
-        File projectFolder = buildProject(FOLDER_TEST_REGULAR, projectName,
+        File projectFolder = buildProject(FOLDER_TEST_SAMPLES, projectName,
                 BasePlugin.GRADLE_TEST_VERSION);
 
         // TODO replace with model access.

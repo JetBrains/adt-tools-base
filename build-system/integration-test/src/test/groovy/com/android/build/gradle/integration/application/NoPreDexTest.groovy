@@ -27,7 +27,7 @@ import org.junit.Test
 class NoPreDexTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("regular/noPreDex")
+            .fromSample("noPreDex")
             .create()
 
     @BeforeClass

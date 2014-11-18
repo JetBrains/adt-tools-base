@@ -29,7 +29,7 @@ import org.junit.experimental.categories.Category
 class ApplibtestTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("regular/applibtest")
+            .fromSample("applibtest")
             .create()
 
     @BeforeClass

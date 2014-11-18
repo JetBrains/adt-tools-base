@@ -27,7 +27,7 @@ import org.junit.Test
 class RenderscriptInLibTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("regular/renderscriptInLib")
+            .fromSample("renderscriptInLib")
             .create()
 
     @BeforeClass

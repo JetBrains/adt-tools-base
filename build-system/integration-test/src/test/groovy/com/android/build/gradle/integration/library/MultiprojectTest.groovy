@@ -27,7 +27,7 @@ import org.junit.Test
 class MultiprojectTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("regular/multiproject")
+            .fromSample("multiproject")
             .create()
 
     @BeforeClass

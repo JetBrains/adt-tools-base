@@ -29,7 +29,7 @@ import org.junit.experimental.categories.Category
 class ApiTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("regular/api")
+            .fromSample("api")
             .create()
 
     @BeforeClass

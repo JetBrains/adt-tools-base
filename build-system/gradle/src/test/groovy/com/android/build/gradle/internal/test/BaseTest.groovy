@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal.test
 import com.android.annotations.NonNull
 import com.android.build.tests.AndroidProjectConnector
+import com.google.common.base.Joiner
 import junit.framework.TestCase
 
 import java.security.CodeSource
@@ -25,9 +26,8 @@ import java.security.CodeSource
  */
 public abstract class BaseTest extends TestCase {
 
-    public static final String FOLDER_TEST_REGULAR = "regular";
-    public static final String FOLDER_TEST_MANUAL = "manual";
-    public static final String FOLDER_TEST_NATIVE = "native";
+    public static final String FOLDER_TEST_SAMPLES = "samples";
+    public static final String FOLDER_TEST_PROJECTS = "test-projects";
 
     protected File sdkDir;
     protected File ndkDir;
@@ -51,7 +51,13 @@ public abstract class BaseTest extends TestCase {
                 assertTrue(dir.getPath(), dir.exists())
 
                 File f= dir.getParentFile().getParentFile().getParentFile().getParentFile().getParentFile().getParentFile().getParentFile()
-                return  new File(f, "tools" + File.separator + "base" + File.separator + "build-system")
+                return  new File(
+                        f,
+                        Joiner.on(File.separator).join(
+                                "tools",
+                                "base",
+                                "build-system",
+                                "integration-test"));
             } catch (URISyntaxException e) {
                 fail(e.getLocalizedMessage())
             }
@@ -64,8 +70,7 @@ public abstract class BaseTest extends TestCase {
      * Returns the root folder for the tests projects.
      */
     protected File getTestDir() {
-        File rootDir = getRootDir()
-        return new File(rootDir, "tests")
+        return getRootDir()
     }
 
     /**
@@ -85,8 +90,8 @@ public abstract class BaseTest extends TestCase {
         // get the gradle project root dir.
         File rootDir = getRootDir()
 
-        // go up twice and get the root Android dir.
-        File androidRootDir = rootDir.getParentFile().getParentFile()
+        // go up 3 times and get the root Android dir.
+        File androidRootDir = rootDir.getParentFile().getParentFile().getParentFile()
 
         // get the sdk folder
         String outFolder = "out" + File.separatorChar + "host" + File.separatorChar + "darwin-x86" + File.separatorChar + "sdk";

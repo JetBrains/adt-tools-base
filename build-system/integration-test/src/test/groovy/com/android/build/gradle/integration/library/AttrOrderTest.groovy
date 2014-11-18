@@ -29,7 +29,7 @@ import org.junit.experimental.categories.Category
 class AttrOrderTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("regular/attrOrder")
+            .fromSample("attrOrder")
             .create()
 
     @BeforeClass

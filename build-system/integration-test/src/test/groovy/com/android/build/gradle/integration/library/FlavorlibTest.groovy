@@ -29,7 +29,7 @@ import org.junit.experimental.categories.Category
 class FlavorlibTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("regular/flavorlib")
+            .fromSample("flavorlib")
             .create()
 
     @BeforeClass
