@@ -20,6 +20,7 @@ import com.android.build.gradle.api.BaseVariant
 import com.android.build.gradle.internal.dsl.BuildTypeDsl
 import com.android.build.gradle.internal.dsl.GroupableProductFlavorDsl
 import com.android.build.gradle.internal.dsl.SigningConfigDsl
+import groovy.transform.CompileStatic
 import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.internal.DefaultDomainObjectSet
 import org.gradle.api.internal.project.ProjectInternal
@@ -28,6 +29,7 @@ import org.gradle.internal.reflect.Instantiator
 /**
  * Extension for 'application' project.
  */
+@CompileStatic
 public class AppExtension extends BaseExtension {
 
     private final DefaultDomainObjectSet<ApplicationVariant> applicationVariantList =
