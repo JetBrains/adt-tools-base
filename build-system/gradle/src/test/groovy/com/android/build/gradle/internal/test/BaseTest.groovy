@@ -26,9 +26,8 @@ import java.security.CodeSource
  */
 public abstract class BaseTest extends TestCase {
 
-    public static final String FOLDER_TEST_REGULAR = "regular";
-    public static final String FOLDER_TEST_MANUAL = "manual";
-    public static final String FOLDER_TEST_NATIVE = "native";
+    public static final String FOLDER_TEST_SAMPLES = "samples";
+    public static final String FOLDER_TEST_PROJECTS = "test-projects";
 
     protected File sdkDir;
     protected File ndkDir;
@@ -71,8 +70,7 @@ public abstract class BaseTest extends TestCase {
      * Returns the root folder for the tests projects.
      */
     protected File getTestDir() {
-        File rootDir = getRootDir()
-        return new File(rootDir, "test-projects")
+        return getRootDir()
     }
 
     /**

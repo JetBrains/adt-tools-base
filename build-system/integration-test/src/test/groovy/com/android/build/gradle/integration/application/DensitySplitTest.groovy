@@ -29,7 +29,7 @@ import org.junit.experimental.categories.Category
 class DensitySplitTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("regular/densitySplit")
+            .fromSample("densitySplit")
             .create()
 
     @BeforeClass

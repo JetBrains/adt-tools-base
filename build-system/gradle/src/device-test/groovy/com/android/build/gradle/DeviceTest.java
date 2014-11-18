@@ -104,7 +104,7 @@ public class DeviceTest extends BuildTest {
                 String testName = "check_" + projectName + "_" + gradleVersion;
 
                 DeviceTest test = (DeviceTest) TestSuite.createTest(DeviceTest.class, testName);
-                test.setProjectInfo(FOLDER_TEST_REGULAR, projectName, gradleVersion,
+                test.setProjectInfo(FOLDER_TEST_SAMPLES, projectName, gradleVersion,
                         TestType.CHECK);
                 suite.addTest(test);
             }
@@ -113,7 +113,7 @@ public class DeviceTest extends BuildTest {
                 String testName = "report_" + projectName + "_" + gradleVersion;
 
                 DeviceTest test = (DeviceTest) TestSuite.createTest(DeviceTest.class, testName);
-                test.setProjectInfo(FOLDER_TEST_REGULAR, projectName, gradleVersion,
+                test.setProjectInfo(FOLDER_TEST_SAMPLES, projectName, gradleVersion,
                         TestType.CHECK_AND_REPORT);
                 suite.addTest(test);
             }
@@ -122,7 +122,7 @@ public class DeviceTest extends BuildTest {
                 String testName = "install_" + projectName + "_" + gradleVersion;
 
                 DeviceTest test = (DeviceTest) TestSuite.createTest(DeviceTest.class, testName);
-                test.setProjectInfo(FOLDER_TEST_REGULAR, projectName, gradleVersion,
+                test.setProjectInfo(FOLDER_TEST_SAMPLES, projectName, gradleVersion,
                         TestType.INSTALL);
                 suite.addTest(test);
             }
@@ -132,7 +132,7 @@ public class DeviceTest extends BuildTest {
                     String testName = "jack_" + projectName + "_" + gradleVersion;
 
                     DeviceTest test = (DeviceTest) TestSuite.createTest(DeviceTest.class, testName);
-                    test.setProjectInfo(FOLDER_TEST_REGULAR, projectName, gradleVersion,
+                    test.setProjectInfo(FOLDER_TEST_SAMPLES, projectName, gradleVersion,
                             TestType.JACK);
                     suite.addTest(test);
                 }

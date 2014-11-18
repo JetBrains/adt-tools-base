@@ -29,7 +29,7 @@ import org.junit.experimental.categories.Category
 class NdkSanAngelesTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("regular/ndkSanAngeles")
+            .fromSample("ndkSanAngeles")
             .create()
 
     @BeforeClass
