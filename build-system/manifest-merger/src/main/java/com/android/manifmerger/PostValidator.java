@@ -141,7 +141,7 @@ public class PostValidator {
         XmlElement usesSdk = element.get();
         Node firstChild = xmlElement.getXml().getFirstChild();
         // already the first element ?
-        if (firstChild == usesSdk) {
+        if (firstChild == usesSdk.getXml()) {
             return;
         }
 
