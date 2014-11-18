@@ -16,7 +16,7 @@
 package com.android.build.gradle.internal
 import com.android.annotations.NonNull
 import com.android.build.gradle.internal.api.DefaultAndroidSourceSet
-import com.android.build.gradle.internal.dsl.BuildTypeDsl
+import com.android.build.gradle.internal.dsl.BuildType
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.artifacts.Configuration
@@ -25,13 +25,13 @@ import org.gradle.api.artifacts.Configuration
  */
 class BuildTypeData implements ConfigurationProvider {
 
-    final BuildTypeDsl buildType
+    final BuildType buildType
     final DefaultAndroidSourceSet sourceSet
     private final Project project
 
     final Task assembleTask
 
-    BuildTypeData(BuildTypeDsl buildType, DefaultAndroidSourceSet sourceSet, Project project) {
+    BuildTypeData(BuildType buildType, DefaultAndroidSourceSet sourceSet, Project project) {
 
         this.buildType = buildType
         this.sourceSet = sourceSet

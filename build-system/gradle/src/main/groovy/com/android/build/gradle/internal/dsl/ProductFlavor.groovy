@@ -17,7 +17,6 @@
 package com.android.build.gradle.internal.dsl
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
-import com.android.build.gradle.BasePlugin
 import com.android.builder.core.AndroidBuilder
 import com.android.builder.core.BuilderConstants
 import com.android.builder.core.DefaultApiVersion
@@ -25,16 +24,16 @@ import com.android.builder.core.DefaultProductFlavor
 import com.android.builder.model.ApiVersion
 import com.android.builder.model.ClassField
 import com.android.build.gradle.internal.core.NdkConfig
-import com.android.builder.model.ProductFlavor
 import com.google.common.base.Strings
 import org.gradle.api.Action
 import org.gradle.api.Project
 import org.gradle.api.logging.Logger
 import org.gradle.internal.reflect.Instantiator
+
 /**
  * DSL object used to configure product flavors.
  */
-class ProductFlavorDsl extends DefaultProductFlavor {
+class ProductFlavor extends DefaultProductFlavor {
 
     @NonNull
     protected final Project project
@@ -42,18 +41,18 @@ class ProductFlavorDsl extends DefaultProductFlavor {
     @NonNull
     protected final Logger logger
 
-    private final NdkConfigDsl ndkConfig
+    private final NdkOptions ndkConfig
 
     private Boolean useJack
 
-    ProductFlavorDsl(@NonNull String name,
+    ProductFlavor(@NonNull String name,
             @NonNull Project project,
             @NonNull Instantiator instantiator,
             @NonNull Logger logger) {
         super(name)
         this.project = project
         this.logger = logger
-        ndkConfig = instantiator.newInstance(NdkConfigDsl.class)
+        ndkConfig = instantiator.newInstance(NdkOptions.class)
     }
 
     @Nullable
@@ -62,9 +61,8 @@ class ProductFlavorDsl extends DefaultProductFlavor {
     }
 
     @NonNull
-    public ProductFlavor setMinSdkVersion(int minSdkVersion) {
+    public void setMinSdkVersion(int minSdkVersion) {
         setMinSdkVersion(new DefaultApiVersion(minSdkVersion));
-        return this;
     }
 
     /**
@@ -74,15 +72,13 @@ class ProductFlavorDsl extends DefaultProductFlavor {
      * uses-sdk element documentation</a>.
      */
     @NonNull
-    public ProductFlavor minSdkVersion(int minSdkVersion) {
+    public void minSdkVersion(int minSdkVersion) {
         setMinSdkVersion(minSdkVersion);
-        return this;
     }
 
     @NonNull
-    public ProductFlavor setMinSdkVersion(String minSdkVersion) {
+    public void setMinSdkVersion(String minSdkVersion) {
         setMinSdkVersion(getApiVersion(minSdkVersion))
-        return this;
     }
 
     /**
@@ -92,13 +88,12 @@ class ProductFlavorDsl extends DefaultProductFlavor {
      * uses-sdk element documentation</a>.
      */
     @NonNull
-    public ProductFlavor minSdkVersion(String minSdkVersion) {
+    public void minSdkVersion(String minSdkVersion) {
         setMinSdkVersion(minSdkVersion);
-        return this;
     }
 
     @NonNull
-    public ProductFlavor setTargetSdkVersion(int targetSdkVersion) {
+    public com.android.builder.model.ProductFlavor setTargetSdkVersion(int targetSdkVersion) {
         setTargetSdkVersion(new DefaultApiVersion(targetSdkVersion));
         return this;
     }
@@ -110,15 +105,13 @@ class ProductFlavorDsl extends DefaultProductFlavor {
      * uses-sdk element documentation</a>.
      */
     @NonNull
-    public ProductFlavor targetSdkVersion(int targetSdkVersion) {
+    public void targetSdkVersion(int targetSdkVersion) {
         setTargetSdkVersion(targetSdkVersion);
-        return this;
     }
 
     @NonNull
-    public ProductFlavor setTargetSdkVersion(String targetSdkVersion) {
+    public void setTargetSdkVersion(String targetSdkVersion) {
         setTargetSdkVersion(getApiVersion(targetSdkVersion))
-        return this;
     }
 
     /**
@@ -128,15 +121,13 @@ class ProductFlavorDsl extends DefaultProductFlavor {
      * uses-sdk element documentation</a>.
      */
     @NonNull
-    public ProductFlavor targetSdkVersion(String targetSdkVersion) {
+    public void targetSdkVersion(String targetSdkVersion) {
         setTargetSdkVersion(targetSdkVersion);
-        return this;
     }
 
     @NonNull
-    public ProductFlavor maxSdkVersion(int targetSdkVersion) {
+    public void maxSdkVersion(int targetSdkVersion) {
         setMaxSdkVersion(targetSdkVersion);
-        return this;
     }
 
     @Nullable
@@ -157,7 +148,15 @@ class ProductFlavorDsl extends DefaultProductFlavor {
         return null
     }
 
-    // -- DSL Methods. TODO remove once the instantiator does what I expect it to do.
+    /**
+     * Signing config used by this product flavor.
+     */
+    @Override
+    SigningConfig getSigningConfig() {
+        return (SigningConfig) super.signingConfig
+    }
+
+// -- DSL Methods. TODO remove once the instantiator does what I expect it to do.
 
     public void buildConfigField(
             @NonNull String type,
@@ -209,48 +208,43 @@ class ProductFlavorDsl extends DefaultProductFlavor {
      * full path to the files. They are identical except for enabling optimizations.
      */
     @NonNull
-    public ProductFlavorDsl proguardFile(Object proguardFile) {
+    public void proguardFile(Object proguardFile) {
         proguardFiles.add(project.file(proguardFile))
-        return this
     }
 
     /**
      * Adds new ProGuard configuration files.
      */
     @NonNull
-    public ProductFlavorDsl proguardFiles(Object... proguardFiles) {
+    public void proguardFiles(Object... proguardFiles) {
         proguardFiles.addAll(project.files(proguardFiles).files)
-        return this
     }
 
     /**
      * Sets the ProGuard configuration files.
      */
     @NonNull
-    public ProductFlavorDsl setProguardFiles(Iterable<?> proguardFileIterable) {
+    public void setProguardFiles(Iterable<?> proguardFileIterable) {
         proguardFiles.clear()
         for (Object proguardFile : proguardFileIterable) {
             proguardFiles.add(project.file(proguardFile))
         }
-        return this
     }
 
     @NonNull
-    public ProductFlavorDsl consumerProguardFiles(Object... proguardFileArray) {
+    public void consumerProguardFiles(Object... proguardFileArray) {
         consumerProguardFiles.addAll(project.files(proguardFileArray).files)
-        return this
     }
 
     @NonNull
-    public ProductFlavorDsl setConsumerProguardFiles(Iterable<?> proguardFileIterable) {
+    public void setConsumerProguardFiles(Iterable<?> proguardFileIterable) {
         consumerProguardFiles.clear()
         for (Object proguardFile : proguardFileIterable) {
             consumerProguardFiles.add(project.file(proguardFile))
         }
-        return this
     }
 
-    void ndk(Action<NdkConfigDsl> action) {
+    void ndk(Action<NdkOptions> action) {
         action.execute(ndkConfig)
     }
 

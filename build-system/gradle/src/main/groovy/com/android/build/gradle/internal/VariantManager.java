@@ -28,7 +28,6 @@ import com.android.build.gradle.BaseExtension;
 import com.android.build.gradle.BasePlugin;
 import com.android.build.gradle.api.AndroidSourceSet;
 import com.android.build.gradle.api.BaseVariant;
-import com.android.build.gradle.api.GroupableProductFlavor;
 import com.android.build.gradle.internal.ProductFlavorData.ConfigurationProviderImpl;
 import com.android.build.gradle.internal.api.DefaultAndroidSourceSet;
 import com.android.build.gradle.internal.api.ReadOnlyObjectProvider;
@@ -37,10 +36,10 @@ import com.android.build.gradle.internal.api.TestedVariant;
 import com.android.build.gradle.internal.api.VariantFilterImpl;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.dependency.VariantDependencies;
-import com.android.build.gradle.internal.dsl.BuildTypeDsl;
-import com.android.build.gradle.internal.dsl.GroupableProductFlavorDsl;
-import com.android.build.gradle.internal.dsl.ProductFlavorDsl;
-import com.android.build.gradle.internal.dsl.SigningConfigDsl;
+import com.android.build.gradle.internal.dsl.BuildType;
+import com.android.build.gradle.internal.dsl.GroupableProductFlavor;
+import com.android.build.gradle.internal.dsl.ProductFlavor;
+import com.android.build.gradle.internal.dsl.SigningConfig;
 import com.android.build.gradle.internal.dsl.Splits;
 import com.android.build.gradle.internal.variant.ApplicationVariantFactory;
 import com.android.build.gradle.internal.variant.BaseVariantData;
@@ -49,8 +48,6 @@ import com.android.build.gradle.internal.variant.TestVariantData;
 import com.android.build.gradle.internal.variant.TestedVariantData;
 import com.android.build.gradle.internal.variant.VariantFactory;
 import com.android.builder.core.VariantConfiguration;
-import com.android.builder.model.BuildType;
-import com.android.builder.model.SigningConfig;
 import com.google.common.base.Function;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -88,7 +85,7 @@ public class VariantManager implements VariantModel {
     @NonNull
     private final Map<String, BuildTypeData> buildTypes = Maps.newHashMap();
     @NonNull
-    private final Map<String, ProductFlavorData<GroupableProductFlavorDsl>> productFlavors = Maps.newHashMap();
+    private final Map<String, ProductFlavorData<GroupableProductFlavor>> productFlavors = Maps.newHashMap();
     @NonNull
     private final Map<String, SigningConfig> signingConfigs = Maps.newHashMap();
 
@@ -119,7 +116,7 @@ public class VariantManager implements VariantModel {
 
     @Override
     @NonNull
-    public Map<String, ProductFlavorData<GroupableProductFlavorDsl>> getProductFlavors() {
+    public Map<String, ProductFlavorData<GroupableProductFlavor>> getProductFlavors() {
         return productFlavors;
     }
 
@@ -129,8 +126,8 @@ public class VariantManager implements VariantModel {
         return signingConfigs;
     }
 
-    public void addSigningConfig(@NonNull SigningConfigDsl signingConfigDsl) {
-        signingConfigs.put(signingConfigDsl.getName(), signingConfigDsl);
+    public void addSigningConfig(@NonNull SigningConfig signingConfig) {
+        signingConfigs.put(signingConfig.getName(), signingConfig);
     }
 
     /**
@@ -138,7 +135,7 @@ public class VariantManager implements VariantModel {
      * and adding it to the map.
      * @param buildType the build type.
      */
-    public void addBuildType(@NonNull BuildTypeDsl buildType) {
+    public void addBuildType(@NonNull BuildType buildType) {
         buildType.init(signingConfigs.get(DEBUG));
 
         String name = buildType.getName();
@@ -162,7 +159,7 @@ public class VariantManager implements VariantModel {
      *
      * @param productFlavor the product flavor
      */
-    public void addProductFlavor(@NonNull GroupableProductFlavorDsl productFlavor) {
+    public void addProductFlavor(@NonNull GroupableProductFlavor productFlavor) {
         String name = productFlavor.getName();
         checkName(name, "ProductFlavor");
 
@@ -176,8 +173,8 @@ public class VariantManager implements VariantModel {
         DefaultAndroidSourceSet testSourceSet = (DefaultAndroidSourceSet) extension.getSourceSetsContainer().maybeCreate(
                 testName);
 
-        ProductFlavorData<GroupableProductFlavorDsl> productFlavorData =
-                new ProductFlavorData<GroupableProductFlavorDsl>(
+        ProductFlavorData<GroupableProductFlavor> productFlavorData =
+                new ProductFlavorData<GroupableProductFlavor>(
                         productFlavor, mainSourceSet, testSourceSet, project);
 
         productFlavors.put(productFlavor.getName(), productFlavorData);
@@ -194,7 +191,7 @@ public class VariantManager implements VariantModel {
     /**
      * Task creation entry point.
      */
-    public void createAndroidTasks(@Nullable SigningConfig signingOverride) {
+    public void createAndroidTasks(@Nullable com.android.builder.model.SigningConfig signingOverride) {
         variantFactory.validateModel(this);
 
         if (!productFlavors.isEmpty()) {
@@ -239,8 +236,8 @@ public class VariantManager implements VariantModel {
             List<ConfigurationProvider> testVariantProviders = Lists.newArrayListWithExpectedSize(
                     2 + testVariantConfig.getProductFlavors().size());
 
-            for (GroupableProductFlavor productFlavor : testVariantConfig.getProductFlavors()) {
-                ProductFlavorData<GroupableProductFlavorDsl> data = productFlavors.get(productFlavor.getName());
+            for (com.android.build.gradle.api.GroupableProductFlavor productFlavor : testVariantConfig.getProductFlavors()) {
+                ProductFlavorData<GroupableProductFlavor> data = productFlavors.get(productFlavor.getName());
                 testVariantProviders.add(data.getTestProvider());
             }
 
@@ -283,7 +280,7 @@ public class VariantManager implements VariantModel {
 
                 // each flavor
                 GradleVariantConfiguration variantConfig = variantData.getVariantConfiguration();
-                for (GroupableProductFlavorDsl flavor : variantConfig.getProductFlavors()) {
+                for (GroupableProductFlavor flavor : variantConfig.getProductFlavors()) {
                     productFlavors.get(flavor.getName()).getAssembleTask()
                             .dependsOn(variantData.assembleVariantTask);
                 }
@@ -315,24 +312,24 @@ public class VariantManager implements VariantModel {
      *
      * @param signingOverride a signing override. Generally driven through the IDE.
      */
-    public void populateVariantDataList(@Nullable SigningConfig signingOverride) {
+    public void populateVariantDataList(@Nullable com.android.builder.model.SigningConfig signingOverride) {
         // Add a compile lint task
         basePlugin.createLintCompileTask();
 
         if (productFlavors.isEmpty()) {
             createVariantDataForProductFlavors(signingOverride,
-                    Collections.<GroupableProductFlavor>emptyList());
+                    Collections.<com.android.build.gradle.api.GroupableProductFlavor>emptyList());
         } else {
             List<String> flavorDimensionList = extension.getFlavorDimensionList();
 
-            // Create iterable to get GroupableProductFlavorDsl from ProductFlavorData.
-            Iterable<GroupableProductFlavorDsl> flavorDsl =
+            // Create iterable to get GroupableProductFlavor from ProductFlavorData.
+            Iterable<GroupableProductFlavor> flavorDsl =
                     Iterables.transform(
                             productFlavors.values(),
-                            new Function<ProductFlavorData<GroupableProductFlavorDsl>, GroupableProductFlavorDsl>() {
+                            new Function<ProductFlavorData<GroupableProductFlavor>, GroupableProductFlavor>() {
                                 @Override
-                                public GroupableProductFlavorDsl apply(
-                                        ProductFlavorData<GroupableProductFlavorDsl> data) {
+                                public GroupableProductFlavor apply(
+                                        ProductFlavorData<GroupableProductFlavor> data) {
                                     return data.getProductFlavor();
                                 }
                             });
@@ -352,9 +349,9 @@ public class VariantManager implements VariantModel {
      * Create a VariantData for a specific combination of BuildType and GroupableProductFlavor list.
      */
     public BaseVariantData<? extends BaseVariantOutputData> createVariantData(
-            @NonNull BuildType buildType,
-            @NonNull List<GroupableProductFlavor> productFlavorList,
-            @Nullable SigningConfig signingOverride) {
+            @NonNull com.android.builder.model.BuildType buildType,
+            @NonNull List<com.android.build.gradle.api.GroupableProductFlavor> productFlavorList,
+            @Nullable com.android.builder.model.SigningConfig signingOverride) {
         Splits splits = basePlugin.getExtension().getSplits();
         Set<String> densities = splits.getDensityFilters();
         Set<String> abis = splits.getAbiFilters();
@@ -363,9 +360,9 @@ public class VariantManager implements VariantModel {
         densities = densities.isEmpty() ? Collections.singleton(NO_FILTER) : densities;
         abis = abis.isEmpty() ? Collections.singleton(NO_FILTER) : abis;
 
-        ProductFlavorData<ProductFlavorDsl> defaultConfigData = basePlugin.getDefaultConfigData();
+        ProductFlavorData<ProductFlavor> defaultConfigData = basePlugin.getDefaultConfigData();
 
-        ProductFlavorDsl defaultConfig = defaultConfigData.getProductFlavor();
+        ProductFlavor defaultConfig = defaultConfigData.getProductFlavor();
         DefaultAndroidSourceSet defaultConfigSourceSet = defaultConfigData.getSourceSet();
 
         BuildTypeData buildTypeData = buildTypes.get(buildType.getName());
@@ -387,8 +384,8 @@ public class VariantManager implements VariantModel {
 
         // We must first add the flavors to the variant config, in order to get the proper
         // variant-specific and multi-flavor name as we add/create the variant providers later.
-        for (GroupableProductFlavor productFlavor : productFlavorList) {
-            ProductFlavorData<GroupableProductFlavorDsl> data = productFlavors.get(
+        for (com.android.build.gradle.api.GroupableProductFlavor productFlavor : productFlavorList) {
+            ProductFlavorData<GroupableProductFlavor> data = productFlavors.get(
                     productFlavor.getName());
 
             String dimensionName = productFlavor.getFlavorDimension();
@@ -433,7 +430,7 @@ public class VariantManager implements VariantModel {
         }
 
         // 4. the flavors.
-        for (GroupableProductFlavor productFlavor : productFlavorList) {
+        for (com.android.build.gradle.api.GroupableProductFlavor productFlavor : productFlavorList) {
             variantProviders.add(productFlavors.get(productFlavor.getName()).getMainProvider());
         }
 
@@ -469,14 +466,14 @@ public class VariantManager implements VariantModel {
      */
     public TestVariantData createTestVariantData(
             BaseVariantData testedVariantData,
-            SigningConfig signingOverride) {
+            com.android.builder.model.SigningConfig signingOverride) {
         BuildTypeData testData = buildTypes.get(extension.getTestBuildType());
 
-        ProductFlavorData<ProductFlavorDsl> defaultConfigData = basePlugin.getDefaultConfigData();
-        ProductFlavorDsl defaultConfig = defaultConfigData.getProductFlavor();
+        ProductFlavorData<ProductFlavor> defaultConfigData = basePlugin.getDefaultConfigData();
+        ProductFlavor defaultConfig = defaultConfigData.getProductFlavor();
 
         GradleVariantConfiguration testedConfig = testedVariantData.getVariantConfiguration();
-        List<? extends GroupableProductFlavor> productFlavorList = testedConfig.getProductFlavors();
+        List<? extends com.android.build.gradle.api.GroupableProductFlavor> productFlavorList = testedConfig.getProductFlavors();
 
         // handle test variant
         GradleVariantConfiguration testVariantConfig = new GradleVariantConfiguration(
@@ -488,8 +485,8 @@ public class VariantManager implements VariantModel {
                 testedVariantData.getVariantConfiguration(),
                 signingOverride);
 
-        for (GroupableProductFlavor productFlavor : productFlavorList) {
-            ProductFlavorData<GroupableProductFlavorDsl> data = productFlavors
+        for (com.android.build.gradle.api.GroupableProductFlavor productFlavor : productFlavorList) {
+            ProductFlavorData<GroupableProductFlavor> data = productFlavors
                     .get(productFlavor.getName());
 
             String dimensionName = productFlavor.getFlavorDimension();
@@ -520,8 +517,8 @@ public class VariantManager implements VariantModel {
      * @param productFlavorList the flavor(s) to build.
      */
     private void createVariantDataForProductFlavors(
-            @Nullable SigningConfig signingOverride,
-            @NonNull List<GroupableProductFlavor> productFlavorList) {
+            @Nullable com.android.builder.model.SigningConfig signingOverride,
+            @NonNull List<com.android.build.gradle.api.GroupableProductFlavor> productFlavorList) {
         BuildTypeData testData = buildTypes.get(extension.getTestBuildType());
         if (testData == null) {
             throw new RuntimeException(String.format(
@@ -530,8 +527,8 @@ public class VariantManager implements VariantModel {
 
         BaseVariantData testedVariantData = null;
 
-        ProductFlavorData<ProductFlavorDsl> defaultConfigData = basePlugin.getDefaultConfigData();
-        ProductFlavorDsl defaultConfig = defaultConfigData.getProductFlavor();
+        ProductFlavorData<ProductFlavor> defaultConfigData = basePlugin.getDefaultConfigData();
+        ProductFlavor defaultConfig = defaultConfigData.getProductFlavor();
 
         Closure<Void> variantFilterClosure = basePlugin.getExtension().getVariantFilter();
 

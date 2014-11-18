@@ -25,7 +25,7 @@ import java.util.Set;
 /**
  * Data for per-ABI splits.
  */
-public class AbiSplitData extends SplitData {
+public class AbiSplitOptions extends SplitOptions {
 
     private boolean universalApk = false;
 

@@ -16,14 +16,12 @@
 
 package com.android.build.gradle.internal.dsl
 
-import com.android.builder.core.DexOptions
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Optional
-
 /**
  * DSL object for configuring dx options.
  */
-public class DexOptionsImpl implements DexOptions {
+public class DexOptions implements com.android.builder.core.DexOptions {
 
     @Input
     private boolean isIncrementalFlag = false
