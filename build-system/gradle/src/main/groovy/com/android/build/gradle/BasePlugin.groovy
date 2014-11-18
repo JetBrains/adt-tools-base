@@ -2003,7 +2003,7 @@ public abstract class BasePlugin {
         GradleVariantConfiguration config = variantData.variantConfiguration
 
         boolean isMinifyEnabled = config.isMinifyEnabled()
-        boolean isMultiDexEnabled = config.isMultiDexEnabled() && config.type != TEST
+        boolean isMultiDexEnabled = config.isMultiDexEnabled()
         boolean isLegacyMultiDexMode = config.isLegacyMultiDexMode()
         File multiDexKeepProguard = config.getMultiDexKeepProguard()
         File multiDexKeepFile = config.getMultiDexKeepFile()
