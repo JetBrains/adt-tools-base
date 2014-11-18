@@ -60,10 +60,11 @@ public class StlNativeToolSpecification extends AbstractNativeToolSpecification 
             includeDirs.add("stlport/stlport");
             includeDirs.add("gabi++/include");
         } else if (stlName.equals("gnustl")) {
-            includeDirs.add("gnu-libstdc++/" + ndkHandler.getGccToolchainVersion() + "/include");
-            includeDirs.add("gnu-libstdc++/" + ndkHandler.getGccToolchainVersion() +
+            String gccToolchainVersion = ndkHandler.getGccToolchainVersion(platform.getName());
+            includeDirs.add("gnu-libstdc++/" + gccToolchainVersion + "/include");
+            includeDirs.add("gnu-libstdc++/" + gccToolchainVersion +
                     "/libs/" + platform.getName() + "/include");
-            includeDirs.add("gnu-libstdc++/" + ndkHandler.getGccToolchainVersion() +
+            includeDirs.add("gnu-libstdc++/" + gccToolchainVersion +
                     "/include/backward");
         } else if (stlName.equals("gabi++")) {
             includeDirs.add("gabi++/include");
@@ -87,16 +88,16 @@ public class StlNativeToolSpecification extends AbstractNativeToolSpecification 
             return Collections.emptyList();
         }
         List<String> flags = Lists.newArrayList();
-        flags.add(getStlLib().toString());
+        flags.add(getStlLib(platform.getName()).toString());
         return flags;
     }
 
-    public File getStlLib() {
+    public File getStlLib(String abi) {
         String stlLib;
         if (stlName.equals("stlport")) {
             stlLib = "stlport";
         } else if (stlName.equals("gnustl")) {
-            stlLib = "gnu-libstdc++/" + ndkHandler.getGccToolchainVersion();
+            stlLib = "gnu-libstdc++/" + ndkHandler.getGccToolchainVersion(abi);
         } else if (stlName.equals("gabi++")) {
             stlLib = "gabi++";
         } else if (stlName.equals("c++")) {

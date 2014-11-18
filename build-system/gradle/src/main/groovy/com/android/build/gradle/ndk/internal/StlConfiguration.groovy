@@ -100,7 +100,7 @@ public class StlConfiguration {
             Task copySharedLib = tasks.create(
                     name: NdkNamingScheme.getTaskName(binary, "copy", "StlSo"),
                     type: Copy) {
-                from(stlConfig.getStlLib())
+                from(stlConfig.getStlLib(binary.targetPlatform.name))
                 into(new File(buildDir, NdkNamingScheme.getOutputDirectoryName(binary)))
             }
             binary.builtBy copySharedLib

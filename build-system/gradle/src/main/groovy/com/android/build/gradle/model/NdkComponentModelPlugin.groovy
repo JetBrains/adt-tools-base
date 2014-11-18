@@ -21,10 +21,10 @@ import com.android.build.gradle.api.GroupableProductFlavor
 import com.android.build.gradle.internal.ProductFlavorCombo
 import com.android.build.gradle.internal.dsl.GroupableProductFlavorDsl
 import com.android.build.gradle.ndk.NdkExtension
-import com.android.build.gradle.ndk.internal.NdkConfigurationAction
-import com.android.build.gradle.ndk.internal.NdkExtensionConventionAction
+import com.android.build.gradle.ndk.internal.NdkConfiguration
+import com.android.build.gradle.ndk.internal.NdkExtensionConvention
 import com.android.build.gradle.ndk.internal.NdkHandler
-import com.android.build.gradle.ndk.internal.ToolchainConfigurationAction
+import com.android.build.gradle.ndk.internal.ToolchainConfiguration
 import com.android.builder.core.DefaultBuildType
 import com.android.builder.core.VariantConfiguration
 import com.android.builder.model.BuildType
@@ -92,13 +92,13 @@ class NdkComponentModelPlugin implements Plugin<Project> {
 
         @Finalize
         void setDefaultNdkExtensionValue(NdkExtension extension) {
-            NdkExtensionConventionAction.setExtensionDefault(extension)
+            NdkExtensionConvention.setExtensionDefault(extension)
         }
 
         @Mutate
         void createAndroidPlatforms(PlatformContainer platforms, NdkHandler ndkHandler) {
             // Create android platforms.
-            ToolchainConfigurationAction.configurePlatforms(platforms, ndkHandler)
+            ToolchainConfiguration.configurePlatforms(platforms, ndkHandler)
         }
 
         @Mutate
@@ -107,7 +107,7 @@ class NdkComponentModelPlugin implements Plugin<Project> {
                 NdkExtension ndkExtension,
                 NdkHandler ndkHandler) {
             // Create toolchain for each ABI.
-            ToolchainConfigurationAction.configureToolchain(
+            ToolchainConfiguration.configureToolchain(
                     toolchains,
                     ndkExtension.getToolchain(),
                     ndkExtension.getToolchainVersion(),
@@ -139,12 +139,12 @@ class NdkComponentModelPlugin implements Plugin<Project> {
                 NdkHandler ndkHandler,
                 ProjectSourceSet sources,
                 @Path("buildDir") File buildDir) {
-            if (extension.moduleName != null) {
+            if (!extension.moduleName.isEmpty()) {
                 specs.withType(DefaultAndroidComponentSpec) { androidSpec ->
                     NativeLibrarySpec library =
                             specs.create(extension.moduleName, NativeLibrarySpec)
                     androidSpec.nativeLibrary = library
-                    NdkConfigurationAction.configureProperties(
+                    NdkConfiguration.configureProperties(
                             library, sources, buildDir, extension, ndkHandler)
                 }
             }
@@ -160,7 +160,7 @@ class NdkComponentModelPlugin implements Plugin<Project> {
             specs.withType(DefaultAndroidComponentSpec) { androidSpec ->
                 if (androidSpec.nativeLibrary != null) {
                     androidSpec.nativeLibrary.binaries.withType(SharedLibraryBinarySpec) { binary ->
-                        NdkConfigurationAction.createTasks(
+                        NdkConfiguration.createTasks(
                                 tasks, binary, buildDir, extension, ndkHandler)
                     }
                 }
@@ -172,7 +172,7 @@ class NdkComponentModelPlugin implements Plugin<Project> {
                 BinaryContainer binaries,
                 ComponentSpecContainer specs,
                 NdkExtension extension) {
-            if (extension.moduleName != null) {
+            if (!extension.moduleName.isEmpty()) {
                 NativeLibrarySpec library =
                         specs.withType(NativeLibrarySpec).getByName(extension.moduleName);
                 binaries.withType(DefaultAndroidBinary) { binary ->
@@ -192,15 +192,15 @@ class NdkComponentModelPlugin implements Plugin<Project> {
                 NamedDomainObjectContainer<GroupableProductFlavorDsl> flavors,
                 List<ProductFlavorCombo> flavorGroups,
                 NdkExtension ndkExtension) {
-            NdkConfigurationAction.configureSources(sources, "main", ndkExtension)
+            NdkConfiguration.configureSources(sources, "main", ndkExtension)
             for (def buildType : buildTypes) {
-                NdkConfigurationAction.configureSources(sources, buildType.name, ndkExtension)
+                NdkConfiguration.configureSources(sources, buildType.name, ndkExtension)
             }
             for (def group : flavorGroups) {
-                NdkConfigurationAction.configureSources(sources, group.name, ndkExtension)
+                NdkConfiguration.configureSources(sources, group.name, ndkExtension)
                 if (!group.flavorList.isEmpty()) {
                     for (def buildType : buildTypes) {
-                        NdkConfigurationAction.configureSources(
+                        NdkConfiguration.configureSources(
                                 sources, group.name + buildType.name.capitalize(), ndkExtension)
                     }
                 }
@@ -209,7 +209,7 @@ class NdkComponentModelPlugin implements Plugin<Project> {
                 // If flavorGroups and flavors are the same size, there is at most 1 flavor
                 // dimension.  So we don't need to reconfigure the source sets for flavorGroups.
                 for (def flavor : flavors) {
-                    NdkConfigurationAction.configureSources(sources, flavor.name, ndkExtension)
+                    NdkConfiguration.configureSources(sources, flavor.name, ndkExtension)
                 }
             }
         }
