@@ -19,11 +19,11 @@ package com.android.build.gradle.internal.dsl;
 import com.android.builder.core.BuilderConstants;
 import junit.framework.TestCase;
 
-public class SigningConfigDslTest extends TestCase {
+public class SigningConfigTest extends TestCase {
 
     public void testInitWith() throws Exception {
-        SigningConfigDsl debug = new SigningConfigDsl(BuilderConstants.DEBUG);
-        SigningConfigDsl foo = new SigningConfigDsl("foo").initWith(debug);
+        SigningConfig debug = new SigningConfig(BuilderConstants.DEBUG);
+        SigningConfig foo = new SigningConfig("foo").initWith(debug);
 
         assertEquals(debug.getStoreFile(), foo.getStoreFile());
         assertEquals(debug.getStorePassword(), foo.getStorePassword());

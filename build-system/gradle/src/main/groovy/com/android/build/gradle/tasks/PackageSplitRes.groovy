@@ -20,7 +20,7 @@ import com.android.annotations.NonNull
 import com.android.build.FilterData
 import com.android.build.OutputFile
 import com.android.build.gradle.api.ApkOutputFile
-import com.android.build.gradle.internal.dsl.SigningConfigDsl
+import com.android.build.gradle.internal.dsl.SigningConfig
 import com.android.build.gradle.internal.tasks.BaseTask
 import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Callables
@@ -53,7 +53,7 @@ class PackageSplitRes extends BaseTask {
     String outputBaseName
 
     @Nested @Optional
-    SigningConfigDsl signingConfig
+    SigningConfig signingConfig
 
     @NonNull
     public synchronized  ImmutableList<ApkOutputFile> getOutputSplitFiles() {

@@ -14,15 +14,13 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.dsl;
+package com.android.build.gradle.internal.dsl
 
-import com.android.builder.model.AaptOptions
 import org.gradle.api.tasks.Input
-
 /**
  * DSL object for configuring aapt options.
  */
-public class AaptOptionsImpl implements AaptOptions {
+public class AaptOptions implements com.android.builder.model.AaptOptions {
 
     @Input
     private String ignoreAssetsPattern

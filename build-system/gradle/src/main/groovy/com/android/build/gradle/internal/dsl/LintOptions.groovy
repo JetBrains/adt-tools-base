@@ -21,8 +21,7 @@ import com.android.tools.lint.checks.BuiltinIssueRegistry
 import static com.android.builder.model.AndroidProject.FD_OUTPUTS
 
 import com.android.annotations.NonNull
-import com.android.annotations.Nullable;
-import com.android.builder.model.LintOptions
+import com.android.annotations.Nullable
 import com.android.tools.lint.HtmlReporter
 import com.android.tools.lint.LintCliClient
 import com.android.tools.lint.LintCliFlags
@@ -42,7 +41,7 @@ import static com.android.SdkConstants.DOT_XML
 /**
  * DSL object for configuring lint options.
  */
-public class LintOptionsImpl implements LintOptions, Serializable {
+public class LintOptions implements com.android.builder.model.LintOptions, Serializable {
     public static final String STDOUT = "stdout"
     public static final String STDERR = "stderr"
     private static final long serialVersionUID = 1L;
@@ -90,10 +89,10 @@ public class LintOptionsImpl implements LintOptions, Serializable {
 
     private Map<String,Severity> severities = Maps.newHashMap();
 
-    public LintOptionsImpl() {
+    public LintOptions() {
     }
 
-    public LintOptionsImpl(
+    public LintOptions(
             @Nullable Set<String> disable,
             @Nullable Set<String> enable,
             @Nullable Set<String> check,
@@ -144,8 +143,8 @@ public class LintOptionsImpl implements LintOptions, Serializable {
     }
 
     @NonNull
-    static LintOptions create(@NonNull LintOptions source) {
-        return new LintOptionsImpl(
+    static com.android.builder.model.LintOptions create(@NonNull com.android.builder.model.LintOptions source) {
+        return new LintOptions(
                 source.getDisable(),
                 source.getEnable(),
                 source.getCheck(),
@@ -725,31 +724,31 @@ public class LintOptionsImpl implements LintOptions, Serializable {
     private static int convert(Severity s) {
         switch (s) {
             case Severity.FATAL:
-                return LintOptions.SEVERITY_FATAL
+                return com.android.builder.model.LintOptions.SEVERITY_FATAL
             case Severity.ERROR:
-                return LintOptions.SEVERITY_ERROR
+                return com.android.builder.model.LintOptions.SEVERITY_ERROR
             case Severity.WARNING:
-                return LintOptions.SEVERITY_WARNING
+                return com.android.builder.model.LintOptions.SEVERITY_WARNING
             case Severity.INFORMATIONAL:
-                return LintOptions.SEVERITY_INFORMATIONAL
+                return com.android.builder.model.LintOptions.SEVERITY_INFORMATIONAL
             case Severity.IGNORE:
             default:
-                return LintOptions.SEVERITY_IGNORE
+                return com.android.builder.model.LintOptions.SEVERITY_IGNORE
         }
     }
 
     @SuppressWarnings("UnnecessaryQualifiedReference")
     private static Severity convert(int s) {
         switch (s) {
-            case LintOptions.SEVERITY_FATAL:
+            case com.android.builder.model.LintOptions.SEVERITY_FATAL:
                 return Severity.FATAL
-            case LintOptions.SEVERITY_ERROR:
+            case com.android.builder.model.LintOptions.SEVERITY_ERROR:
                 return Severity.ERROR
-            case LintOptions.SEVERITY_WARNING:
+            case com.android.builder.model.LintOptions.SEVERITY_WARNING:
                 return Severity.WARNING
-            case LintOptions.SEVERITY_INFORMATIONAL:
+            case com.android.builder.model.LintOptions.SEVERITY_INFORMATIONAL:
                 return Severity.INFORMATIONAL
-            case LintOptions.SEVERITY_IGNORE:
+            case com.android.builder.model.LintOptions.SEVERITY_IGNORE:
             default:
                 return Severity.IGNORE
         }

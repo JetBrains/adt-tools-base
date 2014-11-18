@@ -29,7 +29,7 @@ import java.util.Set;
 /**
  * Data for per-density splits.
  */
-public class DensitySplitData extends SplitData {
+public class DensitySplitOptions extends SplitOptions {
 
     private boolean strict = true;
     private Set<String> compatibleScreens;

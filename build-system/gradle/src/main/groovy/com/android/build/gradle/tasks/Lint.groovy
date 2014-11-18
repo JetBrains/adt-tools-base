@@ -20,7 +20,7 @@ import com.android.annotations.NonNull
 import com.android.annotations.Nullable
 import com.android.build.gradle.BasePlugin
 import com.android.build.gradle.internal.LintGradleClient
-import com.android.build.gradle.internal.dsl.LintOptionsImpl
+import com.android.build.gradle.internal.dsl.LintOptions
 import com.android.build.gradle.internal.model.ModelBuilder
 import com.android.builder.model.AndroidProject
 import com.android.builder.model.Variant
@@ -200,7 +200,7 @@ public class Lint extends DefaultTask {
     }
 
     private static syncOptions(
-            @NonNull LintOptionsImpl options,
+            @NonNull LintOptions options,
             @NonNull LintGradleClient client,
             @NonNull LintCliFlags flags,
             @NonNull String variantName,

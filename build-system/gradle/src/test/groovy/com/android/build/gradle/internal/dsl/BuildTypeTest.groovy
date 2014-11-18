@@ -26,7 +26,7 @@ import org.gradle.testfixtures.ProjectBuilder
 /**
  * test that the build type are properly initialized
  */
-public class BuildTypeDslTest extends BaseTest {
+public class BuildTypeTest extends BaseTest {
 
     public void testDebug() {
         Project project = ProjectBuilder.builder().withProjectDir(
@@ -74,7 +74,7 @@ public class BuildTypeDslTest extends BaseTest {
         Project project = ProjectBuilder.builder().withProjectDir(
                 new File(testDir, "basic")).build()
 
-        BuildTypeDsl object1 = new BuildTypeDsl("foo", project, project.getLogger())
+        BuildType object1 = new BuildType("foo", project, project.getLogger())
 
         // change every value from their default.
         object1.setDebuggable(true)
@@ -84,12 +84,12 @@ public class BuildTypeDslTest extends BaseTest {
         object1.setApplicationIdSuffix("foo")
         object1.setVersionNameSuffix("foo")
         object1.setMinifyEnabled(true)
-        object1.setSigningConfig(new SigningConfigDsl("blah"))
+        object1.setSigningConfig(new SigningConfig("blah"))
         object1.setZipAlignEnabled(false)
         object1.setShrinkResources(true)
         object1.setUseJack(Boolean.FALSE)
 
-        BuildTypeDsl object2 = new BuildTypeDsl(object1.name, project, project.getLogger())
+        BuildType object2 = new BuildType(object1.name, project, project.getLogger())
         object2.initWith(object1)
 
         assertEquals(object1, object2)

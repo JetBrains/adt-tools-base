@@ -16,7 +16,6 @@
 package com.android.build.gradle.tasks
 import com.android.SdkConstants
 import com.android.annotations.NonNull
-import com.android.build.gradle.internal.dsl.DexOptionsImpl
 import com.android.build.gradle.internal.tasks.BaseTask
 import com.android.builder.core.AndroidBuilder
 import com.android.builder.core.DexOptions
@@ -57,7 +56,7 @@ public class PreDex extends BaseTask {
     File outputFolder
 
     @Nested
-    DexOptionsImpl dexOptions
+    com.android.build.gradle.internal.dsl.DexOptions dexOptions
 
     @Input
     boolean multiDex
