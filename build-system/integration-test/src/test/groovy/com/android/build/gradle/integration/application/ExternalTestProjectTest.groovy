@@ -17,20 +17,24 @@
 package com.android.build.gradle.integration.application
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
-import org.junit.BeforeClass
-import org.junit.ClassRule
+import org.gradle.tooling.BuildException
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
+
+import static org.junit.Assert.assertTrue
 /**
  * Check that a project can depend on a jar dependency published by another app project.
  */
 class ExternalTestProjectTest {
 
-    @ClassRule
-    public static GradleTestProject project = GradleTestProject.builder().create()
+    @Rule
+    public GradleTestProject project = GradleTestProject.builder().create()
 
-    private static File app2BuildFile
+    private File app2BuildFile
 
-    @BeforeClass
-    public static void setup() {
+    @Before
+    public void setup() {
         File rootFile = project.getTestDir()
         new File(rootFile, "settings.gradle") << """
 include ':app1'
@@ -68,7 +72,7 @@ artifacts {
         app2BuildFile = new File(app2, "build.gradle")
     }
 
-//    @Test
+    @Test
     public void testExtraJarDependency() {
         app2BuildFile << """
 apply plugin: 'com.android.application'
@@ -86,7 +90,7 @@ dependencies {
         project.execute('clean', 'app2:assembleDebug')
     }
 
-//    @Test
+    @Test
     void testApkDependency() {
         app2BuildFile << """
 apply plugin: 'com.android.application'
@@ -100,6 +104,15 @@ dependencies {
     compile project(path: ':app1')
 }
 """
-        project.execute('clean', 'app2:assembleDebug')
+        try {
+            project.execute('clean', 'app2:assembleDebug')
+        } catch (BuildException e) {
+            Exception cause = e;
+            while (cause.getCause() != null) {
+                cause = cause.getCause();
+            }
+            String expectedMsg = "Dependency project:app1:unspecified on project app2 resolves to an APK archive which is not supported as a compilation dependency. File:"
+            assertTrue(cause.getMessage().startsWith(expectedMsg))
+        }
     }
 }

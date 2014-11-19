@@ -3446,9 +3446,11 @@ public abstract class BasePlugin {
 
                     // cannot throw this yet, since depending on a secondary artifact in an
                     // Android app will trigger getting the main APK as well.
-//                    throw new GradleException(
-//                            "Dependency ${name} on project ${project.name} resolves to an APK archive which is not supported" +
-//                                    " as a compilation dependency. File: " + artifact.file)
+                    throw new GradleException(
+                            "Dependency ${name} on project ${project.name} resolves to an APK"
+                                    + " archive which is not supported"
+                                    + " as a compilation dependency. File: "
+                                    + artifact.file)
                 }
             }
 
