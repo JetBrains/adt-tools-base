@@ -1359,7 +1359,7 @@ public final class SdkConstants {
     public static final String GRADLE_LATEST_VERSION = "2.2";
     public static final String GRADLE_PLUGIN_MINIMUM_VERSION = "0.14.0";
     public static final String GRADLE_PLUGIN_LATEST_VERSION = "0.14.+";
-    public static final String GRADLE_PLUGIN_RECOMMENDED_VERSION = "0.14.2";
+    public static final String GRADLE_PLUGIN_RECOMMENDED_VERSION = "0.14.3";
     public static final String MIN_BUILD_TOOLS_VERSION = "19.1.0";
     public static final String SUPPORT_LIB_ARTIFACT = "com.android.support:support-v4";
     public static final String APPCOMPAT_LIB_ARTIFACT = "com.android.support:appcompat-v7";
