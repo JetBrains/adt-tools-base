@@ -1,4 +1,4 @@
-package com.android.build.gradle.integration.application
+package com.android.build.gradle.integration.library
 
 import com.android.SdkConstants
 import com.android.annotations.NonNull
