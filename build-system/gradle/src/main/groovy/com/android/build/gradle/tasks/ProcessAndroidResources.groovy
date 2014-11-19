@@ -56,6 +56,9 @@ public class ProcessAndroidResources extends IncrementalTask {
     @Input
     Collection<String> resourceConfigs
 
+    @Input @Optional
+    String preferredDensity
+
     // ----- PRIVATE TASK API -----
     @Input
     String getBuildToolsVersion() {
@@ -110,6 +113,7 @@ public class ProcessAndroidResources extends IncrementalTask {
                     .setPseudoLocalesEnabled(getPseudoLocalesEnabled())
                     .setResourceConfigs(getResourceConfigs())
                     .setSplits(getSplits())
+                    .setPreferredDensity(getPreferredDensity())
 
         getBuilder().processResources(
                 aaptPackageCommandBuilder,

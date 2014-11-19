@@ -23,6 +23,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.dependency.SymbolFileProvider;
 import com.android.builder.model.AaptOptions;
+import com.android.resources.Density;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
 import com.android.utils.ILogger;
@@ -56,6 +57,7 @@ public class AaptPackageCommandBuilder {
     @Nullable private Collection<String> mResourceConfigs;
     @Nullable Collection<String> mSplits;
     @Nullable String mPackageForR;
+    @Nullable String mPreferredDensity;
 
     /**
      *
@@ -222,6 +224,17 @@ public class AaptPackageCommandBuilder {
         return this;
     }
 
+    /**
+     * Specifies a preference for a particular density. Resources that do not match this density
+     * and have variants that are a closer match are removed.
+     * @param density the preferred density
+     * @return itself
+     */
+    public AaptPackageCommandBuilder setPreferredDensity(String density) {
+        mPreferredDensity = density;
+        return this;
+    }
+
     @Nullable
     String getPackageForR() {
         return mPackageForR;
@@ -356,11 +369,27 @@ public class AaptPackageCommandBuilder {
             }
         }
 
+
+        List<String> resourceConfigs = new ArrayList<String>();
         if (mResourceConfigs!=null && !mResourceConfigs.isEmpty()) {
+            resourceConfigs.addAll(mResourceConfigs);
+        }
+        if (buildToolInfo.getRevision().getMajor() < 21 && mPreferredDensity != null) {
+            resourceConfigs.add(mPreferredDensity);
+            // when adding a density filter, also always add the nodpi option.
+            resourceConfigs.add(Density.NODPI.getResourceValue());
+        }
+
+        if (!resourceConfigs.isEmpty()) {
             command.add("-c");
 
             Joiner joiner = Joiner.on(',');
-            command.add(joiner.join(mResourceConfigs));
+            command.add(joiner.join(resourceConfigs));
+        }
+
+        if (buildToolInfo.getRevision().getMajor() >= 21 && mPreferredDensity != null) {
+            command.add("--preferred-density");
+            command.add(mPreferredDensity);
         }
 
         if (mSymbolOutputDir != null &&
