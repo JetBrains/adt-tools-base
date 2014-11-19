@@ -18,16 +18,27 @@ package com.android.build.gradle.integration.application
 
 import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.integration.utils.ApkHelper
+import com.android.builder.model.AndroidArtifact
+import com.android.builder.model.AndroidArtifactOutput
+import com.android.builder.model.AndroidProject
+import com.android.builder.model.Variant
+import com.google.common.collect.ImmutableSet
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
 import org.junit.experimental.categories.Category
 
+import static junit.framework.Assert.assertEquals
+
 /**
  * Assemble tests for densitySplit.
  */
 class DensitySplitTest {
+
+    static AndroidProject model;
+
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
             .fromSample("densitySplit")
@@ -35,12 +46,32 @@ class DensitySplitTest {
 
     @BeforeClass
     static void setup() {
-        project.execute("clean", "assembleDebug");
+        model = project.executeAndReturnModel("clean", "assembleDebug");
     }
 
     @AfterClass
     static void cleanUp() {
         project = null
+        model = null
+    }
+
+    @Test
+    void testPackaging() {
+        for (Variant variant : model.getVariants()) {
+            AndroidArtifact mainArtifact = variant.getMainArtifact();
+            if (!variant.getBuildType().equalsIgnoreCase("Debug")) {
+                continue
+            }
+            assertEquals(5, mainArtifact.getOutputs().size())
+
+            Map<String, String> filesToMatch = Collections.singletonMap(
+                    "res/drawable-mdpi-v4/other.png", null)
+            for (AndroidArtifactOutput output : mainArtifact.getOutputs()) {
+                ApkHelper.checkArchive(output.mainOutputFile.getOutputFile(),
+                        filesToMatch,
+                        ImmutableSet.<String>of())
+            }
+        }
     }
 
     @Test
