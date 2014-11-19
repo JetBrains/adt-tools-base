@@ -1446,16 +1446,6 @@ public class AndroidProjectTest extends TestCase {
         }
     }
 
-    public void testInvalidAppDependencies() throws Exception {
-        try {
-            getModelForProject(FOLDER_TEST_PROJECT, "invalidDependencyOnAppProject");
-            fail("Should fail.");
-        } catch (BuildException e) {
-            assertTrue(e.getCause().getMessage().contains(
-                    "Only Android library projects can act as dependencies of other projects."));
-        }
-    }
-
     public void testCustomSigning() throws Exception {
         // Load the custom model for the project
         ProjectData projectData = getModelForProject(FOLDER_TEST_SAMPLE, "basic");
