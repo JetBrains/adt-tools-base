@@ -42,8 +42,7 @@ include ':app2'
 """
         // app1 module
         File app1 = new File(rootFile, "app1")
-        File app1Src = new File(app1, "src")
-        new HelloWorldApp().writeSources(app1Src)
+        new HelloWorldApp().writeSources(app1)
         new File(app1, "build.gradle") << """
 apply plugin: 'com.android.application'
 
@@ -67,8 +66,7 @@ artifacts {
 """
         // app2 module
         File app2 = new File(rootFile, "app2")
-        File app2Src = new File(app2, "src")
-        new HelloWorldApp().writeSources(app2Src)
+        new HelloWorldApp().writeSources(app2)
         app2BuildFile = new File(app2, "build.gradle")
     }
 
