@@ -10,5 +10,5 @@ repositories {
 }
 
 dependencies {
-    compile 'com.android.tools.build:builder-test-api:0.14.3'
+    compile 'com.android.tools.build:builder-test-api:0.14.4'
 }
