@@ -861,7 +861,7 @@ final class Device implements IDevice {
         try {
 
             // create a installation session.
-            String sessionId = createMultiInstallSession(apkFilePaths);
+            String sessionId = createMultiInstallSession(apkFilePaths, reinstall);
             if (sessionId == null) {
                 Log.d(mainPackageFilePath, "Failed to establish session, quit installation");
                 throw new InstallException("Failed to establish session");
@@ -941,7 +941,7 @@ final class Device implements IDevice {
     }
 
     @Nullable
-    private String createMultiInstallSession(List<String> apkFileNames)
+    private String createMultiInstallSession(List<String> apkFileNames, boolean reinstall)
             throws TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException,
             IOException {
 
@@ -961,7 +961,9 @@ final class Device implements IDevice {
             }
         }
         MultiInstallReceiver receiver = new MultiInstallReceiver();
-        String cmd = String.format("pm install-create -S %1$d", totalFileSize);
+        String cmd = String.format("pm install-create %1$s -S %2$d",
+                reinstall ? "-r" : "",
+                totalFileSize);
         executeShellCommand(cmd, receiver, DdmPreferences.getTimeOut());
         return receiver.getSessionId();
     }
