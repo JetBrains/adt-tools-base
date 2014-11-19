@@ -143,7 +143,7 @@ public class GradleDetectorTest extends AbstractCheckTest {
             + "build.gradle:24: Warning: A newer version of com.google.guava:guava than 11.0.2 is available: 18.0 [GradleDependency]\n"
             + "    freeCompile 'com.google.guava:guava:11.0.2'\n"
             + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-            + "build.gradle:25: Warning: A newer version of com.android.support:appcompat-v7 than 13.0.0 is available: " + HIGHEST_KNOWN_STABLE_API + ".0.0 [GradleDependency]\n"
+            + "build.gradle:25: Warning: A newer version of com.android.support:appcompat-v7 than 13.0.0 is available: " + HIGHEST_KNOWN_STABLE_API + ".0.2 [GradleDependency]\n"
             + "    compile 'com.android.support:appcompat-v7:13.0.0'\n"
             + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
             + "build.gradle:23: Warning: Avoid using + in version numbers; can lead to unpredictable and unrepeatable builds (com.android.support:appcompat-v7:+) [GradleDynamicVersion]\n"
@@ -199,7 +199,7 @@ public class GradleDetectorTest extends AbstractCheckTest {
                 + "build.gradle:24: Warning: A newer version of com.google.guava:guava than 11.0.2 is available: 18.0 [GradleDependency]\n"
                 + "    freeCompile 'com.google.guava:guava:11.0.2'\n"
                 + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-                + "build.gradle:25: Warning: A newer version of com.android.support:appcompat-v7 than 13.0.0 is available: " + HIGHEST_KNOWN_STABLE_API + ".0.0 [GradleDependency]\n"
+                + "build.gradle:25: Warning: A newer version of com.android.support:appcompat-v7 than 13.0.0 is available: " + HIGHEST_KNOWN_STABLE_API + ".0.2 [GradleDependency]\n"
                 + "    compile 'com.android.support:appcompat-v7:13.0.0'\n"
                 + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                 + "0 errors, 3 warnings\n",
@@ -210,7 +210,7 @@ public class GradleDetectorTest extends AbstractCheckTest {
     public void testLongHandDependencies() throws Exception {
         mEnabled = Collections.singleton(DEPENDENCY);
         assertEquals(""
-                + "build.gradle:9: Warning: A newer version of com.android.support:support-v4 than 19.0 is available: 21.0.0 [GradleDependency]\n"
+                + "build.gradle:9: Warning: A newer version of com.android.support:support-v4 than 19.0 is available: " + HIGHEST_KNOWN_STABLE_API + ".0.2 [GradleDependency]\n"
                 + "    compile group: 'com.android.support', name: 'support-v4', version: '19.0'\n"
                 + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                 + "0 errors, 1 warnings\n",
