@@ -214,10 +214,19 @@ public abstract class BaseExtension {
         compileSdkVersion(target)
     }
 
-    /** Sets the build tools version. */
     void buildToolsVersion(String version) {
         plugin.checkTasksAlreadyCreated()
         buildToolsRevision = FullRevision.parseRevision(version)
+    }
+
+    /**
+     * <strong>Required.</strong> Version of the build tools to use.
+     *
+     * <p>Value assigned to this property is parsed and stored in a normalized form, so reading it
+     * back may give a slightly different string.
+     */
+    String getBuildToolsVersion() {
+        return buildToolsRevision.toString()
     }
 
     void setBuildToolsVersion(String version) {
@@ -460,7 +469,14 @@ public abstract class BaseExtension {
         return new SourceSetSourceProviderWrapper(sourceSet)
     }
 
-    /** Compile SDK version. */
+    /**
+     * <strong>Required.</strong> Compile SDK version.
+     *
+     * <p>Setter can be called with a string like "android-21" or a number.
+     *
+     * <p>Value assigned to this property is parsed and stored in a normalized form, so reading it
+     * back may give a slightly different string.
+     */
     public String getCompileSdkVersion() {
         return target
     }
