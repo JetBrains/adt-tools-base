@@ -1166,19 +1166,12 @@ public abstract class BasePlugin {
                     { config.buildType.pseudoLocalesEnabled }
 
             processResources.conventionMapping.resourceConfigs = {
-                if (variantOutputData.mainOutputFile.getFilter(OutputFile.DENSITY) == null) {
-                    return config.mergedFlavor.resourceConfigurations
-                }
-
-                Collection<String> list = config.mergedFlavor.resourceConfigurations
-                List<String> resConfigs = Lists.newArrayListWithCapacity(list.size() + 1)
-                resConfigs.addAll(list)
-                resConfigs.add(variantOutputData.mainOutputFile.getFilter(OutputFile.DENSITY))
-                // when adding a density filter, also always add the nodpi option.
-                resConfigs.add(Density.NODPI.resourceValue)
-
-                return resConfigs
+                return config.mergedFlavor.resourceConfigurations
             }
+            processResources.conventionMapping.preferredDensity = {
+                variantOutputData.mainOutputFile.getFilter(OutputFile.DENSITY)
+            }
+
         }
     }
 
