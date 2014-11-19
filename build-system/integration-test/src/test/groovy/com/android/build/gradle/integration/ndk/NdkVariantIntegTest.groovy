@@ -88,11 +88,9 @@ android {
     @Test
     public void assembleX86Release() {
         project.execute("assembleX86Release");
-        ZipFile apk = new ZipFile(
-                project.file(
-                        "build/outputs/apk/${project.name}-x86-release-unsigned.apk"));
 
         // Verify .so are built for all platform.
+        ZipFile apk = new ZipFile(project.getApk("x86", "release", "unsigned"))
         assertNotNull(apk.getEntry("lib/x86/libhello-jni.so"));
         assertNull(apk.getEntry("lib/mips/libhello-jni.so"));
         assertNull(apk.getEntry("lib/armeabi/libhello-jni.so"));
@@ -102,11 +100,9 @@ android {
     @Test
     public void assembleArmRelease() {
         project.execute("assembleArmRelease");
-        ZipFile apk = new ZipFile(
-                project.file(
-                        "build/outputs/apk/${project.name}-arm-release-unsigned.apk"));
 
         // Verify .so are built for all platform.
+        ZipFile apk = new ZipFile(project.getApk("arm", "release", "unsigned"))
         assertNull(apk.getEntry("lib/x86/libhello-jni.so"));
         assertNull(apk.getEntry("lib/mips/libhello-jni.so"));
         assertNotNull(apk.getEntry("lib/armeabi/libhello-jni.so"));
@@ -116,11 +112,9 @@ android {
     @Test
     public void assembleMipsRelease() {
         project.execute("assembleMipsRelease");
-        ZipFile apk = new ZipFile(
-                project.file(
-                        "build/outputs/apk/${project.name}-mips-release-unsigned.apk"));
 
         // Verify .so are built for all platform.
+        ZipFile apk = new ZipFile(project.getApk("mips", "release", "unsigned"))
         assertNull(apk.getEntry("lib/x86/libhello-jni.so"));
         assertNotNull(apk.getEntry("lib/mips/libhello-jni.so"));
         assertNull(apk.getEntry("lib/armeabi/libhello-jni.so"));
