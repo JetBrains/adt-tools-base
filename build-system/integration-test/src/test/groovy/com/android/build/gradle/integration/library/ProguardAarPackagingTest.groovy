@@ -113,9 +113,7 @@ public class LibInJar {
     @Test
     public void "check debug AAR packaging"() {
         androidProject.execute("assembleDebug")
-        ZipFile aar = new ZipFile(androidProject.file(
-                Joiner.on(File.separatorChar).join("build", AndroidProject.FD_OUTPUTS, "aar",
-                        androidProject.name + "-debug" + SdkConstants.DOT_AAR)))
+        ZipFile aar = new ZipFile(androidProject.getAar("debug"))
 
         assertNotNull("debug build arr should contain libinjar",
                 aar.getEntry("libs/libinjar.jar"))
@@ -127,9 +125,7 @@ public class LibInJar {
     @Test
     public void "check release AAR packaging"() {
         androidProject.execute("assembleRelease")
-        ZipFile aar = new ZipFile(androidProject.file(
-                Joiner.on(File.separatorChar).join("build", AndroidProject.FD_OUTPUTS, "aar",
-                        androidProject.name + "-release" + SdkConstants.DOT_AAR)))
+        ZipFile aar = new ZipFile(androidProject.getAar("release"))
 
         assertNull("release build arr should not contain libinjar",
                 aar.getEntry("libs/libinjar.jar"))
