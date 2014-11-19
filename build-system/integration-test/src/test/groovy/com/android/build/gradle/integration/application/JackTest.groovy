@@ -21,6 +21,7 @@ package com.android.build.gradle.integration.application
 import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.google.common.collect.ImmutableList
+import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
@@ -57,6 +58,13 @@ class JackTest {
         basic.execute(JACK_OPTIONS, "clean", "assembleDebug")
         minify.execute(JACK_OPTIONS, "clean", "assembleDebug")
         multiDex.execute(JACK_OPTIONS, "clean", "assembleDebug")
+    }
+
+    @AfterClass
+    static void cleanUp() {
+        basic = null
+        minify = null
+        multiDex = null
     }
 
     @Test

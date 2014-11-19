@@ -29,6 +29,7 @@ import com.google.common.base.Charsets
 import com.google.common.collect.Maps
 import com.google.common.io.Files
 import junit.framework.Assert
+import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
@@ -98,6 +99,12 @@ class BuildConfigTest {
                 'generateFlavor1ReleaseBuildConfig',
                 'generateFlavor2DebugBuildConfig',
                 'generateFlavor2ReleaseBuildConfig')
+    }
+
+    @AfterClass
+    static void cleanUp() {
+        project = null
+        model = null
     }
 
     @Test
