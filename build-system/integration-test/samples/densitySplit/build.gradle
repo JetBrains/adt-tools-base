@@ -1,7 +1,7 @@
 import com.android.build.OutputFile;
 
 ext {
-    buildToolsVersion = System.env.CUSTOM_BUILDTOOLS != null ? System.env.CUSTOM_BUILDTOOLS : '20.0.0'
+    buildToolsVersion = System.env.CUSTOM_BUILDTOOLS != null ? System.env.CUSTOM_BUILDTOOLS : '21.0.0'
 }
 
 buildscript {
@@ -17,6 +17,10 @@ buildscript {
     dependencies {
         classpath "com.android.tools.build:gradle:$gradleVersion"
     }
+}
+
+if (buildToolsVersion < '21.0.0') {
+    println ("Warning : this sample requires build-tools version 21 or above")
 }
 
 apply plugin: 'com.android.application'
