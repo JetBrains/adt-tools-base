@@ -216,8 +216,8 @@ class ProductFlavor extends DefaultProductFlavor {
      * Adds new ProGuard configuration files.
      */
     @NonNull
-    public void proguardFiles(Object... proguardFiles) {
-        proguardFiles.addAll(project.files(proguardFiles).files)
+    public void proguardFiles(Object... proguardFileArray) {
+        proguardFiles.addAll(project.files(proguardFileArray).files)
     }
 
     /**

@@ -20,6 +20,7 @@ import com.android.build.gradle.api.ApkVariantOutput
 import com.android.build.gradle.api.ApplicationVariant
 import com.android.build.gradle.api.BaseVariantOutput
 import com.android.build.gradle.api.TestVariant
+import com.android.build.gradle.internal.core.GradleVariantConfiguration
 import com.android.build.gradle.internal.test.BaseTest
 import org.gradle.api.JavaVersion
 import org.gradle.api.Project
@@ -325,6 +326,68 @@ public class AppPluginDslTest extends BaseTest {
             } else {
                 assertNull(variant.getMappingFile())
             }
+        }
+    }
+
+    public void testProguardDsl() throws Exception {
+        Project project = ProjectBuilder.builder().withProjectDir(
+                new File(testDir, "${FOLDER_TEST_SAMPLES}/basic")).build()
+
+        project.apply plugin: 'com.android.application'
+
+        project.android {
+            compileSdkVersion 15
+
+            buildTypes {
+                release {
+                    proguardFile 'file1.1'
+                    proguardFiles 'file1.2', 'file1.3'
+                }
+
+                custom {
+                    proguardFile 'file3.1'
+                    proguardFiles 'file3.2', 'file3.3'
+                    proguardFiles = ['file3.1']
+                }
+            }
+
+            productFlavors {
+                f1 {
+                    proguardFile 'file2.1'
+                    proguardFiles 'file2.2', 'file2.3'
+                }
+
+                f2  {
+
+                }
+
+                f3 {
+                    proguardFile 'file4.1'
+                    proguardFiles 'file4.2', 'file4.3'
+                    proguardFiles = ['file4.1']
+                }
+            }
+        }
+
+        AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
+        plugin.createAndroidTasks(false)
+
+        def variantsData = plugin.variantManager.variantDataList
+        Map<String, GradleVariantConfiguration> variantMap =
+                variantsData.collectEntries {[it.name, it.variantConfiguration]}
+
+        def expectedFiles = [
+                f1Release: ["file1.1", "file1.2", "file1.3", "file2.1", "file2.2", "file2.3"],
+                f1Debug: ["file2.1", "file2.2", "file2.3"],
+                f2Release: ["file1.1", "file1.2", "file1.3"],
+                f2Debug: [],
+                f2Custom: ["file3.1"],
+                f3Custom: ["file3.1", "file4.1"],
+        ]
+
+        expectedFiles.each { name, expected ->
+            def actual = variantMap[name].getProguardFiles(false, [])
+            assert (actual*.name as Set) == (expected as Set), name
         }
     }
 
