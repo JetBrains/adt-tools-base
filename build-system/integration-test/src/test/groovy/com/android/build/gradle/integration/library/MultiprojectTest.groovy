@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.library
 
 import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
@@ -35,6 +36,11 @@ class MultiprojectTest {
     @BeforeClass
     static void setup() {
         project.execute("clean", "assembleDebug");
+    }
+
+    @AfterClass
+    static void cleanUp() {
+        project = null
     }
 
     @Test
