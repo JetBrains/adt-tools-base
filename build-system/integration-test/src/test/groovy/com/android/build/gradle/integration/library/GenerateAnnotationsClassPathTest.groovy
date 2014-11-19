@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.library
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
@@ -25,7 +26,9 @@ import static org.junit.Assert.assertFalse
 class GenerateAnnotationsClassPathTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("extractAnnotations").create()
+            .fromSample("extractAnnotations")
+            .captureStdOut(true)
+            .create()
 
     @BeforeClass
     static public void setUpProject() {
@@ -85,6 +88,11 @@ public class GeneratedClass {
 
 
 ''')
+    }
+
+    @AfterClass
+    static void cleanUp() {
+        project = null
     }
 
     /**

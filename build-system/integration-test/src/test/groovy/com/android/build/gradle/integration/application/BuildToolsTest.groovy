@@ -43,7 +43,7 @@ class BuildToolsTest {
     ]
 
     @Rule
-    public GradleTestProject project = GradleTestProject.builder().create();
+    public GradleTestProject project = GradleTestProject.builder().captureStdOut(true).create();
 
     @Before
     public void setup() {
