@@ -169,6 +169,7 @@ import proguard.gradle.ProGuardTask
 
 import java.util.jar.Attributes
 import java.util.jar.Manifest
+import java.util.regex.Pattern
 
 import static com.android.SdkConstants.EXT_ANDROID_PACKAGE
 import static com.android.SdkConstants.EXT_JAR
@@ -203,9 +204,9 @@ import static java.io.File.separator
 public abstract class BasePlugin {
     public final static String DIR_BUNDLES = "bundles";
 
-    private static final String GRADLE_MIN_VERSION = "2.1"
+    private static final String GRADLE_MIN_VERSION = "2.2"
     public static final String GRADLE_TEST_VERSION = "2.2"
-    public static final String[] GRADLE_SUPPORTED_VERSIONS = [ GRADLE_MIN_VERSION, "2.2", "2.2.1" ]
+    public static final Pattern GRADLE_ACCEPTABLE_VERSIONS = Pattern.compile("2\\.[2-9].*");
 
     public static final String INSTALL_GROUP = "Install"
 
@@ -417,15 +418,7 @@ public abstract class BasePlugin {
     }
 
     private void checkGradleVersion() {
-        boolean foundMatch = false
-        for (String version : GRADLE_SUPPORTED_VERSIONS) {
-            if (project.getGradle().gradleVersion.startsWith(version)) {
-                foundMatch = true
-                break
-            }
-        }
-
-        if (!foundMatch) {
+        if (!GRADLE_ACCEPTABLE_VERSIONS.matcher(project.getGradle().gradleVersion).matches()) {
             File file = new File("gradle" + separator + "wrapper" + separator +
                     "gradle-wrapper.properties");
             throw new BuildException(
