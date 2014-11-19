@@ -1,3 +1,35 @@
+0.14.3
+- Variant Specific BuildConfigField/resValue
+    applicationVariants.all { variant ->
+        variant.buildConfigField "int", "VALUE", "1"
+        variant.resValue "string", "name", "value"
+    }
+- Variant (and multi-flavor) specific dependency configuration
+    multi-flavor is all the flavors without the build Type. Only exists for 2+ dimensions of Flavors.
+    Current limitation: Requires defining the configuration manually first:
+        configurations {
+            fooDebugCompile
+        }
+
+        android {
+            productFlavors {
+                foo { ... }
+            }
+        }
+
+        dependencies {
+            fooDebugCompile '...'
+        }
+
+- BuildType/Flavor/Variant configuration for embedding wear app (<name>WearApp)
+- Upgrade to Proguard 5.1
+- Almost 1.0: removed deprecated properties/methods
+    * BuildConfig.PACKAGE_NAME (use new field name)
+    * android.flavorGroups (use new property names)
+    * ProductFlavor.packageName/flavorGroup/testPackageName/renderscriptSupportMode (use new property name)
+    * BuildType.runProguard/packageNameSuffix/jniDebugBuild/renderscriptDebugBuild/zipAlign (use the new property name)
+    * Variant.packageApplication/zipAlign/createZipAlignTask/outputFile/processResources/processManifest (use the variant output)
+
 0.14.2
 - Fix versionNameSuffix support
 - Fix BuildType.initWith to copy shrinkResources flag
