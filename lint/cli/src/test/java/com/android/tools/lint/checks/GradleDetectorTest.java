@@ -18,7 +18,6 @@ package com.android.tools.lint.checks;
 
 import static com.android.SdkConstants.GRADLE_PLUGIN_MINIMUM_VERSION;
 import static com.android.SdkConstants.GRADLE_PLUGIN_RECOMMENDED_VERSION;
-import static com.android.sdklib.SdkVersionInfo.HIGHEST_KNOWN_STABLE_API;
 import static com.android.tools.lint.checks.GradleDetector.ACCIDENTAL_OCTAL;
 import static com.android.tools.lint.checks.GradleDetector.COMPATIBILITY;
 import static com.android.tools.lint.checks.GradleDetector.DEPENDENCY;
@@ -50,6 +49,7 @@ import com.android.utils.Pair;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import com.google.common.io.Files;
 
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.CodeVisitorSupport;
@@ -67,6 +67,8 @@ import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -78,6 +80,86 @@ import java.util.Set;
  * for IntellijGradleDetector
  */
 public class GradleDetectorTest extends AbstractCheckTest {
+
+    private File mSdkDir;
+
+    @Override
+    protected void setUp() throws Exception {
+        super.setUp();
+    }
+
+    @Override
+    protected void tearDown() throws Exception {
+        super.tearDown();
+
+        if (mSdkDir != null) {
+            deleteFile(mSdkDir);
+            mSdkDir = null;
+        }
+    }
+
+    /** Creates a mock SDK installation structure, containing a fixed set of dependencies */
+    private File getMockSupportLibraryInstallation() {
+        if (mSdkDir == null) {
+            // Make fake SDK "installation" such that we can predict the set
+            // of Maven repositories discovered by this test
+            mSdkDir = Files.createTempDir();
+
+            String[] paths = new String[]{
+                    // Android repository
+                    "extras/android/m2repository/com/android/support/appcompat-v7/18.0.0/appcompat-v7-18.0.0.aar",
+                    "extras/android/m2repository/com/android/support/appcompat-v7/19.0.0/appcompat-v7-19.0.0.aar",
+                    "extras/android/m2repository/com/android/support/appcompat-v7/19.0.1/appcompat-v7-19.0.1.aar",
+                    "extras/android/m2repository/com/android/support/appcompat-v7/19.1.0/appcompat-v7-19.1.0.aar",
+                    "extras/android/m2repository/com/android/support/appcompat-v7/20.0.0/appcompat-v7-20.0.0.aar",
+                    "extras/android/m2repository/com/android/support/appcompat-v7/21.0.0/appcompat-v7-21.0.0.aar",
+                    "extras/android/m2repository/com/android/support/appcompat-v7/21.0.2/appcompat-v7-21.0.2.aar",
+                    "extras/android/m2repository/com/android/support/cardview-v7/21.0.0/cardview-v7-21.0.0.aar",
+                    "extras/android/m2repository/com/android/support/cardview-v7/21.0.2/cardview-v7-21.0.2.aar",
+                    "extras/android/m2repository/com/android/support/support-v13/20.0.0/support-v13-20.0.0.aar",
+                    "extras/android/m2repository/com/android/support/support-v13/21.0.0/support-v13-21.0.0.aar",
+                    "extras/android/m2repository/com/android/support/support-v13/21.0.2/support-v13-21.0.2.aar",
+                    "extras/android/m2repository/com/android/support/support-v4/20.0.0/support-v4-20.0.0.aar",
+                    "extras/android/m2repository/com/android/support/support-v4/21.0.0/support-v4-21.0.0.aar",
+                    "extras/android/m2repository/com/android/support/support-v4/21.0.2/support-v4-21.0.2.aar",
+
+                    // Google repository
+                    "extras/google/m2repository/com/google/android/gms/play-services/3.1.36/play-services-3.1.36.aar",
+                    "extras/google/m2repository/com/google/android/gms/play-services/3.1.59/play-services-3.1.59.aar",
+                    "extras/google/m2repository/com/google/android/gms/play-services/3.2.25/play-services-3.2.25.aar",
+                    "extras/google/m2repository/com/google/android/gms/play-services/3.2.65/play-services-3.2.65.aar",
+                    "extras/google/m2repository/com/google/android/gms/play-services/4.0.30/play-services-4.0.30.aar",
+                    "extras/google/m2repository/com/google/android/gms/play-services/4.1.32/play-services-4.1.32.aar",
+                    "extras/google/m2repository/com/google/android/gms/play-services/4.2.42/play-services-4.2.42.aar",
+                    "extras/google/m2repository/com/google/android/gms/play-services/4.3.23/play-services-4.3.23.aar",
+                    "extras/google/m2repository/com/google/android/gms/play-services/4.4.52/play-services-4.4.52.aar",
+                    "extras/google/m2repository/com/google/android/gms/play-services/5.0.89/play-services-5.0.89.aar",
+                    "extras/google/m2repository/com/google/android/gms/play-services/6.1.11/play-services-6.1.11.aar",
+                    "extras/google/m2repository/com/google/android/gms/play-services/6.1.71/play-services-6.1.71.aar",
+                    "extras/google/m2repository/com/google/android/gms/play-services-wearable/5.0.77/play-services-wearable-5.0.77.aar",
+                    "extras/google/m2repository/com/google/android/gms/play-services-wearable/6.1.11/play-services-wearable-6.1.11.aar",
+                    "extras/google/m2repository/com/google/android/gms/play-services-wearable/6.1.71/play-services-wearable-6.1.71.aar",
+                    "extras/google/m2repository/com/google/android/support/wearable/1.0.0/wearable-1.0.0.aar"
+            };
+
+            for (String path : paths) {
+                File file = new File(mSdkDir, path.replace('/', File.separatorChar));
+                File parent = file.getParentFile();
+                if (!parent.exists()) {
+                    boolean ok = parent.mkdirs();
+                    assertTrue(ok);
+                }
+                try {
+                    boolean created = file.createNewFile();
+                    assertTrue(created);
+                } catch (IOException e) {
+                    fail(e.toString());
+                }
+            }
+        }
+
+        return mSdkDir;
+    }
 
     public void testGetOldValue() {
         assertEquals("11.0.2", getOldValue(DEPENDENCY,
@@ -143,7 +225,7 @@ public class GradleDetectorTest extends AbstractCheckTest {
             + "build.gradle:24: Warning: A newer version of com.google.guava:guava than 11.0.2 is available: 18.0 [GradleDependency]\n"
             + "    freeCompile 'com.google.guava:guava:11.0.2'\n"
             + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-            + "build.gradle:25: Warning: A newer version of com.android.support:appcompat-v7 than 13.0.0 is available: " + HIGHEST_KNOWN_STABLE_API + ".0.2 [GradleDependency]\n"
+            + "build.gradle:25: Warning: A newer version of com.android.support:appcompat-v7 than 13.0.0 is available: 21.0.2 [GradleDependency]\n"
             + "    compile 'com.android.support:appcompat-v7:13.0.0'\n"
             + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
             + "build.gradle:23: Warning: Avoid using + in version numbers; can lead to unpredictable and unrepeatable builds (com.android.support:appcompat-v7:+) [GradleDynamicVersion]\n"
@@ -199,7 +281,7 @@ public class GradleDetectorTest extends AbstractCheckTest {
                 + "build.gradle:24: Warning: A newer version of com.google.guava:guava than 11.0.2 is available: 18.0 [GradleDependency]\n"
                 + "    freeCompile 'com.google.guava:guava:11.0.2'\n"
                 + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-                + "build.gradle:25: Warning: A newer version of com.android.support:appcompat-v7 than 13.0.0 is available: " + HIGHEST_KNOWN_STABLE_API + ".0.2 [GradleDependency]\n"
+                + "build.gradle:25: Warning: A newer version of com.android.support:appcompat-v7 than 13.0.0 is available: 21.0.2 [GradleDependency]\n"
                 + "    compile 'com.android.support:appcompat-v7:13.0.0'\n"
                 + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                 + "0 errors, 3 warnings\n",
@@ -210,7 +292,7 @@ public class GradleDetectorTest extends AbstractCheckTest {
     public void testLongHandDependencies() throws Exception {
         mEnabled = Collections.singleton(DEPENDENCY);
         assertEquals(""
-                + "build.gradle:9: Warning: A newer version of com.android.support:support-v4 than 19.0 is available: " + HIGHEST_KNOWN_STABLE_API + ".0.2 [GradleDependency]\n"
+                + "build.gradle:9: Warning: A newer version of com.android.support:support-v4 than 19.0 is available: 21.0.2 [GradleDependency]\n"
                 + "    compile group: 'com.android.support', name: 'support-v4', version: '19.0'\n"
                 + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                 + "0 errors, 1 warnings\n",
@@ -509,6 +591,16 @@ public class GradleDetectorTest extends AbstractCheckTest {
         };
     }
 
+    @Override
+    protected TestLintClient createClient() {
+        return new TestLintClient() {
+            @Nullable
+            @Override
+            public File getSdkHome() {
+                return getMockSupportLibraryInstallation();
+            }
+        };
+    }
 
     // Copy of com.android.build.gradle.tasks.GroovyGradleDetector (with "static" added as
     // a modifier, and the unused field IMPLEMENTATION removed, and with fail(t.toString())
