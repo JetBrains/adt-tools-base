@@ -19,6 +19,7 @@ package com.android.build.gradle.integration.common.fixture;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.BasePlugin;
@@ -315,14 +316,36 @@ public class GradleTestProject implements TestRule {
     }
 
     /**
-     * Return the output APK File from the application plugin for the given dimension.
+     * Return the output apk File from the application plugin for the given dimension.
+     *
+     * Expected dimensions orders are:
+     *   - product flavors
+     *   - build type
+     *   - other modifiers (e.g. "unsigned", "aligned")
      */
     public File getApk(String ... dimensions) {
         // TODO: Add overload for tests and splits.
         List<String> dimensionList = Lists.newArrayListWithExpectedSize(1 + dimensions.length);
         dimensionList.add(getName());
         dimensionList.addAll(Arrays.asList(dimensions));
-        return getOutputFile("apk/" + Joiner.on("-").join(dimensionList) + ".apk");
+        return getOutputFile(
+                "apk/" + Joiner.on("-").join(dimensionList) + SdkConstants.DOT_ANDROID_PACKAGE);
+    }
+
+    /**
+     * Return the output aar File from the library plugin for the given dimension.
+     *
+     * Expected dimensions orders are:
+     *   - product flavors
+     *   - build type
+     *   - other modifiers (e.g. "unsigned", "aligned")
+     */
+    public File getAar(String ... dimensions) {
+        // TODO: Add overload for tests and splits.
+        List<String> dimensionList = Lists.newArrayListWithExpectedSize(1 + dimensions.length);
+        dimensionList.add(getName());
+        dimensionList.addAll(Arrays.asList(dimensions));
+        return getOutputFile("aar/" + Joiner.on("-").join(dimensionList) + SdkConstants.DOT_AAR);
     }
 
     /**
