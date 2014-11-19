@@ -19,6 +19,7 @@ package com.android.build.gradle.integration.ndk
 import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldJniApp
+import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
@@ -77,6 +78,11 @@ android {
     }
 }
 """
+    }
+
+    @AfterClass
+    static void cleanUp() {
+        project = null
     }
 
     @Test

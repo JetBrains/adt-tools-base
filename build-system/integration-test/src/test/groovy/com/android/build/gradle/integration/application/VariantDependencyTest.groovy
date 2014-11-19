@@ -31,6 +31,7 @@ import com.android.build.gradle.integration.utils.ApkHelper
 import com.android.build.gradle.integration.utils.ModelHelper
 import com.android.utils.StdLogger
 import com.google.common.collect.Sets
+import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
@@ -94,6 +95,13 @@ class VariantDependencyTest {
         assertTrue("Test requires build-tools 20.0.0", aapt.isFile());
         CommandLineRunner commandLineRunner = new CommandLineRunner(new StdLogger(StdLogger.Level.ERROR));
         apkInfoParser = new ApkInfoParser(aapt, commandLineRunner);
+    }
+
+    @AfterClass
+    static void cleanUp() {
+        project = null
+        model = null
+        apkInfoParser = null
     }
 
     @Test

@@ -35,6 +35,7 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 
+import org.gradle.tooling.BuildLauncher;
 import org.gradle.tooling.GradleConnector;
 import org.gradle.tooling.ProjectConnection;
 import org.junit.rules.TestRule;
@@ -83,11 +84,13 @@ public class GradleTestProject implements TestRule {
         @Nullable
         private AndroidTestApp testApp = null;
 
+        boolean captureStdOut = false;
+
         /**
          * Create a GradleTestProject.
          */
         public GradleTestProject create()  {
-            return new GradleTestProject(name, testApp);
+            return new GradleTestProject(name, testApp, captureStdOut);
         }
 
         /**
@@ -97,6 +100,11 @@ public class GradleTestProject implements TestRule {
          */
         public Builder withName(@NonNull String name) {
             this.name = name;
+            return this;
+        }
+
+        public Builder captureStdOut(boolean captureStdOut) {
+            this.captureStdOut = captureStdOut;
             return this;
         }
 
@@ -147,22 +155,28 @@ public class GradleTestProject implements TestRule {
 
     private File sdkDir;
 
-    private ByteArrayOutputStream stdout = new ByteArrayOutputStream();
+    private ByteArrayOutputStream stdout;
 
     @Nullable
     private AndroidTestApp testApp;
 
     private GradleTestProject() {
-        this(null, null);
+        this(null, null, false);
     }
 
-    private GradleTestProject(@Nullable String name, @Nullable AndroidTestApp testApp) {
+    private GradleTestProject(
+            @Nullable String name,
+            @Nullable AndroidTestApp testApp,
+            boolean captureStdOut) {
         sdkDir = findSdkDir();
         ndkDir = findNdkDir();
         String buildDir = System.getenv("PROJECT_BUILD_DIR");
         outDir = (buildDir == null) ? new File("build/tests") : new File(buildDir, "tests");
         this.name = (name == null) ? DEFAULT_TEST_PROJECT_NAME : name;
         this.testApp = testApp;
+        if (captureStdOut) {
+            stdout = new ByteArrayOutputStream();
+        }
     }
 
     public static Builder builder() {
@@ -390,9 +404,12 @@ public class GradleTestProject implements TestRule {
             args.add("-u");
             args.addAll(arguments);
 
-            connection.newBuild().forTasks(tasks)
-                    .setStandardOutput(stdout)
-                    .withArguments(args.toArray(new String[args.size()])).run();
+            BuildLauncher launcher = connection.newBuild().forTasks(tasks)
+                    .withArguments(args.toArray(new String[args.size()]));
+            if (stdout != null) {
+                launcher.setStandardOutput(stdout);
+            }
+            launcher.run();
 
             if (returnModel) {
                 return connection.getModel(AndroidProject.class);

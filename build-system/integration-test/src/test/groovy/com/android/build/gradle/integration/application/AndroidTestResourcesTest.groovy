@@ -32,7 +32,7 @@ import static org.junit.Assert.*
  * Check resources in androidTest are available in the generated R.java.
  */
 class AndroidTestResourcesTest {
-    private static final AndroidTestApp testApp
+    private static AndroidTestApp testApp
     static {
         testApp =  new HelloWorldApp()
 
@@ -113,6 +113,13 @@ class AndroidTestResourcesTest {
                 }
                 """.stripIndent()
         libProject.execute("assembleDebugTest")
+    }
+
+    @AfterClass
+    static void cleanUp() {
+        appProject = null
+        libProject = null
+        testApp = null
     }
 
     @Test
