@@ -11,6 +11,7 @@ import com.android.build.gradle.integration.common.fixture.app.TestSourceFile
 import com.google.common.base.Joiner
 import com.google.common.io.Files
 import org.apache.commons.io.FileUtils
+import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
@@ -101,6 +102,12 @@ public class LibInJar {
         FileUtils.copyFile(
                 libraryInJarProject.file(libInJarName),
                 androidProject.file("libs/libinjar.jar"))
+    }
+
+    @AfterClass
+    static void cleanUp() {
+        androidProject = null
+        libraryInJarProject = null
     }
 
     @Test
