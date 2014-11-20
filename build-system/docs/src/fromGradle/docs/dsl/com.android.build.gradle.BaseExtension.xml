@@ -5,6 +5,8 @@
             <thead>
                 <tr><td>Name</td></tr>
             </thead>
+            <tr><td>compileSdkVersion</td></tr>
+            <tr><td>buildToolsVersion</td></tr>
             <tr><td>defaultConfig</td></tr>
             <tr><td>sourceSets</td></tr>
             <tr><td>defaultPublishConfig</td></tr>
@@ -29,7 +31,6 @@
             <thead>
                 <tr><td>Name</td></tr>
             </thead>
-            <tr><td>compileSdkVersion</td></tr>
             <tr><td>sourceSets</td></tr>
             <tr><td>defaultConfig</td></tr>
             <tr><td>buildTypes</td></tr>
