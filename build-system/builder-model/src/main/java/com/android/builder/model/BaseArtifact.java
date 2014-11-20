@@ -33,6 +33,16 @@ public interface BaseArtifact {
     String getName();
 
     /**
+     * @return the name of the task used to compile Java code.
+     *
+     * @deprecated use {@link #getCompileTaskName()}
+     * STOPSHIP remove before 1.0
+     */
+    @NonNull
+    @Deprecated
+    String getJavaCompileTaskName();
+
+    /**
      * @return the name of the task used to compile the code.
      */
     @NonNull

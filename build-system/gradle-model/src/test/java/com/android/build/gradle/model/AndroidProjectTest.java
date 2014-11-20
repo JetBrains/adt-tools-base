@@ -82,7 +82,7 @@ public class AndroidProjectTest extends TestCase {
     private static final String FOLDER_TEST_SAMPLE = "samples";
     private static final String FOLDER_TEST_PROJECT = "test-projects";
 
-    private static final String MODEL_VERSION = "0.14.3";
+    private static final String MODEL_VERSION = "0.14.4";
 
     private static final Map<String, ProjectData> sProjectModelMap = Maps.newHashMap();
 
@@ -1443,16 +1443,6 @@ public class AndroidProjectTest extends TestCase {
                 assertTrue("Check " + abi + " present in artifact abi for " + variantName,
                         actualAbis.contains(abi));
             }
-        }
-    }
-
-    public void testInvalidAppDependencies() throws Exception {
-        try {
-            getModelForProject(FOLDER_TEST_PROJECT, "invalidDependencyOnAppProject");
-            fail("Should fail.");
-        } catch (BuildException e) {
-            assertTrue(e.getCause().getMessage().contains(
-                    "Only Android library projects can act as dependencies of other projects."));
         }
     }
 

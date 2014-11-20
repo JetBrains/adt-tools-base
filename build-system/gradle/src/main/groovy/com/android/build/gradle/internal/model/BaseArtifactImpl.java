@@ -70,6 +70,12 @@ class BaseArtifactImpl implements BaseArtifact, Serializable {
 
     @NonNull
     @Override
+    public String getJavaCompileTaskName() {
+        return compileTaskName;
+    }
+
+    @NonNull
+    @Override
     public String getCompileTaskName() {
         return compileTaskName;
     }
