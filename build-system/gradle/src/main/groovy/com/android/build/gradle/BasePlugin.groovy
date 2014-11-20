@@ -2637,11 +2637,10 @@ public abstract class BasePlugin {
                     // to add the filters if needed.
                     String classifier = variantData.variantDependency.publishConfiguration.name
                     if (variantOutputData.mainOutputFile.getFilter(OutputFile.DENSITY) != null) {
-                        classifier = classifier + '-'
-                            + variantOutputData.mainOutputFile.getFilter(OutputFile.DENSITY)
+                        classifier = "${classifier}-${variantOutputData.mainOutputFile.getFilter(OutputFile.DENSITY)}"
                     }
-                    if (variantOutputData.abiFilter != null) {
-                        classifier = classifier + '-' + variantOutputData.abiFilter
+                    if (variantOutputData.mainOutputFile.getFilter(OutputFile.ABI) != null) {
+                        classifier = "${classifier}-${variantOutputData.mainOutputFile.getFilter(OutputFile.ABI)}"
                     }
 
                     project.artifacts.add(variantData.variantDependency.publishConfiguration.name,
