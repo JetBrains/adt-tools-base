@@ -392,6 +392,13 @@ public class AaptPackageCommandBuilder {
             command.add(mPreferredDensity);
         }
 
+        if (buildToolInfo.getRevision().getMajor() < 21 && mPreferredDensity != null) {
+            logger.warning(String.format("Warning : Project is building density based multiple APKs"
+                    + " but using tools version %1$s, you should upgrade to build-tools 21 or above"
+                    + " to ensure proper packaging of resources.",
+                    buildToolInfo.getRevision().getMajor()));
+        }
+
         if (mSymbolOutputDir != null &&
                 (mType == VariantConfiguration.Type.LIBRARY || !mLibraries.isEmpty())) {
             command.add("--output-text-symbols");
