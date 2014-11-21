@@ -1,7 +1,7 @@
 <component name="libraryTable">
   <library name="groovy">
     <CLASSES>
-      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/org/codehaus/groovy/groovy-all/2.2.1/groovy-all-2.2.1.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../out/gradle-dist-link/lib/groovy-all-2.3.6.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />
