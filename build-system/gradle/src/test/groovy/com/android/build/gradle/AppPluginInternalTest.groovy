@@ -24,6 +24,9 @@ import com.android.builder.core.DefaultBuildType
 import com.android.builder.model.SigningConfig
 import com.android.ide.common.signing.KeystoreHelper
 import org.gradle.api.Project
+import org.gradle.api.artifacts.ModuleIdentifier
+import org.gradle.api.artifacts.ModuleVersionIdentifier
+import org.gradle.api.internal.artifacts.DefaultModuleVersionIdentifier
 import org.gradle.testfixtures.ProjectBuilder
 
 /**
@@ -428,12 +431,14 @@ public class AppPluginInternalTest extends BaseTest {
     }
 
     public void testPathNormalization() {
-        assertEquals("app", BasePlugin.normalize("app"));
-        assertEquals(".app", BasePlugin.normalize(".app"))
-        assertEquals("app@@@", BasePlugin.normalize("app..."))
-        assertEquals("app@@@", BasePlugin.normalize("app. ."))
-        assertEquals(".app@@", BasePlugin.normalize(".app%%"))
-        assertEquals("app.txt", BasePlugin.normalize("app.txt"))
-        assertEquals("app@@@txt", BasePlugin.normalize("app%*?txt"))
+        ModuleVersionIdentifier moduleVersionIdentifier = new DefaultModuleVersionIdentifier(
+                "group", "name", "1.2");
+        assertEquals("app", BasePlugin.normalize(moduleVersionIdentifier, "app"));
+        assertEquals(".app", BasePlugin.normalize(moduleVersionIdentifier, ".app"))
+        assertEquals("app@@@", BasePlugin.normalize(moduleVersionIdentifier, "app..."))
+        assertEquals("app@@@", BasePlugin.normalize(moduleVersionIdentifier, "app. ."))
+        assertEquals(".app@@", BasePlugin.normalize(moduleVersionIdentifier, ".app%%"))
+        assertEquals("app.txt", BasePlugin.normalize(moduleVersionIdentifier, "app.txt"))
+        assertEquals("app@@@txt", BasePlugin.normalize(moduleVersionIdentifier, "app%*?txt"))
     }
 }
