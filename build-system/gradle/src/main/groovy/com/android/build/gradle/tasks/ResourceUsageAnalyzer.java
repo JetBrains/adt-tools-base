@@ -96,7 +96,6 @@ import java.util.jar.JarOutputStream;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
-import java.util.zip.Deflater;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -301,8 +300,10 @@ public class ResourceUsageAnalyzer {
                 zis = new JarInputStream(fis);
                 JarOutputStream zos = new JarOutputStream(fos);
                 try {
-                    // The .ap_ file is also compressed
-                    zos.setLevel(Deflater.DEFAULT_COMPRESSION);
+                    // Rather than using Deflater.DEFAULT_COMPRESSION we use 9 here,
+                    // since that seems to match the compressed sizes we observe in source
+                    // .ap_ files encountered by the resource shrinker:
+                    zos.setLevel(9);
 
                     ZipEntry entry = zis.getNextEntry();
                     while (entry != null) {
@@ -310,7 +311,43 @@ public class ResourceUsageAnalyzer {
                         boolean directory = entry.isDirectory();
                         Resource resource = getResourceByJarPath(name);
                         if (resource == null || resource.reachable) {
-                            JarEntry outEntry = new JarEntry(entry);
+                            // We can't just compress all files; files that are not
+                            // compressed in the source .ap_ file must be left uncompressed
+                            // here, since for example RAW files need to remain uncompressed in
+                            // the APK such that they can be mmap'ed at runtime.
+                            //
+                            // Create the JarEntry manually rather than setting up
+                            // the JarEntry via new JarEntry(entry):
+                            // We don't know what the exact compressed size will
+                            // be for this file; it depends on the compression level,
+                            // and we don't have a way to know what it was for the
+                            // input file. Empirically it seems to be 9 (when it is
+                            // set to a different level the compressed sizes we produce
+                            // are larger than the ones we see in typical .ap_ input files).
+                            // However, we don't want to set the size specifically; we leave it
+                            // as the default value such that the actual compressed size
+                            // is used; without that we can hit errors like
+                            //   java.util.zip.ZipException: invalid entry compressed size
+                            //                     (expected 7344 but got 7352 bytes); ignoring
+                            // (see issue 80115 for more).
+                            //
+                            // However, for stored (not compressed) entries, we *do* have
+                            // to set the size and compressed size; without it, the zip
+                            // encoder will throw an exception. Luckily, for uncompressed files
+                            // we predictably know the compressed size. Therefore, we special case
+                            // this based on the entry's method.
+                            JarEntry outEntry = new JarEntry(entry.getName());
+                            if (entry.getTime() != -1L) {
+                                outEntry.setTime(entry.getTime());
+                            }
+                            int method = entry.getMethod();
+                            outEntry.setMethod(method);
+                            if (method == ZipEntry.STORED) {
+                                outEntry.setCompressedSize(entry.getCompressedSize());
+                                outEntry.setSize(entry.getSize());
+                                outEntry.setCrc(entry.getCrc());
+                            }
+
                             zos.putNextEntry(outEntry);
 
                             if (!directory) {
