@@ -426,4 +426,14 @@ public class AppPluginInternalTest extends BaseTest {
         assertNotNull(recordedException)
         assertEquals(BadPluginException.class, recordedException.getClass())
     }
+
+    public void testPathNormalization() {
+        assertEquals("app", BasePlugin.normalize("app"));
+        assertEquals(".app", BasePlugin.normalize(".app"))
+        assertEquals("app@@@", BasePlugin.normalize("app..."))
+        assertEquals("app@@@", BasePlugin.normalize("app. ."))
+        assertEquals(".app@@", BasePlugin.normalize(".app%%"))
+        assertEquals("app.txt", BasePlugin.normalize("app.txt"))
+        assertEquals("app@@@txt", BasePlugin.normalize("app%*?txt"))
+    }
 }
