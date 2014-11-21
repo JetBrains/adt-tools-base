@@ -39,6 +39,7 @@ import com.google.common.io.Files;
 import org.gradle.tooling.BuildLauncher;
 import org.gradle.tooling.GradleConnector;
 import org.gradle.tooling.ProjectConnection;
+import org.gradle.tooling.internal.consumer.DefaultGradleConnector;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
@@ -52,6 +53,7 @@ import java.security.CodeSource;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * JUnit4 test rule for integration test.
@@ -516,6 +518,10 @@ public class GradleTestProject implements TestRule {
     @NonNull
     private ProjectConnection getProjectConnection() {
         GradleConnector connector = GradleConnector.newConnector();
+
+        // Limit daemon idle time for tests. 10 seconds is enough for another test
+        // to start and reuse the daemon.
+        ((DefaultGradleConnector) connector).daemonMaxIdleTime(10, TimeUnit.SECONDS);
 
         return connector
                 .useGradleVersion(BasePlugin.GRADLE_TEST_VERSION)

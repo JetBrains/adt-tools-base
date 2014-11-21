@@ -22,6 +22,9 @@ task integrationTest(type: Test) {
     systemProperties['jar.path'] = jar.archivePath
     environment("CUSTOM_REPO", rootProject.file("../out/repo"))
 
+    forkEvery = 1
+    maxParallelForks = Runtime.runtime.availableProcessors() / 2
+
     useJUnit {
         excludeCategories "com.android.build.gradle.integration.common.category.DeviceTests"
     }
