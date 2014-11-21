@@ -76,19 +76,28 @@ android {
         assertEquals("foo-suffix", versionName);
     }
 
+
+
     @Test
     public void extraPropTest() {
         project.getBuildFile() << """
 android {
     buildTypes {
         debug {
-            ext.foo = true
+            ext.foo = "bar"
         }
     }
 
     applicationVariants.all { variant ->
         if (variant.buildType.name == "debug") {
             def foo = variant.buildType.foo
+            if (!foo.equals("bar")) {
+                throw new RuntimeException("direct access to dynamic property failed, got " + foo)
+            }
+            def hasProperty = variant.buildType.hasProperty("foo")
+            if (!hasProperty) {
+                throw new RuntimeException("hasProperty not returning property value, got " + hasProperty)
+            }
         }
     }
 }
