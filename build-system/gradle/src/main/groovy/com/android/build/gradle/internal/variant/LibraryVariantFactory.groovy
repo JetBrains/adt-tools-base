@@ -460,6 +460,13 @@ public class LibraryVariantFactory implements VariantFactory<LibraryVariantData>
      */
     @Override
     public void validateModel(VariantModel model) {
+        if (model.getDefaultConfig().getProductFlavor().getApplicationId() != null) {
+            throw new GradleException("Library projects cannot set applicationId. " +
+                    "applicationId is set to '" +
+                    model.getDefaultConfig().getProductFlavor().getApplicationId() +
+                    "' in default config.");
+        }
+
         for (BuildTypeData buildType : model.getBuildTypes().values()) {
             if (buildType.getBuildType().getApplicationIdSuffix() != null) {
                 throw new GradleException("Library projects cannot set applicationId. " +
