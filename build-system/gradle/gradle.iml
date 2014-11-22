@@ -71,15 +71,6 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../../out/gradle-dist-link/lib/groovy-all-2.3.6.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
           <root url="jar://$MODULE_DIR$/../../../../out/gradle-dist-link/lib/asm-all-5.0.3.jar!/" />
         </CLASSES>
         <JAVADOC />
@@ -1318,4 +1309,3 @@
     <orderEntry type="module" module-name="project-test-lib" scope="TEST" />
   </component>
 </module>
-
