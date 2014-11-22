@@ -122,4 +122,15 @@ abstract class ReadOnlyBaseConfig implements BaseConfig {
         throw new RuntimeException("Cannot set property @{name} on read-only ${baseConfig.class}")
     }
 
+    /**
+     * Provide dynamic properties refective access.
+     * @param name a property name
+     * @return true if this object of {@link #baseConfig} supports the passed property name
+     */
+    def hasProperty(String name) {
+        if (super.hasProperty(name)) {
+            return true
+        }
+        return baseConfig.hasProperty(name)
+    }
 }
