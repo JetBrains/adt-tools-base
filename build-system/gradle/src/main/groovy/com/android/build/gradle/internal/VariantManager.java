@@ -108,6 +108,12 @@ public class VariantManager implements VariantModel {
         this.variantFactory = variantFactory;
     }
 
+    @NonNull
+    @Override
+    public ProductFlavorData<ProductFlavor> getDefaultConfig() {
+        return basePlugin.getDefaultConfigData();
+    }
+
     @Override
     @NonNull
     public Map<String, BuildTypeData> getBuildTypes() {
