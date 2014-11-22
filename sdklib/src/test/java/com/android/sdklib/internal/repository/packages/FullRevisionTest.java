@@ -156,5 +156,4 @@ public class FullRevisionTest extends TestCase {
         assertTrue (c5.compareTo(o5)  > 0);     // 5.1.0-6  > 5.0.0-7
         assertTrue (o5.compareTo(o5) == 0);     // 5.0.0-7  > 5.0.0-7
     }
-
 }
