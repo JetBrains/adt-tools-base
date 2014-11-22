@@ -71,11 +71,9 @@ model {
     @Test
     public void assembleX86Debug() {
         project.execute("assembleX86Debug");
-        ZipFile apk = new ZipFile(
-                project.file(
-                        "build/outputs/apk/${project.name}-x86-debug.apk"));
 
         // Verify .so are built for all platform.
+        ZipFile apk = new ZipFile(project.getApk("x86", "debug"));
         assertNotNull(apk.getEntry("lib/x86/libhello-jni.so"));
         assertNull(apk.getEntry("lib/mips/libhello-jni.so"));
         assertNull(apk.getEntry("lib/armeabi/libhello-jni.so"));
@@ -86,11 +84,9 @@ model {
     public void assembleArmDebug() {
 
         project.execute("assembleArmeabi-v7aDebug");
-        ZipFile apk = new ZipFile(
-                project.file(
-                        "build/outputs/apk/${project.name}-armeabi-v7a-debug.apk"));
 
         // Verify .so are built for all platform.
+        ZipFile apk = new ZipFile(project.getApk("armeabi-v7a", "debug"));
         assertNull(apk.getEntry("lib/x86/libhello-jni.so"));
         assertNull(apk.getEntry("lib/mips/libhello-jni.so"));
         assertNull(apk.getEntry("lib/armeabi/libhello-jni.so"));
@@ -100,11 +96,9 @@ model {
     @Test
     public void assembleMipsDebug() {
         project.execute("assembleMipsDebug");
-        ZipFile apk = new ZipFile(
-                project.file(
-                        "build/outputs/apk/${project.name}-mips-debug.apk"));
 
         // Verify .so are built for all platform.
+        ZipFile apk = new ZipFile(project.getApk("mips", "debug"));
         assertNull(apk.getEntry("lib/x86/libhello-jni.so"));
         assertNotNull(apk.getEntry("lib/mips/libhello-jni.so"));
         assertNull(apk.getEntry("lib/armeabi/libhello-jni.so"));

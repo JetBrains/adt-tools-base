@@ -67,10 +67,9 @@ model {
     @Test
     public void assembleRelease() {
         project.execute("assembleRelease");
-        ZipFile apk = new ZipFile(
-                project.file("build/outputs/apk/${project.name}-release-unsigned.apk"));
 
         // Verify .so are built for all platform.
+        ZipFile apk = new ZipFile(project.getApk("release", "unsigned"));
         assertNotNull(apk.getEntry("lib/x86/libhello-jni.so"));
         assertNotNull(apk.getEntry("lib/mips/libhello-jni.so"));
         assertNotNull(apk.getEntry("lib/armeabi/libhello-jni.so"));
@@ -80,10 +79,9 @@ model {
     @Test
     public void assembleDebug() {
         project.execute("assembleDebug");
-        ZipFile apk = new ZipFile(
-                project.file("build/outputs/apk/${project.name}-debug.apk"));
 
         // Verify .so are built for all platform.
+        ZipFile apk = new ZipFile(project.getApk("debug"));
         assertNotNull(apk.getEntry("lib/x86/libhello-jni.so"));
         assertNotNull(apk.getEntry("lib/x86/gdbserver"));
         assertNotNull(apk.getEntry("lib/x86/gdb.setup"));

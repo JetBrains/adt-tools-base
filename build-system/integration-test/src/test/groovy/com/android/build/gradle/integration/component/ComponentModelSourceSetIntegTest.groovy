@@ -84,32 +84,28 @@ model {
     @Test
     void defaultBuildTypeSourceDirectory() {
         project.execute("assembleFlavor2Release");
-        ZipFile apk = new ZipFile(
-                project.file("build/outputs/apk/${project.name}-flavor2-release-unsigned.apk"));
+        ZipFile apk = new ZipFile(project.getApk("flavor2", "release", "unsigned"));
         assertNotNull(apk.getEntry("lib/x86/libhello-jni.so"));
     }
 
     @Test
     void defaultProductFlavorSourceDirectory() {
         project.execute("assembleFlavor1Debug");
-        ZipFile apk = new ZipFile(
-                project.file("build/outputs/apk/${project.name}-flavor1-debug.apk"));
+        ZipFile apk = new ZipFile(project.getApk("flavor1", "debug"));
         assertNotNull(apk.getEntry("lib/x86/libhello-jni.so"));
     }
 
     @Test
     void defaultVariantSourceDirectory() {
         project.execute("assembleFlavor2Debug");
-        ZipFile apk = new ZipFile(
-                project.file("build/outputs/apk/${project.name}-flavor2-debug.apk"));
+        ZipFile apk = new ZipFile(project.getApk("flavor2", "debug"));
         assertNotNull(apk.getEntry("lib/x86/libhello-jni.so"));
     }
 
     @Test
     void nonDefaultSourceDirectory() {
         project.execute("assembleFlavor3Debug");
-        ZipFile apk = new ZipFile(
-                project.file("build/outputs/apk/${project.name}-flavor3-debug.apk"));
+        ZipFile apk = new ZipFile(project.getApk("flavor3", "debug"));
         assertNotNull(apk.getEntry("lib/x86/libhello-jni.so"));
     }
 }

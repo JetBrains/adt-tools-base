@@ -35,7 +35,7 @@ public class LibraryExtension extends BaseExtension {
     private final DefaultDomainObjectSet<LibraryVariant> libraryVariantList =
         new DefaultDomainObjectSet<LibraryVariant>(LibraryVariant.class)
 
-    LibraryExtension(LibraryPlugin plugin, ProjectInternal project, Instantiator instantiator,
+    LibraryExtension(BasePlugin plugin, ProjectInternal project, Instantiator instantiator,
             NamedDomainObjectContainer<BuildType> buildTypes,
             NamedDomainObjectContainer<GroupableProductFlavor> productFlavors,
             NamedDomainObjectContainer<SigningConfig> signingConfigs,

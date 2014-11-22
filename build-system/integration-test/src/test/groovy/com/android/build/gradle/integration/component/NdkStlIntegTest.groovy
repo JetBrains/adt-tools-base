@@ -93,8 +93,7 @@ model {
         if (!stl.equals("invalid")) {
             project.execute("assembleDebug");
 
-            ZipFile apk = new ZipFile(
-                    project.file("build/outputs/apk/${project.testDir.name}-debug.apk"));
+            ZipFile apk = new ZipFile(project.getApk("debug"));
             assertNotNull(apk.getEntry("lib/x86/libhello-jni.so"));
             assertNotNull(apk.getEntry("lib/mips/libhello-jni.so"));
             assertNotNull(apk.getEntry("lib/armeabi/libhello-jni.so"));
