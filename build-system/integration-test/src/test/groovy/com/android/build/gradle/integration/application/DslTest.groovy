@@ -75,4 +75,26 @@ android {
         assertNotNull(versionName)
         assertEquals("foo-suffix", versionName);
     }
+
+    @Test
+    public void extraPropTest() {
+        project.getBuildFile() << """
+android {
+    buildTypes {
+        debug {
+            ext.foo = true
+        }
+    }
+
+    applicationVariants.all { variant ->
+        if (variant.buildType.name == "debug") {
+            def foo = variant.buildType.foo
+        }
+    }
+}
+"""
+        // no need to do a full build. Let's just run the tasks.
+        project.execute("tasks")
+
+    }
 }
