@@ -23,6 +23,7 @@ import org.junit.Rule
 import org.junit.Test
 
 import static org.junit.Assert.assertTrue
+import static org.junit.Assert.fail
 /**
  * Check that a project can depend on a jar dependency published by another app project.
  */
@@ -104,8 +105,9 @@ dependencies {
 """
         try {
             project.execute('clean', 'app2:assembleDebug')
+            fail('Broken build file did not throw exception')
         } catch (BuildException e) {
-            Exception cause = e;
+            Throwable cause = e;
             while (cause.getCause() != null) {
                 cause = cause.getCause();
             }
