@@ -141,7 +141,15 @@ public class ApkInfoParser {
             throw new RuntimeException("Failed to find apk information with aapt");
         }
 
-        return new ApkInfo(pkgName, Integer.parseInt(versionCode), versionName);
+        int intVersionCode;
+        try {
+            intVersionCode = Integer.parseInt(versionCode);
+        } catch(NumberFormatException e) {
+            throw new RuntimeException(
+                    String.format("Invalid versionCode specified '%1$s'", versionCode));
+        }
+
+        return new ApkInfo(pkgName, intVersionCode, versionName);
     }
 
     /**

@@ -337,7 +337,7 @@ public class XmlDocument {
                 return targetSdkVersion.get().getValue();
             }
         }
-        return getMinSdkVersion();
+        return getRawMinSdkVersion();
     }
 
     /**
@@ -398,8 +398,14 @@ public class XmlDocument {
             }
         }
         int thisTargetSdk = getApiLevelFromAttribute(getTargetSdkVersion());
+
+        // when we are importing a library, we should never use the build.gradle injected
+        // values (only valid for overlay, main manifest) so use the raw versions coming from
+        // the AndroidManifest.xml
         int libraryTargetSdk = getApiLevelFromAttribute(
-                lowerPriorityDocument.getTargetSdkVersion());
+                lowerPriorityDocument.getFileType() == Type.LIBRARY
+                    ? lowerPriorityDocument.getRawTargetSdkVersion()
+                    : lowerPriorityDocument.getTargetSdkVersion());
 
         // if library is using a code name rather than an API level, make sure this document target
         // sdk version is using the same code name.
@@ -421,7 +427,7 @@ public class XmlDocument {
         }
         // same for minSdkVersion, if the library is using a code name, the application must
         // also be using the same code name.
-        String libraryMinSdkVersion = lowerPriorityDocument.getMinSdkVersion();
+        String libraryMinSdkVersion = lowerPriorityDocument.getRawMinSdkVersion();
         if (!Character.isDigit(libraryMinSdkVersion.charAt(0))) {
             // this is a code name, ensure this document uses the same code name.
             if (!libraryMinSdkVersion.equals(getMinSdkVersion())) {
