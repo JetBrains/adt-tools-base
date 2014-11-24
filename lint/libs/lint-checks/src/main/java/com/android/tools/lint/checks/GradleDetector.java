@@ -29,7 +29,7 @@ import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.ide.common.repository.GradleCoordinate;
 import com.android.ide.common.repository.SdkMavenRepository;
-import com.android.sdklib.repository.FullRevision;
+import com.android.sdklib.repository.PreciseRevision;
 import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
@@ -382,9 +382,9 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
         } else if (property.equals("buildToolsVersion") && parent.equals("android")) {
             String versionString = getStringLiteralValue(value);
             if (versionString != null) {
-                FullRevision version = parseRevisionSilently(versionString);
+                PreciseRevision version = parseRevisionSilently(versionString);
                 if (version != null) {
-                    FullRevision recommended = getLatestBuildTools(context.getClient(),
+                    PreciseRevision recommended = getLatestBuildTools(context.getClient(),
                             version.getMajor());
                     if (recommended != null && version.compareTo(recommended) < 0) {
                         // Keep in sync with {@link #getOldValue} and {@link #getNewValue}
@@ -642,9 +642,9 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
     }
 
     @Nullable
-    private static FullRevision parseRevisionSilently(String versionString) {
+    private static PreciseRevision parseRevisionSilently(String versionString) {
         try {
-            return FullRevision.parseRevision(versionString);
+            return PreciseRevision.parseRevision(versionString);
         } catch (Throwable t) {
             return null;
         }
@@ -655,7 +655,7 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
     }
 
     private static int sMajorBuildTools;
-    private static FullRevision sLatestBuildTools;
+    private static PreciseRevision sLatestBuildTools;
 
     /** Returns the latest build tools installed for the given major version.
      * We just cache this once; we don't need to be accurate in the sense that if the
@@ -667,17 +667,19 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
      * @return the corresponding highest known revision
      */
     @Nullable
-    private static FullRevision getLatestBuildTools(@NonNull LintClient client, int major) {
+    private static PreciseRevision getLatestBuildTools(@NonNull LintClient client, int major) {
         if (major != sMajorBuildTools) {
             sMajorBuildTools = major;
 
-            List<FullRevision> revisions = Lists.newArrayList();
-            if (major == 20) {
-                revisions.add(new FullRevision(20, 0, 0));
+            List<PreciseRevision> revisions = Lists.newArrayList();
+            if (major == 21) {
+                revisions.add(new PreciseRevision(21, 1, 1));
+            } else if (major == 20) {
+                revisions.add(new PreciseRevision(20));
             } else if (major == 19) {
-                revisions.add(new FullRevision(19, 1, 0));
+                revisions.add(new PreciseRevision(19, 1));
             } else if (major == 18) {
-                revisions.add(new FullRevision(18, 1, 1));
+                revisions.add(new PreciseRevision(18, 1, 1));
             }
             // The above versions can go stale.
             // Check if a more recent one is installed. (The above are still useful for
@@ -691,7 +693,7 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
                         if (!dir.isDirectory() || !Character.isDigit(name.charAt(0))) {
                             continue;
                         }
-                        FullRevision v = parseRevisionSilently(name);
+                        PreciseRevision v = parseRevisionSilently(name);
                         if (v != null && v.getMajor() == major) {
                             revisions.add(v);
                         }
@@ -791,33 +793,30 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
             return;
         }
 
-        FullRevision version = null;
+        PreciseRevision version = null;
         Issue issue = DEPENDENCY;
-        boolean includeMicro = true;
         if ("com.android.tools.build".equals(dependency.getGroupId()) &&
                 "gradle".equals(dependency.getArtifactId())) {
-            FullRevision v = FullRevision.parseRevision(GRADLE_PLUGIN_RECOMMENDED_VERSION);
+            PreciseRevision v = PreciseRevision.parseRevision(GRADLE_PLUGIN_RECOMMENDED_VERSION);
             try {
-                version = getNewerRevision(dependency, v.getMajor(), v.getMinor(), v.getMicro());
+                version = getNewerRevision(dependency, v);
             } catch (NumberFormatException e) {
                 context.log(e, null);
             }
         } else if ("com.google.guava".equals(dependency.getGroupId()) &&
                 "guava".equals(dependency.getArtifactId())) {
-            version = getNewerRevision(dependency, 18, 0, 0);
-            includeMicro = false;
+            version = getNewerRevision(dependency, new PreciseRevision(18, 0));
         } else if ("com.google.code.gson".equals(dependency.getGroupId()) &&
                 "gson".equals(dependency.getArtifactId())) {
-            version = getNewerRevision(dependency, 2, 3, 0);
-            includeMicro = false;
+            version = getNewerRevision(dependency, new PreciseRevision(2, 3));
         } else if ("org.apache.httpcomponents".equals(dependency.getGroupId()) &&
                 "httpclient".equals(dependency.getArtifactId())) {
-            version = getNewerRevision(dependency, 4, 3, 5);
+            version = getNewerRevision(dependency, new PreciseRevision(4, 3, 5));
         }
 
         // Network check for really up to date libraries? Only done in batch mode
         if (context.getScope().size() > 1 && context.isEnabled(REMOTE_VERSION)) {
-            FullRevision latest = getLatestVersion(context, dependency, dependency.isPreview());
+            PreciseRevision latest = getLatestVersion(context, dependency, dependency.isPreview());
             if (latest != null && isOlderThan(dependency, latest.getMajor(), latest.getMinor(),
                     latest.getMicro())) {
                 version = latest;
@@ -826,19 +825,14 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
         }
 
         if (version != null) {
-            String message = getNewerVersionAvailableMessage(dependency, version, includeMicro);
+            String message = getNewerVersionAvailableMessage(dependency, version);
             report(context, cookie, issue, message);
         }
     }
 
     private static String getNewerVersionAvailableMessage(GradleCoordinate dependency,
-            FullRevision version, boolean includeMicro) {
-        String versionString = includeMicro || version.getMicro() != 0 || version.isPreview()
-                ? version.toString()
-                // We can't use version#toShortString because that will turn 18.0 into 18
-                // which we don't want.
-                : (version.getMajor() + "." + version.getMinor());
-        return getNewerVersionAvailableMessage(dependency, versionString);
+            PreciseRevision version) {
+        return getNewerVersionAvailableMessage(dependency, version.toString());
     }
 
     private static String getNewerVersionAvailableMessage(GradleCoordinate dependency,
@@ -850,12 +844,12 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
     }
 
     /** TODO: Cache these results somewhere! */
-    private static FullRevision getLatestVersion(@NonNull Context context,
+    private static PreciseRevision getLatestVersion(@NonNull Context context,
             @NonNull GradleCoordinate dependency, boolean allowPreview) {
         return getLatestVersion(context, dependency, true, allowPreview);
     }
 
-    private static FullRevision getLatestVersion(@NonNull Context context,
+    private static PreciseRevision getLatestVersion(@NonNull Context context,
             @NonNull GradleCoordinate dependency, boolean firstRowOnly, boolean allowPreview) {
         StringBuilder query = new StringBuilder();
         String encoding = UTF_8.name();
@@ -920,7 +914,7 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
                 int start = response.indexOf('"', index) + 1;
                 int end = response.indexOf('"', start + 1);
                 if (end > start && start >= 0) {
-                    FullRevision revision = parseRevisionSilently(response.substring(start, end));
+                    PreciseRevision revision = parseRevisionSilently(response.substring(start, end));
                     if (revision != null) {
                         foundPreview = revision.isPreview();
                         if (allowPreview || !foundPreview) {
@@ -1069,14 +1063,14 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
         }
     }
 
-    private static FullRevision getNewerRevision(@NonNull GradleCoordinate dependency,
-            int major, int minor, int micro) {
+    private static PreciseRevision getNewerRevision(@NonNull GradleCoordinate dependency,
+            PreciseRevision revision) {
         assert dependency.getGroupId() != null;
         assert dependency.getArtifactId() != null;
         if (COMPARE_PLUS_HIGHER.compare(dependency,
-                new GradleCoordinate(dependency.getGroupId(),
-                        dependency.getArtifactId(), major, minor, micro)) < 0) {
-            return new FullRevision(major, minor, micro);
+                new GradleCoordinate(dependency.getGroupId(), dependency.getArtifactId(),
+                        revision.getMajor(), revision.getMinor(), revision.getMicro())) < 0) {
+            return revision;
         } else {
             return null;
         }
