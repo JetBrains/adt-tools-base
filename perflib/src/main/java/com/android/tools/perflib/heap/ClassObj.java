@@ -176,6 +176,11 @@ public class ClassObj extends Instance implements Comparable<ClassObj> {
         return 0 == compareTo((ClassObj) o);
     }
 
+    @Override
+    public int hashCode() {
+        return mClassName.hashCode();
+    }
+
     @VisibleForTesting
     Object getStaticField(Type type, String name) {
         return getStaticFieldValues().get(new Field(type, name));
