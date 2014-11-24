@@ -98,16 +98,22 @@ public class PreciseRevision extends FullRevision {
 
     @Override
     public int[] toIntArray(boolean includePreview) {
-        int[] result = new int[mPrecision];
+        int[] result;
+        if (mPrecision >= PRECISION_PREVIEW && isPreview()) {
+            if (includePreview) {
+                result = new int[mPrecision];
+                result[3] = getPreview();
+            } else {
+                result = new int[mPrecision - 1];
+            }
+        } else {
+            result = new int[mPrecision];
+        }
         result[0] = getMajor();
-
         if (mPrecision >= PRECISION_MINOR) {
             result[1] = getMinor();
             if (mPrecision >= PRECISION_MICRO) {
                 result[2] = getMicro();
-                if (mPrecision >= PRECISION_PREVIEW && isPreview()) {
-                    result[3] = getPreview();
-                }
             }
         }
 
