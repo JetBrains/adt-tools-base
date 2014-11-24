@@ -226,6 +226,11 @@ public class NdkHandler {
                         return file.isDirectory();
                     }
                 });
+
+        if (toolchainPaths == null) {
+            throw new InvalidUserDataException("Unable to find toolchain: "
+                    + prebuiltFolder);
+        }
         if (toolchainPaths.length == 1) {
             return toolchainPaths[0];
         }
