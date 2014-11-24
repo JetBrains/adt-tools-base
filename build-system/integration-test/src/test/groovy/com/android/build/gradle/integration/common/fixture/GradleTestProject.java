@@ -74,7 +74,7 @@ public class GradleTestProject implements TestRule {
 
     public static final String DEFAULT_BUILD_TOOL_VERSION = "21.0.1";
 
-    private static final String ANDROID_GRADLE_VERSION = "0.14.4";
+    private static final String ANDROID_GRADLE_VERSION = "1.0.0-rc1";
 
     public static class Builder {
         private static final File SAMPLE_PROJECT_DIR = new File("samples");
