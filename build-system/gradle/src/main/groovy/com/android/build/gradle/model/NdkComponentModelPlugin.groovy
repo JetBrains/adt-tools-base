@@ -35,12 +35,12 @@ import org.gradle.api.internal.project.ProjectIdentifier
 import org.gradle.api.tasks.TaskContainer
 import org.gradle.internal.reflect.Instantiator
 import org.gradle.internal.service.ServiceRegistry
-import org.gradle.language.base.ProjectSourceSet
 import org.gradle.model.Finalize
 import org.gradle.model.Model
 import org.gradle.model.Mutate
 import org.gradle.model.Path
 import org.gradle.model.RuleSource
+import org.gradle.model.collection.CollectionBuilder
 import org.gradle.nativeplatform.BuildTypeContainer
 import org.gradle.nativeplatform.FlavorContainer
 import org.gradle.nativeplatform.NativeLibraryBinarySpec
@@ -136,19 +136,17 @@ class NdkComponentModelPlugin implements Plugin<Project> {
                 ComponentSpecContainer specs,
                 NdkExtension extension,
                 NdkHandler ndkHandler,
-                ProjectSourceSet sources,
+                AndroidComponentModelSourceSet sources,
                 @Path("buildDir") File buildDir) {
             if (!extension.moduleName.isEmpty()) {
+                NativeLibrarySpec library = specs.create(extension.moduleName, NativeLibrarySpec)
                 specs.withType(DefaultAndroidComponentSpec) { androidSpec ->
-                    NativeLibrarySpec library =
-                            specs.create(extension.moduleName, NativeLibrarySpec)
                     androidSpec.nativeLibrary = library
                     NdkConfiguration.configureProperties(
                             library, sources, buildDir, extension, ndkHandler)
                 }
             }
         }
-
         @Mutate
         void createAdditionalTasksForNatives(
                 TaskContainer tasks,
@@ -186,7 +184,7 @@ class NdkComponentModelPlugin implements Plugin<Project> {
          */
         @Mutate
         void configureNativeSourceSet(
-                ProjectSourceSet sources,
+                AndroidComponentModelSourceSet sources,
                 NamedDomainObjectContainer<DefaultBuildType> buildTypes,
                 NamedDomainObjectContainer<com.android.build.gradle.internal.dsl.GroupableProductFlavor> flavors,
                 List<ProductFlavorCombo> flavorGroups,

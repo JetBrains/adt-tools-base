@@ -16,11 +16,11 @@
 
 package com.android.build.gradle.ndk.internal
 
+import com.android.build.gradle.model.AndroidComponentModelSourceSet
 import com.android.build.gradle.ndk.NdkExtension
 import com.android.build.gradle.tasks.GdbSetupTask
 import com.android.builder.core.BuilderConstants
 import org.gradle.api.tasks.TaskContainer
-import org.gradle.language.base.ProjectSourceSet
 import org.gradle.language.base.FunctionalSourceSet
 import org.gradle.language.c.CSourceSet
 import org.gradle.language.cpp.CppSourceSet
@@ -39,7 +39,7 @@ import org.gradle.platform.base.BinarySpec
 class NdkConfiguration {
 
     public static void configureSources(
-            ProjectSourceSet sources,
+            AndroidComponentModelSourceSet sources,
             String sourceSetName,
             NdkExtension ndkExtension) {
         sources.maybeCreate(sourceSetName).configure {
@@ -70,7 +70,7 @@ class NdkConfiguration {
 
     public static void configureProperties(
             NativeLibrarySpec library,
-            ProjectSourceSet sources,
+            AndroidComponentModelSourceSet sources,
             File buildDir,
             NdkExtension ndkExtension,
             NdkHandler ndkHandler) {
@@ -151,7 +151,7 @@ class NdkConfiguration {
      */
     private static void sourceIfExist(
             BinarySpec binary,
-            ProjectSourceSet projectSourceSet,
+            AndroidComponentModelSourceSet projectSourceSet,
             String sourceSetName) {
         FunctionalSourceSet sourceSet = projectSourceSet.findByName(sourceSetName)
         if (sourceSet != null) {

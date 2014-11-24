@@ -68,7 +68,7 @@ model {
         flavor2
         flavor3
     }
-    sources {
+    androidsources {
         flavor3 {
             c {
                 source {
