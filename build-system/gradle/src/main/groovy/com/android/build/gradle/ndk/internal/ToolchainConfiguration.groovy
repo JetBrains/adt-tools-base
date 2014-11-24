@@ -30,7 +30,7 @@ class ToolchainConfiguration {
 
     private static final String DEFAULT_GCC32_VERSION="4.6"
     private static final String DEFAULT_GCC64_VERSION="4.9"
-    private static final String DEFAULT_LLVM_VERSION="3.5"
+    private static final String DEFAULT_LLVM_VERSION="3.4"
 
     private static final GCC_PREFIX = [
             (SdkConstants.ABI_INTEL_ATOM) : "i686-linux-android",
