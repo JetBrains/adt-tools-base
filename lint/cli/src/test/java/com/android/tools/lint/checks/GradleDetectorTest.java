@@ -219,7 +219,7 @@ public class GradleDetectorTest extends AbstractCheckTest {
             + "build.gradle:1: Warning: 'android' is deprecated; use 'com.android.application' instead [GradleDeprecated]\n"
             + "apply plugin: 'android'\n"
             + "~~~~~~~~~~~~~~~~~~~~~~~\n"
-            + "build.gradle:5: Warning: Old buildToolsVersion 19.0.0; recommended version is 19.1.0 or later [GradleDependency]\n"
+            + "build.gradle:5: Warning: Old buildToolsVersion 19.0.0; recommended version is 19.1 or later [GradleDependency]\n"
             + "    buildToolsVersion \"19.0.0\"\n"
             + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
             + "build.gradle:24: Warning: A newer version of com.google.guava:guava than 11.0.2 is available: 18.0 [GradleDependency]\n"
@@ -275,7 +275,7 @@ public class GradleDetectorTest extends AbstractCheckTest {
     public void testDependencies() throws Exception {
         mEnabled = Collections.singleton(DEPENDENCY);
         assertEquals(""
-                + "build.gradle:5: Warning: Old buildToolsVersion 19.0.0; recommended version is 19.1.0 or later [GradleDependency]\n"
+                + "build.gradle:5: Warning: Old buildToolsVersion 19.0.0; recommended version is 19.1 or later [GradleDependency]\n"
                 + "    buildToolsVersion \"19.0.0\"\n"
                 + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                 + "build.gradle:24: Warning: A newer version of com.google.guava:guava than 11.0.2 is available: 18.0 [GradleDependency]\n"
@@ -463,7 +463,7 @@ public class GradleDetectorTest extends AbstractCheckTest {
                     "{\"responseHeader\":{\"status\":0,\"QTime\":1,\"params\":{\"fl\":\"id,g,a,v,p,ec,timestamp,tags\",\"sort\":\"score desc,timestamp desc,g asc,a asc,v desc\",\"indent\":\"off\",\"q\":\"g:\\\"com.squareup.dagger\\\" AND a:\\\"dagger\\\"\",\"core\":\"gav\",\"wt\":\"json\",\"rows\":\"1\",\"version\":\"2.2\"}},\"response\":{\"numFound\":5,\"start\":0,\"docs\":[{\"id\":\"com.squareup.dagger:dagger:1.2.1\",\"g\":\"com.squareup.dagger\",\"a\":\"dagger\",\"v\":\"1.2.1\",\"p\":\"jar\",\"timestamp\":1392614597000,\"tags\":[\"dependency\",\"android\",\"injector\",\"java\",\"fast\"],\"ec\":[\"-javadoc.jar\",\"-sources.jar\",\"-tests.jar\",\".jar\",\".pom\"]}]}}");
 
             assertEquals(""
-                    + "build.gradle:9: Warning: A newer version of joda-time:joda-time than 2.1 is available: 2.3.0 [NewerVersionAvailable]\n"
+                    + "build.gradle:9: Warning: A newer version of joda-time:joda-time than 2.1 is available: 2.3 [NewerVersionAvailable]\n"
                     + "    compile 'joda-time:joda-time:2.1'\n"
                     + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                     + "build.gradle:10: Warning: A newer version of com.squareup.dagger:dagger than 1.2.0 is available: 1.2.1 [NewerVersionAvailable]\n"
