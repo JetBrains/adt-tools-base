@@ -863,12 +863,15 @@ public class AndroidBuilder {
                 Charsets.UTF_8);
     }
 
-    public void generateApkDataEntryInManifest(@NonNull File manifestFile)
+    public void generateApkDataEntryInManifest(
+                    int minSdkVersion,
+                    @NonNull File manifestFile)
             throws InterruptedException, LoggedErrorException, IOException {
 
         String content =
                 "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
                 "<manifest package=\"\" xmlns:android=\"http://schemas.android.com/apk/res/android\">\n" +
+                "    <uses-sdk android:minSdkVersion=\"" + minSdkVersion + "\"/>\n" +
                 "    <application>\n" +
                         "        <meta-data android:name=\"" + ANDROID_WEAR + "\"\n" +
                 "                   android:resource=\"@xml/" + ANDROID_WEAR_MICRO_APK + "\" />\n" +
