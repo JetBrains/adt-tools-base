@@ -29,8 +29,6 @@ model {
             versionCode = 123
         }
 
-        buildTypes.debug.jniDebugBuild true
-
         // make per-variant version code
         applicationVariants.all { variant ->
             // get the single flavor
@@ -40,6 +38,12 @@ model {
             variant.mergedFlavor.versionCode = flavorVersion * 1000000 + defaultConfig.versionCode
         }
     }
+    android.buildTypes {
+        debug {
+            debuggable true
+        }
+    }
+
     android.ndk {
         compileSdkVersion 19
         moduleName "sanangeles"
