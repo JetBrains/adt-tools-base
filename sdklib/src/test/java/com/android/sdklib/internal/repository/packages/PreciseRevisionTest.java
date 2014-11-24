@@ -42,8 +42,8 @@ public class PreciseRevisionTest extends TestCase {
         assertEquals(p, PreciseRevision.parseRevision("5"));
         assertEquals("5", p.toString());
         assertEquals(p, PreciseRevision.parseRevision("5"));
-        assertEquals("[5, 0, 0]",    Arrays.toString(p.toIntArray(false /*includePreview*/)));
-        assertEquals("[5, 0, 0, 0]", Arrays.toString(p.toIntArray(true  /*includePreview*/)));
+        assertEquals("[5]",    Arrays.toString(p.toIntArray(false /*includePreview*/)));
+        assertEquals("[5]", Arrays.toString(p.toIntArray(true  /*includePreview*/)));
 
         p = new PreciseRevision(5, 0);
         assertEquals(5, p.getMajor());
@@ -55,8 +55,8 @@ public class PreciseRevisionTest extends TestCase {
         assertEquals(new PreciseRevision(5), PreciseRevision.parseRevision("5"));
         assertEquals("5.0", p.toString());
         assertEquals(p, PreciseRevision.parseRevision("5.0"));
-        assertEquals("[5, 0, 0]",    Arrays.toString(p.toIntArray(false /*includePreview*/)));
-        assertEquals("[5, 0, 0, 0]", Arrays.toString(p.toIntArray(true  /*includePreview*/)));
+        assertEquals("[5, 0]",    Arrays.toString(p.toIntArray(false /*includePreview*/)));
+        assertEquals("[5, 0]", Arrays.toString(p.toIntArray(true  /*includePreview*/)));
 
         p = new PreciseRevision(5, 0, 0);
         assertEquals(5, p.getMajor());
@@ -69,7 +69,7 @@ public class PreciseRevisionTest extends TestCase {
         assertEquals("5.0.0", p.toString());
         assertEquals(p, PreciseRevision.parseRevision("5.0.0"));
         assertEquals("[5, 0, 0]",    Arrays.toString(p.toIntArray(false /*includePreview*/)));
-        assertEquals("[5, 0, 0, 0]", Arrays.toString(p.toIntArray(true  /*includePreview*/)));
+        assertEquals("[5, 0, 0]", Arrays.toString(p.toIntArray(true  /*includePreview*/)));
 
         p = new PreciseRevision(5, 0, 0, 6);
         assertEquals(5, p.getMajor());
@@ -96,7 +96,7 @@ public class PreciseRevisionTest extends TestCase {
         assertEquals("6.7.0", p.toString());
         assertEquals(p, PreciseRevision.parseRevision("6.7.0"));
         assertEquals("[6, 7, 0]",    Arrays.toString(p.toIntArray(false /*includePreview*/)));
-        assertEquals("[6, 7, 0, 0]", Arrays.toString(p.toIntArray(true  /*includePreview*/)));
+        assertEquals("[6, 7, 0]", Arrays.toString(p.toIntArray(true  /*includePreview*/)));
 
         p = new PreciseRevision(10, 11, 12, PreciseRevision.NOT_A_PREVIEW);
         assertEquals(10, p.getMajor());
