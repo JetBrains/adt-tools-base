@@ -65,15 +65,16 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
 
         // Remove this when our models no longer depends on Project.
         project.modelRegistry.create(
-                ModelCreators.of(ModelReference.of("projectModel", Project), project)
-                        .simpleDescriptor("Model of project.")
-                        .build())
+                ModelCreators.bridgedInstance(
+                        ModelReference.of("projectModel", Project), project)
+                                .simpleDescriptor("Model of project.")
+                                .build())
     }
 
     @RuleSource
     static class Rules {
 
-        @Model("android.buildTypes")
+        @Model("androidBuildTypes")
         NamedDomainObjectContainer<DefaultBuildType> createBuildTypes(
                 ServiceRegistry serviceRegistry,
                 Project project) {
@@ -91,7 +92,7 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
             return buildTypeContainer
         }
 
-        @Model("android.productFlavors")
+        @Model("androidProductFlavors")
         NamedDomainObjectContainer<GroupableProductFlavor> createProductFlavors(
                 ServiceRegistry serviceRegistry,
                 Project project) {

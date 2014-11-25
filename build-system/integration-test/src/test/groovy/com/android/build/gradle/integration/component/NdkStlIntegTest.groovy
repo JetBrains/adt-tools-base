@@ -74,7 +74,7 @@ model {
         compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
         buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
     }
-    android.ndk {
+    androidNdk {
         moduleName "hello-jni"
     }
 }
@@ -85,7 +85,7 @@ model {
     public void buildAppWithStl() {
         project.getBuildFile() << """
 model {
-    android.ndk {
+    androidNdk {
         stl "$stl"
     }
 }

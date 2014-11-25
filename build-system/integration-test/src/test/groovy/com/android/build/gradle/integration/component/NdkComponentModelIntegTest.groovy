@@ -41,7 +41,7 @@ import com.android.build.gradle.model.NdkComponentModelPlugin
 apply plugin: NdkComponentModelPlugin
 
 model {
-    android.ndk {
+    androidNdk {
         compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
         moduleName "hello-jni"
     }

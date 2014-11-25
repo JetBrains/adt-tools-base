@@ -97,16 +97,17 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
      */
     @Override
     protected void doApply() {
-        project.plugins.apply(AndroidComponentModelPlugin)
+        project.apply plugin: AndroidComponentModelPlugin
 
         configureProject()
 
-        project.plugins.apply(NdkComponentModelPlugin)
+        project.apply plugin: NdkComponentModelPlugin
 
         project.modelRegistry.create(
-                ModelCreators.of(ModelReference.of("androidBasePlugin", BasePlugin.class), this)
-                        .simpleDescriptor("Android BaseComponentModelPlugin.")
-                        .build())
+                ModelCreators.bridgedInstance(
+                        ModelReference.of("androidBasePlugin", BasePlugin.class), this)
+                                .simpleDescriptor("Android BaseComponentModelPlugin.")
+                                .build())
     }
 
     @RuleSource
@@ -146,7 +147,7 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
             }
         }
 
-        @Model("android.signingConfig")
+        @Model("androidSigningConfig")
         NamedDomainObjectContainer<SigningConfig> signingConfig(ServiceRegistry serviceRegistry,
                 BasePlugin plugin) {
             Instantiator instantiator = serviceRegistry.get(Instantiator.class);

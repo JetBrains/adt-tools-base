@@ -62,7 +62,7 @@ class NdkComponentModelPlugin implements Plugin<Project> {
     void apply(Project project) {
         this.project = project
 
-        project.plugins.apply(AndroidComponentModelPlugin)
+        project.apply plugin: AndroidComponentModelPlugin
 
         project.apply plugin: 'c'
         project.apply plugin: 'cpp'
@@ -75,7 +75,7 @@ class NdkComponentModelPlugin implements Plugin<Project> {
 
     @RuleSource
     static class Rules {
-        @Model("android.ndk")
+        @Model("androidNdk")
         NdkExtension createAndroidNdk(ServiceRegistry serviceRegistry) {
             Instantiator instantiator = serviceRegistry.get(Instantiator.class)
             return instantiator.newInstance(NdkExtension)

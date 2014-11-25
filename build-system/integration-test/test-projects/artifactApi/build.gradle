@@ -33,7 +33,7 @@ android.registerArtifactType("__test__", false, ArtifactMetaData.TYPE_JAVA)
 
 // register a new SourceProvider per build type, and associate it with the artifact
 // registered above.
-android.buildTypes.all { type ->
+androidBuildTypes.all { type ->
     project.android.registerBuildTypeSourceProvider(
            "__test__",                              // registered name of the artifact type
            type,                                    // associate it with a BuildType
@@ -41,7 +41,7 @@ android.buildTypes.all { type ->
 }
 
 // Same with ProductFlavor
-android.productFlavors.all { flavor ->
+androidProductFlavors.all { flavor ->
     project.android.registerProductFlavorSourceProvider(
             "__test__",                                  // registered name of the artifact type
             flavor,                                      // associate it with a ProductFlavor

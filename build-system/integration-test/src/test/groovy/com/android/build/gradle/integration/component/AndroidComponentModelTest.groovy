@@ -36,10 +36,10 @@ import com.android.build.gradle.model.AndroidComponentModelPlugin
 apply plugin: AndroidComponentModelPlugin
 
 model {
-    android.buildTypes {
+    androidBuildTypes {
         custom
     }
-    android.productFlavors {
+    androidProductFlavors {
         flavor1
         flavor2
     }
