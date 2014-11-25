@@ -47,22 +47,31 @@ public class ArrayInstance extends Instance {
 
     @Override
     public final int getSize() {
+        // TODO: Take the rest of the fields into account: length, type, etc (~16 bytes).
         return mLength * mType.getSize();
     }
 
     @Override
     public final void accept(@NonNull Visitor visitor) {
-        if (mType != Type.OBJECT) {
-            return;
-        }
-
         if (visitor.visitEnter(this)) {
-            for (Object value : getValues()) {
-                if (value instanceof Instance) {
-                    ((Instance) value).accept(visitor);
+            if (mType == Type.OBJECT) {
+                for (Object value : getValues()) {
+                    if (value instanceof Instance) {
+                        ((Instance) value).accept(visitor);
+                    }
                 }
             }
             visitor.visitLeave(this);
+        }
+    }
+
+    @Override
+    public ClassObj getClassObj() {
+        if (mType == Type.OBJECT) {
+            return super.getClassObj();
+        } else {
+            // Primitive arrays don't set their classId, we need to do the lookup manually.
+            return mHeap.mSnapshot.findClass(Type.getClassNameOfPrimitiveArray(mType));
         }
     }
 
