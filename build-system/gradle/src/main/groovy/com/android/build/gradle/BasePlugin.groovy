@@ -188,6 +188,7 @@ import static com.android.builder.core.BuilderConstants.FD_FLAVORS
 import static com.android.builder.core.BuilderConstants.FD_FLAVORS_ALL
 import static com.android.builder.core.BuilderConstants.FD_REPORTS
 import static com.android.builder.core.BuilderConstants.RELEASE
+import static com.android.builder.core.VariantConfiguration.Type.DEFAULT
 import static com.android.builder.core.VariantConfiguration.Type.TEST
 import static com.android.builder.model.AndroidProject.FD_GENERATED
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
@@ -1959,8 +1960,11 @@ public abstract class BasePlugin {
     public void createPostCompilationTasks(@NonNull ApkVariantData variantData) {
         GradleVariantConfiguration config = variantData.variantConfiguration
 
+        boolean isTestForApp = config.type == TEST &&
+                variantData.testedVariantData.variantConfiguration.type == DEFAULT
+
         boolean isMinifyEnabled = config.isMinifyEnabled()
-        boolean isMultiDexEnabled = config.isMultiDexEnabled()
+        boolean isMultiDexEnabled = config.isMultiDexEnabled() && !isTestForApp
         boolean isLegacyMultiDexMode = config.isLegacyMultiDexMode()
         File multiDexKeepProguard = config.getMultiDexKeepProguard()
         File multiDexKeepFile = config.getMultiDexKeepFile()
