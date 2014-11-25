@@ -60,10 +60,10 @@ model {
         compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
         buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
     }
-    android.ndk {
+    androidNdk {
         moduleName "hello-jni"
     }
-    android.productFlavors {
+    androidProductFlavors {
         flavor1
         flavor2
         flavor3

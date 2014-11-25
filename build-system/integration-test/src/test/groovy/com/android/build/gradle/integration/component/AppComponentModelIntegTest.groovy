@@ -56,10 +56,10 @@ model {
     public void flavors() {
         project.buildFile << """
 model {
-    android.buildTypes {
+    androidBuildTypes {
         b1
     }
-    android.productFlavors {
+    androidProductFlavors {
         f1
         f2
     }

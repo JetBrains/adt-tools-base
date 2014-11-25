@@ -56,10 +56,10 @@ model {
             }
         }
     }
-    android.ndk {
+    androidNdk {
         moduleName "hello-jni"
     }
-    android.buildTypes {
+    androidBuildTypes {
         debug {
             jniDebuggable true
         }

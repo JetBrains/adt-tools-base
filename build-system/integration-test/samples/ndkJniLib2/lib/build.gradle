@@ -6,7 +6,7 @@ model {
         buildToolsVersion = rootProject.ext.buildToolsVersion
     }
 
-    android.ndk {
+    androidNdk {
         moduleName "hello-jni"
     }
 }

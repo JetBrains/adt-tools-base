@@ -49,15 +49,15 @@ model {
         compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
         buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
     }
-    android.ndk {
+    androidNdk {
         moduleName "hello-jni"
     }
-    android.buildTypes {
+    androidBuildTypes {
         debug {
             jniDebuggable true
         }
     }
-    android.productFlavors {
+    androidProductFlavors {
         x86 {
             ndk {
                 abiFilter "x86"

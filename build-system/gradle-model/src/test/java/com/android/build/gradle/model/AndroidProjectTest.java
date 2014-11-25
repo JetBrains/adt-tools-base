@@ -76,7 +76,7 @@ import java.util.Set;
 
 public class AndroidProjectTest extends TestCase {
 
-    private static final String GRADLE_VERSION = "2.3-20141107230024+0000";
+    private static final String GRADLE_VERSION = "2.3-20141124230031+0000";
 
     private static final String FOLDER_TEST_SAMPLE = "samples";
     private static final String FOLDER_TEST_PROJECT = "test-projects";
