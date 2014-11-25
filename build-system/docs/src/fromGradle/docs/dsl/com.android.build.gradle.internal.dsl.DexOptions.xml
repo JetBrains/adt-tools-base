@@ -9,7 +9,6 @@
             <tr><td>preDexLibraries</td></tr>
             <tr><td>jumboMode</td></tr>
             <tr><td>javaMaxHeapSize</td></tr>
-            <tr><td>threadCount</td></tr>
         </table>
     </section>
     <section>
