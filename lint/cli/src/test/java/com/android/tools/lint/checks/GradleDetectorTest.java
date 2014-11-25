@@ -503,6 +503,22 @@ public class GradleDetectorTest extends AbstractCheckTest {
         }
     }
 
+    public void testPreviewVersions() throws Exception {
+        mEnabled = Collections.singleton(DEPENDENCY);
+        // This test only works when SdkConstants.GRADLE_PLUGIN_RECOMMENDED_VERSION contains
+        // a preview string:
+        if (!GRADLE_PLUGIN_RECOMMENDED_VERSION.startsWith("1.0.0-rc")) {
+            return;
+        }
+        assertEquals(""
+                        + "build.gradle:6: Warning: A newer version of com.android.tools.build:gradle than 1.0.0-rc0 is available: 1.0.0-rc1 [GradleDependency]\n"
+                        + "        classpath 'com.android.tools.build:gradle:1.0.0-rc0'\n"
+                        + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                        + "0 errors, 1 warnings\n",
+
+                lintProject("gradle/PreviewDependencies.gradle=>build.gradle"));
+    }
+
     @Override
     protected void checkReportedError(@NonNull Context context, @NonNull Issue issue,
             @NonNull Severity severity, @Nullable Location location, @NonNull String message) {
