@@ -327,6 +327,260 @@ public class AaptPackageCommandBuilderTest extends TestCase {
         assertEquals("xhdpi", command.get(command.indexOf("--preferred-density") + 1));
     }
 
+    public void testResConfigAndSplitConflict() {
+        File virtualAndroidManifestFile = new File("/path/to/non/existent/file");
+        File assetsFolder = Mockito.mock(File.class);
+        Mockito.when(assetsFolder.isDirectory()).thenReturn(true);
+        Mockito.when(assetsFolder.getAbsolutePath()).thenReturn("/path/to/assets/folder");
+        File resFolder = Mockito.mock(File.class);
+        Mockito.when(resFolder.isDirectory()).thenReturn(true);
+        Mockito.when(resFolder.getAbsolutePath()).thenReturn("/path/to/res/folder");
+
+        AaptPackageCommandBuilder aaptPackageCommandBuilder =
+                new AaptPackageCommandBuilder(virtualAndroidManifestFile, mAaptOptions);
+        aaptPackageCommandBuilder.setResPackageOutput("/path/to/non/existent/dir")
+                .setAssetsFolder(assetsFolder)
+                .setResFolder(resFolder)
+                .setPackageForR("com.example.package.forR")
+                .setSourceOutputDir("path/to/source/output/dir")
+                .setLibraries(ImmutableList.of(Mockito.mock(SymbolFileProvider.class)))
+                .setType(VariantConfiguration.Type.DEFAULT)
+                .setResourceConfigs(
+                        ImmutableList.of("nodpi", "en", "fr", "mdpi", "hdpi", "xxhdpi", "xxxhdpi"))
+                .setSplits(ImmutableList.of("xhdpi"))
+                .setPreferredDensity("xhdpi");
+
+
+        SdkManager sdkManager = SdkManager.createManager(getSdkDir().getAbsolutePath(), mLogger);
+        assert sdkManager != null;
+        BuildToolInfo buildToolInfo = sdkManager.getBuildTool(FullRevision.parseRevision("21"));
+        if (buildToolInfo == null) {
+            throw new RuntimeException("Test requires build-tools 21");
+        }
+        IAndroidTarget androidTarget = null;
+        for (IAndroidTarget iAndroidTarget : sdkManager.getTargets()) {
+            if (iAndroidTarget.getVersion().getApiLevel() < 21) {
+                androidTarget = iAndroidTarget;
+                break;
+            }
+        }
+        if (androidTarget == null) {
+            throw new RuntimeException("Test requires pre android-21");
+        }
+
+        try {
+            aaptPackageCommandBuilder.build(buildToolInfo, androidTarget, mLogger);
+        } catch(Exception expected) {
+            assertEquals("Splits for densities \"xhdpi\" were configured, yet the resConfigs settings does not include such splits. The resulting split APKs would be empty.\n"
+                    + "Suggestion : exclude those splits in your build.gradle : \n"
+                    + "splits {\n"
+                    + "     density {\n"
+                    + "         enable true\n"
+                    + "         exclude \"xhdpi\"\n"
+                    + "     }\n"
+                    + "}\n"
+                    + "OR add them to the resConfigs list.", expected.getMessage());
+        }
+    }
+
+    public void testResConfigAndSplitConflict2() {
+        File virtualAndroidManifestFile = new File("/path/to/non/existent/file");
+        File assetsFolder = Mockito.mock(File.class);
+        Mockito.when(assetsFolder.isDirectory()).thenReturn(true);
+        Mockito.when(assetsFolder.getAbsolutePath()).thenReturn("/path/to/assets/folder");
+        File resFolder = Mockito.mock(File.class);
+        Mockito.when(resFolder.isDirectory()).thenReturn(true);
+        Mockito.when(resFolder.getAbsolutePath()).thenReturn("/path/to/res/folder");
+
+        AaptPackageCommandBuilder aaptPackageCommandBuilder =
+                new AaptPackageCommandBuilder(virtualAndroidManifestFile, mAaptOptions);
+        aaptPackageCommandBuilder.setResPackageOutput("/path/to/non/existent/dir")
+                .setAssetsFolder(assetsFolder)
+                .setResFolder(resFolder)
+                .setPackageForR("com.example.package.forR")
+                .setSourceOutputDir("path/to/source/output/dir")
+                .setLibraries(ImmutableList.of(Mockito.mock(SymbolFileProvider.class)))
+                .setType(VariantConfiguration.Type.DEFAULT)
+                .setResourceConfigs(ImmutableList.of("xxxhdpi"))
+                .setSplits(ImmutableList.of("hdpi", "mdpi", "xxhdpi"))
+                .setPreferredDensity("xhdpi");
+
+
+        SdkManager sdkManager = SdkManager.createManager(getSdkDir().getAbsolutePath(), mLogger);
+        assert sdkManager != null;
+        BuildToolInfo buildToolInfo = sdkManager.getBuildTool(FullRevision.parseRevision("21"));
+        if (buildToolInfo == null) {
+            throw new RuntimeException("Test requires build-tools 21");
+        }
+        IAndroidTarget androidTarget = null;
+        for (IAndroidTarget iAndroidTarget : sdkManager.getTargets()) {
+            if (iAndroidTarget.getVersion().getApiLevel() < 21) {
+                androidTarget = iAndroidTarget;
+                break;
+            }
+        }
+        if (androidTarget == null) {
+            throw new RuntimeException("Test requires pre android-21");
+        }
+
+        try {
+            aaptPackageCommandBuilder.build(buildToolInfo, androidTarget, mLogger);
+        } catch(Exception expected) {
+            assertEquals("Splits for densities \"hdpi,mdpi,xxhdpi\" were configured, yet the "
+                    + "resConfigs settings does not include such splits. The resulting split APKs "
+                    + "would be empty.\n"
+                    + "Suggestion : exclude those splits in your build.gradle : \n"
+                    + "splits {\n"
+                    + "     density {\n"
+                    + "         enable true\n"
+                    + "         exclude \"hdpi\",\"mdpi\",\"xxhdpi\"\n"
+                    + "     }\n"
+                    + "}\n"
+                    + "OR add them to the resConfigs list.", expected.getMessage());
+        }
+    }
+
+    public void testResConfigAndSplitNoConflict() {
+        File virtualAndroidManifestFile = new File("/path/to/non/existent/file");
+        File assetsFolder = Mockito.mock(File.class);
+        Mockito.when(assetsFolder.isDirectory()).thenReturn(true);
+        Mockito.when(assetsFolder.getAbsolutePath()).thenReturn("/path/to/assets/folder");
+        File resFolder = Mockito.mock(File.class);
+        Mockito.when(resFolder.isDirectory()).thenReturn(true);
+        Mockito.when(resFolder.getAbsolutePath()).thenReturn("/path/to/res/folder");
+
+        AaptPackageCommandBuilder aaptPackageCommandBuilder =
+                new AaptPackageCommandBuilder(virtualAndroidManifestFile, mAaptOptions);
+        aaptPackageCommandBuilder.setResPackageOutput("/path/to/non/existent/dir")
+                .setAssetsFolder(assetsFolder)
+                .setResFolder(resFolder)
+                .setPackageForR("com.example.package.forR")
+                .setSourceOutputDir("path/to/source/output/dir")
+                .setLibraries(ImmutableList.of(Mockito.mock(SymbolFileProvider.class)))
+                .setType(VariantConfiguration.Type.DEFAULT)
+                .setResourceConfigs(ImmutableList
+                        .of("en", "fr", "es", "de", "it", "mdpi", "hdpi", "xhdpi", "xxhdpi"))
+                .setSplits(ImmutableList.of("mdpi", "hdpi", "xhdpi", "xxhdpi"));
+
+        SdkManager sdkManager = SdkManager.createManager(getSdkDir().getAbsolutePath(), mLogger);
+        assert sdkManager != null;
+        BuildToolInfo buildToolInfo = sdkManager.getBuildTool(FullRevision.parseRevision("21"));
+        if (buildToolInfo == null) {
+            throw new RuntimeException("Test requires build-tools 21");
+        }
+        IAndroidTarget androidTarget = null;
+        for (IAndroidTarget iAndroidTarget : sdkManager.getTargets()) {
+            if (iAndroidTarget.getVersion().getApiLevel() >= 21) {
+                androidTarget = iAndroidTarget;
+                break;
+            }
+        }
+        if (androidTarget == null) {
+            throw new RuntimeException("Test requires pre android-21");
+        }
+
+        List<String> command = aaptPackageCommandBuilder.build(buildToolInfo, androidTarget,
+                mLogger);
+        assertEquals("en,fr,es,de,it,mdpi,hdpi,xhdpi,xxhdpi",
+                command.get(command.indexOf("-c") + 1));
+        assertTrue("--split".equals(command.get(command.indexOf("mdpi") - 1)));
+        assertTrue("--split".equals(command.get(command.indexOf("hdpi") - 1)));
+        assertTrue("--split".equals(command.get(command.indexOf("xhdpi") - 1)));
+        assertTrue("--split".equals(command.get(command.indexOf("xxhdpi") - 1)));
+        assertEquals(-1, command.indexOf("xxxhdpi"));
+    }
+
+    public void testResConfigAndPreferredDensityConflict() {
+        File virtualAndroidManifestFile = new File("/path/to/non/existent/file");
+        File assetsFolder = Mockito.mock(File.class);
+        Mockito.when(assetsFolder.isDirectory()).thenReturn(true);
+        Mockito.when(assetsFolder.getAbsolutePath()).thenReturn("/path/to/assets/folder");
+        File resFolder = Mockito.mock(File.class);
+        Mockito.when(resFolder.isDirectory()).thenReturn(true);
+        Mockito.when(resFolder.getAbsolutePath()).thenReturn("/path/to/res/folder");
+
+        AaptPackageCommandBuilder aaptPackageCommandBuilder =
+                new AaptPackageCommandBuilder(virtualAndroidManifestFile, mAaptOptions);
+        aaptPackageCommandBuilder.setResPackageOutput("/path/to/non/existent/dir")
+                .setAssetsFolder(assetsFolder)
+                .setResFolder(resFolder)
+                .setPackageForR("com.example.package.forR")
+                .setSourceOutputDir("path/to/source/output/dir")
+                .setLibraries(ImmutableList.of(Mockito.mock(SymbolFileProvider.class)))
+                .setType(VariantConfiguration.Type.DEFAULT)
+                .setResourceConfigs(ImmutableList.of( "en", "fr", "es", "de", "it", "mdpi", "hdpi", "xhdpi", "xxhdpi"))
+                .setSplits(ImmutableList.of("mdpi", "hdpi", "xhdpi", "xxhdpi"))
+                .setPreferredDensity("hdpi");
+
+        SdkManager sdkManager = SdkManager.createManager(getSdkDir().getAbsolutePath(), mLogger);
+        assert sdkManager != null;
+        BuildToolInfo buildToolInfo = sdkManager.getBuildTool(FullRevision.parseRevision("21"));
+        if (buildToolInfo == null) {
+            throw new RuntimeException("Test requires build-tools 21");
+        }
+        IAndroidTarget androidTarget = null;
+        for (IAndroidTarget iAndroidTarget : sdkManager.getTargets()) {
+            if (iAndroidTarget.getVersion().getApiLevel() >= 21) {
+                androidTarget = iAndroidTarget;
+                break;
+            }
+        }
+        if (androidTarget == null) {
+            throw new RuntimeException("Test requires pre android-21");
+        }
+
+        try {
+            aaptPackageCommandBuilder.build(buildToolInfo, androidTarget, mLogger);
+        } catch (Exception expected) {
+            assertEquals("When using splits in tools 21 and above, resConfigs should not contain "
+                    + "any densities. Right now, it contains \"mdpi\",\"hdpi\",\"xhdpi\",\"xxhdpi\"\n"
+                    + "Suggestion: remove these from resConfigs from build.gradle", expected.getMessage());
+        }
+    }
+
+    public void testResConfigAndPreferredDensityNoConflict() {
+        File virtualAndroidManifestFile = new File("/path/to/non/existent/file");
+        File assetsFolder = Mockito.mock(File.class);
+        Mockito.when(assetsFolder.isDirectory()).thenReturn(true);
+        Mockito.when(assetsFolder.getAbsolutePath()).thenReturn("/path/to/assets/folder");
+        File resFolder = Mockito.mock(File.class);
+        Mockito.when(resFolder.isDirectory()).thenReturn(true);
+        Mockito.when(resFolder.getAbsolutePath()).thenReturn("/path/to/res/folder");
+
+        AaptPackageCommandBuilder aaptPackageCommandBuilder =
+                new AaptPackageCommandBuilder(virtualAndroidManifestFile, mAaptOptions);
+        aaptPackageCommandBuilder.setResPackageOutput("/path/to/non/existent/dir")
+                .setAssetsFolder(assetsFolder)
+                .setResFolder(resFolder)
+                .setPackageForR("com.example.package.forR")
+                .setSourceOutputDir("path/to/source/output/dir")
+                .setLibraries(ImmutableList.of(Mockito.mock(SymbolFileProvider.class)))
+                .setType(VariantConfiguration.Type.DEFAULT)
+                // only languages, no density...
+                .setResourceConfigs(ImmutableList.of("en", "fr", "es", "de", "it"))
+                .setPreferredDensity("hdpi");
+
+        SdkManager sdkManager = SdkManager.createManager(getSdkDir().getAbsolutePath(), mLogger);
+        assert sdkManager != null;
+        BuildToolInfo buildToolInfo = sdkManager.getBuildTool(FullRevision.parseRevision("21"));
+        if (buildToolInfo == null) {
+            throw new RuntimeException("Test requires build-tools 21");
+        }
+        IAndroidTarget androidTarget = null;
+        for (IAndroidTarget iAndroidTarget : sdkManager.getTargets()) {
+            if (iAndroidTarget.getVersion().getApiLevel() >= 21) {
+                androidTarget = iAndroidTarget;
+                break;
+            }
+        }
+        if (androidTarget == null) {
+            throw new RuntimeException("Test requires pre android-21");
+        }
+        List<String> command = aaptPackageCommandBuilder.build(buildToolInfo, androidTarget,
+                mLogger);
+        assertEquals("en,fr,es,de,it", command.get(command.indexOf("-c") + 1));
+    }
+
     /**
      * Returns the SDK folder as built from the Android source tree.
      * @return the SDK
