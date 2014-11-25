@@ -139,33 +139,6 @@ public class ManualBuildTest extends BuildTest {
         checkImageColor(drawableOutput, "free_normal_overlay.png", RED);
     }
 
-    public void testRepo() {
-        File repo = new File(sampleDir, "repo");
-
-        try {
-            runTasksOn(
-                    new File(repo, "util"),
-                    BasePlugin.GRADLE_TEST_VERSION,
-                    "clean", "uploadArchives");
-            runTasksOn(
-                    new File(repo, "baseLibrary"),
-                    BasePlugin.GRADLE_TEST_VERSION,
-                    "clean", "uploadArchives");
-            runTasksOn(
-                    new File(repo, "library"),
-                    BasePlugin.GRADLE_TEST_VERSION,
-                    "clean", "uploadArchives");
-            runTasksOn(
-                    new File(repo, "app"),
-                    BasePlugin.GRADLE_TEST_VERSION,
-                    "clean", "assemble");
-        } finally {
-            // clean up the test repository.
-            File testRepo = new File(repo, "testrepo");
-            deleteFolder(testRepo);
-        }
-    }
-
     public void testLibsManifestMerging() throws Exception {
         File project = new File(testProjectDir, "libsTest");
         File fileOutput = new File(project, "libapp/build/" + FD_INTERMEDIATES + "/bundles/release/AndroidManifest.xml");
