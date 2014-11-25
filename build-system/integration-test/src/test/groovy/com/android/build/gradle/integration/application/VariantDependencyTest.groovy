@@ -27,8 +27,8 @@ import com.android.builder.model.Variant
 import com.android.ide.common.internal.CommandLineRunner
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
-import com.android.build.gradle.integration.utils.ApkHelper
-import com.android.build.gradle.integration.utils.ModelHelper
+import com.android.build.gradle.integration.common.utils.ZipHelper
+import com.android.build.gradle.integration.common.utils.ModelHelper
 import com.android.utils.StdLogger
 import com.google.common.collect.Sets
 import org.junit.AfterClass
@@ -217,7 +217,7 @@ class VariantDependencyTest {
 
         assertTrue("${variantName} output check", apk.isFile())
 
-        ApkHelper.checkArchive(
+        ZipHelper.checkArchive(
                 apk,
                 Collections.<String, String> singletonMap(checkFilePath, null),
                 Collections.emptySet())
@@ -231,7 +231,7 @@ class VariantDependencyTest {
 
         assertTrue("${variantName} output check", apk.isFile())
 
-        ApkHelper.checkArchive(
+        ZipHelper.checkArchive(
                 apk,
                 Collections.emptyMap(),
                 checkFilePath)

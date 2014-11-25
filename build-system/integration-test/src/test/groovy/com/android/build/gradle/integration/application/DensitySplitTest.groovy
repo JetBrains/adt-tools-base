@@ -18,7 +18,7 @@ package com.android.build.gradle.integration.application
 
 import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.utils.ApkHelper
+import com.android.build.gradle.integration.common.utils.ZipHelper
 import com.android.builder.model.AndroidArtifact
 import com.android.builder.model.AndroidArtifactOutput
 import com.android.builder.model.AndroidProject
@@ -67,7 +67,7 @@ class DensitySplitTest {
             Map<String, String> filesToMatch = Collections.singletonMap(
                     "res/drawable-mdpi-v4/other.png", null)
             for (AndroidArtifactOutput output : mainArtifact.getOutputs()) {
-                ApkHelper.checkArchive(output.mainOutputFile.getOutputFile(),
+                ZipHelper.checkArchive(output.mainOutputFile.getOutputFile(),
                         filesToMatch,
                         ImmutableSet.<String>of())
             }
