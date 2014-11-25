@@ -43,7 +43,8 @@ public class DexOptions implements com.android.builder.core.DexOptions {
     }
 
     /**
-     * TODO: Document.
+     * Whether to enable the incremental mode for dx. This has many limitations and may not
+     * work. Use carefully.
      */
     @Override
     boolean getIncremental() {
@@ -51,7 +52,8 @@ public class DexOptions implements com.android.builder.core.DexOptions {
     }
 
     /**
-     * TODO: Document.
+     * Whether to pre-dex libraries. This can improve incremental builds, but clean builds may
+     * be slower.
      */
     @Override
     boolean getPreDexLibraries() {
@@ -67,7 +69,7 @@ public class DexOptions implements com.android.builder.core.DexOptions {
     }
 
     /**
-     * TODO: Document.
+     * Enable jumbo mode in dx (--force-jumbo).
      */
     @Override
     boolean getJumboMode() {
@@ -84,7 +86,7 @@ public class DexOptions implements com.android.builder.core.DexOptions {
     }
 
     /**
-     * TODO: Document.
+     * Sets the -JXmx* value when calling dx. Format should follow the 1024M pattern.
      */
     @Override
     public String getJavaMaxHeapSize() {

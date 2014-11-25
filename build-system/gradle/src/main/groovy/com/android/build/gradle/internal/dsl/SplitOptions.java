@@ -89,7 +89,10 @@ public class SplitOptions {
     }
 
     /**
-     * TODO: Document.
+     * Resets the list of included split configuration.
+     *
+     * Use this before calling include, in order to manually configure the list of configuration
+     * to split on, rather than excluding from the default list.
      */
     public void reset() {
         reset = true;
