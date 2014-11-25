@@ -30,7 +30,7 @@ public class AbiSplitOptions extends SplitOptions {
     private boolean universalApk = false;
 
     /**
-     * TODO: Document.
+     * Whether to create an APK with all available ABIs.
      */
     public boolean isUniversalApk() {
         return universalApk;
