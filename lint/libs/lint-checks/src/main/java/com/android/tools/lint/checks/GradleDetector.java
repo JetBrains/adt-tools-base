@@ -1067,9 +1067,17 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
             PreciseRevision revision) {
         assert dependency.getGroupId() != null;
         assert dependency.getArtifactId() != null;
-        if (COMPARE_PLUS_HIGHER.compare(dependency,
-                new GradleCoordinate(dependency.getGroupId(), dependency.getArtifactId(),
-                        revision.getMajor(), revision.getMinor(), revision.getMicro())) < 0) {
+        GradleCoordinate coordinate;
+        if (revision.isPreview()) {
+            String coordinateString = dependency.getGroupId()
+                    + ":" + dependency.getArtifactId()
+                    + ":" + revision.toString();
+            coordinate = GradleCoordinate.parseCoordinateString(coordinateString);
+        } else {
+            coordinate = new GradleCoordinate(dependency.getGroupId(), dependency.getArtifactId(),
+                    revision.getMajor(), revision.getMinor(), revision.getMicro());
+        }
+        if (COMPARE_PLUS_HIGHER.compare(dependency, coordinate) < 0) {
             return revision;
         } else {
             return null;
