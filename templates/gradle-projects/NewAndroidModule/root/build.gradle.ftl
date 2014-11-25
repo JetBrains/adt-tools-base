@@ -35,7 +35,10 @@ android {
     buildToolsVersion "${buildToolsVersion}"
 
     defaultConfig {
-        applicationId "${packageName}"
+    <#if isLibraryProject?? && isLibraryProject>
+    <#else>
+    applicationId "${packageName}"
+    </#if>
         minSdkVersion <#if minApi?matches("^\\d+$")>${minApi}<#else>'${minApi}'</#if>
         targetSdkVersion <#if targetApiString?matches("^\\d+$")>${targetApiString}<#else>'${targetApiString}'</#if>
         versionCode 1
