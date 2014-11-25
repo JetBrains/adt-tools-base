@@ -32,7 +32,7 @@ public class PackagingOptions implements com.android.builder.model.PackagingOpti
     private Set<String> pickFirsts;
 
     /**
-     * TODO: Document.
+     * Returns the list of excluded paths.
      */
     @Override
     @NonNull
@@ -44,6 +44,10 @@ public class PackagingOptions implements com.android.builder.model.PackagingOpti
         return excludes;
     }
 
+    /**
+     * Adds an excluded paths.
+     * @param path the path, as packaged in the APK
+     */
     public void exclude(String path) {
         if (excludes == null) {
             excludes = Sets.newHashSet();
@@ -53,7 +57,7 @@ public class PackagingOptions implements com.android.builder.model.PackagingOpti
     }
 
     /**
-     * TODO: Document.
+     * Returns the list of paths where the first occurrence is packaged in the APK.
      */
     @Override
     @NonNull
@@ -65,6 +69,11 @@ public class PackagingOptions implements com.android.builder.model.PackagingOpti
         return pickFirsts;
     }
 
+    /**
+     * Adds a firstPick path. First pick paths do get packaged in the APK, but only the first
+     * occurrence gets packaged.
+     * @param path the path to add.
+     */
     public void pickFirst(String path) {
         if (pickFirsts == null) {
             pickFirsts = Sets.newHashSet();
