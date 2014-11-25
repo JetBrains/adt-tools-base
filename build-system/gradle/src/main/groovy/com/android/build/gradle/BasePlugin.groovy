@@ -141,12 +141,15 @@ import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.JavaVersion
 import org.gradle.api.Project
+import org.gradle.api.ProjectConfigurationException
 import org.gradle.api.Task
+import org.gradle.api.UnknownProjectException
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.ModuleVersionIdentifier
 import org.gradle.api.artifacts.ProjectDependency
 import org.gradle.api.artifacts.ResolvedArtifact
 import org.gradle.api.artifacts.SelfResolvingDependency
+import org.gradle.api.artifacts.UnknownConfigurationException
 import org.gradle.api.artifacts.result.DependencyResult
 import org.gradle.api.artifacts.result.ResolvedComponentResult
 import org.gradle.api.artifacts.result.ResolvedDependencyResult
@@ -3325,7 +3328,12 @@ public abstract class BasePlugin {
     protected void ensureConfigured(Configuration config) {
         config.allDependencies.withType(ProjectDependency).each { dep ->
             project.evaluationDependsOn(dep.dependencyProject.path)
-            ensureConfigured(dep.projectConfiguration)
+            try {
+                ensureConfigured(dep.projectConfiguration)
+            } catch (Throwable e) {
+                throw new UnknownProjectException(
+                        "Cannot evaluate module ${dep.name} : ${e.getMessage()}", e);
+            }
         }
     }
 
