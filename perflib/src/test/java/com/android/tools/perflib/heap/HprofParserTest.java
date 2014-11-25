@@ -68,6 +68,27 @@ public class HprofParserTest extends TestCase {
         assertEquals("dalvik.system.PathClassLoader", classLoader.getClassObj().getClassName());
     }
 
+    public void testPrimitiveArrays() {
+        ClassObj byteArray = mSnapshot.findClass("byte[]");
+        assertEquals(1406, byteArray.getInstances().size());
+
+        ArrayInstance byteArrayInstance = (ArrayInstance) mSnapshot.findReference(0xB0D60401);
+        assertEquals(byteArray, byteArrayInstance.getClassObj());
+        assertEquals(43224, byteArrayInstance.getSize());
+        assertEquals(43224, byteArrayInstance.getCompositeSize());
+
+        ClassObj intArrayArray = mSnapshot.findClass("int[][]");
+        assertEquals(37, intArrayArray.getInstances().size());
+
+        ArrayInstance intArrayInstance = (ArrayInstance) mSnapshot.findReference(0xB0F69F58);
+        assertEquals(intArrayArray, intArrayInstance.getClassObj());
+        assertEquals(40, intArrayInstance.getSize());
+        assertEquals(52, intArrayInstance.getCompositeSize());
+
+        ClassObj stringArray = mSnapshot.findClass("java.lang.String[]");
+        assertEquals(1396, stringArray.getInstances().size());
+    }
+
     /**
      * Tests the creation of an Enum class which covers static values, fields of type references,
      * strings and primitive values.

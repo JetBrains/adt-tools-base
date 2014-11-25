@@ -117,8 +117,8 @@ public class DominatorsTest extends TestCase {
         mSnapshot = (new HprofParser(new MemoryMappedFileBuffer(file))).parse();
         mSnapshot.computeDominators();
 
-        // TODO: Double-check this data
-        assertEquals(29597, mSnapshot.getReachableInstances().size());
+        // TODO: investigate the unreachable objects: there are 43687 objects in total.
+        assertEquals(42911, mSnapshot.getReachableInstances().size());
 
         // An object reachable via two GC roots, a JNI global and a Thread.
         Instance instance = mSnapshot.findReference(0xB0EDFFA0);
@@ -129,12 +129,12 @@ public class DominatorsTest extends TestCase {
 
         // The largest object in our sample hprof belongs to the zygote
         ClassObj htmlParser = mSnapshot.findClass("android.text.Html$HtmlParser");
-        assertEquals(116468, htmlParser.getRetainedSize(zygoteIndex));
+        assertEquals(116492, htmlParser.getRetainedSize(zygoteIndex));
         assertEquals(0, htmlParser.getRetainedSize(appIndex));
 
         // One of the bigger objects in the app heap
         ClassObj activityThread = mSnapshot.findClass("android.app.ActivityThread");
-        assertEquals(237, activityThread.getRetainedSize(zygoteIndex));
+        assertEquals(813, activityThread.getRetainedSize(zygoteIndex));
         assertEquals(576, activityThread.getRetainedSize(appIndex));
     }
 
