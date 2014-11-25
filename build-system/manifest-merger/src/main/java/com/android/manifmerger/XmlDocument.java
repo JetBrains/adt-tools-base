@@ -473,7 +473,8 @@ public class XmlDocument {
         }
 
         boolean hasWriteToExternalStoragePermission =
-                getByTypeAndKey(USES_PERMISSION, permission("WRITE_EXTERNAL_STORAGE")).isPresent();
+                lowerPriorityDocument.getByTypeAndKey(
+                        USES_PERMISSION, permission("WRITE_EXTERNAL_STORAGE")).isPresent();
 
         if (libraryTargetSdk < 4) {
             Optional<Element> permission = addIfAbsent(mergingReport.getActionRecorder(),
@@ -494,8 +495,8 @@ public class XmlDocument {
         // do this (regardless of target API version) because we can't have
         // an app with write permission but not read permission.
         if (hasWriteToExternalStoragePermission
-                && !getByTypeAndKey(USES_PERMISSION, permission("READ_EXTERNAL_STORAGE"))
-                        .isPresent()) {
+                && !lowerPriorityDocument.getByTypeAndKey(
+                            USES_PERMISSION, permission("READ_EXTERNAL_STORAGE")).isPresent()) {
 
             addIfAbsent(mergingReport.getActionRecorder(),
                     USES_PERMISSION,
@@ -508,12 +509,14 @@ public class XmlDocument {
 
         // Pre-JellyBean call log permission compatibility.
         if (libraryTargetSdk < 16) {
-            if (getByTypeAndKey(USES_PERMISSION, permission("READ_CONTACTS")).isPresent()) {
+            if (lowerPriorityDocument.getByTypeAndKey(
+                    USES_PERMISSION, permission("READ_CONTACTS")).isPresent()) {
                 addIfAbsent(mergingReport.getActionRecorder(),
                         USES_PERMISSION, permission("READ_CALL_LOG"),
                         "targetSdkVersion < 16 and requested READ_CONTACTS");
             }
-            if (getByTypeAndKey(USES_PERMISSION, permission("WRITE_CONTACTS")).isPresent()) {
+            if (lowerPriorityDocument.getByTypeAndKey(
+                    USES_PERMISSION, permission("WRITE_CONTACTS")).isPresent()) {
                 addIfAbsent(mergingReport.getActionRecorder(),
                         USES_PERMISSION, permission("WRITE_CALL_LOG"),
                         "targetSdkVersion < 16 and requested WRITE_CONTACTS");
