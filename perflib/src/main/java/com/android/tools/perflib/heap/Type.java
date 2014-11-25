@@ -61,5 +61,19 @@ public enum Type {
     public int getSize() {
         return this == OBJECT ? sIdSize : mSize;
     }
+
+    public static String getClassNameOfPrimitiveArray(Type type) {
+        switch (type) {
+            case BOOLEAN: return "boolean[]";
+            case CHAR: return "char[]";
+            case FLOAT: return "float[]";
+            case DOUBLE: return "double[]";
+            case BYTE: return "byte[]";
+            case SHORT: return "short[]";
+            case INT: return "int[]";
+            case LONG: return "long[]";
+            default: throw new IllegalArgumentException("OBJECT type is not a primitive type");
+        }
+    }
 }
 
