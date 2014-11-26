@@ -1,9 +1,14 @@
 apply plugin: 'groovy'
 
+repositories {
+    maven { url = uri(rootProject.cloneArtifacts.repository) }
+}
+
 dependencies {
     compile gradleApi()
     compile localGroovy()
     compile project(':base:gradle')
+    compile "com.google.truth:truth:0.24"
 }
 
 test {
