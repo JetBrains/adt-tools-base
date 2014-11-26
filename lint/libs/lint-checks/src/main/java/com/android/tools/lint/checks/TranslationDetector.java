@@ -27,7 +27,12 @@ import static com.android.SdkConstants.TAG_STRING_ARRAY;
 import static com.android.SdkConstants.TOOLS_URI;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
+import com.android.builder.model.AndroidProject;
+import com.android.builder.model.ProductFlavor;
+import com.android.builder.model.ProductFlavorContainer;
+import com.android.builder.model.Variant;
 import com.android.ide.common.resources.LocaleManager;
 import com.android.resources.ResourceFolderType;
 import com.android.tools.lint.detector.api.Category;
@@ -36,10 +41,12 @@ import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.LintUtils;
 import com.android.tools.lint.detector.api.Location;
+import com.android.tools.lint.detector.api.Project;
 import com.android.tools.lint.detector.api.ResourceXmlDetector;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.XmlContext;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
@@ -356,6 +363,25 @@ public class TranslationDetector extends ResourceXmlDetector {
             }
         }
 
+        List<String> resConfigLanguages = getResConfigLanguages(context.getMainProject());
+        if (resConfigLanguages != null) {
+            List<String> keys = Lists.newArrayList(languageToStrings.keySet());
+            for (String locale : keys) {
+                if (defaultLanguage.equals(locale)) {
+                    continue;
+                }
+                String language = locale;
+                int index = language.indexOf('-');
+                if (index != -1) {
+                    // Strip off region
+                    language = language.substring(0, index);
+                }
+                if (!resConfigLanguages.contains(language)) {
+                    languageToStrings.remove(locale);
+                }
+            }
+        }
+
         // Do we need to resolve fallback strings for regions that only define a subset
         // of the strings in the language and fall back on the main language for the rest?
         if (!sCompleteRegions) {
@@ -646,4 +672,50 @@ public class TranslationDetector extends ResourceXmlDetector {
 
         return true;
     }
+
+    @Nullable
+    private static List<String> getResConfigLanguages(@NonNull Project project) {
+        if (project.isGradleProject() && project.getGradleProjectModel() != null &&
+                project.getCurrentVariant() != null) {
+            Set<String> relevantDensities = Sets.newHashSet();
+            Variant variant = project.getCurrentVariant();
+            List<String> variantFlavors = variant.getProductFlavors();
+            AndroidProject gradleProjectModel = project.getGradleProjectModel();
+
+            addResConfigsFromFlavor(relevantDensities, null,
+                    project.getGradleProjectModel().getDefaultConfig());
+            for (ProductFlavorContainer container : gradleProjectModel.getProductFlavors()) {
+                addResConfigsFromFlavor(relevantDensities, variantFlavors, container);
+            }
+            if (!relevantDensities.isEmpty()) {
+                ArrayList<String> strings = Lists.newArrayList(relevantDensities);
+                Collections.sort(strings);
+                return strings;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Adds in the resConfig values specified by the given flavor container, assuming
+     * it's in one of the relevant variantFlavors, into the given set
+     */
+    private static void addResConfigsFromFlavor(@NonNull Set<String> relevantLanguages,
+            @Nullable List<String> variantFlavors,
+            @NonNull ProductFlavorContainer container) {
+        ProductFlavor flavor = container.getProductFlavor();
+        if (variantFlavors == null || variantFlavors.contains(flavor.getName())) {
+            if (!flavor.getResourceConfigurations().isEmpty()) {
+                for (String resConfig : flavor.getResourceConfigurations()) {
+                    // Look for languages; these are of length 2. (ResConfigs
+                    // can also refer to densities, etc.)
+                    if (resConfig.length() == 2) {
+                        relevantLanguages.add(resConfig);
+                    }
+                }
+            }
+        }
+    }
+
 }
