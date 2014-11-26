@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.tasks;
 
+import static com.android.build.gradle.tasks.ResourceUsageAnalyzer.NO_MATCH;
 import static com.android.build.gradle.tasks.ResourceUsageAnalyzer.Resource;
 import static com.android.build.gradle.tasks.ResourceUsageAnalyzer.convertFormatStringToRegexp;
 import static java.io.File.separatorChar;
@@ -34,7 +35,6 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
@@ -911,10 +911,20 @@ public class ResourceUsageAnalyzerTest extends TestCase {
     }
 
     public void testFormatStringRegexp() {
-        assertEquals("", convertFormatStringToRegexp(""));
+        assertEquals(NO_MATCH, convertFormatStringToRegexp(""));
         assertEquals("\\Qfoo_\\E", convertFormatStringToRegexp("foo_"));
         assertEquals("\\Qfoo\\E.*\\Q_\\E.*\\Qend\\E", convertFormatStringToRegexp("foo%s_%1$send"));
         assertEquals("\\Qescape!.()\\E", convertFormatStringToRegexp("escape!.()"));
+
+        assertEquals(NO_MATCH, convertFormatStringToRegexp("%c%c%c%d"));
+        assertEquals(NO_MATCH, convertFormatStringToRegexp("%d%s"));
+        assertEquals(NO_MATCH, convertFormatStringToRegexp("%s%s"));
+        assertEquals(NO_MATCH, convertFormatStringToRegexp("%d_%d"));
+        assertEquals(NO_MATCH, convertFormatStringToRegexp("%s%s%s%s"));
+        assertEquals(NO_MATCH, convertFormatStringToRegexp("%s_%s_%s"));
+        assertEquals(NO_MATCH, convertFormatStringToRegexp("%.0f%s"));
+        assertEquals(".*\\Qabc\\E", convertFormatStringToRegexp("%sabc"));
+        assertEquals("\\Qa\\E.*", convertFormatStringToRegexp("a%d%s"));
 
         assertTrue("foo_".matches(convertFormatStringToRegexp("foo_")));
         assertTrue("fooA_BBend".matches(convertFormatStringToRegexp("foo%s_%1$send")));
