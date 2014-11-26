@@ -462,6 +462,34 @@ public class ManualBuildTest extends BuildTest {
 
         zis1.close();
         zis2.close();
+
+        //noinspection SpellCheckingInspection
+        uncompressed = new File(project,
+                "keep/build/intermediates/res/resources-release.ap_"
+                        .replace('/', separatorChar));
+        //noinspection SpellCheckingInspection
+        compressed = new File(project,
+                "keep/build/intermediates/res/resources-release-stripped.ap_"
+                        .replace('/', separatorChar));
+        assertTrue(uncompressed + " is not a file", uncompressed.isFile());
+        assertTrue(compressed + " is not a file", compressed.isFile());
+
+        //noinspection SpellCheckingInspection
+        assertEquals(""
+                + "AndroidManifest.xml\n"
+                + "res/raw/keep.xml\n"
+                + "resources.arsc\n"
+                + "res/layout/unused1.xml\n"
+                + "res/layout/unused2.xml\n"
+                + "res/layout/used1.xml",
+                dumpZipContents(uncompressed));
+
+        //noinspection SpellCheckingInspection
+        assertEquals(""
+                + "AndroidManifest.xml\n"
+                + "resources.arsc\n"
+                + "res/layout/used1.xml",
+                dumpZipContents(compressed));
     }
 
     private static List<String> getZipPaths(File zipFile, boolean includeMethod) throws IOException {

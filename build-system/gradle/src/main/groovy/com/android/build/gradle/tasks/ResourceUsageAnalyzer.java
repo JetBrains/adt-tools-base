@@ -198,6 +198,14 @@ public class ResourceUsageAnalyzer {
 
     /** Name of keep attribute in XML */
     private static final String ATTR_KEEP = "keep";
+    /** Name of discard attribute in XML (to mark resources as not referenced, despite guesses) */
+    private static final String ATTR_DISCARD = "discard";
+    /** Name of attribute in XML to control whether we should guess resources to keep */
+    private static final String ATTR_SHRINK_MODE = "shrinkMode";
+    /** @{linkplain #ATTR_SHRINK_MODE} value to only shrink explicitly encountered resources */
+    private static final String VALUE_STRICT = "strict";
+    /** @{linkplain #ATTR_SHRINK_MODE} value to keep possibly referenced resources */
+    private static final String VALUE_SAFE = "safe";
 
     private final File mResourceClassDir;
     private final File mProguardMapping;
@@ -224,6 +232,13 @@ public class ResourceUsageAnalyzer {
      * This will typically be the fully qualified names of the R classes, as well as
      * any renamed versions of those discovered in the mapping.txt file from ProGuard */
     private Map<String, ResourceType> mResourceClassOwners = Maps.newHashMapWithExpectedSize(20);
+
+    /**
+     * Whether we should attempt to guess resources that should be kept based on looking
+     * at the string pool and assuming some of the strings can be used to dynamically construct
+     * the resource names. Can be turned off via {@code tools:guessKeep="false"}.
+     */
+    private boolean mGuessKeep = true;
 
     public ResourceUsageAnalyzer(
             @NonNull File rDir,
@@ -747,6 +762,7 @@ public class ResourceUsageAnalyzer {
 
     private void dumpReferences() {
         if (mDebug) {
+            System.out.println("Resource Reference Graph:");
             for (Resource resource : mResources) {
                 if (resource.references != null) {
                     System.out.println(resource + " => " + resource.references);
@@ -759,6 +775,12 @@ public class ResourceUsageAnalyzer {
         if ((!mFoundGetIdentifier && !mFoundWebContent) || mStrings == null) {
             // No calls to android.content.res.Resources#getIdentifier; no need
             // to worry about string references to resources
+            return;
+        }
+
+        if (!mGuessKeep) {
+            // User specifically asked for us not to guess resources to keep; they will
+            // explicitly mark them as kept if necessary instead
             return;
         }
 
@@ -1765,9 +1787,7 @@ public class ResourceUsageAnalyzer {
                     // Ignore tools: namespace attributes, unless it's
                     // a keep attribute
                     if (TOOLS_URI.equals(attr.getNamespaceURI())) {
-                        if (ATTR_KEEP.equals(attr.getLocalName())) {
-                            handleKeepAttribute(attr.getValue());
-                        }
+                        handleToolsAttribute(attr);
                         // Skip all other tools: attributes
                         continue;
                     }
@@ -1802,9 +1822,9 @@ public class ResourceUsageAnalyzer {
                 }
             } else {
                 // Look for keep attributes everywhere else since they don't require a source
-                if (element.hasAttributeNS(TOOLS_URI, ATTR_KEEP)) {
-                    handleKeepAttribute(element.getAttributeNS(TOOLS_URI, ATTR_KEEP));
-                }
+                handleToolsAttribute(element.getAttributeNodeNS(TOOLS_URI, ATTR_KEEP));
+                handleToolsAttribute(element.getAttributeNodeNS(TOOLS_URI, ATTR_DISCARD));
+                handleToolsAttribute(element.getAttributeNodeNS(TOOLS_URI, ATTR_SHRINK_MODE));
             }
 
             Resource definition = getResource(element);
@@ -1883,6 +1903,28 @@ public class ResourceUsageAnalyzer {
         }
     }
 
+    private void handleToolsAttribute(@Nullable Attr attr) {
+        if (attr == null) {
+            return;
+        }
+        String localName = attr.getLocalName();
+        String value = attr.getValue();
+        if (ATTR_KEEP.equals(localName)) {
+            handleKeepAttribute(value);
+        } else if (ATTR_DISCARD.equals(localName)) {
+            handleRemoveAttribute(value);
+        } else if (ATTR_SHRINK_MODE.equals(localName)) {
+            if (VALUE_STRICT.equals(value)) {
+                mGuessKeep = false;
+            } else if (VALUE_SAFE.equals(value)) {
+                mGuessKeep = true;
+            }
+            if (mDebug) {
+                System.out.println("Setting shrink mode to " + value);
+            }
+        }
+    }
+
     public static String getFieldName(@NonNull String styleName) {
         return styleName.replace('.', '_').replace('-', '_').replace(':', '_');
     }
@@ -1890,6 +1932,12 @@ public class ResourceUsageAnalyzer {
     private static void markReachable(@Nullable Resource resource) {
         if (resource != null) {
             resource.reachable = true;
+        }
+    }
+
+    private static void markUnreachable(@Nullable Resource resource) {
+        if (resource != null) {
+            resource.reachable = false;
         }
     }
 
@@ -1941,6 +1989,54 @@ public class ResourceUsageAnalyzer {
             } catch (PatternSyntaxException ignored) {
                 if (mDebug) {
                     System.out.println("Could not compute keep globbing pattern for " +
+                            url.name + ": tried regexp " + regexp + "(" + ignored + ")");
+                }
+            }
+        }
+    }
+
+    private void handleRemoveAttribute(@NonNull String value) {
+        // Handle comma separated lists of URLs and globs
+        if (value.indexOf(',') != -1) {
+            for (String portion : Splitter.on(',').omitEmptyStrings().trimResults().split(value)) {
+                handleRemoveAttribute(portion);
+            }
+            return;
+        }
+
+        ResourceUrl url = ResourceUrl.parse(value);
+        if (url == null || url.framework) {
+            return;
+        }
+
+        Resource resource = getResource(url.type, url.name);
+        if (resource != null) {
+            if (mDebug) {
+                System.out.println("Marking " + resource + " used because it "
+                        + "matches remove attribute " + value);
+            }
+            markUnreachable(resource);
+        } else if (url.name.contains("*") || url.name.contains("?")) {
+            // Look for globbing patterns
+            String regexp = DefaultConfiguration.globToRegexp(getFieldName(url.name));
+            try {
+                Pattern pattern = Pattern.compile(regexp);
+                Map<String, Resource> nameMap = mTypeToName.get(url.type);
+                if (nameMap != null) {
+                    for (Resource r : nameMap.values()) {
+                        if (pattern.matcher(r.name).matches()) {
+                            if (mDebug) {
+                                System.out.println("Marking " + r + " used because it "
+                                        + "matches remove globbing pattern " + url.name);
+                            }
+
+                            markUnreachable(r);
+                        }
+                    }
+                }
+            } catch (PatternSyntaxException ignored) {
+                if (mDebug) {
+                    System.out.println("Could not compute remove globbing pattern for " +
                             url.name + ": tried regexp " + regexp + "(" + ignored + ")");
                 }
             }
