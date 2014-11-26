@@ -14,13 +14,15 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.integration.utils;
+package com.android.build.gradle.integration.common.utils;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import com.android.annotations.NonNull;
 import com.google.common.base.Charsets;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.io.ByteStreams;
 
@@ -29,15 +31,58 @@ import org.junit.Assert;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.jar.JarInputStream;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 /**
- * Helper to help read/test the content of generated APKs
+ * Helper to help read/test the content of generated zip file.
  */
-public class ApkHelper {
+public class ZipHelper {
+
+    /**
+     * Checks that a zip file contains a specific file.
+     */
+    public static void checkFileExists(
+            @NonNull File archive,
+            @NonNull String path)
+            throws IOException {
+        Map<String, String> pathToContent = Collections.singletonMap(path, null);
+        checkArchive(archive, pathToContent, ImmutableSet.<String>of());
+    }
+
+    /**
+     * Checks that a zip file contains all files in the list.
+     */
+    public static void checkFileExists(
+            @NonNull File archive,
+            @NonNull List<String> paths)
+            throws IOException {
+        Map<String, String> pathToContent = Maps.newLinkedHashMap();
+        for (String path : paths) {
+            pathToContent.put(path, null);
+        }
+        checkArchive(archive, pathToContent, ImmutableSet.<String>of());
+    }
+
+    /**
+     * Checks that a zip file contains a file with the specified content
+     * @param archive the zip file to check.
+     * @param path an expected file inside archive
+     * @param content the expected content of the file inside archive
+     * @throws IOException
+     */
+    public static void checkContent(
+            @NonNull File archive,
+            @NonNull String path,
+            @NonNull String content)
+            throws IOException {
+        Map<String, String> pathToContent = Collections.singletonMap(path, content);
+        checkArchive(archive, pathToContent, ImmutableSet.<String>of());
+    }
 
     /**
      * Checks that a zip file contains files, optionally with specific content.
@@ -53,13 +98,13 @@ public class ApkHelper {
             @NonNull Set<String> notPresentPaths)
             throws IOException {
         assertTrue("File '" + archive.getPath() + "' does not exist.", archive.isFile());
-        JarInputStream zis = null;
+        ZipInputStream zis = null;
         FileInputStream fis;
         Set<String> notFound = Sets.newHashSet();
         notFound.addAll(pathToContents.keySet());
         fis = new FileInputStream(archive);
         try {
-            zis = new JarInputStream(fis);
+            zis = new ZipInputStream(fis);
 
             ZipEntry entry = zis.getNextEntry();
             while (entry != null) {

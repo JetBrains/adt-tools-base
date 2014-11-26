@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.integration.utils;
+package com.android.build.gradle.integration.common.utils;
 
 import static org.junit.Assert.assertNotNull;
 
