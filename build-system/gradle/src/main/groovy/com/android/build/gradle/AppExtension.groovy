@@ -27,7 +27,8 @@ import org.gradle.api.internal.project.ProjectInternal
 import org.gradle.internal.reflect.Instantiator
 
 /**
- * Extension for 'application' project.
+ * 'android' extension for 'com.android.application' project.
+ * This extends {@link BaseExtension}
  */
 @CompileStatic
 public class AppExtension extends BaseExtension {
@@ -43,6 +44,11 @@ public class AppExtension extends BaseExtension {
         super(plugin, project, instantiator, buildTypes, productFlavors, signingConfigs, isLibrary)
     }
 
+    /**
+     * Returns the list of Application variants. Since the collections is built after evaluation,
+     * it should be used with Groovy's <code>all</code> iterator to process future items.
+     *
+     */
     public DefaultDomainObjectSet<ApplicationVariant> getApplicationVariants() {
         return applicationVariantList
     }

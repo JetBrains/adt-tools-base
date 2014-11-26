@@ -45,6 +45,8 @@
         <table>
             <title>DSL types</title>
             <tr><td>com.android.build.gradle.BaseExtension</td></tr>
+            <tr><td>com.android.build.gradle.AppExtension</td></tr>
+            <tr><td>com.android.build.gradle.LibraryExtension</td></tr>
             <tr><td>com.android.build.gradle.api.AndroidSourceSet</td></tr>
             <tr><td>com.android.build.gradle.internal.dsl.ProductFlavor</td></tr>
             <tr><td>com.android.build.gradle.internal.dsl.GroupableProductFlavor</td></tr>
@@ -58,6 +60,7 @@
             <tr><td>com.android.build.gradle.internal.dsl.PackagingOptions</td></tr>
             <tr><td>com.android.build.gradle.internal.coverage.JacocoExtension</td></tr>
             <tr><td>com.android.build.gradle.internal.dsl.Splits</td></tr>
+            <tr><td>com.android.build.gradle.internal.api.VariantFilter</td></tr>
         </table>
     </section>
 </book>
