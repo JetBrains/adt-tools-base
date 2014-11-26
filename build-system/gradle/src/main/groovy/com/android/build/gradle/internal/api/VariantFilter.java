@@ -19,7 +19,6 @@ package com.android.build.gradle.internal.api;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.api.GroupableProductFlavor;
-import com.android.build.gradle.api.VariantFilter;
 import com.android.builder.model.BuildType;
 import com.android.builder.model.ProductFlavor;
 
@@ -27,9 +26,10 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Internal implementation of VariantFilter
+ * An object representing a Variant (made of a build type and one or more flavors), and
+ * a boolean controlling whether this variant is to be excluded.
  */
-public class VariantFilterImpl implements VariantFilter {
+public class VariantFilter implements com.android.build.gradle.api.VariantFilter {
 
     @NonNull
     private final ReadOnlyObjectProvider readOnlyObjectProvider;
@@ -40,7 +40,7 @@ public class VariantFilterImpl implements VariantFilter {
     private BuildType buildType;
     private List<GroupableProductFlavor> flavors;
 
-    public VariantFilterImpl(@NonNull ReadOnlyObjectProvider readOnlyObjectProvider) {
+    public VariantFilter(@NonNull ReadOnlyObjectProvider readOnlyObjectProvider) {
         this.readOnlyObjectProvider = readOnlyObjectProvider;
     }
 
@@ -54,6 +54,9 @@ public class VariantFilterImpl implements VariantFilter {
         this.flavors = flavors;
     }
 
+    /**
+     * Whether to ignore this variant.
+     */
     public boolean isIgnore() {
         return ignore;
     }
@@ -63,18 +66,30 @@ public class VariantFilterImpl implements VariantFilter {
         this.ignore = ignore;
     }
 
+    /**
+     * The default config. This is a Read-Only version of the global
+     * <code>android.defaultConfig</code> object.
+     */
     @Override
     @NonNull
     public ProductFlavor getDefaultConfig() {
         return readOnlyObjectProvider.getDefaultConfig(defaultConfig);
     }
 
+    /**
+     * The Build Type used by the variant. This is Read-Only version, as changing this
+     * object would have global impact.
+     */
     @Override
     @NonNull
     public BuildType getBuildType() {
         return readOnlyObjectProvider.getBuildType(buildType);
     }
 
+    /**
+     * The list of Product Flavors for this variant. These are returned as Read-Only versions, as
+     * changing these objects would have global impact.
+     */
     @NonNull
     @Override
     public List<GroupableProductFlavor> getFlavors() {
