@@ -50,7 +50,13 @@ import org.gradle.api.internal.project.ProjectInternal
 import org.gradle.api.tasks.SourceSet
 import org.gradle.internal.reflect.Instantiator
 /**
- * Base android extension for all android plugins.
+ * Base 'android' extension for all android plugins.
+ *
+ * <p>This is never used directly. Instead,
+ *<ul>
+ * <li>Plugin 'com.android.application' uses {@link AppExtension}</li>
+ * <li>Plugin 'com.android.library' uses {@link LibraryExtension}</li>
+ * </ul>
  */
 public abstract class BaseExtension {
 
@@ -93,6 +99,7 @@ public abstract class BaseExtension {
     /** Signing configs used by this project. */
     final NamedDomainObjectContainer<SigningConfig> signingConfigs
 
+    /** A prefix to be used when creating new resources. Used by Studio */
     String resourcePrefix
 
     List<String> flavorDimensionList
@@ -402,10 +409,28 @@ public abstract class BaseExtension {
         return publishNonDefault
     }
 
+    /**
+     * Sets a variant filter to control which variant are excluded. The closure is passed a single
+     * object of type {@link com.android.build.gradle.internal.api.VariantFilter}
+     * @param filter the filter as a closure
+     */
     void variantFilter(Closure<Void> filter) {
+        setVariantFilter(variantFilter)
+    }
+
+    /**
+     * Sets a variant filter to control which variant are excluded. The closure is passed a single
+     * object of type {@link com.android.build.gradle.internal.api.VariantFilter}
+     * @param filter the filter as a closure
+     */
+    void setVariantFilter(Closure<Void> filter) {
         variantFilter = filter
     }
 
+    /**
+     * A variant filter to control which variant are excluded. The filter is a closure which
+     * is passed a single object of type {@link com.android.build.gradle.internal.api.VariantFilter}
+     */
     public Closure<Void> getVariantFilter() {
         return variantFilter;
     }
@@ -414,6 +439,10 @@ public abstract class BaseExtension {
         resourcePrefix = prefix
     }
 
+    /**
+     * Returns the list of test variants. Since the collections is built after evaluation,
+     * it should be used with Groovy's <code>all</code> iterator to process future items.
+     */
     @NonNull
     public DefaultDomainObjectSet<TestVariant> getTestVariants() {
         return testVariantList

@@ -33,7 +33,7 @@ import com.android.build.gradle.internal.api.DefaultAndroidSourceSet;
 import com.android.build.gradle.internal.api.ReadOnlyObjectProvider;
 import com.android.build.gradle.internal.api.TestVariantImpl;
 import com.android.build.gradle.internal.api.TestedVariant;
-import com.android.build.gradle.internal.api.VariantFilterImpl;
+import com.android.build.gradle.internal.api.VariantFilter;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.dependency.VariantDependencies;
 import com.android.build.gradle.internal.dsl.BuildType;
@@ -92,7 +92,7 @@ public class VariantManager implements VariantModel {
     @NonNull
     private final ReadOnlyObjectProvider readOnlyObjectProvider = new ReadOnlyObjectProvider();
     @NonNull
-    private final VariantFilterImpl variantFilter = new VariantFilterImpl(readOnlyObjectProvider);
+    private final VariantFilter variantFilter = new VariantFilter(readOnlyObjectProvider);
 
     @NonNull
     private final List<BaseVariantData<? extends BaseVariantOutputData>> variantDataList = Lists.newArrayList();
