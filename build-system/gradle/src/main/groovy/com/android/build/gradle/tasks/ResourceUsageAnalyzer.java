@@ -207,6 +207,9 @@ public class ResourceUsageAnalyzer {
     /** @{linkplain #ATTR_SHRINK_MODE} value to keep possibly referenced resources */
     private static final String VALUE_SAFE = "safe";
 
+    /** Special marker regexp which does not match a resource name */
+    static final String NO_MATCH = "-nomatch-";
+
     private final File mResourceClassDir;
     private final File mProguardMapping;
     private final File mClassesJar;
@@ -649,12 +652,6 @@ public class ResourceUsageAnalyzer {
         return getFieldName(element.getAttribute(ATTR_NAME));
     }
 
-    private static String getResourceName(File path) {
-        String name = path.getName();
-        int dot = name.indexOf('.');
-        return dot != -1 ? name.substring(0, dot) : name;
-    }
-
     @Nullable
     private Resource getResource(Element element) {
         ResourceType type = getResourceType(element);
@@ -985,27 +982,64 @@ public class ResourceUsageAnalyzer {
     static String convertFormatStringToRegexp(String formatString) {
         StringBuilder regexp = new StringBuilder();
         int from = 0;
+        boolean hasEscapedLetters = false;
         Matcher matcher = StringFormatDetector.FORMAT.matcher(formatString);
+        int length = formatString.length();
         while (matcher.find(from)) {
             int start = matcher.start();
             int end = matcher.end();
-            if (start == 0 && end == formatString.length()) {
+            if (start == 0 && end == length) {
                 // Don't match if the entire string literal starts with % and ends with
                 // the a formatting character, such as just "%d": this just matches absolutely
                 // everything and is unlikely to be used in a resource lookup
-                return "nomatch";
+                return NO_MATCH;
             }
             if (start > from) {
-                regexp.append(Pattern.quote(formatString.substring(from, start)));
+                hasEscapedLetters |= appendEscapedPattern(formatString, regexp, from, start);
             }
-            regexp.append(".*");
+            // If the wildcard follows a previous wildcard, just skip it
+            // (e.g. don't convert %s%s into .*.*; .* is enough.
+            int regexLength = regexp.length();
+            if (regexLength < 2
+                    || regexp.charAt(regexLength - 1) != '*'
+                    || regexp.charAt(regexLength - 2) != '.') {
+                regexp.append(".*");
+            }
             from = end;
         }
-        if (from < formatString.length()) {
-            regexp.append(Pattern.quote(formatString.substring(from, formatString.length())));
+
+        if (from < length) {
+            hasEscapedLetters |= appendEscapedPattern(formatString, regexp, from, length);
+        }
+
+        if (!hasEscapedLetters) {
+            // If the regexp contains *only* formatting characters, e.g. "%.0f%d", or
+            // if it contains only formatting characters and punctuation, e.g. "%s_%d",
+            // don't treat this as a possible resource name pattern string: it is unlikely
+            // to be intended for actual resource names, and has the side effect of matching
+            // most names.
+            return NO_MATCH;
         }
 
         return regexp.toString();
+    }
+
+    /**
+     * Appends the characters in the range [from,to> from formatString as escaped
+     * regexp characters into the given string builder. Returns true if there were
+     * any letters in the appended text.
+     */
+    private static boolean appendEscapedPattern(@NonNull String formatString,
+            @NonNull StringBuilder regexp, int from, int to) {
+        regexp.append(Pattern.quote(formatString.substring(from, to)));
+
+        for (int i = from; i < to; i++) {
+            if (Character.isLetter(formatString.charAt(i))) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private void recordResources(File resDir)
@@ -1275,7 +1309,8 @@ public class ResourceUsageAnalyzer {
                     if (c == '>') {
                         endHtmlTag(from, html, offset, tag);
                         state = STATE_TEXT;
-                    } else if (c == '/') {
+                    } else //noinspection StatementWithEmptyBody
+                        if (c == '/') {
                         // we expect an '>' next to close the tag
                     } else if (!Character.isWhitespace(c)) {
                         state = STATE_ATTRIBUTE_NAME;
@@ -1918,6 +1953,8 @@ public class ResourceUsageAnalyzer {
                 mGuessKeep = false;
             } else if (VALUE_SAFE.equals(value)) {
                 mGuessKeep = true;
+            } else if (mDebug) {
+                System.out.println("Ignoring unknown " + ATTR_SHRINK_MODE + " " + value);
             }
             if (mDebug) {
                 System.out.println("Setting shrink mode to " + value);
