@@ -419,7 +419,7 @@ public abstract class BaseExtension {
      * @param filter the filter as a closure
      */
     void variantFilter(Closure<Void> filter) {
-        setVariantFilter(variantFilter)
+        setVariantFilter(filter)
     }
 
     /**
