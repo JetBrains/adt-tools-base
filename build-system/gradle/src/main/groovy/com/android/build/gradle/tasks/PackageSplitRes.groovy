@@ -17,6 +17,7 @@
 package com.android.build.gradle.tasks
 
 import com.android.annotations.NonNull
+import com.android.annotations.Nullable
 import com.android.build.FilterData
 import com.android.build.OutputFile
 import com.android.build.gradle.api.ApkOutputFile
@@ -47,7 +48,10 @@ class PackageSplitRes extends BaseTask {
     File outputDirectory
 
     @Input
-    Set<String> splits
+    Set<String> densitySplits
+
+    @Input
+    Set<String> languageSplits
 
     @Input
     String outputBaseName
@@ -61,33 +65,29 @@ class PackageSplitRes extends BaseTask {
         if (mOutputFiles == null) {
             ImmutableList.Builder<ApkOutputFile> builder = ImmutableList.builder();
             if (outputDirectory.exists() && outputDirectory.listFiles().length > 0) {
-                final Pattern pattern = Pattern.compile(
-                        "${project.archivesBaseName}-${outputBaseName}-([h|x|d|p|i|m]*)(.*)")
-                for (File file : outputDirectory.listFiles()) {
-                    Matcher matcher = pattern.matcher(file.getName());
-                    if (matcher.matches()) {
-                        builder.add(new ApkOutputFile(
-                                OutputFile.OutputType.SPLIT,
-                                ImmutableList.<FilterData> of(FilterData.Builder.build(
-                                        OutputFile.DENSITY,
-                                        matcher.group(1))),
-                                Callables.returning(file)));
+                File[] potentialFiles = outputDirectory.listFiles();
+                for (String density : densitySplits) {
+                    String filePath = "${project.archivesBaseName}-${outputBaseName}_${density}";
+                    for (File potentialFile : potentialFiles) {
+                        // density related APKs have a suffix.
+                       if (potentialFile.getName().startsWith(filePath)) {
+                           builder.add(new ApkOutputFile(
+                                   OutputFile.OutputType.SPLIT,
+                                   ImmutableList.<FilterData> of(FilterData.Builder.build(
+                                           OutputFile.DENSITY,
+                                           density)),
+                                   Callables.returning(potentialFile)));
+                       }
                     }
                 }
             } else {
                 // the project has not been built yet so we extrapolate what the package step result
                 // might look like. So far, we only handle density splits, eventually we will need
                 // to disambiguate.
-                for (String split : splits) {
-                    ApkOutputFile apkOutput = new ApkOutputFile(
-                            OutputFile.OutputType.SPLIT,
-                            ImmutableList.<FilterData>of(
-                                    FilterData.Builder.build(OutputFile.DENSITY,
-                                            "${project.archivesBaseName}-${outputBaseName}-${split}")),
-                            Callables.returning(new File(outputDirectory, split)))
-                    builder.add(apkOutput)
-                }
+                addAllSplits(densitySplits, OutputFile.FilterType.DENSITY, builder);
             }
+            // now do languages.
+            addAllSplits(languageSplits, OutputFile.FilterType.LANGUAGE, builder);
             mOutputFiles = builder.build()
         }
         return mOutputFiles;
@@ -96,21 +96,35 @@ class PackageSplitRes extends BaseTask {
     @TaskAction
     protected void doFullTaskAction() {
 
-        // resources- and .ap_ should be shared in a setting somewhere. see BasePlugin:1206
-        final Pattern pattern = Pattern.compile(
-                "resources-${outputBaseName}.ap__([h|x|d|p|i|m]*)(.*)")
-        for (File file : inputDirectory.listFiles()) {
-            Matcher matcher = pattern.matcher(file.getName());
-            if (matcher.matches()) {
-                String apkName = "${project.archivesBaseName}-${outputBaseName}_" +
-                        "${matcher.group(1)}"
-                apkName = apkName + (signingConfig == null
-                        ? "-unsigned.apk"
-                        : "-unaligned.apk")
+        Pattern resourcePattern = Pattern.compile(
+                "resources-${outputBaseName}.ap__(.*)")
 
-                File outFile = new File(outputDirectory, apkName);
+        // resources- and .ap_ should be shared in a setting somewhere. see BasePlugin:1206
+        for (File file : inputDirectory.listFiles()) {
+            Matcher matcher = resourcePattern.matcher(file.getName());
+            if (matcher.matches() && !matcher.group(1).isEmpty()) {
+                File outFile = new File(outputDirectory, getOuputFileNameForSplit(matcher.group(1)));
                 getBuilder().signApk(file, signingConfig, outFile)
             }
         }
+    }
+
+    private void addAllSplits(Collection<String> filters,
+            OutputFile.FilterType filterType,
+            ImmutableList.Builder<ApkOutputFile> builder) {
+        for (String filter : filters) {
+            ApkOutputFile apkOutput = new ApkOutputFile(
+                    OutputFile.OutputType.SPLIT,
+                    ImmutableList.<FilterData>of(
+                            FilterData.Builder.build(filterType.name(), filter)),
+                    Callables.returning(
+                            new File(outputDirectory, getOuputFileNameForSplit(filter))))
+            builder.add(apkOutput)
+        }
+    }
+
+    private String getOuputFileNameForSplit(String split) {
+        String apkName = "${project.archivesBaseName}-${outputBaseName}_${split}"
+        apkName = apkName + (signingConfig == null ? "-unsigned.apk" : "-unaligned.apk")
     }
 }

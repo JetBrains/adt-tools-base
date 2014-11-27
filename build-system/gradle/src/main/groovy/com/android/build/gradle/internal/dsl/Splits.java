@@ -24,6 +24,7 @@ import com.google.common.collect.Sets;
 import org.gradle.api.Action;
 import org.gradle.internal.reflect.Instantiator;
 
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -33,6 +34,7 @@ public class Splits {
 
     private final DensitySplitOptions density;
     private final AbiSplitOptions abi;
+    private final LanguageSplitOptions language;
 
     private static final Set<String> ABI_LIST = ImmutableSet.of(
             "armeabi", "armeabi-v7a", "arm64-v8a","x86", "x86_64", "mips", "mips64");
@@ -40,6 +42,7 @@ public class Splits {
     public Splits(@NonNull Instantiator instantiator) {
         density = instantiator.newInstance(DensitySplitOptions.class);
         abi = instantiator.newInstance(AbiSplitOptions.class);
+        language = instantiator.newInstance(LanguageSplitOptions.class);
     }
 
     /**
@@ -68,6 +71,20 @@ public class Splits {
      */
     public void abi(Action<AbiSplitOptions> action) {
         action.execute(abi);
+    }
+
+    /**
+     * Language settings.
+     */
+    public LanguageSplitOptions getLanguage() {
+        return language;
+    }
+
+    /**
+     * Configures the language split settings.
+     */
+    public void language(Action<LanguageSplitOptions> action) {
+        action.execute(language);
     }
 
     /**
@@ -100,5 +117,17 @@ public class Splits {
     @NonNull
     public Set<String> getAbiFilters() {
         return abi.getApplicableFilters(ABI_LIST);
+    }
+
+    /**
+     * Returns the list of language filters used for multi-apk.
+     *
+     * <>null value is allowed, indicating the need to generate an apk with all languages.
+     *
+     * @return a set of language filters.
+     */
+    @NonNull
+    public Set<String> getLanguageFilters() {
+        return language.getApplicationFilters();
     }
 }
