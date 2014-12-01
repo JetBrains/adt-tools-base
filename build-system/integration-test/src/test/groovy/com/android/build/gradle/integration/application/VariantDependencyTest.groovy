@@ -15,20 +15,16 @@
  */
 
 package com.android.build.gradle.integration.application
+
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
-import com.android.builder.core.ApkInfoParser
-import com.android.builder.model.AndroidArtifact
-import com.android.builder.model.AndroidLibrary
-import com.android.builder.model.AndroidProject
-import com.android.builder.model.Dependencies
-import com.android.builder.model.MavenCoordinates
-import com.android.builder.model.Variant
-import com.android.ide.common.internal.CommandLineRunner
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
-import com.android.build.gradle.integration.common.utils.ZipHelper
 import com.android.build.gradle.integration.common.utils.ModelHelper
+import com.android.build.gradle.integration.common.utils.ZipHelper
+import com.android.builder.core.ApkInfoParser
+import com.android.builder.model.*
+import com.android.ide.common.internal.CommandLineRunner
 import com.android.utils.StdLogger
 import com.google.common.collect.Sets
 import org.junit.AfterClass
@@ -36,10 +32,7 @@ import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
 
-import static org.junit.Assert.assertEquals
-import static org.junit.Assert.assertFalse
-import static org.junit.Assert.assertNotNull
-import static org.junit.Assert.assertTrue
+import static org.junit.Assert.*
 
 class VariantDependencyTest {
     @ClassRule
@@ -217,10 +210,7 @@ class VariantDependencyTest {
 
         assertTrue("${variantName} output check", apk.isFile())
 
-        ZipHelper.checkArchive(
-                apk,
-                Collections.<String, String> singletonMap(checkFilePath, null),
-                Collections.emptySet())
+        ZipHelper.checkFileExists(apk, checkFilePath)
     }
 
     private static void checkApkForMissingContent(
@@ -231,9 +221,6 @@ class VariantDependencyTest {
 
         assertTrue("${variantName} output check", apk.isFile())
 
-        ZipHelper.checkArchive(
-                apk,
-                Collections.emptyMap(),
-                checkFilePath)
+        ZipHelper.checkFileDoesNotExist(apk, checkFilePath)
     }
 }

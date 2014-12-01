@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.integration.common.fixture.app;
 
-import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
 import com.google.common.io.Files;
 
