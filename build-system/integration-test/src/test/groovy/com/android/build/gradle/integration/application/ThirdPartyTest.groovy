@@ -16,31 +16,19 @@
 
 package com.android.build.gradle.integration.application
 
-import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import org.junit.AfterClass
-import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
-import org.junit.experimental.categories.Category
-
-import java.util.zip.ZipFile
-
-import static org.junit.Assert.assertNotNull
 
 /**
- * Assemble tests for packagingOptions.
+ * Assemble tests for 3rdPartyTests.
  */
-class PackagingOptionsTest {
+class ThirdPartyTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("packagingOptions")
+            .fromTestProject("3rdPartyTests")
             .create()
-
-    @BeforeClass
-    static void setup() {
-        project.execute("clean", "assembleDebug")
-    }
 
     @AfterClass
     static void cleanUp() {
@@ -48,19 +36,10 @@ class PackagingOptionsTest {
     }
 
     @Test
-    void lint() {
-        project.execute("lint")
-    }
-
-    @Test
-    void "check packaging"() {
-        ZipFile apk = new ZipFile(project.getApk("debug"))
-        assertNotNull(apk.getEntry("first_pick.txt"))
-    }
-
-    @Test
-    @Category(DeviceTests.class)
-    void connectedCheck() {
-        project.execute("connectedCheck")
+    void deviceCheck() {
+        // Run deviceCheck even without devices, since we use a fake DeviceProvider that doesn't
+        // use a device, but only record the calls made to the DeviceProvider and the
+        // DeviceConnector.
+        project.execute("clean", "deviceCheck");
     }
 }
