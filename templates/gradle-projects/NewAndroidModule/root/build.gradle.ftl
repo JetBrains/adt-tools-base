@@ -44,7 +44,7 @@ android {
         versionCode 1
         versionName "1.0"
     }
-<#if javaVersion?? && javaVersion != "1.6">
+<#if javaVersion?? && (javaVersion != "1.6" && buildApi lt 21 || javaVersion != "1.7")>
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_${javaVersion?replace('.','_','i')}
