@@ -144,7 +144,9 @@ public class Main {
                             project.getName());
                     Location location = Location.create(project.getDir());
                     Context context = new Context(mDriver, project, project, project.getDir());
-                    if (context.isEnabled(IssueRegistry.LINT_ERROR)) {
+                    if (context.isEnabled(IssueRegistry.LINT_ERROR) &&
+                            !getConfiguration(project).isIgnored(context, IssueRegistry.LINT_ERROR,
+                            location, message)) {
                         report(context,
                                IssueRegistry.LINT_ERROR,
                                project.getConfiguration().getSeverity(IssueRegistry.LINT_ERROR),
@@ -155,7 +157,7 @@ public class Main {
             }
 
             @Override
-            public Configuration getConfiguration(@NonNull Project project) {
+            public Configuration getConfiguration(@NonNull final Project project) {
                 if (project.isGradleProject()) {
                     // Don't report any issues when analyzing a Gradle project from the
                     // non-Gradle runner; they are likely to be false, and will hide the real
@@ -171,6 +173,13 @@ public class Main {
                        @Override
                        public boolean isIgnored(@NonNull Context context, @NonNull Issue issue,
                                @Nullable Location location, @NonNull String message) {
+                           // If you've deliberately ignored IssueRegistry.LINT_ERROR
+                           // don't flag that one either
+                           if (issue == IssueRegistry.LINT_ERROR && new LintCliClient(mFlags).isSuppressed(
+                                   IssueRegistry.LINT_ERROR)) {
+                               return true;
+                           }
+
                            return issue != IssueRegistry.LINT_ERROR;
                        }
                    };
