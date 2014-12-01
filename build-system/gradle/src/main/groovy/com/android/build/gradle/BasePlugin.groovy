@@ -136,6 +136,8 @@ import com.google.common.collect.Lists
 import com.google.common.collect.Maps
 import com.google.common.collect.Multimap
 import com.google.common.collect.Sets
+import groovy.transform.CompileDynamic
+import groovy.transform.CompileStatic
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.JavaVersion
@@ -160,6 +162,7 @@ import org.gradle.api.specs.Specs
 import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.compile.AbstractCompile
 import org.gradle.api.tasks.compile.JavaCompile
+import org.gradle.api.tasks.testing.Test
 import org.gradle.internal.reflect.Instantiator
 import org.gradle.language.jvm.tasks.ProcessResources
 import org.gradle.tooling.BuildException
@@ -184,8 +187,9 @@ import static com.android.builder.core.BuilderConstants.FD_FLAVORS
 import static com.android.builder.core.BuilderConstants.FD_FLAVORS_ALL
 import static com.android.builder.core.BuilderConstants.FD_REPORTS
 import static com.android.builder.core.BuilderConstants.RELEASE
-import static com.android.builder.core.VariantConfiguration.Type.DEFAULT
 import static com.android.builder.core.VariantConfiguration.Type.ANDROID_TEST
+import static com.android.builder.core.VariantConfiguration.Type.DEFAULT
+import static com.android.builder.core.VariantConfiguration.Type.UNIT_TEST
 import static com.android.builder.model.AndroidProject.FD_GENERATED
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
 import static com.android.builder.model.AndroidProject.FD_OUTPUTS
@@ -241,11 +245,12 @@ public abstract class BasePlugin {
     private final Collection<String> unresolvedDependencies = Sets.newHashSet();
 
     protected DefaultAndroidSourceSet mainSourceSet
-    protected DefaultAndroidSourceSet testSourceSet
+    protected DefaultAndroidSourceSet androidTestSourceSet
+    protected DefaultAndroidSourceSet unitTestSourceSet
 
     protected PrepareSdkTask mainPreBuild
     protected Task uninstallAll
-    protected Task assembleTest
+    protected Task assembleAndroidTest
     protected Task deviceCheck
     protected Task connectedCheck
     protected Copy jacocoAgentTask
@@ -413,11 +418,12 @@ public abstract class BasePlugin {
 
     private void setBaseExtension(@NonNull BaseExtension extension) {
         mainSourceSet = (DefaultAndroidSourceSet) extension.sourceSets.create(extension.defaultConfig.name)
-        testSourceSet = (DefaultAndroidSourceSet) extension.sourceSets.create(ANDROID_TEST.prefix)
+        androidTestSourceSet = (DefaultAndroidSourceSet) extension.sourceSets.create(ANDROID_TEST.prefix)
+        unitTestSourceSet = (DefaultAndroidSourceSet) extension.sourceSets.create(UNIT_TEST.prefix)
 
         defaultConfigData = new ProductFlavorData<ProductFlavor>(
                 extension.defaultConfig, mainSourceSet,
-                testSourceSet, project)
+                androidTestSourceSet, unitTestSourceSet, project)
     }
 
     private void checkGradleVersion() {
@@ -538,8 +544,8 @@ public abstract class BasePlugin {
         return project.logger.isEnabled(LogLevel.DEBUG)
     }
 
-    void setAssembleTest(Task assembleTest) {
-        this.assembleTest = assembleTest
+    void setAssembleAndroidTest(Task assembleTest) {
+        this.assembleAndroidTest = assembleTest
     }
 
     AndroidBuilder getAndroidBuilder() {
@@ -1530,11 +1536,11 @@ public abstract class BasePlugin {
     }
 
     /**
-     * Creates the tasks to build the test apk.
+     * Creates the tasks to build the tests.
      *
      * @param variantData the test variant
      */
-    public void createTestApkTasks(@NonNull TestVariantData variantData) {
+    public void createTestVariantTasks(@NonNull TestVariantData variantData) {
 
         BaseVariantData<? extends BaseVariantOutputData> testedVariantData =
                 (BaseVariantData<? extends BaseVariantOutputData>) variantData.getTestedVariantData()
@@ -1592,10 +1598,12 @@ public abstract class BasePlugin {
             createPostCompilationTasks(variantData);
         }
 
-        createPackagingTask(variantData, null /*assembleTask*/, false /*publishApk*/)
+        if (variantData.variantConfiguration.type != UNIT_TEST) {
+            createPackagingTask(variantData, null /*assembleTask*/, false /*publishApk*/)
 
-        if (assembleTest != null) {
-            assembleTest.dependsOn variantOutputData.assembleTask
+            if (assembleAndroidTest != null) {
+                assembleAndroidTest.dependsOn variantOutputData.assembleTask
+            }
         }
     }
 
@@ -1684,6 +1692,69 @@ public abstract class BasePlugin {
         }
     }
 
+    @CompileStatic
+    void createUnitTestTasks() {
+        Task topLevelTest = project.tasks.create(JavaPlugin.TEST_TASK_NAME)
+        topLevelTest.group = JavaBasePlugin.VERIFICATION_GROUP
+
+        variantDataList.findAll{it.variantConfiguration.type == UNIT_TEST}.each { loopVariantData ->
+            // Inner scope copy for the closures.
+            def variantData = loopVariantData
+            def testedVariantConfig = variantData.variantConfiguration.testedConfig
+
+            if (variantData.variantConfiguration.useJack) {
+                // Don't create unit test tasks when using Jack.
+                // TODO: Handle Jack somehow.
+                return
+            }
+
+            Test runTestsTask = project.tasks.create(
+                    UNIT_TEST.prefix + testedVariantConfig.fullName.capitalize(),
+                    Test)
+            runTestsTask.group = JavaBasePlugin.VERIFICATION_GROUP
+
+            fixTestTaskSources(runTestsTask)
+
+            runTestsTask.dependsOn variantData.compileTask
+            JavaCompile testCompileTask = variantData.javaCompileTask
+            runTestsTask.testClassesDir = testCompileTask.destinationDir
+
+            runTestsTask.classpath = project.files(
+                    testCompileTask.classpath,
+                    testCompileTask.outputs.files)
+
+            // See https://issues.gradle.org/browse/GRADLE-1682
+            // TODO: Remove
+            runTestsTask.scanForTestClasses = false
+            runTestsTask.include "**/*Test.class"
+
+            // TODO: Use mockable JAR.
+            runTestsTask.doFirst {
+                runTestsTask.classpath = project.files(
+                        androidBuilder.bootClasspath,
+                        runTestsTask.classpath)
+            }
+
+            topLevelTest.dependsOn runTestsTask
+        }
+
+        Task check = project.tasks.getByName(JavaBasePlugin.CHECK_TASK_NAME)
+        check.dependsOn topLevelTest
+    }
+
+    @CompileDynamic
+    private static void fixTestTaskSources(@NonNull Test testTask) {
+        // We are running in afterEvaluate, so the JavaBasePlugin has already added a
+        // callback to add test classes to the list of source files of the newly created task.
+        // The problem is that we haven't configured the test classes yet (JavaBasePlugin
+        // assumes all Test tasks are fully configured at this point), so we have to remove the
+        // "directory null" entry from source files and add the right value.
+        //
+        // This is an ugly hack, since we assume sourceFiles is an instance of
+        // DefaultConfigurableFileCollection.
+        testTask.inputs.sourceFiles.from.clear()
+    }
+
     public void createConnectedCheckTasks(boolean hasFlavors, boolean isLibraryTest) {
         List<AndroidReportTask> reportTasks = Lists.newArrayListWithExpectedSize(2)
 
@@ -1753,7 +1824,7 @@ public abstract class BasePlugin {
         for (int i = 0 ; i < count ; i++) {
             final BaseVariantData<? extends BaseVariantOutputData> baseVariantData = variantManager.getVariantDataList().get(i);
             if (baseVariantData instanceof TestedVariantData) {
-                final TestVariantData testVariantData = ((TestedVariantData) baseVariantData).testVariantData
+                final TestVariantData testVariantData = ((TestedVariantData) baseVariantData).getTestVariantData(ANDROID_TEST)
                 if (testVariantData == null) {
                     continue
                 }

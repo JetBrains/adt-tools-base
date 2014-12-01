@@ -16,8 +16,8 @@
 
 package com.android.build.gradle.integration.common.utils;
 
-import static com.android.builder.core.BuilderConstants.ANDROID_TEST;
 import static com.android.builder.core.BuilderConstants.DEBUG;
+import static com.android.builder.core.VariantConfiguration.Type.ANDROID_TEST;
 import static com.android.builder.model.AndroidProject.ARTIFACT_ANDROID_TEST;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -136,7 +136,7 @@ public class ModelHelper {
         assertNotNull("InstrumentTest source Providers null-check", testSourceProviders);
 
         new SourceProviderHelper(model.getName(), projectDir,
-                ANDROID_TEST, testSourceProviders.getSourceProvider())
+                ANDROID_TEST.getPrefix(), testSourceProviders.getSourceProvider())
                 .test();
 
         // test the source provider for the build types

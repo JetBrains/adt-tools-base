@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 The Android Open Source Project
+ * Copyright (C) 2014 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,21 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.build.gradle.internal.variant;
 
-import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
-import com.android.builder.core.VariantConfiguration;
+package com.android.build.gradle
+
+import groovy.transform.PackageScope
 
 /**
- * A tested variant
+ * Helper code for DSL tests.
  */
-public interface TestedVariantData {
+@PackageScope
+class DslTestUtil {
+    /**
+     * Variants created by default.
+     */
+    static final def DEFAULT_VARIANTS = [
+           "release", "debug", "debugAndroidTest", "releaseUnitTest", "debugUnitTest"
+    ]
 
-    void setTestVariantData(
-            @NonNull TestVariantData testVariantData,
-            @NonNull VariantConfiguration.Type type);
-
-    @Nullable
-    TestVariantData getTestVariantData(VariantConfiguration.Type type);
+    static int countVariants(Map variants) {
+        variants.values().sum()
+    }
 }

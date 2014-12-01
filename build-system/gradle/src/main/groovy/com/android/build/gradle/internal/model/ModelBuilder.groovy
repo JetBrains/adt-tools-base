@@ -113,7 +113,7 @@ public class ModelBuilder implements ToolingModelBuilder {
                 project.getBuildDir(),
                 basePlugin.extension.resourcePrefix,
                 basePlugin instanceof LibraryPlugin)
-                    .setDefaultConfig(ProductFlavorContainerImpl.createPFC(
+                    .setDefaultConfig(ProductFlavorContainerImpl.createProductFlavorContainer(
                         basePlugin.defaultConfigData,
                         basePlugin.getExtraFlavorSourceProviders(basePlugin.defaultConfigData.productFlavor.name)))
 
@@ -123,7 +123,7 @@ public class ModelBuilder implements ToolingModelBuilder {
                     basePlugin.getExtraBuildTypeSourceProviders(btData.buildType.name)))
         }
         for (ProductFlavorData pfData : basePlugin.variantManager.productFlavors.values()) {
-            androidProject.addProductFlavors(ProductFlavorContainerImpl.createPFC(
+            androidProject.addProductFlavors(ProductFlavorContainerImpl.createProductFlavorContainer(
                     pfData,
                     basePlugin.getExtraFlavorSourceProviders(pfData.productFlavor.name)))
         }
@@ -167,7 +167,7 @@ public class ModelBuilder implements ToolingModelBuilder {
         TestVariantData testVariantData = null
         if (variantData instanceof ApplicationVariantData ||
                 variantData instanceof LibraryVariantData) {
-            testVariantData = variantData.testVariantData
+            testVariantData = variantData.getTestVariantData(VariantConfiguration.Type.ANDROID_TEST)
         }
 
         AndroidArtifact mainArtifact = createArtifactInfo(
