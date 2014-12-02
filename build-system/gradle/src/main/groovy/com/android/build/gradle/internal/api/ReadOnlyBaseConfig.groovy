@@ -76,7 +76,7 @@ abstract class ReadOnlyBaseConfig implements BaseConfig {
 
     @NonNull
     @Override
-    public Map<String, String> getManifestPlaceholders() {
+    public Map<String, Object> getManifestPlaceholders() {
         return ImmutableMap.copyOf(baseConfig.getManifestPlaceholders())
     }
 
