@@ -44,7 +44,6 @@ import com.google.common.io.ByteSource;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Files;
 
-import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
@@ -63,8 +62,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 
-import javax.imageio.ImageIO;
-
 /**
  * Some manual tests for building projects.
  *
@@ -72,10 +69,6 @@ import javax.imageio.ImageIO;
  * Android Source tree under out/host/<platform>/sdk/... (result of 'make sdk')
  */
 public class ManualBuildTest extends BuildTest {
-
-    private static final int RED = 0xFFFF0000;
-    private static final int GREEN = 0xFF00FF00;
-    private static final int BLUE = 0xFF0000FF;
 
     protected File sampleDir;
     protected File testProjectDir;
@@ -85,58 +78,6 @@ public class ManualBuildTest extends BuildTest {
         super.setUp();
         sampleDir = new File(testDir, FOLDER_TEST_PROJECTS);
         testProjectDir = new File(testDir, FOLDER_TEST_SAMPLES);
-    }
-
-    public void testOverlay1Content() throws Exception {
-        File project = buildProject(FOLDER_TEST_SAMPLES, "overlay1", BasePlugin.GRADLE_TEST_VERSION);
-        File drawableOutput = new File(project, "build/" + FD_INTERMEDIATES + "/res/debug/drawable");
-
-        checkImageColor(drawableOutput, "no_overlay.png", GREEN);
-        checkImageColor(drawableOutput, "type_overlay.png", GREEN);
-    }
-
-    public void testOverlay2Content() throws Exception {
-        File project = buildProject(FOLDER_TEST_SAMPLES, "overlay2", BasePlugin.GRADLE_TEST_VERSION);
-        File drawableOutput = new File(project, "build/" + FD_INTERMEDIATES + "/res/one/debug/drawable");
-
-        checkImageColor(drawableOutput, "no_overlay.png", GREEN);
-        checkImageColor(drawableOutput, "type_overlay.png", GREEN);
-        checkImageColor(drawableOutput, "flavor_overlay.png", GREEN);
-        checkImageColor(drawableOutput, "type_flavor_overlay.png", GREEN);
-        checkImageColor(drawableOutput, "variant_type_flavor_overlay.png", GREEN);
-    }
-
-    public void testOverlay3Content() throws Exception {
-        File project = buildProject(FOLDER_TEST_SAMPLES, "overlay3", BasePlugin.GRADLE_TEST_VERSION);
-        File drawableOutput = new File(project, "build/" + FD_INTERMEDIATES + "/res/freebeta/debug/drawable");
-
-        checkImageColor(drawableOutput, "no_overlay.png", GREEN);
-        checkImageColor(drawableOutput, "debug_overlay.png", GREEN);
-        checkImageColor(drawableOutput, "beta_overlay.png", GREEN);
-        checkImageColor(drawableOutput, "free_overlay.png", GREEN);
-        checkImageColor(drawableOutput, "free_beta_overlay.png", GREEN);
-        checkImageColor(drawableOutput, "free_beta_debug_overlay.png", GREEN);
-        checkImageColor(drawableOutput, "free_normal_overlay.png", RED);
-
-        drawableOutput = new File(project, "build/" + FD_INTERMEDIATES + "/res/freenormal/debug/drawable");
-
-        checkImageColor(drawableOutput, "no_overlay.png", GREEN);
-        checkImageColor(drawableOutput, "debug_overlay.png", GREEN);
-        checkImageColor(drawableOutput, "beta_overlay.png", RED);
-        checkImageColor(drawableOutput, "free_overlay.png", GREEN);
-        checkImageColor(drawableOutput, "free_beta_overlay.png", RED);
-        checkImageColor(drawableOutput, "free_beta_debug_overlay.png", RED);
-        checkImageColor(drawableOutput, "free_normal_overlay.png", GREEN);
-
-        drawableOutput = new File(project, "build/" + FD_INTERMEDIATES + "/res/paidbeta/debug/drawable");
-
-        checkImageColor(drawableOutput, "no_overlay.png", GREEN);
-        checkImageColor(drawableOutput, "debug_overlay.png", GREEN);
-        checkImageColor(drawableOutput, "beta_overlay.png", GREEN);
-        checkImageColor(drawableOutput, "free_overlay.png", RED);
-        checkImageColor(drawableOutput, "free_beta_overlay.png", RED);
-        checkImageColor(drawableOutput, "free_beta_debug_overlay.png", RED);
-        checkImageColor(drawableOutput, "free_normal_overlay.png", RED);
     }
 
     public void testLibsManifestMerging() throws Exception {
@@ -1002,18 +943,6 @@ public class ManualBuildTest extends BuildTest {
             }
         }
         fail("Could not find uses-sdk:maxSdkVersion set to " + version + " in apk dump");
-    }
-
-    private static void checkImageColor(File folder, String fileName, int expectedColor)
-            throws IOException {
-        File f = new File(folder, fileName);
-        assertTrue("File '" + f.getAbsolutePath() + "' does not exist.", f.isFile());
-
-        BufferedImage image = ImageIO.read(f);
-        int rgb = image.getRGB(0, 0);
-        assertEquals(String.format("Expected: 0x%08X, actual: 0x%08X for file %s",
-                        expectedColor, rgb, f),
-                expectedColor, rgb);
     }
 
     private static void checkFile(File folder, String fileName, String[] expectedContents)
