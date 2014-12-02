@@ -865,18 +865,25 @@ public class AndroidBuilder {
 
     public void generateApkDataEntryInManifest(
                     int minSdkVersion,
+                    int targetSdkVersion,
                     @NonNull File manifestFile)
             throws InterruptedException, LoggedErrorException, IOException {
 
-        String content =
-                "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
-                "<manifest package=\"\" xmlns:android=\"http://schemas.android.com/apk/res/android\">\n" +
-                "    <uses-sdk android:minSdkVersion=\"" + minSdkVersion + "\"/>\n" +
-                "    <application>\n" +
-                        "        <meta-data android:name=\"" + ANDROID_WEAR + "\"\n" +
-                "                   android:resource=\"@xml/" + ANDROID_WEAR_MICRO_APK + "\" />\n" +
-                "    </application>\n" +
-                "</manifest>\n";
+        StringBuilder content = new StringBuilder();
+        content.append("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n")
+                .append("<manifest package=\"\" xmlns:android=\"http://schemas.android.com/apk/res/android\">\n")
+                .append("            <uses-sdk android:minSdkVersion=\"")
+                .append(minSdkVersion).append("\"");
+        if (targetSdkVersion != -1) {
+            content.append(" android:targetSdkVersion=\"").append(targetSdkVersion).append("\"");
+        }
+        content.append("/>\n");
+        content.append("    <application>\n")
+                .append("        <meta-data android:name=\"" + ANDROID_WEAR + "\"\n")
+                .append("                   android:resource=\"@xml/" + ANDROID_WEAR_MICRO_APK)
+                .append("\" />\n")
+                .append("   </application>\n")
+                .append("</manifest>\n");
 
         Files.write(content, manifestFile, Charsets.UTF_8);
     }
