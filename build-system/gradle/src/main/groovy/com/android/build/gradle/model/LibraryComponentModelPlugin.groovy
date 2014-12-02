@@ -55,8 +55,8 @@ public class LibraryComponentModelPlugin implements Plugin<Project> {
         static class Rules {
 
             @Model
-            Class extensionClass() {
-                return LibraryExtension
+            Boolean isApplication() {
+                return false
             }
 
             @Model

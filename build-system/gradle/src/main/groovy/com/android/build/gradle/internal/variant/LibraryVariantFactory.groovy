@@ -59,7 +59,7 @@ import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
 import static com.android.builder.model.AndroidProject.FD_OUTPUTS
 /**
  */
-public class LibraryVariantFactory implements VariantFactory<LibraryVariantData> {
+public class LibraryVariantFactory implements VariantFactory {
 
     private static final String ANNOTATIONS = "annotations"
 
@@ -78,7 +78,7 @@ public class LibraryVariantFactory implements VariantFactory<LibraryVariantData>
 
     @Override
     @NonNull
-    public LibraryVariantData createVariantData(
+    public BaseVariantData createVariantData(
             @NonNull GradleVariantConfiguration variantConfiguration,
             @NonNull Set<String> densities,
             @NonNull Set<String> abis,

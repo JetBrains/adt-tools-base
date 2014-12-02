@@ -17,8 +17,10 @@
 package com.android.build.gradle.model
 
 import com.android.annotations.Nullable
+import com.android.build.gradle.AppExtension
 import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.BasePlugin
+import com.android.build.gradle.LibraryExtension
 import com.android.build.gradle.api.AndroidSourceDirectorySet
 import com.android.build.gradle.api.AndroidSourceSet
 import com.android.build.gradle.internal.BuildTypeData
@@ -124,10 +126,12 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
                 NamedDomainObjectContainer<DefaultBuildType> buildTypeContainer,
                 NamedDomainObjectContainer<GroupableProductFlavor> productFlavorContainer,
                 NamedDomainObjectContainer<SigningConfig> signingConfigContainer,
-                @Path("extensionClass") Class extensionClass,
+                @Path("isApplication") Boolean isApplication,
                 BasePlugin plugin) {
             Instantiator instantiator = serviceRegistry.get(Instantiator.class);
             Project project = plugin.getProject()
+
+            Class extensionClass = isApplication ? AppExtension : LibraryExtension
 
             BaseExtension extension = (BaseExtension)instantiator.newInstance(extensionClass,
                     plugin, (ProjectInternal) project, instantiator,
