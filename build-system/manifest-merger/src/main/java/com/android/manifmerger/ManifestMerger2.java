@@ -54,7 +54,7 @@ public class ManifestMerger2 {
     private final File mManifestFile;
 
     @NonNull
-    private final Map<String, String> mPlaceHolderValues;
+    private final Map<String, Object> mPlaceHolderValues;
 
     @NonNull
     private final KeyBasedValueResolver<SystemProperty> mSystemPropertyResolver;
@@ -72,7 +72,7 @@ public class ManifestMerger2 {
             @NonNull ImmutableList<Pair<String, File>> libraryFiles,
             @NonNull ImmutableList<File> flavorsAndBuildTypeFiles,
             @NonNull ImmutableList<Invoker.Feature> optionalFeatures,
-            @NonNull Map<String, String> placeHolderValues,
+            @NonNull Map<String, Object> placeHolderValues,
             @NonNull KeyBasedValueResolver<SystemProperty> systemPropertiesResolver,
             @NonNull MergeType mergeType,
             @NonNull Optional<File> reportFile) {
@@ -131,10 +131,10 @@ public class ManifestMerger2 {
         }
 
         // check for placeholders presence.
-        Map<String, String> finalPlaceHolderValues = mPlaceHolderValues;
+        Map<String, Object> finalPlaceHolderValues = mPlaceHolderValues;
         if (!mPlaceHolderValues.containsKey("applicationId")) {
             finalPlaceHolderValues =
-                    ImmutableMap.<String, String>builder().putAll(mPlaceHolderValues)
+                    ImmutableMap.<String, Object>builder().putAll(mPlaceHolderValues)
                             .put("packageName", mainPackageAttribute.get().getValue())
                             .put("applicationId", mainPackageAttribute.get().getValue())
                             .build();
@@ -406,13 +406,13 @@ public class ManifestMerger2 {
             MergingReport.Builder mergingReportBuilder) {
 
         // check for placeholders presence.
-        Map<String, String> finalPlaceHolderValues = mPlaceHolderValues;
+        Map<String, Object> finalPlaceHolderValues = mPlaceHolderValues;
         if (!mPlaceHolderValues.containsKey("applicationId")) {
             String packageName = manifestInfo.getMainManifestPackageName().isPresent()
                     ? manifestInfo.getMainManifestPackageName().get()
                     : xmlDocument.getPackageName();
             finalPlaceHolderValues =
-                    ImmutableMap.<String, String>builder().putAll(mPlaceHolderValues)
+                    ImmutableMap.<String, Object>builder().putAll(mPlaceHolderValues)
                             .put(PlaceholderHandler.PACKAGE_NAME, packageName)
                             .put(PlaceholderHandler.APPLICATION_ID, packageName)
                             .build();
@@ -778,13 +778,13 @@ public class ManifestMerger2 {
 
         protected final File mMainManifestFile;
 
-        protected final ImmutableMap.Builder<SystemProperty, String> mSystemProperties =
-                new ImmutableMap.Builder<SystemProperty, String>();
+        protected final ImmutableMap.Builder<SystemProperty, Object> mSystemProperties =
+                new ImmutableMap.Builder<SystemProperty, Object>();
 
         protected final ILogger mLogger;
 
-        protected final ImmutableMap.Builder<String, String> mPlaceHolders =
-                new ImmutableMap.Builder<String, String>();
+        protected final ImmutableMap.Builder<String, Object> mPlaceHolders =
+                new ImmutableMap.Builder<String, Object>();
 
         /**
          * Sets a value for a {@link com.android.manifmerger.ManifestMerger2.SystemProperty}
@@ -962,7 +962,7 @@ public class ManifestMerger2 {
         public MergingReport merge() throws MergeFailureException {
 
             // provide some free placeholders values.
-            ImmutableMap<SystemProperty, String> systemProperties = mSystemProperties.build();
+            ImmutableMap<SystemProperty, Object> systemProperties = mSystemProperties.build();
             if (systemProperties.containsKey(SystemProperty.PACKAGE)) {
                 mPlaceHolders.put("packageName", systemProperties.get(SystemProperty.PACKAGE));
                 mPlaceHolders.put("applicationId", systemProperties.get(SystemProperty.PACKAGE));
@@ -993,16 +993,17 @@ public class ManifestMerger2 {
      */
     public static class MapBasedKeyBasedValueResolver<T> implements KeyBasedValueResolver<T> {
 
-        private final ImmutableMap<T, String> keyValues;
+        private final ImmutableMap<T, Object> keyValues;
 
-        public MapBasedKeyBasedValueResolver(Map<T, String> keyValues) {
+        public MapBasedKeyBasedValueResolver(Map<T, Object> keyValues) {
             this.keyValues = ImmutableMap.copyOf(keyValues);
         }
 
         @Nullable
         @Override
         public String getValue(@NonNull T key) {
-            return keyValues.get(key);
+            Object value = keyValues.get(key);
+            return value == null ? null : value.toString();
         }
     }
 
