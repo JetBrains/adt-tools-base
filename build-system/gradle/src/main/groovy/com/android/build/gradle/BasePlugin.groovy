@@ -1459,6 +1459,10 @@ public abstract class BasePlugin {
             variantData.variantConfiguration.getMinSdkVersion().apiLevel
         }
 
+        task.conventionMapping.targetSdkVersion = {
+            variantData.variantConfiguration.getTargetSdkVersion().apiLevel
+        }
+
         task.dependsOn config
 
         // the merge res task will need to run after this one.
