@@ -63,6 +63,8 @@ android {
 
         resConfig "en"
         resConfigs "nodpi", "hdpi"
+
+        manifestPlaceholders = [ "someKey":12 ]
     }
 
     buildTypes {

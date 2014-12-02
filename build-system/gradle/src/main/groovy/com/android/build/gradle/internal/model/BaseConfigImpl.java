@@ -36,7 +36,7 @@ abstract class BaseConfigImpl implements BaseConfig, Serializable {
     private static final long serialVersionUID = 1L;
 
     @NonNull
-    private final Map<String, String> mManifestPlaceholders;
+    private final Map<String, Object> mManifestPlaceholders;
     @NonNull
     private final Map<String, ClassField> mBuildConfigFields;
     @NonNull
@@ -83,7 +83,7 @@ abstract class BaseConfigImpl implements BaseConfig, Serializable {
 
     @Override
     @NonNull
-    public Map<String, String> getManifestPlaceholders() {
+    public Map<String, Object> getManifestPlaceholders() {
         return mManifestPlaceholders;
     }
 

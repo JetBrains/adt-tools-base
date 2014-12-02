@@ -70,7 +70,7 @@ public interface BaseConfig {
      * @return the map of key value pairs.
      */
     @NonNull
-    Map<String, String> getManifestPlaceholders();
+    Map<String, Object> getManifestPlaceholders();
 
     /**
      * Returns whether multi-dex is enabled.

@@ -38,7 +38,7 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
     private final Map<String, ClassField> mResValues = Maps.newTreeMap();
     private final List<File> mProguardFiles = Lists.newArrayList();
     private final List<File> mConsumerProguardFiles = Lists.newArrayList();
-    private final Map<String, String> mManifestPlaceholders = Maps.newHashMap();
+    private final Map<String, Object> mManifestPlaceholders = Maps.newHashMap();
     @Nullable
     private Boolean mMultiDexEnabled;
 
@@ -91,15 +91,15 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
 
     @NonNull
     @Override
-    public Map<String, String> getManifestPlaceholders() {
+    public Map<String, Object> getManifestPlaceholders() {
         return mManifestPlaceholders;
     }
 
-    public void addManifestPlaceHolders(@NonNull Map<String, String> manifestPlaceholders) {
+    public void addManifestPlaceHolders(@NonNull Map<String, Object> manifestPlaceholders) {
         mManifestPlaceholders.putAll(manifestPlaceholders);
     }
 
-    public void setManifestPlaceholders(@NonNull Map<String, String> manifestPlaceholders) {
+    public void setManifestPlaceholders(@NonNull Map<String, Object> manifestPlaceholders) {
         mManifestPlaceholders.clear();
         this.mManifestPlaceholders.putAll(manifestPlaceholders);
     }
