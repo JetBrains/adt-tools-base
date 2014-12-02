@@ -1791,8 +1791,8 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
      * @return the merged manifest placeholders for a build variant.
      */
     @NonNull
-    public Map<String, String> getManifestPlaceholders() {
-        Map<String, String> mergedFlavorsPlaceholders = mMergedFlavor.getManifestPlaceholders();
+    public Map<String, Object> getManifestPlaceholders() {
+        Map<String, Object> mergedFlavorsPlaceholders = mMergedFlavor.getManifestPlaceholders();
         // so far, blindly override the build type placeholders
         mergedFlavorsPlaceholders.putAll(mBuildType.getManifestPlaceholders());
         return mergedFlavorsPlaceholders;
