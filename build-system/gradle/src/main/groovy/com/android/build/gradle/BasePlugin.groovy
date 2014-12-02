@@ -3481,7 +3481,7 @@ public abstract class BasePlugin {
     static String normalize(ModuleVersionIdentifier id, String path) {
         // list of illegal characters
         String normalizedPath = path.replaceAll("[%<>:\"/?*\\\\]","@");
-        int pathPointer = path.length() - 1;
+        int pathPointer = normalizedPath.length() - 1;
         // do not end your path with either a dot or a space.
         String suffix = "";
         while((normalizedPath.charAt(pathPointer) == '.'
