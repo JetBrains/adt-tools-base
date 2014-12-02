@@ -134,7 +134,7 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
         // eventually, this will require a more open ended comparison.
         mSplitHandlingPolicy =
                 basePlugin.getExtension().getGeneratePureSplits()
-                    && variantConfiguration.getMinSdkVersion().getApiLevel() == 21
+                    && variantConfiguration.getMinSdkVersion().getApiLevel() >= 21
                     ? SplitHandlingPolicy.RELEASE_21_AND_AFTER_POLICY
                     : SplitHandlingPolicy.PRE_21_POLICY;
 
