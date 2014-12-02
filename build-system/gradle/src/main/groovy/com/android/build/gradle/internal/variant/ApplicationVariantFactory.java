@@ -43,7 +43,7 @@ import java.util.Set;
 
 /**
  */
-public class ApplicationVariantFactory implements VariantFactory<ApplicationVariantData> {
+public class ApplicationVariantFactory implements VariantFactory {
 
     @NonNull
     private final BasePlugin basePlugin;
@@ -54,7 +54,7 @@ public class ApplicationVariantFactory implements VariantFactory<ApplicationVari
 
     @Override
     @NonNull
-    public ApplicationVariantData createVariantData(
+    public BaseVariantData createVariantData(
             @NonNull GradleVariantConfiguration variantConfiguration,
             @NonNull Set<String> densities,
             @NonNull Set<String> abis,

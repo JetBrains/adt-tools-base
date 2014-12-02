@@ -45,8 +45,9 @@ public class AppComponentModelPlugin implements Plugin<Project> {
         static class Rules {
 
             @Model
-            Class extensionClass() {
-                return AppExtension
+            Boolean isApplication() {
+                // TODO: Determine a better way to do this.
+                return true
             }
 
             @Model
