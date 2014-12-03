@@ -67,6 +67,10 @@ public class JackTask extends AbstractCompile {
     @Input
     int minSdkVersion
 
+    @Input
+    @Optional
+    String javaMaxHeapSize
+
     @TaskAction
     void compile() {
         FullRevision revision = plugin.androidBuilder.targetInfo.buildTools.revision
@@ -77,9 +81,21 @@ public class JackTask extends AbstractCompile {
         List<String> command = Lists.newArrayList()
 
         command << "java"
-        command << "-Xmx1024M"
+
+        if (getJavaMaxHeapSize() != null) {
+            command << "-Xmx${getJavaMaxHeapSize()}"
+        } else {
+            command << "-Xmx1024M"
+        }
+
         command << "-jar"
         command << getJackExe().absolutePath
+
+        if (plugin.isVerbose()) {
+            command << "--verbose"
+            command << "info"
+        }
+
         command << "--classpath"
         command << computeBootClasspath()
         for (File lib : getPackagedLibraries()) {
