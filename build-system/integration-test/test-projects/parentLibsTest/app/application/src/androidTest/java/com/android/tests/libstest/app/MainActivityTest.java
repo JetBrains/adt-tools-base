@@ -43,15 +43,9 @@ public class MainActivityTest extends ActivityInstrumentationTestCase2<MainActiv
     private TextView mAppTextView2;
     private TextView mLib1TextView1;
     private TextView mLib1TextView2;
-    private TextView mLib2TextView1;
-    private TextView mLib2TextView2;
-    private TextView mLib2bTextView1;
-    private TextView mLib2bTextView2;
-    private TextView mLibappTextView1;
-    private TextView mLibappTextView2;
 
     /**
-     * Creates an {@link ActivityInstrumentationTestCase2} that tests the {@link Focus2} activity.
+     * Creates an {@link ActivityInstrumentationTestCase2} that tests the activity.
      */
     public MainActivityTest() {
         super(MainActivity.class);
@@ -63,17 +57,11 @@ public class MainActivityTest extends ActivityInstrumentationTestCase2<MainActiv
         final MainActivity a = getActivity();
         // ensure a valid handle to the activity has been returned
         assertNotNull(a);
-        
+
         mAppTextView1 = (TextView) a.findViewById(R.id.app_text1);
         mAppTextView2 = (TextView) a.findViewById(R.id.app_text1);
         mLib1TextView1 = (TextView) a.findViewById(R.id.lib1_text1);
         mLib1TextView2 = (TextView) a.findViewById(R.id.lib1_text2);
-        mLib2TextView1 = (TextView) a.findViewById(R.id.lib2_text1);
-        mLib2TextView2 = (TextView) a.findViewById(R.id.lib2_text2);
-        mLib2bTextView1 = (TextView) a.findViewById(R.id.lib2b_text1);
-        mLib2bTextView2 = (TextView) a.findViewById(R.id.lib2b_text2);
-        mLibappTextView1 = (TextView) a.findViewById(R.id.libapp_text1);
-        mLibappTextView2 = (TextView) a.findViewById(R.id.libapp_text2);
     }
 
     /**
@@ -88,29 +76,17 @@ public class MainActivityTest extends ActivityInstrumentationTestCase2<MainActiv
         assertNotNull(mAppTextView2);
         assertNotNull(mLib1TextView1);
         assertNotNull(mLib1TextView2);
-        assertNotNull(mLib2TextView1);
-        assertNotNull(mLib2TextView2);
-        assertNotNull(mLib2bTextView1);
-        assertNotNull(mLib2bTextView2);
-        assertNotNull(mLibappTextView1);
-        assertNotNull(mLibappTextView2);
     }
 
     @MediumTest
     public void testAndroidStrings() {
         assertEquals("SUCCESS-APP", mAppTextView1.getText().toString());
         assertEquals("SUCCESS-LIB1", mLib1TextView1.getText().toString());
-        assertEquals("SUCCESS-LIB2", mLib2TextView1.getText().toString());
-        assertEquals("SUCCESS-LIB2b", mLib2bTextView1.getText().toString());
-        assertEquals("SUCCESS-LIBAPP", mLibappTextView1.getText().toString());
     }
 
     @MediumTest
     public void testJavaStrings() {
         assertEquals("SUCCESS-APP", mAppTextView2.getText().toString());
         assertEquals("SUCCESS-LIB1", mLib1TextView2.getText().toString());
-        assertEquals("SUCCESS-LIB2", mLib2TextView2.getText().toString());
-        assertEquals("SUCCESS-LIB2b", mLib2bTextView2.getText().toString());
-        assertEquals("SUCCESS-LIBAPP", mLibappTextView2.getText().toString());
     }
 }

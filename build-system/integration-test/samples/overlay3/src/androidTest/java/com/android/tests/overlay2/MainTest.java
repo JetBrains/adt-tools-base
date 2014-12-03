@@ -66,7 +66,7 @@ public class MainTest extends ActivityInstrumentationTestCase2<Main> {
     }
 
     public void testBetaOverlay() {
-        if ("beta".equals(BuildConfig.FLAVOR2)) {
+        if ("beta".equals(BuildConfig.FLAVOR_releaseType)) {
             pixelLooker(mBetaOverlayIV, GREEN);
         } else {
             pixelLooker(mBetaOverlayIV, RED);
