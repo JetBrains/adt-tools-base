@@ -511,7 +511,7 @@ public class GradleDetectorTest extends AbstractCheckTest {
             return;
         }
         assertEquals(""
-                        + "build.gradle:6: Warning: A newer version of com.android.tools.build:gradle than 1.0.0-rc0 is available: 1.0.0-rc1 [GradleDependency]\n"
+                        + "build.gradle:6: Warning: A newer version of com.android.tools.build:gradle than 1.0.0-rc0 is available: " + GRADLE_PLUGIN_RECOMMENDED_VERSION + " [GradleDependency]\n"
                         + "        classpath 'com.android.tools.build:gradle:1.0.0-rc0'\n"
                         + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                         + "0 errors, 1 warnings\n",
