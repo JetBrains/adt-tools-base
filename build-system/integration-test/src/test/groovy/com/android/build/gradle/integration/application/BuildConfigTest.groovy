@@ -132,7 +132,7 @@ public final class BuildConfig {
   public static final int VALUE_DEFAULT = 1;
 }
 """
-        checkBuildConfig(expected, 'flavor1/debug')
+        doCheckBuildConfig(expected, 'flavor1/debug')
     }
 
     @Test
@@ -170,7 +170,7 @@ public final class BuildConfig {
   public static final int VALUE_DEFAULT = 1;
 }
 """
-        checkBuildConfig(expected, 'flavor2/debug')
+        doCheckBuildConfig(expected, 'flavor2/debug')
     }
 
     @Test
@@ -206,7 +206,7 @@ public final class BuildConfig {
   public static final int VALUE_DEFAULT = 1;
 }
 """
-        checkBuildConfig(expected, 'flavor1/release')
+        doCheckBuildConfig(expected, 'flavor1/release')
     }
 
     @Test
@@ -242,7 +242,7 @@ public final class BuildConfig {
   public static final int VALUE_DEFAULT = 1;
 }
 """
-        checkBuildConfig(expected, 'flavor2/release')
+        doCheckBuildConfig(expected, 'flavor2/release')
     }
 
     @Test
@@ -255,7 +255,14 @@ public final class BuildConfig {
         checkVariant(model.getVariants(), 'flavor2Release', map)
     }
 
-    private static void checkBuildConfig(@NonNull String expected, @NonNull String variantDir) {
+    private static void doCheckBuildConfig(@NonNull String expected, @NonNull String variantDir) {
+        checkBuildConfig(project, expected, variantDir)
+    }
+
+    static void checkBuildConfig(
+            @NonNull GradleTestProject project,
+            @NonNull String expected,
+            @NonNull String variantDir) {
         File outputFile = new File(project.getTestDir(),
                 "build/generated/source/buildConfig/$variantDir/com/example/helloworld/BuildConfig.java")
         Assert.assertTrue("Missing file: " + outputFile, outputFile.isFile());
