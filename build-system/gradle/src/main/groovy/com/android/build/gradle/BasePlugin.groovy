@@ -3418,12 +3418,12 @@ public abstract class BasePlugin {
 
             moduleArtifacts?.each { artifact ->
                 if (artifact.type == EXT_LIB_ARCHIVE) {
-                    String path = "${BasePlugin.normalize(id, id.group)}" +
-                            "/${BasePlugin.normalize(id, id.name)}" +
-                            "/${BasePlugin.normalize(id, id.version)}"
+                    String path = "${BasePlugin.normalize(logger, id, id.group)}" +
+                            "/${BasePlugin.normalize(logger, id, id.name)}" +
+                            "/${BasePlugin.normalize(logger, id, id.version)}"
                     String name = "$id.group:$id.name:$id.version"
-                    if (artifact.classifier != null) {
-                        path += "/${BasePlugin.normalize(id, artifact.classifier)}"
+                    if (artifact.classifier != null && !artifact.classifier.isEmpty()) {
+                        path += "/${BasePlugin.normalize(logger, id, artifact.classifier)}"
                         name += ":$artifact.classifier"
                     }
                     //def explodedDir = project.file("$project.rootProject.buildDir/${FD_INTERMEDIATES}/exploded-aar/$path")
@@ -3478,24 +3478,41 @@ public abstract class BasePlugin {
      * @param path the proposed path name
      * @return the normalized path name
      */
-    static String normalize(ModuleVersionIdentifier id, String path) {
+    static String normalize(ILogger logger, ModuleVersionIdentifier id, String path) {
+        if (path == null || path.isEmpty()) {
+            logger.info("When unzipping library '${id.group}:${id.name}:${id.version}, " +
+                    "either group, name or version is empty")
+            return path;
+        }
         // list of illegal characters
         String normalizedPath = path.replaceAll("[%<>:\"/?*\\\\]","@");
-        int pathPointer = normalizedPath.length() - 1;
-        // do not end your path with either a dot or a space.
-        String suffix = "";
-        while((normalizedPath.charAt(pathPointer) == '.'
-                || normalizedPath.charAt(pathPointer) == ' ')
-                && pathPointer > 0) {
-            pathPointer--
-            suffix += "@"
+        if (normalizedPath == null || normalizedPath.isEmpty()) {
+            // if the path normalization failed, return the original path.
+            logger.info("When unzipping library '${id.group}:${id.name}:${id.version}, " +
+                    "the normalized '${path}' is empty")
+            return path
         }
-        if (pathPointer == 0) {
-            throw new RuntimeException(
-                    "When unzipping library '${id.group}:${id.name}:${id.version}, " +
-                            "the path '${path}' cannot be transformed into a valid directory name");
+        try {
+            int pathPointer = normalizedPath.length() - 1;
+            // do not end your path with either a dot or a space.
+            String suffix = "";
+            while ((normalizedPath.charAt(pathPointer) == '.'
+                    || normalizedPath.charAt(pathPointer) == ' ')
+                    && pathPointer > 0) {
+                pathPointer--
+                suffix += "@"
+            }
+            if (pathPointer == 0) {
+                throw new RuntimeException(
+                        "When unzipping library '${id.group}:${id.name}:${id.version}, " +
+                                "the path '${path}' cannot be transformed into a valid directory name");
+            }
+            return normalizedPath.substring(0, pathPointer + 1) + suffix;
+        } catch (Exception e) {
+            logger.error(e, "When unzipping library '${id.group}:${id.name}:${id.version}', " +
+                    "Path normalization failed for input ${path}")
+            return path;
         }
-        return normalizedPath.substring(0, pathPointer+1) + suffix;
     }
 
     private void configureBuild(VariantDependencies configurationDependencies) {
