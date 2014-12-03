@@ -17,17 +17,21 @@
 package com.android.build.gradle
 
 import com.android.build.gradle.internal.BadPluginException
+import com.android.build.gradle.internal.LoggerWrapper
 import com.android.build.gradle.internal.test.BaseTest
 import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.builder.core.BuilderConstants
 import com.android.builder.core.DefaultBuildType
 import com.android.builder.model.SigningConfig
 import com.android.ide.common.signing.KeystoreHelper
+import com.android.utils.ILogger
+import com.android.utils.StdLogger
 import org.gradle.api.Project
-import org.gradle.api.artifacts.ModuleIdentifier
 import org.gradle.api.artifacts.ModuleVersionIdentifier
 import org.gradle.api.internal.artifacts.DefaultModuleVersionIdentifier
 import org.gradle.testfixtures.ProjectBuilder
+
+import java.util.logging.Logger
 
 /**
  * Tests for the internal workings of the app plugin ("android")
@@ -433,12 +437,18 @@ public class AppPluginInternalTest extends BaseTest {
     public void testPathNormalization() {
         ModuleVersionIdentifier moduleVersionIdentifier = new DefaultModuleVersionIdentifier(
                 "group", "name", "1.2");
-        assertEquals("app", BasePlugin.normalize(moduleVersionIdentifier, "app"));
-        assertEquals(".app", BasePlugin.normalize(moduleVersionIdentifier, ".app"))
-        assertEquals("app@@@", BasePlugin.normalize(moduleVersionIdentifier, "app..."))
-        assertEquals("app@@@", BasePlugin.normalize(moduleVersionIdentifier, "app. ."))
-        assertEquals(".app@@", BasePlugin.normalize(moduleVersionIdentifier, ".app%%"))
-        assertEquals("app.txt", BasePlugin.normalize(moduleVersionIdentifier, "app.txt"))
-        assertEquals("app@@@txt", BasePlugin.normalize(moduleVersionIdentifier, "app%*?txt"))
+        ILogger logger = new StdLogger(StdLogger.Level.VERBOSE);
+        assertEquals("app", BasePlugin.normalize(logger, moduleVersionIdentifier, "app"));
+        assertEquals(".app", BasePlugin.normalize(logger, moduleVersionIdentifier, ".app"))
+        assertEquals("app@@@", BasePlugin.normalize(logger, moduleVersionIdentifier, "app..."))
+        assertEquals("app@@@", BasePlugin.normalize(logger, moduleVersionIdentifier, "app. ."))
+        assertEquals("app@@@@", BasePlugin.normalize(logger, moduleVersionIdentifier, "app. . "))
+        // will generate an exeption and return the original value
+        assertEquals("..", BasePlugin.normalize(logger, moduleVersionIdentifier, ".."))
+        assertEquals(".app@@", BasePlugin.normalize(logger, moduleVersionIdentifier, ".app%%"))
+        assertEquals("app.txt", BasePlugin.normalize(logger, moduleVersionIdentifier, "app.txt"))
+        assertEquals("app@@@txt", BasePlugin.normalize(logger, moduleVersionIdentifier, "app%*?txt"))
+        assertEquals("", BasePlugin.normalize(logger, moduleVersionIdentifier, ""));
+        assertNull(BasePlugin.normalize(logger, moduleVersionIdentifier, null));
     }
 }
