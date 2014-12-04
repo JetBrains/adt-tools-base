@@ -527,7 +527,7 @@ public abstract class BasePlugin {
     }
 
     boolean isVerbose() {
-        return project.logger.isEnabled(LogLevel.DEBUG)
+        return project.logger.isEnabled(LogLevel.INFO)
     }
 
     void setAssembleTest(Task assembleTest) {
@@ -2306,6 +2306,7 @@ public abstract class BasePlugin {
         compileTask.dependsOn variantData.variantDependency.compileConfiguration.buildDependencies
 
         compileTask.plugin = this
+        compileTask.conventionMapping.javaMaxHeapSize = { extension.dexOptions.getJavaMaxHeapSize() }
 
         compileTask.source = variantData.getJavaSources()
 
