@@ -39,6 +39,7 @@ import com.android.build.gradle.ndk.NdkExtension
 import com.android.builder.core.BuilderConstants
 import com.android.builder.core.DefaultBuildType
 import com.android.builder.model.SigningConfig
+import com.google.common.collect.Lists
 import org.gradle.api.DefaultTask
 import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.Plugin
@@ -52,14 +53,15 @@ import org.gradle.internal.reflect.Instantiator
 import org.gradle.internal.service.ServiceRegistry
 import org.gradle.language.base.FunctionalSourceSet
 import org.gradle.language.base.LanguageSourceSet
-import org.gradle.language.base.ProjectSourceSet
 import org.gradle.language.base.internal.LanguageRegistration
 import org.gradle.language.base.internal.LanguageRegistry
 import org.gradle.language.base.internal.SourceTransformTaskConfig
+import org.gradle.model.Finalize
 import org.gradle.model.Model
 import org.gradle.model.Mutate
 import org.gradle.model.Path
 import org.gradle.model.RuleSource
+import org.gradle.model.collection.CollectionBuilder
 import org.gradle.model.internal.core.ModelCreators
 import org.gradle.model.internal.core.ModelReference
 import org.gradle.platform.base.BinaryContainer
@@ -185,7 +187,7 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
 
         @Mutate
         void createAndroidComponents(
-                ComponentSpecContainer specContainer,
+                AndroidComponentSpec androidSpec,
                 BaseExtension androidExtension,
                 NamedDomainObjectContainer<DefaultBuildType> buildTypeContainer,
                 NamedDomainObjectContainer<GroupableProductFlavor> productFlavorContainer,
@@ -210,13 +212,12 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
             }
             plugin.variantManager = variantManager;
 
-            specContainer.withType(AndroidComponentSpec) { DefaultAndroidComponentSpec spec ->
-                spec.extension = androidExtension
-                spec.variantManager = variantManager
-                spec.signingOverride = plugin.getSigningOverride()
+            def spec = androidSpec as DefaultAndroidComponentSpec
+            spec.extension = androidExtension
+            spec.variantManager = variantManager
+            spec.signingOverride = plugin.getSigningOverride()
 
-                applyProjectSourceSet(spec, sources, plugin)
-            }
+            applyProjectSourceSet(spec, sources, plugin)
         }
 
         @BinaryType
@@ -224,28 +225,29 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
             builder.defaultImplementation(DefaultAndroidTestBinary)
         }
 
-        @Mutate
-        void createTestBinary(BinaryContainer binaries, ComponentSpecContainer specs) {
-            AndroidComponentSpec spec =
-                    (AndroidComponentSpec) specs.getByName(AndroidComponentModelPlugin.COMPONENT_NAME)
-            spec.binaries.withType(AndroidBinary) { binary ->
+        // Must run after AndroidBinaries are created.
+        @Finalize
+        void createTestBinary(BinaryContainer binaries, AndroidComponentSpec spec) {
+            List<AndroidTestBinary> testBinaries = Lists.newArrayList();
+            spec.binaries.each { AndroidBinary binary ->
                 if (binary.buildType.name.equals(DEBUG)) {
                     DefaultAndroidTestBinary testBinary =
                             (DefaultAndroidTestBinary) binaries.create(
                                     binary.name + "Test", AndroidTestBinary);
                     testBinary.testedBinary = binary
-                    spec.binaries.add(testBinary)
+                    testBinaries.add(testBinary)
                 }
             }
+            spec.binaries.addAll(testBinaries)
         }
 
         @Mutate
         void createAndroidTasks(
                 TaskContainer tasks,
                 BinaryContainer binaries,
-                ComponentSpecContainer specContainer,
+                AndroidComponentSpec androidSpec,
                 BasePlugin plugin) {
-            DefaultAndroidComponentSpec spec = (DefaultAndroidComponentSpec)specContainer.withType(AndroidComponentSpec)[0]
+            DefaultAndroidComponentSpec spec = (DefaultAndroidComponentSpec) androidSpec
             VariantManager variantManager = spec.variantManager
 
             // Create lifecycle tasks.
