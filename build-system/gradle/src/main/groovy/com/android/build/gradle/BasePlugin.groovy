@@ -3501,18 +3501,17 @@ public abstract class BasePlugin {
             int pathPointer = normalizedPath.length() - 1;
             // do not end your path with either a dot or a space.
             String suffix = "";
-            while ((normalizedPath.charAt(pathPointer) == '.'
-                    || normalizedPath.charAt(pathPointer) == ' ')
-                    && pathPointer > 0) {
+            while (pathPointer >= 0 && (normalizedPath.charAt(pathPointer) == '.'
+                    || normalizedPath.charAt(pathPointer) == ' ')) {
                 pathPointer--
                 suffix += "@"
             }
-            if (pathPointer == 0) {
+            if (pathPointer < 0) {
                 throw new RuntimeException(
                         "When unzipping library '${id.group}:${id.name}:${id.version}, " +
                                 "the path '${path}' cannot be transformed into a valid directory name");
             }
-            return normalizedPath.substring(0, pathPointer + 1) + suffix;
+            return normalizedPath.substring(0, pathPointer + 1) + suffix
         } catch (Exception e) {
             logger.error(e, "When unzipping library '${id.group}:${id.name}:${id.version}', " +
                     "Path normalization failed for input ${path}")
