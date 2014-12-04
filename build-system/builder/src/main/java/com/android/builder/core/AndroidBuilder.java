@@ -1402,7 +1402,7 @@ public class AndroidBuilder {
 
         command.add("java");
         if (dexOptions.getJavaMaxHeapSize() != null) {
-            command.add("-JXmx" + dexOptions.getJavaMaxHeapSize());
+            command.add("-Xmx" + dexOptions.getJavaMaxHeapSize());
         }
         command.add("-jar");
         command.add(jill);
