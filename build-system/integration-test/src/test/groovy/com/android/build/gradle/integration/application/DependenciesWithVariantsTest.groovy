@@ -14,32 +14,28 @@
  * limitations under the License.
  */
 
+
+
 package com.android.build.gradle.integration.application
 
-import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
-import org.junit.experimental.categories.Category
-
-import java.util.zip.ZipFile
-
-import static org.junit.Assert.assertNotNull
 
 /**
- * Assemble tests for packagingOptions.
+ * Assemble tests for dependenciesWithVariants.
  */
-class PackagingOptionsTest {
+class DependenciesWithVariantsTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("packagingOptions")
+            .fromTestProject("dependenciesWithVariants")
             .create()
 
     @BeforeClass
     static void setup() {
-        project.execute("clean", "assembleDebug")
+        project.execute("clean", "assembleDebug", "assembleTest");
     }
 
     @AfterClass
@@ -50,17 +46,5 @@ class PackagingOptionsTest {
     @Test
     void lint() {
         project.execute("lint")
-    }
-
-    @Test
-    void "check packaging"() {
-        ZipFile apk = new ZipFile(project.getApk("debug"))
-        assertNotNull(apk.getEntry("first_pick.txt"))
-    }
-
-    @Test
-    @Category(DeviceTests.class)
-    void connectedCheck() {
-        project.execute("connectedCheck")
     }
 }
