@@ -440,15 +440,25 @@ public class AppPluginInternalTest extends BaseTest {
         ILogger logger = new StdLogger(StdLogger.Level.VERBOSE);
         assertEquals("app", BasePlugin.normalize(logger, moduleVersionIdentifier, "app"));
         assertEquals(".app", BasePlugin.normalize(logger, moduleVersionIdentifier, ".app"))
+        assertEquals("app@", BasePlugin.normalize(logger, moduleVersionIdentifier, "app."))
+        assertEquals("app@", BasePlugin.normalize(logger, moduleVersionIdentifier, "app "))
         assertEquals("app@@@", BasePlugin.normalize(logger, moduleVersionIdentifier, "app..."))
         assertEquals("app@@@", BasePlugin.normalize(logger, moduleVersionIdentifier, "app. ."))
         assertEquals("app@@@@", BasePlugin.normalize(logger, moduleVersionIdentifier, "app. . "))
-        // will generate an exeption and return the original value
-        assertEquals("..", BasePlugin.normalize(logger, moduleVersionIdentifier, ".."))
+        assertEquals("a@", BasePlugin.normalize(logger, moduleVersionIdentifier, "a."))
+        assertEquals("a@", BasePlugin.normalize(logger, moduleVersionIdentifier, "a "))
+        assertEquals("a@@@", BasePlugin.normalize(logger, moduleVersionIdentifier, "a..."))
         assertEquals(".app@@", BasePlugin.normalize(logger, moduleVersionIdentifier, ".app%%"))
         assertEquals("app.txt", BasePlugin.normalize(logger, moduleVersionIdentifier, "app.txt"))
         assertEquals("app@@@txt", BasePlugin.normalize(logger, moduleVersionIdentifier, "app%*?txt"))
         assertEquals("", BasePlugin.normalize(logger, moduleVersionIdentifier, ""));
+        assertEquals("a", BasePlugin.normalize(logger, moduleVersionIdentifier, "a"));
+        assertEquals("1", BasePlugin.normalize(logger, moduleVersionIdentifier, "1"));
         assertNull(BasePlugin.normalize(logger, moduleVersionIdentifier, null));
+
+        // those will generate an exception and return the original value
+        assertEquals(".", BasePlugin.normalize(logger, moduleVersionIdentifier, "."));
+        assertEquals("..", BasePlugin.normalize(logger, moduleVersionIdentifier, ".."))
+        assertEquals("...", BasePlugin.normalize(logger, moduleVersionIdentifier, "..."))
     }
 }
