@@ -3,7 +3,7 @@ This is a test project which exercises the "resource shrinking"
 
 The project has three build types; only the "release" type has
 shrinking enabled. To test, run "gradle assembleRelease", which will
-generate statistics. ManualBuildTest#testShrinkResources will not only
+generate statistics. ShrinkTest#"check shrink resources" will not only
 build that target, but run specific checks on the results after the
 build to make sure all referenced resources are still present, and
 that all unused resources have been removed from the final APK.

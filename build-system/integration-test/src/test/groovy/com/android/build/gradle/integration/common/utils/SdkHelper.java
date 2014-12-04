@@ -16,23 +16,14 @@
 
 package com.android.build.gradle.integration.common.utils;
 
-import static org.junit.Assert.assertTrue;
-
 import com.android.annotations.NonNull;
-import com.android.builder.core.ApkInfoParser;
-import com.android.ide.common.internal.CommandLineRunner;
-import com.android.ide.common.internal.LoggedErrorException;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.SdkManager;
 import com.android.sdklib.repository.FullRevision;
 import com.android.utils.ILogger;
 import com.android.utils.StdLogger;
 
-import org.gradle.api.Nullable;
-
 import java.io.File;
-import java.io.IOException;
-import java.util.Map;
 
 /**
  * Helper for SDK related functions.
