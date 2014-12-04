@@ -302,7 +302,7 @@ final class Device implements IDevice {
     public String getProperty(String name) {
         Future<String> future = mPropFetcher.getProperty(name);
         try {
-            return future.get(1, TimeUnit.MILLISECONDS);
+            return future.get(1, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             // ignore
         } catch (ExecutionException e) {
@@ -1201,5 +1201,15 @@ final class Device implements IDevice {
         }
 
         return 0;
+    }
+
+    @Override
+    public String getLanguage() {
+        return getProperty(IDevice.PROP_DEVICE_LANGUAGE);
+    }
+
+    @Override
+    public String getRegion() {
+        return getProperty(IDevice.PROP_DEVICE_REGION);
     }
 }

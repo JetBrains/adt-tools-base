@@ -17,6 +17,7 @@
 package com.android.builder.testing.api;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.IShellEnabledDevice;
 import com.android.ddmlib.TimeoutException;
@@ -127,6 +128,21 @@ public abstract class DeviceConnector implements IShellEnabledDevice {
     public abstract int getHeight();
 
     public abstract int getWidth();
+
+    /**
+     * Returns the user's language.
+     * @return the user's language or null if it's unknown.
+     */
+    @Nullable
+    public abstract String getLanguage();
+
+    /**
+     * Returns the user's region.
+     *
+     * @return the user's region or null if it's unknown
+     */
+    @Nullable
+    public abstract String getRegion();
 
     @NonNull
     public abstract String getProperty(String propertyName);

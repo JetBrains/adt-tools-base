@@ -235,6 +235,14 @@ public class FakeDevice extends DeviceConnector {
         return 480;
     }
 
+    public String getLanguage() {
+        return "en";
+    }
+
+    public String getRegion() {
+        return null;
+    }
+
     public String getProperty(String propertyName) {
         if ("ro.sf.lcd_density".equals(propertyName)) return "160";
         return null;

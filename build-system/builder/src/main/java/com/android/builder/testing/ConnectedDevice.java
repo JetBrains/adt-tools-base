@@ -209,6 +209,16 @@ public class ConnectedDevice extends DeviceConnector {
     }
 
     @Override
+    public String getLanguage() {
+        return iDevice.getLanguage();
+    }
+
+    @Override
+    public String getRegion() {
+        return iDevice.getRegion();
+    }
+
+    @Override
     @NonNull
     public String getProperty(String propertyName) {
         return iDevice.getProperty(propertyName);

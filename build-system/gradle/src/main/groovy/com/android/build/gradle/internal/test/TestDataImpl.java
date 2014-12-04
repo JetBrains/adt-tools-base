@@ -99,7 +99,11 @@ public class TestDataImpl implements TestData {
 
     @NonNull
     @Override
-    public ImmutableList<File> getTestedApks(int density, @NonNull List<String> abis) {
+    public ImmutableList<File> getTestedApks(
+            int density,
+            @Nullable String language,
+            @Nullable String region,
+            @NonNull List<String> abis) {
         TestedVariantData testedVariantData = testVariantData.getTestedVariantData();
         BaseVariantData<?> testedVariantData2 = (BaseVariantData) testedVariantData;
 
@@ -107,6 +111,8 @@ public class TestDataImpl implements TestData {
                 testedVariantData2.getOutputs(),
                 testedVariantData2.getVariantConfiguration().getSupportedAbis(),
                 density,
+                language,
+                region,
                 abis);
         ImmutableList.Builder<File> apks = ImmutableList.builder();
         for (OutputFile outputFile : outputFiles) {
