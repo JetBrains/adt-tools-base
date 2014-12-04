@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.application
 
 import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.integration.common.utils.ApkHelper
 import com.android.build.gradle.integration.common.utils.ZipHelper
 import com.android.builder.model.AndroidArtifact
 import com.android.builder.model.AndroidArtifactOutput
@@ -56,6 +57,11 @@ class DensitySplitTest {
     }
 
     @Test
+    void lint() {
+        project.execute("lint")
+    }
+
+    @Test
     void testPackaging() {
         for (Variant variant : model.getVariants()) {
             AndroidArtifact mainArtifact = variant.getMainArtifact();
@@ -75,8 +81,12 @@ class DensitySplitTest {
     }
 
     @Test
-    void lint() {
-        project.execute("lint")
+    void "check version code"() {
+        ApkHelper.checkVersion(project.getApk("universal", "debug"), 112, "version 112")
+        ApkHelper.checkVersion(project.getApk("mdpi", "debug"), 212, "version 212")
+        ApkHelper.checkVersion(project.getApk("hdpi", "debug"), 312, "version 312")
+        ApkHelper.checkVersion(project.getApk("xhdpi", "debug"), 412, "version 412")
+        ApkHelper.checkVersion(project.getApk("xxhdpi", "debug"), 512, "version 512")
     }
 
     @Test

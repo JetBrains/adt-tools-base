@@ -26,6 +26,7 @@ import com.android.build.gradle.BasePlugin;
 import com.android.build.gradle.integration.common.fixture.app.AbstractAndroidTestApp;
 import com.android.build.gradle.integration.common.fixture.app.AndroidTestApp;
 import com.android.build.gradle.integration.common.fixture.app.TestSourceFile;
+import com.android.build.gradle.integration.common.utils.SdkHelper;
 import com.android.builder.model.AndroidProject;
 import com.android.io.StreamException;
 import com.android.sdklib.internal.project.ProjectProperties;
@@ -171,7 +172,7 @@ public class GradleTestProject implements TestRule {
             @Nullable String name,
             @Nullable AndroidTestApp testApp,
             boolean captureStdOut) {
-        sdkDir = findSdkDir();
+        sdkDir = SdkHelper.findSdkDir();
         ndkDir = findNdkDir();
         String buildDir = System.getenv("PROJECT_BUILD_DIR");
         outDir = (buildDir == null) ? new File("build/tests") : new File(buildDir, "tests");
@@ -180,6 +181,28 @@ public class GradleTestProject implements TestRule {
         if (captureStdOut) {
             stdout = new ByteArrayOutputStream();
         }
+    }
+
+    /**
+     * Create a GradleTestProject representing a subproject of another GradleTestProject.
+     * @param subproject name of the subproject.
+     * @param rootProject root GradleTestProject.
+     */
+    private GradleTestProject(
+            @NonNull String subproject,
+            @NonNull GradleTestProject rootProject) {
+        name = subproject;
+        outDir = rootProject.outDir;
+
+        testDir = new File(rootProject.testDir, subproject);
+        assertTrue(testDir.isDirectory());
+
+        buildFile = new File(testDir, "build.gradle");
+        sourceDir = new File(testDir, "src");
+        ndkDir = rootProject.ndkDir;
+        sdkDir = rootProject.sdkDir;
+        stdout = rootProject.stdout;
+        testApp = null;
     }
 
     public static Builder builder() {
@@ -272,6 +295,13 @@ public class GradleTestProject implements TestRule {
                 base.evaluate();
             }
         };
+    }
+
+    /**
+     * Create a GradleTestProject representing a subproject.
+     */
+    public GradleTestProject getSubproject(String name) {
+        return new GradleTestProject(name, this);
     }
 
     /**
@@ -478,22 +508,6 @@ public class GradleTestProject implements TestRule {
         } else {
             return new File(testDir, path);
         }
-    }
-
-    /**
-     * Returns the SDK folder as built from the Android source tree.
-     */
-    private static File findSdkDir() {
-        String androidHome = System.getenv("ANDROID_HOME");
-        if (androidHome != null) {
-            File f = new File(androidHome);
-            if (f.isDirectory()) {
-                return f;
-            } else {
-                System.out.println("Failed to find SDK in ANDROID_HOME=" + androidHome);
-            }
-        }
-        return null;
     }
 
     /**
