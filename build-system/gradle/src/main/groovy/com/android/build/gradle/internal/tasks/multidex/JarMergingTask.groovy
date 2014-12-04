@@ -17,6 +17,10 @@
 
 
 package com.android.build.gradle.internal.tasks.multidex
+
+import com.google.common.collect.Sets
+import com.google.common.hash.Hashing
+import com.google.common.io.Files
 import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.InputFiles
@@ -54,8 +58,20 @@ class JarMergingTask extends DefaultTask {
         JarOutputStream jos = new JarOutputStream(fos)
 
         final byte[] buffer = new byte[8192]
+        Collection<File> jars = getInputJars()
 
-        for (File file : getInputJars()) {
+        final Set<String> hashs = Sets.newHashSetWithExpectedSize(jars.size())
+
+        for (File file : jars) {
+
+            // TODO remove once we can properly add a library as a dependency of its test.
+            String hash = Files.hash(file, Hashing.sha1()).toString()
+            if (hashs.contains(hash)) {
+                continue
+            }
+            hashs.add(hash)
+
+            logger.info("INPUT: " + file)
             processJarFile(jos, file, buffer)
         }
 
