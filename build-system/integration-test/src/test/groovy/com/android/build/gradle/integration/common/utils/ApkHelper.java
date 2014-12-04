@@ -41,6 +41,13 @@ public class ApkHelper {
         checkVersion(apk, code, null /* versionName */);
     }
 
+    public static void checkVersionName(
+        @NonNull File apk,
+        @Nullable String name)
+        throws IOException, InterruptedException, LoggedErrorException {
+        checkVersion(apk, null, name);
+    }
+
     public static void checkVersion(
             @NonNull File apk,
             @Nullable Integer code,

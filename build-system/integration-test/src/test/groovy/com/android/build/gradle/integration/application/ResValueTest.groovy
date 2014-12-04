@@ -18,13 +18,13 @@ package com.android.build.gradle.integration.application
 
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
+import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
+import com.android.build.gradle.integration.common.utils.ModelHelper
 import com.android.builder.model.AndroidArtifact
 import com.android.builder.model.AndroidProject
 import com.android.builder.model.ClassField
 import com.android.builder.model.Variant
-import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
-import com.android.build.gradle.integration.common.utils.ModelHelper
 import com.google.common.base.Charsets
 import com.google.common.collect.Maps
 import com.google.common.io.Files

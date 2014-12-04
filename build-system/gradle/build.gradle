@@ -7,10 +7,6 @@ sourceSets {
         groovy.srcDirs = ['src/main/groovy', 'src/fromGradle/groovy']
         resources.srcDirs = ['src/main/resources', 'src/fromGradle/resources']
     }
-    buildTest {
-        groovy.srcDir file('src/build-test/groovy')
-        resources.srcDir file('src/build-test/resources')
-    }
 }
 
 ext.proguardVersion = "5.1"
@@ -24,11 +20,6 @@ dependencies {
 
     testCompile 'junit:junit:3.8.1'
     testCompile project(':base:project-test-lib')
-
-    buildTestCompile sourceSets.main.output
-    buildTestCompile sourceSets.test.output
-    buildTestCompile configurations.testCompile
-    buildTestCompile configurations.testRuntime
 }
 
 // configuration for dependencies provided by the runtime,
@@ -70,18 +61,6 @@ test {
         events "failed"
     }
 }
-
-task buildTest(type: Test) {
-    testClassesDir = sourceSets.buildTest.output.classesDir
-    classpath = sourceSets.buildTest.runtimeClasspath
-    description = "Runs the project build tests. This requires an SDK either from the Android source tree, under out/..., or an env var ANDROID_HOME."
-    group = "verification"
-    systemProperties['jar.path'] = jar.archivePath
-    environment("CUSTOM_REPO", rootProject.file("../out/repo"))
-}
-
-buildTest.dependsOn ':publishLocal'
-check.dependsOn buildTest
 
 groovydoc {
     exclude     "**/internal/**"
