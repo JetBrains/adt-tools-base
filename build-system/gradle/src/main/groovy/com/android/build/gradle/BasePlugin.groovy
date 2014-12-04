@@ -526,6 +526,10 @@ public abstract class BasePlugin {
         return project.logger.isEnabled(LogLevel.INFO)
     }
 
+    boolean isDebugLog() {
+        return project.logger.isEnabled(LogLevel.DEBUG)
+    }
+
     void setAssembleTest(Task assembleTest) {
         this.assembleTest = assembleTest
     }
