@@ -14,34 +14,36 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.integration.library
+package com.android.build.gradle.integration.application
 
-import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.utils.ModelHelper
-import com.android.builder.model.*
+import com.android.builder.model.AndroidArtifact
+import com.android.builder.model.AndroidProject
+import com.android.builder.model.Dependencies
+import com.android.builder.model.Variant
 import org.junit.*
-import org.junit.experimental.categories.Category
 
 import static com.android.builder.core.BuilderConstants.DEBUG
 import static com.android.builder.model.AndroidProject.ARTIFACT_ANDROID_TEST
+
 import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertNotNull
-import static org.junit.Assert.assertTrue
 
 /**
- * Assemble tests for libTestDep.
+ * Assemble tests for testWithDep that loads the model but doesn't build.
  */
-class LibTestDepTest {
+class TestWithDepTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("libTestDep")
+            .fromSample("testWithDep")
             .create()
-    static AndroidProject model
+
+    static public AndroidProject model
 
     @BeforeClass
     static void setup() {
-        model = project.executeAndReturnModel("clean", "assembleDebug");
+        model = project.getModel()
     }
 
     @AfterClass
@@ -51,12 +53,7 @@ class LibTestDepTest {
     }
 
     @Test
-    void lint() {
-        project.execute("lint")
-    }
-
-    @Test
-    public void "check test variant inherits deps from main variant"() {
+    void "check there is a dep on the test variant"() throws Exception {
         Collection<Variant> variants = model.getVariants();
         Variant debugVariant = ModelHelper.getVariant(variants, DEBUG);
         assertNotNull(debugVariant);
@@ -67,22 +64,6 @@ class LibTestDepTest {
         assertNotNull(testArtifact);
 
         Dependencies testDependencies = testArtifact.getDependencies();
-        Collection<JavaLibrary> javaLibraries = testDependencies.getJavaLibraries();
-        assertEquals(2, javaLibraries.size());
-        for (JavaLibrary lib : javaLibraries) {
-            File f = lib.getJarFile();
-            assertTrue(f.getName().equals("guava-11.0.2.jar") || f.getName().equals("jsr305-1.3.9.jar"));
-        }
-    }
-
-    @Test
-    void "check debug and release output have different names"() {
-        ModelHelper.compareDebugAndReleaseOutput(model)
-    }
-
-    @Test
-    @Category(DeviceTests.class)
-    void connectedCheck() {
-        project.execute("connectedCheck");
+        assertEquals(1, testDependencies.getJavaLibraries().size());
     }
 }
