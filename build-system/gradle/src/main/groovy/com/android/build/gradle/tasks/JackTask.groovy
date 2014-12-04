@@ -83,7 +83,7 @@ public class JackTask extends AbstractCompile {
         command << "java"
 
         if (getJavaMaxHeapSize() != null) {
-            command << "-Xmx${getJavaMaxHeapSize()}"
+            command << "-Xmx${getJavaMaxHeapSize()}".toString()
         } else {
             command << "-Xmx1024M"
         }
@@ -94,6 +94,9 @@ public class JackTask extends AbstractCompile {
         if (plugin.isVerbose()) {
             command << "--verbose"
             command << "info"
+        } else if (plugin.isDebugLog()) {
+            command << "--verbose"
+            command << "debug"
         }
 
         command << "--classpath"
