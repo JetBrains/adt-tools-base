@@ -14,29 +14,30 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.integration.ndk
 
-import com.android.build.gradle.integration.common.category.DeviceTests
+
+package com.android.build.gradle.integration.application
+
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.utils.ApkHelper
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
-import org.junit.experimental.categories.Category
 
 /**
- * Assemble tests for ndkJniLib.
+ * Assemble tests for ndkJniPureSplitLib.
  */
-class NdkJniLibTest {
+class NdkJniPureSplitLibTest {
+
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("ndkJniLib")
+            .fromSample("ndkJniPureSplitLib")
             .create()
 
     @BeforeClass
     static void setup() {
-        project.execute("clean", "assembleDebug");
+        project.execute("clean", ":app:assembleDebug");
     }
 
     @AfterClass
@@ -52,19 +53,11 @@ class NdkJniLibTest {
     @Test
     void "check version code"() {
         GradleTestProject app = project.getSubproject("app")
-        ApkHelper.checkVersion(app.getApk("gingerbread", "universal", "debug"),        1000123)
-        ApkHelper.checkVersion(app.getApk("gingerbread", "armeabi-v7a", "debug"),      1100123)
-        ApkHelper.checkVersion(app.getApk("gingerbread", "mips", "debug"),             1200123)
-        ApkHelper.checkVersion(app.getApk("gingerbread", "x86", "debug"),              1300123)
-        ApkHelper.checkVersion(app.getApk("icecreamSandwich", "universal", "debug"),   2000123)
-        ApkHelper.checkVersion(app.getApk("icecreamSandwich", "armeabi-v7a", "debug"), 2100123)
-        ApkHelper.checkVersion(app.getApk("icecreamSandwich", "mips", "debug"),        2200123)
-        ApkHelper.checkVersion(app.getApk("icecreamSandwich", "x86", "debug"),         2300123)
-    }
-
-    @Test
-    @Category(DeviceTests.class)
-    void connectedCheck() {
-        project.execute("connectedCheck");
+        ApkHelper.checkVersion(app.getApk("free", "debug_armeabi-v7a"), 123)
+        ApkHelper.checkVersion(app.getApk("free", "debug_mips"),        123)
+        ApkHelper.checkVersion(app.getApk("free", "debug_x86"),         123)
+        ApkHelper.checkVersion(app.getApk("paid", "debug_armeabi-v7a"), 123)
+        ApkHelper.checkVersion(app.getApk("paid", "debug_mips"),        123)
+        ApkHelper.checkVersion(app.getApk("paid", "debug_x86"),         123)
     }
 }
