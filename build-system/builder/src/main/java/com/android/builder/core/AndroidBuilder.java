@@ -1410,6 +1410,10 @@ public class AndroidBuilder {
         command.add("--output");
         command.add(outFile.getAbsolutePath());
 
+        if (verbose) {
+            command.add("--verbose");
+        }
+
         commandLineRunner.runCmdLine(command, null);
 
         return Collections.singletonList(outFile);
