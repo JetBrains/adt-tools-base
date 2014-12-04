@@ -19,7 +19,7 @@ ext {
 }
 
 buildscript {
-    def gradleVersion = System.env.CUSTOM_GRADLE != null ? System.env.CUSTOM_GRADLE : '1.0.0-rc3'
+    def gradleVersion = System.env.CUSTOM_GRADLE != null ? System.env.CUSTOM_GRADLE : '1.0.0-rc4'
 
     repositories {
         if (System.env.CUSTOM_REPO != null) {
