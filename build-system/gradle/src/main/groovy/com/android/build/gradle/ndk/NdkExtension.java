@@ -69,7 +69,7 @@ public class NdkExtension {
         return target;
     }
 
-    public void compileSdkVersion(String target) {
+    public void compileSdkVersion(@NonNull String target) {
         this.target = target;
     }
 
@@ -81,7 +81,7 @@ public class NdkExtension {
         compileSdkVersion(apiLevel);
     }
 
-    public void setCompileSdkVersion(String target) {
+    public void setCompileSdkVersion(@NonNull String target) {
         compileSdkVersion(target);
     }
 

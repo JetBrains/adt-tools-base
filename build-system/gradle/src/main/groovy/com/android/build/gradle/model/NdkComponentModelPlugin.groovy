@@ -19,14 +19,12 @@ package com.android.build.gradle.model
 
 import com.android.build.gradle.internal.ProductFlavorCombo
 import com.android.build.gradle.internal.dsl.BuildType
-import com.android.build.gradle.internal.dsl.GroupableProductFlavor
 import com.android.build.gradle.ndk.NdkExtension
 import com.android.build.gradle.ndk.internal.NdkConfiguration
 import com.android.build.gradle.ndk.internal.NdkExtensionConvention
 import com.android.build.gradle.ndk.internal.NdkHandler
 import com.android.build.gradle.ndk.internal.ToolchainConfiguration
 import com.android.builder.core.VariantConfiguration
-import groovy.transform.CompileStatic
 import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -167,11 +165,12 @@ class NdkComponentModelPlugin implements Plugin<Project> {
         void attachNativeBinaryToAndroid(
                 BinaryContainer binaries,
                 ComponentSpecContainer specs,
+                AndroidComponentSpec androidSpec,
                 NdkExtension extension) {
             if (!extension.moduleName.isEmpty()) {
                 NativeLibrarySpec library =
                         specs.withType(NativeLibrarySpec).getByName(extension.moduleName);
-                binaries.withType(DefaultAndroidBinary) { binary ->
+                binaries.withType(DefaultAndroidBinary).each { binary ->
                     def nativeBinaries = getNativeBinaries(library, binary.buildType, binary.productFlavors)
                     binary.getNativeBinaries().addAll(nativeBinaries)
                 }

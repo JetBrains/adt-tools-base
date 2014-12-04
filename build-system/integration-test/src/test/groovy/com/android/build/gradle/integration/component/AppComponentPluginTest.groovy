@@ -39,7 +39,7 @@ class AppComponentPluginTest {
 apply plugin: "com.android.model.application"
 
 model {
-    android {
+    androidConfig {
         compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
         buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
     }
@@ -56,10 +56,10 @@ model {
     public void flavors() {
         project.buildFile << """
 model {
-    androidBuildTypes {
+    android.buildTypes {
         b1
     }
-    androidProductFlavors {
+    android.productFlavors {
         f1
         f2
     }
