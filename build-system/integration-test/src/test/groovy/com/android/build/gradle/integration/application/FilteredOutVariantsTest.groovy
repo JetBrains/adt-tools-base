@@ -15,12 +15,16 @@
  */
 
 package com.android.build.gradle.integration.application
-
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.builder.model.AndroidProject
+import com.android.builder.model.Variant
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
+
+import static org.junit.Assert.assertFalse
+import static org.junit.Assert.assertEquals
 
 /**
  * Assemble tests for filteredOutVariants.
@@ -30,15 +34,34 @@ class FilteredOutVariantsTest {
     static public GradleTestProject project = GradleTestProject.builder()
             .fromSample("filteredOutVariants")
             .create()
+    static AndroidProject model
 
     @BeforeClass
     static void setup() {
-        project.execute("clean", "assembleDebug");
+        model = project.executeAndReturnModel("clean", "assembleDebug")
     }
 
     @AfterClass
     static void cleanUp() {
         project = null
+        model = null
+    }
+
+    @Test
+    void "check filtered out variant isn't in model"() {
+        Collection<Variant> variants = model.getVariants();
+        // check we have the right number of variants:
+        // arm/cupcake, arm/gingerbread, x86/gingerbread, mips/gingerbread
+        // all 4 in release and debug
+        assertEquals("Variant Count", 8, variants.size())
+
+        for (Variant variant : variants) {
+            List<String> flavors = variant.getProductFlavors()
+            assertFalse("check ignored x86/cupcake",
+                    flavors.contains("x68") && flavors.contains("cupcake"))
+            assertFalse("check ignored mips/cupcake",
+                    flavors.contains("mips") && flavors.contains("cupcake"))
+        }
     }
 
     @Test
