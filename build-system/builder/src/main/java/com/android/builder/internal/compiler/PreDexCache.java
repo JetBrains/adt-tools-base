@@ -124,6 +124,8 @@ public class PreDexCache extends PreProcessCache<DexKey> {
                         buildToolInfo,
                         verbose,
                         commandLineRunner);
+
+                item.getOutputFiles().clear();
                 item.getOutputFiles().addAll(files);
 
                 incrementMisses();
