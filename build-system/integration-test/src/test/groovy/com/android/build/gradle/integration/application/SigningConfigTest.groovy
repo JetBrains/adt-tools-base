@@ -14,33 +14,27 @@
  * limitations under the License.
  */
 
+
+
 package com.android.build.gradle.integration.application
 
-import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.integration.common.utils.ZipHelper
+import com.google.common.collect.ImmutableList
 import org.junit.AfterClass
-import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
-import org.junit.experimental.categories.Category
 
-import java.util.zip.ZipFile
-
-import static org.junit.Assert.assertNotNull
+import static com.android.builder.model.AndroidProject.*
 
 /**
- * Assemble tests for packagingOptions.
+ * Integration test with signing overrider.
  */
-class PackagingOptionsTest {
+class SigningConfigTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("packagingOptions")
+            .fromSample("basic")
             .create()
-
-    @BeforeClass
-    static void setup() {
-        project.execute("clean", "assembleDebug")
-    }
 
     @AfterClass
     static void cleanUp() {
@@ -48,19 +42,18 @@ class PackagingOptionsTest {
     }
 
     @Test
-    void lint() {
-        project.execute("lint")
-    }
+    void "check assemble with injected signing config"() {
+        // add prop args for signing override.
+        List<String> args = ImmutableList.of(
+                "-P" + PROPERTY_SIGNING_STORE_FILE + "=" + project.file("debug.keystore").getPath(),
+                "-P" + PROPERTY_SIGNING_STORE_PASSWORD + "=android",
+                "-P" + PROPERTY_SIGNING_KEY_ALIAS + "=AndroidDebugKey",
+                "-P" + PROPERTY_SIGNING_KEY_PASSWORD + "=android")
 
-    @Test
-    void "check packaging"() {
-        ZipFile apk = new ZipFile(project.getApk("debug"))
-        assertNotNull(apk.getEntry("first_pick.txt"))
-    }
+        project.execute(args, "clean", "assembleRelease")
 
-    @Test
-    @Category(DeviceTests.class)
-    void connectedCheck() {
-        project.execute("connectedCheck")
+        // Check for signing file inside the archive.
+        File releaseApk = project.getApk("release")
+        ZipHelper.checkFileExists(releaseApk, "META-INF/CERT.RSA")
     }
 }

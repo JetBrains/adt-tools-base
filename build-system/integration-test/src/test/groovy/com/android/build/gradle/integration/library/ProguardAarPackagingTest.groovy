@@ -2,9 +2,8 @@ package com.android.build.gradle.integration.library
 
 import com.android.SdkConstants
 import com.android.annotations.NonNull
-import com.android.build.gradle.integration.common.fixture.app.AbstractAndroidTestApp
-import com.android.builder.model.AndroidProject
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.integration.common.fixture.app.AbstractAndroidTestApp
 import com.android.build.gradle.integration.common.fixture.app.AndroidTestApp
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
 import com.android.build.gradle.integration.common.fixture.app.TestSourceFile
@@ -20,7 +19,8 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 
 import static org.junit.Assert.*
- /**
+
+/**
   * Integration test to check that libraries included directly as jar files are correctly handled
   * when using proguard.
  */

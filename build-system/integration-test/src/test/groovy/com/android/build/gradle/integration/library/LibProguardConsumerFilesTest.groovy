@@ -14,32 +14,30 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.integration.application
+package com.android.build.gradle.integration.library
 
-import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.integration.common.utils.FileHelper
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
-import org.junit.experimental.categories.Category
 
-import java.util.zip.ZipFile
-
-import static org.junit.Assert.assertNotNull
+import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
 
 /**
- * Assemble tests for packagingOptions.
+ * Assemble tests for libProguarConsumerFiles.
  */
-class PackagingOptionsTest {
+class LibProguardConsumerFilesTest {
+
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("packagingOptions")
+            .fromSample("libProguardConsumerFiles")
             .create()
 
     @BeforeClass
     static void setup() {
-        project.execute("clean", "assembleDebug")
+        project.execute("clean", "build");
     }
 
     @AfterClass
@@ -48,19 +46,11 @@ class PackagingOptionsTest {
     }
 
     @Test
-    void lint() {
-        project.execute("lint")
-    }
+    void "check proguard.txt has been correctly merged"() {
+        File debugFileOutput = project.file("build/" + FD_INTERMEDIATES + "/bundles/debug/proguard.txt");
+        File releaseFileOutput = project.file("build/" + FD_INTERMEDIATES + "/bundles/release/proguard.txt");
 
-    @Test
-    void "check packaging"() {
-        ZipFile apk = new ZipFile(project.getApk("debug"))
-        assertNotNull(apk.getEntry("first_pick.txt"))
-    }
-
-    @Test
-    @Category(DeviceTests.class)
-    void connectedCheck() {
-        project.execute("connectedCheck")
+        FileHelper.checkContent(debugFileOutput, "A");
+        FileHelper.checkContent(releaseFileOutput, ["A", "B", "C"]);
     }
 }

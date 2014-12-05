@@ -24,7 +24,6 @@ import com.android.builder.model.AndroidArtifact
 import com.android.builder.model.AndroidArtifactOutput
 import com.android.builder.model.AndroidProject
 import com.android.builder.model.Variant
-import com.google.common.collect.ImmutableSet
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
@@ -70,12 +69,10 @@ class DensitySplitTest {
             }
             assertEquals(5, mainArtifact.getOutputs().size())
 
-            Map<String, String> filesToMatch = Collections.singletonMap(
-                    "res/drawable-mdpi-v4/other.png", null)
             for (AndroidArtifactOutput output : mainArtifact.getOutputs()) {
-                ZipHelper.checkArchive(output.mainOutputFile.getOutputFile(),
-                        filesToMatch,
-                        ImmutableSet.<String>of())
+                ZipHelper.checkFileExists(
+                        output.mainOutputFile.getOutputFile(),
+                        "res/drawable-mdpi-v4/other.png")
             }
         }
     }

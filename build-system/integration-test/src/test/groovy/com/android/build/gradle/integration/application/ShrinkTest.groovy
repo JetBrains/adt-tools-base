@@ -25,7 +25,6 @@ import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
-import org.junit.experimental.categories.Category
 
 import java.util.jar.JarInputStream
 import java.util.regex.Matcher
@@ -336,8 +335,8 @@ res/layout/used21.xml"""
         uncompressed = project.file("keep/build/intermediates/res/resources-release.ap_")
         //noinspection SpellCheckingInspection
         compressed = project.file("keep/build/intermediates/res/resources-release-stripped.ap_")
-        assertTrue(uncompressed + " is not a file", uncompressed.isFile());
-        assertTrue(compressed + " is not a file", compressed.isFile());
+        assertTrue(uncompressed.toString() + " is not a file", uncompressed.isFile());
+        assertTrue(compressed.toString() + " is not a file", compressed.isFile());
 
         //noinspection SpellCheckingInspection
         assertEquals(""
