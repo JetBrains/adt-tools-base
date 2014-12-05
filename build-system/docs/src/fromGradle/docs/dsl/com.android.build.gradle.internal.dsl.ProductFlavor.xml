@@ -13,6 +13,7 @@
             <tr><td>signingConfig</td></tr>
             <tr><td>testHandleProfiling</td></tr>
             <tr><td>testFunctionalTest</td></tr>
+            <tr><td>multiDexEnabled</td></tr>
         </table>
     </section>
     <section>
