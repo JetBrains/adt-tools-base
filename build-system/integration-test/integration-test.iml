@@ -21,5 +21,6 @@
       </library>
     </orderEntry>
     <orderEntry type="module" module-name="sdk-common-base" />
+    <orderEntry type="library" name="org.jacoco" level="project" />
   </component>
 </module>
