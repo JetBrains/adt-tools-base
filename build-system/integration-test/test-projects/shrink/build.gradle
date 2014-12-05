@@ -53,6 +53,7 @@ android {
 }
 
 dependencies {
+    compile project(':lib')
     compile 'com.android.support:support-annotations:+'
     compile 'com.android.support:support-v4:+'
 }
