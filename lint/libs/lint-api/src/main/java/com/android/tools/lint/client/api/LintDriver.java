@@ -31,7 +31,7 @@ import static com.android.SdkConstants.SUPPRESS_LINT;
 import static com.android.SdkConstants.TOOLS_URI;
 import static com.android.tools.lint.detector.api.LintUtils.isAnonymousClass;
 import static java.io.File.separator;
-import static org.objectweb.asm.Opcodes.ASM4;
+import static org.objectweb.asm.Opcodes.ASM5;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -1548,7 +1548,7 @@ public class LintDriver {
         private final Map<String, String> mMap;
 
         public SuperclassVisitor(Map<String, String> map) {
-            super(ASM4);
+            super(ASM5);
             mMap = map;
         }
 

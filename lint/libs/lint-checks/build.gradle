@@ -16,9 +16,9 @@ version = rootProject.ext.baseVersion
 
 dependencies {
     compile project(':base:lint-api')
-    compile 'org.ow2.asm:asm-analysis:4.0'
+    compile 'org.ow2.asm:asm-analysis:5.0.3'
 
-    testCompile 'org.easymock:easymock:3.1'
+    testCompile 'org.easymock:easymock:3.3'
     testCompile 'junit:junit:3.8.1'
     testCompile project(':base:testutils')
 }
