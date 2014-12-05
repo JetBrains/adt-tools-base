@@ -133,6 +133,9 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
         mResValues.putAll(fields);
     }
 
+    /**
+     * Whether Multi-Dex is enabled for this variant.
+     */
     @Override
     @Nullable
     public Boolean getMultiDexEnabled() {

@@ -14,6 +14,7 @@
             <tr><td>signingConfig</td></tr>
             <tr><td>zipAlignEnabled</td></tr>
             <tr><td>minifyEnabled</td></tr>
+            <tr><td>multiDexEnabled</td></tr>
         </table>
     </section>
     <section>
