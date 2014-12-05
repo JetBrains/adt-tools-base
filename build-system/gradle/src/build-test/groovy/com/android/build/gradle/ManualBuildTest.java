@@ -637,64 +637,6 @@ public class ManualBuildTest extends BuildTest {
         }
     }
 
-    public void testDensitySplits() throws Exception {
-        File project = new File(testProjectDir, "densitySplit");
-
-        runTasksOn(
-                project,
-                BasePlugin.GRADLE_TEST_VERSION,
-                "clean", "assembleDebug");
-
-        Map<String, VersionData> expected = Maps.newHashMapWithExpectedSize(5);
-        expected.put("universal", VersionData.of(112, "version 112"));
-        expected.put("mdpi",      VersionData.of(212, "version 212"));
-        expected.put("hdpi",      VersionData.of(312, "version 312"));
-        expected.put("xhdpi",     VersionData.of(412, "version 412"));
-        expected.put("xxhdpi",    VersionData.of(512, "version 512"));
-
-        checkVersion(project, null, expected, "densitySplit", "-debug");
-    }
-
-    public void testAbiSplits() throws Exception {
-        File project = new File(testProjectDir, "ndkJniLib");
-
-        runTasksOn(
-                project,
-                BasePlugin.GRADLE_TEST_VERSION,
-                "clean", "app:assembleDebug");
-
-        Map<String, VersionData> expected = Maps.newHashMapWithExpectedSize(8);
-        expected.put("gingerbread-universal",        VersionData.of(1000123));
-        expected.put("gingerbread-armeabi-v7a",      VersionData.of(1100123));
-        expected.put("gingerbread-mips",             VersionData.of(1200123));
-        expected.put("gingerbread-x86",              VersionData.of(1300123));
-        expected.put("icecreamSandwich-universal",   VersionData.of(2000123));
-        expected.put("icecreamSandwich-armeabi-v7a", VersionData.of(2100123));
-        expected.put("icecreamSandwich-mips",        VersionData.of(2200123));
-        expected.put("icecreamSandwich-x86",         VersionData.of(2300123));
-
-        checkVersion(project, "app/", expected, "app", "-debug");
-    }
-
-    public void testPureAbiSplits() throws Exception {
-        File project = new File(testProjectDir, "ndkJniPureSplitLib");
-
-        runTasksOn(
-                project,
-                BasePlugin.GRADLE_TEST_VERSION,
-                "clean", "app:assembleDebug");
-
-        Map<String, VersionData> expected = Maps.newHashMapWithExpectedSize(8);
-        expected.put("free-debug_armeabi-v7a",      VersionData.of(123));
-        expected.put("free-debug_mips",             VersionData.of(123));
-        expected.put("free-debug_x86",              VersionData.of(123));
-        expected.put("paid-debug_armeabi-v7a",      VersionData.of(123));
-        expected.put("paid-debug_mips",             VersionData.of(123));
-        expected.put("paid-debug_x86",              VersionData.of(123));
-
-        checkVersion(project, "app/", expected, "app", null /* suffix */);
-    }
-
     public void testManifestMergerReports() throws Exception {
         File project = new File(testProjectDir, "flavors");
 
@@ -711,67 +653,6 @@ public class ManualBuildTest extends BuildTest {
             }
         });
         assertEquals(8, reports.length);
-    }
-
-    private static final class VersionData {
-        static VersionData of(int code, String name) {
-            VersionData versionData = new VersionData();
-            versionData.code = code;
-            versionData.name = name;
-            return versionData;
-        }
-
-        static VersionData of(int code) {
-            return of(code, null);
-        }
-
-        @Nullable
-        Integer code;
-        @Nullable
-        String name;
-    }
-
-    private void checkVersion(
-            @NonNull File project,
-            @Nullable String outRoot,
-            @NonNull Map<String, VersionData> expected,
-            @NonNull String baseName,
-            @Nullable String suffix)
-            throws IOException, InterruptedException, LoggedErrorException {
-
-
-        File aapt = new File(sdkDir, "build-tools/20.0.0/aapt");
-        assertTrue("Test requires build-tools 20.0.0", aapt.isFile());
-
-        CommandLineRunner commandLineRunner = new CommandLineRunner(new StdLogger(StdLogger.Level.ERROR));
-
-        ApkInfoParser parser = new ApkInfoParser(aapt, commandLineRunner);
-
-        for (Map.Entry<String, VersionData> entry : expected.entrySet()) {
-            if (suffix == null) {
-                suffix = "";
-            }
-            String path = "build/" + FD_OUTPUTS + "/apk/" + baseName + "-" + entry.getKey() + suffix + ".apk";
-            if (outRoot != null) {
-                path = outRoot + path;
-            }
-
-            File apk = new File(project, path);
-
-            ApkInfoParser.ApkInfo apkInfo = parser.parseApk(apk);
-
-            VersionData versionData = entry.getValue();
-
-            if (versionData.code != null) {
-                assertEquals("Unexpected version code for split: " + entry.getKey(),
-                        versionData.code, apkInfo.getVersionCode());
-            }
-
-            if (versionData.name != null) {
-                assertEquals("Unexpected version code for split: " + entry.getKey(),
-                        versionData.name, apkInfo.getVersionName());
-            }
-        }
     }
 
     public void testPseudolocalization() throws Exception {
