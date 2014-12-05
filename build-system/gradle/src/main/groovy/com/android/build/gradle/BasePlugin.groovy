@@ -208,6 +208,8 @@ public abstract class BasePlugin {
     private static final String GRADLE_MIN_VERSION = "2.2"
     public static final String GRADLE_TEST_VERSION = "2.2"
     public static final Pattern GRADLE_ACCEPTABLE_VERSIONS = Pattern.compile("2\\.[2-9].*");
+    private static final String GRADLE_VERSION_CHECK_OVERRIDE_PROPERTY =
+            "com.android.build.gradle.overrideVersionCheck"
 
     public static final String INSTALL_GROUP = "Install"
 
@@ -420,16 +422,22 @@ public abstract class BasePlugin {
 
     private void checkGradleVersion() {
         if (!GRADLE_ACCEPTABLE_VERSIONS.matcher(project.getGradle().gradleVersion).matches()) {
+            boolean allowNonMatching = Boolean.getBoolean(GRADLE_VERSION_CHECK_OVERRIDE_PROPERTY)
             File file = new File("gradle" + separator + "wrapper" + separator +
                     "gradle-wrapper.properties");
-            throw new BuildException(
-                String.format(
-                    "Gradle version %s is required. Current version is %s. " +
-                    "If using the gradle wrapper, try editing the distributionUrl in %s " +
-                    "to gradle-%s-all.zip",
-                    GRADLE_MIN_VERSION, project.getGradle().gradleVersion, file.getAbsolutePath(),
-                    GRADLE_MIN_VERSION), null);
-
+            String errorMessage = String.format(
+                "Gradle version %s is required. Current version is %s. " +
+                "If using the gradle wrapper, try editing the distributionUrl in %s " +
+                "to gradle-%s-all.zip",
+                GRADLE_MIN_VERSION, project.getGradle().gradleVersion, file.getAbsolutePath(),
+                GRADLE_MIN_VERSION);
+            if (allowNonMatching) {
+                getLogger().warning(errorMessage)
+                getLogger().warning("As %s is set, continuing anyways.",
+                        GRADLE_VERSION_CHECK_OVERRIDE_PROPERTY)
+            } else {
+                throw new BuildException(errorMessage, null)
+            }
         }
     }
 
