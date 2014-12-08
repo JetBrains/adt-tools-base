@@ -20,5 +20,6 @@
     <orderEntry type="library" name="mockito" level="project" />
     <orderEntry type="module" module-name="sdk-common-base" />
     <orderEntry type="module" module-name="manifest-merger-base" />
+    <orderEntry type="library" exported="" name="asm-tools" level="project" />
   </component>
 </module>

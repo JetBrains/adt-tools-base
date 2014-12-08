@@ -26,6 +26,8 @@ dependencies {
     compile 'com.squareup:javawriter:2.5.0'
     compile 'org.bouncycastle:bcpkix-jdk15on:1.48'
     compile 'org.bouncycastle:bcprov-jdk15on:1.48'
+    compile 'org.ow2.asm:asm:4.0'
+    compile 'org.ow2.asm:asm-tree:4.0'
 
     testCompile 'junit:junit:3.8.1'
     testCompile 'org.mockito:mockito-all:1.9.5'

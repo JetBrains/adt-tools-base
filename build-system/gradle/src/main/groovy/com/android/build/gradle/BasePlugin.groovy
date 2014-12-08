@@ -59,6 +59,7 @@ import com.android.build.gradle.internal.tasks.DeviceProviderInstrumentTestLibra
 import com.android.build.gradle.internal.tasks.DeviceProviderInstrumentTestTask
 import com.android.build.gradle.internal.tasks.GenerateApkDataTask
 import com.android.build.gradle.internal.tasks.InstallVariantTask
+import com.android.build.gradle.internal.tasks.MockableAndroidJarTask
 import com.android.build.gradle.internal.tasks.OutputFileTask
 import com.android.build.gradle.internal.tasks.PrepareDependenciesTask
 import com.android.build.gradle.internal.tasks.PrepareLibraryTask
@@ -129,6 +130,7 @@ import com.android.builder.testing.api.DeviceProvider
 import com.android.builder.testing.api.TestServer
 import com.android.ide.common.internal.ExecutorSingleton
 import com.android.sdklib.AndroidTargetHash
+import com.android.sdklib.IAndroidTarget
 import com.android.sdklib.SdkVersionInfo
 import com.android.utils.ILogger
 import com.google.common.collect.ArrayListMultimap
@@ -221,8 +223,10 @@ public abstract class BasePlugin {
     private static final String GRADLE_VERSION_CHECK_OVERRIDE_PROPERTY =
             "com.android.build.gradle.overrideVersionCheck"
 
-    private static final String INSTALL_GROUP = "Install"
-    private static final String BUILD_GROUP = org.gradle.api.plugins.BasePlugin.BUILD_GROUP
+    // These need to be public for gradle-dev.
+    public static final String INSTALL_GROUP = "Install"
+    public static final String BUILD_GROUP = org.gradle.api.plugins.BasePlugin.BUILD_GROUP
+    public static final String ANDROID_GROUP = "Android"
 
     public static File TEST_SDK_DIR;
 
@@ -270,6 +274,8 @@ public abstract class BasePlugin {
     public Task lintCompile
     protected Task lintAll
     protected Task lintVital
+
+    public MockableAndroidJarTask createMockableJar
 
     protected BasePlugin(Instantiator instantiator, ToolingModelBuilderRegistry registry) {
         this.instantiator = instantiator
@@ -488,6 +494,7 @@ public abstract class BasePlugin {
             }
         }
 
+        createMockableJarTask();
         variantManager.createAndroidTasks(getSigningOverride())
         createReportTasks()
 
@@ -1716,6 +1723,7 @@ public abstract class BasePlugin {
     void createUnitTestTasks() {
         Task topLevelTest = project.tasks.create(JavaPlugin.TEST_TASK_NAME)
         topLevelTest.group = JavaBasePlugin.VERIFICATION_GROUP
+        topLevelTest.dependsOn createMockableJar
 
         variantDataList.findAll{it.variantConfiguration.type == UNIT_TEST}.each { loopVariantData ->
             // Inner scope copy for the closures.
@@ -3055,16 +3063,32 @@ public abstract class BasePlugin {
         return task
     }
 
+    private void createMockableJarTask() {
+        createMockableJar = project.tasks.create("mockableAndroidJar", MockableAndroidJarTask)
+        createMockableJar.group = BUILD_GROUP
+        createMockableJar.description = "Creates a version of android.jar that's suitable for unit tests."
+
+        conventionMapping(createMockableJar).map("androidJar") {
+            ensureTargetSetup()
+            new File(androidBuilder.target.getPath(IAndroidTarget.ANDROID_JAR))
+        }
+
+        conventionMapping(createMockableJar).map("outputFile") {
+            project.file(
+                    "$project.buildDir/${FD_INTERMEDIATES}/mockable-${extension.compileSdkVersion}.jar")
+        }
+    }
+
     private void createReportTasks() {
         def dependencyReportTask = project.tasks.create("androidDependencies", DependencyReportTask)
         dependencyReportTask.setDescription("Displays the Android dependencies of the project")
         dependencyReportTask.setVariants(variantManager.getVariantDataList())
-        dependencyReportTask.setGroup("Android")
+        dependencyReportTask.setGroup(ANDROID_GROUP)
 
         def signingReportTask = project.tasks.create("signingReport", SigningReportTask)
         signingReportTask.setDescription("Displays the signing info for each variant")
         signingReportTask.setVariants(variantManager.getVariantDataList())
-        signingReportTask.setGroup("Android")
+        signingReportTask.setGroup(ANDROID_GROUP)
     }
 
     public void createAnchorTasks(
