@@ -440,9 +440,11 @@ public class ResourceResolver extends RenderResources {
 
         // now search in the framework resources.
         typeMap = mFrameworkResources.get(resType);
-        ResourceValue item = typeMap.get(resName);
-        if (item != null) {
-            return item;
+        if (typeMap != null) {
+            ResourceValue item = typeMap.get(resName);
+            if (item != null) {
+                return item;
+            }
         }
 
         // if it was not found and the type is an id, it is possible that the ID was
