@@ -182,6 +182,35 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
             Severity.ERROR,
             IMPLEMENTATION_XML_AND_JAVA);
 
+    /** This plural does not use the quantity value */
+    public static final Issue POTENTIAL_PLURAL = Issue.create(
+            "PluralsCandidate", //$NON-NLS-1$
+            "Potential Plurals",
+
+            "This lint check looks for potential errors in internationalization where you have " +
+            "translated a message which involves a quantity and it looks like other parts of " +
+            "the string may need grammatical changes.\n" +
+            "\n" +
+            "For example, rather than something like this:\n" +
+            "  <string name=\"try_again\">Try again in %d seconds.</string>\n" +
+            "you should be using a plural:\n" +
+            "   <plurals name=\"try_again\">\n" +
+            "        <item quantity=\"one\">Try again in %d second</item>\n" +
+            "        <item quantity=\"other\">Try again in %d seconds</item>\n" +
+            "    </plurals>\n" +
+            "This will ensure that in other languages the right set of translations are " +
+            "provided for the different quantity classes.\n" +
+            "\n" +
+            "(This check depends on some heuristics, so it may not accurately determine whether " +
+            "a string really should be a quantity. You can use tools:ignore to filter out false " +
+            "positives.",
+
+            Category.MESSAGES,
+            5,
+            Severity.WARNING,
+            IMPLEMENTATION_XML).addMoreInfo(
+            "http://developer.android.com/guide/topics/resources/string-resource.html#Plurals");
+
     /**
      * Map from a format string name to a list of declaration file and actual
      * formatting string content. We're using a list since a format string can be
@@ -238,25 +267,25 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
                 // This is needed to handle xliff localization documents,
                 // but this needs more work so ignore compound XML documents as
                 // string values for now:
-                //StringBuilder sb = new StringBuilder();
-                //addText(sb, element);
-                //if (sb.length() > 0) {
-                //    checkTextNode(context, element, sb.toString());
-                //}
+                StringBuilder sb = new StringBuilder();
+                addText(sb, element);
+                if (sb.length() > 0) {
+                    checkTextNode(context, element, sb.toString());
+                }
             }
         }
     }
 
-    //private static void addText(StringBuilder sb, Node node) {
-    //    if (node.getNodeType() == Node.TEXT_NODE) {
-    //        sb.append(strip(node.getNodeValue().trim()));
-    //    } else {
-    //        NodeList childNodes = node.getChildNodes();
-    //        for (int i = 0, n = childNodes.getLength(); i < n; i++) {
-    //            addText(sb, childNodes.item(i));
-    //        }
-    //    }
-    //}
+    private static void addText(StringBuilder sb, Node node) {
+        if (node.getNodeType() == Node.TEXT_NODE) {
+            sb.append(strip(node.getNodeValue().trim()));
+        } else {
+            NodeList childNodes = node.getChildNodes();
+            for (int i = 0, n = childNodes.getLength(); i < n; i++) {
+                addText(sb, childNodes.item(i));
+            }
+        }
+    }
 
     private static String strip(String s) {
         if (s.length() < 2) {
@@ -274,6 +303,7 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
     private void checkTextNode(XmlContext context, Element element, String text) {
         String name = null;
         boolean found = false;
+        boolean foundPlural = false;
 
         // Look at the String and see if it's a format string (contains
         // positional %'s)
@@ -326,6 +356,20 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
                     return;
                 }
 
+                if (conversionClass == CONVERSION_CLASS_INTEGER && !foundPlural) {
+                    // See if there appears to be further text content here.
+                    // Look for whitespace followed by a letter, with no punctuation in between
+                    for (int k = matcher.end(); k < m; k++) {
+                        char nc = text.charAt(k);
+                        if (!Character.isWhitespace(nc)) {
+                            if (Character.isLetter(nc)) {
+                                foundPlural = checkPotentialPlural(context, element, text, k);
+                            }
+                            break;
+                        }
+                    }
+                }
+
                 found = true;
                 j++; // Ensure that when we process a "%%" we don't separately check the second %
             }
@@ -351,6 +395,77 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
             handle.setClientData(element);
             list.add(Pair.of(handle, text));
         }
+    }
+
+    /**
+     * Checks whether the text begins with a non-unit word, pointing to a string
+     * that should probably be a plural instead. This
+     */
+    private boolean checkPotentialPlural(XmlContext context, Element element, String text,
+            int wordBegin) {
+        // This method should only be called if the text is known to start with a word
+        assert Character.isLetter(text.charAt(wordBegin));
+
+        int wordEnd = wordBegin;
+        while (wordEnd < text.length()) {
+            if (!Character.isLetter(text.charAt(wordEnd))) {
+                break;
+            }
+            wordEnd++;
+        }
+
+        // Eliminate units, since those are not sentences you need to use plurals for, e.g.
+        //   "Elevation gain: %1$d m (%2$d ft)"
+        // We'll determine whether something is a unit by looking for
+        // (1) Multiple uppercase characters (e.g. KB, or MiB), or better yet, uppercase characters
+        //     anywhere but as the first letter
+        // (2) No vowels (e.g. ft)
+        // (3) Adjacent consonants (e.g. ft); this one can eliminate some legitimate
+        //     English words as well (e.g. "the") so we should really limit this to
+        //     letter pairs that are not common in English. This is probably overkill
+        //     so not handled yet. Instead we use a simpler heuristic:
+        // (4) Very short "words" (1-2 letters)
+        if (wordEnd - wordBegin <= 2) {
+            // Very short word (1-2 chars): possible unit, e.g. "m", "ft", "kb", etc
+            return false;
+        }
+        boolean hasVowel = false;
+        for (int i = wordBegin; i < wordEnd; i++) {
+            // Uppercase character anywhere but first character: probably a unit (e.g. KB)
+            char c = text.charAt(i);
+            if (i > wordBegin && Character.isUpperCase(c)) {
+                return false;
+            }
+            if (c == 'a' || c == 'e' || c == 'i' || c == 'o' || c == 'u' || c == 'y') {
+                hasVowel = true;
+            }
+        }
+        if (!hasVowel) {
+            // No vowels: likely unit
+            return false;
+        }
+
+        String word = text.substring(wordBegin, wordEnd);
+
+        // Some other known abbreviations that we don't want to count:
+        if (word.equals("min")) {
+            return false;
+        }
+
+        // This heuristic only works in English!
+        Pair<String, String> locale = TypoDetector.getLocale(context);
+        if (locale == null || "en".equals(locale.getFirst())) {
+            String message = String.format("Formatting %%d followed by words (\"%1$s\"): "
+                            + "This should probably be a plural rather than a string", word);
+            context.report(POTENTIAL_PLURAL, element,
+                    context.getLocation(element),
+                    message);
+            // Avoid reporting multiple errors on the same string
+            // (if it contains more than one %d)
+            return true;
+        }
+
+        return false;
     }
 
     @Override

@@ -20,6 +20,7 @@ import static com.android.tools.lint.checks.StringFormatDetector.isLocaleSpecifi
 
 import com.android.tools.lint.detector.api.Detector;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -196,7 +197,10 @@ public class StringFormatDetectorTest  extends AbstractCheckTest {
                 "                context.getString(R.string.gridview_views_count), \"string\");\n" +
                 "                                                                  ~~~~~~~~\n" +
                 "    res/values/formatstrings5.xml:3: Conflicting argument declaration here\n" +
-                "4 errors, 0 warnings\n",
+                "res/values/formatstrings5.xml:3: Warning: Formatting %d followed by words: This should probably be a plural rather than a string [PluralsCandidate]\n" +
+                "    <string name=\"gridview_views_count\">%d vues</string>\n" +
+                "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
+                "4 errors, 1 warnings\n",
 
                 lintProject(
                         "res/values/formatstrings5.xml",
@@ -374,12 +378,44 @@ public class StringFormatDetectorTest  extends AbstractCheckTest {
     }
 
     public void testWrapperClasses() throws Exception {
-        // Regression test for https://code.google.com/p/android/issues/detail?id=70496
         assertEquals("No warnings.",
 
                 lintProject(
                         "res/values/formatstrings10.xml",
                         "src/test/pkg/StringFormat11.java.txt=>src/test/pkg/StringFormat11.java"
                 ));
+    }
+
+    public void testPluralsCandidates() throws Exception {
+        assertEquals(""
+                + "res/values/plurals_candidates.xml:4: Warning: Formatting %d followed by words (\"times\"): This should probably be a plural rather than a string [PluralsCandidate]\n"
+                + "    <string name=\"lockscreen_too_many_failed_attempts_dialog_message1\">\n"
+                + "    ^\n"
+                + "res/values/plurals_candidates.xml:10: Warning: Formatting %d followed by words (\"times\"): This should probably be a plural rather than a string [PluralsCandidate]\n"
+                + "    <string name=\"lockscreen_too_many_failed_attempts_dialog_message2\">\n"
+                + "    ^\n"
+                + "res/values/plurals_candidates.xml:14: Warning: Formatting %d followed by words (\"moves\"): This should probably be a plural rather than a string [PluralsCandidate]\n"
+                + "    <string name=\"win_dialog\">You won in %1$s and %2$d moves!</string>\n"
+                + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "res/values/plurals_candidates.xml:15: Warning: Formatting %d followed by words (\"times\"): This should probably be a plural rather than a string [PluralsCandidate]\n"
+                + "    <string name=\"countdown_complete_sub\">Timer was paused %d times</string>\n"
+                + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "res/values/plurals_candidates.xml:16: Warning: Formatting %d followed by words (\"satellites\"): This should probably be a plural rather than a string [PluralsCandidate]\n"
+                + "    <string name=\"service_gpsstatus\">Logging: %s (%s with %d satellites)</string>\n"
+                + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "res/values/plurals_candidates.xml:17: Warning: Formatting %d followed by words (\"seconds\"): This should probably be a plural rather than a string [PluralsCandidate]\n"
+                + "    <string name=\"sync_log_clocks_unsynchronized\">The clock on your device is incorrect by %1$d seconds%2$s;</string>\n"
+                + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "res/values/plurals_candidates.xml:18: Warning: Formatting %d followed by words (\"tasks\"): This should probably be a plural rather than a string [PluralsCandidate]\n"
+                + "    <string name=\"EPr_manage_purge_deleted_status\">Purged %d tasks!</string>\n"
+                + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "0 errors, 7 warnings\n",
+
+                lintProject(
+                        "res/values/plurals_candidates.xml",
+                        // Should not flag on anything but English strings
+                        "res/values/plurals_candidates.xml=>res/values-de/plurals_candidates.xml"
+
+                        ));
     }
 }
