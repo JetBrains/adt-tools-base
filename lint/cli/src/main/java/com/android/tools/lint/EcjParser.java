@@ -260,6 +260,8 @@ public class EcjParser extends JavaParser {
         try {
             compiler.compile(sourceUnits.toArray(new ICompilationUnit[sourceUnits.size()]));
         } catch (OutOfMemoryError e) {
+            environment.cleanup();
+
             // Since we're running out of memory, if it's all still held we could potentially
             // fail attempting to log the failure. Actively get rid of the large ECJ data
             // structure references first so minimize the chance of that
@@ -295,6 +297,10 @@ public class EcjParser extends JavaParser {
                 }
             } else {
                 t.printStackTrace();
+            }
+        } finally {
+            if (environment != null) {
+                environment.cleanup();
             }
         }
     }
