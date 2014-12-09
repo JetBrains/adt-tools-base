@@ -32,9 +32,20 @@ import static com.android.tools.lint.checks.GradleDetector.getNamedDependency;
 import static com.android.tools.lint.checks.GradleDetector.getNewValue;
 import static com.android.tools.lint.checks.GradleDetector.getOldValue;
 import static com.android.tools.lint.detector.api.TextFormat.TEXT;
+import static org.easymock.EasyMock.createNiceMock;
+import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.replay;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.builder.model.AndroidArtifact;
+import com.android.builder.model.AndroidLibrary;
+import com.android.builder.model.AndroidProject;
+import com.android.builder.model.Dependencies;
+import com.android.builder.model.MavenCoordinates;
+import com.android.builder.model.ProductFlavor;
+import com.android.builder.model.ProductFlavorContainer;
+import com.android.builder.model.Variant;
 import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.DefaultPosition;
@@ -69,6 +80,7 @@ import org.codehaus.groovy.ast.stmt.Statement;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -519,6 +531,18 @@ public class GradleDetectorTest extends AbstractCheckTest {
                 lintProject("gradle/PreviewDependencies.gradle=>build.gradle"));
     }
 
+
+    public void testDependenciesInVariables() throws Exception {
+        mEnabled = Collections.singleton(DEPENDENCY);
+        assertEquals(""
+                    + "build.gradle:10: Warning: A newer version of com.google.android.gms:play-services-wearable than 5.0.77 is available: 6.1.71 [GradleDependency]\n"
+                    + "    compile \"com.google.android.gms:play-services-wearable:${GPS_VERSION}\"\n"
+                    + "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                    + "0 errors, 1 warnings\n",
+
+                lintProject("gradle/DependenciesVariable.gradle=>build.gradle"));
+    }
+
     @Override
     protected void checkReportedError(@NonNull Context context, @NonNull Issue issue,
             @NonNull Severity severity, @Nullable Location location, @NonNull String message) {
@@ -614,6 +638,55 @@ public class GradleDetectorTest extends AbstractCheckTest {
             @Override
             public File getSdkHome() {
                 return getMockSupportLibraryInstallation();
+            }
+
+            @NonNull
+            @Override
+            protected Project createProject(@NonNull File dir, @NonNull File referenceDir) {
+                if (!"testDependenciesInVariables".equals(getName())) {
+                    return super.createProject(dir, referenceDir);
+                }
+
+                return new Project(this, dir, referenceDir) {
+                    @Override
+                    public boolean isGradleProject() {
+                        return true;
+                    }
+
+                    @Nullable
+                    @Override
+                    public Variant getCurrentVariant() {
+                        /*
+                        Simulate variant which has an AndroidLibrary with
+                        resolved coordinates
+
+                        com.google.android.gms:play-services-wearable:5.0.77"
+                         */
+                        MavenCoordinates coordinates = createNiceMock(MavenCoordinates.class);
+                        expect(coordinates.getGroupId()).andReturn("com.google.android.gms").anyTimes();
+                        expect(coordinates.getArtifactId()).andReturn("play-services-wearable").anyTimes();
+                        expect(coordinates.getVersion()).andReturn("5.0.77").anyTimes();
+                        replay(coordinates);
+
+                        AndroidLibrary library = createNiceMock(AndroidLibrary.class);
+                        expect(library.getResolvedCoordinates()).andReturn(coordinates).anyTimes();
+                        replay(library);
+                        List<AndroidLibrary> libraries = Collections.singletonList(library);
+
+                        Dependencies dependencies = createNiceMock(Dependencies.class);
+                        expect(dependencies.getLibraries()).andReturn(libraries).anyTimes();
+                        replay(dependencies);
+
+                        AndroidArtifact artifact = createNiceMock(AndroidArtifact.class);
+                        expect(artifact.getDependencies()).andReturn(dependencies).anyTimes();
+                        replay(artifact);
+
+                        Variant variant = createNiceMock(Variant.class);
+                        expect(variant.getMainArtifact()).andReturn(artifact).anyTimes();
+                        replay(variant);
+                        return variant;
+                    }
+                };
             }
         };
     }

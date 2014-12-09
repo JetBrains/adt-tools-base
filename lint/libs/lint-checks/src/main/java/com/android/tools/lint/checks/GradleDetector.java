@@ -27,7 +27,12 @@ import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
+import com.android.builder.model.AndroidLibrary;
+import com.android.builder.model.Dependencies;
+import com.android.builder.model.MavenCoordinates;
+import com.android.builder.model.Variant;
 import com.android.ide.common.repository.GradleCoordinate;
+import com.android.ide.common.repository.GradleCoordinate.RevisionComponent;
 import com.android.ide.common.repository.SdkMavenRepository;
 import com.android.sdklib.repository.PreciseRevision;
 import com.android.tools.lint.client.api.LintClient;
@@ -413,8 +418,11 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
                 }
                 // If the dependency is a GString (i.e. it uses Groovy variable substitution,
                 // with a $variable_name syntax) then don't try to parse it.
-                if (dependency != null && !dependency.contains("$")) {
+                if (dependency != null) {
                     GradleCoordinate gc = GradleCoordinate.parseCoordinateString(dependency);
+                    if (gc != null && dependency.contains("$")) {
+                        gc = resolveCoordinate(context, gc);
+                    }
                     if (gc != null) {
                         if (gc.acceptsGreaterRevisions()) {
                             String message = "Avoid using + in version numbers; can lead "
@@ -441,6 +449,32 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
                 report(context, valueCookie, PATH, message);
             }
         }
+    }
+
+    @Nullable
+    private static GradleCoordinate resolveCoordinate(@NonNull Context context,
+            @NonNull GradleCoordinate gc) {
+        assert gc.getFullRevision().contains("$") : gc.getFullRevision();
+        Variant variant = context.getProject().getCurrentVariant();
+        if (variant != null) {
+            Dependencies dependencies = variant.getMainArtifact().getDependencies();
+            for (AndroidLibrary library : dependencies.getLibraries()) {
+                MavenCoordinates mc = library.getResolvedCoordinates();
+                if (mc != null
+                        && mc.getGroupId().equals(gc.getGroupId())
+                        && mc.getArtifactId().equals(gc.getArtifactId())) {
+                    List<RevisionComponent> revisions =
+                            GradleCoordinate.parseRevisionNumber(mc.getVersion());
+                    if (!revisions.isEmpty()) {
+                        return new GradleCoordinate(mc.getGroupId(), mc.getArtifactId(),
+                                revisions, null);
+                    }
+                    break;
+                }
+            }
+        }
+
+        return null;
     }
 
     // Convert a long-hand dependency, like
@@ -762,8 +796,8 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
                             + "compileSdkVersion < 21 is not necessary");
             }
             return;
-        } else if ("com.google.android.gms".equals(dependency.getGroupId()) &&
-                "play-services".equals(dependency.getArtifactId())) {
+        } else if ("com.google.android.gms".equals(dependency.getGroupId())
+                && dependency.getArtifactId() != null) {
 
             // 5.2.08 is not supported; special case and warn about this
             if ("5.2.08".equals(dependency.getFullRevision()) && context.isEnabled(COMPATIBILITY)) {
