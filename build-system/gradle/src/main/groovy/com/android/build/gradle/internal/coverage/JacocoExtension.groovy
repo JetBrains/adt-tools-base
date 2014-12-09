@@ -17,17 +17,7 @@
 package com.android.build.gradle.internal.coverage
 
 /**
- * Extension of the Jacoco support.
- *
- * This is accessed with
- *
- * <pre>
- * android {
- *   jacoco {
- *     ...
- *   }
- * }
- * </pre>
+ * DSL object for configuring JaCoCo settings.
  */
 class JacocoExtension {
     /**

@@ -21,6 +21,7 @@ import com.android.annotations.Nullable;
 
 import java.io.File;
 import java.util.Collection;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -96,4 +97,21 @@ public interface AndroidArtifact extends BaseArtifact {
      */
     @Nullable
     Set<String> getAbiFilters();
+
+    /**
+     * Map of Build Config Fields where the key is the field name.
+     *
+     * @return a non-null map of class fields (possibly empty).
+     */
+    @NonNull
+    Map<String, ClassField> getBuildConfigFields();
+
+    /**
+     * Map of generated res values where the key is the res name.
+     *
+     * @return a non-null map of class fields (possibly empty).
+     */
+    @NonNull
+    Map<String, ClassField> getResValues();
+
 }

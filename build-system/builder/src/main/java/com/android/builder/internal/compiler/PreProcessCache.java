@@ -47,6 +47,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.logging.Logger;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -135,7 +136,7 @@ public abstract class PreProcessCache<T extends PreProcessCache.Key> {
 
         @Override
         public boolean areOutputFilesPresent() {
-            boolean filesOk = true;
+            boolean filesOk = !mOutputFiles.isEmpty();
             for (File outputFile : mOutputFiles) {
                 filesOk &= outputFile.isFile();
             }
@@ -328,6 +329,13 @@ public abstract class PreProcessCache<T extends PreProcessCache.Key> {
                 // check the sha1 is still valid, and the pre-dex files are still there.
                 if (storedItem.areOutputFilesPresent() &&
                         storedItem.getSourceHash().equals(getHash(inputFile))) {
+
+                    Logger.getAnonymousLogger().info("Cached result for getItem(" + inputFile + "): "
+                            + storedItem.getOutputFiles());
+                    for (File f : storedItem.getOutputFiles()) {
+                        Logger.getAnonymousLogger().info(
+                                String.format("%s l:%d ts:%d", f, f.length(), f.lastModified()));
+                    }
 
                     // create an item where the outFile is the one stored since it
                     // represent the pre-dexed library already.
@@ -528,7 +536,12 @@ public abstract class PreProcessCache<T extends PreProcessCache.Key> {
 
         HashCode hashCode = item.getSourceHash();
         if (hashCode == null) {
-            hashCode = Files.hash(item.getSourceFile(), Hashing.sha1());
+            try {
+                hashCode = Files.hash(item.getSourceFile(), Hashing.sha1());
+            } catch (IOException ex) {
+                // If we can't compute the hash for whatever reason, simply skip this entry.
+                return null;
+            }
         }
         attr = document.createAttribute(ATTR_SHA1);
         attr.setValue(hashCode.toString());

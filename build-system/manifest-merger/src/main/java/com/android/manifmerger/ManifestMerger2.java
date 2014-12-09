@@ -38,6 +38,8 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -52,7 +54,7 @@ public class ManifestMerger2 {
     private final File mManifestFile;
 
     @NonNull
-    private final Map<String, String> mPlaceHolderValues;
+    private final Map<String, Object> mPlaceHolderValues;
 
     @NonNull
     private final KeyBasedValueResolver<SystemProperty> mSystemPropertyResolver;
@@ -62,6 +64,7 @@ public class ManifestMerger2 {
     private final ImmutableList<File> mFlavorsAndBuildTypeFiles;
     private final ImmutableList<Invoker.Feature> mOptionalFeatures;
     private final MergeType mMergeType;
+    private final Optional<File> mReportFile;
 
     private ManifestMerger2(
             @NonNull ILogger logger,
@@ -69,9 +72,10 @@ public class ManifestMerger2 {
             @NonNull ImmutableList<Pair<String, File>> libraryFiles,
             @NonNull ImmutableList<File> flavorsAndBuildTypeFiles,
             @NonNull ImmutableList<Invoker.Feature> optionalFeatures,
-            @NonNull Map<String, String> placeHolderValues,
+            @NonNull Map<String, Object> placeHolderValues,
             @NonNull KeyBasedValueResolver<SystemProperty> systemPropertiesResolver,
-            @NonNull MergeType mergeType) {
+            @NonNull MergeType mergeType,
+            @NonNull Optional<File> reportFile) {
         this.mSystemPropertyResolver = systemPropertiesResolver;
         this.mPlaceHolderValues = placeHolderValues;
         this.mManifestFile = mainManifestFile;
@@ -80,6 +84,7 @@ public class ManifestMerger2 {
         this.mFlavorsAndBuildTypeFiles = flavorsAndBuildTypeFiles;
         this.mOptionalFeatures = optionalFeatures;
         this.mMergeType = mergeType;
+        this.mReportFile = reportFile;
     }
 
     /**
@@ -126,10 +131,10 @@ public class ManifestMerger2 {
         }
 
         // check for placeholders presence.
-        Map<String, String> finalPlaceHolderValues = mPlaceHolderValues;
+        Map<String, Object> finalPlaceHolderValues = mPlaceHolderValues;
         if (!mPlaceHolderValues.containsKey("applicationId")) {
             finalPlaceHolderValues =
-                    ImmutableMap.<String, String>builder().putAll(mPlaceHolderValues)
+                    ImmutableMap.<String, Object>builder().putAll(mPlaceHolderValues)
                             .put("packageName", mainPackageAttribute.get().getValue())
                             .put("applicationId", mainPackageAttribute.get().getValue())
                             .build();
@@ -286,6 +291,41 @@ public class ManifestMerger2 {
         build.log(stdLogger);
         stdLogger.verbose(build.getMergedDocument().get().prettyPrint());
 
+        if (mReportFile.isPresent()) {
+            FileWriter fileWriter = null;
+            try {
+                if (!mReportFile.get().getParentFile().exists()
+                        && !mReportFile.get().getParentFile().mkdirs()) {
+                    mLogger.warning(String.format(
+                            "Cannot create %1$s manifest merger report file,"
+                                    + "build will continue but merging activities "
+                                    + "will not be documented",
+                            mReportFile.get().getAbsolutePath()));
+                } else {
+                    fileWriter = new FileWriter(mReportFile.get());
+                    build.getActions().log(fileWriter);
+                }
+            } catch (IOException e) {
+                mLogger.warning(String.format(
+                        "Error '%1$s' while writing the merger report file, "
+                                + "build can continue but merging activities "
+                                + "will not be documented ",
+                        e.getMessage()));
+            } finally {
+                if (fileWriter != null) {
+                    try {
+                        fileWriter.close();
+                    } catch (IOException e) {
+                        mLogger.warning(String.format(
+                                "Error '%1$s' while closing the merger report file, "
+                                + "build can continue but merging activities "
+                                        + "will not be documented ",
+                                e.getMessage()));
+                    }
+                }
+            }
+        }
+
         return build;
     }
 
@@ -366,13 +406,13 @@ public class ManifestMerger2 {
             MergingReport.Builder mergingReportBuilder) {
 
         // check for placeholders presence.
-        Map<String, String> finalPlaceHolderValues = mPlaceHolderValues;
+        Map<String, Object> finalPlaceHolderValues = mPlaceHolderValues;
         if (!mPlaceHolderValues.containsKey("applicationId")) {
             String packageName = manifestInfo.getMainManifestPackageName().isPresent()
                     ? manifestInfo.getMainManifestPackageName().get()
                     : xmlDocument.getPackageName();
             finalPlaceHolderValues =
-                    ImmutableMap.<String, String>builder().putAll(mPlaceHolderValues)
+                    ImmutableMap.<String, Object>builder().putAll(mPlaceHolderValues)
                             .put(PlaceholderHandler.PACKAGE_NAME, packageName)
                             .put(PlaceholderHandler.APPLICATION_ID, packageName)
                             .build();
@@ -477,7 +517,8 @@ public class ManifestMerger2 {
      * further customization and trigger the merging tool.
      */
     public static Invoker newMerger(@NonNull File mainManifestFile,
-            @NonNull ILogger logger, @NonNull MergeType mergeType) {
+            @NonNull ILogger logger,
+            @NonNull MergeType mergeType) {
         return new Invoker(mainManifestFile, logger, mergeType);
     }
 
@@ -737,13 +778,13 @@ public class ManifestMerger2 {
 
         protected final File mMainManifestFile;
 
-        protected final ImmutableMap.Builder<SystemProperty, String> mSystemProperties =
-                new ImmutableMap.Builder<SystemProperty, String>();
+        protected final ImmutableMap.Builder<SystemProperty, Object> mSystemProperties =
+                new ImmutableMap.Builder<SystemProperty, Object>();
 
         protected final ILogger mLogger;
 
-        protected final ImmutableMap.Builder<String, String> mPlaceHolders =
-                new ImmutableMap.Builder<String, String>();
+        protected final ImmutableMap.Builder<String, Object> mPlaceHolders =
+                new ImmutableMap.Builder<String, Object>();
 
         /**
          * Sets a value for a {@link com.android.manifmerger.ManifestMerger2.SystemProperty}
@@ -800,7 +841,7 @@ public class ManifestMerger2 {
             /**
              * Perform a sweep after all merging activities to remove all tools: decorations.
              */
-            REMOVE_TOOLS_DECLARATIONS
+            REMOVE_TOOLS_DECLARATIONS;
         }
 
         private final ImmutableList.Builder<Pair<String, File>> mLibraryFilesBuilder =
@@ -810,6 +851,7 @@ public class ManifestMerger2 {
         private final ImmutableList.Builder<Feature> mFeaturesBuilder =
                 new ImmutableList.Builder<Feature>();
         private final MergeType mMergeType;
+        @Nullable private File mReportFile;
 
         /**
          * Creates a new builder with the mandatory main manifest file.
@@ -817,10 +859,23 @@ public class ManifestMerger2 {
          * @param logger the logger interface to use.
          */
         private Invoker(
-                @NonNull File mainManifestFile, @NonNull ILogger logger, MergeType mergeType) {
+                @NonNull File mainManifestFile,
+                @NonNull ILogger logger,
+                MergeType mergeType) {
             this.mMainManifestFile = Preconditions.checkNotNull(mainManifestFile);
             this.mLogger = logger;
             this.mMergeType = mergeType;
+        }
+
+        /**
+         * Sets the file to use to write the merging report. If not called,
+         * the merging process will not write a report.
+         * @param mergeReport the file to write the report in.
+         * @return itself.
+         */
+        public Invoker setMergeReportFile(@NonNull File mergeReport) {
+            mReportFile = mergeReport;
+            return this;
         }
 
         /**
@@ -907,7 +962,7 @@ public class ManifestMerger2 {
         public MergingReport merge() throws MergeFailureException {
 
             // provide some free placeholders values.
-            ImmutableMap<SystemProperty, String> systemProperties = mSystemProperties.build();
+            ImmutableMap<SystemProperty, Object> systemProperties = mSystemProperties.build();
             if (systemProperties.containsKey(SystemProperty.PACKAGE)) {
                 mPlaceHolders.put("packageName", systemProperties.get(SystemProperty.PACKAGE));
                 mPlaceHolders.put("applicationId", systemProperties.get(SystemProperty.PACKAGE));
@@ -922,7 +977,8 @@ public class ManifestMerger2 {
                             mFeaturesBuilder.build(),
                             mPlaceHolders.build(),
                             new MapBasedKeyBasedValueResolver<SystemProperty>(systemProperties),
-                            mMergeType);
+                            mMergeType,
+                            Optional.fromNullable(mReportFile));
             return manifestMerger.merge();
         }
 
@@ -937,16 +993,17 @@ public class ManifestMerger2 {
      */
     public static class MapBasedKeyBasedValueResolver<T> implements KeyBasedValueResolver<T> {
 
-        private final ImmutableMap<T, String> keyValues;
+        private final ImmutableMap<T, Object> keyValues;
 
-        public MapBasedKeyBasedValueResolver(Map<T, String> keyValues) {
+        public MapBasedKeyBasedValueResolver(Map<T, Object> keyValues) {
             this.keyValues = ImmutableMap.copyOf(keyValues);
         }
 
         @Nullable
         @Override
         public String getValue(@NonNull T key) {
-            return keyValues.get(key);
+            Object value = keyValues.get(key);
+            return value == null ? null : value.toString();
         }
     }
 

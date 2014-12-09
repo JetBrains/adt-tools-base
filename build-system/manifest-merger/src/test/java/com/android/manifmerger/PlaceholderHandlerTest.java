@@ -161,6 +161,6 @@ public class PlaceholderHandlerTest extends TestCase {
         // verify the error was recorded.
         verify(mBuilder).addMessage(
                 any(XmlLoader.SourceLocation.class), anyInt(), anyInt(),
-                eq(MergingReport.Record.Severity.INFO), anyString());
+                eq(MergingReport.Record.Severity.ERROR), anyString());
     }
 }

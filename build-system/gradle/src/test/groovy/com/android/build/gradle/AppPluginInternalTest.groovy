@@ -17,14 +17,21 @@
 package com.android.build.gradle
 
 import com.android.build.gradle.internal.BadPluginException
+import com.android.build.gradle.internal.LoggerWrapper
 import com.android.build.gradle.internal.test.BaseTest
 import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.builder.core.BuilderConstants
 import com.android.builder.core.DefaultBuildType
 import com.android.builder.model.SigningConfig
 import com.android.ide.common.signing.KeystoreHelper
+import com.android.utils.ILogger
+import com.android.utils.StdLogger
 import org.gradle.api.Project
+import org.gradle.api.artifacts.ModuleVersionIdentifier
+import org.gradle.api.internal.artifacts.DefaultModuleVersionIdentifier
 import org.gradle.testfixtures.ProjectBuilder
+
+import java.util.logging.Logger
 
 /**
  * Tests for the internal workings of the app plugin ("android")
@@ -38,7 +45,7 @@ public class AppPluginInternalTest extends BaseTest {
 
     public void testBasic() {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "${FOLDER_TEST_REGULAR}/basic")).build()
+                new File(testDir, "${FOLDER_TEST_SAMPLES}/basic")).build()
 
         project.apply plugin: 'com.android.application'
 
@@ -66,7 +73,7 @@ public class AppPluginInternalTest extends BaseTest {
 
     public void testDefaultConfig() {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "${FOLDER_TEST_REGULAR}/basic")).build()
+                new File(testDir, "${FOLDER_TEST_SAMPLES}/basic")).build()
 
         project.apply plugin: 'com.android.application'
 
@@ -112,7 +119,7 @@ public class AppPluginInternalTest extends BaseTest {
 
     public void testBuildTypes() {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "${FOLDER_TEST_REGULAR}/basic")).build()
+                new File(testDir, "${FOLDER_TEST_SAMPLES}/basic")).build()
 
         project.apply plugin: 'com.android.application'
 
@@ -149,7 +156,7 @@ public class AppPluginInternalTest extends BaseTest {
 
     public void testFlavors() {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "${FOLDER_TEST_REGULAR}/basic")).build()
+                new File(testDir, "${FOLDER_TEST_SAMPLES}/basic")).build()
 
         project.apply plugin: 'com.android.application'
 
@@ -186,7 +193,7 @@ public class AppPluginInternalTest extends BaseTest {
 
     public void testMultiFlavors() {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "${FOLDER_TEST_REGULAR}/basic")).build()
+                new File(testDir, "${FOLDER_TEST_SAMPLES}/basic")).build()
 
         project.apply plugin: 'com.android.application'
 
@@ -251,7 +258,7 @@ public class AppPluginInternalTest extends BaseTest {
 
     public void testSigningConfigs() {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "${FOLDER_TEST_REGULAR}/basic")).build()
+                new File(testDir, "${FOLDER_TEST_SAMPLES}/basic")).build()
 
         project.apply plugin: 'com.android.application'
 
@@ -352,7 +359,7 @@ public class AppPluginInternalTest extends BaseTest {
      */
     public void testDebugSigningConfig() throws Exception {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "${FOLDER_TEST_REGULAR}/basic")).build()
+                new File(testDir, "${FOLDER_TEST_SAMPLES}/basic")).build()
 
         project.apply plugin: 'com.android.application'
 
@@ -378,7 +385,7 @@ public class AppPluginInternalTest extends BaseTest {
 
     public void testSigningConfigInitWith() throws Exception {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "${FOLDER_TEST_REGULAR}/basic")).build()
+                new File(testDir, "${FOLDER_TEST_SAMPLES}/basic")).build()
 
         project.apply plugin: 'com.android.application'
 
@@ -405,7 +412,7 @@ public class AppPluginInternalTest extends BaseTest {
 
     public void testPluginDetection() {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "${FOLDER_TEST_REGULAR}/basic")).build()
+                new File(testDir, "${FOLDER_TEST_SAMPLES}/basic")).build()
 
         project.apply plugin: 'com.android.application'
         project.apply plugin: 'java'
@@ -425,5 +432,33 @@ public class AppPluginInternalTest extends BaseTest {
 
         assertNotNull(recordedException)
         assertEquals(BadPluginException.class, recordedException.getClass())
+    }
+
+    public void testPathNormalization() {
+        ModuleVersionIdentifier moduleVersionIdentifier = new DefaultModuleVersionIdentifier(
+                "group", "name", "1.2");
+        ILogger logger = new StdLogger(StdLogger.Level.VERBOSE);
+        assertEquals("app", BasePlugin.normalize(logger, moduleVersionIdentifier, "app"));
+        assertEquals(".app", BasePlugin.normalize(logger, moduleVersionIdentifier, ".app"))
+        assertEquals("app@", BasePlugin.normalize(logger, moduleVersionIdentifier, "app."))
+        assertEquals("app@", BasePlugin.normalize(logger, moduleVersionIdentifier, "app "))
+        assertEquals("app@@@", BasePlugin.normalize(logger, moduleVersionIdentifier, "app..."))
+        assertEquals("app@@@", BasePlugin.normalize(logger, moduleVersionIdentifier, "app. ."))
+        assertEquals("app@@@@", BasePlugin.normalize(logger, moduleVersionIdentifier, "app. . "))
+        assertEquals("a@", BasePlugin.normalize(logger, moduleVersionIdentifier, "a."))
+        assertEquals("a@", BasePlugin.normalize(logger, moduleVersionIdentifier, "a "))
+        assertEquals("a@@@", BasePlugin.normalize(logger, moduleVersionIdentifier, "a..."))
+        assertEquals(".app@@", BasePlugin.normalize(logger, moduleVersionIdentifier, ".app%%"))
+        assertEquals("app.txt", BasePlugin.normalize(logger, moduleVersionIdentifier, "app.txt"))
+        assertEquals("app@@@txt", BasePlugin.normalize(logger, moduleVersionIdentifier, "app%*?txt"))
+        assertEquals("", BasePlugin.normalize(logger, moduleVersionIdentifier, ""));
+        assertEquals("a", BasePlugin.normalize(logger, moduleVersionIdentifier, "a"));
+        assertEquals("1", BasePlugin.normalize(logger, moduleVersionIdentifier, "1"));
+        assertNull(BasePlugin.normalize(logger, moduleVersionIdentifier, null));
+
+        // those will generate an exception and return the original value
+        assertEquals(".", BasePlugin.normalize(logger, moduleVersionIdentifier, "."));
+        assertEquals("..", BasePlugin.normalize(logger, moduleVersionIdentifier, ".."))
+        assertEquals("...", BasePlugin.normalize(logger, moduleVersionIdentifier, "..."))
     }
 }

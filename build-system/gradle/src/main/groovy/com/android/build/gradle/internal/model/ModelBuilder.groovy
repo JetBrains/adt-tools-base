@@ -23,7 +23,6 @@ import com.android.build.gradle.LibraryPlugin
 import com.android.build.gradle.api.ApkOutputFile
 import com.android.build.gradle.internal.BuildTypeData
 import com.android.build.gradle.internal.ProductFlavorData
-import com.android.build.gradle.internal.dsl.LintOptionsImpl
 import com.android.build.gradle.internal.variant.ApkVariantOutputData
 import com.android.build.gradle.internal.variant.ApplicationVariantData
 import com.android.build.gradle.internal.variant.BaseVariantData
@@ -94,7 +93,7 @@ public class ModelBuilder implements ToolingModelBuilder {
                         true /*isTest*/,
                         ArtifactMetaData.TYPE_ANDROID));
 
-        LintOptions lintOptions = LintOptionsImpl.create(basePlugin.extension.lintOptions)
+        LintOptions lintOptions = com.android.build.gradle.internal.dsl.LintOptions.create(basePlugin.extension.lintOptions)
 
         AaptOptions aaptOptions = AaptOptionsImpl.create(basePlugin.extension.aaptOptions)
 
@@ -262,14 +261,15 @@ public class ModelBuilder implements ToolingModelBuilder {
             ImmutableCollection.Builder<OutputFile> outputFiles = ImmutableList.builder();
 
             // add the main APK
-            outputFiles.add(new MainOutputFileImpl(
+            outputFiles.add(new OutputFileImpl(
                     variantOutputData.mainOutputFile.filters,
                     variantOutputData.mainOutputFile.getType().name(),
                     variantOutputData.outputFile));
 
             for (ApkOutputFile splitApk : variantOutputData.outputs) {
                 if (splitApk.getType() == OutputFile.OutputType.SPLIT) {
-                    outputFiles.add(new OutputFileImpl(splitApk.getFilters(), OutputFile.SPLIT));
+                    outputFiles.add(new OutputFileImpl(
+                            splitApk.getFilters(), OutputFile.SPLIT, splitApk.getOutputFile()));
                 }
             }
 
@@ -301,7 +301,9 @@ public class ModelBuilder implements ToolingModelBuilder {
                 DependenciesImpl.cloneDependencies(variantData, basePlugin, gradleProjects),
                 variantSourceProvider,
                 multiFlavorSourceProvider,
-                variantConfiguration.supportedAbis)
+                variantConfiguration.supportedAbis,
+                variantConfiguration.getMergedBuildConfigFields(),
+                variantConfiguration.getMergedResValues())
     }
 
     @NonNull

@@ -15,8 +15,8 @@
  */
 package com.android.build.gradle.tasks
 
-import com.android.build.gradle.internal.dsl.PackagingOptionsImpl
-import com.android.build.gradle.internal.dsl.SigningConfigDsl
+import com.android.build.gradle.internal.dsl.PackagingOptions
+import com.android.build.gradle.internal.dsl.SigningConfig
 import com.android.build.gradle.internal.tasks.IncrementalTask
 import com.android.build.gradle.internal.tasks.OutputFileTask
 import com.android.builder.packaging.DuplicateFileException
@@ -63,10 +63,10 @@ public class PackageApplication extends IncrementalTask implements OutputFileTas
     boolean jniDebugBuild
 
     @Nested @Optional
-    SigningConfigDsl signingConfig
+    SigningConfig signingConfig
 
     @Nested
-    PackagingOptionsImpl packagingOptions
+    PackagingOptions packagingOptions
 
     @InputFiles
     public FileTree getNativeLibraries() {

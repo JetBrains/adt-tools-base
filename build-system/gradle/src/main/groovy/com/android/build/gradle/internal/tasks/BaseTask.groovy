@@ -26,8 +26,12 @@ public abstract class BaseTask extends DefaultTask {
         return plugin.getAndroidBuilder()
     }
 
-    protected static void emptyFolder(File folder) {
-        folder.deleteDir()
+    protected void emptyFolder(File folder) {
+        if (plugin!= null && plugin.logger != null) {
+            plugin.logger.info("deleteDir(" + folder + ") returned: " + folder.deleteDir());
+        } else {
+            folder.deleteDir();
+        }
         folder.mkdirs()
     }
 }

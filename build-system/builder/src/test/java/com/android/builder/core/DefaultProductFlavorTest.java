@@ -50,7 +50,8 @@ public class DefaultProductFlavorTest extends TestCase {
         mCustom.setTestHandleProfiling(true);
         mCustom.setTestFunctionalTest(true);
         mCustom.addResourceConfiguration("hdpi");
-        mCustom.addManifestPlaceHolders(ImmutableMap.of("one", "oneValue", "two", "twoValue"));
+        mCustom.addManifestPlaceHolders(
+                ImmutableMap.<String, Object>of("one", "oneValue", "two", "twoValue"));
 
         mCustom.addResValue(new ClassFieldImpl("foo", "one", "oneValue"));
         mCustom.addResValue(new ClassFieldImpl("foo", "two", "twoValue"));
@@ -61,7 +62,7 @@ public class DefaultProductFlavorTest extends TestCase {
         mCustom2 = new DefaultProductFlavor("custom2");
         mCustom2.addResourceConfigurations("ldpi", "hdpi");
         mCustom2.addManifestPlaceHolders(
-                ImmutableMap.of("two","twoValueBis", "three", "threeValue"));
+                ImmutableMap.<String, Object>of("two","twoValueBis", "three", "threeValue"));
         mCustom2.addResValue(new ClassFieldImpl("foo", "two", "twoValueBis"));
         mCustom2.addResValue(new ClassFieldImpl("foo", "three", "threeValue"));
         mCustom2.addBuildConfigField(new ClassFieldImpl("foo", "two", "twoValueBis"));
@@ -138,7 +139,7 @@ public class DefaultProductFlavorTest extends TestCase {
     public void testManifestPlaceholdersMerge() {
         ProductFlavor flavor = DefaultProductFlavor.mergeFlavors(mCustom2, mCustom);
 
-        Map<String, String> manifestPlaceholders = flavor.getManifestPlaceholders();
+        Map<String, Object> manifestPlaceholders = flavor.getManifestPlaceholders();
         assertEquals(3, manifestPlaceholders.size());
         assertEquals("oneValue", manifestPlaceholders.get("one"));
         assertEquals("twoValue", manifestPlaceholders.get("two"));

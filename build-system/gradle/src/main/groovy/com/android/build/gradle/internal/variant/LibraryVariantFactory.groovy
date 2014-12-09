@@ -249,10 +249,10 @@ public class LibraryVariantFactory implements VariantFactory<LibraryVariantData>
                 "bundle${fullName.capitalize()}",
                 Zip)
 
-        def extract = variantData.variantDependency.annotationsPresent ? createExtractAnnotations(
+        libVariantData.generateAnnotationsTask = variantData.variantDependency.annotationsPresent ? createExtractAnnotations(
                 fullName, project, variantData) : null
-        if (extract != null) {
-            bundle.dependsOn(extract)
+        if (libVariantData.generateAnnotationsTask != null) {
+            bundle.dependsOn(libVariantData.generateAnnotationsTask)
         }
 
         final boolean instrumented = variantConfig.buildType.isTestCoverageEnabled()
@@ -327,9 +327,9 @@ public class LibraryVariantFactory implements VariantFactory<LibraryVariantData>
                 jar.exclude(packageName + "/BuildConfig.class")
             }
 
-            if (extract != null) {
+            if (libVariantData.generateAnnotationsTask != null) {
                 // In case extract annotations strips out private typedef annotation classes
-                jar.dependsOn extract
+                jar.dependsOn libVariantData.generateAnnotationsTask
             }
         }
 
@@ -460,6 +460,13 @@ public class LibraryVariantFactory implements VariantFactory<LibraryVariantData>
      */
     @Override
     public void validateModel(VariantModel model) {
+        if (model.getDefaultConfig().getProductFlavor().getApplicationId() != null) {
+            throw new GradleException("Library projects cannot set applicationId. " +
+                    "applicationId is set to '" +
+                    model.getDefaultConfig().getProductFlavor().getApplicationId() +
+                    "' in default config.");
+        }
+
         for (BuildTypeData buildType : model.getBuildTypes().values()) {
             if (buildType.getBuildType().getApplicationIdSuffix() != null) {
                 throw new GradleException("Library projects cannot set applicationId. " +

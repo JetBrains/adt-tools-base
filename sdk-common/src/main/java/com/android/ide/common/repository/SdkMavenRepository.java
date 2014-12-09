@@ -25,7 +25,10 @@ import static java.io.File.separatorChar;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.sdklib.repository.FullRevision;
+import com.android.sdklib.repository.NoPreviewRevision;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
+import com.android.sdklib.repository.descriptors.IdDisplay;
+import com.android.sdklib.repository.descriptors.PkgDesc;
 import com.android.sdklib.repository.descriptors.PkgType;
 import com.android.sdklib.repository.local.LocalPkgInfo;
 import com.android.sdklib.repository.local.LocalSdk;
@@ -42,15 +45,17 @@ import java.util.List;
  */
 public enum SdkMavenRepository {
     /** The Android repository; contains support lib, app compat, media router, etc */
-    ANDROID("android"),
+    ANDROID("android", "Android Support Repository"),
 
     /** The Google repository; contains Play Services etc */
-    GOOGLE("google");
+    GOOGLE("google", "Google Support Repository");
 
     private final String mDir;
+    @NonNull private final String myDisplayName;
 
-    private SdkMavenRepository(@NonNull String dir) {
+    SdkMavenRepository(@NonNull String dir, @NonNull String displayName) {
         mDir = dir;
+        myDisplayName = displayName;
     }
 
     /**
@@ -187,5 +192,13 @@ public enum SdkMavenRepository {
     @NonNull
     public String getDirName() {
         return mDir;
+    }
+
+    /**
+     * @return SDK package description for this repository
+     */
+    public IPkgDesc getPackageDescription() {
+        return PkgDesc.Builder.newExtra(new IdDisplay(mDir, ""), FD_M2_REPOSITORY, myDisplayName,
+                                        null, new NoPreviewRevision(1)).create();
     }
 }

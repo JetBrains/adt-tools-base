@@ -18,12 +18,9 @@ package com.android.build.gradle.internal.test;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.annotations.concurrency.Immutable;
-import com.android.build.MainOutputFile;
 import com.android.build.OutputFile;
 import com.android.build.gradle.api.ApkOutputFile;
 import com.android.build.gradle.internal.variant.BaseVariantData;
-import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.internal.variant.TestVariantData;
 import com.android.build.gradle.internal.variant.TestedVariantData;
 import com.android.builder.core.VariantConfiguration;
@@ -33,7 +30,6 @@ import com.android.ide.common.build.SplitOutputMatcher;
 import com.google.common.collect.ImmutableList;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.List;
 
 /**

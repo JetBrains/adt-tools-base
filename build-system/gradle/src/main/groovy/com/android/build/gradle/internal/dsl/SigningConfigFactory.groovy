@@ -16,10 +16,8 @@
 
 package com.android.build.gradle.internal.dsl
 
-import com.android.builder.model.SigningConfig
 import org.gradle.api.NamedDomainObjectFactory
 import org.gradle.internal.reflect.Instantiator
-
 /**
  * Factory to create SigningConfig object using an {@ling Instantiator} to add the DSL methods.
  */
@@ -33,6 +31,6 @@ class SigningConfigFactory implements NamedDomainObjectFactory<SigningConfig> {
 
     @Override
     SigningConfig create(String name) {
-        return instantiator.newInstance(SigningConfigDsl.class, name)
+        return instantiator.newInstance(SigningConfig.class, name)
     }
 }

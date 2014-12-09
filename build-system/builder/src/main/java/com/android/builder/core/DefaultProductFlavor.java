@@ -75,9 +75,6 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
 
     /**
      * Sets the application id.
-     *
-     * @param applicationId the application id
-     * @return the flavor object
      */
     @NonNull
     public ProductFlavor setApplicationId(String applicationId) {
@@ -85,6 +82,11 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
         return this;
     }
 
+    /**
+     * Returns the application ID.
+     *
+     * <p>See <a href="http://tools.android.com/tech-docs/new-build-system/applicationid-vs-packagename">ApplicationId versus PackageName</a>
+     */
     @Override
     @Nullable
     public String getApplicationId() {
@@ -92,7 +94,7 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
     }
 
     /**
-     * Sets the version code. If the value is -1, it is considered not set.
+     * Sets the version code.
      *
      * @param versionCode the version code
      * @return the flavor object
@@ -103,6 +105,11 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
         return this;
     }
 
+    /**
+     * Version code.
+     *
+     * <p>See <a href="http://developer.android.com/tools/publishing/versioning.html">Versioning Your Application</a>
+     */
     @Override
     @Nullable
     public Integer getVersionCode() {
@@ -121,19 +128,29 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
         return this;
     }
 
+    /**
+     * Version name.
+     *
+     * <p>See <a href="http://developer.android.com/tools/publishing/versioning.html">Versioning Your Application</a>
+     */
     @Override
     @Nullable
     public String getVersionName() {
         return mVersionName;
     }
 
-    /** Sets the minSdkVersion to the given value. */
+    /**
+     * Sets the minSdkVersion to the given value.
+     */
     @NonNull
     public ProductFlavor setMinSdkVersion(ApiVersion minSdkVersion) {
         mMinSdkVersion = minSdkVersion;
         return this;
     }
 
+    /**
+     * Min SDK version.
+     */
     @Override
     public ApiVersion getMinSdkVersion() {
         return mMinSdkVersion;
@@ -146,6 +163,9 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
         return this;
     }
 
+    /**
+     * Target SDK version.
+     */
     @Override
     public ApiVersion getTargetSdkVersion() {
         return mTargetSdkVersion;
@@ -201,13 +221,18 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
         return this;
     }
 
-    /** Sets the test package name. */
+    /** Sets the test application ID. */
     @NonNull
     public ProductFlavor setTestApplicationId(String applicationId) {
         mTestApplicationId = applicationId;
         return this;
     }
 
+    /**
+     * Test application ID.
+     *
+     * <p>See <a href="http://tools.android.com/tech-docs/new-build-system/applicationid-vs-packagename">ApplicationId versus PackageName</a>
+     */
     @Override
     @Nullable
     public String getTestApplicationId() {
@@ -221,12 +246,25 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
         return this;
     }
 
+    /**
+     * Test instrumentation runner class name.
+     *
+     * <p>This is a fully qualified class name of the runner, e.g.
+     * <code>android.test.InstrumentationTestRunner</code>
+     *
+     * <p>See <a href="http://developer.android.com/guide/topics/manifest/instrumentation-element.html">
+     * instrumentation</a>.
+     */
     @Override
     @Nullable
     public String getTestInstrumentationRunner() {
         return mTestInstrumentationRunner;
     }
 
+    /**
+     * See <a href="http://developer.android.com/guide/topics/manifest/instrumentation-element.html">
+     * instrumentation</a>.
+     */
     @Override
     @Nullable
     public Boolean getTestHandleProfiling() {
@@ -239,6 +277,10 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
         return this;
     }
 
+    /**
+     * See <a href="http://developer.android.com/guide/topics/manifest/instrumentation-element.html">
+     * instrumentation</a>.
+     */
     @Override
     @Nullable
     public Boolean getTestFunctionalTest() {
@@ -251,6 +293,9 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
         return this;
     }
 
+    /**
+     * Signing config used by this product flavor.
+     */
     @Override
     @Nullable
     public SigningConfig getSigningConfig() {

@@ -337,7 +337,7 @@ public class XmlDocument {
                 return targetSdkVersion.get().getValue();
             }
         }
-        return getMinSdkVersion();
+        return getRawMinSdkVersion();
     }
 
     /**
@@ -398,8 +398,14 @@ public class XmlDocument {
             }
         }
         int thisTargetSdk = getApiLevelFromAttribute(getTargetSdkVersion());
+
+        // when we are importing a library, we should never use the build.gradle injected
+        // values (only valid for overlay, main manifest) so use the raw versions coming from
+        // the AndroidManifest.xml
         int libraryTargetSdk = getApiLevelFromAttribute(
-                lowerPriorityDocument.getTargetSdkVersion());
+                lowerPriorityDocument.getFileType() == Type.LIBRARY
+                    ? lowerPriorityDocument.getRawTargetSdkVersion()
+                    : lowerPriorityDocument.getTargetSdkVersion());
 
         // if library is using a code name rather than an API level, make sure this document target
         // sdk version is using the same code name.
@@ -421,7 +427,7 @@ public class XmlDocument {
         }
         // same for minSdkVersion, if the library is using a code name, the application must
         // also be using the same code name.
-        String libraryMinSdkVersion = lowerPriorityDocument.getMinSdkVersion();
+        String libraryMinSdkVersion = lowerPriorityDocument.getRawMinSdkVersion();
         if (!Character.isDigit(libraryMinSdkVersion.charAt(0))) {
             // this is a code name, ensure this document uses the same code name.
             if (!libraryMinSdkVersion.equals(getMinSdkVersion())) {
@@ -467,13 +473,14 @@ public class XmlDocument {
         }
 
         boolean hasWriteToExternalStoragePermission =
-                getByTypeAndKey(USES_PERMISSION, permission("WRITE_EXTERNAL_STORAGE")).isPresent();
+                lowerPriorityDocument.getByTypeAndKey(
+                        USES_PERMISSION, permission("WRITE_EXTERNAL_STORAGE")).isPresent();
 
         if (libraryTargetSdk < 4) {
             Optional<Element> permission = addIfAbsent(mergingReport.getActionRecorder(),
                     USES_PERMISSION,
                     permission("WRITE_EXTERNAL_STORAGE"),
-                    "targetSdkVersion < 4",
+                    lowerPriorityDocument.getPackageName() + " has a targetSdkVersion < 4",
                     Pair.of("maxSdkVersion", "18") // permission became implied at 19.
             );
             hasWriteToExternalStoragePermission = permission.isPresent();
@@ -481,20 +488,20 @@ public class XmlDocument {
             addIfAbsent(mergingReport.getActionRecorder(),
                     USES_PERMISSION,
                     permission("READ_PHONE_STATE"),
-                    "targetSdkVersion < 4");
+                    lowerPriorityDocument.getPackageName() + " has a targetSdkVersion < 4");
         }
         // If the application has requested WRITE_EXTERNAL_STORAGE, we will
         // force them to always take READ_EXTERNAL_STORAGE as well.  We always
         // do this (regardless of target API version) because we can't have
         // an app with write permission but not read permission.
         if (hasWriteToExternalStoragePermission
-                && !getByTypeAndKey(USES_PERMISSION, permission("READ_EXTERNAL_STORAGE"))
-                        .isPresent()) {
+                && !lowerPriorityDocument.getByTypeAndKey(
+                            USES_PERMISSION, permission("READ_EXTERNAL_STORAGE")).isPresent()) {
 
             addIfAbsent(mergingReport.getActionRecorder(),
                     USES_PERMISSION,
                     permission("READ_EXTERNAL_STORAGE"),
-                    "requested WRITE_EXTERNAL_STORAGE",
+                    lowerPriorityDocument.getPackageName() + " requested WRITE_EXTERNAL_STORAGE",
                     // NOTE TO @xav, where can we find the list of implied permissions at versions X
                     Pair.of("maxSdkVersion", "18") // permission became implied at 19, DID IT ???
             );
@@ -502,15 +509,19 @@ public class XmlDocument {
 
         // Pre-JellyBean call log permission compatibility.
         if (libraryTargetSdk < 16) {
-            if (getByTypeAndKey(USES_PERMISSION, permission("READ_CONTACTS")).isPresent()) {
+            if (lowerPriorityDocument.getByTypeAndKey(
+                    USES_PERMISSION, permission("READ_CONTACTS")).isPresent()) {
                 addIfAbsent(mergingReport.getActionRecorder(),
                         USES_PERMISSION, permission("READ_CALL_LOG"),
-                        "targetSdkVersion < 16 and requested READ_CONTACTS");
+                        lowerPriorityDocument.getPackageName()
+                                + " has targetSdkVersion < 16 and requested READ_CONTACTS");
             }
-            if (getByTypeAndKey(USES_PERMISSION, permission("WRITE_CONTACTS")).isPresent()) {
+            if (lowerPriorityDocument.getByTypeAndKey(
+                    USES_PERMISSION, permission("WRITE_CONTACTS")).isPresent()) {
                 addIfAbsent(mergingReport.getActionRecorder(),
                         USES_PERMISSION, permission("WRITE_CALL_LOG"),
-                        "targetSdkVersion < 16 and requested WRITE_CONTACTS");
+                        lowerPriorityDocument.getPackageName()
+                                + " has targetSdkVersion < 16 and requested WRITE_CONTACTS");
             }
         }
     }

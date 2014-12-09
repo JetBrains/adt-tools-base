@@ -92,28 +92,4 @@ public interface ApkVariant extends BaseVariant {
      */
     @Nullable
     DefaultTask getUninstall();
-
-    // ---- Deprecated, will be removed in 1.0
-    //STOPSHIP
-
-    /**
-     * @deprecated use version on the variant's outputs.
-     */
-    @Nullable
-    @Deprecated
-    PackageApplication getPackageApplication();
-
-    /**
-     * @deprecated use version on the variant's outputs.
-     */
-    @Nullable
-    @Deprecated
-    ZipAlign getZipAlign();
-
-    /**
-     * @deprecated use version on the variant's outputs.
-     */
-    @NonNull
-    @Deprecated
-    ZipAlign createZipAlignTask(@NonNull String taskName, @NonNull File inputFile, @NonNull File outputFile);
 }

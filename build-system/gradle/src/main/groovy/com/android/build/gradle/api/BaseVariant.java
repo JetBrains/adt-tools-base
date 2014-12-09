@@ -252,28 +252,21 @@ public interface BaseVariant {
      */
     void registerJavaGeneratingTask(@NonNull Task task, @NonNull Collection<File> sourceFolders);
 
-    // ---- Deprecated, will be removed in 1.0
-    //STOPSHIP
+    /**
+     * Adds a variant-specific BuildConfig field.
+     * @param type the type of the field
+     * @param name the name of the field
+     * @param value the value of the field
+     */
+    void buildConfigField(@NonNull String type, @NonNull String name, @NonNull String value);
 
     /**
-     * @deprecated Use getApplicationId()
+     * Adds a variant-specific res value.
+     * @param type the type of the field
+     * @param name the name of the field
+     * @param value the value of the field
      */
-    @NonNull
-    @Deprecated
-    String getPackageName();
-
-    /**
-     * @deprecated use version on the variant's outputs.
-     */
-    @NonNull
-    @Deprecated
-    File getOutputFile();
-
-    /**
-     * @deprecated use version on the variant's outputs.
-     */
-    @Deprecated
-    void setOutputFile(@NonNull File outputFile);
+    void resValue(@NonNull String type, @NonNull String name, @NonNull String value);
 
     /**
      * If true, variant outputs will be considered signed. Only set if you manually set the outputs
@@ -285,18 +278,4 @@ public interface BaseVariant {
      * @see #setOutputsAreSigned(boolean)
      */
     boolean getOutputsAreSigned();
-
-    /**
-     * @deprecated use version on the variant's outputs.
-     */
-    @NonNull
-    @Deprecated
-    ProcessAndroidResources getProcessResources();
-
-    /**
-     * @deprecated use version on the variant's outputs.
-     */
-    @NonNull
-    @Deprecated
-    ManifestProcessorTask getProcessManifest();
 }

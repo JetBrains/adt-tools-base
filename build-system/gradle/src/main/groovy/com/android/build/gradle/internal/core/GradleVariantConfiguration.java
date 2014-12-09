@@ -20,9 +20,9 @@ import static com.android.builder.core.VariantConfiguration.Type.TEST;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.gradle.internal.dsl.BuildTypeDsl;
-import com.android.build.gradle.internal.dsl.GroupableProductFlavorDsl;
-import com.android.build.gradle.internal.dsl.ProductFlavorDsl;
+import com.android.build.gradle.internal.dsl.BuildType;
+import com.android.build.gradle.internal.dsl.GroupableProductFlavor;
+import com.android.build.gradle.internal.dsl.ProductFlavor;
 import com.android.builder.core.VariantConfiguration;
 import com.android.builder.model.SigningConfig;
 import com.android.builder.model.SourceProvider;
@@ -36,14 +36,14 @@ import java.util.Set;
  *
  * It also adds support for Ndk support that is not ready to go in the builder library.
  */
-public class GradleVariantConfiguration extends VariantConfiguration<BuildTypeDsl, ProductFlavorDsl, GroupableProductFlavorDsl> {
+public class GradleVariantConfiguration extends VariantConfiguration<BuildType, ProductFlavor, GroupableProductFlavor> {
 
     private final MergedNdkConfig mMergedNdkConfig = new MergedNdkConfig();
 
     public GradleVariantConfiguration(
-            @NonNull ProductFlavorDsl defaultConfig,
+            @NonNull ProductFlavor defaultConfig,
             @NonNull SourceProvider defaultSourceProvider,
-            @NonNull BuildTypeDsl buildType,
+            @NonNull BuildType buildType,
             @Nullable SourceProvider buildTypeSourceProvider,
             @Nullable SigningConfig signingConfigOverride) {
         super(defaultConfig, defaultSourceProvider, buildType, buildTypeSourceProvider,
@@ -52,9 +52,9 @@ public class GradleVariantConfiguration extends VariantConfiguration<BuildTypeDs
     }
 
     public GradleVariantConfiguration(
-            @NonNull ProductFlavorDsl defaultConfig,
+            @NonNull ProductFlavor defaultConfig,
             @NonNull SourceProvider defaultSourceProvider,
-            @NonNull BuildTypeDsl buildType,
+            @NonNull BuildType buildType,
             @Nullable SourceProvider buildTypeSourceProvider,
             @NonNull Type type, @Nullable SigningConfig signingConfigOverride) {
         super(defaultConfig, defaultSourceProvider, buildType, buildTypeSourceProvider, type,
@@ -63,9 +63,9 @@ public class GradleVariantConfiguration extends VariantConfiguration<BuildTypeDs
     }
 
     public GradleVariantConfiguration(
-            @NonNull ProductFlavorDsl defaultConfig,
+            @NonNull ProductFlavor defaultConfig,
             @NonNull SourceProvider defaultSourceProvider,
-            @NonNull BuildTypeDsl buildType,
+            @NonNull BuildType buildType,
             @Nullable SourceProvider buildTypeSourceProvider,
             @NonNull Type type, @Nullable VariantConfiguration testedConfig,
             @Nullable SigningConfig signingConfigOverride) {
@@ -77,7 +77,7 @@ public class GradleVariantConfiguration extends VariantConfiguration<BuildTypeDs
     @NonNull
     @Override
     public VariantConfiguration addProductFlavor(
-            @NonNull GroupableProductFlavorDsl productFlavor,
+            @NonNull GroupableProductFlavor productFlavor,
             @NonNull SourceProvider sourceProvider,
             @NonNull String dimensionName) {
         super.addProductFlavor(productFlavor, sourceProvider, dimensionName);
@@ -119,8 +119,8 @@ public class GradleVariantConfiguration extends VariantConfiguration<BuildTypeDs
         }
 
         // cant use merge flavor as useJack is not a prop on the base class.
-        for (ProductFlavorDsl productFlavorDsl : getProductFlavors()) {
-            value = productFlavorDsl.getUseJack();
+        for (ProductFlavor productFlavor : getProductFlavors()) {
+            value = productFlavor.getUseJack();
             if (value != null) {
                 return value;
             }
@@ -141,7 +141,7 @@ public class GradleVariantConfiguration extends VariantConfiguration<BuildTypeDs
             mMergedNdkConfig.append(getDefaultConfig().getNdkConfig());
         }
 
-        final List<GroupableProductFlavorDsl> flavors = getProductFlavors();
+        final List<GroupableProductFlavor> flavors = getProductFlavors();
         for (int i = flavors.size() - 1 ; i >= 0 ; i--) {
             NdkConfig ndkConfig = flavors.get(i).getNdkConfig();
             if (ndkConfig != null) {

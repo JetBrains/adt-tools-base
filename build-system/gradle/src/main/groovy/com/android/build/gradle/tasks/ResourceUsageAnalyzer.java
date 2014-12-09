@@ -96,7 +96,6 @@ import java.util.jar.JarOutputStream;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
-import java.util.zip.Deflater;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -199,6 +198,17 @@ public class ResourceUsageAnalyzer {
 
     /** Name of keep attribute in XML */
     private static final String ATTR_KEEP = "keep";
+    /** Name of discard attribute in XML (to mark resources as not referenced, despite guesses) */
+    private static final String ATTR_DISCARD = "discard";
+    /** Name of attribute in XML to control whether we should guess resources to keep */
+    private static final String ATTR_SHRINK_MODE = "shrinkMode";
+    /** @{linkplain #ATTR_SHRINK_MODE} value to only shrink explicitly encountered resources */
+    private static final String VALUE_STRICT = "strict";
+    /** @{linkplain #ATTR_SHRINK_MODE} value to keep possibly referenced resources */
+    private static final String VALUE_SAFE = "safe";
+
+    /** Special marker regexp which does not match a resource name */
+    static final String NO_MATCH = "-nomatch-";
 
     private final File mResourceClassDir;
     private final File mProguardMapping;
@@ -225,6 +235,13 @@ public class ResourceUsageAnalyzer {
      * This will typically be the fully qualified names of the R classes, as well as
      * any renamed versions of those discovered in the mapping.txt file from ProGuard */
     private Map<String, ResourceType> mResourceClassOwners = Maps.newHashMapWithExpectedSize(20);
+
+    /**
+     * Whether we should attempt to guess resources that should be kept based on looking
+     * at the string pool and assuming some of the strings can be used to dynamically construct
+     * the resource names. Can be turned off via {@code tools:guessKeep="false"}.
+     */
+    private boolean mGuessKeep = true;
 
     public ResourceUsageAnalyzer(
             @NonNull File rDir,
@@ -301,8 +318,10 @@ public class ResourceUsageAnalyzer {
                 zis = new JarInputStream(fis);
                 JarOutputStream zos = new JarOutputStream(fos);
                 try {
-                    // The .ap_ file is also compressed
-                    zos.setLevel(Deflater.DEFAULT_COMPRESSION);
+                    // Rather than using Deflater.DEFAULT_COMPRESSION we use 9 here,
+                    // since that seems to match the compressed sizes we observe in source
+                    // .ap_ files encountered by the resource shrinker:
+                    zos.setLevel(9);
 
                     ZipEntry entry = zis.getNextEntry();
                     while (entry != null) {
@@ -310,7 +329,43 @@ public class ResourceUsageAnalyzer {
                         boolean directory = entry.isDirectory();
                         Resource resource = getResourceByJarPath(name);
                         if (resource == null || resource.reachable) {
-                            JarEntry outEntry = new JarEntry(entry);
+                            // We can't just compress all files; files that are not
+                            // compressed in the source .ap_ file must be left uncompressed
+                            // here, since for example RAW files need to remain uncompressed in
+                            // the APK such that they can be mmap'ed at runtime.
+                            //
+                            // Create the JarEntry manually rather than setting up
+                            // the JarEntry via new JarEntry(entry):
+                            // We don't know what the exact compressed size will
+                            // be for this file; it depends on the compression level,
+                            // and we don't have a way to know what it was for the
+                            // input file. Empirically it seems to be 9 (when it is
+                            // set to a different level the compressed sizes we produce
+                            // are larger than the ones we see in typical .ap_ input files).
+                            // However, we don't want to set the size specifically; we leave it
+                            // as the default value such that the actual compressed size
+                            // is used; without that we can hit errors like
+                            //   java.util.zip.ZipException: invalid entry compressed size
+                            //                     (expected 7344 but got 7352 bytes); ignoring
+                            // (see issue 80115 for more).
+                            //
+                            // However, for stored (not compressed) entries, we *do* have
+                            // to set the size and compressed size; without it, the zip
+                            // encoder will throw an exception. Luckily, for uncompressed files
+                            // we predictably know the compressed size. Therefore, we special case
+                            // this based on the entry's method.
+                            JarEntry outEntry = new JarEntry(entry.getName());
+                            if (entry.getTime() != -1L) {
+                                outEntry.setTime(entry.getTime());
+                            }
+                            int method = entry.getMethod();
+                            outEntry.setMethod(method);
+                            if (method == ZipEntry.STORED) {
+                                outEntry.setCompressedSize(entry.getCompressedSize());
+                                outEntry.setSize(entry.getSize());
+                                outEntry.setCrc(entry.getCrc());
+                            }
+
                             zos.putNextEntry(outEntry);
 
                             if (!directory) {
@@ -597,12 +652,6 @@ public class ResourceUsageAnalyzer {
         return getFieldName(element.getAttribute(ATTR_NAME));
     }
 
-    private static String getResourceName(File path) {
-        String name = path.getName();
-        int dot = name.indexOf('.');
-        return dot != -1 ? name.substring(0, dot) : name;
-    }
-
     @Nullable
     private Resource getResource(Element element) {
         ResourceType type = getResourceType(element);
@@ -710,6 +759,7 @@ public class ResourceUsageAnalyzer {
 
     private void dumpReferences() {
         if (mDebug) {
+            System.out.println("Resource Reference Graph:");
             for (Resource resource : mResources) {
                 if (resource.references != null) {
                     System.out.println(resource + " => " + resource.references);
@@ -722,6 +772,12 @@ public class ResourceUsageAnalyzer {
         if ((!mFoundGetIdentifier && !mFoundWebContent) || mStrings == null) {
             // No calls to android.content.res.Resources#getIdentifier; no need
             // to worry about string references to resources
+            return;
+        }
+
+        if (!mGuessKeep) {
+            // User specifically asked for us not to guess resources to keep; they will
+            // explicitly mark them as kept if necessary instead
             return;
         }
 
@@ -926,27 +982,64 @@ public class ResourceUsageAnalyzer {
     static String convertFormatStringToRegexp(String formatString) {
         StringBuilder regexp = new StringBuilder();
         int from = 0;
+        boolean hasEscapedLetters = false;
         Matcher matcher = StringFormatDetector.FORMAT.matcher(formatString);
+        int length = formatString.length();
         while (matcher.find(from)) {
             int start = matcher.start();
             int end = matcher.end();
-            if (start == 0 && end == formatString.length()) {
+            if (start == 0 && end == length) {
                 // Don't match if the entire string literal starts with % and ends with
                 // the a formatting character, such as just "%d": this just matches absolutely
                 // everything and is unlikely to be used in a resource lookup
-                return "nomatch";
+                return NO_MATCH;
             }
             if (start > from) {
-                regexp.append(Pattern.quote(formatString.substring(from, start)));
+                hasEscapedLetters |= appendEscapedPattern(formatString, regexp, from, start);
             }
-            regexp.append(".*");
+            // If the wildcard follows a previous wildcard, just skip it
+            // (e.g. don't convert %s%s into .*.*; .* is enough.
+            int regexLength = regexp.length();
+            if (regexLength < 2
+                    || regexp.charAt(regexLength - 1) != '*'
+                    || regexp.charAt(regexLength - 2) != '.') {
+                regexp.append(".*");
+            }
             from = end;
         }
-        if (from < formatString.length()) {
-            regexp.append(Pattern.quote(formatString.substring(from, formatString.length())));
+
+        if (from < length) {
+            hasEscapedLetters |= appendEscapedPattern(formatString, regexp, from, length);
+        }
+
+        if (!hasEscapedLetters) {
+            // If the regexp contains *only* formatting characters, e.g. "%.0f%d", or
+            // if it contains only formatting characters and punctuation, e.g. "%s_%d",
+            // don't treat this as a possible resource name pattern string: it is unlikely
+            // to be intended for actual resource names, and has the side effect of matching
+            // most names.
+            return NO_MATCH;
         }
 
         return regexp.toString();
+    }
+
+    /**
+     * Appends the characters in the range [from,to> from formatString as escaped
+     * regexp characters into the given string builder. Returns true if there were
+     * any letters in the appended text.
+     */
+    private static boolean appendEscapedPattern(@NonNull String formatString,
+            @NonNull StringBuilder regexp, int from, int to) {
+        regexp.append(Pattern.quote(formatString.substring(from, to)));
+
+        for (int i = from; i < to; i++) {
+            if (Character.isLetter(formatString.charAt(i))) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private void recordResources(File resDir)
@@ -1216,7 +1309,8 @@ public class ResourceUsageAnalyzer {
                     if (c == '>') {
                         endHtmlTag(from, html, offset, tag);
                         state = STATE_TEXT;
-                    } else if (c == '/') {
+                    } else //noinspection StatementWithEmptyBody
+                        if (c == '/') {
                         // we expect an '>' next to close the tag
                     } else if (!Character.isWhitespace(c)) {
                         state = STATE_ATTRIBUTE_NAME;
@@ -1728,9 +1822,7 @@ public class ResourceUsageAnalyzer {
                     // Ignore tools: namespace attributes, unless it's
                     // a keep attribute
                     if (TOOLS_URI.equals(attr.getNamespaceURI())) {
-                        if (ATTR_KEEP.equals(attr.getLocalName())) {
-                            handleKeepAttribute(attr.getValue());
-                        }
+                        handleToolsAttribute(attr);
                         // Skip all other tools: attributes
                         continue;
                     }
@@ -1765,9 +1857,9 @@ public class ResourceUsageAnalyzer {
                 }
             } else {
                 // Look for keep attributes everywhere else since they don't require a source
-                if (element.hasAttributeNS(TOOLS_URI, ATTR_KEEP)) {
-                    handleKeepAttribute(element.getAttributeNS(TOOLS_URI, ATTR_KEEP));
-                }
+                handleToolsAttribute(element.getAttributeNodeNS(TOOLS_URI, ATTR_KEEP));
+                handleToolsAttribute(element.getAttributeNodeNS(TOOLS_URI, ATTR_DISCARD));
+                handleToolsAttribute(element.getAttributeNodeNS(TOOLS_URI, ATTR_SHRINK_MODE));
             }
 
             Resource definition = getResource(element);
@@ -1846,6 +1938,30 @@ public class ResourceUsageAnalyzer {
         }
     }
 
+    private void handleToolsAttribute(@Nullable Attr attr) {
+        if (attr == null) {
+            return;
+        }
+        String localName = attr.getLocalName();
+        String value = attr.getValue();
+        if (ATTR_KEEP.equals(localName)) {
+            handleKeepAttribute(value);
+        } else if (ATTR_DISCARD.equals(localName)) {
+            handleRemoveAttribute(value);
+        } else if (ATTR_SHRINK_MODE.equals(localName)) {
+            if (VALUE_STRICT.equals(value)) {
+                mGuessKeep = false;
+            } else if (VALUE_SAFE.equals(value)) {
+                mGuessKeep = true;
+            } else if (mDebug) {
+                System.out.println("Ignoring unknown " + ATTR_SHRINK_MODE + " " + value);
+            }
+            if (mDebug) {
+                System.out.println("Setting shrink mode to " + value);
+            }
+        }
+    }
+
     public static String getFieldName(@NonNull String styleName) {
         return styleName.replace('.', '_').replace('-', '_').replace(':', '_');
     }
@@ -1853,6 +1969,12 @@ public class ResourceUsageAnalyzer {
     private static void markReachable(@Nullable Resource resource) {
         if (resource != null) {
             resource.reachable = true;
+        }
+    }
+
+    private static void markUnreachable(@Nullable Resource resource) {
+        if (resource != null) {
+            resource.reachable = false;
         }
     }
 
@@ -1904,6 +2026,54 @@ public class ResourceUsageAnalyzer {
             } catch (PatternSyntaxException ignored) {
                 if (mDebug) {
                     System.out.println("Could not compute keep globbing pattern for " +
+                            url.name + ": tried regexp " + regexp + "(" + ignored + ")");
+                }
+            }
+        }
+    }
+
+    private void handleRemoveAttribute(@NonNull String value) {
+        // Handle comma separated lists of URLs and globs
+        if (value.indexOf(',') != -1) {
+            for (String portion : Splitter.on(',').omitEmptyStrings().trimResults().split(value)) {
+                handleRemoveAttribute(portion);
+            }
+            return;
+        }
+
+        ResourceUrl url = ResourceUrl.parse(value);
+        if (url == null || url.framework) {
+            return;
+        }
+
+        Resource resource = getResource(url.type, url.name);
+        if (resource != null) {
+            if (mDebug) {
+                System.out.println("Marking " + resource + " used because it "
+                        + "matches remove attribute " + value);
+            }
+            markUnreachable(resource);
+        } else if (url.name.contains("*") || url.name.contains("?")) {
+            // Look for globbing patterns
+            String regexp = DefaultConfiguration.globToRegexp(getFieldName(url.name));
+            try {
+                Pattern pattern = Pattern.compile(regexp);
+                Map<String, Resource> nameMap = mTypeToName.get(url.type);
+                if (nameMap != null) {
+                    for (Resource r : nameMap.values()) {
+                        if (pattern.matcher(r.name).matches()) {
+                            if (mDebug) {
+                                System.out.println("Marking " + r + " used because it "
+                                        + "matches remove globbing pattern " + url.name);
+                            }
+
+                            markUnreachable(r);
+                        }
+                    }
+                }
+            } catch (PatternSyntaxException ignored) {
+                if (mDebug) {
+                    System.out.println("Could not compute remove globbing pattern for " +
                             url.name + ": tried regexp " + regexp + "(" + ignored + ")");
                 }
             }

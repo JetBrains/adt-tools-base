@@ -15,6 +15,7 @@
  */
 
 package com.android.build.gradle
+
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
 import com.android.build.OutputFile
@@ -37,12 +38,12 @@ import com.android.build.gradle.internal.dependency.LibraryDependencyImpl
 import com.android.build.gradle.internal.dependency.ManifestDependencyImpl
 import com.android.build.gradle.internal.dependency.SymbolFileProviderImpl
 import com.android.build.gradle.internal.dependency.VariantDependencies
-import com.android.build.gradle.internal.dsl.BuildTypeDsl
+import com.android.build.gradle.internal.dsl.BuildType
 import com.android.build.gradle.internal.dsl.BuildTypeFactory
-import com.android.build.gradle.internal.dsl.GroupableProductFlavorDsl
+import com.android.build.gradle.internal.dsl.GroupableProductFlavor
 import com.android.build.gradle.internal.dsl.GroupableProductFlavorFactory
-import com.android.build.gradle.internal.dsl.ProductFlavorDsl
-import com.android.build.gradle.internal.dsl.SigningConfigDsl
+import com.android.build.gradle.internal.dsl.ProductFlavor
+import com.android.build.gradle.internal.dsl.SigningConfig
 import com.android.build.gradle.internal.dsl.SigningConfigFactory
 import com.android.build.gradle.internal.model.ArtifactMetaDataImpl
 import com.android.build.gradle.internal.model.JavaArtifactImpl
@@ -115,10 +116,7 @@ import com.android.builder.internal.testing.SimpleTestCallable
 import com.android.builder.model.AndroidArtifact
 import com.android.builder.model.ApiVersion
 import com.android.builder.model.ArtifactMetaData
-import com.android.builder.model.BuildType
 import com.android.builder.model.JavaArtifact
-import com.android.builder.model.ProductFlavor
-import com.android.builder.model.SigningConfig
 import com.android.builder.model.SourceProvider
 import com.android.builder.model.SourceProviderContainer
 import com.android.builder.sdk.SdkInfo
@@ -127,7 +125,6 @@ import com.android.builder.testing.ConnectedDeviceProvider
 import com.android.builder.testing.api.DeviceProvider
 import com.android.builder.testing.api.TestServer
 import com.android.ide.common.internal.ExecutorSingleton
-import com.android.resources.Density
 import com.android.sdklib.AndroidTargetHash
 import com.android.sdklib.SdkVersionInfo
 import com.android.utils.ILogger
@@ -144,6 +141,7 @@ import org.gradle.api.GradleException
 import org.gradle.api.JavaVersion
 import org.gradle.api.Project
 import org.gradle.api.Task
+import org.gradle.api.UnknownProjectException
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.ModuleVersionIdentifier
 import org.gradle.api.artifacts.ProjectDependency
@@ -171,7 +169,10 @@ import proguard.gradle.ProGuardTask
 
 import java.util.jar.Attributes
 import java.util.jar.Manifest
+import java.util.regex.Pattern
 
+import static com.android.SdkConstants.EXT_ANDROID_PACKAGE
+import static com.android.SdkConstants.EXT_JAR
 import static com.android.SdkConstants.FN_ANDROID_MANIFEST_XML
 import static com.android.builder.core.BuilderConstants.ANDROID_TEST
 import static com.android.builder.core.BuilderConstants.CONNECTED
@@ -184,6 +185,7 @@ import static com.android.builder.core.BuilderConstants.FD_FLAVORS
 import static com.android.builder.core.BuilderConstants.FD_FLAVORS_ALL
 import static com.android.builder.core.BuilderConstants.FD_REPORTS
 import static com.android.builder.core.BuilderConstants.RELEASE
+import static com.android.builder.core.VariantConfiguration.Type.DEFAULT
 import static com.android.builder.core.VariantConfiguration.Type.TEST
 import static com.android.builder.model.AndroidProject.FD_GENERATED
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
@@ -203,9 +205,9 @@ import static java.io.File.separator
 public abstract class BasePlugin {
     public final static String DIR_BUNDLES = "bundles";
 
-    private static final String GRADLE_MIN_VERSION = "2.1"
+    private static final String GRADLE_MIN_VERSION = "2.2"
     public static final String GRADLE_TEST_VERSION = "2.2"
-    public static final String[] GRADLE_SUPPORTED_VERSIONS = [ GRADLE_MIN_VERSION, "2.2" ]
+    public static final Pattern GRADLE_ACCEPTABLE_VERSIONS = Pattern.compile("2\\.[2-9].*");
 
     public static final String INSTALL_GROUP = "Install"
 
@@ -233,7 +235,7 @@ public abstract class BasePlugin {
 
     private boolean hasCreatedTasks = false
 
-    private ProductFlavorData<ProductFlavorDsl> defaultConfigData
+    private ProductFlavorData<ProductFlavor> defaultConfigData
     private final Collection<String> unresolvedDependencies = Sets.newHashSet();
 
     protected DefaultAndroidSourceSet mainSourceSet
@@ -285,7 +287,6 @@ public abstract class BasePlugin {
         configureProject()
         createExtension()
         createTasks()
-        checkDependencies()
     }
 
     protected void configureProject() {
@@ -342,9 +343,9 @@ public abstract class BasePlugin {
     }
 
     private void createExtension() {
-        def buildTypeContainer = project.container(DefaultBuildType,
+        def buildTypeContainer = project.container(BuildType,
                 new BuildTypeFactory(instantiator, project, project.getLogger()))
-        def productFlavorContainer = project.container(GroupableProductFlavorDsl,
+        def productFlavorContainer = project.container(GroupableProductFlavor,
                 new GroupableProductFlavorFactory(instantiator, project, project.getLogger()))
         def signingConfigContainer = project.container(SigningConfig,
                 new SigningConfigFactory(instantiator))
@@ -359,14 +360,14 @@ public abstract class BasePlugin {
 
         // map the whenObjectAdded callbacks on the containers.
         signingConfigContainer.whenObjectAdded { SigningConfig signingConfig ->
-            variantManager.addSigningConfig((SigningConfigDsl) signingConfig)
+            variantManager.addSigningConfig((SigningConfig) signingConfig)
         }
 
         buildTypeContainer.whenObjectAdded { DefaultBuildType buildType ->
-            variantManager.addBuildType((BuildTypeDsl) buildType)
+            variantManager.addBuildType((BuildType) buildType)
         }
 
-        productFlavorContainer.whenObjectAdded { GroupableProductFlavorDsl productFlavor ->
+        productFlavorContainer.whenObjectAdded { GroupableProductFlavor productFlavor ->
             variantManager.addProductFlavor(productFlavor)
         }
 
@@ -412,21 +413,13 @@ public abstract class BasePlugin {
         mainSourceSet = (DefaultAndroidSourceSet) extension.sourceSets.create(extension.defaultConfig.name)
         testSourceSet = (DefaultAndroidSourceSet) extension.sourceSets.create(ANDROID_TEST)
 
-        defaultConfigData = new ProductFlavorData<ProductFlavorDsl>(
+        defaultConfigData = new ProductFlavorData<ProductFlavor>(
                 extension.defaultConfig, mainSourceSet,
                 testSourceSet, project)
     }
 
     private void checkGradleVersion() {
-        boolean foundMatch = false
-        for (String version : GRADLE_SUPPORTED_VERSIONS) {
-            if (project.getGradle().gradleVersion.startsWith(version)) {
-                foundMatch = true
-                break
-            }
-        }
-
-        if (!foundMatch) {
+        if (!GRADLE_ACCEPTABLE_VERSIONS.matcher(project.getGradle().gradleVersion).matches()) {
             File file = new File("gradle" + separator + "wrapper" + separator +
                     "gradle-wrapper.properties");
             throw new BuildException(
@@ -479,42 +472,13 @@ public abstract class BasePlugin {
         }
     }
 
-    /**
-     * Registers a callback to check if this project depends on another android application project.
-     * This is a common mistake and it doesn't work, since application projects generate APKs as the
-     * only artifacts.
-     */
-    private void checkDependencies() {
-        // All projects need to be evaluated to make this check.
-        project.gradle.projectsEvaluated {
-            // Check dependencies of all the variants.
-            List<VariantDependencies> depsList = variantManager.variantDataList*.variantDependency
-
-            for (deps in depsList) {
-                // Trying to reference classes from another application project at compile time is
-                // what we're trying to prevent. Other configurations may choose to use the APKs
-                // (artifacts generated by application projects) in some way.
-                def configuration = deps.compileConfiguration
-                configuration.allDependencies.withType(ProjectDependency) { dep ->
-                    def dp = dep.dependencyProject
-                    if (dp.plugins.findPlugin(AppPlugin)) {
-                        throw new GradleException(
-                                "${configuration} depends on an Android " +
-                                "application project '${dp.name}'. Only Android library projects " +
-                                "can act as dependencies of other projects.")
-                    }
-                }
-            }
-        }
-    }
-
     private SigningConfig getSigningOverride() {
         if (project.hasProperty(PROPERTY_SIGNING_STORE_FILE) &&
                 project.hasProperty(PROPERTY_SIGNING_STORE_PASSWORD) &&
                 project.hasProperty(PROPERTY_SIGNING_KEY_ALIAS) &&
                 project.hasProperty(PROPERTY_SIGNING_KEY_PASSWORD)) {
 
-            SigningConfigDsl signingConfigDsl = new SigningConfigDsl("externalOverride")
+            SigningConfig signingConfigDsl = new SigningConfig("externalOverride")
             Map<String, ?> props = project.getProperties();
 
             signingConfigDsl.setStoreFile(new File((String) props.get(PROPERTY_SIGNING_STORE_FILE)))
@@ -542,7 +506,7 @@ public abstract class BasePlugin {
         }
     }
 
-    ProductFlavorData<ProductFlavorDsl> getDefaultConfigData() {
+    ProductFlavorData<ProductFlavor> getDefaultConfigData() {
         return defaultConfigData
     }
 
@@ -559,6 +523,10 @@ public abstract class BasePlugin {
     }
 
     boolean isVerbose() {
+        return project.logger.isEnabled(LogLevel.INFO)
+    }
+
+    boolean isDebugLog() {
         return project.logger.isEnabled(LogLevel.DEBUG)
     }
 
@@ -616,7 +584,7 @@ public abstract class BasePlugin {
             @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData) {
 
         VariantConfiguration config = variantData.variantConfiguration
-        ProductFlavor mergedFlavor = config.mergedFlavor
+        com.android.builder.model.ProductFlavor mergedFlavor = config.mergedFlavor
 
         ApplicationVariantData appVariantData = variantData as ApplicationVariantData
         Set<String> screenSizes = appVariantData.getCompatibleScreens()
@@ -706,6 +674,17 @@ public abstract class BasePlugin {
                         "$project.buildDir/${FD_INTERMEDIATES}/manifests/full/" +
                                 "${outputDirName}/AndroidManifest.xml")
             }
+
+            String defaultLocation = "$project.buildDir/${FD_OUTPUTS}/apk"
+            String apkLocation = defaultLocation
+            if (project.hasProperty(PROPERTY_APK_LOCATION)) {
+                apkLocation = project.getProperties().get(PROPERTY_APK_LOCATION)
+            }
+
+            processManifestTask.conventionMapping.reportFile = {
+                project.file(
+                        "$apkLocation/manifest-merger-${config.baseName}-report.txt")
+            }
         }
     }
 
@@ -732,8 +711,6 @@ public abstract class BasePlugin {
     public void createMergeLibManifestsTask(
             @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData,
             @NonNull String manifestOutDir) {
-        boolean multiOutput = variantData.outputs.size() > 1
-
         VariantConfiguration config = variantData.variantConfiguration
 
         // get single output for now.
@@ -748,7 +725,7 @@ public abstract class BasePlugin {
         processManifest.dependsOn variantData.prepareDependenciesTask
         processManifest.variantConfiguration = config
 
-        ProductFlavor mergedFlavor = config.mergedFlavor
+        com.android.builder.model.ProductFlavor mergedFlavor = config.mergedFlavor
 
         processManifest.conventionMapping.minSdkVersion = {
             if (androidBuilder.isPreviewTarget()) {
@@ -859,7 +836,7 @@ public abstract class BasePlugin {
             renderscriptTask.dependsOn variantData.checkManifestTask
         }
 
-        ProductFlavor mergedFlavor = config.mergedFlavor
+        com.android.builder.model.ProductFlavor mergedFlavor = config.mergedFlavor
         boolean ndkMode = config.renderscriptNdkModeEnabled
 
         variantData.resourceGenTask.dependsOn renderscriptTask
@@ -1187,19 +1164,12 @@ public abstract class BasePlugin {
                     { config.buildType.pseudoLocalesEnabled }
 
             processResources.conventionMapping.resourceConfigs = {
-                if (variantOutputData.mainOutputFile.getFilter(OutputFile.DENSITY) == null) {
-                    return config.mergedFlavor.resourceConfigurations
-                }
-
-                Collection<String> list = config.mergedFlavor.resourceConfigurations
-                List<String> resConfigs = Lists.newArrayListWithCapacity(list.size() + 1)
-                resConfigs.addAll(list)
-                resConfigs.add(variantOutputData.mainOutputFile.getFilter(OutputFile.DENSITY))
-                // when adding a density filter, also always add the nodpi option.
-                resConfigs.add(Density.NODPI.resourceValue)
-
-                return resConfigs
+                return config.mergedFlavor.resourceConfigurations
             }
+            processResources.conventionMapping.preferredDensity = {
+                variantOutputData.mainOutputFile.getFilter(OutputFile.DENSITY)
+            }
+
         }
     }
 
@@ -1244,7 +1214,7 @@ public abstract class BasePlugin {
         variantOutputData.packageSplitResourcesTask.splits = densityFilters
         variantOutputData.packageSplitResourcesTask.outputBaseName = config.baseName
         variantOutputData.packageSplitResourcesTask.signingConfig =
-                (SigningConfigDsl) config.signingConfig
+                (SigningConfig) config.signingConfig
         variantOutputData.packageSplitResourcesTask.outputDirectory =
                 new File("$project.buildDir/${FD_INTERMEDIATES}/splits/${config.dirName}")
         variantOutputData.packageSplitResourcesTask.plugin = this
@@ -1320,7 +1290,7 @@ public abstract class BasePlugin {
         variantOutputData.packageSplitAbiTask.splits = filters
         variantOutputData.packageSplitAbiTask.outputBaseName = config.baseName
         variantOutputData.packageSplitAbiTask.signingConfig =
-                (SigningConfigDsl) config.signingConfig
+                (SigningConfig) config.signingConfig
         variantOutputData.packageSplitAbiTask.outputDirectory =
                 new File("$project.buildDir/${FD_INTERMEDIATES}/splits/${config.dirName}")
         variantOutputData.packageSplitAbiTask.plugin = this
@@ -1487,6 +1457,14 @@ public abstract class BasePlugin {
         }
         task.conventionMapping.mainPkgName = {
             variantData.variantConfiguration.getApplicationId()
+        }
+
+        task.conventionMapping.minSdkVersion = {
+            variantData.variantConfiguration.getMinSdkVersion().apiLevel
+        }
+
+        task.conventionMapping.targetSdkVersion = {
+            variantData.variantConfiguration.getTargetSdkVersion().apiLevel
         }
 
         task.dependsOn config
@@ -1816,10 +1794,6 @@ public abstract class BasePlugin {
                     reportTask.conventionMapping.sourceDir = { baseVariantData.getJavaSourceFoldersForCoverage() }
 
                     reportTask.conventionMapping.reportDir = {
-                        String rootLocation = extension.testOptions.reportDir != null ?
-                                extension.testOptions.reportDir :
-                                "$project.buildDir/${FD_OUTPUTS}/$FD_REPORTS/$FD_ANDROID_TESTS"
-
                         project.file(
                                 "$project.buildDir/${FD_OUTPUTS}/$FD_REPORTS/coverage/${baseVariantData.variantConfiguration.dirName}")
                     }
@@ -1991,8 +1965,11 @@ public abstract class BasePlugin {
     public void createPostCompilationTasks(@NonNull ApkVariantData variantData) {
         GradleVariantConfiguration config = variantData.variantConfiguration
 
+        boolean isTestForApp = config.type == TEST &&
+                variantData.testedVariantData.variantConfiguration.type == DEFAULT
+
         boolean isMinifyEnabled = config.isMinifyEnabled()
-        boolean isMultiDexEnabled = config.isMultiDexEnabled() && config.type != TEST
+        boolean isMultiDexEnabled = config.isMultiDexEnabled() && !isTestForApp
         boolean isLegacyMultiDexMode = config.isLegacyMultiDexMode()
         File multiDexKeepProguard = config.getMultiDexKeepProguard()
         File multiDexKeepFile = config.getMultiDexKeepFile()
@@ -2013,7 +1990,6 @@ public abstract class BasePlugin {
         dexTask.multiDexEnabled = isMultiDexEnabled
         dexTask.legacyMultiDexMode = isLegacyMultiDexMode
         dexTask.optimize = !variantData.variantConfiguration.buildType.debuggable
-
 
         // data holding dependencies and input for the dex. This gets updated as new
         // post-compilation steps are inserted between the compilation and dx.
@@ -2040,7 +2016,8 @@ public abstract class BasePlugin {
 
         if (isMinifyEnabled) {
             // first proguard task.
-            BaseVariantData<? extends BaseVariantOutputData> testedVariantData = variantData instanceof TestVariantData ? variantData.testedVariantData : null as BaseVariantData
+            BaseVariantData<? extends BaseVariantOutputData> testedVariantData =
+                    variantData instanceof TestVariantData ? variantData.testedVariantData : null as BaseVariantData
             createProguardTasks(variantData, testedVariantData, pcData)
 
         } else if ((extension.dexOptions.preDexLibraries && !isMultiDexEnabled) ||
@@ -2325,6 +2302,7 @@ public abstract class BasePlugin {
         compileTask.dependsOn variantData.variantDependency.compileConfiguration.buildDependencies
 
         compileTask.plugin = this
+        compileTask.conventionMapping.javaMaxHeapSize = { extension.dexOptions.getJavaMaxHeapSize() }
 
         compileTask.source = variantData.getJavaSources()
 
@@ -2395,56 +2373,41 @@ public abstract class BasePlugin {
      * Configures the source and target language level of a compile task. If the user has set it
      * explicitly, we obey the setting. Otherwise we change the default language level based on the
      * compile SDK version.
+     *
+     * <p>This method modifies extension.compileOptions, to propagate the language level to Studio.
      */
     private void configureLanguageLevel(AbstractCompile compileTask) {
-        def getJavaVersion = { sdkVersionNumber, fromDsl, setExplicitly ->
-            if (setExplicitly) {
-                fromDsl.toString()
-            } else {
-                JavaVersion languageLevelToUse
-                switch (sdkVersionNumber) {
-                    case null:  // Default to 1.6 if we fail to parse compile SDK version.
-                    case 0..20:
-                        languageLevelToUse = JavaVersion.VERSION_1_6
-                        break
-                    default:
-                        languageLevelToUse = JavaVersion.VERSION_1_7
-                        break
-                }
+        def compileOptions = extension.compileOptions
+        JavaVersion javaVersionToUse
 
-                def jdkVersion = JavaVersion.toVersion(
-                        System.getProperty("java.specification.version"))
+        Integer compileSdkLevel =
+                AndroidTargetHash.getVersionFromHash(extension.compileSdkVersion)?.apiLevel
+        switch (compileSdkLevel) {
+            case null:  // Default to 1.6 if we fail to parse compile SDK version.
+            case 0..20:
+                javaVersionToUse = JavaVersion.VERSION_1_6
+                break
+            default:
+                javaVersionToUse = JavaVersion.VERSION_1_7
+                break
+        }
 
-                if (jdkVersion < languageLevelToUse) {
-                    logger.info(
-                            "Default language level for 'compileSdkVersion %d' is %s, but the " +
+        def jdkVersion = JavaVersion.toVersion(System.getProperty("java.specification.version"))
+        if (jdkVersion < javaVersionToUse) {
+            logger.info(
+                    "Default language level for 'compileSdkVersion %d' is %s, but the " +
                             "JDK used is %s, so the JDK language level will be used.",
-                            sdkVersionNumber, languageLevelToUse, jdkVersion)
-                    languageLevelToUse = jdkVersion
-                }
-
-                return languageLevelToUse.toString()
-            }
+                    compileSdkLevel, javaVersionToUse, jdkVersion)
+            javaVersionToUse = jdkVersion
         }
 
-        /**
-         * Returns the platform number, or null if we can't determine it.
-         */
-        Closure<Integer> getCompileSdkNumber = {
-            return AndroidTargetHash.getVersionFromHash(it)?.apiLevel
-        }
+        compileOptions.defaultJavaVersion = javaVersionToUse
 
         compileTask.conventionMapping.sourceCompatibility = {
-            getJavaVersion(
-                    getCompileSdkNumber(extension.compileSdkVersion),
-                    extension.compileOptions.sourceCompatibility,
-                    extension.compileOptions.setExplicitly)
+            compileOptions.sourceCompatibility.toString()
         }
         compileTask.conventionMapping.targetCompatibility = {
-            getJavaVersion(
-                    getCompileSdkNumber(extension.compileSdkVersion),
-                    extension.compileOptions.targetCompatibility,
-                    extension.compileOptions.setExplicitly)
+            compileOptions.targetCompatibility.toString()
         }
     }
 
@@ -2468,7 +2431,7 @@ public abstract class BasePlugin {
         if (project.hasProperty(PROPERTY_APK_LOCATION)) {
             apkLocation = project.getProperties().get(PROPERTY_APK_LOCATION)
         }
-        SigningConfigDsl sc = (SigningConfigDsl) config.signingConfig
+        SigningConfig sc = (SigningConfig) config.signingConfig
 
         boolean multiOutput = variantData.outputs.size() > 1
 
@@ -2684,11 +2647,10 @@ public abstract class BasePlugin {
                     // to add the filters if needed.
                     String classifier = variantData.variantDependency.publishConfiguration.name
                     if (variantOutputData.mainOutputFile.getFilter(OutputFile.DENSITY) != null) {
-                        classifier = classifier + '-'
-                            + variantOutputData.mainOutputFile.getFilter(OutputFile.DENSITY)
+                        classifier = "${classifier}-${variantOutputData.mainOutputFile.getFilter(OutputFile.DENSITY)}"
                     }
-                    if (variantOutputData.abiFilter != null) {
-                        classifier = classifier + '-' + variantOutputData.abiFilter
+                    if (variantOutputData.mainOutputFile.getFilter(OutputFile.ABI) != null) {
+                        classifier = "${classifier}-${variantOutputData.mainOutputFile.getFilter(OutputFile.ABI)}"
                     }
 
                     project.artifacts.add(variantData.variantDependency.publishConfiguration.name,
@@ -2830,6 +2792,14 @@ public abstract class BasePlugin {
         variantData.obfuscatedClassesJar = outFile
 
         // --- Proguard Config ---
+
+        if (variantConfig.isTestCoverageEnabled()) {
+            // when collecting coverage, don't remove the JaCoCo runtime
+            proguardTask.keep("class com.vladium.** {*;}")
+            proguardTask.keep("class org.jacoco.** {*;}")
+            proguardTask.keep("interface org.jacoco.** {*;}")
+            proguardTask.dontwarn("org.jacoco.**")
+        }
 
         if (testedVariantData != null) {
 
@@ -3368,7 +3338,12 @@ public abstract class BasePlugin {
     protected void ensureConfigured(Configuration config) {
         config.allDependencies.withType(ProjectDependency).each { dep ->
             project.evaluationDependsOn(dep.dependencyProject.path)
-            ensureConfigured(dep.projectConfiguration)
+            try {
+                ensureConfigured(dep.projectConfiguration)
+            } catch (Throwable e) {
+                throw new UnknownProjectException(
+                        "Cannot evaluate module ${dep.name} : ${e.getMessage()}", e);
+            }
         }
     }
 
@@ -3448,10 +3423,12 @@ public abstract class BasePlugin {
 
             moduleArtifacts?.each { artifact ->
                 if (artifact.type == EXT_LIB_ARCHIVE) {
-                    String path = "$id.group/$id.name/$id.version"
+                    String path = "${BasePlugin.normalize(logger, id, id.group)}" +
+                            "/${BasePlugin.normalize(logger, id, id.name)}" +
+                            "/${BasePlugin.normalize(logger, id, id.version)}"
                     String name = "$id.group:$id.name:$id.version"
-                    if (artifact.classifier != null) {
-                        path += "/$artifact.classifier"
+                    if (artifact.classifier != null && !artifact.classifier.isEmpty()) {
+                        path += "/${BasePlugin.normalize(logger, id, artifact.classifier)}"
                         name += ":$artifact.classifier"
                     }
                     //def explodedDir = project.file("$project.rootProject.buildDir/${FD_INTERMEDIATES}/exploded-aar/$path")
@@ -3462,7 +3439,7 @@ public abstract class BasePlugin {
                             new MavenCoordinatesImpl(artifact))
                     bundlesForThisModule << adep
                     reverseMap.put(adep, configDependencies)
-                } else {
+                } else if (artifact.type == EXT_JAR) {
                     jars.put(artifact.file,
                             new JarDependency(
                                     artifact.file,
@@ -3470,6 +3447,19 @@ public abstract class BasePlugin {
                                     false /*packaged*/,
                                     true /*proguarded*/,
                                     new MavenCoordinatesImpl(artifact)))
+                } else if (artifact.type == EXT_ANDROID_PACKAGE) {
+                    String name = "$id.group:$id.name:$id.version"
+                    if (artifact.classifier != null) {
+                        name += ":$artifact.classifier"
+                    }
+
+                    // cannot throw this yet, since depending on a secondary artifact in an
+                    // Android app will trigger getting the main APK as well.
+                    throw new GradleException(
+                            "Dependency ${name} on project ${project.name} resolves to an APK"
+                                    + " archive which is not supported"
+                                    + " as a compilation dependency. File: "
+                                    + artifact.file)
                 }
             }
 
@@ -3483,6 +3473,50 @@ public abstract class BasePlugin {
         }
 
         bundles.addAll(bundlesForThisModule)
+    }
+
+    /**
+     * Normalize a path to remove all illegal characters for all supported operating systems.
+     * {@see http://en.wikipedia.org/wiki/Filename#Comparison%5Fof%5Ffile%5Fname%5Flimitations}
+     *
+     * @param id the module coordinates that generated this path
+     * @param path the proposed path name
+     * @return the normalized path name
+     */
+    static String normalize(ILogger logger, ModuleVersionIdentifier id, String path) {
+        if (path == null || path.isEmpty()) {
+            logger.info("When unzipping library '${id.group}:${id.name}:${id.version}, " +
+                    "either group, name or version is empty")
+            return path;
+        }
+        // list of illegal characters
+        String normalizedPath = path.replaceAll("[%<>:\"/?*\\\\]","@");
+        if (normalizedPath == null || normalizedPath.isEmpty()) {
+            // if the path normalization failed, return the original path.
+            logger.info("When unzipping library '${id.group}:${id.name}:${id.version}, " +
+                    "the normalized '${path}' is empty")
+            return path
+        }
+        try {
+            int pathPointer = normalizedPath.length() - 1;
+            // do not end your path with either a dot or a space.
+            String suffix = "";
+            while (pathPointer >= 0 && (normalizedPath.charAt(pathPointer) == '.'
+                    || normalizedPath.charAt(pathPointer) == ' ')) {
+                pathPointer--
+                suffix += "@"
+            }
+            if (pathPointer < 0) {
+                throw new RuntimeException(
+                        "When unzipping library '${id.group}:${id.name}:${id.version}, " +
+                                "the path '${path}' cannot be transformed into a valid directory name");
+            }
+            return normalizedPath.substring(0, pathPointer + 1) + suffix
+        } catch (Exception e) {
+            logger.error(e, "When unzipping library '${id.group}:${id.name}:${id.version}', " +
+                    "Path normalization failed for input ${path}")
+            return path;
+        }
     }
 
     private void configureBuild(VariantDependencies configurationDependencies) {
@@ -3567,8 +3601,12 @@ public abstract class BasePlugin {
             }
             String manifestPath = classPath.substring(0, classPath.lastIndexOf("!") + 1) +
                     "/META-INF/MANIFEST.MF";
-            Manifest manifest = new Manifest(new URL(manifestPath).openStream());
-            Attributes attr = manifest.getMainAttributes();
+
+            URLConnection jarConnection = new URL(manifestPath).openConnection();
+            jarConnection.setUseCaches(false);
+            InputStream jarInputStream = jarConnection.getInputStream();
+            Attributes attr = new Manifest(jarInputStream).getMainAttributes();
+            jarInputStream.close();
             return attr.getValue("Plugin-Version");
         } catch (Throwable t) {
             return null;

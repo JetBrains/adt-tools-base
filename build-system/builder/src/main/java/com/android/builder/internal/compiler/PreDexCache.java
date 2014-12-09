@@ -36,6 +36,7 @@ import org.w3c.dom.Node;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.logging.Logger;
 
 /**
  * Pre Dexing cache.
@@ -123,6 +124,8 @@ public class PreDexCache extends PreProcessCache<DexKey> {
                         buildToolInfo,
                         verbose,
                         commandLineRunner);
+
+                item.getOutputFiles().clear();
                 item.getOutputFiles().addAll(files);
 
                 incrementMisses();
@@ -155,7 +158,9 @@ public class PreDexCache extends PreProcessCache<DexKey> {
                 if (multiDex) {
                     // output should be a folder
                     for (File sourceFile : item.getOutputFiles()) {
-                        Files.copy(sourceFile, new File(outFile, sourceFile.getName()));
+                        File destFile = new File(outFile, sourceFile.getName());
+                        checkSame(sourceFile, destFile);
+                        Files.copy(sourceFile, destFile);
                     }
 
                 } else {
@@ -163,6 +168,7 @@ public class PreDexCache extends PreProcessCache<DexKey> {
                     if (item.getOutputFiles().isEmpty()) {
                         throw new RuntimeException(item.toString());
                     }
+                    checkSame(item.getOutputFiles().get(0), outFile);
                     Files.copy(item.getOutputFiles().get(0), outFile);
                 }
                 incrementHits();
@@ -183,5 +189,12 @@ public class PreDexCache extends PreProcessCache<DexKey> {
         itemNode.getAttributes().setNamedItem(attr);
 
         return itemNode;
+    }
+
+    private void checkSame(File source, File dest) {
+        if (source.equals(dest)) {
+            Logger.getAnonymousLogger().info(
+                String.format("%s l:%d ts:%d", source, source.length(), source.lastModified()));
+        }
     }
 }

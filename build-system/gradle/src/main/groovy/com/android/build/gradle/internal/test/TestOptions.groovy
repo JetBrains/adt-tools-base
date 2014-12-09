@@ -17,10 +17,12 @@
 package com.android.build.gradle.internal.test
 
 /**
- * Options for the tests.
+ * Options for running tests.
  */
 class TestOptions {
-
+    /** Name of the results directory. */
     String resultsDir
+
+    /** Name of the reports directory. */
     String reportDir
 }

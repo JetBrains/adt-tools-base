@@ -33,8 +33,8 @@ import com.android.sdklib.internal.repository.NullTaskMonitor;
 import com.android.sdklib.internal.repository.archives.Archive;
 import com.android.sdklib.internal.repository.archives.ArchiveInstaller;
 import com.android.sdklib.internal.repository.packages.AddonPackage;
-import com.android.sdklib.internal.repository.packages.Package;
 import com.android.sdklib.internal.repository.packages.License;
+import com.android.sdklib.internal.repository.packages.Package;
 import com.android.sdklib.internal.repository.packages.PlatformToolPackage;
 import com.android.sdklib.internal.repository.packages.ToolPackage;
 import com.android.sdklib.internal.repository.sources.SdkRepoSource;
@@ -46,11 +46,13 @@ import com.android.sdklib.repository.ISdkChangeListener;
 import com.android.sdklib.repository.SdkAddonConstants;
 import com.android.sdklib.repository.SdkRepoConstants;
 import com.android.sdklib.util.LineUtil;
-import com.android.utils.SparseIntArray;
 import com.android.utils.ILogger;
 import com.android.utils.IReaderLogger;
+import com.android.utils.SparseIntArray;
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -640,20 +642,21 @@ public class UpdaterData implements IUpdaterData {
     protected void notifyToolsNeedsToBeRestarted(int flags) {
 
         String msg = null;
-        if ((flags & TOOLS_MSG_UPDATED_FROM_ADT) != 0) {
+        if ((flags & TOOLS_MSG_UPDATED_FROM_ADT) == TOOLS_MSG_UPDATED_FROM_ADT) {
             msg =
             "The Android SDK and AVD Manager that you are currently using has been updated. " +
             "Please also run Eclipse > Help > Check for Updates to see if the Android " +
             "plug-in needs to be updated.";
 
-        } else if ((flags & TOOLS_MSG_UPDATED_FROM_SDKMAN) != 0) {
+        } else if ((flags & TOOLS_MSG_UPDATED_FROM_SDKMAN) == TOOLS_MSG_UPDATED_FROM_SDKMAN) {
             msg =
             "The Android SDK and AVD Manager that you are currently using has been updated. " +
             "It is recommended that you now close the manager window and re-open it. " +
             "If you use Eclipse, please run Help > Check for Updates to see if the Android " +
             "plug-in needs to be updated.";
+        } else if ((flags & NO_TOOLS_MSG) == NO_TOOLS_MSG) {
+            return;
         }
-
         mSdkLog.info("%s", msg);  //$NON-NLS-1$
     }
 
@@ -800,12 +803,39 @@ public class UpdaterData implements IUpdaterData {
      *   download or install anything.
      * @param acceptLicense SDK licenses to automatically accept.
      * @return A list of archives that have been installed. Can be null if nothing was done.
+     * @deprecated Use {@link #updateOrInstallAll_NoGUI(java.util.Collection, boolean, boolean, String, boolean)}
+     *   instead
+     */
+    @Deprecated
+    public List<Archive> updateOrInstallAll_NoGUI(
+      Collection<String> pkgFilter,
+      boolean includeAll,
+      boolean dryMode,
+      String acceptLicense) {
+        return updateOrInstallAll_NoGUI(pkgFilter, includeAll, dryMode, acceptLicense, false);
+    }
+
+    /**
+     * Tries to update all the *existing* local packages.
+     * This version is intended to run without a GUI and
+     * only outputs to the current {@link ILogger}.
+     *
+     * @param pkgFilter A list of {@link SdkRepoConstants#NODES} or {@link Package#installId()}
+     *   or package indexes to limit the packages we can update or install.
+     *   A null or empty list means to update everything possible.
+     * @param includeAll True to list and install all packages, including obsolete ones.
+     * @param dryMode True to check what would be updated/installed but do not actually
+     *   download or install anything.
+     * @param acceptLicense SDK licenses to automatically accept.
+     * @param includeDependencies If true, also include any required dependencies
+     * @return A list of archives that have been installed. Can be null if nothing was done.
      */
     public List<Archive> updateOrInstallAll_NoGUI(
             Collection<String> pkgFilter,
             boolean includeAll,
             boolean dryMode,
-            String acceptLicense) {
+            String acceptLicense,
+            boolean includeDependencies) {
 
         List<ArchiveInfo> archives = getRemoteArchives_NoGUI(includeAll);
 
@@ -897,14 +927,23 @@ public class UpdaterData implements IUpdaterData {
                 }
             }
 
-            if (archives.size() == 0) {
+            if (archives.isEmpty()) {
                 mSdkLog.info(LineUtil.reflowLine(
                         "Warning: The package filter removed all packages. There is nothing to install.\nPlease consider trying to update again without a package filter.\n"));
                 return null;
             }
         }
 
-        if (archives != null && archives.size() > 0) {
+        if (archives != null && !archives.isEmpty()) {
+            if (includeDependencies) {
+                List<ArchiveInfo> dependencies = getDependencies(archives);
+                if (!dependencies.isEmpty()) {
+                    List<ArchiveInfo> combined = Lists.newArrayList();
+                    combined.addAll(dependencies);
+                    combined.addAll(archives);
+                    archives = combined;
+                }
+            }
             if (dryMode) {
                 mSdkLog.info("Packages selected for install:\n");
                 for (ArchiveInfo ai : archives) {
@@ -927,6 +966,37 @@ public class UpdaterData implements IUpdaterData {
         }
 
         return null;
+    }
+
+    /**
+     * Computes the transitive dependencies of the given list of archives. This will only
+     * include dependencies that also need to be installed, not satisfied dependencies.
+     */
+    private static List<ArchiveInfo> getDependencies(@NonNull List<ArchiveInfo> archives) {
+        List<ArchiveInfo> dependencies = Lists.newArrayList();
+        for (ArchiveInfo archive : archives) {
+            addDependencies(dependencies, archive, Sets.<ArchiveInfo>newHashSet());
+        }
+        return dependencies;
+    }
+
+    private static void addDependencies(@NonNull List<ArchiveInfo> dependencies,
+            @NonNull ArchiveInfo archive,
+            @NonNull Set<ArchiveInfo> visited) {
+        if (visited.contains(archive)) {
+            return;
+        }
+        visited.add(archive);
+
+        ArchiveInfo[] dependsOn = archive.getDependsOn();
+        if (dependsOn != null) {
+            for (ArchiveInfo dependency : dependsOn) {
+                if (!dependencies.contains(dependency)) {
+                    dependencies.add(dependency);
+                    addDependencies(dependencies, dependency, visited);
+                }
+            }
+        }
     }
 
     /**

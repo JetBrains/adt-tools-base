@@ -136,6 +136,16 @@ public class Warning implements Comparable<Warning> {
             return 1;
         }
 
+        // This handles the case where you have a huge XML document without hewlines,
+        // such that all the errors end up on the same line.
+        if (location != null && other.location != null &&
+                location.getStart() != null && other.location.getStart() != null) {
+                delta = location.getStart().getColumn() - other.location.getStart().getColumn();
+            if (delta != 0) {
+                return delta;
+            }
+        }
+
         return 0;
     }
 
@@ -182,6 +192,15 @@ public class Warning implements Comparable<Warning> {
             }
         } else //noinspection VariableNotUsedInsideIf
             if (secondary2 != null) {
+            return false;
+        }
+
+        // This handles the case where you have a huge XML document without hewlines,
+        // such that all the errors end up on the same line.
+        //noinspection RedundantIfStatement
+        if (location != null && warning.location != null &&
+                location.getStart() != null && warning.location.getStart() != null &&
+                location.getStart().getColumn() != warning.location.getStart().getColumn()) {
             return false;
         }
 

@@ -640,6 +640,14 @@ public class Project {
 
         mPackage = root.getAttribute(ATTR_PACKAGE);
 
+        // Treat support libraries as non-reportable (in Eclipse where we don't
+        // have binary libraries, the support libraries have to be source-copied into
+        // the workspace which then triggers warnings in these libraries that users
+        // shouldn't have to investigate)
+        if (mPackage != null && mPackage.startsWith("android.support.")) {
+            mReportIssues = false;
+        }
+
         // Initialize minSdk and targetSdk
         mManifestMinSdk = AndroidVersion.DEFAULT;
         mManifestTargetSdk = AndroidVersion.DEFAULT;
