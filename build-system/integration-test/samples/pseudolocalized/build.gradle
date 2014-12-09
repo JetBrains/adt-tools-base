@@ -1,5 +1,5 @@
 buildscript {
-    def gradleVersion = System.env.CUSTOM_GRADLE != null ? System.env.CUSTOM_GRADLE : '1.0.0'
+    def gradleVersion = System.env.CUSTOM_GRADLE != null ? System.env.CUSTOM_GRADLE : '1.0.1'
     repositories {
         if (System.env.CUSTOM_REPO != null) {
             maven { url System.env.CUSTOM_REPO }
