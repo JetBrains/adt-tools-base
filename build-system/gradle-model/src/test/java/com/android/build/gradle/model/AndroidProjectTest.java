@@ -48,7 +48,7 @@ public class AndroidProjectTest extends TestCase {
     private static final String FOLDER_TEST_SAMPLE = "samples";
     private static final String FOLDER_TEST_PROJECT = "test-projects";
 
-    private static final String MODEL_VERSION = "1.0.0";
+    private static final String MODEL_VERSION = "1.0.1";
 
     private static final class ProjectData {
         AndroidProject model;
