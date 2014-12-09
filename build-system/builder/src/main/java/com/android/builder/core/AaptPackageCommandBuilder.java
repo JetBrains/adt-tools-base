@@ -327,7 +327,7 @@ public class AaptPackageCommandBuilder {
         }
 
 
-        if (mType != VariantConfiguration.Type.TEST) {
+        if (mType != VariantConfiguration.Type.ANDROID_TEST) {
             if (mPackageForR != null) {
                 command.add("--custom-package");
                 command.add(mPackageForR);

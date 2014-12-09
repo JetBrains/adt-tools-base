@@ -137,7 +137,7 @@ public class AaptPackageCommandBuilderTest extends TestCase {
                 .setPackageForR("com.example.package.forR")
                 .setSourceOutputDir("path/to/source/output/dir")
                 .setLibraries(ImmutableList.of(Mockito.mock(SymbolFileProvider.class)))
-                .setType(VariantConfiguration.Type.TEST);
+                .setType(VariantConfiguration.Type.ANDROID_TEST);
 
         List<String> command = aaptPackageCommandBuilder
                 .build(mBuildToolInfo, mIAndroidTarget, mLogger);
