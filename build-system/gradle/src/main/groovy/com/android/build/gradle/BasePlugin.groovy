@@ -174,7 +174,6 @@ import java.util.regex.Pattern
 import static com.android.SdkConstants.EXT_ANDROID_PACKAGE
 import static com.android.SdkConstants.EXT_JAR
 import static com.android.SdkConstants.FN_ANDROID_MANIFEST_XML
-import static com.android.builder.core.BuilderConstants.ANDROID_TEST
 import static com.android.builder.core.BuilderConstants.CONNECTED
 import static com.android.builder.core.BuilderConstants.DEBUG
 import static com.android.builder.core.BuilderConstants.DEVICE
@@ -186,7 +185,7 @@ import static com.android.builder.core.BuilderConstants.FD_FLAVORS_ALL
 import static com.android.builder.core.BuilderConstants.FD_REPORTS
 import static com.android.builder.core.BuilderConstants.RELEASE
 import static com.android.builder.core.VariantConfiguration.Type.DEFAULT
-import static com.android.builder.core.VariantConfiguration.Type.TEST
+import static com.android.builder.core.VariantConfiguration.Type.ANDROID_TEST
 import static com.android.builder.model.AndroidProject.FD_GENERATED
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
 import static com.android.builder.model.AndroidProject.FD_OUTPUTS
@@ -199,6 +198,7 @@ import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_STORE_PA
 import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_STORE_TYPE
 import static com.android.sdklib.BuildToolInfo.PathId.ZIP_ALIGN
 import static java.io.File.separator
+
 /**
  * Base class for all Android plugins
  */
@@ -413,7 +413,7 @@ public abstract class BasePlugin {
 
     private void setBaseExtension(@NonNull BaseExtension extension) {
         mainSourceSet = (DefaultAndroidSourceSet) extension.sourceSets.create(extension.defaultConfig.name)
-        testSourceSet = (DefaultAndroidSourceSet) extension.sourceSets.create(ANDROID_TEST)
+        testSourceSet = (DefaultAndroidSourceSet) extension.sourceSets.create(ANDROID_TEST.prefix)
 
         defaultConfigData = new ProductFlavorData<ProductFlavor>(
                 extension.defaultConfig, mainSourceSet,
@@ -838,7 +838,7 @@ public abstract class BasePlugin {
                 "compile${variantData.variantConfiguration.fullName.capitalize()}Renderscript",
                 RenderscriptCompile)
         variantData.renderscriptCompileTask = renderscriptTask
-        if (config.type == TEST) {
+        if (config.type.isForTesting()) {
             renderscriptTask.dependsOn variantOutputData.manifestProcessorTask
         } else {
             renderscriptTask.dependsOn variantData.checkManifestTask
@@ -982,7 +982,7 @@ public abstract class BasePlugin {
         VariantConfiguration variantConfiguration = variantData.variantConfiguration
 
         variantData.sourceGenTask.dependsOn generateBuildConfigTask
-        if (variantConfiguration.type == TEST) {
+        if (variantConfiguration.type.isForTesting()) {
             // in case of a test project, the manifest is generated so we need to depend
             // on its creation.
 
@@ -1355,7 +1355,7 @@ public abstract class BasePlugin {
         // set the input
         processResources.from(((AndroidSourceSet) variantConfiguration.defaultSourceSet).resources.getSourceFiles())
 
-        if (variantConfiguration.type != TEST) {
+        if (!variantConfiguration.type.isForTesting()) {
             processResources.from(
                     ((AndroidSourceSet) variantConfiguration.buildTypeSourceSet).resources.getSourceFiles())
         }
@@ -1621,7 +1621,7 @@ public abstract class BasePlugin {
         // Only create lint targets for variants like debug and release, not debugTest
         VariantConfiguration config = baseVariantData.variantConfiguration
         // TODO: re-enable with Jack when possible
-        return config.getType() != TEST && !config.useJack;
+        return !config.getType().isForTesting() && !config.useJack;
     }
 
     // Add tasks for running lint on individual variants. We've already added a
@@ -1684,14 +1684,14 @@ public abstract class BasePlugin {
         }
     }
 
-    public void createCheckTasks(boolean hasFlavors, boolean isLibraryTest) {
+    public void createConnectedCheckTasks(boolean hasFlavors, boolean isLibraryTest) {
         List<AndroidReportTask> reportTasks = Lists.newArrayListWithExpectedSize(2)
 
         List<DeviceProvider> providers = extension.deviceProviders
         List<TestServer> servers = extension.testServers
 
         Task mainConnectedTask = connectedCheck
-        String connectedRootName = "${CONNECTED}${ANDROID_TEST.capitalize()}"
+        String connectedRootName = "${CONNECTED}${ANDROID_TEST.suffix}"
         // if more than one flavor, create a report aggregator task and make this the parent
         // task for all new connected tasks.
         if (hasFlavors) {
@@ -1722,7 +1722,7 @@ public abstract class BasePlugin {
         // if more than one provider tasks, either because of several flavors, or because of
         // more than one providers, then create an aggregate report tasks for all of them.
         if (providers.size() > 1 || hasFlavors) {
-            mainProviderTask = project.tasks.create("${DEVICE}${ANDROID_TEST.capitalize()}",
+            mainProviderTask = project.tasks.create("${DEVICE}${ANDROID_TEST.suffix}",
                     AndroidReportTask)
             mainProviderTask.group = JavaBasePlugin.VERIFICATION_GROUP
             mainProviderTask.description = "Installs and runs instrumentation tests using all Device Providers."
@@ -1814,8 +1814,8 @@ public abstract class BasePlugin {
                 for (DeviceProvider deviceProvider : providers) {
                     DefaultTask providerTask = createDeviceProviderInstrumentTestTask(
                             hasFlavors ?
-                                "${deviceProvider.name}${ANDROID_TEST.capitalize()}${baseVariantData.variantConfiguration.fullName.capitalize()}" :
-                                "${deviceProvider.name}${ANDROID_TEST.capitalize()}",
+                                "${deviceProvider.name}${ANDROID_TEST.suffix}${baseVariantData.variantConfiguration.fullName.capitalize()}" :
+                                "${deviceProvider.name}${ANDROID_TEST.suffix}",
                             "Installs and runs the tests for Build '${baseVariantData.variantConfiguration.fullName}' using Provider '${deviceProvider.name.capitalize()}'.",
                             isLibraryTest ?
                                 DeviceProviderInstrumentTestLibraryTask :
@@ -1973,7 +1973,7 @@ public abstract class BasePlugin {
     public void createPostCompilationTasks(@NonNull ApkVariantData variantData) {
         GradleVariantConfiguration config = variantData.variantConfiguration
 
-        boolean isTestForApp = config.type == TEST &&
+        boolean isTestForApp = config.type.isForTesting() &&
                 variantData.testedVariantData.variantConfiguration.type == DEFAULT
 
         boolean isMinifyEnabled = config.isMinifyEnabled()
@@ -1983,7 +1983,7 @@ public abstract class BasePlugin {
         File multiDexKeepFile = config.getMultiDexKeepFile()
 
         boolean isTestCoverageEnabled = config.buildType.isTestCoverageEnabled() &&
-                config.type != TEST
+                !config.type.isForTesting()
 
         // common dex task configuration
         String dexTaskName = "dex${config.fullName.capitalize()}"

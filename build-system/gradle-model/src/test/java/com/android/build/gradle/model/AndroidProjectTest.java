@@ -473,8 +473,8 @@ public class AndroidProjectTest extends TestCase {
                 debugTestInfo.getApplicationId());
         assertTrue("Test signed check", debugTestInfo.isSigned());
         assertEquals("Test signingConfig name", "myConfig", debugTestInfo.getSigningConfigName());
-        assertEquals("Test sourceGenTask", "generateDebugTestSources", debugTestInfo.getSourceGenTaskName());
-        assertEquals("Test compileTask", "compileDebugTestSources", debugTestInfo.getCompileTaskName());
+        assertEquals("Test sourceGenTask", "generateDebugAndroidTestSources", debugTestInfo.getSourceGenTaskName());
+        assertEquals("Test compileTask", "compileDebugAndroidTestSources", debugTestInfo.getCompileTaskName());
 
         Collection<File> generatedResFolders = debugTestInfo.getGeneratedResourceFolders();
         assertNotNull(generatedResFolders);
@@ -588,7 +588,7 @@ public class AndroidProjectTest extends TestCase {
             String lib = coord.getGroupId() + ":" + coord.getArtifactId() + ":" + coord.getVersion();
 
             Integer localJarCount = aarLibs.get(lib);
-            assertNotNull("Check presense of " + lib, localJarCount);
+            assertNotNull("Check presence of " + lib, localJarCount);
             assertEquals("Check local jar count for " + lib,
                     localJarCount.intValue(), androidLib.getLocalJars().size());
             System.out.println(">>" + androidLib.getLocalJars());

@@ -68,7 +68,7 @@ public class AppPluginInternalTest extends BaseTest {
 
         findNamedItem(variants, "debug", "variantData")
         findNamedItem(variants, "release", "variantData")
-        findNamedItem(variants, "debugTest", "variantData")
+        findNamedItem(variants, "debugAndroidTest", "variantData")
     }
 
     public void testDefaultConfig() {
@@ -150,7 +150,7 @@ public class AppPluginInternalTest extends BaseTest {
             findNamedItem(variants, variantName, "variantData")
         }
 
-        BaseVariantData testVariant = findNamedItem(variants, "stagingTest", "variantData")
+        BaseVariantData testVariant = findNamedItem(variants, "stagingAndroidTest", "variantData")
         assertEquals("staging", testVariant.variantConfiguration.buildType.name)
     }
 
@@ -183,8 +183,8 @@ public class AppPluginInternalTest extends BaseTest {
         assertEquals(6, variants.size()) // includes the test variant(s)
 
         String[] variantNames = [
-                "flavor1Debug", "flavor1Release", "flavor1DebugTest",
-                "flavor2Debug", "flavor2Release", "flavor2DebugTest"]
+                "flavor1Debug", "flavor1Release", "flavor1DebugAndroidTest",
+                "flavor2Debug", "flavor2Release", "flavor2DebugAndroidTest"]
 
         for (String variantName : variantNames) {
             findNamedItem(variants, variantName, "variantData")
@@ -244,12 +244,12 @@ public class AppPluginInternalTest extends BaseTest {
                 "f2FaRelease",
                 "f2FbRelease",
                 "f2FcRelease",
-                "f1FaDebugTest",
-                "f1FbDebugTest",
-                "f1FcDebugTest",
-                "f2FaDebugTest",
-                "f2FbDebugTest",
-                "f2FcDebugTest"];
+                "f1FaDebugAndroidTest",
+                "f1FbDebugAndroidTest",
+                "f1FcDebugAndroidTest",
+                "f2FaDebugAndroidTest",
+                "f2FbDebugAndroidTest",
+                "f2FcDebugAndroidTest"];
 
         for (String variantName : variantNames) {
             findNamedItem(variants, variantName, "variantData");
