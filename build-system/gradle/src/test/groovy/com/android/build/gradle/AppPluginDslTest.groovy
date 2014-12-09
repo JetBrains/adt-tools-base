@@ -57,7 +57,7 @@ public class AppPluginDslTest extends BaseTest {
         Set<TestVariant> testVariants = project.android.testVariants
         assertEquals(1, testVariants.size())
 
-        checkTestedVariant("debug", "debugTest", variants, testVariants)
+        checkTestedVariant("debug", "debugAndroidTest", variants, testVariants)
         checkNonTestedVariant("release", variants)
     }
 
@@ -86,7 +86,7 @@ public class AppPluginDslTest extends BaseTest {
         Set<TestVariant> testVariants = project.android.testVariants
         assertEquals(1, testVariants.size())
 
-        checkTestedVariant("debug", "debugTest", variants, testVariants)
+        checkTestedVariant("debug", "debugAndroidTest", variants, testVariants)
         checkNonTestedVariant("release", variants)
     }
 
@@ -112,7 +112,7 @@ public class AppPluginDslTest extends BaseTest {
         Set<TestVariant> testVariants = project.android.testVariants
         assertEquals(1, testVariants.size())
 
-        checkTestedVariant("debug", "debugTest", variants, testVariants)
+        checkTestedVariant("debug", "debugAndroidTest", variants, testVariants)
         checkNonTestedVariant("release", variants)
     }
 
@@ -168,7 +168,7 @@ public class AppPluginDslTest extends BaseTest {
         Set<TestVariant> testVariants = project.android.testVariants
         assertEquals(1, testVariants.size())
 
-        checkTestedVariant("staging", "stagingTest", variants, testVariants)
+        checkTestedVariant("staging", "stagingAndroidTest", variants, testVariants)
 
         checkNonTestedVariant("debug", variants)
         checkNonTestedVariant("release", variants)
@@ -207,8 +207,8 @@ public class AppPluginDslTest extends BaseTest {
         Set<TestVariant> testVariants = project.android.testVariants
         assertEquals(2, testVariants.size())
 
-        checkTestedVariant("flavor1Debug", "flavor1DebugTest", variants, testVariants)
-        checkTestedVariant("flavor2Debug", "flavor2DebugTest", variants, testVariants)
+        checkTestedVariant("flavor1Debug", "flavor1DebugAndroidTest", variants, testVariants)
+        checkTestedVariant("flavor2Debug", "flavor2DebugAndroidTest", variants, testVariants)
 
         checkNonTestedVariant("flavor1Release", variants)
         checkNonTestedVariant("flavor2Release", variants)
@@ -259,12 +259,12 @@ public class AppPluginDslTest extends BaseTest {
         Set<TestVariant> testVariants = project.android.testVariants
         assertEquals(6, testVariants.size())
 
-        checkTestedVariant("f1FaDebug", "f1FaDebugTest", variants, testVariants)
-        checkTestedVariant("f1FbDebug", "f1FbDebugTest", variants, testVariants)
-        checkTestedVariant("f1FcDebug", "f1FcDebugTest", variants, testVariants)
-        checkTestedVariant("f2FaDebug", "f2FaDebugTest", variants, testVariants)
-        checkTestedVariant("f2FbDebug", "f2FbDebugTest", variants, testVariants)
-        checkTestedVariant("f2FcDebug", "f2FcDebugTest", variants, testVariants)
+        checkTestedVariant("f1FaDebug", "f1FaDebugAndroidTest", variants, testVariants)
+        checkTestedVariant("f1FbDebug", "f1FbDebugAndroidTest", variants, testVariants)
+        checkTestedVariant("f1FcDebug", "f1FcDebugAndroidTest", variants, testVariants)
+        checkTestedVariant("f2FaDebug", "f2FaDebugAndroidTest", variants, testVariants)
+        checkTestedVariant("f2FbDebug", "f2FbDebugAndroidTest", variants, testVariants)
+        checkTestedVariant("f2FcDebug", "f2FcDebugAndroidTest", variants, testVariants)
 
         checkNonTestedVariant("f1FaRelease", variants)
         checkNonTestedVariant("f1FbRelease", variants)

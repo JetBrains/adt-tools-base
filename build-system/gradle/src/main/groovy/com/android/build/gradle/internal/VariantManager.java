@@ -221,7 +221,7 @@ public class VariantManager implements VariantModel {
         basePlugin.createLintTasks();
 
         // create the test tasks.
-        basePlugin.createCheckTasks(!productFlavors.isEmpty(), false /*isLibrary*/);
+        basePlugin.createConnectedCheckTasks(!productFlavors.isEmpty(), false /*isLibrary*/);
 
         // Create the variant API objects after the tasks have been created!
         createApiObjects();
@@ -231,8 +231,7 @@ public class VariantManager implements VariantModel {
      * Create tasks for the specified variantData.
      */
     public void createTasksForVariantData(TaskContainer tasks, BaseVariantData variantData) {
-        if (variantData.getVariantConfiguration().getType() ==
-                GradleVariantConfiguration.Type.TEST) {
+        if (variantData.getVariantConfiguration().getType().isForTesting()) {
             GradleVariantConfiguration testVariantConfig = variantData.getVariantConfiguration();
             BaseVariantData testedVariantData = (BaseVariantData) ((TestVariantData) variantData)
                     .getTestedVariantData();
@@ -488,7 +487,7 @@ public class VariantManager implements VariantModel {
                 defaultConfigData.getTestSourceSet(),
                 testData.getBuildType(),
                 null,
-                VariantConfiguration.Type.TEST,
+                VariantConfiguration.Type.ANDROID_TEST,
                 testedVariantData.getVariantConfiguration(),
                 signingOverride);
 

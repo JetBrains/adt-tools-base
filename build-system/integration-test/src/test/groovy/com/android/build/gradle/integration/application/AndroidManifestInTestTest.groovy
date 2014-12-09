@@ -44,7 +44,7 @@ class AndroidManifestInTestTest {
 
     @BeforeClass
     static void setup() {
-        project.execute("clean", "assembleDebugTest");
+        project.execute("clean", "assembleDebugAndroidTest");
     }
 
     @AfterClass

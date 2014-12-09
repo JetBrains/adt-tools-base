@@ -16,8 +16,6 @@
 
 package com.android.build.gradle.internal.core;
 
-import static com.android.builder.core.VariantConfiguration.Type.TEST;
-
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.dsl.BuildType;
@@ -109,7 +107,7 @@ public class GradleVariantConfiguration extends VariantConfiguration<BuildType, 
         // if type == test then getTestedConfig always returns non-null
         //noinspection ConstantConditions
         return getBuildType().isMinifyEnabled() &&
-                (type != TEST || (getTestedConfig().getType() != Type.LIBRARY));
+                (!type.isForTesting() || (getTestedConfig().getType() != Type.LIBRARY));
     }
 
     public boolean getUseJack() {
@@ -149,7 +147,7 @@ public class GradleVariantConfiguration extends VariantConfiguration<BuildType, 
             }
         }
 
-        if (getBuildType().getNdkConfig() != null && getType() != Type.TEST) {
+        if (getBuildType().getNdkConfig() != null && !getType().isForTesting()) {
             mMergedNdkConfig.append(getBuildType().getNdkConfig());
         }
     }
