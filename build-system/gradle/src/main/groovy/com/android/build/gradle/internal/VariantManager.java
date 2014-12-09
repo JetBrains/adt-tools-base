@@ -277,7 +277,16 @@ public class VariantManager implements VariantModel {
 
             basePlugin.resolveDependencies(variantDep);
             testVariantConfig.setDependencies(variantDep);
-            basePlugin.createTestVariantTasks((TestVariantData) variantData);
+            switch (variantType) {
+                case ANDROID_TEST:
+                    basePlugin.createAndroidTestVariantTasks((TestVariantData) variantData);
+                    break;
+                case UNIT_TEST:
+                    basePlugin.createUnitTestVariantTasks((TestVariantData) variantData);
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unknown test type " + variantType);
+            }
         } else {
             if (productFlavors.isEmpty()) {
                 variantFactory.createTasks(

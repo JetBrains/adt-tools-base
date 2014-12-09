@@ -271,12 +271,21 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
             }
 
             // then all the generated src folders.
-            sourceList.add(generateRClassTask.getSourceOutputDir());
+            if (generateRClassTask != null) {
+                sourceList.add(generateRClassTask.getSourceOutputDir());
+            }
 
             // for the other, there's no duplicate so no issue.
-            sourceList.add(generateBuildConfigTask.getSourceOutputDir());
-            sourceList.add(aidlCompileTask.getSourceOutputDir());
-            if (!variantConfiguration.getRenderscriptNdkModeEnabled()) {
+            if (generateBuildConfigTask != null) {
+                sourceList.add(generateBuildConfigTask.getSourceOutputDir());
+            }
+
+            if (aidlCompileTask != null) {
+                sourceList.add(aidlCompileTask.getSourceOutputDir());
+            }
+
+            if (!variantConfiguration.getRenderscriptNdkModeEnabled()
+                    && renderscriptCompileTask != null) {
                 sourceList.add(renderscriptCompileTask.getSourceOutputDir());
             }
 
