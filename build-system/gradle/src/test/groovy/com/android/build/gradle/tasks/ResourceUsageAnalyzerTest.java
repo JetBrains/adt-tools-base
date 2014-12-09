@@ -1011,4 +1011,12 @@ public class ResourceUsageAnalyzerTest extends TestCase {
             prev = resource;
         }
     }
+
+    public void testIsResourceClass() {
+        assertTrue(ResourceUsageAnalyzer.isResourceClass("android/support/v7/appcompat/R$attr.class"));
+        assertTrue(ResourceUsageAnalyzer.isResourceClass("android/support/v7/appcompat/R$attr.class"));
+        assertTrue(ResourceUsageAnalyzer.isResourceClass("android/support/v7/appcompat/R$bool.class"));
+        assertFalse(ResourceUsageAnalyzer.isResourceClass("android/support/v7/appcompat/R.class"));
+        assertFalse(ResourceUsageAnalyzer.isResourceClass("com/google/samples/apps/iosched/ui/BrowseSessionsActivity.class"));
+    }
 }
