@@ -252,6 +252,10 @@ public class JavaVisitor {
         mParser.prepareJavaParse(contexts);
     }
 
+    public void dispose() {
+        mParser.dispose();
+    }
+
     private static class VisitingDetector {
         private AstVisitor mVisitor; // construct lazily, and clear out on context switch!
         private JavaContext mContext;
