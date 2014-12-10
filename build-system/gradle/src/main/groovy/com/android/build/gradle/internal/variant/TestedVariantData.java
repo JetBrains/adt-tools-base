@@ -30,4 +30,7 @@ public interface TestedVariantData {
 
     @Nullable
     TestVariantData getTestVariantData(VariantConfiguration.Type type);
+
+    @NonNull
+    VariantConfiguration getVariantConfiguration();
 }
