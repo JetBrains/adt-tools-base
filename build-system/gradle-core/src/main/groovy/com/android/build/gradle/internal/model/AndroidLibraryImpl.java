@@ -62,6 +62,8 @@ public class AndroidLibraryImpl extends LibraryImpl implements AndroidLibrary, S
     @NonNull
     private final File annotations;
     @NonNull
+    private final File publicResources;
+    @NonNull
     private final List<AndroidLibrary> dependencies;
 
     AndroidLibraryImpl(
@@ -87,6 +89,7 @@ public class AndroidLibraryImpl extends LibraryImpl implements AndroidLibrary, S
         proguardRules = libraryDependency.getProguardRules();
         lintJar = libraryDependency.getLintJar();
         annotations = libraryDependency.getExternalAnnotations();
+        publicResources = libraryDependency.getPublicResources();
 
         this.project = project;
         this.variant = variant;
@@ -186,5 +189,11 @@ public class AndroidLibraryImpl extends LibraryImpl implements AndroidLibrary, S
     @Override
     public File getExternalAnnotations() {
         return annotations;
+    }
+
+    @Override
+    @NonNull
+    public File getPublicResources() {
+        return publicResources;
     }
 }

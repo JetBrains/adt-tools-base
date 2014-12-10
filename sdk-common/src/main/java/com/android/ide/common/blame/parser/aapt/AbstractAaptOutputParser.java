@@ -88,6 +88,7 @@ public abstract class AbstractAaptOutputParser implements PatternAwareOutputPars
     private static final Pattern REQUIRED_ATTRIBUTE = Pattern
             .compile("A '(.+)' attribute is required for <(.+)>");
 
+    // Keep in sync with SdkUtils#FILENAME_PREFIX
     private static final String START_MARKER = "<!-- From: ";
 
     private static final String END_MARKER = " -->";
@@ -95,7 +96,6 @@ public abstract class AbstractAaptOutputParser implements PatternAwareOutputPars
     private static final Cache<String, ReadOnlyDocument> ourDocumentsByPathCache = CacheBuilder
             .newBuilder()
             .weakValues().build();
-    // Keep in sync with MergedResourceWriter#FILENAME_PREFIX
 
     @VisibleForTesting
     public static File ourRootDir;

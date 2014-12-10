@@ -23,6 +23,7 @@ import static com.android.SdkConstants.FD_RES;
 import static com.android.SdkConstants.FN_ANDROID_MANIFEST_XML;
 import static com.android.SdkConstants.FN_ANNOTATIONS_ZIP;
 import static com.android.SdkConstants.FN_CLASSES_JAR;
+import static com.android.SdkConstants.FN_PUBLIC_TXT;
 import static com.android.SdkConstants.LIBS_FOLDER;
 
 import com.android.SdkConstants;
@@ -195,6 +196,12 @@ public abstract class LibraryBundle implements LibraryDependency {
     @NonNull
     public File getExternalAnnotations() {
         return new File(mBundleFolder, FN_ANNOTATIONS_ZIP);
+    }
+
+    @Override
+    @NonNull
+    public File getPublicResources() {
+        return new File(mBundleFolder, FN_PUBLIC_TXT);
     }
 
     @NonNull
