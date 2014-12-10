@@ -296,7 +296,7 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
             plugin.createLintTasks();
 
             // create the test tasks.
-            plugin.createCheckTasks(!variantManager.productFlavors.isEmpty(), false /*isLibrary*/);
+            plugin.createConnectedCheckTasks(!variantManager.productFlavors.isEmpty(), false /*isLibrary*/);
 
             // Create the variant API objects after the tasks have been created!
             variantManager.createApiObjects();

@@ -80,8 +80,8 @@ model {
                 "assembleF2Release",
                 "assembleRelease",
                 "assembleTest",
-                "assembleF1DebugTest",
-                "assembleF2DebugTest");
+                "assembleF1DebugAndroidTest",
+                "assembleF2DebugAndroidTest");
     }
 
     @Test

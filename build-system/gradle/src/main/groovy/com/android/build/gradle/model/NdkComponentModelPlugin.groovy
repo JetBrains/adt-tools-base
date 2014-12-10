@@ -268,7 +268,7 @@ class NdkComponentModelPlugin implements Plugin<Project> {
      * Return library binaries for a VariantConfiguration.
      */
     public Collection<BinarySpec> getBinaries(VariantConfiguration variantConfig) {
-        if (variantConfig.getType() == VariantConfiguration.Type.TEST) {
+        if (variantConfig.getType().isForTesting()) {
             // Do not return binaries for test variants as test source set is not supported at the
             // moment.
             return []
