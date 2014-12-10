@@ -824,8 +824,18 @@ public class AvdManager {
                     return null;
                 }
 
-                // skinPath is the skin folder path relative to the SDK directory
-                skinPath = FileOp.makeRelative(myLocalSdk.getLocation(), skinFolder);
+                // if skinFolder is in the sdk, use the relative path
+                if (skinFolder.getPath().startsWith(myLocalSdk.getLocation().getPath())) {
+                    try {
+                        skinPath = FileOp.makeRelative(myLocalSdk.getLocation(), skinFolder);
+                    } catch (IOException e) {
+                        // In case it fails, just use the absolute path
+                        skinPath = skinFolder.getAbsolutePath();
+                    }
+                } else {
+                    // Skin isn't in the sdk. Just use the absolute path.
+                    skinPath = skinFolder.getAbsolutePath();
+                }
             }
 
             // Set skin.name for display purposes in the AVD manager and
