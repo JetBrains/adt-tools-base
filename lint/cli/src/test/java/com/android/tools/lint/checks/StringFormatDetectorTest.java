@@ -20,7 +20,6 @@ import static com.android.tools.lint.checks.StringFormatDetector.isLocaleSpecifi
 
 import com.android.tools.lint.detector.api.Detector;
 
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -197,7 +196,7 @@ public class StringFormatDetectorTest  extends AbstractCheckTest {
                 "                context.getString(R.string.gridview_views_count), \"string\");\n" +
                 "                                                                  ~~~~~~~~\n" +
                 "    res/values/formatstrings5.xml:3: Conflicting argument declaration here\n" +
-                "res/values/formatstrings5.xml:3: Warning: Formatting %d followed by words: This should probably be a plural rather than a string [PluralsCandidate]\n" +
+                "res/values/formatstrings5.xml:3: Warning: Formatting %d followed by words (\"vues\"): This should probably be a plural rather than a string [PluralsCandidate]\n" +
                 "    <string name=\"gridview_views_count\">%d vues</string>\n" +
                 "    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
                 "4 errors, 1 warnings\n",
