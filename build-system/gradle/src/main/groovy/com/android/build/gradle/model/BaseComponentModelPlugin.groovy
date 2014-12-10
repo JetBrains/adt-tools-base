@@ -52,6 +52,7 @@ import org.gradle.internal.reflect.Instantiator
 import org.gradle.internal.service.ServiceRegistry
 import org.gradle.language.base.FunctionalSourceSet
 import org.gradle.language.base.LanguageSourceSet
+import org.gradle.language.base.ProjectSourceSet
 import org.gradle.language.base.internal.LanguageRegistration
 import org.gradle.language.base.internal.LanguageRegistry
 import org.gradle.language.base.internal.SourceTransformTaskConfig
@@ -118,6 +119,19 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
         @Mutate
         void registerLanguage(LanguageRegistry languages) {
             languages.add(new AndroidSource())
+        }
+
+        @Mutate
+        void addAndroidSourceSets(AndroidComponentModelSourceSet sources) {
+            sources.addDefaultSourceSet("resources", AndroidLanguageSourceSet)
+            sources.addDefaultSourceSet("java", AndroidLanguageSourceSet)
+            sources.addDefaultSourceSet("manifest", AndroidLanguageSourceSet)
+            sources.addDefaultSourceSet("res", AndroidLanguageSourceSet)
+            sources.addDefaultSourceSet("assets", AndroidLanguageSourceSet)
+            sources.addDefaultSourceSet("aidl", AndroidLanguageSourceSet)
+            sources.addDefaultSourceSet("renderscript", AndroidLanguageSourceSet)
+            sources.addDefaultSourceSet("jni", AndroidLanguageSourceSet)
+            sources.addDefaultSourceSet("jniLibs", AndroidLanguageSourceSet)
         }
 
         @Model("android")

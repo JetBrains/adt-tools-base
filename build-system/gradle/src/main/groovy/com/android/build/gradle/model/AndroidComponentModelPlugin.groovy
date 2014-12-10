@@ -24,19 +24,13 @@ import com.android.builder.core.BuilderConstants
 import com.android.builder.core.DefaultBuildType
 import com.android.builder.model.BuildType
 import org.gradle.api.NamedDomainObjectContainer
-import org.gradle.api.NamedDomainObjectFactory
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.internal.file.FileResolver
 import org.gradle.internal.reflect.Instantiator
 import org.gradle.internal.service.ServiceRegistry
-import org.gradle.language.base.FunctionalSourceSet
 import org.gradle.language.base.ProjectSourceSet
 import org.gradle.language.base.plugins.ComponentModelBasePlugin
-import org.gradle.language.c.CSourceSet
-import org.gradle.language.c.internal.DefaultCSourceSet
-import org.gradle.language.cpp.CppSourceSet
-import org.gradle.language.cpp.internal.DefaultCppSourceSet
 import org.gradle.model.Model
 import org.gradle.model.Mutate
 import org.gradle.model.RuleSource
@@ -134,76 +128,9 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
                 ServiceRegistry serviceRegistry,
                 ProjectSourceSet projectSourceSet) {
             def instantiator = serviceRegistry.get(Instantiator.class)
-            def sources = new AndroidComponentModelSourceSet(instantiator, projectSourceSet)
             def fileResolver = serviceRegistry.get(FileResolver.class);
-
-            // Setup Android's FunctionalSourceSet.
-            sources.all { functionalSourceSet ->
-                functionalSourceSet.registerFactory(
-                        AndroidLanguageSourceSet,
-                        new NamedDomainObjectFactory() {
-                            public AndroidLanguageSourceSet create(String name) {
-                                return instantiator.newInstance(
-                                        AndroidLanguageSourceSet,
-                                        name,
-                                        functionalSourceSet.getName(),
-                                        fileResolver);
-                            }
-                        })
-                functionalSourceSet.registerFactory(
-                        CSourceSet,
-                        new NamedDomainObjectFactory() {
-                            public CSourceSet create(String name) {
-                                return instantiator.newInstance(
-                                        DefaultCSourceSet,
-                                        name,
-                                        functionalSourceSet.getName(),
-                                        fileResolver);
-                            }
-                        })
-                functionalSourceSet.registerFactory(
-                        CppSourceSet,
-                        new NamedDomainObjectFactory() {
-                            public CppSourceSet create(String name) {
-                                return instantiator.newInstance(
-                                        DefaultCppSourceSet,
-                                        name,
-                                        functionalSourceSet.getName(),
-                                        fileResolver);
-                            }
-                        })
-            }
-
-            sources.all {
-                String name = it.name
-                resources(AndroidLanguageSourceSet) { languageSourceSet ->
-                    getSource().srcDir("src/$name/$languageSourceSet.name")
-                }
-                java(AndroidLanguageSourceSet) { languageSourceSet ->
-                    getSource().srcDir("src/$name/$languageSourceSet.name")
-                }
-                manifest(AndroidLanguageSourceSet) { languageSourceSet ->
-                    getSource().srcDir("src/$name/$languageSourceSet.name")
-                }
-                res(AndroidLanguageSourceSet) { languageSourceSet ->
-                    getSource().srcDir("src/$name/$languageSourceSet.name")
-                }
-                assets(AndroidLanguageSourceSet) { languageSourceSet ->
-                    getSource().srcDir("src/$name/$languageSourceSet.name")
-                }
-                aidl(AndroidLanguageSourceSet) { languageSourceSet ->
-                    getSource().srcDir("src/$name/$languageSourceSet.name")
-                }
-                renderscript(AndroidLanguageSourceSet) { languageSourceSet ->
-                    getSource().srcDir("src/$name/$languageSourceSet.name")
-                }
-                jni(AndroidLanguageSourceSet) { languageSourceSet ->
-                    getSource().srcDir("src/$name/$languageSourceSet.name")
-                }
-                jniLibs(AndroidLanguageSourceSet) { languageSourceSet ->
-                    getSource().srcDir("src/$name/$languageSourceSet.name")
-                }
-            }
+            def sources =
+                    new AndroidComponentModelSourceSet(instantiator, projectSourceSet, fileResolver)
 
             // Create main source set.
             sources.create("main")
