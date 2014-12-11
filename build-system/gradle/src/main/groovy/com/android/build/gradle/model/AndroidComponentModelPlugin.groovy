@@ -23,6 +23,7 @@ import com.android.build.gradle.internal.dsl.GroupableProductFlavorFactory
 import com.android.builder.core.BuilderConstants
 import com.android.builder.core.DefaultBuildType
 import com.android.builder.model.BuildType
+import groovy.transform.CompileStatic
 import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -37,12 +38,15 @@ import org.gradle.model.RuleSource
 import org.gradle.model.collection.CollectionBuilder
 import org.gradle.model.internal.core.ModelCreators
 import org.gradle.model.internal.core.ModelReference
-import org.gradle.platform.base.BinaryContainer
+import org.gradle.model.internal.registry.ModelRegistry
 import org.gradle.platform.base.BinaryType
 import org.gradle.platform.base.BinaryTypeBuilder
+import org.gradle.platform.base.ComponentBinaries
 import org.gradle.platform.base.ComponentSpecContainer
 import org.gradle.platform.base.ComponentType
 import org.gradle.platform.base.ComponentTypeBuilder
+
+import javax.inject.Inject
 
 /**
  * Plugin to set up infrastructure for other android plugins.
@@ -53,12 +57,19 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
      */
     public static final String COMPONENT_NAME = "android";
 
+    private final ModelRegistry modelRegistry
+
+    @Inject
+    public AndroidComponentModelPlugin(ModelRegistry modelRegistry) {
+        this.modelRegistry = modelRegistry
+    }
+
     @Override
     public void apply(Project project) {
         project.apply plugin: ComponentModelBasePlugin
 
         // Remove this when our models no longer depends on Project.
-        project.modelRegistry.create(
+        modelRegistry.create(
                 ModelCreators.bridgedInstance(
                         ModelReference.of("projectModel", Project), project)
                                 .simpleDescriptor("Model of project.")
@@ -118,9 +129,13 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
         }
 
         @Mutate
-        void createAndroidComponents(
-                CollectionBuilder<AndroidComponentSpec> androidComponents) {
+        void createAndroidComponents(CollectionBuilder<AndroidComponentSpec> androidComponents) {
             androidComponents.create(COMPONENT_NAME)
+        }
+
+        @Model
+        AndroidComponentSpec androidComponentSpec(ComponentSpecContainer specs) {
+            return (AndroidComponentSpec) specs.getByName(COMPONENT_NAME)
         }
 
         @Model("androidsources")
@@ -143,24 +158,23 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
             builder.defaultImplementation(DefaultAndroidBinary)
         }
 
-        @Mutate
+        @ComponentBinaries
         void createBinaries(
-                BinaryContainer binaries,
+                CollectionBuilder<AndroidBinary> binaries,
                 NamedDomainObjectContainer<DefaultBuildType> buildTypes,
                 List<ProductFlavorCombo> flavorCombos,
-                ComponentSpecContainer specs) {
-            AndroidComponentSpec spec = (AndroidComponentSpec) specs.getByName(COMPONENT_NAME)
+                AndroidComponentSpec spec) {
             if (flavorCombos.isEmpty()) {
                 flavorCombos.add(new ProductFlavorCombo());
             }
 
             for (def buildType : buildTypes) {
                 for (def flavorCombo : flavorCombos) {
-                    DefaultAndroidBinary binary = (DefaultAndroidBinary) binaries.create(
-                            getBinaryName(buildType, flavorCombo), AndroidBinary)
-                    binary.buildType = buildType
-                    binary.productFlavors = flavorCombo.flavorList
-                    spec.binaries.add(binary)
+                    binaries.create(getBinaryName(buildType, flavorCombo)) {
+                        def binary = it as DefaultAndroidBinary
+                        binary.buildType = buildType
+                        binary.productFlavors = flavorCombo.flavorList
+                    }
                 }
             }
         }
