@@ -1,3 +1,12 @@
+buildscript {
+    repositories {
+        maven { url = uri(rootProject.cloneArtifacts.repository) }
+    }
+    dependencies {
+        classpath "com.jfrog.bintray.gradle:gradle-bintray-plugin:1.0"
+    }
+}
+
 apply plugin: 'java'
 apply plugin: 'sdk-java-lib'
 
@@ -18,5 +27,6 @@ project.ext.pomName = 'Android Tools sdk-common library'
 project.ext.pomDesc = 'sdk-common library used by other Android tools libraries.'
 
 apply from: "$rootDir/buildSrc/base/publish.gradle"
+apply from: "$rootDir/buildSrc/base/bintray.gradle"
 apply from: "$rootDir/buildSrc/base/javadoc.gradle"
 
