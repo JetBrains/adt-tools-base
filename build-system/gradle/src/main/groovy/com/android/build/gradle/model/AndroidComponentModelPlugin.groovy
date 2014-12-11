@@ -168,10 +168,9 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
                 flavorCombos.add(new ProductFlavorCombo());
             }
 
-            //for (BuildType buildType : buildTypes) {
             buildTypes.each { BuildType buildType ->
-                for (ProductFlavorCombo flavorCombo : flavorCombos) {
-                    binaries.create(AndroidComponentModelPlugin.getBinaryName(buildType, flavorCombo)) {
+                flavorCombos.each { ProductFlavorCombo flavorCombo ->
+                    binaries.create(getBinaryName(buildType, flavorCombo)) {
                         def binary = it as DefaultAndroidBinary
                         binary.buildType = buildType
                         binary.productFlavors = flavorCombo.flavorList
@@ -179,13 +178,14 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
                 }
             }
         }
-    }
 
-    private static String getBinaryName(BuildType buildType, ProductFlavorCombo flavorCombo) {
-        if (flavorCombo.flavorList.isEmpty()) {
-            return  buildType.name
-        } else {
-            return  flavorCombo.name + buildType.name.capitalize()
+        private static String getBinaryName(BuildType buildType, ProductFlavorCombo flavorCombo) {
+            if (flavorCombo.flavorList.isEmpty()) {
+                return  buildType.name
+            } else {
+                return  flavorCombo.name + buildType.name.capitalize()
+            }
         }
     }
+
 }
