@@ -16,11 +16,15 @@
 
 package com.android.build.gradle.integration.application
 
+import com.android.SdkConstants
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import org.junit.AfterClass
-import org.junit.BeforeClass
-import org.junit.ClassRule
-import org.junit.Test
+import com.android.build.gradle.integration.common.utils.ModelHelper
+import com.android.builder.model.*
+import org.junit.*
+
+import static org.junit.Assert.assertNotNull
+import static org.junit.Assert.assertTrue
+import static org.junit.Assert.assertFalse
 
 /**
  * Assemble tests for rsSupportMode.
@@ -30,19 +34,43 @@ class RsSupportModeTest {
     static public GradleTestProject project = GradleTestProject.builder()
             .fromSample("rsSupportMode")
             .create()
+    static AndroidProject model
 
     @BeforeClass
     static void setup() {
-        project.execute("clean", "assembleDebug");
+        model =project.executeAndReturnModel("clean", "assembleDebug");
     }
 
     @AfterClass
     static void cleanUp() {
         project = null
+        model = null
     }
 
     @Test
     void lint() {
         project.execute("lint")
+    }
+
+    @Test
+    void testRsSupportMode() throws Exception {
+        Variant debugVariant = ModelHelper.getVariant(model.getVariants(), "x86Debug")
+        assertNotNull("x86Debug variant null-check", debugVariant)
+
+        AndroidArtifact mainArtifact = debugVariant.getMainArtifact()
+        Dependencies dependencies = mainArtifact.getDependencies()
+
+        assertFalse(dependencies.getJavaLibraries().isEmpty())
+
+        boolean foundSupportJar = false
+        for (JavaLibrary lib : dependencies.getJavaLibraries()) {
+            File file = lib.getJarFile()
+            if (SdkConstants.FN_RENDERSCRIPT_V8_JAR.equals(file.getName())) {
+                foundSupportJar = true
+                break
+            }
+        }
+
+        assertTrue("Found suppport jar check", foundSupportJar)
     }
 }

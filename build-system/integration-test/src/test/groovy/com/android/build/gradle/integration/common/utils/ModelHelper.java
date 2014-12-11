@@ -16,16 +16,26 @@
 
 package com.android.build.gradle.integration.common.utils;
 
+import static com.android.builder.core.BuilderConstants.ANDROID_TEST;
+import static com.android.builder.core.BuilderConstants.DEBUG;
+import static com.android.builder.model.AndroidProject.ARTIFACT_ANDROID_TEST;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.FilterData;
 import com.android.build.OutputFile;
 import com.android.builder.model.AndroidArtifact;
 import com.android.builder.model.AndroidArtifactOutput;
+import com.android.builder.model.AndroidProject;
+import com.android.builder.model.ArtifactMetaData;
+import com.android.builder.model.BuildTypeContainer;
+import com.android.builder.model.ProductFlavorContainer;
+import com.android.builder.model.SigningConfig;
+import com.android.builder.model.SourceProviderContainer;
 import com.android.builder.model.Variant;
-
-import junit.framework.Assert;
 
 import java.io.File;
 import java.util.Collection;
@@ -80,7 +90,7 @@ public class ModelHelper {
                 "variantName '" + variantName + "' outputs null-check",
                 variantOutputs);
         // we only support single output artifact in this helper method.
-        Assert.assertEquals(
+        assertEquals(
                 "variantName '" + variantName + "' outputs size check",
                 1,
                 variantOutputs.size());
@@ -96,7 +106,7 @@ public class ModelHelper {
         assertNotNull(
                 "variantName '" + variantName + "' outputFiles null-check",
                 outputFiles);
-        Assert.assertEquals(
+        assertEquals(
                 "variantName '" + variantName + "' outputFiles size check",
                 1,
                 outputFiles.size());
@@ -109,4 +119,157 @@ public class ModelHelper {
 
         return mainOutputFile.getOutputFile();
     }
+
+    public static void testDefaultSourceSets(
+            @NonNull AndroidProject model,
+            @NonNull File projectDir) {
+        ProductFlavorContainer defaultConfig = model.getDefaultConfig();
+
+        // test the main source provider
+        new SourceProviderHelper(model.getName(), projectDir,
+                "main", defaultConfig.getSourceProvider())
+                .test();
+
+        // test the main instrumentTest source provider
+        SourceProviderContainer testSourceProviders = getSourceProviderContainer(
+                defaultConfig.getExtraSourceProviders(), ARTIFACT_ANDROID_TEST);
+        assertNotNull("InstrumentTest source Providers null-check", testSourceProviders);
+
+        new SourceProviderHelper(model.getName(), projectDir,
+                ANDROID_TEST, testSourceProviders.getSourceProvider())
+                .test();
+
+        // test the source provider for the build types
+        Collection<BuildTypeContainer> buildTypes = model.getBuildTypes();
+        assertEquals("Build Type Count", 2, buildTypes.size());
+
+        for (BuildTypeContainer btContainer : model.getBuildTypes()) {
+            new SourceProviderHelper(
+                    model.getName(),
+                    projectDir,
+                    btContainer.getBuildType().getName(),
+                    btContainer.getSourceProvider())
+                    .test();
+
+            assertEquals(0, btContainer.getExtraSourceProviders().size());
+        }
+    }
+
+    public static void compareDebugAndReleaseOutput(@NonNull AndroidProject model) {
+        Collection<Variant> variants = model.getVariants();
+        assertEquals("Variant Count", 2, variants.size());
+
+        // debug variant
+        Variant debugVariant = getVariant(variants, DEBUG);
+        assertNotNull("debug Variant null-check", debugVariant);
+
+        // debug artifact
+        AndroidArtifact debugMainInfo = debugVariant.getMainArtifact();
+        assertNotNull("Debug main info null-check", debugMainInfo);
+
+        Collection<AndroidArtifactOutput> debugMainOutputs = debugMainInfo.getOutputs();
+        assertNotNull("Debug main output null-check", debugMainOutputs);
+
+        // release variant
+        Variant releaseVariant = getVariant(variants, "release");
+        assertNotNull("release Variant null-check", releaseVariant);
+
+        AndroidArtifact relMainInfo = releaseVariant.getMainArtifact();
+        assertNotNull("Release main info null-check", relMainInfo);
+
+        Collection<AndroidArtifactOutput> relMainOutputs = relMainInfo.getOutputs();
+        assertNotNull("Rel Main output null-check", relMainOutputs);
+
+        File debugFile = debugMainOutputs.iterator().next().getMainOutputFile().getOutputFile();
+        File releaseFile = relMainOutputs.iterator().next().getMainOutputFile().getOutputFile();
+
+        assertFalse("debug: " + debugFile + " / release: " + releaseFile,
+                debugFile.equals(releaseFile));
+    }
+
+
+    @Nullable
+    public static Variant getVariant(
+            @NonNull Collection<Variant> items,
+            @NonNull String name) {
+        for (Variant item : items) {
+            if (name.equals(item.getName())) {
+                return item;
+            }
+        }
+
+        return null;
+    }
+
+    @Nullable
+    public static AndroidArtifact getAndroidArtifact(
+            @NonNull Collection<AndroidArtifact> items,
+            @NonNull String name) {
+        for (AndroidArtifact item : items) {
+            assertNotNull("AndroidArtifact list item null-check:" + name, item);
+            assertNotNull("AndroidArtifact.getName() list item null-check: " + name, item.getName());
+            if (name.equals(item.getName())) {
+                return item;
+            }
+        }
+
+        return null;
+    }
+
+    @Nullable
+    public static SigningConfig getSigningConfig(
+            @NonNull Collection<SigningConfig> items,
+            @NonNull String name) {
+        for (SigningConfig item : items) {
+            assertNotNull("SigningConfig list item null-check:" + name, item);
+            assertNotNull("SigningConfig.getName() list item null-check: " + name, item.getName());
+            if (name.equals(item.getName())) {
+                return item;
+            }
+        }
+
+        return null;
+    }
+
+    @Nullable
+    public static SourceProviderContainer getSourceProviderContainer(
+            @NonNull Collection<SourceProviderContainer> items,
+            @NonNull String name) {
+        for (SourceProviderContainer item : items) {
+            assertNotNull("SourceProviderContainer list item null-check:" + name, item);
+            assertNotNull("SourceProviderContainer.getName() list item null-check: " + name, item.getArtifactName());
+            if (name.equals(item.getArtifactName())) {
+                return item;
+            }
+        }
+
+        return null;
+    }
+
+    @Nullable
+    public static String getFilter(@NonNull OutputFile outputFile, @NonNull String filterType) {
+        for (FilterData filterData : outputFile.getFilters()) {
+            if (filterData.getFilterType().equals(filterType)) {
+                return filterData.getIdentifier();
+            }
+        }
+        return null;
+    }
+
+    @Nullable
+    public static ArtifactMetaData getArtifactMetaData(
+            @NonNull Collection<ArtifactMetaData> items,
+            @NonNull String name) {
+        for (ArtifactMetaData item : items) {
+            assertNotNull("ArtifactMetaData list item null-check:" + name, item);
+            assertNotNull("ArtifactMetaData.getName() list item null-check: " + name, item.getName());
+            if (name.equals(item.getName())) {
+                return item;
+            }
+        }
+
+        return null;
+    }
+
+
 }

@@ -20,35 +20,33 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.builder.model.AndroidArtifact
 import com.android.builder.model.AndroidProject
 import com.android.builder.model.Variant
-import org.junit.*
+import org.junit.AfterClass
+import org.junit.BeforeClass
+import org.junit.ClassRule
+import org.junit.Test
 
 import static org.junit.Assert.assertNotNull
 import static org.junit.Assert.assertTrue
 
 /**
- * Assemble tests for genFolderApi.
+ * Assemble tests for genFolderApi2.
  */
-class GenFolderApiTest {
+class GenFolderApi2Test {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("genFolderApi")
+            .fromTestProject("genFolderApi2")
             .create()
     static AndroidProject model
 
     @BeforeClass
     static void setup() {
-        model = project.executeAndReturnModel("clean", "assembleDebug")
+        model = project.getModel()
     }
 
     @AfterClass
     static void cleanUp() {
         project = null
         model = null
-    }
-
-    @Test
-    void lint() {
-        project.execute("lint")
     }
 
     @Test
@@ -80,5 +78,4 @@ class GenFolderApiTest {
             assertTrue("custom generated source folder check", found)
         }
     }
-
 }
