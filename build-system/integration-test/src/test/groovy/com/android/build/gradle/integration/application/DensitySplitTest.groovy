@@ -16,21 +16,24 @@
 
 package com.android.build.gradle.integration.application
 
+import com.android.build.OutputFile
 import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.utils.ApkHelper
+import com.android.build.gradle.integration.common.utils.ModelHelper
 import com.android.build.gradle.integration.common.utils.ZipHelper
 import com.android.builder.model.AndroidArtifact
 import com.android.builder.model.AndroidArtifactOutput
 import com.android.builder.model.AndroidProject
 import com.android.builder.model.Variant
-import org.junit.AfterClass
-import org.junit.BeforeClass
-import org.junit.ClassRule
-import org.junit.Test
+import com.google.common.collect.Maps
+import org.junit.*
 import org.junit.experimental.categories.Category
 
-import static junit.framework.Assert.assertEquals
+import static com.android.builder.core.BuilderConstants.DEBUG
+import static org.junit.Assert.assertEquals
+import static org.junit.Assert.assertNotNull
+import static org.junit.Assert.assertTrue
 
 /**
  * Assemble tests for densitySplit.
@@ -78,12 +81,58 @@ class DensitySplitTest {
     }
 
     @Test
-    void "check version code"() {
+    void "check version code in apk"() {
         ApkHelper.checkVersion(project.getApk("universal", "debug"), 112, "version 112")
         ApkHelper.checkVersion(project.getApk("mdpi", "debug"), 212, "version 212")
         ApkHelper.checkVersion(project.getApk("hdpi", "debug"), 312, "version 312")
         ApkHelper.checkVersion(project.getApk("xhdpi", "debug"), 412, "version 412")
         ApkHelper.checkVersion(project.getApk("xxhdpi", "debug"), 512, "version 512")
+    }
+
+    @Test
+    void "check version code in model"() {
+        Collection<Variant> variants = model.getVariants();
+        assertEquals("Variant Count", 2 , variants.size());
+
+        // get the main artifact of the debug artifact
+        Variant debugVariant = ModelHelper.getVariant(variants, DEBUG);
+        assertNotNull("debug Variant null-check", debugVariant);
+        AndroidArtifact debugMainArficat = debugVariant.getMainArtifact();
+        assertNotNull("Debug main info null-check", debugMainArficat);
+
+        // get the outputs.
+        Collection<AndroidArtifactOutput> debugOutputs = debugMainArficat.getOutputs();
+        assertNotNull(debugOutputs);
+        assertEquals(5, debugOutputs.size());
+
+        // build a map of expected outputs and their versionCode
+        Map<String, Integer> expected = Maps.newHashMapWithExpectedSize(5);
+        expected.put(null, 112);
+        expected.put("mdpi", 212);
+        expected.put("hdpi", 312);
+        expected.put("xhdpi", 412);
+        expected.put("xxhdpi", 512);
+
+        assertEquals(5, debugOutputs.size());
+        for (AndroidArtifactOutput output : debugOutputs) {
+            assertEquals(OutputFile.FULL_SPLIT, output.getMainOutputFile().getOutputType());
+            Collection<? extends OutputFile> outputFiles = output.getOutputs();
+            assertEquals(1, outputFiles.size());
+            assertNotNull(output.getMainOutputFile());
+
+            String densityFilter = ModelHelper.getFilter(output.getMainOutputFile(), OutputFile.DENSITY);
+            Integer value = expected.get(densityFilter);
+            // this checks we're not getting an unexpected output.
+            assertNotNull("Check Valid output: " + (densityFilter == null ? "universal"
+                    : densityFilter),
+                    value);
+
+            assertEquals(value.intValue(), output.getVersionCode());
+            expected.remove(densityFilter);
+        }
+
+        // this checks we didn't miss any expected output.
+        assertTrue(expected.isEmpty());
     }
 
     @Test

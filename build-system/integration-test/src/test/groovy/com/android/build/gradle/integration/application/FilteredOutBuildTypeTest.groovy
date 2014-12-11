@@ -17,10 +17,11 @@
 package com.android.build.gradle.integration.application
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import org.junit.AfterClass
-import org.junit.BeforeClass
-import org.junit.ClassRule
-import org.junit.Test
+import com.android.builder.model.AndroidProject
+import com.android.builder.model.Variant
+import org.junit.*
+
+import static org.junit.Assert.assertEquals
 
 /**
  * Assemble tests for filteredOutBuildType.
@@ -30,15 +31,25 @@ class FilteredOutBuildTypeTest {
     static public GradleTestProject project = GradleTestProject.builder()
             .fromSample("filteredOutBuildType")
             .create()
+    static AndroidProject model
 
     @BeforeClass
     static void setup() {
-        project.execute("clean", "assembleDebug");
+        model = project.executeAndReturnModel("clean", "assembleDebug")
     }
 
     @AfterClass
     static void cleanUp() {
         project = null
+        model = null
+    }
+
+    @Test
+    void "check filtered out variant isn't in model"() {
+        // Load the custom model for the project
+        assertEquals("Variant Count", 1, model.getVariants().size())
+        Variant variant = model.getVariants().iterator().next()
+        assertEquals("Variant name", "release", variant.getBuildType())
     }
 
     @Test
