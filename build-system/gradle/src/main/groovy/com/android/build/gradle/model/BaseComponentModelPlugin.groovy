@@ -28,6 +28,7 @@ import com.android.build.gradle.internal.ProductFlavorData
 import com.android.build.gradle.internal.VariantManager
 import com.android.build.gradle.internal.dsl.BuildType
 import com.android.build.gradle.internal.dsl.GroupableProductFlavor
+import com.android.build.gradle.internal.dsl.SigningConfig
 import com.android.build.gradle.internal.dsl.SigningConfigFactory
 import com.android.build.gradle.internal.tasks.DependencyReportTask
 import com.android.build.gradle.internal.tasks.PrepareSdkTask
@@ -37,14 +38,14 @@ import com.android.build.gradle.internal.variant.TestVariantData
 import com.android.build.gradle.internal.variant.VariantFactory
 import com.android.build.gradle.ndk.NdkExtension
 import com.android.builder.core.BuilderConstants
-import com.android.builder.core.DefaultBuildType
-import com.android.builder.model.SigningConfig
 import com.google.common.collect.Lists
+import groovy.transform.CompileStatic
 import org.gradle.api.DefaultTask
 import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
+import org.gradle.api.artifacts.repositories.MavenArtifactRepository
 import org.gradle.api.file.SourceDirectorySet
 import org.gradle.api.internal.project.ProjectInternal
 import org.gradle.api.plugins.JavaBasePlugin
@@ -64,11 +65,11 @@ import org.gradle.model.RuleSource
 import org.gradle.model.collection.CollectionBuilder
 import org.gradle.model.internal.core.ModelCreators
 import org.gradle.model.internal.core.ModelReference
+import org.gradle.model.internal.registry.ModelRegistry
 import org.gradle.platform.base.BinaryContainer
 import org.gradle.platform.base.BinarySpec
 import org.gradle.platform.base.BinaryType
 import org.gradle.platform.base.BinaryTypeBuilder
-import org.gradle.platform.base.ComponentSpecContainer
 import org.gradle.platform.base.TransformationFileType
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry
 
@@ -76,10 +77,17 @@ import javax.inject.Inject
 
 import static com.android.builder.core.BuilderConstants.DEBUG
 
+@CompileStatic
 public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Project> {
+    ModelRegistry modelRegistry
+
     @Inject
-    protected BaseComponentModelPlugin(Instantiator instantiator, ToolingModelBuilderRegistry registry) {
+    protected BaseComponentModelPlugin(
+            Instantiator instantiator,
+            ToolingModelBuilderRegistry registry,
+            ModelRegistry modelRegistry) {
         super(instantiator, registry);
+        this.modelRegistry = modelRegistry
     }
 
     @Override
@@ -108,7 +116,7 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
 
         project.apply plugin: NdkComponentModelPlugin
 
-        project.modelRegistry.create(
+        modelRegistry.create(
                 ModelCreators.bridgedInstance(
                         ModelReference.of("androidBasePlugin", BasePlugin.class), this)
                                 .simpleDescriptor("Android BaseComponentModelPlugin.")
@@ -139,7 +147,7 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
         @Model("android")
         BaseExtension androidapp(
                 ServiceRegistry serviceRegistry,
-                NamedDomainObjectContainer<DefaultBuildType> buildTypeContainer,
+                NamedDomainObjectContainer<BuildType> buildTypeContainer,
                 NamedDomainObjectContainer<GroupableProductFlavor> productFlavorContainer,
                 NamedDomainObjectContainer<SigningConfig> signingConfigContainer,
                 @Path("isApplication") Boolean isApplication,
@@ -189,7 +197,7 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
         void createAndroidComponents(
                 AndroidComponentSpec androidSpec,
                 BaseExtension androidExtension,
-                NamedDomainObjectContainer<DefaultBuildType> buildTypeContainer,
+                NamedDomainObjectContainer<BuildType> buildTypeContainer,
                 NamedDomainObjectContainer<GroupableProductFlavor> productFlavorContainer,
                 NamedDomainObjectContainer<SigningConfig> signingConfigContainer,
                 AndroidComponentModelSourceSet sources,
@@ -202,10 +210,10 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
                     variantFactory)
 
             signingConfigContainer.all { SigningConfig signingConfig ->
-                variantManager.addSigningConfig((com.android.build.gradle.internal.dsl.SigningConfig) signingConfig)
+                variantManager.addSigningConfig(signingConfig)
             }
-            buildTypeContainer.all { DefaultBuildType buildType ->
-                variantManager.addBuildType((BuildType) buildType)
+            buildTypeContainer.all { BuildType buildType ->
+                variantManager.addBuildType(buildType)
             }
             productFlavorContainer.all { GroupableProductFlavor productFlavor ->
                 variantManager.addProductFlavor(productFlavor)
@@ -229,7 +237,8 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
         @Finalize
         void createTestBinary(BinaryContainer binaries, AndroidComponentSpec spec) {
             List<AndroidTestBinary> testBinaries = Lists.newArrayList();
-            spec.binaries.each { AndroidBinary binary ->
+            spec.binaries.each { binarySpec ->
+                def binary = binarySpec as AndroidBinary
                 if (binary.buildType.name.equals(DEBUG)) {
                     DefaultAndroidTestBinary testBinary =
                             (DefaultAndroidTestBinary) binaries.create(
@@ -273,8 +282,8 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
 
             // setup SDK repositories.
             for (File file : plugin.sdkHandler.sdkLoader.repositories) {
-                plugin.project.repositories.maven {
-                    url = file.toURI()
+                plugin.project.repositories.maven { MavenArtifactRepository repo ->
+                    repo.url = file.toURI()
                 }
             }
 
@@ -293,17 +302,17 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
                 BaseVariantData variantData = variantManager.createVariantData(
                         binary.buildType,
                         binary.productFlavors,
-                        plugin.signingOverride
-                )
+                        plugin.signingOverride)
                 binary.variantData = variantData
                 variantManager.getVariantDataList().add(variantData)
                 variantManager.createTasksForVariantData(tasks, variantData)
             }
 
             // Create test tasks.
-            binaries.withType(AndroidTestBinary) { binary ->
+            binaries.withType(AndroidTestBinary) { binarySpec ->
+                def binary = binarySpec as DefaultAndroidTestBinary
                 TestVariantData testVariantData =
-                        variantManager.createTestVariantData(((DefaultAndroidBinary)binary.testedBinary).variantData, plugin.signingOverride)
+                        variantManager.createTestVariantData((binary.testedBinary as DefaultAndroidBinary).variantData, plugin.signingOverride)
                 variantManager.getVariantDataList().add(testVariantData);
                 variantManager.createTasksForVariantData(tasks, testVariantData)
             }

@@ -356,7 +356,7 @@ public class VariantManager implements VariantModel {
      */
     public BaseVariantData<? extends BaseVariantOutputData> createVariantData(
             @NonNull com.android.builder.model.BuildType buildType,
-            @NonNull List<com.android.build.gradle.api.GroupableProductFlavor> productFlavorList,
+            @NonNull List<? extends com.android.build.gradle.api.GroupableProductFlavor> productFlavorList,
             @Nullable com.android.builder.model.SigningConfig signingOverride) {
         Splits splits = basePlugin.getExtension().getSplits();
         Set<String> densities = splits.getDensityFilters();

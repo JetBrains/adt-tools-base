@@ -278,10 +278,13 @@ public abstract class BasePlugin {
         return variantManager
     }
 
+    void setVariantManager(VariantManager variantManager) {
+        this.variantManager = variantManager
+    }
+
     BaseExtension getExtension() {
         return extension
     }
-
 
     protected void apply(Project project) {
         this.project = project
@@ -414,7 +417,7 @@ public abstract class BasePlugin {
         }
     }
 
-    protected void setBaseExtension(@NonNull BaseExtension extension) {
+    public void setBaseExtension(@NonNull BaseExtension extension) {
         this.extension = extension
         mainSourceSet = (DefaultAndroidSourceSet) extension.sourceSets.create(extension.defaultConfig.name)
         testSourceSet = (DefaultAndroidSourceSet) extension.sourceSets.create(ANDROID_TEST.prefix)
@@ -484,7 +487,7 @@ public abstract class BasePlugin {
         }
     }
 
-    protected SigningConfig getSigningOverride() {
+    public SigningConfig getSigningOverride() {
         if (project.hasProperty(PROPERTY_SIGNING_STORE_FILE) &&
                 project.hasProperty(PROPERTY_SIGNING_STORE_PASSWORD) &&
                 project.hasProperty(PROPERTY_SIGNING_KEY_ALIAS) &&

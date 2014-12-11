@@ -17,12 +17,11 @@
 package com.android.build.gradle.model
 
 import com.android.build.gradle.internal.ProductFlavorCombo
+import com.android.build.gradle.internal.dsl.BuildType
 import com.android.build.gradle.internal.dsl.BuildTypeFactory
 import com.android.build.gradle.internal.dsl.GroupableProductFlavor
 import com.android.build.gradle.internal.dsl.GroupableProductFlavorFactory
 import com.android.builder.core.BuilderConstants
-import com.android.builder.core.DefaultBuildType
-import com.android.builder.model.BuildType
 import groovy.transform.CompileStatic
 import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.Plugin
@@ -51,6 +50,7 @@ import javax.inject.Inject
 /**
  * Plugin to set up infrastructure for other android plugins.
  */
+@CompileStatic
 public class AndroidComponentModelPlugin implements Plugin<Project> {
     /**
      * The name of ComponentSpec created with android component model plugin.
@@ -80,11 +80,11 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
     static class Rules {
 
         @Model("androidBuildTypes")
-        NamedDomainObjectContainer<DefaultBuildType> createBuildTypes(
+        NamedDomainObjectContainer<BuildType> createBuildTypes(
                 ServiceRegistry serviceRegistry,
                 Project project) {
             Instantiator instantiator = serviceRegistry.get(Instantiator.class)
-            def buildTypeContainer = project.container(DefaultBuildType,
+            def buildTypeContainer = project.container(BuildType,
                     new BuildTypeFactory(instantiator, project, project.getLogger()))
 
             // create default Objects, signingConfig first as its used by the BuildTypes.
@@ -117,7 +117,7 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
         List<ProductFlavorCombo> createProductFlavorCombo (
                 NamedDomainObjectContainer<GroupableProductFlavor> productFlavors) {
             // TODO: Create custom product flavor container to manually configure flavor dimensions.
-            List<String> flavorDimensionList = productFlavors*.flavorDimension.unique();
+            List<String> flavorDimensionList = productFlavors*.flavorDimension.unique().asList();
             flavorDimensionList.removeAll([null])
 
             return  ProductFlavorCombo.createCombinations(flavorDimensionList, productFlavors);
@@ -161,16 +161,17 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
         @ComponentBinaries
         void createBinaries(
                 CollectionBuilder<AndroidBinary> binaries,
-                NamedDomainObjectContainer<DefaultBuildType> buildTypes,
+                NamedDomainObjectContainer<BuildType> buildTypes,
                 List<ProductFlavorCombo> flavorCombos,
                 AndroidComponentSpec spec) {
             if (flavorCombos.isEmpty()) {
                 flavorCombos.add(new ProductFlavorCombo());
             }
 
-            for (def buildType : buildTypes) {
-                for (def flavorCombo : flavorCombos) {
-                    binaries.create(getBinaryName(buildType, flavorCombo)) {
+            //for (BuildType buildType : buildTypes) {
+            buildTypes.each { BuildType buildType ->
+                for (ProductFlavorCombo flavorCombo : flavorCombos) {
+                    binaries.create(AndroidComponentModelPlugin.getBinaryName(buildType, flavorCombo)) {
                         def binary = it as DefaultAndroidBinary
                         binary.buildType = buildType
                         binary.productFlavors = flavorCombo.flavorList
