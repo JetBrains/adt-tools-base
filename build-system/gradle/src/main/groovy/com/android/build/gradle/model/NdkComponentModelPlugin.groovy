@@ -17,16 +17,16 @@
 
 package com.android.build.gradle.model
 
-import com.android.build.gradle.api.GroupableProductFlavor
 import com.android.build.gradle.internal.ProductFlavorCombo
+import com.android.build.gradle.internal.dsl.BuildType
+import com.android.build.gradle.internal.dsl.GroupableProductFlavor
 import com.android.build.gradle.ndk.NdkExtension
 import com.android.build.gradle.ndk.internal.NdkConfiguration
 import com.android.build.gradle.ndk.internal.NdkExtensionConvention
 import com.android.build.gradle.ndk.internal.NdkHandler
 import com.android.build.gradle.ndk.internal.ToolchainConfiguration
-import com.android.builder.core.DefaultBuildType
 import com.android.builder.core.VariantConfiguration
-import com.android.builder.model.BuildType
+import groovy.transform.CompileStatic
 import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -40,7 +40,6 @@ import org.gradle.model.Model
 import org.gradle.model.Mutate
 import org.gradle.model.Path
 import org.gradle.model.RuleSource
-import org.gradle.model.collection.CollectionBuilder
 import org.gradle.nativeplatform.BuildTypeContainer
 import org.gradle.nativeplatform.FlavorContainer
 import org.gradle.nativeplatform.NativeLibraryBinarySpec
@@ -116,7 +115,7 @@ class NdkComponentModelPlugin implements Plugin<Project> {
         @Mutate
         void createNativeBuildTypes(
                 BuildTypeContainer nativeBuildTypes,
-                NamedDomainObjectContainer<DefaultBuildType> androidBuildTypes) {
+                NamedDomainObjectContainer<BuildType> androidBuildTypes) {
             for (def buildType : androidBuildTypes) {
                 nativeBuildTypes.maybeCreate(buildType.name)
             }
@@ -185,8 +184,8 @@ class NdkComponentModelPlugin implements Plugin<Project> {
         @Mutate
         void configureNativeSourceSet(
                 AndroidComponentModelSourceSet sources,
-                NamedDomainObjectContainer<DefaultBuildType> buildTypes,
-                NamedDomainObjectContainer<com.android.build.gradle.internal.dsl.GroupableProductFlavor> flavors,
+                NamedDomainObjectContainer<BuildType> buildTypes,
+                NamedDomainObjectContainer<GroupableProductFlavor> flavors,
                 List<ProductFlavorCombo> flavorGroups,
                 NdkExtension ndkExtension) {
             NdkConfiguration.configureSources(sources, "main", ndkExtension)
@@ -217,7 +216,7 @@ class NdkComponentModelPlugin implements Plugin<Project> {
                 if (binary.targetAbi.isEmpty())  {
                     binary.builtBy(binary.nativeBinaries)
                 } else {
-                    binary.nativeBinaries.each { nativeBinary ->
+                    for (NativeLibraryBinarySpec nativeBinary : binary.nativeBinaries) {
                         if (binary.targetAbi.contains(nativeBinary.targetPlatform.name)) {
                             binary.builtBy(nativeBinary)
                         }
@@ -254,8 +253,8 @@ class NdkComponentModelPlugin implements Plugin<Project> {
 
     private static Collection<SharedLibraryBinarySpec> getNativeBinaries(
             NativeLibrarySpec library,
-            BuildType buildType,
-            List<? extends GroupableProductFlavor> productFlavors) {
+            com.android.builder.model.BuildType buildType,
+            List<? extends com.android.build.gradle.api.GroupableProductFlavor> productFlavors) {
         ProductFlavorCombo flavorGroup = new ProductFlavorCombo(productFlavors);
         library.binaries.withType(SharedLibraryBinarySpec).matching { binary ->
             (binary.buildType.name.equals(buildType.name)
