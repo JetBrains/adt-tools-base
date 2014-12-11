@@ -139,8 +139,8 @@ class BasicTest2 {
                 debugTestInfo.getApplicationId());
         assertTrue("Test signed check", debugTestInfo.isSigned());
         assertEquals("Test signingConfig name", "myConfig", debugTestInfo.getSigningConfigName());
-        assertEquals("Test sourceGenTask", "generateDebugTestSources", debugTestInfo.getSourceGenTaskName());
-        assertEquals("Test compileTask", "compileDebugTestSources", debugTestInfo.getCompileTaskName());
+        assertEquals("Test sourceGenTask", "generateDebugAndroidTestSources", debugTestInfo.getSourceGenTaskName());
+        assertEquals("Test compileTask", "compileDebugAndroidTestSources", debugTestInfo.getCompileTaskName());
 
         Collection<File> generatedResFolders = debugTestInfo.getGeneratedResourceFolders();
         assertNotNull(generatedResFolders);
