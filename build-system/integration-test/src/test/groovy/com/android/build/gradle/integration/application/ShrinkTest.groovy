@@ -94,6 +94,7 @@ res/raw/keep.xml
 res/layout/l_used_a.xml
 res/layout/l_used_b2.xml
 res/layout/l_used_c.xml
+res/layout/lib_unused.xml
 res/layout/prefix_3_suffix.xml
 res/layout/prefix_used_1.xml
 res/layout/prefix_used_2.xml

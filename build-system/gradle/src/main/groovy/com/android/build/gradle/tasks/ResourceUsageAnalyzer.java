@@ -721,7 +721,7 @@ public class ResourceUsageAnalyzer {
         }
 
         if (mDebug) {
-            System.out.println("The root reachable resources are: " +
+            System.out.println("The root reachable resources are:\n" +
                     Joiner.on(",\n   ").join(roots));
         }
 
@@ -1966,10 +1966,18 @@ public class ResourceUsageAnalyzer {
         return styleName.replace('.', '_').replace('-', '_').replace(':', '_');
     }
 
-    private static void markReachable(@Nullable Resource resource) {
+    /**
+     * Marks the given resource (if non-null) as reachable, and returns true if
+     * this is the first time the resource is marked reachable
+     */
+    private static boolean markReachable(@Nullable Resource resource) {
         if (resource != null) {
+            boolean wasReachable = resource.reachable;
             resource.reachable = true;
+            return !wasReachable;
         }
+
+        return false;
     }
 
     private static void markUnreachable(@Nullable Resource resource) {
@@ -2129,11 +2137,17 @@ public class ResourceUsageAnalyzer {
                 ZipEntry entry = zis.getNextEntry();
                 while (entry != null) {
                     String name = entry.getName();
-                    if (name.endsWith(DOT_CLASS)) {
+                    if (name.endsWith(DOT_CLASS) &&
+                            // Skip resource type classes like R$drawable; they will
+                            // reference the integer id's we're looking for, but these aren't
+                            // actual usages we need to track; if somebody references the
+                            // field elsewhere, we'll catch that
+                            !isResourceClass(name)) {
                         byte[] bytes = ByteStreams.toByteArray(zis);
                         if (bytes != null) {
                             ClassReader classReader = new ClassReader(bytes);
-                            classReader.accept(new UsageVisitor(), SKIP_DEBUG | SKIP_FRAMES);
+                            classReader.accept(new UsageVisitor(jarFile, name),
+                                    SKIP_DEBUG | SKIP_FRAMES);
                         }
                     }
 
@@ -2145,6 +2159,19 @@ public class ResourceUsageAnalyzer {
         } finally {
             Closeables.close(zis, true);
         }
+    }
+
+    /** Returns whether the given class path points to an aapt-generated compiled R class */
+    @VisibleForTesting
+    static boolean isResourceClass(@NonNull String name) {
+        assert name.endsWith(DOT_CLASS) : name;
+        int index = name.lastIndexOf('/');
+        if (index != -1 && name.startsWith("R$", index + 1)) {
+            String typeName = name.substring(index + 3, name.length() - DOT_CLASS.length());
+            return ResourceType.getEnum(typeName) != null;
+        }
+
+        return false;
     }
 
     private void gatherResourceValues(File file) throws IOException {
@@ -2399,8 +2426,13 @@ public class ResourceUsageAnalyzer {
      * calls and recording string literals, used to handle dynamic lookup of resources.
      */
     private class UsageVisitor extends ClassVisitor {
-        public UsageVisitor() {
+        private final File mJarFile;
+        private final String mCurrentClass;
+
+        public UsageVisitor(File jarFile, String name) {
             super(Opcodes.ASM4);
+            mJarFile = jarFile;
+            mCurrentClass = name;
         }
 
         @Override
@@ -2409,7 +2441,7 @@ public class ResourceUsageAnalyzer {
             return new MethodVisitor(Opcodes.ASM4) {
                 @Override
                 public void visitLdcInsn(Object cst) {
-                    handleCodeConstant(cst);
+                    handleCodeConstant(cst, "ldc");
                 }
 
                 @Override
@@ -2468,7 +2500,7 @@ public class ResourceUsageAnalyzer {
         @Override
         public FieldVisitor visitField(int access, String name, String desc, String signature,
                 Object value) {
-            handleCodeConstant(value);
+            handleCodeConstant(value, "field");
             return new FieldVisitor(Opcodes.ASM4) {
                 @Override
                 public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
@@ -2476,43 +2508,51 @@ public class ResourceUsageAnalyzer {
                 }
             };
         }
-    }
 
-    private class AnnotationUsageVisitor extends AnnotationVisitor {
-        public AnnotationUsageVisitor() {
-            super(Opcodes.ASM4);
-        }
-
-        @Override
-        public AnnotationVisitor visitAnnotation(String name, String desc) {
-            return new AnnotationUsageVisitor();
-        }
-
-        @Override
-        public AnnotationVisitor visitArray(String name) {
-            return new AnnotationUsageVisitor();
-        }
-
-        @Override
-        public void visit(String name, Object value) {
-            handleCodeConstant(value);
-            super.visit(name, value);
-        }
-    }
-
-    /** Invoked when an ASM visitor encounters a constant: record corresponding reference */
-    private void handleCodeConstant(@Nullable Object cst) {
-        if (cst instanceof Integer) {
-            Integer value = (Integer) cst;
-            markReachable(mValueToResource.get(value));
-        } else if (cst instanceof int[]) {
-            int[] values = (int[]) cst;
-            for (int value : values) {
-                markReachable(mValueToResource.get(value));
+        private class AnnotationUsageVisitor extends AnnotationVisitor {
+            public AnnotationUsageVisitor() {
+                super(Opcodes.ASM4);
             }
-        } else if (cst instanceof String) {
-            String string = (String) cst;
-            referencedString(string);
+
+            @Override
+            public AnnotationVisitor visitAnnotation(String name, String desc) {
+                return new AnnotationUsageVisitor();
+            }
+
+            @Override
+            public AnnotationVisitor visitArray(String name) {
+                return new AnnotationUsageVisitor();
+            }
+
+            @Override
+            public void visit(String name, Object value) {
+                handleCodeConstant(value, "annotation");
+                super.visit(name, value);
+            }
+        }
+
+        /** Invoked when an ASM visitor encounters a constant: record corresponding reference */
+        private void handleCodeConstant(@Nullable Object cst, @NonNull String context) {
+            if (cst instanceof Integer) {
+                Integer value = (Integer) cst;
+                Resource resource = mValueToResource.get(value);
+                if (markReachable(resource) && mDebug) {
+                    System.out.println("Marking " + resource + " reachable: referenced from " +
+                            context + " in " + mJarFile + ":" + mCurrentClass);
+                }
+            } else if (cst instanceof int[]) {
+                int[] values = (int[]) cst;
+                for (int value : values) {
+                    Resource resource = mValueToResource.get(value);
+                    if (markReachable(resource) && mDebug) {
+                        System.out.println("Marking " + resource + " reachable: referenced from " +
+                                context + " in " + mJarFile + ":" + mCurrentClass);
+                    }
+                }
+            } else if (cst instanceof String) {
+                String string = (String) cst;
+                referencedString(string);
+            }
         }
     }
 
