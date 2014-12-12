@@ -48,7 +48,7 @@ class BuildConfigTest {
     private static AndroidProject model
 
     @BeforeClass
-    static void setup() {
+    static void setUp() {
         new HelloWorldApp().writeSources(project.testDir)
         project.getBuildFile() << """
             apply plugin: 'com.android.application'

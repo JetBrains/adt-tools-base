@@ -31,7 +31,7 @@ class DensitySplitWithPublishNonDefaultTest {
     public GradleTestProject project = GradleTestProject.builder().create();
 
     @Before
-    public void setup() {
+    public void setUp() {
         new HelloWorldApp().writeSources(project.testDir)
         project.getBuildFile() << """
 apply plugin: 'com.android.application'

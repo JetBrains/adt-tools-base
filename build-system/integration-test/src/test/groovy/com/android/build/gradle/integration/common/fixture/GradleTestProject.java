@@ -35,12 +35,16 @@ import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.google.common.io.Files;
 
 import org.gradle.tooling.BuildLauncher;
 import org.gradle.tooling.GradleConnector;
 import org.gradle.tooling.ProjectConnection;
+import org.gradle.tooling.UnknownModelException;
 import org.gradle.tooling.internal.consumer.DefaultGradleConnector;
+import org.gradle.tooling.model.GradleProject;
+import org.junit.Assert;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
@@ -54,6 +58,7 @@ import java.security.CodeSource;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -142,6 +147,29 @@ public class GradleTestProject implements TestRule {
         }
 
         static class EmptyTestApp extends AbstractAndroidTestApp {
+        }
+    }
+
+
+    public static final class SubProjectData {
+        @NonNull
+        private final AndroidProject model;
+        @NonNull
+        private final File projectDir;
+
+        private SubProjectData(@NonNull AndroidProject model, @NonNull File projectDir) {
+            this.model = model;
+            this.projectDir = projectDir;
+        }
+
+        @NonNull
+        public AndroidProject getModel() {
+            return model;
+        }
+
+        @NonNull
+        public File getProjectDir() {
+            return projectDir;
         }
     }
 
@@ -434,8 +462,57 @@ public class GradleTestProject implements TestRule {
      *
      * @return the AndroidProject model for the project.
      */
+    @NonNull
     public AndroidProject executeAndReturnModel(String ... tasks) {
         return execute(Collections.<String>emptyList(), true, tasks);
+    }
+
+    /**
+     * Runs gradle on the project, and returns a project model for each sub-project.
+     * Throws exception on failure.
+     *
+     * @param tasks Variadic list of tasks to execute.
+     *
+     * @return the AndroidProject model for the project.
+     */
+    @NonNull
+    public Map<String, SubProjectData> executeAndReturnMultiModel(String ... tasks) {
+        ProjectConnection connection = getProjectConnection();
+        try {
+            executeBuild(Collections.<String>emptyList(), connection, tasks);
+
+            return buildMultiModel(connection);
+
+        } finally {
+            connection.close();
+        }
+    }
+
+    /**
+     * Returns the project model without building
+     */
+    @NonNull
+    public AndroidProject getModel() {
+        ProjectConnection connection = getProjectConnection();
+        try {
+            return connection.getModel(AndroidProject.class);
+        } finally {
+            connection.close();
+        }
+    }
+
+    /**
+     * Returns a project model for each sub-project without building.
+     */
+    @NonNull
+    public Map<String, SubProjectData> getMultiModel() {
+        ProjectConnection connection = getProjectConnection();
+        try {
+            return buildMultiModel(connection);
+
+        } finally {
+            connection.close();
+        }
     }
 
     /**
@@ -454,17 +531,7 @@ public class GradleTestProject implements TestRule {
             @NonNull String ... tasks) {
         ProjectConnection connection = getProjectConnection();
         try {
-            List<String> args = Lists.newArrayListWithCapacity(2 + arguments.size());
-            args.add("-i");
-            args.add("-u");
-            args.addAll(arguments);
-
-            BuildLauncher launcher = connection.newBuild().forTasks(tasks)
-                    .withArguments(args.toArray(new String[args.size()]));
-            if (stdout != null) {
-                launcher.setStandardOutput(stdout);
-            }
-            launcher.run();
+            executeBuild(arguments, connection, tasks);
 
             if (returnModel) {
                 return connection.getModel(AndroidProject.class);
@@ -476,17 +543,59 @@ public class GradleTestProject implements TestRule {
         return null;
     }
 
-    /**
-     * Returns the project model
-     */
-    @NonNull
-    public AndroidProject getModel() {
-        ProjectConnection connection = getProjectConnection();
-        try {
-            return connection.getModel(AndroidProject.class);
-        } finally {
-            connection.close();
+    private void executeBuild(List<String> arguments, ProjectConnection connection,
+            String[] tasks) {
+        List<String> args = Lists.newArrayListWithCapacity(2 + arguments.size());
+        args.add("-i");
+        args.add("-u");
+        args.addAll(arguments);
+
+        BuildLauncher launcher = connection.newBuild().forTasks(tasks)
+                .withArguments(args.toArray(new String[args.size()]));
+        if (stdout != null) {
+            launcher.setStandardOutput(stdout);
         }
+        launcher.run();
+    }
+
+    private Map<String, SubProjectData> buildMultiModel(
+            ProjectConnection connection) {
+        Map<String, SubProjectData> map = Maps.newHashMap();
+
+        // Query the default Gradle Model.
+        GradleProject model = connection.getModel(GradleProject.class);
+        Assert.assertNotNull("Model Object null-check", model);
+
+        // Now get the children projects, recursively.
+        for (GradleProject child : model.getChildren()) {
+            String path = child.getPath();
+            String name = path.substring(1);
+            File childDir = new File(testDir, name);
+
+            GradleConnector childConnector = GradleConnector.newConnector();
+
+            childConnector.forProjectDirectory(childDir);
+
+            ProjectConnection childConnection = childConnector.connect();
+            try {
+                AndroidProject androidProject = childConnection.getModel(AndroidProject.class);
+
+                Assert.assertNotNull("Model Object null-check for " + path, androidProject);
+                Assert.assertEquals("Model Name for " + path, name, androidProject.getName());
+                Assert.assertEquals("Model version", ANDROID_GRADLE_VERSION,
+                        androidProject.getModelVersion());
+
+                map.put(path, new SubProjectData(androidProject, childDir));
+
+            } catch (UnknownModelException e) {
+                // probably a Java-only project. add to the map
+                map.put(path, null);
+            } finally {
+                childConnection.close();
+            }
+        }
+
+        return map;
     }
 
     /**

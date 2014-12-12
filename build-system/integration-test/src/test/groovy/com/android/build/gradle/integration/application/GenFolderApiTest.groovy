@@ -36,7 +36,7 @@ class GenFolderApiTest {
     static AndroidProject model
 
     @BeforeClass
-    static void setup() {
+    static void setUp() {
         model = project.executeAndReturnModel("clean", "assembleDebug")
     }
 

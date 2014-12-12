@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.application
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import org.junit.AfterClass
 import org.junit.ClassRule
 import org.junit.Test
 
@@ -48,6 +49,14 @@ class RepoTest {
             .withName("util")
             .fromTestProject("repo/util")
             .create()
+
+    @AfterClass
+    static void cleanUp() {
+        app = null
+        baseLibrary = null
+        library = null
+        util = null
+    }
 
     @Test
     void repo() {

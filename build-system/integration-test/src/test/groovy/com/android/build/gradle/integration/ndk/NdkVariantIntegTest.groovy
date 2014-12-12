@@ -39,7 +39,7 @@ class NdkVariantIntegTest {
     static public GradleTestProject project = GradleTestProject.builder().create();
 
     @BeforeClass
-    static public void setup() {
+    static public void setUp() {
         new HelloWorldJniApp().writeSources(project.testDir)
 
         project.getBuildFile() << """
