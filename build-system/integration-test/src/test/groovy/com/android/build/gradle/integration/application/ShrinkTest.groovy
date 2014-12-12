@@ -46,7 +46,7 @@ class ShrinkTest {
             .create()
 
     @BeforeClass
-    static void setup() {
+    static void setUp() {
         project.execute("clean", "assembleRelease", "assembleDebug", "assembleProguardNoShrink");
     }
 

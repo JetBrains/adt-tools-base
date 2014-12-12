@@ -33,7 +33,7 @@ class LibMinifyTest {
             .create()
 
     @BeforeClass
-    static void setup() {
+    static void setUp() {
         project.execute("clean", "build");
     }
 

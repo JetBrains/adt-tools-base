@@ -271,5 +271,19 @@ public class ModelHelper {
         return null;
     }
 
+    @Nullable
+    public static ProductFlavorContainer getProductFlavor(
+            @NonNull Collection<ProductFlavorContainer> items,
+            @NonNull String name) {
+        for (ProductFlavorContainer item : items) {
+            assertNotNull("ProductFlavorContainer list item null-check:" + name, item);
+            assertNotNull("ProductFlavorContainer.getProductFlavor() list item null-check: " + name, item.getProductFlavor());
+            assertNotNull("ProductFlavorContainer.getProductFlavor().getName() list item null-check: " + name, item.getProductFlavor().getName());
+            if (name.equals(item.getProductFlavor().getName())) {
+                return item;
+            }
+        }
 
+        return null;
+    }
 }

@@ -54,7 +54,7 @@ class JackTest {
             .create()
 
     @BeforeClass
-    static void setup() {
+    static void setUp() {
         basic.execute(JACK_OPTIONS, "clean", "assembleDebug")
         minify.execute(JACK_OPTIONS, "clean", "assembleDebug")
         multiDex.execute(JACK_OPTIONS, "clean", "assembleDebug")
