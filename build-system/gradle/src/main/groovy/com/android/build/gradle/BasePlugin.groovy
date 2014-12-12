@@ -215,7 +215,8 @@ public abstract class BasePlugin {
     private static final String GRADLE_VERSION_CHECK_OVERRIDE_PROPERTY =
             "com.android.build.gradle.overrideVersionCheck"
 
-    public static final String INSTALL_GROUP = "Install"
+    private static final String INSTALL_GROUP = "Install"
+    private static final String BUILD_GROUP = org.gradle.api.plugins.BasePlugin.BUILD_GROUP
 
     public static File TEST_SDK_DIR;
 
@@ -1409,8 +1410,8 @@ public abstract class BasePlugin {
                 "compile${variantData.variantConfiguration.fullName.capitalize()}Java",
                 JavaCompile)
         variantData.javaCompileTask = compileTask
-        variantData.javaCompileTask.dependsOn variantData.sourceGenTask
         variantData.compileTask.dependsOn variantData.javaCompileTask
+        optionalDependsOn(variantData.javaCompileTask, variantData.sourceGenTask)
 
         compileTask.source = variantData.getJavaSources()
 
@@ -1536,11 +1537,23 @@ public abstract class BasePlugin {
     }
 
     /**
-     * Creates the tasks to build the tests.
+     * Creates the tasks to build unit tests.
      *
      * @param variantData the test variant
      */
-    public void createTestVariantTasks(@NonNull TestVariantData variantData) {
+    @CompileStatic
+    void createUnitTestVariantTasks(@NonNull TestVariantData variantData) {
+        BaseVariantData testedVariantData = variantData.getTestedVariantData() as BaseVariantData
+        createCompileAnchorTask(variantData)
+        createCompileTask(variantData, testedVariantData)
+    }
+
+    /**
+     * Creates the tasks to build android tests.
+     *
+     * @param variantData the test variant
+     */
+    public void createAndroidTestVariantTasks(@NonNull TestVariantData variantData) {
 
         BaseVariantData<? extends BaseVariantOutputData> testedVariantData =
                 (BaseVariantData<? extends BaseVariantOutputData>) variantData.getTestedVariantData()
@@ -1598,12 +1611,10 @@ public abstract class BasePlugin {
             createPostCompilationTasks(variantData);
         }
 
-        if (variantData.variantConfiguration.type != UNIT_TEST) {
-            createPackagingTask(variantData, null /*assembleTask*/, false /*publishApk*/)
+        createPackagingTask(variantData, null /*assembleTask*/, false /*publishApk*/)
 
-            if (assembleAndroidTest != null) {
-                assembleAndroidTest.dependsOn variantOutputData.assembleTask
-            }
+        if (assembleAndroidTest != null) {
+            assembleAndroidTest.dependsOn variantOutputData.assembleTask
         }
     }
 
@@ -1699,23 +1710,24 @@ public abstract class BasePlugin {
 
         variantDataList.findAll{it.variantConfiguration.type == UNIT_TEST}.each { loopVariantData ->
             // Inner scope copy for the closures.
-            def variantData = loopVariantData
-            def testedVariantConfig = variantData.variantConfiguration.testedConfig
+            TestVariantData variantData = loopVariantData as TestVariantData
+            BaseVariantData testedVariantData = variantData.testedVariantData as BaseVariantData
 
-            if (variantData.variantConfiguration.useJack) {
+            if (variantData.variantConfiguration.useJack
+                    || testedVariantData.variantConfiguration.useJack) {
                 // Don't create unit test tasks when using Jack.
                 // TODO: Handle Jack somehow.
                 return
             }
 
             Test runTestsTask = project.tasks.create(
-                    UNIT_TEST.prefix + testedVariantConfig.fullName.capitalize(),
+                    UNIT_TEST.prefix + testedVariantData.variantConfiguration.fullName.capitalize(),
                     Test)
             runTestsTask.group = JavaBasePlugin.VERIFICATION_GROUP
 
             fixTestTaskSources(runTestsTask)
 
-            runTestsTask.dependsOn variantData.compileTask
+            runTestsTask.dependsOn variantData.javaCompileTask
             JavaCompile testCompileTask = variantData.javaCompileTask
             runTestsTask.testClassesDir = testCompileTask.destinationDir
 
@@ -2787,7 +2799,7 @@ public abstract class BasePlugin {
         Task assembleTask = project.tasks.
                 create("assemble${variantData.variantConfiguration.fullName.capitalize()}")
         assembleTask.description = "Assembles the " + variantData.description
-        assembleTask.group = org.gradle.api.plugins.BasePlugin.BUILD_GROUP
+        assembleTask.group = BUILD_GROUP
         return assembleTask
     }
 
@@ -3089,8 +3101,14 @@ public abstract class BasePlugin {
         variantData.assetGenTask = project.tasks.create(
                 "generate${variantData.variantConfiguration.fullName.capitalize()}Assets")
         // and compile task
+        createCompileAnchorTask(variantData)
+    }
+
+    private void createCompileAnchorTask(
+            BaseVariantData<? extends BaseVariantOutputData> variantData) {
         variantData.compileTask = project.tasks.create(
                 "compile${variantData.variantConfiguration.fullName.capitalize()}Sources")
+        variantData.compileTask.group = BUILD_GROUP
     }
 
     public void createCheckManifestTask(
