@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.component
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
@@ -29,7 +30,7 @@ class AndroidComponentModelTest {
     public static GradleTestProject project = GradleTestProject.builder().create();
 
     @BeforeClass
-    public static void setup() {
+    public static void setUp() {
 
         project.buildFile << """
 import com.android.build.gradle.model.AndroidComponentModelPlugin
@@ -45,6 +46,11 @@ model {
     }
 }
 """
+    }
+
+    @AfterClass
+    static void cleanUp() {
+        project = null
     }
 
     @Test

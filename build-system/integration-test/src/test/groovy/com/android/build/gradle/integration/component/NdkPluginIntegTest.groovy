@@ -19,6 +19,7 @@ package com.android.build.gradle.integration.component
 import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldJniApp
+import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
@@ -37,7 +38,7 @@ class NdkPluginIntegTest {
     public static GradleTestProject project = GradleTestProject.builder().create();
 
     @BeforeClass
-    public static void setup() {
+    public static void setUp() {
         new HelloWorldJniApp(true /* useCppSource */).writeSources(project.testDir)
         project.getBuildFile() << """
 apply plugin: 'com.android.model.application'
@@ -57,6 +58,11 @@ model {
     }
 }
 """
+    }
+
+    @AfterClass
+    static void cleanUp() {
+        project = null
     }
 
     @Test

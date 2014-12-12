@@ -20,6 +20,7 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.AndroidTestApp
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldJniApp
 import com.android.build.gradle.integration.common.fixture.app.TestSourceFile
+import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
@@ -37,7 +38,7 @@ class ComponentModelSourceSetIntegTest {
     public static GradleTestProject project = GradleTestProject.builder().create();
 
     @BeforeClass
-    public static void setup() {
+    public static void setUp() {
         AndroidTestApp app = new HelloWorldJniApp()
 
         // Remove the main hello-jni.c and place it in different directories for different flavors.
@@ -79,6 +80,11 @@ model {
     }
 }
 """
+    }
+
+    @AfterClass
+    static void cleanUp() {
+        project = null
     }
 
     @Test

@@ -33,7 +33,7 @@ class AppComponentModelIntegTest {
     public GradleTestProject project = GradleTestProject.builder().create();
 
     @Before
-    public void setup() {
+    public void setUp() {
         new HelloWorldApp().writeSources(project.testDir)
         project.buildFile << """
 apply plugin: "com.android.model.application"

@@ -64,7 +64,7 @@ public class NdkStlIntegTest {
     public GradleTestProject project = GradleTestProject.builder().create();
 
     @Before
-    public void setup() {
+    public void setUp() {
         new HelloWorldJniApp().writeSources(project.testDir)
         project.getBuildFile() << """
 apply plugin: 'com.android.model.application'
