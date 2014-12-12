@@ -38,7 +38,7 @@ public class ParentLibsTest {
             .create()
 
     @BeforeClass
-    static void setup() {
+    static void setUp() {
         model = project.execute(ImmutableList.of("-p", "app"),
                 "clean", "assembleDebug");
     }

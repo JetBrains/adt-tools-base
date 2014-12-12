@@ -33,7 +33,7 @@ class ProguardAarPackagingTest {
             GradleTestProject.builder().withName("libInJar").create();
 
     @BeforeClass
-    static public void setup() {
+    static public void setUp() {
         // Create android test application
         AndroidTestApp testApp = new HelloWorldApp();
 
