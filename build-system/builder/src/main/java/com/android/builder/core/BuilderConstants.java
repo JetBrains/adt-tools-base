@@ -41,13 +41,9 @@ public class BuilderConstants {
     public static final String CONNECTED = "connected";
     public static final String DEVICE = "device";
 
-    public static final String ANDROID_TEST = "androidTest";
     public static final String FD_ANDROID_TESTS = "androidTests";
-    public static final String FD_ANDROID_RESULTS = ANDROID_TEST + "-results";
-
-    public static final String UI_TEST = "uiTest";
-    public static final String FD_UI_TESTS = "uiTests";
-    public static final String FD_UI_RESULTS = UI_TEST + "-results";
+    public static final String FD_ANDROID_RESULTS =
+            VariantConfiguration.Type.ANDROID_TEST.getPrefix() + "-results";
 
     public static final String FD_FLAVORS = "flavors";
     public static final String FD_FLAVORS_ALL = "all";

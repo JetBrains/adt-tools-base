@@ -35,7 +35,7 @@ class DependenciesWithVariantsTest {
 
     @BeforeClass
     static void setup() {
-        project.execute("clean", "assembleDebug", "assembleTest");
+        project.execute("clean", "assembleDebug", "assembleAndroidTest");
     }
 
     @AfterClass

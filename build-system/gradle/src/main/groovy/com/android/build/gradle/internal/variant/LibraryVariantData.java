@@ -22,20 +22,22 @@ import com.android.build.OutputFile;
 import com.android.build.gradle.BasePlugin;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.tasks.ExtractAnnotations;
+import com.android.builder.core.VariantConfiguration;
+import com.google.common.collect.Maps;
 
 import org.gradle.api.Task;
 
 import java.io.File;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Map;
 
 /**
  * Data about a variant that produce a Library bundle (.aar)
  */
 public class LibraryVariantData extends BaseVariantData<LibVariantOutputData> implements TestedVariantData {
 
-    @Nullable
-    private TestVariantData testVariantData = null;
+    private final Map<VariantConfiguration.Type, TestVariantData> testVariants;
 
     @Nullable
     public ExtractAnnotations generateAnnotationsTask = null;
@@ -44,6 +46,7 @@ public class LibraryVariantData extends BaseVariantData<LibVariantOutputData> im
             @NonNull BasePlugin basePlugin,
             @NonNull GradleVariantConfiguration config) {
         super(basePlugin, config);
+        testVariants = Maps.newEnumMap(VariantConfiguration.Type.class);
 
         // create default output
         createOutput(OutputFile.OutputType.MAIN,
@@ -70,20 +73,23 @@ public class LibraryVariantData extends BaseVariantData<LibVariantOutputData> im
         }
     }
 
+    @Nullable
     @Override
-    public void setTestVariantData(@Nullable TestVariantData testVariantData) {
-        this.testVariantData = testVariantData;
+    public TestVariantData getTestVariantData(@NonNull VariantConfiguration.Type type) {
+        return testVariants.get(type);
     }
 
     @Override
-    @Nullable
-    public TestVariantData getTestVariantData() {
-        return testVariantData;
+    public void setTestVariantData(
+            @NonNull TestVariantData testVariantData,
+            VariantConfiguration.Type type) {
+        testVariants.put(type, testVariantData);
     }
 
     // Overridden to add source folders to a generateAnnotationsTask, if it exists.
     @Override
-    public void registerJavaGeneratingTask(@NonNull Task task, @NonNull File... generatedSourceFolders) {
+    public void registerJavaGeneratingTask(
+            @NonNull Task task, @NonNull File... generatedSourceFolders) {
         super.registerJavaGeneratingTask(task, generatedSourceFolders);
         if (generateAnnotationsTask != null) {
             for (File f : generatedSourceFolders) {
@@ -94,7 +100,8 @@ public class LibraryVariantData extends BaseVariantData<LibVariantOutputData> im
 
     // Overridden to add source folders to a generateAnnotationsTask, if it exists.
     @Override
-    public void registerJavaGeneratingTask(@NonNull Task task, @NonNull Collection<File> generatedSourceFolders) {
+    public void registerJavaGeneratingTask(
+            @NonNull Task task, @NonNull Collection<File> generatedSourceFolders) {
         super.registerJavaGeneratingTask(task, generatedSourceFolders);
         if (generateAnnotationsTask != null) {
             for (File f : generatedSourceFolders) {

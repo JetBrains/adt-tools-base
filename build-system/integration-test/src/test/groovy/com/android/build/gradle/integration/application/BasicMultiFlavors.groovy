@@ -27,7 +27,7 @@ import com.android.builder.internal.StringHelper
 import com.android.builder.model.*
 import org.junit.*
 
-import static com.android.builder.core.BuilderConstants.ANDROID_TEST
+import static com.android.builder.core.VariantConfiguration.Type.ANDROID_TEST;
 import static com.android.builder.model.AndroidProject.ARTIFACT_ANDROID_TEST
 
 /**
@@ -78,7 +78,7 @@ class BasicMultiFlavors {
             new SourceProviderHelper(
                     model.getName(),
                     projectDir,
-                    ANDROID_TEST + StringHelper.capitalize(name),
+                    ANDROID_TEST.prefix + StringHelper.capitalize(name),
                     container.getSourceProvider())
                     .test();
         }

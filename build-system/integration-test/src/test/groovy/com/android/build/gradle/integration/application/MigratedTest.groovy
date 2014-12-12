@@ -28,7 +28,7 @@ import org.junit.ClassRule
 import org.junit.Test
 import org.junit.experimental.categories.Category
 
-import static com.android.builder.core.BuilderConstants.ANDROID_TEST
+import static com.android.builder.core.VariantConfiguration.Type.ANDROID_TEST;
 import static com.android.builder.model.AndroidProject.ARTIFACT_ANDROID_TEST
 import static org.junit.Assert.assertFalse
 import static org.junit.Assert.assertNotNull
@@ -83,7 +83,7 @@ class MigratedTest {
         assertNotNull("InstrumentTest source Providers null-check", testSourceProviderContainer)
 
         new SourceProviderHelper(model.getName(), projectDir,
-                ANDROID_TEST, testSourceProviderContainer.getSourceProvider())
+                ANDROID_TEST.prefix, testSourceProviderContainer.getSourceProvider())
                 .setJavaDir("tests/java")
                 .setResourcesDir("tests/resources")
                 .setAidlDir("tests/aidl")
