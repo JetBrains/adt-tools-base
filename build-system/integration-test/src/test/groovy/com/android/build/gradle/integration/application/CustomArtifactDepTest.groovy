@@ -16,15 +16,20 @@
 
 package com.android.build.gradle.integration.application
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.GradleTestProject.SubProjectData
 import com.android.build.gradle.integration.common.utils.ModelHelper
-import com.android.builder.model.*
-import org.junit.*
+import com.android.builder.model.AndroidArtifact
+import com.android.builder.model.AndroidProject
+import com.android.builder.model.Dependencies
+import com.android.builder.model.JavaLibrary
+import com.android.builder.model.Variant
+import org.junit.AfterClass
+import org.junit.BeforeClass
+import org.junit.ClassRule
+import org.junit.Test
 
 import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertNotNull
 import static org.junit.Assert.assertTrue
-
 /**
  * Assemble tests for customArtifactDep.
  */
@@ -33,11 +38,11 @@ class CustomArtifactDepTest {
     static public GradleTestProject project = GradleTestProject.builder()
             .fromTestProject("customArtifactDep")
             .create()
-    static Map<String, SubProjectData> models
+    static Map<String, AndroidProject> models
 
     @BeforeClass
     static void setUp() {
-        models = project.getMultiModel();
+        models = project.getAllModels();
     }
 
     @AfterClass
@@ -48,11 +53,10 @@ class CustomArtifactDepTest {
 
     @Test
     void testModel() {
-        SubProjectData appModelData = models.get(":app")
-        assertNotNull("Module app null-check", appModelData)
-        AndroidProject model = appModelData.model
+        AndroidProject appModel = models.get(":app")
+        assertNotNull("Module app null-check", appModel)
 
-        Collection<Variant> variants = model.getVariants()
+        Collection<Variant> variants = appModel.getVariants()
         assertEquals("Variant count", 2, variants.size())
 
         Variant variant = ModelHelper.getVariant(variants, "release")

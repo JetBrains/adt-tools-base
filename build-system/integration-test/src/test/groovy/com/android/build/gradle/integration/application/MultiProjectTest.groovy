@@ -15,13 +15,20 @@
  */
 
 package com.android.build.gradle.integration.application
-
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.GradleTestProject.SubProjectData
 import com.android.build.gradle.integration.common.utils.ModelHelper
-import com.android.builder.model.*
-import org.junit.*
+import com.android.builder.model.AndroidArtifact
+import com.android.builder.model.AndroidProject
+import com.android.builder.model.Dependencies
+import com.android.builder.model.JavaLibrary
+import com.android.builder.model.Variant
+import org.junit.AfterClass
+import org.junit.BeforeClass
+import org.junit.ClassRule
+import org.junit.Test
 
+import static org.junit.Assert.assertEquals
+import static org.junit.Assert.assertNotNull
 /**
  * Assemble tests for multiproject.
  */
@@ -30,11 +37,11 @@ class MultiProjectTest {
     static public GradleTestProject project = GradleTestProject.builder()
             .fromSample("multiproject")
             .create()
-    static Map<String, SubProjectData> models
+    static Map<String, AndroidProject> models
 
     @BeforeClass
     static void setUp() {
-        models = project.getMultiModel();
+        models = project.getAllModels();
     }
 
     @AfterClass
@@ -46,30 +53,29 @@ class MultiProjectTest {
     @Test
     void testModel() {
 
-        SubProjectData baseLibModelData = models.get(":baseLibrary");
-        Assert.assertNotNull("Module app null-check", baseLibModelData);
-        AndroidProject model = baseLibModelData.model;
+        AndroidProject baseLibModel = models.get(":baseLibrary");
+        assertNotNull("Module app null-check", baseLibModel);
 
-        Collection<Variant> variants = model.getVariants();
-        Assert.assertEquals("Variant count", 2, variants.size());
+        Collection<Variant> variants = baseLibModel.getVariants();
+        assertEquals("Variant count", 2, variants.size());
 
         Variant variant = ModelHelper.getVariant(variants, "release");
-        Assert.assertNotNull("release variant null-check", variant);
+        assertNotNull("release variant null-check", variant);
 
         AndroidArtifact mainInfo = variant.getMainArtifact();
-        Assert.assertNotNull("Main Artifact null-check", mainInfo);
+        assertNotNull("Main Artifact null-check", mainInfo);
 
         Dependencies dependencies = mainInfo.getDependencies();
-        Assert.assertNotNull("Dependencies null-check", dependencies);
+        assertNotNull("Dependencies null-check", dependencies);
 
         Collection<String> projects = dependencies.getProjects();
-        Assert.assertNotNull("project dep list null-check", projects);
-        Assert.assertEquals("project dep count", 1, projects.size());
-        Assert.assertEquals("dep on :util check", ":util", projects.iterator().next());
+        assertNotNull("project dep list null-check", projects);
+        assertEquals("project dep count", 1, projects.size());
+        assertEquals("dep on :util check", ":util", projects.iterator().next());
 
         Collection<JavaLibrary> javaLibraries = dependencies.getJavaLibraries();
-        Assert.assertNotNull("jar dep list null-check", javaLibraries);
+        assertNotNull("jar dep list null-check", javaLibraries);
         // TODO these are jars coming from ':util' They shouldn't be there.
-        Assert.assertEquals("jar dep count", 2, javaLibraries.size());
+        assertEquals("jar dep count", 2, javaLibraries.size());
     }
 }

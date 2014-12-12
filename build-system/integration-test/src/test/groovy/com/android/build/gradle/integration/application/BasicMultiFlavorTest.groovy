@@ -14,10 +14,6 @@
  * limitations under the License.
  */
 
-
-
-
-
 package com.android.build.gradle.integration.application
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
@@ -33,7 +29,7 @@ import static com.android.builder.model.AndroidProject.ARTIFACT_ANDROID_TEST
 /**
  * Assemble tests for basicMultiFlavors
  */
-class BasicMultiFlavors {
+class BasicMultiFlavorTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
             .fromTestProject("basicMultiFlavors")
@@ -43,7 +39,7 @@ class BasicMultiFlavors {
 
     @BeforeClass
     static void setUp() {
-        model = project.getModel()
+        model = project.getSingleModel()
     }
 
     @AfterClass
