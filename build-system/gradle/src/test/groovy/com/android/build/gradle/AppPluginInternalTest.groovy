@@ -17,7 +17,6 @@
 package com.android.build.gradle
 
 import com.android.build.gradle.internal.BadPluginException
-import com.android.build.gradle.internal.LoggerWrapper
 import com.android.build.gradle.internal.test.BaseTest
 import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.builder.core.BuilderConstants
@@ -31,7 +30,8 @@ import org.gradle.api.artifacts.ModuleVersionIdentifier
 import org.gradle.api.internal.artifacts.DefaultModuleVersionIdentifier
 import org.gradle.testfixtures.ProjectBuilder
 
-import java.util.logging.Logger
+import static com.android.build.gradle.DslTestUtil.DEFAULT_VARIANTS
+import static com.android.build.gradle.DslTestUtil.countVariants
 
 /**
  * Tests for the internal workings of the app plugin ("android")
@@ -64,7 +64,7 @@ public class AppPluginInternalTest extends BaseTest {
 
 
         List<BaseVariantData> variants = plugin.variantDataList
-        assertEquals(3, variants.size()) // includes the test variant(s)
+        assertEquals(DEFAULT_VARIANTS.size(), variants.size()) // includes the test variant(s)
 
         findNamedItem(variants, "debug", "variantData")
         findNamedItem(variants, "release", "variantData")
@@ -141,7 +141,7 @@ public class AppPluginInternalTest extends BaseTest {
         assertEquals(3, plugin.variantManager.buildTypes.size())
 
         List<BaseVariantData> variants = plugin.variantDataList
-        assertEquals(4, variants.size()) // includes the test variant(s)
+        assertEquals(countVariants(appVariants: 3, unitTests: 3, androidTests: 1), variants.size())
 
         String[] variantNames = [
                 "debug", "release", "staging"]
@@ -180,7 +180,7 @@ public class AppPluginInternalTest extends BaseTest {
         assertEquals(2, plugin.variantManager.productFlavors.size())
 
         List<BaseVariantData> variants = plugin.variantDataList
-        assertEquals(6, variants.size()) // includes the test variant(s)
+        assertEquals(countVariants(appVariants: 4, unitTests: 4, androidTests: 2), variants.size())
 
         String[] variantNames = [
                 "flavor1Debug", "flavor1Release", "flavor1DebugAndroidTest",
@@ -229,7 +229,7 @@ public class AppPluginInternalTest extends BaseTest {
         assertEquals(5, plugin.variantManager.productFlavors.size())
 
         List<BaseVariantData> variants = plugin.variantDataList
-        assertEquals(18, variants.size())   // includes the test variant(s)
+        assertEquals(countVariants(appVariants: 12, unitTests: 12, androidTests: 6), variants.size())
 
         String[] variantNames = [
                 "f1FaDebug",
@@ -318,7 +318,7 @@ public class AppPluginInternalTest extends BaseTest {
         plugin.createAndroidTasks(true /*force*/)
 
         List<BaseVariantData> variants = plugin.variantDataList
-        assertEquals(8, variants.size())   // includes the test variant(s)
+        assertEquals(countVariants(appVariants: 6, unitTests: 6, androidTests: 2), variants.size())
 
         BaseVariantData variant
         SigningConfig signingConfig
