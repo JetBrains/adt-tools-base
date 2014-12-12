@@ -9,6 +9,6 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="groovy" level="project" />
     <orderEntry type="module" module-name="gradle" />
+    <orderEntry type="library" name="org.jacoco" level="project" />
   </component>
 </module>
-
