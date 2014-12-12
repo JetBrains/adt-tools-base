@@ -185,10 +185,12 @@ public abstract class BaseExtension {
         }
     }
 
-    protected static void createConfiguration(
+    protected void createConfiguration(
             @NonNull ConfigurationContainer configurations,
             @NonNull String configurationName,
             @NonNull String configurationDescription) {
+        logger.info("Creating configuration ${configurationName}.")
+
         Configuration configuration = configurations.findByName(configurationName)
         if (configuration == null) {
             configuration = configurations.create(configurationName)

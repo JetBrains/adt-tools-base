@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.android.build.gradle
 import com.android.annotations.NonNull
 import com.android.build.gradle.api.ApkVariant
@@ -25,6 +26,10 @@ import com.android.build.gradle.internal.test.BaseTest
 import org.gradle.api.JavaVersion
 import org.gradle.api.Project
 import org.gradle.testfixtures.ProjectBuilder
+
+import static com.android.build.gradle.DslTestUtil.DEFAULT_VARIANTS
+import static com.android.build.gradle.DslTestUtil.countVariants
+
 /**
  * Tests for the public DSL of the App plugin ("android")
  */
@@ -48,7 +53,7 @@ public class AppPluginDslTest extends BaseTest {
         AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
 
         plugin.createAndroidTasks(false)
-        assertEquals(3, plugin.variantDataList.size())
+        assertEquals(DEFAULT_VARIANTS.size(), plugin.variantDataList.size())
 
         // we can now call this since the variants/tasks have been created
         Set<ApplicationVariant> variants = project.android.applicationVariants
@@ -77,7 +82,7 @@ public class AppPluginDslTest extends BaseTest {
         AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
 
         plugin.createAndroidTasks(false)
-        assertEquals(3, plugin.variantDataList.size())
+        assertEquals(DEFAULT_VARIANTS.size(), plugin.variantDataList.size())
 
         // we can now call this since the variants/tasks have been created
         Set<ApplicationVariant> variants = project.android.applicationVariants
@@ -103,7 +108,7 @@ public class AppPluginDslTest extends BaseTest {
         AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
 
         plugin.createAndroidTasks(false)
-        assertEquals(3, plugin.variantDataList.size())
+        assertEquals(DEFAULT_VARIANTS.size(), plugin.variantDataList.size())
 
         // we can now call this since the variants/tasks have been created
         Set<ApplicationVariant> variants = project.android.applicationVariants
@@ -157,7 +162,9 @@ public class AppPluginDslTest extends BaseTest {
         AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
 
         plugin.createAndroidTasks(false)
-        assertEquals(4, plugin.variantDataList.size())
+        assertEquals(
+                countVariants(appVariants: 3, unitTest: 3, androidTests: 1),
+                plugin.variantDataList.size())
 
         // we can now call this since the variants/tasks have been created
 
@@ -196,7 +203,9 @@ public class AppPluginDslTest extends BaseTest {
         AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
 
         plugin.createAndroidTasks(false)
-        assertEquals(6, plugin.variantDataList.size())
+        assertEquals(
+                countVariants(appVariants: 4, unitTest: 4, androidTests: 2),
+                plugin.variantDataList.size())
 
         // we can now call this since the variants/tasks have been created
 
@@ -248,7 +257,9 @@ public class AppPluginDslTest extends BaseTest {
         AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
 
         plugin.createAndroidTasks(false)
-        assertEquals(18, plugin.variantDataList.size())
+        assertEquals(
+                countVariants(appVariants: 12, unitTest: 12, androidTests: 6),
+                plugin.variantDataList.size())
 
         // we can now call this since the variants/tasks have been created
 
@@ -312,7 +323,7 @@ public class AppPluginDslTest extends BaseTest {
         AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
 
         plugin.createAndroidTasks(false)
-        assertEquals(3, plugin.variantDataList.size())
+        assertEquals(DEFAULT_VARIANTS.size(), plugin.variantDataList.size())
 
         // we can now call this since the variants/tasks have been created
 

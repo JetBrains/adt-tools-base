@@ -40,6 +40,7 @@ import com.android.build.gradle.tasks.NdkCompile;
 import com.android.build.gradle.tasks.ProcessAndroidResources;
 import com.android.build.gradle.tasks.RenderscriptCompile;
 import com.android.builder.model.SourceProvider;
+import com.google.common.base.Objects;
 import com.google.common.collect.Lists;
 
 import org.gradle.api.Task;
@@ -341,5 +342,12 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
         }
 
         return names;
+    }
+
+    @Override
+    public String toString() {
+        return Objects.toStringHelper(this)
+                .addValue(variantConfiguration.getFullName())
+                .toString();
     }
 }

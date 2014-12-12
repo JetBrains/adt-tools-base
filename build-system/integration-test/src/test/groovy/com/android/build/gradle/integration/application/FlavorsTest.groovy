@@ -26,7 +26,7 @@ import com.android.builder.model.*
 import org.junit.*
 import org.junit.experimental.categories.Category
 
-import static com.android.builder.core.BuilderConstants.ANDROID_TEST
+import static com.android.builder.core.VariantConfiguration.Type.ANDROID_TEST;
 import static com.android.builder.model.AndroidProject.ARTIFACT_ANDROID_TEST
 
 import static org.junit.Assert.assertEquals
@@ -76,7 +76,7 @@ class FlavorsTest {
         assertNotNull("InstrumentTest source Providers null-check", testSourceProviderContainer)
 
         new SourceProviderHelper(model.getName(), projectDir,
-                ANDROID_TEST, testSourceProviderContainer.getSourceProvider())
+                ANDROID_TEST.prefix, testSourceProviderContainer.getSourceProvider())
                 .test()
 
         Collection<BuildTypeContainer> buildTypes = model.getBuildTypes()

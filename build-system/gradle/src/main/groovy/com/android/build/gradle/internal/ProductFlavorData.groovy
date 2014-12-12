@@ -20,6 +20,8 @@ import com.android.annotations.NonNull
 import com.android.build.gradle.internal.api.DefaultAndroidSourceSet
 import com.android.builder.core.BuilderConstants
 import com.android.builder.core.DefaultProductFlavor
+import com.android.builder.core.VariantConfiguration
+import groovy.transform.CompileStatic
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.artifacts.Configuration
@@ -27,6 +29,7 @@ import org.gradle.api.artifacts.Configuration
 /**
  * Class containing a ProductFlavor and associated data (sourcesets)
  */
+@CompileStatic
 public class ProductFlavorData<T extends DefaultProductFlavor> {
 
     public static class ConfigurationProviderImpl implements ConfigurationProvider {
@@ -61,22 +64,28 @@ public class ProductFlavorData<T extends DefaultProductFlavor> {
     final T productFlavor
 
     final DefaultAndroidSourceSet sourceSet
-    final DefaultAndroidSourceSet testSourceSet
+    private final DefaultAndroidSourceSet androidTestSourceSet
+    private final DefaultAndroidSourceSet unitTestSourceSet
+
     final ConfigurationProvider mainProvider
-    final ConfigurationProvider testProvider
+    private final ConfigurationProvider androidTestProvider
+    private final ConfigurationProvider unitTestProvider
 
     final Task assembleTask
 
     ProductFlavorData(
             T productFlavor,
             DefaultAndroidSourceSet sourceSet,
-            DefaultAndroidSourceSet testSourceSet,
+            DefaultAndroidSourceSet androidTestSourceSet,
+            DefaultAndroidSourceSet unitTestSourceSet,
             Project project) {
         this.productFlavor = productFlavor
         this.sourceSet = sourceSet
-        this.testSourceSet = testSourceSet
+        this.androidTestSourceSet = androidTestSourceSet
+        this.unitTestSourceSet = unitTestSourceSet
         mainProvider = new ConfigurationProviderImpl(project, sourceSet)
-        testProvider = new ConfigurationProviderImpl(project, testSourceSet)
+        androidTestProvider = new ConfigurationProviderImpl(project, androidTestSourceSet)
+        unitTestProvider = new ConfigurationProviderImpl(project, unitTestSourceSet)
 
         if (!BuilderConstants.MAIN.equals(sourceSet.name)) {
             assembleTask = project.tasks.create("assemble${sourceSet.name.capitalize()}")
@@ -87,14 +96,30 @@ public class ProductFlavorData<T extends DefaultProductFlavor> {
         }
     }
 
-    public static String getFlavoredName(ProductFlavorData[] flavorDataArray, boolean capitalized) {
-        StringBuilder builder = new StringBuilder()
-        for (ProductFlavorData data : flavorDataArray) {
-            builder.append(capitalized ?
-                data.productFlavor.name.capitalize() :
-                data.productFlavor.name)
+    DefaultAndroidSourceSet getTestSourceSet(@NonNull VariantConfiguration.Type type) {
+        switch (type) {
+            case VariantConfiguration.Type.ANDROID_TEST:
+                return androidTestSourceSet;
+            case VariantConfiguration.Type.UNIT_TEST:
+                return unitTestSourceSet;
+            default:
+                throw unknownTestType(type)
         }
+    }
 
-        return builder.toString()
+    ConfigurationProvider getTestConfigurationProvider(@NonNull VariantConfiguration.Type type) {
+        switch (type) {
+            case VariantConfiguration.Type.ANDROID_TEST:
+                return androidTestProvider;
+            case VariantConfiguration.Type.UNIT_TEST:
+                return unitTestProvider;
+            default:
+                throw unknownTestType(type)
+        }
+    }
+
+    private static Throwable unknownTestType(VariantConfiguration.Type type) {
+        throw new IllegalArgumentException(
+                String.format("Unknown test variant type %s", type));
     }
 }

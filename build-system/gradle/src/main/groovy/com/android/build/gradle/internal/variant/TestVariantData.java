@@ -56,11 +56,22 @@ public class TestVariantData extends ApkVariantData {
     @Override
     @NonNull
     public String getDescription() {
+        String prefix;
+        switch (getVariantConfiguration().getType()) {
+            case ANDROID_TEST:
+                prefix = "Android (on device) tests";
+                break;
+            case UNIT_TEST:
+                prefix = "Unit tests";
+                break;
+            default:
+                throw new IllegalStateException("Unknown test variant type.");
+        }
         if (getVariantConfiguration().hasFlavors()) {
-            return String.format("Test build for the %s%s build",
+            return String.format("%s for the %s%s build", prefix,
                     getCapitalizedFlavorName(), getCapitalizedBuildTypeName());
         } else {
-            return String.format("Test build for the %s build",
+            return String.format("%s for the %s build", prefix,
                     getCapitalizedBuildTypeName());
         }
     }

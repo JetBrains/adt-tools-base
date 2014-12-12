@@ -19,36 +19,27 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.BasePlugin;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
+import com.android.builder.core.VariantConfiguration;
+import com.google.common.collect.Maps;
 
 import java.util.Collections;
+import java.util.Map;
 import java.util.Set;
 
 /**
  * Data about a variant that produce an application APK
  */
 public class ApplicationVariantData extends ApkVariantData implements TestedVariantData {
-
-    @Nullable
-    private TestVariantData testVariantData = null;
-
+    private final Map<VariantConfiguration.Type, TestVariantData> testVariants;
     private Set<String> compatibleScreens = null;
 
     public ApplicationVariantData(
             @NonNull BasePlugin basePlugin,
             @NonNull GradleVariantConfiguration config) {
         super(basePlugin, config);
+        testVariants = Maps.newEnumMap(VariantConfiguration.Type.class);
     }
 
-    @Override
-    public void setTestVariantData(@Nullable TestVariantData testVariantData) {
-        this.testVariantData = testVariantData;
-    }
-
-    @Override
-    @Nullable
-    public TestVariantData getTestVariantData() {
-        return testVariantData;
-    }
 
     public void setCompatibleScreens(Set<String> compatibleScreens) {
         this.compatibleScreens = compatibleScreens;
@@ -61,5 +52,18 @@ public class ApplicationVariantData extends ApkVariantData implements TestedVari
         }
 
         return compatibleScreens;
+    }
+
+    @Override
+    public void setTestVariantData(
+            @NonNull TestVariantData testVariantData,
+            @NonNull VariantConfiguration.Type type) {
+        testVariants.put(type, testVariantData);
+    }
+
+    @Nullable
+    @Override
+    public TestVariantData getTestVariantData(@NonNull VariantConfiguration.Type type) {
+        return testVariants.get(type);
     }
 }

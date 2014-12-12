@@ -20,6 +20,7 @@ import static com.android.builder.model.AndroidProject.ARTIFACT_ANDROID_TEST;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.ProductFlavorData;
+import com.android.builder.core.VariantConfiguration;
 import com.android.builder.model.ProductFlavor;
 import com.android.builder.model.ProductFlavorContainer;
 import com.android.builder.model.SourceProvider;
@@ -50,15 +51,17 @@ class ProductFlavorContainerImpl implements ProductFlavorContainer, Serializable
      * @return a non-null ProductFlavorContainer
      */
     @NonNull
-    static ProductFlavorContainer createPFC(
+    static ProductFlavorContainer createProductFlavorContainer(
             @NonNull ProductFlavorData productFlavorData,
             @NonNull Collection<SourceProviderContainer> sourceProviderContainers) {
 
-        List<SourceProviderContainer> clonedContainer = SourceProviderContainerImpl.cloneCollection(sourceProviderContainers);
+        List<SourceProviderContainer> clonedContainer =
+                SourceProviderContainerImpl.cloneCollection(sourceProviderContainers);
 
         // instrument test Source Provider
         SourceProviderContainer testASP = SourceProviderContainerImpl.create(
-                ARTIFACT_ANDROID_TEST, productFlavorData.getTestSourceSet());
+                ARTIFACT_ANDROID_TEST,
+                productFlavorData.getTestSourceSet(VariantConfiguration.Type.ANDROID_TEST));
 
         clonedContainer.add(testASP);
 
