@@ -37,7 +37,6 @@ import org.xml.sax.SAXException;
 import java.io.IOException;
 
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.Source;
 
 /**
  * Tests for the {@link com.android.manifmerger.PlaceholderHandler}
@@ -161,6 +160,6 @@ public class PlaceholderHandlerTest extends TestCase {
         // verify the error was recorded.
         verify(mBuilder).addMessage(
                 any(XmlLoader.SourceLocation.class), anyInt(), anyInt(),
-                eq(MergingReport.Record.Severity.ERROR), anyString());
+                eq(MergingReport.Record.Severity.INFO), anyString());
     }
 }
