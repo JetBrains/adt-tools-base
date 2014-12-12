@@ -42,7 +42,7 @@ class VariantDependencyTest {
     private static ApkInfoParser apkInfoParser
 
     @BeforeClass
-    public static void setup() {
+    public static void setUp() {
         new HelloWorldApp().writeSources(project.testDir)
         project.getBuildFile() << """
             apply plugin: 'com.android.application'

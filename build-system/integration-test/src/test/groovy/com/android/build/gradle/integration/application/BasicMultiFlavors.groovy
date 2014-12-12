@@ -42,7 +42,7 @@ class BasicMultiFlavors {
     static public AndroidProject model
 
     @BeforeClass
-    static void setup() {
+    static void setUp() {
         model = project.getModel()
     }
 

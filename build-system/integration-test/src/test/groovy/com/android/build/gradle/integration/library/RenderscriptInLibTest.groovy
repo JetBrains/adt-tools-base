@@ -32,7 +32,7 @@ class RenderscriptInLibTest {
             .create()
 
     @BeforeClass
-    static void setup() {
+    static void setUp() {
         project.execute("clean", "assembleDebug");
     }
 

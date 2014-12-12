@@ -35,7 +35,7 @@ class ExternalTestProjectTest {
     private File app2BuildFile
 
     @Before
-    public void setup() {
+    public void setUp() {
         File rootFile = project.getTestDir()
         new File(rootFile, "settings.gradle") << """
 include ':app1'
