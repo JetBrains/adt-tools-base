@@ -16,6 +16,8 @@
 
 package com.android.build.gradle.model
 
+import static com.android.builder.core.VariantConfiguration.Type.ANDROID_TEST;
+
 import com.android.annotations.Nullable
 import com.android.build.gradle.AppExtension
 import com.android.build.gradle.BaseExtension
@@ -295,7 +297,7 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
                 Task assembleTest = tasks.create("assembleTest");
                 assembleTest.setGroup(org.gradle.api.plugins.BasePlugin.BUILD_GROUP);
                 assembleTest.setDescription("Assembles all the Test applications");
-                plugin.setAssembleTest(assembleTest);
+                plugin.setAssembleAndroidTest(assembleTest);
             }
 
             binaries.withType(AndroidBinary) { DefaultAndroidBinary binary ->
@@ -312,7 +314,10 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
             binaries.withType(AndroidTestBinary) { binarySpec ->
                 def binary = binarySpec as DefaultAndroidTestBinary
                 TestVariantData testVariantData =
-                        variantManager.createTestVariantData((binary.testedBinary as DefaultAndroidBinary).variantData, plugin.signingOverride)
+                        variantManager.createTestVariantData(
+                            (binary.testedBinary as DefaultAndroidBinary).variantData,
+                            plugin.signingOverride as com.android.builder.model.SigningConfig,
+                            ANDROID_TEST)
                 variantManager.getVariantDataList().add(testVariantData);
                 variantManager.createTasksForVariantData(tasks, testVariantData)
             }
@@ -350,8 +355,8 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
                 AndroidSourceSet androidSource = (
                         name.equals(BuilderConstants.MAIN)
                                 ? plugin.mainSourceSet
-                                : (name.equals(BuilderConstants.ANDROID_TEST)
-                                        ? plugin.testSourceSet
+                                : (name.equals(ANDROID_TEST.prefix)
+                                        ? plugin.androidTestSourceSet
                                         : findAndroidSourceSet(variantManager, name)))
 
                 if (androidSource == null) {
@@ -389,11 +394,11 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
                 return buildTypeData.getSourceSet();
             }
 
-            boolean isTest = name.startsWith(BuilderConstants.ANDROID_TEST)
-            name = name.replaceFirst(BuilderConstants.ANDROID_TEST, "")
+            boolean isTest = name.startsWith(ANDROID_TEST.prefix)
+            name = name.replaceFirst(ANDROID_TEST.prefix, "")
             ProductFlavorData productFlavorData = variantManager.getProductFlavors().get(name)
             if (productFlavorData != null) {
-                return isTest ? productFlavorData.getTestSourceSet() : productFlavorData.getSourceSet();
+                return isTest ? productFlavorData.getTestSourceSet(ANDROID_TEST) : productFlavorData.getSourceSet();
             }
             return null;
         }
