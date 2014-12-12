@@ -14,9 +14,11 @@
  * limitations under the License.
  */
 
-
-
 package com.android.build.gradle.integration.application
+
+import com.android.annotations.NonNull
+import com.android.annotations.Nullable
+import com.android.build.FilterData
 import com.android.build.OutputFile
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.utils.ModelHelper
@@ -36,16 +38,15 @@ import static org.junit.Assert.assertNotNull
 import static org.junit.Assert.assertTrue
 
 /**
- * Assemble tests for class densitySplitInL
- .
+ * test driver for combined density and language pure splits test.
  */
-class DensitySplitInLTest {
+class CombinedDensityAndLanguageTest {
 
     static AndroidProject model;
 
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("densitySplitInL")
+            .fromSample("combinedDensityAndLanguagePureSplits")
             .create()
 
     @BeforeClass
@@ -60,7 +61,9 @@ class DensitySplitInLTest {
     }
 
     @Test
-    void "check split outputs"() throws Exception {
+    public void "test combined density and language pure splits"() throws Exception {
+
+        // Load the custom model for the project
         Collection<Variant> variants = model.getVariants();
         assertEquals("Variant Count", 2 , variants.size());
 
@@ -76,27 +79,32 @@ class DensitySplitInLTest {
 
         // build a set of expected outputs
         Set<String> expected = Sets.newHashSetWithExpectedSize(5);
-        expected.add(null);
         expected.add("mdpi");
         expected.add("hdpi");
         expected.add("xhdpi");
         expected.add("xxhdpi");
+        expected.add("en");
+        expected.add("fr");
 
         assertEquals(1, debugOutputs.size());
         AndroidArtifactOutput output = debugOutputs.iterator().next();
-        assertEquals(5, output.getOutputs().size());
+        assertEquals(7, output.getOutputs().size());
         for (OutputFile outputFile : output.getOutputs()) {
-            String densityFilter = ModelHelper.getFilter(outputFile, OutputFile.DENSITY);
-            assertEquals(densityFilter == null ? OutputFile.MAIN : OutputFile.SPLIT,
+            String filter = ModelHelper.getFilter(outputFile, OutputFile.DENSITY);
+            if (filter == null) {
+                filter = ModelHelper.getFilter(outputFile, OutputFile.LANGUAGE);
+            }
+            assertEquals(filter == null  ? OutputFile.MAIN : OutputFile.SPLIT,
                     outputFile.getOutputType());
 
             // with pure splits, all split have the same version code.
             assertEquals(12, output.getVersionCode());
-            expected.remove(densityFilter);
+            if (filter != null) {
+                expected.remove(filter);
+            }
         }
 
         // this checks we didn't miss any expected output.
         assertTrue(expected.isEmpty());
     }
-
 }

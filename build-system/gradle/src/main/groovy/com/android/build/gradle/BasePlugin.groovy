@@ -207,6 +207,7 @@ import static java.io.File.separator
  * Base class for all Android plugins
  */
 public abstract class BasePlugin {
+
     public final static String DIR_BUNDLES = "bundles";
 
     private static final String GRADLE_MIN_VERSION = "2.2"
@@ -222,6 +223,15 @@ public abstract class BasePlugin {
 
     public static final String FILE_JACOCO_AGENT = 'jacocoagent.jar'
     public static final String DEFAULT_PROGUARD_CONFIG_FILE = 'proguard-android.txt'
+
+
+    private static final Predicate<? super Object> NON_NULL_ONLY = new Predicate<? super Object>() {
+
+        @Override
+        boolean apply(Object o) {
+            return o != null;
+        }
+    }
 
     protected Instantiator instantiator
     private ToolingModelBuilderRegistry registry
@@ -1102,14 +1112,9 @@ public abstract class BasePlugin {
             if (variantData.getSplitHandlingPolicy() ==
                     BaseVariantData.SplitHandlingPolicy.RELEASE_21_AND_AFTER_POLICY) {
 
-                Set<String> filters = Sets.filter(getExtension().getSplits().getDensityFilters(),
-                        new Predicate<? super String>() {
-
-                            @Override
-                            boolean apply(Object o) {
-                                return o != null;
-                            }
-                        });
+                Set<String> filters = new HashSet<String>(getExtension().getSplits().getDensityFilters());
+                filters.addAll(getExtension().getSplits().getLanguageFilters());
+                filters = removeAllNullEntries(filters);
                 processResources.splits = filters;
             }
 
@@ -1202,18 +1207,12 @@ public abstract class BasePlugin {
                 BaseVariantData.SplitHandlingPolicy.RELEASE_21_AND_AFTER_POLICY;
 
         VariantConfiguration config = variantData.variantConfiguration
-        Set<String> densityFilters = new HashSet<String>();
-        for (String density : getExtension().getSplits().getDensityFilters()) {
-            if (density != null) {
-                densityFilters.add(density);
-            }
-        }
-        Set<String> abiFilters = new HashSet<String>();
-        for (String abi : getExtension().getSplits().getAbiFilters()) {
-            if (abi != null) {
-                abiFilters.add(abi);
-            }
-        }
+        Set<String> densityFilters =
+                removeAllNullEntries(getExtension().getSplits().getDensityFilters());
+        Set<String> abiFilters = removeAllNullEntries(getExtension().getSplits().getAbiFilters());
+        Set<String> languageFilters =
+                removeAllNullEntries(getExtension().getSplits().getLanguageFilters());
+
         def outputs = variantData.outputs;
         if (outputs.size() != 1) {
             throw new RuntimeException("In release 21 and later, there can be only one main APK, " +
@@ -1226,7 +1225,8 @@ public abstract class BasePlugin {
                         PackageSplitRes);
         variantOutputData.packageSplitResourcesTask.inputDirectory =
                 new File("$project.buildDir/${FD_INTERMEDIATES}/res")
-        variantOutputData.packageSplitResourcesTask.splits = densityFilters
+        variantOutputData.packageSplitResourcesTask.densitySplits = densityFilters
+        variantOutputData.packageSplitResourcesTask.languageSplits = languageFilters
         variantOutputData.packageSplitResourcesTask.outputBaseName = config.baseName
         variantOutputData.packageSplitResourcesTask.signingConfig =
                 (SigningConfig) config.signingConfig
@@ -1246,9 +1246,10 @@ public abstract class BasePlugin {
         }
         zipAlign.outputDirectory = new File("$project.buildDir/outputs/apk")
         zipAlign.inputDirectory = variantOutputData.packageSplitResourcesTask.outputDirectory
-        zipAlign.outputBaseName = config.baseName;
-        zipAlign.abiFilters = abiFilters;
-        zipAlign.densityFilters = densityFilters;
+        zipAlign.outputBaseName = config.baseName
+        zipAlign.abiFilters = abiFilters
+        zipAlign.languageFilters = languageFilters
+        zipAlign.densityFilters = densityFilters
         ((ApkVariantOutputData) variantOutputData).splitZipAlign = zipAlign
         zipAlign.dependsOn(variantOutputData.packageSplitResourcesTask)
     }
@@ -3761,5 +3762,16 @@ public abstract class BasePlugin {
                 main.dependsOn dependency
             }
         }
+    }
+
+
+    private static <T> Set<T> removeAllNullEntries(Set<T> input) {
+        HashSet<T> output = new HashSet<T>();
+        for (T element : input) {
+           if (NON_NULL_ONLY.apply(element)) {
+               output.add(element);
+           }
+        }
+        return output;
     }
 }
