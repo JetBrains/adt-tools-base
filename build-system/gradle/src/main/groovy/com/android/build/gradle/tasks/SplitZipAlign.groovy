@@ -22,6 +22,7 @@ import com.android.build.FilterData
 import com.android.build.FilterDataImpl
 import com.android.build.OutputFile
 import com.android.build.gradle.api.ApkOutputFile
+import com.google.common.base.Optional
 import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Callables
 import org.gradle.api.DefaultTask
@@ -51,6 +52,9 @@ class SplitZipAlign extends DefaultTask {
     @Input
     Set<String> abiFilters;
 
+    @Input
+    Set<String> languageFilters;
+
     @OutputDirectory
     File outputDirectory;
 
@@ -64,12 +68,50 @@ class SplitZipAlign extends DefaultTask {
 
         if (mOutputFiles == null) {
             ImmutableList.Builder<ApkOutputFile> builder = ImmutableList.builder();
-            processFilters(densityFilters, OutputFile.FilterType.DENSITY, builder);
+            processDensityFilters(densityFilters, builder);
             processFilters(abiFilters, OutputFile.FilterType.ABI, builder);
+            processFilters(languageFilters, OutputFile.FilterType.LANGUAGE, builder);
             mOutputFiles = builder.build();
         }
         return mOutputFiles;
     }
+
+    /**
+     * Process density filters which can have some suffix appended after the filter identifier.
+     */
+    private void processDensityFilters(Set<String> filters,
+            ImmutableList.Builder<ApkOutputFile> builder) {
+        if (filters != null) {
+            for (String filter : filters) {
+                String fileName = "${project.archivesBaseName}-${outputBaseName}_${filter}"
+                Optional<File> outputFile = findFileStartingWithName(outputDirectory, fileName);
+                if (outputFile.isPresent()) {
+                    List<FilterData> filtersData = ImmutableList.of(
+                            FilterData.Builder.build(OutputFile.FilterType.DENSITY.name(), filter))
+                    builder.add(new ApkOutputFile(
+                            OutputFile.OutputType.SPLIT,
+                            filtersData,
+                            Callables.returning(outputFile.get())));
+                }
+            }
+        }
+    }
+
+    /**
+     * Returns a file starting with the provided file name prefix.
+     * @param directory a directory where the file could be located.
+     * @param name the file prefix.
+     * @return the file if found of {@link Optional#absent()} if not.
+     */
+    private static Optional<File> findFileStartingWithName(File directory, String name) {
+        for (File file : directory.listFiles()) {
+            if (file.getName().startsWith(name)) {
+                return Optional.of(file);
+            }
+        }
+        return Optional.absent();
+    }
+
 
 
     private void processFilters(Set<String> filters, OutputFile.FilterType filterType,
@@ -78,14 +120,12 @@ class SplitZipAlign extends DefaultTask {
             for (String filter : filters) {
                 String fileName = "${project.archivesBaseName}-${outputBaseName}_${filter}.apk"
                 File outputFile = new File(outputDirectory, fileName);
-                if (outputFile.exists()) {
-                    List<FilterData> filtersData = ImmutableList.of(
-                            FilterData.Builder.build(filterType.name(), filter))
-                    builder.add(new ApkOutputFile(
-                            OutputFile.OutputType.SPLIT,
-                            filtersData,
-                            Callables.returning(outputFile)));
-                }
+                List<FilterData> filtersData = ImmutableList.of(
+                        FilterData.Builder.build(filterType.name(), filter))
+                builder.add(new ApkOutputFile(
+                        OutputFile.OutputType.SPLIT,
+                        filtersData,
+                        Callables.returning(outputFile)));
             }
         }
     }
