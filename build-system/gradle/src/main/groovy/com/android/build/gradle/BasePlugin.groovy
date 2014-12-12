@@ -1748,21 +1748,20 @@ public abstract class BasePlugin {
             JavaCompile testCompileTask = variantData.javaCompileTask
             runTestsTask.testClassesDir = testCompileTask.destinationDir
 
-            runTestsTask.classpath = project.files(
-                    testCompileTask.classpath,
-                    testCompileTask.outputs.files)
+            conventionMapping(runTestsTask).map("classpath") {
+                ensureTargetSetup()
+
+                project.files(
+                        testCompileTask.classpath,
+                        testCompileTask.outputs.files,
+                        androidBuilder.bootClasspath.findAll { it.name != "android.jar"},
+                        createMockableJar.outputFile)
+            }
 
             // See https://issues.gradle.org/browse/GRADLE-1682
             // TODO: Remove
             runTestsTask.scanForTestClasses = false
             runTestsTask.include "**/*Test.class"
-
-            // TODO: Use mockable JAR.
-            runTestsTask.doFirst {
-                runTestsTask.classpath = project.files(
-                        androidBuilder.bootClasspath,
-                        runTestsTask.classpath)
-            }
 
             topLevelTest.dependsOn runTestsTask
         }
