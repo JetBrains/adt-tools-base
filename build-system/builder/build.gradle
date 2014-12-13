@@ -33,6 +33,10 @@ dependencies {
     testCompile project(':base:sdklib').sourceSets.test.output
 }
 
+test {
+    maxParallelForks = Runtime.runtime.availableProcessors() / 2
+}
+
 group = 'com.android.tools.build'
 archivesBaseName = 'builder'
 version = rootProject.ext.buildVersion
