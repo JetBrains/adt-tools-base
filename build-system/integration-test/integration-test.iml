@@ -9,6 +9,16 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="groovy" level="project" />
     <orderEntry type="module" module-name="gradle" />
+    <orderEntry type="module-library">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../../../prebuilts/tools/common/m2/repository/com/google/truth/truth/0.24/truth-0.24.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES>
+          <root url="jar://$MODULE_DIR$/../../../../prebuilts/tools/common/m2/repository/com/google/truth/truth/0.24/truth-0.24-sources.jar!/" />
+        </SOURCES>
+      </library>
+    </orderEntry>
   </component>
 </module>
-
