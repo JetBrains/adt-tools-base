@@ -27,6 +27,7 @@ import com.android.builder.model.JavaCompileOptions;
 import com.android.builder.model.LintOptions;
 import com.android.builder.model.ProductFlavorContainer;
 import com.android.builder.model.SigningConfig;
+import com.android.builder.model.SyncIssue;
 import com.android.builder.model.Variant;
 import com.google.common.collect.Lists;
 
@@ -59,6 +60,8 @@ class DefaultAndroidProject implements AndroidProject, Serializable {
     @NonNull
     private final Collection<String> unresolvedDependencies;
     @NonNull
+    private final Collection<SyncIssue> syncIssues;
+    @NonNull
     private final JavaCompileOptions javaCompileOptions;
     @NonNull
     private final LintOptions lintOptions;
@@ -74,20 +77,22 @@ class DefaultAndroidProject implements AndroidProject, Serializable {
 
     private ProductFlavorContainer defaultConfig;
 
-    DefaultAndroidProject(@NonNull String modelVersion,
-                          @NonNull String name,
-                          @NonNull String compileTarget,
-                          @NonNull Collection<String> bootClasspath,
-                          @NonNull Collection<File> frameworkSource,
-                          @NonNull Collection<SigningConfig> signingConfigs,
-                          @NonNull AaptOptions aaptOptions,
-                          @NonNull Collection<ArtifactMetaData> extraArtifacts,
-                          @NonNull Collection<String> unresolvedDependencies,
-                          @NonNull CompileOptions compileOptions,
-                          @NonNull LintOptions lintOptions,
-                          @NonNull File buildFolder,
-                          @Nullable String resourcePrefix,
-                          boolean isLibrary) {
+    DefaultAndroidProject(
+            @NonNull String modelVersion,
+            @NonNull String name,
+            @NonNull String compileTarget,
+            @NonNull Collection<String> bootClasspath,
+            @NonNull Collection<File> frameworkSource,
+            @NonNull Collection<SigningConfig> signingConfigs,
+            @NonNull AaptOptions aaptOptions,
+            @NonNull Collection<ArtifactMetaData> extraArtifacts,
+            @NonNull Collection<String> unresolvedDependencies,
+            @NonNull Collection<SyncIssue> syncIssues,
+            @NonNull CompileOptions compileOptions,
+            @NonNull LintOptions lintOptions,
+            @NonNull File buildFolder,
+            @Nullable String resourcePrefix,
+            boolean isLibrary) {
         this.modelVersion = modelVersion;
         this.name = name;
         this.compileTarget = compileTarget;
@@ -97,6 +102,7 @@ class DefaultAndroidProject implements AndroidProject, Serializable {
         this.aaptOptions = aaptOptions;
         this.extraArtifacts = extraArtifacts;
         this.unresolvedDependencies = unresolvedDependencies;
+        this.syncIssues = syncIssues;
         javaCompileOptions = new DefaultJavaCompileOptions(compileOptions);
         this.lintOptions = lintOptions;
         this.buildFolder = buildFolder;
@@ -216,6 +222,12 @@ class DefaultAndroidProject implements AndroidProject, Serializable {
     @NonNull
     public Collection<String> getUnresolvedDependencies() {
         return unresolvedDependencies;
+    }
+
+    @NonNull
+    @Override
+    public Collection<SyncIssue> getSyncIssues() {
+        return syncIssues;
     }
 
     @Override

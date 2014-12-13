@@ -56,8 +56,10 @@ class AndroidManifestInTestTest {
     void lint() {
         project.execute("lint")
     }
+
+    @Test
     public void testUserProvidedTestAndroidManifest() throws Exception {
-        File testApk = project.getApk("debug", "test", "unaligned")
+        File testApk = project.getApk("debug", "androidTest", "unaligned")
 
         File aapt = SdkHelper.getAapt(FullRevision.parseRevision("19.1.0"));
 

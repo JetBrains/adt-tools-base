@@ -108,6 +108,7 @@ public class ModelBuilder implements ToolingModelBuilder {
                 aaptOptions,
                 artifactMetaDataList,
                 basePlugin.unresolvedDependencies,
+                Lists.newArrayList(basePlugin.syncIssues.values()),
                 basePlugin.extension.compileOptions,
                 lintOptions,
                 project.getBuildDir(),

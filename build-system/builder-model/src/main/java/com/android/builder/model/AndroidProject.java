@@ -170,9 +170,19 @@ public interface AndroidProject {
      * com.google.guava:guava:15.0.2
      *
      * @return the dependencies that were not successfully resolved.
+     * @deprecated use {@link #getSyncIssues()}
      */
+    @Deprecated
     @NonNull
     Collection<String> getUnresolvedDependencies();
+
+    /**
+     * Returns issues found during sync.  The returned list gets
+     * populated only if the system property {@link #PROPERTY_BUILD_MODEL_ONLY} has been
+     * set to {@code true}.
+     */
+    @NonNull
+    Collection<SyncIssue> getSyncIssues();
 
     /**
      * @return the compile options for Java code.

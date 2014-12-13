@@ -26,6 +26,9 @@ import org.junit.Test
 import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertNotNull
 
+/**
+ * General DSL tests
+ */
 class DslTest {
 
     @Rule
