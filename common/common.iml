@@ -12,6 +12,6 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="library" exported="" name="guava-tools" level="project" />
     <orderEntry type="library" scope="TEST" name="JUnit3" level="project" />
+    <orderEntry type="module" module-name="android-annotations" exported="" />
   </component>
 </module>
-

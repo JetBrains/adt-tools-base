@@ -10,19 +10,12 @@ buildscript {
 apply plugin: 'java'
 apply plugin: 'sdk-java-lib'
 
-dependencies {
-    compile project(':base:annotations')
-    compile 'com.google.guava:guava:17.0'
-
-    testCompile 'junit:junit:3.8.1'
-}
-
 group = 'com.android.tools'
-archivesBaseName = 'common'
+archivesBaseName = 'annotations'
 version = rootProject.ext.baseVersion
 
-project.ext.pomName = 'Android Tools common library'
-project.ext.pomDesc = 'common library used by other Android tools libraries.'
+project.ext.pomName = 'Android Tools Annotations library'
+project.ext.pomDesc = 'annotations used throughout the Android tools libraries.'
 
 apply from: "$rootDir/buildSrc/base/publish.gradle"
 apply from: "$rootDir/buildSrc/base/bintray.gradle"
