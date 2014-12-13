@@ -10,7 +10,6 @@ buildscript {
 apply plugin: 'groovy'
 apply plugin: 'clone-artifacts'
 apply plugin: 'idea'
-apply plugin: 'jacoco'
 
 sourceSets {
     main {

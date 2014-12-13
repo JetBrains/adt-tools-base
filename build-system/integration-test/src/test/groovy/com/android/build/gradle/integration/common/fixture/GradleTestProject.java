@@ -26,7 +26,6 @@ import com.android.build.gradle.BasePlugin;
 import com.android.build.gradle.integration.common.fixture.app.AbstractAndroidTestApp;
 import com.android.build.gradle.integration.common.fixture.app.AndroidTestApp;
 import com.android.build.gradle.integration.common.fixture.app.TestSourceFile;
-import com.android.build.gradle.integration.common.utils.JacocoAgent;
 import com.android.build.gradle.integration.common.utils.SdkHelper;
 import com.android.builder.model.AndroidProject;
 import com.android.io.StreamException;
@@ -552,8 +551,7 @@ public class GradleTestProject implements TestRule {
         args.addAll(arguments);
 
         BuildLauncher launcher = connection.newBuild().forTasks(tasks)
-                .withArguments(args.toArray(new String[args.size()]))
-                .setJvmArguments(JacocoAgent.getJvmArg());
+                .withArguments(args.toArray(new String[args.size()]));
         if (stdout != null) {
             launcher.setStandardOutput(stdout);
         }
