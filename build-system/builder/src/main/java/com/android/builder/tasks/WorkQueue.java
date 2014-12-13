@@ -112,7 +112,7 @@ public class WorkQueue<T> implements Runnable {
                 || (mPendingJobs.size() / mWorkThreads.size() > mGrowthTriggerRation)) {
             mLogger.verbose("Request to incrementing workforce from %1$d", mWorkThreads.size());
             if (mWorkThreads.size() >= MAX_WORKFORCE_SIZE) {
-                mLogger.verbose("Refused to allocate more threads.");
+                mLogger.verbose("Already at max workforce %1$d, denied.", MAX_WORKFORCE_SIZE);
                 return;
             }
             for (int i = 0; i < mMWorkforceIncrement; i++) {
@@ -208,6 +208,8 @@ public class WorkQueue<T> implements Runnable {
                     mQueueThreadContext.runTask(job);
                 } catch (Exception e) {
                     Logger.getAnonymousLogger().log(Level.WARNING, "Exception while processing task ", e);
+                    job.error();
+                    return;
                 }
                 // wait for the job completion.
                 job.await();

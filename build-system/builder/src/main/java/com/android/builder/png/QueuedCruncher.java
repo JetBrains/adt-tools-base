@@ -58,6 +58,7 @@ public class QueuedCruncher implements PngCruncher {
                 @NonNull String aaptLocation,
                 @NonNull ILogger logger) {
             synchronized (sLock) {
+                logger.info("QueuedCruncher is using %1$s", aaptLocation);
                 if (!sInstances.containsKey(aaptLocation)) {
                     QueuedCruncher queuedCruncher = new QueuedCruncher(aaptLocation, logger);
                     sInstances.put(aaptLocation, queuedCruncher);
@@ -94,8 +95,10 @@ public class QueuedCruncher implements PngCruncher {
                             Thread.currentThread().getName());
                     AaptProcess aaptProcess = new AaptProcess.Builder(mAaptLocation, mLogger).start();
                     assert aaptProcess != null;
+                    aaptProcess.waitForReady();
                     mAaptProcesses.put(t.getName(), aaptProcess);
                 } catch (InterruptedException e) {
+                    mLogger.error(e, "Cannot start slave process");
                     e.printStackTrace();
                 }
             }

@@ -18,22 +18,20 @@ package com.android.builder.png;
 
 import com.android.annotations.NonNull;
 import com.android.ide.common.internal.PngCruncher;
-import com.android.sdklib.mock.MockLog;
 import com.android.sdklib.repository.FullRevision;
+import com.android.utils.StdLogger;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
 
 import java.io.File;
-import java.io.IOException;
-import java.util.zip.DataFormatException;
 
 /**
  * Asynchronous version of the aapt cruncher test.
  */
 public class NinePatchAsyncAaptProcessTest extends NinePatchAaptProcessorTest {
 
-    private MockLog mLogger = new MockLog();
+    private static StdLogger sLogger = new StdLogger(StdLogger.Level.VERBOSE);
 
     public static Test suite() {
         TestSuite suite = new TestSuite();
@@ -57,15 +55,6 @@ public class NinePatchAsyncAaptProcessTest extends NinePatchAaptProcessorTest {
     }
 
     @Override
-    public void tearSuiteDown() throws IOException, DataFormatException {
-
-        super.tearSuiteDown();
-        for (String message : mLogger.getMessages()) {
-            System.out.println(message);
-        }
-    }
-
-    @Override
     protected File getAapt() {
         return super.getAapt(FullRevision.parseRevision("21"));
     }
@@ -74,6 +63,6 @@ public class NinePatchAsyncAaptProcessTest extends NinePatchAaptProcessorTest {
     @Override
     protected PngCruncher getCruncher() {
         File aapt = getAapt();
-        return QueuedCruncher.Builder.INSTANCE.newCruncher(aapt.getAbsolutePath(), mLogger);
+        return QueuedCruncher.Builder.INSTANCE.newCruncher(aapt.getAbsolutePath(), sLogger);
     }
 }

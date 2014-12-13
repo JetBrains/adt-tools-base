@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -41,7 +42,8 @@ public class AaptProcess {
 
     private final ProcessOutputFacade mProcessOutputFacade = new ProcessOutputFacade();
     private final List<String> mMessages = new ArrayList<String>();
-    private final AtomicBoolean mReady = new AtomicBoolean(true);
+    private final AtomicBoolean mReady = new AtomicBoolean(false);
+    private final BooleanLatch mReadyLatch = new BooleanLatch();
     private final OutputStreamWriter mWriter;
 
     private AaptProcess(@NonNull Process process, @NonNull ILogger iLogger)
@@ -69,7 +71,7 @@ public class AaptProcess {
             throws IOException {
 
         if (!mReady.get()) {
-            throw new RuntimeException("Crunching request received after shutdown");
+            throw new RuntimeException("AAPT process not ready to receive commands");
         }
         NotifierProcessOutput notifier =
                 new NotifierProcessOutput(job, mProcessOutputFacade, mLogger);
@@ -83,6 +85,11 @@ public class AaptProcess {
         mWriter.flush();
         mMessages.add("Process(" + mProcess.hashCode() + ") processed " + in.getName() +
             "job: " + job.toString());
+    }
+
+    public void waitForReady() throws InterruptedException {
+        mReadyLatch.await(TimeUnit.NANOSECONDS.convert(5, TimeUnit.SECONDS));
+        mLogger.info("Slave %1$s is ready", hashCode());
     }
 
     @Override
@@ -135,6 +142,7 @@ public class AaptProcess {
 
     private class ProcessOutputFacade implements GrabProcessOutput.IProcessOutput {
         @Nullable NotifierProcessOutput notifier = null;
+        AtomicBoolean ready = new AtomicBoolean(false);
 
         synchronized void setNotifier(@NonNull NotifierProcessOutput notifierProcessOutput) {
             if (notifier != null) {
@@ -156,7 +164,12 @@ public class AaptProcess {
         public synchronized void out(@Nullable String line) {
 
             // an empty message or aapt startup message are ignored.
-            if (Strings.isNullOrEmpty(line) || line.equals("Ready")) {
+            if (Strings.isNullOrEmpty(line)) {
+                return;
+            }
+            if (line.equals("Ready")) {
+                AaptProcess.this.mReady.set(true);
+                AaptProcess.this.mReadyLatch.signal();
                 return;
             }
             NotifierProcessOutput delegate = getNotifier();
@@ -181,9 +194,20 @@ public class AaptProcess {
                 mLogger.verbose("AAPT err(%1$s): %2$s -> %3$s", mProcess.hashCode(), line, delegate.mJob);
                 delegate.err(line);
             } else {
-                mLogger.error(null, "AAPT err(%1$s) : No Delegate set : lost message:%2$s",
-                        mProcess.hashCode(), line);
+                if (!mReady.get()) {
+                    if (line.equals("ERROR: Unknown command 'm'")) {
+                       throw new RuntimeException("Invalid aapt version, version 21 or above is required");
+                    }
+                    mLogger.error(null, "AAPT err(%1$s): %2$s", mProcess.hashCode(), line);
+                } else {
+                    mLogger.error(null, "AAPT err(%1$s) : No Delegate set : lost message:%2$s",
+                            mProcess.hashCode(), line);
+                }
             }
+        }
+
+        synchronized boolean isProcessRead() {
+            return ready.get();
         }
     }
 
