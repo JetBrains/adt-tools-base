@@ -32,6 +32,10 @@ sourceSets {
     test.resources.srcDir 'src/test/java'
 }
 
+test {
+    maxParallelForks = Runtime.runtime.availableProcessors() / 2
+}
+
 project.ext.pomName = 'Android Tools Manifest Merger library'
 project.ext.pomDesc = 'A Library to merge Android manifests.'
 

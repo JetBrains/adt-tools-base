@@ -29,6 +29,10 @@ sourceSets {
     test.resources.srcDir 'src/test/java'
 }
 
+test {
+    maxParallelForks = Runtime.runtime.availableProcessors() / 2
+}
+
 sdk {
     linux {
         item('etc/lint') { executable true }

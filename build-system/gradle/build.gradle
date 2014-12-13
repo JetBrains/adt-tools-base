@@ -44,6 +44,7 @@ dependencies{
 //Include provided for compilation
 sourceSets.main.compileClasspath += configurations.provided
 
+
 idea {
     module {
         testSourceDirs += files('src/build-test/groovy', 'src/device-test/groovy').files
@@ -70,6 +71,8 @@ test {
     testLogging {
         events "failed"
     }
+
+    maxParallelForks = Runtime.runtime.availableProcessors() / 2
 }
 
 groovydoc {
