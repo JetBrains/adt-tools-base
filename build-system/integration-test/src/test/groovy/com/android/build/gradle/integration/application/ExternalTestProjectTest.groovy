@@ -17,12 +17,15 @@
 package com.android.build.gradle.integration.application
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
+import com.android.builder.model.AndroidProject
+import com.android.builder.model.SyncIssue
 import org.gradle.tooling.BuildException
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
-import static org.junit.Assert.assertTrue
+import static org.junit.Assert.assertEquals
+import static org.junit.Assert.assertNotNull
 import static org.junit.Assert.fail
 /**
  * Check that a project can depend on a jar dependency published by another app project.
@@ -90,7 +93,7 @@ dependencies {
     }
 
     @Test
-    void testApkDependency() {
+    void testApkDependencyInBuild() {
         app2BuildFile << """
 apply plugin: 'com.android.application'
 
@@ -112,7 +115,52 @@ dependencies {
                 cause = cause.getCause();
             }
             String expectedMsg = "Dependency project:app1:unspecified on project app2 resolves to an APK archive which is not supported as a compilation dependency. File:"
-            assertTrue(cause.getMessage().startsWith(expectedMsg))
+            String actual = cause.getMessage()
+            if (actual.length() < expectedMsg.length()) {
+                fail("Wrong error message: " + actual)
+            }
+
+            String actualTruncated = actual.substring(0, expectedMsg.length())
+            assertEquals(expectedMsg, actualTruncated)
+        }
+    }
+
+    @Test
+    void testApkDependencyInModel() {
+        app2BuildFile << """
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
+    buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
+}
+
+dependencies {
+    compile project(path: ':app1')
+}
+"""
+
+        Map<String, AndroidProject> modelMap = project.getAllModels()
+
+        AndroidProject model = modelMap.get(':app2')
+        assertNotNull(model)
+
+        Collection<SyncIssue> issues = model.getSyncIssues()
+        assertNotNull(issues)
+
+        assertEquals(1, issues.size())
+
+        SyncIssue issue = issues.iterator().next()
+        assertNotNull(issue)
+
+        assertEquals(SyncIssue.SEVERITY_ERROR, issue.severity)
+        assertEquals(SyncIssue.TYPE_DEPENDENCY_IS_APK, issue.type)
+        assertEquals('project:app1:unspecified', issue.data)
+
+        String expectedMsg = "Dependency project:app1:unspecified on project app2 resolves to an APK archive which is not supported as a compilation dependency. File:"
+        String actual = issue.getMessage()
+        if (actual.length() < expectedMsg.length()) {
+            fail("Wrong error message: " + actual)
         }
     }
 }

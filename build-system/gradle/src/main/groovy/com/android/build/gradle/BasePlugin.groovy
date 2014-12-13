@@ -49,6 +49,8 @@ import com.android.build.gradle.internal.model.ArtifactMetaDataImpl
 import com.android.build.gradle.internal.model.JavaArtifactImpl
 import com.android.build.gradle.internal.model.MavenCoordinatesImpl
 import com.android.build.gradle.internal.model.ModelBuilder
+import com.android.build.gradle.internal.model.SyncIssueImpl
+import com.android.build.gradle.internal.model.SyncIssueKey
 import com.android.build.gradle.internal.publishing.ApkPublishArtifact
 import com.android.build.gradle.internal.tasks.AndroidReportTask
 import com.android.build.gradle.internal.tasks.CheckManifest
@@ -119,6 +121,7 @@ import com.android.builder.model.ArtifactMetaData
 import com.android.builder.model.JavaArtifact
 import com.android.builder.model.SourceProvider
 import com.android.builder.model.SourceProviderContainer
+import com.android.builder.model.SyncIssue
 import com.android.builder.sdk.SdkInfo
 import com.android.builder.sdk.TargetInfo
 import com.android.builder.testing.ConnectedDeviceProvider
@@ -241,6 +244,8 @@ public abstract class BasePlugin {
     private BaseExtension extension
     private VariantManager variantManager
 
+    protected boolean buildModelForIde
+
     final Map<LibraryDependencyImpl, PrepareLibraryTask> prepareTaskMap = [:]
     final Map<SigningConfig, ValidateSigningTask> validateSigningTaskMap = [:]
 
@@ -253,7 +258,10 @@ public abstract class BasePlugin {
     private boolean hasCreatedTasks = false
 
     private ProductFlavorData<ProductFlavor> defaultConfigData
+    /** @deprecated use syncIssue instead */
+    @Deprecated
     private final Collection<String> unresolvedDependencies = Sets.newHashSet();
+    private final Map<SyncIssueKey, SyncIssue> syncIssues = Maps.newHashMap();
 
     protected DefaultAndroidSourceSet mainSourceSet
     protected DefaultAndroidSourceSet androidTestSourceSet
@@ -308,6 +316,8 @@ public abstract class BasePlugin {
     }
 
     protected void configureProject() {
+        buildModelForIde = isBuildModelForIde()
+
         checkGradleVersion()
         sdkHandler = new SdkHandler(project, logger)
         androidBuilder = new AndroidBuilder(
@@ -535,8 +545,13 @@ public abstract class BasePlugin {
         return defaultConfigData
     }
 
+    @Deprecated
     Collection<String> getUnresolvedDependencies() {
         return unresolvedDependencies
+    }
+
+    Map<SyncIssueKey, SyncIssue> getSyncIssues() {
+        return syncIssues
     }
 
     ILogger getLogger() {
@@ -3420,8 +3435,13 @@ public abstract class BasePlugin {
                             "' is not supported in project " + project.name)
                 }
             }
-        } else if (!currentUnresolvedDependencies.isEmpty()) {
+        } else if (buildModelForIde && !currentUnresolvedDependencies.isEmpty()) {
             unresolvedDependencies.addAll(currentUnresolvedDependencies)
+
+            for (String dep : currentUnresolvedDependencies) {
+                SyncIssue issue = getUnresolvedDependencyIssue(dep)
+                syncIssues.put(SyncIssueKey.from(issue), issue)
+            }
         }
 
         variantDeps.addLibraries(bundles)
@@ -3431,6 +3451,14 @@ public abstract class BasePlugin {
         // TODO - filter bundles out of source set classpath
 
         configureBuild(variantDeps)
+    }
+
+    private static SyncIssue getUnresolvedDependencyIssue(@NonNull String dependency) {
+        return new SyncIssueImpl(
+                SyncIssue.TYPE_UNRESOLVED_DEPENDENCY,
+                SyncIssue.SEVERITY_ERROR,
+                dependency,
+                "Unable to resolve dependency '${dependency}'")
     }
 
     protected void ensureConfigured(Configuration config) {
@@ -3450,21 +3478,8 @@ public abstract class BasePlugin {
             Map<ModuleVersionIdentifier,
             List<ResolvedArtifact>> artifacts) {
 
-        // To keep backwards-compatibility, we check first if we have the JVM arg. If not, we look for
-        // the project property.
-        boolean buildModelOnly = false;
-        String val = System.getProperty(PROPERTY_BUILD_MODEL_ONLY);
-        if ("true".equalsIgnoreCase(val)) {
-            buildModelOnly = true;
-        } else if (project.hasProperty(PROPERTY_BUILD_MODEL_ONLY)) {
-            Object value = project.getProperties().get(PROPERTY_BUILD_MODEL_ONLY);
-            if (value instanceof String) {
-                buildModelOnly = Boolean.parseBoolean(value);
-            }
-        }
-
         Set<ResolvedArtifact> allArtifacts
-        if (buildModelOnly) {
+        if (buildModelForIde) {
             allArtifacts = configuration.resolvedConfiguration.lenientConfiguration.getArtifacts(Specs.satisfyAll())
         } else {
             allArtifacts = configuration.resolvedConfiguration.resolvedArtifacts
@@ -3483,6 +3498,22 @@ public abstract class BasePlugin {
                 moduleArtifacts.add(artifact)
             }
         }
+    }
+
+    /**
+     * Returns whether we are just trying to build a model for the IDE instead of building.
+     * This means we will attempt to resolve dependencies even if some are broken/unsupported
+     * to avoid failing the import in the IDE.
+     */
+    private boolean isBuildModelForIde() {
+        boolean flagValue = false;
+        if (project.hasProperty(PROPERTY_BUILD_MODEL_ONLY)) {
+            Object value = project.getProperties().get(PROPERTY_BUILD_MODEL_ONLY);
+            if (value instanceof String) {
+                flagValue = Boolean.parseBoolean(value);
+            }
+        }
+        return flagValue
     }
 
     def addDependency(ResolvedComponentResult moduleVersion,
@@ -3551,13 +3582,40 @@ public abstract class BasePlugin {
                         name += ":$artifact.classifier"
                     }
 
-                    // cannot throw this yet, since depending on a secondary artifact in an
-                    // Android app will trigger getting the main APK as well.
-                    throw new GradleException(
-                            "Dependency ${name} on project ${project.name} resolves to an APK"
-                                    + " archive which is not supported"
-                                    + " as a compilation dependency. File: "
-                                    + artifact.file)
+                    String msg = "Dependency ${name} on project ${project.name} resolves to an APK" +
+                            " archive which is not supported" +
+                            " as a compilation dependency. File: " +
+                            artifact.file
+
+                    if (!buildModelForIde) {
+                        throw new GradleException(msg)
+                    } else {
+                        SyncIssue syncIssue = new SyncIssueImpl(
+                                SyncIssue.TYPE_DEPENDENCY_IS_APK,
+                                SyncIssue.SEVERITY_ERROR,
+                                name,
+                                msg)
+                        syncIssues.put(SyncIssueKey.from(syncIssue), syncIssue)
+                    }
+                } else if (artifact.type == "apklib") {
+                    String name = "$id.group:$id.name:$id.version"
+                    if (artifact.classifier != null) {
+                        name += ":$artifact.classifier"
+                    }
+
+                    String msg = "Packaging for dependency ${name} is 'apklib' and is not supported. " +
+                            "Only 'aar' libraries are supported."
+
+                    if (!buildModelForIde) {
+                        throw new GradleException(msg)
+                    } else {
+                        SyncIssue syncIssue = new SyncIssueImpl(
+                                SyncIssue.TYPE_DEPENDENCY_IS_APKLIB,
+                                SyncIssue.SEVERITY_ERROR,
+                                name,
+                                msg)
+                        syncIssues.put(SyncIssueKey.from(syncIssue), syncIssue)
+                    }
                 }
             }
 

@@ -82,7 +82,7 @@ class VariantDependencyTest {
             """.stripIndent()
 
         project.execute('clean', 'assemble')
-        model = project.getModel()
+        model = project.getSingleModel()
 
         File aapt = new File(project.getSdkDir(), "build-tools/20.0.0/aapt");
         assertTrue("Test requires build-tools 20.0.0", aapt.isFile());

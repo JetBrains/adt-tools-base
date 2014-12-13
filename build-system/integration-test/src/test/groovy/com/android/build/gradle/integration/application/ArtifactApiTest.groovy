@@ -39,7 +39,7 @@ class ArtifactApiTest {
 
     @BeforeClass
     static void setUp() {
-        model = project.getModel()
+        model = project.getSingleModel()
     }
 
     @AfterClass
