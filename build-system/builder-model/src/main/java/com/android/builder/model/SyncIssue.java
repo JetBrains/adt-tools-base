@@ -28,10 +28,11 @@ public interface SyncIssue {
     public static final int SEVERITY_ERROR = 2;
 
     public static final int TYPE_NONE                     = 0;
-    public static final int TYPE_UNRESOLVED_DEPENDENCY    = 1;
-    public static final int TYPE_DEPENDENCY_IS_APK        = 2;
-    public static final int TYPE_DEPENDENCY_IS_APKLIB     = 3;
-    public static final int TYPE_MAX                      = 4; // increment when adding new types.
+    public static final int TYPE_PLUGIN_OBSOLETE          = 1;
+    public static final int TYPE_UNRESOLVED_DEPENDENCY    = 2;
+    public static final int TYPE_DEPENDENCY_IS_APK        = 3;
+    public static final int TYPE_DEPENDENCY_IS_APKLIB     = 4;
+    public static final int TYPE_MAX                      = 5; // increment when adding new types.
 
     /**
      * Returns the severity of the issue.
