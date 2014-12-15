@@ -23,6 +23,7 @@ import com.android.build.OutputFile;
 import com.android.build.gradle.BasePlugin;
 import com.android.build.gradle.api.BaseVariant;
 import com.android.build.gradle.api.BaseVariantOutput;
+import com.android.build.gradle.internal.TaskManager;
 import com.android.build.gradle.internal.VariantModel;
 import com.android.build.gradle.internal.api.ApkVariantImpl;
 import com.android.build.gradle.internal.api.ApkVariantOutputImpl;
@@ -48,9 +49,14 @@ public class ApplicationVariantFactory implements VariantFactory<ApplicationVari
 
     @NonNull
     private final BasePlugin basePlugin;
+    @NonNull
+    private final TaskManager taskManager;
 
-    public ApplicationVariantFactory(@NonNull BasePlugin basePlugin) {
+    public ApplicationVariantFactory(
+            @NonNull BasePlugin basePlugin,
+            @NonNull TaskManager taskManager) {
         this.basePlugin = basePlugin;
+        this.taskManager = taskManager;
     }
 
     @Override
@@ -150,58 +156,58 @@ public class ApplicationVariantFactory implements VariantFactory<ApplicationVari
         assert variantData instanceof ApplicationVariantData;
         ApplicationVariantData appVariantData = (ApplicationVariantData) variantData;
 
-        basePlugin.createAnchorTasks(variantData);
-        basePlugin.createCheckManifestTask(variantData);
+        taskManager.createAnchorTasks(variantData);
+        taskManager.createCheckManifestTask(variantData);
 
         handleMicroApp(variantData);
 
         // Add a task to process the manifest(s)
-        basePlugin.createMergeAppManifestsTask(variantData);
+        taskManager.createMergeAppManifestsTask(variantData);
 
         // Add a task to create the res values
-        basePlugin.createGenerateResValuesTask(variantData);
+        taskManager.createGenerateResValuesTask(variantData);
 
         // Add a task to compile renderscript files.
-        basePlugin.createRenderscriptTask(variantData);
+        taskManager.createRenderscriptTask(variantData);
 
         // Add a task to merge the resource folders
-        basePlugin.createMergeResourcesTask(variantData, true /*process9Patch*/);
+        taskManager.createMergeResourcesTask(variantData, true /*process9Patch*/);
 
         // Add a task to merge the asset folders
-        basePlugin.createMergeAssetsTask(variantData, null /*default location*/, true /*includeDependencies*/);
+        taskManager.createMergeAssetsTask(variantData, null /*default location*/, true /*includeDependencies*/);
 
         // Add a task to create the BuildConfig class
-        basePlugin.createBuildConfigTask(variantData);
+        taskManager.createBuildConfigTask(variantData);
 
         // Add a task to process the Android Resources and generate source files
-        basePlugin.createProcessResTask(variantData, true /*generateResourcePackage*/);
+        taskManager.createProcessResTask(variantData, true /*generateResourcePackage*/);
 
         // Add a task to process the java resources
-        basePlugin.createProcessJavaResTask(variantData);
+        taskManager.createProcessJavaResTask(variantData);
 
-        basePlugin.createAidlTask(variantData, null /*parcelableDir*/);
+        taskManager.createAidlTask(variantData, null /*parcelableDir*/);
 
         // Add a compile task
         if (variantData.getVariantConfiguration().getUseJack()) {
-            basePlugin.createJackTask(appVariantData, null /*testedVariant*/);
+            taskManager.createJackTask(appVariantData, null /*testedVariant*/);
         } else{
-            basePlugin.createCompileTask(variantData, null /*testedVariant*/);
+            taskManager.createCompileTask(variantData, null /*testedVariant*/);
 
-            basePlugin.createPostCompilationTasks(appVariantData);
+            taskManager.createPostCompilationTasks(appVariantData);
         }
 
         // Add NDK tasks
         if (!basePlugin.getExtension().getUseNewNativePlugin()) {
-            basePlugin.createNdkTasks(variantData);
+            taskManager.createNdkTasks(variantData);
         }
 
         if (variantData.getSplitHandlingPolicy() ==
                 BaseVariantData.SplitHandlingPolicy.RELEASE_21_AND_AFTER_POLICY) {
-            basePlugin.createSplitResourcesTasks(appVariantData);
-            basePlugin.createSplitAbiTasks(appVariantData);
+            taskManager.createSplitResourcesTasks(appVariantData);
+            taskManager.createSplitAbiTasks(appVariantData);
         }
 
-        basePlugin.createPackagingTask(appVariantData, assembleTask, true /*publishApk*/);
+        taskManager.createPackagingTask(appVariantData, assembleTask, true /*publishApk*/);
     }
 
     @Override
@@ -227,7 +233,7 @@ public class ApplicationVariantFactory implements VariantFactory<ApplicationVari
 
                 int count = file.size();
                 if (count == 1) {
-                    basePlugin.createGenerateMicroApkDataTask(variantData, config);
+                    taskManager.createGenerateMicroApkDataTask(variantData, config);
                     // found one, bail out.
                     return;
                 } else if (count > 1) {

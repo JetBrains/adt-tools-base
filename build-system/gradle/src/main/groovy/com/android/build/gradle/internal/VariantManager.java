@@ -44,6 +44,7 @@ import com.android.build.gradle.internal.dsl.Splits;
 import com.android.build.gradle.internal.variant.ApplicationVariantFactory;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
+import com.android.build.gradle.internal.TaskManager;
 import com.android.build.gradle.internal.variant.TestVariantData;
 import com.android.build.gradle.internal.variant.TestedVariantData;
 import com.android.build.gradle.internal.variant.VariantFactory;
@@ -81,6 +82,8 @@ public class VariantManager implements VariantModel {
     private final BaseExtension extension;
     @NonNull
     private final VariantFactory variantFactory;
+    @NonNull
+    private final TaskManager taskManager;
 
     @NonNull
     private final Map<String, BuildTypeData> buildTypes = Maps.newHashMap();
@@ -101,11 +104,13 @@ public class VariantManager implements VariantModel {
             @NonNull Project project,
             @NonNull BasePlugin basePlugin,
             @NonNull BaseExtension extension,
-            @NonNull VariantFactory variantFactory) {
+            @NonNull VariantFactory variantFactory,
+            @NonNull TaskManager taskManager) {
         this.extension = extension;
         this.basePlugin = basePlugin;
         this.project = project;
         this.variantFactory = variantFactory;
+        this.taskManager = taskManager;
     }
 
     @NonNull
@@ -203,10 +208,7 @@ public class VariantManager implements VariantModel {
     public void createAndroidTasks(@Nullable com.android.builder.model.SigningConfig signingOverride) {
         variantFactory.validateModel(this);
 
-        Task assembleTest = project.getTasks().create("assembleAndroidTest");
-        assembleTest.setGroup(org.gradle.api.plugins.BasePlugin.BUILD_GROUP);
-        assembleTest.setDescription("Assembles all the Test applications");
-        basePlugin.setAssembleAndroidTest(assembleTest);
+        taskManager.createAssembleAndroidTestTask();
 
         if (variantDataList.isEmpty()) {
             populateVariantDataList(signingOverride);
@@ -217,11 +219,11 @@ public class VariantManager implements VariantModel {
         }
 
         // create the lint tasks.
-        basePlugin.createLintTasks();
+        taskManager.createLintTasks();
 
         // create the test tasks.
-        basePlugin.createConnectedCheckTasks(!productFlavors.isEmpty(), false /*isLibrary*/);
-        basePlugin.createUnitTestTasks();
+        taskManager.createConnectedCheckTasks(!productFlavors.isEmpty(), false /*isLibrary*/);
+        taskManager.createUnitTestTasks();
 
         // Create the variant API objects after the tasks have been created!
         createApiObjects();
@@ -275,10 +277,10 @@ public class VariantManager implements VariantModel {
             testVariantConfig.setDependencies(variantDep);
             switch (variantType) {
                 case ANDROID_TEST:
-                    basePlugin.createAndroidTestVariantTasks((TestVariantData) variantData);
+                    taskManager.createAndroidTestVariantTasks((TestVariantData) variantData);
                     break;
                 case UNIT_TEST:
-                    basePlugin.createUnitTestVariantTasks((TestVariantData) variantData);
+                    taskManager.createUnitTestVariantTasks((TestVariantData) variantData);
                     break;
                 default:
                     throw new IllegalArgumentException("Unknown test type " + variantType);
@@ -334,7 +336,7 @@ public class VariantManager implements VariantModel {
      */
     public void populateVariantDataList(@Nullable com.android.builder.model.SigningConfig signingOverride) {
         // Add a compile lint task
-        basePlugin.createLintCompileTask();
+        taskManager.createLintCompileTask();
 
         if (productFlavors.isEmpty()) {
             createVariantDataForProductFlavors(signingOverride,
