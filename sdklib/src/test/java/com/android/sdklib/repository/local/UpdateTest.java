@@ -727,25 +727,25 @@ public class UpdateTest extends TestCase {
 
     private void addRemoteTool(FullRevision revision, FullRevision minPlatformToolsRev) {
         IPkgDesc d = PkgDesc.Builder.newTool(revision, minPlatformToolsRev).create();
-        RemotePkgInfo r = new RemotePkgInfo(d, mSource);
+        RemotePkgInfo r = new RemotePkgInfo(d, mSource, 0);
         mRemotePkgs.put(d.getType(), r);
     }
 
     private void addRemotePlatformTool(FullRevision revision) {
         IPkgDesc d = PkgDesc.Builder.newPlatformTool(revision).create();
-        RemotePkgInfo r = new RemotePkgInfo(d, mSource);
+        RemotePkgInfo r = new RemotePkgInfo(d, mSource, 0);
         mRemotePkgs.put(d.getType(), r);
     }
 
     private void addRemoteDoc(AndroidVersion version, MajorRevision revision) {
         IPkgDesc d = PkgDesc.Builder.newDoc(version, revision).create();
-        RemotePkgInfo r = new RemotePkgInfo(d, mSource);
+        RemotePkgInfo r = new RemotePkgInfo(d, mSource, 0);
         mRemotePkgs.put(d.getType(), r);
     }
 
     private void addRemoteBuildTool(FullRevision revision) {
         IPkgDesc d = PkgDesc.Builder.newBuildTool(revision).create();
-        RemotePkgInfo r = new RemotePkgInfo(d, mSource);
+        RemotePkgInfo r = new RemotePkgInfo(d, mSource, 0);
         mRemotePkgs.put(d.getType(), r);
     }
 
@@ -754,13 +754,13 @@ public class UpdateTest extends TestCase {
                                 String path,
                                 String name) {
         IPkgDesc d = PkgDesc.Builder.newExtra(vendor, path, name, null, revision).create();
-        RemotePkgInfo r = new RemotePkgInfo(d, mSource);
+        RemotePkgInfo r = new RemotePkgInfo(d, mSource, 0);
         mRemotePkgs.put(d.getType(), r);
     }
 
     private void addRemoteSource(AndroidVersion version, MajorRevision revision) {
         IPkgDesc d = PkgDesc.Builder.newSource(version, revision).create();
-        RemotePkgInfo r = new RemotePkgInfo(d, mSource);
+        RemotePkgInfo r = new RemotePkgInfo(d, mSource, 0);
         mRemotePkgs.put(d.getType(), r);
     }
 
@@ -768,7 +768,7 @@ public class UpdateTest extends TestCase {
                                  MajorRevision revision,
                                  FullRevision minToolsRev) {
         IPkgDesc d = PkgDesc.Builder.newSample(version, revision, minToolsRev).create();
-        RemotePkgInfo r = new RemotePkgInfo(d, mSource);
+        RemotePkgInfo r = new RemotePkgInfo(d, mSource, 0);
         mRemotePkgs.put(d.getType(), r);
     }
 
@@ -777,7 +777,7 @@ public class UpdateTest extends TestCase {
                                  IdDisplay tag,
                                  String abi) {
         IPkgDesc d = PkgDesc.Builder.newSysImg(version, tag, abi, revision).create();
-        RemotePkgInfo r = new RemotePkgInfo(d, mSource);
+        RemotePkgInfo r = new RemotePkgInfo(d, mSource, 0);
         mRemotePkgs.put(d.getType(), r);
     }
 
@@ -787,7 +787,7 @@ public class UpdateTest extends TestCase {
                                       IdDisplay tag,
                                       String abi) {
         IPkgDesc d = PkgDesc.Builder.newAddonSysImg(version, vendor, tag, abi, revision).create();
-        RemotePkgInfo r = new RemotePkgInfo(d, mSource);
+        RemotePkgInfo r = new RemotePkgInfo(d, mSource, 0);
         mRemotePkgs.put(d.getType(), r);
     }
 
@@ -795,7 +795,7 @@ public class UpdateTest extends TestCase {
                                    MajorRevision revision,
                                    FullRevision minToolsRev) {
         IPkgDesc d = PkgDesc.Builder.newPlatform(version, revision, minToolsRev).create();
-        RemotePkgInfo r = new RemotePkgInfo(d, mSource);
+        RemotePkgInfo r = new RemotePkgInfo(d, mSource, 0);
         mRemotePkgs.put(d.getType(), r);
     }
 
@@ -804,7 +804,7 @@ public class UpdateTest extends TestCase {
                                 IdDisplay vendor,
                                 IdDisplay name) {
         IPkgDesc d = PkgDesc.Builder.newAddon(version, revision, vendor, name).create();
-        RemotePkgInfo r = new RemotePkgInfo(d, mSource);
+        RemotePkgInfo r = new RemotePkgInfo(d, mSource, 0);
         mRemotePkgs.put(d.getType(), r);
     }
 
