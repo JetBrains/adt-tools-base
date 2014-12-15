@@ -26,8 +26,11 @@ import com.android.sdklib.SystemImage;
 import com.android.sdklib.devices.Abi;
 import com.android.sdklib.devices.Device;
 import com.android.sdklib.repository.descriptors.IdDisplay;
+import com.google.common.base.Charsets;
+import com.google.common.io.Files;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
 
@@ -378,7 +381,38 @@ public final class AvdInfo implements Comparable<AvdInfo> {
     public boolean isRunning() {
         // this is a file on Unix, and a directory on Windows.
         File f = new File(mFolderPath, "userdata-qemu.img.lock");   //$NON-NLS-1$
-        return f.exists();
+        String command = null;
+        if (SdkConstants.currentPlatform() == SdkConstants.PLATFORM_WINDOWS) {
+            f = new File(f, "pid");
+        }
+        if (f.exists()) {
+            try {
+                String pid = Files.toString(f, Charsets.UTF_8);
+                if (SdkConstants.currentPlatform() == SdkConstants.PLATFORM_WINDOWS) {
+                    command = "cmd /c \"tasklist /FI \"PID eq " + pid + "\" | findstr " + pid + "\"";
+                } else {
+                    command = "kill -0 " + pid;
+                }
+            } catch (IOException e) {
+                // Shouldn't happen, but if it does be safe and return true;
+                return true;
+            }
+            try {
+                Process p = Runtime.getRuntime().exec(command);
+                // If the process ends with non-0 it means the process doesn't exist
+                return p.waitFor() == 0;
+            }
+            catch (IOException e) {
+                // To be safe return true
+                return true;
+            }
+            catch (InterruptedException e) {
+                // To be safe return true
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
