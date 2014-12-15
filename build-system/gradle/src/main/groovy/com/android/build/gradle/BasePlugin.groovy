@@ -133,8 +133,6 @@ import com.android.ide.common.internal.ExecutorSingleton
 import com.android.sdklib.AndroidTargetHash
 import com.android.sdklib.SdkVersionInfo
 import com.android.utils.ILogger
-import com.google.common.base.Predicate
-import com.google.common.base.Predicates
 import com.google.common.collect.ArrayListMultimap
 import com.google.common.collect.ImmutableSet
 import com.google.common.collect.ListMultimap
@@ -2736,7 +2734,7 @@ public abstract class BasePlugin {
                 Copy copyTask = project.tasks.create(
                         "copySplit${outputName.capitalize()}",
                         Copy)
-                copyTask.destinationDir = new File(apkLocation);
+                copyTask.destinationDir = new File(apkLocation as String);
                 copyTask.from(variantOutputData.packageSplitResourcesTask.getOutputDirectory())
                 variantOutputData.assembleTask.dependsOn(copyTask)
                 copyTask.mustRunAfter(appTask)
@@ -3629,8 +3627,8 @@ public abstract class BasePlugin {
                 throw new GradleException("Module version $id depends on libraries but is not a library itself")
             }
         } else {
-            for (LibraryDependency adep : bundlesForThisModule) {
-                reverseMap.put(adep, configDependencies)
+            for (adep in bundlesForThisModule) {
+                reverseMap.put(adep as LibraryDependency, configDependencies)
             }
         }
 
