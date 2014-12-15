@@ -20,29 +20,30 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import org.junit.ClassRule
 import org.junit.Test
 
+import static com.android.build.gradle.integration.testing.JUnitResults.Outcome.*
+
 /**
  * Meta-level tests for the app-level unit testing support.
  */
 class UnitTestingSupportTest {
     @ClassRule
-    static public GradleTestProject project = GradleTestProject.builder()
+    static public GradleTestProject simpleProject = GradleTestProject.builder()
             .fromTestProject("unitTesting")
             .create()
 
     @Test
-    void testTask() {
-        project.execute("test")
+    void testSimpleScenario() {
+        simpleProject.execute("test")
 
-        def testSuite = new XmlParser().parse(
-                project.file("build/test-results/TEST-com.android.tests.UnitTest.xml"))
-        def getTest = { name -> testSuite.testcase.find { it.@name == name } }
+        def results = new JUnitResults(
+                simpleProject.file("build/test-results/TEST-com.android.tests.UnitTest.xml"))
 
         def ignored = ["thisIsIgnored"]
         def passed = [ "referenceProductionCode", "mockFinalClass", "mockFinalMethod" ]
 
         // TODO: Migrate to Truth.
-        assert testSuite.testcase.@name as Set == (ignored + passed) as Set
-        assert getTest(ignored.first()).skipped
-        passed.each { name -> assert getTest(name).children().isEmpty() }
+        assert results.allTestCases == (ignored + passed) as Set
+        assert results.outcome(ignored.first()) == SKIPPED
+        passed.each { assert results.outcome(it) == PASSED }
     }
 }
