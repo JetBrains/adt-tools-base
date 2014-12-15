@@ -223,8 +223,8 @@ public abstract class BasePlugin {
     private static final String GRADLE_VERSION_CHECK_OVERRIDE_PROPERTY =
             "com.android.build.gradle.overrideVersionCheck"
 
-    private static final String INSTALL_GROUP = "Install"
-    private static final String BUILD_GROUP = org.gradle.api.plugins.BasePlugin.BUILD_GROUP
+    public static final String INSTALL_GROUP = "Install"
+    public static final String BUILD_GROUP = org.gradle.api.plugins.BasePlugin.BUILD_GROUP
 
     public static File TEST_SDK_DIR;
 

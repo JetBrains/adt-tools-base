@@ -490,11 +490,11 @@ public class VariantManager implements VariantModel {
      */
     public TestVariantData createTestVariantData(
             BaseVariantData testedVariantData,
-            BuildTypeData buildTypeData,
             com.android.builder.model.SigningConfig signingOverride,
             VariantConfiguration.Type type) {
         ProductFlavorData<ProductFlavor> defaultConfigData = basePlugin.getDefaultConfigData();
         ProductFlavor defaultConfig = defaultConfigData.getProductFlavor();
+        BuildType buildType = testedVariantData.getVariantConfiguration().getBuildType();
 
         GradleVariantConfiguration testedConfig = testedVariantData.getVariantConfiguration();
         List<? extends com.android.build.gradle.api.GroupableProductFlavor> productFlavorList = testedConfig.getProductFlavors();
@@ -503,7 +503,7 @@ public class VariantManager implements VariantModel {
         GradleVariantConfiguration testVariantConfig = new GradleVariantConfiguration(
                 defaultConfig,
                 defaultConfigData.getTestSourceSet(type),
-                buildTypeData.getBuildType(),
+                buildType,
                 null,
                 type,
                 testedVariantData.getVariantConfiguration(),
@@ -573,7 +573,6 @@ public class VariantManager implements VariantModel {
 
                 TestVariantData unitTestVariantData = createTestVariantData(
                         variantData,
-                        buildTypeData,
                         signingOverride,
                         UNIT_TEST);
                 variantDataList.add(unitTestVariantData);
@@ -591,14 +590,13 @@ public class VariantManager implements VariantModel {
         if (variantForAndroidTest != null) {
             TestVariantData androidTestVariantData = createTestVariantData(
                     variantForAndroidTest,
-                    testBuildTypeData,
                     signingOverride,
                     ANDROID_TEST);
             variantDataList.add(androidTestVariantData);
         }
     }
 
-    private void createApiObjects() {
+    public void createApiObjects() {
         for (BaseVariantData<?> variantData : variantDataList) {
             if (variantData.getVariantConfiguration().getType().isForTesting()) {
                 // Testing variants are handled together with their "owners".
