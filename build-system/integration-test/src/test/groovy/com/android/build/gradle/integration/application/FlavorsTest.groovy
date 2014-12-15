@@ -22,13 +22,19 @@ import com.android.build.gradle.integration.common.utils.ModelHelper
 import com.android.build.gradle.integration.common.utils.ProductFlavorHelper
 import com.android.build.gradle.integration.common.utils.SourceProviderHelper
 import com.android.build.gradle.integration.common.utils.VariantHelper
-import com.android.builder.model.*
-import org.junit.*
+import com.android.builder.model.AndroidProject
+import com.android.builder.model.BuildTypeContainer
+import com.android.builder.model.ProductFlavorContainer
+import com.android.builder.model.SourceProviderContainer
+import com.android.builder.model.Variant
+import org.junit.AfterClass
+import org.junit.BeforeClass
+import org.junit.ClassRule
+import org.junit.Test
 import org.junit.experimental.categories.Category
 
-import static com.android.builder.core.VariantConfiguration.Type.ANDROID_TEST;
+import static com.android.builder.core.VariantConfiguration.Type.ANDROID_TEST
 import static com.android.builder.model.AndroidProject.ARTIFACT_ANDROID_TEST
-
 import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertFalse
 import static org.junit.Assert.assertNotNull

@@ -16,6 +16,8 @@
 
 package com.android.build.gradle.internal.test.report;
 
+import static org.gradle.api.tasks.testing.TestResult.ResultType;
+
 import com.android.builder.core.BuilderConstants;
 
 import java.math.BigDecimal;
@@ -23,8 +25,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
-
-import static org.gradle.api.tasks.testing.TestResult.ResultType;
 
 /**
  * Custom CompositeTestResults based on Gradle's CompositeTestResults

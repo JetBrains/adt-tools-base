@@ -16,13 +16,12 @@
 
 package com.android.manifmerger;
 
-import static com.android.manifmerger.MergingReport.Record.Severity.*;
+import static com.android.manifmerger.MergingReport.Record.Severity.ERROR;
+import static com.android.manifmerger.MergingReport.Record.Severity.WARNING;
 import static com.android.manifmerger.XmlNode.NodeKey;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
-import com.android.utils.SdkUtils;
-import com.android.utils.XmlUtils;
 import com.android.xml.AndroidManifest;
 import com.google.common.base.Joiner;
 import com.google.common.base.Optional;

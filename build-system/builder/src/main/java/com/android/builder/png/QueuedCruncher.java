@@ -25,7 +25,6 @@ import com.android.builder.tasks.WorkQueue;
 import com.android.ide.common.internal.LoggedErrorException;
 import com.android.ide.common.internal.PngCruncher;
 import com.android.utils.ILogger;
-import com.google.common.collect.ImmutableList;
 
 import java.io.File;
 import java.io.IOException;

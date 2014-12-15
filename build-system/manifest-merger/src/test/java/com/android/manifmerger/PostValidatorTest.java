@@ -28,7 +28,6 @@ import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
-import java.util.logging.Logger;
 
 import javax.xml.parsers.ParserConfigurationException;
 

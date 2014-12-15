@@ -18,6 +18,7 @@ package com.android.build.gradle.internal.dsl;
 
 import com.android.annotations.NonNull;
 import com.google.common.collect.Sets;
+
 import org.gradle.api.tasks.Input;
 
 import java.util.Collections;

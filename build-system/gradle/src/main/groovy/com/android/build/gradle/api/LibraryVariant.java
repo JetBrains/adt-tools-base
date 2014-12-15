@@ -17,7 +17,6 @@
 package com.android.build.gradle.api;
 
 import com.android.annotations.Nullable;
-import org.gradle.api.tasks.bundling.Zip;
 
 /**
  * A Build variant and all its public data.

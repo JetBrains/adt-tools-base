@@ -16,9 +16,6 @@
 
 package com.android.rs.image2;
 
-import java.lang.Math;
-
-
 public class Contrast extends TestBase {
     private ScriptC_contrast mScript;
 

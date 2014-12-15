@@ -15,10 +15,10 @@
  */
 package com.android.build.gradle.internal.test.report;
 
+import static org.gradle.api.tasks.testing.TestResult.ResultType;
+
 import java.util.ArrayList;
 import java.util.List;
-
-import static org.gradle.api.tasks.testing.TestResult.ResultType;
 
 /**
  * Custom test result based on Gradle's TestResult

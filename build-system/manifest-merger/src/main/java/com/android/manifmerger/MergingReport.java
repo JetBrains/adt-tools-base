@@ -21,8 +21,6 @@ import static com.android.manifmerger.XmlLoader.SourceLocation;
 import com.android.annotations.NonNull;
 import com.android.annotations.concurrency.Immutable;
 import com.android.utils.ILogger;
-import com.android.utils.SdkUtils;
-import com.android.utils.XmlUtils;
 import com.google.common.base.CaseFormat;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;

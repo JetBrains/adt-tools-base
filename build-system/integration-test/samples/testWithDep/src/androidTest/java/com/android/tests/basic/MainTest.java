@@ -1,10 +1,10 @@
 package com.android.tests.basic;
 
+import com.jayway.android.robotium.solo.Solo;
+
 import android.test.ActivityInstrumentationTestCase2;
 import android.test.suitebuilder.annotation.MediumTest;
 import android.widget.TextView;
-
-import com.jayway.android.robotium.solo.Solo;
 
 public class MainTest extends ActivityInstrumentationTestCase2<Main> {
 

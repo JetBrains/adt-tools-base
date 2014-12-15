@@ -17,7 +17,6 @@
 package com.example.android.rs.balls;
 
 import android.content.res.Resources;
-import android.renderscript.*;
 import android.util.Log;
 
 public class BallsRS {

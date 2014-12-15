@@ -20,10 +20,18 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.utils.ModelHelper
 import com.android.build.gradle.integration.common.utils.SourceProviderHelper
 import com.android.builder.internal.StringHelper
-import com.android.builder.model.*
-import org.junit.*
+import com.android.builder.model.AndroidArtifact
+import com.android.builder.model.AndroidProject
+import com.android.builder.model.ProductFlavorContainer
+import com.android.builder.model.SourceProviderContainer
+import com.android.builder.model.Variant
+import org.junit.AfterClass
+import org.junit.Assert
+import org.junit.BeforeClass
+import org.junit.ClassRule
+import org.junit.Test
 
-import static com.android.builder.core.VariantConfiguration.Type.ANDROID_TEST;
+import static com.android.builder.core.VariantConfiguration.Type.ANDROID_TEST
 import static com.android.builder.model.AndroidProject.ARTIFACT_ANDROID_TEST
 
 /**

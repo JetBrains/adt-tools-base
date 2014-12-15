@@ -42,8 +42,8 @@
 package com.example.combinedSplits;
 
 import android.app.Activity;
-import android.widget.TextView;
 import android.os.Bundle;
+import android.widget.TextView;
 
 public class DemoActivity extends Activity {
 

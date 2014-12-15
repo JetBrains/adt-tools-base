@@ -15,12 +15,16 @@
  */
 
 package com.android.build.gradle.integration.ndk
+
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.builder.model.AndroidProject
 import com.android.builder.model.Variant
 import com.google.common.collect.ImmutableList
 import com.google.common.collect.ImmutableMap
-import org.junit.*
+import org.junit.AfterClass
+import org.junit.BeforeClass
+import org.junit.ClassRule
+import org.junit.Test
 
 import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertNotNull

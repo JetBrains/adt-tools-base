@@ -16,14 +16,14 @@
 
 package com.example.android.tictactoe;
 
+import com.example.android.tictactoe.library.GameActivity;
+import com.example.android.tictactoe.library.GameView.State;
+
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.view.View.OnClickListener;
-
-import com.example.android.tictactoe.library.GameActivity;
-import com.example.android.tictactoe.library.GameView.State;
 
 public class MainActivity extends Activity {
     /** Called when the activity is first created. */

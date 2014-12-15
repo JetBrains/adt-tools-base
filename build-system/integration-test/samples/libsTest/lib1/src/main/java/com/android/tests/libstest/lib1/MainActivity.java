@@ -1,9 +1,9 @@
 package com.android.tests.libstest.lib1;
 
+import com.android.tests.libstest.lib2.Lib2;
+
 import android.app.Activity;
 import android.os.Bundle;
-
-import com.android.tests.libstest.lib2.Lib2;
 
 public class MainActivity extends Activity {
     /** Called when the activity is first created. */

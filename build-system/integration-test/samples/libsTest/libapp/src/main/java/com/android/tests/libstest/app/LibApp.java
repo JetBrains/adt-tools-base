@@ -1,5 +1,7 @@
 package com.android.tests.libstest.app;
 
+import com.android.tests.libstest.libapp.R;
+
 import android.app.Activity;
 import android.widget.TextView;
 
@@ -7,8 +9,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-
-import com.android.tests.libstest.libapp.R;
 
 public class LibApp {
     

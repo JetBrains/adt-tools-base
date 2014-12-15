@@ -25,7 +25,6 @@ import com.android.utils.ILogger;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import org.kxml2.io.KXmlSerializer;
 
 import java.io.File;
 import java.io.IOException;

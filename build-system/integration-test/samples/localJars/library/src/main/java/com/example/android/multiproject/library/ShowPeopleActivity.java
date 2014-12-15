@@ -1,16 +1,11 @@
 package com.example.android.multiproject.library;
 
+import com.example.android.multiproject.person.People;
+import com.example.android.multiproject.person.Person;
+
 import android.app.Activity;
 import android.os.Bundle;
-import android.content.Intent;
-import android.widget.TextView;
 import android.widget.LinearLayout;
-
-import java.lang.String;
-import java.util.Arrays;
-
-import com.example.android.multiproject.person.Person;
-import com.example.android.multiproject.person.People;
 
 public class ShowPeopleActivity extends Activity {
     @Override

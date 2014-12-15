@@ -16,11 +16,11 @@
 
 package com.android.tests.assets.lib;
 
+import com.android.tests.assets.lib.R;
+
 import android.test.ActivityInstrumentationTestCase2;
 import android.test.suitebuilder.annotation.MediumTest;
 import android.widget.TextView;
-
-import com.android.tests.assets.lib.R;
 
 /**
  * An example of an {@link ActivityInstrumentationTestCase2} of a specific activity {@link Focus2}.

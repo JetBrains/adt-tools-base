@@ -16,13 +16,13 @@
 
 package com.android.build.gradle.internal.model;
 
-import java.io.Serializable;
-import java.util.Collection;
-
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.model.AaptOptions;
 import com.google.common.collect.ImmutableList;
+
+import java.io.Serializable;
+import java.util.Collection;
 
 /**
  * Implementation of AaptOptions that is Serializable.

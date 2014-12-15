@@ -2,8 +2,8 @@ package com.android.tests.assets.lib;
 
 import android.app.Activity;
 import android.content.Context;
-import android.widget.TextView;
 import android.content.res.AssetManager;
+import android.widget.TextView;
 
 import java.io.BufferedReader;
 import java.io.IOException;

@@ -1,5 +1,8 @@
 package com.android.tests.extractannotations;
 
+import static com.android.tests.extractannotations.Constants.FLAG_VALUE_1;
+import static com.android.tests.extractannotations.Constants.FLAG_VALUE_2;
+
 import android.support.annotation.ColorRes;
 import android.support.annotation.DrawableRes;
 import android.support.annotation.IdRes;
@@ -12,9 +15,6 @@ import android.support.annotation.StringRes;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.Map;
-
-import static com.android.tests.extractannotations.Constants.FLAG_VALUE_1;
-import static com.android.tests.extractannotations.Constants.FLAG_VALUE_2;
 
 @SuppressWarnings({"JavaDoc", "UnusedDeclaration", "SpellCheckingInspection"})
 public class ExtractTest {

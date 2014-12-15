@@ -18,8 +18,8 @@ package com.android.build.gradle.internal.dsl
 
 import com.android.build.gradle.AppPlugin
 import com.android.build.gradle.internal.test.BaseTest
-import com.android.builder.core.DefaultBuildType
 import com.android.builder.core.BuilderConstants
+import com.android.builder.core.DefaultBuildType
 import org.gradle.api.Project
 import org.gradle.testfixtures.ProjectBuilder
 

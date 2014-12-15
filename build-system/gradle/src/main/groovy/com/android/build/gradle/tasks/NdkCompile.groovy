@@ -17,8 +17,8 @@
 package com.android.build.gradle.tasks
 
 import com.android.annotations.NonNull
-import com.android.build.gradle.internal.tasks.NdkTask
 import com.android.build.gradle.internal.core.NdkConfig
+import com.android.build.gradle.internal.tasks.NdkTask
 import com.android.sdklib.IAndroidTarget
 import com.google.common.base.Charsets
 import com.google.common.base.Joiner

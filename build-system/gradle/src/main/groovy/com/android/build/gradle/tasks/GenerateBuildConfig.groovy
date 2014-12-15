@@ -14,12 +14,10 @@
  * limitations under the License.
  */
 package com.android.build.gradle.tasks
+
 import com.android.build.gradle.internal.tasks.BaseTask
 import com.android.builder.compiling.BuildConfigGenerator
-import com.android.builder.internal.ClassFieldImpl
 import com.android.builder.model.ClassField
-import com.google.common.collect.ImmutableList
-import com.google.common.collect.ImmutableSet
 import com.google.common.collect.Lists
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Optional

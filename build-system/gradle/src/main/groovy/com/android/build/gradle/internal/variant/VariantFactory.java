@@ -19,8 +19,6 @@ package com.android.build.gradle.internal.variant;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.api.BaseVariant;
-import com.android.build.gradle.internal.BuildTypeData;
-import com.android.build.gradle.internal.ProductFlavorData;
 import com.android.build.gradle.internal.VariantModel;
 import com.android.build.gradle.internal.api.ReadOnlyObjectProvider;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
@@ -28,7 +26,6 @@ import com.android.builder.core.VariantConfiguration;
 
 import org.gradle.api.Task;
 
-import java.util.Map;
 import java.util.Set;
 
 /**

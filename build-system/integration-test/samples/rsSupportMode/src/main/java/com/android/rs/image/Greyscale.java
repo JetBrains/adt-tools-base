@@ -16,8 +16,6 @@
 
 package com.android.rs.image2;
 
-import android.util.Log;
-
 public class Greyscale extends TestBase {
     private ScriptC_greyscale mScript;
 

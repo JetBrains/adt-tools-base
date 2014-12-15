@@ -1,7 +1,5 @@
 package com.android.tests.basic;
 
-import java.lang.Integer;
-
 public class StringProvider {
     private static int obfuscatedInt = 5;
 

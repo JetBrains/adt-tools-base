@@ -20,12 +20,9 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.BasePlugin;
 import com.android.build.gradle.api.LibraryVariant;
-import com.android.build.gradle.api.LibraryVariantOutput;
 import com.android.build.gradle.api.TestVariant;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.LibraryVariantData;
-
-import org.gradle.api.tasks.bundling.Zip;
 
 /**
  * implementation of the {@link LibraryVariant} interface around a

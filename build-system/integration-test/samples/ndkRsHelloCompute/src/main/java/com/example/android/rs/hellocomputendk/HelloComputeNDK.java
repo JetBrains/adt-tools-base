@@ -17,9 +17,9 @@
 package com.example.android.rs.hellocomputendk;
 
 import android.app.Activity;
-import android.os.Bundle;
-import android.graphics.BitmapFactory;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.os.Bundle;
 import android.widget.ImageView;
 
 public class HelloComputeNDK extends Activity {

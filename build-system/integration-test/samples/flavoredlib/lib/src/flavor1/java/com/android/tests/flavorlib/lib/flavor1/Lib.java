@@ -1,5 +1,7 @@
 package com.android.tests.flavorlib.lib.flavor1;
 
+import com.android.tests.flavorlib.lib.R;
+
 import android.app.Activity;
 import android.widget.TextView;
 
@@ -7,8 +9,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-
-import com.android.tests.flavorlib.lib.R;
 
 public class Lib {
 

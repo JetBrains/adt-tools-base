@@ -1,11 +1,11 @@
 package com.android.tests.dependencies;
 
-import android.test.ActivityInstrumentationTestCase2;
-import android.test.suitebuilder.annotation.MediumTest;
-import android.test.suitebuilder.annotation.SmallTest;
-import android.widget.TextView;
 import com.android.tests.dependencies.jar.StringHelper;
 import com.android.tests.dependencies.jar.StringHelper2;
+
+import android.test.ActivityInstrumentationTestCase2;
+import android.test.suitebuilder.annotation.SmallTest;
+import android.widget.TextView;
 
 public class MainActivityTest extends ActivityInstrumentationTestCase2<MainActivity> {
 

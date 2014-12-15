@@ -3,6 +3,7 @@ package com.android.tests.basic;
 import android.app.Activity;
 import android.os.Bundle;
 import android.widget.TextView;
+
 import java.lang.reflect.Method;
 
 public class Main extends Activity

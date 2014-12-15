@@ -20,7 +20,10 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.builder.model.AndroidArtifact
 import com.android.builder.model.AndroidProject
 import com.android.builder.model.Variant
-import org.junit.*
+import org.junit.AfterClass
+import org.junit.BeforeClass
+import org.junit.ClassRule
+import org.junit.Test
 
 import static org.junit.Assert.assertNotNull
 import static org.junit.Assert.assertTrue

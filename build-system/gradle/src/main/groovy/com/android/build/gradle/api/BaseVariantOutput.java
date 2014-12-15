@@ -18,11 +18,9 @@ package com.android.build.gradle.api;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.OutputFile;
 import com.android.build.VariantOutput;
 import com.android.build.gradle.tasks.ManifestProcessorTask;
 import com.android.build.gradle.tasks.ProcessAndroidResources;
-import com.google.common.collect.ImmutableList;
 
 import org.gradle.api.Task;
 

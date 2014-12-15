@@ -17,9 +17,7 @@
 package com.android.build.gradle.tasks
 
 import com.android.annotations.NonNull
-import com.android.annotations.Nullable
 import com.android.build.FilterData
-import com.android.build.FilterDataImpl
 import com.android.build.OutputFile
 import com.android.build.gradle.api.ApkOutputFile
 import com.google.common.base.Optional
