@@ -2,9 +2,9 @@ apply plugin: 'sdk-files'
 
 sdk {
     common {
-        item('projects')   { into 'templates/projects' }
-        item('activities') { into 'templates/activities' }
-        item('gradle')     { into 'templates/gradle' }
-        item('other')      { into 'templates/other' }
+        item('eclipse/projects')   { into 'templates/projects' }
+        item('eclipse/activities') { into 'templates/activities' }
+        item('eclipse/gradle')     { into 'templates/gradle' }
+        item('eclipse/other')      { into 'templates/other' }
     }
 }
