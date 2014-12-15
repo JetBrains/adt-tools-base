@@ -132,6 +132,7 @@ import com.android.sdklib.AndroidTargetHash
 import com.android.sdklib.SdkVersionInfo
 import com.android.utils.ILogger
 import com.google.common.base.Predicate
+import com.google.common.base.Predicates
 import com.google.common.collect.ArrayListMultimap
 import com.google.common.collect.ImmutableSet
 import com.google.common.collect.ListMultimap
@@ -141,7 +142,6 @@ import com.google.common.collect.Multimap
 import com.google.common.collect.Sets
 import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
-import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.JavaVersion
 import org.gradle.api.Project
@@ -152,13 +152,16 @@ import org.gradle.api.artifacts.ModuleVersionIdentifier
 import org.gradle.api.artifacts.ProjectDependency
 import org.gradle.api.artifacts.ResolvedArtifact
 import org.gradle.api.artifacts.SelfResolvingDependency
-import org.gradle.api.artifacts.result.DependencyResult
+import org.gradle.api.artifacts.repositories.MavenArtifactRepository
 import org.gradle.api.artifacts.result.ResolvedComponentResult
 import org.gradle.api.artifacts.result.ResolvedDependencyResult
 import org.gradle.api.artifacts.result.UnresolvedDependencyResult
+import org.gradle.api.execution.TaskExecutionGraph
+import org.gradle.api.internal.ConventionMapping
 import org.gradle.api.internal.project.ProjectInternal
 import org.gradle.api.logging.LogLevel
 import org.gradle.api.logging.Logger
+import org.gradle.api.plugins.BasePluginConvention
 import org.gradle.api.plugins.JavaBasePlugin
 import org.gradle.api.plugins.JavaPlugin
 import org.gradle.api.specs.Specs
@@ -209,6 +212,7 @@ import static java.io.File.separator
 /**
  * Base class for all Android plugins
  */
+@CompileStatic
 public abstract class BasePlugin {
 
     public final static String DIR_BUNDLES = "bundles";
@@ -226,15 +230,6 @@ public abstract class BasePlugin {
 
     public static final String FILE_JACOCO_AGENT = 'jacocoagent.jar'
     public static final String DEFAULT_PROGUARD_CONFIG_FILE = 'proguard-android.txt'
-
-
-    private static final Predicate<? super Object> NON_NULL_ONLY = new Predicate<? super Object>() {
-
-        @Override
-        boolean apply(Object o) {
-            return o != null;
-        }
-    }
 
     protected Instantiator instantiator
     private ToolingModelBuilderRegistry registry
@@ -332,7 +327,7 @@ public abstract class BasePlugin {
         // Register a builder for the custom tooling model
         registry.register(new ModelBuilder());
 
-        project.tasks.assemble.description =
+        project.tasks.getByName("assemble").description =
                 "Assembles all variants of all applications and secondary packages."
 
         // call back on execution. This is called after the whole build is done (not
@@ -353,7 +348,7 @@ public abstract class BasePlugin {
             LibraryCache.getCache().unload()
         }
 
-        project.gradle.taskGraph.whenReady { taskGraph ->
+        project.gradle.taskGraph.whenReady { TaskExecutionGraph taskGraph ->
             for (Task task : taskGraph.allTasks) {
                 if (task instanceof PreDex) {
                     PreDexCache.getCache().load(
@@ -490,8 +485,8 @@ public abstract class BasePlugin {
 
         // setup SDK repositories.
         for (File file : sdkHandler.sdkLoader.repositories) {
-            project.repositories.maven {
-                url = file.toURI()
+            project.repositories.maven { MavenArtifactRepository repo ->
+                repo.url = file.toURI()
             }
         }
 
@@ -499,7 +494,7 @@ public abstract class BasePlugin {
         createReportTasks()
 
         if (lintVital != null) {
-            project.gradle.taskGraph.whenReady { taskGraph ->
+            project.gradle.taskGraph.whenReady { TaskExecutionGraph taskGraph ->
                 if (taskGraph.hasTask(lintAll)) {
                     lintVital.setEnabled(false)
                 }
@@ -665,27 +660,24 @@ public abstract class BasePlugin {
                 processManifestTask.variantOutputData = variantOutputData as ApkVariantOutputData
             }
 
-            processManifestTask.conventionMapping.libraries = {
+            conventionMapping(processManifestTask).map("libraries") {
                 List<ManifestDependencyImpl> manifests =
                         getManifestDependencies(config.directLibraries)
 
                 if (variantData.generateApkDataTask != null) {
                     manifests.add(new ManifestDependencyImpl(
-                            variantData.generateApkDataTask.getManifestFile(),
-                            Collections.emptyList()))
+                            variantData.generateApkDataTask.getManifestFile(), []))
                 }
 
                 if (csmTask != null) {
                     manifests.add(
-                            new ManifestDependencyImpl(
-                                    csmTask.getManifestFile(),
-                                    Collections.emptyList()))
+                            new ManifestDependencyImpl(csmTask.getManifestFile(), []))
                 }
 
                 return manifests
             }
 
-            processManifestTask.conventionMapping.minSdkVersion = {
+            conventionMapping(processManifestTask).map("minSdkVersion") {
                 if (androidBuilder.isPreviewTarget()) {
                     return androidBuilder.getTargetCodename()
                 }
@@ -693,7 +685,7 @@ public abstract class BasePlugin {
                 mergedFlavor.minSdkVersion?.apiString
             }
 
-            processManifestTask.conventionMapping.targetSdkVersion = {
+            conventionMapping(processManifestTask).map("targetSdkVersion") {
                 if (androidBuilder.isPreviewTarget()) {
                     return androidBuilder.getTargetCodename()
                 }
@@ -701,7 +693,7 @@ public abstract class BasePlugin {
                 return mergedFlavor.targetSdkVersion?.apiString
             }
 
-            processManifestTask.conventionMapping.maxSdkVersion = {
+            conventionMapping(processManifestTask).map("maxSdkVersion") {
                 if (androidBuilder.isPreviewTarget()) {
                     return null
                 }
@@ -709,7 +701,7 @@ public abstract class BasePlugin {
                 return mergedFlavor.maxSdkVersion
             }
 
-            processManifestTask.conventionMapping.manifestOutputFile = {
+            conventionMapping(processManifestTask).map("manifestOutputFile") {
                 project.file(
                         "$project.buildDir/${FD_INTERMEDIATES}/manifests/full/" +
                                 "${outputDirName}/AndroidManifest.xml")
@@ -721,7 +713,7 @@ public abstract class BasePlugin {
                 apkLocation = project.getProperties().get(PROPERTY_APK_LOCATION)
             }
 
-            processManifestTask.conventionMapping.reportFile = {
+            conventionMapping(processManifestTask).map("reportFile") {
                 project.file(
                         "$apkLocation/manifest-merger-${config.baseName}-report.txt")
             }
@@ -739,13 +731,18 @@ public abstract class BasePlugin {
         csmTask.screenDensity = variantOutputData.mainOutputFile.getFilter(OutputFile.DENSITY)
         csmTask.screenSizes = screenSizes
 
-        csmTask.conventionMapping.manifestFile = {
+        conventionMapping(csmTask).map("manifestFile") {
             project.file(
                     "$project.buildDir/${FD_INTERMEDIATES}/manifests/density/" +
                             "${variantOutputData.dirName}/AndroidManifest.xml")
         }
 
         return csmTask;
+    }
+
+    @CompileDynamic
+    private ConventionMapping conventionMapping(Task task) {
+        task.conventionMapping
     }
 
     public void createMergeLibManifestsTask(
@@ -767,14 +764,14 @@ public abstract class BasePlugin {
 
         com.android.builder.model.ProductFlavor mergedFlavor = config.mergedFlavor
 
-        processManifest.conventionMapping.minSdkVersion = {
+        conventionMapping(processManifest).map("minSdkVersion") {
             if (androidBuilder.isPreviewTarget()) {
                 return androidBuilder.getTargetCodename()
             }
             return mergedFlavor.minSdkVersion?.apiString
         }
 
-        processManifest.conventionMapping.targetSdkVersion = {
+        conventionMapping(processManifest).map("targetSdkVersion") {
             if (androidBuilder.isPreviewTarget()) {
                 return androidBuilder.getTargetCodename()
             }
@@ -782,7 +779,7 @@ public abstract class BasePlugin {
             return mergedFlavor.targetSdkVersion?.apiString
         }
 
-        processManifest.conventionMapping.maxSdkVersion = {
+        conventionMapping(processManifest).map("maxSdkVersion") {
             if (androidBuilder.isPreviewTarget()) {
                 return null
             }
@@ -790,7 +787,7 @@ public abstract class BasePlugin {
             return mergedFlavor.maxSdkVersion
         }
 
-        processManifest.conventionMapping.manifestOutputFile = {
+        conventionMapping(processManifest).map("manifestOutputFile") {
             project.file(
                     "$project.buildDir/${FD_INTERMEDIATES}/${manifestOutDir}/" +
                             "${variantData.variantConfiguration.dirName}/AndroidManifest.xml")
@@ -805,10 +802,10 @@ public abstract class BasePlugin {
         processTestManifestTask = project.tasks.create(
                 "process${variantData.variantConfiguration.fullName.capitalize()}Manifest",
                 ProcessTestManifest)
-        processTestManifestTask.conventionMapping.testManifestFile = {
+        conventionMapping(processTestManifestTask).map("testManifestFile") {
             config.getMainManifest()
         }
-        processTestManifestTask.conventionMapping.tmpDir = {
+        conventionMapping(processTestManifestTask).map("tmpDir") {
             project.file(
                     "$project.buildDir/${FD_INTERMEDIATES}/${manifestOurDir}/tmp")
         }
@@ -821,39 +818,39 @@ public abstract class BasePlugin {
 
         processTestManifestTask.plugin = this
 
-        processTestManifestTask.conventionMapping.testApplicationId = {
+        conventionMapping(processTestManifestTask).map("testApplicationId") {
             config.applicationId
         }
-        processTestManifestTask.conventionMapping.minSdkVersion = {
+        conventionMapping(processTestManifestTask).map("minSdkVersion") {
             if (androidBuilder.isPreviewTarget()) {
                 return androidBuilder.getTargetCodename()
             }
 
             config.minSdkVersion?.apiString
         }
-        processTestManifestTask.conventionMapping.targetSdkVersion = {
+        conventionMapping(processTestManifestTask).map("targetSdkVersion") {
             if (androidBuilder.isPreviewTarget()) {
                 return androidBuilder.getTargetCodename()
             }
 
             return config.targetSdkVersion?.apiString
         }
-        processTestManifestTask.conventionMapping.testedApplicationId = {
+        conventionMapping(processTestManifestTask).map("testedApplicationId") {
             config.testedApplicationId
         }
-        processTestManifestTask.conventionMapping.instrumentationRunner = {
+        conventionMapping(processTestManifestTask).map("instrumentationRunner") {
             config.instrumentationRunner
         }
-        processTestManifestTask.conventionMapping.handleProfiling = {
+        conventionMapping(processTestManifestTask).map("handleProfiling") {
             config.handleProfiling
         }
-        processTestManifestTask.conventionMapping.functionalTest = {
+        conventionMapping(processTestManifestTask).map("functionalTest") {
             config.functionalTest
         }
-        processTestManifestTask.conventionMapping.libraries = {
+        conventionMapping(processTestManifestTask).map("libraries") {
             getManifestDependencies(config.directLibraries)
         }
-        processTestManifestTask.conventionMapping.manifestOutputFile = {
+        conventionMapping(processTestManifestTask).map("manifestOutputFile") {
             project.file(
                     "$project.buildDir/${FD_INTERMEDIATES}/${manifestOurDir}/${variantData.variantConfiguration.dirName}/AndroidManifest.xml")
         }
@@ -888,7 +885,7 @@ public abstract class BasePlugin {
         renderscriptTask.dependsOn variantData.prepareDependenciesTask
         renderscriptTask.plugin = this
 
-        renderscriptTask.conventionMapping.targetApi = {
+        conventionMapping(renderscriptTask).map("targetApi") {
             int targetApi = mergedFlavor.renderscriptTargetApi != null ?
                     mergedFlavor.renderscriptTargetApi : -1
             ApiVersion apiVersion = config.getMinSdkVersion()
@@ -909,22 +906,22 @@ public abstract class BasePlugin {
         renderscriptTask.debugBuild = config.buildType.renderscriptDebuggable
         renderscriptTask.optimLevel = config.buildType.renderscriptOptimLevel
 
-        renderscriptTask.conventionMapping.sourceDirs = { config.renderscriptSourceList }
-        renderscriptTask.conventionMapping.importDirs = { config.renderscriptImports }
+        conventionMapping(renderscriptTask).map("sourceDirs") { config.renderscriptSourceList }
+        conventionMapping(renderscriptTask).map("importDirs") { config.renderscriptImports }
 
-        renderscriptTask.conventionMapping.sourceOutputDir = {
+        conventionMapping(renderscriptTask).map("sourceOutputDir") {
             project.file("$project.buildDir/${FD_GENERATED}/source/rs/${variantData.variantConfiguration.dirName}")
         }
-        renderscriptTask.conventionMapping.resOutputDir = {
+        conventionMapping(renderscriptTask).map("resOutputDir") {
             project.file("$project.buildDir/${FD_GENERATED}/res/rs/${variantData.variantConfiguration.dirName}")
         }
-        renderscriptTask.conventionMapping.objOutputDir = {
+        conventionMapping(renderscriptTask).map("objOutputDir") {
             project.file("$project.buildDir/${FD_INTERMEDIATES}/rs/${variantData.variantConfiguration.dirName}/obj")
         }
-        renderscriptTask.conventionMapping.libOutputDir = {
+        conventionMapping(renderscriptTask).map("libOutputDir") {
             project.file("$project.buildDir/${FD_INTERMEDIATES}/rs/${variantData.variantConfiguration.dirName}/lib")
         }
-        renderscriptTask.conventionMapping.ndkConfig = { config.ndkConfig }
+        conventionMapping(renderscriptTask).map("ndkConfig") { config.ndkConfig }
     }
 
     public void createMergeResourcesTask(
@@ -956,9 +953,9 @@ public abstract class BasePlugin {
 
         mergeResourcesTask.process9Patch = process9Patch
 
-        mergeResourcesTask.conventionMapping.useNewCruncher = { extension.aaptOptions.useNewCruncher }
+        conventionMapping(mergeResourcesTask).map("useNewCruncher") { extension.aaptOptions.useNewCruncher }
 
-        mergeResourcesTask.conventionMapping.inputResourceSets = {
+        conventionMapping(mergeResourcesTask).map("inputResourceSets") {
             def generatedResFolders = [ variantData.renderscriptCompileTask.getResOutputDir(),
                                         variantData.generateResValuesTask.getResOutputDir() ]
             if (variantData.generateApkDataTask != null) {
@@ -968,7 +965,7 @@ public abstract class BasePlugin {
                     includeDependencies)
         }
 
-        mergeResourcesTask.conventionMapping.outputDir = { project.file(outputLocation) }
+        conventionMapping(mergeResourcesTask).map("outputDir") { project.file(outputLocation) }
 
         return mergeResourcesTask
     }
@@ -993,14 +990,14 @@ public abstract class BasePlugin {
         mergeAssetsTask.incrementalFolder =
                 project.file("$project.buildDir/${FD_INTERMEDIATES}/incremental/mergeAssets/${variantConfig.dirName}")
 
-        mergeAssetsTask.conventionMapping.inputAssetSets = {
+        conventionMapping(mergeAssetsTask).map("inputAssetSets") {
             def generatedAssets = []
             if (variantData.copyApkTask != null) {
                 generatedAssets.add(variantData.copyApkTask.destinationDir)
             }
             variantConfig.getAssetSets(generatedAssets, includeDependencies)
         }
-        mergeAssetsTask.conventionMapping.outputDir = { project.file(outputLocation) }
+        conventionMapping(mergeAssetsTask).map("outputDir") { project.file(outputLocation) }
     }
 
     public void createBuildConfigTask(
@@ -1028,43 +1025,43 @@ public abstract class BasePlugin {
 
         generateBuildConfigTask.plugin = this
 
-        generateBuildConfigTask.conventionMapping.buildConfigPackageName = {
+        conventionMapping(generateBuildConfigTask).map("buildConfigPackageName") {
             variantConfiguration.originalApplicationId
         }
 
-        generateBuildConfigTask.conventionMapping.appPackageName = {
+        conventionMapping(generateBuildConfigTask).map("appPackageName") {
             variantConfiguration.applicationId
         }
 
-        generateBuildConfigTask.conventionMapping.versionName = {
+        conventionMapping(generateBuildConfigTask).map("versionName") {
             variantConfiguration.versionName
         }
 
-        generateBuildConfigTask.conventionMapping.versionCode = {
+        conventionMapping(generateBuildConfigTask).map("versionCode") {
             variantConfiguration.versionCode
         }
 
-        generateBuildConfigTask.conventionMapping.debuggable = {
+        conventionMapping(generateBuildConfigTask).map("debuggable") {
             variantConfiguration.buildType.isDebuggable()
         }
 
-        generateBuildConfigTask.conventionMapping.buildTypeName = {
+        conventionMapping(generateBuildConfigTask).map("buildTypeName") {
             variantConfiguration.buildType.name
         }
 
-        generateBuildConfigTask.conventionMapping.flavorName = {
+        conventionMapping(generateBuildConfigTask).map("flavorName") {
             variantConfiguration.flavorName
         }
 
-        generateBuildConfigTask.conventionMapping.flavorNamesWithDimensionNames = {
+        conventionMapping(generateBuildConfigTask).map("flavorNamesWithDimensionNames") {
             variantConfiguration.flavorNamesWithDimensionNames
         }
 
-        generateBuildConfigTask.conventionMapping.items = {
+        conventionMapping(generateBuildConfigTask).map("items") {
             variantConfiguration.buildConfigItems
         }
 
-        generateBuildConfigTask.conventionMapping.sourceOutputDir = {
+        conventionMapping(generateBuildConfigTask).map("sourceOutputDir") {
             project.file("$project.buildDir/${FD_GENERATED}/source/buildConfig/${variantData.variantConfiguration.dirName}")
         }
     }
@@ -1081,11 +1078,11 @@ public abstract class BasePlugin {
 
         generateResValuesTask.plugin = this
 
-        generateResValuesTask.conventionMapping.items = {
+        conventionMapping(generateResValuesTask).map("items") {
             variantConfiguration.resValues
         }
 
-        generateResValuesTask.conventionMapping.resOutputDir = {
+        conventionMapping(generateResValuesTask).map("resOutputDir") {
             project.file("$project.buildDir/${FD_GENERATED}/res/generated/${variantData.variantConfiguration.dirName}")
         }
     }
@@ -1142,25 +1139,25 @@ public abstract class BasePlugin {
                 variantData.sourceGenTask.dependsOn processResources
                 processResources.enforceUniquePackageName = extension.getEnforceUniquePackageName()
 
-                processResources.conventionMapping.libraries = {
+                conventionMapping(processResources).map("libraries") {
                     getTextSymbolDependencies(config.allLibraries)
                 }
-                processResources.conventionMapping.packageForR = {
+                conventionMapping(processResources).map("packageForR") {
                     config.originalApplicationId
                 }
 
                 // TODO: unify with generateBuilderConfig, compileAidl, and library packaging somehow?
-                processResources.conventionMapping.sourceOutputDir = {
+                conventionMapping(processResources).map("sourceOutputDir") {
                     project.file(
                             "$project.buildDir/${FD_GENERATED}/source/r/${config.dirName}")
                 }
 
-                processResources.conventionMapping.textSymbolOutputDir = {
+                conventionMapping(processResources).map("textSymbolOutputDir") {
                     project.file(symbolLocation)
                 }
 
                 if (config.buildType.isMinifyEnabled()) {
-                    processResources.conventionMapping.proguardOutputFile = {
+                    conventionMapping(processResources).map("proguardOutputFile") {
                         project.file(
                                 "$project.buildDir/${FD_INTERMEDIATES}/proguard-rules/${config.dirName}/aapt_rules.txt")
                     }
@@ -1172,36 +1169,34 @@ public abstract class BasePlugin {
                 }
             }
 
-            processResources.conventionMapping.manifestFile = {
+            conventionMapping(processResources).map("manifestFile") {
                 variantOutputData.manifestProcessorTask.manifestOutputFile
             }
 
-            processResources.conventionMapping.resDir = {
+            conventionMapping(processResources).map("resDir") {
                 variantData.mergeResourcesTask.outputDir
             }
 
-            processResources.conventionMapping.assetsDir = {
+            conventionMapping(processResources).map("assetsDir") {
                 variantData.mergeAssetsTask.outputDir
             }
 
             if (generateResourcePackage) {
-                processResources.conventionMapping.packageOutputFile = {
+                conventionMapping(processResources).map("packageOutputFile") {
                     project.file(
                             "$project.buildDir/${FD_INTERMEDIATES}/res/resources-${outputBaseName}.ap_")
                 }
             }
 
-            processResources.conventionMapping.type = { config.type }
-            processResources.conventionMapping.debuggable =
-                    { config.buildType.debuggable }
-            processResources.conventionMapping.aaptOptions = { extension.aaptOptions }
-            processResources.conventionMapping.pseudoLocalesEnabled =
-                    { config.buildType.pseudoLocalesEnabled }
+            conventionMapping(processResources).map("type") { config.type }
+            conventionMapping(processResources).map("debuggable") { config.buildType.debuggable }
+            conventionMapping(processResources).map("aaptOptions") { extension.aaptOptions }
+            conventionMapping(processResources).map("pseudoLocalesEnabled") { config.buildType.pseudoLocalesEnabled }
 
-            processResources.conventionMapping.resourceConfigs = {
+            conventionMapping(processResources).map("resourceConfigs") {
                 return config.mergedFlavor.resourceConfigurations
             }
-            processResources.conventionMapping.preferredDensity = {
+            conventionMapping(processResources).map("preferredDensity") {
                 variantOutputData.mainOutputFile.getFilter(OutputFile.DENSITY)
             }
 
@@ -1251,7 +1246,7 @@ public abstract class BasePlugin {
         variantOutputData.packageSplitResourcesTask.dependsOn variantOutputData.processResourcesTask
 
         SplitZipAlign zipAlign = project.tasks.create("zipAlign${config.fullName.capitalize()}SplitPackages", SplitZipAlign)
-        zipAlign.conventionMapping.zipAlignExe = {
+        conventionMapping(zipAlign).map("zipAlignExe") {
             String path = androidBuilder.targetInfo?.buildTools?.getPath(ZIP_ALIGN)
             if (path != null) {
                 return new File(path)
@@ -1307,7 +1302,7 @@ public abstract class BasePlugin {
         generateSplitAbiRes.versionName = config.getVersionName()
         generateSplitAbiRes.debuggable = {
             config.buildType.debuggable }
-        generateSplitAbiRes.conventionMapping.aaptOptions = {
+        conventionMapping(generateSplitAbiRes).map("aaptOptions") {
             extension.aaptOptions
         }
         generateSplitAbiRes.dependsOn variantOutputData.processResourcesTask
@@ -1327,11 +1322,11 @@ public abstract class BasePlugin {
         variantOutputData.packageSplitAbiTask.plugin = this
         variantOutputData.packageSplitAbiTask.dependsOn generateSplitAbiRes
 
-        variantOutputData.packageSplitAbiTask.conventionMapping.jniFolders = {
+        conventionMapping(variantOutputData.packageSplitAbiTask).map("jniFolders") {
             getJniFolders(variantData);
         }
-        variantOutputData.packageSplitAbiTask.conventionMapping.jniDebuggable = { config.buildType.jniDebuggable }
-        variantOutputData.packageSplitAbiTask.conventionMapping.packagingOptions = { extension.packagingOptions }
+        conventionMapping(variantOutputData.packageSplitAbiTask).map("jniDebuggable") { config.buildType.jniDebuggable }
+        conventionMapping(variantOutputData.packageSplitAbiTask).map("packagingOptions") { extension.packagingOptions }
 
         ((ApkVariantOutputData) variantOutputData).splitZipAlign.dependsOn variantOutputData.packageSplitAbiTask
     }
@@ -1388,7 +1383,7 @@ public abstract class BasePlugin {
             }
         }
 
-        processResources.conventionMapping.destinationDir = {
+        conventionMapping(processResources).map("destinationDir") {
             project.file("$project.buildDir/${FD_INTERMEDIATES}/javaResources/${variantData.variantConfiguration.dirName}")
         }
     }
@@ -1410,10 +1405,10 @@ public abstract class BasePlugin {
         compileTask.incrementalFolder =
                 project.file("$project.buildDir/${FD_INTERMEDIATES}/incremental/aidl/${variantData.variantConfiguration.dirName}")
 
-        compileTask.conventionMapping.sourceDirs = { variantConfiguration.aidlSourceList }
-        compileTask.conventionMapping.importDirs = { variantConfiguration.aidlImports }
+        conventionMapping(compileTask).map("sourceDirs") { variantConfiguration.aidlSourceList }
+        conventionMapping(compileTask).map("importDirs") { variantConfiguration.aidlImports }
 
-        compileTask.conventionMapping.sourceOutputDir = {
+        conventionMapping(compileTask).map("sourceOutputDir") {
             project.file("$project.buildDir/${FD_GENERATED}/source/aidl/${variantData.variantConfiguration.dirName}")
         }
         compileTask.aidlParcelableDir = parcelableDir
@@ -1437,11 +1432,11 @@ public abstract class BasePlugin {
         // it's done automatically since the classpath includes the library output as a normal
         // dependency.
         if (testedVariantData instanceof ApplicationVariantData) {
-            compileTask.conventionMapping.classpath =  {
+            conventionMapping(compileTask).map("classpath")  {
                 project.files(androidBuilder.getCompileClasspath(config)) + testedVariantData.javaCompileTask.classpath + testedVariantData.javaCompileTask.outputs.files
             }
         } else {
-            compileTask.conventionMapping.classpath =  {
+            conventionMapping(compileTask).map("classpath")  {
                 project.files(androidBuilder.getCompileClasspath(config))
             }
         }
@@ -1450,10 +1445,10 @@ public abstract class BasePlugin {
         // Add a temporary approximation
         compileTask.dependsOn variantData.variantDependency.compileConfiguration.buildDependencies
 
-        compileTask.conventionMapping.destinationDir = {
+        conventionMapping(compileTask).map("destinationDir") {
             project.file("$project.buildDir/${FD_INTERMEDIATES}/classes/${variantData.variantConfiguration.dirName}")
         }
-        compileTask.conventionMapping.dependencyCacheDir = {
+        conventionMapping(compileTask).map("dependencyCacheDir") {
             project.file("$project.buildDir/${FD_INTERMEDIATES}/dependency-cache/${variantData.variantConfiguration.dirName}")
         }
 
@@ -1476,25 +1471,25 @@ public abstract class BasePlugin {
         variantData.generateApkDataTask = task
 
         task.plugin = this
-        task.conventionMapping.resOutputDir = {
+        conventionMapping(task).map("resOutputDir") {
             project.file("$project.buildDir/${FD_GENERATED}/res/microapk/${variantData.variantConfiguration.dirName}")
         }
-        task.conventionMapping.apkFile = {
+        conventionMapping(task).map("apkFile") {
             // only care about the first one. There shouldn't be more anyway.
             config.getFiles().iterator().next()
         }
-        task.conventionMapping.manifestFile = {
+        conventionMapping(task).map("manifestFile") {
             project.file("$project.buildDir/${FD_INTERMEDIATES}/${FD_GENERATED}/manifests/microapk/${variantData.variantConfiguration.dirName}/${FN_ANDROID_MANIFEST_XML}")
         }
-        task.conventionMapping.mainPkgName = {
+        conventionMapping(task).map("mainPkgName") {
             variantData.variantConfiguration.getApplicationId()
         }
 
-        task.conventionMapping.minSdkVersion = {
+        conventionMapping(task).map("minSdkVersion") {
             variantData.variantConfiguration.getMinSdkVersion().apiLevel
         }
 
-        task.conventionMapping.targetSdkVersion = {
+        conventionMapping(task).map("targetSdkVersion") {
             variantData.variantConfiguration.getTargetSdkVersion().apiLevel
         }
 
@@ -1516,7 +1511,7 @@ public abstract class BasePlugin {
         variantData.ndkCompileTask = ndkCompile
         variantData.compileTask.dependsOn variantData.ndkCompileTask
 
-        VariantConfiguration variantConfig = variantData.variantConfiguration
+        GradleVariantConfiguration variantConfig = variantData.variantConfiguration
 
         if (variantConfig.mergedFlavor.renderscriptNdkModeEnabled) {
             ndkCompile.ndkRenderScriptMode = true
@@ -1525,7 +1520,7 @@ public abstract class BasePlugin {
             ndkCompile.ndkRenderScriptMode = false
         }
 
-        ndkCompile.conventionMapping.sourceFolders = {
+        conventionMapping(ndkCompile).map("sourceFolders") {
             List<File> sourceList = variantConfig.jniSourceList
             if (variantConfig.mergedFlavor.renderscriptNdkModeEnabled) {
                 sourceList.add(variantData.renderscriptCompileTask.sourceOutputDir)
@@ -1534,20 +1529,20 @@ public abstract class BasePlugin {
             return sourceList
         }
 
-        ndkCompile.conventionMapping.generatedMakefile = {
+        conventionMapping(ndkCompile).map("generatedMakefile") {
             project.file("$project.buildDir/${FD_INTERMEDIATES}/ndk/${variantData.variantConfiguration.dirName}/Android.mk")
         }
 
-        ndkCompile.conventionMapping.ndkConfig = { variantConfig.ndkConfig }
+        conventionMapping(ndkCompile).map("ndkConfig") { variantConfig.ndkConfig }
 
-        ndkCompile.conventionMapping.debuggable = {
+        conventionMapping(ndkCompile).map("debuggable") {
             variantConfig.buildType.jniDebuggable
         }
 
-        ndkCompile.conventionMapping.objFolder = {
+        conventionMapping(ndkCompile).map("objFolder") {
             project.file("$project.buildDir/${FD_INTERMEDIATES}/ndk/${variantData.variantConfiguration.dirName}/obj")
         }
-        ndkCompile.conventionMapping.soFolder = {
+        conventionMapping(ndkCompile).map("soFolder") {
             project.file("$project.buildDir/${FD_INTERMEDIATES}/ndk/${variantData.variantConfiguration.dirName}/lib")
         }
     }
@@ -1557,7 +1552,6 @@ public abstract class BasePlugin {
      *
      * @param variantData the test variant
      */
-    @CompileStatic
     void createUnitTestVariantTasks(@NonNull TestVariantData variantData) {
         BaseVariantData testedVariantData = variantData.getTestedVariantData() as BaseVariantData
         createCompileAnchorTask(variantData)
@@ -1572,7 +1566,7 @@ public abstract class BasePlugin {
     public void createAndroidTestVariantTasks(@NonNull TestVariantData variantData) {
 
         BaseVariantData<? extends BaseVariantOutputData> testedVariantData =
-                (BaseVariantData<? extends BaseVariantOutputData>) variantData.getTestedVariantData()
+                variantData.getTestedVariantData() as BaseVariantData<? extends BaseVariantOutputData>
 
         // get single output for now (though this may always be the case for tests).
         BaseVariantOutputData variantOutputData = variantData.outputs.get(0)
@@ -1666,7 +1660,7 @@ public abstract class BasePlugin {
         lint.description = "Runs lint on all variants."
         lint.group = JavaBasePlugin.VERIFICATION_GROUP
         lint.setPlugin(this)
-        project.tasks.check.dependsOn lint
+        project.tasks.getByName(JavaBasePlugin.CHECK_TASK_NAME).dependsOn lint
         lintAll = lint
 
         int count = variantManager.getVariantDataList().size()
@@ -1719,7 +1713,6 @@ public abstract class BasePlugin {
         }
     }
 
-    @CompileStatic
     void createUnitTestTasks() {
         Task topLevelTest = project.tasks.create(JavaPlugin.TEST_TASK_NAME)
         topLevelTest.group = JavaBasePlugin.VERIFICATION_GROUP
@@ -1800,13 +1793,13 @@ public abstract class BasePlugin {
             mainConnectedTask.reportType = ReportType.MULTI_FLAVOR
             connectedCheck.dependsOn mainConnectedTask
 
-            mainConnectedTask.conventionMapping.resultsDir = {
+            conventionMapping(mainConnectedTask).map("resultsDir") {
                 String rootLocation = extension.testOptions.resultsDir != null ?
                     extension.testOptions.resultsDir : "$project.buildDir/${FD_OUTPUTS}/$FD_ANDROID_RESULTS"
 
                 project.file("$rootLocation/connected/$FD_FLAVORS_ALL")
             }
-            mainConnectedTask.conventionMapping.reportsDir = {
+            conventionMapping(mainConnectedTask).map("reportsDir") {
                 String rootLocation = extension.testOptions.reportDir != null ?
                     extension.testOptions.reportDir :
                     "$project.buildDir/${FD_OUTPUTS}/$FD_REPORTS/$FD_ANDROID_TESTS"
@@ -1828,13 +1821,13 @@ public abstract class BasePlugin {
             mainProviderTask.reportType = ReportType.MULTI_FLAVOR
             deviceCheck.dependsOn mainProviderTask
 
-            mainProviderTask.conventionMapping.resultsDir = {
+            conventionMapping(mainProviderTask).map("resultsDir") {
                 String rootLocation = extension.testOptions.resultsDir != null ?
                     extension.testOptions.resultsDir : "$project.buildDir/${FD_OUTPUTS}/$FD_ANDROID_RESULTS"
 
                 project.file("$rootLocation/devices/$FD_FLAVORS_ALL")
             }
-            mainProviderTask.conventionMapping.reportsDir = {
+            conventionMapping(mainProviderTask).map("reportsDir") {
                 String rootLocation = extension.testOptions.reportDir != null ?
                     extension.testOptions.reportDir :
                     "$project.buildDir/${FD_OUTPUTS}/$FD_REPORTS/$FD_ANDROID_TESTS"
@@ -1845,7 +1838,7 @@ public abstract class BasePlugin {
             reportTasks.add(mainProviderTask)
         }
 
-        // now look for the testedvariant and create the check tasks for them.
+        // Now look for the tested variant and create the check tasks for them.
         // don't use an auto loop as we can't reuse baseVariantData or the closure lower
         // gets broken.
         int count = variantManager.getVariantDataList().size();
@@ -1861,18 +1854,22 @@ public abstract class BasePlugin {
                 BaseVariantOutputData variantOutputData = baseVariantData.outputs.get(0)
                 BaseVariantOutputData testVariantOutputData = testVariantData.outputs.get(0)
 
-                // create the check tasks for this test
+                Class<? extends DeviceProviderInstrumentTestTask> taskClass = isLibraryTest ?
+                        DeviceProviderInstrumentTestLibraryTask :
+                        DeviceProviderInstrumentTestTask
 
+                String connectedTaskName = hasFlavors ?
+                        "${connectedRootName}${baseVariantData.variantConfiguration.fullName.capitalize()}" :
+                        connectedRootName
+
+                // create the check tasks for this test
                 // first the connected one.
-                def connectedTask = createDeviceProviderInstrumentTestTask(
-                        hasFlavors ?
-                            "${connectedRootName}${baseVariantData.variantConfiguration.fullName.capitalize()}" : connectedRootName,
+                DeviceProviderInstrumentTestTask connectedTask = createDeviceProviderInstrumentTestTask(
+                        connectedTaskName,
                         "Installs and runs the tests for Build '${baseVariantData.variantConfiguration.fullName}' on connected devices.",
-                        isLibraryTest ?
-                            DeviceProviderInstrumentTestLibraryTask :
-                            DeviceProviderInstrumentTestTask,
+                        taskClass,
                         testVariantData,
-                        baseVariantData,
+                        baseVariantData as BaseVariantData,
                         new ConnectedDeviceProvider(getSdkInfo().adb),
                         CONNECTED
                 )
@@ -1885,22 +1882,22 @@ public abstract class BasePlugin {
                             "create${baseVariantData.variantConfiguration.fullName.capitalize()}CoverageReport",
                             JacocoReportTask)
                     reportTask.reportName = baseVariantData.variantConfiguration.fullName
-                    reportTask.conventionMapping.jacocoClasspath = {
+                    conventionMapping(reportTask).map("jacocoClasspath") {
                         project.configurations[JacocoPlugin.ANT_CONFIGURATION_NAME]
                     }
-                    reportTask.conventionMapping.coverageFile = {
+                    conventionMapping(reportTask).map("coverageFile") {
                         new File(connectedTask.getCoverageDir(), SimpleTestCallable.FILE_COVERAGE_EC)
                     }
-                    reportTask.conventionMapping.classDir = {
+                    conventionMapping(reportTask).map("classDir") {
                         if (baseVariantData.javaCompileTask != null) {
                             return baseVariantData.javaCompileTask.destinationDir
                         }
 
                         return baseVariantData.jackTask.destinationDir
                     }
-                    reportTask.conventionMapping.sourceDir = { baseVariantData.getJavaSourceFoldersForCoverage() }
+                    conventionMapping(reportTask).map("sourceDir") { baseVariantData.getJavaSourceFoldersForCoverage() }
 
-                    reportTask.conventionMapping.reportDir = {
+                    conventionMapping(reportTask).map("reportDir") {
                         project.file(
                                 "$project.buildDir/${FD_OUTPUTS}/$FD_REPORTS/coverage/${baseVariantData.variantConfiguration.dirName}")
                     }
@@ -1911,16 +1908,14 @@ public abstract class BasePlugin {
 
                 // now the providers.
                 for (DeviceProvider deviceProvider : providers) {
-                    DefaultTask providerTask = createDeviceProviderInstrumentTestTask(
+                    DeviceProviderInstrumentTestTask providerTask = createDeviceProviderInstrumentTestTask(
                             hasFlavors ?
                                 "${deviceProvider.name}${ANDROID_TEST.suffix}${baseVariantData.variantConfiguration.fullName.capitalize()}" :
                                 "${deviceProvider.name}${ANDROID_TEST.suffix}",
                             "Installs and runs the tests for Build '${baseVariantData.variantConfiguration.fullName}' using Provider '${deviceProvider.name.capitalize()}'.",
-                            isLibraryTest ?
-                                DeviceProviderInstrumentTestLibraryTask :
-                                DeviceProviderInstrumentTestTask,
+                            taskClass,
                             testVariantData,
-                            baseVariantData,
+                            baseVariantData as BaseVariantData,
                             deviceProvider,
                             "$DEVICE/$deviceProvider.name"
                     )
@@ -1936,7 +1931,7 @@ public abstract class BasePlugin {
                 // now the test servers
                 // don't use an auto loop as it'll break the closure inside.
                 for (TestServer testServer : servers) {
-                    DefaultTask serverTask = project.tasks.create(
+                    def serverTask = project.tasks.create(
                             hasFlavors ?
                                 "${testServer.name}${"upload".capitalize()}${baseVariantData.variantConfiguration.fullName}" :
                                 "${testServer.name}${"upload".capitalize()}",
@@ -1948,12 +1943,12 @@ public abstract class BasePlugin {
 
                     serverTask.testServer = testServer
 
-                    serverTask.conventionMapping.testApk = { testVariantOutputData.outputFile }
+                    conventionMapping(serverTask).map("testApk") { testVariantOutputData.outputFile }
                     if (!(baseVariantData instanceof LibraryVariantData)) {
-                        serverTask.conventionMapping.testedApk = { variantOutputData.outputFile }
+                        conventionMapping(serverTask).map("testedApk") { variantOutputData.outputFile }
                     }
 
-                    serverTask.conventionMapping.variantName = { baseVariantData.variantConfiguration.fullName }
+                    conventionMapping(serverTask).map("variantName") { baseVariantData.variantConfiguration.fullName }
 
                     deviceCheck.dependsOn serverTask
 
@@ -1973,7 +1968,7 @@ public abstract class BasePlugin {
         // To do this, we make the children tasks ignore their errors (ie they won't fail and
         // stop the build).
         if (!reportTasks.isEmpty() && project.gradle.startParameter.continueOnFailure) {
-            project.gradle.taskGraph.whenReady { taskGraph ->
+            project.gradle.taskGraph.whenReady { TaskExecutionGraph taskGraph ->
                 for (AndroidReportTask reportTask : reportTasks) {
                     if (taskGraph.hasTask(reportTask)) {
                         reportTask.setWillRun()
@@ -1995,7 +1990,10 @@ public abstract class BasePlugin {
         // get single output for now for the test.
         BaseVariantOutputData testVariantOutputData = testVariantData.outputs.get(0)
 
-        def testTask = project.tasks.create(taskName, taskClass)
+        DeviceProviderInstrumentTestTask testTask = project.tasks.create(
+                taskName,
+                taskClass as Class<DeviceProviderInstrumentTestTask>)
+
         testTask.description = description
         testTask.group = JavaBasePlugin.VERIFICATION_GROUP
         testTask.dependsOn testVariantOutputData.assembleTask, testedVariantData.assembleVariantTask
@@ -2005,7 +2003,7 @@ public abstract class BasePlugin {
         testTask.flavorName = testVariantData.variantConfiguration.flavorName.capitalize()
         testTask.deviceProvider = deviceProvider
 
-        testTask.conventionMapping.resultsDir = {
+        conventionMapping(testTask).map("resultsDir") {
             String rootLocation = extension.testOptions.resultsDir != null ?
                 extension.testOptions.resultsDir :
                 "$project.buildDir/${FD_OUTPUTS}/$FD_ANDROID_RESULTS"
@@ -2018,11 +2016,11 @@ public abstract class BasePlugin {
             project.file("$rootLocation/$subFolder/$flavorFolder")
         }
 
-        testTask.conventionMapping.adbExec = {
+        conventionMapping(testTask).map("adbExec") {
             return getSdkInfo().getAdb()
         }
 
-        testTask.conventionMapping.reportsDir = {
+        conventionMapping(testTask).map("reportsDir") {
             String rootLocation = extension.testOptions.reportDir != null ?
                 extension.testOptions.reportDir :
                 "$project.buildDir/${FD_OUTPUTS}/$FD_REPORTS/$FD_ANDROID_TESTS"
@@ -2034,7 +2032,7 @@ public abstract class BasePlugin {
 
             project.file("$rootLocation/$subFolder/$flavorFolder")
         }
-        testTask.conventionMapping.coverageDir = {
+        conventionMapping(testTask).map("coverageDir") {
             String rootLocation = "$project.buildDir/${FD_OUTPUTS}/code-coverage"
 
             String flavorFolder = testVariantData.variantConfiguration.flavorName
@@ -2053,12 +2051,12 @@ public abstract class BasePlugin {
      * post-compilation steps.
      */
     public static class PostCompilationData {
-        List<Object> classGeneratingTask
-        List<Object> libraryGeneratingTask
+        List<?> classGeneratingTask
+        List<?> libraryGeneratingTask
 
-        Closure<Collection<File>> inputFiles
+        Closure<List<File>> inputFiles
         Closure<File> inputDir
-        Closure<Collection<File>> inputLibraries
+        Closure<List<File>> inputLibraries
     }
 
     /**
@@ -2073,7 +2071,7 @@ public abstract class BasePlugin {
         GradleVariantConfiguration config = variantData.variantConfiguration
 
         boolean isTestForApp = config.type.isForTesting() &&
-                variantData.testedVariantData.variantConfiguration.type == DEFAULT
+                (variantData as TestVariantData).testedVariantData.variantConfiguration.type == DEFAULT
 
         boolean isMinifyEnabled = config.isMinifyEnabled()
         boolean isMultiDexEnabled = config.isMultiDexEnabled() && !isTestForApp
@@ -2089,7 +2087,7 @@ public abstract class BasePlugin {
         Dex dexTask = project.tasks.create(dexTaskName, Dex)
         variantData.dexTask = dexTask
         dexTask.plugin = this
-        dexTask.conventionMapping.outputFolder = {
+        conventionMapping(dexTask).map("outputFolder") {
             project.file("${project.buildDir}/${FD_INTERMEDIATES}/dex/${config.dirName}")
         }
         dexTask.tmpFolder = project.file("$project.buildDir/${FD_INTERMEDIATES}/tmp/dex/${config.dirName}")
@@ -2101,17 +2099,16 @@ public abstract class BasePlugin {
         // data holding dependencies and input for the dex. This gets updated as new
         // post-compilation steps are inserted between the compilation and dx.
         PostCompilationData pcData = new PostCompilationData()
-        pcData.classGeneratingTask = Collections.singletonList(variantData.javaCompileTask)
-        pcData.libraryGeneratingTask = Collections.singletonList(
-                variantData.variantDependency.packageConfiguration.buildDependencies)
+        pcData.classGeneratingTask = [variantData.javaCompileTask]
+        pcData.libraryGeneratingTask = [variantData.variantDependency.packageConfiguration.buildDependencies]
         pcData.inputFiles = {
-            return variantData.javaCompileTask.outputs.files.files
+            variantData.javaCompileTask.outputs.files.files as List
         }
         pcData.inputDir = {
-            return variantData.javaCompileTask.destinationDir
+            variantData.javaCompileTask.destinationDir
         }
         pcData.inputLibraries = {
-            return androidBuilder.getPackagedJars(config)
+            androidBuilder.getPackagedJars(config) as List
         }
 
         // ---- Code Coverage first -----
@@ -2124,7 +2121,7 @@ public abstract class BasePlugin {
         if (isMinifyEnabled) {
             // first proguard task.
             BaseVariantData<? extends BaseVariantOutputData> testedVariantData =
-                    variantData instanceof TestVariantData ? variantData.testedVariantData : null as BaseVariantData
+                    (variantData instanceof TestVariantData ? variantData.testedVariantData : null) as BaseVariantData
             createProguardTasks(variantData, testedVariantData, pcData)
 
         } else if ((extension.dexOptions.preDexLibraries && !isMultiDexEnabled) ||
@@ -2137,25 +2134,23 @@ public abstract class BasePlugin {
             preDexTask.dexOptions = extension.dexOptions
             preDexTask.multiDex = isMultiDexEnabled
 
-            preDexTask.conventionMapping.inputFiles = pcData.inputLibraries
-            preDexTask.conventionMapping.outputFolder = {
+            conventionMapping(preDexTask).map("inputFiles", pcData.inputLibraries)
+            conventionMapping(preDexTask).map("outputFolder") {
                 project.file(
                         "${project.buildDir}/${FD_INTERMEDIATES}/pre-dexed/${config.dirName}")
             }
 
             // update dependency.
             optionalDependsOn(preDexTask, pcData.libraryGeneratingTask)
-            pcData.libraryGeneratingTask = Collections.singletonList(preDexTask)
+            pcData.libraryGeneratingTask = [preDexTask] as List<Object>
 
             // update inputs
             if (isMultiDexEnabled) {
-                pcData.inputLibraries = {
-                    return Collections.<File>emptyList()
-                }
+                pcData.inputLibraries = { [] }
 
             } else {
                 pcData.inputLibraries = {
-                    return project.fileTree(preDexTask.outputFolder).files
+                    project.fileTree(preDexTask.outputFolder).files as List
                 }
             }
         }
@@ -2168,8 +2163,8 @@ public abstract class BasePlugin {
                 JarMergingTask jarMergingTask = project.tasks.create(
                         "packageAll${config.fullName.capitalize()}ClassesForMultiDex",
                         JarMergingTask)
-                jarMergingTask.conventionMapping.inputJars = pcData.inputLibraries
-                jarMergingTask.conventionMapping.inputDir = pcData.inputDir
+                conventionMapping(jarMergingTask).map("inputJars",pcData.inputLibraries)
+                conventionMapping(jarMergingTask).map("inputDir", pcData.inputDir)
 
                 jarMergingTask.jarFile = project.file(
                         "$project.buildDir/${FD_INTERMEDIATES}/multi-dex/${config.dirName}/allclasses.jar")
@@ -2177,17 +2172,13 @@ public abstract class BasePlugin {
                 // update dependencies
                 optionalDependsOn(jarMergingTask, pcData.classGeneratingTask)
                 optionalDependsOn(jarMergingTask, pcData.libraryGeneratingTask)
-                pcData.libraryGeneratingTask = pcData.classGeneratingTask =
-                        Collections.singletonList(jarMergingTask)
+                pcData.libraryGeneratingTask = [jarMergingTask]
+                pcData.classGeneratingTask = [jarMergingTask]
 
                 // Update the inputs
-                pcData.inputFiles = {
-                    return Collections.singletonList(jarMergingTask.jarFile)
-                }
+                pcData.inputFiles = { [jarMergingTask.jarFile] }
                 pcData.inputDir = null
-                pcData.inputLibraries = {
-                    return Collections.emptyList()
-                }
+                pcData.inputLibraries = { [] }
             }
 
 
@@ -2202,7 +2193,7 @@ public abstract class BasePlugin {
             // we can take any of the output and use that.
             final BaseVariantOutputData output = variantData.outputs.get(0)
             manifestKeepListTask.dependsOn output.manifestProcessorTask
-            manifestKeepListTask.conventionMapping.manifest = {
+            conventionMapping(manifestKeepListTask).map("manifest") {
                 output.manifestProcessorTask.manifestOutputFile
             }
 
@@ -2254,9 +2245,10 @@ public abstract class BasePlugin {
             createMainDexListTask.dependsOn proguardComponentsTask
             //createMainDexListTask.dependsOn { proguardMainDexTask }
 
-            createMainDexListTask.allClassesJarFile = pcData.inputFiles.call().iterator().next()
-            createMainDexListTask.conventionMapping.componentsJarFile = { componentsJarFile }
-            //createMainDexListTask.conventionMapping.includeInMainDexJarFile = { mainDexJarFile }
+            def files = pcData.inputFiles
+            createMainDexListTask.allClassesJarFile = files().first()
+            conventionMapping(createMainDexListTask).map("componentsJarFile") { componentsJarFile }
+            // conventionMapping(createMainDexListTask).map("includeInMainDexJarFile") { mainDexJarFile }
             createMainDexListTask.mainDexListFile = multiDexKeepFile
             createMainDexListTask.outputFile = project.file(
                     "${project.buildDir}/${FD_INTERMEDIATES}/multi-dex/${config.dirName}/maindexlist.txt")
@@ -2272,15 +2264,15 @@ public abstract class BasePlugin {
                         RetraceMainDexList)
                 retraceTask.dependsOn variantData.obfuscationTask, createMainDexListTask
 
-                retraceTask.conventionMapping.mainDexListFile = { createMainDexListTask.outputFile }
-                retraceTask.conventionMapping.mappingFile = { variantData.mappingFile }
+                conventionMapping(retraceTask).map("mainDexListFile") { createMainDexListTask.outputFile }
+                conventionMapping(retraceTask).map("mappingFile") { variantData.mappingFile }
                 retraceTask.outputFile = project.file(
                         "${project.buildDir}/${FD_INTERMEDIATES}/multi-dex/${config.dirName}/maindexlist_deobfuscated.txt")
                 dexTask.dependsOn retraceTask
             }
 
             // configure the dex task to receive the generated class list.
-            dexTask.conventionMapping.mainDexListFile = { createMainDexListTask.outputFile }
+            conventionMapping(dexTask).map("mainDexListFile") { createMainDexListTask.outputFile }
         }
 
         // ----- Dex Task ----
@@ -2291,11 +2283,11 @@ public abstract class BasePlugin {
 
         // inputs
         if (pcData.inputDir != null) {
-            dexTask.conventionMapping.inputDir = pcData.inputDir
+            conventionMapping(dexTask).map("inputDir", pcData.inputDir)
         } else {
-            dexTask.conventionMapping.inputFiles = pcData.inputFiles
+            conventionMapping(dexTask).map("inputFiles", pcData.inputFiles)
         }
-        dexTask.conventionMapping.libraries = pcData.inputLibraries
+        conventionMapping(dexTask).map("libraries", pcData.inputLibraries)
     }
 
     public PostCompilationData createJacocoTask(
@@ -2304,11 +2296,12 @@ public abstract class BasePlugin {
             @NonNull final PostCompilationData pcData) {
         final JacocoInstrumentTask jacocoTask = project.tasks.create(
                 "instrument${config.fullName.capitalize()}", JacocoInstrumentTask)
-        jacocoTask.conventionMapping.jacocoClasspath =
-                { project.configurations[JacocoPlugin.ANT_CONFIGURATION_NAME] }
+        conventionMapping(jacocoTask).map("jacocoClasspath") {
+            project.configurations[JacocoPlugin.ANT_CONFIGURATION_NAME]
+        }
         // can't directly use the existing inputFiles closure as we need the dir instead :\
-        jacocoTask.conventionMapping.inputDir = pcData.inputDir
-        jacocoTask.conventionMapping.outputDir = {
+        conventionMapping(jacocoTask).map("inputDir", pcData.inputDir)
+        conventionMapping(jacocoTask).map("outputDir") {
             project.file(
                     "${project.buildDir}/${FD_INTERMEDIATES}/coverage-instrumented-classes/${config.dirName}")
         }
@@ -2320,23 +2313,18 @@ public abstract class BasePlugin {
         // update dependency.
         PostCompilationData pcData2 = new PostCompilationData()
         optionalDependsOn(jacocoTask, pcData.classGeneratingTask)
-        pcData2.classGeneratingTask = Collections.singletonList(jacocoTask)
-        List<Object> libTasks = Lists.<Object> newArrayList(pcData.libraryGeneratingTask)
-        libTasks.add(agentTask)
-        pcData2.libraryGeneratingTask = libTasks
+        pcData2.classGeneratingTask = [jacocoTask]
+        pcData2.libraryGeneratingTask = [pcData.libraryGeneratingTask, agentTask]
 
         // update inputs
         pcData2.inputFiles = {
-            return project.files(jacocoTask.getOutputDir()).files
+            project.files(jacocoTask.getOutputDir()).files as List
         }
         pcData2.inputDir = {
-            return jacocoTask.getOutputDir()
+            jacocoTask.getOutputDir()
         }
         pcData2.inputLibraries = {
-            Set<File> set = Sets.newHashSet(pcData.inputLibraries.call())
-            set.add(new File(agentTask.destinationDir, FILE_JACOCO_AGENT))
-
-            return set
+            [pcData.inputLibraries.call(), [new File(agentTask.destinationDir, FILE_JACOCO_AGENT)]].flatten() as List
         }
 
         return pcData2
@@ -2370,10 +2358,10 @@ public abstract class BasePlugin {
         jillRuntimeTask.plugin = this
         jillRuntimeTask.dexOptions = extension.dexOptions
 
-        jillRuntimeTask.conventionMapping.inputLibs = {
+        conventionMapping(jillRuntimeTask).map("inputLibs") {
             getBootClasspath()
         }
-        jillRuntimeTask.conventionMapping.outputFolder = {
+        conventionMapping(jillRuntimeTask).map("outputFolder") {
             project.file(
                     "${project.buildDir}/${FD_INTERMEDIATES}/jill/${config.dirName}/runtime")
         }
@@ -2388,10 +2376,10 @@ public abstract class BasePlugin {
         jillPackagedTask.plugin = this
         jillPackagedTask.dexOptions = extension.dexOptions
 
-        jillPackagedTask.conventionMapping.inputLibs = {
+        conventionMapping(jillPackagedTask).map("inputLibs") {
             androidBuilder.getPackagedJars(config)
         }
-        jillPackagedTask.conventionMapping.outputFolder = {
+        conventionMapping(jillPackagedTask).map("outputFolder") {
             project.file(
                     "${project.buildDir}/${FD_INTERMEDIATES}/jill/${config.dirName}/packaged")
         }
@@ -2409,7 +2397,7 @@ public abstract class BasePlugin {
         compileTask.dependsOn variantData.variantDependency.compileConfiguration.buildDependencies
 
         compileTask.plugin = this
-        compileTask.conventionMapping.javaMaxHeapSize = { extension.dexOptions.getJavaMaxHeapSize() }
+        conventionMapping(compileTask).map("javaMaxHeapSize") { extension.dexOptions.getJavaMaxHeapSize() }
 
         compileTask.source = variantData.getJavaSources()
 
@@ -2420,32 +2408,32 @@ public abstract class BasePlugin {
         // it's done automatically since the classpath includes the library output as a normal
         // dependency.
         if (testedVariantData instanceof ApplicationVariantData) {
-            compileTask.conventionMapping.classpath =  {
+            conventionMapping(compileTask).map("classpath")  {
                 project.fileTree(jillRuntimeTask.outputFolder) + testedVariantData.jackTask.classpath + project.fileTree(testedVariantData.jackTask.jackFile)
             }
         } else {
-            compileTask.conventionMapping.classpath =  {
+            conventionMapping(compileTask).map("classpath")  {
                 project.fileTree(jillRuntimeTask.outputFolder)
             }
         }
 
-        compileTask.conventionMapping.packagedLibraries = {
+        conventionMapping(compileTask).map("packagedLibraries") {
             project.fileTree(jillPackagedTask.outputFolder).files
         }
 
-        compileTask.conventionMapping.destinationDir = {
+        conventionMapping(compileTask).map("destinationDir") {
             project.file("$project.buildDir/${FD_INTERMEDIATES}/dex/${config.dirName}")
         }
 
-        compileTask.conventionMapping.jackFile = {
+        conventionMapping(compileTask).map("jackFile") {
             project.file("$project.buildDir/${FD_INTERMEDIATES}/classes/${config.dirName}/classes.zip")
         }
 
-        compileTask.conventionMapping.tempFolder = {
+        conventionMapping(compileTask).map("tempFolder") {
             project.file("$project.buildDir/${FD_INTERMEDIATES}/tmp/jack/${config.dirName}")
         }
         if (config.isMinifyEnabled()) {
-            compileTask.conventionMapping.proguardFiles = {
+            conventionMapping(compileTask).map("proguardFiles") {
                 // since all the output use the same resources, we can use the first output
                 // to query for a proguard file.
                 BaseVariantOutputData variantOutputData = variantData.outputs.get(0)
@@ -2510,10 +2498,10 @@ public abstract class BasePlugin {
 
         compileOptions.defaultJavaVersion = javaVersionToUse
 
-        compileTask.conventionMapping.sourceCompatibility = {
+        conventionMapping(compileTask).map("sourceCompatibility") {
             compileOptions.sourceCompatibility.toString()
         }
-        compileTask.conventionMapping.targetCompatibility = {
+        conventionMapping(compileTask).map("targetCompatibility") {
             compileOptions.targetCompatibility.toString()
         }
     }
@@ -2532,7 +2520,8 @@ public abstract class BasePlugin {
         GradleVariantConfiguration config = variantData.variantConfiguration
 
         boolean signedApk = variantData.isSigned()
-        String projectBaseName = project.archivesBaseName
+        BasePluginConvention convention = project.convention.findPlugin(BasePluginConvention)
+        String projectBaseName = convention.archivesBaseName
         String defaultLocation = "$project.buildDir/${FD_OUTPUTS}/apk"
         String apkLocation = defaultLocation
         if (project.hasProperty(PROPERTY_APK_LOCATION)) {
@@ -2585,15 +2574,15 @@ public abstract class BasePlugin {
                 // input is the ProcessAndroidResources packageOutputFile, and its
                 // output is what the PackageApplication task reads.
                 packageApp.dependsOn shrinkTask
-                packageApp.conventionMapping.resourceFile = {
+                conventionMapping(packageApp).map("resourceFile") {
                     shrinkTask.compressedResources
                 }
             } else {
-                packageApp.conventionMapping.resourceFile = {
+                conventionMapping(packageApp).map("resourceFile") {
                     variantOutputData.processResourcesTask.packageOutputFile
                 }
             }
-            packageApp.conventionMapping.dexFolder = {
+            conventionMapping(packageApp).map("dexFolder") {
                 if (variantData.dexTask != null) {
                     return variantData.dexTask.outputFolder
                 }
@@ -2604,7 +2593,7 @@ public abstract class BasePlugin {
 
                 return null
             }
-            packageApp.conventionMapping.dexedLibraries = {
+            conventionMapping(packageApp).map("dexedLibraries") {
                 if (config.isMultiDexEnabled() &&
                         !config.isLegacyMultiDexMode() &&
                         variantData.preDexTask != null) {
@@ -2613,23 +2602,22 @@ public abstract class BasePlugin {
 
                 return Collections.<File>emptyList()
             }
-            packageApp.conventionMapping.packagedJars =
-                    { androidBuilder.getPackagedJars(config) }
-            packageApp.conventionMapping.javaResourceDir = {
+            conventionMapping(packageApp).map("packagedJars") { androidBuilder.getPackagedJars(config) }
+            conventionMapping(packageApp).map("javaResourceDir") {
                 getOptionalDir(variantData.processJavaResourcesTask.destinationDir)
             }
-            packageApp.conventionMapping.jniFolders = {
+            conventionMapping(packageApp).map("jniFolders") {
                 getJniFolders(variantData);
             }
-            packageApp.conventionMapping.abiFilters = {
+            conventionMapping(packageApp).map("abiFilters") {
                 if (variantOutputData.mainOutputFile.getFilter(OutputFile.ABI) != null) {
                     return ImmutableSet.of(variantOutputData.mainOutputFile.getFilter(OutputFile.ABI))
                 }
                 return config.supportedAbis
             }
-            packageApp.conventionMapping.jniDebugBuild = { config.buildType.jniDebuggable }
+            conventionMapping(packageApp).map("jniDebugBuild") { config.buildType.jniDebuggable }
 
-            packageApp.conventionMapping.signingConfig = { sc }
+            conventionMapping(packageApp).map("signingConfig") { sc }
             if (sc != null) {
                 ValidateSigningTask validateSigningTask = validateSigningTaskMap.get(sc)
                 if (validateSigningTask == null) {
@@ -2649,9 +2637,9 @@ public abstract class BasePlugin {
                     "$projectBaseName-${outputBaseName}-unaligned.apk" :
                     "$projectBaseName-${outputBaseName}-unsigned.apk"
 
-            packageApp.conventionMapping.packagingOptions = { extension.packagingOptions }
+            conventionMapping(packageApp).map("packagingOptions") { extension.packagingOptions }
 
-            packageApp.conventionMapping.outputFile = {
+            conventionMapping(packageApp).map("outputFile") {
                 // if this is the final task then the location is
                 // the potentially overridden one.
                 if (!signedApk || !variantData.zipAlignEnabled) {
@@ -2674,12 +2662,12 @@ public abstract class BasePlugin {
                     variantOutputData.zipAlignTask = zipAlignTask
 
                     zipAlignTask.dependsOn packageApp
-                    zipAlignTask.conventionMapping.inputFile = { packageApp.outputFile }
-                    zipAlignTask.conventionMapping.outputFile = {
+                    conventionMapping(zipAlignTask).map("inputFile") { packageApp.outputFile }
+                    conventionMapping(zipAlignTask).map("outputFile") {
                         project.file(
                                 "$apkLocation/$projectBaseName-${outputBaseName}.apk")
                     }
-                    zipAlignTask.conventionMapping.zipAlignExe = {
+                    conventionMapping(zipAlignTask).map("zipAlignExe") {
                         String path = androidBuilder.targetInfo?.buildTools?.getPath(ZIP_ALIGN)
                         if (path != null) {
                             return new File(path)
@@ -2780,7 +2768,7 @@ public abstract class BasePlugin {
             installTask.group = INSTALL_GROUP
             installTask.plugin = this
             installTask.variantData = variantData
-            installTask.conventionMapping.adbExe = { androidBuilder.sdkInfo?.adb }
+            conventionMapping(installTask).map("adbExe") { androidBuilder.sdkInfo?.adb }
             installTask.dependsOn variantData.assembleVariantTask
             variantData.installTask = installTask
         }
@@ -2797,7 +2785,7 @@ public abstract class BasePlugin {
         uninstallTask.description = "Uninstalls the " + variantData.description
         uninstallTask.group = INSTALL_GROUP
         uninstallTask.variant = variantData
-        uninstallTask.conventionMapping.adbExe = { sdkHandler.sdkInfo?.adb }
+        conventionMapping(uninstallTask).map("adbExe") { sdkHandler.sdkInfo?.adb }
 
         variantData.uninstallTask = uninstallTask
         uninstallAll.dependsOn uninstallTask
@@ -2822,7 +2810,9 @@ public abstract class BasePlugin {
     public Copy getJacocoAgentTask() {
         if (jacocoAgentTask == null) {
             jacocoAgentTask = project.tasks.create("unzipJacocoAgent", Copy)
-            jacocoAgentTask.from { project.configurations[JacocoPlugin.AGENT_CONFIGURATION_NAME].collect { project.zipTree(it) } }
+            jacocoAgentTask.from {
+                project.configurations.getByName(JacocoPlugin.AGENT_CONFIGURATION_NAME).collect { project.zipTree(it) }
+            }
             jacocoAgentTask.include FILE_JACOCO_AGENT
             jacocoAgentTask.into "$project.buildDir/${FD_INTERMEDIATES}/jacoco"
         }
@@ -2850,7 +2840,7 @@ public abstract class BasePlugin {
 
         zipAlignTask.inputFile = inputFile
         zipAlignTask.outputFile = outputFile
-        zipAlignTask.conventionMapping.zipAlignExe = {
+        conventionMapping(zipAlignTask).map("zipAlignExe") {
             String path = androidBuilder.targetInfo?.buildTools?.getPath(ZIP_ALIGN)
             if (path != null) {
                 return new File(path)
@@ -2971,7 +2961,7 @@ public abstract class BasePlugin {
             // dependencies
             Closure libJars = {
                 Set<File> compiledJars = androidBuilder.getCompileClasspath(variantConfig)
-                Object[]  localJars    = getLocalJarFileList(variantData.variantDependency)
+                Object[] localJars = getLocalJarFileList(variantData.variantDependency)
 
                 compiledJars.findAll({ !localJars.contains(it) })
             }
@@ -3035,16 +3025,13 @@ public abstract class BasePlugin {
         // update dependency.
         optionalDependsOn(proguardTask, pcData.classGeneratingTask)
         optionalDependsOn(proguardTask, pcData.libraryGeneratingTask)
-        pcData.libraryGeneratingTask = pcData.classGeneratingTask = Collections.singletonList(proguardTask)
+        pcData.libraryGeneratingTask = [proguardTask]
+        pcData.classGeneratingTask = [proguardTask]
 
         // Update the inputs
-        pcData.inputFiles = {
-            return Collections.singletonList(outFile)
-        }
+        pcData.inputFiles = { [outFile] }
         pcData.inputDir = null
-        pcData.inputLibraries = {
-            return Collections.emptyList()
-        }
+        pcData.inputLibraries = { [] }
     }
 
     private ShrinkResources createShrinkResourcesTask(ApkVariantOutputData variantOutputData) {
@@ -3056,12 +3043,12 @@ public abstract class BasePlugin {
         task.variantOutputData = variantOutputData
 
         String outputBaseName = variantOutputData.baseName
-        task.conventionMapping.compressedResources = {
+        conventionMapping(task).map("compressedResources") {
             project.file(
                     "$project.buildDir/${FD_INTERMEDIATES}/res/resources-${outputBaseName}-stripped.ap_")
         }
 
-        task.conventionMapping.uncompressedResources = {
+        conventionMapping(task).map("uncompressedResources") {
             variantOutputData.processResourcesTask.packageOutputFile
         }
 
@@ -3138,7 +3125,7 @@ public abstract class BasePlugin {
         variantData.prepareDependenciesTask.dependsOn variantData.checkManifestTask
 
         variantData.checkManifestTask.variantName = name
-        variantData.checkManifestTask.conventionMapping.manifest = {
+        conventionMapping(variantData.checkManifestTask).map("manifest") {
             variantData.variantConfiguration.getDefaultSourceSet().manifestFile
         }
     }
@@ -3274,8 +3261,11 @@ public abstract class BasePlugin {
             prepareLibTask.dependsOn variantData.preBuildTask
         }
 
-        for (LibraryDependencyImpl childLib : lib.dependencies) {
-            addDependencyToPrepareTask(variantData, prepareDependenciesTask, childLib)
+        for (childLib in lib.dependencies) {
+            addDependencyToPrepareTask(
+                    variantData,
+                    prepareDependenciesTask,
+                    childLib as LibraryDependencyImpl)
         }
     }
 
@@ -3285,8 +3275,6 @@ public abstract class BasePlugin {
         Multimap<LibraryDependency, VariantDependencies> reverseMap = ArrayListMultimap.create()
 
         resolveDependencyForConfig(variantDeps, modules, artifacts, reverseMap)
-
-        Set<Project> projects = project.rootProject.allprojects;
 
         modules.values().each { List list ->
 
@@ -3346,8 +3334,8 @@ public abstract class BasePlugin {
                     "prepare" + bundleName + "Library", PrepareLibraryTask.class)
 
             prepareLibraryTask.setDescription("Prepare " + library.getName())
-            prepareLibraryTask.conventionMapping.bundle =  { library.getBundle() }
-            prepareLibraryTask.conventionMapping.explodedDir = { library.getBundleFolder() }
+            conventionMapping(prepareLibraryTask).map("bundle")  { library.getBundle() }
+            conventionMapping(prepareLibraryTask).map("explodedDir") { library.getBundleFolder() }
 
             prepareTaskMap.put(library, prepareLibraryTask)
         }
@@ -3376,16 +3364,16 @@ public abstract class BasePlugin {
         collectArtifacts(compileClasspath, artifacts)
         collectArtifacts(packageClasspath, artifacts)
 
-        List<LibraryDependencyImpl> bundles = []
+        List<LibraryDependency> bundles = []
         Map<File, JarDependency> jars = [:]
         Map<File, JarDependency> localJars = [:]
 
-        Set<DependencyResult> dependencies = compileClasspath.incoming.resolutionResult.root.dependencies
-        dependencies.each { DependencyResult dep ->
+        def dependencies = compileClasspath.incoming.resolutionResult.root.dependencies
+        dependencies.each { dep ->
             if (dep instanceof ResolvedDependencyResult) {
-                addDependency(dep.selected, variantDeps, bundles, jars, modules, artifacts, reverseMap)
+                addDependency((dep as ResolvedDependencyResult).selected, variantDeps, bundles, jars, modules, artifacts, reverseMap)
             } else if (dep instanceof UnresolvedDependencyResult) {
-                def attempted = dep.attempted;
+                def attempted = (dep as UnresolvedDependencyResult).attempted;
                 if (attempted != null) {
                     currentUnresolvedDependencies.add(attempted.toString())
                 }
@@ -3444,7 +3432,7 @@ public abstract class BasePlugin {
             }
         }
 
-        variantDeps.addLibraries(bundles)
+        variantDeps.addLibraries(bundles as List<LibraryDependencyImpl>)
         variantDeps.addJars(jars.values())
         variantDeps.addLocalJars(localJars.values())
 
@@ -3540,8 +3528,9 @@ public abstract class BasePlugin {
 
             List<LibraryDependency> nestedBundles = Lists.newArrayList()
 
-            Set<DependencyResult> dependencies = moduleVersion.dependencies
-            dependencies.each { DependencyResult dep ->
+            Set<ResolvedDependencyResult> dependencies =
+                    moduleVersion.dependencies as Set<ResolvedDependencyResult>
+            dependencies.each { dep ->
                 if (dep instanceof ResolvedDependencyResult) {
                     addDependency(dep.selected, configDependencies, nestedBundles,
                             jars, modules, artifacts, reverseMap)
@@ -3552,12 +3541,12 @@ public abstract class BasePlugin {
 
             moduleArtifacts?.each { artifact ->
                 if (artifact.type == EXT_LIB_ARCHIVE) {
-                    String path = "${BasePlugin.normalize(logger, id, id.group)}" +
-                            "/${BasePlugin.normalize(logger, id, id.name)}" +
-                            "/${BasePlugin.normalize(logger, id, id.version)}"
+                    String path = "${normalize(logger, id, id.group)}" +
+                            "/${normalize(logger, id, id.name)}" +
+                            "/${normalize(logger, id, id.version)}"
                     String name = "$id.group:$id.name:$id.version"
                     if (artifact.classifier != null && !artifact.classifier.isEmpty()) {
-                        path += "/${BasePlugin.normalize(logger, id, artifact.classifier)}"
+                        path += "/${normalize(logger, id, artifact.classifier)}"
                         name += ":$artifact.classifier"
                     }
                     //def explodedDir = project.file("$project.rootProject.buildDir/${FD_INTERMEDIATES}/exploded-aar/$path")
@@ -3814,7 +3803,7 @@ public abstract class BasePlugin {
         }
     }
 
-    public static void optionalDependsOn(@NonNull Task main, @NonNull List<Object> dependencies) {
+    public static void optionalDependsOn(@NonNull Task main, @NonNull List<?> dependencies) {
         for (Object dependency : dependencies) {
             if (dependency != null) {
                 main.dependsOn dependency
@@ -3822,13 +3811,12 @@ public abstract class BasePlugin {
         }
     }
 
-
     private static <T> Set<T> removeAllNullEntries(Set<T> input) {
         HashSet<T> output = new HashSet<T>();
         for (T element : input) {
-           if (NON_NULL_ONLY.apply(element)) {
-               output.add(element);
-           }
+            if (element != null) {
+                output.add(element);
+            }
         }
         return output;
     }
