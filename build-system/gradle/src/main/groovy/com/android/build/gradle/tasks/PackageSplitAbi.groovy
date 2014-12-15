@@ -22,6 +22,7 @@ import com.android.build.OutputFile
 import com.android.build.gradle.api.ApkOutputFile
 import com.android.build.gradle.internal.dsl.PackagingOptions
 import com.android.build.gradle.internal.dsl.SigningConfig
+import com.android.build.gradle.internal.model.FilterDataImpl
 import com.android.build.gradle.internal.tasks.BaseTask
 import com.google.common.base.Joiner
 import com.google.common.collect.ImmutableList
@@ -80,7 +81,7 @@ class PackageSplitAbi extends BaseTask {
                     if (matcher.matches() && isAbiSplit(file.getName())) {
                         builder.add(new ApkOutputFile(
                                 OutputFile.OutputType.SPLIT,
-                                ImmutableList.<FilterData> of(FilterData.Builder.build(
+                                ImmutableList.<FilterData> of(FilterDataImpl.Builder.build(
                                         OutputFile.ABI,
                                         matcher.group(1))),
                                 Callables.returning(file)));
@@ -94,7 +95,7 @@ class PackageSplitAbi extends BaseTask {
                     ApkOutputFile apkOutput = new ApkOutputFile(
                             OutputFile.OutputType.SPLIT,
                             ImmutableList.<FilterData>of(
-                                    FilterData.Builder.build(OutputFile.ABI,
+                                    FilterDataImpl.Builder.build(OutputFile.ABI,
                                             "${project.archivesBaseName}-${outputBaseName}_${split}")),
                             Callables.returning(new File(outputDirectory, split)))
                     builder.add(apkOutput)

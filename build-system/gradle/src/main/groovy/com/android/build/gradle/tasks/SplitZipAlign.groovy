@@ -20,6 +20,7 @@ import com.android.annotations.NonNull
 import com.android.build.FilterData
 import com.android.build.OutputFile
 import com.android.build.gradle.api.ApkOutputFile
+import com.android.build.gradle.internal.model.FilterDataImpl
 import com.google.common.base.Optional
 import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Callables
@@ -85,7 +86,7 @@ class SplitZipAlign extends DefaultTask {
                 Optional<File> outputFile = findFileStartingWithName(outputDirectory, fileName);
                 if (outputFile.isPresent()) {
                     List<FilterData> filtersData = ImmutableList.of(
-                            FilterData.Builder.build(OutputFile.FilterType.DENSITY.name(), filter))
+                            FilterDataImpl.Builder.build(OutputFile.FilterType.DENSITY.name(), filter))
                     builder.add(new ApkOutputFile(
                             OutputFile.OutputType.SPLIT,
                             filtersData,
@@ -119,7 +120,7 @@ class SplitZipAlign extends DefaultTask {
                 String fileName = "${project.archivesBaseName}-${outputBaseName}_${filter}.apk"
                 File outputFile = new File(outputDirectory, fileName);
                 List<FilterData> filtersData = ImmutableList.of(
-                        FilterData.Builder.build(filterType.name(), filter))
+                        FilterDataImpl.Builder.build(filterType.name(), filter))
                 builder.add(new ApkOutputFile(
                         OutputFile.OutputType.SPLIT,
                         filtersData,

@@ -29,6 +29,7 @@ import com.android.build.gradle.internal.api.ApkVariantOutputImpl;
 import com.android.build.gradle.internal.api.ApplicationVariantImpl;
 import com.android.build.gradle.internal.api.ReadOnlyObjectProvider;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
+import com.android.build.gradle.internal.model.FilterDataImpl;
 import com.android.builder.core.VariantConfiguration;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
@@ -73,10 +74,10 @@ public class ApplicationVariantFactory implements VariantFactory<ApplicationVari
                 for (String abi : abis) {
                     ImmutableList.Builder<FilterData> builder = ImmutableList.builder();
                     if (density != null) {
-                        builder.add(FilterData.Builder.build(OutputFile.DENSITY, density));
+                        builder.add(FilterDataImpl.Builder.build(OutputFile.DENSITY, density));
                     }
                     if (abi != null) {
-                        builder.add(FilterData.Builder.build(OutputFile.ABI, abi));
+                        builder.add(FilterDataImpl.Builder.build(OutputFile.ABI, abi));
                     }
                     variant.createOutput(
                             OutputFile.OutputType.FULL_SPLIT,

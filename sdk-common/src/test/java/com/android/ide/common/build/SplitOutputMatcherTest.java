@@ -94,10 +94,10 @@ public class SplitOutputMatcherTest extends TestCase {
         public Collection<FilterData> getFilters() {
             ImmutableList.Builder<FilterData> filters = ImmutableList.builder();
             if (densityFilter != null) {
-                filters.add(FilterData.Builder.build(OutputFile.DENSITY, densityFilter));
+                filters.add(FakeFilterData.Builder.build(OutputFile.DENSITY, densityFilter));
             }
             if (abiFilter != null) {
-                filters.add(FilterData.Builder.build(OutputFile.ABI, abiFilter));
+                filters.add(FakeFilterData.Builder.build(OutputFile.ABI, abiFilter));
             }
             return filters.build();
         }
@@ -111,6 +111,34 @@ public class SplitOutputMatcherTest extends TestCase {
         @Override
         public String toString() {
             return "FilteredOutput{" + densityFilter + ':' + abiFilter + '}';
+        }
+    }
+
+    private static final class FakeFilterData implements FilterData {
+        private final String filterType;
+        private final String identifier;
+
+        FakeFilterData(String filterType, String identifier) {
+            this.filterType = filterType;
+            this.identifier = identifier;
+        }
+
+        @NonNull
+        @Override
+        public String getIdentifier() {
+            return identifier;
+        }
+
+        @NonNull
+        @Override
+        public String getFilterType() {
+            return filterType;
+        }
+
+        public static class Builder {
+            public static FilterData build(final String filterType, final String identifier) {
+                return new FakeFilterData(filterType, identifier);
+            }
         }
     }
 

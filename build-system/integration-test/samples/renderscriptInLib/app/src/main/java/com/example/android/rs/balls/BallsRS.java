@@ -17,7 +17,16 @@
 package com.example.android.rs.balls;
 
 import android.content.res.Resources;
-import android.util.Log;
+import android.renderscript.Allocation;
+import android.renderscript.Float2;
+import android.renderscript.Matrix4f;
+import android.renderscript.Mesh;
+import android.renderscript.ProgramFragment;
+import android.renderscript.ProgramFragmentFixedFunction;
+import android.renderscript.ProgramStore;
+import android.renderscript.ProgramVertex;
+import android.renderscript.RenderScript;
+import android.renderscript.RenderScriptGL;
 
 public class BallsRS {
     public static final int PART_COUNT = 900;
