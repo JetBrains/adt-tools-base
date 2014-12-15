@@ -1,7 +1,6 @@
 package com.android.tests.dependencies;
 
 import android.test.ActivityInstrumentationTestCase2;
-import android.test.suitebuilder.annotation.MediumTest;
 import android.test.suitebuilder.annotation.SmallTest;
 import android.widget.TextView;
 

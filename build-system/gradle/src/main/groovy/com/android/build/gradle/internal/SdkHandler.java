@@ -31,7 +31,6 @@ import com.android.sdklib.repository.FullRevision;
 import com.android.utils.ILogger;
 import com.google.common.base.Charsets;
 import com.google.common.io.Closeables;
-import com.google.common.io.Files;
 
 import org.gradle.api.Project;
 

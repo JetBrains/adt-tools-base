@@ -23,7 +23,12 @@ import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
 import com.android.build.gradle.integration.common.utils.ModelHelper
 import com.android.build.gradle.integration.common.utils.ZipHelper
 import com.android.builder.core.ApkInfoParser
-import com.android.builder.model.*
+import com.android.builder.model.AndroidArtifact
+import com.android.builder.model.AndroidLibrary
+import com.android.builder.model.AndroidProject
+import com.android.builder.model.Dependencies
+import com.android.builder.model.MavenCoordinates
+import com.android.builder.model.Variant
 import com.android.ide.common.internal.CommandLineRunner
 import com.android.utils.StdLogger
 import com.google.common.collect.Sets
@@ -32,7 +37,10 @@ import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
 
-import static org.junit.Assert.*
+import static org.junit.Assert.assertEquals
+import static org.junit.Assert.assertFalse
+import static org.junit.Assert.assertNotNull
+import static org.junit.Assert.assertTrue
 
 class VariantDependencyTest {
     @ClassRule

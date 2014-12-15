@@ -25,8 +25,8 @@ import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.utils.Pair;
 import com.google.common.collect.Lists;
-
 import com.google.common.collect.Maps;
+
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;

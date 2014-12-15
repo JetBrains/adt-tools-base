@@ -16,27 +16,27 @@
 
 package com.example.android.tictactoe.library;
 
-import java.util.Random;
-
 import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
+import android.graphics.Bitmap.Config;
 import android.graphics.BitmapFactory;
+import android.graphics.BitmapFactory.Options;
 import android.graphics.Canvas;
 import android.graphics.Paint;
-import android.graphics.Rect;
-import android.graphics.Bitmap.Config;
-import android.graphics.BitmapFactory.Options;
 import android.graphics.Paint.Style;
+import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Handler.Callback;
 import android.os.Message;
 import android.os.Parcelable;
-import android.os.Handler.Callback;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
+
+import java.util.Random;
 
 //-----------------------------------------------
 

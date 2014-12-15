@@ -17,12 +17,9 @@
 package com.android.builder.model;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
-import com.android.build.OutputFile;
 import com.android.build.VariantOutput;
 
 import java.io.File;
-import java.util.Collection;
 
 /**
  * The Actual output for a {@link AndroidArtifact}, which can be one file at the minimum or

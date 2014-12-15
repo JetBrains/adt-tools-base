@@ -22,8 +22,6 @@ import com.android.build.gradle.BasePlugin;
 import com.android.build.gradle.api.ApkVariant;
 import com.android.build.gradle.internal.variant.ApkVariantData;
 import com.android.build.gradle.tasks.Dex;
-import com.android.build.gradle.tasks.PackageApplication;
-import com.android.build.gradle.tasks.ZipAlign;
 import com.android.builder.model.SigningConfig;
 
 import org.gradle.api.DefaultTask;

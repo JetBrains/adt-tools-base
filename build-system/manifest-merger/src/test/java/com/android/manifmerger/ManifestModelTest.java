@@ -18,18 +18,15 @@ package com.android.manifmerger;
 
 import static com.android.manifmerger.XmlNode.NodeKey;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
-import com.android.sdklib.mock.MockLog;
 import com.android.xml.AndroidManifest;
 import com.google.common.collect.ImmutableList;
 
 import junit.framework.TestCase;
 
 import org.mockito.ArgumentCaptor;
-import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.xml.sax.SAXException;
 

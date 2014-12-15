@@ -33,7 +33,9 @@ import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 
 import static java.io.File.separator
-import static org.junit.Assert.*
+import static org.junit.Assert.assertEquals
+import static org.junit.Assert.assertFalse
+import static org.junit.Assert.assertTrue
 
 /**
  * Assemble tests for shrink.

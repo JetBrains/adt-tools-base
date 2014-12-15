@@ -18,8 +18,6 @@ package com.android.manifmerger;
 
 import com.android.annotations.Nullable;
 
-import java.util.List;
-
 /**
  * Facility to identify an element from its key.
  */

@@ -1,9 +1,9 @@
 package com.android.tests.libdeps;
 
+import com.android.tests.libdeps.R;
+
 import android.app.Activity;
 import android.os.Bundle;
-
-import com.android.tests.libdeps.R;
 
 public class MainActivity extends Activity {
     /** Called when the activity is first created. */

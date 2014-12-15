@@ -19,7 +19,6 @@ package com.android.manifmerger;
 import static com.android.manifmerger.Actions.ActionLocation;
 import static com.android.manifmerger.Actions.DecisionTreeRecord;
 import static com.android.manifmerger.XmlNode.NodeKey;
-import static com.android.manifmerger.XmlNode.fromXmlName;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -31,8 +30,6 @@ import com.android.utils.StdLogger;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Multimap;
-import com.google.common.io.LineReader;
 
 import junit.framework.TestCase;
 

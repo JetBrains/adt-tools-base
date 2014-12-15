@@ -37,7 +37,6 @@ import org.xml.sax.SAXException;
 import java.io.IOException;
 
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.Source;
 
 /**
  * Tests for the {@link com.android.manifmerger.PlaceholderHandler}

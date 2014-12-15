@@ -18,7 +18,10 @@ import org.junit.Test
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 
-import static org.junit.Assert.*
+import static org.junit.Assert.assertFalse
+import static org.junit.Assert.assertNotNull
+import static org.junit.Assert.assertNull
+import static org.junit.Assert.assertTrue
 
 /**
   * Integration test to check that libraries included directly as jar files are correctly handled

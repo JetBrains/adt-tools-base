@@ -16,7 +16,9 @@
 
 package com.android.build.gradle.internal;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import com.android.build.gradle.internal.dsl.GroupableProductFlavor;
 import com.google.common.collect.ImmutableList;

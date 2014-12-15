@@ -16,10 +16,7 @@
 
 package com.android.rs.image2;
 
-import java.lang.Math;
-
 import android.support.v8.renderscript.*;
-import android.util.Log;
 
 public class GroupTest extends TestBase {
     private ScriptIntrinsicConvolve3x3 mConvolve;

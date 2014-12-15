@@ -16,28 +16,11 @@
 
 package com.example.android.rs.balls;
 
-import java.io.Writer;
-import java.util.ArrayList;
-import java.util.concurrent.Semaphore;
-
-import android.renderscript.RSSurfaceView;
-import android.renderscript.RenderScript;
-import android.renderscript.RenderScriptGL;
-
 import android.content.Context;
-import android.content.res.Resources;
-import android.graphics.Bitmap;
-import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.Drawable;
-import android.os.Handler;
-import android.os.Message;
-import android.util.AttributeSet;
-import android.util.Log;
-import android.view.Surface;
-import android.view.SurfaceHolder;
-import android.view.SurfaceView;
-import android.view.KeyEvent;
+import android.renderscript.RSSurfaceView;
+import android.renderscript.RenderScriptGL;
 import android.view.MotionEvent;
+import android.view.SurfaceHolder;
 
 public class BallsView extends RSSurfaceView {
 

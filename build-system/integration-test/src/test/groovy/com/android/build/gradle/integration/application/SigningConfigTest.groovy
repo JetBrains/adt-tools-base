@@ -25,7 +25,10 @@ import org.junit.AfterClass
 import org.junit.ClassRule
 import org.junit.Test
 
-import static com.android.builder.model.AndroidProject.*
+import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_KEY_ALIAS
+import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_KEY_PASSWORD
+import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_STORE_FILE
+import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_STORE_PASSWORD
 
 /**
  * Integration test with signing overrider.

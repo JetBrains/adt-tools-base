@@ -1,10 +1,11 @@
 package com.sample.android.multiproject.library;
 
+import com.example.android.multiproject.person.Person;
+
+import android.content.Context;
 import android.util.AttributeSet;
 import android.util.TypedValue;
 import android.widget.TextView;
-import android.content.Context;
-import com.example.android.multiproject.person.Person;
 
 public class PersonView extends TextView {
 

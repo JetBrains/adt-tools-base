@@ -1,10 +1,10 @@
 package com.android.tests.libstest.lib.test;
 
+import com.android.tests.libstest.lib.Lib;
+
 import android.app.Activity;
 import android.os.Bundle;
 import android.widget.TextView;
-
-import com.android.tests.libstest.lib.Lib;
 
 public class TestActivity extends Activity {
     /** Called when the activity is first created. */

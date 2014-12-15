@@ -19,8 +19,15 @@ package com.android.build.gradle.integration.library
 import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.utils.ModelHelper
-import com.android.builder.model.*
-import org.junit.*
+import com.android.builder.model.AndroidArtifact
+import com.android.builder.model.AndroidProject
+import com.android.builder.model.Dependencies
+import com.android.builder.model.JavaLibrary
+import com.android.builder.model.Variant
+import org.junit.AfterClass
+import org.junit.BeforeClass
+import org.junit.ClassRule
+import org.junit.Test
 import org.junit.experimental.categories.Category
 
 import static com.android.builder.core.BuilderConstants.DEBUG

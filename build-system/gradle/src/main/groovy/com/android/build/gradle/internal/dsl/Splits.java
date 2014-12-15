@@ -24,7 +24,6 @@ import com.google.common.collect.Sets;
 import org.gradle.api.Action;
 import org.gradle.internal.reflect.Instantiator;
 
-import java.util.HashSet;
 import java.util.Set;
 
 /**

@@ -1,8 +1,8 @@
 package com.android.tests.flavorlib.app;
 
-import android.app.Activity;
-
 import com.android.tests.flavorlib.lib.flavor1.Lib;
+
+import android.app.Activity;
 
 /**
  */

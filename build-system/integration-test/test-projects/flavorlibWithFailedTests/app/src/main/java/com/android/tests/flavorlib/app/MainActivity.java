@@ -1,9 +1,9 @@
 package com.android.tests.flavorlib.app;
 
+import com.android.tests.flavorlib.lib.Lib;
+
 import android.app.Activity;
 import android.os.Bundle;
-
-import com.android.tests.flavorlib.lib.Lib;
 
 public class MainActivity extends Activity {
     /** Called when the activity is first created. */
