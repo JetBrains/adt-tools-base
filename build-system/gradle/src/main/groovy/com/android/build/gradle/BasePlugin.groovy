@@ -2092,7 +2092,8 @@ public abstract class BasePlugin {
         dexTask.dexOptions = extension.dexOptions
         dexTask.multiDexEnabled = isMultiDexEnabled
         dexTask.legacyMultiDexMode = isLegacyMultiDexMode
-        dexTask.optimize = !variantData.variantConfiguration.buildType.debuggable
+        // dx doesn't work with receving --no-optimize in debug so we disable it for now.
+        dexTask.optimize = true //!variantData.variantConfiguration.buildType.debuggable
 
         // data holding dependencies and input for the dex. This gets updated as new
         // post-compilation steps are inserted between the compilation and dx.
