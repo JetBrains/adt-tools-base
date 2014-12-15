@@ -19,10 +19,6 @@ package com.android.build.gradle.internal;
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
 import static java.io.File.separator;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
-
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.BasePlugin;
@@ -35,6 +31,9 @@ import com.android.tools.lint.client.api.IssueRegistry;
 import com.android.tools.lint.client.api.LintRequest;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.Project;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 
 import java.io.File;
 import java.io.IOException;

@@ -15,16 +15,17 @@
  */
 
 package com.android.build.gradle.internal.dsl
+
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
 import com.android.build.gradle.BasePlugin
+import com.android.build.gradle.internal.core.NdkConfig
 import com.android.builder.core.AndroidBuilder
 import com.android.builder.core.BuilderConstants
 import com.android.builder.core.DefaultApiVersion
 import com.android.builder.core.DefaultProductFlavor
 import com.android.builder.model.ApiVersion
 import com.android.builder.model.ClassField
-import com.android.build.gradle.internal.core.NdkConfig
 import com.google.common.base.Strings
 import org.gradle.api.Action
 import org.gradle.api.Project

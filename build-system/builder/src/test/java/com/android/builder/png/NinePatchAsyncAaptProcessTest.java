@@ -17,13 +17,9 @@
 package com.android.builder.png;
 
 import com.android.annotations.NonNull;
-import com.android.ide.common.internal.CommandLineRunner;
 import com.android.ide.common.internal.PngCruncher;
-import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.mock.MockLog;
 import com.android.sdklib.repository.FullRevision;
-import com.android.utils.ILogger;
-import com.android.utils.StdLogger;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;

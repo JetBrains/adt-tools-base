@@ -1,11 +1,10 @@
 package com.android.tests.dependencies;
 
+import com.android.tests.dependencies.jar.StringHelper2;
+
 import android.app.Activity;
-import android.view.View;
-import android.content.Intent;
 import android.os.Bundle;
 import android.widget.TextView;
-import com.android.tests.dependencies.jar.StringHelper2;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;

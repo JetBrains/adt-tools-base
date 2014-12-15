@@ -18,9 +18,7 @@ package com.android.manifmerger;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.android.annotations.concurrency.Immutable;
-import com.android.utils.ILogger;
 import com.android.utils.PositionXmlParser;
 import com.google.common.base.Function;
 import com.google.common.base.Objects;

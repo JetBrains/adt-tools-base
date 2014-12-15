@@ -19,8 +19,6 @@ package com.android.build.gradle.api;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.tasks.Dex;
-import com.android.build.gradle.tasks.PackageApplication;
-import com.android.build.gradle.tasks.ZipAlign;
 import com.android.builder.model.SigningConfig;
 
 import org.gradle.api.DefaultTask;

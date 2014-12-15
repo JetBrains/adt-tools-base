@@ -8,6 +8,9 @@
         <option name="STATIC_FIELD_NAME_PREFIX" value="m" />
         <option name="CLASS_COUNT_TO_USE_IMPORT_ON_DEMAND" value="99" />
         <option name="NAMES_COUNT_TO_USE_IMPORT_ON_DEMAND" value="99" />
+        <option name="PACKAGES_TO_USE_IMPORT_ON_DEMAND">
+          <value />
+        </option>
         <option name="IMPORT_LAYOUT_TABLE">
           <value>
             <package name="" withSubpackages="true" static="true" />
@@ -62,8 +65,23 @@
         <option name="WHILE_BRACE_FORCE" value="3" />
         <option name="FOR_BRACE_FORCE" value="3" />
         <GroovyCodeStyleSettings>
+          <option name="USE_FQ_CLASS_NAMES_IN_JAVADOC" value="false" />
           <option name="CLASS_COUNT_TO_USE_IMPORT_ON_DEMAND" value="99" />
           <option name="NAMES_COUNT_TO_USE_IMPORT_ON_DEMAND" value="99" />
+          <option name="PACKAGES_TO_USE_IMPORT_ON_DEMAND">
+            <value />
+          </option>
+          <option name="IMPORT_LAYOUT_TABLE">
+            <value>
+              <package name="" withSubpackages="true" static="false" />
+              <emptyLine />
+              <package name="javax" withSubpackages="true" static="false" />
+              <package name="java" withSubpackages="true" static="false" />
+              <emptyLine />
+              <package name="" withSubpackages="true" static="true" />
+              <emptyLine />
+            </value>
+          </option>
         </GroovyCodeStyleSettings>
         <XML>
           <option name="XML_LEGACY_SETTINGS_IMPORTED" value="true" />

@@ -1,8 +1,9 @@
 package com.example.android.multiproject.library;
 
-import android.widget.TextView;
-import android.content.Context;
 import com.example.android.multiproject.person.Person;
+
+import android.content.Context;
+import android.widget.TextView;
 
 class PersonView extends TextView {
     public PersonView(Context context, Person person) {

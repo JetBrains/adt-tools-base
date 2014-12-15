@@ -26,7 +26,9 @@ import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
 
-import static com.android.SdkConstants.*
+import static com.android.SdkConstants.DOT_ANDROID_PACKAGE
+import static com.android.SdkConstants.FD_RES
+import static com.android.SdkConstants.FD_RES_RAW
 import static com.android.builder.core.BuilderConstants.ANDROID_WEAR_MICRO_APK
 import static org.junit.Assert.assertNotNull
 import static org.junit.Assert.assertNull

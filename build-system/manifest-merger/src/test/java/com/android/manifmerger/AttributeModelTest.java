@@ -17,22 +17,14 @@
 package com.android.manifmerger;
 
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
 
-import com.android.sdklib.mock.MockLog;
 import com.android.utils.ILogger;
-import com.google.common.base.Optional;
 
 import junit.framework.TestCase;
 
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
-import org.xml.sax.SAXException;
-
-import java.io.IOException;
-
-import javax.xml.parsers.ParserConfigurationException;
 
 /**
  * Tests for the {@link com.android.manifmerger.AttributeModel} class

@@ -19,6 +19,7 @@ package com.android.build.gradle.internal.dsl;
 import com.android.annotations.NonNull;
 import com.android.build.gradle.api.AndroidSourceSet;
 import com.android.build.gradle.internal.api.DefaultAndroidSourceSet;
+
 import org.gradle.api.NamedDomainObjectFactory;
 import org.gradle.api.Project;
 import org.gradle.internal.reflect.Instantiator;

@@ -28,7 +28,6 @@ import com.android.sdklib.repository.FullRevision;
 import com.android.utils.ILogger;
 import com.android.utils.StdLogger;
 
-import junit.framework.AssertionFailedError;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 

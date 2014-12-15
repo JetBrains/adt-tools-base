@@ -15,6 +15,7 @@
  */
 
 package com.android.build.gradle.integration.application
+
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.builder.model.AndroidArtifact
 import com.android.builder.model.AndroidArtifactOutput
@@ -25,9 +26,10 @@ import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
 
-import static org.junit.Assert.assertTrue
-import static org.junit.Assert.assertNotNull
 import static org.junit.Assert.assertEquals
+import static org.junit.Assert.assertNotNull
+import static org.junit.Assert.assertTrue
+
 /**
  * Assemble tests for renamedApk.
  */

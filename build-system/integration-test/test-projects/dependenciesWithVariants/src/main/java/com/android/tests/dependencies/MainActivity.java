@@ -1,11 +1,10 @@
 package com.android.tests.dependencies;
 
+import com.android.tests.dependencies.jar.StringHelper;
+
 import android.app.Activity;
-import android.view.View;
-import android.content.Intent;
 import android.os.Bundle;
 import android.widget.TextView;
-import com.android.tests.dependencies.jar.StringHelper;
 
 public class MainActivity extends Activity {
     @Override

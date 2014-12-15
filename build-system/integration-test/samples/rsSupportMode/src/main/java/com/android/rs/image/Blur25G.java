@@ -16,11 +16,8 @@
 
 package com.android.rs.image2;
 
-import java.lang.Math;
-
 import android.graphics.Bitmap;
 import android.support.v8.renderscript.*;
-import android.util.Log;
 import android.widget.SeekBar;
 import android.widget.TextView;
 

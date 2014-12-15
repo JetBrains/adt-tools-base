@@ -21,6 +21,7 @@ import com.android.builder.core.BuilderConstants;
 import com.android.builder.signing.DefaultSigningConfig;
 import com.android.prefs.AndroidLocation;
 import com.google.common.base.Objects;
+
 import org.gradle.api.Named;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFile;

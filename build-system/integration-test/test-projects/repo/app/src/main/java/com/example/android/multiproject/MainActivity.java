@@ -1,15 +1,15 @@
 package com.example.android.multiproject;
 
-import android.app.Activity;
-import android.view.View;
-import android.content.Intent;
-import android.os.Bundle;
-
-import java.util.List;
+import com.example.android.multiproject.library.ShowPeopleActivity;
 import com.example.android.multiproject.person.Person;
 import com.google.common.collect.Lists;
 
-import com.example.android.multiproject.library.ShowPeopleActivity;
+import android.app.Activity;
+import android.content.Intent;
+import android.os.Bundle;
+import android.view.View;
+
+import java.util.List;
 
 public class MainActivity extends Activity {
     @Override

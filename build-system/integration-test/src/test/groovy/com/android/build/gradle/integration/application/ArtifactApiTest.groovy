@@ -17,16 +17,28 @@
 
 
 package com.android.build.gradle.integration.application
+
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.utils.ModelHelper
-import com.android.builder.model.*
+import com.android.builder.model.AndroidProject
+import com.android.builder.model.ArtifactMetaData
+import com.android.builder.model.BuildTypeContainer
+import com.android.builder.model.Dependencies
+import com.android.builder.model.JavaArtifact
+import com.android.builder.model.ProductFlavorContainer
+import com.android.builder.model.SourceProvider
+import com.android.builder.model.SourceProviderContainer
+import com.android.builder.model.Variant
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
 
 import static com.android.builder.model.AndroidProject.ARTIFACT_ANDROID_TEST
-import static org.junit.Assert.*
+import static org.junit.Assert.assertEquals
+import static org.junit.Assert.assertFalse
+import static org.junit.Assert.assertNotNull
+
 /**
  * Assemble tests for artifactApi.
  */

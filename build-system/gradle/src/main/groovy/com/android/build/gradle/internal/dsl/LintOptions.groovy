@@ -16,10 +16,6 @@
 
 package com.android.build.gradle.internal.dsl
 
-import com.android.tools.lint.checks.BuiltinIssueRegistry
-
-import static com.android.builder.model.AndroidProject.FD_OUTPUTS
-
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
 import com.android.tools.lint.HtmlReporter
@@ -27,6 +23,7 @@ import com.android.tools.lint.LintCliClient
 import com.android.tools.lint.LintCliFlags
 import com.android.tools.lint.TextReporter
 import com.android.tools.lint.XmlReporter
+import com.android.tools.lint.checks.BuiltinIssueRegistry
 import com.android.tools.lint.detector.api.Severity
 import com.google.common.collect.Maps
 import com.google.common.collect.Sets
@@ -37,6 +34,7 @@ import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.OutputFile
 
 import static com.android.SdkConstants.DOT_XML
+import static com.android.builder.model.AndroidProject.FD_OUTPUTS
 
 /**
  * DSL object for configuring lint options.

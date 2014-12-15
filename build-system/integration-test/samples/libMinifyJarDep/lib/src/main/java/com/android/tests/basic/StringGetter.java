@@ -1,7 +1,5 @@
 package com.android.tests.basic;
 
-import java.lang.String;
-import java.lang.StringBuffer;
 import com.example.android.multiproject.person.People;
 import com.example.android.multiproject.person.Person;
 

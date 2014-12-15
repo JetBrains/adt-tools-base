@@ -16,22 +16,12 @@
 
 package com.android.rs.image2;
 
-import android.app.Activity;
-import android.content.Context;
-import android.os.Bundle;
-import android.graphics.BitmapFactory;
 import android.graphics.Bitmap;
-import android.graphics.Canvas;
 import android.support.v8.renderscript.*;
-import android.view.SurfaceView;
-import android.view.SurfaceHolder;
-import android.widget.ImageView;
-import android.widget.SeekBar;
-import android.widget.TextView;
 import android.view.View;
-import android.util.Log;
-import java.lang.Math;
+import android.widget.SeekBar;
 import android.widget.Spinner;
+import android.widget.TextView;
 
 public class TestBase  {
     protected final String TAG = "Img";

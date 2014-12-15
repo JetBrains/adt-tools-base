@@ -17,6 +17,7 @@
 package com.android.builder.internal.incremental;
 
 import com.android.testutils.TestUtils;
+
 import junit.framework.TestCase;
 
 import java.io.File;

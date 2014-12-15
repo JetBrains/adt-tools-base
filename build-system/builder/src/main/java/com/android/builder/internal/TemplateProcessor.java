@@ -16,6 +16,8 @@
 
 package com.android.builder.internal;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.android.annotations.NonNull;
 import com.google.common.base.Charsets;
 import com.google.common.io.CharStreams;
@@ -27,8 +29,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Map;
 import java.util.Map.Entry;
-
-import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Processes a template to generate a file somewhere.

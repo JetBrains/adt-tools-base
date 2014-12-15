@@ -1,10 +1,10 @@
 package com.android.tests.basic;
 
+import com.android.tests.libstest.lib.Lib;
+
 import android.app.Activity;
 import android.os.Bundle;
 import android.widget.TextView;
-
-import com.android.tests.libstest.lib.Lib;
 
 public class Main extends Activity
 {

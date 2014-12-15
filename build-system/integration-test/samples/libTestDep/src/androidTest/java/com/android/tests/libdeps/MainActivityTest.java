@@ -16,11 +16,12 @@
 
 package com.android.tests.libdeps;
 
+import com.android.tests.libdeps.MainActivity;
+import com.google.common.base.Splitter;
+
 import android.test.ActivityInstrumentationTestCase2;
 import android.test.suitebuilder.annotation.MediumTest;
 import android.widget.TextView;
-import com.android.tests.libdeps.MainActivity;
-import com.google.common.base.Splitter;
 
 /**
  *

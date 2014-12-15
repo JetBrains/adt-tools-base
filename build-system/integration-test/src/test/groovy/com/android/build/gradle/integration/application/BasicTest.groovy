@@ -15,11 +15,16 @@
  */
 
 package com.android.build.gradle.integration.application
+
 import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.utils.ModelHelper
 import com.android.build.gradle.integration.common.utils.SigningConfigHelper
-import com.android.builder.model.*
+import com.android.builder.model.AndroidArtifact
+import com.android.builder.model.AndroidProject
+import com.android.builder.model.JavaCompileOptions
+import com.android.builder.model.SigningConfig
+import com.android.builder.model.Variant
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
@@ -27,7 +32,12 @@ import org.junit.Test
 import org.junit.experimental.categories.Category
 
 import static com.android.builder.core.BuilderConstants.DEBUG
-import static org.junit.Assert.*
+import static org.junit.Assert.assertEquals
+import static org.junit.Assert.assertFalse
+import static org.junit.Assert.assertNotNull
+import static org.junit.Assert.assertNull
+import static org.junit.Assert.assertTrue
+
 /**
  * Assemble tests for basic.
  */

@@ -22,11 +22,13 @@ import com.android.builder.model.AndroidArtifact
 import com.android.builder.model.AndroidProject
 import com.android.builder.model.Dependencies
 import com.android.builder.model.Variant
-import org.junit.*
+import org.junit.AfterClass
+import org.junit.BeforeClass
+import org.junit.ClassRule
+import org.junit.Test
 
 import static com.android.builder.core.BuilderConstants.DEBUG
 import static com.android.builder.model.AndroidProject.ARTIFACT_ANDROID_TEST
-
 import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertNotNull
 

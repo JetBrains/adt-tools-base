@@ -16,17 +16,13 @@
 
 package com.android.rs.image2;
 
-import java.lang.Math;
-import java.lang.Short;
-
 import android.support.v8.renderscript.*;
-import android.util.Log;
-import android.widget.SeekBar;
-import android.widget.TextView;
+import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.view.View;
+import android.widget.SeekBar;
 import android.widget.Spinner;
+import android.widget.TextView;
 
 public class Blend extends TestBase {
     private ScriptIntrinsicBlend mBlend;

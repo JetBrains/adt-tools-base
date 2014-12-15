@@ -18,6 +18,7 @@ package com.android.build.gradle.internal;
 
 import com.android.annotations.NonNull;
 import com.android.builder.model.SourceProvider;
+
 import org.gradle.api.tasks.SourceSet;
 
 import java.io.File;
