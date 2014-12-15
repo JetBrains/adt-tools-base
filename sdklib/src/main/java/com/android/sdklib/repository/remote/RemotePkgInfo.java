@@ -37,9 +37,13 @@ public class RemotePkgInfo
     @NonNull
     private final IDescription mSourceUri;
 
-    public RemotePkgInfo(@NonNull IPkgDesc pkgDesc, @NonNull IDescription sourceUri) {
+    /** Size of the archives that make up this package */
+    private final long mDownloadSize;
+
+    public RemotePkgInfo(@NonNull IPkgDesc pkgDesc, @NonNull IDescription sourceUri, long downloadSize) {
         mPkgDesc = pkgDesc;
         mSourceUri = sourceUri;
+        mDownloadSize = downloadSize;
     }
 
     /** Information on the package provided by the remote server. */
@@ -55,6 +59,13 @@ public class RemotePkgInfo
     @NonNull
     public IDescription getSourceUri() {
         return mSourceUri;
+    }
+
+    /**
+     * Returns the size (in bytes) of all the archives that make up this package.
+     */
+    public long getDownloadSize() {
+        return mDownloadSize;
     }
 
     //---- Ordering ----

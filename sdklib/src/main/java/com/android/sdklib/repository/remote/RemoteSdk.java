@@ -24,6 +24,7 @@ import com.android.sdklib.internal.repository.DownloadCache;
 import com.android.sdklib.internal.repository.ITaskMonitor;
 import com.android.sdklib.internal.repository.NullTaskMonitor;
 import com.android.sdklib.internal.repository.AddonsListFetcher.Site;
+import com.android.sdklib.internal.repository.archives.Archive;
 import com.android.sdklib.internal.repository.packages.Package;
 import com.android.sdklib.internal.repository.sources.SdkAddonSource;
 import com.android.sdklib.internal.repository.sources.SdkRepoSource;
@@ -112,7 +113,11 @@ public class RemoteSdk {
             // Adapt the legacy Package instances into the new RemotePkgInfo
             for (Package p : pkgs) {
                 IPkgDesc d = p.getPkgDesc();
-                RemotePkgInfo r = new RemotePkgInfo(d, source);
+                long size = 0;
+                for (Archive archive : p.getArchives()) {
+                    size += archive.getSize();
+                }
+                RemotePkgInfo r = new RemotePkgInfo(d, source, size);
                 remotes.put(d.getType(), r);
             }
         }
