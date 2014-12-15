@@ -23,7 +23,6 @@ import java.util.Collection;
 
 /**
  * basic variant output information
- * TODO(jedo): reconcile the numerous subclasses.
  */
 public interface VariantOutput {
 

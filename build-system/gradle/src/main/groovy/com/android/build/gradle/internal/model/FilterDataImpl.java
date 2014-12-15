@@ -14,21 +14,36 @@
  * limitations under the License.
  */
 
-package com.android.build;
+package com.android.build.gradle.internal.model;
 
 import com.android.annotations.NonNull;
+import com.android.build.FilterData;
+
+import java.io.Serializable;
 
 /**
- * Represents a split information, like its type or dimension (density, abi, language...) and
- * the filter value (like hdpi for a density split type).
+ * Implementation of {@link com.android.build.FilterData} interface
  */
-public interface FilterData {
+public class FilterDataImpl implements FilterData, Serializable {
+    private final String filterType;
+    private final String identifier;
+
+    FilterDataImpl(String filterType, String identifier) {
+        this.filterType = filterType;
+        this.identifier = identifier;
+    }
 
     @NonNull
-    String getIdentifier();
+    @Override
+    public String getIdentifier() {
+        return identifier;
+    }
 
     @NonNull
-    String getFilterType();
+    @Override
+    public String getFilterType() {
+        return filterType;
+    }
 
     public static class Builder {
         public static FilterData build(final String filterType, final String identifier) {
