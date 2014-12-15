@@ -18,29 +18,15 @@ package com.android.build;
 
 import com.android.annotations.NonNull;
 
-import java.io.Serializable;
-
 /**
- * Implementation of {@link FilterData} interface
+ * Represents a split information, like its type or dimension (density, abi, language...) and
+ * the filter value (like hdpi for a density split type).
  */
-class FilterDataImpl implements FilterData, Serializable {
-    private final String filterType;
-    private final String identifier;
-
-    FilterDataImpl(String filterType, String identifier) {
-        this.filterType = filterType;
-        this.identifier = identifier;
-    }
+public interface FilterData {
 
     @NonNull
-    @Override
-    public String getIdentifier() {
-        return identifier;
-    }
+    String getIdentifier();
 
     @NonNull
-    @Override
-    public String getFilterType() {
-        return filterType;
-    }
+    String getFilterType();
 }
