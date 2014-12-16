@@ -11,8 +11,12 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="library" exported="" name="asm-tools" level="project" />
     <orderEntry type="library" exported="" name="lombok-ast" level="project" />
-    <orderEntry type="module" module-name="sdk-common" exported="" />
     <orderEntry type="library" exported="" name="builder-model" level="project" />
+    <orderEntry type="module" module-name="android-annotations" exported="" />
+    <orderEntry type="library" exported="" name="guava-tools" level="project" />
+    <orderEntry type="module" module-name="common" />
+    <orderEntry type="module" module-name="layoutlib-api" />
+    <orderEntry type="module" module-name="sdklib" />
+    <orderEntry type="module" module-name="sdk-common-base" />
   </component>
 </module>
-
