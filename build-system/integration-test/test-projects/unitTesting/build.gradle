@@ -1,22 +1,5 @@
-ext {
-    buildToolsVersion = System.env.CUSTOM_BUILDTOOLS != null ? System.env.CUSTOM_BUILDTOOLS : (project.hasProperty("CUSTOM_BUILDTOOLS") ? project.CUSTOM_BUILDTOOLS : '20.0.0')
-    useJack = System.env.CUSTOM_JACK != null ? true : (project.hasProperty("CUSTOM_JACK") ? true : false)
-}
-
-buildscript {
-    def gradleVersion = System.env.CUSTOM_GRADLE != null ? System.env.CUSTOM_GRADLE : '1.0.1'
-
-    repositories {
-        if (System.env.CUSTOM_REPO != null) {
-            maven { url System.env.CUSTOM_REPO }
-        } else {
-            mavenCentral()
-        }
-    }
-    dependencies {
-        classpath "com.android.tools.build:gradle:$gradleVersion"
-    }
-}
+apply from: "../commonHeader.gradle"
+buildscript { apply from: "../commonBuildScript.gradle", to: buildscript }
 
 apply plugin: 'com.android.application'
 
@@ -25,8 +8,9 @@ repositories {
 }
 
 android {
+    // We need an android.jar that contains Java 6 bytecode, since Jenkins runs on Java 6.
     compileSdkVersion 19
-    buildToolsVersion = rootProject.ext.buildToolsVersion
+    buildToolsVersion = rootProject.buildToolsVersion
 }
 
 dependencies {

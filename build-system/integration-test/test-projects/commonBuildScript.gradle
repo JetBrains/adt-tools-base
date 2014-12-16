@@ -14,14 +14,16 @@
  * limitations under the License.
  */
 
-apply plugin: 'com.android.application'
+def gradleVersion = System.env.CUSTOM_GRADLE ?: '1.0.1'
 
-android {
-    compileSdkVersion 19
-    buildToolsVersion = rootProject.buildToolsVersion
+repositories {
+    if (System.env.CUSTOM_REPO != null) {
+        maven { url System.env.CUSTOM_REPO }
+    } else {
+        mavenCentral()
+    }
 }
 
 dependencies {
-    // This is invalid and should cause the test to fail.
-    compile project(':dependency-app')
+    classpath "com.android.tools.build:gradle:$gradleVersion"
 }

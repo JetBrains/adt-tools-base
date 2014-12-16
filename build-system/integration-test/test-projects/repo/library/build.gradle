@@ -1,21 +1,5 @@
-ext {
-    buildToolsVersion = System.env.CUSTOM_BUILDTOOLS != null ? System.env.CUSTOM_BUILDTOOLS : '20.0.0'
-}
-
-buildscript {
-    def gradleVersion = System.env.CUSTOM_GRADLE != null ? System.env.CUSTOM_GRADLE : '1.0.1'
-
-    repositories {
-        if (System.env.CUSTOM_REPO != null) {
-            maven { url System.env.CUSTOM_REPO }
-        } else {
-            mavenCentral()
-        }
-    }
-    dependencies {
-        classpath "com.android.tools.build:gradle:$gradleVersion"
-    }
-}
+apply from: "../commonHeader.gradle"
+buildscript { apply from: "../commonBuildScript.gradle", to: buildscript }
 
 apply plugin: 'com.android.library'
 apply plugin: 'maven'
@@ -31,7 +15,7 @@ dependencies {
 
 android {
     compileSdkVersion 19
-    buildToolsVersion = rootProject.ext.buildToolsVersion
+    buildToolsVersion = rootProject.buildToolsVersion
 }
 
 group = 'com.example.android.multiproject'
