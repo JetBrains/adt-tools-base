@@ -2891,41 +2891,35 @@ public abstract class BasePlugin {
 
         // --- Proguard Config ---
 
-        if (variantConfig.isTestCoverageEnabled()) {
-            // when collecting coverage, don't remove the JaCoCo runtime
-            proguardTask.keep("class com.vladium.** {*;}")
-            proguardTask.keep("class org.jacoco.** {*;}")
-            proguardTask.keep("interface org.jacoco.** {*;}")
-            proguardTask.dontwarn("org.jacoco.**")
-        }
-
         if (testedVariantData != null) {
-
-            // don't remove any code in tested app
+            // Don't remove any code in tested app.
             proguardTask.dontshrink()
-            proguardTask.keepnames("class * extends junit.framework.TestCase")
-            proguardTask.keepclassmembers("class * extends junit.framework.TestCase {\n" +
-                    "    void test*(...);\n" +
-                    "}")
+            proguardTask.dontoptimize()
 
-            // input the mapping from the tested app so that we can deal with obfuscated code
+            // We can't call dontobfuscate, since that would make ProGuard ignore the mapping file.
+            proguardTask.keep("class * {*;}")
+            proguardTask.keep("interface * {*;}")
+            proguardTask.keep("enum * {*;}")
+
+            // Input the mapping from the tested app so that we can deal with obfuscated code.
             proguardTask.applymapping("${project.buildDir}/${FD_OUTPUTS}/mapping/${testedVariantData.variantConfiguration.dirName}/mapping.txt")
-        }
-
-        Closure configFiles = {
-            List<File> proguardFiles = variantConfig.getProguardFiles(true /*includeLibs*/,
-                    [extension.getDefaultProguardFile(DEFAULT_PROGUARD_CONFIG_FILE)])
-            proguardFiles.add(variantOutputData.processResourcesTask.proguardOutputFile)
-            // for tested app, we only care about their aapt config since the base
-            // configs are the same files anyway.
-            if (testedVariantData != null) {
-                // use single output for now.
-                proguardFiles.add(testedVariantData.outputs.get(0).processResourcesTask.proguardOutputFile)
+        } else {
+            if (variantConfig.isTestCoverageEnabled()) {
+                // when collecting coverage, don't remove the JaCoCo runtime
+                proguardTask.keep("class com.vladium.** {*;}")
+                proguardTask.keep("class org.jacoco.** {*;}")
+                proguardTask.keep("interface org.jacoco.** {*;}")
+                proguardTask.dontwarn("org.jacoco.**")
             }
 
-            return proguardFiles
+            proguardTask.configuration {
+                List<File> proguardFiles = variantConfig.getProguardFiles(true /*includeLibs*/,
+                        [extension.getDefaultProguardFile(DEFAULT_PROGUARD_CONFIG_FILE)])
+
+                proguardFiles + [variantOutputData.processResourcesTask.proguardOutputFile]
+            }
         }
-        proguardTask.configuration(configFiles)
+
 
         // --- InJars / LibraryJars ---
 
