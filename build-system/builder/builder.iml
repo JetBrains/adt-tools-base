@@ -15,10 +15,10 @@
     <orderEntry type="library" scope="TEST" name="JUnit3" level="project" />
     <orderEntry type="module" module-name="testutils" scope="TEST" />
     <orderEntry type="module" module-name="ddmlib" exported="" />
-    <orderEntry type="module" module-name="manifest-merger" exported="" />
     <orderEntry type="library" exported="" name="javawriter" level="project" />
     <orderEntry type="library" exported="" name="bouncy-castle" level="project" />
     <orderEntry type="library" name="mockito" level="project" />
     <orderEntry type="module" module-name="sdk-common-base" />
+    <orderEntry type="module" module-name="manifest-merger-base" />
   </component>
 </module>

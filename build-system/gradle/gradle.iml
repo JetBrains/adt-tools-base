@@ -1308,5 +1308,7 @@
     <orderEntry type="library" name="groovy" level="project" />
     <orderEntry type="module" module-name="project-test-lib" scope="TEST" />
     <orderEntry type="module" module-name="sdk-common-base" />
+    <orderEntry type="module" module-name="lint-api-base" />
+    <orderEntry type="module" module-name="lint-checks-base" />
   </component>
 </module>

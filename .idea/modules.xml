@@ -16,10 +16,10 @@
       <module fileurl="file://$PROJECT_DIR$/build-system/gradle/gradle.iml" filepath="$PROJECT_DIR$/build-system/gradle/gradle.iml" />
       <module fileurl="file://$PROJECT_DIR$/build-system/integration-test/integration-test.iml" filepath="$PROJECT_DIR$/build-system/integration-test/integration-test.iml" />
       <module fileurl="file://$PROJECT_DIR$/layoutlib-api/layoutlib-api.iml" filepath="$PROJECT_DIR$/layoutlib-api/layoutlib-api.iml" />
-      <module fileurl="file://$PROJECT_DIR$/lint/libs/lint-api/lint-api.iml" filepath="$PROJECT_DIR$/lint/libs/lint-api/lint-api.iml" />
-      <module fileurl="file://$PROJECT_DIR$/lint/libs/lint-checks/lint-checks.iml" filepath="$PROJECT_DIR$/lint/libs/lint-checks/lint-checks.iml" />
+      <module fileurl="file://$PROJECT_DIR$/lint/libs/lint-api/lint-api-base.iml" filepath="$PROJECT_DIR$/lint/libs/lint-api/lint-api-base.iml" />
+      <module fileurl="file://$PROJECT_DIR$/lint/libs/lint-checks/lint-checks-base.iml" filepath="$PROJECT_DIR$/lint/libs/lint-checks/lint-checks-base.iml" />
       <module fileurl="file://$PROJECT_DIR$/lint/cli/lint-cli.iml" filepath="$PROJECT_DIR$/lint/cli/lint-cli.iml" />
-      <module fileurl="file://$PROJECT_DIR$/build-system/manifest-merger/manifest-merger.iml" filepath="$PROJECT_DIR$/build-system/manifest-merger/manifest-merger.iml" />
+      <module fileurl="file://$PROJECT_DIR$/build-system/manifest-merger/manifest-merger-base.iml" filepath="$PROJECT_DIR$/build-system/manifest-merger/manifest-merger-base.iml" />
       <module fileurl="file://$PROJECT_DIR$/ninepatch/ninepatch.iml" filepath="$PROJECT_DIR$/ninepatch/ninepatch.iml" />
       <module fileurl="file://$PROJECT_DIR$/perflib/perflib.iml" filepath="$PROJECT_DIR$/perflib/perflib.iml" />
       <module fileurl="file://$PROJECT_DIR$/build-system/project-test/project-test.iml" filepath="$PROJECT_DIR$/build-system/project-test/project-test.iml" />
