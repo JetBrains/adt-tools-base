@@ -1217,5 +1217,6 @@
         <SOURCES />
       </library>
     </orderEntry>
+    <orderEntry type="module" module-name="sdk-common-base" />
   </component>
 </module>
