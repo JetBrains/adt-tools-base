@@ -633,7 +633,7 @@ public abstract class BasePlugin {
         // of the generated manifest
         for (BaseVariantOutputData vod : variantData.outputs) {
             final CompatibleScreensManifest csmTask =
-                    (vod.mainOutputFile.getFilter(OutputFile.DENSITY) != null
+                    (vod.getMainOutputFile().getFilter(OutputFile.DENSITY) != null
                             && !screenSizes.isEmpty()) ?
                             createCompatibleScreensManifest(vod, screenSizes) :
                             null
@@ -733,7 +733,7 @@ public abstract class BasePlugin {
                 "create${variantOutputData.fullName.capitalize()}CompatibleScreensManifest",
                 CompatibleScreensManifest)
 
-        csmTask.screenDensity = variantOutputData.mainOutputFile.getFilter(OutputFile.DENSITY)
+        csmTask.screenDensity = variantOutputData.getMainOutputFile().getFilter(OutputFile.DENSITY)
         csmTask.screenSizes = screenSizes
 
         conventionMapping(csmTask).map("manifestFile") {
@@ -1138,7 +1138,7 @@ public abstract class BasePlugin {
             // only generate code if the density filter is null, and if we haven't generated
             // it yet (if you have abi + density splits, then several abi output will have no
             // densityFilter)
-            if (variantOutputData.mainOutputFile.getFilter(OutputFile.DENSITY) == null
+            if (variantOutputData.getMainOutputFile().getFilter(OutputFile.DENSITY) == null
                     && variantData.generateRClassTask == null) {
                 variantData.generateRClassTask = processResources
                 variantData.sourceGenTask.dependsOn processResources
@@ -1202,7 +1202,7 @@ public abstract class BasePlugin {
                 return config.mergedFlavor.resourceConfigurations
             }
             conventionMapping(processResources).map("preferredDensity") {
-                variantOutputData.mainOutputFile.getFilter(OutputFile.DENSITY)
+                variantOutputData.getMainOutputFile().getFilter(OutputFile.DENSITY)
             }
 
         }
@@ -2626,8 +2626,8 @@ public abstract class BasePlugin {
                 getJniFolders(variantData);
             }
             conventionMapping(packageApp).map("abiFilters") {
-                if (variantOutputData.mainOutputFile.getFilter(OutputFile.ABI) != null) {
-                    return ImmutableSet.of(variantOutputData.mainOutputFile.getFilter(OutputFile.ABI))
+                if (variantOutputData.getMainOutputFile().getFilter(OutputFile.ABI) != null) {
+                    return ImmutableSet.of(variantOutputData.getMainOutputFile().getFilter(OutputFile.ABI))
                 }
                 return config.supportedAbis
             }
@@ -2757,11 +2757,11 @@ public abstract class BasePlugin {
                     // classifier cannot just be the publishing config as we need
                     // to add the filters if needed.
                     String classifier = variantData.variantDependency.publishConfiguration.name
-                    if (variantOutputData.mainOutputFile.getFilter(OutputFile.DENSITY) != null) {
-                        classifier = "${classifier}-${variantOutputData.mainOutputFile.getFilter(OutputFile.DENSITY)}"
+                    if (variantOutputData.getMainOutputFile().getFilter(OutputFile.DENSITY) != null) {
+                        classifier = "${classifier}-${variantOutputData.getMainOutputFile().getFilter(OutputFile.DENSITY)}"
                     }
-                    if (variantOutputData.mainOutputFile.getFilter(OutputFile.ABI) != null) {
-                        classifier = "${classifier}-${variantOutputData.mainOutputFile.getFilter(OutputFile.ABI)}"
+                    if (variantOutputData.getMainOutputFile().getFilter(OutputFile.ABI) != null) {
+                        classifier = "${classifier}-${variantOutputData.getMainOutputFile().getFilter(OutputFile.ABI)}"
                     }
 
                     project.artifacts.add(variantData.variantDependency.publishConfiguration.name,
