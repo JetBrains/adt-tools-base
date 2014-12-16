@@ -67,6 +67,9 @@ public class HardwareProperties {
     /** AVD/config.ini key indicating whether proximity sensor present. */
     public static final String HW_PROXIMITY_SENSOR = "hw.sensors.proximity";
 
+    /** AVD/config.ini key for initial device orientation. */
+    public static final String HW_INITIAL_ORIENTATION = "hw.initialOrientation";
+
 
     private static final Pattern PATTERN_PROP = Pattern.compile(
     "^([a-zA-Z0-9._-]+)\\s*=\\s*(.*)\\s*$");
