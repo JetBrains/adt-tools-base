@@ -46,7 +46,7 @@ public class MergeResources extends IncrementalTask {
 
     @Input
     String getBuildToolsVersion() {
-        plugin.extension.buildToolsRevision
+        getBuildTools().getRevision()
     }
 
     @Input
@@ -92,7 +92,7 @@ public class MergeResources extends IncrementalTask {
         try {
             for (ResourceSet resourceSet : resourceSets) {
                 // set needs to be loaded.
-                resourceSet.loadFromFiles(plugin.logger)
+                resourceSet.loadFromFiles(getILogger())
                 merger.addDataSet(resourceSet)
             }
 
@@ -146,8 +146,7 @@ public class MergeResources extends IncrementalTask {
                     return
                 } else if (fileValidity.status == FileValidity.FileStatus.VALID_FILE) {
                     if (!fileValidity.dataSet.updateWith(
-                            fileValidity.sourceFile, changedFile, entry.getValue(),
-                            plugin.logger)) {
+                            fileValidity.sourceFile, changedFile, entry.getValue(), getILogger())) {
                         project.logger.info(
                                 String.format("Failed to process %s event! Full task run",
                                         entry.getValue()))

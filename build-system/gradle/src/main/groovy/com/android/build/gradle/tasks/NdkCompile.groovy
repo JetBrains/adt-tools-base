@@ -28,6 +28,7 @@ import com.google.common.io.Files
 import org.gradle.api.GradleException
 import org.gradle.api.file.FileTree
 import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.OutputFile
@@ -53,6 +54,9 @@ class NdkCompile extends NdkTask {
 
     @OutputDirectory
     File objFolder
+
+    @InputDirectory
+    File ndkDirectory
 
     @Input
     boolean ndkRenderScriptMode
@@ -84,7 +88,6 @@ class NdkCompile extends NdkTask {
             return
         }
 
-        File ndkDirectory = getPlugin().ndkFolder
         if (ndkDirectory == null || !ndkDirectory.isDirectory()) {
             throw new GradleException(
                     "NDK not configured.\n" +

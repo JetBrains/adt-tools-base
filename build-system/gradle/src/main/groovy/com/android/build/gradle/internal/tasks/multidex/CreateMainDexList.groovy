@@ -50,7 +50,6 @@ public class CreateMainDexList extends BaseTask {
 
     @InputFile
     File getDxJar() {
-        plugin.ensureTargetSetup()
         return builder.getDxJar()
     }
 
@@ -91,6 +90,6 @@ public class CreateMainDexList extends BaseTask {
     }
 
     private Set<String> callDx(File allClassesJarFile, File jarOfRoots) {
-        return plugin.androidBuilder.createMainDexList(allClassesJarFile, jarOfRoots)
+        return androidBuilder.createMainDexList(allClassesJarFile, jarOfRoots)
     }
 }

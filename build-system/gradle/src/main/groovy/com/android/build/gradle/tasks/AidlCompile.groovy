@@ -54,7 +54,7 @@ public class AidlCompile extends IncrementalTask {
     // ----- PRIVATE TASK API -----
     @Input
     String getBuildToolsVersion() {
-        plugin.extension.buildToolsRevision
+        getBuildTools().getRevision()
     }
 
     List<File> sourceDirs

@@ -62,7 +62,7 @@ public class ProcessAndroidResources extends IncrementalTask {
     // ----- PRIVATE TASK API -----
     @Input
     String getBuildToolsVersion() {
-        plugin.extension.buildToolsRevision
+        getBuildTools().getRevision()
     }
 
     @Nested @Optional
