@@ -20,6 +20,7 @@ import static com.android.SdkConstants.FD_LIB;
 import static com.android.SdkConstants.FN_AAPT;
 import static com.android.SdkConstants.FN_AIDL;
 import static com.android.SdkConstants.FN_BCC_COMPAT;
+import static com.android.SdkConstants.FN_DEXDUMP;
 import static com.android.SdkConstants.FN_DX;
 import static com.android.SdkConstants.FN_DX_JAR;
 import static com.android.SdkConstants.FN_JACK;
@@ -31,7 +32,21 @@ import static com.android.SdkConstants.FN_RENDERSCRIPT;
 import static com.android.SdkConstants.FN_ZIPALIGN;
 import static com.android.SdkConstants.OS_FRAMEWORK_RS;
 import static com.android.SdkConstants.OS_FRAMEWORK_RS_CLANG;
-import static com.android.sdklib.BuildToolInfo.PathId.*;
+import static com.android.sdklib.BuildToolInfo.PathId.AAPT;
+import static com.android.sdklib.BuildToolInfo.PathId.AIDL;
+import static com.android.sdklib.BuildToolInfo.PathId.ANDROID_RS;
+import static com.android.sdklib.BuildToolInfo.PathId.ANDROID_RS_CLANG;
+import static com.android.sdklib.BuildToolInfo.PathId.BCC_COMPAT;
+import static com.android.sdklib.BuildToolInfo.PathId.DEXDUMP;
+import static com.android.sdklib.BuildToolInfo.PathId.DX;
+import static com.android.sdklib.BuildToolInfo.PathId.DX_JAR;
+import static com.android.sdklib.BuildToolInfo.PathId.JACK;
+import static com.android.sdklib.BuildToolInfo.PathId.JILL;
+import static com.android.sdklib.BuildToolInfo.PathId.LD_ARM;
+import static com.android.sdklib.BuildToolInfo.PathId.LD_MIPS;
+import static com.android.sdklib.BuildToolInfo.PathId.LD_X86;
+import static com.android.sdklib.BuildToolInfo.PathId.LLVM_RS_CC;
+import static com.android.sdklib.BuildToolInfo.PathId.ZIP_ALIGN;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -84,6 +99,8 @@ public class BuildToolInfo {
         ANDROID_RS("1.0.0"),
         /** OS Path to the Renderscript(clang) include folder. */
         ANDROID_RS_CLANG("1.0.0"),
+
+        DEXDUMP("1.0.0"),
 
         // --- NEW IN 18.1.0 ---
 
@@ -151,6 +168,7 @@ public class BuildToolInfo {
         add(LLVM_RS_CC, FN_RENDERSCRIPT);
         add(ANDROID_RS, OS_FRAMEWORK_RS);
         add(ANDROID_RS_CLANG, OS_FRAMEWORK_RS_CLANG);
+        add(DEXDUMP, FN_DEXDUMP);
         add(BCC_COMPAT, FN_BCC_COMPAT);
         add(LD_ARM, FN_LD_ARM);
         add(LD_X86, FN_LD_X86);
