@@ -24,9 +24,8 @@ import org.junit.ClassRule
 import org.junit.Test
 import org.junit.experimental.categories.Category
 
-import java.util.zip.ZipFile
-
-import static org.junit.Assert.assertNotNull
+import static com.android.build.gradle.integration.common.truth.ZipFileSubjectFactory.zipFile
+import static com.google.common.truth.Truth.assert_
 
 /**
  * Assemble tests for packagingOptions.
@@ -53,9 +52,8 @@ class PackagingOptionsTest {
     }
 
     @Test
-    void "check packaging"() {
-        ZipFile apk = new ZipFile(project.getApk("debug"))
-        assertNotNull(apk.getEntry("first_pick.txt"))
+    void "check packinging"() {
+        assert_().about(zipFile()).that(project.getApk("debug")).contains("first_pick.txt")
     }
 
     @Test
