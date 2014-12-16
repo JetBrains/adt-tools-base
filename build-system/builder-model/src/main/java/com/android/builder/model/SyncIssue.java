@@ -28,11 +28,23 @@ public interface SyncIssue {
     public static final int SEVERITY_ERROR = 2;
 
     public static final int TYPE_NONE                     = 0;
+
+    // data is expiration data
     public static final int TYPE_PLUGIN_OBSOLETE          = 1;
+
+    // data is dependency coordinate
     public static final int TYPE_UNRESOLVED_DEPENDENCY    = 2;
+
+    // data is dependency coordinate
     public static final int TYPE_DEPENDENCY_IS_APK        = 3;
+
+    // data is dependency coordinate
     public static final int TYPE_DEPENDENCY_IS_APKLIB     = 4;
-    public static final int TYPE_MAX                      = 5; // increment when adding new types.
+
+    // data is dependency coordinate/path
+    public static final int TYPE_NON_JAR_PACKAGE_DEP      = 5;
+
+    public static final int TYPE_MAX                      = 6; // increment when adding new types.
 
     /**
      * Returns the severity of the issue.

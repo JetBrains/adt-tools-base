@@ -178,6 +178,7 @@ import java.util.jar.Attributes
 import java.util.jar.Manifest
 import java.util.regex.Pattern
 
+import static com.android.SdkConstants.DOT_JAR
 import static com.android.SdkConstants.EXT_ANDROID_PACKAGE
 import static com.android.SdkConstants.EXT_JAR
 import static com.android.SdkConstants.FN_ANDROID_MANIFEST_XML
@@ -206,7 +207,6 @@ import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_STORE_PA
 import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_STORE_TYPE
 import static com.android.sdklib.BuildToolInfo.PathId.ZIP_ALIGN
 import static java.io.File.separator
-
 /**
  * Base class for all Android plugins
  */
@@ -2953,7 +2953,7 @@ public abstract class BasePlugin {
 
             // injar: the local dependencies
             Closure inJars = {
-                Arrays.asList(getLocalJarFileList(variantData.variantDependency))
+                Arrays.asList(getPackagedLocalJarFileList(variantData.variantDependency))
             }
 
             proguardTask.injars(inJars, filter: '!META-INF/MANIFEST.MF')
@@ -2961,8 +2961,10 @@ public abstract class BasePlugin {
             // libjar: the library dependencies. In this case we take all the compile-scope
             // dependencies
             Closure libJars = {
+                // get all the compiled jar.
                 Set<File> compiledJars = androidBuilder.getCompileClasspath(variantConfig)
-                Object[] localJars = getLocalJarFileList(variantData.variantDependency)
+                // and remove local jar that are also packaged
+                Object[] localJars = getPackagedLocalJarFileList(variantData.variantDependency)
 
                 compiledJars.findAll({ !localJars.contains(it) })
             }
@@ -3238,10 +3240,33 @@ public abstract class BasePlugin {
         extraJavaArtifacts.put(variant.name, artifact)
     }
 
-    public static Object[] getLocalJarFileList(DependencyContainer dependencyContainer) {
+    /**
+     * Returns the list of packaged local jars.
+     * @param dependencyContainer
+     * @return
+     */
+    public static Object[] getPackagedLocalJarFileList(DependencyContainer dependencyContainer) {
         Set<File> files = Sets.newHashSet()
         for (JarDependency jarDependency : dependencyContainer.localDependencies) {
-            files.add(jarDependency.jarFile)
+            if (jarDependency.isPackaged()) {
+                files.add(jarDependency.jarFile)
+            }
+        }
+
+        return files.toArray()
+    }
+
+    /**
+     * Returns the list of compiled local jars.
+     * @param dependencyContainer
+     * @return
+     */
+    public static Object[] getCompiledLocalJarFileList(DependencyContainer dependencyContainer) {
+        Set<File> files = Sets.newHashSet()
+        for (JarDependency jarDependency : dependencyContainer.localDependencies) {
+            if (jarDependency.isCompiled()) {
+                files.add(jarDependency.jarFile)
+            }
         }
 
         return files.toArray()
@@ -3367,7 +3392,6 @@ public abstract class BasePlugin {
 
         List<LibraryDependency> bundles = []
         Map<File, JarDependency> jars = [:]
-        Map<File, JarDependency> localJars = [:]
 
         def dependencies = compileClasspath.incoming.resolutionResult.root.dependencies
         dependencies.each { dep ->
@@ -3383,14 +3407,45 @@ public abstract class BasePlugin {
 
         // also need to process local jar files, as they are not processed by the
         // resolvedConfiguration result. This only includes the local jar files for this project.
+        Set<File> localCompileJars = []
+        Set<File> localPackageJars = []
+
         compileClasspath.allDependencies.each { dep ->
             if (dep instanceof SelfResolvingDependency &&
                     !(dep instanceof ProjectDependency)) {
                 Set<File> files = ((SelfResolvingDependency) dep).resolve()
                 for (File f : files) {
-                    localJars.put(f, new JarDependency(f, true /*compiled*/, false /*packaged*/,
-                            null /*resolvedCoordinates*/))
+                    localCompileJars.add(f)
                 }
+            }
+        }
+
+        packageClasspath.allDependencies.each { dep ->
+            if (dep instanceof SelfResolvingDependency &&
+                    !(dep instanceof ProjectDependency)) {
+                Set<File> files = ((SelfResolvingDependency) dep).resolve()
+                for (File f : files) {
+                    localPackageJars.add(f)
+                }
+            }
+        }
+
+        Map<File, JarDependency> localJars = Maps.newHashMap()
+        for (File file : localCompileJars) {
+            localJars.put(file, new JarDependency(
+                    file,
+                    true /*compiled*/,
+                    localPackageJars.contains(file) /*packaged*/,
+                    null /*resolvedCoordinates*/))
+        }
+
+        for (File file : localPackageJars) {
+            if (!localCompileJars.contains(file)) {
+                localJars.put(file, new JarDependency(
+                        file,
+                        false /*compiled*/,
+                        true /*packaged*/,
+                        null /*resolvedCoordinates*/))
             }
         }
 
@@ -3405,23 +3460,23 @@ public abstract class BasePlugin {
             for (File f : packageFiles) {
                 if (compileFiles.contains(f)) {
                     // if also in compile
-                    JarDependency jarDep = jars.get(f);
-                    if (jarDep == null) {
-                        jarDep = localJars.get(f);
-                    }
-                    if (jarDep != null) {
-                        jarDep.setPackaged(true)
-                    }
                     continue
                 }
 
-                if (f.getName().toLowerCase().endsWith(".jar")) {
-                    jars.put(f, new JarDependency(f, false /*compiled*/, true /*packaged*/,
-                            null /*resolveCoordinates*/))
-                } else {
-                    throw new RuntimeException("Package-only dependency '" +
+                if (!f.getName().toLowerCase().endsWith(DOT_JAR)) {
+                    String msg = "Package-only dependency '" +
                             f.absolutePath +
-                            "' is not supported in project " + project.name)
+                            "' is not supported in project " + project.name
+                    if (!buildModelForIde) {
+                        throw new RuntimeException(msg)
+                    } else {
+                        SyncIssue syncIssue = new SyncIssueImpl(
+                                SyncIssue.TYPE_NON_JAR_PACKAGE_DEP,
+                                SyncIssue.SEVERITY_ERROR,
+                                f.absolutePath,
+                                msg)
+                        syncIssues.put(SyncIssueKey.from(syncIssue), syncIssue)
+                    }
                 }
             }
         } else if (buildModelForIde && !currentUnresolvedDependencies.isEmpty()) {
