@@ -53,7 +53,7 @@
             </d:abi>
             <d:dock/>
             <d:power-type>battery</d:power-type>
-            <d:skin>wear_square</d:skin>
+            <d:skin>AndroidWearSquare</d:skin>
         </d:hardware>
         <d:software>
             <d:api-level>20-</d:api-level>
@@ -143,7 +143,7 @@
             </d:abi>
             <d:dock/>
             <d:power-type>battery</d:power-type>
-            <d:skin>wear_round</d:skin>
+            <d:skin>AndroidWearRound</d:skin>
         </d:hardware>
         <d:software>
             <d:api-level>20-</d:api-level>

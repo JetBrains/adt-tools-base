@@ -330,6 +330,8 @@ public class AvdManager {
     private AvdInfo[] mValidAvdList;
     private AvdInfo[] mBrokenAvdList;
     private final LocalSdk myLocalSdk;
+    private final Map<ILogger, DeviceManager> myDeviceManagers =
+            new HashMap<ILogger, DeviceManager>();
 
     /**
      * Creates an AVD Manager for a given SDK represented by a {@link LocalSdk}.
@@ -1508,6 +1510,21 @@ public class AvdManager {
         }
     }
 
+    private DeviceManager getDeviceManager(ILogger logger) {
+        DeviceManager manager = myDeviceManagers.get(logger);
+        if (manager == null) {
+            manager = DeviceManager.createInstance(myLocalSdk.getLocation(), logger);
+            manager.registerListener(new DeviceManager.DevicesChangedListener() {
+                @Override
+                public void onDevicesChanged() {
+                    myDeviceManagers.clear();
+                }
+            });
+            myDeviceManagers.put(logger, manager);
+        }
+        return manager;
+    }
+
     /**
      * Parses an AVD .ini file to create an {@link AvdInfo}.
      *
@@ -1615,7 +1632,7 @@ public class AvdManager {
             Device d = null;
 
             if (deviceName != null && deviceMfctr != null) {
-                DeviceManager devMan = DeviceManager.createInstance(myLocalSdk.getLocation(), log);
+                DeviceManager devMan = getDeviceManager(log);
                 d = devMan.getDevice(deviceName, deviceMfctr);
                 deviceStatus = d == null ? DeviceStatus.MISSING : DeviceStatus.EXISTS;
 
@@ -2012,7 +2029,7 @@ public class AvdManager {
         // Overwrite the properties derived from the device and nothing else
         Map<String, String> properties = new HashMap<String, String>(avd.getProperties());
 
-        DeviceManager devMan = DeviceManager.createInstance(myLocalSdk.getLocation(), log);
+        DeviceManager devMan = getDeviceManager(log);
         Collection<Device> devices = devMan.getDevices(DeviceManager.ALL_DEVICES);
         String name = properties.get(AvdManager.AVD_INI_DEVICE_NAME);
         String manufacturer = properties.get(AvdManager.AVD_INI_DEVICE_MANUFACTURER);
