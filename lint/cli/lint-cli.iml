@@ -18,6 +18,6 @@
     <orderEntry type="library" name="easymock-tools" level="project" />
     <orderEntry type="library" name="ecj" level="project" />
     <orderEntry type="library" scope="TEST" name="groovy" level="project" />
+    <orderEntry type="module" module-name="sdk-common-base" />
   </component>
 </module>
-
