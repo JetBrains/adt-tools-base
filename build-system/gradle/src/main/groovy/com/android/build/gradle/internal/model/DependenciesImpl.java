@@ -107,11 +107,14 @@ public class DependenciesImpl implements Dependencies, Serializable {
         }
 
         for (JarDependency jarDep : localDeps) {
-            javaLibraries.add(
-                    new JavaLibraryImpl(
-                            jarDep.getJarFile(),
-                            null,
-                            jarDep.getResolvedCoordinates()));
+            // don't include package-only dependencies
+            if (jarDep.isCompiled()) {
+                javaLibraries.add(
+                        new JavaLibraryImpl(
+                                jarDep.getJarFile(),
+                                null,
+                                jarDep.getResolvedCoordinates()));
+            }
         }
 
         GradleVariantConfiguration variantConfig = variantData.getVariantConfiguration();
