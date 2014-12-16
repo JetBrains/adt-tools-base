@@ -22,18 +22,24 @@ import com.android.annotations.NonNull;
 import com.android.builder.core.ApkInfoParser;
 import com.android.ide.common.internal.CommandLineRunner;
 import com.android.ide.common.internal.LoggedErrorException;
-import com.android.sdklib.repository.FullRevision;
 import com.android.utils.StdLogger;
+import com.google.common.collect.Lists;
 
 import org.gradle.api.Nullable;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Helper to help read/test the content of generated apk file.
  */
 public class ApkHelper {
+    private static final Pattern PATTERN = Pattern.compile(
+            "^Class descriptor\\W*:\\W*'(L.+;)'$");
+
     public static void checkVersion(
             @NonNull File apk,
             @Nullable Integer code)
@@ -53,10 +59,9 @@ public class ApkHelper {
             @Nullable Integer code,
             @Nullable String versionName)
             throws IOException, InterruptedException, LoggedErrorException {
-        CommandLineRunner commandLineRunner = new CommandLineRunner(new StdLogger(StdLogger.Level.ERROR));
-        ApkInfoParser parser = new ApkInfoParser(
-                SdkHelper.getAapt(FullRevision.parseRevision("20.0.0")),
-                commandLineRunner);
+        CommandLineRunner commandLineRunner = new CommandLineRunner(
+                new StdLogger(StdLogger.Level.ERROR));
+        ApkInfoParser parser = new ApkInfoParser(SdkHelper.getAapt(), commandLineRunner);
 
         ApkInfoParser.ApkInfo apkInfo = parser.parseApk(apk);
 
@@ -69,5 +74,79 @@ public class ApkHelper {
             assertEquals("Unexpected version code for split: " + apk.getName(),
                     versionName, apkInfo.getVersionName());
         }
+    }
+
+    /**
+     * Returns true if the provided class is present in the file.
+     * @param apkFile the apk file
+     * @param expectedClassName the class name
+     */
+    public static boolean checkForClass(
+            @NonNull File apkFile,
+            @NonNull String expectedClassName)
+            throws IOException, LoggedErrorException, InterruptedException {
+        // extract the classes.jar from the apk
+        File classesDex = File.createTempFile("ApkHelper", "");
+        classesDex.deleteOnExit();
+        ZipHelper.extractFile(apkFile, "classes.dex", classesDex);
+
+        // get the dexdump exec
+        File dexDump = SdkHelper.getDexDump();
+
+        CommandLineRunner commandLineRunner = new CommandLineRunner(
+                new StdLogger(StdLogger.Level.ERROR));
+        List<String> command = Lists.newArrayList();
+
+        command.add(dexDump.getAbsolutePath());
+        command.add(classesDex.getAbsolutePath());
+
+        List<String> output = runAndGetOutput(commandLineRunner, command);
+
+        for (String line : output) {
+            Matcher m = PATTERN.matcher(line.trim());
+            if (m.matches()) {
+                String className = m.group(1);
+                if (expectedClassName.equals(className)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Runs a command, and returns the output.
+     *
+     * @param commandLineRunner the commandline runner
+     * @param command the command line args
+     *
+     * @return the output as a list of files.
+     * @throws IOException
+     * @throws InterruptedException
+     * @throws LoggedErrorException
+     */
+    @NonNull
+    public static List<String> runAndGetOutput(
+            @NonNull CommandLineRunner commandLineRunner,
+            @NonNull List<String> command)
+            throws IOException, InterruptedException, LoggedErrorException {
+
+        final List<String> output = Lists.newArrayList();
+
+        commandLineRunner.runCmdLine(command, new CommandLineRunner.CommandLineOutput() {
+            @Override
+            public void out(@com.android.annotations.Nullable String line) {
+                if (line != null) {
+                    output.add(line);
+                }
+            }
+            @Override
+            public void err(@com.android.annotations.Nullable String line) {
+                super.err(line);
+
+            }
+        }, null /*env vars*/);
+
+        return output;
     }
 }

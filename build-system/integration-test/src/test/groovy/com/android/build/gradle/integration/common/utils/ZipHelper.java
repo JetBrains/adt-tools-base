@@ -202,5 +202,38 @@ public class ZipHelper {
         assertTrue("Did not find the following paths in the " + archive.getPath() + " file: " +
                 notFound, notFound.isEmpty());
     }
+
+    public static void extractFile(
+            @NonNull File zipFile,
+            @NonNull String entryPath,
+            @NonNull File destFile) throws IOException {
+        assertTrue("File '" + zipFile.getPath() + "' does not exist.", zipFile.isFile());
+        ZipInputStream zis = null;
+        FileInputStream fis;
+        fis = new FileInputStream(zipFile);
+        try {
+            zis = new ZipInputStream(fis);
+
+            ZipEntry entry = zis.getNextEntry();
+            while (entry != null) {
+                String name = entry.getName();
+
+                if (entryPath.equals(name)) {
+                    byte[] bytes = ByteStreams.toByteArray(zis);
+                    if (bytes != null) {
+                        Files.write(bytes, destFile);
+                        break;
+                    }
+                }
+
+                entry = zis.getNextEntry();
+            }
+        } finally {
+            fis.close();
+            if (zis != null) {
+                zis.close();
+            }
+        }
+    }
 }
 
