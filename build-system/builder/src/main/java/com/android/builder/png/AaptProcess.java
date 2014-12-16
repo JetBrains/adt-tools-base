@@ -18,6 +18,7 @@ package com.android.builder.png;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.builder.tasks.BooleanLatch;
 import com.android.builder.tasks.Job;
 import com.android.utils.GrabProcessOutput;
 import com.android.utils.ILogger;
