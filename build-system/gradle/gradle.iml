@@ -1218,5 +1218,7 @@
       </library>
     </orderEntry>
     <orderEntry type="module" module-name="sdk-common-base" />
+    <orderEntry type="module" module-name="lint-api-base" />
+    <orderEntry type="module" module-name="lint-checks-base" />
   </component>
 </module>

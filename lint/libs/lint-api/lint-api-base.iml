@@ -17,6 +17,6 @@
     <orderEntry type="module" module-name="common" />
     <orderEntry type="module" module-name="layoutlib-api" />
     <orderEntry type="module" module-name="sdklib" />
-    <orderEntry type="module" module-name="sdk-common" />
+    <orderEntry type="module" module-name="sdk-common-base" />
   </component>
 </module>
