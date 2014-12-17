@@ -23,6 +23,7 @@ import com.google.common.collect.Sets;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -72,13 +73,16 @@ public class DensitySplitOptions extends SplitOptions {
     @NonNull
     @Override
     public Set<String> getApplicableFilters(@NonNull Set<String> allFilters) {
-        Set<String> list = super.getApplicableFilters(allFilters);
+        // use a LinkedHashSet so iteration order follows insertion order.
+        LinkedHashSet<String> filters = new LinkedHashSet<String>();
 
         // if splitting enabled, then add an entry with no filter for universal
+        // add it FIRST, since code assume that the first variant output will be the universal one.
         if (isEnable()) {
-            list.add(NO_FILTER);
+            filters.add(NO_FILTER);
         }
 
-        return list;
+        filters.addAll(super.getApplicableFilters(allFilters));
+        return filters;
     }
 }
