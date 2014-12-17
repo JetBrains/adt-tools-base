@@ -53,6 +53,7 @@ import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.Speed;
 import com.android.tools.lint.detector.api.XmlContext;
 
+import org.w3c.dom.Attr;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -86,6 +87,10 @@ public class ButtonDetector extends ResourceXmlDetector {
     private static final String OK_LABEL = "OK";
     /** Name of Back value ("Back") */
     private static final String BACK_LABEL = "Back";
+    /** Yes */
+    private static final String YES_LABEL = "Yes";
+    /** No */
+    private static final String NO_LABEL = "No";
 
     /** Layout text attribute reference to {@code @android:string/ok} */
     private static final String ANDROID_OK_RESOURCE =
@@ -93,6 +98,12 @@ public class ButtonDetector extends ResourceXmlDetector {
     /** Layout text attribute reference to {@code @android:string/cancel} */
     private static final String ANDROID_CANCEL_RESOURCE =
             ANDROID_STRING_PREFIX + "cancel"; //$NON-NLS-1$
+    /** Layout text attribute reference to {@code @android:string/yes} */
+    private static final String ANDROID_YES_RESOURCE =
+            ANDROID_STRING_PREFIX + "yes"; //$NON-NLS-1$
+    /** Layout text attribute reference to {@code @android:string/no} */
+    private static final String ANDROID_NO_RESOURCE =
+            ANDROID_STRING_PREFIX + "no"; //$NON-NLS-1$
 
     private static final Implementation IMPLEMENTATION = new Implementation(
             ButtonDetector.class,
@@ -356,6 +367,20 @@ public class ButtonDetector extends ResourceXmlDetector {
             } else if (text.equals(OK_LABEL) || text.equals(ANDROID_OK_RESOURCE)) {
                 if (isWrongOkPosition(element)) {
                     reportOkPosition(context, element);
+                }
+            } else {
+                boolean isYes = text.equals(ANDROID_YES_RESOURCE);
+                if (isYes || text.equals(ANDROID_NO_RESOURCE)) {
+                    Attr attribute = element.getAttributeNodeNS(ANDROID_URI, ATTR_TEXT);
+                    Location location = context.getLocation(attribute);
+                    String message = String.format("%1$s actually returns \"%2$s\", not \"%3$s\"; "
+                                    + "use %4$s instead or create a local string resource for %5$s",
+                            text,
+                            isYes ? OK_LABEL : CANCEL_LABEL,
+                            isYes ? YES_LABEL : NO_LABEL,
+                            isYes ? ANDROID_OK_RESOURCE : ANDROID_CANCEL_RESOURCE,
+                            isYes ? YES_LABEL : NO_LABEL);
+                    context.report(CASE, element, location, message, null);
                 }
             }
         }

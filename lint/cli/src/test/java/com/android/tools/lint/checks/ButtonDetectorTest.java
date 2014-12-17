@@ -26,7 +26,6 @@ public class ButtonDetectorTest extends AbstractCheckTest {
     @Override
     protected boolean isEnabled(Issue issue) {
         return super.isEnabled(issue) && sTestIssue == null || issue == sTestIssue;
-
     }
 
     @Override
@@ -412,4 +411,19 @@ public class ButtonDetectorTest extends AbstractCheckTest {
                     "res/values/buttonbar-values.xml"));
     }
 
+    public void testYesNo() throws Exception {
+        sTestIssue = ButtonDetector.CASE;
+        assertEquals(""
+                + "res/layout/yesno.xml:10: Warning: @android:string/yes actually returns \"OK\", not \"Yes\"; use @android:string/ok instead or create a local string resource for Yes [ButtonCase]\n"
+                + "        android:text=\"@android:string/yes\" />\n"
+                + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "res/layout/yesno.xml:15: Warning: @android:string/no actually returns \"Cancel\", not \"No\"; use @android:string/cancel instead or create a local string resource for No [ButtonCase]\n"
+                + "        android:text=\"@android:string/no\" />\n"
+                + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "0 errors, 2 warnings\n",
+
+                lintProject(
+                        "apicheck/minsdk4.xml=>AndroidManifest.xml",
+                        "res/layout/yesno.xml"));
+    }
 }
