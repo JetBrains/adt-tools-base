@@ -82,6 +82,7 @@ final class Device implements IDevice {
     private static final char SEPARATOR = '-';
     private static final String UNKNOWN_PACKAGE = "";   //$NON-NLS-1$
 
+    private static final long GET_PROP_TIMEOUT_MS = 100;
     private static final long INSTALL_TIMEOUT_MINUTES;
 
     static {
@@ -214,10 +215,8 @@ final class Device implements IDevice {
             String model = null;
 
             try {
-                manufacturer = cleanupStringForDisplay(
-                    getSystemProperty(PROP_DEVICE_MANUFACTURER).get());
-                model = cleanupStringForDisplay(
-                        getSystemProperty(PROP_DEVICE_MODEL).get());
+                manufacturer = cleanupStringForDisplay(getProperty(PROP_DEVICE_MANUFACTURER));
+                model = cleanupStringForDisplay(getProperty(PROP_DEVICE_MODEL));
             } catch (Exception e) {
                 // If there are exceptions thrown while attempting to get these properties,
                 // we can just use the serial number, so ignore these exceptions.
@@ -302,7 +301,7 @@ final class Device implements IDevice {
     public String getProperty(String name) {
         Future<String> future = mPropFetcher.getProperty(name);
         try {
-            return future.get(1, TimeUnit.SECONDS);
+            return future.get(GET_PROP_TIMEOUT_MS, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
             // ignore
         } catch (ExecutionException e) {
@@ -377,7 +376,11 @@ final class Device implements IDevice {
     public boolean supportsFeature(@NonNull HardwareFeature feature) {
         if (mHardwareCharacteristics == null) {
             try {
-                String characteristics = getSystemProperty(PROP_BUILD_CHARACTERISTICS).get();
+                String characteristics = getProperty(PROP_BUILD_CHARACTERISTICS);
+                if (characteristics == null) {
+                    return false;
+                }
+
                 mHardwareCharacteristics = Sets.newHashSet(Splitter.on(',').split(characteristics));
             } catch (Exception e) {
                 mHardwareCharacteristics = Collections.emptySet();
@@ -393,7 +396,8 @@ final class Device implements IDevice {
         }
 
         try {
-            mApiLevel = Integer.parseInt(getSystemProperty(PROP_BUILD_API_LEVEL).get());
+            String buildApi = getProperty(PROP_BUILD_API_LEVEL);
+            mApiLevel = buildApi == null ? -1 : Integer.parseInt(buildApi);
             return mApiLevel;
         } catch (Exception e) {
             return -1;
