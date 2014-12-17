@@ -72,7 +72,10 @@ public class SimpleTestRunner implements TestRunner {
                     // now look for a matching output file
                     ImmutableList<File> testedApks = ImmutableList.of();
                     if (!testData.isLibrary()) {
-                        testedApks = testData.getTestedApks(device.getDensity(), device.getAbis());
+                        testedApks = testData.getTestedApks(device.getDensity(),
+                                device.getLanguage(),
+                                device.getRegion(),
+                                device.getAbis());
 
                         if (testedApks.isEmpty()) {
                             logger.info("Skipping device '%1$s' for '%2$s:%3$s': No matching output file",

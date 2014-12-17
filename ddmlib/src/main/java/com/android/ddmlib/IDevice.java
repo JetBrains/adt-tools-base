@@ -42,6 +42,8 @@ public interface IDevice extends IShellEnabledDevice {
     public static final String PROP_DEVICE_CPU_ABI2 = "ro.product.cpu.abi2";
     public static final String PROP_BUILD_CHARACTERISTICS = "ro.build.characteristics";
     public static final String PROP_DEVICE_DENSITY = "ro.sf.lcd_density";
+    public static final String PROP_DEVICE_LANGUAGE = "persist.sys.language";
+    public static final String PROP_DEVICE_REGION = "persist.sys.country";
 
     public static final String PROP_DEBUGGABLE = "ro.debuggable";
 
@@ -612,4 +614,18 @@ public interface IDevice extends IShellEnabledDevice {
      * @return the density, or 0 if it's unknown.
      */
     public int getDensity();
+
+    /**
+     * Returns the user's language.
+     *
+     * @return the user's language, or null if it's unknown
+     */
+    public String getLanguage();
+
+    /**
+     * Returns the user's region.
+     *
+     * @return the user's region, or null if it's unknown
+     */
+    public String getRegion();
 }

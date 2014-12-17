@@ -70,9 +70,15 @@ public interface TestData {
     /**
      * Returns an APK file to install based on given density and abis.
      * @param density the density
+     * @param language the device's language
+     * @param region the device's region
      * @param abis a list of ABIs in descending priority order.
      * @return the file to install or null if non is compatible.
      */
     @NonNull
-    ImmutableList<File> getTestedApks(int density, @NonNull List<String> abis);
+    ImmutableList<File> getTestedApks(
+            int density,
+            @Nullable String language,
+            @Nullable String region,
+            @NonNull List<String> abis);
 }
