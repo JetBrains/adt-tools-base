@@ -483,6 +483,7 @@ public class MainTest extends AbstractCheckTest {
 
         File outputDir = new File(project, "build");
         outputDir.mkdirs();
+        assertTrue(outputDir.setWritable(true));
 
         checkDriver(
                 "\n"
