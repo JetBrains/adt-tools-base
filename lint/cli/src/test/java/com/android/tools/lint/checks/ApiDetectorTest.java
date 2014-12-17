@@ -758,16 +758,10 @@ public class ApiDetectorTest extends AbstractCheckTest {
     public void testAllowLocalMethodsImplementingInaccessible() throws Exception {
         // See http://code.google.com/p/android/issues/detail?id=39030
         assertEquals(
-            "src/test/pkg/ApiCallTest10.java:25: Error: Call requires API level 14 (current min is 4): android.view.View#onPopulateAccessibilityEvent [NewApi]\n" +
-            "        super.onPopulateAccessibilityEvent(event); // Valid lint warning\n" +
-            "              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
-            "src/test/pkg/ApiCallTest10.java:31: Error: Call requires API level 14 (current min is 4): android.view.View#dispatchGenericFocusedEvent [NewApi]\n" +
-            "        return super.dispatchGenericFocusedEvent(event); // Should flag this\n" +
-            "                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
             "src/test/pkg/ApiCallTest10.java:40: Error: Call requires API level 14 (current min is 4): android.view.View#dispatchHoverEvent [NewApi]\n" +
             "        dispatchHoverEvent(null);\n" +
             "        ~~~~~~~~~~~~~~~~~~\n" +
-            "3 errors, 0 warnings\n",
+            "1 errors, 0 warnings\n",
 
             lintProject(
                     "apicheck/classpath=>.classpath",
@@ -996,13 +990,10 @@ public class ApiDetectorTest extends AbstractCheckTest {
                 + "src/test/pkg/MyActivityImpl.java:8: Error: Call requires API level 11 (current min is 1): android.app.Activity#isChangingConfigurations [NewApi]\n"
                 + "  boolean isChanging = super.isChangingConfigurations();\n"
                 + "                             ~~~~~~~~~~~~~~~~~~~~~~~~\n"
-                + "src/test/pkg/MyActivityImpl.java:13: Error: Call requires API level 11 (current min is 1): android.app.Activity#isChangingConfigurations [NewApi]\n"
-                + "  return super.isChangingConfigurations();\n"
-                + "               ~~~~~~~~~~~~~~~~~~~~~~~~\n"
                 + "src/test/pkg/MyActivityImpl.java:12: Error: This method is not overriding anything with the current build target, but will in API level 11 (current target is 3): test.pkg.MyActivityImpl#isChangingConfigurations [Override]\n"
                 + " public boolean isChangingConfigurations() {\n"
                 + "                ~~~~~~~~~~~~~~~~~~~~~~~~\n"
-                + "3 errors, 0 warnings\n",
+                + "2 errors, 0 warnings\n",
 
                 lintProject(
                         "apicheck/classpath=>.classpath",
@@ -1224,6 +1215,26 @@ public class ApiDetectorTest extends AbstractCheckTest {
                 lintProject(
                         "apicheck/minsdk4.xml=>AndroidManifest.xml",
                         "apicheck/GravityTest.java.txt=>src/test/pkg/GravityTest.java"
+                ));
+    }
+
+    public void testSuperCall() throws Exception {
+        assertEquals(""
+                + "src/test/pkg/SuperCallTest.java:20: Error: Call requires API level 21 (current min is 19): android.service.wallpaper.WallpaperService.Engine#onApplyWindowInsets [NewApi]\n"
+                + "            super.onApplyWindowInsets(insets); // Error\n"
+                + "                  ~~~~~~~~~~~~~~~~~~~\n"
+                + "src/test/pkg/SuperCallTest.java:27: Error: Call requires API level 21 (current min is 19): android.service.wallpaper.WallpaperService.Engine#onApplyWindowInsets [NewApi]\n"
+                + "            onApplyWindowInsets(insets); // Error: not overridden\n"
+                + "            ~~~~~~~~~~~~~~~~~~~\n"
+                + "2 errors, 0 warnings\n",
+
+                lintProject(
+                        "apicheck/classpath=>.classpath",
+                        "apicheck/minsdk19.xml=>AndroidManifest.xml",
+                        "apicheck/SuperCallTest.java.txt=>src/test/pkg/SuperCallTest.java",
+                        "apicheck/SuperCallTest.class.data=>bin/classes/test/pkg/SuperCallTest.class",
+                        "apicheck/SuperCallTest$MyEngine2.class.data=>bin/classes/test/pkg/SuperCallTest$MyEngine2.class",
+                        "apicheck/SuperCallTest$MyEngine1.class.data=>bin/classes/test/pkg/SuperCallTest$MyEngine1.class"
                 ));
     }
 
