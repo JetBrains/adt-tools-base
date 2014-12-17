@@ -73,17 +73,16 @@ import java.util.concurrent.TimeUnit;
  */
 public class GradleTestProject implements TestRule {
 
-    private static final String DEFAULT_TEST_PROJECT_NAME = "project";
-
     public static final int DEFAULT_COMPILE_SDK_VERSION = 21;
-
     public static final String DEFAULT_BUILD_TOOL_VERSION = "21.0.1";
 
     private static final String ANDROID_GRADLE_VERSION = "1.0.1";
+    private static final String COMMON_HEADER = "commonHeader.gradle";
+    private static final String COMMON_BUILD_SCRIPT = "commonBuildScript.gradle";
+    private static final String DEFAULT_TEST_PROJECT_NAME = "project";
 
     public static class Builder {
         private static final File SAMPLE_PROJECT_DIR = new File("samples");
-
         private static final File TEST_PROJECT_DIR = new File("test-projects");
 
         @Nullable
@@ -188,17 +187,17 @@ public class GradleTestProject implements TestRule {
     }
 
     /**
-     * Create a GradleTestProject representing a subproject of another GradleTestProject.
-     * @param subproject name of the subproject.
+     * Create a GradleTestProject representing a subProject of another GradleTestProject.
+     * @param subProject name of the subProject.
      * @param rootProject root GradleTestProject.
      */
     private GradleTestProject(
-            @NonNull String subproject,
+            @NonNull String subProject,
             @NonNull GradleTestProject rootProject) {
-        name = subproject;
+        name = subProject;
         outDir = rootProject.outDir;
 
-        testDir = new File(rootProject.testDir, subproject);
+        testDir = new File(rootProject.testDir, subProject);
         assertTrue(testDir.isDirectory());
 
         buildFile = new File(testDir, "build.gradle");
@@ -278,6 +277,13 @@ public class GradleTestProject implements TestRule {
                 }
                 assertTrue(testDir.mkdirs());
                 assertTrue(sourceDir.mkdirs());
+
+                Files.copy(
+                        new File(Builder.TEST_PROJECT_DIR, COMMON_HEADER),
+                        new File(testDir.getParent(), COMMON_HEADER));
+                Files.copy(
+                        new File(Builder.TEST_PROJECT_DIR, COMMON_BUILD_SCRIPT),
+                        new File(testDir.getParent(), COMMON_BUILD_SCRIPT));
 
                 if (testApp != null) {
                     testApp.writeSources(testDir);
