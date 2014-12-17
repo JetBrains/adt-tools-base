@@ -1,6 +1,14 @@
+buildscript {
+    repositories {
+        maven { url = uri(rootProject.cloneArtifacts.repository) }
+    }
+    dependencies {
+        classpath "com.jfrog.bintray.gradle:gradle-bintray-plugin:1.0"
+    }
+}
+
 apply plugin: 'java'
 apply plugin: 'sdk-java-lib'
-
 
 group = 'com.android.tools.lint'
 archivesBaseName = 'lint-api'
@@ -24,5 +32,6 @@ project.ext.pomName = 'Android Tools Lint API'
 project.ext.pomDesc = 'API to build lint checks'
 
 apply from: "$rootDir/buildSrc/base/publish.gradle"
+apply from: "$rootDir/buildSrc/base/bintray.gradle"
 apply from: "$rootDir/buildSrc/base/javadoc.gradle"
 
