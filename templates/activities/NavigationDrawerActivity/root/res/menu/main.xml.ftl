@@ -4,9 +4,9 @@
     tools:context="${relativePackage}.${activityClass}" >
     <item android:id="@+id/action_example"
         android:title="@string/action_example"
-        ${ActionNamespace}:showAsAction="withText|ifRoom" />
+        ${(appCompat)?string('app','android')}:showAsAction="withText|ifRoom" />
     <item android:id="@+id/action_settings"
         android:title="@string/action_settings"
         android:orderInCategory="100"
-        ${ActionNamespace}:showAsAction="never" />
+        ${(appCompat)?string('app','android')}:showAsAction="never" />
 </menu>
