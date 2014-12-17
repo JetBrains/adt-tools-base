@@ -28,7 +28,6 @@ import com.android.sdklib.repository.NoPreviewRevision;
 import com.android.sdklib.repository.descriptors.IdDisplay;
 import com.google.common.collect.Sets;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Properties;
@@ -84,7 +83,8 @@ public class SdkManagerTest extends SdkManagerTestCase {
                     "DX_JAR=$SDK/build-tools/3.0.0/lib/dx.jar, " +
                     "LLVM_RS_CC=$SDK/build-tools/3.0.0/llvm-rs-cc, " +
                     "ANDROID_RS=$SDK/build-tools/3.0.0/renderscript/include/, " +
-                    "ANDROID_RS_CLANG=$SDK/build-tools/3.0.0/renderscript/clang-include/}>",
+                    "ANDROID_RS_CLANG=$SDK/build-tools/3.0.0/renderscript/clang-include/, " +
+                    "DEXDUMP=$SDK/build-tools/3.0.0/dexdump}>",
                 cleanPath(sdkman, i.toString()));
 
         i = sdkman.getBuildTool(new FullRevision(18, 3, 4, 5));
@@ -99,6 +99,7 @@ public class SdkManagerTest extends SdkManagerTestCase {
                     "LLVM_RS_CC=$SDK/build-tools/18.3.4 rc5/llvm-rs-cc, " +
                     "ANDROID_RS=$SDK/build-tools/18.3.4 rc5/renderscript/include/, " +
                     "ANDROID_RS_CLANG=$SDK/build-tools/18.3.4 rc5/renderscript/clang-include/, " +
+                    "DEXDUMP=$SDK/build-tools/18.3.4 rc5/dexdump, " +
                     "BCC_COMPAT=$SDK/build-tools/18.3.4 rc5/bcc_compat, " +
                     "LD_ARM=$SDK/build-tools/18.3.4 rc5/arm-linux-androideabi-ld, " +
                     "LD_X86=$SDK/build-tools/18.3.4 rc5/i686-linux-android-ld, " +

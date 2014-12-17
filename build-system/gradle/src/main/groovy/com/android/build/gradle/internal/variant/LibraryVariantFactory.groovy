@@ -287,7 +287,7 @@ public class LibraryVariantFactory implements VariantFactory<LibraryVariantData>
             Sync packageLocalJar = project.tasks.create(
                     "package${fullName.capitalize()}LocalJar",
                     Sync)
-            packageLocalJar.from(BasePlugin.getLocalJarFileList(variantData.variantDependency))
+            packageLocalJar.from(BasePlugin.getPackagedLocalJarFileList(variantData.variantDependency))
             packageLocalJar.into(project.file(
                     "$project.buildDir/${FD_INTERMEDIATES}/$DIR_BUNDLES/${dirName}/$LIBS_FOLDER"))
 
