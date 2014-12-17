@@ -14,14 +14,9 @@
  * limitations under the License.
  */
 
-apply plugin: 'com.android.application'
+ext {
+    buildToolsVersion = [System.env.CUSTOM_BUILDTOOLS, project.properties["CUSTOM_BUILDTOOLS"], '21.0.1'].find()
+    latestCompileSdk = 21
 
-android {
-    compileSdkVersion 19
-    buildToolsVersion = rootProject.buildToolsVersion
-}
-
-dependencies {
-    // This is invalid and should cause the test to fail.
-    compile project(':dependency-app')
+    useJack = System.env.CUSTOM_JACK || project.properties["CUSTOM_JACK"]
 }
