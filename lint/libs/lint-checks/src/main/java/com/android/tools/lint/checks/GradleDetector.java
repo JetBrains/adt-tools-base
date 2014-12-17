@@ -831,9 +831,12 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
         Issue issue = DEPENDENCY;
         if ("com.android.tools.build".equals(dependency.getGroupId()) &&
                 "gradle".equals(dependency.getArtifactId())) {
-            PreciseRevision v = PreciseRevision.parseRevision(GRADLE_PLUGIN_RECOMMENDED_VERSION);
             try {
-                version = getNewerRevision(dependency, v);
+                PreciseRevision v =
+                        PreciseRevision.parseRevision(GRADLE_PLUGIN_RECOMMENDED_VERSION);
+                if (!v.isPreview()) {
+                    version = getNewerRevision(dependency, v);
+                }
             } catch (NumberFormatException e) {
                 context.log(e, null);
             }
@@ -1098,7 +1101,7 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
     }
 
     private static PreciseRevision getNewerRevision(@NonNull GradleCoordinate dependency,
-            PreciseRevision revision) {
+            @NonNull PreciseRevision revision) {
         assert dependency.getGroupId() != null;
         assert dependency.getArtifactId() != null;
         GradleCoordinate coordinate;
