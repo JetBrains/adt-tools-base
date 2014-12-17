@@ -76,7 +76,10 @@ public class InstallVariantTask extends BaseTask {
                     List<OutputFile> outputFiles = SplitOutputMatcher.computeBestOutput(
                             variantData.outputs,
                             variantData.variantConfiguration.getSupportedAbis(),
-                            device.getDensity(), device.getAbis())
+                            device.getDensity(),
+                            device.getLanguage(),
+                            device.getRegion(),
+                            device.getAbis())
 
                     if (outputFiles.isEmpty()) {
                         project.logger.lifecycle(
