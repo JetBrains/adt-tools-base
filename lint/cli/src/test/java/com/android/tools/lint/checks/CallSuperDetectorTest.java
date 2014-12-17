@@ -23,7 +23,7 @@ public class CallSuperDetectorTest extends AbstractCheckTest {
         return new CallSuperDetector();
     }
 
-    public void test() throws Exception {
+    public void testDetachFromWindow() throws Exception {
         assertEquals(""
                 + "src/test/pkg/DetachedFromWindow.java:7: Warning: Overriding method should call super.onDetachedFromWindow [MissingSuperCall]\n"
                 + "        protected void onDetachedFromWindow() {\n"
@@ -35,5 +35,17 @@ public class CallSuperDetectorTest extends AbstractCheckTest {
 
                 lintProject("src/test/pkg/DetachedFromWindow.java.txt=>" +
                         "src/test/pkg/DetachedFromWindow.java"));
+    }
+
+    public void testWatchFaceVisibility() throws Exception {
+        assertEquals(""
+                + "src/android/support/wearable/watchface/WatchFaceService.java:6: Warning: Overriding method should call super.onVisibilityChanged [MissingSuperCall]\n"
+                + "        public void onVisibilityChanged(boolean visible) {\n"
+                + "                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "0 errors, 1 warnings\n",
+
+                lintProject(
+                        "src/test/pkg/WatchFaceTest.java.txt=>src/test/pkg/WatchFaceTest.java",
+                        "stubs/WatchFaceService.java.txt=>src/android/support/wearable/watchface/WatchFaceService.java"));
     }
 }
