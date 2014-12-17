@@ -211,7 +211,7 @@ public class SplitOutputMatcherTest extends TestCase {
         @NonNull
         @Override
         public Collection<FilterData> getFilters() {
-            return ImmutableList.of(FilterData.Builder.build(filterType.name(), filter));
+            return ImmutableList.of(FakeFilterData.Builder.build(filterType.name(), filter));
         }
 
         @NonNull
