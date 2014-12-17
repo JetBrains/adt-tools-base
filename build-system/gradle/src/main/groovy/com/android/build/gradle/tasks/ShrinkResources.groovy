@@ -18,7 +18,7 @@ package com.android.build.gradle.tasks
 
 import com.android.build.gradle.internal.tasks.BaseTask
 import com.android.build.gradle.internal.variant.BaseVariantOutputData
-import com.android.builder.core.AaptPackageCommandBuilder
+import com.android.builder.core.AaptPackageProcessBuilder
 import org.gradle.api.logging.LogLevel
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.OutputFile
@@ -102,8 +102,8 @@ public class ShrinkResources extends BaseTask {
                 String sourceOutputPath = null
 
                 // Repackage the resources:
-                AaptPackageCommandBuilder aaptPackageCommandBuilder =
-                        new AaptPackageCommandBuilder(processResourcesTask.getManifestFile(),
+                AaptPackageProcessBuilder aaptPackageCommandBuilder =
+                        new AaptPackageProcessBuilder(processResourcesTask.getManifestFile(),
                                 processResourcesTask.getAaptOptions())
                                 .setAssetsFolder(processResourcesTask.getAssetsDir())
                                 .setResFolder(destination)

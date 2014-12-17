@@ -14,16 +14,9 @@
  * limitations under the License.
  */
 
-
-
 package com.android.build.gradle.integration.application
-
-import com.android.annotations.Nullable
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.utils.SdkHelper
-import com.android.ide.common.internal.CommandLineRunner
-import com.android.sdklib.repository.FullRevision
-import com.android.utils.StdLogger
+import com.android.build.gradle.integration.common.utils.ApkHelper
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
@@ -33,9 +26,8 @@ import java.util.regex.Matcher
 import java.util.regex.Pattern
 
 import static org.junit.Assert.assertTrue
-
 /**
- * Assemble tests for emptySplit.
+ * Test for pseudolocalized.
  */
 class PseudoLocalizationTest {
     @ClassRule
@@ -58,49 +50,20 @@ class PseudoLocalizationTest {
         project.execute("lint")
     }
 
-    class TestOutput extends CommandLineRunner.CommandLineOutput {
-        public boolean pseudolocalized = false
-        private Pattern p = Pattern.compile("^locales:.*'en[_-]XA'.*'ar[_-]XB'.*")
-
-        @Override
-        public void out(@Nullable String line) {
-            if (line != null) {
-                Matcher m = p.matcher(line)
-                if (m.matches()) {
-                    pseudolocalized = true
-                }
-            }
-        }
-        @Override
-        public void err(@Nullable String line) {
-            super.err(line)
-
-        }
-
-        public boolean getPseudolocalized() {
-            return pseudolocalized
-        }
-    }
-
-
     @Test
     public void testPseudolocalization() throws Exception {
-        File aapt = SdkHelper.getAapt(FullRevision.parseRevision("21.1.0"))
+        List<String> output = ApkHelper.getApkBadging(project.getApk("debug"))
 
-        File apk = project.getApk("debug")
+        Pattern p = Pattern.compile("^locales:.*'en[_-]XA'.*'ar[_-]XB'.*")
+        boolean pseudolocalized = false
 
-        String[] command = new String[4]
-        command[0] = aapt.getPath()
-        command[1] = "dump"
-        command[2] = "badging"
-        command[3] = apk.getPath()
+        for (String line : output) {
+            Matcher m = p.matcher(line)
+            if (m.matches()) {
+                pseudolocalized = true
+            }
+        }
 
-        CommandLineRunner commandLineRunner = new CommandLineRunner(new StdLogger(StdLogger.Level.ERROR))
-
-        TestOutput handler = new TestOutput()
-        commandLineRunner.runCmdLine(command, handler, null /*env vars*/)
-
-        assertTrue("Pseudo locales were not added", handler.getPseudolocalized())
+        assertTrue("Pseudo locales were not added", pseudolocalized)
     }
-
 }

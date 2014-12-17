@@ -22,8 +22,8 @@ import com.android.builder.tasks.JobContext;
 import com.android.builder.tasks.QueueThreadContext;
 import com.android.builder.tasks.Task;
 import com.android.builder.tasks.WorkQueue;
-import com.android.ide.common.internal.LoggedErrorException;
 import com.android.ide.common.internal.PngCruncher;
+import com.android.ide.common.internal.PngException;
 import com.android.utils.ILogger;
 
 import java.io.File;
@@ -144,22 +144,28 @@ public class QueuedCruncher implements PngCruncher {
     }
 
     @Override
-    public void crunchPng(@NonNull final File from, @NonNull final File to)
-            throws InterruptedException, LoggedErrorException, IOException {
-        final Job<AaptProcess> aaptProcessJob = new Job<AaptProcess>(
-                "Cruncher " + from.getName(),
-                new Task<AaptProcess>() {
-            @Override
-            public void run(Job<AaptProcess> job, JobContext<AaptProcess> context) throws IOException {
-                mLogger.verbose("Thread(%1$s): begin executing job %2$s",
-                        Thread.currentThread().getName(), job.getJobTitle());
-                context.getPayload().crunch(from, to, job);
-                mLogger.verbose("Thread(%1$s): done executing job %2$s",
-                        Thread.currentThread().getName(), job.getJobTitle());
-            }
-        });
-        mOutstandingJobs.add(aaptProcessJob);
-        mCrunchingRequests.push(aaptProcessJob);
+    public void crunchPng(@NonNull final File from, @NonNull final File to) throws PngException {
+        try {
+            final Job<AaptProcess> aaptProcessJob = new Job<AaptProcess>(
+                    "Cruncher " + from.getName(),
+                    new Task<AaptProcess>() {
+                        @Override
+                        public void run(Job<AaptProcess> job, JobContext<AaptProcess> context)
+                                throws IOException {
+                            mLogger.verbose("Thread(%1$s): begin executing job %2$s",
+                                    Thread.currentThread().getName(), job.getJobTitle());
+                            context.getPayload().crunch(from, to, job);
+                            mLogger.verbose("Thread(%1$s): done executing job %2$s",
+                                    Thread.currentThread().getName(), job.getJobTitle());
+                        }
+                    });
+            mOutstandingJobs.add(aaptProcessJob);
+            mCrunchingRequests.push(aaptProcessJob);
+        } catch (InterruptedException e) {
+            // Restore the interrupted status
+            Thread.currentThread().interrupt();
+            throw new PngException(e);
+        }
     }
 
     public void waitForAll() throws InterruptedException {

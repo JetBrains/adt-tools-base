@@ -17,13 +17,10 @@
 
 
 package com.android.build.gradle.internal.tasks.multidex
-import com.android.annotations.Nullable
+
 import com.android.build.gradle.internal.tasks.BaseTask
-import com.android.ide.common.internal.CommandLineRunner
 import com.google.common.base.Charsets
 import com.google.common.base.Joiner
-import com.google.common.collect.Lists
-import com.google.common.collect.Sets
 import com.google.common.io.Files
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.Optional
@@ -93,39 +90,7 @@ public class CreateMainDexList extends BaseTask {
         Files.write(fileContent, getOutputFile(), Charsets.UTF_8)
     }
 
-    private Set<String> callDx(File path, File jarOfRoots) {
-        File dxJar = getDxJar()
-
-        List<String> command = Lists.newArrayList()
-
-        command << "java"
-        command << "-Xmx1024M"
-        command << "-cp"
-        command << dxJar.absolutePath
-
-        command << "com.android.multidex.ClassReferenceListBuilder"
-
-        command << jarOfRoots.absolutePath
-        command << path.absolutePath
-
-        OutputGrabber grabber = new OutputGrabber()
-        plugin.androidBuilder.commandLineRunner.runCmdLine(command, grabber, null)
-
-        return Sets.newHashSet(grabber.lines)
-    }
-
-    private final static class OutputGrabber extends CommandLineRunner.CommandLineOutput {
-        List<String> lines = Lists.newArrayList()
-
-        @Override
-        void out(@Nullable String line) {
-            if (line != null) {
-                lines.add(line)
-            }
-        }
-
-        List<String> getLines() {
-            return lines
-        }
+    private Set<String> callDx(File allClassesJarFile, File jarOfRoots) {
+        return plugin.androidBuilder.createMainDexList(allClassesJarFile, jarOfRoots)
     }
 }

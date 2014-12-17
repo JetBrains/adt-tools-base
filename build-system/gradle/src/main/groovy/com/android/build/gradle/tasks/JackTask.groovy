@@ -15,12 +15,10 @@
  */
 
 package com.android.build.gradle.tasks
-
 import com.android.build.gradle.BasePlugin
 import com.android.sdklib.BuildToolInfo
 import com.android.sdklib.repository.FullRevision
 import com.google.common.base.Charsets
-import com.google.common.collect.Lists
 import com.google.common.io.Files
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
@@ -73,81 +71,21 @@ public class JackTask extends AbstractCompile {
 
     @TaskAction
     void compile() {
-        FullRevision revision = plugin.androidBuilder.targetInfo.buildTools.revision
-        if (revision.compareTo(JACK_MIN_REV) < 0) {
-            throw new RuntimeException("Jack requires Build Tools ${JACK_MIN_REV.toString()} or later")
-        }
-
-        List<String> command = Lists.newArrayList()
-
-        command << "java"
-
-        if (getJavaMaxHeapSize() != null) {
-            command << "-Xmx${getJavaMaxHeapSize()}".toString()
-        } else {
-            command << "-Xmx1024M"
-        }
-
-        command << "-jar"
-        command << getJackExe().absolutePath
-
-        if (plugin.isVerbose()) {
-            command << "--verbose"
-            command << "info"
-        } else if (plugin.isDebugLog()) {
-            command << "--verbose"
-            command << "debug"
-        }
-
-        command << "--classpath"
-        command << computeBootClasspath()
-        for (File lib : getPackagedLibraries()) {
-            command << "--import"
-            command << lib.absolutePath
-        }
-        command << "--output-dex"
-        command << getDestinationDir().absolutePath
-
-        command << "--output-jack"
-        command << getJackFile().absolutePath
-
-        command << "-D"
-        command << "jack.import.resource.policy=keep-first"
-
-        command << "-D"
-        command << "jack.reporter=sdk"
-
-        Collection<File> _proguardFiles = getProguardFiles()
-        if (_proguardFiles != null && !_proguardFiles.isEmpty()) {
-            for (File file : _proguardFiles) {
-                command << "--config-proguard"
-                command << file.absolutePath
-            }
-
-            File _mappingFile = getMappingFile()
-            if (_mappingFile != null) {
-                command << "-D"
-                command << "jack.obfuscation.mapping.dump=true"
-                command << "-D"
-                command << "jack.obfuscation.mapping.dump.file=${_mappingFile.absolutePath}".toString()
-            }
-        }
-
-        if (isMultiDexEnabled()) {
-            command << "--multi-dex"
-            if (getMinSdkVersion() < 21) {
-                command << "legacy"
-            } else {
-                command << "native"
-            }
-        }
-
-        command << computeEcjOptionFile()
-
-        plugin.androidBuilder.commandLineRunner.runCmdLine(command, null)
+        plugin.androidBuilder.convertByteCodeWithJack(
+                getDestinationDir(),
+                getJackFile(),
+                computeBootClasspath(),
+                getPackagedLibraries(),
+                computeEcjOptionFile(),
+                getProguardFiles(),
+                getMappingFile(),
+                isMultiDexEnabled(),
+                getMinSdkVersion(),
+                plugin.isDebugLog(),
+                getJavaMaxHeapSize())
     }
 
-    private String computeEcjOptionFile() {
+    private File computeEcjOptionFile() {
         File folder = getTempFolder()
         folder.mkdirs()
         File file = new File(folder, "ecj-options.txt");
@@ -162,7 +100,7 @@ public class JackTask extends AbstractCompile {
 
         Files.write(sb.toString(), file, Charsets.UTF_8)
 
-        return "@$file.absolutePath"
+        return file
     }
 
     private String computeBootClasspath() {

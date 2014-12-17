@@ -18,7 +18,7 @@ package com.android.build.gradle.tasks
 import com.android.build.gradle.internal.dependency.SymbolFileProviderImpl
 import com.android.build.gradle.internal.dsl.AaptOptions
 import com.android.build.gradle.internal.tasks.IncrementalTask
-import com.android.builder.core.AaptPackageCommandBuilder
+import com.android.builder.core.AaptPackageProcessBuilder
 import com.android.builder.core.VariantType
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputDirectory
@@ -98,8 +98,8 @@ public class ProcessAndroidResources extends IncrementalTask {
         }
 
         File resOutBaseNameFile = getPackageOutputFile()
-        AaptPackageCommandBuilder aaptPackageCommandBuilder =
-                new AaptPackageCommandBuilder(getManifestFile(), getAaptOptions())
+        AaptPackageProcessBuilder aaptPackageCommandBuilder =
+                new AaptPackageProcessBuilder(getManifestFile(), getAaptOptions())
                     .setAssetsFolder(getAssetsDir())
                     .setResFolder(getResDir())
                     .setLibraries(getLibraries())

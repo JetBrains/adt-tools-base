@@ -23,6 +23,9 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.dependency.SymbolFileProvider;
 import com.android.builder.model.AaptOptions;
+import com.android.ide.common.process.ProcessEnvBuilder;
+import com.android.ide.common.process.ProcessInfo;
+import com.android.ide.common.process.ProcessInfoBuilder;
 import com.android.resources.Density;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
@@ -31,7 +34,6 @@ import com.google.common.base.Joiner;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -39,9 +41,9 @@ import java.util.Collection;
 import java.util.List;
 
 /**
- * Builds the command line necessary for an aapt package invocation
+ * Builds the ProcessInfo necessary for an aapt package invocation
  */
-public class AaptPackageCommandBuilder {
+public class AaptPackageProcessBuilder extends ProcessEnvBuilder<AaptPackageProcessBuilder> {
 
     @NonNull private final File mManifestFile;
     @NonNull private final AaptOptions mOptions;
@@ -66,7 +68,7 @@ public class AaptPackageCommandBuilder {
      * @param manifestFile the location of the manifest file
      * @param options the {@link com.android.builder.model.AaptOptions}
      */
-    public AaptPackageCommandBuilder(
+    public AaptPackageProcessBuilder(
             @NonNull File manifestFile,
             @NonNull AaptOptions options) {
         checkNotNull(manifestFile, "manifestFile cannot be null.");
@@ -75,6 +77,7 @@ public class AaptPackageCommandBuilder {
         mOptions = options;
     }
 
+    @NonNull
     public File getManifestFile() {
         return mManifestFile;
     }
@@ -83,7 +86,7 @@ public class AaptPackageCommandBuilder {
      * @param resFolder the merged res folder
      * @return itself
      */
-    public AaptPackageCommandBuilder setResFolder(@NonNull File resFolder) {
+    public AaptPackageProcessBuilder setResFolder(@NonNull File resFolder) {
         if (!resFolder.isDirectory()) {
             throw new RuntimeException("resFolder parameter is not a directory");
         }
@@ -95,7 +98,7 @@ public class AaptPackageCommandBuilder {
      * @param assetsFolder the merged asset folder
      * @return itself
      */
-    public AaptPackageCommandBuilder setAssetsFolder(@NonNull File assetsFolder) {
+    public AaptPackageProcessBuilder setAssetsFolder(@NonNull File assetsFolder) {
         if (!assetsFolder.isDirectory()) {
             throw new RuntimeException("assetsFolder parameter is not a directory");
         }
@@ -107,7 +110,7 @@ public class AaptPackageCommandBuilder {
      * @param sourceOutputDir optional source folder to generate R.java
      * @return itself
      */
-    public AaptPackageCommandBuilder setSourceOutputDir(@Nullable String sourceOutputDir) {
+    public AaptPackageProcessBuilder setSourceOutputDir(@Nullable String sourceOutputDir) {
         mSourceOutputDir = sourceOutputDir;
         return this;
     }
@@ -121,7 +124,7 @@ public class AaptPackageCommandBuilder {
      * @param symbolOutputDir the folder to write symbols into
      * @ itself
      */
-    public AaptPackageCommandBuilder setSymbolOutputDir(@Nullable String symbolOutputDir) {
+    public AaptPackageProcessBuilder setSymbolOutputDir(@Nullable String symbolOutputDir) {
         mSymbolOutputDir = symbolOutputDir;
         return this;
     }
@@ -135,7 +138,7 @@ public class AaptPackageCommandBuilder {
      * @param libraries the flat list of libraries
      * @return itself
      */
-    public AaptPackageCommandBuilder setLibraries(
+    public AaptPackageProcessBuilder setLibraries(
             @NonNull List<? extends SymbolFileProvider> libraries) {
         mLibraries = libraries;
         return this;
@@ -150,7 +153,7 @@ public class AaptPackageCommandBuilder {
      * @param resPackageOutput optional filepath for packaged resources
      * @return itself
      */
-    public AaptPackageCommandBuilder setResPackageOutput(@Nullable String resPackageOutput) {
+    public AaptPackageProcessBuilder setResPackageOutput(@Nullable String resPackageOutput) {
         mResPackageOutput = resPackageOutput;
         return this;
     }
@@ -159,7 +162,7 @@ public class AaptPackageCommandBuilder {
      * @param proguardOutput optional filepath for proguard file to generate
      * @return itself
      */
-    public AaptPackageCommandBuilder setProguardOutput(@Nullable String proguardOutput) {
+    public AaptPackageProcessBuilder setProguardOutput(@Nullable String proguardOutput) {
         mProguardOutput = proguardOutput;
         return this;
     }
@@ -168,7 +171,7 @@ public class AaptPackageCommandBuilder {
      * @param type the type of the variant being built
      * @return itself
      */
-    public AaptPackageCommandBuilder setType(@NonNull VariantType type) {
+    public AaptPackageProcessBuilder setType(@NonNull VariantType type) {
         this.mType = type;
         return this;
     }
@@ -182,7 +185,7 @@ public class AaptPackageCommandBuilder {
      * @param debuggable whether the app is debuggable
      * @return itself
      */
-    public AaptPackageCommandBuilder setDebuggable(boolean debuggable) {
+    public AaptPackageProcessBuilder setDebuggable(boolean debuggable) {
         this.mDebuggable = debuggable;
         return this;
     }
@@ -191,7 +194,7 @@ public class AaptPackageCommandBuilder {
      * @param resourceConfigs a list of resource config filters to pass to aapt.
      * @return itself
      */
-    public AaptPackageCommandBuilder setResourceConfigs(@NonNull Collection<String> resourceConfigs) {
+    public AaptPackageProcessBuilder setResourceConfigs(@NonNull Collection<String> resourceConfigs) {
         this.mResourceConfigs = resourceConfigs;
         return this;
     }
@@ -201,13 +204,13 @@ public class AaptPackageCommandBuilder {
      *               will be used by aapt to generate the corresponding pure split apks.
      * @return itself
      */
-    public AaptPackageCommandBuilder setSplits(@NonNull Collection<String> splits) {
+    public AaptPackageProcessBuilder setSplits(@NonNull Collection<String> splits) {
         this.mSplits = splits;
         return this;
     }
 
 
-    public AaptPackageCommandBuilder setVerbose() {
+    public AaptPackageProcessBuilder setVerbose() {
         mVerboseExec = true;
         return this;
     }
@@ -216,12 +219,12 @@ public class AaptPackageCommandBuilder {
      * @param packageForR Package override to generate the R class in a different package.
      * @return itself
      */
-    public AaptPackageCommandBuilder setPackageForR(@NonNull String packageForR) {
+    public AaptPackageProcessBuilder setPackageForR(@NonNull String packageForR) {
         this.mPackageForR = packageForR;
         return this;
     }
 
-    public AaptPackageCommandBuilder setPseudoLocalesEnabled(boolean pseudoLocalesEnabled) {
+    public AaptPackageProcessBuilder setPseudoLocalesEnabled(boolean pseudoLocalesEnabled) {
         mPseudoLocalesEnabled = pseudoLocalesEnabled;
         return this;
     }
@@ -232,7 +235,7 @@ public class AaptPackageCommandBuilder {
      * @param density the preferred density
      * @return itself
      */
-    public AaptPackageCommandBuilder setPreferredDensity(String density) {
+    public AaptPackageProcessBuilder setPreferredDensity(String density) {
         mPreferredDensity = density;
         return this;
     }
@@ -242,7 +245,7 @@ public class AaptPackageCommandBuilder {
         return mPackageForR;
     }
 
-    public List<String> build(
+    public ProcessInfo build(
             @NonNull BuildToolInfo buildToolInfo,
             @NonNull IAndroidTarget target,
             @NonNull ILogger logger) {
@@ -258,85 +261,74 @@ public class AaptPackageCommandBuilder {
         // check resConfigs and split settings coherence.
         checkResConfigsVersusSplitSettings(logger);
 
-        // launch aapt: create the command line
-        ArrayList<String> command = Lists.newArrayList();
+        ProcessInfoBuilder builder = new ProcessInfoBuilder();
+        builder.addEnvironments(mEnvironment);
 
         String aapt = buildToolInfo.getPath(BuildToolInfo.PathId.AAPT);
         if (aapt == null || !new File(aapt).isFile()) {
             throw new IllegalStateException("aapt is missing");
         }
 
-        command.add(aapt);
-        command.add("package");
+        builder.setExecutable(aapt);
+        builder.addArgs("package");
 
         if (mVerboseExec) {
-            command.add("-v");
+            builder.addArgs("-v");
         }
 
-        command.add("-f");
-        command.add("--no-crunch");
+        builder.addArgs("-f");
+        builder.addArgs("--no-crunch");
 
         // inputs
-        command.add("-I");
-        command.add(target.getPath(IAndroidTarget.ANDROID_JAR));
+        builder.addArgs("-I", target.getPath(IAndroidTarget.ANDROID_JAR));
 
-        command.add("-M");
-        command.add(mManifestFile.getAbsolutePath());
+        builder.addArgs("-M", mManifestFile.getAbsolutePath());
 
         if (mResFolder != null) {
-            command.add("-S");
-            command.add(mResFolder.getAbsolutePath());
+            builder.addArgs("-S", mResFolder.getAbsolutePath());
         }
 
         if (mAssetsFolder != null) {
-            command.add("-A");
-            command.add(mAssetsFolder.getAbsolutePath());
+            builder.addArgs("-A", mAssetsFolder.getAbsolutePath());
         }
 
         // outputs
-
         if (mSourceOutputDir != null) {
-            command.add("-m");
-            command.add("-J");
-            command.add(mSourceOutputDir);
+            builder.addArgs("-m");
+            builder.addArgs("-J", mSourceOutputDir);
         }
 
         if (mResPackageOutput != null) {
-            command.add("-F");
-            command.add(mResPackageOutput);
+            builder.addArgs("-F", mResPackageOutput);
         }
 
         if (mProguardOutput != null) {
-            command.add("-G");
-            command.add(mProguardOutput);
+            builder.addArgs("-G", mProguardOutput);
         }
 
         if (mSplits != null) {
             for (String split : mSplits) {
 
-                command.add("--split");
-                command.add(split);
+                builder.addArgs("--split", split);
             }
         }
 
         // options controlled by build variants
 
         if (mDebuggable) {
-            command.add("--debug-mode");
+            builder.addArgs("--debug-mode");
         }
-
 
         if (mType != VariantType.ANDROID_TEST) {
             if (mPackageForR != null) {
-                command.add("--custom-package");
-                command.add(mPackageForR);
+                builder.addArgs("--custom-package", mPackageForR);
                 logger.verbose("Custom package for R class: '%s'", mPackageForR);
             }
         }
 
         if (mPseudoLocalesEnabled) {
             if (buildToolInfo.getRevision().getMajor() >= 21) {
-                command.add("--pseudo-localize");
+                builder.addArgs("--pseudo-localize");
             } else {
                 throw new RuntimeException(
                         "Pseudolocalization is only available since Build Tools version 21.0.0,"
@@ -346,19 +338,18 @@ public class AaptPackageCommandBuilder {
 
         // library specific options
         if (mType == VariantType.LIBRARY) {
-            command.add("--non-constant-id");
+            builder.addArgs("--non-constant-id");
         }
 
         // AAPT options
         String ignoreAssets = mOptions.getIgnoreAssets();
         if (ignoreAssets != null) {
-            command.add("--ignore-assets");
-            command.add(ignoreAssets);
+            builder.addArgs("--ignore-assets", ignoreAssets);
         }
 
         if (mOptions.getFailOnMissingConfigEntry()) {
             if (buildToolInfo.getRevision().getMajor() > 20) {
-                command.add("--error-on-missing-config-entry");
+                builder.addArgs("--error-on-missing-config-entry");
             } else {
                 throw new IllegalStateException("aaptOptions:failOnMissingConfigEntry cannot be used"
                         + " with SDK Build Tools revision earlier than 21.0.0");
@@ -366,18 +357,15 @@ public class AaptPackageCommandBuilder {
         }
 
         // never compress apks.
-        command.add("-0");
-        command.add("apk");
+        builder.addArgs("-0", "apk");
 
         // add custom no-compress extensions
         Collection<String> noCompressList = mOptions.getNoCompress();
         if (noCompressList != null) {
             for (String noCompress : noCompressList) {
-                command.add("-0");
-                command.add(noCompress);
+                builder.addArgs("-0", noCompress);
             }
         }
-
 
         List<String> resourceConfigs = new ArrayList<String>();
         if (!isNullOrEmpty(mResourceConfigs)) {
@@ -390,10 +378,8 @@ public class AaptPackageCommandBuilder {
         }
 
         if (!resourceConfigs.isEmpty()) {
-            command.add("-c");
-
             Joiner joiner = Joiner.on(',');
-            command.add(joiner.join(resourceConfigs));
+            builder.addArgs("-c", joiner.join(resourceConfigs));
         }
 
         if (buildToolInfo.getRevision().getMajor() >= 21 && mPreferredDensity != null) {
@@ -407,23 +393,22 @@ public class AaptPackageCommandBuilder {
                             Joiner.on("\",\"").join(densityResConfig)));
                 }
             }
-            command.add("--preferred-density");
-            command.add(mPreferredDensity);
+            builder.addArgs("--preferred-density", mPreferredDensity);
         }
 
         if (buildToolInfo.getRevision().getMajor() < 21 && mPreferredDensity != null) {
             logger.warning(String.format("Warning : Project is building density based multiple APKs"
-                    + " but using tools version %1$s, you should upgrade to build-tools 21 or above"
-                    + " to ensure proper packaging of resources.",
+                            + " but using tools version %1$s, you should upgrade to build-tools 21 or above"
+                            + " to ensure proper packaging of resources.",
                     buildToolInfo.getRevision().getMajor()));
         }
 
         if (mSymbolOutputDir != null &&
                 (mType == VariantType.LIBRARY || !mLibraries.isEmpty())) {
-            command.add("--output-text-symbols");
-            command.add(mSymbolOutputDir);
+            builder.addArgs("--output-text-symbols", mSymbolOutputDir);
         }
-        return command;
+
+        return builder.createProcess();
     }
 
     private void checkResConfigsVersusSplitSettings(ILogger logger) {

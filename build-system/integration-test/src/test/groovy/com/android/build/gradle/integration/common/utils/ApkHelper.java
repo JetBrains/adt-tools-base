@@ -20,10 +20,14 @@ import static org.junit.Assert.assertEquals;
 
 import com.android.annotations.NonNull;
 import com.android.builder.core.ApkInfoParser;
-import com.android.ide.common.internal.CommandLineRunner;
-import com.android.ide.common.internal.LoggedErrorException;
+import com.android.ide.common.process.CachedProcessOutputHandler;
+import com.android.ide.common.process.DefaultProcessExecutor;
+import com.android.ide.common.process.ProcessException;
+import com.android.ide.common.process.ProcessExecutor;
+import com.android.ide.common.process.ProcessInfo;
+import com.android.ide.common.process.ProcessInfoBuilder;
 import com.android.utils.StdLogger;
-import com.google.common.collect.Lists;
+import com.google.common.base.Splitter;
 
 import org.gradle.api.Nullable;
 
@@ -43,14 +47,14 @@ public class ApkHelper {
     public static void checkVersion(
             @NonNull File apk,
             @Nullable Integer code)
-            throws IOException, InterruptedException, LoggedErrorException {
+            throws IOException, ProcessException {
         checkVersion(apk, code, null /* versionName */);
     }
 
     public static void checkVersionName(
         @NonNull File apk,
         @Nullable String name)
-        throws IOException, InterruptedException, LoggedErrorException {
+        throws IOException, ProcessException {
         checkVersion(apk, null, name);
     }
 
@@ -58,10 +62,11 @@ public class ApkHelper {
             @NonNull File apk,
             @Nullable Integer code,
             @Nullable String versionName)
-            throws IOException, InterruptedException, LoggedErrorException {
-        CommandLineRunner commandLineRunner = new CommandLineRunner(
+            throws IOException, ProcessException {
+        ProcessExecutor processExecutor = new DefaultProcessExecutor(
                 new StdLogger(StdLogger.Level.ERROR));
-        ApkInfoParser parser = new ApkInfoParser(SdkHelper.getAapt(), commandLineRunner);
+
+        ApkInfoParser parser = new ApkInfoParser(SdkHelper.getAapt(), processExecutor);
 
         ApkInfoParser.ApkInfo apkInfo = parser.parseApk(apk);
 
@@ -84,18 +89,18 @@ public class ApkHelper {
     public static boolean checkForClass(
             @NonNull File apkFile,
             @NonNull String expectedClassName)
-            throws IOException, LoggedErrorException, InterruptedException {
+            throws ProcessException, IOException {
         // get the dexdump exec
         File dexDump = SdkHelper.getDexDump();
 
-        CommandLineRunner commandLineRunner = new CommandLineRunner(
+        ProcessExecutor executor = new DefaultProcessExecutor(
                 new StdLogger(StdLogger.Level.ERROR));
-        List<String> command = Lists.newArrayList();
 
-        command.add(dexDump.getAbsolutePath());
-        command.add(apkFile.getAbsolutePath());
+        ProcessInfoBuilder builder = new ProcessInfoBuilder();
+        builder.setExecutable(dexDump);
+        builder.addArgs(apkFile.getAbsolutePath());
 
-        List<String> output = runAndGetOutput(commandLineRunner, command);
+        List<String> output = runAndGetOutput(builder.createProcess(), executor);
 
         for (String line : output) {
             Matcher m = PATTERN.matcher(line.trim());
@@ -109,39 +114,50 @@ public class ApkHelper {
         return false;
     }
 
+    @NonNull
+    public static List<String> getApkBadging(@NonNull File apk) throws ProcessException {
+        File aapt = SdkHelper.getAapt();
+
+        ProcessInfoBuilder builder = new ProcessInfoBuilder();
+        builder.setExecutable(aapt);
+        builder.addArgs("dump", "badging", apk.getPath());
+
+        return runAndGetOutput(builder.createProcess());
+    }
+
     /**
-     * Runs a command, and returns the output.
+     * Runs a process, and returns the output.
      *
-     * @param commandLineRunner the commandline runner
-     * @param command the command line args
+     * @param processInfo the process info to run
      *
      * @return the output as a list of files.
-     * @throws IOException
-     * @throws InterruptedException
-     * @throws LoggedErrorException
+     * @throws ProcessException
+     */
+    @NonNull
+    public static List<String> runAndGetOutput(@NonNull ProcessInfo processInfo)
+            throws ProcessException {
+
+        ProcessExecutor executor = new DefaultProcessExecutor(
+                new StdLogger(StdLogger.Level.ERROR));
+        return runAndGetOutput(processInfo, executor);
+    }
+
+    /**
+     * Runs a process, and returns the output.
+     *
+     * @param processInfo the process info to run
+     * @param processExecutor the process executor
+     *
+     * @return the output as a list of files.
+     * @throws ProcessException
      */
     @NonNull
     public static List<String> runAndGetOutput(
-            @NonNull CommandLineRunner commandLineRunner,
-            @NonNull List<String> command)
-            throws IOException, InterruptedException, LoggedErrorException {
-
-        final List<String> output = Lists.newArrayList();
-
-        commandLineRunner.runCmdLine(command, new CommandLineRunner.CommandLineOutput() {
-            @Override
-            public void out(@com.android.annotations.Nullable String line) {
-                if (line != null) {
-                    output.add(line);
-                }
-            }
-            @Override
-            public void err(@com.android.annotations.Nullable String line) {
-                super.err(line);
-
-            }
-        }, null /*env vars*/);
-
-        return output;
+            @NonNull ProcessInfo processInfo,
+            @NonNull ProcessExecutor processExecutor)
+            throws ProcessException {
+        CachedProcessOutputHandler handler = new CachedProcessOutputHandler();
+        processExecutor.execute(processInfo, handler).rethrowFailure().assertNormalExitValue();
+        return Splitter.on('\n').splitToList(handler.getProcessOutput().getStandardOutputAsString());
     }
 }

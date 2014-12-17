@@ -17,21 +17,34 @@
 package com.android.ide.common.internal;
 
 import com.android.annotations.NonNull;
+import com.android.ide.common.process.ProcessException;
+import com.android.ide.common.process.ProcessExecutor;
+import com.android.ide.common.process.ProcessInfo;
+import com.android.ide.common.process.ProcessInfoBuilder;
+import com.android.ide.common.process.ProcessOutputHandler;
+import com.android.ide.common.process.ProcessResult;
 
 import java.io.File;
-import java.io.IOException;
 
 /**
  * Implementation of the PngCruncher using aapt underneath.
  */
 public class AaptCruncher implements PngCruncher {
 
+    @NonNull
     private final String mAaptLocation;
-    private final CommandLineRunner mCommandLineRunner;
+    @NonNull
+    private final ProcessExecutor mProcessExecutor;
+    @NonNull
+    private final ProcessOutputHandler mProcessOutputHandler;
 
-    public AaptCruncher(@NonNull String aaptLocation, @NonNull CommandLineRunner commandLineRunner) {
+    public AaptCruncher(
+            @NonNull String aaptLocation,
+            @NonNull ProcessExecutor processExecutor,
+            @NonNull ProcessOutputHandler processOutputHandler) {
         mAaptLocation = aaptLocation;
-        mCommandLineRunner = commandLineRunner;
+        mProcessExecutor = processExecutor;
+        mProcessOutputHandler = processOutputHandler;
     }
 
     /**
@@ -39,23 +52,26 @@ public class AaptCruncher implements PngCruncher {
      *
      * @param from the file to crunch
      * @param to the output file
-     * @throws IOException
-     * @throws InterruptedException
-     * @throws LoggedErrorException
+     * @throws PngException
      */
     @Override
-    public void crunchPng(@NonNull File from, @NonNull File to)
-            throws InterruptedException, LoggedErrorException, IOException {
-        String[] command = new String[] {
-                mAaptLocation,
-                "s",
-                "-i",
-                from.getAbsolutePath(),
-                "-o",
-                to.getAbsolutePath()
-        };
+    public void crunchPng(@NonNull File from, @NonNull File to) throws PngException {
 
-        mCommandLineRunner.runCmdLine(command, null);
+        try {
+            ProcessInfo processInfo = new ProcessInfoBuilder()
+                    .setExecutable(mAaptLocation)
+                    .addArgs("s",
+                            "-i",
+                            from.getAbsolutePath(),
+                            "-o",
+                            to.getAbsolutePath()).createProcess();
+
+            ProcessResult result = mProcessExecutor.execute(processInfo, mProcessOutputHandler);
+
+            result.rethrowFailure().assertNormalExitValue();
+        } catch (ProcessException e) {
+            throw new PngException(e);
+        }
     }
 
     @Override
