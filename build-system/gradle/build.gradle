@@ -1,3 +1,12 @@
+buildscript {
+    repositories {
+        maven { url = uri(rootProject.cloneArtifacts.repository) }
+    }
+    dependencies {
+        classpath "com.jfrog.bintray.gradle:gradle-bintray-plugin:1.0"
+    }
+}
+
 apply plugin: 'groovy'
 apply plugin: 'clone-artifacts'
 apply plugin: 'idea'
@@ -51,6 +60,7 @@ project.ext.pomName = 'Gradle Plug-in for Android'
 project.ext.pomDesc = 'Gradle plug-in to build Android applications.'
 
 apply from: "$rootDir/buildSrc/base/publish.gradle"
+apply from: "$rootDir/buildSrc/base/bintray.gradle"
 
 jar.manifest.attributes("Plugin-Version": version)
 
