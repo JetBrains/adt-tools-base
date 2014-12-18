@@ -101,7 +101,7 @@ public class AaptPackageCommandBuilderTest extends TestCase {
                 .setPackageForR("com.example.package.forR")
                 .setSourceOutputDir("path/to/source/output/dir")
                 .setLibraries(ImmutableList.of(Mockito.mock(SymbolFileProvider.class)))
-                .setType(VariantConfiguration.Type.DEFAULT);
+                .setType(VariantType.DEFAULT);
 
         List<String> command = aaptPackageCommandBuilder
                 .build(mBuildToolInfo, mIAndroidTarget, mLogger);
@@ -137,7 +137,7 @@ public class AaptPackageCommandBuilderTest extends TestCase {
                 .setPackageForR("com.example.package.forR")
                 .setSourceOutputDir("path/to/source/output/dir")
                 .setLibraries(ImmutableList.of(Mockito.mock(SymbolFileProvider.class)))
-                .setType(VariantConfiguration.Type.ANDROID_TEST);
+                .setType(VariantType.ANDROID_TEST);
 
         List<String> command = aaptPackageCommandBuilder
                 .build(mBuildToolInfo, mIAndroidTarget, mLogger);
@@ -173,7 +173,7 @@ public class AaptPackageCommandBuilderTest extends TestCase {
                 .setPackageForR("com.example.package.forR")
                 .setSourceOutputDir("path/to/source/output/dir")
                 .setLibraries(ImmutableList.of(Mockito.mock(SymbolFileProvider.class)))
-                .setType(VariantConfiguration.Type.LIBRARY);
+                .setType(VariantType.LIBRARY);
 
         List<String> command = aaptPackageCommandBuilder
                 .build(mBuildToolInfo, mIAndroidTarget, mLogger);
@@ -211,7 +211,7 @@ public class AaptPackageCommandBuilderTest extends TestCase {
                 .setPackageForR("com.example.package.forR")
                 .setSourceOutputDir("path/to/source/output/dir")
                 .setLibraries(ImmutableList.of(Mockito.mock(SymbolFileProvider.class)))
-                .setType(VariantConfiguration.Type.DEFAULT)
+                .setType(VariantType.DEFAULT)
                 .setSplits(ImmutableList.of("mdpi", "hdpi"));
 
         List<String> command = aaptPackageCommandBuilder
@@ -252,7 +252,7 @@ public class AaptPackageCommandBuilderTest extends TestCase {
                 .setPackageForR("com.example.package.forR")
                 .setSourceOutputDir("path/to/source/output/dir")
                 .setLibraries(ImmutableList.of(Mockito.mock(SymbolFileProvider.class)))
-                .setType(VariantConfiguration.Type.DEFAULT)
+                .setType(VariantType.DEFAULT)
                 .setResourceConfigs(ImmutableList.of("res1", "res2"))
                 .setPreferredDensity("xhdpi");
 
@@ -298,7 +298,7 @@ public class AaptPackageCommandBuilderTest extends TestCase {
                 .setPackageForR("com.example.package.forR")
                 .setSourceOutputDir("path/to/source/output/dir")
                 .setLibraries(ImmutableList.of(Mockito.mock(SymbolFileProvider.class)))
-                .setType(VariantConfiguration.Type.DEFAULT)
+                .setType(VariantType.DEFAULT)
                 .setResourceConfigs(ImmutableList.of("res1", "res2"))
                 .setPreferredDensity("xhdpi");
 
@@ -344,7 +344,7 @@ public class AaptPackageCommandBuilderTest extends TestCase {
                 .setPackageForR("com.example.package.forR")
                 .setSourceOutputDir("path/to/source/output/dir")
                 .setLibraries(ImmutableList.of(Mockito.mock(SymbolFileProvider.class)))
-                .setType(VariantConfiguration.Type.DEFAULT)
+                .setType(VariantType.DEFAULT)
                 .setResourceConfigs(
                         ImmutableList.of("nodpi", "en", "fr", "mdpi", "hdpi", "xxhdpi", "xxxhdpi"))
                 .setSplits(ImmutableList.of("xhdpi"))
@@ -400,7 +400,7 @@ public class AaptPackageCommandBuilderTest extends TestCase {
                 .setPackageForR("com.example.package.forR")
                 .setSourceOutputDir("path/to/source/output/dir")
                 .setLibraries(ImmutableList.of(Mockito.mock(SymbolFileProvider.class)))
-                .setType(VariantConfiguration.Type.DEFAULT)
+                .setType(VariantType.DEFAULT)
                 .setResourceConfigs(ImmutableList.of("xxxhdpi"))
                 .setSplits(ImmutableList.of("hdpi", "mdpi", "xxhdpi"))
                 .setPreferredDensity("xhdpi");
@@ -457,7 +457,7 @@ public class AaptPackageCommandBuilderTest extends TestCase {
                 .setPackageForR("com.example.package.forR")
                 .setSourceOutputDir("path/to/source/output/dir")
                 .setLibraries(ImmutableList.of(Mockito.mock(SymbolFileProvider.class)))
-                .setType(VariantConfiguration.Type.DEFAULT)
+                .setType(VariantType.DEFAULT)
                 .setResourceConfigs(ImmutableList
                         .of("en", "fr", "es", "de", "it", "mdpi", "hdpi", "xhdpi", "xxhdpi"))
                 .setSplits(ImmutableList.of("mdpi", "hdpi", "xhdpi", "xxhdpi"));
@@ -507,7 +507,7 @@ public class AaptPackageCommandBuilderTest extends TestCase {
                 .setPackageForR("com.example.package.forR")
                 .setSourceOutputDir("path/to/source/output/dir")
                 .setLibraries(ImmutableList.of(Mockito.mock(SymbolFileProvider.class)))
-                .setType(VariantConfiguration.Type.DEFAULT)
+                .setType(VariantType.DEFAULT)
                 .setResourceConfigs(ImmutableList.of( "en", "fr", "es", "de", "it", "mdpi", "hdpi", "xhdpi", "xxhdpi"))
                 .setSplits(ImmutableList.of("mdpi", "hdpi", "xhdpi", "xxhdpi"))
                 .setPreferredDensity("hdpi");
@@ -555,7 +555,7 @@ public class AaptPackageCommandBuilderTest extends TestCase {
                 .setPackageForR("com.example.package.forR")
                 .setSourceOutputDir("path/to/source/output/dir")
                 .setLibraries(ImmutableList.of(Mockito.mock(SymbolFileProvider.class)))
-                .setType(VariantConfiguration.Type.DEFAULT)
+                .setType(VariantType.DEFAULT)
                 // only languages, no density...
                 .setResourceConfigs(ImmutableList.of("en", "fr", "es", "de", "it"))
                 .setPreferredDensity("hdpi");

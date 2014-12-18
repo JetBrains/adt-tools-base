@@ -30,7 +30,7 @@ import com.android.build.gradle.internal.api.ApplicationVariantImpl;
 import com.android.build.gradle.internal.api.ReadOnlyObjectProvider;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.model.FilterDataImpl;
-import com.android.builder.core.VariantConfiguration;
+import com.android.builder.core.VariantType;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
@@ -128,8 +128,8 @@ public class ApplicationVariantFactory implements VariantFactory<ApplicationVari
 
     @NonNull
     @Override
-    public VariantConfiguration.Type getVariantConfigurationType() {
-        return VariantConfiguration.Type.DEFAULT;
+    public VariantType getVariantConfigurationType() {
+        return VariantType.DEFAULT;
     }
 
     @Override

@@ -41,6 +41,7 @@ public interface AndroidProject {
 
     String ARTIFACT_MAIN = "_main_";
     String ARTIFACT_ANDROID_TEST = "_android_test_";
+    String ARTIFACT_UNIT_TEST = "_unit_test_";
 
     String FD_INTERMEDIATES = "intermediates";
     String FD_OUTPUTS = "outputs";
@@ -132,31 +133,24 @@ public interface AndroidProject {
 
     /**
      * Returns a list of folders or jar files that contains the framework source code.
-     * @return a list of folders or jar files that contains the framework source code.
      */
     @NonNull
     Collection<File> getFrameworkSources();
 
     /**
      * Returns a list of {@link SigningConfig}.
-     *
-     * @return a map of signing config
      */
     @NonNull
     Collection<SigningConfig> getSigningConfigs();
 
     /**
      * Returns the aapt options.
-     *
-     * @return the aapt options.
      */
     @NonNull
     AaptOptions getAaptOptions();
 
     /**
      * Returns the lint options.
-     *
-     * @return the lint options.
      */
     @NonNull
     LintOptions getLintOptions();
@@ -185,13 +179,13 @@ public interface AndroidProject {
     Collection<SyncIssue> getSyncIssues();
 
     /**
-     * @return the compile options for Java code.
+     * Returns the compile options for Java code.
      */
     @NonNull
     JavaCompileOptions getJavaCompileOptions();
 
     /**
-     * @return the build folder of this project.
+     * Returns the build folder of this project.
      */
     @NonNull
     File getBuildFolder();

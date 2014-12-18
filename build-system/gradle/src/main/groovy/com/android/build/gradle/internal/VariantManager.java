@@ -19,8 +19,8 @@ package com.android.build.gradle.internal;
 import static com.android.build.OutputFile.NO_FILTER;
 import static com.android.builder.core.BuilderConstants.DEBUG;
 import static com.android.builder.core.BuilderConstants.LINT;
-import static com.android.builder.core.VariantConfiguration.Type.ANDROID_TEST;
-import static com.android.builder.core.VariantConfiguration.Type.UNIT_TEST;
+import static com.android.builder.core.VariantType.ANDROID_TEST;
+import static com.android.builder.core.VariantType.UNIT_TEST;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -47,7 +47,7 @@ import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.internal.variant.TestVariantData;
 import com.android.build.gradle.internal.variant.TestedVariantData;
 import com.android.build.gradle.internal.variant.VariantFactory;
-import com.android.builder.core.VariantConfiguration;
+import com.android.builder.core.VariantType;
 import com.google.common.base.Function;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -231,7 +231,7 @@ public class VariantManager implements VariantModel {
      * Create tasks for the specified variantData.
      */
     public void createTasksForVariantData(TaskContainer tasks, BaseVariantData variantData) {
-        VariantConfiguration.Type variantType = variantData.getVariantConfiguration().getType();
+        VariantType variantType = variantData.getType();
 
         if (variantType.isForTesting()) {
             GradleVariantConfiguration testVariantConfig = variantData.getVariantConfiguration();
@@ -256,8 +256,7 @@ public class VariantManager implements VariantModel {
                     basePlugin.getDefaultConfigData().getTestConfigurationProvider(variantType));
 
             assert(testVariantConfig.getTestedConfig() != null);
-            if (testVariantConfig.getTestedConfig().getType()
-                    == VariantConfiguration.Type.LIBRARY) {
+            if (testVariantConfig.getTestedConfig().getType() == VariantType.LIBRARY) {
                 testVariantProviders.add(testedVariantData.getVariantDependency());
             }
 
@@ -488,7 +487,7 @@ public class VariantManager implements VariantModel {
     public TestVariantData createTestVariantData(
             BaseVariantData testedVariantData,
             com.android.builder.model.SigningConfig signingOverride,
-            VariantConfiguration.Type type) {
+            VariantType type) {
         ProductFlavorData<ProductFlavor> defaultConfigData = basePlugin.getDefaultConfigData();
         ProductFlavor defaultConfig = defaultConfigData.getProductFlavor();
         BuildType buildType = testedVariantData.getVariantConfiguration().getBuildType();
@@ -595,7 +594,7 @@ public class VariantManager implements VariantModel {
 
     private void createApiObjects() {
         for (BaseVariantData<?> variantData : variantDataList) {
-            if (variantData.getVariantConfiguration().getType().isForTesting()) {
+            if (variantData.getType().isForTesting()) {
                 // Testing variants are handled together with their "owners".
                 continue;
             }

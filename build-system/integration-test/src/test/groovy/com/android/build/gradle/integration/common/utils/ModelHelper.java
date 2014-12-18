@@ -17,7 +17,7 @@
 package com.android.build.gradle.integration.common.utils;
 
 import static com.android.builder.core.BuilderConstants.DEBUG;
-import static com.android.builder.core.VariantConfiguration.Type.ANDROID_TEST;
+import static com.android.builder.core.VariantType.ANDROID_TEST;
 import static com.android.builder.model.AndroidProject.ARTIFACT_ANDROID_TEST;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;

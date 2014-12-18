@@ -111,7 +111,7 @@ import java.util.Set;
  * then build steps can be done with
  * {@link #mergeManifests(java.io.File, java.util.List, java.util.List, String, int, String, String, String, Integer, String, com.android.manifmerger.ManifestMerger2.MergeType, java.util.Map)}
  * {@link #processTestManifest(String, String, String, String, String, Boolean, Boolean, java.io.File, java.util.List, java.io.File, java.io.File)}
- * {@link #processResources(java.io.File, java.io.File, java.io.File, java.util.List, String, String, String, String, String, com.android.builder.core.VariantConfiguration.Type, boolean, com.android.builder.model.AaptOptions, java.util.Collection, boolean, java.util.Collection)}
+ * {@link #processResources(java.io.File, java.io.File, java.io.File, java.util.List, String, String, String, String, String, VariantType, boolean, com.android.builder.model.AaptOptions, java.util.Collection, boolean, java.util.Collection)}
  * {@link #compileAllAidlFiles(java.util.List, java.io.File, java.io.File, java.util.List, com.android.builder.compiling.DependencyFileProcessor)}
  * {@link #convertByteCode(Iterable, Iterable, java.io.File, boolean, java.io.File, DexOptions, java.util.List, java.io.File, boolean)}
  * {@link #packageApk(String, java.io.File, java.util.Collection, java.util.Collection, String, java.util.Collection, java.util.Set, boolean, com.android.builder.model.SigningConfig, com.android.builder.model.PackagingOptions, String)}
@@ -746,7 +746,7 @@ public class AndroidBuilder {
         // now if the project has libraries, R needs to be created for each libraries,
         // but only if the current project is not a library.
         if (aaptCommand.getSourceOutputDir() != null
-                && aaptCommand.getType() != VariantConfiguration.Type.LIBRARY
+                && aaptCommand.getType() != VariantType.LIBRARY
                 && !aaptCommand.getLibraries().isEmpty()) {
             SymbolLoader fullSymbolValues = null;
 

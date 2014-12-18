@@ -57,7 +57,7 @@ public class TestVariantData extends ApkVariantData {
     @NonNull
     public String getDescription() {
         String prefix;
-        switch (getVariantConfiguration().getType()) {
+        switch (getType()) {
             case ANDROID_TEST:
                 prefix = "Android (on device) tests";
                 break;

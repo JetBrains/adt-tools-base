@@ -114,12 +114,12 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
     private SourceProvider mMultiFlavorSourceProvider;
 
     @NonNull
-    private final Type mType;
+    private final VariantType mType;
 
     /**
      * Optional tested config in case this variant is used for testing another variant.
      *
-     * @see com.android.builder.core.VariantConfiguration.Type#isForTesting()
+     * @see VariantType#isForTesting()
      */
     private final VariantConfiguration mTestedConfig;
 
@@ -163,55 +163,6 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
      */
     private final SigningConfig mSigningConfigOverride;
 
-    public static enum Type {
-        DEFAULT,
-        LIBRARY,
-        ANDROID_TEST("androidTest", "AndroidTest"),
-        UNIT_TEST("test", "UnitTest"),
-        ;
-
-        private final boolean isForTesting;
-        private final String prefix;
-        private final String suffix;
-
-        Type() {
-            this.isForTesting = false;
-            this.prefix = "";
-            this.suffix = "";
-        }
-        Type(String prefix, String suffix) {
-            this.isForTesting = true;
-            this.prefix = prefix;
-            this.suffix = suffix;
-        }
-
-        /**
-         * Returns true if the variant is automatically generated for testing purposed, false
-         * otherwise.
-         */
-        public boolean isForTesting() {
-            return isForTesting;
-        }
-
-        /**
-         * Returns prefix used for naming source directories. This is an empty string in
-         * case of non-testing variants and a camel case string otherwise, e.g. "androidTest".
-         */
-        @NonNull
-        public String getPrefix() {
-            return prefix;
-        }
-
-        /**
-         * Returns suffix used for naming Gradle tasks. This is an empty string in
-         * case of non-testing variants and a camel case string otherwise, e.g. "AndroidTest".
-         */
-        @NonNull
-        public String getSuffix() {
-            return suffix;
-        }
-    }
-
 
     /**
      * Parses the manifest file and return the package name.
@@ -226,7 +177,7 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
     /**
      * Creates the configuration with the base source sets.
      *
-     * This creates a config with a {@link Type#DEFAULT} type.
+     * This creates a config with a {@link VariantType#DEFAULT} type.
      *
      * @param defaultConfig the default configuration. Required.
      * @param defaultSourceProvider the default source provider. Required
@@ -242,11 +193,11 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
         this(
                 defaultConfig, defaultSourceProvider,
                 buildType, buildTypeSourceProvider,
-                Type.DEFAULT, null /*testedConfig*/, signingConfigOverride);
+                VariantType.DEFAULT, null /*testedConfig*/, signingConfigOverride);
     }
 
     /**
-     * Creates the configuration with the base source sets for a given {@link Type}.
+     * Creates the configuration with the base source sets for a given {@link VariantType}.
      *
      * @param defaultConfig the default configuration. Required.
      * @param defaultSourceProvider the default source provider. Required
@@ -260,7 +211,7 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
             @NonNull SourceProvider defaultSourceProvider,
             @NonNull T buildType,
             @Nullable SourceProvider buildTypeSourceProvider,
-            @NonNull Type type,
+            @NonNull VariantType type,
             @Nullable SigningConfig signingConfigOverride) {
         this(
                 defaultConfig, defaultSourceProvider,
@@ -284,7 +235,7 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
             @NonNull SourceProvider defaultSourceProvider,
             @NonNull T buildType,
             @Nullable SourceProvider buildTypeSourceProvider,
-            @NonNull Type type,
+            @NonNull VariantType type,
             @Nullable VariantConfiguration testedConfig,
             @Nullable SigningConfig signingConfigOverride) {
         mDefaultConfig = checkNotNull(defaultConfig);
@@ -718,7 +669,7 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
         // created.  If library output has never been added to mDirectLibraries, checked the output
         // of the mTestedConfig to see if the tasks are now created.
         if (mTestedConfig != null &&
-                mTestedConfig.mType == Type.LIBRARY &&
+                mTestedConfig.mType == VariantType.LIBRARY &&
                 mTestedConfig.mOutput != null &&
                 !mDirectLibraries.contains(mTestedConfig.mOutput)) {
             mDirectLibraries.add(mTestedConfig.mOutput);
@@ -838,7 +789,7 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
     }
 
     @NonNull
-    public Type getType() {
+    public VariantType getType() {
         return mType;
     }
 
@@ -932,7 +883,7 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
     public String getTestedApplicationId() {
         if (mType.isForTesting()) {
             checkState(mTestedConfig != null);
-            if (mTestedConfig.mType == Type.LIBRARY) {
+            if (mTestedConfig.mType == VariantType.LIBRARY) {
                 return getApplicationId();
             } else {
                 return mTestedConfig.getApplicationId();

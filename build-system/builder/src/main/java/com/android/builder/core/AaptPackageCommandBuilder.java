@@ -53,7 +53,7 @@ public class AaptPackageCommandBuilder {
     @Nullable private List<? extends SymbolFileProvider> mLibraries;
     @Nullable private String mResPackageOutput;
     @Nullable private String mProguardOutput;
-    @Nullable private VariantConfiguration.Type mType;
+    @Nullable private VariantType mType;
     private boolean mDebuggable = false;
     private boolean mPseudoLocalesEnabled = false;
     @Nullable private Collection<String> mResourceConfigs;
@@ -168,13 +168,13 @@ public class AaptPackageCommandBuilder {
      * @param type the type of the variant being built
      * @return itself
      */
-    public AaptPackageCommandBuilder setType(@NonNull VariantConfiguration.Type type) {
+    public AaptPackageCommandBuilder setType(@NonNull VariantType type) {
         this.mType = type;
         return this;
     }
 
     @Nullable
-    public VariantConfiguration.Type getType() {
+    public VariantType getType() {
         return mType;
     }
 
@@ -326,7 +326,7 @@ public class AaptPackageCommandBuilder {
         }
 
 
-        if (mType != VariantConfiguration.Type.ANDROID_TEST) {
+        if (mType != VariantType.ANDROID_TEST) {
             if (mPackageForR != null) {
                 command.add("--custom-package");
                 command.add(mPackageForR);
@@ -345,7 +345,7 @@ public class AaptPackageCommandBuilder {
         }
 
         // library specific options
-        if (mType == VariantConfiguration.Type.LIBRARY) {
+        if (mType == VariantType.LIBRARY) {
             command.add("--non-constant-id");
         }
 
@@ -419,7 +419,7 @@ public class AaptPackageCommandBuilder {
         }
 
         if (mSymbolOutputDir != null &&
-                (mType == VariantConfiguration.Type.LIBRARY || !mLibraries.isEmpty())) {
+                (mType == VariantType.LIBRARY || !mLibraries.isEmpty())) {
             command.add("--output-text-symbols");
             command.add(mSymbolOutputDir);
         }

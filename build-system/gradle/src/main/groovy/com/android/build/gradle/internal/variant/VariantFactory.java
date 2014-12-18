@@ -22,7 +22,7 @@ import com.android.build.gradle.api.BaseVariant;
 import com.android.build.gradle.internal.VariantModel;
 import com.android.build.gradle.internal.api.ReadOnlyObjectProvider;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
-import com.android.builder.core.VariantConfiguration;
+import com.android.builder.core.VariantType;
 
 import org.gradle.api.Task;
 
@@ -49,7 +49,7 @@ public interface VariantFactory<T extends BaseVariantData<? extends BaseVariantO
             @NonNull ReadOnlyObjectProvider readOnlyObjectProvider);
 
     @NonNull
-    VariantConfiguration.Type getVariantConfigurationType();
+    VariantType getVariantConfigurationType();
 
     boolean isLibrary();
 
