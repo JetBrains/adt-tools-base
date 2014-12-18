@@ -1220,5 +1220,6 @@
     <orderEntry type="module" module-name="sdk-common-base" />
     <orderEntry type="module" module-name="lint-api-base" />
     <orderEntry type="module" module-name="lint-checks-base" />
+    <orderEntry type="library" exported="" name="jacoco" level="project" />
   </component>
 </module>
