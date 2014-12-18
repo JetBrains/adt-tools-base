@@ -15,6 +15,7 @@
  */
 
 package com.android.build.gradle.internal.model
+
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
 import com.android.build.OutputFile
@@ -24,11 +25,10 @@ import com.android.build.gradle.api.ApkOutputFile
 import com.android.build.gradle.internal.BuildTypeData
 import com.android.build.gradle.internal.ProductFlavorData
 import com.android.build.gradle.internal.variant.ApkVariantOutputData
-import com.android.build.gradle.internal.variant.ApplicationVariantData
 import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.build.gradle.internal.variant.BaseVariantOutputData
-import com.android.build.gradle.internal.variant.LibraryVariantData
 import com.android.build.gradle.internal.variant.TestVariantData
+import com.android.build.gradle.internal.variant.TestedVariantData
 import com.android.builder.core.DefaultProductFlavor
 import com.android.builder.core.VariantConfiguration
 import com.android.builder.model.AaptOptions
@@ -47,6 +47,8 @@ import com.android.sdklib.IAndroidTarget
 import com.google.common.collect.ImmutableCollection
 import com.google.common.collect.ImmutableList
 import com.google.common.collect.Lists
+import groovy.transform.CompileStatic
+import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.Project
 import org.gradle.api.tasks.compile.AbstractCompile
 import org.gradle.tooling.provider.model.ToolingModelBuilder
@@ -56,19 +58,21 @@ import java.util.jar.Manifest
 
 import static com.android.builder.model.AndroidProject.ARTIFACT_ANDROID_TEST
 import static com.android.builder.model.AndroidProject.ARTIFACT_MAIN
+
 /**
  * Builder for the custom Android model.
  */
+@CompileStatic
 public class ModelBuilder implements ToolingModelBuilder {
     @Override
     public boolean canBuild(String modelName) {
         // The default name for a model is the name of the Java interface
-        return modelName.equals(AndroidProject.class.getName())
+        modelName == AndroidProject.name
     }
 
     @Override
     public Object buildAll(String modelName, Project project) {
-        Collection<SigningConfig> signingConfigs
+        NamedDomainObjectContainer<SigningConfig> signingConfigs
 
         BasePlugin basePlugin = BasePlugin.findBasePlugin(project);
 
@@ -77,7 +81,9 @@ public class ModelBuilder implements ToolingModelBuilder {
             return null
         }
 
-        signingConfigs = basePlugin.extension.signingConfigs
+        // Cast is needed due to covariance issues.
+        signingConfigs =
+                basePlugin.extension.signingConfigs as NamedDomainObjectContainer<SigningConfig>
 
         // get the boot classpath. This will ensure the target is configured.
         List<String> bootClasspath = basePlugin.bootClasspathAsStrings
@@ -97,7 +103,6 @@ public class ModelBuilder implements ToolingModelBuilder {
 
         AaptOptions aaptOptions = AaptOptionsImpl.create(basePlugin.extension.aaptOptions)
 
-        //noinspection GroovyVariableNotAssigned
         DefaultAndroidProject androidProject = new DefaultAndroidProject(
                 getModelVersion(),
                 project.name,
@@ -166,8 +171,7 @@ public class ModelBuilder implements ToolingModelBuilder {
                                              @NonNull BasePlugin basePlugin,
                                              @NonNull Set<Project> gradleProjects) {
         TestVariantData testVariantData = null
-        if (variantData instanceof ApplicationVariantData ||
-                variantData instanceof LibraryVariantData) {
+        if (variantData instanceof TestedVariantData) {
             testVariantData = variantData.getTestVariantData(VariantConfiguration.Type.ANDROID_TEST)
         }
 
