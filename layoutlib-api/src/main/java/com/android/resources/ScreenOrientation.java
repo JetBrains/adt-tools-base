@@ -86,6 +86,15 @@ public enum ScreenOrientation implements ResourceEnum {
         return null;
     }
 
+    public static ScreenOrientation getByShortDisplayName(String name) {
+        for (ScreenOrientation orientation : values()) {
+            if (orientation.getShortDisplayValue().equals(name)) {
+                return orientation;
+            }
+        }
+        return null;
+    }
+
     @Override
     public boolean isFakeValue() {
         return false;
