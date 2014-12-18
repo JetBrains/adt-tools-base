@@ -16,6 +16,8 @@ dependencies {
 test {
     environment("PROJECT_BUILD_DIR", project.buildDir)
 
+    exclude "com/android/build/gradle/integration/device/**"
+
     description =
             "Runs the project integration tests. This requires an SDK either from the Android " +
                     "source tree, under out/..., or an env var ANDROID_HOME."
@@ -35,6 +37,7 @@ task connectedIntegrationTest(type: Test) {
 
     testClassesDir = sourceSets.test.output.classesDir
     classpath = sourceSets.test.runtimeClasspath
+    include "com/android/build/gradle/integration/device/DeviceTestSuite.class"
     description =
             "Runs the project integration tests with device tests. This requires an SDK either " +
                     "from the Android source tree, under out/..., or an env var ANDROID_HOME " +
