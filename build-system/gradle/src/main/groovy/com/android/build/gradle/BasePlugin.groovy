@@ -218,7 +218,7 @@ public abstract class BasePlugin {
     public final static String DIR_BUNDLES = "bundles";
 
     private static final String GRADLE_MIN_VERSION = "2.3"
-    public static final String GRADLE_TEST_VERSION = "2.3-20141203230023+0000"
+    public static final String GRADLE_TEST_VERSION = "2.3-20141217230055+0000"
     public static final Pattern GRADLE_ACCEPTABLE_VERSIONS = Pattern.compile("2\\.[3-9].*");
     private static final String GRADLE_VERSION_CHECK_OVERRIDE_PROPERTY =
             "com.android.build.gradle.overrideVersionCheck"
