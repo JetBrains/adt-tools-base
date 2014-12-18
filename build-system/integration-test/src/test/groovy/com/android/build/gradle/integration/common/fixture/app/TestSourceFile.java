@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.common.fixture.app;
 
+import com.android.annotations.NonNull;
 import com.google.common.base.Joiner;
 import com.google.common.io.Files;
 
@@ -30,13 +31,13 @@ public class TestSourceFile {
     private final String name;
     private final byte[] content;
 
-    public TestSourceFile(String path, String name, byte[] content) {
+    public TestSourceFile(@NonNull String path, @NonNull String name, @NonNull byte[] content) {
         this.path = path;
         this.name = name;
         this.content = content;
     }
 
-    public TestSourceFile(String path, String name, String content) {
+    public TestSourceFile(@NonNull String path, @NonNull String name, @NonNull String content) {
         this(path, name, content.getBytes());
     }
 
