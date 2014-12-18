@@ -121,7 +121,7 @@ public class TranslationDetectorTest extends AbstractCheckTest {
         assertEquals(
             "No warnings.",
             lintProject(
-                 "res/values-de/strings.xml"
+                 "res/values-de/strings.xml=>res/values/strings.xml"
             ));
     }
 
@@ -210,6 +210,7 @@ public class TranslationDetectorTest extends AbstractCheckTest {
             "No warnings.",
 
             lintProject(
+                 "res/values-es/strings.xml=>res/values/strings.xml",
                  "res/values-es/strings.xml=>res/values-es/strings.xml",
                  "res/values-es-rUS/strings.xml"));
     }
@@ -333,6 +334,56 @@ public class TranslationDetectorTest extends AbstractCheckTest {
                         "res/values-cs/arrays.xml",
                         "res/values-es/donottranslate.xml",
                         "res/values-nl-rNL/strings.xml"));
+    }
+
+    public void testMissingBaseCompletely() throws Exception {
+        TranslationDetector.sCompleteRegions = false;
+        assertEquals(""
+                + "res/values-cs/strings.xml:4: Error: \"home_title\" is translated here but not found in default locale [ExtraTranslation]\n"
+                + "    <string name=\"home_title\">\"Domů\"</string>\n"
+                + "            ~~~~~~~~~~~~~~~~~\n"
+                + "res/values-cs/strings.xml:5: Error: \"show_all_apps\" is translated here but not found in default locale [ExtraTranslation]\n"
+                + "    <string name=\"show_all_apps\">\"Vše\"</string>\n"
+                + "            ~~~~~~~~~~~~~~~~~~~~\n"
+                + "res/values-cs/strings.xml:6: Error: \"menu_wallpaper\" is translated here but not found in default locale [ExtraTranslation]\n"
+                + "    <string name=\"menu_wallpaper\">\"Tapeta\"</string>\n"
+                + "            ~~~~~~~~~~~~~~~~~~~~~\n"
+                + "res/values-cs/strings.xml:7: Error: \"menu_search\" is translated here but not found in default locale [ExtraTranslation]\n"
+                + "    <string name=\"menu_search\">\"Hledat\"</string>\n"
+                + "            ~~~~~~~~~~~~~~~~~~\n"
+                + "res/values-cs/strings.xml:10: Error: \"wallpaper_instructions\" is translated here but not found in default locale [ExtraTranslation]\n"
+                + "    <string name=\"wallpaper_instructions\">\"Klepnutím na obrázek nastavíte tapetu portrétu\"</string>\n"
+                + "            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "5 errors, 0 warnings\n",
+
+                lintProject("res/values-cs/strings.xml"));
+    }
+
+    public void testMissingSomeBaseStrings() throws Exception {
+        TranslationDetector.sCompleteRegions = false;
+        assertEquals(""
+                + "res/values-es/strings.xml:4: Error: \"home_title\" is translated here but not found in default locale [ExtraTranslation]\n"
+                + "    <string name=\"home_title\">\"Casa\"</string>\n"
+                + "            ~~~~~~~~~~~~~~~~~\n"
+                + "res/values-es/strings.xml:5: Error: \"show_all_apps\" is translated here but not found in default locale [ExtraTranslation]\n"
+                + "    <string name=\"show_all_apps\">\"Todo\"</string>\n"
+                + "            ~~~~~~~~~~~~~~~~~~~~\n"
+                + "res/values-es/strings.xml:6: Error: \"menu_wallpaper\" is translated here but not found in default locale [ExtraTranslation]\n"
+                + "    <string name=\"menu_wallpaper\">\"Papel tapiz\"</string>\n"
+                + "            ~~~~~~~~~~~~~~~~~~~~~\n"
+                + "res/values-es/strings.xml:10: Error: \"wallpaper_instructions\" is translated here but not found in default locale [ExtraTranslation]\n"
+                + "    <string name=\"wallpaper_instructions\">\"Puntee en la imagen para establecer papel tapiz vertical\"</string>\n"
+                + "            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "res/values-es/strings.xml:12: Error: \"security_questions\" is translated here but not found in default locale [ExtraTranslation]\n"
+                + "  <string-array name=\"security_questions\">\n"
+                + "                ~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "5 errors, 0 warnings\n",
+
+                lintProject(
+                        "res/values-es-rUS/strings.xml=>res/values/strings.xml",
+                        "res/values-es/strings.xml=>res/values-es/strings.xml"
+
+                ));
     }
 
     @Override
