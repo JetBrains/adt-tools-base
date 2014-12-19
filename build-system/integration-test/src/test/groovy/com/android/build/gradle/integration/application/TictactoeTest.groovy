@@ -83,6 +83,6 @@ class TictactoeTest {
 
         // TODO: right now we can only test the folder name efficiently
         String path = androidLibrary.getFolder().getPath();
-        assertTrue(path, path.endsWith("/project/lib/unspecified"))
+        assertTrue(path, path.endsWith("/tictactoe/lib/unspecified"))
     }
 }
