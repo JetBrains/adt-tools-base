@@ -178,38 +178,6 @@ class NdkComponentModelPlugin implements Plugin<Project> {
             }
         }
 
-        /**
-         * Create all source sets for each AndroidBinary.
-         */
-        @Mutate
-        void configureNativeSourceSet(
-                AndroidComponentModelSourceSet sources,
-                NamedDomainObjectContainer<BuildType> buildTypes,
-                NamedDomainObjectContainer<GroupableProductFlavor> flavors,
-                List<ProductFlavorCombo> flavorGroups,
-                NdkExtension ndkExtension) {
-            NdkConfiguration.configureSources(sources, "main", ndkExtension)
-            for (def buildType : buildTypes) {
-                NdkConfiguration.configureSources(sources, buildType.name, ndkExtension)
-            }
-            for (def group : flavorGroups) {
-                NdkConfiguration.configureSources(sources, group.name, ndkExtension)
-                if (!group.flavorList.isEmpty()) {
-                    for (def buildType : buildTypes) {
-                        NdkConfiguration.configureSources(
-                                sources, group.name + buildType.name.capitalize(), ndkExtension)
-                    }
-                }
-            }
-            if (flavorGroups.size() != flavors.size()) {
-                // If flavorGroups and flavors are the same size, there is at most 1 flavor
-                // dimension.  So we don't need to reconfigure the source sets for flavorGroups.
-                for (def flavor : flavors) {
-                    NdkConfiguration.configureSources(sources, flavor.name, ndkExtension)
-                }
-            }
-        }
-
         @Finalize
         void attachNativeTasksToAssembleTasks(BinaryContainer binaries) {
             binaries.withType(DefaultAndroidBinary) { binary ->

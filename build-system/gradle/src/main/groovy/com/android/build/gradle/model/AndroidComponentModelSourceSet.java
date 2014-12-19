@@ -19,6 +19,7 @@ package com.android.build.gradle.model;
 import org.gradle.api.Action;
 import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.NamedDomainObjectFactory;
+import org.gradle.api.file.SourceDirectorySet;
 import org.gradle.api.internal.AbstractNamedDomainObjectContainer;
 import org.gradle.api.internal.file.FileResolver;
 import org.gradle.internal.reflect.Instantiator;
@@ -50,7 +51,7 @@ public class AndroidComponentModelSourceSet
         super(FunctionalSourceSet.class, instantiator);
         this.sources = sources;
 
-        // Hardcoding registered language sets for now.
+        // Hardcoding registered language sets and default source sets for now.
         all(new Action<FunctionalSourceSet>() {
             @Override
             public void execute(final FunctionalSourceSet functionalSourceSet) {
@@ -92,6 +93,17 @@ public class AndroidComponentModelSourceSet
                         });
             }
         });
+
+        addDefaultSourceSet("resources", AndroidLanguageSourceSet.class);
+        addDefaultSourceSet("java", AndroidLanguageSourceSet.class);
+        addDefaultSourceSet("manifest", AndroidLanguageSourceSet.class);
+        addDefaultSourceSet("res", AndroidLanguageSourceSet.class);
+        addDefaultSourceSet("assets", AndroidLanguageSourceSet.class);
+        addDefaultSourceSet("aidl", AndroidLanguageSourceSet.class);
+        addDefaultSourceSet("renderscript", AndroidLanguageSourceSet.class);
+        addDefaultSourceSet("jniLibs", AndroidLanguageSourceSet.class);
+        addDefaultSourceSet("c", CSourceSet.class);
+        addDefaultSourceSet("cpp", CppSourceSet.class);
     }
 
     @Override
@@ -103,12 +115,32 @@ public class AndroidComponentModelSourceSet
                 sources);
     }
 
-    public void addDefaultSourceSet(final String sourceSetName, final Class<? extends LanguageSourceSet> type) {
+    private void addDefaultSourceSet(final String sourceSetName, final Class<? extends LanguageSourceSet> type) {
         all(new Action<FunctionalSourceSet>() {
             @Override
             public void execute(FunctionalSourceSet functionalSourceSet) {
                 LanguageSourceSet sourceSet= functionalSourceSet.maybeCreate(sourceSetName, type);
-                sourceSet.getSource().srcDir("src/" + functionalSourceSet.getName() + "/" + sourceSet.getName());
+            }
+        });
+    }
+
+    /**
+     * Set the default directory for each source sets if it is empty.
+     */
+    public void setDefaultSrcDir() {
+        all(new Action<FunctionalSourceSet>() {
+            @Override
+            public void execute(final FunctionalSourceSet functionalSourceSet) {
+                functionalSourceSet.all(
+                        new Action<LanguageSourceSet>() {
+                            @Override
+                            public void execute(LanguageSourceSet languageSourceSet) {
+                                SourceDirectorySet source = languageSourceSet.getSource();
+                                if (source.getSrcDirs().isEmpty()) {
+                                    source.srcDir("src/" + functionalSourceSet.getName() + "/" + languageSourceSet.getName());
+                                }
+                            }
+                        });
             }
         });
     }
