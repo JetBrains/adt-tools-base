@@ -352,7 +352,7 @@ public abstract class Reporter {
         }
         int len = 0;
         int lastSeparatorIndex = 0;
-        // bug in inspection; see http://youtrack.jetbrains.com/issue/IDEA-118971
+        // bug in inspection; see https://youtrack.jetbrains.com/issue/IDEA-118971
         //noinspection ConstantConditions
         while (len < filePath.length() && len < basePath.length()
                 && filePathToCompare.charAt(len) == basePathToCompare.charAt(len)) {
