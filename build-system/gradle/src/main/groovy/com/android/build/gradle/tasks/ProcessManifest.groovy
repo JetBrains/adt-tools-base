@@ -92,6 +92,7 @@ class ProcessManifest extends ManifestProcessorTask {
                 getTargetSdkVersion(),
                 getMaxSdkVersion(),
                 getManifestOutputFile().absolutePath,
+                getAaptFriendlyManifestOutputFile()?.absolutePath,
                 ManifestMerger2.MergeType.LIBRARY,
                 variantConfiguration.getManifestPlaceholders(),
                 getReportFile())

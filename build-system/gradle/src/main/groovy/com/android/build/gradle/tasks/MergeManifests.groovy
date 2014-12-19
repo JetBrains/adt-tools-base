@@ -120,6 +120,8 @@ public class MergeManifests extends ManifestProcessorTask {
                 getTargetSdkVersion(),
                 getMaxSdkVersion(),
                 getManifestOutputFile().absolutePath,
+                // no appt friendly merged manifest file necessary for applications.
+                null /* aaptFriendlyManifestOutputFile */ ,
                 ManifestMerger2.MergeType.APPLICATION,
                 variantConfiguration.getManifestPlaceholders(),
                 getReportFile())

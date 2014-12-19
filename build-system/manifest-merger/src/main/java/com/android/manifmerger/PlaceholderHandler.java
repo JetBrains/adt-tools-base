@@ -35,7 +35,7 @@ public class PlaceholderHandler {
     // regular expression to recognize placeholders like ${name}, potentially surrounded by a
     // prefix and suffix string. this will split in 3 groups, the prefix, the placeholder name, and
     // the suffix.
-    private static final Pattern PATTERN = Pattern.compile("([^\\$]*)\\$\\{([^\\}]*)\\}(.*)");
+    static final Pattern PATTERN = Pattern.compile("([^\\$]*)\\$\\{([^\\}]*)\\}(.*)");
 
     /**
      * Interface to provide a value for a placeholder key.
@@ -92,8 +92,7 @@ public class PlaceholderHandler {
                     // if this is a library, ignore the failure
                     MergingReport.Record.Severity severity =
                             mergeType == ManifestMerger2.MergeType.LIBRARY
-                        // revert to INFO once no placeholder substitution is lib is optional.
-                        ? MergingReport.Record.Severity.ERROR
+                        ? MergingReport.Record.Severity.INFO
                         : MergingReport.Record.Severity.ERROR;
 
                     xmlAttribute.addMessage(mergingReportBuilder, severity,

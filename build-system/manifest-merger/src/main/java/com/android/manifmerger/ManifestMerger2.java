@@ -286,47 +286,55 @@ public class ManifestMerger2 {
             mergingReportBuilder.setMergedDocument(finalMergedDocument);
         }
 
-        MergingReport build = mergingReportBuilder.build();
+        MergingReport mergingReport = mergingReportBuilder.build();
         StdLogger stdLogger = new StdLogger(StdLogger.Level.INFO);
-        build.log(stdLogger);
-        stdLogger.verbose(build.getMergedDocument().get().prettyPrint());
+        mergingReport.log(stdLogger);
+        stdLogger.verbose(mergingReport.getMergedDocument().get().prettyPrint());
 
         if (mReportFile.isPresent()) {
-            FileWriter fileWriter = null;
-            try {
-                if (!mReportFile.get().getParentFile().exists()
-                        && !mReportFile.get().getParentFile().mkdirs()) {
-                    mLogger.warning(String.format(
-                            "Cannot create %1$s manifest merger report file,"
-                                    + "build will continue but merging activities "
-                                    + "will not be documented",
-                            mReportFile.get().getAbsolutePath()));
-                } else {
-                    fileWriter = new FileWriter(mReportFile.get());
-                    build.getActions().log(fileWriter);
-                }
-            } catch (IOException e) {
+            writeReport(mergingReport);
+        }
+
+        return mergingReport;
+    }
+
+    /**
+     * Creates the merging report file.
+     * @param mergingReport the merging activities report to serialize.
+     */
+    private void writeReport(MergingReport mergingReport) {
+        FileWriter fileWriter = null;
+        try {
+            if (!mReportFile.get().getParentFile().exists()
+                    && !mReportFile.get().getParentFile().mkdirs()) {
                 mLogger.warning(String.format(
-                        "Error '%1$s' while writing the merger report file, "
-                                + "build can continue but merging activities "
-                                + "will not be documented ",
-                        e.getMessage()));
-            } finally {
-                if (fileWriter != null) {
-                    try {
-                        fileWriter.close();
-                    } catch (IOException e) {
-                        mLogger.warning(String.format(
-                                "Error '%1$s' while closing the merger report file, "
-                                + "build can continue but merging activities "
-                                        + "will not be documented ",
-                                e.getMessage()));
-                    }
+                        "Cannot create %1$s manifest merger report file,"
+                                + "build will continue but merging activities "
+                                + "will not be documented",
+                        mReportFile.get().getAbsolutePath()));
+            } else {
+                fileWriter = new FileWriter(mReportFile.get());
+                mergingReport.getActions().log(fileWriter);
+            }
+        } catch (IOException e) {
+            mLogger.warning(String.format(
+                    "Error '%1$s' while writing the merger report file, "
+                            + "build can continue but merging activities "
+                            + "will not be documented ",
+                    e.getMessage()));
+        } finally {
+            if (fileWriter != null) {
+                try {
+                    fileWriter.close();
+                } catch (IOException e) {
+                    mLogger.warning(String.format(
+                            "Error '%1$s' while closing the merger report file, "
+                                    + "build can continue but merging activities "
+                                    + "will not be documented ",
+                            e.getMessage()));
                 }
             }
         }
-
-        return build;
     }
 
     /**
@@ -786,6 +794,15 @@ public class ManifestMerger2 {
         protected final ImmutableMap.Builder<String, Object> mPlaceHolders =
                 new ImmutableMap.Builder<String, Object>();
 
+        private final ImmutableList.Builder<Pair<String, File>> mLibraryFilesBuilder =
+                new ImmutableList.Builder<Pair<String, File>>();
+        private final ImmutableList.Builder<File> mFlavorsAndBuildTypeFiles =
+                new ImmutableList.Builder<File>();
+        private final ImmutableList.Builder<Feature> mFeaturesBuilder =
+                new ImmutableList.Builder<Feature>();
+        private final MergeType mMergeType;
+        @Nullable private File mReportFile;
+
         /**
          * Sets a value for a {@link com.android.manifmerger.ManifestMerger2.SystemProperty}
          * @param override the property to set
@@ -843,15 +860,6 @@ public class ManifestMerger2 {
              */
             REMOVE_TOOLS_DECLARATIONS;
         }
-
-        private final ImmutableList.Builder<Pair<String, File>> mLibraryFilesBuilder =
-                new ImmutableList.Builder<Pair<String, File>>();
-        private final ImmutableList.Builder<File> mFlavorsAndBuildTypeFiles =
-                new ImmutableList.Builder<File>();
-        private final ImmutableList.Builder<Feature> mFeaturesBuilder =
-                new ImmutableList.Builder<Feature>();
-        private final MergeType mMergeType;
-        @Nullable private File mReportFile;
 
         /**
          * Creates a new builder with the mandatory main manifest file.

@@ -65,6 +65,7 @@ import com.android.ide.common.signing.KeystoreHelper;
 import com.android.ide.common.signing.KeytoolException;
 import com.android.manifmerger.ManifestMerger2;
 import com.android.manifmerger.MergingReport;
+import com.android.manifmerger.PlaceholderEncoder;
 import com.android.manifmerger.PlaceholderHandler;
 import com.android.manifmerger.XmlDocument;
 import com.android.sdklib.BuildToolInfo;
@@ -433,6 +434,7 @@ public class AndroidBuilder {
             @Nullable String targetSdkVersion,
             @Nullable Integer maxSdkVersion,
             @NonNull String outManifestLocation,
+            @Nullable String outAaptSafeManifestLocation,
             ManifestMerger2.MergeType mergeType,
             Map<String, String> placeHolders,
             @Nullable File reportFile) {
@@ -469,6 +471,10 @@ public class AndroidBuilder {
                         mLogger.error(e, "cannot print resulting xml");
                     }
                     save(xmlDocument, new File(outManifestLocation));
+                    if (outAaptSafeManifestLocation != null) {
+                        new PlaceholderEncoder().visit(xmlDocument);
+                        save(xmlDocument, new File(outAaptSafeManifestLocation));
+                    }
                     mLogger.info("Merged manifest saved to " + outManifestLocation);
                     break;
                 case ERROR:

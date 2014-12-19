@@ -797,6 +797,12 @@ public abstract class BasePlugin {
                     "$project.buildDir/${FD_INTERMEDIATES}/${manifestOutDir}/" +
                             "${variantData.variantConfiguration.dirName}/AndroidManifest.xml")
         }
+
+        conventionMapping(processManifest).map("aaptFriendlyManifestOutputFile") {
+            project.file(
+                    "$project.buildDir/${FD_INTERMEDIATES}/${manifestOutDir}/" +
+                            "${variantData.variantConfiguration.dirName}/aapt/AndroidManifest.xml")
+        }
     }
 
     protected void createProcessTestManifestTask(
@@ -1177,7 +1183,7 @@ public abstract class BasePlugin {
             }
 
             conventionMapping(processResources).map("manifestFile") {
-                variantOutputData.manifestProcessorTask.manifestOutputFile
+                variantOutputData.manifestProcessorTask.getOutputFile()
             }
 
             conventionMapping(processResources).map("resDir") {

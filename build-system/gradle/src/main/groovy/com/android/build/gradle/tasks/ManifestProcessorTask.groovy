@@ -19,6 +19,7 @@ import com.google.common.base.Function
 import com.google.common.base.Joiner
 import com.google.common.collect.Iterables
 import com.google.common.collect.Lists
+import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputFile
 /**
  * A task that processes the manifest
@@ -32,6 +33,15 @@ public abstract class ManifestProcessorTask extends IncrementalTask {
      */
     @OutputFile
     File manifestOutputFile
+
+    /**
+     * The aapt friendly processed Manifest. In case we are processing a library manifest, some
+     * placeholders may not have been resolved (and will be when the library is merged into the
+     * importing application). However, such placeholders keys are not friendly to aapt which
+     * flags some illegal characters. Such characters are replaced/encoded in this version.
+     */
+    @OutputFile @Optional
+    File aaptFriendlyManifestOutputFile
 
     /**
      * Serialize a map key+value pairs into a comma separated list. Map elements are sorted to
@@ -51,5 +61,14 @@ public abstract class ManifestProcessorTask extends IncrementalTask {
                                 return keyValueJoiner.join(input.getKey(), input.getValue());
                             }
                         })).sort())
+    }
+
+    /**
+     * Returns the manifest processing output file. if an aapt friendly version was requested,
+     * return that otherwise return the actual output of the manifest merger tool directly.
+     */
+    public File getOutputFile() {
+        getAaptFriendlyManifestOutputFile() == null ? getManifestOutputFile()
+                : getAaptFriendlyManifestOutputFile();
     }
 }
