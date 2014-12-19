@@ -534,7 +534,7 @@ public class PositionXmlParser {
                 Attributes attributes) throws SAXException {
             try {
                 flushText();
-                Element element = mDocument.createElement(qName);
+                Element element = mDocument.createElementNS(uri, qName);
                 for (int i = 0; i < attributes.getLength(); i++) {
                     if (attributes.getURI(i) != null && !attributes.getURI(i).isEmpty()) {
                         Attr attr = mDocument.createAttributeNS(attributes.getURI(i),

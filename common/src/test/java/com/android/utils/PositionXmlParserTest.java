@@ -492,4 +492,46 @@ public class PositionXmlParserTest extends TestCase {
                     xml.substring(start.getOffset(), end.getOffset()));
         }
     }
+
+
+    public void testTagNamespace() throws Exception {
+
+        final String NAMESPACE_URL = "http://example.org/path";
+        final String XML =
+                "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
+                        "<ns:SomeTag xmlns:ns=\"" + NAMESPACE_URL + "\">\n" +
+                        "    <ns:SubTag\n" +
+                        "        ns:text=\"Button\" />\n" +
+                        "</ns:SomeTag>\n";
+        PositionXmlParser parser = new PositionXmlParser();
+        File file = File.createTempFile("parsertest", ".xml");
+        Writer fw = new BufferedWriter(new FileWriter(file));
+        fw.write(XML);
+        fw.close();
+        Document document = parser.parse(new FileInputStream(file));
+        assertNotNull(document);
+        Element e = document.getDocumentElement();
+        assertNotNull(e);
+        assertEquals("http://example.org/path", e.getNamespaceURI());
+        assertEquals("ns:SomeTag", e.getTagName());
+        assertEquals("ns:SomeTag", e.getNodeName());
+        assertEquals("SomeTag",e.getLocalName());
+        NodeList subTags = e.getElementsByTagNameNS(NAMESPACE_URL, "SubTag");
+        assertEquals(1, subTags.getLength());
+        Node subTagNode = subTags.item(0);
+        assertEquals(Node.ELEMENT_NODE, subTagNode.getNodeType());
+        Element subTag = (Element) subTagNode;
+        assertEquals("ns:SubTag", subTag.getTagName());
+        assertEquals("ns:SubTag", subTag.getNodeName());
+        assertEquals("SubTag", subTag.getLocalName());
+        Attr attr = subTag.getAttributeNodeNS(NAMESPACE_URL, "text");
+        assertNotNull(attr);
+        Position start = parser.getPosition(attr);
+        assertNotNull(start);
+        Position end = start.getEnd();
+        assertNotNull(end);
+        assertEquals("ns:text=\"Button\"", XML.substring(start.getOffset(), end.getOffset()));
+        assertEquals("Button", subTag.getAttributeNS(NAMESPACE_URL, "text"));
+        assertEquals(NAMESPACE_URL, subTag.getNamespaceURI());
+    }
 }
