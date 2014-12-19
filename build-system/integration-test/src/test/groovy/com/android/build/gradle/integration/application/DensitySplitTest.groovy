@@ -77,7 +77,7 @@ class DensitySplitTest {
 
             for (AndroidArtifactOutput output : mainArtifact.getOutputs()) {
                 ZipHelper.checkFileExists(
-                        output.mainOutputFile.getOutputFile(),
+                        output.getMainOutputFile().getOutputFile(),
                         "res/drawable-mdpi-v4/other.png")
             }
         }
