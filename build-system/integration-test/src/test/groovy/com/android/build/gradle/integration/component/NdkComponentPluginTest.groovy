@@ -29,7 +29,7 @@ import org.junit.Test
 /**
  * Basic integration test for ndk component plugin.
  */
-class NdkComponentModelIntegTest {
+class NdkComponentPluginTest {
 
     @ClassRule
     public static GradleTestProject project = GradleTestProject.builder().create();
