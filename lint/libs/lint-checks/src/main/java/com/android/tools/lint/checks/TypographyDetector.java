@@ -17,6 +17,7 @@
 package com.android.tools.lint.checks;
 
 import static com.android.SdkConstants.ATTR_NAME;
+import static com.android.SdkConstants.TAG_PLURALS;
 import static com.android.SdkConstants.TAG_STRING;
 import static com.android.SdkConstants.TAG_STRING_ARRAY;
 
@@ -209,7 +210,8 @@ public class TypographyDetector extends ResourceXmlDetector {
     public Collection<String> getApplicableElements() {
         return Arrays.asList(
                 TAG_STRING,
-                TAG_STRING_ARRAY
+                TAG_STRING_ARRAY,
+                TAG_PLURALS
         );
     }
 
@@ -231,8 +233,9 @@ public class TypographyDetector extends ResourceXmlDetector {
                 String text = child.getNodeValue();
                 checkText(context, element, child, text);
             } else if (child.getNodeType() == Node.ELEMENT_NODE &&
-                    child.getParentNode().getNodeName().equals(TAG_STRING_ARRAY)) {
-                // String array item children
+                    (child.getParentNode().getNodeName().equals(TAG_STRING_ARRAY) ||
+                            child.getParentNode().getNodeName().equals(TAG_PLURALS))) {
+                // String array or plural item children
                 NodeList items = child.getChildNodes();
                 for (int j = 0, m = items.getLength(); j < m; j++) {
                     Node item = items.item(j);
