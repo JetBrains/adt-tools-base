@@ -37,37 +37,6 @@ import org.gradle.platform.base.BinarySpec
  * Configure settings used by the native binaries.
  */
 class NdkConfiguration {
-
-    public static void configureSources(
-            AndroidComponentModelSourceSet sources,
-            String sourceSetName,
-            NdkExtension ndkExtension) {
-        sources.maybeCreate(sourceSetName).configure {
-            c(CSourceSet) {
-                source {
-                    if (srcDirs.isEmpty()) {
-                        srcDir "src/$sourceSetName/jni"
-                    }
-                    if (includes.isEmpty()) {
-                        include ndkExtension.getCFilePattern().getIncludes()
-                        exclude ndkExtension.getCFilePattern().getExcludes()
-                    }
-                }
-            }
-            cpp(CppSourceSet) {
-                source {
-                    if (srcDirs.isEmpty()) {
-                        srcDir "src/$sourceSetName/jni"
-                    }
-                    if (includes.isEmpty()) {
-                        include ndkExtension.getCppFilePattern().getIncludes()
-                        exclude ndkExtension.getCppFilePattern().getExcludes()
-                    }
-                }
-            }
-        }
-    }
-
     public static void configureProperties(
             NativeLibrarySpec library,
             AndroidComponentModelSourceSet sources,

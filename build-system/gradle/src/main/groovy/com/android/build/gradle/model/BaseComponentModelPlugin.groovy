@@ -133,19 +133,6 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
             languages.add(new AndroidSource())
         }
 
-        @Mutate
-        void addAndroidSourceSets(AndroidComponentModelSourceSet sources) {
-            sources.addDefaultSourceSet("resources", AndroidLanguageSourceSet)
-            sources.addDefaultSourceSet("java", AndroidLanguageSourceSet)
-            sources.addDefaultSourceSet("manifest", AndroidLanguageSourceSet)
-            sources.addDefaultSourceSet("res", AndroidLanguageSourceSet)
-            sources.addDefaultSourceSet("assets", AndroidLanguageSourceSet)
-            sources.addDefaultSourceSet("aidl", AndroidLanguageSourceSet)
-            sources.addDefaultSourceSet("renderscript", AndroidLanguageSourceSet)
-            sources.addDefaultSourceSet("jni", AndroidLanguageSourceSet)
-            sources.addDefaultSourceSet("jniLibs", AndroidLanguageSourceSet)
-        }
-
         @Model("android")
         BaseExtension androidapp(
                 ServiceRegistry serviceRegistry,

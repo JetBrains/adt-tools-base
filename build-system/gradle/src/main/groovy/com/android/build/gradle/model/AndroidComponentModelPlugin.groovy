@@ -21,6 +21,8 @@ import com.android.build.gradle.internal.dsl.BuildType
 import com.android.build.gradle.internal.dsl.BuildTypeFactory
 import com.android.build.gradle.internal.dsl.GroupableProductFlavor
 import com.android.build.gradle.internal.dsl.GroupableProductFlavorFactory
+import com.android.build.gradle.ndk.NdkExtension
+import com.android.build.gradle.ndk.internal.NdkConfiguration
 import com.android.builder.core.BuilderConstants
 import groovy.transform.CompileStatic
 import org.gradle.api.NamedDomainObjectContainer
@@ -31,6 +33,7 @@ import org.gradle.internal.reflect.Instantiator
 import org.gradle.internal.service.ServiceRegistry
 import org.gradle.language.base.ProjectSourceSet
 import org.gradle.language.base.plugins.ComponentModelBasePlugin
+import org.gradle.model.Finalize
 import org.gradle.model.Model
 import org.gradle.model.Mutate
 import org.gradle.model.RuleSource
@@ -153,6 +156,11 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
             return sources
         }
 
+        @Finalize
+        void setDefaultSrcDir(AndroidComponentModelSourceSet sourceSet) {
+            sourceSet.setDefaultSrcDir()
+        }
+
         @BinaryType
         void defineBinaryType(BinaryTypeBuilder<AndroidBinary> builder) {
             builder.defaultImplementation(DefaultAndroidBinary)
@@ -175,6 +183,35 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
                         binary.buildType = buildType
                         binary.productFlavors = flavorCombo.flavorList
                     }
+                }
+            }
+        }
+
+        /**
+         * Create all source sets for each AndroidBinary.
+         */
+        @Mutate
+        void createVariantSourceSet(
+                AndroidComponentModelSourceSet sources,
+                NamedDomainObjectContainer<BuildType> buildTypes,
+                NamedDomainObjectContainer<GroupableProductFlavor> flavors,
+                List<ProductFlavorCombo> flavorGroups) {
+            buildTypes.each { buildType ->
+                sources.maybeCreate(buildType.name)
+            }
+            flavorGroups.each { group ->
+                sources.maybeCreate(group.name)
+                if (!group.flavorList.isEmpty()) {
+                    buildTypes.each { buildType ->
+                        sources.maybeCreate(group.name + buildType.name.capitalize())
+                    }
+                }
+            }
+            if (flavorGroups.size() != flavors.size()) {
+                // If flavorGroups and flavors are the same size, there is at most 1 flavor
+                // dimension.  So we don't need to reconfigure the source sets for flavorGroups.
+                flavors.each { flavor ->
+                    sources.maybeCreate(flavor.name)
                 }
             }
         }

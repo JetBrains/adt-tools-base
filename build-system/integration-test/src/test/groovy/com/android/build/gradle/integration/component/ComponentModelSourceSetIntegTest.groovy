@@ -27,6 +27,8 @@ import org.junit.Test
 
 import java.util.zip.ZipFile
 
+import static com.android.build.gradle.integration.common.truth.ZipFileSubjectFactory.zipFile
+import static com.google.common.truth.Truth.assert_
 import static org.junit.Assert.assertNotNull
 
 /**
@@ -46,10 +48,10 @@ class ComponentModelSourceSetIntegTest {
         TestSourceFile cSource = app.getFile("hello-jni.c");
         app.removeFile(cSource);
         app.addFile(
-                new TestSourceFile("src/release/jni", cSource.name, cSource.content))
+                new TestSourceFile("src/release/c", cSource.name, cSource.content))
         app.addFile(
-                new TestSourceFile("src/flavor1/jni/hello-jni.c", cSource.name, cSource.content))
-        app.addFile(new TestSourceFile("src/flavor2Debug/jni/hello-jni.c", cSource.name,
+                new TestSourceFile("src/flavor1/c/hello-jni.c", cSource.name, cSource.content))
+        app.addFile(new TestSourceFile("src/flavor2Debug/c/hello-jni.c", cSource.name,
                 cSource.content))
         app.writeSources(project.testDir)
 
@@ -73,7 +75,7 @@ model {
         flavor3 {
             c {
                 source {
-                    srcDir 'src/flavor1/jni'
+                    srcDir 'src/flavor1/c'
                 }
             }
         }
@@ -90,28 +92,28 @@ model {
     @Test
     void defaultBuildTypeSourceDirectory() {
         project.execute("assembleFlavor2Release");
-        ZipFile apk = new ZipFile(project.getApk("flavor2", "release", "unsigned"));
-        assertNotNull(apk.getEntry("lib/x86/libhello-jni.so"));
+        def apk = project.getApk("flavor2", "release", "unsigned")
+        assert_().about(zipFile()).that(apk).contains("lib/x86/libhello-jni.so");
     }
 
     @Test
     void defaultProductFlavorSourceDirectory() {
         project.execute("assembleFlavor1Debug");
-        ZipFile apk = new ZipFile(project.getApk("flavor1", "debug"));
-        assertNotNull(apk.getEntry("lib/x86/libhello-jni.so"));
+        def apk = project.getApk("flavor1", "debug")
+        assert_().about(zipFile()).that(apk).contains("lib/x86/libhello-jni.so");
     }
 
     @Test
     void defaultVariantSourceDirectory() {
         project.execute("assembleFlavor2Debug");
-        ZipFile apk = new ZipFile(project.getApk("flavor2", "debug"));
-        assertNotNull(apk.getEntry("lib/x86/libhello-jni.so"));
+        def apk = project.getApk("flavor2", "debug")
+        assert_().about(zipFile()).that(apk).contains("lib/x86/libhello-jni.so");
     }
 
     @Test
     void nonDefaultSourceDirectory() {
         project.execute("assembleFlavor3Debug");
-        ZipFile apk = new ZipFile(project.getApk("flavor3", "debug"));
-        assertNotNull(apk.getEntry("lib/x86/libhello-jni.so"));
+        def apk = project.getApk("flavor3", "debug")
+        assert_().about(zipFile()).that(apk).contains("lib/x86/libhello-jni.so");
     }
 }
