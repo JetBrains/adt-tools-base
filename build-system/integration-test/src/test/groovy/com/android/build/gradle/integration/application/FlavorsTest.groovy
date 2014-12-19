@@ -95,7 +95,7 @@ class FlavorsTest {
         assertNotNull("f1faDebug Variant null-check", f1faDebugVariant)
         new ProductFlavorHelper(f1faDebugVariant.getMergedFlavor(), "F1faDebug Merged Flavor")
                 .test()
-        new VariantHelper(f1faDebugVariant, projectDir, "project-f1-fa-debug.apk").test()
+        new VariantHelper(f1faDebugVariant, projectDir, "flavors-f1-fa-debug.apk").test()
     }
 
     @Test

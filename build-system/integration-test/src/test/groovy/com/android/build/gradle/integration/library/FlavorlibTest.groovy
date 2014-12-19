@@ -94,7 +94,7 @@ class FlavorlibTest {
         assertEquals(":lib1", androidLibrary.getProject())
         // TODO: right now we can only test the folder name efficiently
         String path = androidLibrary.getFolder().getPath()
-        assertTrue(path, path.endsWith("/project/lib1/unspecified"))
+        assertTrue(path, path.endsWith("/flavorlib/lib1/unspecified"))
 
         ProductFlavorContainer flavor2 = ModelHelper.getProductFlavor(productFlavors, "flavor2")
         assertNotNull(flavor2)
@@ -112,7 +112,7 @@ class FlavorlibTest {
         assertEquals(":lib2", androidLibrary.getProject())
         // TODO: right now we can only test the folder name efficiently
         path = androidLibrary.getFolder().getPath()
-        assertTrue(path, path.endsWith("/project/lib2/unspecified"))
+        assertTrue(path, path.endsWith("/flavorlib/lib2/unspecified"))
     }
 
     @Test

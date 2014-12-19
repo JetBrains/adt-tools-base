@@ -37,6 +37,7 @@ import com.android.sdklib.internal.project.ProjectPropertiesWorkingCopy;
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
 import com.google.common.base.Predicate;
+import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 
@@ -55,6 +56,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.security.CodeSource;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -130,6 +132,7 @@ public class GradleTestProject implements TestRule {
         public Builder fromSample(@NonNull String project) {
             // Create a new AndroidTestApp with all files in the project.
             AndroidTestApp app = new EmptyTestApp();
+            name = project;
             File projectDir = new File(SAMPLE_PROJECT_DIR, project);
             addAllFiles(app, projectDir);
             return fromTestApp(app);
@@ -140,6 +143,7 @@ public class GradleTestProject implements TestRule {
          */
         public Builder fromTestProject(@NonNull String project) {
             AndroidTestApp app = new EmptyTestApp();
+            name = project;
             File projectDir = new File(TEST_PROJECT_DIR, project);
             addAllFiles(app, projectDir);
             return fromTestApp(app);
@@ -545,8 +549,16 @@ public class GradleTestProject implements TestRule {
         BuildLauncher launcher = connection.newBuild().forTasks(tasks)
                 .withArguments(args.toArray(new String[args.size()]));
 
+        List<String> jvmArguments = new ArrayList<String>();
+        String debugIntegrationTest = System.getenv("DEBUG_INNER_TEST");
+        if (!Strings.isNullOrEmpty(debugIntegrationTest) && debugIntegrationTest.equals(name)) {
+            jvmArguments.add("-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005");
+        }
         if (JacocoAgent.isJacocoEnabled()) {
-            launcher.setJvmArguments(JacocoAgent.getJvmArg());
+            jvmArguments.add(JacocoAgent.getJvmArg());
+        }
+        if (!jvmArguments.isEmpty()) {
+            launcher.setJvmArguments(jvmArguments.toArray(new String[jvmArguments.size()]));
         }
 
         if (stdout != null) {
