@@ -93,6 +93,23 @@ public class TypographyDetectorTest extends AbstractCheckTest {
                 lintProject("res/values/analytics.xml"));
     }
 
+    public void testPlurals() throws Exception {
+        // Regression test for https://code.google.com/p/android/issues/detail?id=82588
+        assertEquals(""
+                + "res/values/plurals_typography.xml:5: Warning: Replace \"-\" with an \"en dash\" character (–, &#8211;) ? [TypographyDashes]\n"
+                + "        <item quantity=\"one\">For ages 3-5</item>\n"
+                + "                             ^\n"
+                + "res/values/plurals_typography.xml:6: Warning: Use fraction character ¼ (&#188;) instead of 1/4 ? [TypographyFractions]\n"
+                + "        <item quantity=\"few\">1/4 times</item>\n"
+                + "                             ^\n"
+                + "res/values/plurals_typography.xml:14: Warning: Avoid quoting with grave accents; use apostrophes or better yet directional quotes instead [TypographyQuotes]\n"
+                + "        <item>``second''</item>\n"
+                + "              ^\n"
+                + "0 errors, 3 warnings\n",
+
+                lintProject("res/values/plurals_typography.xml"));
+    }
+
     public void testSingleQuotesRange() {
         assertTrue(SINGLE_QUOTE.matcher("Foo: 'bar'").matches());
         assertTrue(SINGLE_QUOTE.matcher("'Foo': bar").matches());

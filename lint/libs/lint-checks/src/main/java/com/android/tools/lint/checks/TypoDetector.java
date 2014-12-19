@@ -19,7 +19,9 @@ package com.android.tools.lint.checks;
 import static com.android.SdkConstants.ATTR_LOCALE;
 import static com.android.SdkConstants.ATTR_TRANSLATABLE;
 import static com.android.SdkConstants.FD_RES_VALUES;
+import static com.android.SdkConstants.TAG_PLURALS;
 import static com.android.SdkConstants.TAG_STRING;
+import static com.android.SdkConstants.TAG_STRING_ARRAY;
 import static com.android.SdkConstants.TOOLS_URI;
 import static com.android.tools.lint.checks.TypoLookup.isLetter;
 import static com.google.common.base.Objects.equal;
@@ -48,6 +50,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -223,7 +226,11 @@ public class TypoDetector extends ResourceXmlDetector {
 
     @Override
     public Collection<String> getApplicableElements() {
-        return Collections.singletonList(TAG_STRING);
+        return Arrays.asList(
+                TAG_STRING,
+                TAG_STRING_ARRAY,
+                TAG_PLURALS
+        );
     }
 
     @Override
