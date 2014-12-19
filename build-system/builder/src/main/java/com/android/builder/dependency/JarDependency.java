@@ -24,6 +24,9 @@ import java.io.File;
 
 /**
  * Represents a Jar dependency. This could be the output of a Java project.
+ *
+ * This is not meant to include transitive dependencies, as there's no need to record this
+ * information when building.
  */
 public class JarDependency {
 
@@ -31,7 +34,7 @@ public class JarDependency {
     private final File mJarFile;
 
     private final boolean mCompiled;
-    private boolean mPackaged;
+    private final boolean mPackaged;
     private final boolean mProguarded;
 
     @Nullable
@@ -49,7 +52,6 @@ public class JarDependency {
         mProguarded = proguarded;
         mResolvedCoordinates = resolvedCoordinates;
     }
-
 
     public JarDependency(
             @NonNull File jarFile,
@@ -70,10 +72,6 @@ public class JarDependency {
 
     public boolean isPackaged() {
         return mPackaged;
-    }
-
-    public void setPackaged(boolean packaged) {
-        mPackaged = packaged;
     }
 
     public boolean isProguarded() {

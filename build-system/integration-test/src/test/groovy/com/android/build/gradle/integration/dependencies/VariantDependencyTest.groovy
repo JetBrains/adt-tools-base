@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.integration.application
+package com.android.build.gradle.integration.dependencies
 
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
