@@ -27,7 +27,7 @@ import org.junit.experimental.categories.Category
 /**
  * Assemble tests for ndkStandaloneSo.
  */
-class NdkStandaloneSo {
+class NdkStandaloneSoTest {
 
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()

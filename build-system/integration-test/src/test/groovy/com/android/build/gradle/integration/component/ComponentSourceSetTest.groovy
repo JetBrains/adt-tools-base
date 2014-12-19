@@ -34,7 +34,7 @@ import static org.junit.Assert.assertNotNull
 /**
  * Integration tests for different configuration of source sets.
  */
-class ComponentModelSourceSetIntegTest {
+class ComponentSourceSetTest {
 
     @ClassRule
     public static GradleTestProject project = GradleTestProject.builder().create();

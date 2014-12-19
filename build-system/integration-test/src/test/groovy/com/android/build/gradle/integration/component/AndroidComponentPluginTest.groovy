@@ -25,7 +25,7 @@ import org.junit.Test
 /**
  * Test AndroidComponentModelPlugin.
  */
-class AndroidComponentModelTest {
+class AndroidComponentPluginTest {
     @ClassRule
     public static GradleTestProject project = GradleTestProject.builder().create();
 

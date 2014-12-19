@@ -16,20 +16,22 @@
 
 package com.android.build.gradle.integration.component
 
+import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
+import org.junit.experimental.categories.Category
 
 /**
- * Assemble tests for ndkVariants.
+ * Assemble tests for ndkSanAngeles2.
  */
-class NdkVariants {
+class NdkSanAngeles2Test {
 
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("ndkVariants")
+            .fromSample("ndkSanAngeles2")
             .create()
 
     @BeforeClass
@@ -45,5 +47,11 @@ class NdkVariants {
     @Test
     void lint() {
         project.execute("lint")
+    }
+
+    @Test
+    @Category(DeviceTests.class)
+    void connectedCheck() {
+        project.execute("connectedCheck");
     }
 }

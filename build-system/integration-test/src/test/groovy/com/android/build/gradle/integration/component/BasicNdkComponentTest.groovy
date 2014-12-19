@@ -32,7 +32,7 @@ import static org.junit.Assert.assertNotNull
 /**
  * Basic integration test for native plugin.
  */
-class NdkPluginIntegTest {
+class BasicNdkComponentTest {
 
     @ClassRule
     public static GradleTestProject project = GradleTestProject.builder().create();

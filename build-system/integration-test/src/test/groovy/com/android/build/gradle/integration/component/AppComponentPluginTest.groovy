@@ -27,7 +27,7 @@ import org.junit.experimental.categories.Category
 /**
  * Basic integration test for AppComponentModelPlugin.
  */
-class AppComponentModelIntegTest {
+class AppComponentPluginTest {
 
     @Rule
     public GradleTestProject project = GradleTestProject.builder().create();

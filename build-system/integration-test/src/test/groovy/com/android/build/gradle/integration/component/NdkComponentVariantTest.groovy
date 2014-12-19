@@ -33,7 +33,7 @@ import static org.junit.Assert.assertNull
 /**
  * Integration test of the native plugin with multiple variants.
  */
-class NdkComponentModelVariantIntegTest {
+class NdkComponentVariantTest {
 
     @ClassRule
     public static GradleTestProject project = GradleTestProject.builder().create();

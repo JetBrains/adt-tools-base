@@ -27,7 +27,7 @@ import org.junit.experimental.categories.Category
 /**
  * Assemble tests for ndkJniLib2.
  */
-class NkdJniLib2Test {
+class NdkJniLib2Test {
 
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
