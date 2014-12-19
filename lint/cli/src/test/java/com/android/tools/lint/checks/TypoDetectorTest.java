@@ -166,4 +166,19 @@ public class TypoDetectorTest extends AbstractCheckTest {
 
             lintProject("res/values-nb/typos_locale.xml=>res/values/typos.xml"));
     }
+
+
+    public void testPluralsAndStringArrays() throws Exception {
+        // Regression test for https://code.google.com/p/android/issues/detail?id=82588
+        assertEquals(""
+                + "res/values/plurals_typography.xml:8: Warning: \"Andriod\" is a common misspelling; did you mean \"Android\" ? [Typos]\n"
+                + "        <item quantity=\"other\">Andriod</item>\n"
+                + "                               ^\n"
+                + "res/values/plurals_typography.xml:13: Warning: \"Seach\" is a common misspelling; did you mean \"Search\" ? [Typos]\n"
+                + "        <item>Seach</item>\n"
+                + "              ^\n"
+                + "0 errors, 2 warnings\n",
+
+                lintProject("res/values/plurals_typography.xml"));
+    }
 }
