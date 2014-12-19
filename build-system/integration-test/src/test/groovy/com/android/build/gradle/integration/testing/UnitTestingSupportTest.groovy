@@ -32,5 +32,17 @@ class UnitTestingSupportTest {
     @Test
     void testTask() {
         project.execute("test")
+
+        def testSuite = new XmlParser().parse(
+                project.file("build/test-results/TEST-com.android.tests.UnitTest.xml"))
+        def getTest = { name -> testSuite.testcase.find { it.@name == name } }
+
+        def ignored = ["thisIsIgnored"]
+        def passed = [ "referenceProductionCode", "mockFinalClass", "mockFinalMethod" ]
+
+        // TODO: Migrate to Truth.
+        assert testSuite.testcase.@name as Set == (ignored + passed) as Set
+        assert getTest(ignored.first()).skipped
+        passed.each { name -> assert getTest(name).children().isEmpty() }
     }
 }

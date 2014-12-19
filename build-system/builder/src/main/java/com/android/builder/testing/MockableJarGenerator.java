@@ -168,9 +168,7 @@ public class MockableJarGenerator {
             instructions.clear();
 
             if (returnDefaultValues) {
-                if (returnType.equals(Type.VOID_TYPE)) {
-                  return;
-                } else if (INTEGER_LIKE_TYPES.contains(returnType)) {
+                if (INTEGER_LIKE_TYPES.contains(returnType)) {
                     instructions.add(new InsnNode(Opcodes.ICONST_0));
                 } else if (returnType.equals(Type.LONG_TYPE)) {
                     instructions.add(new InsnNode(Opcodes.LCONST_0));

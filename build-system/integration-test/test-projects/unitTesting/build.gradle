@@ -4,7 +4,7 @@ buildscript { apply from: "../commonBuildScript.gradle", to: buildscript }
 apply plugin: 'com.android.application'
 
 repositories {
-    mavenCentral()
+    jcenter()
 }
 
 android {
@@ -15,5 +15,6 @@ android {
 
 dependencies {
     testCompile 'junit:junit:4.11'
+    testCompile "org.mockito:mockito-core:1.9.5"
 }
 
