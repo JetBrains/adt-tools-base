@@ -34,6 +34,8 @@ import com.android.build.gradle.internal.coverage.JacocoInstrumentTask
 import com.android.build.gradle.internal.coverage.JacocoPlugin
 import com.android.build.gradle.internal.coverage.JacocoReportTask
 import com.android.build.gradle.internal.dependency.DependencyChecker
+import com.android.build.gradle.internal.dependency.JarInfo
+import com.android.build.gradle.internal.dependency.LibInfo
 import com.android.build.gradle.internal.dependency.LibraryDependencyImpl
 import com.android.build.gradle.internal.dependency.ManifestDependencyImpl
 import com.android.build.gradle.internal.dependency.SymbolFileProviderImpl
@@ -207,6 +209,7 @@ import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_KEY_PASS
 import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_STORE_FILE
 import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_STORE_PASSWORD
 import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_STORE_TYPE
+import static com.android.sdklib.BuildToolInfo.PathId.AAPT
 import static com.android.sdklib.BuildToolInfo.PathId.ZIP_ALIGN
 import static java.io.File.separator
 /**
@@ -215,11 +218,13 @@ import static java.io.File.separator
 @CompileStatic
 public abstract class BasePlugin {
 
-    public final static String DIR_BUNDLES = "bundles";
+    protected final static boolean DEBUG_DEPENDENCY = false
+
+    public final static String DIR_BUNDLES = "bundles"
 
     private static final String GRADLE_MIN_VERSION = "2.2"
     public static final String GRADLE_TEST_VERSION = "2.2"
-    public static final Pattern GRADLE_ACCEPTABLE_VERSIONS = Pattern.compile("2\\.[2-9].*");
+    public static final Pattern GRADLE_ACCEPTABLE_VERSIONS = Pattern.compile("2\\.[2-9].*")
     private static final String GRADLE_VERSION_CHECK_OVERRIDE_PROPERTY =
             "com.android.build.gradle.overrideVersionCheck"
 
@@ -257,8 +262,8 @@ public abstract class BasePlugin {
     private ProductFlavorData<ProductFlavor> defaultConfigData
     /** @deprecated use syncIssue instead */
     @Deprecated
-    private final Collection<String> unresolvedDependencies = Sets.newHashSet();
-    private final Map<SyncIssueKey, SyncIssue> syncIssues = Maps.newHashMap();
+    private final Collection<String> unresolvedDependencies = Sets.newHashSet()
+    private final Map<SyncIssueKey, SyncIssue> syncIssues = Maps.newHashMap()
 
     protected DefaultAndroidSourceSet mainSourceSet
     protected DefaultAndroidSourceSet androidTestSourceSet
@@ -3319,46 +3324,46 @@ public abstract class BasePlugin {
     }
 
     public void resolveDependencies(VariantDependencies variantDeps) {
-        Map<ModuleVersionIdentifier, List<LibraryDependencyImpl>> modules = [:]
-        Map<ModuleVersionIdentifier, List<ResolvedArtifact>> artifacts = [:]
         Multimap<LibraryDependency, VariantDependencies> reverseMap = ArrayListMultimap.create()
 
-        resolveDependencyForConfig(variantDeps, modules, artifacts, reverseMap)
+        resolveDependencyForConfig(variantDeps, reverseMap)
 
-        modules.values().each { List list ->
+        processLibraries(variantDeps.getLibraries()) { LibraryDependencyImpl libDependency ->
+            Task task = handleLibrary(project, libDependency)
 
-            if (!list.isEmpty()) {
-                // get the first item only
-                LibraryDependencyImpl androidDependency = (LibraryDependencyImpl) list.get(0)
-                Task task = handleLibrary(project, androidDependency)
-
-                // Use the reverse map to find all the configurations that included this android
-                // library so that we can make sure they are built.
-                // TODO fix, this is not optimum as we bring in more dependencies than we should.
-                List<VariantDependencies> configDepList = reverseMap.get(androidDependency)
-                if (configDepList != null && !configDepList.isEmpty()) {
-                    for (VariantDependencies configDependencies: configDepList) {
-                        task.dependsOn configDependencies.compileConfiguration.buildDependencies
-                    }
+            // Use the reverse map to find all the configurations that included this android
+            // library so that we can make sure they are built.
+            // TODO fix, this is not optimum as we bring in more dependencies than we should.
+            List<VariantDependencies> configDepList = reverseMap.get(libDependency)
+            if (configDepList != null && !configDepList.isEmpty()) {
+                for (VariantDependencies configDependencies: configDepList) {
+                    task.dependsOn configDependencies.compileConfiguration.buildDependencies
                 }
-
-                // check if this library is created by a parent (this is based on the
-                // output file.
-                // TODO Fix this as it's fragile
-                /*
-                This is a somewhat better way but it doesn't work in some project with
-                weird setups...
-                Project parentProject = DependenciesImpl.getProject(library.getBundle(), projects)
-                if (parentProject != null) {
-                    String configName = library.getProjectVariant();
-                    if (configName == null) {
-                        configName = "default"
-                    }
-
-                    prepareLibraryTask.dependsOn parentProject.getPath() + ":assemble${configName.capitalize()}"
-                }
-    */
             }
+
+            // check if this library is created by a parent (this is based on the
+            // output file.
+            // TODO Fix this as it's fragile
+            /*
+            This is a somewhat better way but it doesn't work in some project with
+            weird setups...
+            Project parentProject = DependenciesImpl.getProject(library.getBundle(), projects)
+            if (parentProject != null) {
+                String configName = library.getProjectVariant();
+                if (configName == null) {
+                    configName = "default"
+                }
+
+                prepareLibraryTask.dependsOn parentProject.getPath() + ":assemble${configName.capitalize()}"
+            }
+*/
+        }
+    }
+
+    private void processLibraries(Collection<LibraryDependencyImpl> libraries, Closure closure) {
+        for (LibraryDependencyImpl lib : libraries) {
+            closure.call(lib)
+            processLibraries(lib.getDependencies() as Collection<LibraryDependencyImpl>, closure)
         }
     }
 
@@ -3393,13 +3398,16 @@ public abstract class BasePlugin {
     }
 
     private void resolveDependencyForConfig(
-            VariantDependencies variantDeps,
-            Map<ModuleVersionIdentifier, List<LibraryDependencyImpl>> modules,
-            Map<ModuleVersionIdentifier, List<ResolvedArtifact>> artifacts,
-            Multimap<LibraryDependency, VariantDependencies> reverseMap) {
+            @NonNull VariantDependencies variantDeps,
+            @NonNull Multimap<LibraryDependency, VariantDependencies> reverseMap) {
 
         Configuration compileClasspath = variantDeps.compileConfiguration
         Configuration packageClasspath = variantDeps.packageConfiguration
+
+        if (DEBUG_DEPENDENCY) {
+            println ">>>>>>>>>>"
+            println "${project.name}:${compileClasspath.name}/${packageClasspath.name}"
+        }
 
         // TODO - shouldn't need to do this - fix this in Gradle
         ensureConfigured(compileClasspath)
@@ -3410,60 +3418,176 @@ public abstract class BasePlugin {
         Set<String> currentUnresolvedDependencies = Sets.newHashSet()
 
         // TODO - defer downloading until required -- This is hard to do as we need the info to build the variant config.
+        Map<ModuleVersionIdentifier, List<ResolvedArtifact>> artifacts = Maps.newHashMap()
         collectArtifacts(compileClasspath, artifacts)
         collectArtifacts(packageClasspath, artifacts)
 
-        List<LibraryDependency> bundles = []
-        Map<File, JarDependency> jars = [:]
+        // --- Handle the external/module dependencies ---
+        // keep a map of modules already processed so that we don't go through sections of the
+        // graph that have been seen elsewhere.
+        Map<ModuleVersionIdentifier, List<LibInfo>> foundLibraries = Maps.newHashMap()
+        Map<ModuleVersionIdentifier, List<JarInfo>> foundJars = Maps.newHashMap()
+
+        // first get the compile dependencies. Note that in both case the libraries and the
+        // jars are a graph. The list only contains the first level of dependencies, and
+        // they themselves contain transitive dependencies (libraries can contain both, jars only
+        // contains jars)
+        List<LibInfo> compiledAndroidLibraries = Lists.newArrayList()
+        List<JarInfo> compiledJars = Lists.newArrayList()
 
         def dependencies = compileClasspath.incoming.resolutionResult.root.dependencies
         dependencies.each { dep ->
             if (dep instanceof ResolvedDependencyResult) {
-                addDependency((dep as ResolvedDependencyResult).selected, variantDeps, bundles, jars, modules, artifacts, reverseMap)
+                addDependency(
+                        (dep as ResolvedDependencyResult).selected,
+                        variantDeps,
+                        compiledAndroidLibraries,
+                        compiledJars,
+                        foundLibraries,
+                        foundJars,
+                        artifacts,
+                        reverseMap,
+                        0)
             } else if (dep instanceof UnresolvedDependencyResult) {
-                def attempted = (dep as UnresolvedDependencyResult).attempted;
+                def attempted = (dep as UnresolvedDependencyResult).attempted
                 if (attempted != null) {
                     currentUnresolvedDependencies.add(attempted.toString())
                 }
             }
         }
 
+        // then the packaged ones.
+        List<LibInfo> packagedAndroidLibraries = []
+        List<JarInfo> packagedJars = []
+        dependencies = packageClasspath.incoming.resolutionResult.root.dependencies
+        dependencies.each { dep ->
+            if (dep instanceof ResolvedDependencyResult) {
+                addDependency(
+                        (dep as ResolvedDependencyResult).selected,
+                        variantDeps,
+                        packagedAndroidLibraries,
+                        packagedJars,
+                        foundLibraries,
+                        foundJars,
+                        artifacts,
+                        reverseMap,
+                        0)
+            } else if (dep instanceof UnresolvedDependencyResult) {
+                def attempted = (dep as UnresolvedDependencyResult).attempted
+                if (attempted != null) {
+                    currentUnresolvedDependencies.add(attempted.toString())
+                }
+            }
+        }
+
+        // now look through both results.
+        // 1. All Android libraries must be in both lists.
+        // since we reuse the same instance of LibInfo for identical modules
+        // we can simply run through each list and look for libs that are in only one.
+        // While the list of library is actually a graph, it's fine to look only at the
+        // top level ones since they transitive ones are in the same scope as the direct libraries.
+        List<LibInfo> copyOfPackagedLibs = Lists.newArrayList(packagedAndroidLibraries)
+
+        for (LibraryDependencyImpl lib : compiledAndroidLibraries) {
+            if (!copyOfPackagedLibs.contains(lib)) {
+                handleSyncError(
+                        lib.resolvedCoordinates.toString(),
+                        SyncIssue.TYPE_NON_JAR_PROVIDED_DEP,
+                        "Project ${project.name}: provided dependencies can only be jars. " +
+                                "${lib.resolvedCoordinates} is an Android Library.")
+             } else {
+                copyOfPackagedLibs.remove(lib);
+            }
+        }
+        // at this stage copyOfPackagedLibs should be empty, if not, error.
+        for (LibraryDependencyImpl lib : copyOfPackagedLibs) {
+            handleSyncError(
+                    lib.resolvedCoordinates.toString(),
+                    SyncIssue.TYPE_NON_JAR_PACKAGE_DEP,
+                    "Project ${project.name}: apk dependencies can only be jars. " +
+                            "${lib.resolvedCoordinates} is an Android Library.")
+        }
+
+        // 2. merge jar dependencies with a single list where items have packaged/compiled properties.
+        // since we reuse the same instance of a JarInfo for identical modules, we can use an
+        // Identity set (ie both compiledJars and packagedJars will contain the same instance
+        // if it's both compiled and packaged)
+        Set<JarInfo> jarInfoSet = Sets.newIdentityHashSet()
+
+        // go through the graphs of dependencies (jars and libs) and gather all the transitive
+        // jar dependencies.
+        // At the same this we set the compiled/packaged properties.
+        gatherJarDependencies(jarInfoSet, compiledJars, true /*compiled*/, false /*packaged*/)
+        gatherJarDependencies(jarInfoSet, packagedJars, false /*compiled*/, true /*packaged*/)
+        // at this step, we know that libraries have been checked and libraries can only
+        // be in both compiled and packaged scope.
+        gatherJarDependenciesFromLibraries(jarInfoSet, compiledAndroidLibraries, true, true)
+
+        // and convert them to the right class.
+        List<JarDependency> jars = Lists.newArrayListWithCapacity(jarInfoSet.size())
+        for (JarInfo jarInfo : jarInfoSet) {
+            jars.add(jarInfo.createJarDependency())
+        }
+
+        // --- Handle the local jar dependencies ---
+
         // also need to process local jar files, as they are not processed by the
         // resolvedConfiguration result. This only includes the local jar files for this project.
-        Set<File> localCompileJars = []
-        Set<File> localPackageJars = []
-
+        Set<File> localCompiledJars = []
         compileClasspath.allDependencies.each { dep ->
             if (dep instanceof SelfResolvingDependency &&
                     !(dep instanceof ProjectDependency)) {
                 Set<File> files = ((SelfResolvingDependency) dep).resolve()
                 for (File f : files) {
-                    localCompileJars.add(f)
+                    if (DEBUG_DEPENDENCY) println "LOCAL compile: " + f.getName()
+                    // only accept local jar, no other types.
+                    if (!f.getName().toLowerCase().endsWith(DOT_JAR)) {
+                        handleSyncError(
+                                f.absolutePath,
+                                SyncIssue.TYPE_NON_JAR_LOCAL_DEP,
+                                "Project ${project.name}: Only Jar-type local " +
+                                "dependencies are supported. Cannot handle: ${f.absolutePath}")
+                    } else {
+                        localCompiledJars.add(f)
+                    }
                 }
             }
         }
 
+        Set<File> localPackagedJars = []
         packageClasspath.allDependencies.each { dep ->
             if (dep instanceof SelfResolvingDependency &&
                     !(dep instanceof ProjectDependency)) {
                 Set<File> files = ((SelfResolvingDependency) dep).resolve()
                 for (File f : files) {
-                    localPackageJars.add(f)
+                    if (DEBUG_DEPENDENCY) println "LOCAL package: " + f.getName()
+                    // only accept local jar, no other types.
+                    if (!f.getName().toLowerCase().endsWith(DOT_JAR)) {
+                        handleSyncError(
+                                f.absolutePath,
+                                SyncIssue.TYPE_NON_JAR_LOCAL_DEP,
+                                "Project ${project.name}: Only Jar-type local " +
+                                "dependencies are supported. Cannot handle: ${f.absolutePath}")
+                    } else {
+                        localPackagedJars.add(f)
+                    }
                 }
             }
         }
 
+        // loop through both the compiled and packaged jar to compute the list
+        // of jars that are: compile-only, package-only, or both.
         Map<File, JarDependency> localJars = Maps.newHashMap()
-        for (File file : localCompileJars) {
+        for (File file : localCompiledJars) {
             localJars.put(file, new JarDependency(
                     file,
                     true /*compiled*/,
-                    localPackageJars.contains(file) /*packaged*/,
+                    localPackagedJars.contains(file) /*packaged*/,
                     null /*resolvedCoordinates*/))
         }
 
-        for (File file : localPackageJars) {
-            if (!localCompileJars.contains(file)) {
+        for (File file : localPackagedJars) {
+            if (!localCompiledJars.contains(file)) {
                 localJars.put(file, new JarDependency(
                         file,
                         false /*compiled*/,
@@ -3472,60 +3596,127 @@ public abstract class BasePlugin {
             }
         }
 
-        if (!compileClasspath.resolvedConfiguration.hasError()) {
-            // handle package dependencies. We'll refuse aar libs only in package but not
-            // in compile and remove all dependencies already in compile to get package-only jar
-            // files.
-
-            Set<File> compileFiles = compileClasspath.files
-            Set<File> packageFiles = packageClasspath.files
-
-            for (File f : packageFiles) {
-                if (compileFiles.contains(f)) {
-                    // if also in compile
-                    continue
-                }
-
-                if (!f.getName().toLowerCase().endsWith(DOT_JAR)) {
-                    String msg = "Package-only dependency '" +
-                            f.absolutePath +
-                            "' is not supported in project " + project.name
-                    if (!buildModelForIde) {
-                        throw new RuntimeException(msg)
-                    } else {
-                        SyncIssue syncIssue = new SyncIssueImpl(
-                                SyncIssue.TYPE_NON_JAR_PACKAGE_DEP,
-                                SyncIssue.SEVERITY_ERROR,
-                                f.absolutePath,
-                                msg)
-                        syncIssues.put(SyncIssueKey.from(syncIssue), syncIssue)
-                    }
-                }
-            }
-        } else if (buildModelForIde && !currentUnresolvedDependencies.isEmpty()) {
+        if (buildModelForIde &&
+                compileClasspath.resolvedConfiguration.hasError() &&
+                !currentUnresolvedDependencies.isEmpty()) {
             unresolvedDependencies.addAll(currentUnresolvedDependencies)
 
-            for (String dep : currentUnresolvedDependencies) {
-                SyncIssue issue = getUnresolvedDependencyIssue(dep)
-                syncIssues.put(SyncIssueKey.from(issue), issue)
+            for (String dependency : currentUnresolvedDependencies) {
+                handleSyncError(
+                        dependency,
+                        SyncIssue.TYPE_UNRESOLVED_DEPENDENCY,
+                        "Unable to resolve dependency '${dependency}'")
             }
         }
 
-        variantDeps.addLibraries(bundles as List<LibraryDependencyImpl>)
-        variantDeps.addJars(jars.values())
+        // convert the LibInfo in LibraryDependencyImpl and update the reverseMap
+        // with the converted keys
+        List<LibraryDependencyImpl> libList = convertLibraryInfoIntoDependency(
+                compiledAndroidLibraries, reverseMap)
+
+        variantDeps.addLibraries(libList)
+        variantDeps.addJars(jars)
         variantDeps.addLocalJars(localJars.values())
 
-        // TODO - filter bundles out of source set classpath
-
         configureBuild(variantDeps)
+
+        if (DEBUG_DEPENDENCY) {
+            println "${project.name}:${compileClasspath.name}/${packageClasspath.name}"
+            println "<<<<<<<<<<"
+        }
+
     }
 
-    private static SyncIssue getUnresolvedDependencyIssue(@NonNull String dependency) {
-        return new SyncIssueImpl(
-                SyncIssue.TYPE_UNRESOLVED_DEPENDENCY,
-                SyncIssue.SEVERITY_ERROR,
-                dependency,
-                "Unable to resolve dependency '${dependency}'")
+    private static List<LibraryDependencyImpl> convertLibraryInfoIntoDependency(
+            @NonNull List<LibInfo> libInfos,
+            @NonNull Multimap<LibraryDependency, VariantDependencies> reverseMap) {
+        List<LibraryDependencyImpl> list = Lists.newArrayListWithCapacity(libInfos.size())
+
+        // since the LibInfos is a graph and the previous "foundLibraries" map ensure we reuse
+        // instance where applicable, we'll create a map to keep track of what we have already
+        // converted.
+        Map<LibInfo, LibraryDependencyImpl> convertedMap = Maps.newIdentityHashMap()
+
+        for (LibInfo libInfo : libInfos) {
+            list.add(convertLibInfo(libInfo, reverseMap, convertedMap))
+        }
+
+        return list
+    }
+
+    private static LibraryDependencyImpl convertLibInfo(
+            @NonNull LibInfo libInfo,
+            @NonNull Multimap<LibraryDependency, VariantDependencies> reverseMap,
+            @NonNull Map<LibInfo, LibraryDependencyImpl> convertedMap) {
+        LibraryDependencyImpl convertedLib = convertedMap.get(libInfo)
+        if (convertedLib == null) {
+            // first, convert the children.
+            List<LibInfo> children = libInfo.getDependencies() as List<LibInfo>
+            List<LibraryDependency> convertedChildren = Lists.newArrayListWithCapacity(children.size())
+
+            for (LibInfo child : children) {
+                convertedChildren.add(convertLibInfo(child, reverseMap, convertedMap))
+            }
+
+            // now convert the libInfo
+            convertedLib = new LibraryDependencyImpl(
+                    libInfo.getBundle(),
+                    libInfo.getFolder(),
+                    convertedChildren,
+                    libInfo.getName(),
+                    libInfo.getProjectVariant(),
+                    libInfo.getRequestedCoordinates(),
+                    libInfo.getResolvedCoordinates())
+
+            // add it to the map
+            convertedMap.put(libInfo, convertedLib)
+
+            // and update the reversemap
+            // get the items associated with the libInfo. Put in a fresh list as the returned
+            // collection is backed by the content of the map.
+            Collection<VariantDependencies> values = Lists.newArrayList(reverseMap.get(libInfo))
+            reverseMap.removeAll(libInfo)
+            reverseMap.putAll(convertedLib, values)
+        }
+
+        return convertedLib
+    }
+
+    private void gatherJarDependencies(
+            Set<JarInfo> outJarInfos,
+            Collection<JarInfo> inJarInfos,
+            boolean compiled,
+            boolean packaged) {
+        for (JarInfo jarInfo : inJarInfos) {
+            if (!outJarInfos.contains(jarInfo)) {
+                outJarInfos.add(jarInfo)
+            }
+
+            if (compiled) {
+                jarInfo.setCompiled(true)
+            }
+            if (packaged) {
+                jarInfo.setPackaged(true)
+            }
+
+            gatherJarDependencies(outJarInfos, jarInfo.getDependencies(), compiled, packaged)
+        }
+    }
+
+    private void gatherJarDependenciesFromLibraries(
+            Set<JarInfo> outJarInfos,
+            Collection<LibInfo> inLibraryDependencies,
+            boolean compiled,
+            boolean packaged) {
+        for (LibInfo libInfo : inLibraryDependencies) {
+            gatherJarDependencies(outJarInfos, libInfo.getJarDependencies(), compiled, packaged)
+
+            gatherJarDependenciesFromLibraries(
+                    outJarInfos,
+                    libInfo.getDependencies() as Collection<LibInfo>,
+                    compiled,
+                    packaged)
+        }
     }
 
     protected void ensureConfigured(Configuration config) {
@@ -3583,13 +3774,24 @@ public abstract class BasePlugin {
         return flagValue
     }
 
-    def addDependency(ResolvedComponentResult moduleVersion,
-                      VariantDependencies configDependencies,
-                      Collection<LibraryDependency> bundles,
-                      Map<File, JarDependency> jars,
-                      Map<ModuleVersionIdentifier, List<LibraryDependencyImpl>> modules,
-                      Map<ModuleVersionIdentifier, List<ResolvedArtifact>> artifacts,
-                      Multimap<LibraryDependency, VariantDependencies> reverseMap) {
+    private static void printIndent(int indent, String message) {
+        for (int i = 0 ; i < indent ; i++) {
+            print "\t"
+        }
+
+        println message
+    }
+
+    private void addDependency(
+            ResolvedComponentResult moduleVersion,
+            VariantDependencies configDependencies,
+            Collection<LibInfo> outLibraries,
+            List<JarInfo> outJars,
+            Map<ModuleVersionIdentifier, List<LibInfo>> alreadyFoundLibraries,
+            Map<ModuleVersionIdentifier, List<JarInfo>> alreadyFoundJars,
+            Map<ModuleVersionIdentifier, List<ResolvedArtifact>> artifacts,
+            Multimap<LibraryDependency, VariantDependencies> reverseMap,
+            int indent) {
 
         ModuleVersionIdentifier id = moduleVersion.moduleVersion
         if (configDependencies.checker.excluded(id)) {
@@ -3600,26 +3802,71 @@ public abstract class BasePlugin {
             configDependencies.annotationsPresent = true
         }
 
-        List<LibraryDependencyImpl> bundlesForThisModule = modules.get(id)
-        if (bundlesForThisModule == null) {
-            bundlesForThisModule = Lists.newArrayList()
-            modules.put(id, bundlesForThisModule)
+        List<LibInfo> libsForThisModule = alreadyFoundLibraries.get(id)
+        List<JarInfo> jarsForThisModule = alreadyFoundJars.get(id)
 
-            List<LibraryDependency> nestedBundles = Lists.newArrayList()
+        if (libsForThisModule != null) {
+            if (DEBUG_DEPENDENCY) {
+                printIndent indent, "FOUND LIB: " + id.name
+            }
+            outLibraries.addAll(libsForThisModule)
+
+            for (LibInfo lib : libsForThisModule) {
+                reverseMap.put(lib, configDependencies)
+            }
+
+        } else if (jarsForThisModule != null) {
+            if (DEBUG_DEPENDENCY) {
+                printIndent indent, "FOUND JAR: " + id.name
+            }
+            outJars.addAll(jarsForThisModule)
+        }
+        else {
+            if (DEBUG_DEPENDENCY) {
+                printIndent indent, "NOT FOUND: " + id.name
+            }
+            // new module! Might be a jar or a library
+
+            // get the nested components first.
+            List<LibInfo> nestedLibraries = Lists.newArrayList()
+            List<JarInfo> nestedJars = Lists.newArrayList()
 
             Set<ResolvedDependencyResult> dependencies =
                     moduleVersion.dependencies as Set<ResolvedDependencyResult>
             dependencies.each { dep ->
                 if (dep instanceof ResolvedDependencyResult) {
-                    addDependency(dep.selected, configDependencies, nestedBundles,
-                            jars, modules, artifacts, reverseMap)
+                    addDependency(
+                            dep.selected,
+                            configDependencies,
+                            nestedLibraries,
+                            nestedJars,
+                            alreadyFoundLibraries,
+                            alreadyFoundJars,
+                            artifacts,
+                            reverseMap,
+                            indent+1)
                 }
             }
 
+            if (DEBUG_DEPENDENCY) {
+                printIndent indent, "BACK2: " + id.name
+                printIndent indent, "NESTED LIBS: " + nestedLibraries.size();
+                printIndent indent, "NESTED JARS: " + nestedJars.size();
+            }
+
+            // now loop on all the artifact for this modules.
             List<ResolvedArtifact> moduleArtifacts = artifacts.get(id)
 
             moduleArtifacts?.each { artifact ->
                 if (artifact.type == EXT_LIB_ARCHIVE) {
+                    if (DEBUG_DEPENDENCY) {
+                        printIndent indent, "TYPE: AAR"
+                    }
+                    if (libsForThisModule == null) {
+                        libsForThisModule = Lists.newArrayList()
+                        alreadyFoundLibraries.put(id, libsForThisModule)
+                    }
+
                     String path = "${normalize(logger, id, id.group)}" +
                             "/${normalize(logger, id, id.name)}" +
                             "/${normalize(logger, id, id.version)}"
@@ -3629,74 +3876,91 @@ public abstract class BasePlugin {
                         name += ":$artifact.classifier"
                     }
                     //def explodedDir = project.file("$project.rootProject.buildDir/${FD_INTERMEDIATES}/exploded-aar/$path")
-                    def explodedDir = project.file("$project.buildDir/${FD_INTERMEDIATES}/exploded-aar/$path")
-                    LibraryDependencyImpl adep = new LibraryDependencyImpl(
-                            artifact.file, explodedDir, nestedBundles, name, artifact.classifier,
-                            null,
+                    File explodedDir = project.file(
+                            "$project.buildDir/${FD_INTERMEDIATES}/exploded-aar/$path")
+                    LibInfo libInfo = new LibInfo(
+                            artifact.file,
+                            explodedDir,
+                            nestedLibraries as List<LibraryDependency>,
+                            nestedJars,
+                            name,
+                            artifact.classifier,
+                            null /*requestedCoordinates*/,
                             new MavenCoordinatesImpl(artifact))
-                    bundlesForThisModule << adep
-                    reverseMap.put(adep, configDependencies)
+
+                    libsForThisModule.add(libInfo)
+                    outLibraries.add(libInfo)
+                    reverseMap.put(libInfo, configDependencies)
+
                 } else if (artifact.type == EXT_JAR) {
-                    jars.put(artifact.file,
-                            new JarDependency(
-                                    artifact.file,
-                                    true /*compiled*/,
-                                    false /*packaged*/,
-                                    true /*proguarded*/,
-                                    new MavenCoordinatesImpl(artifact)))
+                    if (DEBUG_DEPENDENCY) {
+                        printIndent indent, "TYPE: JAR"
+                    }
+                    // check this jar does not have a dependency on an library, as this would not work.
+                    if (!nestedLibraries.isEmpty()) {
+                        handleSyncError(
+                                new MavenCoordinatesImpl(artifact).toString(),
+                                SyncIssue.TYPE_JAR_DEPEND_ON_AAR,
+                                "Module version $id depends on libraries but is a jar");
+                    }
+
+                    if (jarsForThisModule == null) {
+                        jarsForThisModule = Lists.newArrayList()
+                        alreadyFoundJars.put(id, jarsForThisModule)
+                    }
+
+                    JarInfo jarInfo = new JarInfo(
+                            artifact.file,
+                            new MavenCoordinatesImpl(artifact),
+                            nestedJars)
+
+                    jarsForThisModule.add(jarInfo);
+                    outJars.add(jarInfo)
+
                 } else if (artifact.type == EXT_ANDROID_PACKAGE) {
                     String name = "$id.group:$id.name:$id.version"
                     if (artifact.classifier != null) {
                         name += ":$artifact.classifier"
                     }
 
-                    String msg = "Dependency ${name} on project ${project.name} resolves to an APK" +
+                    handleSyncError(
+                            name,
+                            SyncIssue.TYPE_DEPENDENCY_IS_APK,
+                            "Dependency ${name} on project ${project.name} resolves to an APK" +
                             " archive which is not supported" +
-                            " as a compilation dependency. File: " +
-                            artifact.file
-
-                    if (!buildModelForIde) {
-                        throw new GradleException(msg)
-                    } else {
-                        SyncIssue syncIssue = new SyncIssueImpl(
-                                SyncIssue.TYPE_DEPENDENCY_IS_APK,
-                                SyncIssue.SEVERITY_ERROR,
-                                name,
-                                msg)
-                        syncIssues.put(SyncIssueKey.from(syncIssue), syncIssue)
-                    }
+                            " as a compilation dependency. File: ${artifact.file}")
                 } else if (artifact.type == "apklib") {
                     String name = "$id.group:$id.name:$id.version"
                     if (artifact.classifier != null) {
                         name += ":$artifact.classifier"
                     }
 
-                    String msg = "Packaging for dependency ${name} is 'apklib' and is not supported. " +
-                            "Only 'aar' libraries are supported."
-
-                    if (!buildModelForIde) {
-                        throw new GradleException(msg)
-                    } else {
-                        SyncIssue syncIssue = new SyncIssueImpl(
-                                SyncIssue.TYPE_DEPENDENCY_IS_APKLIB,
-                                SyncIssue.SEVERITY_ERROR,
-                                name,
-                                msg)
-                        syncIssues.put(SyncIssueKey.from(syncIssue), syncIssue)
-                    }
+                    handleSyncError(
+                            name,
+                            SyncIssue.TYPE_DEPENDENCY_IS_APKLIB,
+                            "Packaging for dependency ${name} is 'apklib' and is not supported. " +
+                            "Only 'aar' libraries are supported.")
                 }
             }
 
-            if (bundlesForThisModule.empty && !nestedBundles.empty) {
-                throw new GradleException("Module version $id depends on libraries but is not a library itself")
+            if (DEBUG_DEPENDENCY) {
+                printIndent indent, "DONE: " + id.name
             }
-        } else {
-            for (adep in bundlesForThisModule) {
-                reverseMap.put(adep as LibraryDependency, configDependencies)
-            }
-        }
 
-        bundles.addAll(bundlesForThisModule)
+        }
+    }
+
+    protected void handleSyncError(String data, int type, String msg) {
+        if (!buildModelForIde) {
+            throw new GradleException(msg)
+        } else {
+            SyncIssue syncIssue = new SyncIssueImpl(
+                    type,
+                    SyncIssue.SEVERITY_ERROR,
+                    data,
+                    msg)
+            syncIssues.put(SyncIssueKey.from(syncIssue), syncIssue)
+        }
     }
 
     /**

@@ -203,7 +203,7 @@ public class GradleTestProject implements TestRule {
         outDir = rootProject.outDir;
 
         testDir = new File(rootProject.testDir, subProject);
-        assertTrue(testDir.isDirectory());
+        assertTrue("No subproject dir at " + testDir.toString(), testDir.isDirectory());
 
         buildFile = new File(testDir, "build.gradle");
         sourceDir = new File(testDir, "src");

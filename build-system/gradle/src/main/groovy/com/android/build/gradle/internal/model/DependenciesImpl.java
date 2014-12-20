@@ -93,16 +93,20 @@ public class DependenciesImpl implements Dependencies, Serializable {
         projects = Lists.newArrayList();
 
         for (JarDependency jarDep : jarDeps) {
-            boolean customArtifact = jarDep.getResolvedCoordinates() != null &&
-                    jarDep.getResolvedCoordinates().getClassifier() != null;
+            // don't include package-only dependencies
+            if (jarDep.isCompiled()) {
+                boolean customArtifact = jarDep.getResolvedCoordinates() != null &&
+                        jarDep.getResolvedCoordinates().getClassifier() != null;
 
-            File jarFile = jarDep.getJarFile();
-            Project projectMatch;
-            if (!customArtifact && (projectMatch = getProject(jarFile, gradleProjects)) != null) {
-                projects.add(projectMatch.getPath());
-            } else {
-                javaLibraries.add(
-                        new JavaLibraryImpl(jarFile, null, jarDep.getResolvedCoordinates()));
+                File jarFile = jarDep.getJarFile();
+                Project projectMatch;
+                if (!customArtifact &&
+                        (projectMatch = getProject(jarFile, gradleProjects)) != null) {
+                    projects.add(projectMatch.getPath());
+                } else {
+                    javaLibraries.add(
+                            new JavaLibraryImpl(jarFile, null, jarDep.getResolvedCoordinates()));
+                }
             }
         }
 
@@ -164,12 +168,12 @@ public class DependenciesImpl implements Dependencies, Serializable {
 
     @NonNull
     private static AndroidLibrary getAndroidLibrary(
-            @NonNull LibraryDependency liblibraryDependency,
+            @NonNull LibraryDependency libraryDependency,
             @NonNull Set<Project> gradleProjects) {
-        File bundle = liblibraryDependency.getBundle();
+        File bundle = libraryDependency.getBundle();
         Project projectMatch = getProject(bundle, gradleProjects);
 
-        List<LibraryDependency> deps = liblibraryDependency.getDependencies();
+        List<LibraryDependency> deps = libraryDependency.getDependencies();
         List<AndroidLibrary> clonedDeps = Lists.newArrayListWithCapacity(deps.size());
         for (LibraryDependency child : deps) {
             AndroidLibrary clonedLib = getAndroidLibrary(child, gradleProjects);
@@ -177,16 +181,16 @@ public class DependenciesImpl implements Dependencies, Serializable {
         }
 
         // compute local jar even if the bundle isn't exploded.
-        Collection<File> localJarOverride = findLocalJar(liblibraryDependency);
+        Collection<File> localJarOverride = findLocalJar(libraryDependency);
 
         return new AndroidLibraryImpl(
-                liblibraryDependency,
+                libraryDependency,
                 clonedDeps,
                 localJarOverride,
                 projectMatch != null ? projectMatch.getPath() : null,
-                liblibraryDependency.getProjectVariant(),
-                liblibraryDependency.getRequestedCoordinates(),
-                liblibraryDependency.getResolvedCoordinates());
+                libraryDependency.getProjectVariant(),
+                libraryDependency.getRequestedCoordinates(),
+                libraryDependency.getResolvedCoordinates());
     }
 
     /**
