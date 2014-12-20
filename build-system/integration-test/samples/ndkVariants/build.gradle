@@ -20,7 +20,7 @@ buildscript {
 apply plugin: 'com.android.model.application'
 
 model {
-    android {
+    androidConfig {
         compileSdkVersion 19
         buildToolsVersion = rootProject.ext.buildToolsVersion
 
@@ -34,7 +34,7 @@ model {
         stl "stlport_static"
     }
 
-    androidProductFlavors {
+    android.productFlavors {
         free
         premium
     }

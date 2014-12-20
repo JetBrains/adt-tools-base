@@ -46,19 +46,19 @@ class NdkComponentVariantTest {
 apply plugin: 'com.android.model.application'
 
 model {
-    android {
+    androidConfig {
         compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
         buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
     }
     androidNdk {
         moduleName "hello-jni"
     }
-    androidBuildTypes {
+    android.buildTypes {
         debug {
             jniDebuggable true
         }
     }
-    androidProductFlavors {
+    android.productFlavors {
         x86 {
             ndk {
                 abiFilter "x86"

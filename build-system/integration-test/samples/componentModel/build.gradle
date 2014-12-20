@@ -41,7 +41,7 @@ model {
         compileSdkVersion 19
         buildToolsVersion '19.1.0'
     }
-    androidProductFlavors {
+    android.productFlavors {
         f1 {}
         f2 {}
     }

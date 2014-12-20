@@ -20,7 +20,7 @@ buildscript {
 apply plugin: 'com.android.model.application'
 
 model {
-    android {
+    androidConfig {
         compileSdkVersion 19
         buildToolsVersion = rootProject.ext.buildToolsVersion
 
@@ -38,7 +38,7 @@ model {
             variant.mergedFlavor.versionCode = flavorVersion * 1000000 + defaultConfig.versionCode
         }
     }
-    androidBuildTypes {
+    android.buildTypes {
         debug {
             debuggable true
         }
@@ -53,7 +53,7 @@ model {
         toolchain "clang"
     }
 
-    androidProductFlavors {
+    android.productFlavors {
         x86 {
             ndk {
                 abiFilter "x86"
