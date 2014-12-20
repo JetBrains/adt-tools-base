@@ -3832,11 +3832,11 @@ public abstract class BasePlugin {
             List<LibInfo> nestedLibraries = Lists.newArrayList()
             List<JarInfo> nestedJars = Lists.newArrayList()
 
-            Set<DependencyResult> dependencies = moduleVersion.dependencies
+            Set<? extends DependencyResult> dependencies = moduleVersion.dependencies
             dependencies.each { dep ->
                 if (dep instanceof ResolvedDependencyResult) {
                     addDependency(
-                            dep.selected,
+                            (dep as ResolvedDependencyResult).selected,
                             configDependencies,
                             nestedLibraries,
                             nestedJars,
