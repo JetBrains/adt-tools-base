@@ -67,6 +67,6 @@ dependencies {
         assertNotNull(issue)
         assertEquals(SyncIssue.SEVERITY_ERROR, issue.getSeverity())
         assertEquals(SyncIssue.TYPE_NON_JAR_PACKAGE_DEP, issue.getType())
-        assertEquals("project:library:aar:unspecified", issue.getData())
+        assertEquals("projectWithModules:library:aar:unspecified", issue.getData())
     }
 }
