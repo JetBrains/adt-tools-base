@@ -155,6 +155,7 @@ import org.gradle.api.artifacts.ProjectDependency
 import org.gradle.api.artifacts.ResolvedArtifact
 import org.gradle.api.artifacts.SelfResolvingDependency
 import org.gradle.api.artifacts.repositories.MavenArtifactRepository
+import org.gradle.api.artifacts.result.DependencyResult
 import org.gradle.api.artifacts.result.ResolvedComponentResult
 import org.gradle.api.artifacts.result.ResolvedDependencyResult
 import org.gradle.api.artifacts.result.UnresolvedDependencyResult
@@ -209,9 +210,9 @@ import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_KEY_PASS
 import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_STORE_FILE
 import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_STORE_PASSWORD
 import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_STORE_TYPE
-import static com.android.sdklib.BuildToolInfo.PathId.AAPT
 import static com.android.sdklib.BuildToolInfo.PathId.ZIP_ALIGN
 import static java.io.File.separator
+
 /**
  * Base class for all Android plugins
  */
@@ -3831,8 +3832,7 @@ public abstract class BasePlugin {
             List<LibInfo> nestedLibraries = Lists.newArrayList()
             List<JarInfo> nestedJars = Lists.newArrayList()
 
-            Set<ResolvedDependencyResult> dependencies =
-                    moduleVersion.dependencies as Set<ResolvedDependencyResult>
+            Set<DependencyResult> dependencies = moduleVersion.dependencies
             dependencies.each { dep ->
                 if (dep instanceof ResolvedDependencyResult) {
                     addDependency(
