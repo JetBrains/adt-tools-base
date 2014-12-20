@@ -77,7 +77,7 @@ public class ControlFlowGraph {
         final InsnList instructions = method.instructions;
         graph.mNodeMap = Maps.newHashMapWithExpectedSize(instructions.size());
 
-        // Create a flow control graph using ASM4's analyzer. According to the ASM 4 guide
+        // Create a flow control graph using ASM5's analyzer. According to the ASM 4 guide
         // (download.forge.objectweb.org/asm/asm4-guide.pdf) there are faster ways to construct
         // it, but those require a lot more code.
         Analyzer analyzer = new Analyzer(new BasicInterpreter()) {
