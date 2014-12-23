@@ -21,6 +21,7 @@ import static com.android.tools.lint.detector.api.TextFormat.TEXT;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.tools.lint.client.api.IssueRegistry;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Position;
@@ -237,7 +238,7 @@ public class TextReporter extends Reporter {
 
     private void explainIssue(@NonNull StringBuilder output, @Nullable Issue issue)
             throws IOException {
-        if (issue == null || !mFlags.isExplainIssues()) {
+        if (issue == null || !mFlags.isExplainIssues() || issue == IssueRegistry.LINT_ERROR) {
             return;
         }
 
