@@ -376,46 +376,6 @@ public final class AvdInfo implements Comparable<AvdInfo> {
     }
 
     /**
-     * Returns whether an emulator is currently running the AVD.
-     */
-    public boolean isRunning() {
-        // this is a file on Unix, and a directory on Windows.
-        File f = new File(mFolderPath, "userdata-qemu.img.lock");   //$NON-NLS-1$
-        String command = null;
-        if (SdkConstants.currentPlatform() == SdkConstants.PLATFORM_WINDOWS) {
-            f = new File(f, "pid");
-        }
-        if (f.exists()) {
-            try {
-                String pid = Files.toString(f, Charsets.UTF_8);
-                if (SdkConstants.currentPlatform() == SdkConstants.PLATFORM_WINDOWS) {
-                    command = "cmd /c \"tasklist /FI \"PID eq " + pid + "\" | findstr " + pid + "\"";
-                } else {
-                    command = "kill -0 " + pid;
-                }
-            } catch (IOException e) {
-                // Shouldn't happen, but if it does be safe and return true;
-                return true;
-            }
-            try {
-                Process p = Runtime.getRuntime().exec(command);
-                // If the process ends with non-0 it means the process doesn't exist
-                return p.waitFor() == 0;
-            }
-            catch (IOException e) {
-                // To be safe return true
-                return true;
-            }
-            catch (InterruptedException e) {
-                // To be safe return true
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /**
      * Compares this object with the specified object for order. Returns a
      * negative integer, zero, or a positive integer as this object is less
      * than, equal to, or greater than the specified object.
