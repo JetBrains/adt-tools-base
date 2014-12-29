@@ -48,21 +48,23 @@ public class CleanupDetectorTest extends AbstractCheckTest {
             "src/test/pkg/RecycleTest.java:103: Warning: This MotionEvent should be recycled after use with #recycle() [Recycle]\n" +
             "  MotionEvent event1 = MotionEvent.obtain(null);  // Not recycled\n" +
             "                                   ~~~~~~\n" +
+            /* Not implemented in AST visitor; not a typical user error and easy to diagnose if it's done
             "src/test/pkg/RecycleTest.java:113: Warning: This MotionEvent has already been recycled [Recycle]\n" +
             "  int contents2 = event1.describeContents(); // BAD, after recycle\n" +
             "                         ~~~~~~~~~~~~~~~~\n" +
             "src/test/pkg/RecycleTest.java:117: Warning: This TypedArray has already been recycled [Recycle]\n" +
             "  example = a.getString(R.styleable.MyView_exampleString); // BAD, after recycle\n" +
             "              ~~~~~~~~~\n" +
+            */
             "src/test/pkg/RecycleTest.java:129: Warning: This Parcel should be recycled after use with #recycle() [Recycle]\n" +
             "  Parcel myparcel = Parcel.obtain();\n" +
             "                           ~~~~~~\n" +
-            "0 errors, 10 warnings\n",
+            "0 errors, 8 warnings\n",
 
             lintProject(
                 "apicheck/classpath=>.classpath",
                 "apicheck/minsdk4.xml=>AndroidManifest.xml",
-                "project.properties1=>project.properties",
+                "project.properties19=>project.properties",
                 "bytecode/RecycleTest.java.txt=>src/test/pkg/RecycleTest.java",
                 "bytecode/RecycleTest.class.data=>bin/classes/test/pkg/RecycleTest.class"
             ));
@@ -79,7 +81,7 @@ public class CleanupDetectorTest extends AbstractCheckTest {
             "src/test/pkg/CommitTest.java:39: Warning: This transaction should be completed with a commit() call [CommitTransaction]\n" +
             "        getFragmentManager().beginTransaction(); // Missing commit\n" +
             "                             ~~~~~~~~~~~~~~~~\n" +
-            "src/test/pkg/CommitTest.java:65: Warning: This transaction should be completed with a commit() call [Recycle]\n" +
+            "src/test/pkg/CommitTest.java:65: Warning: This transaction should be completed with a commit() call [CommitTransaction]\n" +
             "        getSupportFragmentManager().beginTransaction();\n" +
             "                                    ~~~~~~~~~~~~~~~~\n" +
             "0 errors, 4 warnings\n",
@@ -87,9 +89,14 @@ public class CleanupDetectorTest extends AbstractCheckTest {
             lintProject(
                     "apicheck/classpath=>.classpath",
                     "apicheck/minsdk4.xml=>AndroidManifest.xml",
-                    "project.properties1=>project.properties",
+                    "project.properties19=>project.properties",
                     "bytecode/CommitTest.java.txt=>src/test/pkg/CommitTest.java",
-                    "bytecode/CommitTest.class.data=>bin/classes/test/pkg/CommitTest.class"
+                    "bytecode/CommitTest.class.data=>bin/classes/test/pkg/CommitTest.class",
+                    // Stubs just to be able to do type resolution without needing the full appcompat jar
+                    "appcompat/Fragment.java.txt=>src/android/support/v4/app/Fragment.java",
+                    "appcompat/DialogFragment.java.txt=>src/android/support/v4/app/DialogFragment.java",
+                    "appcompat/FragmentTransaction.java.txt=>src/android/support/v4/app/FragmentTransaction.java",
+                    "appcompat/FragmentManager.java.txt=>src/android/support/v4/app/FragmentManager.java"
             ));
     }
 
@@ -100,22 +107,14 @@ public class CleanupDetectorTest extends AbstractCheckTest {
                 lintProject(
                         "apicheck/classpath=>.classpath",
                         "apicheck/minsdk4.xml=>AndroidManifest.xml",
-                        "project.properties1=>project.properties",
-                        "bytecode/DialogFragment.class.data=>bin/classes/test/pkg/DialogFragment.class"
+                        "project.properties19=>project.properties",
+                        "bytecode/DialogFragment.class.data=>bin/classes/test/pkg/DialogFragment.class",
+                        // Stubs just to be able to do type resolution without needing the full appcompat jar
+                        "appcompat/Fragment.java.txt=>src/android/support/v4/app/Fragment.java",
+                        "appcompat/DialogFragment.java.txt=>src/android/support/v4/app/DialogFragment.java",
+                        "appcompat/FragmentTransaction.java.txt=>src/android/support/v4/app/FragmentTransaction.java",
+                        "appcompat/FragmentManager.java.txt=>src/android/support/v4/app/FragmentManager.java"
                 ));
-    }
-
-    public void testHasReturnType() throws Exception {
-        assertTrue(CleanupDetector.hasReturnType("android/app/FragmentTransaction",
-                "(Landroid/app/Fragment;)Landroid/app/FragmentTransaction;"));
-        assertTrue(CleanupDetector.hasReturnType("android/app/FragmentTransaction",
-                "()Landroid/app/FragmentTransaction;"));
-        assertFalse(CleanupDetector.hasReturnType("android/app/FragmentTransaction",
-                "()Landroid/app/FragmentTransactions;"));
-        assertFalse(CleanupDetector.hasReturnType("android/app/FragmentTransaction",
-                "()Landroid/app/FragmentTransactions"));
-        assertFalse(CleanupDetector.hasReturnType("android/app/FragmentTransaction",
-                "()android/app/FragmentTransaction;"));
     }
 
     public void testCommit3() throws Exception {
@@ -125,16 +124,21 @@ public class CleanupDetectorTest extends AbstractCheckTest {
                 lintProject(
                         "apicheck/classpath=>.classpath",
                         "apicheck/minsdk4.xml=>AndroidManifest.xml",
-                        "project.properties1=>project.properties",
+                        "project.properties19=>project.properties",
                         "bytecode/CommitTest2.java.txt=>src/test/pkg/CommitTest2.java",
                         "bytecode/CommitTest2$MyDialogFragment.class.data=>bin/classes/test/pkg/CommitTest2$MyDialogFragment.class",
-                        "bytecode/CommitTest2.class.data=>bin/classes/test/pkg/CommitTest2.class"
+                        "bytecode/CommitTest2.class.data=>bin/classes/test/pkg/CommitTest2.class",
+                        // Stubs just to be able to do type resolution without needing the full appcompat jar
+                        "appcompat/Fragment.java.txt=>src/android/support/v4/app/Fragment.java",
+                        "appcompat/DialogFragment.java.txt=>src/android/support/v4/app/DialogFragment.java",
+                        "appcompat/FragmentTransaction.java.txt=>src/android/support/v4/app/FragmentTransaction.java",
+                        "appcompat/FragmentManager.java.txt=>src/android/support/v4/app/FragmentManager.java"
                 ));
     }
 
     public void testCommit4() throws Exception {
         assertEquals("" +
-                "src/test/pkg/CommitTest3.java:35: Warning: This transaction should be completed with a commit() call [Recycle]\n"
+                "src/test/pkg/CommitTest3.java:35: Warning: This transaction should be completed with a commit() call [CommitTransaction]\n"
                 + "    getCompatFragmentManager().beginTransaction();\n"
                 + "                               ~~~~~~~~~~~~~~~~\n"
                 + "0 errors, 1 warnings\n",
@@ -142,11 +146,16 @@ public class CleanupDetectorTest extends AbstractCheckTest {
                 lintProject(
                         "apicheck/classpath=>.classpath",
                         "apicheck/minsdk4.xml=>AndroidManifest.xml",
-                        "project.properties1=>project.properties",
+                        "project.properties19=>project.properties",
                         "bytecode/CommitTest3.java.txt=>src/test/pkg/CommitTest3.java",
                         "bytecode/CommitTest3.class.data=>bin/classes/test/pkg/CommitTest3.class",
                         "bytecode/CommitTest3$MyDialogFragment.class.data=>bin/classes/test/pkg/CommitTest3$MyDialogFragment.class",
-                        "bytecode/CommitTest3$MyCompatDialogFragment.class.data=>bin/classes/test/pkg/CommitTest3$MyCompatDialogFragment.class"
+                        "bytecode/CommitTest3$MyCompatDialogFragment.class.data=>bin/classes/test/pkg/CommitTest3$MyCompatDialogFragment.class",
+                        // Stubs just to be able to do type resolution without needing the full appcompat jar
+                        "appcompat/Fragment.java.txt=>src/android/support/v4/app/Fragment.java",
+                        "appcompat/DialogFragment.java.txt=>src/android/support/v4/app/DialogFragment.java",
+                        "appcompat/FragmentTransaction.java.txt=>src/android/support/v4/app/FragmentTransaction.java",
+                        "appcompat/FragmentManager.java.txt=>src/android/support/v4/app/FragmentManager.java"
                 ));
     }
 }
