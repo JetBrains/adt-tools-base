@@ -32,8 +32,23 @@ import junit.framework.Assert;
 
 import java.io.File;
 
+import lombok.ast.AnnotationElement;
+import lombok.ast.BinaryExpression;
+import lombok.ast.Block;
 import lombok.ast.DescribedNode;
+import lombok.ast.ExpressionStatement;
+import lombok.ast.ForwardingAstVisitor;
+import lombok.ast.Identifier;
+import lombok.ast.KeywordModifier;
+import lombok.ast.MethodInvocation;
+import lombok.ast.Modifiers;
 import lombok.ast.Node;
+import lombok.ast.NormalTypeBody;
+import lombok.ast.Select;
+import lombok.ast.TypeReferencePart;
+import lombok.ast.VariableDeclaration;
+import lombok.ast.VariableDefinition;
+import lombok.ast.VariableReference;
 import lombok.ast.printer.SourceFormatter;
 import lombok.ast.printer.SourcePrinter;
 import lombok.ast.printer.TextFormatter;
@@ -204,6 +219,53 @@ public class EcjParserTest extends AbstractCheckTest {
         Node unit = LintUtilsTest.getCompilationUnit(source,
                 new File("src/test/pkg/TypeResolutionTest.java"));
 
+        // Visit all nodes and assert nativeNode != null unless I expect it!
+        unit.accept(new ForwardingAstVisitor() {
+            @SuppressWarnings("Contract")
+            @Override
+            public boolean visitNode(Node node) {
+                if (node.getNativeNode() == null && requiresNativeNode(node)) {
+                    fail("Expected native node on node of type " +
+                                    node.getClass().getSimpleName());
+                }
+                return super.visitNode(node);
+            }
+
+            private boolean requiresNativeNode(Node node) {
+                if (node instanceof TypeReferencePart &&
+                        node.getParent().getNativeNode() != null) {
+                    return false;
+                }
+
+                if (node instanceof Identifier
+                        || node instanceof NormalTypeBody
+                        || node instanceof Block
+                        || node instanceof VariableDeclaration
+                        || node instanceof VariableDefinition
+                        || node instanceof AnnotationElement
+                        || node instanceof BinaryExpression
+                        || node instanceof Modifiers
+                        || node instanceof KeywordModifier) {
+                    return false;
+                }
+
+                if (node instanceof VariableReference) {
+                    VariableReference reference = (VariableReference)node;
+                    if (reference.getParent() instanceof Select) {
+                        return false;
+                    }
+                } else if (node instanceof MethodInvocation) {
+                    Node parent = node.getParent();
+                    if (parent instanceof ExpressionStatement &&
+                            parent.getNativeNode() != null) {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+        });
+
         JavaParser parser = new EcjParser(new LintCliClient(), null);
         AstPrettyPrinter astPrettyPrinter = new AstPrettyPrinter(parser);
         unit.accept(new SourcePrinter(astPrettyPrinter));
@@ -258,9 +320,9 @@ public class EcjParserTest extends AbstractCheckTest {
                 "                    [TypeReferencePart], type: float, resolved class: float \n" +
                 "                      [Identifier float]\n" +
                 "                        PROPERTY: name = float\n" +
-                "                  [VariableDefinitionEntry]\n" +
+                "                  [VariableDefinitionEntry], resolved field: myField test.pkg.TypeResolutionTest.Inner\n" +
                 "                    PROPERTY: arrayDimensions = 0\n" +
-                "                    varName: [Identifier myField]\n" +
+                "                    varName: [Identifier myField], resolved field: myField test.pkg.TypeResolutionTest.Inner\n" +
                 "                      PROPERTY: name = myField\n" +
                 "                    [FloatingPointLiteral 5.0], type: float\n" +
                 "                      PROPERTY: value = 5f\n" +
@@ -276,9 +338,9 @@ public class EcjParserTest extends AbstractCheckTest {
                 "                    [TypeReferencePart], type: int[], resolved class: int[] \n" +
                 "                      [Identifier int]\n" +
                 "                        PROPERTY: name = int\n" +
-                "                  [VariableDefinitionEntry]\n" +
+                "                  [VariableDefinitionEntry], resolved field: myInts test.pkg.TypeResolutionTest.Inner\n" +
                 "                    PROPERTY: arrayDimensions = 0\n" +
-                "                    varName: [Identifier myInts]\n" +
+                "                    varName: [Identifier myInts], resolved field: myInts test.pkg.TypeResolutionTest.Inner\n" +
                 "                      PROPERTY: name = myInts\n" +
                 "              [ConstructorDeclaration], type: void, resolved method: test.pkg.TypeResolutionTest.Inner test.pkg.TypeResolutionTest.Inner\n" +
                 "                [Modifiers], type: void, resolved method: test.pkg.TypeResolutionTest.Inner test.pkg.TypeResolutionTest.Inner\n" +
@@ -295,9 +357,9 @@ public class EcjParserTest extends AbstractCheckTest {
                 "                    [TypeReferencePart], type: java.io.File, resolved class: java.io.File \n" +
                 "                      [Identifier File]\n" +
                 "                        PROPERTY: name = File\n" +
-                "                  [VariableDefinitionEntry]\n" +
+                "                  [VariableDefinitionEntry], resolved variable: dir java.io.File\n" +
                 "                    PROPERTY: arrayDimensions = 0\n" +
-                "                    varName: [Identifier dir]\n" +
+                "                    varName: [Identifier dir], resolved variable: dir java.io.File\n" +
                 "                      PROPERTY: name = dir\n" +
                 "                parameter: [VariableDefinition], type: void, resolved method: test.pkg.TypeResolutionTest.Inner test.pkg.TypeResolutionTest.Inner\n" +
                 "                  PROPERTY: varargs = false\n" +
@@ -308,9 +370,9 @@ public class EcjParserTest extends AbstractCheckTest {
                 "                    [TypeReferencePart], type: java.lang.String, resolved class: java.lang.String \n" +
                 "                      [Identifier String]\n" +
                 "                        PROPERTY: name = String\n" +
-                "                  [VariableDefinitionEntry]\n" +
+                "                  [VariableDefinitionEntry], resolved variable: name java.lang.String\n" +
                 "                    PROPERTY: arrayDimensions = 0\n" +
-                "                    varName: [Identifier name]\n" +
+                "                    varName: [Identifier name], resolved variable: name java.lang.String\n" +
                 "                      PROPERTY: name = name\n" +
                 "                [Block], type: void, resolved method: test.pkg.TypeResolutionTest.Inner test.pkg.TypeResolutionTest.Inner\n" +
                 "                    [SuperConstructorInvocation], resolved method: java.io.File java.io.File\n" +
@@ -341,9 +403,9 @@ public class EcjParserTest extends AbstractCheckTest {
                 "                    [TypeReferencePart], type: int, resolved class: int \n" +
                 "                      [Identifier int]\n" +
                 "                        PROPERTY: name = int\n" +
-                "                  [VariableDefinitionEntry]\n" +
+                "                  [VariableDefinitionEntry], resolved variable: arg1 int\n" +
                 "                    PROPERTY: arrayDimensions = 0\n" +
-                "                    varName: [Identifier arg1]\n" +
+                "                    varName: [Identifier arg1], resolved variable: arg1 int\n" +
                 "                      PROPERTY: name = arg1\n" +
                 "                parameter: [VariableDefinition], type: void, resolved method: call test.pkg.TypeResolutionTest.Inner\n" +
                 "                  PROPERTY: varargs = false\n" +
@@ -354,9 +416,9 @@ public class EcjParserTest extends AbstractCheckTest {
                 "                    [TypeReferencePart], type: double, resolved class: double \n" +
                 "                      [Identifier double]\n" +
                 "                        PROPERTY: name = double\n" +
-                "                  [VariableDefinitionEntry]\n" +
+                "                  [VariableDefinitionEntry], resolved variable: arg2 double\n" +
                 "                    PROPERTY: arrayDimensions = 0\n" +
-                "                    varName: [Identifier arg2]\n" +
+                "                    varName: [Identifier arg2], resolved variable: arg2 double\n" +
                 "                      PROPERTY: name = arg2\n" +
                 "                [Block], type: void, resolved method: call test.pkg.TypeResolutionTest.Inner\n" +
                 "                    [VariableDeclaration], type: boolean, resolved class: boolean \n" +
@@ -369,9 +431,9 @@ public class EcjParserTest extends AbstractCheckTest {
                 "                          [TypeReferencePart], type: boolean, resolved class: boolean \n" +
                 "                            [Identifier boolean]\n" +
                 "                              PROPERTY: name = boolean\n" +
-                "                        [VariableDefinitionEntry]\n" +
+                "                        [VariableDefinitionEntry], resolved variable: x boolean\n" +
                 "                          PROPERTY: arrayDimensions = 0\n" +
-                "                          varName: [Identifier x]\n" +
+                "                          varName: [Identifier x], resolved variable: x boolean\n" +
                 "                            PROPERTY: name = x\n" +
                 "                          [MethodInvocation canRead], type: boolean, resolved method: canRead java.io.File\n" +
                 "                            operand: [Super], type: java.io.File\n" +
@@ -430,9 +492,9 @@ public class EcjParserTest extends AbstractCheckTest {
                 "                    [TypeReferencePart], type: int, resolved class: int \n" +
                 "                      [Identifier int]\n" +
                 "                        PROPERTY: name = int\n" +
-                "                  [VariableDefinitionEntry]\n" +
+                "                  [VariableDefinitionEntry], resolved variable: z int\n" +
                 "                    PROPERTY: arrayDimensions = 0\n" +
-                "                    varName: [Identifier z]\n" +
+                "                    varName: [Identifier z], resolved variable: z int\n" +
                 "                      PROPERTY: name = z\n" +
                 "                [Block], type: void, resolved method: client test.pkg.TypeResolutionTest.Other\n" +
                 "                    [VariableDeclaration], type: int, resolved class: int \n" +
@@ -445,9 +507,9 @@ public class EcjParserTest extends AbstractCheckTest {
                 "                          [TypeReferencePart], type: int, resolved class: int \n" +
                 "                            [Identifier int]\n" +
                 "                              PROPERTY: name = int\n" +
-                "                        [VariableDefinitionEntry]\n" +
+                "                        [VariableDefinitionEntry], resolved variable: x int\n" +
                 "                          PROPERTY: arrayDimensions = 0\n" +
-                "                          varName: [Identifier x]\n" +
+                "                          varName: [Identifier x], resolved variable: x int\n" +
                 "                            PROPERTY: name = x\n" +
                 "                          [VariableReference], type: int, resolved variable: z int\n" +
                 "                            [Identifier z], type: int, resolved variable: z int\n" +
@@ -462,9 +524,9 @@ public class EcjParserTest extends AbstractCheckTest {
                 "                          [TypeReferencePart], type: int, resolved class: int \n" +
                 "                            [Identifier int]\n" +
                 "                              PROPERTY: name = int\n" +
-                "                        [VariableDefinitionEntry]\n" +
+                "                        [VariableDefinitionEntry], resolved variable: y int\n" +
                 "                          PROPERTY: arrayDimensions = 0\n" +
-                "                          varName: [Identifier y]\n" +
+                "                          varName: [Identifier y], resolved variable: y int\n" +
                 "                            PROPERTY: name = y\n" +
                 "                          [BinaryExpression +], type: int\n" +
                 "                            PROPERTY: operator = +\n" +
@@ -483,9 +545,9 @@ public class EcjParserTest extends AbstractCheckTest {
                 "                          [TypeReferencePart], type: test.pkg.TypeResolutionTest.Inner, resolved class: test.pkg.TypeResolutionTest.Inner \n" +
                 "                            [Identifier Inner]\n" +
                 "                              PROPERTY: name = Inner\n" +
-                "                        [VariableDefinitionEntry]\n" +
+                "                        [VariableDefinitionEntry], resolved variable: inner test.pkg.TypeResolutionTest.Inner\n" +
                 "                          PROPERTY: arrayDimensions = 0\n" +
-                "                          varName: [Identifier inner]\n" +
+                "                          varName: [Identifier inner], resolved variable: inner test.pkg.TypeResolutionTest.Inner\n" +
                 "                            PROPERTY: name = inner\n" +
                 "                          [ConstructorInvocation Inner], type: test.pkg.TypeResolutionTest.Inner, resolved method: test.pkg.TypeResolutionTest.Inner test.pkg.TypeResolutionTest.Inner\n" +
                 "                            type: [TypeReference Inner], type: test.pkg.TypeResolutionTest.Inner, resolved class: test.pkg.TypeResolutionTest.Inner \n" +
