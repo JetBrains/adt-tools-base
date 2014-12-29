@@ -77,6 +77,7 @@ public class ApkOutputFile implements OutputFile, Serializable {
     }
 
     @NonNull
+    @Override
     public File getOutputFile() {
         try {
             return outputFile.call();

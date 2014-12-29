@@ -17,9 +17,7 @@
 package com.android.ide.common.build;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.android.build.FilterData;
-import com.android.build.MainOutputFile;
 import com.android.build.OutputFile;
 import com.android.build.VariantOutput;
 import com.android.resources.Density;
@@ -61,7 +59,7 @@ public class SplitOutputMatcherTest extends TestCase {
      * Fake implementation of FilteredOutput
      */
 
-    private static final class FakeSplitOutput implements MainOutputFile {
+    private static final class FakeSplitOutput implements OutputFile {
 
         private final String densityFilter;
         private final String abiFilter;
@@ -118,10 +116,10 @@ public class SplitOutputMatcherTest extends TestCase {
 
     private static class FakeVariantOutput implements VariantOutput {
 
-        private final MainOutputFile mainOutputFile;
+        private final OutputFile mainOutputFile;
         private final int versionCode;
 
-        private FakeVariantOutput(MainOutputFile mainOutputFile,
+        private FakeVariantOutput(OutputFile mainOutputFile,
                 int versionCode) {
             this.mainOutputFile = mainOutputFile;
             this.versionCode = versionCode;
@@ -129,7 +127,7 @@ public class SplitOutputMatcherTest extends TestCase {
 
         @NonNull
         @Override
-        public MainOutputFile getMainOutputFile() {
+        public OutputFile getMainOutputFile() {
             return mainOutputFile;
         }
 

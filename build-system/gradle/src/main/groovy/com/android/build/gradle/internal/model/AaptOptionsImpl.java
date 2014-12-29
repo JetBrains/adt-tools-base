@@ -77,7 +77,7 @@ public class AaptOptionsImpl implements AaptOptions, Serializable {
 
 
     public String toString() {
-        return "AaptOptionsImpl{" +
+        return "AaptOptions{" +
                 ", ignoreAssets=" + ignoreAssets +
                 ", noCompress=" + noCompress +
                 ", failOnMissingConfigEntry=" + failOnMissingConfigEntry +

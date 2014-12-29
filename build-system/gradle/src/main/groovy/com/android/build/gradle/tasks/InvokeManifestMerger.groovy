@@ -26,6 +26,7 @@ import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.OutputFile
+import org.gradle.api.tasks.TaskAction
 
 /**
  * Simple task to invoke the new Manifest Merger without any injection, features, system properties
@@ -42,7 +43,7 @@ class InvokeManifestMerger extends DefaultTask implements OutputFileTask {
     @OutputFile
     File outputFile
 
-    @org.gradle.api.tasks.TaskAction
+    @TaskAction
     protected void doFullTaskAction() {
         ILogger iLogger = new LoggerWrapper(getLogger());
         ManifestMerger2.Invoker mergerInvoker = ManifestMerger2.

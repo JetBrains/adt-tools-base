@@ -23,6 +23,7 @@ import com.android.build.OutputFile;
 import com.android.build.gradle.BasePlugin;
 import com.android.build.gradle.api.AndroidSourceSet;
 import com.android.build.gradle.internal.StringHelper;
+import com.android.build.gradle.internal.api.DefaultAndroidSourceSet;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.coverage.JacocoInstrumentTask;
 import com.android.build.gradle.internal.dependency.VariantDependencies;
@@ -133,7 +134,7 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
         // eventually, this will require a more open ended comparison.
         mSplitHandlingPolicy =
                 basePlugin.getExtension().getGeneratePureSplits()
-                    && variantConfiguration.getMinSdkVersion().getApiLevel() == 21
+                    && variantConfiguration.getMinSdkVersion().getApiLevel() >= 21
                     ? SplitHandlingPolicy.RELEASE_21_AND_AFTER_POLICY
                     : SplitHandlingPolicy.PRE_21_POLICY;
 
@@ -322,4 +323,23 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
         return sourceFolders;
     }
 
+    /**
+     * Returns a list of configuration name for wear connection, from highest to lowest priority.
+     * @return list of config.
+     */
+    @NonNull
+    public List<String> getWearConfigNames() {
+        List<SourceProvider> providers = variantConfiguration.getSortedSourceProviders();
+
+        // this is the wrong order, so let's reverse it as we gather the names.
+        final int count = providers.size();
+        List<String> names = Lists.newArrayListWithCapacity(count);
+        for (int i = count - 1 ; i >= 0; i--) {
+            DefaultAndroidSourceSet sourceSet = (DefaultAndroidSourceSet) providers.get(i);
+
+            names.add(sourceSet.getWearAppConfigurationName());
+        }
+
+        return names;
+    }
 }

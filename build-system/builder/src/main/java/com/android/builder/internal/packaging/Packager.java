@@ -40,8 +40,10 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -657,8 +659,12 @@ public final class Packager implements IArchiveBuilder {
         try {
             String manifestPath = classPath.substring(0, classPath.lastIndexOf('!') + 1) +
                     "/META-INF/MANIFEST.MF";
-            Manifest manifest = new Manifest(new URL(manifestPath).openStream());
-            Attributes attr = manifest.getMainAttributes();
+
+            URLConnection jarConnection = new URL(manifestPath).openConnection();
+            jarConnection.setUseCaches(false);
+            InputStream jarInputStream = jarConnection.getInputStream();
+            Attributes attr = new Manifest(jarInputStream).getMainAttributes();
+            jarInputStream.close();
             return attr.getValue("Builder-Version");
         } catch (MalformedURLException ignored) {
         } catch (IOException ignored) {

@@ -52,7 +52,8 @@ public class MajorRevision extends FullRevision {
     public static MajorRevision parseRevision(@NonNull String revision)
             throws NumberFormatException {
         FullRevision r = parseRevisionImpl(
-                                revision, false /*supportMinorMicro*/, false /*supportPreview*/);
+                                revision, false /*supportMinorMicro*/, false /*supportPreview*/,
+                                false /*keepPrecision*/);
         return new MajorRevision(r.getMajor());
     }
 }

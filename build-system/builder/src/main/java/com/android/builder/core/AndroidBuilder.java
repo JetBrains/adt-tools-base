@@ -73,10 +73,10 @@ import com.android.sdklib.repository.FullRevision;
 import com.android.utils.ILogger;
 import com.android.utils.Pair;
 import com.google.common.base.Charsets;
+import com.google.common.base.Predicate;
 import com.google.common.base.Strings;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
@@ -94,6 +94,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -433,7 +434,8 @@ public class AndroidBuilder {
             @Nullable Integer maxSdkVersion,
             @NonNull String outManifestLocation,
             ManifestMerger2.MergeType mergeType,
-            Map<String, String> placeHolders) {
+            Map<String, String> placeHolders,
+            @Nullable File reportFile) {
 
         try {
             Invoker manifestMergerInvoker =
@@ -441,7 +443,8 @@ public class AndroidBuilder {
                     .setPlaceHolderValues(placeHolders)
                     .addFlavorAndBuildTypeManifests(
                             manifestOverlays.toArray(new File[manifestOverlays.size()]))
-                    .addLibraryManifests(collectLibraries(libraries));
+                    .addLibraryManifests(collectLibraries(libraries))
+                    .setMergeReportFile(reportFile);
 
             if (mergeType == ManifestMerger2.MergeType.APPLICATION) {
                 manifestMergerInvoker.withFeatures(Invoker.Feature.REMOVE_TOOLS_DECLARATIONS);
@@ -860,17 +863,27 @@ public class AndroidBuilder {
                 Charsets.UTF_8);
     }
 
-    public void generateApkDataEntryInManifest(@NonNull File manifestFile)
+    public void generateApkDataEntryInManifest(
+                    int minSdkVersion,
+                    int targetSdkVersion,
+                    @NonNull File manifestFile)
             throws InterruptedException, LoggedErrorException, IOException {
 
-        String content =
-                "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
-                "<manifest package=\"\" xmlns:android=\"http://schemas.android.com/apk/res/android\">\n" +
-                "    <application>\n" +
-                        "        <meta-data android:name=\"" + ANDROID_WEAR + "\"\n" +
-                "                   android:resource=\"@xml/" + ANDROID_WEAR_MICRO_APK + "\" />\n" +
-                "    </application>\n" +
-                "</manifest>\n";
+        StringBuilder content = new StringBuilder();
+        content.append("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n")
+                .append("<manifest package=\"\" xmlns:android=\"http://schemas.android.com/apk/res/android\">\n")
+                .append("            <uses-sdk android:minSdkVersion=\"")
+                .append(minSdkVersion).append("\"");
+        if (targetSdkVersion != -1) {
+            content.append(" android:targetSdkVersion=\"").append(targetSdkVersion).append("\"");
+        }
+        content.append("/>\n");
+        content.append("    <application>\n")
+                .append("        <meta-data android:name=\"" + ANDROID_WEAR + "\"\n")
+                .append("                   android:resource=\"@xml/" + ANDROID_WEAR_MICRO_APK)
+                .append("\" />\n")
+                .append("   </application>\n")
+                .append("</manifest>\n");
 
         Files.write(content, manifestFile, Charsets.UTF_8);
     }
@@ -1094,8 +1107,8 @@ public class AndroidBuilder {
      * @throws LoggedErrorException
      */
     public void convertByteCode(
-            @NonNull Iterable<File> inputs,
-            @NonNull Iterable<File> preDexedLibraries,
+            @NonNull Collection<File> inputs,
+            @NonNull Collection<File> preDexedLibraries,
             @NonNull File outDexFolder,
                      boolean multidex,
                      boolean multidexLegacy,
@@ -1161,20 +1174,6 @@ public class AndroidBuilder {
                 command.add("--main-dex-list");
                 command.add(mainDexList.getAbsolutePath());
             }
-
-            if (multidexLegacy) {
-                // This sets the method ref count threshold at which dex overflow
-                // occurs.  On the one hand, we want this number to be as large as
-                // possible, to provide maximum room for code which must reside in
-                // the primary dex.  On the other hand, making this number too big
-                // results in LinearAlloc capacity being exceeded on Gingerbread
-                // devices.  (Experience has shown that a value of 65100 yields
-                // LinearAlloc failures on a large percentage of GB devices.)
-                // Basically, making this number smaller can break builds, while
-                // making it bigger can break devices.  THINK VERY HARD BEFORE
-                // CHANGING THIS VALUE!
-                command.add("--set-max-idx-number=60000");
-            }
         }
 
         /**
@@ -1193,30 +1192,57 @@ public class AndroidBuilder {
         command.add("--output");
         command.add(outDexFolder.getAbsolutePath());
 
-        Iterable<File> allInputs = Iterables.concat(preDexedLibraries, inputs);
+        Set<File> allInputs = Sets.newHashSetWithExpectedSize(preDexedLibraries.size() + inputs.size());
+        allInputs.addAll(preDexedLibraries);
+        allInputs.addAll(inputs);
         command.addAll(getFilesToAdd(allInputs, buildToolInfo, tmpFolder));
 
         mCmdLineRunner.runCmdLine(command, null);
     }
 
-    private List<String> getFilesToAdd(Iterable<File> includeFiles,
+    private static List<String> getFilesToAdd(Set<File> includeFiles,
             BuildToolInfo buildToolInfo, File tmpFolder) throws IOException {
-        // clean up and add library inputs.
-        List<String> filePathList = Lists.newArrayList();
-        for (File f : includeFiles) {
-            if (f != null && f.exists()) {
-                filePathList.add(f.getAbsolutePath());
+        // remove non-existing files.
+        Set<File> existingFiles = Sets.filter(includeFiles, new Predicate<File>() {
+            @Override
+            public boolean apply(@Nullable File input) {
+                return input != null && input.exists();
             }
-        }
-        if (filePathList.isEmpty()) {
+        });
+
+        if (existingFiles.isEmpty()) {
             throw new IOException("No files to pass to dex.");
         }
 
-        if (buildToolInfo.getRevision().compareTo(MIN_BUILD_TOOLS_REVISION_FOR_DEX_INPUT_LIST) >= 0) {
-            File inputListFile = new File(tmpFolder, "libraryList.txt");
+        // sort the inputs
+        List<File> sortedList = Lists.newArrayList(existingFiles);
+        Collections.sort(sortedList, new Comparator<File>() {
+            @Override
+            public int compare(File file, File file2) {
+                if (file.isDirectory()) {
+                    return -1;
+                } else if (file2.isDirectory()) {
+                    return 1;
+                } else if (file.length() > file2.length()) {
+                    return 1;
+                }
+
+                return -1;
+            }
+        });
+
+        // convert to String-based paths.
+        List<String> filePathList = Lists.newArrayListWithCapacity(sortedList.size());
+        for (File f : sortedList) {
+            filePathList.add(f.getAbsolutePath());
+        }
+
+        if (buildToolInfo.getRevision()
+                .compareTo(MIN_BUILD_TOOLS_REVISION_FOR_DEX_INPUT_LIST) >= 0) {
+            File inputListFile = new File(tmpFolder, "inputList.txt");
             // Write each library line by line to file
             Files.asCharSink(inputListFile, Charsets.UTF_8).writeLines(filePathList);
-            return Lists.newArrayList("--input-list=" + inputListFile.getAbsolutePath());
+            return Collections.singletonList("--input-list=" + inputListFile.getAbsolutePath());
         } else {
             return filePathList;
         }
@@ -1376,13 +1402,17 @@ public class AndroidBuilder {
 
         command.add("java");
         if (dexOptions.getJavaMaxHeapSize() != null) {
-            command.add("-JXmx" + dexOptions.getJavaMaxHeapSize());
+            command.add("-Xmx" + dexOptions.getJavaMaxHeapSize());
         }
         command.add("-jar");
         command.add(jill);
         command.add(inputFile.getAbsolutePath());
         command.add("--output");
         command.add(outFile.getAbsolutePath());
+
+        if (verbose) {
+            command.add("--verbose");
+        }
 
         commandLineRunner.runCmdLine(command, null);
 

@@ -232,6 +232,14 @@ public class RelativeOverlapDetector extends LayoutDetector {
             if (mToLeft == null) {
                 mToLeft = findNodeByAttr(nodes, ATTR_LAYOUT_TO_LEFT_OF);
             }
+            // Avoid circular dependency
+            for (LayoutNode n = mToLeft; n != null; n = n.mToLeft) {
+              if (n.equals(this)) {
+                mToLeft = null;
+                mBucket = Bucket.SKIP;
+                break;
+              }
+            }
             if (mToLeft != null) {
                 mToLeft.mLastLeft = false;
                 mLastRight = false;
@@ -239,6 +247,14 @@ public class RelativeOverlapDetector extends LayoutDetector {
             mToRight = findNodeByAttr(nodes, ATTR_LAYOUT_TO_END_OF);
             if (mToRight == null) {
                 mToRight = findNodeByAttr(nodes, ATTR_LAYOUT_TO_RIGHT_OF);
+            }
+            // Avoid circular dependency
+            for (LayoutNode n = mToRight; n != null; n = n.mToRight) {
+              if (n.equals(this)) {
+                mToRight = null;
+                mBucket = Bucket.SKIP;
+                break;
+              }
             }
             if (mToRight != null) {
                 mToRight.mLastLeft = false;

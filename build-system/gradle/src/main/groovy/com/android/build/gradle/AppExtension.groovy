@@ -14,31 +14,41 @@
  * limitations under the License.
  */
 package com.android.build.gradle
+
 import com.android.build.gradle.api.ApplicationVariant
 import com.android.build.gradle.api.BaseVariant
-import com.android.builder.core.DefaultBuildType
-import com.android.builder.core.DefaultProductFlavor
-import com.android.builder.model.SigningConfig
+import com.android.build.gradle.internal.dsl.BuildType
+import com.android.build.gradle.internal.dsl.GroupableProductFlavor
+import com.android.build.gradle.internal.dsl.SigningConfig
+import groovy.transform.CompileStatic
 import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.internal.DefaultDomainObjectSet
 import org.gradle.api.internal.project.ProjectInternal
 import org.gradle.internal.reflect.Instantiator
+
 /**
- * Extension for 'application' project.
+ * 'android' extension for 'com.android.application' project.
+ * This extends {@link BaseExtension}
  */
+@CompileStatic
 public class AppExtension extends BaseExtension {
 
     private final DefaultDomainObjectSet<ApplicationVariant> applicationVariantList =
         new DefaultDomainObjectSet<ApplicationVariant>(ApplicationVariant.class)
 
     AppExtension(AppPlugin plugin, ProjectInternal project, Instantiator instantiator,
-                 NamedDomainObjectContainer<DefaultBuildType> buildTypes,
-                 NamedDomainObjectContainer<DefaultProductFlavor> productFlavors,
+                 NamedDomainObjectContainer<BuildType> buildTypes,
+                 NamedDomainObjectContainer<GroupableProductFlavor> productFlavors,
                  NamedDomainObjectContainer<SigningConfig> signingConfigs,
                  boolean isLibrary) {
         super(plugin, project, instantiator, buildTypes, productFlavors, signingConfigs, isLibrary)
     }
 
+    /**
+     * Returns the list of Application variants. Since the collections is built after evaluation,
+     * it should be used with Groovy's <code>all</code> iterator to process future items.
+     *
+     */
     public DefaultDomainObjectSet<ApplicationVariant> getApplicationVariants() {
         return applicationVariantList
     }

@@ -115,7 +115,7 @@ public class SimpleTestCallable implements Callable<Boolean> {
 
             if (!testedApks.isEmpty()) {
                 logger.verbose("DeviceConnector '%s': installing %s", deviceName, Joiner.on(',').join(testedApks));
-                if (testedApks.size() > 1) {
+                if (testedApks.size() > 1 || device.getApiLevel() >= 21) {
                     if (device.getApiLevel() < 21) {
                         throw new InstallException("Internal error, file a bug, multi-apk applications"
                                 + " require a device with API level 21+");
@@ -210,7 +210,7 @@ public class SimpleTestCallable implements Callable<Boolean> {
                     logger.verbose("DeviceConnector '%s': fetching coverage data from %s",
                             deviceName, coverageFile);
                     device.executeShellCommand("run-as " + testData.getTestedApplicationId()
-                                    + " cat " + coverageFile + " > " + temporaryCoverageCopy,
+                                    + " cat " + coverageFile + " | cat > " + temporaryCoverageCopy,
                             outputReceiver,
                             30, TimeUnit.SECONDS);
                     device.pullFile(

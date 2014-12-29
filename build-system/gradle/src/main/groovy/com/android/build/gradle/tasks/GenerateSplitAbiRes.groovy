@@ -16,7 +16,7 @@
 
 package com.android.build.gradle.tasks
 
-import com.android.build.gradle.internal.dsl.AaptOptionsImpl
+import com.android.build.gradle.internal.dsl.AaptOptions
 import com.android.build.gradle.internal.tasks.BaseTask
 import com.android.builder.core.AaptPackageCommandBuilder
 import org.gradle.api.tasks.Input
@@ -53,7 +53,7 @@ class GenerateSplitAbiRes extends BaseTask {
     boolean debuggable
 
     @Nested
-    AaptOptionsImpl aaptOptions
+    AaptOptions aaptOptions
 
     @TaskAction
     protected void doFullTaskAction() {

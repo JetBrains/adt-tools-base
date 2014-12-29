@@ -19,7 +19,6 @@ package com.android.ide.common.build;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.FilterData;
-import com.android.build.MainOutputFile;
 import com.android.build.OutputFile;
 import com.android.build.VariantOutput;
 import com.android.resources.Density;
@@ -100,7 +99,7 @@ public class SplitOutputMatcher {
             }
         });
 
-        MainOutputFile mainOutputFile = match.getMainOutputFile();
+        OutputFile mainOutputFile = match.getMainOutputFile();
         if (match.getOutputs().size() == 1) {
             return isMainApkCompatibleWithDevice(mainOutputFile, variantAbiFilters, deviceAbis)
                     ? ImmutableList.<OutputFile>of(mainOutputFile)
@@ -124,7 +123,7 @@ public class SplitOutputMatcher {
     }
 
     private static boolean isMainApkCompatibleWithDevice(
-            MainOutputFile mainOutputFile,
+            OutputFile mainOutputFile,
             Set<String> variantAbiFilters,
             List<String> deviceAbis) {
         // so far, we are not dealing with the pure split files...

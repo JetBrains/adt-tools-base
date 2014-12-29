@@ -23,12 +23,16 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.dependency.SymbolFileProvider;
 import com.android.builder.model.AaptOptions;
+import com.android.resources.Density;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
 import com.android.utils.ILogger;
 import com.google.common.base.Joiner;
+import com.google.common.base.Predicate;
+import com.google.common.collect.Collections2;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -56,6 +60,7 @@ public class AaptPackageCommandBuilder {
     @Nullable private Collection<String> mResourceConfigs;
     @Nullable Collection<String> mSplits;
     @Nullable String mPackageForR;
+    @Nullable String mPreferredDensity;
 
     /**
      *
@@ -222,19 +227,37 @@ public class AaptPackageCommandBuilder {
         return this;
     }
 
+    /**
+     * Specifies a preference for a particular density. Resources that do not match this density
+     * and have variants that are a closer match are removed.
+     * @param density the preferred density
+     * @return itself
+     */
+    public AaptPackageCommandBuilder setPreferredDensity(String density) {
+        mPreferredDensity = density;
+        return this;
+    }
+
     @Nullable
     String getPackageForR() {
         return mPackageForR;
     }
 
-    public List<String> build(@NonNull BuildToolInfo buildToolInfo, @NonNull IAndroidTarget target, @NonNull ILogger logger) {
+    public List<String> build(
+            @NonNull BuildToolInfo buildToolInfo,
+            @NonNull IAndroidTarget target,
+            @NonNull ILogger logger) {
 
         // if both output types are empty, then there's nothing to do and this is an error
         checkArgument(mSourceOutputDir != null || mResPackageOutput != null,
                 "No output provided for aapt task");
         if (mSymbolOutputDir != null || mSourceOutputDir != null) {
-            checkNotNull(mLibraries, "libraries cannot be null if symbolOutputDir or sourceOutputDir is non-null");
+            checkNotNull(mLibraries,
+                    "libraries cannot be null if symbolOutputDir or sourceOutputDir is non-null");
         }
+
+        // check resConfigs and split settings coherence.
+        checkResConfigsVersusSplitSettings(logger);
 
         // launch aapt: create the command line
         ArrayList<String> command = Lists.newArrayList();
@@ -356,11 +379,44 @@ public class AaptPackageCommandBuilder {
             }
         }
 
-        if (mResourceConfigs!=null && !mResourceConfigs.isEmpty()) {
+
+        List<String> resourceConfigs = new ArrayList<String>();
+        if (!isNullOrEmpty(mResourceConfigs)) {
+            resourceConfigs.addAll(mResourceConfigs);
+        }
+        if (buildToolInfo.getRevision().getMajor() < 21 && mPreferredDensity != null) {
+            resourceConfigs.add(mPreferredDensity);
+            // when adding a density filter, also always add the nodpi option.
+            resourceConfigs.add(Density.NODPI.getResourceValue());
+        }
+
+        if (!resourceConfigs.isEmpty()) {
             command.add("-c");
 
             Joiner joiner = Joiner.on(',');
-            command.add(joiner.join(mResourceConfigs));
+            command.add(joiner.join(resourceConfigs));
+        }
+
+        if (buildToolInfo.getRevision().getMajor() >= 21 && mPreferredDensity != null) {
+            if (!isNullOrEmpty(mResourceConfigs)) {
+                Collection<String> densityResConfig = getDensityResConfigs(mResourceConfigs);
+                if (!densityResConfig.isEmpty()) {
+                    throw new RuntimeException(String.format(
+                            "When using splits in tools 21 and above, resConfigs should not contain "
+                                    + "any densities. Right now, it contains \"%1$s\"\n"
+                                    + "Suggestion: remove these from resConfigs from build.gradle",
+                            Joiner.on("\",\"").join(densityResConfig)));
+                }
+            }
+            command.add("--preferred-density");
+            command.add(mPreferredDensity);
+        }
+
+        if (buildToolInfo.getRevision().getMajor() < 21 && mPreferredDensity != null) {
+            logger.warning(String.format("Warning : Project is building density based multiple APKs"
+                    + " but using tools version %1$s, you should upgrade to build-tools 21 or above"
+                    + " to ensure proper packaging of resources.",
+                    buildToolInfo.getRevision().getMajor()));
         }
 
         if (mSymbolOutputDir != null &&
@@ -371,4 +427,61 @@ public class AaptPackageCommandBuilder {
         return command;
     }
 
+    private void checkResConfigsVersusSplitSettings(ILogger logger) {
+        if (isNullOrEmpty(mResourceConfigs) || isNullOrEmpty(mSplits)) {
+            return;
+        }
+
+        // only consider the Density related resConfig settings.
+        Collection<String> resConfigs = getDensityResConfigs(mResourceConfigs);
+        List<String> splits = new ArrayList<String>(mSplits);
+        splits.removeAll(resConfigs);
+        if (!splits.isEmpty()) {
+            // some splits are required, yet the resConfigs do not contain the split density value
+            // which mean that the resulting split file would be empty, flag this as an error.
+            throw new RuntimeException(String.format(
+                    "Splits for densities \"%1$s\" were configured, yet the resConfigs settings does"
+                            + " not include such splits. The resulting split APKs would be empty.\n"
+                            + "Suggestion : exclude those splits in your build.gradle : \n"
+                            + "splits {\n"
+                            + "     density {\n"
+                            + "         enable true\n"
+                            + "         exclude \"%2$s\"\n"
+                            + "     }\n"
+                            + "}\n"
+                            + "OR add them to the resConfigs list.",
+                    Joiner.on(",").join(splits),
+                    Joiner.on("\",\"").join(splits)));
+        }
+        resConfigs.removeAll(mSplits);
+        if (!resConfigs.isEmpty()) {
+            // there are densities present in the resConfig but not in splits, which mean that those
+            // densities will be packaged in the main APK
+            throw new RuntimeException(String.format(
+                    "Inconsistent density configuration, with \"%1$s\" present on "
+                            + "resConfig settings, while only \"%2$s\" densities are requested "
+                            + "in splits APK density settings.\n"
+                            + "Suggestion : remove extra densities from the resConfig : \n"
+                            + "defaultConfig {\n"
+                            + "     resConfigs \"%2$s\"\n"
+                            + "}\n"
+                            + "OR remove such densities from the split's exclude list.\n",
+                    Joiner.on(",").join(resConfigs),
+                    Joiner.on("\",\"").join(mSplits)));
+        }
+    }
+
+    private static boolean isNullOrEmpty(@Nullable Collection<?> collection) {
+        return collection == null || collection.isEmpty();
+    }
+
+    private static Collection<String> getDensityResConfigs(Collection<String> resourceConfigs) {
+        return Collections2.filter(new ArrayList<String>(resourceConfigs),
+                new Predicate<String>() {
+                    @Override
+                    public boolean apply(@Nullable String input) {
+                        return Density.getEnum(input) != null;
+                    }
+                });
+    }
 }

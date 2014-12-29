@@ -1,3 +1,12 @@
+buildscript {
+    repositories {
+        maven { url = uri(rootProject.cloneArtifacts.repository) }
+    }
+    dependencies {
+        classpath "com.jfrog.bintray.gradle:gradle-bintray-plugin:1.0"
+    }
+}
+
 apply plugin: 'java'
 apply plugin: 'sdk-java-lib'
 
@@ -16,5 +25,6 @@ project.ext.pomName = 'Android Tools layoutlib-api'
 project.ext.pomDesc = 'Library to use the rendering library for Android layouts: layoutlib'
 
 apply from: "$rootDir/buildSrc/base/publish.gradle"
+apply from: "$rootDir/buildSrc/base/bintray.gradle"
 apply from: "$rootDir/buildSrc/base/javadoc.gradle"
 

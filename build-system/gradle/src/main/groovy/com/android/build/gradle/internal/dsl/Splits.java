@@ -31,37 +31,49 @@ import java.util.Set;
  */
 public class Splits {
 
-    private final DensitySplitData density;
-    private final AbiSplitData abi;
+    private final DensitySplitOptions density;
+    private final AbiSplitOptions abi;
 
     private static final Set<String> ABI_LIST = ImmutableSet.of(
             "armeabi", "armeabi-v7a", "arm64-v8a","x86", "x86_64", "mips", "mips64");
 
     public Splits(@NonNull Instantiator instantiator) {
-        density = instantiator.newInstance(DensitySplitData.class);
-        abi = instantiator.newInstance(AbiSplitData.class);
+        density = instantiator.newInstance(DensitySplitOptions.class);
+        abi = instantiator.newInstance(AbiSplitOptions.class);
     }
 
-    public DensitySplitData getDensity() {
+    /**
+     * Density settings.
+     */
+    public DensitySplitOptions getDensity() {
         return density;
     }
 
-    public void density(Action<DensitySplitData> action) {
+    /**
+     * Configures density split settings.
+     */
+    public void density(Action<DensitySplitOptions> action) {
         action.execute(density);
     }
 
-    public AbiSplitData getAbi() {
+    /**
+     * ABI settings.
+     */
+    public AbiSplitOptions getAbi() {
         return abi;
     }
 
-    public void abi(Action<AbiSplitData> action) {
+    /**
+     * Configures ABI split settings.
+     */
+    public void abi(Action<AbiSplitOptions> action) {
         action.execute(abi);
     }
 
     /**
      * Returns the list of Density filters used for multi-apk.
      *
-     * null value is allowed, indicating the need to generate an apk with all densities.
+     * <p>null value is allowed, indicating the need to generate an apk with all densities.
      *
      * @return a set of filters.
      */
@@ -81,7 +93,7 @@ public class Splits {
     /**
      * Returns the list of ABI filters used for multi-apk.
      *
-     * null value is allowed, indicating the need to generate an apk with all abis.
+     * <p>null value is allowed, indicating the need to generate an apk with all abis.
      *
      * @return a set of filters.
      */

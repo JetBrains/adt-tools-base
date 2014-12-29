@@ -48,6 +48,12 @@ public class GenerateApkDataTask extends BaseTask {
     @Input
     String mainPkgName
 
+    @Input
+    int minSdkVersion
+
+    @Input
+    int targetSdkVersion
+
     @TaskAction
     void generate() {
         // always empty output dir.
@@ -66,6 +72,8 @@ public class GenerateApkDataTask extends BaseTask {
         AndroidBuilder builder = getBuilder();
 
         builder.generateApkData(apk, outDir, getMainPkgName(), ANDROID_WEAR_MICRO_APK)
-        builder.generateApkDataEntryInManifest(getManifestFile())
+        builder.generateApkDataEntryInManifest(getMinSdkVersion(),
+                getTargetSdkVersion(),
+                getManifestFile())
     }
 }

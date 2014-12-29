@@ -16,8 +16,11 @@
 package com.android.build.gradle
 import com.android.annotations.NonNull
 import com.android.build.gradle.api.ApkVariant
+import com.android.build.gradle.api.ApkVariantOutput
 import com.android.build.gradle.api.ApplicationVariant
+import com.android.build.gradle.api.BaseVariantOutput
 import com.android.build.gradle.api.TestVariant
+import com.android.build.gradle.internal.core.GradleVariantConfiguration
 import com.android.build.gradle.internal.test.BaseTest
 import org.gradle.api.JavaVersion
 import org.gradle.api.Project
@@ -34,7 +37,7 @@ public class AppPluginDslTest extends BaseTest {
 
     public void testBasic() {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "${FOLDER_TEST_REGULAR}/basic")).build()
+                new File(testDir, "${FOLDER_TEST_SAMPLES}/basic")).build()
 
         project.apply plugin: 'com.android.application'
 
@@ -63,7 +66,7 @@ public class AppPluginDslTest extends BaseTest {
      */
     public void testBasic2() {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "${FOLDER_TEST_REGULAR}/basic")).build()
+                new File(testDir, "${FOLDER_TEST_SAMPLES}/basic")).build()
 
         project.apply plugin: 'com.android.application'
 
@@ -89,7 +92,7 @@ public class AppPluginDslTest extends BaseTest {
 
     public void testBasicWithStringTarget() {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "${FOLDER_TEST_REGULAR}/basic")).build()
+                new File(testDir, "${FOLDER_TEST_SAMPLES}/basic")).build()
 
         project.apply plugin: 'com.android.application'
 
@@ -115,7 +118,7 @@ public class AppPluginDslTest extends BaseTest {
 
     public void testMultiRes() {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "${FOLDER_TEST_REGULAR}/multires")).build()
+                new File(testDir, "${FOLDER_TEST_SAMPLES}/multires")).build()
 
         project.apply plugin: 'com.android.application'
 
@@ -136,7 +139,7 @@ public class AppPluginDslTest extends BaseTest {
 
     public void testBuildTypes() {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "${FOLDER_TEST_REGULAR}/basic")).build()
+                new File(testDir, "${FOLDER_TEST_SAMPLES}/basic")).build()
 
         project.apply plugin: 'com.android.application'
 
@@ -173,7 +176,7 @@ public class AppPluginDslTest extends BaseTest {
 
     public void testFlavors() {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "${FOLDER_TEST_REGULAR}/basic")).build()
+                new File(testDir, "${FOLDER_TEST_SAMPLES}/basic")).build()
 
         project.apply plugin: 'com.android.application'
 
@@ -213,7 +216,7 @@ public class AppPluginDslTest extends BaseTest {
 
     public void testMultiFlavors() {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "${FOLDER_TEST_REGULAR}/basic")).build()
+                new File(testDir, "${FOLDER_TEST_SAMPLES}/basic")).build()
 
         project.apply plugin: 'com.android.application'
 
@@ -273,7 +276,7 @@ public class AppPluginDslTest extends BaseTest {
 
     public void testSourceSetsApi() {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "${FOLDER_TEST_REGULAR}/basic")).build()
+                new File(testDir, "${FOLDER_TEST_SAMPLES}/basic")).build()
 
         project.apply plugin: 'com.android.application'
 
@@ -291,7 +294,7 @@ public class AppPluginDslTest extends BaseTest {
 
     public void testObfuscationMappingFile() {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "${FOLDER_TEST_REGULAR}/basic")).build()
+                new File(testDir, "${FOLDER_TEST_SAMPLES}/basic")).build()
 
         project.apply plugin: 'com.android.application'
 
@@ -326,10 +329,72 @@ public class AppPluginDslTest extends BaseTest {
         }
     }
 
+    public void testProguardDsl() throws Exception {
+        Project project = ProjectBuilder.builder().withProjectDir(
+                new File(testDir, "${FOLDER_TEST_SAMPLES}/basic")).build()
+
+        project.apply plugin: 'com.android.application'
+
+        project.android {
+            compileSdkVersion 15
+
+            buildTypes {
+                release {
+                    proguardFile 'file1.1'
+                    proguardFiles 'file1.2', 'file1.3'
+                }
+
+                custom {
+                    proguardFile 'file3.1'
+                    proguardFiles 'file3.2', 'file3.3'
+                    proguardFiles = ['file3.1']
+                }
+            }
+
+            productFlavors {
+                f1 {
+                    proguardFile 'file2.1'
+                    proguardFiles 'file2.2', 'file2.3'
+                }
+
+                f2  {
+
+                }
+
+                f3 {
+                    proguardFile 'file4.1'
+                    proguardFiles 'file4.2', 'file4.3'
+                    proguardFiles = ['file4.1']
+                }
+            }
+        }
+
+        AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
+        plugin.createAndroidTasks(false)
+
+        def variantsData = plugin.variantManager.variantDataList
+        Map<String, GradleVariantConfiguration> variantMap =
+                variantsData.collectEntries {[it.name, it.variantConfiguration]}
+
+        def expectedFiles = [
+                f1Release: ["file1.1", "file1.2", "file1.3", "file2.1", "file2.2", "file2.3"],
+                f1Debug: ["file2.1", "file2.2", "file2.3"],
+                f2Release: ["file1.1", "file1.2", "file1.3"],
+                f2Debug: [],
+                f2Custom: ["file3.1"],
+                f3Custom: ["file3.1", "file4.1"],
+        ]
+
+        expectedFiles.each { name, expected ->
+            def actual = variantMap[name].getProguardFiles(false, [])
+            assert (actual*.name as Set) == (expected as Set), name
+        }
+    }
+
     public void testSettingLanguageLevelFromCompileSdk() {
         def testLanguageLevel = { version, expectedLanguageLevel, useJack ->
             Project project = ProjectBuilder.builder().withProjectDir(
-                    new File(testDir, "${FOLDER_TEST_REGULAR}/basic")).build()
+                    new File(testDir, "${FOLDER_TEST_SAMPLES}/basic")).build()
 
             project.apply plugin: 'com.android.application'
             project.android {
@@ -372,7 +437,7 @@ public class AppPluginDslTest extends BaseTest {
 
     public void testSettingLanguageLevelFromCompileSdk_dontOverride() {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "${FOLDER_TEST_REGULAR}/basic")).build()
+                new File(testDir, "${FOLDER_TEST_SAMPLES}/basic")).build()
 
         project.apply plugin: 'com.android.application'
         project.android {
@@ -395,7 +460,7 @@ public class AppPluginDslTest extends BaseTest {
 
     public void testSettingLanguageLevelFromCompileSdk_unknownVersion() {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "${FOLDER_TEST_REGULAR}/basic")).build()
+                new File(testDir, "${FOLDER_TEST_SAMPLES}/basic")).build()
 
         project.apply plugin: 'com.android.application'
         project.android {
@@ -434,28 +499,39 @@ public class AppPluginDslTest extends BaseTest {
     private static void checkTasks(@NonNull ApkVariant variant) {
         boolean isTestVariant = variant instanceof TestVariant;
 
-        assertNotNull(variant.processManifest)
         assertNotNull(variant.aidlCompile)
         assertNotNull(variant.mergeResources)
         assertNotNull(variant.mergeAssets)
-        assertNotNull(variant.processResources)
         assertNotNull(variant.generateBuildConfig)
         assertNotNull(variant.javaCompile)
         assertNotNull(variant.processJavaResources)
         assertNotNull(variant.dex)
-        assertNotNull(variant.packageApplication)
-
         assertNotNull(variant.assemble)
         assertNotNull(variant.uninstall)
+
+        assertFalse(variant.outputs.isEmpty())
+
+        for (BaseVariantOutput baseVariantOutput : variant.outputs) {
+            assertTrue(baseVariantOutput instanceof ApkVariantOutput)
+            ApkVariantOutput apkVariantOutput = (ApkVariantOutput) baseVariantOutput
+
+            assertNotNull(apkVariantOutput.processManifest)
+            assertNotNull(apkVariantOutput.processResources)
+            assertNotNull(apkVariantOutput.packageApplication)
+        }
 
         if (variant.isSigningReady()) {
             assertNotNull(variant.install)
 
-            // tested variant are never zipAligned.
-            if (!isTestVariant && variant.buildType.zipAlignEnabled) {
-                assertNotNull(variant.zipAlign)
-            } else {
-                assertNull(variant.zipAlign)
+            for (BaseVariantOutput baseVariantOutput : variant.outputs) {
+                ApkVariantOutput apkVariantOutput = (ApkVariantOutput) baseVariantOutput
+
+                // tested variant are never zipAligned.
+                if (!isTestVariant && variant.buildType.zipAlignEnabled) {
+                    assertNotNull(apkVariantOutput.zipAlign)
+                } else {
+                    assertNull(apkVariantOutput.zipAlign)
+                }
             }
         } else {
             assertNull(variant.install)

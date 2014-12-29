@@ -16,7 +16,7 @@
 package com.android.build.gradle.tasks
 
 import com.android.build.gradle.internal.dependency.SymbolFileProviderImpl
-import com.android.build.gradle.internal.dsl.AaptOptionsImpl
+import com.android.build.gradle.internal.dsl.AaptOptions
 import com.android.build.gradle.internal.tasks.IncrementalTask
 import com.android.builder.core.AaptPackageCommandBuilder
 import com.android.builder.core.VariantConfiguration
@@ -56,6 +56,9 @@ public class ProcessAndroidResources extends IncrementalTask {
     @Input
     Collection<String> resourceConfigs
 
+    @Input @Optional
+    String preferredDensity
+
     // ----- PRIVATE TASK API -----
     @Input
     String getBuildToolsVersion() {
@@ -84,7 +87,7 @@ public class ProcessAndroidResources extends IncrementalTask {
     boolean pseudoLocalesEnabled
 
     @Nested
-    AaptOptionsImpl aaptOptions
+    AaptOptions aaptOptions
 
     @Override
     protected void doFullTaskAction() {
@@ -110,6 +113,7 @@ public class ProcessAndroidResources extends IncrementalTask {
                     .setPseudoLocalesEnabled(getPseudoLocalesEnabled())
                     .setResourceConfigs(getResourceConfigs())
                     .setSplits(getSplits())
+                    .setPreferredDensity(getPreferredDensity())
 
         getBuilder().processResources(
                 aaptPackageCommandBuilder,

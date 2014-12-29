@@ -91,7 +91,8 @@ public class PlaceholderHandler {
                     // if this is a library, ignore the failure
                     MergingReport.Record.Severity severity =
                             mergeType == ManifestMerger2.MergeType.LIBRARY
-                        ? MergingReport.Record.Severity.INFO
+                        // revert to INFO once no placeholder substitution is lib is optional.
+                        ? MergingReport.Record.Severity.ERROR
                         : MergingReport.Record.Severity.ERROR;
 
                     xmlAttribute.addMessage(mergingReportBuilder, severity,

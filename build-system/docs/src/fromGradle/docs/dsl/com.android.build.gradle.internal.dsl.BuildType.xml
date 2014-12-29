@@ -1,0 +1,31 @@
+<section>
+    <section>
+        <title>Properties</title>
+        <table>
+            <thead>
+                <tr><td>Name</td></tr>
+            </thead>
+            <tr><td>debuggable</td></tr>
+            <tr><td>jniDebuggable</td></tr>
+            <tr><td>renderscriptDebuggable</td></tr>
+            <tr><td>renderscriptOptimLevel</td></tr>
+            <tr><td>applicationIdSuffix</td></tr>
+            <tr><td>versionNameSuffix</td></tr>
+            <tr><td>signingConfig</td></tr>
+            <tr><td>zipAlignEnabled</td></tr>
+            <tr><td>minifyEnabled</td></tr>
+            <tr><td>multiDexEnabled</td></tr>
+        </table>
+    </section>
+    <section>
+        <title>Methods</title>
+        <table>
+            <thead>
+                <tr><td>Name</td></tr>
+            </thead>
+            <tr><td>proguardFile</td></tr>
+            <tr><td>proguardFiles</td></tr>
+            <tr><td>setProguardFiles</td></tr>
+        </table>
+    </section>
+</section>

@@ -29,7 +29,7 @@ import org.gradle.api.artifacts.Configuration
  */
 public class ProductFlavorData<T extends DefaultProductFlavor> {
 
-    private static class ConfigurationProviderImpl implements ConfigurationProvider {
+    public static class ConfigurationProviderImpl implements ConfigurationProvider {
 
         private final Project project
         private final DefaultAndroidSourceSet sourceSet
