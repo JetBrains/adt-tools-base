@@ -21,23 +21,19 @@ import com.android.build.gradle.internal.dsl.BuildType
 import com.android.build.gradle.internal.dsl.BuildTypeFactory
 import com.android.build.gradle.internal.dsl.GroupableProductFlavor
 import com.android.build.gradle.internal.dsl.GroupableProductFlavorFactory
-import com.android.build.gradle.ndk.NdkExtension
-import com.android.build.gradle.ndk.internal.NdkConfiguration
 import com.android.builder.core.BuilderConstants
 import groovy.transform.CompileStatic
-import com.google.common.collect.Lists
 import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.gradle.api.internal.file.FileResolver
 import org.gradle.internal.reflect.Instantiator
 import org.gradle.internal.service.ServiceRegistry
 import org.gradle.language.base.ProjectSourceSet
+import org.gradle.language.base.internal.registry.LanguageRegistry
 import org.gradle.language.base.plugins.ComponentModelBasePlugin
 import org.gradle.model.Finalize
 import org.gradle.model.Model
 import org.gradle.model.Mutate
-import org.gradle.model.Path
 import org.gradle.model.RuleSource
 import org.gradle.model.collection.CollectionBuilder
 import org.gradle.model.internal.core.ModelCreators
@@ -49,6 +45,8 @@ import org.gradle.platform.base.ComponentBinaries
 import org.gradle.platform.base.ComponentSpecContainer
 import org.gradle.platform.base.ComponentType
 import org.gradle.platform.base.ComponentTypeBuilder
+import org.gradle.platform.base.LanguageType
+import org.gradle.platform.base.LanguageTypeBuilder
 
 import javax.inject.Inject
 
@@ -83,6 +81,12 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
 
     @RuleSource
     static class Rules {
+        @LanguageType
+        void registerLanguage(LanguageTypeBuilder<AndroidLanguageSourceSet> builder) {
+            builder.setLanguageName("android")
+            builder.defaultImplementation(AndroidLanguageSourceSet)
+        }
+
         @Model("android")
         void android(
                 AndroidModel androidModel,
@@ -151,14 +155,17 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
             return (AndroidComponentSpec) specs.getByName(COMPONENT_NAME)
         }
 
-        @Model("androidSources")
-        AndroidComponentModelSourceSet createAndroidSourceSet (
+        @Model
+        AndroidComponentModelSourceSet androidSources (
                 ServiceRegistry serviceRegistry,
-                ProjectSourceSet projectSourceSet) {
+                ProjectSourceSet projectSourceSet,
+                LanguageRegistry languageRegistry) {
             def instantiator = serviceRegistry.get(Instantiator.class)
-            def fileResolver = serviceRegistry.get(FileResolver.class);
-            def sources =
-                    new AndroidComponentModelSourceSet(instantiator, projectSourceSet, fileResolver)
+            def sources = new AndroidComponentModelSourceSet(instantiator, projectSourceSet)
+
+            languageRegistry.each { languageRegistration ->
+                sources.registerLanguage(languageRegistration)
+            }
 
             // Create main source set.
             sources.create("main")

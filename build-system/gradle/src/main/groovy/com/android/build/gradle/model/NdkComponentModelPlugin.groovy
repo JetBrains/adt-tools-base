@@ -33,6 +33,8 @@ import org.gradle.api.internal.project.ProjectIdentifier
 import org.gradle.api.tasks.TaskContainer
 import org.gradle.internal.reflect.Instantiator
 import org.gradle.internal.service.ServiceRegistry
+import org.gradle.language.c.CSourceSet
+import org.gradle.language.cpp.CppSourceSet
 import org.gradle.model.Finalize
 import org.gradle.model.Model
 import org.gradle.model.Mutate
@@ -76,6 +78,12 @@ class NdkComponentModelPlugin implements Plugin<Project> {
         NdkExtension createAndroidNdk(ServiceRegistry serviceRegistry) {
             Instantiator instantiator = serviceRegistry.get(Instantiator.class)
             return instantiator.newInstance(NdkExtension)
+        }
+
+        @Mutate
+        void addDefaultNativeSourceSet(AndroidComponentModelSourceSet sources) {
+            sources.addDefaultSourceSet("c", CSourceSet.class);
+            sources.addDefaultSourceSet("cpp", CppSourceSet.class);
         }
 
         @Model
