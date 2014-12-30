@@ -16,8 +16,6 @@
 
 package com.android.build.gradle.model
 
-import static com.android.builder.core.VariantConfiguration.Type.ANDROID_TEST;
-
 import com.android.annotations.Nullable
 import com.android.build.gradle.AppExtension
 import com.android.build.gradle.BaseExtension
@@ -56,15 +54,13 @@ import org.gradle.internal.reflect.Instantiator
 import org.gradle.internal.service.ServiceRegistry
 import org.gradle.language.base.FunctionalSourceSet
 import org.gradle.language.base.LanguageSourceSet
-import org.gradle.language.base.internal.LanguageRegistration
-import org.gradle.language.base.internal.LanguageRegistry
 import org.gradle.language.base.internal.SourceTransformTaskConfig
+import org.gradle.language.base.internal.registry.LanguageTransform
 import org.gradle.model.Finalize
 import org.gradle.model.Model
 import org.gradle.model.Mutate
 import org.gradle.model.Path
 import org.gradle.model.RuleSource
-import org.gradle.model.collection.CollectionBuilder
 import org.gradle.model.internal.core.ModelCreators
 import org.gradle.model.internal.core.ModelReference
 import org.gradle.model.internal.registry.ModelRegistry
@@ -72,12 +68,12 @@ import org.gradle.platform.base.BinaryContainer
 import org.gradle.platform.base.BinarySpec
 import org.gradle.platform.base.BinaryType
 import org.gradle.platform.base.BinaryTypeBuilder
-import org.gradle.platform.base.TransformationFileType
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry
 
 import javax.inject.Inject
 
 import static com.android.builder.core.BuilderConstants.DEBUG
+import static com.android.builder.core.VariantConfiguration.Type.ANDROID_TEST
 
 @CompileStatic
 public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Project> {
@@ -134,11 +130,6 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
             androidModel.signingConfigs = signingConfigs
         }
 
-        @Mutate
-        void registerLanguage(LanguageRegistry languages) {
-            languages.add(new AndroidSource())
-        }
-
         @Model("androidConfig")
         BaseExtension androidConfig(
                 ServiceRegistry serviceRegistry,
@@ -161,6 +152,18 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
             extension.useNewNativePlugin = true
 
             return extension
+        }
+
+        @Mutate
+        void addDefaulAndroidSourceSet(AndroidComponentModelSourceSet sources) {
+            sources.addDefaultSourceSet("resources", AndroidLanguageSourceSet.class);
+            sources.addDefaultSourceSet("java", AndroidLanguageSourceSet.class);
+            sources.addDefaultSourceSet("manifest", AndroidLanguageSourceSet.class);
+            sources.addDefaultSourceSet("res", AndroidLanguageSourceSet.class);
+            sources.addDefaultSourceSet("assets", AndroidLanguageSourceSet.class);
+            sources.addDefaultSourceSet("aidl", AndroidLanguageSourceSet.class);
+            sources.addDefaultSourceSet("renderscript", AndroidLanguageSourceSet.class);
+            sources.addDefaultSourceSet("jniLibs", AndroidLanguageSourceSet.class);
         }
 
         @Mutate
@@ -195,7 +198,6 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
                 NamedDomainObjectContainer<BuildType> buildTypeContainer,
                 NamedDomainObjectContainer<GroupableProductFlavor> productFlavorContainer,
                 NamedDomainObjectContainer<SigningConfig> signingConfigContainer,
-                AndroidComponentModelSourceSet sources,
                 VariantFactory variantFactory,
                 BasePlugin plugin) {
             VariantManager variantManager = new VariantManager(
@@ -219,8 +221,6 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
             spec.extension = androidExtension
             spec.variantManager = variantManager
             spec.signingOverride = plugin.getSigningOverride()
-
-            applyProjectSourceSet(spec, sources, plugin)
         }
 
         @BinaryType
@@ -250,9 +250,12 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
                 TaskContainer tasks,
                 BinaryContainer binaries,
                 AndroidComponentSpec androidSpec,
-                BasePlugin plugin) {
+                BasePlugin plugin,
+                AndroidComponentModelSourceSet androidSources) {
             DefaultAndroidComponentSpec spec = (DefaultAndroidComponentSpec) androidSpec
             VariantManager variantManager = spec.variantManager
+
+            applyProjectSourceSet(spec, androidSources, plugin)
 
             // Create lifecycle tasks.
             Task uninstallAll = tasks.create("uninstallAll")
@@ -404,7 +407,7 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
      * Allows default LanguageSourceSet to be create until specialized LanguageRegistration is
      * created.
      */
-    private static class AndroidSource implements LanguageRegistration<AndroidLanguageSourceSet> {
+    private static class AndroidSource implements LanguageTransform<AndroidLanguageSourceSet, AndroidObject> {
         public String getName() {
             return "main";
         }
@@ -421,7 +424,7 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
             return Collections.emptyMap();
         }
 
-        public Class<? extends TransformationFileType> getOutputType() {
+        public Class<AndroidObject> getOutputType() {
             return null;
         }
 

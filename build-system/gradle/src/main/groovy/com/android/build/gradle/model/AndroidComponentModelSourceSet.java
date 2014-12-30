@@ -21,16 +21,14 @@ import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.NamedDomainObjectFactory;
 import org.gradle.api.file.SourceDirectorySet;
 import org.gradle.api.internal.AbstractNamedDomainObjectContainer;
-import org.gradle.api.internal.file.FileResolver;
 import org.gradle.internal.reflect.Instantiator;
 import org.gradle.language.base.FunctionalSourceSet;
 import org.gradle.language.base.LanguageSourceSet;
 import org.gradle.language.base.ProjectSourceSet;
 import org.gradle.language.base.internal.DefaultFunctionalSourceSet;
+import org.gradle.language.base.internal.registry.LanguageRegistration;
 import org.gradle.language.c.CSourceSet;
-import org.gradle.language.c.internal.DefaultCSourceSet;
 import org.gradle.language.cpp.CppSourceSet;
-import org.gradle.language.cpp.internal.DefaultCppSourceSet;
 
 /**
  * Collection of source sets for each build type, product flavor or variant.
@@ -42,68 +40,26 @@ import org.gradle.language.cpp.internal.DefaultCppSourceSet;
 public class AndroidComponentModelSourceSet
         extends AbstractNamedDomainObjectContainer<FunctionalSourceSet>
         implements NamedDomainObjectContainer<FunctionalSourceSet> {
-    ProjectSourceSet sources;
+    ProjectSourceSet projectSourceSet;
 
     public AndroidComponentModelSourceSet (
-            final Instantiator instantiator,
-            ProjectSourceSet sources,
-            final FileResolver fileResolver) {
+            Instantiator instantiator,
+            ProjectSourceSet projectSourceSet) {
         super(FunctionalSourceSet.class, instantiator);
-        this.sources = sources;
+        this.projectSourceSet = projectSourceSet;
+    }
 
+    public <T extends LanguageSourceSet> void registerLanguage(final LanguageRegistration<T> languageRegistration) {
         // Hardcoding registered language sets and default source sets for now.
         all(new Action<FunctionalSourceSet>() {
             @Override
             public void execute(final FunctionalSourceSet functionalSourceSet) {
                 functionalSourceSet.registerFactory(
-                        AndroidLanguageSourceSet.class,
-                        new NamedDomainObjectFactory<AndroidLanguageSourceSet>() {
-                            @Override
-                            public AndroidLanguageSourceSet create(String name) {
-                                return (AndroidLanguageSourceSet) instantiator.newInstance(
-                                        AndroidLanguageSourceSet.class,
-                                        name,
-                                        functionalSourceSet.getName(),
-                                        fileResolver);
-                            }
-                        });
-                functionalSourceSet.registerFactory(
-                        CSourceSet.class,
-                        new NamedDomainObjectFactory<CSourceSet>() {
-                            @Override
-                            public CSourceSet create(String name) {
-                                return instantiator.newInstance(
-                                        DefaultCSourceSet.class,
-                                        name,
-                                        functionalSourceSet.getName(),
-                                        fileResolver);
-                            }
-                        });
-                functionalSourceSet.registerFactory(
-                        CppSourceSet.class,
-                        new NamedDomainObjectFactory<CppSourceSet>() {
-                            @Override
-                            public CppSourceSet create(String name) {
-                                return instantiator.newInstance(
-                                        DefaultCppSourceSet.class,
-                                        name,
-                                        functionalSourceSet.getName(),
-                                        fileResolver);
-                            }
-                        });
+                        languageRegistration.getSourceSetType(),
+                        languageRegistration.getSourceSetFactory(functionalSourceSet.getName()));
             }
         });
 
-        addDefaultSourceSet("resources", AndroidLanguageSourceSet.class);
-        addDefaultSourceSet("java", AndroidLanguageSourceSet.class);
-        addDefaultSourceSet("manifest", AndroidLanguageSourceSet.class);
-        addDefaultSourceSet("res", AndroidLanguageSourceSet.class);
-        addDefaultSourceSet("assets", AndroidLanguageSourceSet.class);
-        addDefaultSourceSet("aidl", AndroidLanguageSourceSet.class);
-        addDefaultSourceSet("renderscript", AndroidLanguageSourceSet.class);
-        addDefaultSourceSet("jniLibs", AndroidLanguageSourceSet.class);
-        addDefaultSourceSet("c", CSourceSet.class);
-        addDefaultSourceSet("cpp", CppSourceSet.class);
     }
 
     @Override
@@ -112,14 +68,14 @@ public class AndroidComponentModelSourceSet
                 DefaultFunctionalSourceSet.class,
                 name,
                 getInstantiator(),
-                sources);
+                projectSourceSet);
     }
 
-    private void addDefaultSourceSet(final String sourceSetName, final Class<? extends LanguageSourceSet> type) {
+    public void addDefaultSourceSet(final String sourceSetName, final Class<? extends LanguageSourceSet> type) {
         all(new Action<FunctionalSourceSet>() {
             @Override
             public void execute(FunctionalSourceSet functionalSourceSet) {
-                LanguageSourceSet sourceSet= functionalSourceSet.maybeCreate(sourceSetName, type);
+                functionalSourceSet.maybeCreate(sourceSetName, type);
             }
         });
     }
