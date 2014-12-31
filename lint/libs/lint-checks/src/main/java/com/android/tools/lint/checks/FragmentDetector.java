@@ -39,6 +39,7 @@ import java.util.List;
 
 import lombok.ast.ClassDeclaration;
 import lombok.ast.ConstructorDeclaration;
+import lombok.ast.Node;
 import lombok.ast.NormalTypeBody;
 import lombok.ast.TypeMember;
 
@@ -94,8 +95,12 @@ public class FragmentDetector extends Detector implements JavaScanner {
     }
 
     @Override
-    public void checkClass(@NonNull JavaContext context, @NonNull ClassDeclaration node,
-            @NonNull ResolvedClass cls) {
+    public void checkClass(@NonNull JavaContext context, @Nullable ClassDeclaration node,
+            @NonNull Node declarationOrAnonymous, @NonNull ResolvedClass cls) {
+        if (node == null) {
+            return;
+        }
+
         int flags = node.astModifiers().getEffectiveModifierFlags();
         if ((flags & Modifier.ABSTRACT) != 0) {
             return;

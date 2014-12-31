@@ -92,8 +92,11 @@ public class OverrideConcreteDetector extends Detector implements JavaScanner {
     }
 
     @Override
-    public void checkClass(@NonNull JavaContext context, @NonNull ClassDeclaration node,
-            @NonNull ResolvedClass resolvedClass) {
+    public void checkClass(@NonNull JavaContext context, @Nullable ClassDeclaration node,
+            @NonNull Node declarationOrAnonymous, @NonNull ResolvedClass resolvedClass) {
+        if (node == null) {
+            return;
+        }
         int flags = node.astModifiers().getEffectiveModifierFlags();
         if ((flags & Modifier.ABSTRACT) != 0) {
             return;

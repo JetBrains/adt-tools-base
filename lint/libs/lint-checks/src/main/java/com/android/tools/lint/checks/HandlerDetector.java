@@ -16,29 +16,25 @@
 
 package com.android.tools.lint.checks;
 
-import static com.android.SdkConstants.CONSTRUCTOR_NAME;
-
 import com.android.annotations.NonNull;
-import com.android.tools.lint.detector.api.Category;
-import com.android.tools.lint.detector.api.ClassContext;
-import com.android.tools.lint.detector.api.Detector;
-import com.android.tools.lint.detector.api.Detector.ClassScanner;
-import com.android.tools.lint.detector.api.Implementation;
-import com.android.tools.lint.detector.api.Issue;
-import com.android.tools.lint.detector.api.LintUtils;
-import com.android.tools.lint.detector.api.Location;
-import com.android.tools.lint.detector.api.Scope;
-import com.android.tools.lint.detector.api.Severity;
-import com.android.tools.lint.detector.api.Speed;
+import com.android.annotations.Nullable;
+import com.android.tools.lint.client.api.JavaParser.ResolvedClass;
+import com.android.tools.lint.client.api.JavaParser.ResolvedMethod;
+import com.android.tools.lint.client.api.JavaParser.TypeDescriptor;
+import com.android.tools.lint.detector.api.*;
 
-import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.MethodNode;
+import lombok.ast.ClassDeclaration;
+import lombok.ast.Node;
+
+import java.lang.reflect.Modifier;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Checks that Handler implementations are top level classes or static.
  * See the corresponding check in the android.os.Handler source code.
  */
-public class HandlerDetector extends Detector implements ClassScanner {
+public class HandlerDetector extends Detector implements Detector.JavaScanner {
 
     /** Potentially leaking handlers */
     public static final Issue ISSUE = Issue.create(
@@ -59,7 +55,10 @@ public class HandlerDetector extends Detector implements ClassScanner {
             Severity.WARNING,
             new Implementation(
                     HandlerDetector.class,
-                    Scope.CLASS_FILE_SCOPE));
+                    Scope.JAVA_FILE_SCOPE));
+
+    private static final String LOOPER_CLS = "android.os.Looper";
+    private static final String HANDLER_CLS = "android.os.Handler";
 
     /** Constructs a new {@link HandlerDetector} */
     public HandlerDetector() {
@@ -71,29 +70,62 @@ public class HandlerDetector extends Detector implements ClassScanner {
         return Speed.FAST;
     }
 
-    // ---- Implements ClassScanner ----
+    // ---- Implements JavaScanner ----
+
+    @Nullable
+    @Override
+    public List<String> applicableSuperClasses() {
+        return Collections.singletonList(HANDLER_CLS);
+    }
 
     @Override
-    public void checkClass(@NonNull ClassContext context, @NonNull ClassNode classNode) {
-        if (classNode.name.indexOf('$') == -1) {
+    public void checkClass(@NonNull JavaContext context, @Nullable ClassDeclaration declaration,
+            @NonNull Node node, @NonNull ResolvedClass cls) {
+        if (!isInnerClass(declaration)) {
             return;
         }
 
-        if (context.getDriver().isSubclassOf(classNode, "android/os/Handler") //$NON-NLS-1$
-                && !LintUtils.isStaticInnerClass(classNode)) {
-            // Only flag handlers using the default looper
-            for (Object m : classNode.methods) {
-                MethodNode method = (MethodNode) m;
-                if (CONSTRUCTOR_NAME.equals(method.name) &&
-                        method.desc.contains("Landroid/os/Looper;")) {
-                    return;
+        if (isStaticClass(declaration)) {
+            return;
+        }
+
+        // Only flag handlers using the default looper
+        if (hasLooperConstructorParameter(cls)) {
+            return;
+        }
+
+        Node locationNode = node instanceof ClassDeclaration
+                ? ((ClassDeclaration) node).astName() : node;
+        Location location = context.getLocation(locationNode);
+        context.report(ISSUE, location, String.format(
+                "This Handler class should be static or leaks might occur (%1$s)",
+                cls.getName()));
+    }
+
+    private static boolean isInnerClass(@Nullable ClassDeclaration node) {
+        return node == null || // null class declarations means anonymous inner class
+                JavaContext.getParentOfType(node, ClassDeclaration.class, true) != null;
+    }
+
+    private static boolean isStaticClass(@Nullable ClassDeclaration node) {
+        if (node == null) {
+            // A null class declaration means anonymous inner class, and these can't be static
+            return false;
+        }
+
+        int flags = node.astModifiers().getEffectiveModifierFlags();
+        return (flags & Modifier.STATIC) != 0;
+    }
+
+    private static boolean hasLooperConstructorParameter(@NonNull ResolvedClass cls) {
+        for (ResolvedMethod constructor : cls.getConstructors()) {
+            for (int i = 0, n = constructor.getArgumentCount(); i < n; i++) {
+                TypeDescriptor type = constructor.getArgumentType(i);
+                if (type.matchesSignature(LOOPER_CLS)) {
+                    return true;
                 }
             }
-
-            Location location = context.getLocation(classNode);
-            context.report(ISSUE, location, String.format(
-                    "This Handler class should be static or leaks might occur (%1$s)",
-                        ClassContext.createSignature(classNode.name, null, null)));
         }
+        return false;
     }
 }
