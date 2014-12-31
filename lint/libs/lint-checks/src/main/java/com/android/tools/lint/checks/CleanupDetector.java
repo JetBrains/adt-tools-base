@@ -20,17 +20,18 @@ import static com.android.SdkConstants.CLASS_CONTEXT;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.tools.lint.client.api.JavaParser;
 import com.android.tools.lint.client.api.JavaParser.ResolvedClass;
 import com.android.tools.lint.client.api.JavaParser.ResolvedMethod;
 import com.android.tools.lint.client.api.JavaParser.ResolvedNode;
 import com.android.tools.lint.client.api.JavaParser.ResolvedVariable;
+import com.android.tools.lint.client.api.JavaParser.TypeDescriptor;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Detector.JavaScanner;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.JavaContext;
+import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 
@@ -40,6 +41,7 @@ import java.util.List;
 import lombok.ast.AstVisitor;
 import lombok.ast.BinaryExpression;
 import lombok.ast.BinaryOperator;
+import lombok.ast.ConstructorInvocation;
 import lombok.ast.Expression;
 import lombok.ast.ForwardingAstVisitor;
 import lombok.ast.MethodInvocation;
@@ -86,8 +88,10 @@ public class CleanupDetector extends Detector implements JavaScanner {
 
     // Target method names
     private static final String RECYCLE = "recycle";                                  //$NON-NLS-1$
+    private static final String RELEASE = "release";                                  //$NON-NLS-1$
     private static final String OBTAIN = "obtain";                                    //$NON-NLS-1$
     private static final String SHOW = "show";                                        //$NON-NLS-1$
+    private static final String ACQUIRE_CPC = "acquireContentProviderClient";         //$NON-NLS-1$
     private static final String OBTAIN_NO_HISTORY = "obtainNoHistory";                //$NON-NLS-1$
     private static final String OBTAIN_ATTRIBUTES = "obtainAttributes";               //$NON-NLS-1$
     private static final String OBTAIN_TYPED_ARRAY = "obtainTypedArray";              //$NON-NLS-1$
@@ -112,6 +116,14 @@ public class CleanupDetector extends Detector implements JavaScanner {
     private static final String FRAGMENT_TRANSACTION_V4_CLS =
             "android.support.v4.app.FragmentTransaction";                             //$NON-NLS-1$
 
+    public static final String SURFACE_CLS = "android.view.Surface";
+    public static final String SURFACE_TEXTURE_CLS = "android.graphics.SurfaceTexture";
+
+    public static final String CONTENT_PROVIDER_CLIENT_CLS
+            = "android.content.ContentProviderClient";
+
+    public static final String CONTENT_RESOLVER_CLS = "android.content.ContentResolver";
+
     /** Constructs a new {@link CleanupDetector} */
     public CleanupDetector() {
     }
@@ -129,8 +141,17 @@ public class CleanupDetector extends Detector implements JavaScanner {
                 OBTAIN, OBTAIN_NO_HISTORY,
                 OBTAIN_STYLED_ATTRIBUTES,
                 OBTAIN_ATTRIBUTES,
-                OBTAIN_TYPED_ARRAY
+                OBTAIN_TYPED_ARRAY,
+
+                // Release check
+                ACQUIRE_CPC
         );
+    }
+
+    @Nullable
+    @Override
+    public List<String> getApplicableConstructorTypes() {
+        return Arrays.asList(SURFACE_TEXTURE_CLS, SURFACE_CLS);
     }
 
     @Override
@@ -145,6 +166,12 @@ public class CleanupDetector extends Detector implements JavaScanner {
         }
     }
 
+    @Override
+    public void visitConstructor(@NonNull JavaContext context, @Nullable AstVisitor visitor,
+            @NonNull ConstructorInvocation node, @NonNull ResolvedMethod constructor) {
+        checkRecycled(context, node, constructor.getContainingClass().getSignature(), RELEASE);
+    }
+
     private static void checkResourceRecycled(@NonNull JavaContext context,
             @NonNull MethodInvocation node, @NonNull String name) {
         // Recycle detector
@@ -156,26 +183,29 @@ public class CleanupDetector extends Detector implements JavaScanner {
         ResolvedClass containingClass = method.getContainingClass();
         if ((OBTAIN.equals(name) || OBTAIN_NO_HISTORY.equals(name)) &&
                 containingClass.isSubclassOf(MOTION_EVENT_CLS, false)) {
-            checkRecycled(context, node, MOTION_EVENT_CLS);
+            checkRecycled(context, node, MOTION_EVENT_CLS, RECYCLE);
         } else if (OBTAIN.equals(name) && containingClass.isSubclassOf(PARCEL_CLS, false)) {
-            checkRecycled(context, node, PARCEL_CLS);
+            checkRecycled(context, node, PARCEL_CLS, RECYCLE);
         } else if (OBTAIN.equals(name) &&
                 containingClass.isSubclassOf(VELOCITY_TRACKER_CLS, false)) {
-            checkRecycled(context, node, VELOCITY_TRACKER_CLS);
+            checkRecycled(context, node, VELOCITY_TRACKER_CLS, RECYCLE);
         } else if ((OBTAIN_STYLED_ATTRIBUTES.equals(name)
                 || OBTAIN_ATTRIBUTES.equals(name)
                 || OBTAIN_TYPED_ARRAY.equals(name)) &&
                 (containingClass.isSubclassOf(CLASS_CONTEXT, false) ||
                         containingClass.isSubclassOf(RESOURCES_CLS, false))) {
-            JavaParser.TypeDescriptor returnType = method.getReturnType();
+            TypeDescriptor returnType = method.getReturnType();
             if (returnType != null && returnType.matchesSignature(TYPED_ARRAY_CLS)) {
-                checkRecycled(context, node, TYPED_ARRAY_CLS);
+                checkRecycled(context, node, TYPED_ARRAY_CLS, RECYCLE);
             }
+        } else if (ACQUIRE_CPC.equals(name) && containingClass.isSubclassOf(
+                CONTENT_RESOLVER_CLS, false)) {
+            checkRecycled(context, node, CONTENT_PROVIDER_CLIENT_CLS, RELEASE);
         }
     }
 
-    private static void checkRecycled(@NonNull JavaContext context, @NonNull MethodInvocation node,
-            @NonNull String recycleType) {
+    private static void checkRecycled(@NonNull JavaContext context, @NonNull Node node,
+            @NonNull String recycleType, @NonNull String recycleName) {
         ResolvedVariable boundVariable = getVariable(context, node);
         if (boundVariable == null) {
             return;
@@ -186,16 +216,27 @@ public class CleanupDetector extends Detector implements JavaScanner {
             return;
         }
 
-        RecycleVisitor visitor = new RecycleVisitor(context, boundVariable, recycleType);
+        RecycleVisitor visitor = new RecycleVisitor(context, boundVariable, recycleType,
+                recycleName);
         method.accept(visitor);
         if (visitor.containsRecycle() || visitor.variableEscapes()) {
             return;
         }
 
         String className = recycleType.substring(recycleType.lastIndexOf('.') + 1);
-        String message = String.format(
-                "This `%1$s` should be recycled after use with `#recycle()`", className);
-        context.report(RECYCLE_RESOURCE, node, context.getLocation(node.astName()), message);
+        String message;
+        if (RECYCLE.equals(recycleName)) {
+            message = String.format(
+                    "This `%1$s` should be recycled after use with `#recycle()`", className);
+        } else {
+            message = String.format(
+                    "This `%1$s` should be freed up after use with `#%2$s()`", className,
+                    recycleName);
+        }
+        Node locationNode = node instanceof MethodInvocation ?
+                ((MethodInvocation) node).astName() : node;
+        Location location = context.getLocation(locationNode);
+        context.report(RECYCLE_RESOURCE, node, location, message);
     }
 
     private static boolean checkTransactionCommits(@NonNull JavaContext context,
@@ -386,13 +427,15 @@ public class CleanupDetector extends Detector implements JavaScanner {
         private final String mRecycleType;
         private final ResolvedVariable mVariable;
         private final String mVariableName;
+        private final String mRecycleName;
         private boolean mContainsRecycle;
         private boolean mEscapes;
 
         public RecycleVisitor(JavaContext context, @NonNull ResolvedVariable variable,
-                @NonNull String recycleType) {
+                @NonNull String recycleType, @NonNull String recycleName) {
             mContext = context;
             mVariable = variable;
+            mRecycleName = recycleName;
             mRecycleType = recycleType;
             mVariableName = variable.getName();
         }
@@ -471,7 +514,7 @@ public class CleanupDetector extends Detector implements JavaScanner {
 
         private boolean isRecycle(@NonNull MethodInvocation call) {
             String methodName = call.astName().astValue();
-            if (!RECYCLE.equals(methodName)) {
+            if (!mRecycleName.equals(methodName)) {
                 return false;
             }
             ResolvedNode resolved = mContext.resolve(call);

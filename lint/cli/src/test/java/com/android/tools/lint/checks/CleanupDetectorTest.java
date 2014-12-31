@@ -158,4 +158,40 @@ public class CleanupDetectorTest extends AbstractCheckTest {
                         "appcompat/FragmentManager.java.txt=>src/android/support/v4/app/FragmentManager.java"
                 ));
     }
+
+    public void testSurfaceTexture() throws Exception {
+        assertEquals(
+            "src/test/pkg/SurfaceTextureTest.java:18: Warning: This SurfaceTexture should be freed up after use with #release() [Recycle]\n" +
+            "        SurfaceTexture texture = new SurfaceTexture(1); // Warn: texture not released\n" +
+            "                                 ~~~~~~~~~~~~~~~~~~~~~\n" +
+            "src/test/pkg/SurfaceTextureTest.java:25: Warning: This SurfaceTexture should be freed up after use with #release() [Recycle]\n" +
+            "        SurfaceTexture texture = new SurfaceTexture(1); // Warn: texture not released\n" +
+            "                                 ~~~~~~~~~~~~~~~~~~~~~\n" +
+            "src/test/pkg/SurfaceTextureTest.java:32: Warning: This Surface should be freed up after use with #release() [Recycle]\n" +
+            "        Surface surface = new Surface(texture); // Warn: surface not released\n" +
+            "                          ~~~~~~~~~~~~~~~~~~~~\n" +
+            "0 errors, 3 warnings\n",
+
+            lintProject(
+                    "apicheck/classpath=>.classpath",
+                    "apicheck/minsdk4.xml=>AndroidManifest.xml",
+                    "project.properties19=>project.properties",
+                    "src/test/pkg/SurfaceTextureTest.java.txt=>src/test/pkg/SurfaceTextureTest.java"
+            ));
+    }
+
+    public void testContentProviderClient() throws Exception {
+        assertEquals(
+                "src/test/pkg/ContentProviderClientTest.java:8: Warning: This ContentProviderClient should be freed up after use with #release() [Recycle]\n" +
+                "        ContentProviderClient client = resolver.acquireContentProviderClient(\"test\"); // Warn\n" +
+                "                                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
+                "0 errors, 1 warnings\n",
+
+                lintProject(
+                        "apicheck/classpath=>.classpath",
+                        "apicheck/minsdk4.xml=>AndroidManifest.xml",
+                        "project.properties19=>project.properties",
+                        "src/test/pkg/ContentProviderClientTest.java.txt=>src/test/pkg/ContentProviderClientTest.java"
+                ));
+    }
 }
