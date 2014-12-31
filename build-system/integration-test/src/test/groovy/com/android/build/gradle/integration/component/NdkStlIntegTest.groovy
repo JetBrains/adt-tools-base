@@ -70,11 +70,11 @@ public class NdkStlIntegTest {
 apply plugin: 'com.android.model.application'
 
 model {
-    androidConfig {
+    android.config {
         compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
         buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
     }
-    androidNdk {
+    android.ndk {
         moduleName "hello-jni"
     }
 }
@@ -85,7 +85,7 @@ model {
     public void buildAppWithStl() {
         project.getBuildFile() << """
 model {
-    androidNdk {
+    android.ndk {
         stl "$stl"
     }
 }

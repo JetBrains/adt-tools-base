@@ -16,9 +16,11 @@
 
 package com.android.build.gradle.model;
 
+import com.android.build.gradle.BaseExtension;
 import com.android.build.gradle.internal.dsl.BuildType;
 import com.android.build.gradle.internal.dsl.GroupableProductFlavor;
 import com.android.build.gradle.internal.dsl.SigningConfig;
+import com.android.build.gradle.ndk.NdkExtension;
 
 import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.model.Managed;
@@ -43,4 +45,19 @@ public interface AndroidModel {
     NamedDomainObjectContainer<SigningConfig> getSigningConfigs();
 
     void setSigningConfigs(NamedDomainObjectContainer<SigningConfig> signingConfigs);
+
+    @Unmanaged
+    AndroidComponentModelSourceSet getSources();
+
+    void setSources(AndroidComponentModelSourceSet sources);
+
+    @Unmanaged
+    NdkExtension getNdk();
+
+    void setNdk(NdkExtension ndk);
+
+    @Unmanaged
+    BaseExtension getConfig();
+
+    void setConfig(BaseExtension config);
 }

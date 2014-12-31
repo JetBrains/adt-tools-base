@@ -126,16 +126,18 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
         @Mutate
         void configureAndroidModel(
                 AndroidModel androidModel,
-                NamedDomainObjectContainer<SigningConfig> signingConfigs) {
+                @Path("androidConfig") BaseExtension config,
+                @Path("androidSigningConfigs") NamedDomainObjectContainer<SigningConfig> signingConfigs) {
+            androidModel.config = config
             androidModel.signingConfigs = signingConfigs
         }
 
         @Model("androidConfig")
         BaseExtension androidConfig(
                 ServiceRegistry serviceRegistry,
-                NamedDomainObjectContainer<BuildType> buildTypeContainer,
-                NamedDomainObjectContainer<GroupableProductFlavor> productFlavorContainer,
-                NamedDomainObjectContainer<SigningConfig> signingConfigContainer,
+                @Path("androidBuildTypes") NamedDomainObjectContainer<BuildType> buildTypeContainer,
+                @Path("androidProductFlavors") NamedDomainObjectContainer<GroupableProductFlavor> productFlavorContainer,
+                @Path("androidSigningConfigs") NamedDomainObjectContainer<SigningConfig> signingConfigContainer,
                 @Path("isApplication") Boolean isApplication,
                 BasePlugin plugin) {
             Instantiator instantiator = serviceRegistry.get(Instantiator.class);
@@ -167,13 +169,15 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
         }
 
         @Mutate
-        void forwardCompileSdkVersion(NdkExtension ndkExtension, BaseExtension baseExtension) {
+        void forwardCompileSdkVersion(
+                @Path("android.ndk") NdkExtension ndkExtension,
+                @Path("android.config") BaseExtension baseExtension) {
             if (ndkExtension.compileSdkVersion.isEmpty() && baseExtension.compileSdkVersion != null) {
                 ndkExtension.compileSdkVersion(baseExtension.compileSdkVersion);
             }
         }
 
-        @Model("androidSigningConfig")
+        @Model("androidSigningConfigs")
         NamedDomainObjectContainer<SigningConfig> signingConfig(ServiceRegistry serviceRegistry,
                 BasePlugin plugin) {
             Instantiator instantiator = serviceRegistry.get(Instantiator.class);
@@ -195,9 +199,9 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
         void createAndroidComponents(
                 AndroidComponentSpec androidSpec,
                 BaseExtension androidExtension,
-                NamedDomainObjectContainer<BuildType> buildTypeContainer,
-                NamedDomainObjectContainer<GroupableProductFlavor> productFlavorContainer,
-                NamedDomainObjectContainer<SigningConfig> signingConfigContainer,
+                @Path("android.buildTypes") NamedDomainObjectContainer<BuildType> buildTypeContainer,
+                @Path("android.productFlavors") NamedDomainObjectContainer<GroupableProductFlavor> productFlavorContainer,
+                @Path("android.signingConfigs") NamedDomainObjectContainer<SigningConfig> signingConfigContainer,
                 VariantFactory variantFactory,
                 BasePlugin plugin) {
             VariantManager variantManager = new VariantManager(

@@ -46,7 +46,7 @@ class NdkComponentSplitTest {
 apply plugin: 'com.android.model.application'
 
 model {
-    androidConfig {
+    android.config {
         compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
         buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
         splits {
@@ -57,7 +57,7 @@ model {
             }
         }
     }
-    androidNdk {
+    android.ndk {
         moduleName "hello-jni"
     }
     android.buildTypes {

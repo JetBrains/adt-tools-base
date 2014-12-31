@@ -31,9 +31,11 @@ import org.gradle.internal.service.ServiceRegistry
 import org.gradle.language.base.ProjectSourceSet
 import org.gradle.language.base.internal.registry.LanguageRegistry
 import org.gradle.language.base.plugins.ComponentModelBasePlugin
+import org.gradle.model.Defaults
 import org.gradle.model.Finalize
 import org.gradle.model.Model
 import org.gradle.model.Mutate
+import org.gradle.model.Path
 import org.gradle.model.RuleSource
 import org.gradle.model.collection.CollectionBuilder
 import org.gradle.model.internal.core.ModelCreators
@@ -90,10 +92,12 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
         @Model("android")
         void android(
                 AndroidModel androidModel,
-                NamedDomainObjectContainer<BuildType> buildTypes,
-                NamedDomainObjectContainer<GroupableProductFlavor> productFlavors) {
+                @Path("androidBuildTypes") NamedDomainObjectContainer<BuildType> buildTypes,
+                @Path("androidProductFlavors") NamedDomainObjectContainer<GroupableProductFlavor> productFlavors,
+                @Path("androidSources") AndroidComponentModelSourceSet sources) {
             androidModel.buildTypes = buildTypes
             androidModel.productFlavors = productFlavors
+            androidModel.sources = sources
         }
 
         @Model
@@ -132,7 +136,7 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
 
         @Model
         List<ProductFlavorCombo> createProductFlavorCombo (
-                NamedDomainObjectContainer<GroupableProductFlavor> productFlavors) {
+                @Path("android.productFlavors") NamedDomainObjectContainer<GroupableProductFlavor> productFlavors) {
             // TODO: Create custom product flavor container to manually configure flavor dimensions.
             List<String> flavorDimensionList = productFlavors*.flavorDimension.unique().asList()
             flavorDimensionList.removeAll([null])
@@ -176,11 +180,11 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
         /**
          * Create all source sets for each AndroidBinary.
          */
-        @Mutate
+        @Defaults
         void createVariantSourceSet(
-                AndroidComponentModelSourceSet sources,
-                NamedDomainObjectContainer<BuildType> buildTypes,
-                NamedDomainObjectContainer<GroupableProductFlavor> flavors,
+                @Path("android.sources") AndroidComponentModelSourceSet sources,
+                @Path("android.buildTypes") NamedDomainObjectContainer<BuildType> buildTypes,
+                @Path("android.productFlavors") NamedDomainObjectContainer<GroupableProductFlavor> flavors,
                 List<ProductFlavorCombo> flavorGroups) {
             buildTypes.each { buildType ->
                 sources.maybeCreate(buildType.name)
@@ -203,7 +207,7 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
         }
 
         @Finalize
-        void setDefaultSrcDir(AndroidComponentModelSourceSet sourceSet) {
+        void setDefaultSrcDir(@Path("android.sources") AndroidComponentModelSourceSet sourceSet) {
             sourceSet.setDefaultSrcDir()
         }
 
@@ -216,7 +220,7 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
         // TODO: Migrate to @ComponentBinaries when we can create test binary from AndroidBinary.
         void createBinaries(
                 BinaryContainer binaries,
-                NamedDomainObjectContainer<BuildType> buildTypes,
+                @Path("android.buildTypes") NamedDomainObjectContainer<BuildType> buildTypes,
                 List<ProductFlavorCombo> flavorCombos,
                 AndroidComponentSpec spec) {
             if (flavorCombos.isEmpty()) {

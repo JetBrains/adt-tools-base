@@ -20,13 +20,13 @@ buildscript {
 apply plugin: 'com.android.model.application'
 
 model {
-    androidConfig {
+    android.config {
         compileSdkVersion 19
         buildToolsVersion = rootProject.ext.buildToolsVersion
 
     }
 
-    androidNdk {
+    android.ndk {
         moduleName "simple-jni"
 
         // TODO: Include a way to set include directories the DSL.
