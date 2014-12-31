@@ -21,16 +21,20 @@ import static com.android.SdkConstants.R_CLASS;
 
 import com.android.annotations.NonNull;
 import com.android.tools.lint.client.api.JavaParser.ResolvedClass;
+import com.android.tools.lint.client.api.JavaParser.ResolvedMethod;
+import com.android.tools.lint.client.api.JavaParser.ResolvedNode;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Detector.JavaScanner;
 import com.android.tools.lint.detector.api.Detector.XmlScanner;
 import com.android.tools.lint.detector.api.JavaContext;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import lombok.ast.AlternateConstructorInvocation;
 import lombok.ast.Annotation;
@@ -133,13 +137,16 @@ public class JavaVisitor {
     private static final int SAME_TYPE_COUNT = 8;
 
     private final Map<String, List<VisitingDetector>> mMethodDetectors =
-            Maps.newHashMapWithExpectedSize(24);
+            Maps.newHashMapWithExpectedSize(40);
+    private final Map<String, List<VisitingDetector>> mConstructorDetectors =
+            Maps.newHashMapWithExpectedSize(12);
+    private Set<String> mConstructorSimpleNames;
     private final List<VisitingDetector> mResourceFieldDetectors =
             new ArrayList<VisitingDetector>();
     private final List<VisitingDetector> mAllDetectors;
     private final List<VisitingDetector> mFullTreeDetectors;
     private final Map<Class<? extends Node>, List<VisitingDetector>> mNodeTypeDetectors =
-            new HashMap<Class<? extends Node>, List<VisitingDetector>>();
+            new HashMap<Class<? extends Node>, List<VisitingDetector>>(16);
     private final JavaParser mParser;
     private final Map<String, List<VisitingDetector>> mSuperClassDetectors =
             new HashMap<String, List<VisitingDetector>>();
@@ -194,10 +201,30 @@ public class JavaVisitor {
                 }
             }
 
+            List<String> types = detector.getApplicableConstructorTypes();
+            if (types != null) {
+                // not supported in Java visitors; adding a method invocation node is trivial
+                // for that case.
+                assert types != XmlScanner.ALL;
+                if (mConstructorSimpleNames == null) {
+                    mConstructorSimpleNames = Sets.newHashSet();
+                }
+                for (String type : types) {
+                    List<VisitingDetector> list = mConstructorDetectors.get(type);
+                    if (list == null) {
+                        list = new ArrayList<VisitingDetector>(SAME_TYPE_COUNT);
+                        mConstructorDetectors.put(type, list);
+                        mConstructorSimpleNames.add(type.substring(type.lastIndexOf('.')+1));
+                    }
+                    list.add(v);
+                }
+            }
+
             if (detector.appliesToResourceRefs()) {
                 mResourceFieldDetectors.add(v);
             } else if ((names == null || names.isEmpty())
-                    && (nodeTypes == null || nodeTypes.isEmpty())) {
+                    && (nodeTypes == null || nodeTypes.isEmpty())
+                    && (types == null || types.isEmpty())) {
                 mFullTreeDetectors.add(v);
             }
         }
@@ -230,7 +257,8 @@ public class JavaVisitor {
                 compilationUnit.accept(visitor);
             }
 
-            if (!mMethodDetectors.isEmpty() || !mResourceFieldDetectors.isEmpty()) {
+            if (!mMethodDetectors.isEmpty() || !mResourceFieldDetectors.isEmpty() ||
+                    !mConstructorDetectors.isEmpty()) {
                 AstVisitor visitor = new DelegatingJavaVisitor(context);
                 compilationUnit.accept(visitor);
             } else if (!mNodeTypeDetectors.isEmpty()) {
@@ -307,7 +335,7 @@ public class JavaVisitor {
 
         @Override
         public boolean visitClassDeclaration(ClassDeclaration node) {
-            JavaParser.ResolvedNode resolved = mContext.resolve(node);
+            ResolvedNode resolved = mContext.resolve(node);
             if (!(resolved instanceof ResolvedClass)) {
                 return true;
             }
@@ -1187,11 +1215,13 @@ public class JavaVisitor {
         private final JavaContext mContext;
         private final boolean mVisitResources;
         private final boolean mVisitMethods;
+        private final boolean mVisitConstructors;
 
         public DelegatingJavaVisitor(JavaContext context) {
             mContext = context;
 
             mVisitMethods = !mMethodDetectors.isEmpty();
+            mVisitConstructors = !mConstructorDetectors.isEmpty();
             mVisitResources = !mResourceFieldDetectors.isEmpty();
         }
 
@@ -1266,6 +1296,36 @@ public class JavaVisitor {
             }
 
             return super.visitMethodInvocation(node);
+        }
+
+        @Override
+        public boolean visitConstructorInvocation(ConstructorInvocation node) {
+            if (mVisitConstructors) {
+                TypeReference typeReference = node.astTypeReference();
+                if (typeReference != null) {
+                    TypeReferencePart last = typeReference.astParts().last();
+                    if (last != null) {
+                        String name = last.astIdentifier().astValue();
+                        if (mConstructorSimpleNames.contains(name)) {
+                            ResolvedNode resolved = mContext.resolve(node);
+                            if (resolved instanceof ResolvedMethod) {
+                                ResolvedMethod method = (ResolvedMethod) resolved;
+                                String type = method.getContainingClass().getSignature();
+                                List<VisitingDetector> list = mConstructorDetectors.get(type);
+                                if (list != null) {
+                                    for (VisitingDetector v : list) {
+                                        v.getJavaScanner().visitConstructor(mContext,
+                                                v.getVisitor(), node, method);
+                                    }
+                                }
+
+                            }
+                        }
+                    }
+                }
+            }
+
+            return super.visitConstructorInvocation(node);
         }
     }
 }

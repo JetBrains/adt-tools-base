@@ -71,7 +71,7 @@ public class DateFormatDetector extends Detector implements JavaScanner {
             Severity.WARNING,
             IMPLEMENTATION)
             .addMoreInfo(
-            "http://developer.android.com/reference/java/text/SimpleDateFormat.html"); //$NON-NLS-1$
+            "http://developer.android.com/reference/java/text/SimpleDateFormat.html");//$NON-NLS-1$
 
     public static final String LOCALE_CLS = "java.util.Locale";                       //$NON-NLS-1$
     public static final String SIMPLE_DATE_FORMAT_CLS = "java.text.SimpleDateFormat"; //$NON-NLS-1$
@@ -88,62 +88,32 @@ public class DateFormatDetector extends Detector implements JavaScanner {
 
     // ---- Implements JavaScanner ----
 
+    @Nullable
     @Override
-    public List<Class<? extends Node>> getApplicableNodeTypes() {
-        return Collections.<Class<? extends Node>>singletonList(ConstructorInvocation.class);
+    public List<String> getApplicableConstructorTypes() {
+        return Collections.singletonList(SIMPLE_DATE_FORMAT_CLS);
     }
 
     @Override
-    public AstVisitor createJavaVisitor(@NonNull JavaContext context) {
-        return new ConstructorVisitor(context);
-    }
-
-    private static class ConstructorVisitor extends ForwardingAstVisitor {
-        private final JavaContext mContext;
-
-        public ConstructorVisitor(JavaContext context) {
-            mContext = context;
-        }
-
-        @Override
-        public boolean visitConstructorInvocation(ConstructorInvocation node) {
-            ResolvedMethod constructor = findDateFormatConstructor(node);
-            if (constructor != null && !specifiesLocale(constructor)) {
-                Location location = mContext.getLocation(node);
-                String message =
+    public void visitConstructor(@NonNull JavaContext context, @Nullable AstVisitor visitor,
+            @NonNull ConstructorInvocation node, @NonNull ResolvedMethod constructor) {
+        if (!specifiesLocale(constructor)) {
+            Location location = context.getLocation(node);
+            String message =
                     "To get local formatting use `getDateInstance()`, `getDateTimeInstance()`, " +
                     "or `getTimeInstance()`, or use `new SimpleDateFormat(String template, " +
                     "Locale locale)` with for example `Locale.US` for ASCII dates.";
-                mContext.report(DATE_FORMAT, node, location, message);
-            }
-
-            return super.visitConstructorInvocation(node);
+            context.report(DATE_FORMAT, node, location, message);
         }
+    }
 
-        private static boolean specifiesLocale(@NonNull ResolvedMethod method) {
-            for (int i = 0, n = method.getArgumentCount(); i < n; i++) {
-                TypeDescriptor argumentType = method.getArgumentType(i);
-                if (argumentType.matchesSignature(LOCALE_CLS)) {
-                    return true;
-                }
+    private static boolean specifiesLocale(@NonNull ResolvedMethod method) {
+        for (int i = 0, n = method.getArgumentCount(); i < n; i++) {
+            TypeDescriptor argumentType = method.getArgumentType(i);
+            if (argumentType.matchesSignature(LOCALE_CLS)) {
+                return true;
             }
-            return false;
         }
-
-        @Nullable
-        private ResolvedMethod findDateFormatConstructor(@NonNull ConstructorInvocation node) {
-            String type = node.astTypeReference().astParts().last().astIdentifier().astValue();
-            if (type.endsWith("SimpleDateFormat")) {
-                ResolvedNode resolved = mContext.resolve(node);
-                if (resolved instanceof ResolvedMethod) {
-                    ResolvedMethod method = (ResolvedMethod) resolved;
-                    if (method.getContainingClass().matches(SIMPLE_DATE_FORMAT_CLS)) {
-                        return method;
-                    }
-                }
-            }
-
-            return null;
-        }
+        return false;
     }
 }
