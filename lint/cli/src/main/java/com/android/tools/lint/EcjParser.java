@@ -898,51 +898,13 @@ public class EcjParser extends JavaParser {
         public boolean isSubclassOf(@NonNull String name, boolean strict) {
             if (mBinding instanceof ReferenceBinding) {
                 ReferenceBinding cls = (ReferenceBinding) mBinding;
-                try {
-                    if (strict) {
-                        cls = cls.superclass();
+                if (strict) {
+                    cls = cls.superclass();
+                }
+                for (; cls != null; cls = cls.superclass()) {
+                    if (sameChars(name, cls.readableName())) {
+                        return true;
                     }
-                    for (; cls != null; cls = cls.superclass()) {
-                        if (sameChars(name, cls.readableName())) {
-                            return true;
-                        }
-                    }
-                } catch (AbortCompilation ignore) {
-                    // ECJ throws this for incorrect class path configurations, e.g.
-                    // "The type java.security.MessageDigestSpi cannot be resolved.
-                    // It is indirectly referenced from required .class files"
-                    // Exception in thread "main" o.e.j.i.c.problem.AbortCompilation: Pb(324)
-                    //  at o.e.j.i.c.problem.ProblemHandler.handle(ProblemHandler.java:135)
-                    //  at o.e.j.i.c.problem.ProblemHandler.handle(ProblemHandler.java:201)
-                    //  at o.e.j.i.c.problem.ProblemReporter.handle(ProblemReporter.java:2132)
-                    //  at o.e.j.i.c.problem.ProblemReporter.isClassPathCorrect(ProblemReporter.java:4162)
-                    //  at o.e.j.i.c.lookup.UnresolvedReferenceBinding.resolve(UnresolvedReferenceBinding.java:59)
-                    //  at o.e.j.i.c.lookup.BinaryTypeBinding.resolveType(BinaryTypeBinding.java:131)
-                    //  at o.e.j.i.c.lookup.BinaryTypeBinding.superclass(BinaryTypeBinding.java:1328)
-                    //  at com.android.tools.lint.EcjParser$EcjResolvedClass.isSubclassOf(EcjParser.java:892)
-                    // (in this trace, o.e.j.i.c = org.eclipse.jdt.internal.compiler)
-                } catch (NullPointerException ignore) {
-                    // Check for known ECJ NPE:
-                    // java.lang.NullPointerException:
-                    //  at o.e.j.i.c.batch.ClasspathJar.isPackage(ClasspathJar.java:153)
-                    //  at o.e.j.i.c.batch.ClasspathJar.findClass(ClasspathJar.java:93)
-                    //  at o.e.j.i.c.batch.FileSystem.findClass(FileSystem.java:261)
-                    //  at o.e.j.i.c.batch.FileSystem.findType(FileSystem.java:295)
-                    //  at o.e.j.i.c.lookup.LookupEnvironment.askForType(LookupEnvironment.java:122)
-                    //  at o.e.j.i.c.lookup.UnresolvedReferenceBinding.resolve(UnresolvedReferenceBinding.java:54)
-                    //  at o.e.j.i.c.lookup.BinaryTypeBinding.resolveType(BinaryTypeBinding.java:131)
-                    //  at o.e.j.i.c.lookup.BinaryTypeBinding.superclass(BinaryTypeBinding.java:1328)
-                    StackTraceElement[] stackTrace = ignore.getStackTrace();
-                    if (stackTrace.length >= 1 &&
-                            "isPackage".equals(stackTrace[0].getMethodName()) &&
-                            "org.eclipse.jdt.internal.compiler.batch.ClasspathJar".equals(
-                                    stackTrace[0].getClassName())) {
-                        // Known NPE; don't report.
-                        return false;
-                    }
-
-                    // Unknown ECJ bug: pass it on for analysis
-                    throw ignore;
                 }
             }
 
