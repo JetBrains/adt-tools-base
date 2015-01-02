@@ -21,6 +21,7 @@ import static com.android.SdkConstants.CLASS_CONTEXT;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.tools.lint.client.api.JavaParser.ResolvedClass;
+import com.android.tools.lint.client.api.JavaParser.ResolvedField;
 import com.android.tools.lint.client.api.JavaParser.ResolvedMethod;
 import com.android.tools.lint.client.api.JavaParser.ResolvedNode;
 import com.android.tools.lint.client.api.JavaParser.ResolvedVariable;
@@ -34,6 +35,7 @@ import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
+import com.google.common.collect.Lists;
 
 import java.util.Arrays;
 import java.util.List;
@@ -46,6 +48,7 @@ import lombok.ast.Expression;
 import lombok.ast.ForwardingAstVisitor;
 import lombok.ast.MethodInvocation;
 import lombok.ast.Node;
+import lombok.ast.Return;
 import lombok.ast.StrictListAccessor;
 import lombok.ast.VariableDefinitionEntry;
 import lombok.ast.VariableReference;
@@ -204,8 +207,8 @@ public class CleanupDetector extends Detector implements JavaScanner {
         }
     }
 
-    private static void checkRecycled(@NonNull JavaContext context, @NonNull Node node,
-            @NonNull String recycleType, @NonNull String recycleName) {
+    private static void checkRecycled(@NonNull final JavaContext context, @NonNull Node node,
+            @NonNull final String recycleType, @NonNull final String recycleName) {
         ResolvedVariable boundVariable = getVariable(context, node);
         if (boundVariable == null) {
             return;
@@ -216,10 +219,35 @@ public class CleanupDetector extends Detector implements JavaScanner {
             return;
         }
 
-        RecycleVisitor visitor = new RecycleVisitor(context, boundVariable, recycleType,
-                recycleName);
+        FinishVisitor visitor = new FinishVisitor(context, boundVariable) {
+            @Override
+            protected boolean isCleanupCall(@NonNull MethodInvocation call) {
+                String methodName = call.astName().astValue();
+                if (!recycleName.equals(methodName)) {
+                    return false;
+                }
+                ResolvedNode resolved = mContext.resolve(call);
+                if (resolved instanceof ResolvedMethod) {
+                    ResolvedClass containingClass = ((ResolvedMethod) resolved).getContainingClass();
+                    if (containingClass.isSubclassOf(recycleType, false)) {
+                        // Yes, called the right recycle() method; now make sure
+                        // we're calling it on the right variable
+                        Expression operand = call.astOperand();
+                        if (operand != null) {
+                            resolved = mContext.resolve(operand);
+                            //noinspection SuspiciousMethodCalls
+                            if (resolved != null && mVariables.contains(resolved)) {
+                                return true;
+                            }
+                        }
+                    }
+                }
+                return false;
+            }
+        };
+
         method.accept(visitor);
-        if (visitor.containsRecycle() || visitor.variableEscapes()) {
+        if (visitor.isCleanedUp() || visitor.variableEscapes()) {
             return;
         }
 
@@ -253,9 +281,36 @@ public class CleanupDetector extends Detector implements JavaScanner {
                     return true;
                 }
 
-                CommitVisitor commitVisitor = new CommitVisitor(context, boundVariable);
+                FinishVisitor commitVisitor = new FinishVisitor(context, boundVariable) {
+                    @Override
+                    protected boolean isCleanupCall(@NonNull MethodInvocation call) {
+                        if (isTransactionCommitMethodCall(mContext, call)) {
+                            Expression operand = call.astOperand();
+                            if (operand != null) {
+                                ResolvedNode resolved = mContext.resolve(operand);
+                                //noinspection SuspiciousMethodCalls
+                                if (resolved != null && mVariables.contains(resolved)) {
+                                    return true;
+                                }
+                            }
+                        } else if (isShowTransactionMethodCall(mContext, call)) {
+                            StrictListAccessor<Expression, MethodInvocation> arguments =
+                                    call.astArguments();
+                            if (arguments.size() == 2) {
+                                Expression first = arguments.first();
+                                ResolvedNode resolved = mContext.resolve(first);
+                                //noinspection SuspiciousMethodCalls
+                                if (resolved != null && mVariables.contains(resolved)) {
+                                    return true;
+                                }
+                            }
+                        }
+                        return false;
+                    }
+                };
+
                 method.accept(commitVisitor);
-                if (commitVisitor.containsClose()) {
+                if (commitVisitor.isCleanedUp() || commitVisitor.variableEscapes()) {
                     return true;
                 }
             }
@@ -364,84 +419,25 @@ public class CleanupDetector extends Detector implements JavaScanner {
         return false;
     }
 
-    private static class CommitVisitor extends ForwardingAstVisitor {
-        private final JavaContext mContext;
-        private final ResolvedVariable mVariable;
-        private boolean mContainsCommit;
-
-        public CommitVisitor(JavaContext context, @NonNull ResolvedVariable variable) {
-            mContext = context;
-            mVariable = variable;
-        }
-
-        public boolean containsClose() {
-            return mContainsCommit;
-        }
-
-        @Override
-        public boolean visitNode(Node node) {
-            return mContainsCommit || super.visitNode(node);
-        }
-
-        @Override
-        public boolean visitMethodInvocation(MethodInvocation call) {
-            if (mContainsCommit) {
-                return true;
-            }
-
-            super.visitMethodInvocation(call);
-
-            if (isCommitTransaction(call)) {
-                mContainsCommit = true;
-                return true;
-            } else {
-                return false;
-            }
-        }
-
-        private boolean isCommitTransaction(@NonNull MethodInvocation call) {
-            if (isTransactionCommitMethodCall(mContext, call)) {
-                Expression operand = call.astOperand();
-                if (operand != null) {
-                    ResolvedNode resolved = mContext.resolve(operand);
-                    if (resolved != null && resolved.equals(mVariable)) {
-                        return true;
-                    }
-                }
-            } else if (isShowTransactionMethodCall(mContext, call)) {
-                StrictListAccessor<Expression, MethodInvocation> arguments = call.astArguments();
-                if (arguments.size() == 2) {
-                    Expression first = arguments.first();
-                    ResolvedNode resolved = mContext.resolve(first);
-                    if (resolved != null && resolved.equals(mVariable)) {
-                        return true;
-                    }
-                }
-            }
-            return false;
-        }
-    }
-
-    private static class RecycleVisitor extends ForwardingAstVisitor {
-        private final JavaContext mContext;
-        private final String mRecycleType;
-        private final ResolvedVariable mVariable;
-        private final String mVariableName;
-        private final String mRecycleName;
-        private boolean mContainsRecycle;
+    /**
+     * Visitor which checks whether an operation is "finished"; in the case
+     * of a FragmentTransaction we're looking for a "commit" call; in the
+     * case of a TypedArray we're looking for a "recycle", call, in the
+     * case of a database cursor we're looking for a "close" call, etc.
+     */
+    private abstract static class FinishVisitor extends ForwardingAstVisitor {
+        protected final JavaContext mContext;
+        protected final List<ResolvedVariable> mVariables;
+        private boolean mContainsCleanup;
         private boolean mEscapes;
 
-        public RecycleVisitor(JavaContext context, @NonNull ResolvedVariable variable,
-                @NonNull String recycleType, @NonNull String recycleName) {
+        public FinishVisitor(JavaContext context, @NonNull ResolvedVariable variable) {
             mContext = context;
-            mVariable = variable;
-            mRecycleName = recycleName;
-            mRecycleType = recycleType;
-            mVariableName = variable.getName();
+            mVariables = Lists.newArrayList(variable);
         }
 
-        public boolean containsRecycle() {
-            return mContainsRecycle;
+        public boolean isCleanedUp() {
+            return mContainsCleanup;
         }
 
         public boolean variableEscapes() {
@@ -450,12 +446,14 @@ public class CleanupDetector extends Detector implements JavaScanner {
 
         @Override
         public boolean visitNode(Node node) {
-            return mContainsRecycle || super.visitNode(node);
+            return mContainsCleanup || super.visitNode(node);
         }
+
+        protected abstract boolean isCleanupCall(@NonNull MethodInvocation call);
 
         @Override
         public boolean visitMethodInvocation(MethodInvocation call) {
-            if (mContainsRecycle) {
+            if (mContainsCleanup) {
                 return true;
             }
 
@@ -465,23 +463,21 @@ public class CleanupDetector extends Detector implements JavaScanner {
             if (!mEscapes) {
                 for (Expression expression : call.astArguments()) {
                     if (expression instanceof VariableReference) {
-                        VariableReference reference = (VariableReference) expression;
-                        if (mVariableName.equals((reference.astIdentifier().astValue()))) {
-                            ResolvedNode resolved = mContext.resolve(expression);
-                            if (resolved != null && resolved.equals(mVariable)) {
-                                mEscapes = true;
+                        ResolvedNode resolved = mContext.resolve(expression);
+                        //noinspection SuspiciousMethodCalls
+                        if (resolved != null && mVariables.contains(resolved)) {
+                            mEscapes = true;
 
-                                // Special case: MotionEvent.obtain(MotionEvent): passing in an
-                                // event here does not recycle the event, and we also know it
-                                // doesn't escape
-                                if (OBTAIN.equals(call.astName().astValue())) {
-                                    ResolvedNode r = mContext.resolve(call);
-                                    if (r instanceof ResolvedMethod) {
-                                        ResolvedMethod method = (ResolvedMethod) r;
-                                        ResolvedClass cls = method.getContainingClass();
-                                        if (cls.matches(MOTION_EVENT_CLS)) {
-                                            mEscapes = false;
-                                        }
+                            // Special case: MotionEvent.obtain(MotionEvent): passing in an
+                            // event here does not recycle the event, and we also know it
+                            // doesn't escape
+                            if (OBTAIN.equals(call.astName().astValue())) {
+                                ResolvedNode r = mContext.resolve(call);
+                                if (r instanceof ResolvedMethod) {
+                                    ResolvedMethod method = (ResolvedMethod) r;
+                                    ResolvedClass cls = method.getContainingClass();
+                                    if (cls.matches(MOTION_EVENT_CLS)) {
+                                        mEscapes = false;
                                     }
                                 }
                             }
@@ -490,8 +486,8 @@ public class CleanupDetector extends Detector implements JavaScanner {
                 }
             }
 
-            if (isRecycle(call)) {
-                mContainsRecycle = true;
+            if (isCleanupCall(call)) {
+                mContainsCleanup = true;
                 return true;
             } else {
                 return false;
@@ -499,40 +495,57 @@ public class CleanupDetector extends Detector implements JavaScanner {
         }
 
         @Override
+        public boolean visitVariableDefinitionEntry(VariableDefinitionEntry node) {
+            Expression initializer = node.astInitializer();
+            if (initializer instanceof VariableReference) {
+                ResolvedNode resolved = mContext.resolve(initializer);
+                //noinspection SuspiciousMethodCalls
+                if (resolved != null && mVariables.contains(resolved)) {
+                    ResolvedNode resolvedVariable = mContext.resolve(node);
+                    if (resolvedVariable instanceof ResolvedVariable) {
+                        ResolvedVariable variable = (ResolvedVariable) resolvedVariable;
+                        mVariables.add(variable);
+                    } else if (resolvedVariable instanceof ResolvedField) {
+                        mEscapes = true;
+                    }
+                }
+            }
+            return super.visitVariableDefinitionEntry(node);
+        }
+
+        @Override
         public boolean visitBinaryExpression(BinaryExpression node) {
             if (node.astOperator() == BinaryOperator.ASSIGN) {
                 Expression rhs = node.astRight();
-                if (rhs.toString().contains(mVariableName)) {
+                if (rhs instanceof VariableReference) {
                     ResolvedNode resolved = mContext.resolve(rhs);
-                    if (resolved != null && resolved.equals(mVariable)) {
-                        mEscapes = true;
+                    //noinspection SuspiciousMethodCalls
+                    if (resolved != null && mVariables.contains(resolved)) {
+                        ResolvedNode resolvedLhs = mContext.resolve(node.astLeft());
+                        if (resolvedLhs instanceof ResolvedVariable) {
+                            ResolvedVariable variable = (ResolvedVariable) resolvedLhs;
+                            mVariables.add(variable);
+                        } else if (resolvedLhs instanceof ResolvedField) {
+                            mEscapes = true;
+                        }
                     }
                 }
             }
             return super.visitBinaryExpression(node);
         }
 
-        private boolean isRecycle(@NonNull MethodInvocation call) {
-            String methodName = call.astName().astValue();
-            if (!mRecycleName.equals(methodName)) {
-                return false;
-            }
-            ResolvedNode resolved = mContext.resolve(call);
-            if (resolved instanceof ResolvedMethod) {
-                ResolvedClass containingClass = ((ResolvedMethod) resolved).getContainingClass();
-                if (containingClass.isSubclassOf(mRecycleType, false)) {
-                    // Yes, called the right recycle() method; now make sure
-                    // we're calling it on the right variable
-                    Expression operand = call.astOperand();
-                    if (operand != null) {
-                        resolved = mContext.resolve(operand);
-                        if (resolved != null && resolved.equals(mVariable)) {
-                            return true;
-                        }
-                    }
+        @Override
+        public boolean visitReturn(Return node) {
+            Expression value = node.astValue();
+            if (value instanceof VariableReference) {
+                ResolvedNode resolved = mContext.resolve(value);
+                //noinspection SuspiciousMethodCalls
+                if (resolved != null && mVariables.contains(resolved)) {
+                    mEscapes = true;
                 }
             }
-            return false;
+
+            return super.visitReturn(node);
         }
     }
 }

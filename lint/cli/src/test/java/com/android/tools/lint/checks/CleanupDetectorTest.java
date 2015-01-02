@@ -59,7 +59,10 @@ public class CleanupDetectorTest extends AbstractCheckTest {
             "src/test/pkg/RecycleTest.java:129: Warning: This Parcel should be recycled after use with #recycle() [Recycle]\n" +
             "  Parcel myparcel = Parcel.obtain();\n" +
             "                           ~~~~~~\n" +
-            "0 errors, 8 warnings\n",
+            "src/test/pkg/RecycleTest.java:190: Warning: This TypedArray should be recycled after use with #recycle() [Recycle]\n" +
+            "        final TypedArray a = getContext().obtainStyledAttributes(attrs,  // Not recycled\n" +
+            "                                          ~~~~~~~~~~~~~~~~~~~~~~\n" +
+            "0 errors, 9 warnings\n",
 
             lintProject(
                 "apicheck/classpath=>.classpath",
