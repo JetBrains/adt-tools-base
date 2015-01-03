@@ -18,7 +18,6 @@ package com.android.build.gradle.model;
 
 import org.gradle.api.Action;
 import org.gradle.api.NamedDomainObjectContainer;
-import org.gradle.api.NamedDomainObjectFactory;
 import org.gradle.api.file.SourceDirectorySet;
 import org.gradle.api.internal.AbstractNamedDomainObjectContainer;
 import org.gradle.internal.reflect.Instantiator;
@@ -27,8 +26,6 @@ import org.gradle.language.base.LanguageSourceSet;
 import org.gradle.language.base.ProjectSourceSet;
 import org.gradle.language.base.internal.DefaultFunctionalSourceSet;
 import org.gradle.language.base.internal.registry.LanguageRegistration;
-import org.gradle.language.c.CSourceSet;
-import org.gradle.language.cpp.CppSourceSet;
 
 /**
  * Collection of source sets for each build type, product flavor or variant.

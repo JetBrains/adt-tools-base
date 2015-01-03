@@ -20,7 +20,7 @@ buildscript {
 apply plugin: 'com.android.model.application'
 
 model {
-    androidConfig {
+    android.config {
         compileSdkVersion 19
         buildToolsVersion = rootProject.ext.buildToolsVersion
 
@@ -44,7 +44,7 @@ model {
         }
     }
 
-    androidNdk {
+    android.ndk {
         compileSdkVersion 19
         moduleName "sanangeles"
         cFlags "-DDISABLE_IMPORTGL"

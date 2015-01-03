@@ -17,6 +17,7 @@
 
 package com.android.build.gradle.model
 
+import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.internal.ProductFlavorCombo
 import com.android.build.gradle.internal.dsl.BuildType
 import com.android.build.gradle.ndk.NdkExtension
@@ -74,6 +75,13 @@ class NdkComponentModelPlugin implements Plugin<Project> {
 
     @RuleSource
     static class Rules {
+        @Mutate
+        void configureAndroidModel(
+                AndroidModel androidModel,
+                @Path("androidNdk") NdkExtension ndk) {
+            androidModel.ndk = ndk
+        }
+
         @Model("androidNdk")
         NdkExtension createAndroidNdk(ServiceRegistry serviceRegistry) {
             Instantiator instantiator = serviceRegistry.get(Instantiator.class)
@@ -121,7 +129,7 @@ class NdkComponentModelPlugin implements Plugin<Project> {
         @Mutate
         void createNativeBuildTypes(
                 BuildTypeContainer nativeBuildTypes,
-                NamedDomainObjectContainer<BuildType> androidBuildTypes) {
+                @Path("android.buildTypes") NamedDomainObjectContainer<BuildType> androidBuildTypes) {
             for (def buildType : androidBuildTypes) {
                 nativeBuildTypes.maybeCreate(buildType.name)
             }
@@ -141,7 +149,7 @@ class NdkComponentModelPlugin implements Plugin<Project> {
                 ComponentSpecContainer specs,
                 NdkExtension extension,
                 NdkHandler ndkHandler,
-                AndroidComponentModelSourceSet sources,
+                @Path("android.sources") AndroidComponentModelSourceSet sources,
                 @Path("buildDir") File buildDir) {
             if (!extension.moduleName.isEmpty()) {
                 NativeLibrarySpec library = specs.create(extension.moduleName, NativeLibrarySpec)
