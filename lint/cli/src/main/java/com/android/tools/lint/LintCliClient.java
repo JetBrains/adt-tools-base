@@ -52,6 +52,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -86,6 +87,7 @@ public class LintCliClient extends LintClient {
     protected LintDriver mDriver;
     protected final LintCliFlags mFlags;
     private Configuration mConfiguration;
+    private boolean mValidatedIds;
 
     /** Creates a CLI driver */
     public LintCliClient() {
@@ -111,6 +113,19 @@ public class LintCliClient extends LintClient {
 
         mDriver.setAbbreviating(!mFlags.isShowEverything());
         addProgressPrinter();
+        mDriver.addLintListener(new LintListener() {
+            @Override
+            public void update(@NonNull LintDriver driver, @NonNull EventType type,
+                    @Nullable Context context) {
+                if (type == EventType.SCANNING_PROJECT && !mValidatedIds) {
+                    mValidatedIds = true;
+
+                    // Make sure all the id's are valid once the driver is all set up and
+                    // ready to run (such that custom rules are available in the registry etc)
+                    validateIssueIds(context != null ? context.getProject() : null);
+                }
+            }
+        });
 
         mDriver.analyze(createLintRequest(files));
 
@@ -472,6 +487,51 @@ public class LintCliClient extends LintClient {
             }
 
             return severity;
+        }
+    }
+
+    /**
+     * Checks that any id's specified by id refer to valid, known, issues. This
+     * typically can't be done right away (in for example the Gradle code which
+     * handles DSL references to strings, or in the command line parser for the
+     * lint command) because the full set of valid id's is not known until lint
+     * actually starts running and for example gathers custom rules from all
+     * AAR dependencies reachable from libraries, etc.
+     */
+    private void validateIssueIds(@Nullable Project project) {
+        if (mDriver != null) {
+            IssueRegistry registry = mDriver.getRegistry();
+            validateIssueIds(project, registry, mFlags.getExactCheckedIds());
+            validateIssueIds(project, registry, mFlags.getEnabledIds());
+            validateIssueIds(project, registry, mFlags.getSuppressedIds());
+            validateIssueIds(project, registry, mFlags.getSeverityOverrides().keySet());
+        }
+    }
+
+    private void validateIssueIds(@Nullable Project project, @NonNull IssueRegistry registry,
+            @Nullable Collection<String> ids) {
+        if (ids != null) {
+            for (String id : ids) {
+                if (registry.getIssue(id) == null) {
+                    reportNonExistingIssueId(project, id);
+                }
+            }
+        }
+    }
+
+    protected void reportNonExistingIssueId(@Nullable Project project, @NonNull String id) {
+        String message = String.format("Unknown issue id \"%1$s\"", id);
+
+        if (mDriver != null && project != null) {
+            Location location = Location.create(project.getDir());
+            if (!isSuppressed(IssueRegistry.LINT_ERROR)) {
+                report(new Context(mDriver, project, project, project.getDir()),
+                        IssueRegistry.LINT_ERROR,
+                        project.getConfiguration().getSeverity(IssueRegistry.LINT_ERROR),
+                        location, message, TextFormat.RAW);
+            }
+        } else {
+            log(Severity.ERROR, null, "Lint: %1$s", message);
         }
     }
 
