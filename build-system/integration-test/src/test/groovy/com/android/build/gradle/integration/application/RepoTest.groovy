@@ -15,12 +15,10 @@
  */
 
 package com.android.build.gradle.integration.application
-
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import org.junit.AfterClass
 import org.junit.ClassRule
 import org.junit.Test
-
 /**
  * Integration test for uploadAchives with multiple projects.
  */
@@ -64,7 +62,7 @@ class RepoTest {
             util.execute("clean", "uploadArchives")
             baseLibrary.execute("clean", "uploadArchives")
             library.execute("clean", "uploadArchives")
-            app.execute("clean", "uploadArchives")
+            app.execute("clean", "assembleDebug")
         } finally {
             // clean up the test repository.
             File testRepo = new File(app.testDir, "../testrepo")

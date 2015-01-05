@@ -130,7 +130,15 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
     @NonNull
     private ProductFlavor mMergedFlavor;
 
-    private final Set<JarDependency> mJars = Sets.newHashSet();
+    /**
+     * External/Jar dependencies
+     */
+    private final Set<JarDependency> mExternalJars = Sets.newHashSet();
+
+    /**
+     * Local Jar dependencies
+     */
+    private final Set<JarDependency> mLocalJars = Sets.newHashSet();
 
     /** List of direct library dependencies. Each object defines its own dependencies. */
     private final List<LibraryDependency> mDirectLibraries = Lists.newArrayList();
@@ -717,24 +725,33 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
         }
 
         mDirectLibraries.addAll(container.getAndroidDependencies());
-        mJars.addAll(container.getJarDependencies());
-        mJars.addAll(container.getLocalDependencies());
+        mExternalJars.addAll(container.getJarDependencies());
+        mLocalJars.addAll(container.getLocalDependencies());
 
         resolveIndirectLibraryDependencies(mDirectLibraries, mFlatLibraries);
 
         for (LibraryDependency libraryDependency : mFlatLibraries) {
-            mJars.addAll(libraryDependency.getLocalDependencies());
+            mLocalJars.addAll(libraryDependency.getLocalDependencies());
         }
         return this;
     }
 
     /**
-     * Returns the list of jar dependencies
+     * Returns the list of external/module jar dependencies
      * @return a non null collection of Jar dependencies.
      */
     @NonNull
-    public Collection<JarDependency> getJars() {
-        return mJars;
+    public Collection<JarDependency> getExternalJarDependencies() {
+        return mExternalJars;
+    }
+
+    /**
+     * Returns the list of local jar dependencies
+     * @return a non null collection of Jar dependencies.
+     */
+    @NonNull
+    public Collection<JarDependency> getLocalJarDependencies() {
+        return mLocalJars;
     }
 
     /**
@@ -1488,7 +1505,8 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
      */
     @NonNull
     public Set<File> getCompileClasspath() {
-        Set<File> classpath = Sets.newHashSetWithExpectedSize(mJars.size() + mFlatLibraries.size());
+        Set<File> classpath = Sets.newHashSetWithExpectedSize(
+                mExternalJars.size() + mLocalJars.size() + mFlatLibraries.size());
 
         for (LibraryDependency lib : mFlatLibraries) {
             classpath.add(lib.getJarFile());
@@ -1497,7 +1515,13 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
             }
         }
 
-        for (JarDependency jar : mJars) {
+        for (JarDependency jar : mExternalJars) {
+            if (jar.isCompiled()) {
+                classpath.add(jar.getJarFile());
+            }
+        }
+
+        for (JarDependency jar : mLocalJars) {
             if (jar.isCompiled()) {
                 classpath.add(jar.getJarFile());
             }
@@ -1514,9 +1538,17 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
      */
     @NonNull
     public Set<File> getPackagedJars() {
-        Set<File> jars = Sets.newHashSetWithExpectedSize(mJars.size() + mFlatLibraries.size());
+        Set<File> jars = Sets.newHashSetWithExpectedSize(
+                mExternalJars.size() + mLocalJars.size() + mFlatLibraries.size());
 
-        for (JarDependency jar : mJars) {
+        for (JarDependency jar : mExternalJars) {
+            File jarFile = jar.getJarFile();
+            if (jar.isPackaged() && jarFile.exists()) {
+                jars.add(jarFile);
+            }
+        }
+
+        for (JarDependency jar : mLocalJars) {
             File jarFile = jar.getJarFile();
             if (jar.isPackaged() && jarFile.exists()) {
                 jars.add(jarFile);
@@ -1545,9 +1577,16 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
      */
     @NonNull
     public List<File> getProvidedOnlyJars() {
-        Set<File> jars = Sets.newHashSetWithExpectedSize(mJars.size());
+        Set<File> jars = Sets.newHashSetWithExpectedSize(mExternalJars.size() + mLocalJars.size());
 
-        for (JarDependency jar : mJars) {
+        for (JarDependency jar : mExternalJars) {
+            File jarFile = jar.getJarFile();
+            if (jar.isCompiled() && !jar.isPackaged() && jarFile.exists()) {
+                jars.add(jarFile);
+            }
+        }
+
+        for (JarDependency jar : mLocalJars) {
             File jarFile = jar.getJarFile();
             if (jar.isCompiled() && !jar.isPackaged() && jarFile.exists()) {
                 jars.add(jarFile);
