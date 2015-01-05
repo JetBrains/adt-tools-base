@@ -2430,7 +2430,7 @@ public class ResourceUsageAnalyzer {
         private final String mCurrentClass;
 
         public UsageVisitor(File jarFile, String name) {
-            super(Opcodes.ASM4);
+            super(Opcodes.ASM5);
             mJarFile = jarFile;
             mCurrentClass = name;
         }
@@ -2438,7 +2438,7 @@ public class ResourceUsageAnalyzer {
         @Override
         public MethodVisitor visitMethod(int access, final String name,
                 String desc, String signature, String[] exceptions) {
-            return new MethodVisitor(Opcodes.ASM4) {
+            return new MethodVisitor(Opcodes.ASM5) {
                 @Override
                 public void visitLdcInsn(Object cst) {
                     handleCodeConstant(cst, "ldc");
@@ -2458,8 +2458,9 @@ public class ResourceUsageAnalyzer {
                 }
 
                 @Override
-                public void visitMethodInsn(int opcode, String owner, String name, String desc) {
-                    super.visitMethodInsn(opcode, owner, name, desc);
+                public void visitMethodInsn(int opcode, String owner, String name,
+                        String desc, boolean itf) {
+                    super.visitMethodInsn(opcode, owner, name, desc, itf);
                     if (owner.equals("android/content/res/Resources")
                             && name.equals("getIdentifier")
                             && desc.equals(
@@ -2501,7 +2502,7 @@ public class ResourceUsageAnalyzer {
         public FieldVisitor visitField(int access, String name, String desc, String signature,
                 Object value) {
             handleCodeConstant(value, "field");
-            return new FieldVisitor(Opcodes.ASM4) {
+            return new FieldVisitor(Opcodes.ASM5) {
                 @Override
                 public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
                     return new AnnotationUsageVisitor();
@@ -2511,7 +2512,7 @@ public class ResourceUsageAnalyzer {
 
         private class AnnotationUsageVisitor extends AnnotationVisitor {
             public AnnotationUsageVisitor() {
-                super(Opcodes.ASM4);
+                super(Opcodes.ASM5);
             }
 
             @Override

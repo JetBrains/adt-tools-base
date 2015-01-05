@@ -215,7 +215,7 @@ public class OverrideDetector extends Detector implements ClassScanner {
         }
     }
 
-    @SuppressWarnings("rawtypes") // ASM4 API
+    @SuppressWarnings("rawtypes") // ASM5 API
     @Override
     public void checkClass(@NonNull ClassContext context, @NonNull ClassNode classNode) {
         if (!context.getProject().getReportIssues()) {

@@ -105,7 +105,7 @@ class MinifyTest {
         def mainTestBytes = minifiedJar.getInputStream(
                 minifiedJar.getEntry("com/android/tests/basic/MainTest.class"))
         def classReader = new ClassReader(mainTestBytes)
-        def mainTestClassNode = new ClassNode(Opcodes.ASM4)
+        def mainTestClassNode = new ClassNode(Opcodes.ASM5)
         classReader.accept(mainTestClassNode, 0)
 
         // Make sure bytecode got rewritten to point to renamed classes.

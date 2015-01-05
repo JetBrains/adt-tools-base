@@ -340,7 +340,7 @@ public class CleanupDetector extends Detector implements ClassScanner {
                 @NonNull MethodNode method,
                 @NonNull MethodInsnNode obtainNode,
                 @NonNull String recycleOwner) {
-            super(Opcodes.ASM4);
+            super(Opcodes.ASM5);
             mContext = context;
             mMethod = method;
             mObtainNode = obtainNode;
