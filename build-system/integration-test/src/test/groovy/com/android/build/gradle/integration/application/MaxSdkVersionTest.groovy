@@ -24,7 +24,6 @@ import com.android.ide.common.internal.LoggedErrorException
 import com.android.sdklib.repository.FullRevision
 import com.android.utils.StdLogger
 import com.google.common.collect.Lists
-import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
@@ -35,7 +34,6 @@ import static org.junit.Assert.fail
 /**
  * Assemble tests for maxSdkVersion.
  */
-@CompileStatic
 class MaxSdkVersionTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
