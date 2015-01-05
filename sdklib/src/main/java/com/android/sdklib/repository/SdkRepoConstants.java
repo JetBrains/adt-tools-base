@@ -50,7 +50,7 @@ public class SdkRepoConstants extends RepoConstants {
      * The URL ends with a /, allowing easy concatenation.
      * */
     public static final String URL_GOOGLE_SDK_SITE =
-        "https://dl-ssl.google.com/android/repository/";                        //$NON-NLS-1$
+        "https://dl.google.com/android/repository/";                        //$NON-NLS-1$
 
     /**
      * The default name looked for by {@link SdkSource} when trying to load an
