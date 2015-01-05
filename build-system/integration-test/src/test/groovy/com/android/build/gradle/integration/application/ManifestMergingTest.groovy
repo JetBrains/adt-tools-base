@@ -74,7 +74,8 @@ class ManifestMergingTest {
     void "check manifest merger report"() {
         flavors.execute("clean", "assemble")
 
-        File[] reports = flavors.getOutputFile("apk").listFiles(new FileFilter() {
+        File logs = new File(flavors.getOutputFile("apk").getParentFile(), "logs");
+        File[] reports = logs.listFiles(new FileFilter() {
 
             @Override
             public boolean accept(File file) {
