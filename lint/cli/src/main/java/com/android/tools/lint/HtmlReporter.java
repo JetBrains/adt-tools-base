@@ -30,6 +30,7 @@ import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Position;
 import com.android.tools.lint.detector.api.Project;
 import com.android.tools.lint.detector.api.Severity;
+import com.android.tools.lint.detector.api.TextFormat;
 import com.android.utils.SdkUtils;
 import com.google.common.annotations.Beta;
 import com.google.common.base.Charsets;
@@ -439,7 +440,7 @@ public class HtmlReporter extends Reporter {
         mWriter.write("Suppressing Warnings and Errors");
         mWriter.write("<div class=\"categorySeparator\"></div>\n");//$NON-NLS-1$
         mWriter.write("</div>\n");                               //$NON-NLS-1$
-        appendEscapedText(Main.getSuppressHelp());
+        mWriter.write(TextFormat.RAW.convertTo(Main.getSuppressHelp(), TextFormat.HTML));
         mWriter.write('\n');
     }
 
