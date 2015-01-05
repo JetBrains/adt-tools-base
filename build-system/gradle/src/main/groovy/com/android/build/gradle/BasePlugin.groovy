@@ -1642,9 +1642,7 @@ public abstract class BasePlugin {
 
         createPackagingTask(variantData, null /*assembleTask*/, false /*publishApk*/)
 
-        if (assembleAndroidTest != null) {
-            assembleAndroidTest.dependsOn variantOutputData.assembleTask
-        }
+        assembleAndroidTest.dependsOn variantOutputData.assembleTask
     }
 
     // TODO - should compile src/lint/java from src/lint/java and jar it into build/lint/lint.jar
