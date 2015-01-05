@@ -155,6 +155,13 @@ public class AvdManager {
      * @see #NUMERIC_SKIN_SIZE
      */
     public static final String AVD_INI_SKIN_PATH = "skin.path"; //$NON-NLS-1$
+
+    /**
+     * AVD/config.ini key name representing the SDK-relative path of the skin folder to be selected if
+     * skins for this device become enabled.
+     */
+    public static final String AVD_INI_BACKUP_SKIN_PATH = "skin.path.backup"; //$NON-NLS-1$
+
     /**
      * AVD/config.ini key name representing an UI name for the skin.
      * This config key is ignored by the emulator. It is only used by the SDK manager or
