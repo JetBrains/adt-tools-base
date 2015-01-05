@@ -163,4 +163,17 @@ public class LintRequest {
     public void setProjects(@Nullable Collection<Project> projects) {
         mProjects = projects;
     }
+
+    /**
+     * Returns the project to be used as the main project during analysis. This is
+     * usually the project itself, but when you are for example analyzing a library project,
+     * it can be the app project using the library.
+     *
+     * @param project the project to look up the main project for
+     * @return the main project
+     */
+    @NonNull
+    public Project getMainProject(@NonNull Project project) {
+        return project;
+    }
 }
