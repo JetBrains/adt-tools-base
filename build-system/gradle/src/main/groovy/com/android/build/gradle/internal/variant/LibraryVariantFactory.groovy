@@ -404,7 +404,6 @@ public class LibraryVariantFactory implements VariantFactory {
                 return variantConfig.directLibraries
             }
 
-
             @NonNull
             @Override
             List<ManifestDependency> getManifestDependencies() {

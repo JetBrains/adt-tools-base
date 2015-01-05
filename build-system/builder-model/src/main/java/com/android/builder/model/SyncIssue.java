@@ -41,10 +41,19 @@ public interface SyncIssue {
     // data is dependency coordinate
     public static final int TYPE_DEPENDENCY_IS_APKLIB     = 4;
 
-    // data is dependency coordinate/path
-    public static final int TYPE_NON_JAR_PACKAGE_DEP      = 5;
+    // data is local file
+    public static final int TYPE_NON_JAR_LOCAL_DEP        = 5;
 
-    public static final int TYPE_MAX                      = 6; // increment when adding new types.
+    // data is dependency coordinate/path
+    public static final int TYPE_NON_JAR_PACKAGE_DEP      = 6;
+
+    // data is dependency coordinate/path
+    public static final int TYPE_NON_JAR_PROVIDED_DEP     = 7;
+
+    // data is dependency coordinate/path
+    public static final int TYPE_JAR_DEPEND_ON_AAR        = 8;
+
+    public static final int TYPE_MAX                      = 9; // increment when adding new types.
 
     /**
      * Returns the severity of the issue.
