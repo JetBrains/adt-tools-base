@@ -268,6 +268,12 @@ public class OverdrawDetector extends LayoutDetector implements Detector.JavaSca
 
     @Override
     public void visitAttribute(@NonNull XmlContext context, @NonNull Attr attribute) {
+        // Ignore tools:background and any other custom attribute that isn't actually the
+        // android View background attribute
+        if (!ANDROID_URI.equals(attribute.getNamespaceURI())) {
+            return;
+        }
+
         // Only consider the root element's background
         Element documentElement = attribute.getOwnerDocument().getDocumentElement();
         if (documentElement == attribute.getOwnerElement()) {
