@@ -36,8 +36,8 @@ import com.android.sdklib.internal.project.ProjectProperties;
 import com.android.sdklib.internal.project.ProjectPropertiesWorkingCopy;
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
-import com.google.common.base.Predicate;
 import com.google.common.base.Strings;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 
@@ -549,11 +549,8 @@ public class GradleTestProject implements TestRule {
         BuildLauncher launcher = connection.newBuild().forTasks(tasks)
                 .withArguments(args.toArray(new String[args.size()]));
 
-        List<String> jvmArguments = new ArrayList<String>();
-        String debugIntegrationTest = System.getenv("DEBUG_INNER_TEST");
-        if (!Strings.isNullOrEmpty(debugIntegrationTest) && debugIntegrationTest.equals(name)) {
-            jvmArguments.add("-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005");
-        }
+        List<String> jvmArguments = getDebugJvmArguments();
+
         if (JacocoAgent.isJacocoEnabled()) {
             jvmArguments.add(JacocoAgent.getJvmArg());
         }
@@ -567,6 +564,15 @@ public class GradleTestProject implements TestRule {
         launcher.run();
     }
 
+    private static List<String> getDebugJvmArguments() {
+        List<String> jvmArguments = new ArrayList<String>();
+        String debugIntegrationTest = System.getenv("DEBUG_INNER_TEST");
+        if (!Strings.isNullOrEmpty(debugIntegrationTest)) {
+            jvmArguments.add("-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005");
+        }
+        return jvmArguments;
+    }
+
     /**
      * Returns a project model for each sub-project without building.
      */
@@ -576,11 +582,11 @@ public class GradleTestProject implements TestRule {
         BuildActionExecuter<Map<String, AndroidProject>> executer
                 = connection.action(getModelAction);
 
-        //noinspection unchecked
-        executer = (BuildActionExecuter<Map<String, AndroidProject>>) executer.withArguments(
+        executer.withArguments(
                 "-P" + AndroidProject.PROPERTY_BUILD_MODEL_ONLY + "=true",
                 "-P" + AndroidProject.PROPERTY_INVOKED_FROM_IDE + "=true");
 
+        executer.setJvmArguments(Iterables.toArray(getDebugJvmArguments(), String.class));
         return executer.run();
     }
 
