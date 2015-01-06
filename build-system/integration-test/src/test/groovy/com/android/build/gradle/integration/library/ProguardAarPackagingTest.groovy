@@ -30,15 +30,15 @@ import static org.junit.Assert.assertTrue
 class ProguardAarPackagingTest {
     @ClassRule
     static public GradleTestProject androidProject =
-            GradleTestProject.builder().withName("mainProject").create();
+            GradleTestProject.builder().withName("mainProject").create()
     @ClassRule
     static public GradleTestProject libraryInJarProject =
-            GradleTestProject.builder().withName("libInJar").create();
+            GradleTestProject.builder().withName("libInJar").create()
 
     @BeforeClass
     static public void setUp() {
         // Create android test application
-        AndroidTestApp testApp = new HelloWorldApp();
+        AndroidTestApp testApp = new HelloWorldApp()
 
         TestSourceFile oldHelloWorld = testApp.getFile("HelloWorld.java")
         testApp.removeFile(oldHelloWorld)

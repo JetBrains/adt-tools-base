@@ -32,7 +32,7 @@ import static org.junit.Assert.assertNotNull
 class DslTest {
 
     @Rule
-    public GradleTestProject project = GradleTestProject.builder().create();
+    public GradleTestProject project = GradleTestProject.builder().create()
 
     @Before
     public void setUp() {
@@ -74,7 +74,7 @@ android {
         String versionName = xml.'@android:versionName'.text()
 
         assertNotNull(versionName)
-        assertEquals("foo-suffix", versionName);
+        assertEquals("foo-suffix", versionName)
     }
 
 

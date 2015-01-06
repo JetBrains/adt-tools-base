@@ -46,7 +46,7 @@ class MinifyTest {
 
     @BeforeClass
     static void setUp() {
-        project.execute("clean", "assembleMinified", "assembleMinifiedAndroidTest");
+        project.execute("clean", "assembleMinified", "assembleMinifiedAndroidTest")
     }
 
     @AfterClass
@@ -62,7 +62,7 @@ class MinifyTest {
     @Test
     @Category(DeviceTests.class)
     void connectedCheck() {
-        project.execute("connectedCheck");
+        project.execute("connectedCheck")
     }
 
     @Test

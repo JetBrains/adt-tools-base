@@ -42,7 +42,7 @@ class CustomArtifactDepTest {
 
     @BeforeClass
     static void setUp() {
-        models = project.getAllModels();
+        models = project.getAllModels()
     }
 
     @AfterClass

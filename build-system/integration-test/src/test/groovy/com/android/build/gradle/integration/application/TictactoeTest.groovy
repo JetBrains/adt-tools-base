@@ -42,7 +42,7 @@ class TictactoeTest {
 
     @BeforeClass
     static void setUp() {
-        models = project.executeAndReturnMultiModel("clean", "assembleDebug");
+        models = project.executeAndReturnMultiModel("clean", "assembleDebug")
     }
 
     @AfterClass
@@ -82,7 +82,7 @@ class TictactoeTest {
         assertEquals("Dependency project path", ":lib", androidLibrary.getProject())
 
         // TODO: right now we can only test the folder name efficiently
-        String path = androidLibrary.getFolder().getPath();
+        String path = androidLibrary.getFolder().getPath()
         assertTrue(path, path.endsWith("/tictactoe/lib/unspecified"))
     }
 }

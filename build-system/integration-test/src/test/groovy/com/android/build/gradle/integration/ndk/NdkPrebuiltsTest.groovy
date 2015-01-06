@@ -43,7 +43,7 @@ class NdkPrebuiltsTest {
 
     @BeforeClass
     static void setUp() {
-        model = project.executeAndReturnModel("clean", "assembleDebug");
+        model = project.executeAndReturnModel("clean", "assembleDebug")
     }
 
     @AfterClass

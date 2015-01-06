@@ -49,7 +49,7 @@ class ShrinkTest {
 
     @BeforeClass
     static void setUp() {
-        project.execute("clean", "assembleRelease", "assembleDebug", "assembleProguardNoShrink");
+        project.execute("clean", "assembleRelease", "assembleDebug", "assembleProguardNoShrink")
     }
 
     @AfterClass
@@ -59,7 +59,7 @@ class ShrinkTest {
 
     @Test
     void "check shrink resources"() {
-        File intermediates = project.file("build/" + AndroidProject.FD_INTERMEDIATES);
+        File intermediates = project.file("build/" + AndroidProject.FD_INTERMEDIATES)
 
         // The release target has shrinking enabled.
         // The proguardNoShrink target has proguard but no shrinking enabled.
@@ -69,25 +69,25 @@ class ShrinkTest {
         File apkDebug = project.getApk("debug")
         File apkProguardOnly = project.getApk("proguardNoShrink", "unsigned")
 
-        assertTrue(apkDebug.toString() + " is not a file", apkDebug.isFile());
-        assertTrue(apkRelease.toString() + " is not a file", apkRelease.isFile());
-        assertTrue(apkProguardOnly.toString() + " is not a file", apkProguardOnly.isFile());
+        assertTrue(apkDebug.toString() + " is not a file", apkDebug.isFile())
+        assertTrue(apkRelease.toString() + " is not a file", apkRelease.isFile())
+        assertTrue(apkProguardOnly.toString() + " is not a file", apkProguardOnly.isFile())
 
         File compressed = new File(intermediates,
-                "res" + separator + "resources-release-stripped.ap_");
-        File uncompressed = new File(intermediates, "res" + separator + "resources-release.ap_");
-        assertTrue(compressed.toString() + " is not a file", compressed.isFile());
-        assertTrue(uncompressed.toString() + " is not a file", uncompressed.isFile());
+                "res" + separator + "resources-release-stripped.ap_")
+        File uncompressed = new File(intermediates, "res" + separator + "resources-release.ap_")
+        assertTrue(compressed.toString() + " is not a file", compressed.isFile())
+        assertTrue(uncompressed.toString() + " is not a file", uncompressed.isFile())
 
         // Check that there is no shrinking in the other two targets:
         assertTrue(new File(intermediates,
-                "res" + separator + "resources-debug.ap_").exists());
+                "res" + separator + "resources-debug.ap_").exists())
         assertFalse(new File(intermediates,
-                "res" + separator + "resources-debug-stripped.ap_").exists());
+                "res" + separator + "resources-debug-stripped.ap_").exists())
         assertTrue(new File(intermediates,
-                "res" + separator + "resources-proguardNoShrink.ap_").exists());
+                "res" + separator + "resources-proguardNoShrink.ap_").exists())
         assertFalse(new File(intermediates,
-                "res" + separator + "resources-proguardNoShrink-stripped.ap_").exists());
+                "res" + separator + "resources-proguardNoShrink-stripped.ap_").exists())
 
         String expectedUnstrippedApk = """\
 AndroidManifest.xml
@@ -164,60 +164,60 @@ res/layout/used20.xml
 res/layout/used21.xml"""
 
         // Should not have any unused resources in the compressed list
-        assertFalse(expectedStrippedApkContents, expectedStrippedApkContents.contains("unused"));
+        assertFalse(expectedStrippedApkContents, expectedStrippedApkContents.contains("unused"))
         // Should have *all* the used resources, currently 1-21
         for (int i = 1; i <= 21; i++) {
             assertTrue("Missing used" + i + " in " + expectedStrippedApkContents,
-                    expectedStrippedApkContents.contains("/used" + i + "."));
+                    expectedStrippedApkContents.contains("/used" + i + "."))
         }
 
         // Check that the uncompressed resources (.ap_) for the release target have everything
         // we expect
-        String expectedUncompressed = expectedUnstrippedApk.replace("classes.dex\n", "");
-        assertEquals(expectedUncompressed, dumpZipContents(uncompressed).trim());
+        String expectedUncompressed = expectedUnstrippedApk.replace("classes.dex\n", "")
+        assertEquals(expectedUncompressed, dumpZipContents(uncompressed).trim())
 
         // The debug target should have everything there in the APK
-        assertEquals(expectedUnstrippedApk, dumpZipContents(apkDebug));
-        assertEquals(expectedUnstrippedApk, dumpZipContents(apkProguardOnly));
+        assertEquals(expectedUnstrippedApk, dumpZipContents(apkDebug))
+        assertEquals(expectedUnstrippedApk, dumpZipContents(apkProguardOnly))
 
         // Check the compressed .ap_:
-        String actualCompressed = dumpZipContents(compressed);
-        String expectedCompressed = expectedStrippedApkContents.replace("classes.dex\n", "");
-        assertEquals(expectedCompressed, actualCompressed);
-        assertFalse(expectedCompressed, expectedCompressed.contains("unused"));
-        assertEquals(expectedStrippedApkContents, dumpZipContents(apkRelease));
+        String actualCompressed = dumpZipContents(compressed)
+        String expectedCompressed = expectedStrippedApkContents.replace("classes.dex\n", "")
+        assertEquals(expectedCompressed, actualCompressed)
+        assertFalse(expectedCompressed, expectedCompressed.contains("unused"))
+        assertEquals(expectedStrippedApkContents, dumpZipContents(apkRelease))
 
         // Check splits -- just sample one of them
         //noinspection SpellCheckingInspection
         compressed = project.file(
-                "abisplits/build/intermediates/res/resources-arm64-v8a-release-stripped.ap_");
+                "abisplits/build/intermediates/res/resources-arm64-v8a-release-stripped.ap_")
         //noinspection SpellCheckingInspection
         uncompressed =
                 project.file("abisplits/build/intermediates/res/resources-arm64-v8a-release.ap_")
-        assertTrue(compressed.toString() + " is not a file", compressed.isFile());
-        assertTrue(uncompressed.toString() + " is not a file", uncompressed.isFile());
+        assertTrue(compressed.toString() + " is not a file", compressed.isFile())
+        assertTrue(uncompressed.toString() + " is not a file", uncompressed.isFile())
         //noinspection SpellCheckingInspection
         assertEquals(""
                 + "AndroidManifest.xml\n"
                 + "resources.arsc\n"
                 + "res/layout/used.xml",
-                dumpZipContents(compressed));
+                dumpZipContents(compressed))
         //noinspection SpellCheckingInspection
         assertEquals(""
                 + "AndroidManifest.xml\n"
                 + "resources.arsc\n"
                 + "res/layout/unused.xml\n"
                 + "res/layout/used.xml",
-                dumpZipContents(uncompressed));
+                dumpZipContents(uncompressed))
 
         // Check WebView string handling (android_res strings etc)
 
         //noinspection SpellCheckingInspection
-        uncompressed = project.file("webview/build/intermediates/res/resources-release.ap_");
+        uncompressed = project.file("webview/build/intermediates/res/resources-release.ap_")
         //noinspection SpellCheckingInspection
         compressed = project.file("webview/build/intermediates/res/resources-release-stripped.ap_")
-        assertTrue(uncompressed.toString() + " is not a file", uncompressed.isFile());
-        assertTrue(compressed.toString() + " is not a file", compressed.isFile());
+        assertTrue(uncompressed.toString() + " is not a file", uncompressed.isFile())
+        assertTrue(compressed.toString() + " is not a file", compressed.isFile())
 
         //noinspection SpellCheckingInspection
         assertEquals(""
@@ -239,7 +239,7 @@ res/layout/used21.xml"""
                 + "res/raw/used_script.js\n"
                 + "res/raw/used_styles.css\n"
                 + "res/layout/webview.xml",
-                dumpZipContents(uncompressed));
+                dumpZipContents(uncompressed))
 
         //noinspection SpellCheckingInspection
         assertEquals(""
@@ -258,7 +258,7 @@ res/layout/used21.xml"""
                 + "res/raw/used_script.js\n"
                 + "res/raw/used_styles.css\n"
                 + "res/layout/webview.xml",
-                dumpZipContents(compressed));
+                dumpZipContents(compressed))
 
         // Check stored vs deflated state:
         // This is the state of the original source _ap file:
@@ -281,7 +281,7 @@ res/layout/used21.xml"""
                 + "deflated  res/raw/used_script.js\n"
                 + "deflated  res/raw/used_styles.css\n"
                 + "deflated  res/layout/webview.xml",
-                dumpZipContents(uncompressed, true));
+                dumpZipContents(uncompressed, true))
 
         // This is the state of the rewritten ap_ file: the zip states should match
         assertEquals(""
@@ -300,46 +300,46 @@ res/layout/used21.xml"""
                 + "deflated  res/raw/used_script.js\n"
                 + "deflated  res/raw/used_styles.css\n"
                 + "deflated  res/layout/webview.xml",
-                dumpZipContents(compressed, true));
+                dumpZipContents(compressed, true))
 
         // Make sure the (remaining) binary contents of the files in the compressed APK are
         // identical to the ones in uncompressed:
-        FileInputStream fis1 = new FileInputStream(compressed);
-        JarInputStream zis1 = new JarInputStream(fis1);
-        FileInputStream fis2 = new FileInputStream(uncompressed);
-        JarInputStream zis2 = new JarInputStream(fis2);
+        FileInputStream fis1 = new FileInputStream(compressed)
+        JarInputStream zis1 = new JarInputStream(fis1)
+        FileInputStream fis2 = new FileInputStream(uncompressed)
+        JarInputStream zis2 = new JarInputStream(fis2)
 
-        ZipEntry entry1 = zis1.getNextEntry();
-        ZipEntry entry2 = zis2.getNextEntry();
+        ZipEntry entry1 = zis1.getNextEntry()
+        ZipEntry entry2 = zis2.getNextEntry()
         while (entry1 != null) {
-            String name1 = entry1.getName();
-            String name2 = entry2.getName();
+            String name1 = entry1.getName()
+            String name2 = entry2.getName()
             while (!name1.equals(name2)) {
                 // uncompressed should contain a superset of all the names in compressed
-                entry2 = zis2.getNextJarEntry();
-                name2 = entry2.getName();
+                entry2 = zis2.getNextJarEntry()
+                name2 = entry2.getName()
             }
-            assertEquals(name1, name2);
+            assertEquals(name1, name2)
             if (!entry1.isDirectory()) {
-                byte[] bytes1 = ByteStreams.toByteArray(zis1);
-                byte[] bytes2 = ByteStreams.toByteArray(zis2);
-                assertTrue(name1, Arrays.equals(bytes1, bytes2));
+                byte[] bytes1 = ByteStreams.toByteArray(zis1)
+                byte[] bytes2 = ByteStreams.toByteArray(zis2)
+                assertTrue(name1, Arrays.equals(bytes1, bytes2))
             } else {
-                assertTrue(entry2.isDirectory());
+                assertTrue(entry2.isDirectory())
             }
-            entry1 = zis1.getNextEntry();
-            entry2 = zis2.getNextEntry();
+            entry1 = zis1.getNextEntry()
+            entry2 = zis2.getNextEntry()
         }
 
-        zis1.close();
-        zis2.close();
+        zis1.close()
+        zis2.close()
 
         //noinspection SpellCheckingInspection
         uncompressed = project.file("keep/build/intermediates/res/resources-release.ap_")
         //noinspection SpellCheckingInspection
         compressed = project.file("keep/build/intermediates/res/resources-release-stripped.ap_")
-        assertTrue(uncompressed.toString() + " is not a file", uncompressed.isFile());
-        assertTrue(compressed.toString() + " is not a file", compressed.isFile());
+        assertTrue(uncompressed.toString() + " is not a file", uncompressed.isFile())
+        assertTrue(compressed.toString() + " is not a file", compressed.isFile())
 
         //noinspection SpellCheckingInspection
         assertEquals(""
@@ -349,100 +349,100 @@ res/layout/used21.xml"""
                 + "res/layout/unused1.xml\n"
                 + "res/layout/unused2.xml\n"
                 + "res/layout/used1.xml",
-                dumpZipContents(uncompressed));
+                dumpZipContents(uncompressed))
 
         //noinspection SpellCheckingInspection
         assertEquals(""
                 + "AndroidManifest.xml\n"
                 + "resources.arsc\n"
                 + "res/layout/used1.xml",
-                dumpZipContents(compressed));
+                dumpZipContents(compressed))
     }
 
     private static List<String> getZipPaths(File zipFile, boolean includeMethod)
             throws IOException {
-        List<String> lines = Lists.newArrayList();
-        FileInputStream fis = new FileInputStream(zipFile);
+        List<String> lines = Lists.newArrayList()
+        FileInputStream fis = new FileInputStream(zipFile)
         try {
-            ZipInputStream zis = new ZipInputStream(fis);
+            ZipInputStream zis = new ZipInputStream(fis)
             try {
-                ZipEntry entry = zis.getNextEntry();
+                ZipEntry entry = zis.getNextEntry()
                 while (entry != null) {
-                    String path = entry.getName();
+                    String path = entry.getName()
                     if (includeMethod) {
-                        String method;
+                        String method
                         switch (entry.getMethod()) {
-                            case ZipEntry.STORED: method = "  stored"; break;
-                            case ZipEntry.DEFLATED: method = "deflated"; break;
-                            default: method = " unknown"; break;
+                            case ZipEntry.STORED: method = "  stored"; break
+                            case ZipEntry.DEFLATED: method = "deflated"; break
+                            default: method = " unknown"; break
                         }
-                        path = method + "  " + path;
+                        path = method + "  " + path
                     }
-                    lines.add(path);
-                    entry = zis.getNextEntry();
+                    lines.add(path)
+                    entry = zis.getNextEntry()
                 }
             } finally {
-                zis.close();
+                zis.close()
             }
         } finally {
-            fis.close();
+            fis.close()
         }
 
-        return lines;
+        return lines
     }
 
     private static String dumpZipContents(File zipFile) throws IOException {
-        return dumpZipContents(zipFile, false);
+        return dumpZipContents(zipFile, false)
     }
 
     private static String dumpZipContents(File zipFile, final boolean includeMethod)
             throws IOException {
-        List<String> lines = getZipPaths(zipFile, includeMethod);
+        List<String> lines = getZipPaths(zipFile, includeMethod)
 
         // Remove META-INF statements
-        ListIterator<String> iterator = lines.listIterator();
+        ListIterator<String> iterator = lines.listIterator()
         while (iterator.hasNext()) {
             if (iterator.next().startsWith("META-INF/")) {
-                iterator.remove();
+                iterator.remove()
             }
         }
 
         // Sort by base name (and numeric sort such that unused10 comes after unused9)
-        final Pattern pattern = Pattern.compile("(.*[^\\d])(\\d+)(\\..+)?");
+        final Pattern pattern = Pattern.compile("(.*[^\\d])(\\d+)(\\..+)?")
         Collections.sort(lines, new Comparator<String>() {
 
             @Override
             public int compare(String line1, String line2) {
-                String name1 = line1.substring(line1.lastIndexOf('/') + 1);
-                String name2 = line2.substring(line2.lastIndexOf('/') + 1);
-                int delta = name1.compareTo(name2);
+                String name1 = line1.substring(line1.lastIndexOf('/') + 1)
+                String name2 = line2.substring(line2.lastIndexOf('/') + 1)
+                int delta = name1.compareTo(name2)
                 if (delta != 0) {
                     // Try to do numeric sort
-                    Matcher match1 = pattern.matcher(name1);
+                    Matcher match1 = pattern.matcher(name1)
                     if (match1.matches()) {
-                        Matcher match2 = pattern.matcher(name2);
+                        Matcher match2 = pattern.matcher(name2)
                         //noinspection ConstantConditions
                         if (match2.matches() && match1.group(1).equals(match2.group(1))) {
                             //noinspection ConstantConditions
-                            int num1 = Integer.parseInt(match1.group(2));
+                            int num1 = Integer.parseInt(match1.group(2))
                             //noinspection ConstantConditions
-                            int num2 = Integer.parseInt(match2.group(2));
+                            int num2 = Integer.parseInt(match2.group(2))
                             if (num1 != num2) {
-                                return num1 - num2;
+                                return num1 - num2
                             }
                         }
                     }
-                    return delta;
+                    return delta
                 }
 
                 if (includeMethod) {
-                    line1 = line1.substring(10);
-                    line2 = line2.substring(10);
+                    line1 = line1.substring(10)
+                    line2 = line2.substring(10)
                 }
-                return line1.compareTo(line2);
+                return line1.compareTo(line2)
             }
-        });
+        })
 
-        return Joiner.on('\n').join(lines);
+        return Joiner.on('\n').join(lines)
     }
 }

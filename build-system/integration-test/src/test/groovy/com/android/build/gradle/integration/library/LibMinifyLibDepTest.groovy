@@ -35,7 +35,7 @@ class LibMinifyLibDepTest {
 
     @BeforeClass
     static void setUp() {
-        project.execute("clean", "assembleDebug");
+        project.execute("clean", "assembleDebug")
     }
 
     @AfterClass
@@ -51,6 +51,6 @@ class LibMinifyLibDepTest {
     @Test
     @Category(DeviceTests.class)
     void connectedCheck() {
-        project.execute("connectedCheck");
+        project.execute("connectedCheck")
     }
 }
