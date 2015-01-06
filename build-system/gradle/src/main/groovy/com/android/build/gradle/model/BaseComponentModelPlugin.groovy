@@ -291,15 +291,12 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
 
             plugin.createLintCompileTask();
 
-            // Create tasks for each binaries.
-            if (!variantManager.productFlavors.isEmpty()) {
-                // there'll be more than one test app, so we need a top level assembleTest
-                Task assembleTest = tasks.create("assembleTest");
-                assembleTest.setGroup(org.gradle.api.plugins.BasePlugin.BUILD_GROUP);
-                assembleTest.setDescription("Assembles all the Test applications");
-                plugin.setAssembleAndroidTest(assembleTest);
-            }
+            Task assembleTest = tasks.create("assembleTest");
+            assembleTest.setGroup(org.gradle.api.plugins.BasePlugin.BUILD_GROUP);
+            assembleTest.setDescription("Assembles all the Test applications");
+            plugin.setAssembleAndroidTest(assembleTest);
 
+            // Create tasks for each binaries.
             binaries.withType(AndroidBinary) { DefaultAndroidBinary binary ->
                 BaseVariantData variantData = variantManager.createVariantData(
                         binary.buildType,
