@@ -39,7 +39,7 @@ class MultiDexTest {
 
     @BeforeClass
     static void setUp() {
-        project.execute("clean", "assembleDebug");
+        project.execute("clean", "assembleDebug")
     }
 
     @AfterClass
@@ -57,10 +57,10 @@ class MultiDexTest {
         // manually inspcet the apk to ensure that the classes.dex that was created is the same
         // one in the apk. This tests that the packaging didn't rename the multiple dex files
         // around when we packaged them.
-        File classesDex = project.file("build/" + FD_INTERMEDIATES + "/dex/ics/debug/classes.dex");
+        File classesDex = project.file("build/" + FD_INTERMEDIATES + "/dex/ics/debug/classes.dex")
         File apk = project.getApk("ics", "debug")
 
-        ZipHelper.checkContent(apk, "classes.dex", Files.toByteArray(classesDex));
+        ZipHelper.checkContent(apk, "classes.dex", Files.toByteArray(classesDex))
     }
 
     @Test
@@ -71,6 +71,6 @@ class MultiDexTest {
     @Test
     @Category(DeviceTests.class)
     void connectedCheck() {
-        project.execute("connectedCheck");
+        project.execute("connectedCheck")
     }
 }

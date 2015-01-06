@@ -264,7 +264,7 @@ public final class BuildConfig {
             @NonNull String variantDir) {
         File outputFile = new File(project.getTestDir(),
                 "build/generated/source/buildConfig/$variantDir/com/example/helloworld/BuildConfig.java")
-        Assert.assertTrue("Missing file: " + outputFile, outputFile.isFile());
+        Assert.assertTrue("Missing file: " + outputFile, outputFile.isFile())
         assertEquals(expected, Files.asByteSource(outputFile).asCharSource(Charsets.UTF_8).read())
     }
 

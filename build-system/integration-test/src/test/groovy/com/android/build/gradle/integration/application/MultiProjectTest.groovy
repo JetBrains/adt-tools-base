@@ -41,7 +41,7 @@ class MultiProjectTest {
 
     @BeforeClass
     static void setUp() {
-        models = project.getAllModels();
+        models = project.getAllModels()
     }
 
     @AfterClass
@@ -53,29 +53,29 @@ class MultiProjectTest {
     @Test
     void testModel() {
 
-        AndroidProject baseLibModel = models.get(":baseLibrary");
-        assertNotNull("Module app null-check", baseLibModel);
+        AndroidProject baseLibModel = models.get(":baseLibrary")
+        assertNotNull("Module app null-check", baseLibModel)
 
-        Collection<Variant> variants = baseLibModel.getVariants();
-        assertEquals("Variant count", 2, variants.size());
+        Collection<Variant> variants = baseLibModel.getVariants()
+        assertEquals("Variant count", 2, variants.size())
 
-        Variant variant = ModelHelper.getVariant(variants, "release");
-        assertNotNull("release variant null-check", variant);
+        Variant variant = ModelHelper.getVariant(variants, "release")
+        assertNotNull("release variant null-check", variant)
 
-        AndroidArtifact mainInfo = variant.getMainArtifact();
-        assertNotNull("Main Artifact null-check", mainInfo);
+        AndroidArtifact mainInfo = variant.getMainArtifact()
+        assertNotNull("Main Artifact null-check", mainInfo)
 
-        Dependencies dependencies = mainInfo.getDependencies();
-        assertNotNull("Dependencies null-check", dependencies);
+        Dependencies dependencies = mainInfo.getDependencies()
+        assertNotNull("Dependencies null-check", dependencies)
 
-        Collection<String> projects = dependencies.getProjects();
-        assertNotNull("project dep list null-check", projects);
-        assertEquals("project dep count", 1, projects.size());
-        assertEquals("dep on :util check", ":util", projects.iterator().next());
+        Collection<String> projects = dependencies.getProjects()
+        assertNotNull("project dep list null-check", projects)
+        assertEquals("project dep count", 1, projects.size())
+        assertEquals("dep on :util check", ":util", projects.iterator().next())
 
-        Collection<JavaLibrary> javaLibraries = dependencies.getJavaLibraries();
-        assertNotNull("jar dep list null-check", javaLibraries);
+        Collection<JavaLibrary> javaLibraries = dependencies.getJavaLibraries()
+        assertNotNull("jar dep list null-check", javaLibraries)
         // TODO these are jars coming from ':util' They shouldn't be there.
-        assertEquals("jar dep count", 2, javaLibraries.size());
+        assertEquals("jar dep count", 2, javaLibraries.size())
     }
 }

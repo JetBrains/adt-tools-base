@@ -41,7 +41,7 @@ import static org.junit.Assert.assertTrue
  */
 class DensitySplitInLTest {
 
-    static AndroidProject model;
+    static AndroidProject model
 
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
@@ -50,7 +50,7 @@ class DensitySplitInLTest {
 
     @BeforeClass
     static void setUp() {
-        model = project.executeAndReturnModel("clean", "assembleDebug");
+        model = project.executeAndReturnModel("clean", "assembleDebug")
     }
 
     @AfterClass
@@ -61,42 +61,42 @@ class DensitySplitInLTest {
 
     @Test
     void "check split outputs"() throws Exception {
-        Collection<Variant> variants = model.getVariants();
-        assertEquals("Variant Count", 2 , variants.size());
+        Collection<Variant> variants = model.getVariants()
+        assertEquals("Variant Count", 2 , variants.size())
 
         // get the main artifact of the debug artifact
-        Variant debugVariant = ModelHelper.getVariant(variants, DEBUG);
-        assertNotNull("debug Variant null-check", debugVariant);
-        AndroidArtifact debugMainArtifact = debugVariant.getMainArtifact();
-        assertNotNull("Debug main info null-check", debugMainArtifact);
+        Variant debugVariant = ModelHelper.getVariant(variants, DEBUG)
+        assertNotNull("debug Variant null-check", debugVariant)
+        AndroidArtifact debugMainArtifact = debugVariant.getMainArtifact()
+        assertNotNull("Debug main info null-check", debugMainArtifact)
 
         // get the outputs.
-        Collection<AndroidArtifactOutput> debugOutputs = debugMainArtifact.getOutputs();
-        assertNotNull(debugOutputs);
+        Collection<AndroidArtifactOutput> debugOutputs = debugMainArtifact.getOutputs()
+        assertNotNull(debugOutputs)
 
         // build a set of expected outputs
-        Set<String> expected = Sets.newHashSetWithExpectedSize(5);
-        expected.add(null);
-        expected.add("mdpi");
-        expected.add("hdpi");
-        expected.add("xhdpi");
-        expected.add("xxhdpi");
+        Set<String> expected = Sets.newHashSetWithExpectedSize(5)
+        expected.add(null)
+        expected.add("mdpi")
+        expected.add("hdpi")
+        expected.add("xhdpi")
+        expected.add("xxhdpi")
 
-        assertEquals(1, debugOutputs.size());
-        AndroidArtifactOutput output = debugOutputs.iterator().next();
-        assertEquals(5, output.getOutputs().size());
+        assertEquals(1, debugOutputs.size())
+        AndroidArtifactOutput output = debugOutputs.iterator().next()
+        assertEquals(5, output.getOutputs().size())
         for (OutputFile outputFile : output.getOutputs()) {
-            String densityFilter = ModelHelper.getFilter(outputFile, OutputFile.DENSITY);
+            String densityFilter = ModelHelper.getFilter(outputFile, OutputFile.DENSITY)
             assertEquals(densityFilter == null ? OutputFile.MAIN : OutputFile.SPLIT,
-                    outputFile.getOutputType());
+                    outputFile.getOutputType())
 
             // with pure splits, all split have the same version code.
-            assertEquals(12, output.getVersionCode());
-            expected.remove(densityFilter);
+            assertEquals(12, output.getVersionCode())
+            expected.remove(densityFilter)
         }
 
         // this checks we didn't miss any expected output.
-        assertTrue(expected.isEmpty());
+        assertTrue(expected.isEmpty())
     }
 
 }

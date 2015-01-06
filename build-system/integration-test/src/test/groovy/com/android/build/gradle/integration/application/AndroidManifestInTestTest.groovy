@@ -46,7 +46,7 @@ class AndroidManifestInTestTest {
 
     @BeforeClass
     static void setUp() {
-        project.execute("clean", "assembleDebugAndroidTest");
+        project.execute("clean", "assembleDebugAndroidTest")
     }
 
     @AfterClass
@@ -63,50 +63,50 @@ class AndroidManifestInTestTest {
     public void testUserProvidedTestAndroidManifest() throws Exception {
         File testApk = project.getApk("debug", "androidTest", "unaligned")
 
-        File aapt = SdkHelper.getAapt(FullRevision.parseRevision("19.1.0"));
+        File aapt = SdkHelper.getAapt(FullRevision.parseRevision("19.1.0"))
 
-        assertTrue("Test requires build-tools 19.1.0", aapt.isFile());
+        assertTrue("Test requires build-tools 19.1.0", aapt.isFile())
 
-        String[] command = new String[4];
-        command[0] = aapt.getPath();
-        command[1] = "l";
-        command[2] = "-a";
-        command[3] = testApk.getPath();
+        String[] command = new String[4]
+        command[0] = aapt.getPath()
+        command[1] = "l"
+        command[2] = "-a"
+        command[3] = testApk.getPath()
 
-        CommandLineRunner commandLineRunner = new CommandLineRunner(new StdLogger(StdLogger.Level.ERROR));
+        CommandLineRunner commandLineRunner = new CommandLineRunner(new StdLogger(StdLogger.Level.ERROR))
 
-        final List<String> aaptOutput = Lists.newArrayList();
+        final List<String> aaptOutput = Lists.newArrayList()
 
         commandLineRunner.runCmdLine(command, new CommandLineRunner.CommandLineOutput() {
             @Override
             public void out(@Nullable String line) {
                 if (line != null) {
-                    aaptOutput.add(line);
+                    aaptOutput.add(line)
                 }
             }
             @Override
             public void err(@Nullable String line) {
-                super.err(line);
+                super.err(line)
 
             }
-        }, null /*env vars*/);
+        }, null /*env vars*/)
 
-        System.out.println("Beginning dump");
-        boolean foundPermission = false;
-        boolean foundMetadata = false;
+        System.out.println("Beginning dump")
+        boolean foundPermission = false
+        boolean foundMetadata = false
         for (String line : aaptOutput) {
             if (line.contains("foo.permission-group.COST_MONEY")) {
-                foundPermission = true;
+                foundPermission = true
             }
             if (line.contains("meta-data")) {
-                foundMetadata = true;
+                foundMetadata = true
             }
         }
         if (!foundPermission) {
-            fail("Could not find user-specified permission group.");
+            fail("Could not find user-specified permission group.")
         }
         if (!foundMetadata) {
-            fail("Could not find meta-data under instrumentation ");
+            fail("Could not find meta-data under instrumentation ")
         }
     }
 }

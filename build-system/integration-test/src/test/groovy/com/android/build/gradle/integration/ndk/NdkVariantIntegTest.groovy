@@ -36,7 +36,7 @@ import static org.junit.Assert.assertNull
 class NdkVariantIntegTest {
 
     @ClassRule
-    static public GradleTestProject project = GradleTestProject.builder().create();
+    static public GradleTestProject project = GradleTestProject.builder().create()
 
     @BeforeClass
     static public void setUp() {
@@ -87,43 +87,43 @@ android {
 
     @Test
     public void assembleX86Release() {
-        project.execute("assembleX86Release");
+        project.execute("assembleX86Release")
 
         // Verify .so are built for all platform.
         ZipFile apk = new ZipFile(project.getApk("x86", "release", "unsigned"))
-        assertNotNull(apk.getEntry("lib/x86/libhello-jni.so"));
-        assertNull(apk.getEntry("lib/mips/libhello-jni.so"));
-        assertNull(apk.getEntry("lib/armeabi/libhello-jni.so"));
-        assertNull(apk.getEntry("lib/armeabi-v7a/libhello-jni.so"));
+        assertNotNull(apk.getEntry("lib/x86/libhello-jni.so"))
+        assertNull(apk.getEntry("lib/mips/libhello-jni.so"))
+        assertNull(apk.getEntry("lib/armeabi/libhello-jni.so"))
+        assertNull(apk.getEntry("lib/armeabi-v7a/libhello-jni.so"))
     }
 
     @Test
     public void assembleArmRelease() {
-        project.execute("assembleArmRelease");
+        project.execute("assembleArmRelease")
 
         // Verify .so are built for all platform.
         ZipFile apk = new ZipFile(project.getApk("arm", "release", "unsigned"))
-        assertNull(apk.getEntry("lib/x86/libhello-jni.so"));
-        assertNull(apk.getEntry("lib/mips/libhello-jni.so"));
-        assertNotNull(apk.getEntry("lib/armeabi/libhello-jni.so"));
-        assertNotNull(apk.getEntry("lib/armeabi-v7a/libhello-jni.so"));
+        assertNull(apk.getEntry("lib/x86/libhello-jni.so"))
+        assertNull(apk.getEntry("lib/mips/libhello-jni.so"))
+        assertNotNull(apk.getEntry("lib/armeabi/libhello-jni.so"))
+        assertNotNull(apk.getEntry("lib/armeabi-v7a/libhello-jni.so"))
     }
 
     @Test
     public void assembleMipsRelease() {
-        project.execute("assembleMipsRelease");
+        project.execute("assembleMipsRelease")
 
         // Verify .so are built for all platform.
         ZipFile apk = new ZipFile(project.getApk("mips", "release", "unsigned"))
-        assertNull(apk.getEntry("lib/x86/libhello-jni.so"));
-        assertNotNull(apk.getEntry("lib/mips/libhello-jni.so"));
-        assertNull(apk.getEntry("lib/armeabi/libhello-jni.so"));
-        assertNull(apk.getEntry("lib/armeabi-v7a/libhello-jni.so"));
+        assertNull(apk.getEntry("lib/x86/libhello-jni.so"))
+        assertNotNull(apk.getEntry("lib/mips/libhello-jni.so"))
+        assertNull(apk.getEntry("lib/armeabi/libhello-jni.so"))
+        assertNull(apk.getEntry("lib/armeabi-v7a/libhello-jni.so"))
     }
 
     @Test
     @Category(DeviceTests.class)
     public void connectedAndroidTest() {
-        project.execute("connectedAndroidTestArmDebug");
+        project.execute("connectedAndroidTestArmDebug")
     }
 }

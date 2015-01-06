@@ -37,7 +37,7 @@ class LibProguardConsumerFilesTest {
 
     @BeforeClass
     static void setUp() {
-        project.execute("clean", "build");
+        project.execute("clean", "build")
     }
 
     @AfterClass
@@ -47,10 +47,10 @@ class LibProguardConsumerFilesTest {
 
     @Test
     void "check proguard.txt has been correctly merged"() {
-        File debugFileOutput = project.file("build/" + FD_INTERMEDIATES + "/bundles/debug/proguard.txt");
-        File releaseFileOutput = project.file("build/" + FD_INTERMEDIATES + "/bundles/release/proguard.txt");
+        File debugFileOutput = project.file("build/" + FD_INTERMEDIATES + "/bundles/debug/proguard.txt")
+        File releaseFileOutput = project.file("build/" + FD_INTERMEDIATES + "/bundles/release/proguard.txt")
 
-        FileHelper.checkContent(debugFileOutput, "A");
-        FileHelper.checkContent(releaseFileOutput, ["A", "B", "C"]);
+        FileHelper.checkContent(debugFileOutput, "A")
+        FileHelper.checkContent(releaseFileOutput, ["A", "B", "C"])
     }
 }

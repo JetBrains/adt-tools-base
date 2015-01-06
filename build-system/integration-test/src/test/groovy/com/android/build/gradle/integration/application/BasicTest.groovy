@@ -120,18 +120,18 @@ class BasicTest {
 
     @Test
     void "check custom signing"() throws Exception {
-        Collection<Variant> variants = model.getVariants();
+        Collection<Variant> variants = model.getVariants()
 
         for (Variant variant : variants) {
             // Release variant doesn't specify the signing config, so it should not be considered
             // signed.
             if (variant.getName().equals("release")) {
-                assertFalse(variant.getMainArtifact().isSigned());
+                assertFalse(variant.getMainArtifact().isSigned())
             }
 
             // customSigning is identical to release, but overrides the signing check.
             if (variant.getName().equals("customSigning")) {
-                assertTrue(variant.getMainArtifact().isSigned());
+                assertTrue(variant.getMainArtifact().isSigned())
             }
         }
     }

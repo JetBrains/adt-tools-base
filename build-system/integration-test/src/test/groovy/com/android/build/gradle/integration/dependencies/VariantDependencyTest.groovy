@@ -92,10 +92,10 @@ class VariantDependencyTest {
         project.execute('clean', 'assemble')
         model = project.getSingleModel()
 
-        File aapt = new File(project.getSdkDir(), "build-tools/20.0.0/aapt");
-        assertTrue("Test requires build-tools 20.0.0", aapt.isFile());
-        CommandLineRunner commandLineRunner = new CommandLineRunner(new StdLogger(StdLogger.Level.ERROR));
-        apkInfoParser = new ApkInfoParser(aapt, commandLineRunner);
+        File aapt = new File(project.getSdkDir(), "build-tools/20.0.0/aapt")
+        assertTrue("Test requires build-tools 20.0.0", aapt.isFile())
+        CommandLineRunner commandLineRunner = new CommandLineRunner(new StdLogger(StdLogger.Level.ERROR))
+        apkInfoParser = new ApkInfoParser(aapt, commandLineRunner)
     }
 
     @AfterClass
