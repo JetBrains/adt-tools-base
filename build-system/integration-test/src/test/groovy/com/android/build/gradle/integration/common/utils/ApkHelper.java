@@ -85,11 +85,6 @@ public class ApkHelper {
             @NonNull File apkFile,
             @NonNull String expectedClassName)
             throws IOException, LoggedErrorException, InterruptedException {
-        // extract the classes.jar from the apk
-        File classesDex = File.createTempFile("ApkHelper", "");
-        classesDex.deleteOnExit();
-        ZipHelper.extractFile(apkFile, "classes.dex", classesDex);
-
         // get the dexdump exec
         File dexDump = SdkHelper.getDexDump();
 
@@ -98,7 +93,7 @@ public class ApkHelper {
         List<String> command = Lists.newArrayList();
 
         command.add(dexDump.getAbsolutePath());
-        command.add(classesDex.getAbsolutePath());
+        command.add(apkFile.getAbsolutePath());
 
         List<String> output = runAndGetOutput(commandLineRunner, command);
 
