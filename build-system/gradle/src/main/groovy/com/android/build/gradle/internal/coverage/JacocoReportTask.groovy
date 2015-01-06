@@ -67,7 +67,7 @@ public class JacocoReportTask extends DefaultTask {
                 classfiles {
                     fileset(
                             dir: getClassDir(),
-                            excludes: "**/R.class,**/R*.class,**/Manifest.class,**/Manifest*.class,**/BuildConfig.class")
+                            excludes: "**/R.class,**/R\$*.class,**/Manifest.class,**/Manifest\$*.class,**/BuildConfig.class")
                 }
             }
 
