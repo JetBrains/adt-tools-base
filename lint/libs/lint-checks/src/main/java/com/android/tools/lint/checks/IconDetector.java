@@ -47,6 +47,10 @@ import static com.android.tools.lint.detector.api.LintUtils.endsWith;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.FilterData;
+import com.android.build.OutputFile;
+import com.android.builder.model.AndroidArtifact;
+import com.android.builder.model.AndroidArtifactOutput;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.ProductFlavor;
 import com.android.builder.model.ProductFlavorContainer;
@@ -1103,6 +1107,25 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
                 for (ProductFlavorContainer container : gradleProjectModel.getProductFlavors()) {
                     addResConfigsFromFlavor(relevantDensities, variantFlavors, container);
                 }
+
+                // Are there any splits that specify densities?
+                if (relevantDensities.isEmpty()) {
+                    AndroidArtifact mainArtifact = variant.getMainArtifact();
+                    Collection<AndroidArtifactOutput> outputs = mainArtifact.getOutputs();
+                    for (AndroidArtifactOutput output : outputs) {
+                        for (OutputFile file : output.getOutputs()) {
+                            final String DENSITY_NAME = OutputFile.FilterType.DENSITY.name();
+                            if (file.getFilterTypes().contains(DENSITY_NAME)) {
+                                for (FilterData data : file.getFilters()) {
+                                    if (DENSITY_NAME.equals(data.getFilterType())) {
+                                        relevantDensities.add(data.getIdentifier());
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
                 if (!relevantDensities.isEmpty()) {
                     for (String density : relevantDensities) {
                         String folder = ResourceFolderType.DRAWABLE.getName() + '-' + density;
