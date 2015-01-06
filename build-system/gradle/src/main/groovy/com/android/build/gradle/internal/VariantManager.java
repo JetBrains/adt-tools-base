@@ -203,13 +203,10 @@ public class VariantManager implements VariantModel {
     public void createAndroidTasks(@Nullable com.android.builder.model.SigningConfig signingOverride) {
         variantFactory.validateModel(this);
 
-        if (!productFlavors.isEmpty()) {
-            // there'll be more than one test app, so we need a top level assembleAndroidTest
-            Task assembleTest = project.getTasks().create("assembleAndroidTest");
-            assembleTest.setGroup(org.gradle.api.plugins.BasePlugin.BUILD_GROUP);
-            assembleTest.setDescription("Assembles all the Test applications");
-            basePlugin.setAssembleAndroidTest(assembleTest);
-        }
+        Task assembleTest = project.getTasks().create("assembleAndroidTest");
+        assembleTest.setGroup(org.gradle.api.plugins.BasePlugin.BUILD_GROUP);
+        assembleTest.setDescription("Assembles all the Test applications");
+        basePlugin.setAssembleAndroidTest(assembleTest);
 
         if (variantDataList.isEmpty()) {
             populateVariantDataList(signingOverride);
