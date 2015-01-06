@@ -53,6 +53,9 @@ public class MergeResources extends IncrementalTask {
     boolean process9Patch
 
     @Input
+    boolean crunchPng
+
+    @Input
     boolean useNewCruncher;
 
     @Input
@@ -95,7 +98,8 @@ public class MergeResources extends IncrementalTask {
 
             // get the merged set and write it down.
             MergedResourceWriter writer = new MergedResourceWriter(
-                    destinationDir, getProcess9Patch() ? getCruncher() : null)
+                    destinationDir, getCruncher(),
+                    getCrunchPng(), getProcess9Patch())
             writer.setInsertSourceMarkers(getInsertSourceMarkers())
 
             merger.mergeData(writer, false /*doCleanUp*/)
@@ -154,7 +158,8 @@ public class MergeResources extends IncrementalTask {
             }
 
             MergedResourceWriter writer = new MergedResourceWriter(
-                    getOutputDir(), getProcess9Patch() ? getCruncher() : null)
+                    getOutputDir(), getCruncher(),
+                    getCrunchPng(), getProcess9Patch())
             writer.setInsertSourceMarkers(getInsertSourceMarkers())
             merger.mergeData(writer, false /*doCleanUp*/)
             // No exception? Write the known state.
