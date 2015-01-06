@@ -81,5 +81,10 @@ public class ItemResourceValue extends ResourceValue {
             }
             return false;
         }
+
+        @Override
+        public String toString() {
+            return mName + " (framework:" + mIsFrameworkAttr + ")";
+        }
     }
 }
