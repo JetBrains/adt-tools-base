@@ -110,9 +110,9 @@ dependencies {
             project.execute('clean', 'app2:assembleDebug')
             fail('Broken build file did not throw exception')
         } catch (BuildException e) {
-            Throwable cause = e;
+            Throwable cause = e
             while (cause.getCause() != null) {
-                cause = cause.getCause();
+                cause = cause.getCause()
             }
             String expectedMsg = "Dependency project:app1:unspecified on project app2 resolves to an APK archive which is not supported as a compilation dependency. File:"
             String actual = cause.getMessage()

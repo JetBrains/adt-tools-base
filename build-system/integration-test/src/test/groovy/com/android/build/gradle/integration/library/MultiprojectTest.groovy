@@ -35,7 +35,7 @@ class MultiprojectTest {
 
     @BeforeClass
     static void setUp() {
-        project.execute("clean", "assembleDebug");
+        project.execute("clean", "assembleDebug")
     }
 
     @AfterClass

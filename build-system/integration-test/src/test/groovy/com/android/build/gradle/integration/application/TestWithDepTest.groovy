@@ -56,16 +56,16 @@ class TestWithDepTest {
 
     @Test
     void "check there is a dep on the test variant"() throws Exception {
-        Collection<Variant> variants = model.getVariants();
-        Variant debugVariant = ModelHelper.getVariant(variants, DEBUG);
-        assertNotNull(debugVariant);
+        Collection<Variant> variants = model.getVariants()
+        Variant debugVariant = ModelHelper.getVariant(variants, DEBUG)
+        assertNotNull(debugVariant)
 
-        Collection<AndroidArtifact> extraAndroidArtifact = debugVariant.getExtraAndroidArtifacts();
+        Collection<AndroidArtifact> extraAndroidArtifact = debugVariant.getExtraAndroidArtifacts()
         AndroidArtifact testArtifact = ModelHelper.getAndroidArtifact(extraAndroidArtifact,
-                ARTIFACT_ANDROID_TEST);
-        assertNotNull(testArtifact);
+                ARTIFACT_ANDROID_TEST)
+        assertNotNull(testArtifact)
 
-        Dependencies testDependencies = testArtifact.getDependencies();
-        assertEquals(1, testDependencies.getJavaLibraries().size());
+        Dependencies testDependencies = testArtifact.getDependencies()
+        assertEquals(1, testDependencies.getJavaLibraries().size())
     }
 }

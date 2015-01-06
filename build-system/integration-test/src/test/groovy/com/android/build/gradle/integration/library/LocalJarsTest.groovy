@@ -40,7 +40,7 @@ class LocalJarsTest {
 
     @BeforeClass
     static void setUp() {
-        models = project.executeAndReturnMultiModel("clean", "assembleDebug");
+        models = project.executeAndReturnMultiModel("clean", "assembleDebug")
     }
 
     @AfterClass
@@ -56,23 +56,23 @@ class LocalJarsTest {
 
     @Test
     void testModel() throws Exception {
-        AndroidProject libModel = models.get(":baseLibrary");
-        assertNotNull("Module app null-check", libModel);
+        AndroidProject libModel = models.get(":baseLibrary")
+        assertNotNull("Module app null-check", libModel)
 
-        Collection<Variant> variants = libModel.getVariants();
+        Collection<Variant> variants = libModel.getVariants()
 
-        Variant releaseVariant = ModelHelper.getVariant(variants, "release");
-        assertNotNull(releaseVariant);
+        Variant releaseVariant = ModelHelper.getVariant(variants, "release")
+        assertNotNull(releaseVariant)
 
-        Dependencies dependencies = releaseVariant.getMainArtifact().getDependencies();
-        assertNotNull(dependencies);
+        Dependencies dependencies = releaseVariant.getMainArtifact().getDependencies()
+        assertNotNull(dependencies)
 
-        Collection<JavaLibrary> javaLibraries = dependencies.getJavaLibraries();
-        assertNotNull(javaLibraries);
+        Collection<JavaLibrary> javaLibraries = dependencies.getJavaLibraries()
+        assertNotNull(javaLibraries)
 
         //  com.google.guava:guava:11.0.2
         //  \--- com.google.code.findbugs:jsr305:1.3.9
         //  + the local jar
-        assertEquals(3, javaLibraries.size());
+        assertEquals(3, javaLibraries.size())
     }
 }

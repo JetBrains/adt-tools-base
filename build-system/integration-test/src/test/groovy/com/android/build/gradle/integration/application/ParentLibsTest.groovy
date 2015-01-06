@@ -30,7 +30,7 @@ import org.junit.experimental.categories.Category
  * Assemble tests for parentLibTest
  */
 public class ParentLibsTest {
-    static AndroidProject model;
+    static AndroidProject model
 
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
@@ -40,7 +40,7 @@ public class ParentLibsTest {
     @BeforeClass
     static void setUp() {
         model = project.execute(ImmutableList.of("-p", "app"),
-                "clean", "assembleDebug");
+                "clean", "assembleDebug")
     }
 
     @AfterClass
@@ -57,6 +57,6 @@ public class ParentLibsTest {
     @Test
     @Category(DeviceTests.class)
     void connectedCheck() {
-        project.execute(ImmutableList.of("-p", "app"), "connectedCheck");
+        project.execute(ImmutableList.of("-p", "app"), "connectedCheck")
     }
 }

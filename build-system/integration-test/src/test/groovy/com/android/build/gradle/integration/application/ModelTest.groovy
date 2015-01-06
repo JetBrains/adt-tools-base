@@ -33,7 +33,7 @@ import static org.junit.Assert.assertNotNull
 class ModelTest {
 
     @Rule
-    public GradleTestProject project = GradleTestProject.builder().create();
+    public GradleTestProject project = GradleTestProject.builder().create()
 
     @Before
     public void setUp() {

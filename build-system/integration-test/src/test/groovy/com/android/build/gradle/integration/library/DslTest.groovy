@@ -28,7 +28,7 @@ import static org.junit.Assert.fail
 class DslTest {
 
     @Rule
-    public GradleTestProject project = GradleTestProject.builder().create();
+    public GradleTestProject project = GradleTestProject.builder().create()
 
     @Before
     public void setUp() {
@@ -57,9 +57,9 @@ android {
             project.execute("tasks")
             fail('Broken build file did not throw exception')
         } catch (BuildException e) {
-            Throwable cause = e;
+            Throwable cause = e
             while (cause.getCause() != null) {
-                cause = cause.getCause();
+                cause = cause.getCause()
             }
             String expectedMsg = "Library projects cannot set applicationId. applicationId is set to 'foo' in default config."
             assertEquals(expectedMsg, cause.getMessage())
@@ -82,9 +82,9 @@ android {
             project.execute("tasks")
             fail('Broken build file did not throw exception')
         } catch (BuildException e) {
-            Throwable cause = e;
+            Throwable cause = e
             while (cause.getCause() != null) {
-                cause = cause.getCause();
+                cause = cause.getCause()
             }
             String expectedMsg = "Library projects cannot set applicationId. applicationIdSuffix is set to 'foo' in build type 'debug'."
             assertEquals(expectedMsg, cause.getMessage())
@@ -107,9 +107,9 @@ android {
             project.execute("tasks")
             fail('Broken build file did not throw exception')
         } catch (BuildException e) {
-            Throwable cause = e;
+            Throwable cause = e
             while (cause.getCause() != null) {
-                cause = cause.getCause();
+                cause = cause.getCause()
             }
             String expectedMsg = "Library projects cannot set applicationId. applicationId is set to 'foo' in flavor 'myFlavor'."
             assertEquals(expectedMsg, cause.getMessage())

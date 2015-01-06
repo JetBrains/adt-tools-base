@@ -44,7 +44,7 @@ class MaxSdkVersionTest {
 
     @BeforeClass
     static void setUp() {
-        project.execute("clean", "assembleDebug");
+        project.execute("clean", "assembleDebug")
     }
 
     @AfterClass
@@ -61,38 +61,38 @@ class MaxSdkVersionTest {
     private void checkMaxSdkVersion(File testApk, String version)
             throws InterruptedException, LoggedErrorException, IOException {
 
-        File aapt = SdkHelper.getAapt(FullRevision.parseRevision("19.1.0"));
+        File aapt = SdkHelper.getAapt(FullRevision.parseRevision("19.1.0"))
 
-        String[] command = new String[4];
-        command[0] = aapt.getPath();
-        command[1] = "dump";
-        command[2] = "badging";
-        command[3] = testApk.getPath();
+        String[] command = new String[4]
+        command[0] = aapt.getPath()
+        command[1] = "dump"
+        command[2] = "badging"
+        command[3] = testApk.getPath()
 
-        CommandLineRunner commandLineRunner = new CommandLineRunner(new StdLogger(StdLogger.Level.ERROR));
+        CommandLineRunner commandLineRunner = new CommandLineRunner(new StdLogger(StdLogger.Level.ERROR))
 
-        final List<String> aaptOutput = Lists.newArrayList();
+        final List<String> aaptOutput = Lists.newArrayList()
 
         commandLineRunner.runCmdLine(command, new CommandLineRunner.CommandLineOutput() {
             @Override
             public void out(@Nullable String line) {
                 if (line != null) {
-                    aaptOutput.add(line);
+                    aaptOutput.add(line)
                 }
             }
             @Override
             public void err(@Nullable String line) {
-                super.err(line);
+                super.err(line)
 
             }
-        }, null /*env vars*/);
+        }, null /*env vars*/)
 
-        System.out.println("Beginning dump");
+        System.out.println("Beginning dump")
         for (String line : aaptOutput) {
             if (line.equals("maxSdkVersion:'" + version + "'")) {
-                return;
+                return
             }
         }
-        fail("Could not find uses-sdk:maxSdkVersion set to " + version + " in apk dump");
+        fail("Could not find uses-sdk:maxSdkVersion set to " + version + " in apk dump")
     }
 }

@@ -48,7 +48,7 @@ class FlavorlibTest {
 
     @BeforeClass
     static void setUp() {
-        models = project.executeAndReturnMultiModel("clean", "assembleDebug");
+        models = project.executeAndReturnMultiModel("clean", "assembleDebug")
     }
 
     @AfterClass

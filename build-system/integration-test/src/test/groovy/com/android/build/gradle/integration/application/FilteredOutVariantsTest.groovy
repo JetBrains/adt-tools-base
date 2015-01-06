@@ -50,7 +50,7 @@ class FilteredOutVariantsTest {
 
     @Test
     void "check filtered out variant isn't in model"() {
-        Collection<Variant> variants = model.getVariants();
+        Collection<Variant> variants = model.getVariants()
         // check we have the right number of variants:
         // arm/cupcake, arm/gingerbread, x86/gingerbread, mips/gingerbread
         // all 4 in release and debug

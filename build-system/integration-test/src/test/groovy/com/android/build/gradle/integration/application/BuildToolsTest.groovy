@@ -43,7 +43,7 @@ class BuildToolsTest {
     ]
 
     @Rule
-    public GradleTestProject project = GradleTestProject.builder().captureStdOut(true).create();
+    public GradleTestProject project = GradleTestProject.builder().captureStdOut(true).create()
 
     @Before
     public void setUp() {
@@ -73,7 +73,7 @@ android {
 
     @Test
     public void invalidateBuildTools() {
-        project.execute("assemble");
+        project.execute("assemble")
 
         project.getBuildFile() << """
 apply plugin: 'com.android.application'
@@ -85,7 +85,7 @@ android {
 """
 
         project.stdout.reset()
-        project.execute("assemble");
+        project.execute("assemble")
         Set<String> affectedTasks = getTasksMatching(INPUT_CHANGED_PATTERN, project.stdout)
         for (String task : tasks) {
             assertTrue(String.format("Expecting task %s to be invalidated", task),

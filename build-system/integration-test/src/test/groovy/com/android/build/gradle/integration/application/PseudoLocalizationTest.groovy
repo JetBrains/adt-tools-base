@@ -45,7 +45,7 @@ class PseudoLocalizationTest {
 
     @BeforeClass
     static void setUp() {
-        project.execute("clean", "assembleDebug");
+        project.execute("clean", "assembleDebug")
     }
 
     @AfterClass
@@ -59,48 +59,48 @@ class PseudoLocalizationTest {
     }
 
     class TestOutput extends CommandLineRunner.CommandLineOutput {
-        public boolean pseudolocalized = false;
-        private Pattern p = Pattern.compile("^locales:.*'en[_-]XA'.*'ar[_-]XB'.*");
+        public boolean pseudolocalized = false
+        private Pattern p = Pattern.compile("^locales:.*'en[_-]XA'.*'ar[_-]XB'.*")
 
         @Override
         public void out(@Nullable String line) {
             if (line != null) {
-                Matcher m = p.matcher(line);
+                Matcher m = p.matcher(line)
                 if (m.matches()) {
-                    pseudolocalized = true;
+                    pseudolocalized = true
                 }
             }
         }
         @Override
         public void err(@Nullable String line) {
-            super.err(line);
+            super.err(line)
 
         }
 
         public boolean getPseudolocalized() {
-            return pseudolocalized;
+            return pseudolocalized
         }
-    };
+    }
 
 
     @Test
     public void testPseudolocalization() throws Exception {
-        File aapt = SdkHelper.getAapt(FullRevision.parseRevision("21.1.0"));
+        File aapt = SdkHelper.getAapt(FullRevision.parseRevision("21.1.0"))
 
-        File apk = project.getApk("debug");
+        File apk = project.getApk("debug")
 
-        String[] command = new String[4];
-        command[0] = aapt.getPath();
-        command[1] = "dump";
-        command[2] = "badging";
-        command[3] = apk.getPath();
+        String[] command = new String[4]
+        command[0] = aapt.getPath()
+        command[1] = "dump"
+        command[2] = "badging"
+        command[3] = apk.getPath()
 
-        CommandLineRunner commandLineRunner = new CommandLineRunner(new StdLogger(StdLogger.Level.ERROR));
+        CommandLineRunner commandLineRunner = new CommandLineRunner(new StdLogger(StdLogger.Level.ERROR))
 
-        TestOutput handler = new TestOutput();
-        commandLineRunner.runCmdLine(command, handler, null /*env vars*/);
+        TestOutput handler = new TestOutput()
+        commandLineRunner.runCmdLine(command, handler, null /*env vars*/)
 
-        assertTrue("Pseudo locales were not added", handler.getPseudolocalized());
+        assertTrue("Pseudo locales were not added", handler.getPseudolocalized())
     }
 
 }

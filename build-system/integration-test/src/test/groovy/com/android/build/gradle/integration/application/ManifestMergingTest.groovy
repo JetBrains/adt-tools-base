@@ -63,11 +63,11 @@ class ManifestMergingTest {
 
     @Test
     void "check manifest merging for libraries"() {
-        libsTest.execute("clean", "build");
+        libsTest.execute("clean", "build")
         File fileOutput = libsTest.
-                file("libapp/build/" + FD_INTERMEDIATES + "/bundles/release/AndroidManifest.xml");
+                file("libapp/build/" + FD_INTERMEDIATES + "/bundles/release/AndroidManifest.xml")
 
-        assertTrue(fileOutput.exists());
+        assertTrue(fileOutput.exists())
     }
 
     @Test
@@ -78,10 +78,10 @@ class ManifestMergingTest {
 
             @Override
             public boolean accept(File file) {
-                return file.getName().startsWith("manifest-merger");
+                return file.getName().startsWith("manifest-merger")
             }
-        });
-        assertEquals(8, reports.length);
+        })
+        assertEquals(8, reports.length)
     }
 
 }

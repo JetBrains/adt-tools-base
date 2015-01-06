@@ -37,7 +37,7 @@ class NdkJniPureSplitLibTest {
 
     @BeforeClass
     static void setUp() {
-        project.execute("clean", ":app:assembleDebug");
+        project.execute("clean", ":app:assembleDebug")
     }
 
     @AfterClass

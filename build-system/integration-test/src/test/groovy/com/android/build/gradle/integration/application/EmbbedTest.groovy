@@ -44,7 +44,7 @@ class EmbbedTest {
 
     @BeforeClass
     static void setUp() {
-        project.execute("clean", ":main:assemble");
+        project.execute("clean", ":main:assemble")
     }
 
     @AfterClass
@@ -60,7 +60,7 @@ class EmbbedTest {
     @Test
     void "check embedded"() {
         String embeddedApkPath = FD_RES + '/' + FD_RES_RAW + '/' + ANDROID_WEAR_MICRO_APK +
-                DOT_ANDROID_PACKAGE;
+                DOT_ANDROID_PACKAGE
 
         // each micro app has a different version name to distinguish them from one another.
         // here we record what we expect from which.
@@ -73,18 +73,18 @@ class EmbbedTest {
                 [ "flavor2-custom-unsigned",  "custom" ],
                 [ "flavor1-debug",            null ],
                 [ "flavor2-debug",            null ]
-        ];
+        ]
 
         for (String[] data : variantData) {
-            File fullApk = project.getSubproject("main").getApk(data[0]);
-            File embeddedApk = ZipHelper.extractFile(fullApk, embeddedApkPath);
+            File fullApk = project.getSubproject("main").getApk(data[0])
+            File embeddedApk = ZipHelper.extractFile(fullApk, embeddedApkPath)
 
             if (data[1] == null) {
-                assertNull("Expected no embedded app for " + data[0], embeddedApk);
-                break;
+                assertNull("Expected no embedded app for " + data[0], embeddedApk)
+                break
             }
 
-            assertNotNull("Failed to find embedded micro app for " + data[0], embeddedApk);
+            assertNotNull("Failed to find embedded micro app for " + data[0], embeddedApk)
 
             // check for the versionName
             ApkHelper.checkVersionName(embeddedApk, data[1])

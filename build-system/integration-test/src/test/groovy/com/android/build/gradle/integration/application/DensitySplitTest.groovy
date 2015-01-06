@@ -43,7 +43,7 @@ import static org.junit.Assert.assertTrue
  */
 class DensitySplitTest {
 
-    static AndroidProject model;
+    static AndroidProject model
 
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
@@ -52,7 +52,7 @@ class DensitySplitTest {
 
     @BeforeClass
     static void setUp() {
-        model = project.executeAndReturnModel("clean", "assembleDebug");
+        model = project.executeAndReturnModel("clean", "assembleDebug")
     }
 
     @AfterClass
@@ -69,7 +69,7 @@ class DensitySplitTest {
     @Test
     void testPackaging() {
         for (Variant variant : model.getVariants()) {
-            AndroidArtifact mainArtifact = variant.getMainArtifact();
+            AndroidArtifact mainArtifact = variant.getMainArtifact()
             if (!variant.getBuildType().equalsIgnoreCase("Debug")) {
                 continue
             }
@@ -94,53 +94,53 @@ class DensitySplitTest {
 
     @Test
     void "check version code in model"() {
-        Collection<Variant> variants = model.getVariants();
-        assertEquals("Variant Count", 2 , variants.size());
+        Collection<Variant> variants = model.getVariants()
+        assertEquals("Variant Count", 2 , variants.size())
 
         // get the main artifact of the debug artifact
-        Variant debugVariant = ModelHelper.getVariant(variants, DEBUG);
-        assertNotNull("debug Variant null-check", debugVariant);
-        AndroidArtifact debugMainArficat = debugVariant.getMainArtifact();
-        assertNotNull("Debug main info null-check", debugMainArficat);
+        Variant debugVariant = ModelHelper.getVariant(variants, DEBUG)
+        assertNotNull("debug Variant null-check", debugVariant)
+        AndroidArtifact debugMainArficat = debugVariant.getMainArtifact()
+        assertNotNull("Debug main info null-check", debugMainArficat)
 
         // get the outputs.
-        Collection<AndroidArtifactOutput> debugOutputs = debugMainArficat.getOutputs();
-        assertNotNull(debugOutputs);
-        assertEquals(5, debugOutputs.size());
+        Collection<AndroidArtifactOutput> debugOutputs = debugMainArficat.getOutputs()
+        assertNotNull(debugOutputs)
+        assertEquals(5, debugOutputs.size())
 
         // build a map of expected outputs and their versionCode
-        Map<String, Integer> expected = Maps.newHashMapWithExpectedSize(5);
-        expected.put(null, 112);
-        expected.put("mdpi", 212);
-        expected.put("hdpi", 312);
-        expected.put("xhdpi", 412);
-        expected.put("xxhdpi", 512);
+        Map<String, Integer> expected = Maps.newHashMapWithExpectedSize(5)
+        expected.put(null, 112)
+        expected.put("mdpi", 212)
+        expected.put("hdpi", 312)
+        expected.put("xhdpi", 412)
+        expected.put("xxhdpi", 512)
 
-        assertEquals(5, debugOutputs.size());
+        assertEquals(5, debugOutputs.size())
         for (AndroidArtifactOutput output : debugOutputs) {
-            assertEquals(OutputFile.FULL_SPLIT, output.getMainOutputFile().getOutputType());
-            Collection<? extends OutputFile> outputFiles = output.getOutputs();
-            assertEquals(1, outputFiles.size());
-            assertNotNull(output.getMainOutputFile());
+            assertEquals(OutputFile.FULL_SPLIT, output.getMainOutputFile().getOutputType())
+            Collection<? extends OutputFile> outputFiles = output.getOutputs()
+            assertEquals(1, outputFiles.size())
+            assertNotNull(output.getMainOutputFile())
 
-            String densityFilter = ModelHelper.getFilter(output.getMainOutputFile(), OutputFile.DENSITY);
-            Integer value = expected.get(densityFilter);
+            String densityFilter = ModelHelper.getFilter(output.getMainOutputFile(), OutputFile.DENSITY)
+            Integer value = expected.get(densityFilter)
             // this checks we're not getting an unexpected output.
             assertNotNull("Check Valid output: " + (densityFilter == null ? "universal"
                     : densityFilter),
-                    value);
+                    value)
 
-            assertEquals(value.intValue(), output.getVersionCode());
-            expected.remove(densityFilter);
+            assertEquals(value.intValue(), output.getVersionCode())
+            expected.remove(densityFilter)
         }
 
         // this checks we didn't miss any expected output.
-        assertTrue(expected.isEmpty());
+        assertTrue(expected.isEmpty())
     }
 
     @Test
     @Category(DeviceTests.class)
     void connectedCheck() {
-        project.execute("connectedCheck");
+        project.execute("connectedCheck")
     }
 }
