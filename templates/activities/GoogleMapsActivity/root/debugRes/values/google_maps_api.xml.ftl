@@ -2,7 +2,7 @@
     <#--
     NOTE: the merger does not merge comments (only NodeType == ELEMENT_NODE).
     Wrap it in an element as a workaround. -->
-    <string name="google_maps_key_instructions" templateMergeStrategy="replace"><!--
+    <string name="google_maps_key_instructions" translatable="false" templateMergeStrategy="replace"><!--
 
     TODO: Before you run your application, you need a Google Maps API key.
 
@@ -18,5 +18,5 @@ https://console.developers.google.com/flows/enableapi?apiid=maps_android_backend
     --></string>
 
     <#-- Always preserve the existing key. -->
-    <string name="google_maps_key" templateMergeStrategy="preserve">YOUR_KEY_HERE</string>
+    <string name="google_maps_key" translatable="false" templateMergeStrategy="preserve">YOUR_KEY_HERE</string>
 </resources>

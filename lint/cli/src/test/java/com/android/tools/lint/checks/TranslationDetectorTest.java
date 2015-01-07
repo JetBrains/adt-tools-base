@@ -204,6 +204,18 @@ public class TranslationDetectorTest extends AbstractCheckTest {
             lintProject("res/values/nontranslatable.xml=>res/values-nb/nontranslatable.xml"));
     }
 
+    public void testNonTranslatable3() throws Exception {
+        // Regression test for https://code.google.com/p/android/issues/detail?id=92861
+        // Don't treat "google_maps_key" or "google_maps_key_instructions" as translatable
+        TranslationDetector.sCompleteRegions = true;
+        assertEquals(
+                "No warnings.",
+
+                lintProject("res/values/google_maps_api.xml",
+                        "res/values/strings2.xml",
+                        "res/values/strings2.xml=>res/values-nb/strings2.xml"));
+    }
+
     public void testSpecifiedLanguageOk() throws Exception {
         TranslationDetector.sCompleteRegions = false;
         assertEquals(

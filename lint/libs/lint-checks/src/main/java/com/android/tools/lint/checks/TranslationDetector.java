@@ -616,6 +616,15 @@ public class TranslationDetector extends ResourceXmlDetector {
                     mNonTranslatable.add(name);
                 }
                 return;
+            } else if (name.equals("google_maps_key")                  //$NON-NLS-1$
+                    || name.equals("google_maps_key_instructions")) {  //$NON-NLS-1$
+                // Older versions of the templates shipped with these not marked as
+                // non-translatable; don't flag them
+                if (mNonTranslatable == null) {
+                    mNonTranslatable = new HashSet<String>();
+                }
+                mNonTranslatable.add(name);
+                return;
             }
 
             if (element.getTagName().equals(TAG_STRING_ARRAY) &&
