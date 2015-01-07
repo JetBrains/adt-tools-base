@@ -18,6 +18,11 @@ public class ContentProviderClientTest {
         unknown(client);
     }
 
+    public ContentProviderClient ok3(ContentResolver resolver) {
+        ContentProviderClient client = resolver.acquireContentProviderClient("test"); // OK
+        return client;
+    }
+
     private void unknown(ContentProviderClient client) {
     }
 }

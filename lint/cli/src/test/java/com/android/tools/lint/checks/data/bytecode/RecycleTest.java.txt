@@ -163,4 +163,34 @@ public class RecycleTest extends View {
             public static final int MyView_exampleString = 2;
         }
     }
+
+    // Local variable tracking
+
+    @SuppressWarnings("UnnecessaryLocalVariable")
+    public void ok5(AttributeSet attrs, int defStyle) {
+        final TypedArray a = getContext().obtainStyledAttributes(attrs,
+                R.styleable.MyView, defStyle, 0);
+        String example = a.getString(R.styleable.MyView_exampleString);
+        TypedArray b = a;
+        b.recycle();
+    }
+
+    @SuppressWarnings("UnnecessaryLocalVariable")
+    public void ok6(AttributeSet attrs, int defStyle) {
+        final TypedArray a = getContext().obtainStyledAttributes(attrs,
+                R.styleable.MyView, defStyle, 0);
+        String example = a.getString(R.styleable.MyView_exampleString);
+        TypedArray b;
+        b = a;
+        b.recycle();
+    }
+
+    @SuppressWarnings({"UnnecessaryLocalVariable", "UnusedAssignment"})
+    public void wrong3(AttributeSet attrs, int defStyle) {
+        final TypedArray a = getContext().obtainStyledAttributes(attrs,  // Not recycled
+                R.styleable.MyView, defStyle, 0);
+        String example = a.getString(R.styleable.MyView_exampleString);
+        TypedArray b;
+        b = a;
+    }
 }

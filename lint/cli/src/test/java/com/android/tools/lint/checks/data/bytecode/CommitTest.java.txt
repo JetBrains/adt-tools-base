@@ -101,4 +101,19 @@ public class CommitTest extends Activity {
         transaction = (getFragmentManager().beginTransaction());
         transaction.commit();
     }
+
+    @SuppressWarnings("UnnecessaryLocalVariable")
+    public void ok13() {
+        FragmentTransaction transaction = getFragmentManager().beginTransaction();
+        FragmentTransaction temp;
+        temp = transaction;
+        temp.commitAllowingStateLoss();
+    }
+
+    @SuppressWarnings("UnnecessaryLocalVariable")
+    public void ok14() {
+        FragmentTransaction transaction = getFragmentManager().beginTransaction();
+        FragmentTransaction temp = transaction;
+        temp.commitAllowingStateLoss();
+    }
 }
