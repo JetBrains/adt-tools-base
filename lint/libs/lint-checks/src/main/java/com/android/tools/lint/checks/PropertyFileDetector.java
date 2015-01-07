@@ -30,10 +30,15 @@ import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.TextFormat;
+import com.android.utils.SdkUtils;
 import com.google.common.base.Splitter;
+import com.google.common.io.Files;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.StringWriter;
 import java.util.Iterator;
+import java.util.Properties;
 
 /**
  * Check for errors in .property files
@@ -122,6 +127,8 @@ public class PropertyFileDetector extends Detector {
 
         boolean escaped = false;
         boolean hadNonPathEscape = false;
+        int errorStart = -1;
+        int errorEnd = -1;
         StringBuilder path = new StringBuilder();
         for (int i = valueStart; i < line.length(); i++) {
             char c = line.charAt(i);
@@ -130,11 +137,24 @@ public class PropertyFileDetector extends Detector {
                 if (escaped) {
                     path.append(c);
                 }
+            } else if (c == ':') {
+                if (!escaped) {
+                    hadNonPathEscape = true;
+                    if (errorStart < 0) {
+                        errorStart = i;
+                    }
+                    errorEnd = i;
+                } else {
+                    escaped = false;
+                }
+                path.append(c);
             } else {
                 if (escaped) {
-                    if (c != ':') {
-                        hadNonPathEscape = true;
+                    hadNonPathEscape = true;
+                    if (errorStart < 0) {
+                        errorStart = i;
                     }
+                    errorEnd = i;
                 }
                 escaped = false;
                 path.append(c);
@@ -143,16 +163,24 @@ public class PropertyFileDetector extends Detector {
         String pathString = path.toString();
         String key = line.substring(0, valueStart);
         if (hadNonPathEscape && key.endsWith(".dir=") || new File(pathString).exists()) {
-            String escapedPath = pathString.replace("\\", "\\\\");
+            String escapedPath = suggestEscapes(line.substring(valueStart, line.length()));
+
             // NOTE: Keep in sync with {@link #getSuggestedEscape} below
-            String message = "Windows file separators (`\\`) must be escaped (`\\\\`); use "
+            String message = "Windows file separators (`\\`) and drive letter "
+                    + "separators (':') must be escaped (`\\\\`) in property files; use "
                     + escapedPath;
-            int startOffset = offset + valueStart;
-            int endOffset = offset + line.length();
+            int startOffset = offset + errorStart;
+            int endOffset = offset + errorEnd + 1;
             Location location = Location.create(context.file, contents, startOffset,
                     endOffset);
             context.report(ESCAPE, location, message);
         }
+    }
+
+    @NonNull
+    static String suggestEscapes(@NonNull String value) {
+        value = value.replace("\\:", ":").replace("\\\\", "\\");
+        return LintUtils.escapePropertyValue(value);
     }
 
     /**

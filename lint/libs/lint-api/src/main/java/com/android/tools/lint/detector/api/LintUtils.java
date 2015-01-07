@@ -66,11 +66,13 @@ import org.w3c.dom.NodeList;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Properties;
 import java.util.Queue;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -1164,5 +1166,39 @@ public class LintUtils {
             // as a failure to return the formatted parameters.
         }
         return Collections.emptyList();
+    }
+
+    /**
+     * Escapes the given property file value (right hand side of property assignment)
+     * as required by the property file format (e.g. escapes colons and backslashes)
+     *
+     * @param value the value to be escaped
+     * @return the escaped value
+     */
+    @NonNull
+    public static String escapePropertyValue(@NonNull String value) {
+        // Slow, stupid implementation, but is 100% compatible with Java's property file
+        // implementation
+        Properties properties = new Properties();
+        properties.setProperty("k", value); // key doesn't matter
+        StringWriter writer = new StringWriter();
+        try {
+            properties.store(writer, null);
+            String s = writer.toString();
+            int end = s.length();
+
+            // Writer inserts trailing newline
+            String lineSeparator = SdkUtils.getLineSeparator();
+            if (s.endsWith(lineSeparator)) {
+                end -= lineSeparator.length();
+            }
+
+            int start = s.indexOf('=');
+            assert start != -1 : s;
+            return s.substring(start + 1, end);
+        }
+        catch (IOException e) {
+            return value; // shouldn't happen; we're not going to disk
+        }
     }
 }

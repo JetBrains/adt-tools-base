@@ -18,6 +18,7 @@ package com.android.tools.lint.detector.api;
 
 import static com.android.tools.lint.detector.api.LintUtils.computeResourceName;
 import static com.android.tools.lint.detector.api.LintUtils.convertVersion;
+import static com.android.tools.lint.detector.api.LintUtils.escapePropertyValue;
 import static com.android.tools.lint.detector.api.LintUtils.findSubstring;
 import static com.android.tools.lint.detector.api.LintUtils.getFormattedParameters;
 import static com.android.tools.lint.detector.api.LintUtils.getLocaleAndRegion;
@@ -484,6 +485,16 @@ public class LintUtilsTest extends TestCase {
         assertEquals(Arrays.asList("foo","bar"),
                 getFormattedParameters("Prefix %1$s Divider %2$s Suffix",
                         "Prefix foo Divider bar Suffix"));
+    }
+
+    public void testEscapePropertyValue() throws Exception {
+        assertEquals("foo", escapePropertyValue("foo"));
+        assertEquals("\\  foo  ", escapePropertyValue("  foo  "));
+        assertEquals("c\\:/foo/bar", escapePropertyValue("c:/foo/bar"));
+        assertEquals("\\!\\#\\:\\\\a\\\\b\\\\c", escapePropertyValue("!#:\\a\\b\\c"));
+        assertEquals(
+                "foofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoo\\#foofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoo",
+                escapePropertyValue("foofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoo#foofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoofoo"));
     }
 
     private static class TestContext extends JavaContext {
