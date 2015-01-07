@@ -16,6 +16,7 @@
 
 package com.android.tools.lint.detector.api;
 
+import static com.android.SdkConstants.CLASS_CONTEXT;
 import static com.android.tools.lint.client.api.JavaParser.ResolvedNode;
 import static com.android.tools.lint.client.api.JavaParser.TypeDescriptor;
 
@@ -234,7 +235,7 @@ public class JavaContext extends Context {
         if (resolved instanceof JavaParser.ResolvedMethod) {
             JavaParser.ResolvedMethod method = (JavaParser.ResolvedMethod) resolved;
             JavaParser.ResolvedClass containingClass = method.getContainingClass();
-            if (containingClass.isSubclassOf("android.content.Context", false)) {
+            if (containingClass.isSubclassOf(CLASS_CONTEXT, false)) {
                 return true;
             }
         }
