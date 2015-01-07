@@ -428,6 +428,8 @@ public class LintDriver {
         for (Project project : projects) {
             mPhase = 1;
 
+            Project main = mRequest.getMainProject(project);
+
             // The set of available detectors varies between projects
             computeDetectors(project);
 
@@ -436,12 +438,12 @@ public class LintDriver {
                 continue;
             }
 
-            checkProject(project);
+            checkProject(project, main);
             if (mCanceled) {
                 break;
             }
 
-            runExtraPhases(project);
+            runExtraPhases(project, main);
         }
 
         fireEvent(mCanceled ? EventType.CANCELED : EventType.COMPLETED, null);
@@ -475,7 +477,7 @@ public class LintDriver {
         }
     }
 
-    private void runExtraPhases(Project project) {
+    private void runExtraPhases(@NonNull Project project, @NonNull Project main) {
         // Did any detectors request another phase?
         if (mRepeatingDetectors != null) {
             // Yes. Iterate up to MAX_PHASES times.
@@ -514,7 +516,7 @@ public class LintDriver {
                     continue;
                 }
 
-                checkProject(project);
+                checkProject(project, main);
                 if (mCanceled) {
                     break;
                 }
@@ -863,7 +865,7 @@ public class LintDriver {
         }
     }
 
-    private void checkProject(@NonNull Project project) {
+    private void checkProject(@NonNull Project project, @NonNull Project main) {
         File projectDir = project.getDir();
 
         Context projectContext = new Context(this, project, null, projectDir);
@@ -885,7 +887,7 @@ public class LintDriver {
         }
 
         assert mCurrentProject == project;
-        runFileDetectors(project, project);
+        runFileDetectors(project, main);
 
         if (!Scope.checkSingleFile(mScope)) {
             List<Project> libraries = project.getAllLibraries();
@@ -902,7 +904,7 @@ public class LintDriver {
                 }
                 assert mCurrentProject == library;
 
-                runFileDetectors(library, project);
+                runFileDetectors(library, main);
                 if (mCanceled) {
                     return;
                 }

@@ -92,6 +92,10 @@ public class AssertDetector extends Detector implements Detector.JavaScanner {
         return new ForwardingAstVisitor() {
             @Override
             public boolean visitAssert(Assert node) {
+                if (!context.getMainProject().isAndroidProject()) {
+                    return true;
+                }
+
                 Expression assertion = node.astAssertion();
                 // Allow "assert true"; it's basically a no-op
                 if (assertion instanceof BooleanLiteral) {
