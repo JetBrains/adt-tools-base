@@ -26,6 +26,7 @@ import static com.android.SdkConstants.ATTR_PACKAGE;
 import static com.android.SdkConstants.ATTR_TARGET_SDK_VERSION;
 import static com.android.SdkConstants.ATTR_VERSION_CODE;
 import static com.android.SdkConstants.ATTR_VERSION_NAME;
+import static com.android.SdkConstants.DRAWABLE_PREFIX;
 import static com.android.SdkConstants.PREFIX_RESOURCE_REF;
 import static com.android.SdkConstants.TAG_ACTIVITY;
 import static com.android.SdkConstants.TAG_APPLICATION;
@@ -353,6 +354,29 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
             Severity.WARNING,
             IMPLEMENTATION);
 
+    /** Using drawable rather than mipmap launcher icons */
+    public static final Issue MIPMAP = Issue.create(
+            "MipmapIcons", //$NON-NLS-1$
+            "Use Mipmap Launcher Icons",
+
+            "Launcher icons should be provided in the `mipmap` resource directory. " +
+            "This is the same as the `drawable` resource directory, except resources in " +
+            "the `mipmap` directory will not get stripped out, for example when creating " +
+            "density-specific APKs.\n" +
+            "\n" +
+            "In certain cases, the Launcher app may use a higher resolution asset (than " +
+            "would normally be computed for the device) to display large app shortcuts. " +
+            "If drawables for densities other than the device's resolution have been " +
+            "stripped out, then the app shortcut could appear blurry.\n" +
+            "\n" +
+            "To fix this, move your launcher icons from `drawable-`dpi to `mipmap-`dpi " +
+            "and change references from @drawable/ and R.drawable to @mipmap/ and R.mipmap.\n" +
+            "In Android Studio this lint warning has a quickfix to perform this automatically.",
+            Category.ICONS,
+            5,
+            Severity.WARNING,
+            IMPLEMENTATION);
+
     /** Permission name of mock location permission */
     public static final String MOCK_LOCATION_PERMISSION =
             "android.permission.ACCESS_MOCK_LOCATION";   //$NON-NLS-1$
@@ -611,6 +635,8 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
                         }
                     }
                 }
+
+                checkMipmapIcon(context, element);
             }
 
             return;
@@ -776,6 +802,7 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
             }
             if (element.hasAttributeNS(ANDROID_URI, ATTR_ICON)
                     || context.getDriver().isSuppressed(context, APPLICATION_ICON, element)) {
+                checkMipmapIcon(context, element);
                 mSeenAppIcon = true;
             } else {
                 recordLocation = true;
@@ -810,6 +837,44 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
                 }
             }
         }
+    }
+
+    private static void checkMipmapIcon(@NonNull XmlContext context, @NonNull Element element) {
+        Attr attribute = element.getAttributeNodeNS(ANDROID_URI, ATTR_ICON);
+        if (attribute == null) {
+            return;
+        }
+        String icon = attribute.getValue();
+        if (icon.startsWith(DRAWABLE_PREFIX)) {
+            if (TAG_ACTIVITY.equals(element.getTagName()) && !isLaunchableActivity(element)) {
+                return;
+            }
+
+            if (context.isEnabled(MIPMAP)) {
+                context.report(MIPMAP, element, context.getLocation(attribute),
+                        "Should use `@mipmap` instead of `@drawable` for launcher icons");
+            }
+        }
+    }
+
+    @SuppressWarnings("SpellCheckingInspection")
+    private static boolean isLaunchableActivity(@NonNull Element element) {
+        if (!TAG_ACTIVITY.equals(element.getTagName())) {
+            return false;
+        }
+
+        for (Element child : LintUtils.getChildren(element)) {
+            if (child.getTagName().equals(TAG_INTENT_FILTER)) {
+                for (Element innerChild : LintUtils.getChildren(child)) {
+                    if (innerChild.getTagName().equals("category")) { //$NON-NLS-1$
+                        String categoryString = innerChild.getAttributeNS(ANDROID_URI, ATTR_NAME);
+                        return "android.intent.category.LAUNCHER".equals(categoryString);
+                    }
+                }
+            }
+        }
+
+        return false;
     }
 
     /** Returns true iff the given manifest file is the main manifest file */

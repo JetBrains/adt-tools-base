@@ -509,6 +509,21 @@ public class ManifestDetectorTest extends AbstractCheckTest {
                         "multiproject/library.properties=>build.gradle")); // dummy; only name counts
     }
 
+    public void testMipMap() throws Exception {
+        mEnabled = Collections.singleton(ManifestDetector.MIPMAP);
+        assertEquals(""
+                + "AndroidManifest.xml:9: Warning: Should use @mipmap instead of @drawable for launcher icons [MipmapIcons]\n"
+                + "        android:icon=\"@drawable/ic_launcher\"\n"
+                + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "AndroidManifest.xml:14: Warning: Should use @mipmap instead of @drawable for launcher icons [MipmapIcons]\n"
+                + "            android:icon=\"@drawable/activity1\"\n"
+                + "            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "0 errors, 2 warnings\n",
+
+                lintProject(
+                        "mipmap.xml=>AndroidManifest.xml")); // dummy; only name counts
+    }
+
     // Custom project which locates all manifest files in the project rather than just
     // being hardcoded to the root level
     private static class MyProject extends Project {
