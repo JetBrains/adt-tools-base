@@ -777,8 +777,8 @@ public abstract class LintClient {
     @Nullable
     public Boolean isSubclassOf(
             @NonNull Project project,
-            @NonNull String name, @NonNull
-            String superClassName) {
+            @NonNull String name,
+            @NonNull String superClassName) {
         return null;
     }
 
