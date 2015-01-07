@@ -348,7 +348,7 @@ public class JavaVisitor {
                     List<VisitingDetector> list = mSuperClassDetectors.get(fqcn);
                     if (list != null) {
                         for (VisitingDetector v : list) {
-                            v.getJavaScanner().checkClass(mContext, node, resolvedClass);
+                            v.getJavaScanner().checkClass(mContext, node, node, resolvedClass);
                         }
                     }
                 }
@@ -360,14 +360,35 @@ public class JavaVisitor {
         }
 
         @Override
-        public boolean visitMethodDeclaration(MethodDeclaration node) {
-            // No need to look inside methods
-            return true;
-        }
-
-        @Override
         public boolean visitConstructorInvocation(ConstructorInvocation node) {
-            // No need to look inside methods
+            NormalTypeBody anonymous = node.astAnonymousClassBody();
+            if (anonymous != null) {
+                ResolvedNode resolved = mContext.resolve(anonymous);
+                if (resolved instanceof ResolvedMethod) {
+                    resolved = ((ResolvedMethod) resolved).getContainingClass();
+                }
+                if (!(resolved instanceof ResolvedClass)) {
+                    return true;
+                }
+
+                ResolvedClass resolvedClass = (ResolvedClass) resolved;
+                ResolvedClass cls = resolvedClass;
+                while (cls != null) {
+                    String fqcn = cls.getSignature();
+                    if (fqcn != null) {
+                        List<VisitingDetector> list = mSuperClassDetectors.get(fqcn);
+                        if (list != null) {
+                            for (VisitingDetector v : list) {
+                                v.getJavaScanner().checkClass(mContext, null, anonymous,
+                                        resolvedClass);
+                            }
+                        }
+                    }
+
+                    cls = cls.getSuperClass();
+                }
+            }
+
             return true;
         }
 

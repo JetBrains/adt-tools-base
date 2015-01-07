@@ -39,6 +39,7 @@ import java.util.Collections;
 import java.util.List;
 
 import lombok.ast.ClassDeclaration;
+import lombok.ast.Node;
 import lombok.ast.NormalTypeBody;
 
 /**
@@ -112,8 +113,12 @@ public class ViewConstructorDetector extends Detector implements Detector.JavaSc
     }
 
     @Override
-    public void checkClass(@NonNull JavaContext context, @NonNull ClassDeclaration node,
-            @NonNull ResolvedClass resolvedClass) {
+    public void checkClass(@NonNull JavaContext context, @Nullable ClassDeclaration node,
+            @NonNull Node declarationOrAnonymous, @NonNull ResolvedClass resolvedClass) {
+        if (node == null) {
+            return;
+        }
+
         // Only applies to concrete classes
         int flags = node.astModifiers().getEffectiveModifierFlags();
         // Ignore abstract classes

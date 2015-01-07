@@ -47,6 +47,7 @@ import java.util.List;
 import java.util.Map;
 
 import lombok.ast.ClassDeclaration;
+import lombok.ast.Node;
 
 /**
  * Ensures that PreferenceActivity and its subclasses are never exported.
@@ -130,8 +131,8 @@ public class PreferenceActivityDetector extends Detector
     }
 
     @Override
-    public void checkClass(@NonNull JavaContext context, @NonNull ClassDeclaration node,
-            @NonNull ResolvedClass resolvedClass) {
+    public void checkClass(@NonNull JavaContext context, @Nullable ClassDeclaration node,
+            @NonNull Node declarationOrAnonymous, @NonNull ResolvedClass resolvedClass) {
         if (!context.getProject().getReportIssues()) {
             return;
         }

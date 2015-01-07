@@ -256,11 +256,12 @@ public abstract class Detector {
          * {@link #applicableSuperClasses()}
          *
          * @param context the lint scanning context
-         * @param node the class declaration node
+         * @param declaration the class declaration node, or null for anonymous classes
+         * @param node the class declaration node or the anonymous class construction node
          * @param resolvedClass the resolved class
          */
-        void checkClass(@NonNull JavaContext context, @NonNull ClassDeclaration node,
-                @NonNull ResolvedClass resolvedClass);
+        void checkClass(@NonNull JavaContext context, @Nullable ClassDeclaration declaration,
+                @NonNull Node node, @NonNull ResolvedClass resolvedClass);
     }
 
     /** Specialized interface for detectors that scan Java class files */
@@ -702,8 +703,8 @@ public abstract class Detector {
         return null;
     }
 
-    public void checkClass(@NonNull JavaContext context, @NonNull ClassDeclaration node,
-            @NonNull ResolvedClass resolvedClass) {
+    public void checkClass(@NonNull JavaContext context, @Nullable ClassDeclaration declaration,
+            @NonNull Node node, @NonNull ResolvedClass resolvedClass) {
     }
 
     @Nullable @SuppressWarnings("javadoc")
