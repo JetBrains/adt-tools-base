@@ -65,6 +65,7 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(CommentDetector.STOP_SHIP);
         issues.add(CustomViewDetector.ISSUE);
         issues.add(CutPasteDetector.ISSUE);
+        issues.add(DateFormatDetector.DATE_FORMAT);
         issues.add(DeprecationDetector.ISSUE);
         issues.add(DetectMissingPrefix.MISSING_NAMESPACE);
         issues.add(DosLineEndingDetector.ISSUE);
@@ -118,7 +119,6 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(LabelForDetector.ISSUE);
         issues.add(LayoutConsistencyDetector.INCONSISTENT_IDS);
         issues.add(LayoutInflationDetector.ISSUE);
-        issues.add(LocaleDetector.DATE_FORMAT);
         issues.add(LocaleDetector.STRING_LOCALE);
         issues.add(LocaleFolderDetector.ISSUE);
         issues.add(ManifestDetector.ALLOW_BACKUP);

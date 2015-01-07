@@ -16,7 +16,6 @@
 
 package com.android.tools.lint.checks;
 
-import static com.android.SdkConstants.CONSTRUCTOR_NAME;
 import static com.android.SdkConstants.FORMAT_METHOD;
 
 import com.android.annotations.NonNull;
@@ -46,7 +45,6 @@ import org.objectweb.asm.tree.analysis.SourceInterpreter;
 import org.objectweb.asm.tree.analysis.SourceValue;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -80,29 +78,6 @@ public class LocaleDetector extends Detector implements ClassScanner {
             .addMoreInfo(
             "http://developer.android.com/reference/java/util/Locale.html#default_locale"); //$NON-NLS-1$
 
-    /** Constructing SimpleDateFormat without an explicit locale */
-    public static final Issue DATE_FORMAT = Issue.create(
-            "SimpleDateFormat", //$NON-NLS-1$
-            "Implied locale in date format",
-
-            "Almost all callers should use `getDateInstance()`, `getDateTimeInstance()`, or " +
-            "`getTimeInstance()` to get a ready-made instance of SimpleDateFormat suitable " +
-            "for the user's locale. The main reason you'd create an instance this class " +
-            "directly is because you need to format/parse a specific machine-readable format, " +
-            "in which case you almost certainly want to explicitly ask for US to ensure that " +
-            "you get ASCII digits (rather than, say, Arabic digits).\n" +
-            "\n" +
-            "Therefore, you should either use the form of the SimpleDateFormat constructor " +
-            "where you pass in an explicit locale, such as Locale.US, or use one of the " +
-            "get instance methods, or suppress this error if really know what you are doing.",
-
-            Category.CORRECTNESS,
-            6,
-            Severity.WARNING,
-            IMPLEMENTATION)
-            .addMoreInfo(
-            "http://developer.android.com/reference/java/text/SimpleDateFormat.html"); //$NON-NLS-1$
-
     static final String DATE_FORMAT_OWNER = "java/text/SimpleDateFormat"; //$NON-NLS-1$
     private static final String STRING_OWNER = "java/lang/String";                //$NON-NLS-1$
 
@@ -129,35 +104,15 @@ public class LocaleDetector extends Detector implements ClassScanner {
     }
 
     @Override
-    @Nullable
-    public List<String> getApplicableCallOwners() {
-        return Collections.singletonList(DATE_FORMAT_OWNER);
-    }
-
-    @Override
     public void checkCall(@NonNull ClassContext context, @NonNull ClassNode classNode,
             @NonNull MethodNode method, @NonNull MethodInsnNode call) {
         String owner = call.owner;
-        String desc = call.desc;
-        String name = call.name;
-        if (owner.equals(DATE_FORMAT_OWNER)) {
-            if (!name.equals(CONSTRUCTOR_NAME)) {
-                return;
-            }
-            if (desc.equals("(Ljava/lang/String;Ljava/text/DateFormatSymbols;)V")   //$NON-NLS-1$
-                    || desc.equals("()V")                                           //$NON-NLS-1$
-                    || desc.equals("(Ljava/lang/String;)V")) {                      //$NON-NLS-1$
-                Location location = context.getLocation(call);
-                String message =
-                    "To get local formatting use `getDateInstance()`, `getDateTimeInstance()`, " +
-                    "or `getTimeInstance()`, or use `new SimpleDateFormat(String template, " +
-                    "Locale locale)` with for example `Locale.US` for ASCII dates.";
-                context.report(DATE_FORMAT, method, call, location, message);
-            }
-            return;
-        } else if (!owner.equals(STRING_OWNER)) {
+        if (!owner.equals(STRING_OWNER)) {
             return;
         }
+
+        String desc = call.desc;
+        String name = call.name;
 
         if (name.equals(FORMAT_METHOD)) {
             // Only check the non-locale version of String.format
