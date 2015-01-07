@@ -23,6 +23,7 @@ import static com.android.tools.lint.client.api.JavaParser.TypeDescriptor;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.tools.lint.client.api.JavaParser;
+import com.android.tools.lint.client.api.JavaParser.ResolvedClass;
 import com.android.tools.lint.client.api.LintDriver;
 
 import java.io.File;
@@ -217,6 +218,11 @@ public class JavaContext extends Context {
     }
 
     @Nullable
+    public ResolvedClass findClass(@NonNull String fullyQualifiedName) {
+        return mParser.findClass(this, fullyQualifiedName);
+    }
+
+    @Nullable
     public TypeDescriptor getType(@NonNull Node node) {
         return mParser.getType(this, node);
     }
@@ -235,7 +241,7 @@ public class JavaContext extends Context {
         ResolvedNode resolved = resolve(node);
         if (resolved instanceof JavaParser.ResolvedMethod) {
             JavaParser.ResolvedMethod method = (JavaParser.ResolvedMethod) resolved;
-            JavaParser.ResolvedClass containingClass = method.getContainingClass();
+            ResolvedClass containingClass = method.getContainingClass();
             if (containingClass.isSubclassOf(CLASS_CONTEXT, false)) {
                 return true;
             }

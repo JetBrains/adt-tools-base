@@ -24,4 +24,11 @@ public class JavaScriptTest {
 	public void testSuppressed(WebView webview) {
 		webview.addJavascriptInterface(new NonAnnotatedObject(), "myobj");
 	}
+
+	public void testLaterReassignment(WebView webview) {
+		Object o = new NonAnnotatedObject();
+		Object t = o;
+		webview.addJavascriptInterface(t, "myobj");
+		o = new AnnotatedObject();
+	}
 }
