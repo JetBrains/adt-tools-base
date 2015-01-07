@@ -1269,6 +1269,22 @@ public class EcjParser extends JavaParser {
             return null;
         }
 
+        @NonNull
+        @Override
+        public Iterable<ResolvedAnnotation> getAnnotations() {
+            AnnotationBinding[] annotations = mBinding.getAnnotations();
+            int count = annotations.length;
+            if (count > 0) {
+                List<ResolvedAnnotation> result = Lists.newArrayListWithExpectedSize(count);
+                for (AnnotationBinding annotation : annotations) {
+                    result.add(new EcjResolvedAnnotation(annotation));
+                }
+                return result;
+            }
+
+            return Collections.emptyList();
+        }
+
         @Override
         public int getModifiers() {
             return mBinding.getAccessFlags();
@@ -1337,22 +1353,6 @@ public class EcjParser extends JavaParser {
         @Override
         public String getSignature() {
             return mBinding.toString();
-        }
-
-        @NonNull
-        @Override
-        public Iterable<ResolvedAnnotation> getAnnotations() {
-            AnnotationBinding[] annotations = mBinding.getAnnotations();
-            int count = annotations.length;
-            if (count > 0) {
-                List<ResolvedAnnotation> result = Lists.newArrayListWithExpectedSize(count);
-                for (AnnotationBinding annotation : annotations) {
-                    result.add(new EcjResolvedAnnotation(annotation));
-                }
-                return result;
-            }
-
-            return Collections.emptyList();
         }
 
         @Override
