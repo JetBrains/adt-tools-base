@@ -16,35 +16,39 @@
 
 package com.android.tools.lint.checks;
 
-import static com.android.SdkConstants.CONSTRUCTOR_NAME;
-
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.tools.lint.client.api.JavaParser;
+import com.android.tools.lint.client.api.JavaParser.ResolvedMethod;
+import com.android.tools.lint.client.api.JavaParser.ResolvedNode;
+import com.android.tools.lint.client.api.JavaParser.TypeDescriptor;
 import com.android.tools.lint.detector.api.Category;
-import com.android.tools.lint.detector.api.ClassContext;
 import com.android.tools.lint.detector.api.Detector;
-import com.android.tools.lint.detector.api.Detector.ClassScanner;
+import com.android.tools.lint.detector.api.Detector.JavaScanner;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
+import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.Speed;
 
-import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.MethodInsnNode;
-import org.objectweb.asm.tree.MethodNode;
-
 import java.util.Collections;
 import java.util.List;
 
+import lombok.ast.AstVisitor;
+import lombok.ast.ConstructorInvocation;
+import lombok.ast.ForwardingAstVisitor;
+import lombok.ast.Node;
+
 /**
- * Checks for errors related to locale handling
+ * Checks for errors related to Date Formats
  */
-public class DateFormatDetector extends Detector implements ClassScanner {
+public class DateFormatDetector extends Detector implements JavaScanner {
+
     private static final Implementation IMPLEMENTATION = new Implementation(
             DateFormatDetector.class,
-            Scope.CLASS_FILE_SCOPE);
+            Scope.JAVA_FILE_SCOPE);
 
     /** Constructing SimpleDateFormat without an explicit locale */
     public static final Issue DATE_FORMAT = Issue.create(
@@ -69,7 +73,8 @@ public class DateFormatDetector extends Detector implements ClassScanner {
             .addMoreInfo(
             "http://developer.android.com/reference/java/text/SimpleDateFormat.html"); //$NON-NLS-1$
 
-    static final String DATE_FORMAT_OWNER = "java/text/SimpleDateFormat"; //$NON-NLS-1$
+    public static final String LOCALE_CLS = "java.util.Locale";                       //$NON-NLS-1$
+    public static final String SIMPLE_DATE_FORMAT_CLS = "java.text.SimpleDateFormat"; //$NON-NLS-1$
 
     /** Constructs a new {@link DateFormatDetector} */
     public DateFormatDetector() {
@@ -81,34 +86,64 @@ public class DateFormatDetector extends Detector implements ClassScanner {
         return Speed.FAST;
     }
 
-    // ---- Implements ClassScanner ----
+    // ---- Implements JavaScanner ----
 
     @Override
-    @Nullable
-    public List<String> getApplicableCallOwners() {
-        return Collections.singletonList(DATE_FORMAT_OWNER);
+    public List<Class<? extends Node>> getApplicableNodeTypes() {
+        return Collections.<Class<? extends Node>>singletonList(ConstructorInvocation.class);
     }
 
     @Override
-    public void checkCall(@NonNull ClassContext context, @NonNull ClassNode classNode,
-            @NonNull MethodNode method, @NonNull MethodInsnNode call) {
-        String owner = call.owner;
-        String desc = call.desc;
-        String name = call.name;
-        if (owner.equals(DATE_FORMAT_OWNER)) {
-            if (!name.equals(CONSTRUCTOR_NAME)) {
-                return;
-            }
-            if (desc.equals("(Ljava/lang/String;Ljava/text/DateFormatSymbols;)V")   //$NON-NLS-1$
-                    || desc.equals("()V")                                           //$NON-NLS-1$
-                    || desc.equals("(Ljava/lang/String;)V")) {                      //$NON-NLS-1$
-                Location location = context.getLocation(call);
+    public AstVisitor createJavaVisitor(@NonNull JavaContext context) {
+        return new ConstructorVisitor(context);
+    }
+
+    private static class ConstructorVisitor extends ForwardingAstVisitor {
+        private final JavaContext mContext;
+
+        public ConstructorVisitor(JavaContext context) {
+            mContext = context;
+        }
+
+        @Override
+        public boolean visitConstructorInvocation(ConstructorInvocation node) {
+            ResolvedMethod constructor = findDateFormatConstructor(node);
+            if (constructor != null && !specifiesLocale(constructor)) {
+                Location location = mContext.getLocation(node);
                 String message =
                     "To get local formatting use `getDateInstance()`, `getDateTimeInstance()`, " +
                     "or `getTimeInstance()`, or use `new SimpleDateFormat(String template, " +
                     "Locale locale)` with for example `Locale.US` for ASCII dates.";
-                context.report(DATE_FORMAT, method, call, location, message);
+                mContext.report(DATE_FORMAT, node, location, message);
             }
+
+            return super.visitConstructorInvocation(node);
+        }
+
+        private static boolean specifiesLocale(@NonNull ResolvedMethod method) {
+            for (int i = 0, n = method.getArgumentCount(); i < n; i++) {
+                TypeDescriptor argumentType = method.getArgumentType(i);
+                if (argumentType.matchesSignature(LOCALE_CLS)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        @Nullable
+        private ResolvedMethod findDateFormatConstructor(@NonNull ConstructorInvocation node) {
+            String type = node.astTypeReference().astParts().last().astIdentifier().astValue();
+            if (type.endsWith("SimpleDateFormat")) {
+                ResolvedNode resolved = mContext.resolve(node);
+                if (resolved instanceof ResolvedMethod) {
+                    ResolvedMethod method = (ResolvedMethod) resolved;
+                    if (method.getContainingClass().matches(SIMPLE_DATE_FORMAT_CLS)) {
+                        return method;
+                    }
+                }
+            }
+
+            return null;
         }
     }
 }
