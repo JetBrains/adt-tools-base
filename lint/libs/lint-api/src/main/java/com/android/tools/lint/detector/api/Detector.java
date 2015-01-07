@@ -19,7 +19,9 @@ package com.android.tools.lint.detector.api;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.resources.ResourceFolderType;
+import com.android.tools.lint.client.api.JavaParser;
 import com.android.tools.lint.client.api.JavaParser.ResolvedClass;
+import com.android.tools.lint.client.api.JavaParser.ResolvedMethod;
 import com.android.tools.lint.client.api.LintDriver;
 import com.google.common.annotations.Beta;
 
@@ -40,6 +42,7 @@ import java.util.Map;
 
 import lombok.ast.AstVisitor;
 import lombok.ast.ClassDeclaration;
+import lombok.ast.ConstructorInvocation;
 import lombok.ast.MethodInvocation;
 import lombok.ast.Node;
 
@@ -163,6 +166,43 @@ public abstract class Detector {
                 @NonNull JavaContext context,
                 @Nullable AstVisitor visitor,
                 @NonNull MethodInvocation node);
+
+        /**
+         * Return the list of constructor types this detector is interested in, or
+         * null. If this method returns non-null, then any AST nodes that match
+         * a constructor call in the list will be passed to the
+         * {@link #visitConstructor(JavaContext, AstVisitor, ConstructorInvocation, ResolvedMethod)}
+         * method for processing. The visitor created by
+         * {@link #createJavaVisitor(JavaContext)} is also passed to that
+         * method, although it can be null.
+         * <p>
+         * This makes it easy to write detectors that focus on some fixed constructors.
+         *
+         * @return a set of applicable fully qualified types, or null.
+         */
+        @Nullable
+        List<String> getApplicableConstructorTypes();
+
+        /**
+         * Method invoked for any constructor calls found that matches any names
+         * returned by {@link #getApplicableConstructorTypes()}. This also passes
+         * back the visitor that was created by
+         * {@link #createJavaVisitor(JavaContext)}, but a visitor is not
+         * required. It is intended for detectors that need to do additional AST
+         * processing, but also want the convenience of not having to look for
+         * method names on their own.
+         *
+         * @param context the context of the lint request
+         * @param visitor the visitor created from
+         *            {@link #createJavaVisitor(JavaContext)}, or null
+         * @param node the {@link ConstructorInvocation} node for the invoked method
+         * @param constructor the resolved constructor method with type information
+         */
+        void visitConstructor(
+                @NonNull JavaContext context,
+                @Nullable AstVisitor visitor,
+                @NonNull ConstructorInvocation node,
+                @NonNull ResolvedMethod constructor);
 
         /**
          * Returns whether this detector cares about Android resource references
@@ -664,6 +704,19 @@ public abstract class Detector {
 
     public void checkClass(@NonNull JavaContext context, @NonNull ClassDeclaration node,
             @NonNull ResolvedClass resolvedClass) {
+    }
+
+    @Nullable @SuppressWarnings("javadoc")
+    public List<String> getApplicableConstructorTypes() {
+        return null;
+    }
+
+    @SuppressWarnings("javadoc")
+    public void visitConstructor(
+            @NonNull JavaContext context,
+            @Nullable AstVisitor visitor,
+            @NonNull ConstructorInvocation node,
+            @NonNull ResolvedMethod constructor) {
     }
 
     // ---- Dummy implementations to make implementing a ClassScanner easier: ----
