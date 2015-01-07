@@ -63,15 +63,15 @@ public class TextFormatTest extends TestCase {
             assertEquals("", convertMarkup("", HTML));
             assertEquals("", convertMarkup("", HTML));
             assertEquals("This is <b>bold</b>", convertMarkup("This is *bold*", HTML));
-            assertEquals("Visit <nobr><a href=\"http://google.com\">http://google.com</a></nobr>.",
+            assertEquals("Visit <a href=\"http://google.com\">http://google.com</a>.",
                     convertMarkup("Visit http://google.com.", HTML));
             assertEquals("This is <code>monospace</code>!", convertMarkup("This is `monospace`!",
                     HTML));
             assertEquals(
-                    "See <nobr><a href=\"http://developer.android.com/reference/android/view/" +
+                    "See <a href=\"http://developer.android.com/reference/android/view/" +
                     "WindowManager.LayoutParams.html#FLAG_KEEP_SCREEN_ON\">http://developer." +
                     "android.com/reference/android/view/WindowManager.LayoutParams.html#" +
-                    "FLAG_KEEP_SCREEN_ON</a></nobr>.",
+                    "FLAG_KEEP_SCREEN_ON</a>.",
                 convertMarkup(
                   "See http://developer.android.com/reference/android/view/WindowManager.Layout" +
                   "Params.html#FLAG_KEEP_SCREEN_ON.", HTML));
@@ -129,9 +129,9 @@ public class TextFormatTest extends TestCase {
             "test your app to make sure everything works correctly. You may want to consult " +
             "the compatibility notes to see what changes apply to each version you are adding " +
             "support for: " +
-            "<nobr><a href=\"http://developer.android.com/reference/android/os/Build.VERSION_CODES." +
+            "<a href=\"http://developer.android.com/reference/android/os/Build.VERSION_CODES." +
             "html\">http://developer.android.com/reference/android/os/Build.VERSION_CODES.html" +
-            "</a></nobr>",
+            "</a>",
             convertMarkup(explanation, HTML));
     }
 
@@ -147,8 +147,8 @@ public class TextFormatTest extends TestCase {
         assertEquals(
             "When using a custom view with custom attributes in a library project, the layout " +
             "must use the special namespace " +
-            "<nobr><a href=\"http://schemas.android.com/apk/res-auto\">" +
-            "http://schemas.android.com/apk/res-auto</a></nobr> " +
+            "<a href=\"http://schemas.android.com/apk/res-auto\">" +
+            "http://schemas.android.com/apk/res-auto</a> " +
             "instead of a URI which includes the library project's own package. " +
             "This will be used to automatically adjust the namespace of the attributes when " +
             "the library resources are merged into the application project.",
@@ -176,14 +176,14 @@ public class TextFormatTest extends TestCase {
         // From ManifestDetector#MULTIPLE_USES_SDK
         String explanation =
             "The `<uses-sdk>` element should appear just once; the tools will *not* merge the " +
-            "contents of all the elements so if you split up the atttributes across multiple " +
+            "contents of all the elements so if you split up the attributes across multiple " +
             "elements, only one of them will take effect. To fix this, just merge all the " +
             "attributes from the various elements into a single <uses-sdk> element.";
 
         assertEquals(
             "The <code>&lt;uses-sdk></code> element should appear just once; the tools " +
             "will <b>not</b> merge the " +
-            "contents of all the elements so if you split up the atttributes across multiple " +
+            "contents of all the elements so if you split up the attributes across multiple " +
             "elements, only one of them will take effect. To fix this, just merge all the " +
             "attributes from the various elements into a single &lt;uses-sdk> element.",
             convertMarkup(explanation, HTML));
@@ -272,5 +272,9 @@ public class TextFormatTest extends TestCase {
                         "<code>MenuItem.SHOW_AS_ACTION_ALWAYS</code> and no references to " +
                         "<code>MenuItem.SHOW_AS_ACTION_IF_ROOM</code>.",
                 TEXT));
+    }
+
+    public void testNbsp() throws Exception {
+        assertEquals("&nbsp;&nbsp;text", RAW.convertTo("\u00a0\u00A0text", HTML));
     }
 }
