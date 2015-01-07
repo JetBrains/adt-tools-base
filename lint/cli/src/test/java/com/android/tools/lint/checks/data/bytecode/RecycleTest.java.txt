@@ -1,6 +1,6 @@
 package test.pkg;
 
-import com.unit.test.R;
+
 
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -156,4 +156,11 @@ public class RecycleTest extends View {
 			AttributeSet set, int[] attrs, int defStyleAttr, int defStyleRes) {
 		return null;
 	}
+
+    private static class R {
+        public static class styleable {
+            public static final int[] MyView = new int[] {};
+            public static final int MyView_exampleString = 2;
+        }
+    }
 }

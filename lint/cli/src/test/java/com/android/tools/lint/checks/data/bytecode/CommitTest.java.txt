@@ -88,4 +88,17 @@ public class CommitTest extends Activity {
         FragmentManager fragmentManager = getFragmentManager();
         fragmentManager.beginTransaction().commit();
     }
+
+    public void ok11() {
+        FragmentTransaction transaction;
+        // Comment in between variable declaration and assignment
+        transaction = getFragmentManager().beginTransaction();
+        transaction.commit();
+    }
+
+    public void ok12() {
+        FragmentTransaction transaction;
+        transaction = (getFragmentManager().beginTransaction());
+        transaction.commit();
+    }
 }
