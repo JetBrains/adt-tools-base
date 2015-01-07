@@ -29,6 +29,7 @@ public class JavaScriptInterfaceDetectorTest extends AbstractCheckTest {
         assertEquals("No warnings.",
                 lintProject(
                         "bytecode/.classpath=>.classpath",
+                        "project.properties19=>project.properties",
                         "bytecode/AndroidManifest.xml=>AndroidManifest.xml",
                         "bytecode/AnnotatedObject.java.txt=>src/test/pkg/AnnotatedObject.java",
                         "bytecode/InheritsFromAnnotated.java.txt=>src/test/pkg/InheritsFromAnnotated.java",
@@ -42,20 +43,24 @@ public class JavaScriptInterfaceDetectorTest extends AbstractCheckTest {
     }
 
     public void test() throws Exception {
-        assertEquals(""
-                + "src/test/pkg/JavaScriptTest.java:10: Error: None of the methods in the added interface have been annotated with @android.webkit.JavascriptInterface; they will not be visible in API 17 [JavascriptInterface]\n"
-                + "  webview.addJavascriptInterface(new NonAnnotatedObject(), \"myobj\");\n"
-                + "          ~~~~~~~~~~~~~~~~~~~~~~\n"
-                + "src/test/pkg/JavaScriptTest.java:13: Error: None of the methods in the added interface have been annotated with @android.webkit.JavascriptInterface; they will not be visible in API 17 [JavascriptInterface]\n"
-                + "  webview.addJavascriptInterface(o, \"myobj\");\n"
-                + "          ~~~~~~~~~~~~~~~~~~~~~~\n"
-                + "src/test/pkg/JavaScriptTest.java:20: Error: None of the methods in the added interface have been annotated with @android.webkit.JavascriptInterface; they will not be visible in API 17 [JavascriptInterface]\n"
-                + "  webview.addJavascriptInterface(object2, \"myobj\");\n"
-                + "          ~~~~~~~~~~~~~~~~~~~~~~\n"
-                + "3 errors, 0 warnings\n",
+        assertEquals(
+                "src/test/pkg/JavaScriptTest.java:10: Error: None of the methods in the added interface (NonAnnotatedObject) have been annotated with @android.webkit.JavascriptInterface; they will not be visible in API 17 [JavascriptInterface]\n" +
+                "  webview.addJavascriptInterface(new NonAnnotatedObject(), \"myobj\");\n" +
+                "          ~~~~~~~~~~~~~~~~~~~~~~\n" +
+                "src/test/pkg/JavaScriptTest.java:13: Error: None of the methods in the added interface (NonAnnotatedObject) have been annotated with @android.webkit.JavascriptInterface; they will not be visible in API 17 [JavascriptInterface]\n" +
+                "  webview.addJavascriptInterface(o, \"myobj\");\n" +
+                "          ~~~~~~~~~~~~~~~~~~~~~~\n" +
+                "src/test/pkg/JavaScriptTest.java:20: Error: None of the methods in the added interface (NonAnnotatedObject) have been annotated with @android.webkit.JavascriptInterface; they will not be visible in API 17 [JavascriptInterface]\n" +
+                "  webview.addJavascriptInterface(object2, \"myobj\");\n" +
+                "          ~~~~~~~~~~~~~~~~~~~~~~\n" +
+                "src/test/pkg/JavaScriptTest.java:31: Error: None of the methods in the added interface (NonAnnotatedObject) have been annotated with @android.webkit.JavascriptInterface; they will not be visible in API 17 [JavascriptInterface]\n" +
+                "  webview.addJavascriptInterface(t, \"myobj\");\n" +
+                "          ~~~~~~~~~~~~~~~~~~~~~~\n" +
+                "4 errors, 0 warnings\n",
 
             lintProject(
                     "bytecode/.classpath=>.classpath",
+                    "project.properties19=>project.properties",
                     "bytecode/AndroidManifestTarget17.xml=>AndroidManifest.xml",
                     "bytecode/AnnotatedObject.java.txt=>src/test/pkg/AnnotatedObject.java",
                     "bytecode/InheritsFromAnnotated.java.txt=>src/test/pkg/InheritsFromAnnotated.java",
