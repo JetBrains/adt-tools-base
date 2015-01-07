@@ -718,15 +718,9 @@ public abstract class BasePlugin {
                                 "${outputDirName}/AndroidManifest.xml")
             }
 
-            String defaultLocation = "$project.buildDir/${FD_OUTPUTS}/apk"
-            String apkLocation = defaultLocation
-            if (project.hasProperty(PROPERTY_APK_LOCATION)) {
-                apkLocation = project.getProperties().get(PROPERTY_APK_LOCATION)
-            }
-
             conventionMapping(processManifestTask).map("reportFile") {
                 project.file(
-                        "$apkLocation/manifest-merger-${config.baseName}-report.txt")
+                        "$project.buildDir/${FD_OUTPUTS}/logs/manifest-merger-${config.baseName}-report.txt")
             }
         }
     }
