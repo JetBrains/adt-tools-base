@@ -41,6 +41,7 @@ import org.eclipse.jdt.internal.compiler.ICompilerRequestor;
 import org.eclipse.jdt.internal.compiler.IErrorHandlingPolicy;
 import org.eclipse.jdt.internal.compiler.IProblemFactory;
 import org.eclipse.jdt.internal.compiler.ast.AbstractMethodDeclaration;
+import org.eclipse.jdt.internal.compiler.ast.AbstractVariableDeclaration;
 import org.eclipse.jdt.internal.compiler.ast.AllocationExpression;
 import org.eclipse.jdt.internal.compiler.ast.Annotation;
 import org.eclipse.jdt.internal.compiler.ast.CharLiteral;
@@ -49,9 +50,11 @@ import org.eclipse.jdt.internal.compiler.ast.DoubleLiteral;
 import org.eclipse.jdt.internal.compiler.ast.ExplicitConstructorCall;
 import org.eclipse.jdt.internal.compiler.ast.Expression;
 import org.eclipse.jdt.internal.compiler.ast.FalseLiteral;
+import org.eclipse.jdt.internal.compiler.ast.FieldDeclaration;
 import org.eclipse.jdt.internal.compiler.ast.FloatLiteral;
 import org.eclipse.jdt.internal.compiler.ast.IntLiteral;
 import org.eclipse.jdt.internal.compiler.ast.Literal;
+import org.eclipse.jdt.internal.compiler.ast.LocalDeclaration;
 import org.eclipse.jdt.internal.compiler.ast.LongLiteral;
 import org.eclipse.jdt.internal.compiler.ast.MagicLiteral;
 import org.eclipse.jdt.internal.compiler.ast.MessageSend;
@@ -96,6 +99,7 @@ import org.eclipse.jdt.internal.compiler.problem.DefaultProblemFactory;
 import org.eclipse.jdt.internal.compiler.problem.ProblemReporter;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
@@ -106,6 +110,7 @@ import java.util.Set;
 import lombok.ast.Node;
 import lombok.ast.VariableDeclaration;
 import lombok.ast.VariableDefinition;
+import lombok.ast.VariableDefinitionEntry;
 import lombok.ast.ecj.EcjTreeConverter;
 
 /**
@@ -497,6 +502,9 @@ public class EcjParser extends JavaParser {
             }
         }
 
+        if (node instanceof VariableDefinitionEntry) {
+            node = (VariableDeclaration) node.getParent().getParent();
+        }
         if (node instanceof VariableDeclaration) {
             VariableDeclaration declaration = (VariableDeclaration) node;
             VariableDefinition definition = declaration.astDefinition();
@@ -535,6 +543,12 @@ public class EcjParser extends JavaParser {
             return resolve(((Annotation) nativeNode).resolvedType);
         } else if (nativeNode instanceof AbstractMethodDeclaration) {
             return resolve(((AbstractMethodDeclaration) nativeNode).binding);
+        } else if (nativeNode instanceof AbstractVariableDeclaration) {
+            if (nativeNode instanceof LocalDeclaration) {
+                return resolve(((LocalDeclaration) nativeNode).binding);
+            } else if (nativeNode instanceof FieldDeclaration) {
+                return resolve(((FieldDeclaration) nativeNode).binding);
+            }
         }
 
         // TODO: Handle org.eclipse.jdt.internal.compiler.ast.SuperReference. It
@@ -784,6 +798,29 @@ public class EcjParser extends JavaParser {
         public String toString() {
             return getSignature();
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            EcjTypeDescriptor that = (EcjTypeDescriptor) o;
+
+            if (!Arrays.equals(mChars, that.mChars)) {
+                return false;
+            }
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            return mChars != null ? Arrays.hashCode(mChars) : 0;
+        }
     }
 
     private static class EcjResolvedMethod extends ResolvedMethod {
@@ -846,6 +883,29 @@ public class EcjParser extends JavaParser {
         @Override
         public String getSignature() {
             return mBinding.toString();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            EcjResolvedMethod that = (EcjResolvedMethod) o;
+
+            if (mBinding != null ? !mBinding.equals(that.mBinding) : that.mBinding != null) {
+                return false;
+            }
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            return mBinding != null ? mBinding.hashCode() : 0;
         }
     }
 
@@ -1030,6 +1090,29 @@ public class EcjParser extends JavaParser {
         public String getSignature() {
             return getName();
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            EcjResolvedClass that = (EcjResolvedClass) o;
+
+            if (mBinding != null ? !mBinding.equals(that.mBinding) : that.mBinding != null) {
+                return false;
+            }
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            return mBinding != null ? mBinding.hashCode() : 0;
+        }
     }
 
     private static class EcjResolvedField extends ResolvedField {
@@ -1101,6 +1184,29 @@ public class EcjParser extends JavaParser {
         public String getSignature() {
             return mBinding.toString();
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            EcjResolvedField that = (EcjResolvedField) o;
+
+            if (mBinding != null ? !mBinding.equals(that.mBinding) : that.mBinding != null) {
+                return false;
+            }
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            return mBinding != null ? mBinding.hashCode() : 0;
+        }
     }
 
     private static class EcjResolvedVariable extends ResolvedVariable {
@@ -1137,6 +1243,29 @@ public class EcjParser extends JavaParser {
         @Override
         public String getSignature() {
             return mBinding.toString();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            EcjResolvedVariable that = (EcjResolvedVariable) o;
+
+            if (mBinding != null ? !mBinding.equals(that.mBinding) : that.mBinding != null) {
+                return false;
+            }
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            return mBinding != null ? mBinding.hashCode() : 0;
         }
     }
 

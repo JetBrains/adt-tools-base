@@ -356,7 +356,7 @@ public class JavaVisitor {
      * declaration, so this means we avoid visiting all "uninteresting" nodes in
      * the tree repeatedly.
      */
-    private class DispatchVisitor extends AstVisitor {
+    private class DispatchVisitor extends ForwardingAstVisitor {
         @Override
         public void endVisit(Node node) {
             for (VisitingDetector v : mAllDetectors) {
