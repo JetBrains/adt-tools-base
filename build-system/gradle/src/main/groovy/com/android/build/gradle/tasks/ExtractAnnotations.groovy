@@ -22,12 +22,14 @@ import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.build.gradle.tasks.annotations.ApiDatabase
 import com.android.build.gradle.tasks.annotations.Extractor
 import com.android.tools.lint.EcjParser
+import com.android.utils.Pair
 import com.google.common.collect.Lists
 import com.google.common.collect.Maps
 import org.eclipse.jdt.core.compiler.IProblem
 import org.eclipse.jdt.internal.compiler.ast.CompilationUnitDeclaration
 import org.eclipse.jdt.internal.compiler.batch.CompilationUnit
 import org.eclipse.jdt.internal.compiler.env.ICompilationUnit
+import org.eclipse.jdt.internal.compiler.env.INameEnvironment
 import org.eclipse.jdt.internal.compiler.impl.CompilerOptions
 import org.eclipse.jdt.internal.compiler.util.Util
 import org.gradle.api.file.EmptyFileVisitor
@@ -102,42 +104,50 @@ class ExtractAnnotations extends AbstractCompile {
             encoding = UTF_8
         }
 
-        Collection<CompilationUnitDeclaration> parsedUnits = parseSources()
+        Pair<Collection<CompilationUnitDeclaration>, INameEnvironment> result = parseSources()
+        def parsedUnits = result.first
+        def environment = result.second
 
-        for (CompilationUnitDeclaration unit : parsedUnits) {
-            // so maybe I don't need my map!!
-            def problems = unit.compilationResult().allProblems
-            for (IProblem problem : problems) {
-                if (problem.error) {
-                    println "Not extracting annotations (compilation problems encountered)";
-                    println "Error: " + problem.getOriginatingFileName() + ":" +
-                            problem.getSourceLineNumber() + ": " + problem.getMessage()
-                    // TODO: Consider whether we abort the build at this point!
-                    return
+        try {
+            for (CompilationUnitDeclaration unit : parsedUnits) {
+                // so maybe I don't need my map!!
+                def problems = unit.compilationResult().allProblems
+                for (IProblem problem : problems) {
+                    if (problem.error) {
+                        println "Not extracting annotations (compilation problems encountered)";
+                        println "Error: " + problem.getOriginatingFileName() + ":" +
+                                problem.getSourceLineNumber() + ": " + problem.getMessage()
+                        // TODO: Consider whether we abort the build at this point!
+                        return
+                    }
                 }
             }
-        }
 
-        // API definition file
-        ApiDatabase database = null;
-        if (apiFilter != null && apiFilter.exists()) {
-            try {
-                database = new ApiDatabase(apiFilter);
-            } catch (IOException e) {
-                throw new BuildException("Could not open API database " + apiFilter, e)
+            // API definition file
+            ApiDatabase database = null;
+            if (apiFilter != null && apiFilter.exists()) {
+                try {
+                    database = new ApiDatabase(apiFilter);
+                } catch (IOException e) {
+                    throw new BuildException("Could not open API database " + apiFilter, e)
+                }
+            }
+
+            Extractor extractor = new Extractor(database, classDir,
+                    project.logger.isEnabled(LogLevel.INFO));
+            extractor.extractFromProjectSource(parsedUnits)
+            if (mergeJars != null) {
+                for (File jar : mergeJars) {
+                    extractor.mergeExisting(jar);
+                }
+            }
+            extractor.export(output)
+            extractor.removeTypedefClasses();
+        } finally {
+            if (environment != null) {
+                environment.cleanup()
             }
         }
-
-        Extractor extractor = new Extractor(database, classDir,
-                project.logger.isEnabled(LogLevel.INFO));
-        extractor.extractFromProjectSource(parsedUnits)
-        if (mergeJars != null) {
-            for (File jar : mergeJars) {
-                extractor.mergeExisting(jar);
-            }
-        }
-        extractor.export(output)
-        extractor.removeTypedefClasses();
     }
 
     @Input
@@ -146,7 +156,7 @@ class ExtractAnnotations extends AbstractCompile {
     }
 
     @NonNull
-    private Collection<CompilationUnitDeclaration> parseSources() {
+    private Pair<Collection<CompilationUnitDeclaration>,INameEnvironment> parseSources() {
         List<ICompilationUnit> sourceUnits = Lists.newArrayListWithExpectedSize(100);
 
         source.visit(new EmptyFileVisitor() {
@@ -190,10 +200,9 @@ class ExtractAnnotations extends AbstractCompile {
         options.originalSourceLevel = options.sourceLevel;
         options.inlineJsrBytecode = true; // >= 1.5
 
-        EcjParser.parse(options, sourceUnits, jars, outputMap, null);
-
+        def environment = EcjParser.parse(options, sourceUnits, jars, outputMap, null);
         Collection<CompilationUnitDeclaration> parsedUnits = outputMap.values()
-        parsedUnits
+        Pair.of(parsedUnits, environment);
     }
 
     private static long getLanguageLevel(String version) {

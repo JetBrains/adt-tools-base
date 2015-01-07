@@ -1680,6 +1680,7 @@ public class LintDriver {
                     return;
                 }
             }
+            visitor.dispose();
         }
     }
 
@@ -1721,6 +1722,8 @@ public class LintDriver {
                 return;
             }
         }
+
+        visitor.dispose();
     }
 
     private static void gatherJavaFiles(@NonNull File dir, @NonNull List<File> result) {

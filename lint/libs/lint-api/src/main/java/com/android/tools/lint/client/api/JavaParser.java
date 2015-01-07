@@ -111,6 +111,14 @@ public abstract class JavaParser {
     }
 
     /**
+     * Dispose any remaining data structures held for all contexts.
+     * Typically frees up any resources allocated by
+     * {@link #prepareJavaParse(List)}
+     */
+    public void dispose() {
+    }
+
+    /**
      * Resolves the given expression node: computes the declaration for the given symbol
      *
      * @param context information about the file being parsed
