@@ -128,6 +128,7 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(ManifestDetector.DUPLICATE_USES_FEATURE);
         issues.add(ManifestDetector.GRADLE_OVERRIDES);
         issues.add(ManifestDetector.ILLEGAL_REFERENCE);
+        issues.add(ManifestDetector.MIPMAP);
         issues.add(ManifestDetector.MOCK_LOCATION);
         issues.add(ManifestDetector.MULTIPLE_USES_SDK);
         issues.add(ManifestDetector.ORDER);
