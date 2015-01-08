@@ -1132,7 +1132,7 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
         }
 
         // build type overrides flavors
-        if (!mType.isForTesting() && mBuildTypeSourceProvider != null) {
+        if (mBuildTypeSourceProvider != null) {
             providers.add(mBuildTypeSourceProvider);
         }
 

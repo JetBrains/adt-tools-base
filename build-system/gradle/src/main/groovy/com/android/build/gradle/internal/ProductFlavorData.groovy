@@ -74,11 +74,11 @@ public class ProductFlavorData<T extends DefaultProductFlavor> {
     final Task assembleTask
 
     ProductFlavorData(
-            T productFlavor,
-            DefaultAndroidSourceSet sourceSet,
-            DefaultAndroidSourceSet androidTestSourceSet,
-            DefaultAndroidSourceSet unitTestSourceSet,
-            Project project) {
+            @NonNull T productFlavor,
+            @NonNull DefaultAndroidSourceSet sourceSet,
+            @NonNull DefaultAndroidSourceSet androidTestSourceSet,
+            @NonNull DefaultAndroidSourceSet unitTestSourceSet,
+            @NonNull Project project) {
         this.productFlavor = productFlavor
         this.sourceSet = sourceSet
         this.androidTestSourceSet = androidTestSourceSet
@@ -96,6 +96,7 @@ public class ProductFlavorData<T extends DefaultProductFlavor> {
         }
     }
 
+    @NonNull
     DefaultAndroidSourceSet getTestSourceSet(@NonNull VariantType type) {
         switch (type) {
             case VariantType.ANDROID_TEST:

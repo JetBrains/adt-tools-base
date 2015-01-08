@@ -44,7 +44,6 @@ import com.android.build.gradle.internal.dsl.Splits;
 import com.android.build.gradle.internal.variant.ApplicationVariantFactory;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
-import com.android.build.gradle.internal.TaskManager;
 import com.android.build.gradle.internal.variant.TestVariantData;
 import com.android.build.gradle.internal.variant.TestedVariantData;
 import com.android.build.gradle.internal.variant.VariantFactory;
@@ -156,10 +155,11 @@ public class VariantManager implements VariantModel {
             throw new RuntimeException("BuildType names cannot collide with ProductFlavor names");
         }
 
-        DefaultAndroidSourceSet sourceSet = (DefaultAndroidSourceSet) extension.getSourceSetsContainer().maybeCreate(name);
-        // TODO: Create a unit test source set.
+        DefaultAndroidSourceSet mainSourceSet = (DefaultAndroidSourceSet) extension.getSourceSetsContainer().maybeCreate(name);
+        DefaultAndroidSourceSet unitTestSourceSet = (DefaultAndroidSourceSet) extension.getSourceSetsContainer().maybeCreate(
+                UNIT_TEST.getPrefix() + StringHelper.capitalize(buildType.getName()));
 
-        BuildTypeData buildTypeData = new BuildTypeData(buildType, sourceSet, project);
+        BuildTypeData buildTypeData = new BuildTypeData(buildType, project, mainSourceSet, unitTestSourceSet);
         project.getTasks().getByName("assemble").dependsOn(buildTypeData.getAssembleTask());
 
         buildTypes.put(name, buildTypeData);
@@ -493,18 +493,19 @@ public class VariantManager implements VariantModel {
         ProductFlavorData<ProductFlavor> defaultConfigData = basePlugin.getDefaultConfigData();
         ProductFlavor defaultConfig = defaultConfigData.getProductFlavor();
         BuildType buildType = testedVariantData.getVariantConfiguration().getBuildType();
+        BuildTypeData buildTypeData = buildTypes.get(buildType.getName());
 
         GradleVariantConfiguration testedConfig = testedVariantData.getVariantConfiguration();
         List<? extends com.android.build.gradle.api.GroupableProductFlavor> productFlavorList = testedConfig.getProductFlavors();
 
         // handle test variant
         GradleVariantConfiguration testVariantConfig = new GradleVariantConfiguration(
+                testedVariantData.getVariantConfiguration(),
                 defaultConfig,
                 defaultConfigData.getTestSourceSet(type),
                 buildType,
-                null,
+                buildTypeData.getTestSourceSet(type),
                 type,
-                testedVariantData.getVariantConfiguration(),
                 signingOverride);
 
         for (com.android.build.gradle.api.GroupableProductFlavor productFlavor : productFlavorList) {
