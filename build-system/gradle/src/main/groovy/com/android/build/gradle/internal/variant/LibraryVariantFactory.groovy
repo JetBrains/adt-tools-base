@@ -24,6 +24,7 @@ import com.android.build.gradle.api.BaseVariant
 import com.android.build.gradle.api.BaseVariantOutput
 import com.android.build.gradle.internal.BuildTypeData
 import com.android.build.gradle.internal.ProductFlavorData
+import com.android.build.gradle.internal.TaskManager
 import com.android.build.gradle.internal.VariantModel
 import com.android.build.gradle.internal.api.LibraryVariantImpl
 import com.android.build.gradle.internal.api.LibraryVariantOutputImpl
@@ -52,8 +53,7 @@ import org.gradle.tooling.BuildException
 
 import static com.android.SdkConstants.FN_ANNOTATIONS_ZIP
 import static com.android.SdkConstants.LIBS_FOLDER
-import static com.android.build.gradle.BasePlugin.DIR_BUNDLES
-import static com.android.build.gradle.BasePlugin.optionalDependsOn
+import static com.android.build.gradle.internal.TaskManager.DIR_BUNDLES
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
 import static com.android.builder.model.AndroidProject.FD_OUTPUTS
 /**
@@ -66,13 +66,18 @@ public class LibraryVariantFactory implements VariantFactory<LibraryVariantData>
     private final BasePlugin basePlugin
     @NonNull
     private final LibraryExtension extension
+    @NonNull
+    private final TaskManager taskManager
 
     private Task assembleDefault;
 
-    public LibraryVariantFactory(@NonNull BasePlugin basePlugin,
-            @NonNull LibraryExtension extension) {
+    public LibraryVariantFactory(
+            @NonNull BasePlugin basePlugin,
+            @NonNull LibraryExtension extension,
+            @NonNull TaskManager taskManager) {
         this.extension = extension
         this.basePlugin = basePlugin
+        this.taskManager = taskManager
     }
 
     @Override
@@ -141,22 +146,22 @@ public class LibraryVariantFactory implements VariantFactory<LibraryVariantData>
         String dirName = variantConfig.dirName
         Project project = basePlugin.project
 
-        basePlugin.createAnchorTasks(variantData)
+        taskManager.createAnchorTasks(variantData)
 
-        basePlugin.createCheckManifestTask(variantData)
+        taskManager.createCheckManifestTask(variantData)
 
         // Add a task to create the res values
-        basePlugin.createGenerateResValuesTask(variantData)
+        taskManager.createGenerateResValuesTask(variantData)
 
         // Add a task to process the manifest(s)
-        basePlugin.createMergeLibManifestsTask(variantData, DIR_BUNDLES)
+        taskManager.createMergeLibManifestsTask(variantData, DIR_BUNDLES)
 
         // Add a task to compile renderscript files.
-        basePlugin.createRenderscriptTask(variantData)
+        taskManager.createRenderscriptTask(variantData)
 
         // Create a merge task to only merge the resources from this library and not
         // the dependencies. This is what gets packaged in the aar.
-        MergeResources packageRes = basePlugin.basicCreateMergeResourcesTask(variantData,
+        MergeResources packageRes = taskManager.basicCreateMergeResourcesTask(variantData,
                 "package",
                 "$project.buildDir/${FD_INTERMEDIATES}/$DIR_BUNDLES/${dirName}/res",
                 false /*includeDependencies*/,
@@ -170,32 +175,32 @@ public class LibraryVariantFactory implements VariantFactory<LibraryVariantData>
             // Add a task to merge the resource folders, including the libraries, in order to
             // generate the R.txt file with all the symbols, including the ones from
             // the dependencies.
-            basePlugin.createMergeResourcesTask(variantData, false /*process9Patch*/)
+            taskManager.createMergeResourcesTask(variantData, false /*process9Patch*/)
         }
 
         // Add a task to merge the assets folders
-        basePlugin.createMergeAssetsTask(variantData,
+        taskManager.createMergeAssetsTask(variantData,
                 "$project.buildDir/${FD_INTERMEDIATES}/$DIR_BUNDLES/${dirName}/assets",
                 false /*includeDependencies*/)
 
         // Add a task to create the BuildConfig class
-        basePlugin.createBuildConfigTask(variantData)
+        taskManager.createBuildConfigTask(variantData)
 
         // Add a task to generate resource source files, directing the location
         // of the r.txt file to be directly in the bundle.
-        basePlugin.createProcessResTask(variantData,
+        taskManager.createProcessResTask(variantData,
                 "$project.buildDir/${FD_INTERMEDIATES}/$DIR_BUNDLES/${dirName}",
                 false /*generateResourcePackage*/,
                 )
 
         // process java resources
-        basePlugin.createProcessJavaResTask(variantData)
+        taskManager.createProcessJavaResTask(variantData)
 
-        basePlugin.createAidlTask(variantData, basePlugin.project.file(
+        taskManager.createAidlTask(variantData, basePlugin.project.file(
                 "$basePlugin.project.buildDir/${FD_INTERMEDIATES}/$DIR_BUNDLES/${dirName}/$SdkConstants.FD_AIDL"))
 
         // Add a compile task
-        basePlugin.createCompileTask(variantData, null/*testedVariant*/)
+        taskManager.createCompileTask(variantData, null/*testedVariant*/)
 
         // package the prebuilt native libs into the bundle folder
         Sync packageJniLibs = project.tasks.create(
@@ -207,7 +212,7 @@ public class LibraryVariantFactory implements VariantFactory<LibraryVariantData>
             throw new RuntimeException("useNewNativePlugin is currently not supported.")
         } else {
             // Add NDK tasks
-            basePlugin.createNdkTasks(variantData);
+            taskManager.createNdkTasks(variantData);
             packageJniLibs.dependsOn variantData.ndkCompileTask
             packageJniLibs.from(variantData.ndkCompileTask.soFolder).include("**/*.so")
         }
@@ -241,7 +246,7 @@ public class LibraryVariantFactory implements VariantFactory<LibraryVariantData>
         Copy lintCopy = project.tasks.create(
                 "copy${fullName.capitalize()}Lint",
                 Copy)
-        lintCopy.dependsOn basePlugin.lintCompile
+        lintCopy.dependsOn taskManager.lintCompile
         lintCopy.from("$project.buildDir/${FD_INTERMEDIATES}/lint/lint.jar")
         lintCopy.into("$project.buildDir/${FD_INTERMEDIATES}/$DIR_BUNDLES/$dirName")
 
@@ -260,7 +265,7 @@ public class LibraryVariantFactory implements VariantFactory<LibraryVariantData>
 
         // data holding dependencies and input for the dex. This gets updated as new
         // post-compilation steps are inserted between the compilation and dx.
-        BasePlugin.PostCompilationData pcData = new BasePlugin.PostCompilationData()
+        TaskManager.PostCompilationData pcData = new TaskManager.PostCompilationData()
         pcData.classGeneratingTask = Collections.singletonList(variantData.javaCompileTask)
         pcData.libraryGeneratingTask = Collections.singletonList(
                 variantData.variantDependency.packageConfiguration.buildDependencies)
@@ -276,12 +281,12 @@ public class LibraryVariantFactory implements VariantFactory<LibraryVariantData>
 
         // if needed, instrument the code
         if (instrumented) {
-            pcData = basePlugin.createJacocoTask(variantConfig, variantData, pcData)
+            pcData = taskManager.createJacocoTask(variantConfig, variantData, pcData)
         }
 
         if (buildType.isMinifyEnabled()) {
             // run proguard on output of compile task
-            basePlugin.createProguardTasks(variantData, null, pcData)
+            taskManager.createProguardTasks(variantData, null, pcData)
         } else {
             // package the local jar in libs/
             Sync packageLocalJar = project.tasks.create(
@@ -295,7 +300,7 @@ public class LibraryVariantFactory implements VariantFactory<LibraryVariantData>
             // due to how inputLibraries is initialized.
             // TODO: clean this.
             packageLocalJar.from(pcData.inputLibraries)
-            basePlugin.optionalDependsOn(packageLocalJar, pcData.libraryGeneratingTask)
+            TaskManager.optionalDependsOn(packageLocalJar, pcData.libraryGeneratingTask)
             pcData.libraryGeneratingTask = Collections.singletonList(packageLocalJar)
 
             // jar the classes.
@@ -304,7 +309,7 @@ public class LibraryVariantFactory implements VariantFactory<LibraryVariantData>
 
             // add the class files (whether they are instrumented or not.
             jar.from(pcData.inputDir)
-            optionalDependsOn(jar, pcData.classGeneratingTask)
+            TaskManager.optionalDependsOn(jar, pcData.classGeneratingTask)
             pcData.classGeneratingTask = Collections.singletonList(jar)
 
             jar.from(variantData.processJavaResourcesTask.destinationDir)
@@ -334,8 +339,8 @@ public class LibraryVariantFactory implements VariantFactory<LibraryVariantData>
         }
 
         bundle.dependsOn packageRes, packageRenderscript, lintCopy, packageJniLibs, mergeProGuardFileTask
-        basePlugin.optionalDependsOn(bundle, pcData.classGeneratingTask)
-        basePlugin.optionalDependsOn(bundle, pcData.libraryGeneratingTask)
+        TaskManager.optionalDependsOn(bundle, pcData.classGeneratingTask)
+        TaskManager.optionalDependsOn(bundle, pcData.libraryGeneratingTask)
 
         bundle.setDescription("Assembles a bundle containing the library in ${fullName.capitalize()}.");
         bundle.destinationDir = project.file("$project.buildDir/${FD_OUTPUTS}/aar")
@@ -349,7 +354,7 @@ public class LibraryVariantFactory implements VariantFactory<LibraryVariantData>
         variantOutputData.packageLibTask = bundle
 
         if (assembleTask == null) {
-            assembleTask = basePlugin.createAssembleTask(variantData)
+            assembleTask = taskManager.createAssembleTask(variantData)
         }
         assembleTask.dependsOn bundle
         variantData.assembleVariantTask = variantOutputData.assembleTask = assembleTask
