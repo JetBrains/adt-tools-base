@@ -25,6 +25,7 @@ import com.android.build.gradle.api.AndroidSourceDirectorySet
 import com.android.build.gradle.api.AndroidSourceSet
 import com.android.build.gradle.internal.BuildTypeData
 import com.android.build.gradle.internal.ProductFlavorData
+import com.android.build.gradle.internal.TaskManager
 import com.android.build.gradle.internal.VariantManager
 import com.android.build.gradle.internal.dsl.BuildType
 import com.android.build.gradle.internal.dsl.GroupableProductFlavor
@@ -73,7 +74,7 @@ import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry
 import javax.inject.Inject
 
 import static com.android.builder.core.BuilderConstants.DEBUG
-import static com.android.builder.core.VariantConfiguration.Type.ANDROID_TEST
+import static com.android.builder.core.VariantType.ANDROID_TEST
 
 @CompileStatic
 public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Project> {
@@ -208,7 +209,8 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
                     plugin.project,
                     plugin,
                     androidExtension,
-                    variantFactory)
+                    variantFactory,
+                    plugin.getTaskManager())
 
             signingConfigContainer.all { SigningConfig signingConfig ->
                 variantManager.addSigningConfig(signingConfig)
@@ -261,26 +263,10 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
 
             applyProjectSourceSet(spec, androidSources, plugin)
 
+            TaskManager taskManager = plugin.getTaskManager()
+
             // Create lifecycle tasks.
-            Task uninstallAll = tasks.create("uninstallAll")
-            uninstallAll.description = "Uninstall all applications."
-            uninstallAll.group = INSTALL_GROUP
-
-            Task deviceCheck = tasks.create("deviceCheck")
-            deviceCheck.description = "Runs all device checks using Device Providers and Test Servers."
-            deviceCheck.group = JavaBasePlugin.VERIFICATION_GROUP
-
-            Task connectedCheck = tasks.create("connectedCheck")
-            connectedCheck.description = "Runs all device checks on currently connected devices."
-            connectedCheck.group = JavaBasePlugin.VERIFICATION_GROUP
-
-            Task mainPreBuild = tasks.create("preBuild", PrepareSdkTask)
-            mainPreBuild.plugin = plugin
-
-            plugin.uninstallAll = uninstallAll
-            plugin.deviceCheck = deviceCheck
-            plugin.connectedCheck = connectedCheck
-            plugin.mainPreBuild = mainPreBuild
+            taskManager.createTasks()
 
             // setup SDK repositories.
             for (File file : plugin.sdkHandler.sdkLoader.repositories) {
@@ -289,12 +275,9 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
                 }
             }
 
-            plugin.createLintCompileTask();
+            taskManager.createLintCompileTask();
 
-            Task assembleTest = tasks.create("assembleTest");
-            assembleTest.setGroup(org.gradle.api.plugins.BasePlugin.BUILD_GROUP);
-            assembleTest.setDescription("Assembles all the Test applications");
-            plugin.setAssembleAndroidTest(assembleTest);
+            taskManager.createAssembleAndroidTestTask()
 
             // Create tasks for each binaries.
             binaries.withType(AndroidBinary) { DefaultAndroidBinary binary ->
@@ -320,10 +303,10 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
             }
 
             // create the lint tasks.
-            plugin.createLintTasks();
+            taskManager.createLintTasks();
 
             // create the test tasks.
-            plugin.createConnectedCheckTasks(!variantManager.productFlavors.isEmpty(), false /*isLibrary*/);
+            taskManager.createConnectedCheckTasks(!variantManager.productFlavors.isEmpty(), false /*isLibrary*/);
 
             // Create the variant API objects after the tasks have been created!
             variantManager.createApiObjects();

@@ -52,7 +52,7 @@ public class AppComponentModelPlugin implements Plugin<Project> {
 
             @Model
             VariantFactory createVariantFactory(BasePlugin plugin) {
-                return new ApplicationVariantFactory(plugin)
+                return new ApplicationVariantFactory(plugin, plugin.taskManager)
             }
         }
     }

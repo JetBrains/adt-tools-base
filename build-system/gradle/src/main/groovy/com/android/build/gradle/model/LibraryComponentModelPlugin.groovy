@@ -61,7 +61,10 @@ public class LibraryComponentModelPlugin implements Plugin<Project> {
 
             @Model
             VariantFactory createVariantFactory(BasePlugin plugin) {
-                return new LibraryVariantFactory(plugin, (LibraryExtension) plugin.getExtension());
+                return new LibraryVariantFactory(
+                        plugin,
+                        (LibraryExtension) plugin.getExtension(),
+                        plugin.getTaskManager());
             }
         }
     }

@@ -79,7 +79,7 @@ model {
                 "assembleF2Debug",
                 "assembleF2Release",
                 "assembleRelease",
-                "assembleTest",
+                "assembleAndroidTest",
                 "assembleF1DebugAndroidTest",
                 "assembleF2DebugAndroidTest");
     }

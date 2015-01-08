@@ -90,7 +90,7 @@ public class ApkVariantOutputData extends BaseVariantOutputData {
                     "ZipAlign task for variant '%s' already exists.", variantData.getName()));
         }
 
-        zipAlignTask = variantData.basePlugin.createZipAlignTask(taskName, inputFile, outputFile);
+        zipAlignTask = variantData.basePlugin.getTaskManager().createZipAlignTask(taskName, inputFile, outputFile);
 
         // setup dependencies
         assembleTask.dependsOn(zipAlignTask);
