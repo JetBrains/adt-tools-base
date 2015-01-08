@@ -16,8 +16,6 @@
 
 package com.android.build.gradle.internal.model;
 
-import static com.android.builder.model.AndroidProject.ARTIFACT_ANDROID_TEST;
-
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.ProductFlavorData;
 import com.android.builder.core.VariantType;
@@ -58,12 +56,11 @@ class ProductFlavorContainerImpl implements ProductFlavorContainer, Serializable
         List<SourceProviderContainer> clonedContainer =
                 SourceProviderContainerImpl.cloneCollection(sourceProviderContainers);
 
-        // instrument test Source Provider
-        SourceProviderContainer testASP = SourceProviderContainerImpl.create(
-                ARTIFACT_ANDROID_TEST,
-                productFlavorData.getTestSourceSet(VariantType.ANDROID_TEST));
-
-        clonedContainer.add(testASP);
+        for (VariantType variantType : VariantType.getTestingTypes()) {
+            clonedContainer.add(SourceProviderContainerImpl.create(
+                    variantType.getArtifactName(),
+                    productFlavorData.getTestSourceSet(variantType)));
+        }
 
         return new ProductFlavorContainerImpl(
                 ProductFlavorImpl.cloneFlavor(productFlavorData.getProductFlavor(), null, null),
