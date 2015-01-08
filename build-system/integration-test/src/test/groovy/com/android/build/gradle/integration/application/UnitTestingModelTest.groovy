@@ -15,7 +15,6 @@
  */
 
 package com.android.build.gradle.integration.application
-
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
 import com.android.builder.model.AndroidProject
@@ -25,6 +24,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
+import static com.android.builder.model.AndroidProject.ARTIFACT_UNIT_TEST
 import static com.google.common.truth.Truth.assertThat
 /**
  * Tests for the unit-tests related parts of the builder model.
@@ -37,7 +37,7 @@ class UnitTestingModelTest {
     @Before
     public void setUp() {
         new HelloWorldApp().writeSources(project.testDir)
-        project.getBuildFile() << """
+        project.buildFile << """
 apply plugin: 'com.android.application'
 
 android {
@@ -49,30 +49,64 @@ android {
 
     @Test
     public void "Unit testing artifacts are included in the model"() {
-        AndroidProject model = project.getSingleModel()
+        AndroidProject model = project.singleModel
 
         assertThat(model.extraArtifacts*.name).containsExactly(
                 AndroidProject.ARTIFACT_ANDROID_TEST,
-                AndroidProject.ARTIFACT_UNIT_TEST)
+                ARTIFACT_UNIT_TEST)
 
-        def unitTestMetadata =
-                model.extraArtifacts.find { it.name == AndroidProject.ARTIFACT_UNIT_TEST }
+        def unitTestMetadata = model.extraArtifacts.find { it.name == ARTIFACT_UNIT_TEST }
 
         assert unitTestMetadata.isTest()
         assert unitTestMetadata.type == ArtifactMetaData.TYPE_JAVA
 
         for (variant in model.variants) {
             def unitTestArtifacts = variant.extraJavaArtifacts.findAll {
-                it.name == AndroidProject.ARTIFACT_UNIT_TEST
+                it.name == ARTIFACT_UNIT_TEST
             }
             assert unitTestArtifacts.size() == 1
 
             JavaArtifact unitTestArtifact = unitTestArtifacts.first()
-            assert unitTestArtifact.name == AndroidProject.ARTIFACT_UNIT_TEST
+            assert unitTestArtifact.name == ARTIFACT_UNIT_TEST
             assertThat(unitTestArtifact.assembleTaskName).contains("UnitTest")
             assertThat(unitTestArtifact.assembleTaskName).contains(variant.name.capitalize())
             assertThat(unitTestArtifact.compileTaskName).contains("UnitTest")
             assertThat(unitTestArtifact.compileTaskName).contains(variant.name.capitalize())
+
+            // No per-variant source code.
+            assertThat(unitTestArtifact.variantSourceProvider).isNull()
+            assertThat(unitTestArtifact.multiFlavorSourceProvider).isNull()
+        }
+
+        def sourceProvider = model.defaultConfig
+                .extraSourceProviders
+                .find { it.artifactName == ARTIFACT_UNIT_TEST }
+                .sourceProvider
+
+        assertThat(sourceProvider.javaDirectories).hasSize(1)
+        assertThat(sourceProvider.javaDirectories.first().absolutePath).endsWith("test/java")
+    }
+
+    @Test
+    public void flavors() throws Exception {
+        project.buildFile << """
+android {
+    productFlavors { paid; free }
+}
+"""
+
+        AndroidProject model = project.singleModel
+
+        assertThat(model.productFlavors).hasSize(2)
+
+        for (flavor in model.productFlavors) {
+            def sourceProvider = flavor.extraSourceProviders
+                    .find { it.artifactName == ARTIFACT_UNIT_TEST }
+                    .sourceProvider
+
+            assertThat(sourceProvider.javaDirectories).hasSize(1)
+            assertThat(sourceProvider.javaDirectories.first().absolutePath)
+                    .endsWith("test${flavor.productFlavor.name.capitalize()}/java")
         }
     }
 }
