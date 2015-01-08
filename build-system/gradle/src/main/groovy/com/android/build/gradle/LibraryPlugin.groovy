@@ -47,7 +47,7 @@ public class LibraryPlugin extends BasePlugin implements Plugin<Project> {
 
     @Override
     protected VariantFactory getVariantFactory() {
-        return new LibraryVariantFactory(this, (LibraryExtension) getExtension());
+        return new LibraryVariantFactory(this, (LibraryExtension) getExtension(), this.taskManager);
     }
 
     @Override
