@@ -24,6 +24,7 @@ import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.TestVariantData;
 import com.android.build.gradle.internal.variant.TestedVariantData;
 import com.android.builder.core.VariantConfiguration;
+import com.android.builder.core.VariantType;
 import com.android.builder.model.ApiVersion;
 import com.android.builder.testing.TestData;
 import com.android.ide.common.build.SplitOutputMatcher;
@@ -94,7 +95,7 @@ public class TestDataImpl implements TestData {
     public boolean isLibrary() {
         TestedVariantData testedVariantData = testVariantData.getTestedVariantData();
         BaseVariantData<?> testedVariantData2 = (BaseVariantData) testedVariantData;
-        return testedVariantData2.getVariantConfiguration().getType() == VariantConfiguration.Type.LIBRARY;
+        return testedVariantData2.getVariantConfiguration().getType() == VariantType.LIBRARY;
     }
 
     @NonNull

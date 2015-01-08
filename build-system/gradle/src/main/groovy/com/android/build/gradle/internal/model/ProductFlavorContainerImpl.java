@@ -20,7 +20,7 @@ import static com.android.builder.model.AndroidProject.ARTIFACT_ANDROID_TEST;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.ProductFlavorData;
-import com.android.builder.core.VariantConfiguration;
+import com.android.builder.core.VariantType;
 import com.android.builder.model.ProductFlavor;
 import com.android.builder.model.ProductFlavorContainer;
 import com.android.builder.model.SourceProvider;
@@ -61,7 +61,7 @@ class ProductFlavorContainerImpl implements ProductFlavorContainer, Serializable
         // instrument test Source Provider
         SourceProviderContainer testASP = SourceProviderContainerImpl.create(
                 ARTIFACT_ANDROID_TEST,
-                productFlavorData.getTestSourceSet(VariantConfiguration.Type.ANDROID_TEST));
+                productFlavorData.getTestSourceSet(VariantType.ANDROID_TEST));
 
         clonedContainer.add(testASP);
 
