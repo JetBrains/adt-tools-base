@@ -125,7 +125,7 @@ class ArtifactApiTest {
             assertEquals(
                     "Extra artifact source provider container for product flavor size '" + name +
                             "' check",
-                    2,
+                    3, // unit test, android test, extra provider from the API
                     extraSourceProviderContainers.size())
 
             assertNotNull(
