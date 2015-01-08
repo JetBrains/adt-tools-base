@@ -49,6 +49,8 @@ import com.android.builder.model.AndroidProject;
 import com.android.builder.model.ApiVersion;
 import com.android.builder.model.BuildTypeContainer;
 import com.android.builder.model.ProductFlavor;
+import com.android.builder.model.ProductFlavorContainer;
+import com.android.builder.model.SourceProviderContainer;
 import com.android.builder.model.Variant;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
@@ -783,7 +785,8 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
             Attr name = element.getAttributeNodeNS(ANDROID_URI, ATTR_NAME);
             if (name != null && name.getValue().equals(MOCK_LOCATION_PERMISSION)
                     && context.getMainProject().isGradleProject()
-                    && !isDebugManifest(context, context.file)) {
+                    && !isDebugOrTestManifest(context, context.file)
+                    && context.isEnabled(MOCK_LOCATION)) {
                 String message = "Mock locations should only be requested in a debug-specific "
                         + "manifest file (typically `src/debug/AndroidManifest.xml`)";
                 Location location = context.getLocation(name);
@@ -889,13 +892,35 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
                 .equals(model.getDefaultConfig().getSourceProvider().getManifestFile());
     }
 
-    /** Returns true iff the given manifest file is in a debug-specific source set */
-    private static boolean isDebugManifest(XmlContext context, File manifestFile) {
+    /**
+     * Returns true iff the given manifest file is in a debug-specific source set,
+     * or a test source set
+     */
+    private static boolean isDebugOrTestManifest(
+            @NonNull XmlContext context,
+            @NonNull File manifestFile) {
         AndroidProject model = context.getProject().getGradleProjectModel();
         if (model != null) {
+            // Quickly check if it's the main manifest first; that's the most likely scenario
+            if (manifestFile.equals(model.getDefaultConfig().getSourceProvider().getManifestFile())) {
+                return false;
+            }
+
+            // Debug build type?
             for (BuildTypeContainer container : model.getBuildTypes()) {
                 if (container.getBuildType().isDebuggable()) {
                     if (manifestFile.equals(container.getSourceProvider().getManifestFile())) {
+                        return true;
+                    }
+                }
+            }
+
+            // Test source set?
+            for (ProductFlavorContainer container : model.getProductFlavors()) {
+                for (SourceProviderContainer extra : container.getExtraSourceProviders()) {
+                    String artifactName = extra.getArtifactName();
+                    if (AndroidProject.ARTIFACT_ANDROID_TEST.equals(artifactName)
+                            && manifestFile.equals(extra.getSourceProvider().getManifestFile())) {
                         return true;
                     }
                 }

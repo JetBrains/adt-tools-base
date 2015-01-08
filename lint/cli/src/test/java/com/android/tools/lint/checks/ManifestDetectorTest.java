@@ -23,8 +23,14 @@ import static org.easymock.EasyMock.replay;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.builder.model.AndroidProject;
 import com.android.builder.model.ApiVersion;
+import com.android.builder.model.BuildType;
+import com.android.builder.model.BuildTypeContainer;
 import com.android.builder.model.ProductFlavor;
+import com.android.builder.model.ProductFlavorContainer;
+import com.android.builder.model.SourceProvider;
+import com.android.builder.model.SourceProviderContainer;
 import com.android.builder.model.Variant;
 import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.detector.api.Detector;
@@ -450,6 +456,8 @@ public class ManifestDetectorTest extends AbstractCheckTest {
                 + "1 errors, 0 warnings\n",
                 lintProject(
                         "mock_location.xml=>AndroidManifest.xml",
+                        "mock_location.xml=>debug/AndroidManifest.xml",
+                        "mock_location.xml=>test/AndroidManifest.xml",
                         "multiproject/library.properties=>build.gradle")); // dummy; only name counts
         // TODO: When we have an instantiatable gradle model, test with real model and verify
         // that a manifest file in a debug build type does not get flagged.
@@ -526,36 +534,6 @@ public class ManifestDetectorTest extends AbstractCheckTest {
 
     // Custom project which locates all manifest files in the project rather than just
     // being hardcoded to the root level
-    private static class MyProject extends Project {
-        protected MyProject(@NonNull LintClient client, @NonNull File dir,
-                @NonNull File referenceDir) {
-            super(client, dir, referenceDir);
-        }
-
-        @NonNull
-        @Override
-        public List<File> getManifestFiles() {
-            if (mManifestFiles == null) {
-                mManifestFiles = Lists.newArrayList();
-                addManifestFiles(mDir);
-            }
-
-            return mManifestFiles;
-        }
-
-        private void addManifestFiles(File dir) {
-            if (dir.getName().equals(ANDROID_MANIFEST_XML)) {
-                mManifestFiles.add(dir);
-            } else if (dir.isDirectory()) {
-                File[] files = dir.listFiles();
-                if (files != null) {
-                    for (File file : files) {
-                        addManifestFiles(file);
-                    }
-                }
-            }
-        }
-    }
 
     @Override
     protected TestLintClient createClient() {
@@ -564,7 +542,86 @@ public class ManifestDetectorTest extends AbstractCheckTest {
                 @NonNull
                 @Override
                 protected Project createProject(@NonNull File dir, @NonNull File referenceDir) {
-                    return new MyProject(this, dir, referenceDir);
+                    return new Project(this, dir, referenceDir) {
+                        @NonNull
+                        @Override
+                        public List<File> getManifestFiles() {
+                            if (mManifestFiles == null) {
+                                mManifestFiles = Lists.newArrayList();
+                                addManifestFiles(mDir);
+                            }
+
+                            return mManifestFiles;
+                        }
+
+                        private void addManifestFiles(File dir) {
+                            if (dir.getName().equals(ANDROID_MANIFEST_XML)) {
+                                mManifestFiles.add(dir);
+                            } else if (dir.isDirectory()) {
+                                File[] files = dir.listFiles();
+                                if (files != null) {
+                                    for (File file : files) {
+                                        addManifestFiles(file);
+                                    }
+                                }
+                            }
+                        }
+
+                        @NonNull SourceProvider createSourceProvider(File manifest) {
+                            SourceProvider provider = createNiceMock(SourceProvider.class);
+                            expect(provider.getManifestFile()).andReturn(manifest).anyTimes();
+                            replay(provider);
+                            return provider;
+                        }
+
+                        @Nullable
+                        @Override
+                        public AndroidProject getGradleProjectModel() {
+                            if (!isGradleProject()) {
+                                return null;
+                            }
+
+                            File main = new File(mDir, ANDROID_MANIFEST_XML);
+                            File debug = new File(mDir, "debug" + File.separator + ANDROID_MANIFEST_XML);
+                            File test = new File(mDir, "test" + File.separator + ANDROID_MANIFEST_XML);
+
+                            SourceProvider defaultSourceProvider = createSourceProvider(main);
+                            SourceProvider debugSourceProvider = createSourceProvider(debug);
+                            SourceProvider testSourceProvider = createSourceProvider(test);
+
+                            ProductFlavorContainer defaultConfig = createNiceMock(ProductFlavorContainer.class);
+                            expect(defaultConfig.getSourceProvider()).andReturn(defaultSourceProvider).anyTimes();
+                            replay(defaultConfig);
+
+                            BuildType buildType = createNiceMock(BuildType.class);
+                            expect(buildType.isDebuggable()).andReturn(true).anyTimes();
+                            replay(buildType);
+
+                            BuildTypeContainer buildTypeContainer = createNiceMock(BuildTypeContainer.class);
+                            expect(buildTypeContainer.getBuildType()).andReturn(buildType).anyTimes();
+                            expect(buildTypeContainer.getSourceProvider()).andReturn(debugSourceProvider).anyTimes();
+                            List<BuildTypeContainer> buildTypes = Lists.newArrayList(buildTypeContainer);
+                            replay(buildTypeContainer);
+
+                            SourceProviderContainer extraProvider = createNiceMock(SourceProviderContainer.class);
+                            expect(extraProvider.getArtifactName()).andReturn(AndroidProject.ARTIFACT_ANDROID_TEST).anyTimes();
+                            expect(extraProvider.getSourceProvider()).andReturn(testSourceProvider).anyTimes();
+                            List<SourceProviderContainer> extraProviders = Lists.newArrayList(extraProvider);
+                            replay(extraProvider);
+
+                            ProductFlavorContainer productFlavorContainer = createNiceMock(ProductFlavorContainer.class);
+                            expect(productFlavorContainer.getExtraSourceProviders()).andReturn(extraProviders).anyTimes();
+                            List<ProductFlavorContainer> productFlavors = Lists.newArrayList(productFlavorContainer);
+                            replay(productFlavorContainer);
+
+                            AndroidProject project = createNiceMock(AndroidProject.class);
+                            expect(project.getDefaultConfig()).andReturn(defaultConfig).anyTimes();
+                            expect(project.getBuildTypes()).andReturn(buildTypes).anyTimes();
+                            expect(project.getProductFlavors()).andReturn(productFlavors).anyTimes();
+                            replay(project);
+                            return project;
+                        }
+                    };
                 }
             };
         } else if (mEnabled.contains(ManifestDetector.GRADLE_OVERRIDES)) {
