@@ -37,9 +37,17 @@ import static com.android.sdklib.SdkVersionInfo.HIGHEST_KNOWN_API;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.FilterData;
+import com.android.build.OutputFile;
+import com.android.builder.model.AndroidArtifact;
+import com.android.builder.model.AndroidArtifactOutput;
 import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.AndroidProject;
+import com.android.builder.model.ProductFlavor;
+import com.android.builder.model.ProductFlavorContainer;
 import com.android.builder.model.Variant;
+import com.android.resources.Density;
+import com.android.resources.ResourceFolderType;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.SdkVersionInfo;
@@ -1195,5 +1203,95 @@ public class Project {
         }
 
         return null;
+    }
+
+    private List<String> mCachedApplicableDensities;
+
+    /**
+     * Returns the set of applicable densities for this project. If null, there are no density
+     * restrictions and all densities apply.
+     *
+     * @return the list of specific densities that apply in this project, or null if all densities
+     * apply
+     */
+    @Nullable
+    public List<String> getApplicableDensities() {
+        if (mCachedApplicableDensities == null) {
+            // Use the gradle API to set up relevant densities. For example, if the
+            // build.gradle file contains this:
+            // android {
+            //     defaultConfig {
+            //         resConfigs "nodpi", "hdpi"
+            //     }
+            // }
+            // ...then we should only enforce hdpi densities, not all these others!
+            if (isGradleProject() && getGradleProjectModel() != null &&
+                    getCurrentVariant() != null) {
+                Set<String> relevantDensities = Sets.newHashSet();
+                Variant variant = getCurrentVariant();
+                List<String> variantFlavors = variant.getProductFlavors();
+                AndroidProject gradleProjectModel = getGradleProjectModel();
+
+                addResConfigsFromFlavor(relevantDensities, null,
+                        getGradleProjectModel().getDefaultConfig());
+                for (ProductFlavorContainer container : gradleProjectModel.getProductFlavors()) {
+                    addResConfigsFromFlavor(relevantDensities, variantFlavors, container);
+                }
+
+                // Are there any splits that specify densities?
+                if (relevantDensities.isEmpty()) {
+                    AndroidArtifact mainArtifact = variant.getMainArtifact();
+                    Collection<AndroidArtifactOutput> outputs = mainArtifact.getOutputs();
+                    for (AndroidArtifactOutput output : outputs) {
+                        for (OutputFile file : output.getOutputs()) {
+                            final String DENSITY_NAME = OutputFile.FilterType.DENSITY.name();
+                            if (file.getFilterTypes().contains(DENSITY_NAME)) {
+                                for (FilterData data : file.getFilters()) {
+                                    if (DENSITY_NAME.equals(data.getFilterType())) {
+                                        relevantDensities.add(data.getIdentifier());
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (!relevantDensities.isEmpty()) {
+                    mCachedApplicableDensities = Lists.newArrayListWithExpectedSize(10);
+                    for (String density : relevantDensities) {
+                        String folder = ResourceFolderType.DRAWABLE.getName() + '-' + density;
+                        mCachedApplicableDensities.add(folder);
+                    }
+                    Collections.sort(mCachedApplicableDensities);
+                } else {
+                    mCachedApplicableDensities = Collections.emptyList();
+                }
+            } else {
+                mCachedApplicableDensities = Collections.emptyList();
+            }
+        }
+
+        return mCachedApplicableDensities.isEmpty() ? null : mCachedApplicableDensities;
+    }
+
+    /**
+     * Adds in the resConfig values specified by the given flavor container, assuming
+     * it's in one of the relevant variantFlavors, into the given set
+     */
+    private static void addResConfigsFromFlavor(@NonNull Set<String> relevantDensities,
+            @Nullable List<String> variantFlavors,
+            @NonNull ProductFlavorContainer container) {
+        ProductFlavor flavor = container.getProductFlavor();
+        if (variantFlavors == null || variantFlavors.contains(flavor.getName())) {
+            if (!flavor.getResourceConfigurations().isEmpty()) {
+                for (String densityName : flavor.getResourceConfigurations()) {
+                    Density density = Density.getEnum(densityName);
+                    if (density != null && density.isRecommended()
+                            && density != Density.NODPI) {
+                        relevantDensities.add(densityName);
+                    }
+                }
+            }
+        }
     }
 }

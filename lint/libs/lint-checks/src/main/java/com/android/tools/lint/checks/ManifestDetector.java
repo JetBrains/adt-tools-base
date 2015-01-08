@@ -363,8 +363,8 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
 
             "Launcher icons should be provided in the `mipmap` resource directory. " +
             "This is the same as the `drawable` resource directory, except resources in " +
-            "the `mipmap` directory will not get stripped out, for example when creating " +
-            "density-specific APKs.\n" +
+            "the `mipmap` directory will not get stripped out when creating density-specific " +
+            "APKs.\n" +
             "\n" +
             "In certain cases, the Launcher app may use a higher resolution asset (than " +
             "would normally be computed for the device) to display large app shortcuts. " +
@@ -853,7 +853,9 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
                 return;
             }
 
-            if (context.isEnabled(MIPMAP)) {
+            if (context.isEnabled(MIPMAP)
+                    // Only complain if this app is skipping some densities
+                    && context.getProject().getApplicableDensities() == null) {
                 context.report(MIPMAP, element, context.getLocation(attribute),
                         "Should use `@mipmap` instead of `@drawable` for launcher icons");
             }

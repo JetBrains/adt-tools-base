@@ -47,14 +47,8 @@ import static com.android.tools.lint.detector.api.LintUtils.endsWith;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.FilterData;
-import com.android.build.OutputFile;
-import com.android.builder.model.AndroidArtifact;
-import com.android.builder.model.AndroidArtifactOutput;
-import com.android.builder.model.AndroidProject;
 import com.android.builder.model.ProductFlavor;
 import com.android.builder.model.ProductFlavorContainer;
-import com.android.builder.model.Variant;
 import com.android.resources.Density;
 import com.android.resources.ResourceFolderType;
 import com.android.tools.lint.detector.api.Category;
@@ -1086,64 +1080,19 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
             mCachedDensitiesForProject = context.getProject();
             mCachedRequiredDensities = Lists.newArrayListWithExpectedSize(10);
 
-            // Use the gradle API to set up relevant densities. For example, if the
-            // build.gradle file contains this:
-            // android {
-            //     defaultConfig {
-            //         resConfigs "nodpi", "hdpi"
-            //     }
-            // }
-            // ...then we should only enforce hdpi densities, not all these others!
-            Project project = context.getProject();
-            if (project.isGradleProject() && project.getGradleProjectModel() != null &&
-                    project.getCurrentVariant() != null) {
-                Set<String> relevantDensities = Sets.newHashSet();
-                Variant variant = project.getCurrentVariant();
-                List<String> variantFlavors = variant.getProductFlavors();
-                AndroidProject gradleProjectModel = project.getGradleProjectModel();
-
-                addResConfigsFromFlavor(relevantDensities, null,
-                        project.getGradleProjectModel().getDefaultConfig());
-                for (ProductFlavorContainer container : gradleProjectModel.getProductFlavors()) {
-                    addResConfigsFromFlavor(relevantDensities, variantFlavors, container);
+            List<String> applicableDensities = context.getProject().getApplicableDensities();
+            if (applicableDensities != null) {
+                mCachedRequiredDensities.addAll(applicableDensities);
+            } else {
+                if (INCLUDE_LDPI) {
+                    mCachedRequiredDensities.add(DRAWABLE_LDPI);
                 }
-
-                // Are there any splits that specify densities?
-                if (relevantDensities.isEmpty()) {
-                    AndroidArtifact mainArtifact = variant.getMainArtifact();
-                    Collection<AndroidArtifactOutput> outputs = mainArtifact.getOutputs();
-                    for (AndroidArtifactOutput output : outputs) {
-                        for (OutputFile file : output.getOutputs()) {
-                            final String DENSITY_NAME = OutputFile.FilterType.DENSITY.name();
-                            if (file.getFilterTypes().contains(DENSITY_NAME)) {
-                                for (FilterData data : file.getFilters()) {
-                                    if (DENSITY_NAME.equals(data.getFilterType())) {
-                                        relevantDensities.add(data.getIdentifier());
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                if (!relevantDensities.isEmpty()) {
-                    for (String density : relevantDensities) {
-                        String folder = ResourceFolderType.DRAWABLE.getName() + '-' + density;
-                        mCachedRequiredDensities.add(folder);
-                    }
-                    Collections.sort(mCachedRequiredDensities);
-                    return mCachedRequiredDensities;
-                }
+                mCachedRequiredDensities.add(DRAWABLE_MDPI);
+                mCachedRequiredDensities.add(DRAWABLE_HDPI);
+                mCachedRequiredDensities.add(DRAWABLE_XHDPI);
+                mCachedRequiredDensities.add(DRAWABLE_XXHDPI);
+                mCachedRequiredDensities.add(DRAWABLE_XXXHDPI);
             }
-
-            if (INCLUDE_LDPI) {
-                mCachedRequiredDensities.add(DRAWABLE_LDPI);
-            }
-            mCachedRequiredDensities.add(DRAWABLE_MDPI);
-            mCachedRequiredDensities.add(DRAWABLE_HDPI);
-            mCachedRequiredDensities.add(DRAWABLE_XHDPI);
-            mCachedRequiredDensities.add(DRAWABLE_XXHDPI);
-            mCachedRequiredDensities.add(DRAWABLE_XXXHDPI);
         }
 
         return mCachedRequiredDensities;
