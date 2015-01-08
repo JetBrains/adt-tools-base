@@ -29,10 +29,13 @@ public class AaptOptions implements com.android.builder.model.AaptOptions {
     private List<String> noCompressList
 
     @Input
-    private boolean useNewCruncher = false;
+    private boolean useNewCruncher = false
 
     @Input
-    private boolean failOnMissingConfigEntry = false;
+    private boolean cruncherEnabled = true
+
+    @Input
+    private boolean failOnMissingConfigEntry = false
 
     public void setIgnoreAssetsPattern(String ignoreAssetsPattern) {
         this.ignoreAssetsPattern = ignoreAssetsPattern
@@ -65,28 +68,42 @@ public class AaptOptions implements com.android.builder.model.AaptOptions {
     }
 
     public void useNewCruncher(boolean value) {
-        useNewCruncher = value;
+        useNewCruncher = value
     }
 
     public void setUseNewCruncher(boolean value) {
-        useNewCruncher = value;
+        useNewCruncher = value
     }
 
+    /**
+     * Enables or disables PNG crunching.
+     * @param value true to enable, false to disable.
+     */
+    public void setCruncherEnabled(boolean value) {
+        cruncherEnabled = value
+    }
+
+    /**
+     * Returns true if the PNGs should be crunched, false otherwise.
+     */
+    public boolean getCruncherEnabled() {
+        return cruncherEnabled
+    }
     /**
      * Whether to use the new cruncher.
      *
      * <p>TODO: Document.
      */
     public boolean getUseNewCruncher() {
-        return useNewCruncher;
+        return useNewCruncher
     }
 
     public void failOnMissingConfigEntry(boolean value) {
-        failOnMissingConfigEntry = value;
+        failOnMissingConfigEntry = value
     }
 
     public void setFailOnMissingConfigEntry(boolean value) {
-        failOnMissingConfigEntry = value;
+        failOnMissingConfigEntry = value
     }
 
     /**
