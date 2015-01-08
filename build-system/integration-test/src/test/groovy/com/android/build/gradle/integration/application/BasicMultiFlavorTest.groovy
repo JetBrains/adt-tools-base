@@ -15,7 +15,6 @@
  */
 
 package com.android.build.gradle.integration.application
-
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.utils.ModelHelper
 import com.android.build.gradle.integration.common.utils.SourceProviderHelper
@@ -26,13 +25,13 @@ import com.android.builder.model.ProductFlavorContainer
 import com.android.builder.model.SourceProviderContainer
 import com.android.builder.model.Variant
 import org.junit.AfterClass
-import org.junit.Assert
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
 
 import static com.android.builder.core.VariantType.ANDROID_TEST
 import static com.android.builder.model.AndroidProject.ARTIFACT_ANDROID_TEST
+import static com.google.common.truth.Truth.assertThat
 
 /**
  * Assemble tests for basicMultiFlavors
@@ -63,7 +62,7 @@ class BasicMultiFlavorTest {
 
         // test the source provider for the flavor
         Collection<ProductFlavorContainer> productFlavors = model.getProductFlavors()
-        Assert.assertEquals("Product Flavor Count", 4, productFlavors.size())
+        assertThat(productFlavors).hasSize(4)
 
         for (ProductFlavorContainer pfContainer : productFlavors) {
             String name = pfContainer.getProductFlavor().getName()
@@ -74,10 +73,11 @@ class BasicMultiFlavorTest {
                     pfContainer.getSourceProvider())
                     .test()
 
-            Assert.assertEquals(1, pfContainer.getExtraSourceProviders().size())
+            // Unit tests and android tests.
+            assertThat(pfContainer.getExtraSourceProviders()).hasSize(2)
             SourceProviderContainer container = ModelHelper.getSourceProviderContainer(
                     pfContainer.getExtraSourceProviders(), ARTIFACT_ANDROID_TEST)
-            Assert.assertNotNull(container)
+            assertThat(container).isNotNull()
 
             new SourceProviderHelper(
                     model.getName(),
@@ -90,8 +90,8 @@ class BasicMultiFlavorTest {
         // test the source provider for the artifacts
         for (Variant variant : model.getVariants()) {
             AndroidArtifact artifact = variant.getMainArtifact()
-            Assert.assertNotNull(artifact.getVariantSourceProvider())
-            Assert.assertNotNull(artifact.getMultiFlavorSourceProvider())
+            assertThat(artifact.getVariantSourceProvider()).isNotNull()
+            assertThat(artifact.getMultiFlavorSourceProvider()).isNotNull()
         }
     }
 }
