@@ -39,6 +39,7 @@ import com.android.build.gradle.tasks.MergeResources;
 import com.android.build.gradle.tasks.NdkCompile;
 import com.android.build.gradle.tasks.ProcessAndroidResources;
 import com.android.build.gradle.tasks.RenderscriptCompile;
+import com.android.builder.core.VariantType;
 import com.android.builder.model.SourceProvider;
 import com.google.common.base.Objects;
 import com.google.common.collect.Lists;
@@ -205,6 +206,10 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
     @NonNull
     protected String getCapitalizedFlavorName() {
         return StringHelper.capitalize(variantConfiguration.getFlavorName());
+    }
+
+    public VariantType getType() {
+        return variantConfiguration.getType();
     }
 
     @VisibleForTesting

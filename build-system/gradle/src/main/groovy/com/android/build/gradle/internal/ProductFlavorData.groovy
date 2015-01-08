@@ -20,7 +20,7 @@ import com.android.annotations.NonNull
 import com.android.build.gradle.internal.api.DefaultAndroidSourceSet
 import com.android.builder.core.BuilderConstants
 import com.android.builder.core.DefaultProductFlavor
-import com.android.builder.core.VariantConfiguration
+import com.android.builder.core.VariantType
 import groovy.transform.CompileStatic
 import org.gradle.api.Project
 import org.gradle.api.Task
@@ -96,29 +96,29 @@ public class ProductFlavorData<T extends DefaultProductFlavor> {
         }
     }
 
-    DefaultAndroidSourceSet getTestSourceSet(@NonNull VariantConfiguration.Type type) {
+    DefaultAndroidSourceSet getTestSourceSet(@NonNull VariantType type) {
         switch (type) {
-            case VariantConfiguration.Type.ANDROID_TEST:
+            case VariantType.ANDROID_TEST:
                 return androidTestSourceSet;
-            case VariantConfiguration.Type.UNIT_TEST:
+            case VariantType.UNIT_TEST:
                 return unitTestSourceSet;
             default:
                 throw unknownTestType(type)
         }
     }
 
-    ConfigurationProvider getTestConfigurationProvider(@NonNull VariantConfiguration.Type type) {
+    ConfigurationProvider getTestConfigurationProvider(@NonNull VariantType type) {
         switch (type) {
-            case VariantConfiguration.Type.ANDROID_TEST:
+            case VariantType.ANDROID_TEST:
                 return androidTestProvider;
-            case VariantConfiguration.Type.UNIT_TEST:
+            case VariantType.UNIT_TEST:
                 return unitTestProvider;
             default:
                 throw unknownTestType(type)
         }
     }
 
-    private static Throwable unknownTestType(VariantConfiguration.Type type) {
+    private static Throwable unknownTestType(VariantType type) {
         throw new IllegalArgumentException(
                 String.format("Unknown test variant type %s", type));
     }

@@ -43,7 +43,7 @@ public class BuilderConstants {
 
     public static final String FD_ANDROID_TESTS = "androidTests";
     public static final String FD_ANDROID_RESULTS =
-            VariantConfiguration.Type.ANDROID_TEST.getPrefix() + "-results";
+            VariantType.ANDROID_TEST.getPrefix() + "-results";
 
     public static final String FD_FLAVORS = "flavors";
     public static final String FD_FLAVORS_ALL = "all";

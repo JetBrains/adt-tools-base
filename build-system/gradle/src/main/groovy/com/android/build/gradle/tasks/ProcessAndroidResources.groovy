@@ -19,7 +19,7 @@ import com.android.build.gradle.internal.dependency.SymbolFileProviderImpl
 import com.android.build.gradle.internal.dsl.AaptOptions
 import com.android.build.gradle.internal.tasks.IncrementalTask
 import com.android.builder.core.AaptPackageCommandBuilder
-import com.android.builder.core.VariantConfiguration
+import com.android.builder.core.VariantType
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.InputFile
@@ -78,7 +78,7 @@ public class ProcessAndroidResources extends IncrementalTask {
     boolean enforceUniquePackageName
 
     // this doesn't change from one build to another, so no need to annotate
-    VariantConfiguration.Type type
+    VariantType type
 
     @Input
     boolean debuggable

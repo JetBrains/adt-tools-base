@@ -22,7 +22,7 @@ import com.android.build.OutputFile;
 import com.android.build.gradle.BasePlugin;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.tasks.ExtractAnnotations;
-import com.android.builder.core.VariantConfiguration;
+import com.android.builder.core.VariantType;
 import com.google.common.collect.Maps;
 
 import org.gradle.api.Task;
@@ -37,7 +37,7 @@ import java.util.Map;
  */
 public class LibraryVariantData extends BaseVariantData<LibVariantOutputData> implements TestedVariantData {
 
-    private final Map<VariantConfiguration.Type, TestVariantData> testVariants;
+    private final Map<VariantType, TestVariantData> testVariants;
 
     @Nullable
     public ExtractAnnotations generateAnnotationsTask = null;
@@ -46,7 +46,7 @@ public class LibraryVariantData extends BaseVariantData<LibVariantOutputData> im
             @NonNull BasePlugin basePlugin,
             @NonNull GradleVariantConfiguration config) {
         super(basePlugin, config);
-        testVariants = Maps.newEnumMap(VariantConfiguration.Type.class);
+        testVariants = Maps.newEnumMap(VariantType.class);
 
         // create default output
         createOutput(OutputFile.OutputType.MAIN,
@@ -75,14 +75,14 @@ public class LibraryVariantData extends BaseVariantData<LibVariantOutputData> im
 
     @Nullable
     @Override
-    public TestVariantData getTestVariantData(@NonNull VariantConfiguration.Type type) {
+    public TestVariantData getTestVariantData(@NonNull VariantType type) {
         return testVariants.get(type);
     }
 
     @Override
     public void setTestVariantData(
             @NonNull TestVariantData testVariantData,
-            VariantConfiguration.Type type) {
+            VariantType type) {
         testVariants.put(type, testVariantData);
     }
 

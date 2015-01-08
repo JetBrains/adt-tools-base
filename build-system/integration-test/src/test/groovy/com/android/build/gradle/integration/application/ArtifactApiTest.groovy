@@ -17,7 +17,6 @@
 
 
 package com.android.build.gradle.integration.application
-
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.utils.ModelHelper
 import com.android.builder.model.AndroidProject
@@ -35,14 +34,17 @@ import org.junit.ClassRule
 import org.junit.Test
 
 import static com.android.builder.model.AndroidProject.ARTIFACT_ANDROID_TEST
+import static com.google.common.truth.Truth.assertThat
 import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertFalse
 import static org.junit.Assert.assertNotNull
-
 /**
  * Assemble tests for artifactApi.
  */
 class ArtifactApiTest {
+    // Unit test variants produce an extra Java artifact.
+    private static final DEFAULT_EXTRA_JAVA_ARTIFACTS = 1
+
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
             .fromTestProject("artifactApi")
@@ -65,7 +67,7 @@ class ArtifactApiTest {
         // check the Artifact Meta Data
         Collection<ArtifactMetaData> extraArtifacts = model.getExtraArtifacts()
         assertNotNull("Extra artifact collection null-check", extraArtifacts)
-        assertEquals("Extra artifact size check", 2, extraArtifacts.size())
+        assertThat(extraArtifacts).hasSize(DEFAULT_EXTRA_JAVA_ARTIFACTS + 2)
 
         assertNotNull("instrument test metadata null-check",
                 ModelHelper.getArtifactMetaData(extraArtifacts, ARTIFACT_ANDROID_TEST))
@@ -157,9 +159,8 @@ class ArtifactApiTest {
         for (Variant variant : model.getVariants()) {
             String name = variant.getName()
             Collection<JavaArtifact> javaArtifacts = variant.getExtraJavaArtifacts()
-            assertEquals(1, javaArtifacts.size())
-            JavaArtifact javaArtifact = javaArtifacts.iterator().next()
-            assertEquals("__test__", javaArtifact.getName())
+            assertThat(javaArtifacts).hasSize(DEFAULT_EXTRA_JAVA_ARTIFACTS + 1)
+            JavaArtifact javaArtifact = javaArtifacts.find {it.name == "__test__"}
             assertEquals("assemble:" + name, javaArtifact.getAssembleTaskName())
             assertEquals("compile:" + name, javaArtifact.getCompileTaskName())
             assertEquals(new File("classesFolder:" + name), javaArtifact.getClassesFolder())

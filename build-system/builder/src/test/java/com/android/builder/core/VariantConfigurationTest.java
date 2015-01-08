@@ -176,7 +176,7 @@ public class VariantConfigurationTest extends TestCase {
         VariantConfiguration variant = new VariantConfiguration(
                 mDefaultConfig, new MockSourceProvider("main"),
                 mBuildType, new MockSourceProvider("debug"),
-                VariantConfiguration.Type.DEFAULT,
+                VariantType.DEFAULT,
                 signingOverride);
 
         variant.addProductFlavor(mFlavorConfig, new MockSourceProvider("custom"), "");
@@ -188,7 +188,7 @@ public class VariantConfigurationTest extends TestCase {
         VariantConfiguration variant = new VariantConfiguration(
                 mDefaultConfig, new MockSourceProvider("main"),
                 mBuildType, new MockSourceProvider("debug"),
-                VariantConfiguration.Type.DEFAULT,
+                VariantType.DEFAULT,
                 null /*signingConfigOverride*/) {
             @Override
             public String getPackageFromManifest() {
@@ -204,7 +204,7 @@ public class VariantConfigurationTest extends TestCase {
         VariantConfiguration variant = new VariantConfiguration(
                 mDefaultConfig, new MockSourceProvider("main"),
                 mBuildType, new MockSourceProvider("debug"),
-                VariantConfiguration.Type.DEFAULT,
+                VariantType.DEFAULT,
                 null /*signingConfigOverride*/) {
             @Override
             public String getVersionNameFromManifest() {

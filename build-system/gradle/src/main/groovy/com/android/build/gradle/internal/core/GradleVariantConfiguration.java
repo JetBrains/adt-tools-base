@@ -22,6 +22,7 @@ import com.android.build.gradle.internal.dsl.BuildType;
 import com.android.build.gradle.internal.dsl.GroupableProductFlavor;
 import com.android.build.gradle.internal.dsl.ProductFlavor;
 import com.android.builder.core.VariantConfiguration;
+import com.android.builder.core.VariantType;
 import com.android.builder.model.SigningConfig;
 import com.android.builder.model.SourceProvider;
 
@@ -54,7 +55,7 @@ public class GradleVariantConfiguration extends VariantConfiguration<BuildType, 
             @NonNull SourceProvider defaultSourceProvider,
             @NonNull BuildType buildType,
             @Nullable SourceProvider buildTypeSourceProvider,
-            @NonNull Type type, @Nullable SigningConfig signingConfigOverride) {
+            @NonNull VariantType type, @Nullable SigningConfig signingConfigOverride) {
         super(defaultConfig, defaultSourceProvider, buildType, buildTypeSourceProvider, type,
                 signingConfigOverride);
         computeNdkConfig();
@@ -65,7 +66,7 @@ public class GradleVariantConfiguration extends VariantConfiguration<BuildType, 
             @NonNull SourceProvider defaultSourceProvider,
             @NonNull BuildType buildType,
             @Nullable SourceProvider buildTypeSourceProvider,
-            @NonNull Type type, @Nullable VariantConfiguration testedConfig,
+            @NonNull VariantType type, @Nullable VariantConfiguration testedConfig,
             @Nullable SigningConfig signingConfigOverride) {
         super(defaultConfig, defaultSourceProvider, buildType, buildTypeSourceProvider, type,
                 testedConfig, signingConfigOverride);
@@ -103,11 +104,11 @@ public class GradleVariantConfiguration extends VariantConfiguration<BuildType, 
      * Returns whether the configuration has minification enabled.
      */
     public boolean isMinifyEnabled() {
-        Type type = getType();
+        VariantType type = getType();
         // if type == test then getTestedConfig always returns non-null
         //noinspection ConstantConditions
         return getBuildType().isMinifyEnabled() &&
-                (!type.isForTesting() || (getTestedConfig().getType() != Type.LIBRARY));
+                (!type.isForTesting() || (getTestedConfig().getType() != VariantType.LIBRARY));
     }
 
     public boolean getUseJack() {

@@ -35,7 +35,7 @@ import com.android.build.gradle.tasks.ExtractAnnotations
 import com.android.build.gradle.tasks.MergeResources
 import com.android.builder.core.BuilderConstants
 import com.android.builder.core.DefaultBuildType
-import com.android.builder.core.VariantConfiguration
+import com.android.builder.core.VariantType
 import com.android.builder.dependency.LibraryBundle
 import com.android.builder.dependency.LibraryDependency
 import com.android.builder.dependency.ManifestDependency
@@ -114,8 +114,8 @@ public class LibraryVariantFactory implements VariantFactory {
 
     @NonNull
     @Override
-    public VariantConfiguration.Type getVariantConfigurationType() {
-        return VariantConfiguration.Type.LIBRARY
+    public VariantType getVariantConfigurationType() {
+        return VariantType.LIBRARY
     }
 
     @Override

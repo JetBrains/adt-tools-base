@@ -18,6 +18,7 @@ package com.android.build.gradle.internal.variant;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.core.VariantConfiguration;
+import com.android.builder.core.VariantType;
 
 /**
  * A tested variant
@@ -26,10 +27,10 @@ public interface TestedVariantData {
 
     void setTestVariantData(
             @NonNull TestVariantData testVariantData,
-            @NonNull VariantConfiguration.Type type);
+            @NonNull VariantType type);
 
     @Nullable
-    TestVariantData getTestVariantData(VariantConfiguration.Type type);
+    TestVariantData getTestVariantData(VariantType type);
 
     @NonNull
     VariantConfiguration getVariantConfiguration();

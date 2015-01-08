@@ -15,7 +15,6 @@
  */
 
 package com.android.build.gradle.internal.model
-
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
 import com.android.build.OutputFile
@@ -31,6 +30,7 @@ import com.android.build.gradle.internal.variant.TestVariantData
 import com.android.build.gradle.internal.variant.TestedVariantData
 import com.android.builder.core.DefaultProductFlavor
 import com.android.builder.core.VariantConfiguration
+import com.android.builder.core.VariantType
 import com.android.builder.model.AaptOptions
 import com.android.builder.model.AndroidArtifact
 import com.android.builder.model.AndroidArtifactOutput
@@ -56,9 +56,7 @@ import org.gradle.tooling.provider.model.ToolingModelBuilder
 import java.util.jar.Attributes
 import java.util.jar.Manifest
 
-import static com.android.builder.model.AndroidProject.ARTIFACT_ANDROID_TEST
 import static com.android.builder.model.AndroidProject.ARTIFACT_MAIN
-
 /**
  * Builder for the custom Android model.
  */
@@ -66,8 +64,8 @@ import static com.android.builder.model.AndroidProject.ARTIFACT_MAIN
 public class ModelBuilder implements ToolingModelBuilder {
     @Override
     public boolean canBuild(String modelName) {
-        // The default name for a model is the name of the Java interface
-        modelName == AndroidProject.name
+        // The default name for a model is the name of the Java interface.
+        return modelName == AndroidProject.name
     }
 
     @Override
@@ -85,19 +83,17 @@ public class ModelBuilder implements ToolingModelBuilder {
         signingConfigs =
                 basePlugin.extension.signingConfigs as NamedDomainObjectContainer<SigningConfig>
 
-        // get the boot classpath. This will ensure the target is configured.
+        // Get the boot classpath. This will ensure the target is configured.
         List<String> bootClasspath = basePlugin.bootClasspathAsStrings
 
         List<File> frameworkSource = Collections.emptyList();
 
-        // list of extra artifacts
-        List<ArtifactMetaData> artifactMetaDataList = Lists.newArrayList(basePlugin.extraArtifacts)
-        // plus the instrumentation test one.
-        artifactMetaDataList.add(
-                new ArtifactMetaDataImpl(
-                        ARTIFACT_ANDROID_TEST,
-                        true /*isTest*/,
-                        ArtifactMetaData.TYPE_ANDROID));
+        // List of extra artifacts, with all test variants added.
+        List<ArtifactMetaData> artifactMetaDataList = basePlugin.extraArtifacts.collect()
+
+        VariantType.testingTypes
+                .collect { new ArtifactMetaDataImpl(it.artifactName, true, it.artifactType) }
+                .each artifactMetaDataList.&add
 
         LintOptions lintOptions = com.android.build.gradle.internal.dsl.LintOptions.create(basePlugin.extension.lintOptions)
 
@@ -137,7 +133,7 @@ public class ModelBuilder implements ToolingModelBuilder {
         Set<Project> gradleProjects = project.getRootProject().getAllprojects();
 
         for (BaseVariantData variantData : basePlugin.variantDataList) {
-            if (!(variantData instanceof TestVariantData)) {
+            if (!variantData.type.isForTesting()) {
                 androidProject.addVariant(createVariant(variantData, basePlugin, gradleProjects))
             }
         }
@@ -170,31 +166,43 @@ public class ModelBuilder implements ToolingModelBuilder {
     private static VariantImpl createVariant(@NonNull BaseVariantData variantData,
                                              @NonNull BasePlugin basePlugin,
                                              @NonNull Set<Project> gradleProjects) {
-        TestVariantData testVariantData = null
-        if (variantData instanceof TestedVariantData) {
-            testVariantData = variantData.getTestVariantData(VariantConfiguration.Type.ANDROID_TEST)
-        }
-
-        AndroidArtifact mainArtifact = createArtifactInfo(
+        AndroidArtifact mainArtifact = createAndroidArtifact(
                 ARTIFACT_MAIN, variantData, basePlugin, gradleProjects)
 
         String variantName = variantData.variantConfiguration.fullName
 
-        // extra Android Artifacts
-        AndroidArtifact testArtifact = testVariantData != null ?
-                createArtifactInfo(ARTIFACT_ANDROID_TEST, testVariantData, basePlugin, gradleProjects) : null
-
         List<AndroidArtifact> extraAndroidArtifacts = Lists.newArrayList(
                 basePlugin.getExtraAndroidArtifacts(variantName))
-        if (testArtifact != null) {
-            extraAndroidArtifacts.add(testArtifact)
-        }
+        // Make sure all extra artifacts are serializable.
+        List<JavaArtifact> extraJavaArtifacts =
+                basePlugin.getExtraJavaArtifacts(variantName).collect(JavaArtifactImpl.&clone)
 
-        // clone the Java Artifacts
-        Collection<JavaArtifact> javaArtifacts = basePlugin.getExtraJavaArtifacts(variantName)
-        List<JavaArtifact> clonedJavaArtifacts = Lists.newArrayListWithCapacity(javaArtifacts.size())
-        for (JavaArtifact javaArtifact : javaArtifacts) {
-            clonedJavaArtifacts.add(JavaArtifactImpl.clone(javaArtifact))
+        if (variantData instanceof TestedVariantData) {
+            for (variantType in VariantType.testingTypes) {
+                TestVariantData testVariantData = variantData.getTestVariantData(variantType)
+                switch (testVariantData?.type) {
+                    case VariantType.ANDROID_TEST:
+                        extraAndroidArtifacts.add(createAndroidArtifact(
+                                variantType.artifactName,
+                                testVariantData,
+                                basePlugin,
+                                gradleProjects))
+                        break
+                    case VariantType.UNIT_TEST:
+                        extraJavaArtifacts.add(createJavaArtifact(
+                                variantType,
+                                testVariantData,
+                                basePlugin,
+                                gradleProjects))
+                        break
+                    case null:
+                        // No test variant with the given type for the current variant.
+                        break
+                    default:
+                        throw new IllegalArgumentException(
+                                "Unsupported test variant type ${variantType}.")
+                }
+            }
         }
 
         // if the target is a codename, override the model value.
@@ -216,12 +224,29 @@ public class ModelBuilder implements ToolingModelBuilder {
                         sdkVersionOverride),
                 mainArtifact,
                 extraAndroidArtifacts,
-                clonedJavaArtifacts)
+                extraJavaArtifacts)
 
         return variant
     }
 
-    private static AndroidArtifact createArtifactInfo(
+    private static JavaArtifactImpl createJavaArtifact(
+            @NonNull VariantType variantType,
+            @NonNull BaseVariantData variantData,
+            @NonNull BasePlugin basePlugin,
+            @NonNull Set<Project> gradleProjects) {
+        def sourceProviders = determineSourceProviders(variantType.artifactName, variantData, basePlugin)
+
+        return new JavaArtifactImpl(
+                variantType.artifactName,
+                variantData.assembleVariantTask.name,
+                variantData.compileTask.name,
+                variantData.javaCompileTask.destinationDir,
+                DependenciesImpl.cloneDependencies(variantData, basePlugin, gradleProjects),
+                sourceProviders.variantSourceProvider,
+                sourceProviders.multiFlavorSourceProvider)
+    }
+
+    private static AndroidArtifact createAndroidArtifact(
             @NonNull String name,
             @NonNull BaseVariantData variantData,
             @NonNull BasePlugin basePlugin,
@@ -234,23 +259,7 @@ public class ModelBuilder implements ToolingModelBuilder {
             signingConfigName = signingConfig.name
         }
 
-        SourceProvider variantSourceProvider = null;
-        SourceProvider multiFlavorSourceProvider = null;
-
-        if (ARTIFACT_MAIN.equals(name)) {
-            variantSourceProvider = variantData.variantConfiguration.variantSourceProvider
-            multiFlavorSourceProvider = variantData.variantConfiguration.multiFlavorSourceProvider
-        } else {
-            SourceProviderContainer container = getSourceProviderContainer(
-                    basePlugin.getExtraVariantSourceProviders(variantData.getVariantConfiguration().getFullName()),
-                    name)
-            if (container != null) {
-                variantSourceProvider = container.sourceProvider
-            }
-        }
-
-        variantSourceProvider = variantSourceProvider != null ? SourceProviderImpl.cloneProvider(variantSourceProvider) : null
-        multiFlavorSourceProvider = multiFlavorSourceProvider != null ? SourceProviderImpl.cloneProvider(multiFlavorSourceProvider) : null
+        def sourceProviders = determineSourceProviders(name, variantData, basePlugin)
 
         // get the outputs
         List<? extends BaseVariantOutputData> variantOutputs = variantData.outputs
@@ -304,11 +313,40 @@ public class ModelBuilder implements ToolingModelBuilder {
                 getGeneratedResourceFolders(variantData),
                 compileTask.destinationDir,
                 DependenciesImpl.cloneDependencies(variantData, basePlugin, gradleProjects),
-                variantSourceProvider,
-                multiFlavorSourceProvider,
+                sourceProviders.variantSourceProvider,
+                sourceProviders.multiFlavorSourceProvider,
                 variantConfiguration.supportedAbis,
                 variantConfiguration.getMergedBuildConfigFields(),
                 variantConfiguration.getMergedResValues())
+    }
+
+    private static SourceProviders determineSourceProviders(
+            @NonNull String name,
+            @NonNull BaseVariantData variantData,
+            @NonNull BasePlugin basePlugin) {
+        SourceProvider variantSourceProvider = null
+        SourceProvider multiFlavorSourceProvider = null
+
+        if (ARTIFACT_MAIN.equals(name)) {
+            variantSourceProvider = variantData.variantConfiguration.variantSourceProvider
+            multiFlavorSourceProvider = variantData.variantConfiguration.multiFlavorSourceProvider
+        } else {
+            SourceProviderContainer container = getSourceProviderContainer(
+                    basePlugin.getExtraVariantSourceProviders(
+                            variantData.getVariantConfiguration().getFullName()),
+                    name)
+            if (container != null) {
+                variantSourceProvider = container.sourceProvider
+            }
+        }
+
+        return new SourceProviders(
+                variantSourceProvider: variantSourceProvider != null ?
+                        SourceProviderImpl.cloneProvider(variantSourceProvider) :
+                        null,
+                multiFlavorSourceProvider: multiFlavorSourceProvider != null ?
+                        SourceProviderImpl.cloneProvider(multiFlavorSourceProvider) :
+                        null)
     }
 
     @NonNull
@@ -383,5 +421,10 @@ public class ModelBuilder implements ToolingModelBuilder {
         }
 
         return null;
+    }
+
+    private static class SourceProviders {
+        SourceProviderImpl variantSourceProvider
+        SourceProviderImpl multiFlavorSourceProvider
     }
 }

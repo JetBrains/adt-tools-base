@@ -114,6 +114,7 @@ import com.android.build.gradle.tasks.ZipAlign
 import com.android.builder.core.AndroidBuilder
 import com.android.builder.core.DefaultBuildType
 import com.android.builder.core.VariantConfiguration
+import com.android.builder.core.VariantType
 import com.android.builder.dependency.DependencyContainer
 import com.android.builder.dependency.JarDependency
 import com.android.builder.dependency.LibraryDependency
@@ -199,9 +200,9 @@ import static com.android.builder.core.BuilderConstants.FD_FLAVORS
 import static com.android.builder.core.BuilderConstants.FD_FLAVORS_ALL
 import static com.android.builder.core.BuilderConstants.FD_REPORTS
 import static com.android.builder.core.BuilderConstants.RELEASE
-import static com.android.builder.core.VariantConfiguration.Type.ANDROID_TEST
-import static com.android.builder.core.VariantConfiguration.Type.DEFAULT
-import static com.android.builder.core.VariantConfiguration.Type.UNIT_TEST
+import static com.android.builder.core.VariantType.ANDROID_TEST
+import static com.android.builder.core.VariantType.DEFAULT
+import static com.android.builder.core.VariantType.UNIT_TEST
 import static com.android.builder.model.AndroidProject.FD_GENERATED
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
 import static com.android.builder.model.AndroidProject.FD_OUTPUTS
@@ -1580,6 +1581,8 @@ public abstract class BasePlugin {
         BaseVariantData testedVariantData = variantData.getTestedVariantData() as BaseVariantData
         createCompileAnchorTask(variantData)
         createCompileTask(variantData, testedVariantData)
+        variantData.assembleVariantTask = createAssembleTask(variantData)
+        variantData.assembleVariantTask.dependsOn variantData.compileTask
     }
 
     /**
@@ -1613,7 +1616,7 @@ public abstract class BasePlugin {
         // Add a task to merge the assets folders
         createMergeAssetsTask(variantData, null /*default location*/, true /*includeDependencies*/)
 
-        if (testedVariantData.variantConfiguration.type == VariantConfiguration.Type.LIBRARY) {
+        if (testedVariantData.variantConfiguration.type == VariantType.LIBRARY) {
             // in this case the tested library must be fully built before test can be built!
             if (testedVariantOutputData.assembleTask != null) {
                 variantOutputData.manifestProcessorTask.dependsOn testedVariantOutputData.assembleTask
@@ -1759,7 +1762,7 @@ public abstract class BasePlugin {
 
             fixTestTaskSources(runTestsTask)
 
-            runTestsTask.dependsOn variantData.javaCompileTask
+            runTestsTask.dependsOn variantData.assembleVariantTask
             JavaCompile testCompileTask = variantData.javaCompileTask
             runTestsTask.testClassesDir = testCompileTask.destinationDir
 
