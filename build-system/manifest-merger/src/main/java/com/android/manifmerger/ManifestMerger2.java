@@ -782,7 +782,7 @@ public class ManifestMerger2 {
      * </ol>
      *
      */
-    public static final class Invoker<T extends Invoker<T>>{
+    public static class Invoker<T extends Invoker<T>>{
 
         protected final File mMainManifestFile;
 
