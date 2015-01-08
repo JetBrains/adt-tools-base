@@ -476,26 +476,25 @@ public class XmlDocument {
                         USES_PERMISSION, permission("WRITE_EXTERNAL_STORAGE")).isPresent();
 
         if (libraryTargetSdk < 4) {
-            Optional<Element> permission = addIfAbsent(mergingReport.getActionRecorder(),
+            addIfAbsent(mergingReport.getActionRecorder(),
                     USES_PERMISSION,
                     permission("WRITE_EXTERNAL_STORAGE"),
                     lowerPriorityDocument.getPackageName() + " has a targetSdkVersion < 4",
                     Pair.of("maxSdkVersion", "18") // permission became implied at 19.
             );
-            hasWriteToExternalStoragePermission = permission.isPresent();
+            hasWriteToExternalStoragePermission = true;
 
             addIfAbsent(mergingReport.getActionRecorder(),
                     USES_PERMISSION,
                     permission("READ_PHONE_STATE"),
                     lowerPriorityDocument.getPackageName() + " has a targetSdkVersion < 4");
         }
+
         // If the application has requested WRITE_EXTERNAL_STORAGE, we will
         // force them to always take READ_EXTERNAL_STORAGE as well.  We always
         // do this (regardless of target API version) because we can't have
         // an app with write permission but not read permission.
-        if (hasWriteToExternalStoragePermission
-                && !lowerPriorityDocument.getByTypeAndKey(
-                            USES_PERMISSION, permission("READ_EXTERNAL_STORAGE")).isPresent()) {
+        if (hasWriteToExternalStoragePermission) {
 
             addIfAbsent(mergingReport.getActionRecorder(),
                     USES_PERMISSION,
@@ -507,7 +506,7 @@ public class XmlDocument {
         }
 
         // Pre-JellyBean call log permission compatibility.
-        if (libraryTargetSdk < 16) {
+        if (thisTargetSdk >= 16 && libraryTargetSdk < 16) {
             if (lowerPriorityDocument.getByTypeAndKey(
                     USES_PERMISSION, permission("READ_CONTACTS")).isPresent()) {
                 addIfAbsent(mergingReport.getActionRecorder(),
