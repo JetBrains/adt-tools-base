@@ -280,7 +280,7 @@ public class ModelBuilder implements ToolingModelBuilder {
                     variantOutputData.getMainOutputFile().getType().name(),
                     variantOutputData.outputFile));
 
-            for (ApkOutputFile splitApk : variantOutputData.outputs) {
+            for (ApkOutputFile splitApk : variantOutputData.getOutputs()) {
                 if (splitApk.getType() == OutputFile.OutputType.SPLIT) {
                     outputFiles.add(new OutputFileImpl(
                             splitApk.getFilters(), OutputFile.SPLIT, splitApk.getOutputFile()));
