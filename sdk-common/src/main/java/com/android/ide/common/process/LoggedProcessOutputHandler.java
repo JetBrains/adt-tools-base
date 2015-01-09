@@ -35,8 +35,14 @@ public class LoggedProcessOutputHandler extends BaseProcessOutputHandler {
     public void handleOutput(@NonNull ProcessOutput processOutput) throws ProcessException {
         if (processOutput instanceof BaseProcessOutput) {
             BaseProcessOutput impl = (BaseProcessOutput) processOutput;
-            mLogger.info(impl.getStandardOutputAsString());
-            mLogger.error(null, impl.getErrorOutputAsString());
+            String stdout = impl.getStandardOutputAsString();
+            if (!stdout.isEmpty()) {
+                mLogger.info(stdout);
+            }
+            String stderr = impl.getErrorOutputAsString();
+            if (!stderr.isEmpty()) {
+                mLogger.error(null, stderr);
+            }
         } else {
             throw new IllegalArgumentException("processOutput was not created by this handler.");
         }
