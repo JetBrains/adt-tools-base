@@ -261,7 +261,7 @@ public class ApiDetector extends ResourceXmlDetector
             "Attribute unused on older versions",
 
             "This check finds attributes set in XML files that were introduced in a version " +
-            "newer than the oldest version targeted by your application (with the the " +
+            "newer than the oldest version targeted by your application (with the " +
             "`minSdkVersion` attribute).\n" +
             "\n" +
             "This is not an error; the application will simply ignore the attribute. However, " +
