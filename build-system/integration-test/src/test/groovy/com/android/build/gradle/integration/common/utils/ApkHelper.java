@@ -84,7 +84,7 @@ public class ApkHelper {
     /**
      * Returns true if the provided class is present in the file.
      * @param apkFile the apk file
-     * @param expectedClassName the class name
+     * @param expectedClassName the class name in the format Lpkg1/pk2/Name;
      */
     public static boolean checkForClass(
             @NonNull File apkFile,

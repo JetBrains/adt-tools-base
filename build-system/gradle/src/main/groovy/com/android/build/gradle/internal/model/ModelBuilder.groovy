@@ -393,9 +393,21 @@ public class ModelBuilder implements ToolingModelBuilder {
             return Collections.emptyList()
         }
 
-        return Lists.asList(
-                variantData.renderscriptCompileTask.resOutputDir,
-                variantData.generateResValuesTask.resOutputDir)
+        List<File> result
+
+        List<File> extraFolders = variantData.extraGeneratedResFolders
+        if (extraFolders != null && !extraFolders.isEmpty()) {
+            result = Lists.newArrayListWithCapacity(extraFolders.size() + 2)
+
+            result.addAll(extraFolders)
+        } else {
+            result = Lists.newArrayListWithCapacity(2)
+        }
+
+        result.add(variantData.renderscriptCompileTask.resOutputDir)
+        result.add(variantData.generateResValuesTask.resOutputDir)
+
+        return result
     }
 
     @NonNull

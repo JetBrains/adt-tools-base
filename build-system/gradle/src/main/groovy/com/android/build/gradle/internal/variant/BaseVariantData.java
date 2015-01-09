@@ -115,6 +115,7 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
     private Object[] javaSources;
 
     private List<File> extraGeneratedSourceFolders;
+    private List<File> extraGeneratedResFolders;
 
     private final List<T> outputs = Lists.newArrayListWithExpectedSize(4);
 
@@ -223,6 +224,11 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
         return extraGeneratedSourceFolders;
     }
 
+    @Nullable
+    public List<File> getExtraGeneratedResFolders() {
+        return extraGeneratedResFolders;
+    }
+
     public void addJavaSourceFoldersToModel(@NonNull File... generatedSourceFolders) {
         if (extraGeneratedSourceFolders == null) {
             extraGeneratedSourceFolders = Lists.newArrayList();
@@ -257,6 +263,30 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
         }
 
         addJavaSourceFoldersToModel(generatedSourceFolders);
+    }
+
+   public void registerResGeneratingTask(@NonNull Task task, @NonNull File... generatedResFolders) {
+        // no need add the folders anywhere, the convention mapping closure for the MergeResources
+        // action will pick them up from here
+        resourceGenTask.dependsOn(task);
+
+        if (extraGeneratedResFolders == null) {
+            extraGeneratedResFolders = Lists.newArrayList();
+        }
+
+        Collections.addAll(extraGeneratedResFolders, generatedResFolders);
+    }
+
+    public void registerResGeneratingTask(@NonNull Task task, @NonNull Collection<File> generatedResFolders) {
+        // no need add the folders anywhere, the convention mapping closure for the MergeResources
+        // action will pick them up from here
+        resourceGenTask.dependsOn(task);
+
+        if (extraGeneratedResFolders == null) {
+            extraGeneratedResFolders = Lists.newArrayList();
+        }
+
+        extraGeneratedResFolders.addAll(generatedResFolders);
     }
 
     /**
