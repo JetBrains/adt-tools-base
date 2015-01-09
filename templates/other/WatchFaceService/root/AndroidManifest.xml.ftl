@@ -16,8 +16,6 @@
 <#elseif style == "digital">
             android:label="@string/my_digital_name"
 </#if>
-            android:allowEmbedded="true"
-            android:taskAffinity=""
             android:permission="android.permission.BIND_WALLPAPER" >
             <meta-data
                     android:name="android.service.wallpaper"
