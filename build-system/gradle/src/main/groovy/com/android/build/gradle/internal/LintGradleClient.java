@@ -44,25 +44,23 @@ import java.util.Map;
 public class LintGradleClient extends LintCliClient {
     private final AndroidProject mModelProject;
     private final String mVariantName;
-    private final BasePlugin mPlugin;
+    private final org.gradle.api.Project mGradleProject;
     private List<File> mCustomRules = Lists.newArrayList();
+    private File mSdkHome;
 
     public LintGradleClient(
             @NonNull IssueRegistry registry,
             @NonNull LintCliFlags flags,
-            @NonNull BasePlugin plugin,
+            @NonNull org.gradle.api.Project gradleProject,
             @NonNull AndroidProject modelProject,
+            @Nullable File sdkHome,
             @Nullable String variantName) {
         super(flags);
-        mPlugin = plugin;
+        mGradleProject = gradleProject;
         mModelProject = modelProject;
         mVariantName = variantName;
+        mSdkHome = sdkHome;
         mRegistry = registry;
-    }
-
-    @NonNull
-    public BasePlugin getPlugin() {
-        return mPlugin;
     }
 
     public void setCustomRules(List<File> customRules) {
@@ -85,9 +83,8 @@ public class LintGradleClient extends LintCliClient {
 
     @Override
     public File getSdkHome() {
-        File sdkHome = mPlugin.getSdkFolder();
-        if (sdkHome != null) {
-            return sdkHome;
+        if (mSdkHome != null) {
+            return mSdkHome;
         }
         return super.getSdkHome();
     }
@@ -95,7 +92,7 @@ public class LintGradleClient extends LintCliClient {
     @Override
     @Nullable
     public File getCacheDir(boolean create) {
-        File dir = new File(mPlugin.getProject().getRootProject().getBuildDir(),
+        File dir = new File(mGradleProject.getRootProject().getBuildDir(),
                 FD_INTERMEDIATES + separator + "lint-cache"); //$NON-NLS-1$
         if (dir.exists() || create && dir.mkdirs()) {
             return dir;
@@ -107,7 +104,7 @@ public class LintGradleClient extends LintCliClient {
     @Override
     @NonNull
     protected LintRequest createLintRequest(@NonNull List<File> files) {
-        return new LintGradleRequest(this, mModelProject, mPlugin, mVariantName, files);
+        return new LintGradleRequest(this, mModelProject, mGradleProject, mVariantName, files);
     }
 
     /** Run lint with the given registry and return the resulting warnings */

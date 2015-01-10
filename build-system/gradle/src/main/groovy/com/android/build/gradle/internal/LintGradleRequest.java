@@ -16,20 +16,20 @@ import java.util.List;
 
 class LintGradleRequest extends LintRequest {
     @NonNull private final LintGradleClient mLintClient;
-    @NonNull private final BasePlugin mPlugin;
+    @NonNull private final org.gradle.api.Project mGradleProject;
     @Nullable private final String mVariantName;
     @NonNull private final AndroidProject mModelProject;
 
     public LintGradleRequest(
             @NonNull LintGradleClient client,
             @NonNull AndroidProject modelProject,
-            @NonNull BasePlugin plugin,
+            @NonNull org.gradle.api.Project gradleProject,
             @Nullable String variantName,
             @NonNull List<File> files) {
         super(client, files);
         mLintClient = client;
         mModelProject = modelProject;
-        mPlugin = plugin;
+        mGradleProject = gradleProject;
         mVariantName = variantName;
     }
 
@@ -43,7 +43,7 @@ class LintGradleRequest extends LintRequest {
                 return mProjects;
             }
             Pair<LintGradleProject,List<File>> result = LintGradleProject.create(
-                    mLintClient, mModelProject, variant, mPlugin.getProject());
+                    mLintClient, mModelProject, variant, mGradleProject);
             mProjects = Collections.<Project>singletonList(result.getFirst());
             mLintClient.setCustomRules(result.getSecond());
         }
