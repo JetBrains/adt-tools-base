@@ -44,6 +44,10 @@ class LoggerWrapper implements ILogger {
             return
         }
 
+        if (!logger.isEnabled(LogLevel.ERROR)) {
+            return
+        }
+
         if (objects != null && objects.length > 0) {
             s = String.format(s, objects)
         }
@@ -58,6 +62,9 @@ class LoggerWrapper implements ILogger {
 
     @Override
     void warning(String s, Object... objects) {
+        if (!logger.isEnabled(LogLevel.WARN)) {
+            return
+        }
         if (objects == null || objects.length == 0) {
             logger.log(LogLevel.WARN, s)
         } else {
@@ -67,6 +74,9 @@ class LoggerWrapper implements ILogger {
 
     @Override
     void info(String s, Object... objects) {
+        if (!logger.isEnabled(LogLevel.INFO)) {
+            return
+        }
         if (objects == null || objects.length == 0) {
             logger.log(LogLevel.INFO, s)
         } else {
@@ -76,6 +86,9 @@ class LoggerWrapper implements ILogger {
 
     @Override
     void verbose(String s, Object... objects) {
+        if (!logger.isEnabled(LogLevel.DEBUG)) {
+            return
+        }
         if (objects == null || objects.length == 0) {
             logger.log(LogLevel.DEBUG, s)
 
