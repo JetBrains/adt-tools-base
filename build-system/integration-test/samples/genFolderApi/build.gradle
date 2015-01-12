@@ -41,6 +41,19 @@ public class GenerateCode extends DefaultTask {
     }
 }
 
+public class GenerateRes extends DefaultTask {
+    @Input
+    String value
+
+    @OutputFile
+    File outputFile
+
+    @TaskAction
+    void taskAction() {
+        getOutputFile().text = "<xml>${getValue()}</xml>\n"
+    }
+}
+
 
 android.applicationVariants.all { variant ->
 
@@ -52,4 +65,13 @@ android.applicationVariants.all { variant ->
     }
 
     variant.registerJavaGeneratingTask(javaGenerationTask, sourceFolder)
+
+    // create a task that generates an XML file class
+    File resFolder = file("${buildDir}/customRes/${variant.dirName}")
+    def resGenerationTask = tasks.create(name: "generatedResFor${variant.name.capitalize()}", type: GenerateRes) {
+        value new Date().format("yyyy-MM-dd'T'HH:mm'Z'", TimeZone.getTimeZone("UTC"))
+        outputFile file("${resFolder.absolutePath}/xml/generated.xml")
+    }
+
+    variant.registerResGeneratingTask(resGenerationTask, resFolder)
 }

@@ -251,6 +251,32 @@ public interface BaseVariant {
     void registerJavaGeneratingTask(@NonNull Task task, @NonNull Collection<File> sourceFolders);
 
     /**
+     * Adds to the variant a task that generates Resources.
+     *
+     * This will make the generate[Variant]Resources task depend on this task and add the
+     * new Resource folders as Resource merge inputs.
+     *
+     * The Resource folders are also added to the model.
+     *
+     * @param task the task
+     * @param resFolders the folders where the generated resources are.
+     */
+    void registerResGeneratingTask(@NonNull Task task, @NonNull File... resFolders);
+
+    /**
+     * Adds to the variant a task that generates Resources.
+     *
+     * This will make the generate[Variant]Resources task depend on this task and add the
+     * new Resource folders as Resource merge inputs.
+     *
+     * The Resource folders are also added to the model.
+     *
+     * @param task the task
+     * @param resFolders the folders where the generated resources are.
+     */
+    void registerResGeneratingTask(@NonNull Task task, @NonNull Collection<File> resFolders);
+
+    /**
      * Adds a variant-specific BuildConfig field.
      * @param type the type of the field
      * @param name the name of the field
