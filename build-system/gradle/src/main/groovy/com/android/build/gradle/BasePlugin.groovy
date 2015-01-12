@@ -47,6 +47,8 @@ import com.android.build.gradle.internal.model.MavenCoordinatesImpl
 import com.android.build.gradle.internal.model.ModelBuilder
 import com.android.build.gradle.internal.model.SyncIssueImpl
 import com.android.build.gradle.internal.model.SyncIssueKey
+import com.android.build.gradle.internal.process.GradleJavaProcessExecutor
+import com.android.build.gradle.internal.process.GradleProcessExecutor
 import com.android.build.gradle.internal.tasks.PrepareDependenciesTask
 import com.android.build.gradle.internal.tasks.PrepareLibraryTask
 import com.android.build.gradle.internal.variant.BaseVariantData
@@ -72,6 +74,7 @@ import com.android.builder.model.SyncIssue
 import com.android.builder.sdk.SdkInfo
 import com.android.builder.sdk.TargetInfo
 import com.android.ide.common.internal.ExecutorSingleton
+import com.android.ide.common.process.LoggedProcessOutputHandler
 import com.android.utils.ILogger
 import com.google.common.collect.ArrayListMultimap
 import com.google.common.collect.ListMultimap
@@ -224,7 +227,12 @@ public abstract class BasePlugin {
         sdkHandler = new SdkHandler(project, logger)
         androidBuilder = new AndroidBuilder(
                 project == project.rootProject ? project.name : project.path,
-                creator, logger, verbose)
+                creator,
+                new GradleProcessExecutor(project),
+                new GradleJavaProcessExecutor(project),
+                new LoggedProcessOutputHandler(getLogger()),
+                logger,
+                verbose)
 
         taskManager = new TaskManager(this, project, project.tasks, androidBuilder)
 

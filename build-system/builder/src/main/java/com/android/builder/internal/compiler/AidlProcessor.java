@@ -20,15 +20,16 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.compiling.DependencyFileProcessor;
 import com.android.builder.internal.incremental.DependencyData;
-import com.android.ide.common.internal.CommandLineRunner;
-import com.android.ide.common.internal.LoggedErrorException;
+import com.android.ide.common.process.ProcessException;
+import com.android.ide.common.process.ProcessExecutor;
+import com.android.ide.common.process.ProcessInfoBuilder;
+import com.android.ide.common.process.ProcessOutputHandler;
+import com.android.ide.common.process.ProcessResult;
 import com.android.sdklib.io.FileOp;
-import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -49,46 +50,53 @@ public class AidlProcessor implements SourceSearcher.SourceFileProcessor {
     @NonNull
     private final DependencyFileProcessor mDependencyFileProcessor;
     @NonNull
-    private final CommandLineRunner mRunner;
+    private final ProcessExecutor mProcessExecutor;
+    @NonNull
+    private  final ProcessOutputHandler mProcessOutputHandler;
 
-    public AidlProcessor(@NonNull String aidlExecutable,
-                         @NonNull String frameworkLocation,
-                         @NonNull List<File> importFolders,
-                         @NonNull File sourceOutputDir,
-                         @Nullable File parcelableOutputDir,
-                         @NonNull DependencyFileProcessor dependencyFileProcessor,
-                         @NonNull CommandLineRunner runner) {
+    public AidlProcessor(
+            @NonNull String aidlExecutable,
+            @NonNull String frameworkLocation,
+            @NonNull List<File> importFolders,
+            @NonNull File sourceOutputDir,
+            @Nullable File parcelableOutputDir,
+            @NonNull DependencyFileProcessor dependencyFileProcessor,
+            @NonNull ProcessExecutor processExecutor,
+            @NonNull ProcessOutputHandler processOutputHandler) {
         mAidlExecutable = aidlExecutable;
         mFrameworkLocation = frameworkLocation;
         mImportFolders = importFolders;
         mSourceOutputDir = sourceOutputDir;
         mParcelableOutputDir = parcelableOutputDir;
         mDependencyFileProcessor = dependencyFileProcessor;
-        mRunner = runner;
+        mProcessExecutor = processExecutor;
+        mProcessOutputHandler = processOutputHandler;
     }
 
     @Override
     public void processFile(@NonNull File sourceFolder, @NonNull File sourceFile)
-            throws IOException, InterruptedException, LoggedErrorException {
-        ArrayList<String> command = Lists.newArrayList();
+            throws ProcessException, IOException {
+        ProcessInfoBuilder builder = new ProcessInfoBuilder();
 
-        command.add(mAidlExecutable);
+        builder.setExecutable(mAidlExecutable);
 
-        command.add("-p" + mFrameworkLocation);
-        command.add("-o" + mSourceOutputDir.getAbsolutePath());
+        builder.addArgs("-p" + mFrameworkLocation);
+        builder.addArgs("-o" + mSourceOutputDir.getAbsolutePath());
 
         // add all the library aidl folders to access parcelables that are in libraries
         for (File f : mImportFolders) {
-            command.add("-I" + f.getAbsolutePath());
+            builder.addArgs("-I" + f.getAbsolutePath());
         }
 
         // create a temp file for the dependency
         File depFile = File.createTempFile("aidl", ".d");
-        command.add("-d" + depFile.getAbsolutePath());
+        builder.addArgs("-d" + depFile.getAbsolutePath());
 
-        command.add(sourceFile.getAbsolutePath());
+        builder.addArgs(sourceFile.getAbsolutePath());
 
-        mRunner.runCmdLine(command, null);
+        ProcessResult result = mProcessExecutor.execute(
+                builder.createProcess(), mProcessOutputHandler);
+        result.rethrowFailure().assertNormalExitValue();
 
         // send the dependency file to the processor.
         DependencyData data = mDependencyFileProcessor.processFile(depFile);

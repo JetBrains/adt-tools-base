@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 The Android Open Source Project
+ * Copyright (C) 2014 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,29 +14,29 @@
  * limitations under the License.
  */
 
-package com.android.builder.internal.compiler;
+package com.android.ide.common.process;
 
 import com.android.annotations.NonNull;
-import com.google.common.collect.Sets;
 
-import java.io.File;
-import java.util.Set;
+import java.util.List;
 
 /**
- * Source Searcher processor, gathering a list of folders containing processed source files.
+ * Information to run an external java process.
  */
-public class LeafFolderGatherer implements SourceSearcher.SourceFileProcessor {
+public interface JavaProcessInfo extends ProcessInfo {
 
     @NonNull
-    private final Set<File> mFolders = Sets.newHashSet();
+    String getClasspath();
 
-    @Override
-    public void processFile(@NonNull File sourceFolder, @NonNull File sourceFile) {
-        mFolders.add(sourceFile.getParentFile());
-    }
-
+    /**
+     * The main Java Class. This is optional.
+     */
     @NonNull
-    public Set<File> getFolders() {
-        return mFolders;
-    }
+    String getMainClass();
+
+    /**
+     * The JVM args to use.
+     */
+    @NonNull
+    List<String> getJvmArgs();
 }

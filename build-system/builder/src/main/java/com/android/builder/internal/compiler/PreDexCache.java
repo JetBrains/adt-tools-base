@@ -19,10 +19,12 @@ package com.android.builder.internal.compiler;
 import static com.google.common.base.Preconditions.checkState;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.DexOptions;
-import com.android.ide.common.internal.CommandLineRunner;
-import com.android.ide.common.internal.LoggedErrorException;
+import com.android.ide.common.process.JavaProcessExecutor;
+import com.android.ide.common.process.ProcessException;
+import com.android.ide.common.process.ProcessOutputHandler;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.repository.FullRevision;
 import com.android.utils.Pair;
@@ -49,7 +51,7 @@ import java.util.logging.Logger;
  * Because different project could use different build-tools, both the library to pre-dex and the
  * version of the build tools are used as keys in the cache.
  *
- * The API is fairly simple, just call {@link #preDexLibrary(java.io.File, java.io.File, boolean, com.android.builder.core.DexOptions, com.android.sdklib.BuildToolInfo, boolean, com.android.ide.common.internal.CommandLineRunner)}
+ * The API is fairly simple, just call {@link #preDexLibrary(File, File, boolean, DexOptions, BuildToolInfo, boolean, JavaProcessExecutor, ProcessOutputHandler)}
  *
  * The call will be blocking until the pre-dexing happened, either through actual pre-dexing or
  * through copying the output of a previous pre-dex run.
@@ -88,9 +90,9 @@ public class PreDexCache extends PreProcessCache<DexKey> {
      * @param dexOptions the dex options to run pre-dex
      * @param buildToolInfo the build tools info
      * @param verbose verbose flag
-     * @param commandLineRunner the command line runner.
+     * @param processExecutor the process executor
      * @throws IOException
-     * @throws LoggedErrorException
+     * @throws ProcessException
      * @throws InterruptedException
      */
     public void preDexLibrary(
@@ -100,8 +102,9 @@ public class PreDexCache extends PreProcessCache<DexKey> {
             @NonNull DexOptions dexOptions,
             @NonNull BuildToolInfo buildToolInfo,
             boolean verbose,
-            @NonNull CommandLineRunner commandLineRunner)
-            throws IOException, LoggedErrorException, InterruptedException {
+            @NonNull JavaProcessExecutor processExecutor,
+            @NonNull ProcessOutputHandler processOutputHandler)
+            throws IOException, ProcessException, InterruptedException {
         checkState(!multiDex || outFile.isDirectory());
 
         DexKey itemKey = DexKey.of(
@@ -123,23 +126,14 @@ public class PreDexCache extends PreProcessCache<DexKey> {
                         dexOptions,
                         buildToolInfo,
                         verbose,
-                        commandLineRunner);
+                        processExecutor,
+                        processOutputHandler);
 
                 item.getOutputFiles().clear();
                 item.getOutputFiles().addAll(files);
 
                 incrementMisses();
-            } catch (IOException exception) {
-                // in case of error, delete (now obsolete) output file
-                outFile.delete();
-                // and rethrow the error
-                throw exception;
-            } catch (LoggedErrorException exception) {
-                // in case of error, delete (now obsolete) output file
-                outFile.delete();
-                // and rethrow the error
-                throw exception;
-            } catch (InterruptedException exception) {
+            } catch (ProcessException exception) {
                 // in case of error, delete (now obsolete) output file
                 outFile.delete();
                 // and rethrow the error
@@ -177,6 +171,7 @@ public class PreDexCache extends PreProcessCache<DexKey> {
         }
     }
 
+    @Nullable
     @Override
     protected Node createItemNode(
             @NonNull Document document,
@@ -184,14 +179,16 @@ public class PreDexCache extends PreProcessCache<DexKey> {
             @NonNull BaseItem item) throws IOException {
         Node itemNode = super.createItemNode(document, itemKey, item);
 
-        Attr attr = document.createAttribute(ATTR_JUMBO_MODE);
-        attr.setValue(Boolean.toString(itemKey.isJumboMode()));
-        itemNode.getAttributes().setNamedItem(attr);
+        if (itemNode != null) {
+            Attr attr = document.createAttribute(ATTR_JUMBO_MODE);
+            attr.setValue(Boolean.toString(itemKey.isJumboMode()));
+            itemNode.getAttributes().setNamedItem(attr);
+        }
 
         return itemNode;
     }
 
-    private void checkSame(File source, File dest) {
+    private static void checkSame(@NonNull File source, @NonNull File dest) {
         if (source.equals(dest)) {
             Logger.getAnonymousLogger().info(
                 String.format("%s l:%d ts:%d", source, source.length(), source.lastModified()));

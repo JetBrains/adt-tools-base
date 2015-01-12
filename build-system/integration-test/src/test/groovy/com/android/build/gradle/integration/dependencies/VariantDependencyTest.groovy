@@ -15,7 +15,6 @@
  */
 
 package com.android.build.gradle.integration.dependencies
-
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
@@ -29,7 +28,8 @@ import com.android.builder.model.AndroidProject
 import com.android.builder.model.Dependencies
 import com.android.builder.model.MavenCoordinates
 import com.android.builder.model.Variant
-import com.android.ide.common.internal.CommandLineRunner
+import com.android.ide.common.process.DefaultProcessExecutor
+import com.android.ide.common.process.ProcessExecutor
 import com.android.utils.StdLogger
 import com.google.common.collect.Sets
 import org.junit.AfterClass
@@ -94,8 +94,9 @@ class VariantDependencyTest {
 
         File aapt = new File(project.getSdkDir(), "build-tools/20.0.0/aapt")
         assertTrue("Test requires build-tools 20.0.0", aapt.isFile())
-        CommandLineRunner commandLineRunner = new CommandLineRunner(new StdLogger(StdLogger.Level.ERROR))
-        apkInfoParser = new ApkInfoParser(aapt, commandLineRunner)
+        ProcessExecutor processExecutor = new DefaultProcessExecutor(
+                new StdLogger(StdLogger.Level.ERROR))
+        apkInfoParser = new ApkInfoParser(aapt, processExecutor)
     }
 
     @AfterClass

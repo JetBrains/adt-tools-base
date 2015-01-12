@@ -29,6 +29,9 @@ import java.io.File;
  * Helper for SDK related functions.
  */
 public class SdkHelper {
+
+    private static final String BUILD_TOOLS_VERSION = "21.1.1";
+
     /**
      * Returns the SDK folder as built from the Android source tree.
      */
@@ -47,7 +50,9 @@ public class SdkHelper {
 
     @NonNull
     public static File getAapt() {
-        return getBuildTool(FullRevision.parseRevision("21"), BuildToolInfo.PathId.AAPT);
+        return getBuildTool(
+                FullRevision.parseRevision(BUILD_TOOLS_VERSION),
+                BuildToolInfo.PathId.AAPT);
     }
 
     @NonNull
@@ -57,7 +62,9 @@ public class SdkHelper {
 
     @NonNull
     public static File getDexDump() {
-        return getBuildTool(FullRevision.parseRevision("21"), BuildToolInfo.PathId.DEXDUMP);
+        return getBuildTool(
+                FullRevision.parseRevision(BUILD_TOOLS_VERSION),
+                BuildToolInfo.PathId.DEXDUMP);
     }
 
     @NonNull

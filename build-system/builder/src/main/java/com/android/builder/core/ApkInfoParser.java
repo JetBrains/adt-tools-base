@@ -19,14 +19,15 @@ package com.android.builder.core;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
-import com.android.ide.common.internal.CommandLineRunner;
-import com.android.ide.common.internal.LoggedErrorException;
+import com.android.ide.common.process.BaseProcessOutputHandler;
+import com.android.ide.common.process.CachedProcessOutputHandler;
+import com.android.ide.common.process.ProcessException;
+import com.android.ide.common.process.ProcessExecutor;
+import com.android.ide.common.process.ProcessInfoBuilder;
 import com.google.common.base.Objects;
-import com.google.common.collect.Lists;
+import com.google.common.base.Splitter;
 
 import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -42,7 +43,7 @@ public class ApkInfoParser {
     @NonNull
     private final File mAaptFile;
     @NonNull
-    private final CommandLineRunner mCommandLineRunner;
+    private final ProcessExecutor mProcessExecutor;
 
     /**
      * Information about an APK
@@ -89,24 +90,24 @@ public class ApkInfoParser {
     /**
      * Constructs a new parser
      * @param aaptFile aapt file to use to gather the info
-     * @param commandLineRunner a command line runner to call aapt
+     * @param processExecutor a process Executor to call aapt
      */
-    public ApkInfoParser(@NonNull File aaptFile, @NonNull CommandLineRunner commandLineRunner) {
+    public ApkInfoParser(
+            @NonNull File aaptFile,
+            @NonNull ProcessExecutor processExecutor) {
         mAaptFile = aaptFile;
-        mCommandLineRunner = commandLineRunner;
+        mProcessExecutor = processExecutor;
     }
 
     /**
      * Computes and returns the info for an APK
      * @param apkFile the APK to parse
      * @return a non-null ApkInfo object.
-     * @throws InterruptedException
-     * @throws LoggedErrorException
-     * @throws IOException
+     * @throws ProcessException
      */
     @NonNull
     public ApkInfo parseApk(@NonNull File apkFile)
-            throws InterruptedException, LoggedErrorException, IOException {
+            throws ProcessException {
 
         if (!mAaptFile.isFile()) {
             throw new IllegalStateException(
@@ -156,37 +157,24 @@ public class ApkInfoParser {
      * Returns the aapt output.
      * @param apkFile the apk file to call aapt on.
      * @return the output as a list of files.
-     * @throws IOException
-     * @throws InterruptedException
-     * @throws LoggedErrorException
+     * @throws ProcessException
      */
     @NonNull
     private List<String> getAaptOutput(@NonNull File apkFile)
-            throws IOException, InterruptedException, LoggedErrorException {
-        // launch aapt: create the command line
-        ArrayList<String> command = Lists.newArrayList();
+            throws ProcessException {
+        ProcessInfoBuilder builder = new ProcessInfoBuilder();
 
-        command.add(mAaptFile.getAbsolutePath());
-        command.add("dump");
-        command.add("badging");
-        command.add(apkFile.getPath());
+        builder.setExecutable(mAaptFile);
+        builder.addArgs("dump", "badging", apkFile.getPath());
 
-        final List<String> aaptOutput = Lists.newArrayList();
+        CachedProcessOutputHandler processOutputHandler = new CachedProcessOutputHandler();
 
-        mCommandLineRunner.runCmdLine(command, new CommandLineRunner.CommandLineOutput() {
-            @Override
-            public void out(@Nullable String line) {
-                if (line != null) {
-                    aaptOutput.add(line);
-                }
-            }
-            @Override
-            public void err(@Nullable String line) {
-                super.err(line);
+        mProcessExecutor.execute(
+                builder.createProcess(), processOutputHandler)
+                .rethrowFailure().assertNormalExitValue();
 
-            }
-        }, null /*env vars*/);
+        BaseProcessOutputHandler.BaseProcessOutput output = processOutputHandler.getProcessOutput();
 
-        return aaptOutput;
+        return Splitter.on('\n').splitToList(output.getStandardOutputAsString());
     }
 }

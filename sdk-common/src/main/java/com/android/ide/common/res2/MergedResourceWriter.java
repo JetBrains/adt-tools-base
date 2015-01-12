@@ -27,6 +27,7 @@ import static com.android.utils.SdkUtils.createPathComment;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ide.common.internal.PngCruncher;
+import com.android.ide.common.internal.PngException;
 import com.android.resources.ResourceFolderType;
 import com.android.resources.ResourceType;
 import com.android.utils.SdkUtils;
@@ -213,6 +214,8 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
                             } else {
                                 Files.copy(file, outFile);
                             }
+                        } catch (PngException e) {
+                            throw new MergingException(e).setFile(file);
                         } catch (IOException ioe) {
                             throw new MergingException(ioe).setFile(file);
                         }

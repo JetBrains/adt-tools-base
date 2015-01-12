@@ -19,6 +19,7 @@ package com.android.builder.core;
 import com.android.annotations.NonNull;
 import com.android.builder.dependency.SymbolFileProvider;
 import com.android.builder.model.AaptOptions;
+import com.android.ide.common.process.ProcessInfo;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.SdkManager;
@@ -35,11 +36,12 @@ import org.mockito.MockitoAnnotations;
 
 import java.io.File;
 import java.util.List;
+import java.util.Map;
 
 /**
- * Tests for {@link com.android.builder.core.AaptPackageCommandBuilder} class
+ * Tests for {@link AaptPackageProcessBuilder} class
  */
-public class AaptPackageCommandBuilderTest extends TestCase {
+public class AaptPackageProcessBuilderTest extends TestCase {
 
     @Mock
     AaptOptions mAaptOptions;
@@ -72,12 +74,14 @@ public class AaptPackageCommandBuilderTest extends TestCase {
     public void testAndroidManifestPackaging() {
         File virtualAndroidManifestFile = new File("/path/to/non/existent/file");
 
-        AaptPackageCommandBuilder aaptPackageCommandBuilder =
-                new AaptPackageCommandBuilder(virtualAndroidManifestFile, mAaptOptions);
-        aaptPackageCommandBuilder.setResPackageOutput("/path/to/non/existent/dir");
+        AaptPackageProcessBuilder aaptPackageProcessBuilder =
+                new AaptPackageProcessBuilder(virtualAndroidManifestFile, mAaptOptions);
+        aaptPackageProcessBuilder.setResPackageOutput("/path/to/non/existent/dir");
 
-        List<String> command = aaptPackageCommandBuilder
+        ProcessInfo processInfo = aaptPackageProcessBuilder
                 .build(mBuildToolInfo, mIAndroidTarget, mLogger);
+
+        List<String> command = processInfo.getArgs();
 
         assertTrue("/path/to/non/existent/file".equals(command.get(command.indexOf("-M") + 1)));
         assertTrue("/path/to/non/existent/dir".equals(command.get(command.indexOf("-F") + 1)));
@@ -93,9 +97,9 @@ public class AaptPackageCommandBuilderTest extends TestCase {
         Mockito.when(resFolder.isDirectory()).thenReturn(true);
         Mockito.when(resFolder.getAbsolutePath()).thenReturn("/path/to/res/folder");
 
-        AaptPackageCommandBuilder aaptPackageCommandBuilder =
-                new AaptPackageCommandBuilder(virtualAndroidManifestFile, mAaptOptions);
-        aaptPackageCommandBuilder.setResPackageOutput("/path/to/non/existent/dir")
+        AaptPackageProcessBuilder aaptPackageProcessBuilder =
+                new AaptPackageProcessBuilder(virtualAndroidManifestFile, mAaptOptions);
+        aaptPackageProcessBuilder.setResPackageOutput("/path/to/non/existent/dir")
                 .setAssetsFolder(assetsFolder)
                 .setResFolder(resFolder)
                 .setPackageForR("com.example.package.forR")
@@ -103,8 +107,10 @@ public class AaptPackageCommandBuilderTest extends TestCase {
                 .setLibraries(ImmutableList.of(Mockito.mock(SymbolFileProvider.class)))
                 .setType(VariantType.DEFAULT);
 
-        List<String> command = aaptPackageCommandBuilder
+        ProcessInfo processInfo = aaptPackageProcessBuilder
                 .build(mBuildToolInfo, mIAndroidTarget, mLogger);
+
+        List<String> command = processInfo.getArgs();
 
         assertTrue("/path/to/non/existent/file".equals(command.get(command.indexOf("-M") + 1)));
         assertTrue("/path/to/non/existent/dir".equals(command.get(command.indexOf("-F") + 1)));
@@ -129,9 +135,9 @@ public class AaptPackageCommandBuilderTest extends TestCase {
         Mockito.when(resFolder.isDirectory()).thenReturn(true);
         Mockito.when(resFolder.getAbsolutePath()).thenReturn("/path/to/res/folder");
 
-        AaptPackageCommandBuilder aaptPackageCommandBuilder =
-                new AaptPackageCommandBuilder(virtualAndroidManifestFile, mAaptOptions);
-        aaptPackageCommandBuilder.setResPackageOutput("/path/to/non/existent/dir")
+        AaptPackageProcessBuilder aaptPackageProcessBuilder =
+                new AaptPackageProcessBuilder(virtualAndroidManifestFile, mAaptOptions);
+        aaptPackageProcessBuilder.setResPackageOutput("/path/to/non/existent/dir")
                 .setAssetsFolder(assetsFolder)
                 .setResFolder(resFolder)
                 .setPackageForR("com.example.package.forR")
@@ -139,8 +145,10 @@ public class AaptPackageCommandBuilderTest extends TestCase {
                 .setLibraries(ImmutableList.of(Mockito.mock(SymbolFileProvider.class)))
                 .setType(VariantType.ANDROID_TEST);
 
-        List<String> command = aaptPackageCommandBuilder
+        ProcessInfo processInfo = aaptPackageProcessBuilder
                 .build(mBuildToolInfo, mIAndroidTarget, mLogger);
+
+        List<String> command = processInfo.getArgs();
 
         assertTrue("/path/to/non/existent/file".equals(command.get(command.indexOf("-M") + 1)));
         assertTrue("/path/to/non/existent/dir".equals(command.get(command.indexOf("-F") + 1)));
@@ -165,9 +173,9 @@ public class AaptPackageCommandBuilderTest extends TestCase {
         Mockito.when(resFolder.isDirectory()).thenReturn(true);
         Mockito.when(resFolder.getAbsolutePath()).thenReturn("/path/to/res/folder");
 
-        AaptPackageCommandBuilder aaptPackageCommandBuilder =
-                new AaptPackageCommandBuilder(virtualAndroidManifestFile, mAaptOptions);
-        aaptPackageCommandBuilder.setResPackageOutput("/path/to/non/existent/dir")
+        AaptPackageProcessBuilder aaptPackageProcessBuilder =
+                new AaptPackageProcessBuilder(virtualAndroidManifestFile, mAaptOptions);
+        aaptPackageProcessBuilder.setResPackageOutput("/path/to/non/existent/dir")
                 .setAssetsFolder(assetsFolder)
                 .setResFolder(resFolder)
                 .setPackageForR("com.example.package.forR")
@@ -175,8 +183,10 @@ public class AaptPackageCommandBuilderTest extends TestCase {
                 .setLibraries(ImmutableList.of(Mockito.mock(SymbolFileProvider.class)))
                 .setType(VariantType.LIBRARY);
 
-        List<String> command = aaptPackageCommandBuilder
+        ProcessInfo processInfo = aaptPackageProcessBuilder
                 .build(mBuildToolInfo, mIAndroidTarget, mLogger);
+
+        List<String> command = processInfo.getArgs();
 
         assertTrue("/path/to/non/existent/file".equals(command.get(command.indexOf("-M") + 1)));
         assertTrue("/path/to/non/existent/dir".equals(command.get(command.indexOf("-F") + 1)));
@@ -203,9 +213,9 @@ public class AaptPackageCommandBuilderTest extends TestCase {
         Mockito.when(resFolder.isDirectory()).thenReturn(true);
         Mockito.when(resFolder.getAbsolutePath()).thenReturn("/path/to/res/folder");
 
-        AaptPackageCommandBuilder aaptPackageCommandBuilder =
-                new AaptPackageCommandBuilder(virtualAndroidManifestFile, mAaptOptions);
-        aaptPackageCommandBuilder.setResPackageOutput("/path/to/non/existent/dir")
+        AaptPackageProcessBuilder aaptPackageProcessBuilder =
+                new AaptPackageProcessBuilder(virtualAndroidManifestFile, mAaptOptions);
+        aaptPackageProcessBuilder.setResPackageOutput("/path/to/non/existent/dir")
                 .setAssetsFolder(assetsFolder)
                 .setResFolder(resFolder)
                 .setPackageForR("com.example.package.forR")
@@ -214,8 +224,10 @@ public class AaptPackageCommandBuilderTest extends TestCase {
                 .setType(VariantType.DEFAULT)
                 .setSplits(ImmutableList.of("mdpi", "hdpi"));
 
-        List<String> command = aaptPackageCommandBuilder
+        ProcessInfo processInfo = aaptPackageProcessBuilder
                 .build(mBuildToolInfo, mIAndroidTarget, mLogger);
+
+        List<String> command = processInfo.getArgs();
 
         assertTrue("/path/to/non/existent/file".equals(command.get(command.indexOf("-M") + 1)));
         assertTrue("/path/to/non/existent/dir".equals(command.get(command.indexOf("-F") + 1)));
@@ -244,9 +256,9 @@ public class AaptPackageCommandBuilderTest extends TestCase {
         Mockito.when(resFolder.isDirectory()).thenReturn(true);
         Mockito.when(resFolder.getAbsolutePath()).thenReturn("/path/to/res/folder");
 
-        AaptPackageCommandBuilder aaptPackageCommandBuilder =
-                new AaptPackageCommandBuilder(virtualAndroidManifestFile, mAaptOptions);
-        aaptPackageCommandBuilder.setResPackageOutput("/path/to/non/existent/dir")
+        AaptPackageProcessBuilder aaptPackageProcessBuilder =
+                new AaptPackageProcessBuilder(virtualAndroidManifestFile, mAaptOptions);
+        aaptPackageProcessBuilder.setResPackageOutput("/path/to/non/existent/dir")
                 .setAssetsFolder(assetsFolder)
                 .setResFolder(resFolder)
                 .setPackageForR("com.example.package.forR")
@@ -274,8 +286,10 @@ public class AaptPackageCommandBuilderTest extends TestCase {
             throw new RuntimeException("Test requires pre android-21");
         }
 
-        List<String> command = aaptPackageCommandBuilder
+        ProcessInfo processInfo = aaptPackageProcessBuilder
                 .build(buildToolInfo, androidTarget, mLogger);
+
+        List<String> command = processInfo.getArgs();
 
         assertTrue("res1,res2,xhdpi,nodpi".equals(command.get(command.indexOf("-c") + 1)));
         assertTrue(command.indexOf("--preferred-density") == -1);
@@ -290,9 +304,9 @@ public class AaptPackageCommandBuilderTest extends TestCase {
         Mockito.when(resFolder.isDirectory()).thenReturn(true);
         Mockito.when(resFolder.getAbsolutePath()).thenReturn("/path/to/res/folder");
 
-        AaptPackageCommandBuilder aaptPackageCommandBuilder =
-                new AaptPackageCommandBuilder(virtualAndroidManifestFile, mAaptOptions);
-        aaptPackageCommandBuilder.setResPackageOutput("/path/to/non/existent/dir")
+        AaptPackageProcessBuilder aaptPackageProcessBuilder =
+                new AaptPackageProcessBuilder(virtualAndroidManifestFile, mAaptOptions);
+        aaptPackageProcessBuilder.setResPackageOutput("/path/to/non/existent/dir")
                 .setAssetsFolder(assetsFolder)
                 .setResFolder(resFolder)
                 .setPackageForR("com.example.package.forR")
@@ -320,8 +334,10 @@ public class AaptPackageCommandBuilderTest extends TestCase {
             throw new RuntimeException("Test requires pre android-21");
         }
 
-        List<String> command = aaptPackageCommandBuilder
+        ProcessInfo processInfo = aaptPackageProcessBuilder
                 .build(buildToolInfo, androidTarget, mLogger);
+
+        List<String> command = processInfo.getArgs();
 
         assertEquals("res1,res2", command.get(command.indexOf("-c") + 1));
         assertEquals("xhdpi", command.get(command.indexOf("--preferred-density") + 1));
@@ -336,9 +352,9 @@ public class AaptPackageCommandBuilderTest extends TestCase {
         Mockito.when(resFolder.isDirectory()).thenReturn(true);
         Mockito.when(resFolder.getAbsolutePath()).thenReturn("/path/to/res/folder");
 
-        AaptPackageCommandBuilder aaptPackageCommandBuilder =
-                new AaptPackageCommandBuilder(virtualAndroidManifestFile, mAaptOptions);
-        aaptPackageCommandBuilder.setResPackageOutput("/path/to/non/existent/dir")
+        AaptPackageProcessBuilder aaptPackageProcessBuilder =
+                new AaptPackageProcessBuilder(virtualAndroidManifestFile, mAaptOptions);
+        aaptPackageProcessBuilder.setResPackageOutput("/path/to/non/existent/dir")
                 .setAssetsFolder(assetsFolder)
                 .setResFolder(resFolder)
                 .setPackageForR("com.example.package.forR")
@@ -369,7 +385,7 @@ public class AaptPackageCommandBuilderTest extends TestCase {
         }
 
         try {
-            aaptPackageCommandBuilder.build(buildToolInfo, androidTarget, mLogger);
+            aaptPackageProcessBuilder.build(buildToolInfo, androidTarget, mLogger);
         } catch(Exception expected) {
             assertEquals("Splits for densities \"xhdpi\" were configured, yet the resConfigs settings does not include such splits. The resulting split APKs would be empty.\n"
                     + "Suggestion : exclude those splits in your build.gradle : \n"
@@ -392,9 +408,9 @@ public class AaptPackageCommandBuilderTest extends TestCase {
         Mockito.when(resFolder.isDirectory()).thenReturn(true);
         Mockito.when(resFolder.getAbsolutePath()).thenReturn("/path/to/res/folder");
 
-        AaptPackageCommandBuilder aaptPackageCommandBuilder =
-                new AaptPackageCommandBuilder(virtualAndroidManifestFile, mAaptOptions);
-        aaptPackageCommandBuilder.setResPackageOutput("/path/to/non/existent/dir")
+        AaptPackageProcessBuilder aaptPackageProcessBuilder =
+                new AaptPackageProcessBuilder(virtualAndroidManifestFile, mAaptOptions);
+        aaptPackageProcessBuilder.setResPackageOutput("/path/to/non/existent/dir")
                 .setAssetsFolder(assetsFolder)
                 .setResFolder(resFolder)
                 .setPackageForR("com.example.package.forR")
@@ -424,7 +440,7 @@ public class AaptPackageCommandBuilderTest extends TestCase {
         }
 
         try {
-            aaptPackageCommandBuilder.build(buildToolInfo, androidTarget, mLogger);
+            aaptPackageProcessBuilder.build(buildToolInfo, androidTarget, mLogger);
         } catch(Exception expected) {
             assertEquals("Splits for densities \"hdpi,mdpi,xxhdpi\" were configured, yet the "
                     + "resConfigs settings does not include such splits. The resulting split APKs "
@@ -449,9 +465,9 @@ public class AaptPackageCommandBuilderTest extends TestCase {
         Mockito.when(resFolder.isDirectory()).thenReturn(true);
         Mockito.when(resFolder.getAbsolutePath()).thenReturn("/path/to/res/folder");
 
-        AaptPackageCommandBuilder aaptPackageCommandBuilder =
-                new AaptPackageCommandBuilder(virtualAndroidManifestFile, mAaptOptions);
-        aaptPackageCommandBuilder.setResPackageOutput("/path/to/non/existent/dir")
+        AaptPackageProcessBuilder aaptPackageProcessBuilder =
+                new AaptPackageProcessBuilder(virtualAndroidManifestFile, mAaptOptions);
+        aaptPackageProcessBuilder.setResPackageOutput("/path/to/non/existent/dir")
                 .setAssetsFolder(assetsFolder)
                 .setResFolder(resFolder)
                 .setPackageForR("com.example.package.forR")
@@ -479,8 +495,11 @@ public class AaptPackageCommandBuilderTest extends TestCase {
             throw new RuntimeException("Test requires pre android-21");
         }
 
-        List<String> command = aaptPackageCommandBuilder.build(buildToolInfo, androidTarget,
-                mLogger);
+        ProcessInfo processInfo = aaptPackageProcessBuilder
+                .build(buildToolInfo, androidTarget, mLogger);
+
+        List<String> command = processInfo.getArgs();
+
         assertEquals("en,fr,es,de,it,mdpi,hdpi,xhdpi,xxhdpi",
                 command.get(command.indexOf("-c") + 1));
         assertTrue("--split".equals(command.get(command.indexOf("mdpi") - 1)));
@@ -499,9 +518,9 @@ public class AaptPackageCommandBuilderTest extends TestCase {
         Mockito.when(resFolder.isDirectory()).thenReturn(true);
         Mockito.when(resFolder.getAbsolutePath()).thenReturn("/path/to/res/folder");
 
-        AaptPackageCommandBuilder aaptPackageCommandBuilder =
-                new AaptPackageCommandBuilder(virtualAndroidManifestFile, mAaptOptions);
-        aaptPackageCommandBuilder.setResPackageOutput("/path/to/non/existent/dir")
+        AaptPackageProcessBuilder aaptPackageProcessBuilder =
+                new AaptPackageProcessBuilder(virtualAndroidManifestFile, mAaptOptions);
+        aaptPackageProcessBuilder.setResPackageOutput("/path/to/non/existent/dir")
                 .setAssetsFolder(assetsFolder)
                 .setResFolder(resFolder)
                 .setPackageForR("com.example.package.forR")
@@ -530,7 +549,7 @@ public class AaptPackageCommandBuilderTest extends TestCase {
         }
 
         try {
-            aaptPackageCommandBuilder.build(buildToolInfo, androidTarget, mLogger);
+            aaptPackageProcessBuilder.build(buildToolInfo, androidTarget, mLogger);
         } catch (Exception expected) {
             assertEquals("When using splits in tools 21 and above, resConfigs should not contain "
                     + "any densities. Right now, it contains \"mdpi\",\"hdpi\",\"xhdpi\",\"xxhdpi\"\n"
@@ -547,9 +566,9 @@ public class AaptPackageCommandBuilderTest extends TestCase {
         Mockito.when(resFolder.isDirectory()).thenReturn(true);
         Mockito.when(resFolder.getAbsolutePath()).thenReturn("/path/to/res/folder");
 
-        AaptPackageCommandBuilder aaptPackageCommandBuilder =
-                new AaptPackageCommandBuilder(virtualAndroidManifestFile, mAaptOptions);
-        aaptPackageCommandBuilder.setResPackageOutput("/path/to/non/existent/dir")
+        AaptPackageProcessBuilder aaptPackageProcessBuilder =
+                new AaptPackageProcessBuilder(virtualAndroidManifestFile, mAaptOptions);
+        aaptPackageProcessBuilder.setResPackageOutput("/path/to/non/existent/dir")
                 .setAssetsFolder(assetsFolder)
                 .setResFolder(resFolder)
                 .setPackageForR("com.example.package.forR")
@@ -576,9 +595,32 @@ public class AaptPackageCommandBuilderTest extends TestCase {
         if (androidTarget == null) {
             throw new RuntimeException("Test requires pre android-21");
         }
-        List<String> command = aaptPackageCommandBuilder.build(buildToolInfo, androidTarget,
-                mLogger);
+
+        ProcessInfo processInfo = aaptPackageProcessBuilder
+                .build(buildToolInfo, androidTarget, mLogger);
+
+        List<String> command = processInfo.getArgs();
+
         assertEquals("en,fr,es,de,it", command.get(command.indexOf("-c") + 1));
+    }
+
+    public void testEnvironment() {
+        File virtualAndroidManifestFile = new File("/path/to/non/existent/file");
+
+        AaptPackageProcessBuilder aaptPackageProcessBuilder =
+                new AaptPackageProcessBuilder(virtualAndroidManifestFile, mAaptOptions);
+        aaptPackageProcessBuilder.setResPackageOutput("/path/to/non/existent/dir");
+
+        // add an env to the builder
+        aaptPackageProcessBuilder.addEnvironment("foo", "bar");
+
+        ProcessInfo processInfo = aaptPackageProcessBuilder
+                .build(mBuildToolInfo, mIAndroidTarget, mLogger);
+
+        Map<String, Object> env = processInfo.getEnvironment();
+        assertEquals(1, env.size());
+        assertNotNull(env.get("foo"));
+        assertEquals("bar", env.get("foo"));
     }
 
     /**
