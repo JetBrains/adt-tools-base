@@ -597,6 +597,9 @@ class TaskManager {
         conventionMapping(mergeResourcesTask).map("inputResourceSets") {
             def generatedResFolders = [variantData.renderscriptCompileTask.getResOutputDir(),
                                        variantData.generateResValuesTask.getResOutputDir()]
+            if (variantData.extraGeneratedResFolders != null) {
+                generatedResFolders += variantData.extraGeneratedResFolders
+            }
             if (variantData.generateApkDataTask != null) {
                 generatedResFolders.add(variantData.generateApkDataTask.getResOutputDir())
             }

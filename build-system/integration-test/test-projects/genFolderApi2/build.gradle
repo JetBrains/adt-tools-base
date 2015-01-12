@@ -8,25 +8,6 @@ android {
     buildToolsVersion = rootProject.buildToolsVersion
 }
 
-
-public class GenerateCode extends DefaultTask {
-    @Input
-    String value
-
-    @OutputFile
-    File outputFile
-
-    @TaskAction
-    void taskAction() {
-        getOutputFile().text =
-            "package com.custom;\n" +
-            "public class Foo {\n" +
-            "    public static String getBuildDate() { return \"${getValue()}\"; }\n" +
-            "}\n";
-    }
-}
-
-
 android.applicationVariants.all { variant ->
     File sourceFolder = file("${buildDir}/customCode/${variant.dirName}")
     variant.addJavaSourceFoldersToModel(sourceFolder)

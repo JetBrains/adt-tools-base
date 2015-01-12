@@ -50,7 +50,7 @@ class GenFolderApi2Test {
     }
 
     @Test
-    void "check the custom gen folder is present in model"() throws Exception {
+    void "check Java Folder in Model"() throws Exception {
         File projectDir = project.getTestDir()
 
         File buildDir = new File(projectDir, "build")
@@ -63,13 +63,13 @@ class GenFolderApi2Test {
                     mainInfo)
 
             // get the generated source folders.
-            Collection<File> genFolder = mainInfo.getGeneratedSourceFolders()
+            Collection<File> genSourceFolder = mainInfo.getGeneratedSourceFolders()
 
             // We're looking for a custom folder
-            String folderStart = new File(buildDir, "customCode").getAbsolutePath() + File.separatorChar
+            String sourceFolderStart = new File(buildDir, "customCode").getAbsolutePath() + File.separatorChar
             boolean found = false
-            for (File f : genFolder) {
-                if (f.getAbsolutePath().startsWith(folderStart)) {
+            for (File f : genSourceFolder) {
+                if (f.getAbsolutePath().startsWith(sourceFolderStart)) {
                     found = true
                     break
                 }
