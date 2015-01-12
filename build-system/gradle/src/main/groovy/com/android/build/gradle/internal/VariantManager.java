@@ -273,7 +273,7 @@ public class VariantManager implements VariantModel {
                             new ConfigurationProvider[testVariantProviders.size()]));
             variantData.setVariantDependency(variantDep);
 
-            basePlugin.resolveDependencies(variantDep);
+            taskManager.resolveDependencies(variantDep);
             testVariantConfig.setDependencies(variantDep);
             switch (variantType) {
                 case ANDROID_TEST:
@@ -477,7 +477,7 @@ public class VariantManager implements VariantModel {
                     variantDep.getPackageConfiguration().getName(), COM_ANDROID_SUPPORT_MULTIDEX);
         }
 
-        basePlugin.resolveDependencies(variantDep);
+        taskManager.resolveDependencies(variantDep);
         variantConfig.setDependencies(variantDep);
 
         return variantData;
