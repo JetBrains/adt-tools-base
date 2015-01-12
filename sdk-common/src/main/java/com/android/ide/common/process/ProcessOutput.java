@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 The Android Open Source Project
+ * Copyright (C) 2014 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,29 +14,29 @@
  * limitations under the License.
  */
 
-package com.android.builder.internal.compiler;
+package com.android.ide.common.process;
 
 import com.android.annotations.NonNull;
-import com.google.common.collect.Sets;
 
-import java.io.File;
-import java.util.Set;
+import java.io.OutputStream;
 
 /**
- * Source Searcher processor, gathering a list of folders containing processed source files.
+ * The output of a process.
+ *
+ * This is used to configure the {@link com.android.ide.common.process.ProcessExecutor} for how
+ * to handle the stdout and stderr of the process.
  */
-public class LeafFolderGatherer implements SourceSearcher.SourceFileProcessor {
+public interface ProcessOutput  {
 
+    /**
+     * Returns the OutputStream to use for the standard output
+     */
     @NonNull
-    private final Set<File> mFolders = Sets.newHashSet();
+    OutputStream getStandardOutput();
 
-    @Override
-    public void processFile(@NonNull File sourceFolder, @NonNull File sourceFile) {
-        mFolders.add(sourceFile.getParentFile());
-    }
-
+    /**
+     * Returns the OutputStream to use for the error output
+     */
     @NonNull
-    public Set<File> getFolders() {
-        return mFolders;
-    }
+    OutputStream getErrorOutput();
 }

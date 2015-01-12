@@ -25,14 +25,15 @@ import static com.android.SdkConstants.FN_RENDERSCRIPT;
 import static com.android.SdkConstants.FN_ZIPALIGN;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.android.builder.core.DexOptions;
-import com.android.ide.common.internal.CommandLineRunner;
-import com.android.ide.common.internal.LoggedErrorException;
+import com.android.ide.common.process.JavaProcessExecutor;
+import com.android.ide.common.process.JavaProcessInfo;
+import com.android.ide.common.process.ProcessException;
+import com.android.ide.common.process.ProcessOutput;
+import com.android.ide.common.process.ProcessOutputHandler;
+import com.android.ide.common.process.ProcessResult;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.repository.FullRevision;
-import com.android.utils.ILogger;
-import com.android.utils.StdLogger;
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
@@ -44,7 +45,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class PreDexCacheTest extends TestCase {
@@ -52,73 +52,130 @@ public class PreDexCacheTest extends TestCase {
     private static final String DEX_DATA = "**";
 
     /**
-     * Override the command line runner to intercept the call to dex and replace it
+     * implement a fake java process executor to intercept the call to dex and replace it
      * with something else.
      */
-    private static class FakeCommandLineRunner extends CommandLineRunner {
+    private static class FakeJavaProcessExecutor implements JavaProcessExecutor {
 
-        public FakeCommandLineRunner(ILogger logger) {
-            super(logger);
-        }
-
+        @NonNull
         @Override
-        public void runCmdLine(@NonNull String[] command,
-                @Nullable Map<String, String> envVariableMap)
-                throws IOException, InterruptedException, LoggedErrorException {
-            // small delay to test multi-threading.
-            Thread.sleep(1000);
+        public ProcessResult execute(
+                @NonNull JavaProcessInfo javaProcessInfo,
+                @NonNull ProcessOutputHandler processOutputHandler) {
 
-            // input file is the last file in the command
-            File input = new File(command[command.length - 1]);
-            if (!input.isFile()) {
-                throw new FileNotFoundException(input.getPath());
-            }
+            List<String> command = javaProcessInfo.getArgs();
 
-            // loop on the command to find --output
-            String output = null;
-            for (int i = 0 ; i < command.length ; i++) {
-                if ("--output".equals(command[i])) {
-                    output = command[i+1];
-                    break;
+            ProcessException processException = null;
+
+            try {
+                // small delay to test multi-threading.
+                Thread.sleep(1000);
+
+                // input file is the last file in the command
+                File input = new File(command.get(command.size() - 1));
+                if (!input.isFile()) {
+                    throw new FileNotFoundException(input.getPath());
                 }
+
+                // loop on the command to find --output
+                String output = null;
+                for (int i = 0; i < command.size(); i++) {
+                    if ("--output".equals(command.get(i))) {
+                        output = command.get(i + 1);
+                        break;
+                    }
+                }
+
+                if (output == null) {
+                    throw new IOException("Failed to find output in dex commands");
+                }
+
+                // read the source content
+                List<String> lines = Files.readLines(input, Charsets.UTF_8);
+
+                // modify the lines
+                List<String> dexedLines = Lists.newArrayListWithCapacity(lines.size());
+                for (String line : lines) {
+                    dexedLines.add(DEX_DATA + line + DEX_DATA);
+                }
+
+                // combine the lines
+                String content = Joiner.on('\n').join(dexedLines);
+
+                // write it
+                Files.write(content, new File(output), Charsets.UTF_8);
+            } catch (Exception e) {
+                //noinspection ThrowableInstanceNeverThrown
+                processException = new ProcessException(null, e);
             }
 
-            if (output == null) {
-                throw new IOException("Failed to find output in dex commands");
-            }
+            final ProcessException rethrow = processException;
+            return new ProcessResult() {
+                @Override
+                public ProcessResult assertNormalExitValue() throws ProcessException {
+                    return this;
+                }
 
-            // read the source content
-            List<String> lines = Files.readLines(input, Charsets.UTF_8);
+                @Override
+                public int getExitValue() {
+                    return 0;
+                }
 
-            // modify the lines
-            List<String> dexedLines = Lists.newArrayListWithCapacity(lines.size());
-            for (String line : lines) {
-                dexedLines.add(DEX_DATA + line + DEX_DATA);
-            }
-
-            // combine the lines
-            String content = Joiner.on('\n').join(dexedLines);
-
-            // write it
-            Files.write(content, new File(output), Charsets.UTF_8);
+                @Override
+                public ProcessResult rethrowFailure() throws ProcessException {
+                    if (rethrow != null) {
+                        throw rethrow;
+                    }
+                    return this;
+                }
+            };
         }
     }
 
     /**
-     * Override the command line runner to simulate error during the dexing
+     * Fake executor that fails to execute
      */
-    private static class FakeCommandLineRunner2 extends CommandLineRunner {
+    private static class FailingExecutor implements JavaProcessExecutor {
 
-        public FakeCommandLineRunner2(ILogger logger) {
-            super(logger);
+        @NonNull
+        @Override
+        public ProcessResult execute(@NonNull JavaProcessInfo javaProcessInfo,
+                @NonNull ProcessOutputHandler processOutputHandler) {
+            try {
+                Thread.sleep(1000);
+                throw new IOException("foo");
+            } catch (final Exception e) {
+                return new ProcessResult() {
+                    @Override
+                    public ProcessResult assertNormalExitValue() throws ProcessException {
+                        return this;
+                    }
+
+                    @Override
+                    public int getExitValue() {
+                        return 0;
+                    }
+
+                    @Override
+                    public ProcessResult rethrowFailure() throws ProcessException {
+                        throw new ProcessException(null, e);
+                    }
+                };
+            }
+        }
+    }
+
+    private static class FakeProcessOutputHandler implements ProcessOutputHandler {
+
+        @NonNull
+        @Override
+        public ProcessOutput createOutput() {
+            return null;
         }
 
         @Override
-        public void runCmdLine(@NonNull String[] command,
-                @Nullable Map<String, String> envVariableMap)
-                throws IOException, InterruptedException, LoggedErrorException {
-            Thread.sleep(1000);
-            throw new IOException("foo");
+        public void handleOutput(@NonNull ProcessOutput processOutput) throws ProcessException {
+
         }
     }
 
@@ -170,7 +227,7 @@ public class PreDexCacheTest extends TestCase {
         super.tearDown();
     }
 
-    public void testSinglePreDexLibrary() throws IOException, LoggedErrorException, InterruptedException {
+    public void testSinglePreDexLibrary() throws IOException, ProcessException, InterruptedException {
         String content = "Some Content";
         File input = createInputFile(content);
 
@@ -181,7 +238,7 @@ public class PreDexCacheTest extends TestCase {
                 input, output,
                 false /*multidex*/,
                 new FakeDexOptions(), mBuildToolInfo,
-                false /*verbose*/, new FakeCommandLineRunner(new StdLogger(StdLogger.Level.INFO)));
+                false /*verbose*/, new FakeJavaProcessExecutor(), new FakeProcessOutputHandler());
 
         checkOutputFile(content, output);
     }
@@ -194,7 +251,7 @@ public class PreDexCacheTest extends TestCase {
         Thread[] threads = new Thread[3];
         final File[] outputFiles = new File[threads.length];
 
-        final CommandLineRunner clr = new FakeCommandLineRunner(new StdLogger(StdLogger.Level.INFO));
+        final JavaProcessExecutor javaProcessExecutor = new FakeJavaProcessExecutor();
         final DexOptions dexOptions = new FakeDexOptions();
 
         for (int i = 0 ; i < threads.length ; i++) {
@@ -208,9 +265,14 @@ public class PreDexCacheTest extends TestCase {
                         outputFiles[ii] = output;
 
                         PreDexCache.getCache().preDexLibrary(
-                                input, output,
+                                input,
+                                output,
                                 false /*multidex*/,
-                                dexOptions, mBuildToolInfo, false /*verbose*/, clr);
+                                dexOptions,
+                                mBuildToolInfo,
+                                false /*verbose*/,
+                                javaProcessExecutor,
+                                new FakeProcessOutputHandler());
                     } catch (Exception ignored) {
 
                     }
@@ -244,8 +306,8 @@ public class PreDexCacheTest extends TestCase {
         Thread[] threads = new Thread[3];
         final File[] outputFiles = new File[threads.length];
 
-        final CommandLineRunner clr = new FakeCommandLineRunner(new StdLogger(StdLogger.Level.INFO));
-        final CommandLineRunner clrWithError = new FakeCommandLineRunner2(new StdLogger(StdLogger.Level.INFO));
+        final JavaProcessExecutor javaProcessExecutor = new FakeJavaProcessExecutor();
+        final JavaProcessExecutor javaProcessExecutorWithError = new FailingExecutor();
         final DexOptions dexOptions = new FakeDexOptions();
 
         final AtomicInteger threadDoneCount = new AtomicInteger();
@@ -261,10 +323,14 @@ public class PreDexCacheTest extends TestCase {
                         outputFiles[ii] = output;
 
                         PreDexCache.getCache().preDexLibrary(
-                                input, output,
+                                input,
+                                output,
                                 false /*multidex*/,
-                                dexOptions, mBuildToolInfo, false /*verbose*/,
-                                ii == 0 ? clrWithError : clr);
+                                dexOptions,
+                                mBuildToolInfo,
+                                false /*verbose*/,
+                                ii == 0 ? javaProcessExecutorWithError : javaProcessExecutor,
+                                new FakeProcessOutputHandler());
                     } catch (Exception ignored) {
 
                     }
@@ -285,8 +351,8 @@ public class PreDexCacheTest extends TestCase {
     }
 
 
-    public void testReload() throws IOException, LoggedErrorException, InterruptedException {
-        final CommandLineRunner clr = new FakeCommandLineRunner(new StdLogger(StdLogger.Level.INFO));
+    public void testReload() throws IOException, ProcessException, InterruptedException {
+        final JavaProcessExecutor javaProcessExecutor = new FakeJavaProcessExecutor();
         final DexOptions dexOptions = new FakeDexOptions();
 
         // convert one file.
@@ -297,9 +363,14 @@ public class PreDexCacheTest extends TestCase {
         output.deleteOnExit();
 
         PreDexCache.getCache().preDexLibrary(
-                input, output,
+                input,
+                output,
                 false /*multidex*/,
-                dexOptions, mBuildToolInfo, false /*verbose*/, clr);
+                dexOptions,
+                mBuildToolInfo,
+                false /*verbose*/,
+                javaProcessExecutor,
+                new FakeProcessOutputHandler());
 
         checkOutputFile(content, output);
 
@@ -316,9 +387,14 @@ public class PreDexCacheTest extends TestCase {
         output2.deleteOnExit();
 
         PreDexCache.getCache().preDexLibrary(
-                input, output2,
+                input,
+                output2,
                 false /*multidex*/,
-                dexOptions, mBuildToolInfo, false /*verbose*/, clr);
+                dexOptions,
+                mBuildToolInfo,
+                false /*verbose*/,
+                javaProcessExecutor,
+                new FakeProcessOutputHandler());
 
         // check the output
         checkOutputFile(content, output2);
@@ -350,8 +426,8 @@ public class PreDexCacheTest extends TestCase {
     private static BuildToolInfo getBuildToolInfo() throws IOException {
         File toolDir = Files.createTempDir();
 
-        // create a dx file.
-        File dx = new File(toolDir, FN_DX);
+        // create a dx.jar file.
+        File dx = new File(toolDir, FN_DX_JAR);
         Files.write("dx!", dx, Charsets.UTF_8);
 
         return new BuildToolInfo(
@@ -359,8 +435,8 @@ public class PreDexCacheTest extends TestCase {
                 toolDir,
                 new File(toolDir, FN_AAPT),
                 new File(toolDir, FN_AIDL),
+                new File(toolDir, FN_DX),
                 dx,
-                new File(toolDir, FN_DX_JAR),
                 new File(toolDir, FN_RENDERSCRIPT),
                 new File(toolDir, "include"),
                 new File(toolDir, "clang-include"),

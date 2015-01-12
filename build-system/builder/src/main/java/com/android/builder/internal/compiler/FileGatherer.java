@@ -20,7 +20,6 @@ import com.android.annotations.NonNull;
 import com.google.common.collect.Lists;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.List;
 
 /**
@@ -31,8 +30,7 @@ public class FileGatherer implements SourceSearcher.SourceFileProcessor {
     private final List<File> mFiles = Lists.newArrayList();
 
     @Override
-    public void processFile(@NonNull File sourceFolder, @NonNull File sourceFile)
-            throws IOException, InterruptedException {
+    public void processFile(@NonNull File sourceFolder, @NonNull File sourceFile) {
         mFiles.add(sourceFile);
     }
 

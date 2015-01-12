@@ -18,7 +18,7 @@ package com.android.build.gradle.tasks
 
 import com.android.build.gradle.internal.dsl.AaptOptions
 import com.android.build.gradle.internal.tasks.BaseTask
-import com.android.builder.core.AaptPackageCommandBuilder
+import com.android.builder.core.AaptPackageProcessBuilder
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Nested
 import org.gradle.api.tasks.Optional
@@ -86,8 +86,8 @@ class GenerateSplitAbiRes extends BaseTask {
                 fileWriter.close()
             }
 
-            AaptPackageCommandBuilder aaptPackageCommandBuilder =
-                    new AaptPackageCommandBuilder(tmpFile, getAaptOptions())
+            AaptPackageProcessBuilder aaptPackageCommandBuilder =
+                    new AaptPackageProcessBuilder(tmpFile, getAaptOptions())
                         .setDebuggable(getDebuggable())
                         .setResPackageOutput(resPackageFileName);
 

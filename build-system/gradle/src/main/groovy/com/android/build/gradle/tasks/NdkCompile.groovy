@@ -19,6 +19,7 @@ package com.android.build.gradle.tasks
 import com.android.annotations.NonNull
 import com.android.build.gradle.internal.core.NdkConfig
 import com.android.build.gradle.internal.tasks.NdkTask
+import com.android.ide.common.process.ProcessInfoBuilder
 import com.android.sdklib.IAndroidTarget
 import com.google.common.base.Charsets
 import com.google.common.base.Joiner
@@ -185,52 +186,52 @@ class NdkCompile extends NdkTask {
     private void runNdkBuild(@NonNull File ndkLocation, @NonNull File makefile) {
         NdkConfig ndk = getNdkConfig()
 
-        List<String> commands = Lists.newArrayList()
+        ProcessInfoBuilder builder = new ProcessInfoBuilder()
 
         String exe = ndkLocation.absolutePath + File.separator + "ndk-build"
         if (CURRENT_PLATFORM == PLATFORM_WINDOWS && !ndkCygwinMode) {
             exe += ".cmd"
         }
-        commands.add(exe)
+        builder.setExecutable(exe)
 
-        commands.add("NDK_PROJECT_PATH=null")
-
-        commands.add("APP_BUILD_SCRIPT=" + makefile.absolutePath)
+        builder.addArgs(
+                "NDK_PROJECT_PATH=null",
+                "APP_BUILD_SCRIPT=" + makefile.absolutePath)
 
         // target
         IAndroidTarget target = getBuilder().getTarget()
         if (!target.isPlatform()) {
             target = target.parent
         }
-        commands.add("APP_PLATFORM=" + target.hashString())
+        builder.addArgs("APP_PLATFORM=" + target.hashString())
 
         // temp out
-        commands.add("NDK_OUT=" + getObjFolder().absolutePath)
+        builder.addArgs("NDK_OUT=" + getObjFolder().absolutePath)
 
         // libs out
-        commands.add("NDK_LIBS_OUT=" + getSoFolder().absolutePath)
+        builder.addArgs("NDK_LIBS_OUT=" + getSoFolder().absolutePath)
 
         // debug builds
         if (getDebuggable()) {
-            commands.add("NDK_DEBUG=1")
+            builder.addArgs("NDK_DEBUG=1")
         }
 
         if (ndk.getStl() != null) {
-            commands.add("APP_STL=" + ndk.getStl())
+            builder.addArgs("APP_STL=" + ndk.getStl())
         }
 
         Set<String> abiFilters = ndk.abiFilters
         if (abiFilters != null && !abiFilters.isEmpty()) {
             if (abiFilters.size() == 1) {
-                commands.add("APP_ABI=" + abiFilters.iterator().next())
+                builder.addArgs("APP_ABI=" + abiFilters.iterator().next())
             } else {
                 Joiner joiner = Joiner.on(',').skipNulls()
-                commands.add("APP_ABI=" + joiner.join(abiFilters.iterator()))
+                builder.addArgs("APP_ABI=" + joiner.join(abiFilters.iterator()))
             }
         } else {
-            commands.add("APP_ABI=all")
+            builder.addArgs("APP_ABI=all")
         }
 
-        getBuilder().commandLineRunner.runCmdLine(commands, null)
+        getBuilder().executeProcess(builder.createProcess()).rethrowFailure().assertNormalExitValue()
     }
 }
