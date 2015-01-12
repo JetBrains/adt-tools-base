@@ -2199,9 +2199,9 @@ class TaskManager {
         def jdkVersion = JavaVersion.toVersion(System.getProperty("java.specification.version"))
         if (jdkVersion < javaVersionToUse) {
             logger.info(
-                    "Default language level for 'compileSdkVersion %d' is %s, but the " +
-                            "JDK used is %s, so the JDK language level will be used.",
-                    compileSdkLevel, javaVersionToUse, jdkVersion)
+                    "Default language level for 'compileSdkVersion $compileSdkLevel' is " +
+                            "$javaVersionToUse, but the JDK used is $jdkVersion, so the JDK " +
+                            "language level will be used.")
             javaVersionToUse = jdkVersion
         }
 
