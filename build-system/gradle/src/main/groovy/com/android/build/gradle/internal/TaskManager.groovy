@@ -32,6 +32,7 @@ import com.android.build.gradle.internal.dependency.ManifestDependencyImpl
 import com.android.build.gradle.internal.dependency.SymbolFileProviderImpl
 import com.android.build.gradle.internal.dependency.VariantDependencies
 import com.android.build.gradle.internal.dsl.SigningConfig
+import com.android.build.gradle.internal.model.SyncIssueKey
 import com.android.build.gradle.internal.publishing.ApkPublishArtifact
 import com.android.build.gradle.internal.tasks.AndroidReportTask
 import com.android.build.gradle.internal.tasks.CheckManifest
@@ -93,6 +94,7 @@ import com.android.builder.internal.testing.SimpleTestCallable
 import com.android.builder.model.ApiVersion
 import com.android.builder.model.ProductFlavor
 import com.android.builder.model.SourceProvider
+import com.android.builder.model.SyncIssue
 import com.android.builder.testing.ConnectedDeviceProvider
 import com.android.builder.testing.api.DeviceProvider
 import com.android.builder.testing.api.TestServer
@@ -171,6 +173,8 @@ class TaskManager {
 
     private AndroidBuilder androidBuilder
 
+    private DependencyManager dependencyManager
+
     private Logger logger
 
     private PrepareSdkTask mainPreBuild
@@ -201,10 +205,24 @@ class TaskManager {
         this.tasks = tasks
         this.androidBuilder = androidBuilder
         logger = Logging.getLogger(this.class)
+        dependencyManager = new DependencyManager(project)
     }
 
     private BaseExtension getExtension() {
         return plugin.extension
+    }
+
+    public void resolveDependencies(VariantDependencies variantDeps) {
+        dependencyManager.resolveDependencies(variantDeps)
+    }
+
+    @Deprecated
+    public Collection<String> getUnresolvedDependencies() {
+        return dependencyManager.getUnresolvedDependencies()
+    }
+
+    public Map<SyncIssueKey, SyncIssue> getSyncIssues() {
+        return dependencyManager.getSyncIssues()
     }
 
     public void createTasks() {
@@ -2802,7 +2820,7 @@ class TaskManager {
         prepareDependenciesTask.addChecker(configurationDependencies.checker)
 
         for (LibraryDependencyImpl lib : configurationDependencies.libraries) {
-            plugin.addDependencyToPrepareTask(variantData, prepareDependenciesTask, lib)
+            dependencyManager.addDependencyToPrepareTask(variantData, prepareDependenciesTask, lib)
         }
 
         // also create sourceGenTask
