@@ -16,19 +16,17 @@
 
 package com.android.build.gradle.integration.application
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.utils.ApkHelper
+import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
 
-import java.util.regex.Matcher
-import java.util.regex.Pattern
-
-import static org.junit.Assert.assertTrue
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
 /**
  * Test for pseudolocalized.
  */
+@CompileStatic
 class PseudoLocalizationTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
@@ -52,18 +50,6 @@ class PseudoLocalizationTest {
 
     @Test
     public void testPseudolocalization() throws Exception {
-        List<String> output = ApkHelper.getApkBadging(project.getApk("debug"))
-
-        Pattern p = Pattern.compile("^locales:.*'en[_-]XA'.*'ar[_-]XB'.*")
-        boolean pseudolocalized = false
-
-        for (String line : output) {
-            Matcher m = p.matcher(line)
-            if (m.matches()) {
-                pseudolocalized = true
-            }
-        }
-
-        assertTrue("Pseudo locales were not added", pseudolocalized)
+        assertThatApk(project.getApk("debug")).locales().containsAllOf("en-XA", "ar-XB")
     }
 }
