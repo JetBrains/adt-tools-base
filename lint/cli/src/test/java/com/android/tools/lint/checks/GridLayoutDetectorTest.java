@@ -16,7 +16,17 @@
 
 package com.android.tools.lint.checks;
 
+import static com.android.tools.lint.checks.GridLayoutDetector.getNewValue;
+import static com.android.tools.lint.checks.GridLayoutDetector.getOldValue;
+import static com.android.tools.lint.detector.api.TextFormat.TEXT;
+
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
+import com.android.tools.lint.detector.api.Issue;
+import com.android.tools.lint.detector.api.Location;
+import com.android.tools.lint.detector.api.Severity;
 
 @SuppressWarnings("javadoc")
 public class GridLayoutDetectorTest extends AbstractCheckTest {
@@ -55,5 +65,36 @@ public class GridLayoutDetectorTest extends AbstractCheckTest {
                 + "            ~~~~~~~~~~~~~~~~~~~~~~\n"
                 + "1 errors, 0 warnings\n",
                 lintFiles("res/layout/gridlayout3.xml=>res/layout/layout.xml"));
+    }
+
+    public void testGetOldValue() {
+        assertEquals("android:layout_row",
+                getOldValue("Wrong namespace; with v7 GridLayout you should use app:layout_row",
+                        TEXT));
+        assertEquals("android:layout_row",
+                getOldValue("Wrong namespace; with v7 GridLayout you should use app:layout_row " +
+                                "(and add xmlns:app=\"http://schemas.android.com/apk/res-auto\" to " +
+                                "your root element.)",
+                        TEXT));
+    }
+
+    public void testGetNewValue() {
+        assertNotNull("app:layout_row",
+                getNewValue("Wrong namespace; with v7 GridLayout you should use app:layout_row",
+                        TEXT));
+        assertNotNull("app:layout_row",
+                getNewValue("Wrong namespace; with v7 GridLayout you should use app:layout_row" +
+                                "(and add xmlns:app=\"http://schemas.android.com/apk/res-auto\" to " +
+                                "your root element.)",
+                        TEXT));
+    }
+
+    @Override
+    protected void checkReportedError(@NonNull Context context, @NonNull Issue issue,
+            @NonNull Severity severity, @Nullable Location location, @NonNull String message) {
+        if (message.contains("with v7 GridLayout")) {
+            assertNotNull(message, getOldValue(message, TEXT));
+            assertNotNull(message, getNewValue(message, TEXT));
+        }
     }
 }
