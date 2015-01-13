@@ -217,4 +217,14 @@ public class SecurityDetectorTest extends AbstractCheckTest {
                 "No warnings.",
                 lintProject("exportreceiver7.xml=>AndroidManifest.xml"));
     }
+
+    public void testGmsWearable() throws Exception {
+        // As documented in
+        //    https://developer.android.com/training/wearables/data-layer/events.html
+        // you shouldn't need a permission here.
+        assertEquals(
+                "No warnings.",
+                lintProject("exportreceiver8.xml=>AndroidManifest.xml"));
+
+    }
 }
