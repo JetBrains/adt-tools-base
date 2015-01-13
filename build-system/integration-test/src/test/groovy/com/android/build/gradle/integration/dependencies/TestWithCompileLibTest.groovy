@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.integration.dependencies
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.utils.ApkHelper
 import com.android.build.gradle.integration.common.utils.ModelHelper
 import com.android.builder.model.AndroidArtifact
 import com.android.builder.model.AndroidLibrary
@@ -29,11 +28,11 @@ import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
 
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
 import static com.android.build.gradle.integration.common.utils.ModelHelper.getAndroidArtifact
 import static com.android.builder.model.AndroidProject.ARTIFACT_ANDROID_TEST
 import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertNotNull
-import static org.junit.Assert.assertTrue
 /**
  * test for compile library in a test app
  */
@@ -65,11 +64,8 @@ dependencies {
 
     @Test
     void "check compiled library is packaged"() {
-        File apk = project.getSubproject('app').getApk("debug", "androidTest", "unaligned")
-
-        assertTrue(ApkHelper.checkForClass(
-                apk,
-                "Lcom/example/android/multiproject/library/PersonView;"))
+        assertThatApk(project.getSubproject('app').getApk("debug", "androidTest", "unaligned"))
+                .containsClass("Lcom/example/android/multiproject/library/PersonView;")
     }
 
     @Test

@@ -15,10 +15,7 @@
  */
 
 package com.android.build.gradle.integration.application
-
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.utils.ApkHelper
-import com.android.build.gradle.integration.common.utils.ZipHelper
 import com.android.builder.model.AndroidArtifact
 import com.android.builder.model.AndroidProject
 import com.android.builder.model.Variant
@@ -27,9 +24,10 @@ import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
 
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatZip
 import static org.junit.Assert.assertNotNull
 import static org.junit.Assert.assertTrue
-
 /**
  * Assemble tests for genFolderApi.
  */
@@ -58,12 +56,12 @@ class GenFolderApiTest {
 
     @Test
     void "check the custom java generation task ran"() throws Exception {
-        ApkHelper.checkForClass(project.getApk("debug"), "Lcom/custom/Foo;")
+        assertThatApk(project.getApk("debug")).containsClass("Lcom/custom/Foo;")
     }
 
     @Test
     void "check the custom res generation task ran"() throws Exception {
-        ZipHelper.checkFileExists(project.getApk("debug"), "res/xml/generated.xml")
+        assertThatZip(project.getApk("debug")).contains("res/xml/generated.xml")
     }
 
     @Test

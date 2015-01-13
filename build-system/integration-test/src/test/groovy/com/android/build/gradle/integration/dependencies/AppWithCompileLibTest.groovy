@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.integration.dependencies
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.utils.ApkHelper
 import com.android.build.gradle.integration.common.utils.ModelHelper
 import com.android.builder.model.AndroidLibrary
 import com.android.builder.model.AndroidProject
@@ -28,8 +27,8 @@ import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
 
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
 import static org.junit.Assert.assertEquals
-import static org.junit.Assert.assertTrue
 /**
  * test for compile library in app
  */
@@ -63,9 +62,7 @@ dependencies {
     void "check compiled library is packaged"() {
         File apk = project.getSubproject('app').getApk("debug")
 
-        assertTrue(ApkHelper.checkForClass(
-                apk,
-                "Lcom/example/android/multiproject/library/PersonView;"))
+        assertThatApk(apk).containsClass("Lcom/example/android/multiproject/library/PersonView;")
     }
 
     @Test
