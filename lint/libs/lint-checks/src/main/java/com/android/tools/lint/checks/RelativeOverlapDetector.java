@@ -228,6 +228,7 @@ public class RelativeOverlapDetector extends LayoutDetector {
             }
 
             // Check relative placement
+            boolean positioned = false;
             mToLeft = findNodeByAttr(nodes, ATTR_LAYOUT_TO_START_OF);
             if (mToLeft == null) {
                 mToLeft = findNodeByAttr(nodes, ATTR_LAYOUT_TO_LEFT_OF);
@@ -243,6 +244,7 @@ public class RelativeOverlapDetector extends LayoutDetector {
             if (mToLeft != null) {
                 mToLeft.mLastLeft = false;
                 mLastRight = false;
+                positioned = true;
             }
             mToRight = findNodeByAttr(nodes, ATTR_LAYOUT_TO_END_OF);
             if (mToRight == null) {
@@ -257,20 +259,24 @@ public class RelativeOverlapDetector extends LayoutDetector {
               }
             }
             if (mToRight != null) {
-                mToRight.mLastLeft = false;
-                mLastRight = false;
+                mToRight.mLastRight = false;
+                mLastLeft = false;
+                positioned = true;
             }
 
             if (hasTrueAttr(ATTR_LAYOUT_ALIGN_PARENT_END)
                     || hasTrueAttr(ATTR_LAYOUT_ALIGN_PARENT_RIGHT)) {
                 mLastRight = false;
+                positioned = true;
             }
             if (hasTrueAttr(ATTR_LAYOUT_ALIGN_PARENT_START)
                     || hasTrueAttr(ATTR_LAYOUT_ALIGN_PARENT_LEFT)) {
                 mLastLeft = false;
+                positioned = true;
             }
-            if (mToLeft == null && mToRight == null && mLastRight
-                    && mLastLeft) {
+            // Treat any node that does not have explicit relative placement
+            // same as if it has layout_alignParentStart = true;
+            if (!positioned) {
                 mLastLeft = false;
             }
         }
