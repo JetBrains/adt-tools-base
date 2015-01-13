@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.integration.dependencies
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.utils.ApkHelper
 import com.android.build.gradle.integration.common.utils.ModelHelper
 import com.android.builder.model.AndroidProject
 import com.android.builder.model.Dependencies
@@ -28,6 +27,7 @@ import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
 
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
 import static org.junit.Assert.assertTrue
 /**
  * test for package (apk) local jar in app
@@ -67,11 +67,8 @@ dependencies {
 
     @Test
     void "check packaged local jar is packaged"() {
-        File apk = project.getApk("debug")
-
-        assertTrue(ApkHelper.checkForClass(
-                apk,
-                "Lcom/example/android/multiproject/person/People;"))
+        assertThatApk(project.getApk("debug"))
+                .containsClass("Lcom/example/android/multiproject/person/People;")
     }
 
     @Test
