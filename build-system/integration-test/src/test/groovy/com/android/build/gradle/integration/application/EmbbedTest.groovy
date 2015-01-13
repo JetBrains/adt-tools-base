@@ -17,10 +17,9 @@
 
 
 package com.android.build.gradle.integration.application
-
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.utils.ApkHelper
 import com.android.build.gradle.integration.common.utils.ZipHelper
+import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
@@ -29,13 +28,14 @@ import org.junit.Test
 import static com.android.SdkConstants.DOT_ANDROID_PACKAGE
 import static com.android.SdkConstants.FD_RES
 import static com.android.SdkConstants.FD_RES_RAW
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
 import static com.android.builder.core.BuilderConstants.ANDROID_WEAR_MICRO_APK
 import static org.junit.Assert.assertNotNull
 import static org.junit.Assert.assertNull
-
 /**
  * Assemble tests for embedded.
  */
+@CompileStatic
 class EmbbedTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
@@ -87,7 +87,7 @@ class EmbbedTest {
             assertNotNull("Failed to find embedded micro app for " + data[0], embeddedApk)
 
             // check for the versionName
-            ApkHelper.checkVersionName(embeddedApk, data[1])
+            assertThatApk(embeddedApk).hasVersionName(data[1])
         }
     }
 }

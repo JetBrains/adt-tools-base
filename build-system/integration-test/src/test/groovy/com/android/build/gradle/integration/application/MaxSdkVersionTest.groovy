@@ -15,17 +15,15 @@
  */
 
 package com.android.build.gradle.integration.application
-import com.android.annotations.NonNull
+
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.utils.ApkHelper
-import com.android.ide.common.internal.LoggedErrorException
 import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
 
-import static org.junit.Assert.fail
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
 /**
  * Assemble tests for maxSdkVersion.
  */
@@ -48,21 +46,7 @@ class MaxSdkVersionTest {
 
     @Test
     void maxSdkVersion() {
-        checkMaxSdkVersion(project.getApk("f1", "debug"), "21")
-        checkMaxSdkVersion(project.getApk("f2", "debug"), "19")
-    }
-
-    private void checkMaxSdkVersion(@NonNull File testApk, @NonNull String version)
-            throws InterruptedException, LoggedErrorException, IOException {
-
-        List<String> output = ApkHelper.getApkBadging(testApk)
-
-        System.out.println("Beginning dump")
-        for (String line : output) {
-            if (line.equals("maxSdkVersion:'" + version + "'")) {
-                return
-            }
-        }
-        fail("Could not find uses-sdk:maxSdkVersion set to " + version + " in apk dump")
+        assertThatApk(project.getApk("f1", "debug")).hasMaxSdkVersion(21)
+        assertThatApk(project.getApk("f2", "debug")).hasMaxSdkVersion(19)
     }
 }

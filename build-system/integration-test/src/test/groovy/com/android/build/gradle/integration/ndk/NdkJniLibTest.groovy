@@ -15,19 +15,20 @@
  */
 
 package com.android.build.gradle.integration.ndk
-
 import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.utils.ApkHelper
+import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
 import org.junit.experimental.categories.Category
 
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
 /**
  * Assemble tests for ndkJniLib.
  */
+@CompileStatic
 class NdkJniLibTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
@@ -52,14 +53,15 @@ class NdkJniLibTest {
     @Test
     void "check version code"() {
         GradleTestProject app = project.getSubproject("app")
-        ApkHelper.checkVersion(app.getApk("gingerbread", "universal", "debug"),        1000123)
-        ApkHelper.checkVersion(app.getApk("gingerbread", "armeabi-v7a", "debug"),      1100123)
-        ApkHelper.checkVersion(app.getApk("gingerbread", "mips", "debug"),             1200123)
-        ApkHelper.checkVersion(app.getApk("gingerbread", "x86", "debug"),              1300123)
-        ApkHelper.checkVersion(app.getApk("icecreamSandwich", "universal", "debug"),   2000123)
-        ApkHelper.checkVersion(app.getApk("icecreamSandwich", "armeabi-v7a", "debug"), 2100123)
-        ApkHelper.checkVersion(app.getApk("icecreamSandwich", "mips", "debug"),        2200123)
-        ApkHelper.checkVersion(app.getApk("icecreamSandwich", "x86", "debug"),         2300123)
+        
+        assertThatApk(app.getApk("gingerbread", "universal", "debug")).hasVersionCode(1000123)
+        assertThatApk(app.getApk("gingerbread", "armeabi-v7a", "debug")).hasVersionCode(1100123)
+        assertThatApk(app.getApk("gingerbread", "mips", "debug")).hasVersionCode(1200123)
+        assertThatApk(app.getApk("gingerbread", "x86", "debug")).hasVersionCode(1300123)
+        assertThatApk(app.getApk("icecreamSandwich", "universal", "debug")).hasVersionCode(2000123)
+        assertThatApk(app.getApk("icecreamSandwich", "armeabi-v7a", "debug")).hasVersionCode(2100123)
+        assertThatApk(app.getApk("icecreamSandwich", "mips", "debug")).hasVersionCode(2200123)
+        assertThatApk(app.getApk("icecreamSandwich", "x86", "debug")).hasVersionCode(2300123)
     }
 
     @Test
