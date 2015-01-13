@@ -133,10 +133,6 @@ public abstract class BasePlugin {
     private boolean hasCreatedTasks = false
 
     private ProductFlavorData<ProductFlavor> defaultConfigData
-    /** @deprecated use syncIssue instead */
-    @Deprecated
-    private final Collection<String> unresolvedDependencies = Sets.newHashSet()
-    private final Map<SyncIssueKey, SyncIssue> syncIssues = Maps.newHashMap()
 
     protected DefaultAndroidSourceSet mainSourceSet
     protected DefaultAndroidSourceSet androidTestSourceSet
