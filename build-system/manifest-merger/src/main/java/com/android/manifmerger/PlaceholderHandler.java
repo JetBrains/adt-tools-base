@@ -85,35 +85,51 @@ public class PlaceholderHandler {
 
         for (XmlAttribute xmlAttribute : xmlElement.getAttributes()) {
 
-            Matcher matcher = PATTERN.matcher(xmlAttribute.getValue());
+            StringBuilder resultString = new StringBuilder();
+            String inputString = xmlAttribute.getValue();
+            Matcher matcher = PATTERN.matcher(inputString);
             if (matcher.matches()) {
-                String placeholderValue = valueProvider.getValue(matcher.group(2));
-                if (placeholderValue == null) {
-                    // if this is a library, ignore the failure
-                    MergingReport.Record.Severity severity =
-                            mergeType == ManifestMerger2.MergeType.LIBRARY
-                        ? MergingReport.Record.Severity.INFO
-                        : MergingReport.Record.Severity.ERROR;
+                while (matcher.matches()) {
+                    String placeholderValue = valueProvider.getValue(matcher.group(2));
+                    // whatever precedes the placeholder key is added back to the string.
+                    resultString.append(matcher.group(1));
+                    if (placeholderValue == null) {
+                        // if this is a library, ignore the failure
+                        MergingReport.Record.Severity severity =
+                                mergeType == ManifestMerger2.MergeType.LIBRARY
+                                        ? MergingReport.Record.Severity.INFO
+                                        : MergingReport.Record.Severity.ERROR;
 
-                    xmlAttribute.addMessage(mergingReportBuilder, severity,
-                            String.format(
-                                    "Attribute %1$s at %2$s requires a placeholder substitution"
-                                            + " but no value for <%3$s> is provided.",
-                                    xmlAttribute.getId(),
-                                    xmlAttribute.printPosition(),
-                                    matcher.group(2)
-                            ));
-                } else {
-                    // record the attribute set
-                    mergingReportBuilder.getActionRecorder().recordAttributeAction(
-                            xmlAttribute,
-                            PositionImpl.UNKNOWN,
-                            Actions.ActionType.INJECTED,
-                            null /* attributeOperationType */);
+                        xmlAttribute.addMessage(mergingReportBuilder, severity,
+                                String.format(
+                                        "Attribute %1$s at %2$s requires a placeholder substitution"
+                                                + " but no value for <%3$s> is provided.",
+                                        xmlAttribute.getId(),
+                                        xmlAttribute.printPosition(),
+                                        matcher.group(2)
+                                ));
+                        // we add back the placeholder key, since this is not an error for libraries
+                        resultString.append(matcher.group(2));
+                    } else {
+                        // record the attribute set
+                        mergingReportBuilder.getActionRecorder().recordAttributeAction(
+                                xmlAttribute,
+                                PositionImpl.UNKNOWN,
+                                Actions.ActionType.INJECTED,
+                                null /* attributeOperationType */);
 
-                    String attrValue = matcher.group(1) + placeholderValue + matcher.group(3);
-                    xmlAttribute.getXml().setValue(attrValue);
+                        // substitute the placeholder key with its value.
+                        resultString.append(placeholderValue);
+                    }
+                    // the new input string is the tail of the previous match, as it may contain
+                    // more placeholders to substitute.
+                    inputString = matcher.group(3);
+                    // reset the pattern matching with that new string to test for more placeholders
+                    matcher = PATTERN.matcher(inputString);
                 }
+                // append the last remainder (without placeholders) in the result string.
+                resultString.append(inputString);
+                xmlAttribute.getXml().setValue(resultString.toString());
             }
         }
         for (XmlElement childElement : xmlElement.getMergeableElements()) {
