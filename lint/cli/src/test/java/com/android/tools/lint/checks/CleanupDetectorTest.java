@@ -197,4 +197,31 @@ public class CleanupDetectorTest extends AbstractCheckTest {
                         "src/test/pkg/ContentProviderClientTest.java.txt=>src/test/pkg/ContentProviderClientTest.java"
                 ));
     }
+
+    public void testDatabaseCursor() throws Exception {
+        assertEquals(
+                "src/test/pkg/CursorTest.java:14: Warning: This Cursor should be freed up after use with #close() [Recycle]\n" +
+                "        Cursor cursor = db.query(\"TABLE_TRIPS\",\n" +
+                "                           ~~~~~\n" +
+                "src/test/pkg/CursorTest.java:23: Warning: This Cursor should be freed up after use with #close() [Recycle]\n" +
+                "        Cursor cursor = db.query(\"TABLE_TRIPS\",\n" +
+                "                           ~~~~~\n" +
+                "src/test/pkg/CursorTest.java:74: Warning: This Cursor should be freed up after use with #close() [Recycle]\n" +
+                "        Cursor query = provider.query(uri, null, null, null, null);\n" +
+                "                                ~~~~~\n" +
+                "src/test/pkg/CursorTest.java:75: Warning: This Cursor should be freed up after use with #close() [Recycle]\n" +
+                "        Cursor query2 = resolver.query(uri, null, null, null, null);\n" +
+                "                                 ~~~~~\n" +
+                "src/test/pkg/CursorTest.java:76: Warning: This Cursor should be freed up after use with #close() [Recycle]\n" +
+                "        Cursor query3 = client.query(uri, null, null, null, null);\n" +
+                "                               ~~~~~\n" +
+                "0 errors, 5 warnings\n",
+
+                lintProject(
+                        "apicheck/classpath=>.classpath",
+                        "apicheck/minsdk4.xml=>AndroidManifest.xml",
+                        "project.properties19=>project.properties",
+                        "src/test/pkg/CursorTest.java.txt=>src/test/pkg/CursorTest.java"
+                ));
+    }
 }
