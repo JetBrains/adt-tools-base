@@ -37,6 +37,7 @@ import com.android.tools.lint.checks.DetectMissingPrefix;
 import com.android.tools.lint.checks.DosLineEndingDetector;
 import com.android.tools.lint.checks.DuplicateResourceDetector;
 import com.android.tools.lint.checks.GradleDetector;
+import com.android.tools.lint.checks.GridLayoutDetector;
 import com.android.tools.lint.checks.HardcodedValuesDetector;
 import com.android.tools.lint.checks.IncludeDetector;
 import com.android.tools.lint.checks.InefficientWeightDetector;
@@ -468,6 +469,7 @@ public abstract class Reporter {
                         GradleDetector.PLUS,
                         GradleDetector.REMOTE_VERSION,
                         GradleDetector.STRING_INTEGER,
+                        GridLayoutDetector.ISSUE,
                         IncludeDetector.ISSUE,
                         InefficientWeightDetector.BASELINE_WEIGHTS,
                         InefficientWeightDetector.INEFFICIENT_WEIGHT,

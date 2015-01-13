@@ -16,6 +16,7 @@
 
 package com.android.tools.lint.checks;
 
+import static com.android.SdkConstants.ANDROID_NS_NAME;
 import static com.android.SdkConstants.ANDROID_URI;
 import static com.android.SdkConstants.ATTR_COLUMN_COUNT;
 import static com.android.SdkConstants.ATTR_LAYOUT_COLUMN;
@@ -41,6 +42,7 @@ import com.android.tools.lint.detector.api.LintUtils;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.Speed;
+import com.android.tools.lint.detector.api.TextFormat;
 import com.android.tools.lint.detector.api.XmlContext;
 
 import org.w3c.dom.Attr;
@@ -189,5 +191,54 @@ public class GridLayoutDetector extends LayoutDetector {
         }
 
         return null;
+    }
+
+    /**
+     * Given an error message produced by this lint detector,
+     * returns the old value to be replaced in the source code.
+     * <p>
+     * Intended for IDE quickfix implementations.
+     *
+     * @param errorMessage the error message associated with the error
+     * @param format the format of the error message
+     * @return the corresponding old value, or null if not recognized
+     */
+    @Nullable
+    public static String getOldValue(@NonNull String errorMessage,
+            @NonNull TextFormat format) {
+        errorMessage = format.toText(errorMessage);
+        String attribute = LintUtils.findSubstring(errorMessage, " should use ", " ");
+        if (attribute == null) {
+            attribute = LintUtils.findSubstring(errorMessage, " should use ", null);
+        }
+        if (attribute != null) {
+            int index = attribute.indexOf(':');
+            if (index != -1) {
+                return ANDROID_NS_NAME + attribute.substring(index);
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Given an error message produced by this lint detector,
+     * returns the new value to be put into the source code.
+     * <p>
+     * Intended for IDE quickfix implementations.
+     *
+     * @param errorMessage the error message associated with the error
+     * @param format the format of the error message
+     * @return the corresponding new value, or null if not recognized
+     */
+    @Nullable
+    public static String getNewValue(@NonNull String errorMessage,
+            @NonNull TextFormat format) {
+        errorMessage = format.toText(errorMessage);
+        String attribute = LintUtils.findSubstring(errorMessage, " should use ", " ");
+        if (attribute == null) {
+            attribute = LintUtils.findSubstring(errorMessage, " should use ", null);
+        }
+        return attribute;
     }
 }
