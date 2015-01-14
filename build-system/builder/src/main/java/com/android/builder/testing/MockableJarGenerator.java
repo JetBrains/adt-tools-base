@@ -53,10 +53,13 @@ import java.util.zip.ZipEntry;
 public class MockableJarGenerator {
     private static final int EMPTY_FLAGS = 0;
     private static final String CONSTRUCTOR = "<init>";
+    private static final String CLASS_CONSTRUCTOR = "<clinit>";
     private static final ImmutableSet<Type> INTEGER_LIKE_TYPES = ImmutableSet.of(
             Type.INT_TYPE, Type.BYTE_TYPE, Type.BOOLEAN_TYPE, Type.CHAR_TYPE, Type.SHORT_TYPE);
 
     private final boolean returnDefaultValues;
+    private final ImmutableSet<String> prefixesToSkip = ImmutableSet.of(
+            "java.", "javax.", "org.xml.", "org.w3c.");
 
     public MockableJarGenerator(boolean returnDefaultValues) {
         this.returnDefaultValues = returnDefaultValues;
@@ -78,7 +81,9 @@ public class MockableJarGenerator {
                 InputStream inputStream = androidJar.getInputStream(entry);
 
                 if (entry.getName().endsWith(".class")) {
-                    rewriteClass(entry, inputStream, outputStream);
+                    if (!skipClass(entry.getName().replace("/", "."))) {
+                        rewriteClass(entry, inputStream, outputStream);
+                    }
                 } else {
                     outputStream.putNextEntry(entry);
                     ByteStreams.copy(inputStream, outputStream);
@@ -96,6 +101,15 @@ public class MockableJarGenerator {
         }
     }
 
+    private boolean skipClass(String className) {
+        for (String prefix : prefixesToSkip) {
+            if (className.startsWith(prefix)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /**
      * Writes a modified *.class file to the output JAR file.
      */
@@ -110,7 +124,7 @@ public class MockableJarGenerator {
 
         modifyClass(classNode);
 
-        ClassWriter classWriter = new ClassWriter(EMPTY_FLAGS);
+        ClassWriter classWriter = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
         classNode.accept(classWriter);
 
         outputStream.putNextEntry(new ZipEntry(entry.getName()));
@@ -152,11 +166,7 @@ public class MockableJarGenerator {
             for (AbstractInsnNode instruction : instructions.toArray()) {
                 if (!deadCode) {
                     if (instruction.getOpcode() == Opcodes.INVOKESPECIAL) {
-                        if (returnDefaultValues) {
-                            instructions.insert(instruction, new InsnNode(Opcodes.RETURN));
-                        } else {
-                            instructions.insert(instruction, throwExceptionsList(methodNode));
-                        }
+                        instructions.insert(instruction, new InsnNode(Opcodes.RETURN));
                         // Start removing all following instructions.
                         deadCode = true;
                     }
@@ -167,7 +177,7 @@ public class MockableJarGenerator {
         } else {
             instructions.clear();
 
-            if (returnDefaultValues) {
+            if (returnDefaultValues || methodNode.name.equals(CLASS_CONSTRUCTOR)) {
                 if (INTEGER_LIKE_TYPES.contains(returnType)) {
                     instructions.add(new InsnNode(Opcodes.ICONST_0));
                 } else if (returnType.equals(Type.LONG_TYPE)) {
@@ -197,12 +207,15 @@ public class MockableJarGenerator {
             instructions.add(
                     new TypeInsnNode(Opcodes.NEW, runtimeException));
             instructions.add(new InsnNode(Opcodes.DUP));
-            instructions.add(new LdcInsnNode("Method " + methodNode.name + " not mocked."));
+            instructions.add(new LdcInsnNode("Method " + methodNode.name + " not mocked."
+                    + "Set android.testOptions.unitTests.returnDefaultValues=true in build.gradle "
+                    + "to make all methods return zero or null."));
             instructions.add(new MethodInsnNode(
                     Opcodes.INVOKESPECIAL,
                     runtimeException,
                     CONSTRUCTOR,
-                    Type.getType(constructor).getDescriptor()));
+                    Type.getType(constructor).getDescriptor(),
+                    false));
             instructions.add(new InsnNode(Opcodes.ATHROW));
 
             return instructions;
