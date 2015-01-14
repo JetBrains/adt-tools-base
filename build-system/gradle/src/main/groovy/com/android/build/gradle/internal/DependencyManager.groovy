@@ -23,8 +23,6 @@ import com.android.build.gradle.internal.dependency.LibInfo
 import com.android.build.gradle.internal.dependency.LibraryDependencyImpl
 import com.android.build.gradle.internal.dependency.VariantDependencies
 import com.android.build.gradle.internal.model.MavenCoordinatesImpl
-import com.android.build.gradle.internal.model.SyncIssueImpl
-import com.android.build.gradle.internal.model.SyncIssueKey
 import com.android.build.gradle.internal.tasks.PrepareDependenciesTask
 import com.android.build.gradle.internal.tasks.PrepareLibraryTask
 import com.android.build.gradle.internal.variant.BaseVariantData
@@ -40,7 +38,6 @@ import com.google.common.collect.Multimap
 import com.google.common.collect.Sets
 import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
-import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.UnknownProjectException
@@ -64,7 +61,6 @@ import static com.android.SdkConstants.EXT_ANDROID_PACKAGE
 import static com.android.SdkConstants.EXT_JAR
 import static com.android.builder.core.BuilderConstants.EXT_LIB_ARCHIVE
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
-import static com.android.builder.model.AndroidProject.PROPERTY_BUILD_MODEL_ONLY
 
 /**
  * A manager to resolve configuration dependencies.
@@ -75,29 +71,16 @@ class DependencyManager {
 
     Project project
 
+    ExtraModelInfo extraModelInfo
+
     ILogger logger
 
     final Map<LibraryDependencyImpl, PrepareLibraryTask> prepareTaskMap = [:]
 
-    private boolean buildModelForIde
-
-    /** @deprecated use syncIssue instead */
-    @Deprecated
-    private final Collection<String> unresolvedDependencies = Sets.newHashSet()
-    private final Map<SyncIssueKey, SyncIssue> syncIssues = Maps.newHashMap()
-
-    DependencyManager(Project project) {
+    DependencyManager(Project project, ExtraModelInfo extraModelInfo) {
         this.project = project
+        this.extraModelInfo = extraModelInfo
         logger = new LoggerWrapper(Logging.getLogger(this.class))
-        buildModelForIde = isBuildModelForIde()
-    }
-
-    public Collection<String> getUnresolvedDependencies() {
-        return unresolvedDependencies
-    }
-
-    public Map<SyncIssueKey, SyncIssue> getSyncIssues() {
-        return syncIssues
     }
 
     public void addDependencyToPrepareTask(
@@ -285,7 +268,7 @@ class DependencyManager {
 
         for (LibraryDependencyImpl lib : compiledAndroidLibraries) {
             if (!copyOfPackagedLibs.contains(lib)) {
-                handleSyncError(
+                extraModelInfo.handleSyncError(
                         lib.resolvedCoordinates.toString(),
                         SyncIssue.TYPE_NON_JAR_PROVIDED_DEP,
                         "Project ${project.name}: provided dependencies can only be jars. " +
@@ -296,7 +279,7 @@ class DependencyManager {
         }
         // at this stage copyOfPackagedLibs should be empty, if not, error.
         for (LibraryDependencyImpl lib : copyOfPackagedLibs) {
-            handleSyncError(
+            extraModelInfo.handleSyncError(
                     lib.resolvedCoordinates.toString(),
                     SyncIssue.TYPE_NON_JAR_PACKAGE_DEP,
                     "Project ${project.name}: apk dependencies can only be jars. " +
@@ -337,7 +320,7 @@ class DependencyManager {
                     if (DEBUG_DEPENDENCY) println "LOCAL compile: " + f.getName()
                     // only accept local jar, no other types.
                     if (!f.getName().toLowerCase().endsWith(DOT_JAR)) {
-                        handleSyncError(
+                        extraModelInfo.handleSyncError(
                                 f.absolutePath,
                                 SyncIssue.TYPE_NON_JAR_LOCAL_DEP,
                                 "Project ${project.name}: Only Jar-type local " +
@@ -358,7 +341,7 @@ class DependencyManager {
                     if (DEBUG_DEPENDENCY) println "LOCAL package: " + f.getName()
                     // only accept local jar, no other types.
                     if (!f.getName().toLowerCase().endsWith(DOT_JAR)) {
-                        handleSyncError(
+                        extraModelInfo.handleSyncError(
                                 f.absolutePath,
                                 SyncIssue.TYPE_NON_JAR_LOCAL_DEP,
                                 "Project ${project.name}: Only Jar-type local " +
@@ -391,13 +374,9 @@ class DependencyManager {
             }
         }
 
-        if (buildModelForIde &&
-                compileClasspath.resolvedConfiguration.hasError() &&
-                !currentUnresolvedDependencies.isEmpty()) {
-            unresolvedDependencies.addAll(currentUnresolvedDependencies)
-
+        if (extraModelInfo.isBuildModelForIde() && compileClasspath.resolvedConfiguration.hasError()) {
             for (String dependency : currentUnresolvedDependencies) {
-                handleSyncError(
+                extraModelInfo.handleSyncError(
                         dependency,
                         SyncIssue.TYPE_UNRESOLVED_DEPENDENCY,
                         "Unable to resolve dependency '${dependency}'")
@@ -532,7 +511,7 @@ class DependencyManager {
                     List<ResolvedArtifact>> artifacts) {
 
         Set<ResolvedArtifact> allArtifacts
-        if (buildModelForIde) {
+        if (extraModelInfo.isBuildModelForIde()) {
             allArtifacts = configuration.resolvedConfiguration.lenientConfiguration.getArtifacts(Specs.satisfyAll())
         } else {
             allArtifacts = configuration.resolvedConfiguration.resolvedArtifacts
@@ -676,7 +655,7 @@ class DependencyManager {
                     }
                     // check this jar does not have a dependency on an library, as this would not work.
                     if (!nestedLibraries.isEmpty()) {
-                        handleSyncError(
+                        extraModelInfo.handleSyncError(
                                 new MavenCoordinatesImpl(artifact).toString(),
                                 SyncIssue.TYPE_JAR_DEPEND_ON_AAR,
                                 "Module version $id depends on libraries but is a jar");
@@ -701,7 +680,7 @@ class DependencyManager {
                         name += ":$artifact.classifier"
                     }
 
-                    handleSyncError(
+                    extraModelInfo.handleSyncError(
                             name,
                             SyncIssue.TYPE_DEPENDENCY_IS_APK,
                             "Dependency ${name} on project ${project.name} resolves to an APK" +
@@ -713,7 +692,7 @@ class DependencyManager {
                         name += ":$artifact.classifier"
                     }
 
-                    handleSyncError(
+                    extraModelInfo.handleSyncError(
                             name,
                             SyncIssue.TYPE_DEPENDENCY_IS_APKLIB,
                             "Packaging for dependency ${name} is 'apklib' and is not supported. " +
@@ -725,19 +704,6 @@ class DependencyManager {
                 printIndent indent, "DONE: " + id.name
             }
 
-        }
-    }
-
-    private void handleSyncError(String data, int type, String msg) {
-        if (!buildModelForIde) {
-            throw new GradleException(msg)
-        } else {
-            SyncIssue syncIssue = new SyncIssueImpl(
-                    type,
-                    SyncIssue.SEVERITY_ERROR,
-                    data,
-                    msg)
-            syncIssues.put(SyncIssueKey.from(syncIssue), syncIssue)
         }
     }
 
@@ -819,21 +785,5 @@ class DependencyManager {
     @CompileDynamic
     private static ConventionMapping conventionMapping(Task task) {
         task.conventionMapping
-    }
-
-    /**
-     * Returns whether we are just trying to build a model for the IDE instead of building.
-     * This means we will attempt to resolve dependencies even if some are broken/unsupported
-     * to avoid failing the import in the IDE.
-     */
-    private boolean isBuildModelForIde() {
-        boolean flagValue = false;
-        if (project.hasProperty(PROPERTY_BUILD_MODEL_ONLY)) {
-            Object value = project.getProperties().get(PROPERTY_BUILD_MODEL_ONLY);
-            if (value instanceof String) {
-                flagValue = Boolean.parseBoolean(value);
-            }
-        }
-        return flagValue
     }
 }
