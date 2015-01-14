@@ -450,7 +450,7 @@ public class ManifestDetectorTest extends AbstractCheckTest {
     public void testMockLocations() throws Exception {
         mEnabled = Collections.singleton(ManifestDetector.MOCK_LOCATION);
         assertEquals(""
-                + "AndroidManifest.xml:9: Error: Mock locations should only be requested in a debug-specific manifest file (typically src/debug/AndroidManifest.xml) [MockLocation]\n"
+                + "AndroidManifest.xml:9: Error: Mock locations should only be requested in a test or debug-specific manifest file (typically src/debug/AndroidManifest.xml) [MockLocation]\n"
                 + "    <uses-permission android:name=\"android.permission.ACCESS_MOCK_LOCATION\" /> \n"
                 + "                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                 + "1 errors, 0 warnings\n",
