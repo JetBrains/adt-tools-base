@@ -14,10 +14,7 @@
  * limitations under the License.
  */
 
-
-
 package com.android.build.gradle.integration.application
-
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.utils.ApkHelper
 import com.android.build.gradle.integration.common.utils.SdkHelper

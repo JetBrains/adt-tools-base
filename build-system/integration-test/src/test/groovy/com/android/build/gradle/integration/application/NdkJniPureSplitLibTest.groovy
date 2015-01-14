@@ -14,20 +14,19 @@
  * limitations under the License.
  */
 
-
-
 package com.android.build.gradle.integration.application
-
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.utils.ApkHelper
+import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
 
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
 /**
  * Assemble tests for ndkJniPureSplitLib.
  */
+@CompileStatic
 class NdkJniPureSplitLibTest {
 
     @ClassRule
@@ -53,11 +52,11 @@ class NdkJniPureSplitLibTest {
     @Test
     void "check version code"() {
         GradleTestProject app = project.getSubproject("app")
-        ApkHelper.checkVersion(app.getApk("free", "debug_armeabi-v7a"), 123)
-        ApkHelper.checkVersion(app.getApk("free", "debug_mips"),        123)
-        ApkHelper.checkVersion(app.getApk("free", "debug_x86"),         123)
-        ApkHelper.checkVersion(app.getApk("paid", "debug_armeabi-v7a"), 123)
-        ApkHelper.checkVersion(app.getApk("paid", "debug_mips"),        123)
-        ApkHelper.checkVersion(app.getApk("paid", "debug_x86"),         123)
+        assertThatApk(app.getApk("free", "debug_armeabi-v7a")).hasVersionCode(123)
+        assertThatApk(app.getApk("free", "debug_mips")).hasVersionCode(123)
+        assertThatApk(app.getApk("free", "debug_x86")).hasVersionCode(123)
+        assertThatApk(app.getApk("paid", "debug_armeabi-v7a")).hasVersionCode(123)
+        assertThatApk(app.getApk("paid", "debug_mips")).hasVersionCode(123)
+        assertThatApk(app.getApk("paid", "debug_x86")).hasVersionCode(123)
     }
 }
