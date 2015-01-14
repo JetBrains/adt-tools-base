@@ -329,8 +329,8 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
 
             "Using a mock location provider (by requiring the permission " +
             "`android.permission.ACCESS_MOCK_LOCATION`) should *only* be done " +
-            "in debug builds. In Gradle projects, that means you should only " +
-            "request this permission in a debug source set specific manifest file.\n" +
+            "in debug builds (or from tests). In Gradle projects, that means you should only " +
+            "request this permission in a test or debug source set specific manifest file.\n" +
             "\n" +
             "To fix this, create a new manifest file in the debug folder and move " +
             "the `<uses-permission>` element there. A typical path to a debug manifest " +
@@ -787,8 +787,8 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
                     && context.getMainProject().isGradleProject()
                     && !isDebugOrTestManifest(context, context.file)
                     && context.isEnabled(MOCK_LOCATION)) {
-                String message = "Mock locations should only be requested in a debug-specific "
-                        + "manifest file (typically `src/debug/AndroidManifest.xml`)";
+                String message = "Mock locations should only be requested in a test or " +
+                        "debug-specific manifest file (typically `src/debug/AndroidManifest.xml`)";
                 Location location = context.getLocation(name);
                 context.report(MOCK_LOCATION, element, location, message);
             }
