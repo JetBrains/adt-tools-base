@@ -94,7 +94,7 @@ public class ActionRecorder {
      * @param xmlElement xml element added to the initial merged document.
      */
     void recordDefaultNodeAction(XmlElement xmlElement) {
-        if (!mRecords.containsKey(xmlElement.getId())) {
+        if (!mRecords.containsKey(xmlElement.getOriginalId())) {
             recordNodeAction(xmlElement, Actions.ActionType.ADDED);
             for (XmlAttribute xmlAttribute : xmlElement.getAttributes()) {
                 AttributeOperationType attributeOperation = xmlElement
@@ -116,7 +116,7 @@ public class ActionRecorder {
      * @param reason optional contextual information whey the implied element was added.
      */
     void recordImpliedNodeAction(XmlElement xmlElement, String reason) {
-        NodeKey storageKey = xmlElement.getId();
+        NodeKey storageKey = xmlElement.getOriginalId();
         Actions.DecisionTreeRecord nodeDecisionTree = mRecords.get(storageKey);
         if (nodeDecisionTree == null) {
             nodeDecisionTree = new Actions.DecisionTreeRecord();
@@ -126,7 +126,7 @@ public class ActionRecorder {
                 new Actions.ActionLocation(
                         xmlElement.getDocument().getSourceLocation(),
                         xmlElement.getDocument().getRootNode().getPosition()),
-                xmlElement.getId(),
+                xmlElement.getOriginalId(),
                 reason,
                 xmlElement.getOperationType()
         );
@@ -162,7 +162,7 @@ public class ActionRecorder {
                 new Actions.ActionLocation(
                         targetElement.getDocument().getSourceLocation(),
                         targetElement.getPosition()),
-                targetElement.getId(),
+                targetElement.getOriginalId(),
                 null, /* reason */
                 mergedElement.getOperationType()
         );
@@ -178,7 +178,7 @@ public class ActionRecorder {
             XmlElement mergedElement,
             Actions.NodeRecord nodeRecord) {
 
-        NodeKey storageKey = mergedElement.getId();
+        NodeKey storageKey = mergedElement.getOriginalId();
         Actions.DecisionTreeRecord nodeDecisionTree = mRecords.get(storageKey);
         if (nodeDecisionTree == null) {
             nodeDecisionTree = new Actions.DecisionTreeRecord();
@@ -225,7 +225,7 @@ public class ActionRecorder {
                 new Actions.ActionLocation(
                         originElement.getDocument().getSourceLocation(),
                         attributePosition),
-                attribute.getId(),
+                attribute.getOriginalId(),
                 null, /* reason */
                 attributeOperationType
         );
@@ -263,7 +263,7 @@ public class ActionRecorder {
                 new Actions.ActionLocation(
                         implicitAttributeOwner.getDocument().getSourceLocation(),
                         implicitAttributeOwner.getPosition()),
-                attribute.getId(),
+                attribute.getOriginalId(),
                 null, /* reason */
                 AttributeOperationType.REPLACE
         );
@@ -286,7 +286,7 @@ public class ActionRecorder {
 
     private List<Actions.AttributeRecord> getAttributeRecords(XmlAttribute attribute) {
         XmlElement originElement = attribute.getOwnerElement();
-        NodeKey storageKey = originElement.getId();
+        NodeKey storageKey = originElement.getOriginalId();
         Actions.DecisionTreeRecord nodeDecisionTree = mRecords.get(storageKey);
         // by now the node should have been added for this element.
         assert (nodeDecisionTree != null);

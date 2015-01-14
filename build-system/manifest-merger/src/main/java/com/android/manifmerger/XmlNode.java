@@ -42,6 +42,20 @@ public abstract class XmlNode {
                 }
             };
 
+    private NodeKey mOriginalId = null;
+
+    /**
+     * Returns a constant Nodekey that can be used throughout the lifecycle of the xml element.
+     * The {@link #getId} can return different values over time as the key of the element can be
+     * for instance, changed through placeholder replacement.
+     */
+    public synchronized NodeKey getOriginalId() {
+        if (mOriginalId == null) {
+            mOriginalId = getId();
+        }
+        return mOriginalId;
+    }
+
     /**
      * Returns an unique id within the manifest file for the element.
      */
