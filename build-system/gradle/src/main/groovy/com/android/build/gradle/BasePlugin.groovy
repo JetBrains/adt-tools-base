@@ -17,10 +17,9 @@
 package com.android.build.gradle
 
 import com.android.annotations.NonNull
-import com.android.annotations.Nullable
-import com.android.build.gradle.api.BaseVariant
 import com.android.build.gradle.internal.BadPluginException
-import com.android.build.gradle.internal.ConfigurationDependencies
+import com.android.build.gradle.internal.DependencyManager
+import com.android.build.gradle.internal.ExtraModelInfo
 import com.android.build.gradle.internal.LibraryCache
 import com.android.build.gradle.internal.LoggerWrapper
 import com.android.build.gradle.internal.ProductFlavorData
@@ -36,15 +35,12 @@ import com.android.build.gradle.internal.dsl.GroupableProductFlavorFactory
 import com.android.build.gradle.internal.dsl.ProductFlavor
 import com.android.build.gradle.internal.dsl.SigningConfig
 import com.android.build.gradle.internal.dsl.SigningConfigFactory
-import com.android.build.gradle.internal.model.ArtifactMetaDataImpl
-import com.android.build.gradle.internal.model.JavaArtifactImpl
 import com.android.build.gradle.internal.model.ModelBuilder
 import com.android.build.gradle.internal.model.SyncIssueKey
 import com.android.build.gradle.internal.process.GradleJavaProcessExecutor
 import com.android.build.gradle.internal.process.GradleProcessExecutor
 import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.build.gradle.internal.variant.BaseVariantOutputData
-import com.android.build.gradle.internal.variant.DefaultSourceProviderContainer
 import com.android.build.gradle.internal.variant.VariantFactory
 import com.android.build.gradle.tasks.JillTask
 import com.android.build.gradle.tasks.PreDex
@@ -54,26 +50,17 @@ import com.android.builder.dependency.DependencyContainer
 import com.android.builder.dependency.JarDependency
 import com.android.builder.internal.compiler.JackConversionCache
 import com.android.builder.internal.compiler.PreDexCache
-import com.android.builder.model.AndroidArtifact
-import com.android.builder.model.ArtifactMetaData
-import com.android.builder.model.JavaArtifact
-import com.android.builder.model.SourceProvider
-import com.android.builder.model.SourceProviderContainer
 import com.android.builder.model.SyncIssue
 import com.android.builder.sdk.SdkInfo
 import com.android.builder.sdk.TargetInfo
 import com.android.ide.common.internal.ExecutorSingleton
 import com.android.ide.common.process.LoggedProcessOutputHandler
 import com.android.utils.ILogger
-import com.google.common.collect.ArrayListMultimap
-import com.google.common.collect.ListMultimap
-import com.google.common.collect.Maps
 import com.google.common.collect.Sets
 import groovy.transform.CompileStatic
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.Task
-import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.repositories.MavenArtifactRepository
 import org.gradle.api.execution.TaskExecutionGraph
 import org.gradle.api.internal.project.ProjectInternal
@@ -128,6 +115,9 @@ public abstract class BasePlugin {
     private LoggerWrapper loggerWrapper
     protected SdkHandler sdkHandler
     private AndroidBuilder androidBuilder
+
+    private ExtraModelInfo extraModelInfo
+
     private String creator
 
     private boolean hasCreatedTasks = false
@@ -177,6 +167,7 @@ public abstract class BasePlugin {
 
     protected void configureProject() {
         checkGradleVersion()
+        extraModelInfo = new ExtraModelInfo(project)
         sdkHandler = new SdkHandler(project, logger)
         androidBuilder = new AndroidBuilder(
                 project == project.rootProject ? project.name : project.path,
@@ -187,7 +178,8 @@ public abstract class BasePlugin {
                 logger,
                 verbose)
 
-        taskManager = new TaskManager(this, project, project.tasks, androidBuilder)
+        DependencyManager dependencyManager = new DependencyManager(project, extraModelInfo)
+        taskManager = new TaskManager(this, project, project.tasks, androidBuilder, dependencyManager)
 
         project.apply plugin: JavaBasePlugin
 
@@ -390,16 +382,6 @@ public abstract class BasePlugin {
         return defaultConfigData
     }
 
-    @Deprecated
-    Collection<String> getUnresolvedDependencies() {
-        return taskManager.getUnresolvedDependencies()
-    }
-
-    // TODO: Remove after ModelBuilder no longer depends on BasePlugin.
-    Map<SyncIssueKey, SyncIssue> getSyncIssues() {
-        return taskManager.getSyncIssues()
-    }
-
     ILogger getLogger() {
         if (loggerWrapper == null) {
             loggerWrapper = new LoggerWrapper(project.logger)
@@ -466,113 +448,6 @@ public abstract class BasePlugin {
         }
     }
 
-    private final Map<String, ArtifactMetaData> extraArtifactMap = Maps.newHashMap()
-    private final ListMultimap<String, AndroidArtifact> extraAndroidArtifacts = ArrayListMultimap.create()
-    private final ListMultimap<String, JavaArtifact> extraJavaArtifacts = ArrayListMultimap.create()
-    private final ListMultimap<String, SourceProviderContainer> extraVariantSourceProviders = ArrayListMultimap.create()
-    private final ListMultimap<String, SourceProviderContainer> extraBuildTypeSourceProviders = ArrayListMultimap.create()
-    private final ListMultimap<String, SourceProviderContainer> extraProductFlavorSourceProviders = ArrayListMultimap.create()
-    private final ListMultimap<String, SourceProviderContainer> extraMultiFlavorSourceProviders = ArrayListMultimap.create()
-
-
-    public Collection<ArtifactMetaData> getExtraArtifacts() {
-        return extraArtifactMap.values()
-    }
-
-    public Collection<AndroidArtifact> getExtraAndroidArtifacts(@NonNull String variantName) {
-        return extraAndroidArtifacts.get(variantName)
-    }
-
-    public Collection<JavaArtifact> getExtraJavaArtifacts(@NonNull String variantName) {
-        return extraJavaArtifacts.get(variantName)
-    }
-
-    public Collection<SourceProviderContainer> getExtraVariantSourceProviders(@NonNull String variantName) {
-        return extraVariantSourceProviders.get(variantName)
-    }
-
-    public Collection<SourceProviderContainer> getExtraFlavorSourceProviders(@NonNull String flavorName) {
-        return extraProductFlavorSourceProviders.get(flavorName)
-    }
-
-    public Collection<SourceProviderContainer> getExtraBuildTypeSourceProviders(@NonNull String buildTypeName) {
-        return extraBuildTypeSourceProviders.get(buildTypeName)
-    }
-
-    public void registerArtifactType(@NonNull String name,
-                                     boolean isTest,
-                                     int artifactType) {
-
-        if (extraArtifactMap.get(name) != null) {
-            throw new IllegalArgumentException("Artifact with name $name already registered.")
-        }
-
-        extraArtifactMap.put(name, new ArtifactMetaDataImpl(name, isTest, artifactType))
-    }
-
-    public void registerBuildTypeSourceProvider(@NonNull String name,
-                                                @NonNull BuildType buildType,
-                                                @NonNull SourceProvider sourceProvider) {
-        if (extraArtifactMap.get(name) == null) {
-            throw new IllegalArgumentException(
-                    "Artifact with name $name is not yet registered. Use registerArtifactType()")
-        }
-
-        extraBuildTypeSourceProviders.put(buildType.name,
-                new DefaultSourceProviderContainer(name, sourceProvider))
-
-    }
-
-    public void registerProductFlavorSourceProvider(@NonNull String name,
-                                                    @NonNull ProductFlavor productFlavor,
-                                                    @NonNull SourceProvider sourceProvider) {
-        if (extraArtifactMap.get(name) == null) {
-            throw new IllegalArgumentException(
-                    "Artifact with name $name is not yet registered. Use registerArtifactType()")
-        }
-
-        extraProductFlavorSourceProviders.put(productFlavor.name,
-                new DefaultSourceProviderContainer(name, sourceProvider))
-
-    }
-
-    public void registerMultiFlavorSourceProvider(@NonNull String name,
-                                                  @NonNull String flavorName,
-                                                  @NonNull SourceProvider sourceProvider) {
-        if (extraArtifactMap.get(name) == null) {
-            throw new IllegalArgumentException(
-                    "Artifact with name $name is not yet registered. Use registerArtifactType()")
-        }
-
-        extraMultiFlavorSourceProviders.put(flavorName,
-                new DefaultSourceProviderContainer(name, sourceProvider))
-    }
-
-    public void registerJavaArtifact(
-            @NonNull String name,
-            @NonNull BaseVariant variant,
-            @NonNull String assembleTaskName,
-            @NonNull String javaCompileTaskName,
-            @NonNull Configuration configuration,
-            @NonNull File classesFolder,
-            @Nullable SourceProvider sourceProvider) {
-        ArtifactMetaData artifactMetaData = extraArtifactMap.get(name)
-        if (artifactMetaData == null) {
-            throw new IllegalArgumentException(
-                    "Artifact with name $name is not yet registered. Use registerArtifactType()")
-        }
-        if (artifactMetaData.type != ArtifactMetaData.TYPE_JAVA) {
-            throw new IllegalArgumentException(
-                    "Artifact with name $name is not of type JAVA")
-        }
-
-        JavaArtifact artifact = new JavaArtifactImpl(
-                name, assembleTaskName, javaCompileTaskName, classesFolder,
-                new ConfigurationDependencies(configuration),
-                sourceProvider, null)
-        extraJavaArtifacts.put(variant.name, artifact)
-    }
-
     /**
      * Returns the list of packaged local jars.
      * @param dependencyContainer
@@ -630,6 +505,10 @@ public abstract class BasePlugin {
 
     public Project getProject() {
         return project
+    }
+
+    public ExtraModelInfo getExtraModelInfo() {
+        return extraModelInfo
     }
 
     public static void displayWarning(ILogger logger, Project project, String message) {
