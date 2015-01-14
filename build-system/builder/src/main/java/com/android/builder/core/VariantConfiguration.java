@@ -16,6 +16,7 @@
 
 package com.android.builder.core;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
@@ -175,29 +176,8 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
     }
 
     /**
-     * Creates the configuration with the base source sets.
-     *
-     * This creates a config with a {@link VariantType#DEFAULT} type.
-     *
-     * @param defaultConfig the default configuration. Required.
-     * @param defaultSourceProvider the default source provider. Required
-     * @param buildType the build type for this variant. Required.
-     * @param buildTypeSourceProvider the source provider for the build type. Required.
-     */
-    public VariantConfiguration(
-            @NonNull D defaultConfig,
-            @NonNull SourceProvider defaultSourceProvider,
-            @NonNull T buildType,
-            @Nullable SourceProvider buildTypeSourceProvider,
-            @Nullable SigningConfig signingConfigOverride) {
-        this(
-                defaultConfig, defaultSourceProvider,
-                buildType, buildTypeSourceProvider,
-                VariantType.DEFAULT, null /*testedConfig*/, signingConfigOverride);
-    }
-
-    /**
-     * Creates the configuration with the base source sets for a given {@link VariantType}.
+     * Creates the configuration with the base source sets for a given {@link VariantType}. Meant
+     * for non-testing variants.
      *
      * @param defaultConfig the default configuration. Required.
      * @param defaultSourceProvider the default source provider. Required
@@ -238,6 +218,13 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
             @NonNull VariantType type,
             @Nullable VariantConfiguration testedConfig,
             @Nullable SigningConfig signingConfigOverride) {
+        checkArgument(
+                !type.isForTesting() || testedConfig != null,
+                "You have to specify the tested variant for this variant type.");
+        checkArgument(
+                type.isForTesting() || testedConfig == null,
+                "This variant type doesn't need a tested variant.");
+
         mDefaultConfig = checkNotNull(defaultConfig);
         mDefaultSourceProvider = checkNotNull(defaultSourceProvider);
         mBuildType = checkNotNull(buildType);
@@ -245,8 +232,6 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
         mType = checkNotNull(type);
         mTestedConfig = testedConfig;
         mSigningConfigOverride = signingConfigOverride;
-        checkState(!mType.isForTesting() || mTestedConfig != null);
-
         mMergedFlavor = DefaultProductFlavor.clone(mDefaultConfig);
     }
 
