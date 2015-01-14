@@ -16,23 +16,22 @@
 
 package com.android.build.gradle.integration.common.truth;
 
+import com.android.builder.model.SyncIssue;
 import com.google.common.truth.FailureStrategy;
 import com.google.common.truth.SubjectFactory;
 
-import java.io.File;
-
 /**
- * Factory to add truth support for apk files.
+ * Factory to add truth support for SyncIssue.
  */
-public class ApkSubjectFactory extends SubjectFactory<ApkSubject, File> {
-    public static ApkSubjectFactory factory() {
-        return new ApkSubjectFactory();
+public class IssueSubjectFactory extends SubjectFactory<IssueSubject, SyncIssue> {
+    public static IssueSubjectFactory factory() {
+        return new IssueSubjectFactory();
     }
 
-    private ApkSubjectFactory() {}
+    private IssueSubjectFactory() {}
 
     @Override
-    public ApkSubject getSubject(FailureStrategy failureStrategy, File subject) {
-        return new ApkSubject(failureStrategy, subject);
+    public IssueSubject getSubject(FailureStrategy failureStrategy, SyncIssue subject) {
+        return new IssueSubject(failureStrategy, subject);
     }
 }

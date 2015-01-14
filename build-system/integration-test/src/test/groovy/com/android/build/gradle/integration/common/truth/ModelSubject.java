@@ -16,23 +16,26 @@
 
 package com.android.build.gradle.integration.common.truth;
 
+import com.android.builder.model.AndroidProject;
+import com.google.common.truth.CollectionSubject;
 import com.google.common.truth.FailureStrategy;
-import com.google.common.truth.SubjectFactory;
-
-import java.io.File;
+import com.google.common.truth.Subject;
+import com.google.common.truth.Truth;
 
 /**
- * Factory to add truth support for apk files.
+ * Truth support for AndroidProject.
  */
-public class ApkSubjectFactory extends SubjectFactory<ApkSubject, File> {
-    public static ApkSubjectFactory factory() {
-        return new ApkSubjectFactory();
+public class ModelSubject extends Subject<ModelSubject, AndroidProject> {
+
+    public ModelSubject(FailureStrategy failureStrategy, AndroidProject subject) {
+        super(failureStrategy, subject);
     }
 
-    private ApkSubjectFactory() {}
+    public CollectionIssueSubject issues() {
+        return new CollectionIssueSubject(failureStrategy, getSubject().getSyncIssues());
+    }
 
-    @Override
-    public ApkSubject getSubject(FailureStrategy failureStrategy, File subject) {
-        return new ApkSubject(failureStrategy, subject);
+    public CollectionSubject issuesAsCollection() {
+        return Truth.assertThat(getSubject().getSyncIssues());
     }
 }

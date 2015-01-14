@@ -17,22 +17,32 @@
 package com.android.build.gradle.integration.common.truth;
 
 import com.google.common.truth.FailureStrategy;
-import com.google.common.truth.SubjectFactory;
-
-import java.io.File;
 
 /**
- * Factory to add truth support for apk files.
+ * Implementation of FailureStrategy to test custom Truth Subjects.
  */
-public class ApkSubjectFactory extends SubjectFactory<ApkSubject, File> {
-    public static ApkSubjectFactory factory() {
-        return new ApkSubjectFactory();
-    }
+class FakeFailureStrategy extends FailureStrategy {
 
-    private ApkSubjectFactory() {}
+    String message;
+    Throwable throwable;
+    CharSequence expected;
+    CharSequence actual;
 
     @Override
-    public ApkSubject getSubject(FailureStrategy failureStrategy, File subject) {
-        return new ApkSubject(failureStrategy, subject);
+    public void fail(String message) {
+        this.message = message;
+    }
+
+    @Override
+    public void fail(String message, Throwable cause) {
+        this.message = message;
+        this.throwable = cause;
+    }
+
+    @Override
+    public void failComparing(String message, CharSequence expected, CharSequence actual) {
+        this.message = message;
+        this.expected = expected;
+        this.actual = actual;
     }
 }

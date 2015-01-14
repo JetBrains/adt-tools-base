@@ -25,7 +25,7 @@ import java.io.File;
  * Factory to add truth support for zip files.
  */
 public class ZipFileSubjectFactory extends SubjectFactory<ZipFileSubject, File> {
-    public static ZipFileSubjectFactory zipFile() {
+    public static ZipFileSubjectFactory factory() {
         return new ZipFileSubjectFactory();
     }
 

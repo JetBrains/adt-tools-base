@@ -26,8 +26,7 @@ import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
 
-import static org.junit.Assert.assertEquals
-import static org.junit.Assert.assertNotNull
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 /**
  * test for dependency on a jar with a dependency on a library
  */
@@ -66,16 +65,9 @@ dependencies {
 
     @Test
     void "check model failed to load"() {
-        AndroidProject model = models.get(':app')
-        Collection<SyncIssue> issues = model.getSyncIssues()
-
-        assertNotNull(issues)
-        assertEquals(1, issues.size())
-
-        SyncIssue issue = issues.iterator().next()
-        assertNotNull(issue)
-        assertEquals(SyncIssue.SEVERITY_ERROR, issue.getSeverity())
-        assertEquals(SyncIssue.TYPE_JAR_DEPEND_ON_AAR, issue.getType())
-        assertEquals("projectWithModules:jar:jar:unspecified", issue.getData())
+        assertThat(models.get(':app')).issues().hasSingleIssue(
+                SyncIssue.SEVERITY_ERROR,
+                SyncIssue.TYPE_JAR_DEPEND_ON_AAR,
+                'projectWithModules:jar:jar:unspecified')
     }
 }
