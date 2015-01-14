@@ -18,6 +18,8 @@ package com.android.build.gradle.internal.model;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.BuildTypeData;
+import com.android.build.gradle.internal.api.DefaultAndroidSourceSet;
+import com.android.builder.core.VariantType;
 import com.android.builder.model.BuildType;
 import com.android.builder.model.BuildTypeContainer;
 import com.android.builder.model.SourceProvider;
@@ -25,6 +27,7 @@ import com.android.builder.model.SourceProviderContainer;
 
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.List;
 
 class BuildTypeContainerImpl implements BuildTypeContainer, Serializable {
     private static final long serialVersionUID = 1L;
@@ -45,14 +48,25 @@ class BuildTypeContainerImpl implements BuildTypeContainer, Serializable {
      * @return a non-null BuildTypeContainer
      */
     @NonNull
-    static BuildTypeContainer createBTC(
+    static BuildTypeContainer create(
             @NonNull BuildTypeData buildTypeData,
             @NonNull Collection<SourceProviderContainer> sourceProviderContainers) {
 
+        List<SourceProviderContainer> clonedContainers =
+                SourceProviderContainerImpl.cloneCollection(sourceProviderContainers);
+
+        for (VariantType variantType : VariantType.getTestingTypes()) {
+            DefaultAndroidSourceSet testSourceSet = buildTypeData.getTestSourceSet(variantType);
+            if (testSourceSet != null) {
+                clonedContainers.add(SourceProviderContainerImpl.create(
+                        variantType.getArtifactName(),
+                        testSourceSet));
+            }
+        }
         return new BuildTypeContainerImpl(
                 BuildTypeImpl.cloneBuildType(buildTypeData.getBuildType()),
                 SourceProviderImpl.cloneProvider(buildTypeData.getSourceSet()),
-                SourceProviderContainerImpl.cloneCollection(sourceProviderContainers));
+                clonedContainers);
     }
 
     private BuildTypeContainerImpl(

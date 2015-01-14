@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 The Android Open Source Project
+ * Copyright (C) 2015 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,31 +19,17 @@ package com.android.tests;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
-import org.junit.Test;
 import org.junit.Ignore;
-import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
-import android.app.Activity;
 import android.app.Application;
+import android.app.Activity;
+import android.bluetooth.BluetoothAdapter;
+import org.junit.Test;
 
-import com.android.tests.MainActivity;
-
-public class PassingTest {
+public class UnitTest {
     @Test
-    public void referenceFlavorSpecificCode() {
-        ClassThatBuilds o = new ClassThatBuilds();
-        assertTrue(o.run());
-    }
-
-    @Test
-    public void mockFinalMethod() {
-        Activity activity = mock(Activity.class);
-        Application app = mock(Application.class);
-        when(activity.getApplication()).thenReturn(app);
-
-        assertSame(app, activity.getApplication());
-
-        verify(activity).getApplication();
-        verifyNoMoreInteractions(activity);
+    public void referenceProductionCode() {
+        // Reference code for other build types. Should not compile.
+        DebugOnlyClass foo = new DebugOnlyClass();
+        assertEquals("debug", foo.foo());
     }
 }
