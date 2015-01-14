@@ -16,10 +16,38 @@
 
 package com.android.build.gradle.integration.common.truth;
 
+import static com.google.common.truth.Truth.assert_;
+
 import com.android.annotations.NonNull;
-import com.google.common.truth.Truth;
+import com.android.builder.model.AndroidProject;
+import com.android.builder.model.SyncIssue;
+import com.google.common.base.Optional;
+import com.google.common.truth.BooleanSubject;
+import com.google.common.truth.ClassSubject;
+import com.google.common.truth.CollectionSubject;
+import com.google.common.truth.ComparableSubject;
+import com.google.common.truth.DefaultSubject;
+import com.google.common.truth.IntegerSubject;
+import com.google.common.truth.IterableSubject;
+import com.google.common.truth.ListSubject;
+import com.google.common.truth.LongSubject;
+import com.google.common.truth.MapSubject;
+import com.google.common.truth.ObjectArraySubject;
+import com.google.common.truth.OptionalSubject;
+import com.google.common.truth.PrimitiveBooleanArraySubject;
+import com.google.common.truth.PrimitiveByteArraySubject;
+import com.google.common.truth.PrimitiveCharArraySubject;
+import com.google.common.truth.PrimitiveDoubleArraySubject;
+import com.google.common.truth.PrimitiveFloatArraySubject;
+import com.google.common.truth.PrimitiveIntArraySubject;
+import com.google.common.truth.PrimitiveLongArraySubject;
+import com.google.common.truth.StringSubject;
+import com.google.common.truth.Subject;
 
 import java.io.File;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Helper for custom Truth factories.
@@ -28,11 +56,110 @@ public class TruthHelper {
 
     @NonNull
     public static ApkSubject assertThatApk(@NonNull File apk) {
-        return Truth.assert_().about(ApkSubjectFactory.apk()).that(apk);
+        return assert_().about(ApkSubjectFactory.factory()).that(apk);
     }
 
     @NonNull
     public static ZipFileSubject assertThatZip(@NonNull File file) {
-        return Truth.assert_().about(ZipFileSubjectFactory.zipFile()).that(file);
+        return assert_().about(ZipFileSubjectFactory.factory()).that(file);
+    }
+
+    @NonNull
+    public static ModelSubject assertThat(@NonNull AndroidProject androidProject) {
+        return assert_().about(ModelSubjectFactory.factory()).that(androidProject);
+    }
+
+    @NonNull
+    public static IssueSubject assertThat(@NonNull SyncIssue issue) {
+        return assert_().about(IssueSubjectFactory.factory()).that(issue);
+    }
+
+
+    // ---- helper method from com.google.common.truth.Truth
+    // this to allow a single static import of assertThat
+
+    public static <T extends Comparable<?>> ComparableSubject<?, T> assertThat(T target) {
+        return assert_().that(target);
+    }
+
+    public static Subject<DefaultSubject, Object> assertThat(Object target) {
+        return assert_().that(target);
+    }
+
+    public static ClassSubject assertThat(Class<?> target) {
+        return assert_().that(target);
+    }
+
+    public static LongSubject assertThat(Long target) {
+        return assert_().that(target);
+    }
+
+    public static IntegerSubject assertThat(Integer target) {
+        return assert_().that(target);
+    }
+
+    public static BooleanSubject assertThat(Boolean target) {
+        return assert_().that(target);
+    }
+
+    public static StringSubject assertThat(String target) {
+        return assert_().that(target);
+    }
+
+    public static <T, C extends Iterable<T>> IterableSubject<? extends IterableSubject<?, T, C>, T, C>
+    assertThat(Iterable<T> target) {
+        return assert_().that(target);
+    }
+
+    public static <T, C extends Collection<T>>
+    CollectionSubject<? extends CollectionSubject<?, T, C>, T, C>
+    assertThat(Collection<T> target) {
+        return assert_().that(target);
+    }
+
+    public static <T, C extends List<T>> ListSubject<? extends ListSubject<?, T, C>, T, C>
+    assertThat(List<T> target) {
+        return assert_().that(target);
+    }
+
+    public static <T> ObjectArraySubject<T> assertThat(T[] target) {
+        return assert_().that(target);
+    }
+
+    public static PrimitiveBooleanArraySubject assertThat(boolean[] target) {
+        return assert_().that(target);
+    }
+
+    public static PrimitiveIntArraySubject assertThat(int[] target) {
+        return assert_().that(target);
+    }
+
+    public static PrimitiveLongArraySubject assertThat(long[] target) {
+        return assert_().that(target);
+    }
+
+    public static PrimitiveByteArraySubject assertThat(byte[] target) {
+        return assert_().that(target);
+    }
+
+    public static PrimitiveCharArraySubject assertThat(char[] target) {
+        return assert_().that(target);
+    }
+
+    public static PrimitiveFloatArraySubject assertThat(float[] target) {
+        return assert_().that(target);
+    }
+
+    public static PrimitiveDoubleArraySubject assertThat(double[] target) {
+        return assert_().that(target);
+    }
+
+    public static <T> OptionalSubject<T> assertThat(Optional<T> target) {
+        return assert_().that(target);
+    }
+
+    public static <K, V, M extends Map<K, V>> MapSubject<? extends MapSubject<?, K, V, M>, K, V, M>
+    assertThat(Map<K, V> target) {
+        return assert_().that(target);
     }
 }

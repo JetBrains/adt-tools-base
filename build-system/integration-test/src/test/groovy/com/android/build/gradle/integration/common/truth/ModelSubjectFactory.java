@@ -16,23 +16,22 @@
 
 package com.android.build.gradle.integration.common.truth;
 
+import com.android.builder.model.AndroidProject;
 import com.google.common.truth.FailureStrategy;
 import com.google.common.truth.SubjectFactory;
 
-import java.io.File;
-
 /**
- * Factory to add truth support for apk files.
+ * Factory to add truth support for AndroidProject.
  */
-public class ApkSubjectFactory extends SubjectFactory<ApkSubject, File> {
-    public static ApkSubjectFactory factory() {
-        return new ApkSubjectFactory();
+class ModelSubjectFactory extends SubjectFactory<ModelSubject, AndroidProject> {
+    public static ModelSubjectFactory factory() {
+        return new ModelSubjectFactory();
     }
 
-    private ApkSubjectFactory() {}
+    private ModelSubjectFactory() {}
 
     @Override
-    public ApkSubject getSubject(FailureStrategy failureStrategy, File subject) {
-        return new ApkSubject(failureStrategy, subject);
+    public ModelSubject getSubject(FailureStrategy failureStrategy, AndroidProject subject) {
+        return new ModelSubject(failureStrategy, subject);
     }
 }
