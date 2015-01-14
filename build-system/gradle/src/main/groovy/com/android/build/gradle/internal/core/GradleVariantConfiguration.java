@@ -39,17 +39,9 @@ public class GradleVariantConfiguration extends VariantConfiguration<BuildType, 
 
     private final MergedNdkConfig mMergedNdkConfig = new MergedNdkConfig();
 
-    public GradleVariantConfiguration(
-            @NonNull ProductFlavor defaultConfig,
-            @NonNull SourceProvider defaultSourceProvider,
-            @NonNull BuildType buildType,
-            @Nullable SourceProvider buildTypeSourceProvider,
-            @Nullable SigningConfig signingConfigOverride) {
-        super(defaultConfig, defaultSourceProvider, buildType, buildTypeSourceProvider,
-                signingConfigOverride);
-        computeNdkConfig();
-    }
-
+    /**
+     * Creates a {@link GradleVariantConfiguration} for a normal (non-test) variant.
+     */
     public GradleVariantConfiguration(
             @NonNull ProductFlavor defaultConfig,
             @NonNull SourceProvider defaultSourceProvider,
@@ -61,12 +53,15 @@ public class GradleVariantConfiguration extends VariantConfiguration<BuildType, 
         computeNdkConfig();
     }
 
+    /**
+     * Creates a {@link GradleVariantConfiguration} for a testing variant.
+     */
     public GradleVariantConfiguration(
-            @NonNull ProductFlavor defaultConfig,
+            @Nullable VariantConfiguration testedConfig, @NonNull ProductFlavor defaultConfig,
             @NonNull SourceProvider defaultSourceProvider,
             @NonNull BuildType buildType,
             @Nullable SourceProvider buildTypeSourceProvider,
-            @NonNull VariantType type, @Nullable VariantConfiguration testedConfig,
+            @NonNull VariantType type,
             @Nullable SigningConfig signingConfigOverride) {
         super(defaultConfig, defaultSourceProvider, buildType, buildTypeSourceProvider, type,
                 testedConfig, signingConfigOverride);

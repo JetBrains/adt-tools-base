@@ -151,7 +151,8 @@ public class ModelHelper {
                     btContainer.getSourceProvider())
                     .test();
 
-            assertEquals(0, btContainer.getExtraSourceProviders().size());
+            // For every build type there's the unit test source provider.
+            assertEquals(1, btContainer.getExtraSourceProviders().size());
         }
     }
 

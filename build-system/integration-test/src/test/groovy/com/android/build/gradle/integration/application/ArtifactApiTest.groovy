@@ -92,7 +92,7 @@ class ArtifactApiTest {
                     extraSourceProviderContainers)
             assertEquals(
                     "Extra source provider containers for build type size '" + name + "' check",
-                    1,
+                    DEFAULT_EXTRA_JAVA_ARTIFACTS + 1,
                     extraSourceProviderContainers.size())
 
             SourceProviderContainer sourceProviderContainer = extraSourceProviderContainers.iterator().next()

@@ -53,11 +53,11 @@ class ProductFlavorContainerImpl implements ProductFlavorContainer, Serializable
             @NonNull ProductFlavorData productFlavorData,
             @NonNull Collection<SourceProviderContainer> sourceProviderContainers) {
 
-        List<SourceProviderContainer> clonedContainer =
+        List<SourceProviderContainer> clonedContainers =
                 SourceProviderContainerImpl.cloneCollection(sourceProviderContainers);
 
         for (VariantType variantType : VariantType.getTestingTypes()) {
-            clonedContainer.add(SourceProviderContainerImpl.create(
+            clonedContainers.add(SourceProviderContainerImpl.create(
                     variantType.getArtifactName(),
                     productFlavorData.getTestSourceSet(variantType)));
         }
@@ -65,7 +65,7 @@ class ProductFlavorContainerImpl implements ProductFlavorContainer, Serializable
         return new ProductFlavorContainerImpl(
                 ProductFlavorImpl.cloneFlavor(productFlavorData.getProductFlavor(), null, null),
                 SourceProviderImpl.cloneProvider(productFlavorData.getSourceSet()),
-                clonedContainer);
+                clonedContainers);
     }
 
     private ProductFlavorContainerImpl(

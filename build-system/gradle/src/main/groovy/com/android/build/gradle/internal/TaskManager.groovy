@@ -1411,11 +1411,9 @@ class TaskManager {
     void createUnitTestTasks() {
         Task topLevelTest = project.tasks.create(JavaPlugin.TEST_TASK_NAME)
         topLevelTest.group = JavaBasePlugin.VERIFICATION_GROUP
-        topLevelTest.dependsOn createMockableJar
 
-        plugin.variantDataList.findAll { it.variantConfiguration.type == UNIT_TEST }.each { loopVariantData ->
-            // Inner scope copy for the closures.
-            TestVariantData variantData = loopVariantData as TestVariantData
+        plugin.variantDataList.findAll { it.variantConfiguration.type == UNIT_TEST }.each {
+            TestVariantData variantData = it as TestVariantData
             BaseVariantData testedVariantData = variantData.testedVariantData as BaseVariantData
 
             if (variantData.variantConfiguration.useJack
@@ -1452,6 +1450,7 @@ class TaskManager {
             runTestsTask.scanForTestClasses = false
             runTestsTask.include "**/*Test.class"
 
+            runTestsTask.dependsOn createMockableJar
             topLevelTest.dependsOn runTestsTask
         }
 
