@@ -19,7 +19,6 @@ package com.android.build.gradle.integration.common.truth;
 import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.collect.Lists;
-import com.google.common.truth.FailureStrategy;
 
 import org.junit.Test;
 
@@ -27,32 +26,6 @@ import java.io.File;
 import java.util.List;
 
 public class ApkSubjectTest {
-
-    private static final class FakeFailureStrategy extends FailureStrategy {
-
-        String message;
-        Throwable throwable;
-        CharSequence expected;
-        CharSequence actual;
-
-        @Override
-        public void fail(String message) {
-            this.message = message;
-        }
-
-        @Override
-        public void fail(String message, Throwable cause) {
-            this.message = message;
-            this.throwable = cause;
-        }
-
-        @Override
-        public void failComparing(String message, CharSequence expected, CharSequence actual) {
-            this.message = message;
-            this.expected = expected;
-            this.actual = actual;
-        }
-    }
 
     @Test
     public void notInBadgingOutput() {

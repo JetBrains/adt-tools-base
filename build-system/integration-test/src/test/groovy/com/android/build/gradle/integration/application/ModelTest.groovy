@@ -19,17 +19,17 @@
 package com.android.build.gradle.integration.application
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
-import com.android.builder.model.AndroidProject
 import com.android.builder.model.SyncIssue
+import groovy.transform.CompileStatic
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
-import static org.junit.Assert.assertEquals
-import static org.junit.Assert.assertNotNull
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 /**
  * General Model tests
  */
+@CompileStatic
 class ModelTest {
 
     @Rule
@@ -55,18 +55,9 @@ dependencies {
     compile 'foo:bar:1.2.3'
 }
 """
-        AndroidProject model = project.getSingleModel()
-
-        Collection<SyncIssue> issues = model.getSyncIssues()
-        assertNotNull(issues)
-
-        assertEquals(1, issues.size())
-
-        SyncIssue issue = issues.iterator().next()
-        assertNotNull(issue)
-
-        assertEquals(SyncIssue.SEVERITY_ERROR, issue.severity)
-        assertEquals(SyncIssue.TYPE_UNRESOLVED_DEPENDENCY, issue.type)
-        assertEquals('foo:bar:1.2.3', issue.data)
+        assertThat(project.getSingleModel()).issues().hasSingleIssue(
+                SyncIssue.SEVERITY_ERROR,
+                SyncIssue.TYPE_UNRESOLVED_DEPENDENCY,
+                'foo:bar:1.2.3')
     }
 }

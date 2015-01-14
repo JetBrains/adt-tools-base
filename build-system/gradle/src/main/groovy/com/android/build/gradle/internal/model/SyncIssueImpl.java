@@ -61,4 +61,14 @@ public class SyncIssueImpl implements SyncIssue, Serializable {
     public String getMessage() {
         return message;
     }
+
+    @Override
+    public String toString() {
+        return "SyncIssueImpl{" +
+                "type=" + type +
+                ", severity=" + severity +
+                ", data='" + data + '\'' +
+                ", message='" + message + '\'' +
+                '}';
+    }
 }
