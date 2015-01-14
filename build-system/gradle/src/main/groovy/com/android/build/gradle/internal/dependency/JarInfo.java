@@ -59,6 +59,10 @@ public class JarInfo {
         this.packaged = packaged;
     }
 
+    public boolean isPackaged() {
+        return packaged;
+    }
+
     @NonNull
     public File getJarFile() {
         return jarFile;

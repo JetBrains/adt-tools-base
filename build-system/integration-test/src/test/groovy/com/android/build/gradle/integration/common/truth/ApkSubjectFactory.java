@@ -24,7 +24,7 @@ import java.io.File;
 /**
  * Factory to add truth support for apk files.
  */
-public class ApkSubjectFactory extends SubjectFactory<ApkSubject, File> {
+class ApkSubjectFactory extends SubjectFactory<ApkSubject, File> {
     public static ApkSubjectFactory factory() {
         return new ApkSubjectFactory();
     }

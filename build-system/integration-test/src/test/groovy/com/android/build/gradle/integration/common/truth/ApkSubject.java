@@ -75,7 +75,7 @@ public class ApkSubject extends Subject<ApkSubject, File> {
 
     public void doesNotContainClass(String className) throws IOException, ProcessException {
         if (checkForClass(className)) {
-            failWithRawMessage("'%s' unexpectedly contain '%s'", getDisplaySubject(), className);
+            failWithRawMessage("'%s' unexpectedly contains '%s'", getDisplaySubject(), className);
         }
     }
 
