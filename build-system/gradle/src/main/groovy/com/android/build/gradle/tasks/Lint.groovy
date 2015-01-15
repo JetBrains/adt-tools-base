@@ -39,12 +39,17 @@ import org.gradle.api.Project
 import org.gradle.api.tasks.TaskAction
 
 public class Lint extends DefaultTask {
-    @NonNull private BasePlugin mPlugin
+    @NonNull private LintOptions mLintOptions
     @Nullable private String mVariantName
+    @Nullable private File mSdkHome
     private boolean mFatalOnly
 
-    public void setPlugin(@NonNull BasePlugin plugin) {
-        mPlugin = plugin
+    public void setLintOptions(@NonNull LintOptions lintOptions) {
+        mLintOptions = lintOptions
+    }
+
+    public void setSdkHome(@NonNull File sdkHome) {
+        mSdkHome = sdkHome
     }
 
     public void setVariantName(@NonNull String variantName) {
@@ -58,8 +63,6 @@ public class Lint extends DefaultTask {
     @SuppressWarnings("GroovyUnusedDeclaration")
     @TaskAction
     public void lint() {
-        assert project == mPlugin.getProject()
-
         def modelProject = createAndroidProject(project)
         if (mVariantName != null) {
             lintSingleVariant(modelProject, mVariantName)
@@ -84,7 +87,7 @@ public class Lint extends DefaultTask {
         }
 
         // Compute error matrix
-        def quiet = mPlugin.getExtension().lintOptions.quiet
+        def quiet = mLintOptions.quiet
 
 
         for (Map.Entry<Variant,List<Warning>> entry : warningMap.entrySet()) {
@@ -109,10 +112,9 @@ public class Lint extends DefaultTask {
 
         IssueRegistry registry = new BuiltinIssueRegistry()
         LintCliFlags flags = new LintCliFlags()
-        LintGradleClient client = new LintGradleClient(registry, flags, mPlugin, modelProject,
-                null)
-        syncOptions(mPlugin.getExtension().lintOptions, client, flags, null, project, true,
-                mFatalOnly)
+        LintGradleClient client = new LintGradleClient(registry, flags, project, modelProject,
+                mSdkHome, null)
+        syncOptions(mLintOptions, client, flags, null, project, true, mFatalOnly)
 
         for (Reporter reporter : flags.getReporters()) {
             reporter.write(errorCount, warningCount, mergedWarnings)
@@ -171,16 +173,15 @@ public class Lint extends DefaultTask {
             boolean report) {
         IssueRegistry registry = createIssueRegistry()
         LintCliFlags flags = new LintCliFlags()
-        LintGradleClient client = new LintGradleClient(registry, flags, mPlugin, modelProject,
-                variantName)
-        def options = mPlugin.getExtension().lintOptions
+        LintGradleClient client = new LintGradleClient(registry, flags, project, modelProject,
+                mSdkHome, variantName)
         if (mFatalOnly) {
-            if (!options.isCheckReleaseBuilds()) {
+            if (!mLintOptions.isCheckReleaseBuilds()) {
                 return
             }
             flags.setFatalOnly(true)
         }
-        syncOptions(options, client, flags, variantName, project, report, mFatalOnly)
+        syncOptions(mLintOptions, client, flags, variantName, project, report, mFatalOnly)
         if (!report || mFatalOnly) {
             flags.setQuiet(true)
         }

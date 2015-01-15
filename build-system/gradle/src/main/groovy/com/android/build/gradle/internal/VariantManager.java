@@ -219,14 +219,16 @@ public class VariantManager implements VariantModel {
         }
 
         // create the lint tasks.
-        taskManager.createLintTasks();
+        taskManager.createLintTasks(variantDataList);
 
         // create the test tasks.
-        taskManager.createConnectedCheckTasks(!productFlavors.isEmpty(), false /*isLibrary*/);
-        taskManager.createUnitTestTasks();
+        taskManager.createConnectedCheckTasks(variantDataList, !productFlavors.isEmpty(), false /*isLibrary*/);
+        taskManager.createUnitTestTasks(variantDataList);
 
         // Create the variant API objects after the tasks have been created!
         createApiObjects();
+
+        taskManager.createReportTasks(variantDataList);
     }
 
     /**

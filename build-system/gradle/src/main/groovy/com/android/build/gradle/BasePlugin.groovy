@@ -184,9 +184,6 @@ public abstract class BasePlugin {
                 logger,
                 verbose)
 
-        DependencyManager dependencyManager = new DependencyManager(project, extraModelInfo)
-        taskManager = new TaskManager(this, project, project.tasks, androidBuilder, dependencyManager)
-
         project.apply plugin: JavaBasePlugin
 
         project.apply plugin: JacocoPlugin
@@ -246,6 +243,9 @@ public abstract class BasePlugin {
                 buildTypeContainer, productFlavorContainer, signingConfigContainer,
                 this instanceof LibraryPlugin)
         setBaseExtension(extension)
+
+        DependencyManager dependencyManager = new DependencyManager(project, extraModelInfo)
+        taskManager = new TaskManager(project, project.tasks, androidBuilder, extension, sdkHandler, dependencyManager)
 
         variantManager = new VariantManager(project, this, extension, getVariantFactory(), taskManager)
 
@@ -349,7 +349,6 @@ public abstract class BasePlugin {
 
         taskManager.createMockableJarTask()
         variantManager.createAndroidTasks(getSigningOverride())
-        taskManager.createReportTasks()
     }
 
     public SigningConfig getSigningOverride() {
@@ -400,10 +399,6 @@ public abstract class BasePlugin {
 
     boolean isVerbose() {
         return project.logger.isEnabled(LogLevel.INFO)
-    }
-
-    boolean isDebugLog() {
-        return project.logger.isEnabled(LogLevel.DEBUG)
     }
 
     AndroidBuilder getAndroidBuilder() {
