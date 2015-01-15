@@ -64,6 +64,9 @@ public class GradleProcessExecutor implements ProcessExecutor {
             execSpec.environment(processInfo.getEnvironment())
             execSpec.setStandardOutput(processOutput.getStandardOutput())
             execSpec.setErrorOutput(processOutput.getErrorOutput())
+
+            // we want the caller to be able to do its own thing.
+            execSpec.setIgnoreExitValue(true)
         }
     }
 }
