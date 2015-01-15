@@ -15,7 +15,7 @@
  */
 
 package com.android.build.gradle.tasks
-import com.android.build.gradle.BasePlugin
+import com.android.builder.core.AndroidBuilder
 import com.android.sdklib.BuildToolInfo
 import com.android.sdklib.repository.FullRevision
 import com.google.common.base.Charsets
@@ -34,12 +34,15 @@ public class JackTask extends AbstractCompile {
 
     final static FullRevision JACK_MIN_REV = new FullRevision(21, 1, 0)
 
-    BasePlugin plugin
+    AndroidBuilder androidBuilder
+
+    boolean isVerbose
+
+    boolean isDebugLog
 
     @InputFile
     File getJackExe() {
-        plugin.ensureTargetSetup()
-        new File(plugin.androidBuilder.targetInfo.buildTools.getPath(BuildToolInfo.PathId.JACK))
+        new File(androidBuilder.targetInfo.buildTools.getPath(BuildToolInfo.PathId.JACK))
     }
 
     @InputFiles
@@ -71,7 +74,7 @@ public class JackTask extends AbstractCompile {
 
     @TaskAction
     void compile() {
-        plugin.androidBuilder.convertByteCodeWithJack(
+        androidBuilder.convertByteCodeWithJack(
                 getDestinationDir(),
                 getJackFile(),
                 computeBootClasspath(),
@@ -81,7 +84,7 @@ public class JackTask extends AbstractCompile {
                 getMappingFile(),
                 isMultiDexEnabled(),
                 getMinSdkVersion(),
-                plugin.isDebugLog(),
+                isDebugLog,
                 getJavaMaxHeapSize())
     }
 

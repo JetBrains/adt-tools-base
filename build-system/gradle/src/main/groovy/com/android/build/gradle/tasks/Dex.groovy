@@ -46,7 +46,7 @@ public class Dex extends BaseTask {
     // ----- PRIVATE TASK API -----
     @Input
     String getBuildToolsVersion() {
-        plugin.extension.buildToolsRevision
+        getBuildTools().getRevision()
     }
 
     @InputFiles @Optional

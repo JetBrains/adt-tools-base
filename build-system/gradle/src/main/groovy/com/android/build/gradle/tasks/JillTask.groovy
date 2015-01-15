@@ -46,7 +46,7 @@ public class JillTask extends BaseTask {
     // ----- PRIVATE TASK API -----
     @Input
     String getBuildToolsVersion() {
-        plugin.extension.buildToolsRevision
+        getBuildTools().getRevision()
     }
 
     @SuppressWarnings("GroovyUnusedDeclaration")
@@ -61,7 +61,7 @@ public class JillTask extends BaseTask {
 
     @TaskAction
     void taskAction(IncrementalTaskInputs taskInputs) {
-        FullRevision revision = plugin.androidBuilder.targetInfo.buildTools.revision
+        FullRevision revision = androidBuilder.targetInfo.buildTools.revision
         if (revision.compareTo(JACK_MIN_REV) < 0) {
             throw new RuntimeException("Jack requires Build Tools ${JACK_MIN_REV.toString()} or later")
         }
