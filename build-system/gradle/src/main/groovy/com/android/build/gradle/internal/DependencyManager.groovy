@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal
 
 import com.android.annotations.NonNull
+import com.android.annotations.Nullable
 import com.android.build.gradle.internal.dependency.DependencyChecker
 import com.android.build.gradle.internal.dependency.JarInfo
 import com.android.build.gradle.internal.dependency.LibInfo
@@ -29,13 +30,16 @@ import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.build.gradle.internal.variant.BaseVariantOutputData
 import com.android.builder.dependency.JarDependency
 import com.android.builder.dependency.LibraryDependency
+import com.android.builder.model.MavenCoordinates
 import com.android.builder.model.SyncIssue
 import com.android.utils.ILogger
 import com.google.common.collect.ArrayListMultimap
+import com.google.common.collect.HashBasedTable
 import com.google.common.collect.Lists
 import com.google.common.collect.Maps
 import com.google.common.collect.Multimap
 import com.google.common.collect.Sets
+import com.google.common.collect.Table
 import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
 import org.gradle.api.Project
@@ -101,10 +105,12 @@ class DependencyManager {
         }
     }
 
-    public void resolveDependencies(VariantDependencies variantDeps) {
+    public void resolveDependencies(
+            @NonNull VariantDependencies variantDeps,
+            @Nullable VariantDependencies testedVariantDeps) {
         Multimap<LibraryDependency, VariantDependencies> reverseMap = ArrayListMultimap.create()
 
-        resolveDependencyForConfig(variantDeps, reverseMap)
+        resolveDependencyForConfig(variantDeps, testedVariantDeps, reverseMap)
 
         processLibraries(variantDeps.getLibraries()) { LibraryDependencyImpl libDependency ->
             Task task = handleLibrary(project, libDependency)
@@ -127,7 +133,7 @@ class DependencyManager {
             weird setups...
             Project parentProject = DependenciesImpl.getProject(library.getBundle(), projects)
             if (parentProject != null) {
-                String configName = library.getProjectVariant();
+                String configName = library.getProjectVariant()
                 if (configName == null) {
                     configName = "default"
                 }
@@ -172,11 +178,12 @@ class DependencyManager {
             prepareTaskMap.put(library, prepareLibraryTask)
         }
 
-        return prepareLibraryTask;
+        return prepareLibraryTask
     }
 
     private void resolveDependencyForConfig(
             @NonNull VariantDependencies variantDeps,
+            @Nullable VariantDependencies testedVariantDeps,
             @NonNull Multimap<LibraryDependency, VariantDependencies> reverseMap) {
 
         Configuration compileClasspath = variantDeps.compileConfiguration
@@ -274,7 +281,7 @@ class DependencyManager {
                         "Project ${project.name}: provided dependencies can only be jars. " +
                                 "${lib.resolvedCoordinates} is an Android Library.")
             } else {
-                copyOfPackagedLibs.remove(lib);
+                copyOfPackagedLibs.remove(lib)
             }
         }
         // at this stage copyOfPackagedLibs should be empty, if not, error.
@@ -300,6 +307,46 @@ class DependencyManager {
         // at this step, we know that libraries have been checked and libraries can only
         // be in both compiled and packaged scope.
         gatherJarDependenciesFromLibraries(jarInfoSet, compiledAndroidLibraries, true, true)
+
+        // if this is a test dependencies (ie tested dependencies is non null), override
+        // packaged attributes for jars that are already in the tested dependencies in order to
+        // not package them twice (since the VM loads the classes of both APKs in the same
+        // classpath and refuses to load the same class twice)
+        if (testedVariantDeps != null) {
+            // gather the tested dependencies
+            Table<String, String, String> testedDeps = HashBasedTable.create()
+
+            for (JarDependency jar : testedVariantDeps.getJarDependencies()) {
+                if (jar.isPackaged()) {
+                    MavenCoordinates coord = jar.getResolvedCoordinates()
+                    testedDeps.put(coord.getGroupId(), coord.getArtifactId(), coord.getVersion())
+                }
+            }
+
+            // now go through all the test dependencies and check we don't have the same thing.
+            for (JarInfo jar : jarInfoSet) {
+                if (jar.isPackaged()) {
+                    MavenCoordinates coord = jar.getResolvedCoordinates()
+
+                    String testedVersion = testedDeps.get(coord.getGroupId(), coord.getArtifactId())
+                    if (testedVersion != null) {
+                        // if the dependency is present in both tested and test artifact,
+                        // verify that they are the same version
+                        if (!testedVersion.equals(coord.getVersion())) {
+                            String artifactInfo = "${coord.getGroupId()}:${coord.artifactId}"
+                            extraModelInfo.handleSyncError(
+                                    artifactInfo,
+                                    SyncIssue.TYPE_MISMATCH_DEP,
+                                    "Conflict with dependency '${artifactInfo}'. Resolved versions for app and test app differ.")
+                        } else {
+                            // same version, skip packaging of the dependency in the test app.
+                            jar.setPackaged(false)
+                            logger.info("Removed '${coord} from packaging of ${variantDeps.name}: Already in tested package.")
+                        }
+                    }
+                }
+            }
+        }
 
         // and convert them to the right class.
         List<JarDependency> jars = Lists.newArrayListWithCapacity(jarInfoSet.size())
@@ -500,7 +547,7 @@ class DependencyManager {
                 ensureConfigured(dep.projectConfiguration)
             } catch (Throwable e) {
                 throw new UnknownProjectException(
-                        "Cannot evaluate module ${dep.name} : ${e.getMessage()}", e);
+                        "Cannot evaluate module ${dep.name} : ${e.getMessage()}", e)
             }
         }
     }
@@ -607,8 +654,8 @@ class DependencyManager {
 
             if (DEBUG_DEPENDENCY) {
                 printIndent indent, "BACK2: " + id.name
-                printIndent indent, "NESTED LIBS: " + nestedLibraries.size();
-                printIndent indent, "NESTED JARS: " + nestedJars.size();
+                printIndent indent, "NESTED LIBS: " + nestedLibraries.size()
+                printIndent indent, "NESTED JARS: " + nestedJars.size()
             }
 
             // now loop on all the artifact for this modules.
@@ -658,7 +705,7 @@ class DependencyManager {
                         extraModelInfo.handleSyncError(
                                 new MavenCoordinatesImpl(artifact).toString(),
                                 SyncIssue.TYPE_JAR_DEPEND_ON_AAR,
-                                "Module version $id depends on libraries but is a jar");
+                                "Module version $id depends on libraries but is a jar")
                     }
 
                     if (jarsForThisModule == null) {
@@ -671,7 +718,7 @@ class DependencyManager {
                             new MavenCoordinatesImpl(artifact),
                             nestedJars)
 
-                    jarsForThisModule.add(jarInfo);
+                    jarsForThisModule.add(jarInfo)
                     outJars.add(jarInfo)
 
                 } else if (artifact.type == EXT_ANDROID_PACKAGE) {
@@ -719,10 +766,10 @@ class DependencyManager {
         if (path == null || path.isEmpty()) {
             logger.info("When unzipping library '${id.group}:${id.name}:${id.version}, " +
                     "either group, name or version is empty")
-            return path;
+            return path
         }
         // list of illegal characters
-        String normalizedPath = path.replaceAll("[%<>:\"/?*\\\\]","@");
+        String normalizedPath = path.replaceAll("[%<>:\"/?*\\\\]","@")
         if (normalizedPath == null || normalizedPath.isEmpty()) {
             // if the path normalization failed, return the original path.
             logger.info("When unzipping library '${id.group}:${id.name}:${id.version}, " +
@@ -730,9 +777,9 @@ class DependencyManager {
             return path
         }
         try {
-            int pathPointer = normalizedPath.length() - 1;
+            int pathPointer = normalizedPath.length() - 1
             // do not end your path with either a dot or a space.
-            String suffix = "";
+            String suffix = ""
             while (pathPointer >= 0 && (normalizedPath.charAt(pathPointer) == '.'
                     || normalizedPath.charAt(pathPointer) == ' ')) {
                 pathPointer--
@@ -741,23 +788,23 @@ class DependencyManager {
             if (pathPointer < 0) {
                 throw new RuntimeException(
                         "When unzipping library '${id.group}:${id.name}:${id.version}, " +
-                                "the path '${path}' cannot be transformed into a valid directory name");
+                                "the path '${path}' cannot be transformed into a valid directory name")
             }
             return normalizedPath.substring(0, pathPointer + 1) + suffix
         } catch (Exception e) {
             logger.error(e, "When unzipping library '${id.group}:${id.name}:${id.version}', " +
                     "Path normalization failed for input ${path}")
-            return path;
+            return path
         }
     }
 
     private void configureBuild(VariantDependencies configurationDependencies) {
         addDependsOnTaskInOtherProjects(
                 project.getTasks().getByName(JavaBasePlugin.BUILD_NEEDED_TASK_NAME), true,
-                JavaBasePlugin.BUILD_NEEDED_TASK_NAME, "compile");
+                JavaBasePlugin.BUILD_NEEDED_TASK_NAME, "compile")
         addDependsOnTaskInOtherProjects(
                 project.getTasks().getByName(JavaBasePlugin.BUILD_DEPENDENTS_TASK_NAME), false,
-                JavaBasePlugin.BUILD_DEPENDENTS_TASK_NAME, "compile");
+                JavaBasePlugin.BUILD_DEPENDENTS_TASK_NAME, "compile")
     }
 
     /**
@@ -775,11 +822,11 @@ class DependencyManager {
     private static void addDependsOnTaskInOtherProjects(final Task task, boolean useDependedOn,
             String otherProjectTaskName,
             String configurationName) {
-        Project project = task.getProject();
+        Project project = task.getProject()
         final Configuration configuration = project.getConfigurations().getByName(
-                configurationName);
+                configurationName)
         task.dependsOn(configuration.getTaskDependencyFromProjectDependency(
-                useDependedOn, otherProjectTaskName));
+                useDependedOn, otherProjectTaskName))
     }
 
     @CompileDynamic
