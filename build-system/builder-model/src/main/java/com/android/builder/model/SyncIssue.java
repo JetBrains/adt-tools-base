@@ -53,7 +53,13 @@ public interface SyncIssue {
     // data is dependency coordinate/path
     public static final int TYPE_JAR_DEPEND_ON_AAR        = 8;
 
-    public static final int TYPE_MAX                      = 9; // increment when adding new types.
+    /**
+     * Mismatch dependency version between tested and test
+     * app. Data is dep coordinate without the version (groupId:artifactId)
+     */
+    public static final int TYPE_MISMATCH_DEP             = 9;
+
+    public static final int TYPE_MAX                      = 10; // increment when adding new types.
 
     /**
      * Returns the severity of the issue.

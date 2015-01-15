@@ -33,7 +33,7 @@ public class GenerateApkDataTask extends BaseTask {
 
     @Input
     String getBuildToolsVersion() {
-        plugin.extension.buildToolsRevision
+        getBuildTools().getRevision()
     }
 
     @InputFile

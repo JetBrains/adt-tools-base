@@ -14,24 +14,35 @@
  * limitations under the License.
  */
 package com.android.build.gradle.internal.tasks
-import com.android.build.gradle.BasePlugin
+import com.android.build.gradle.internal.LoggerWrapper
 import com.android.builder.core.AndroidBuilder
+import com.android.sdklib.BuildToolInfo
+import com.android.utils.ILogger
 import org.gradle.api.DefaultTask
 
 public abstract class BaseTask extends DefaultTask {
 
-    BasePlugin plugin
+    AndroidBuilder androidBuilder
+
+    private ILogger iLogger
 
     protected AndroidBuilder getBuilder() {
-        return plugin.getAndroidBuilder()
+        return androidBuilder
+    }
+
+    protected getILogger() {
+        if (iLogger == null) {
+            iLogger = new LoggerWrapper(getLogger())
+        }
+        return iLogger
     }
 
     protected void emptyFolder(File folder) {
-        if (plugin!= null && plugin.logger != null) {
-            plugin.logger.info("deleteDir(" + folder + ") returned: " + folder.deleteDir());
-        } else {
-            folder.deleteDir();
-        }
+        logger.info("deleteDir(" + folder + ") returned: " + folder.deleteDir());
         folder.mkdirs()
+    }
+
+    protected BuildToolInfo getBuildTools() {
+        androidBuilder.getTargetInfo().getBuildTools()
     }
 }

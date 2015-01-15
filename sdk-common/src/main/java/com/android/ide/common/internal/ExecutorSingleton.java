@@ -24,10 +24,14 @@ import java.util.concurrent.Executors;
  */
 public class ExecutorSingleton {
 
-    private static ExecutorService sExecutorService = create();
+    private static ExecutorService sExecutorService;
 
     public static synchronized ExecutorService getExecutor() {
-        checkExecutor();
+        if (sExecutorService == null) {
+            sExecutorService = Executors.newFixedThreadPool(
+                    Runtime.getRuntime().availableProcessors());
+        }
+
         return sExecutorService;
     }
 
@@ -36,20 +40,5 @@ public class ExecutorSingleton {
             sExecutorService.shutdown();
             sExecutorService = null;
         }
-    }
-
-    public static synchronized void restart() {
-        shutdown();
-        sExecutorService = create();
-    }
-
-    private static void checkExecutor() {
-        if (sExecutorService == null) {
-            throw new RuntimeException("Executor Singleton not started");
-        }
-    }
-
-    private static ExecutorService create() {
-        return Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
     }
 }

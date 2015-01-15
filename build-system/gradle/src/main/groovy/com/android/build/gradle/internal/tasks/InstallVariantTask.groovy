@@ -39,6 +39,8 @@ public class InstallVariantTask extends BaseTask {
     @InputFile
     File adbExe
 
+    String projectName
+
     int timeOut = 0
 
     BaseVariantData<? extends BaseVariantOutputData> variantData
@@ -56,7 +58,6 @@ public class InstallVariantTask extends BaseTask {
 
         VariantConfiguration variantConfig = variantData.variantConfiguration
         String variantName = variantConfig.fullName
-        String projectName = plugin.project.name
 
         String serial = System.getenv("ANDROID_SERIAL");
 
@@ -69,7 +70,7 @@ public class InstallVariantTask extends BaseTask {
 
             if (device.getState() != IDevice.DeviceState.UNAUTHORIZED) {
                 if (InstallUtils.checkDeviceApiLevel(
-                        device, variantConfig.minSdkVersion, plugin.logger, projectName,
+                        device, variantConfig.minSdkVersion, getILogger(), projectName,
                         variantName)) {
 
                     // now look for a matching output file
@@ -82,25 +83,25 @@ public class InstallVariantTask extends BaseTask {
                             device.getAbis())
 
                     if (outputFiles.isEmpty()) {
-                        project.logger.lifecycle(
+                        logger.lifecycle(
                                 "Skipping device '${device.getName()}' for '${projectName}:${variantName}': " +
                                 "Could not find build of variant which supports density ${device.getDensity()} " +
                                 "and an ABI in " + Joiner.on(", ").join(device.getAbis()));
                     } else {
                         List<File> apkFiles = ((List<ApkOutputFile>) outputFiles)*.getOutputFile()
-                        project.logger.lifecycle("Installing APK '${Joiner.on(", ").join(apkFiles*.getName())}'" +
+                        logger.lifecycle("Installing APK '${Joiner.on(", ").join(apkFiles*.getName())}'" +
                                 " on '${device.getName()}'")
                         if (outputFiles.size() > 1 || device.getApiLevel() >= 21) {
-                            device.installPackages(apkFiles, getTimeOut(), plugin.logger);
+                            device.installPackages(apkFiles, getTimeOut(), logger);
                             successfulInstallCount++
                         } else {
-                            device.installPackage(apkFiles.get(0), getTimeOut(), plugin.logger)
+                            device.installPackage(apkFiles.get(0), getTimeOut(), logger)
                             successfulInstallCount++
                         }
                     }
                 } // When InstallUtils.checkDeviceApiLevel returns false, it logs the reason.
             } else {
-                project.logger.lifecycle(
+                logger.lifecycle(
                         "Skipping device '${device.getName()}' for '${projectName}:${variantName}': Device not authorized, see http://developer.android.com/tools/help/adb.html#Enabling.");
 
             }
@@ -113,7 +114,7 @@ public class InstallVariantTask extends BaseTask {
                 throw new GradleException("Failed to install on any devices.")
             }
         } else {
-            project.logger.quiet("Installed on ${successfulInstallCount} ${successfulInstallCount==1?'device':'devices'}.");
+            logger.quiet("Installed on ${successfulInstallCount} ${successfulInstallCount==1?'device':'devices'}.");
         }
     }
 }

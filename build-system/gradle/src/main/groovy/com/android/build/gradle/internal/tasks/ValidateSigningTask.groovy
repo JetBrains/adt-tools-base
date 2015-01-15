@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.internal.tasks
 
+import com.android.build.gradle.internal.LoggerWrapper
 import com.android.builder.model.SigningConfig
 import com.android.ide.common.signing.KeystoreHelper
 import org.gradle.api.tasks.Input
@@ -58,9 +59,10 @@ class ValidateSigningTask extends BaseTask {
         if (storeFile != null && !storeFile.exists()) {
             if (KeystoreHelper.defaultDebugKeystoreLocation().equals(storeFile.absolutePath)) {
                 getLogger().info("Creating default debug keystore at %s" + storeFile.absolutePath)
-                if (!KeystoreHelper.createDebugStore(signingConfig.getStoreType(),
-                    signingConfig.getStoreFile(), signingConfig.getStorePassword(),
-                    signingConfig.getKeyPassword(), signingConfig.getKeyAlias(), plugin.getLogger())) {
+                if (!KeystoreHelper.createDebugStore(
+                        signingConfig.getStoreType(), signingConfig.getStoreFile(),
+                        signingConfig.getStorePassword(), signingConfig.getKeyPassword(),
+                        signingConfig.getKeyAlias(), getILogger())) {
                     throw new BuildException("Unable to recreate missing debug keystore.", null);
                 }
             }
