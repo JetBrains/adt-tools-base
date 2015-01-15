@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 package com.android.build.gradle
+
 import com.android.SdkConstants
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
@@ -49,6 +50,10 @@ import org.gradle.api.internal.DefaultDomainObjectSet
 import org.gradle.api.internal.project.ProjectInternal
 import org.gradle.api.tasks.SourceSet
 import org.gradle.internal.reflect.Instantiator
+
+import static com.android.builder.core.VariantType.ANDROID_TEST
+import static com.android.builder.core.VariantType.UNIT_TEST
+
 /**
  * Base 'android' extension for all android plugins.
  *
@@ -183,6 +188,10 @@ public abstract class BaseExtension {
 
             sourceSet.setRoot(String.format("src/%s", sourceSet.getName()))
         }
+
+        sourceSetsContainer.create(defaultConfig.name)
+        sourceSetsContainer.create(ANDROID_TEST.prefix)
+        sourceSetsContainer.create(UNIT_TEST.prefix)
     }
 
     protected void createConfiguration(

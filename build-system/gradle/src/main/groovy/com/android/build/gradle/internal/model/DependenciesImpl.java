@@ -20,7 +20,6 @@ import static com.android.SdkConstants.DOT_JAR;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.gradle.BasePlugin;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.dependency.LibraryDependencyImpl;
 import com.android.build.gradle.internal.dependency.VariantDependencies;
@@ -71,7 +70,7 @@ public class DependenciesImpl implements Dependencies, Serializable {
     @NonNull
     static DependenciesImpl cloneDependencies(
             @NonNull BaseVariantData variantData,
-            @NonNull BasePlugin basePlugin,
+            @NonNull AndroidBuilder androidBuilder,
             @NonNull Set<Project> gradleProjects) {
         VariantDependencies variantDependencies = variantData.getVariantDependency();
 
@@ -122,7 +121,6 @@ public class DependenciesImpl implements Dependencies, Serializable {
         }
 
         GradleVariantConfiguration variantConfig = variantData.getVariantConfiguration();
-        AndroidBuilder androidBuilder = basePlugin.getAndroidBuilder();
 
         if (variantConfig.getRenderscriptSupportModeEnabled()) {
             File supportJar = androidBuilder.getRenderScriptSupportJar();
