@@ -32,7 +32,6 @@ import com.android.build.gradle.internal.dsl.GroupableProductFlavor
 import com.android.build.gradle.internal.dsl.SigningConfig
 import com.android.build.gradle.internal.dsl.SigningConfigFactory
 import com.android.build.gradle.internal.tasks.DependencyReportTask
-import com.android.build.gradle.internal.tasks.PrepareSdkTask
 import com.android.build.gradle.internal.tasks.SigningReportTask
 import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.build.gradle.internal.variant.TestVariantData
@@ -49,7 +48,6 @@ import org.gradle.api.Task
 import org.gradle.api.artifacts.repositories.MavenArtifactRepository
 import org.gradle.api.file.SourceDirectorySet
 import org.gradle.api.internal.project.ProjectInternal
-import org.gradle.api.plugins.JavaBasePlugin
 import org.gradle.api.tasks.TaskContainer
 import org.gradle.internal.reflect.Instantiator
 import org.gradle.internal.service.ServiceRegistry
@@ -205,6 +203,8 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
                 @Path("android.signingConfigs") NamedDomainObjectContainer<SigningConfig> signingConfigContainer,
                 VariantFactory variantFactory,
                 BasePlugin plugin) {
+            plugin.ensureTargetSetup()
+
             VariantManager variantManager = new VariantManager(
                     plugin.project,
                     plugin,

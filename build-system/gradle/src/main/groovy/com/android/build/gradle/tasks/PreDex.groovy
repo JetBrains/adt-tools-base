@@ -43,7 +43,7 @@ public class PreDex extends BaseTask {
     // ----- PRIVATE TASK API -----
     @Input
     String getBuildToolsVersion() {
-        plugin.extension.buildToolsRevision
+        getBuildTools().getRevision()
     }
 
     // this is used automatically by Gradle, even though nothing
