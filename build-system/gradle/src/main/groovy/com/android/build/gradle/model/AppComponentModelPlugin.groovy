@@ -18,6 +18,7 @@ package com.android.build.gradle.model
 
 import com.android.build.gradle.AppExtension
 import com.android.build.gradle.BasePlugin
+import com.android.build.gradle.internal.TaskManager
 import com.android.build.gradle.internal.variant.ApplicationVariantFactory
 import com.android.build.gradle.internal.variant.VariantFactory
 import org.gradle.api.Plugin
@@ -51,8 +52,8 @@ public class AppComponentModelPlugin implements Plugin<Project> {
             }
 
             @Model
-            VariantFactory createVariantFactory(BasePlugin plugin) {
-                return new ApplicationVariantFactory(plugin, plugin.taskManager)
+            VariantFactory createVariantFactory(BasePlugin plugin, TaskManager taskManager) {
+                return new ApplicationVariantFactory(plugin, taskManager)
             }
         }
     }

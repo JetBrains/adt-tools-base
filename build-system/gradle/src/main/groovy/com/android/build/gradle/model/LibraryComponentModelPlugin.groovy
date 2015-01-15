@@ -18,8 +18,10 @@
 
 package com.android.build.gradle.model
 
+import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.BasePlugin
 import com.android.build.gradle.LibraryExtension
+import com.android.build.gradle.internal.TaskManager
 import com.android.build.gradle.internal.variant.LibraryVariantFactory
 import com.android.build.gradle.internal.variant.VariantFactory
 import org.gradle.api.Plugin
@@ -60,11 +62,11 @@ public class LibraryComponentModelPlugin implements Plugin<Project> {
             }
 
             @Model
-            VariantFactory createVariantFactory(BasePlugin plugin) {
+            VariantFactory createVariantFactory(BasePlugin plugin, BaseExtension extension, TaskManager taskManager) {
                 return new LibraryVariantFactory(
                         plugin,
-                        (LibraryExtension) plugin.getExtension(),
-                        plugin.getTaskManager());
+                        (LibraryExtension) extension,
+                        taskManager);
             }
         }
     }

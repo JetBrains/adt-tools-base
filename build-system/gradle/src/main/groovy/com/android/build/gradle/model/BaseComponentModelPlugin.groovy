@@ -24,6 +24,7 @@ import com.android.build.gradle.LibraryExtension
 import com.android.build.gradle.api.AndroidSourceDirectorySet
 import com.android.build.gradle.api.AndroidSourceSet
 import com.android.build.gradle.internal.BuildTypeData
+import com.android.build.gradle.internal.DependencyManager
 import com.android.build.gradle.internal.ProductFlavorData
 import com.android.build.gradle.internal.TaskManager
 import com.android.build.gradle.internal.VariantManager
@@ -194,6 +195,12 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
         void closeProjectSourceSet(AndroidComponentModelSourceSet sources) {
         }
 
+        @Model
+        TaskManager createTaskManager(BaseExtension androidExtension, Project project, BasePlugin plugin) {
+            DependencyManager dependencyManager = new DependencyManager(project, plugin.extraModelInfo)
+            return new TaskManager(project, project.tasks, plugin.androidBuilder, androidExtension, plugin.sdkHandler, dependencyManager)
+        }
+
         @Mutate
         void createAndroidComponents(
                 AndroidComponentSpec androidSpec,
@@ -202,15 +209,17 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
                 @Path("android.productFlavors") NamedDomainObjectContainer<GroupableProductFlavor> productFlavorContainer,
                 @Path("android.signingConfigs") NamedDomainObjectContainer<SigningConfig> signingConfigContainer,
                 VariantFactory variantFactory,
+                TaskManager taskManager,
+                Project project,
                 BasePlugin plugin) {
             plugin.ensureTargetSetup()
 
             VariantManager variantManager = new VariantManager(
-                    plugin.project,
+                    project,
                     plugin,
                     androidExtension,
                     variantFactory,
-                    plugin.getTaskManager())
+                    taskManager)
 
             signingConfigContainer.all { SigningConfig signingConfig ->
                 variantManager.addSigningConfig(signingConfig)
@@ -256,14 +265,13 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
                 TaskContainer tasks,
                 BinaryContainer binaries,
                 AndroidComponentSpec androidSpec,
+                TaskManager taskManager,
                 BasePlugin plugin,
                 AndroidComponentModelSourceSet androidSources) {
             DefaultAndroidComponentSpec spec = (DefaultAndroidComponentSpec) androidSpec
             VariantManager variantManager = spec.variantManager
 
             applyProjectSourceSet(spec, androidSources, plugin)
-
-            TaskManager taskManager = plugin.getTaskManager()
 
             // Create lifecycle tasks.
             taskManager.createTasks()
@@ -303,10 +311,13 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
             }
 
             // create the lint tasks.
-            taskManager.createLintTasks();
+            taskManager.createLintTasks(variantManager.variantDataList);
 
             // create the test tasks.
-            taskManager.createConnectedCheckTasks(!variantManager.productFlavors.isEmpty(), false /*isLibrary*/);
+            taskManager.createConnectedCheckTasks(
+                    variantManager.variantDataList,
+                    !variantManager.productFlavors.isEmpty() /*hasFlavors*/,
+                    false /*isLibrary*/);
 
             // Create the variant API objects after the tasks have been created!
             variantManager.createApiObjects();
