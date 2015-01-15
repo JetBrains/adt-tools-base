@@ -26,7 +26,7 @@ import java.util.zip.ZipFile;
 /**
  * Truth support for zip files.
  */
-public class ZipFileSubject extends Subject<ZipFileSubject, File> {
+class ZipFileSubject extends Subject<ZipFileSubject, File> {
     private ZipFile zip;
 
     public ZipFileSubject(FailureStrategy failureStrategy, File subject) {
