@@ -18,7 +18,6 @@ package com.android.build.gradle.tasks
 
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
-import com.android.build.gradle.BasePlugin
 import com.android.build.gradle.internal.LintGradleClient
 import com.android.build.gradle.internal.dsl.LintOptions
 import com.android.build.gradle.internal.model.ModelBuilder

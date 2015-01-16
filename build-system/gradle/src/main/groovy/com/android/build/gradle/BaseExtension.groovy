@@ -22,6 +22,9 @@ import com.android.build.gradle.api.AndroidSourceSet
 import com.android.build.gradle.api.BaseVariant
 import com.android.build.gradle.api.TestVariant
 import com.android.build.gradle.internal.CompileOptions
+import com.android.build.gradle.internal.ExtraModelInfo
+import com.android.build.gradle.internal.LoggingUtil
+import com.android.build.gradle.internal.SdkHandler
 import com.android.build.gradle.internal.SourceSetSourceProviderWrapper
 import com.android.build.gradle.internal.coverage.JacocoExtension
 import com.android.build.gradle.internal.dsl.AaptOptions
@@ -35,19 +38,23 @@ import com.android.build.gradle.internal.dsl.ProductFlavor
 import com.android.build.gradle.internal.dsl.SigningConfig
 import com.android.build.gradle.internal.dsl.Splits
 import com.android.build.gradle.internal.test.TestOptions
+import com.android.builder.core.AndroidBuilder
 import com.android.builder.core.BuilderConstants
 import com.android.builder.model.SourceProvider
 import com.android.builder.testing.api.DeviceProvider
 import com.android.builder.testing.api.TestServer
 import com.android.sdklib.repository.FullRevision
-import com.android.utils.ILogger
 import com.google.common.collect.Lists
 import org.gradle.api.Action
+import org.gradle.api.GradleException
 import org.gradle.api.NamedDomainObjectContainer
+import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.ConfigurationContainer
 import org.gradle.api.internal.DefaultDomainObjectSet
 import org.gradle.api.internal.project.ProjectInternal
+import org.gradle.api.logging.Logger
+import org.gradle.api.logging.Logging
 import org.gradle.api.tasks.SourceSet
 import org.gradle.internal.reflect.Instantiator
 
@@ -104,6 +111,10 @@ public abstract class BaseExtension {
     /** Signing configs used by this project. */
     final NamedDomainObjectContainer<SigningConfig> signingConfigs
 
+    private ExtraModelInfo extraModelInfo
+
+    protected Project project
+
     /** A prefix to be used when creating new resources. Used by Studio */
     String resourcePrefix
 
@@ -122,7 +133,13 @@ public abstract class BaseExtension {
     private final List<DeviceProvider> deviceProviderList = Lists.newArrayList();
     private final List<TestServer> testServerList = Lists.newArrayList();
 
-    private final BasePlugin plugin
+    private final AndroidBuilder androidBuilder
+
+    private final SdkHandler sdkHandler
+
+    protected Logger logger
+
+    private boolean isWritable = true;
 
     /**
      * The source sets container.
@@ -130,17 +147,24 @@ public abstract class BaseExtension {
     final NamedDomainObjectContainer<AndroidSourceSet> sourceSetsContainer
 
     BaseExtension(
-            @NonNull BasePlugin plugin,
             @NonNull ProjectInternal project,
             @NonNull Instantiator instantiator,
+            @NonNull AndroidBuilder androidBuilder,
+            @NonNull SdkHandler sdkHandler,
             @NonNull NamedDomainObjectContainer<BuildType> buildTypes,
             @NonNull NamedDomainObjectContainer<GroupableProductFlavor> productFlavors,
             @NonNull NamedDomainObjectContainer<SigningConfig> signingConfigs,
+            @NonNull ExtraModelInfo extraModelInfo,
             boolean isLibrary) {
-        this.plugin = plugin
+        this.androidBuilder = androidBuilder
+        this.sdkHandler = sdkHandler
         this.buildTypes = buildTypes
         this.productFlavors = productFlavors
         this.signingConfigs = signingConfigs
+        this.extraModelInfo = extraModelInfo
+        this.project = project
+
+        logger = Logging.getLogger(this.class)
 
         defaultConfig = instantiator.newInstance(ProductFlavor, BuilderConstants.MAIN,
                 project, instantiator, project.getLogger())
@@ -194,6 +218,24 @@ public abstract class BaseExtension {
         sourceSetsContainer.create(UNIT_TEST.prefix)
     }
 
+    /**
+     * Disallow further modification on the extension.
+     */
+    public void disableWrite() {
+        isWritable = false
+    }
+
+    private checkWritability() {
+        if (!isWritable) {
+            throw new GradleException(
+                    "Android tasks have already been created.\n" +
+                            "This happens when calling android.applicationVariants,\n" +
+                            "android.libraryVariants or android.testVariants.\n" +
+                            "Once these methods are called, it is not possible to\n" +
+                            "continue configuring the model.")
+        }
+    }
+
     protected void createConfiguration(
             @NonNull ConfigurationContainer configurations,
             @NonNull String configurationName,
@@ -213,7 +255,7 @@ public abstract class BaseExtension {
      * <code>android-21</code> for Lollipop.
      */
     void compileSdkVersion(String version) {
-        plugin.checkTasksAlreadyCreated()
+        checkWritability()
         this.target = version
     }
 
@@ -233,7 +275,7 @@ public abstract class BaseExtension {
     }
 
     void buildToolsVersion(String version) {
-        plugin.checkTasksAlreadyCreated()
+        checkWritability()
         buildToolsRevision = FullRevision.parseRevision(version)
     }
 
@@ -255,7 +297,7 @@ public abstract class BaseExtension {
      * Configures the build types.
      */
     void buildTypes(Action<? super NamedDomainObjectContainer<BuildType>> action) {
-        plugin.checkTasksAlreadyCreated()
+        checkWritability()
         action.execute(buildTypes)
     }
 
@@ -263,7 +305,7 @@ public abstract class BaseExtension {
      * Configures the product flavors.
      */
     void productFlavors(Action<? super NamedDomainObjectContainer<GroupableProductFlavor>> action) {
-        plugin.checkTasksAlreadyCreated()
+        checkWritability()
         action.execute(productFlavors)
     }
 
@@ -271,12 +313,12 @@ public abstract class BaseExtension {
      * Configures the signing configs.
      */
     void signingConfigs(Action<? super NamedDomainObjectContainer<SigningConfig>> action) {
-        plugin.checkTasksAlreadyCreated()
+        checkWritability()
         action.execute(signingConfigs)
     }
 
     public void flavorDimensions(String... dimensions) {
-        plugin.checkTasksAlreadyCreated()
+        checkWritability()
         flavorDimensionList = Arrays.asList(dimensions)
     }
 
@@ -285,7 +327,7 @@ public abstract class BaseExtension {
      * source sets, {@link AndroidSourceSet}.
      */
     void sourceSets(Action<NamedDomainObjectContainer<AndroidSourceSet>> action) {
-        plugin.checkTasksAlreadyCreated()
+        checkWritability()
         action.execute(sourceSetsContainer)
     }
 
@@ -301,7 +343,7 @@ public abstract class BaseExtension {
      * The default configuration, inherited by all build flavors (if any are defined).
      */
     void defaultConfig(Action<ProductFlavor> action) {
-        plugin.checkTasksAlreadyCreated()
+        checkWritability()
         action.execute(defaultConfig)
     }
 
@@ -309,7 +351,7 @@ public abstract class BaseExtension {
      * Configures aapt options.
      */
     void aaptOptions(Action<AaptOptions> action) {
-        plugin.checkTasksAlreadyCreated()
+        checkWritability()
         action.execute(aaptOptions)
     }
 
@@ -318,7 +360,7 @@ public abstract class BaseExtension {
      * @param action
      */
     void dexOptions(Action<DexOptions> action) {
-        plugin.checkTasksAlreadyCreated()
+        checkWritability()
         action.execute(dexOptions)
     }
 
@@ -326,13 +368,13 @@ public abstract class BaseExtension {
      * Configure lint options.
      */
     void lintOptions(Action<LintOptions> action) {
-        plugin.checkTasksAlreadyCreated()
+        checkWritability()
         action.execute(lintOptions)
     }
 
     /** Configures the test options. */
     void testOptions(Action<TestOptions> action) {
-        plugin.checkTasksAlreadyCreated()
+        checkWritability()
         action.execute(testOptions)
     }
 
@@ -340,7 +382,7 @@ public abstract class BaseExtension {
      * Configures compile options.
      */
     void compileOptions(Action<CompileOptions> action) {
-        plugin.checkTasksAlreadyCreated()
+        checkWritability()
         action.execute(compileOptions)
     }
 
@@ -348,7 +390,7 @@ public abstract class BaseExtension {
      * Configures packaging options.
      */
     void packagingOptions(Action<PackagingOptions> action) {
-        plugin.checkTasksAlreadyCreated()
+        checkWritability()
         action.execute(packagingOptions)
     }
 
@@ -356,7 +398,7 @@ public abstract class BaseExtension {
      * Configures JaCoCo options.
      */
     void jacoco(Action<JacocoExtension> action) {
-        plugin.checkTasksAlreadyCreated()
+        checkWritability()
         action.execute(jacoco)
     }
 
@@ -364,12 +406,12 @@ public abstract class BaseExtension {
      * Configures APK splits.
      */
     void splits(Action<Splits> action) {
-        plugin.checkTasksAlreadyCreated()
+        checkWritability()
         action.execute(splits)
     }
 
     void deviceProvider(DeviceProvider deviceProvider) {
-        plugin.checkTasksAlreadyCreated()
+        checkWritability()
         deviceProviderList.add(deviceProvider)
     }
 
@@ -379,7 +421,7 @@ public abstract class BaseExtension {
     }
 
     void testServer(TestServer testServer) {
-        plugin.checkTasksAlreadyCreated()
+        checkWritability()
         testServerList.add(testServer)
     }
 
@@ -468,21 +510,21 @@ public abstract class BaseExtension {
     public void registerArtifactType(@NonNull String name,
                                      boolean isTest,
                                      int artifactType) {
-        plugin.extraModelInfo.registerArtifactType(name, isTest, artifactType)
+        extraModelInfo.registerArtifactType(name, isTest, artifactType)
     }
 
     public void registerBuildTypeSourceProvider(
             @NonNull String name,
             @NonNull BuildType buildType,
             @NonNull SourceProvider sourceProvider) {
-        plugin.extraModelInfo.registerBuildTypeSourceProvider(name, buildType, sourceProvider)
+        extraModelInfo.registerBuildTypeSourceProvider(name, buildType, sourceProvider)
     }
 
     public void registerProductFlavorSourceProvider(
             @NonNull String name,
             @NonNull ProductFlavor productFlavor,
             @NonNull SourceProvider sourceProvider) {
-        plugin.extraModelInfo.registerProductFlavorSourceProvider(name, productFlavor, sourceProvider)
+        extraModelInfo.registerProductFlavorSourceProvider(name, productFlavor, sourceProvider)
     }
 
     public void registerJavaArtifact(
@@ -494,7 +536,7 @@ public abstract class BaseExtension {
             @NonNull Configuration configuration,
             @NonNull File classesFolder,
             @Nullable SourceProvider sourceProvider) {
-        plugin.extraModelInfo.registerJavaArtifact(name, variant, assembleTaskName,
+        extraModelInfo.registerJavaArtifact(name, variant, assembleTaskName,
                 javaCompileTaskName, ideSetupTaskNames,
                 configuration, classesFolder, sourceProvider)
     }
@@ -503,7 +545,7 @@ public abstract class BaseExtension {
             @NonNull String name,
             @NonNull String flavorName,
             @NonNull SourceProvider sourceProvider) {
-        plugin.extraModelInfo.registerMultiFlavorSourceProvider(name, flavorName, sourceProvider)
+        extraModelInfo.registerMultiFlavorSourceProvider(name, flavorName, sourceProvider)
     }
 
     @NonNull
@@ -528,27 +570,19 @@ public abstract class BaseExtension {
     }
 
     public File getSdkDirectory() {
-        return plugin.getSdkFolder()
+        return sdkHandler.getSdkFolder()
     }
 
     public List<File> getBootClasspath() {
-        return plugin.getBootClasspath()
+        return androidBuilder.getBootClasspath()
     }
 
     public File getAdbExe() {
-        return plugin.getSdkInfo().adb
-    }
-
-    public ILogger getLogger() {
-        return plugin.logger
-    }
-
-    protected getPlugin() {
-        return plugin
+        return sdkHandler.getSdkInfo().adb
     }
 
     public File getDefaultProguardFile(String name) {
-        File sdkDir = plugin.sdkHandler.getAndCheckSdkFolder()
+        File sdkDir = sdkHandler.getAndCheckSdkFolder()
         return new File(sdkDir,
                 SdkConstants.FD_TOOLS + File.separatorChar
                         + SdkConstants.FD_PROGUARD + File.separatorChar
@@ -564,7 +598,7 @@ public abstract class BaseExtension {
 
     void generatePureSplits(boolean flag) {
         if (flag) {
-            plugin.getLogger().warning("Pure splits are not supported by PlayStore yet.")
+            logger.warn("Pure splits are not supported by PlayStore yet.")
         }
         this.generatePureSplits = flag;
     }
@@ -573,7 +607,7 @@ public abstract class BaseExtension {
 
     public void enforceUniquePackageName(boolean value) {
         if (!value) {
-            plugin.displayDeprecationWarning("Support for libraries with same package name is deprecated and will be removed in 1.0")
+            LoggingUtil.displayDeprecationWarning(logger, project, "Support for libraries with same package name is deprecated and will be removed in 1.0")
         }
         enforceUniquePackageName = value
     }

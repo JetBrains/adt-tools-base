@@ -19,9 +19,10 @@ package com.android.build.gradle.internal.variant;
 import com.android.annotations.NonNull;
 import com.android.build.FilterData;
 import com.android.build.OutputFile;
-import com.android.build.gradle.BasePlugin;
+import com.android.build.gradle.BaseExtension;
 import com.android.build.gradle.api.BaseVariant;
 import com.android.build.gradle.api.BaseVariantOutput;
+import com.android.build.gradle.internal.TaskManager;
 import com.android.build.gradle.internal.VariantModel;
 import com.android.build.gradle.internal.api.ApkVariantImpl;
 import com.android.build.gradle.internal.api.ApkVariantOutputImpl;
@@ -29,9 +30,12 @@ import com.android.build.gradle.internal.api.ApplicationVariantImpl;
 import com.android.build.gradle.internal.api.ReadOnlyObjectProvider;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.model.FilterDataImpl;
+import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.VariantType;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+
+import org.gradle.internal.reflect.Instantiator;
 
 import java.util.Collections;
 import java.util.List;
@@ -41,11 +45,19 @@ import java.util.Set;
  */
 public class ApplicationVariantFactory implements VariantFactory<ApplicationVariantData> {
 
+    Instantiator instantiator;
     @NonNull
-    private final BasePlugin basePlugin;
+    private final BaseExtension extension;
+    @NonNull
+    private final AndroidBuilder androidBuilder;
 
-    public ApplicationVariantFactory(@NonNull BasePlugin basePlugin) {
-        this.basePlugin = basePlugin;
+    public ApplicationVariantFactory(
+            @NonNull Instantiator instantiator,
+            @NonNull AndroidBuilder androidBuilder,
+            @NonNull BaseExtension extension) {
+        this.instantiator = instantiator;
+        this.androidBuilder = androidBuilder;
+        this.extension = extension;
     }
 
     @Override
@@ -54,8 +66,10 @@ public class ApplicationVariantFactory implements VariantFactory<ApplicationVari
             @NonNull GradleVariantConfiguration variantConfiguration,
             @NonNull Set<String> densities,
             @NonNull Set<String> abis,
-            @NonNull Set<String> compatibleScreens) {
-        ApplicationVariantData variant = new ApplicationVariantData(basePlugin, variantConfiguration);
+            @NonNull Set<String> compatibleScreens,
+            @NonNull TaskManager taskManager) {
+        ApplicationVariantData variant =
+                new ApplicationVariantData(extension, variantConfiguration, taskManager);
 
         if (!densities.isEmpty()) {
             variant.setCompatibleScreens(compatibleScreens);
@@ -93,17 +107,20 @@ public class ApplicationVariantFactory implements VariantFactory<ApplicationVari
             @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData,
             @NonNull ReadOnlyObjectProvider readOnlyObjectProvider) {
         // create the base variant object.
-        ApplicationVariantImpl variant = basePlugin.getInstantiator().newInstance(
-                ApplicationVariantImpl.class, variantData, basePlugin, readOnlyObjectProvider);
+        ApplicationVariantImpl variant = instantiator.newInstance(
+                ApplicationVariantImpl.class,
+                variantData,
+                androidBuilder,
+                readOnlyObjectProvider);
 
         // now create the output objects
-        createApkOutputApiObjects(basePlugin, variantData, variant);
+        createApkOutputApiObjects(instantiator, variantData, variant);
 
         return variant;
     }
 
     public static void createApkOutputApiObjects(
-            @NonNull BasePlugin basePlugin,
+            @NonNull Instantiator instantiator,
             @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData,
             @NonNull ApkVariantImpl variant) {
         List<? extends BaseVariantOutputData> outputList = variantData.getOutputs();
@@ -112,7 +129,7 @@ public class ApplicationVariantFactory implements VariantFactory<ApplicationVari
         for (BaseVariantOutputData variantOutputData : outputList) {
             ApkVariantOutputData apkOutput = (ApkVariantOutputData) variantOutputData;
 
-            ApkVariantOutputImpl output = basePlugin.getInstantiator().newInstance(
+            ApkVariantOutputImpl output = instantiator.newInstance(
                     ApkVariantOutputImpl.class, apkOutput);
 
             apiOutputList.add(output);

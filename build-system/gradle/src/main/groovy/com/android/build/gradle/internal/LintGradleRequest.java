@@ -2,7 +2,6 @@ package com.android.build.gradle.internal;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.gradle.BasePlugin;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.Variant;
 import com.android.tools.lint.client.api.LintRequest;

@@ -19,6 +19,7 @@ package com.android.build.gradle.internal.variant;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.api.BaseVariant;
+import com.android.build.gradle.internal.TaskManager;
 import com.android.build.gradle.internal.VariantModel;
 import com.android.build.gradle.internal.api.ReadOnlyObjectProvider;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
@@ -41,7 +42,8 @@ public interface VariantFactory<T extends BaseVariantData<? extends BaseVariantO
             @NonNull GradleVariantConfiguration variantConfiguration,
             @NonNull Set<String> densities,
             @NonNull Set<String> abi,
-            @NonNull Set<String> compatibleScreens);
+            @NonNull Set<String> compatibleScreens,
+            @NonNull TaskManager taskManager);
 
     @NonNull
     BaseVariant createVariantApi(

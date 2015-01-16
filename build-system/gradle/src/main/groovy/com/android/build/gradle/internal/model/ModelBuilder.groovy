@@ -66,6 +66,7 @@ import static com.android.builder.model.AndroidProject.ARTIFACT_MAIN
  */
 @CompileStatic
 public class ModelBuilder implements ToolingModelBuilder {
+
     AndroidBuilder androidBuilder
 
     BaseExtension extension
