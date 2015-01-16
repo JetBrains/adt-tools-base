@@ -269,6 +269,10 @@ class TaskManager {
             project.file(
                     "$project.buildDir/${FD_INTERMEDIATES}/mockable-${extension.compileSdkVersion}.jar")
         }
+
+        conventionMapping(createMockableJar).map("returnDefaultValues") {
+            extension.testOptions.unitTests.returnDefaultValues
+        }
     }
 
     public void createMergeAppManifestsTask(
@@ -1460,11 +1464,6 @@ class TaskManager {
                         androidBuilder.bootClasspath.findAll { it.name != "android.jar"},
                         createMockableJar.outputFile)
             }
-
-            // See https://issues.gradle.org/browse/GRADLE-1682
-            // TODO: Remove
-            runTestsTask.scanForTestClasses = false
-            runTestsTask.include "**/*Test.class"
 
             runTestsTask.dependsOn createMockableJar
             topLevelTest.dependsOn runTestsTask

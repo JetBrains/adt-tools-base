@@ -19,6 +19,7 @@ package com.android.build.gradle.internal.tasks
 import com.android.builder.testing.MockableJarGenerator
 import groovy.transform.CompileStatic
 import org.gradle.api.DefaultTask
+import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
@@ -38,11 +39,12 @@ class MockableAndroidJarTask extends DefaultTask {
    /**
     * Whether the generated jar should return default values from all methods or throw exceptions.
     */
-   boolean returnDefaultValues = true
+   @Input
+   boolean returnDefaultValues
 
    @TaskAction
    void createMockableJar() {
-      MockableJarGenerator generator = new MockableJarGenerator(returnDefaultValues)
+      MockableJarGenerator generator = new MockableJarGenerator(getReturnDefaultValues())
       getOutputFile().delete()
       logger.info("Creating ${getOutputFile().absolutePath} from ${getAndroidJar().absolutePath}.")
       generator.createMockableJar(getAndroidJar(), getOutputFile())

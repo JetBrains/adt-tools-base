@@ -7,7 +7,11 @@ import org.junit.Ignore;
 import android.app.Application;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
+import android.util.ArrayMap;
+import android.os.Debug;
 import org.junit.Test;
+
+import java.lang.RuntimeException;
 
 public class UnitTest {
     @Test
@@ -38,6 +42,31 @@ public class UnitTest {
 
         verify(adapter).isEnabled();
         verifyNoMoreInteractions(adapter);
+    }
+
+    @Test
+    public void exceptions() {
+        try {
+            ArrayMap map = new ArrayMap();
+            map.isEmpty();
+            fail();
+        } catch (RuntimeException e) {
+            assertEquals(RuntimeException.class, e.getClass());
+            assertTrue(e.getMessage().contains("isEmpty"));
+            assertTrue(e.getMessage().contains("not mocked"));
+            assertTrue(e.getMessage().contains("returnDefaultValues"));
+        }
+
+        try {
+            Debug.getThreadAllocCount();
+            fail();
+        } catch (RuntimeException e) {
+            assertEquals(RuntimeException.class, e.getClass());
+            assertTrue(e.getMessage().contains("getThreadAllocCount"));
+            assertTrue(e.getMessage().contains("not mocked"));
+            assertTrue(e.getMessage().contains("returnDefaultValues"));
+        }
+
     }
 
     @Test
