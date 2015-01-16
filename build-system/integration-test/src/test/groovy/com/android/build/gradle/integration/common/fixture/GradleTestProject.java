@@ -79,7 +79,7 @@ public class GradleTestProject implements TestRule {
     public static final int DEFAULT_COMPILE_SDK_VERSION = 21;
     public static final String DEFAULT_BUILD_TOOL_VERSION = "21.0.1";
 
-    private static final String ANDROID_GRADLE_VERSION = "1.0.1";
+    private static final String ANDROID_GRADLE_VERSION = "1.1.0-rc1";
     private static final String COMMON_HEADER = "commonHeader.gradle";
     private static final String COMMON_BUILD_SCRIPT = "commonBuildScript.gradle";
     private static final String DEFAULT_TEST_PROJECT_NAME = "project";
