@@ -55,7 +55,10 @@ public class LibraryPlugin extends BasePlugin implements Plugin<Project> {
 
     @Override
     protected VariantFactory getVariantFactory() {
-        return new LibraryVariantFactory(this, (LibraryExtension) getExtension());
+        return new LibraryVariantFactory(
+                instantiator,
+                androidBuilder,
+                (LibraryExtension) extension);
     }
 
     @Override
@@ -72,7 +75,7 @@ public class LibraryPlugin extends BasePlugin implements Plugin<Project> {
             SdkHandler sdkHandler,
             DependencyManager dependencyManager,
             ToolingModelBuilderRegistry toolingRegistry) {
-        return new LibraryTaskManager (
+        return new LibraryTaskManager(
                 project,
                 tasks,
                 androidBuilder,
