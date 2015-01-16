@@ -15,9 +15,8 @@
  */
 
 package com.android.build.gradle.internal.variant
-import com.android.SdkConstants
+
 import com.android.annotations.NonNull
-import com.android.annotations.Nullable
 import com.android.build.gradle.BasePlugin
 import com.android.build.gradle.LibraryExtension
 import com.android.build.gradle.api.BaseVariant
@@ -30,54 +29,24 @@ import com.android.build.gradle.internal.api.LibraryVariantImpl
 import com.android.build.gradle.internal.api.LibraryVariantOutputImpl
 import com.android.build.gradle.internal.api.ReadOnlyObjectProvider
 import com.android.build.gradle.internal.core.GradleVariantConfiguration
-import com.android.build.gradle.internal.tasks.MergeFileTask
-import com.android.build.gradle.tasks.ExtractAnnotations
-import com.android.build.gradle.tasks.MergeResources
-import com.android.builder.core.BuilderConstants
-import com.android.builder.core.DefaultBuildType
 import com.android.builder.core.VariantType
-import com.android.builder.dependency.LibraryBundle
-import com.android.builder.dependency.LibraryDependency
-import com.android.builder.dependency.ManifestDependency
-import com.android.builder.model.AndroidLibrary
-import com.android.builder.model.MavenCoordinates
 import com.google.common.collect.Lists
 import org.gradle.api.GradleException
-import org.gradle.api.Project
-import org.gradle.api.Task
-import org.gradle.api.tasks.Copy
-import org.gradle.api.tasks.Sync
-import org.gradle.api.tasks.bundling.Jar
-import org.gradle.api.tasks.bundling.Zip
-import org.gradle.tooling.BuildException
 
-import static com.android.SdkConstants.FN_ANNOTATIONS_ZIP
-import static com.android.SdkConstants.LIBS_FOLDER
-import static com.android.build.gradle.internal.TaskManager.DIR_BUNDLES
-import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
-import static com.android.builder.model.AndroidProject.FD_OUTPUTS
 /**
  */
 public class LibraryVariantFactory implements VariantFactory<LibraryVariantData> {
-
-    private static final String ANNOTATIONS = "annotations"
 
     @NonNull
     private final BasePlugin basePlugin
     @NonNull
     private final LibraryExtension extension
-    @NonNull
-    private final TaskManager taskManager
-
-    private Task assembleDefault;
 
     public LibraryVariantFactory(
             @NonNull BasePlugin basePlugin,
-            @NonNull LibraryExtension extension,
-            @NonNull TaskManager taskManager) {
+            @NonNull LibraryExtension extension) {
         this.extension = extension
         this.basePlugin = basePlugin
-        this.taskManager = taskManager
     }
 
     @Override
@@ -127,343 +96,11 @@ public class LibraryVariantFactory implements VariantFactory<LibraryVariantData>
         return true
     }
 
-    private Task getAssembleDefault() {
-        if (assembleDefault == null) {
-            assembleDefault = basePlugin.project.tasks.findByName("assembleDefault");
-        }
-        return assembleDefault
-    }
-
-    @Override
-    public void createTasks(
-            @NonNull BaseVariantData<?> variantData,
-            @Nullable Task assembleTask) {
-        LibraryVariantData libVariantData = variantData as LibraryVariantData
-        GradleVariantConfiguration variantConfig = variantData.variantConfiguration
-        DefaultBuildType buildType = variantConfig.buildType
-
-        String fullName = variantConfig.fullName
-        String dirName = variantConfig.dirName
-        Project project = basePlugin.project
-
-        taskManager.createAnchorTasks(variantData)
-
-        taskManager.createCheckManifestTask(variantData)
-
-        // Add a task to create the res values
-        taskManager.createGenerateResValuesTask(variantData)
-
-        // Add a task to process the manifest(s)
-        taskManager.createMergeLibManifestsTask(variantData, DIR_BUNDLES)
-
-        // Add a task to compile renderscript files.
-        taskManager.createRenderscriptTask(variantData)
-
-        // Create a merge task to only merge the resources from this library and not
-        // the dependencies. This is what gets packaged in the aar.
-        MergeResources packageRes = taskManager.basicCreateMergeResourcesTask(variantData,
-                "package",
-                "$project.buildDir/${FD_INTERMEDIATES}/$DIR_BUNDLES/${dirName}/res",
-                false /*includeDependencies*/,
-                false /*process9Patch*/)
-
-        if (variantData.variantDependency.androidDependencies.isEmpty()) {
-            // if there is no android dependencies, then we should use the packageRes task above
-            // as the only res merging task.
-            variantData.mergeResourcesTask = packageRes
-        } else {
-            // Add a task to merge the resource folders, including the libraries, in order to
-            // generate the R.txt file with all the symbols, including the ones from
-            // the dependencies.
-            taskManager.createMergeResourcesTask(variantData, false /*process9Patch*/)
-        }
-
-        // Add a task to merge the assets folders
-        taskManager.createMergeAssetsTask(variantData,
-                "$project.buildDir/${FD_INTERMEDIATES}/$DIR_BUNDLES/${dirName}/assets",
-                false /*includeDependencies*/)
-
-        // Add a task to create the BuildConfig class
-        taskManager.createBuildConfigTask(variantData)
-
-        // Add a task to generate resource source files, directing the location
-        // of the r.txt file to be directly in the bundle.
-        taskManager.createProcessResTask(variantData,
-                "$project.buildDir/${FD_INTERMEDIATES}/$DIR_BUNDLES/${dirName}",
-                false /*generateResourcePackage*/,
-                )
-
-        // process java resources
-        taskManager.createProcessJavaResTask(variantData)
-
-        taskManager.createAidlTask(variantData, basePlugin.project.file(
-                "$basePlugin.project.buildDir/${FD_INTERMEDIATES}/$DIR_BUNDLES/${dirName}/$SdkConstants.FD_AIDL"))
-
-        // Add a compile task
-        taskManager.createCompileTask(variantData, null/*testedVariant*/)
-
-        // package the prebuilt native libs into the bundle folder
-        Sync packageJniLibs = project.tasks.create(
-                "package${fullName.capitalize()}JniLibs",
-                Sync)
-
-        // Add dependencies on NDK tasks if NDK plugin is applied.
-        if (extension.getUseNewNativePlugin()) {
-            throw new RuntimeException("useNewNativePlugin is currently not supported.")
-        } else {
-            // Add NDK tasks
-            taskManager.createNdkTasks(variantData);
-            packageJniLibs.dependsOn variantData.ndkCompileTask
-            packageJniLibs.from(variantData.ndkCompileTask.soFolder).include("**/*.so")
-        }
-
-        // package from 2 sources.
-        packageJniLibs.from(variantConfig.jniLibsList).include("**/*.so")
-        packageJniLibs.into(project.file(
-                "$project.buildDir/${FD_INTERMEDIATES}/$DIR_BUNDLES/${dirName}/jni"))
-
-        // package the renderscript header files files into the bundle folder
-        Sync packageRenderscript = project.tasks.create(
-                "package${fullName.capitalize()}Renderscript",
-                Sync)
-        // package from 3 sources. the order is important to make sure the override works well.
-        packageRenderscript.from(variantConfig.renderscriptSourceList).include("**/*.rsh")
-        packageRenderscript.into(project.file(
-                "$project.buildDir/${FD_INTERMEDIATES}/$DIR_BUNDLES/${dirName}/$SdkConstants.FD_RENDERSCRIPT"))
-
-        // merge consumer proguard files from different build types and flavors
-        MergeFileTask mergeProGuardFileTask = project.tasks.create(
-                "merge${fullName.capitalize()}ProguardFiles",
-                MergeFileTask)
-        mergeProGuardFileTask.conventionMapping.inputFiles = {
-            project.files(variantConfig.getConsumerProguardFiles()).files }
-        mergeProGuardFileTask.conventionMapping.outputFile = {
-            project.file(
-                    "$project.buildDir/${FD_INTERMEDIATES}/$DIR_BUNDLES/${dirName}/$LibraryBundle.FN_PROGUARD_TXT")
-        }
-
-        // copy lint.jar into the bundle folder
-        Copy lintCopy = project.tasks.create(
-                "copy${fullName.capitalize()}Lint",
-                Copy)
-        lintCopy.dependsOn taskManager.lintCompile
-        lintCopy.from("$project.buildDir/${FD_INTERMEDIATES}/lint/lint.jar")
-        lintCopy.into("$project.buildDir/${FD_INTERMEDIATES}/$DIR_BUNDLES/$dirName")
-
-        Zip bundle = project.tasks.create(
-                "bundle${fullName.capitalize()}",
-                Zip)
-
-        libVariantData.generateAnnotationsTask = variantData.variantDependency.annotationsPresent ? createExtractAnnotations(
-                fullName, project, variantData) : null
-        if (libVariantData.generateAnnotationsTask != null) {
-            bundle.dependsOn(libVariantData.generateAnnotationsTask)
-        }
-
-        final boolean instrumented = variantConfig.buildType.isTestCoverageEnabled()
-
-
-        // data holding dependencies and input for the dex. This gets updated as new
-        // post-compilation steps are inserted between the compilation and dx.
-        TaskManager.PostCompilationData pcData = new TaskManager.PostCompilationData()
-        pcData.classGeneratingTask = Collections.singletonList(variantData.javaCompileTask)
-        pcData.libraryGeneratingTask = Collections.singletonList(
-                variantData.variantDependency.packageConfiguration.buildDependencies)
-        pcData.inputFiles = {
-            return variantData.javaCompileTask.outputs.files.files
-        }
-        pcData.inputDir = {
-            return variantData.javaCompileTask.destinationDir
-        }
-        pcData.inputLibraries = {
-            return Collections.emptyList()
-        }
-
-        // if needed, instrument the code
-        if (instrumented) {
-            pcData = taskManager.createJacocoTask(variantConfig, variantData, pcData)
-        }
-
-        if (buildType.isMinifyEnabled()) {
-            // run proguard on output of compile task
-            taskManager.createProguardTasks(variantData, null, pcData)
-        } else {
-            // package the local jar in libs/
-            Sync packageLocalJar = project.tasks.create(
-                    "package${fullName.capitalize()}LocalJar",
-                    Sync)
-            packageLocalJar.from(BasePlugin.getPackagedLocalJarFileList(variantData.variantDependency))
-            packageLocalJar.into(project.file(
-                    "$project.buildDir/${FD_INTERMEDIATES}/$DIR_BUNDLES/${dirName}/$LIBS_FOLDER"))
-
-            // add the input libraries. This is only going to be the agent jar if applicable
-            // due to how inputLibraries is initialized.
-            // TODO: clean this.
-            packageLocalJar.from(pcData.inputLibraries)
-            TaskManager.optionalDependsOn(packageLocalJar, pcData.libraryGeneratingTask)
-            pcData.libraryGeneratingTask = Collections.singletonList(packageLocalJar)
-
-            // jar the classes.
-            Jar jar = project.tasks.create("package${fullName.capitalize()}Jar", Jar);
-            jar.dependsOn variantData.processJavaResourcesTask
-
-            // add the class files (whether they are instrumented or not.
-            jar.from(pcData.inputDir)
-            TaskManager.optionalDependsOn(jar, pcData.classGeneratingTask)
-            pcData.classGeneratingTask = Collections.singletonList(jar)
-
-            jar.from(variantData.processJavaResourcesTask.destinationDir)
-
-            jar.destinationDir = project.file(
-                    "$project.buildDir/${FD_INTERMEDIATES}/$DIR_BUNDLES/${dirName}")
-            jar.archiveName = "classes.jar"
-
-            String packageName = variantConfig.getPackageFromManifest()
-            if (packageName == null) {
-                throw new BuildException("Failed to read manifest", null)
-            }
-            packageName = packageName.replace('.', '/');
-
-            jar.exclude(packageName + "/R.class")
-            jar.exclude(packageName + "/R\$*.class")
-            if (!extension.packageBuildConfig) {
-                jar.exclude(packageName + "/Manifest.class")
-                jar.exclude(packageName + "/Manifest\$*.class")
-                jar.exclude(packageName + "/BuildConfig.class")
-            }
-
-            if (libVariantData.generateAnnotationsTask != null) {
-                // In case extract annotations strips out private typedef annotation classes
-                jar.dependsOn libVariantData.generateAnnotationsTask
-            }
-        }
-
-        bundle.dependsOn packageRes, packageRenderscript, lintCopy, packageJniLibs, mergeProGuardFileTask
-        TaskManager.optionalDependsOn(bundle, pcData.classGeneratingTask)
-        TaskManager.optionalDependsOn(bundle, pcData.libraryGeneratingTask)
-
-        bundle.setDescription("Assembles a bundle containing the library in ${fullName.capitalize()}.");
-        bundle.destinationDir = project.file("$project.buildDir/${FD_OUTPUTS}/aar")
-        bundle.setArchiveName("${project.name}-${variantConfig.baseName}.${BuilderConstants.EXT_LIB_ARCHIVE}")
-        bundle.extension = BuilderConstants.EXT_LIB_ARCHIVE
-        bundle.from(project.file("$project.buildDir/${FD_INTERMEDIATES}/$DIR_BUNDLES/${dirName}"))
-        bundle.from(project.file("$project.buildDir/${FD_INTERMEDIATES}/$ANNOTATIONS/${dirName}"))
-
-        // get the single output for now, though that may always be the case for a library.
-        LibVariantOutputData variantOutputData = libVariantData.outputs.get(0)
-        variantOutputData.packageLibTask = bundle
-
-        if (assembleTask == null) {
-            assembleTask = taskManager.createAssembleTask(variantData)
-        }
-        assembleTask.dependsOn bundle
-        variantData.assembleVariantTask = variantOutputData.assembleTask = assembleTask
-
-        if (extension.defaultPublishConfig.equals(fullName)) {
-            VariantHelper.setupDefaultConfig(project,
-                    variantData.variantDependency.packageConfiguration)
-
-            // add the artifact that will be published
-            project.artifacts.add("default", bundle)
-
-            getAssembleDefault().dependsOn variantData.assembleVariantTask
-        }
-
-        // also publish the artifact with its full config name
-        if (extension.publishNonDefault) {
-            project.artifacts.add(variantData.variantDependency.publishConfiguration.name, bundle)
-            bundle.classifier = variantData.variantDependency.publishConfiguration.name
-        }
-
-
-        // configure the variant to be testable.
-        variantConfig.output = new LibraryBundle(
-                bundle.archivePath,
-                project.file("$project.buildDir/${FD_INTERMEDIATES}/$DIR_BUNDLES/${dirName}"),
-                variantData.getName()) {
-
-            @Override
-            @Nullable
-            String getProject() {
-                return project.path
-            }
-
-            @Override
-            @Nullable
-            String getProjectVariant() {
-                return variantData.getName()
-            }
-
-            @NonNull
-            @Override
-            List<LibraryDependency> getDependencies() {
-                return variantConfig.directLibraries
-            }
-
-            @NonNull
-            @Override
-            List<? extends AndroidLibrary> getLibraryDependencies() {
-                return variantConfig.directLibraries
-            }
-
-            @NonNull
-            @Override
-            List<ManifestDependency> getManifestDependencies() {
-                return variantConfig.directLibraries
-            }
-
-            @Override
-            @Nullable
-            MavenCoordinates getRequestedCoordinates() {
-                return null
-            }
-
-            @Override
-            @Nullable
-            MavenCoordinates getResolvedCoordinates() {
-                return null
-            }
-        };
-    }
-
-    public Task createExtractAnnotations(
-            String fullName, Project project, BaseVariantData variantData) {
-        GradleVariantConfiguration config = variantData.variantConfiguration
-        String dirName = config.dirName
-
-        ExtractAnnotations task = project.tasks.create(
-                "extract${fullName.capitalize()}Annotations",
-                ExtractAnnotations)
-        task.description =
-                "Extracts Android annotations for the ${fullName} variant into the archive file"
-        task.group = org.gradle.api.plugins.BasePlugin.BUILD_GROUP
-        task.plugin = basePlugin
-        task.variant = variantData
-        task.destinationDir = project.file("$project.buildDir/${FD_INTERMEDIATES}/$ANNOTATIONS/${dirName}")
-        task.output = new File(task.destinationDir, FN_ANNOTATIONS_ZIP)
-        task.classDir = project.file("$project.buildDir/${FD_INTERMEDIATES}/classes/${variantData.variantConfiguration.dirName}")
-        task.source = variantData.getJavaSources()
-        task.encoding = extension.compileOptions.encoding
-        task.sourceCompatibility = extension.compileOptions.sourceCompatibility
-        task.conventionMapping.classpath =  {
-            project.files(basePlugin.getAndroidBuilder().getCompileClasspath(config))
-        }
-        task.dependsOn variantData.javaCompileTask
-
-        // Setup the boot classpath just before the task actually runs since this will
-        // force the sdk to be parsed. (Same as in compileTask)
-        task.doFirst {
-            task.bootClasspath = basePlugin.getAndroidBuilder().getBootClasspathAsStrings()
-        }
-
-        return task
-    }
-
     /***
      * Prevent customization of applicationId or applicationIdSuffix.
      */
     @Override
-    public void validateModel(VariantModel model) {
+    public void validateModel(@NonNull VariantModel model) {
         if (model.getDefaultConfig().getProductFlavor().getApplicationId() != null) {
             throw new GradleException("Library projects cannot set applicationId. " +
                     "applicationId is set to '" +
