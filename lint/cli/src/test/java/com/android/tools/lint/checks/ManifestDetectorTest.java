@@ -519,17 +519,25 @@ public class ManifestDetectorTest extends AbstractCheckTest {
 
     public void testMipMap() throws Exception {
         mEnabled = Collections.singleton(ManifestDetector.MIPMAP);
-        assertEquals(""
-                + "AndroidManifest.xml:9: Warning: Should use @mipmap instead of @drawable for launcher icons [MipmapIcons]\n"
-                + "        android:icon=\"@drawable/ic_launcher\"\n"
-                + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-                + "AndroidManifest.xml:14: Warning: Should use @mipmap instead of @drawable for launcher icons [MipmapIcons]\n"
-                + "            android:icon=\"@drawable/activity1\"\n"
-                + "            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-                + "0 errors, 2 warnings\n",
+        assertEquals("No warnings.",
 
                 lintProject(
-                        "mipmap.xml=>AndroidManifest.xml")); // dummy; only name counts
+                        "mipmap.xml=>AndroidManifest.xml"));
+    }
+
+    public void testMipMapWithDensityFiltering() throws Exception {
+        mEnabled = Collections.singleton(ManifestDetector.MIPMAP);
+        assertEquals(""
+                        + "AndroidManifest.xml:9: Warning: Should use @mipmap instead of @drawable for launcher icons [MipmapIcons]\n"
+                        + "        android:icon=\"@drawable/ic_launcher\"\n"
+                        + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                        + "AndroidManifest.xml:14: Warning: Should use @mipmap instead of @drawable for launcher icons [MipmapIcons]\n"
+                        + "            android:icon=\"@drawable/activity1\"\n"
+                        + "            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                        + "0 errors, 2 warnings\n",
+
+                lintProject(
+                        "mipmap.xml=>AndroidManifest.xml"));
     }
 
     // Custom project which locates all manifest files in the project rather than just
@@ -537,6 +545,119 @@ public class ManifestDetectorTest extends AbstractCheckTest {
 
     @Override
     protected TestLintClient createClient() {
+        if ("testMipMapWithDensityFiltering".equals(getName())) {
+            // Set up a mock project model for the resource configuration test(s)
+            // where we provide a subset of densities to be included
+            return new TestLintClient() {
+                @NonNull
+                @Override
+                protected Project createProject(@NonNull File dir, @NonNull File referenceDir) {
+                    return new Project(this, dir, referenceDir) {
+                        @Override
+                        public boolean isGradleProject() {
+                            return true;
+                        }
+
+                        @Nullable
+                        @Override
+                        public AndroidProject getGradleProjectModel() {
+                            /*
+                            Simulate variant freeBetaDebug in this setup:
+                                defaultConfig {
+                                    ...
+                                    resConfigs "cs"
+                                }
+                                flavorDimensions  "pricing", "releaseType"
+                                productFlavors {
+                                    beta {
+                                        flavorDimension "releaseType"
+                                        resConfig "en", "de"
+                                        resConfigs "nodpi", "hdpi"
+                                    }
+                                    normal { flavorDimension "releaseType" }
+                                    free { flavorDimension "pricing" }
+                                    paid { flavorDimension "pricing" }
+                                }
+                             */
+                            ProductFlavor flavorFree = createNiceMock(ProductFlavor.class);
+                            expect(flavorFree.getName()).andReturn("free").anyTimes();
+                            expect(flavorFree.getResourceConfigurations())
+                                    .andReturn(Collections.<String>emptyList()).anyTimes();
+                            replay(flavorFree);
+
+                            ProductFlavor flavorNormal = createNiceMock(ProductFlavor.class);
+                            expect(flavorNormal.getName()).andReturn("normal").anyTimes();
+                            expect(flavorNormal.getResourceConfigurations())
+                                    .andReturn(Collections.<String>emptyList()).anyTimes();
+                            replay(flavorNormal);
+
+                            ProductFlavor flavorPaid = createNiceMock(ProductFlavor.class);
+                            expect(flavorPaid.getName()).andReturn("paid").anyTimes();
+                            expect(flavorPaid.getResourceConfigurations())
+                                    .andReturn(Collections.<String>emptyList()).anyTimes();
+                            replay(flavorPaid);
+
+                            ProductFlavor flavorBeta = createNiceMock(ProductFlavor.class);
+                            expect(flavorBeta.getName()).andReturn("beta").anyTimes();
+                            List<String> resConfigs = Arrays.asList("hdpi", "en", "de", "nodpi");
+                            expect(flavorBeta.getResourceConfigurations()).andReturn(resConfigs).anyTimes();
+                            replay(flavorBeta);
+
+                            ProductFlavor defaultFlavor = createNiceMock(ProductFlavor.class);
+                            expect(defaultFlavor.getName()).andReturn("main").anyTimes();
+                            expect(defaultFlavor.getResourceConfigurations()).andReturn(
+                                    Collections.singleton("cs")).anyTimes();
+                            replay(defaultFlavor);
+
+                            ProductFlavorContainer containerBeta =
+                                    createNiceMock(ProductFlavorContainer.class);
+                            expect(containerBeta.getProductFlavor()).andReturn(flavorBeta).anyTimes();
+                            replay(containerBeta);
+
+                            ProductFlavorContainer containerFree =
+                                    createNiceMock(ProductFlavorContainer.class);
+                            expect(containerFree.getProductFlavor()).andReturn(flavorFree).anyTimes();
+                            replay(containerFree);
+
+                            ProductFlavorContainer containerPaid =
+                                    createNiceMock(ProductFlavorContainer.class);
+                            expect(containerPaid.getProductFlavor()).andReturn(flavorPaid).anyTimes();
+                            replay(containerPaid);
+
+                            ProductFlavorContainer containerNormal =
+                                    createNiceMock(ProductFlavorContainer.class);
+                            expect(containerNormal.getProductFlavor()).andReturn(flavorNormal).anyTimes();
+                            replay(containerNormal);
+
+                            ProductFlavorContainer defaultContainer =
+                                    createNiceMock(ProductFlavorContainer.class);
+                            expect(defaultContainer.getProductFlavor()).andReturn(defaultFlavor).anyTimes();
+                            replay(defaultContainer);
+
+                            List<ProductFlavorContainer> containers = Arrays.asList(
+                                    containerPaid, containerFree, containerNormal, containerBeta
+                            );
+
+                            AndroidProject project = createNiceMock(AndroidProject.class);
+                            expect(project.getProductFlavors()).andReturn(containers).anyTimes();
+                            expect(project.getDefaultConfig()).andReturn(defaultContainer).anyTimes();
+                            replay(project);
+                            return project;
+                        }
+
+                        @Nullable
+                        @Override
+                        public Variant getCurrentVariant() {
+                            List<String> productFlavorNames = Arrays.asList("free", "beta");
+                            Variant mock = createNiceMock(Variant.class);
+                            expect(mock.getProductFlavors()).andReturn(productFlavorNames).anyTimes();
+                            replay(mock);
+                            return mock;
+                        }
+                    };
+                }
+            };
+        }
         if (mEnabled.contains(ManifestDetector.MOCK_LOCATION)) {
             return new TestLintClient() {
                 @NonNull
