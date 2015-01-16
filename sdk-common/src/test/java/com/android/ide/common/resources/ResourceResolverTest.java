@@ -7,6 +7,7 @@ import com.android.ide.common.resources.configuration.FolderConfiguration;
 import com.android.resources.ResourceType;
 import com.google.common.collect.Lists;
 
+import junit.framework.AssertionFailedError;
 import junit.framework.TestCase;
 
 import java.io.IOException;
@@ -44,6 +45,12 @@ public class ResourceResolverTest extends TestCase {
                         + "    <color name=\"background_light\">#ffffffff</color>\n"
                         + "    <color name=\"bright_foreground_dark\">@android:color/background_light</color>\n"
                         + "    <color name=\"bright_foreground_light\">@android:color/background_dark</color>\n"
+                        + "</resources>\n",
+
+                        "values/ids.xml",  ""
+                        + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                        + "<resources>\n"
+                        + "    <item name=\"some_framework_id\" type=\"id\" />\n"
                         + "</resources>\n",
                 });
 
@@ -150,6 +157,7 @@ public class ResourceResolverTest extends TestCase {
                 resolver.findResValue("@android:color/bright_foreground_dark", true).getValue());
         assertEquals("#ffffffff",
                 resolver.findResValue("@android:color/background_light", true).getValue());
+        assertNull(resolver.findResValue("?attr/non_existent_style", false)); // shouldn't log an error.
 
         // getTheme
         StyleResourceValue myTheme = resolver.getTheme("MyTheme", false);
@@ -236,6 +244,23 @@ public class ResourceResolverTest extends TestCase {
         assertEquals("#ffffffff",
                 resolver.resolveValue(ResourceType.STRING, "bright_foreground_dark",
                         "@android:color/background_light", true).getValue());
+        // error expected.
+        boolean failed = false;
+        ResourceValue val = null;
+        try {
+            val = resolver.resolveValue(null, "id", "@+id/some_framework_id", false);
+        } catch (AssertionFailedError expected) {
+            failed = true;
+        }
+        assertTrue("incorrect resource returned: " + val, failed);
+        failed = false;
+        try {
+            val = resolver.resolveValue(ResourceType.STRING, "bright_foreground_dark",
+                    "@color/background_light", false);
+        } catch (AssertionFailedError expected) {
+            failed = true;
+        }
+        assertTrue("incorrect resource returned: " + val, failed);
 
         // themeExtends
         assertTrue(resolver.themeExtends("@android:style/Theme", "@android:style/Theme"));
