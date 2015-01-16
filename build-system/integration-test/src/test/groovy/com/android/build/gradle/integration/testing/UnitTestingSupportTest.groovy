@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 The Android Open Source Project
+ * Copyright (C) 2015 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,15 +15,15 @@
  */
 
 package com.android.build.gradle.integration.testing
-
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import org.junit.ClassRule
 import org.junit.Test
 
-import static com.android.build.gradle.integration.testing.JUnitResults.Outcome.*
-
+import static com.android.build.gradle.integration.testing.JUnitResults.Outcome.PASSED
+import static com.android.build.gradle.integration.testing.JUnitResults.Outcome.SKIPPED
+import static com.google.common.truth.Truth.assertThat
 /**
- * Meta-level tests for the app-level unit testing support.
+ * Meta-level tests for the app-level unit testing support. Checks the default values mode.
  */
 class UnitTestingSupportTest {
     @ClassRule
@@ -35,15 +35,24 @@ class UnitTestingSupportTest {
     void testSimpleScenario() {
         simpleProject.execute("test")
 
-        def results = new JUnitResults(
-                simpleProject.file("build/test-results/TEST-com.android.tests.UnitTest.xml"))
+        checkResults(
+                "build/test-results/TEST-com.android.tests.UnitTest.xml",
+                ["thisIsIgnored"],
+                [ "referenceProductionCode",
+                  "exceptions",
+                  "mockFinalClass",
+                  "mockFinalMethod" ])
 
-        def ignored = ["thisIsIgnored"]
-        def passed = [ "referenceProductionCode", "mockFinalClass", "mockFinalMethod" ]
+        checkResults(
+                "build/test-results/TEST-com.android.tests.NonStandardName.xml",
+                [],
+                ["passingTest"])
+    }
 
-        // TODO: Migrate to Truth.
-        assert results.allTestCases == (ignored + passed) as Set
-        assert results.outcome(ignored.first()) == SKIPPED
+    private static void checkResults(String xmlPath, ArrayList<String> ignored, ArrayList<String> passed) {
+        def results = new JUnitResults(simpleProject.file(xmlPath))
+        assertThat(results.allTestCases).containsExactlyElementsIn(ignored + passed)
         passed.each { assert results.outcome(it) == PASSED }
+        ignored.each { assert results.outcome(it) == SKIPPED }
     }
 }
