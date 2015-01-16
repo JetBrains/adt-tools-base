@@ -337,18 +337,9 @@ public class ResourceResolver extends RenderResources {
                 }
 
                 // Now look for the item in the theme, starting with the current one.
-                ResourceValue item = findItemInTheme(resource.name, forceFrameworkOnly || resource.framework);
-                if (item == null && mLogger != null) {
-                    mLogger.warning(LayoutLog.TAG_RESOURCES_RESOLVE_THEME_ATTR,
-                            String.format("Couldn't find theme resource %1$s for the current theme",
-                                    reference),
-                            new ResourceValue(ResourceType.ATTR, reference, resource.framework));
-                }
-
-                return item;
+                return findItemInTheme(resource.name, forceFrameworkOnly || resource.framework);
             } else {
-                return findResValue(resource.type, resource.name,
-                        forceFrameworkOnly || resource.framework);
+                return findResValue(resource, forceFrameworkOnly);
             }
         }
 
@@ -418,50 +409,49 @@ public class ResourceResolver extends RenderResources {
     // ---- Private helper methods.
 
     /**
-     * Searches for, and returns a {@link ResourceValue} by its name, and type.
-     * @param resType the type of the resource
-     * @param resName  the name of the resource
-     * @param frameworkOnly if <code>true</code>, the method does not search in the
+     * Searches for, and returns a {@link ResourceValue} by its parsed reference.
+     * @param resource the parsed resource
+     * @param forceFramework if <code>true</code>, the method does not search in the
      * project resources
      */
-    private ResourceValue findResValue(ResourceType resType, String resName,
-            boolean frameworkOnly) {
+    private ResourceValue findResValue(ResourceUrl resource, boolean forceFramework) {
         // map of ResourceValue for the given type
         Map<String, ResourceValue> typeMap;
+        ResourceType resType = resource.type;
+        String resName = resource.name;
+        boolean isFramework = forceFramework || resource.framework;
 
-        // if allowed, search in the project resources first.
-        if (!frameworkOnly) {
+        if (!isFramework) {
             typeMap = mProjectResources.get(resType);
             ResourceValue item = typeMap.get(resName);
             if (item != null) {
                 return item;
             }
-        }
+        } else {
+            typeMap = mFrameworkResources.get(resType);
+            if (typeMap != null) {
+                ResourceValue item = typeMap.get(resName);
+                if (item != null) {
+                    return item;
+                }
+            }
 
-        // now search in the framework resources.
-        typeMap = mFrameworkResources.get(resType);
-        if (typeMap != null) {
-            ResourceValue item = typeMap.get(resName);
-            if (item != null) {
-                return item;
+            // if it was not found and the type is an id, it is possible that the ID was
+            // generated dynamically when compiling the framework resources.
+            // Look for it in the R map.
+            if (mFrameworkProvider != null && resType == ResourceType.ID) {
+                if (mFrameworkProvider.getId(resType, resName) != null) {
+                    return new ResourceValue(resType, resName, true);
+                }
             }
         }
 
-        // if it was not found and the type is an id, it is possible that the ID was
-        // generated dynamically when compiling the framework resources.
-        // Look for it in the R map.
-        if (mFrameworkProvider != null && resType == ResourceType.ID) {
-            if (mFrameworkProvider.getId(resType, resName) != null) {
-                return new ResourceValue(resType, resName, true);
-            }
-        }
-
-        // didn't find the resource anywhere.
-        if (mLogger != null) {
+      // didn't find the resource anywhere.
+        if (!resource.create && mLogger != null) {
             mLogger.warning(LayoutLog.TAG_RESOURCES_RESOLVE,
                     "Couldn't resolve resource @" +
-                    (frameworkOnly ? "android:" : "") + resType + "/" + resName,
-                    new ResourceValue(resType, resName, frameworkOnly));
+                    (isFramework ? "android:" : "") + resType + "/" + resName,
+                    new ResourceValue(resType, resName, isFramework));
         }
         return null;
     }
