@@ -92,10 +92,10 @@ public class InstallVariantTask extends BaseTask {
                         logger.lifecycle("Installing APK '${Joiner.on(", ").join(apkFiles*.getName())}'" +
                                 " on '${device.getName()}'")
                         if (outputFiles.size() > 1 || device.getApiLevel() >= 21) {
-                            device.installPackages(apkFiles, getTimeOut(), logger);
+                            device.installPackages(apkFiles, getTimeOut(), getILogger());
                             successfulInstallCount++
                         } else {
-                            device.installPackage(apkFiles.get(0), getTimeOut(), logger)
+                            device.installPackage(apkFiles.get(0), getTimeOut(), getILogger())
                             successfulInstallCount++
                         }
                     }
