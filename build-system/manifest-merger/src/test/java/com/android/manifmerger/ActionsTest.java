@@ -81,8 +81,13 @@ public class ActionsTest extends TestCase {
         records.put(nodeKey, activityDecisionTree);
         Actions actions = new Actions(records.build());
 
+        // lookup using DOM element API.
+        ImmutableList<Actions.NodeRecord> nodeRecords = actions.getNodeRecords(xmlElement);
+        assertNotNull(nodeRecords);
+        assertEquals(1, nodeRecords.size());
+
         // lookup using key
-        ImmutableList<Actions.NodeRecord>  nodeRecords = actions.getNodeRecords(nodeKey);
+        nodeRecords = actions.getNodeRecords(nodeKey);
         assertNotNull(nodeRecords);
         assertEquals(1, nodeRecords.size());
     }
@@ -242,13 +247,13 @@ public class ActionsTest extends TestCase {
         // check equality.
         for (NodeKey nodeKey : actions.getNodeKeys()) {
 
-            ImmutableList<Actions.NodeRecord> expectedNodeRecords = actions.getNodeRecords(nodeKey);
-            assertNotNull(expectedNodeRecords);
-            assertEquals(expectedNodeRecords.size(), newActions.getNodeRecords(nodeKey).size());
+            ImmutableList<Actions.NodeRecord> allNodeRecords = newActions.getNodeRecords(nodeKey);
+            assertNotNull(allNodeRecords);
+            assertEquals(newActions.getNodeRecords(nodeKey).size(), allNodeRecords.size());
 
             for (Actions.NodeRecord nodeRecord : newActions.getNodeRecords(nodeKey)) {
                 assertTrue("Cannot find node=" + nodeKey + "record=" + nodeRecord,
-                        findNodeRecordInList(nodeRecord, expectedNodeRecords));
+                        findNodeRecordInList(nodeRecord, allNodeRecords));
             }
 
             for (XmlNode.NodeName nodeName : actions
