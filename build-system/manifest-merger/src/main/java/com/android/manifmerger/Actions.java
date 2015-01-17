@@ -20,34 +20,38 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.annotations.concurrency.Immutable;
-import com.android.ide.common.xml.XmlPrettyPrinter;
 import com.android.utils.ILogger;
 import com.android.utils.PositionXmlParser;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
-import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.io.LineReader;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonSerializationContext;
+import com.google.gson.JsonSerializer;
 
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.StringReader;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 /**
@@ -62,24 +66,10 @@ public class Actions {
 
     // defines all the records for the merging tool activity, indexed by element name+key.
     // iterator should be ordered by the key insertion order.
-    private final ImmutableMap<XmlNode.NodeKey, DecisionTreeRecord> mRecords;
+    private final Map<XmlNode.NodeKey, DecisionTreeRecord> mRecords;
 
-    public Actions(ImmutableMap<XmlNode.NodeKey, DecisionTreeRecord> records) {
+    public Actions(Map<XmlNode.NodeKey, DecisionTreeRecord> records) {
         mRecords = records;
-    }
-
-    /**
-     * Returns a {@link com.google.common.collect.ImmutableList} of {@link NodeRecord}s for the
-     * passed xml {@link Element}
-     * @return the node records for that element or an empty list if none exist.
-     */
-    @NonNull
-    public ImmutableList<NodeRecord> getNodeRecords(Element element) {
-        XmlNode.NodeKey nodeKey = XmlNode.NodeKey.fromXml(element);
-        return mRecords.containsKey(nodeKey)
-                ? mRecords.get(nodeKey).getNodeRecords()
-                : ImmutableList.<NodeRecord>of();
-
     }
 
     /**
@@ -87,7 +77,7 @@ public class Actions {
      * at least one {@link NodeRecord}.
      */
     @NonNull
-    public ImmutableSet<XmlNode.NodeKey> getNodeKeys() {
+    public Set<XmlNode.NodeKey> getNodeKeys() {
         return mRecords.keySet();
     }
 
@@ -164,7 +154,6 @@ public class Actions {
                     attributeRecord.print(stringBuilder);
                     stringBuilder.append('\n');
                 }
-
             }
         }
         return stringBuilder.toString();
@@ -217,14 +206,6 @@ public class Actions {
             mReason = reason;
         }
 
-        private Record(@NonNull Element xml) {
-            mActionType = ActionType.valueOf(xml.getAttribute("action-type"));
-            mActionLocation = new ActionLocation(getFirstChildElement(xml));
-            mTargetId = new XmlNode.NodeKey(xml.getAttribute("target-id"));
-            String reason = xml.getAttribute("reason");
-            mReason = Strings.isNullOrEmpty(reason) ? null : reason;
-        }
-
         public ActionType getActionType() {
             return mActionType;
         }
@@ -246,22 +227,6 @@ public class Actions {
                         .append(mReason);
             }
         }
-
-        public Element toXml(Document document) {
-            Element record = document.createElement("record");
-            record.setAttribute("action-type", mActionType.toString());
-            record.setAttribute("target-id", mTargetId.toString());
-            if (mReason != null) {
-                record.setAttribute("reason", mReason);
-            }
-            addAttributes(record);
-            Element location = document.createElement("location");
-            record.appendChild(mActionLocation.toXml(location));
-            record.appendChild(location);
-            return record;
-        }
-
-        protected abstract void addAttributes(Element element);
     }
 
     /**
@@ -278,16 +243,6 @@ public class Actions {
                 @NonNull NodeOperationType nodeOperationType) {
             super(actionType, actionLocation, targetId, reason);
             this.mNodeOperationType = Preconditions.checkNotNull(nodeOperationType);
-        }
-
-        NodeRecord(@NonNull Element xml) {
-            super(xml);
-            mNodeOperationType = NodeOperationType.valueOf(xml.getAttribute("opType"));
-        }
-
-        @Override
-        protected void addAttributes(Element element) {
-            element.setAttribute("opType", mNodeOperationType.toString());
         }
 
         @Override
@@ -317,21 +272,9 @@ public class Actions {
             this.mOperationType = operationType;
         }
 
-        AttributeRecord(@NonNull Element xml) {
-            super(xml);
-            mOperationType = AttributeOperationType.valueOf(xml.getAttribute("opType"));
-        }
-
         @Nullable
         public AttributeOperationType getOperationType() {
             return mOperationType;
-        }
-
-        @Override
-        protected void addAttributes(Element element) {
-            if (mOperationType != null) {
-                element.setAttribute("opType", mOperationType.toString());
-            }
         }
 
         @Override
@@ -347,19 +290,15 @@ public class Actions {
      * file) and a position within that source location.
      */
     public static final class ActionLocation {
+
         private final XmlLoader.SourceLocation mSourceLocation;
+
         private final PositionXmlParser.Position mPosition;
 
         public ActionLocation(@NonNull XmlLoader.SourceLocation sourceLocation,
                 @NonNull PositionXmlParser.Position position) {
             mSourceLocation = Preconditions.checkNotNull(sourceLocation);
             mPosition = Preconditions.checkNotNull(position);
-        }
-
-        ActionLocation(Element xml) {
-            final Element location = getFirstChildElement(xml);
-            mSourceLocation = XmlLoader.locationFromXml(location);
-            mPosition = PositionImpl.fromXml(getNextSiblingElement(location));
         }
 
         public PositionXmlParser.Position getPosition() {
@@ -372,84 +311,89 @@ public class Actions {
 
         @Override
         public String toString() {
-            return mSourceLocation.print(true)
-                    + ":" + mPosition.getLine() + ":" + mPosition.getColumn();
+            String toString = mSourceLocation.print(true);
+            if (mPosition != null) {
+                toString += ":" + mPosition.getLine() + ":" + mPosition.getColumn();
+            }
+            return toString;
         }
 
-        public Node toXml(Element location) {
-            location.appendChild(mSourceLocation.toXml(location.getOwnerDocument()));
-            location.appendChild(PositionImpl.toXml(mPosition, location.getOwnerDocument()));
-            return location;
+        private static final class ActionLocationAdapter
+                implements JsonSerializer<ActionLocation>, JsonDeserializer<ActionLocation> {
+
+            private static final String POSITION_ELEMENT = "position";
+
+            private static final String LINE_ATTRIBUTE = "line";
+
+            private static final String COLUMN_ATTRIBUTE = "col";
+
+            private static final String OFFSET_ATTRIBUTE = "offset";
+
+            @Override
+            public ActionLocation deserialize(JsonElement json, Type typeOfT,
+                    JsonDeserializationContext context) throws JsonParseException {
+                XmlLoader.SourceLocation sourceLocation =
+                        context.deserialize(json.getAsJsonObject().get(POSITION_ELEMENT),
+                                XmlLoader.SourceLocation.class);
+                PositionImpl position = new PositionImpl(
+                        json.getAsJsonObject().get(LINE_ATTRIBUTE).getAsInt(),
+                        json.getAsJsonObject().get(COLUMN_ATTRIBUTE).getAsInt(),
+                        json.getAsJsonObject().get(OFFSET_ATTRIBUTE).getAsInt());
+                return new ActionLocation(sourceLocation, position);
+            }
+
+            @Override
+            public JsonElement serialize(ActionLocation src, Type typeOfSrc,
+                    JsonSerializationContext context) {
+                JsonObject jsonObject = new JsonObject();
+                jsonObject.add(POSITION_ELEMENT, context.serialize(src.getSourceLocation()));
+                jsonObject.addProperty(LINE_ATTRIBUTE, src.getPosition().getLine());
+                jsonObject.addProperty(COLUMN_ATTRIBUTE, src.getPosition().getColumn());
+                jsonObject.addProperty(OFFSET_ATTRIBUTE, src.getPosition().getOffset());
+                return jsonObject;
+            }
         }
     }
 
-    public String persist()
-            throws ParserConfigurationException, IOException, SAXException {
-        DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
-        Document document = documentBuilderFactory.newDocumentBuilder().newDocument();
-        Element rootElement = document.createElement("manifest-merger-mappings");
-        document.appendChild(rootElement);
-
-        for (Map.Entry<XmlNode.NodeKey, DecisionTreeRecord> decisionTreeRecordEntry :
-                mRecords.entrySet()) {
-
-            Element elementActions = document.createElement("element-actions");
-            elementActions.setAttribute("id", decisionTreeRecordEntry.getKey().toString());
-            decisionTreeRecordEntry.getValue().toXml(elementActions);
-            rootElement.appendChild(elementActions);
-        }
-
-        return XmlPrettyPrinter.prettyPrint(document, false);
+    public String persist() throws IOException  {
+        GsonBuilder gson = new GsonBuilder().setPrettyPrinting();
+        gson.enableComplexMapKeySerialization();
+        gson.registerTypeAdapter(ActionLocation.class, new ActionLocation.ActionLocationAdapter());
+        return gson.create().toJson(this);
     }
 
     @Nullable
-    public static Actions load(InputStream inputStream)
-            throws IOException, SAXException, ParserConfigurationException {
+    public static Actions load(InputStream inputStream) throws IOException {
 
-        return load(new PositionXmlParser().parse(inputStream));
+        return getGsonParser().fromJson(new InputStreamReader(inputStream), Actions.class);
+    }
+
+    private static class NodeNameDeserializer implements JsonDeserializer<XmlNode.NodeName> {
+
+        @Override
+        public XmlNode.NodeName deserialize(JsonElement json, Type typeOfT,
+                JsonDeserializationContext context) throws JsonParseException {
+            if (json.getAsJsonObject().get("mNamespaceURI") != null) {
+                return context.deserialize(json, XmlNode.NamespaceAwareName.class);
+            } else {
+                return context.deserialize(json, XmlNode.Name.class);
+            }
+        }
     }
 
     @Nullable
-    public static Actions load(String xml)
-            throws IOException, SAXException, ParserConfigurationException {
+    @SuppressWarnings("unchecked")
+    public static Actions load(String xml) {
 
-        return load(new PositionXmlParser().parse(xml));
+        return getGsonParser().fromJson(xml, Actions.class);
     }
 
-    @Nullable
-    private static Actions load(Document document) throws IOException {
-        if (document == null) return null;
-
-        Element rootElement = document.getDocumentElement();
-        if (!rootElement.getNodeName().equals("manifest-merger-mappings")) {
-            throw new IOException("File is not a manifest-merger-mappings");
-        }
-        ImmutableMap.Builder<XmlNode.NodeKey, DecisionTreeRecord> records = ImmutableMap.builder();
-        NodeList elementActions = rootElement.getChildNodes();
-        for (int i = 0; i < elementActions.getLength(); i++) {
-            if (elementActions.item(i).getNodeType() != Node.ELEMENT_NODE) continue;
-            Element elementAction = (Element) elementActions.item(i);
-            XmlNode.NodeKey key = new XmlNode.NodeKey(elementAction.getAttribute("id"));
-            DecisionTreeRecord decisionTreeRecord = new DecisionTreeRecord(elementAction);
-            records.put(key, decisionTreeRecord);
-        }
-        return new Actions(records.build());
-    }
-
-    private static Element getFirstChildElement(Element element) {
-        Node child = element.getFirstChild();
-        while(child.getNodeType() != Node.ELEMENT_NODE) {
-            child = child.getNextSibling();
-        }
-        return (Element) child;
-    }
-
-    private static Element getNextSiblingElement(Element element) {
-        Node sibling = element.getNextSibling();
-        while(sibling != null && sibling.getNodeType() != Node.ELEMENT_NODE) {
-            sibling = sibling.getNextSibling();
-        }
-        return (Element) sibling;
+    private static Gson getGsonParser() {
+        GsonBuilder gsonBuilder = new GsonBuilder();
+        gsonBuilder.enableComplexMapKeySerialization();
+        gsonBuilder.registerTypeAdapter(XmlNode.NodeName.class, new NodeNameDeserializer());
+        gsonBuilder.registerTypeAdapter(ActionLocation.class, new ActionLocation.ActionLocationAdapter());
+        return gsonBuilder.create();
     }
 
     public ImmutableMultimap<Integer, Record> getResultingSourceMapping(XmlDocument xmlDocument)
@@ -572,39 +516,6 @@ public class Actions {
         DecisionTreeRecord() {
         }
 
-        DecisionTreeRecord(Element elementAction) {
-            Preconditions.checkArgument(elementAction.getNodeName().equals("element-actions"));
-            NodeList childNodes = elementAction.getChildNodes();
-            for (int i = 0; i < childNodes.getLength(); i++) {
-                Node child = childNodes.item(i);
-                if (child.getNodeName().equals("node-records")) {
-                    NodeList nodeRecords = child.getChildNodes();
-                    for (int j = 0; j < nodeRecords.getLength(); j++) {
-                        if (nodeRecords.item(j).getNodeType() != Node.ELEMENT_NODE) continue;
-                        NodeRecord nodeRecord = new NodeRecord((Element) nodeRecords.item(j));
-                        mNodeRecords.add(nodeRecord);
-                    }
-                } else if (child.getNodeName().equals("attribute-records")) {
-                    // id, record*
-                    Element id = getFirstChildElement((Element) child);
-                    XmlNode.NodeName nodeName = Strings.isNullOrEmpty(id.getAttribute("name"))
-                            ? XmlNode.fromNSName(
-                                    id.getAttribute("namespace-uri"),
-                                    id.getAttribute("prefix"),
-                                    id.getAttribute("local-name"))
-                            : XmlNode.fromXmlName(id.getAttribute("name"));
-                    Element record = id;
-                    ImmutableList.Builder<AttributeRecord> attributeRecords =
-                            ImmutableList.builder();
-                    while ((record = getNextSiblingElement(record)) != null) {
-                        AttributeRecord attributeRecord = new AttributeRecord(record);
-                        attributeRecords.add(attributeRecord);
-                    }
-                    mAttributeRecords.put(nodeName, attributeRecords.build());
-                }
-            }
-        }
-
         void addNodeRecord(NodeRecord nodeRecord) {
             mNodeRecords.add(nodeRecord);
         }
@@ -614,29 +525,6 @@ public class Actions {
             return attributeRecords == null
                     ? ImmutableList.<AttributeRecord>of()
                     : ImmutableList.copyOf(attributeRecords);
-        }
-
-        public void toXml(Element elementAction) {
-            Document document = elementAction.getOwnerDocument();
-            Element nodeRecords = document.createElement("node-records");
-            elementAction.appendChild(nodeRecords);
-            for (NodeRecord nodeRecord : mNodeRecords) {
-                Element xmlNode = nodeRecord.toXml(document);
-                nodeRecords.appendChild(xmlNode);
-            }
-            for (Map.Entry<XmlNode.NodeName, List<AttributeRecord>> nodeNameListEntry :
-                    mAttributeRecords.entrySet()) {
-                Element attributeRecords = document.createElement("attribute-records");
-                elementAction.appendChild(attributeRecords);
-                Element id = document.createElement("id");
-                nodeNameListEntry.getKey().persistTo(id);
-                attributeRecords.appendChild(id);
-
-                for (AttributeRecord attributeRecord : nodeNameListEntry.getValue()) {
-                    Element xmlAttributeRecord = attributeRecord.toXml(document);
-                    attributeRecords.appendChild(xmlAttributeRecord);
-                }
-            }
         }
     }
 }
