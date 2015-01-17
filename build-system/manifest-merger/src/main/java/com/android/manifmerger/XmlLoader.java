@@ -46,24 +46,7 @@ public final class XmlLoader {
      * Abstraction for the notion of source location. This is useful for logging and records
      * collection when a origin of an xml declaration is needed.
      */
-    public static class SourceLocation {
-
-        @Nullable
-        private final File mSource;
-
-        @Nullable
-        private final String mDescription;
-
-        /**
-         * Build a source location, one of the parameter must not be null.
-         */
-        public SourceLocation(@Nullable String description, @Nullable File source) {
-            if (description == null && source == null) {
-                throw new IllegalArgumentException("description and source cannot be both null");
-            }
-            mDescription = description == null ? source.getName() : description;
-            mSource = source;
-        }
+    public interface SourceLocation {
 
         /**
          * print this source location in a human and machine readable format.
@@ -72,13 +55,15 @@ public final class XmlLoader {
          *                    short format is the file name while the long format is its path.
          * @return the human and machine readable source location.
          */
-        String print(boolean shortFormat) {
-            return shortFormat
-                    ? mDescription
-                    : mSource == null
-                            ? mDescription :
-                            mSource.getAbsolutePath();
-        }
+        String print(boolean shortFormat);
+
+        /**
+         * Persist a location to an xml node.
+         *
+         * @param document the document in which the node will exist.
+         * @return the persisted location as a xml node.
+         */
+        Node toXml(Document document);
     }
 
     private XmlLoader() {}
@@ -104,7 +89,7 @@ public final class XmlLoader {
         Document domDocument = positionXmlParser.parse(inputStream);
         return domDocument != null
                 ? new XmlDocument(positionXmlParser,
-                new SourceLocation(displayName, xmlFile),
+                new FileSourceLocation(displayName, xmlFile),
                 selectors,
                 systemPropertyResolver,
                 domDocument.getDocumentElement(),
@@ -146,6 +131,59 @@ public final class XmlLoader {
                 : null;
     }
 
-    public static final SourceLocation UNKNOWN =
-            new SourceLocation("Unknown location", null /* source */);
+    /**
+     * Implementation of {@link SourceLocation} describing a local file.
+     */
+    private static class FileSourceLocation implements SourceLocation {
+
+        private final File mFile;
+        private final String mName;
+
+        private FileSourceLocation(@Nullable String name, File file) {
+            this.mFile = file;
+            mName = Strings.isNullOrEmpty(name)
+                    ? file.getName()
+                    : name;
+        }
+
+        @Override
+        public String print(boolean shortFormat) {
+            return shortFormat ? mName : mFile.getAbsolutePath();
+        }
+
+        @Override
+        public Node toXml(Document document) {
+            Element location = document.createElement("source");
+            location.setAttribute("name", mName);
+            location.setAttribute("scheme", "file://");
+            location.setAttribute("value", mFile.getAbsolutePath());
+            return location;
+        }
+    }
+
+    public static SourceLocation locationFromXml(Element location) {
+        String scheme = location.getAttribute("scheme");
+        if (Strings.isNullOrEmpty(scheme)) {
+            return UNKNOWN;
+        }
+        if (scheme.equals("file://")) {
+            return new FileSourceLocation(
+                    location.getAttribute("name"),
+                    new File(location.getAttribute("value")));
+        }
+        throw new RuntimeException(scheme + " scheme unsupported");
+    }
+
+    public static final SourceLocation UNKNOWN = new SourceLocation() {
+        @Override
+        public String print(boolean shortFormat) {
+            return "Unknown location";
+        }
+
+        @Override
+        public Node toXml(Document document) {
+            // empty node.
+            return document.createElement("source");
+        }
+    };
 }

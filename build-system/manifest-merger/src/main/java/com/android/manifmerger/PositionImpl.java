@@ -19,12 +19,21 @@ package com.android.manifmerger;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.utils.PositionXmlParser;
+import com.google.common.base.Preconditions;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
 /**
  * Implementation of {@link com.android.utils.PositionXmlParser.Position} capable of initializing
  * from xml definition or with given line, column and offset.
 */
 final class PositionImpl implements PositionXmlParser.Position {
+
+    private static final String POSITION_ELEMENT = "position";
+    private static final String LINE_ATTRIBUTE = "line";
+    private static final String COLUMN_ATTRIBUTE = "col";
+    private static final String OFFSET_ATTRIBUTE = "offset";
 
     /**
      * Unknown position on an action happens when the action did not originate from any source file
@@ -37,10 +46,38 @@ final class PositionImpl implements PositionXmlParser.Position {
     private final int mColumn;
     private final int mOffset;
 
-    PositionImpl(int line, int column, int offset) {
+    private PositionImpl(int line, int column, int offset) {
         mLine = line;
         mColumn = column;
         mOffset = offset;
+    }
+
+    /**
+     * Creates a {@link com.android.utils.PositionXmlParser.Position} from its Xml reprentation.
+     * @param xml the xml representation of the element
+     * @return the {link Position} initialized from its Xml representation.
+     */
+    public static PositionXmlParser.Position fromXml(Element xml) {
+        Preconditions.checkArgument(xml.getNodeName().equals(POSITION_ELEMENT));
+        return new PositionImpl(
+                Integer.parseInt(xml.getAttribute(LINE_ATTRIBUTE)),
+                Integer.parseInt(xml.getAttribute(COLUMN_ATTRIBUTE)),
+                Integer.parseInt(xml.getAttribute(OFFSET_ATTRIBUTE)));
+    }
+
+    /**
+     * Persists a position to an xml representation.
+     * @param position the position to be persisted.
+     * @param document the document to persist into.
+     * @return the xml {@link Element} containing the persisted position.
+     */
+    public static Element toXml(PositionXmlParser.Position position, Document document) {
+        Element xml = document.createElement(PositionImpl.POSITION_ELEMENT);
+        xml.setAttribute(LINE_ATTRIBUTE, String.valueOf(position.getLine()));
+        xml.setAttribute(COLUMN_ATTRIBUTE, String.valueOf(position.getColumn()));
+        xml.setAttribute(OFFSET_ATTRIBUTE, String.valueOf(position.getOffset()));
+        return xml;
+
     }
 
     @Nullable
