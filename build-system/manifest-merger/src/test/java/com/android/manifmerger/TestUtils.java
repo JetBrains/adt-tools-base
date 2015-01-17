@@ -61,10 +61,24 @@ public class TestUtils {
                 }
             };
 
-    static class TestSourceLocation extends XmlLoader.SourceLocation {
+    static class TestSourceLocation implements XmlLoader.SourceLocation {
+
+        private final String mLocation;
 
         TestSourceLocation(Class sourceClass, String location) {
-            super(sourceClass.getSimpleName() + "#" + location, null);
+            this.mLocation = sourceClass.getSimpleName() + "#" + location;
+        }
+
+        @Override
+        public String print(boolean shortFormat) {
+            return mLocation;
+        }
+
+        @Override
+        public Node toXml(Document document) {
+            Element location = document.createElement("source");
+            location.setAttribute("value", mLocation);
+            return location;
         }
     }
 
