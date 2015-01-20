@@ -17,6 +17,7 @@
 package com.android.tools.lint.checks;
 
 import com.android.annotations.NonNull;
+import com.android.ide.common.resources.LocaleManager;
 import com.android.resources.ResourceFolderType;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Detector;
@@ -28,19 +29,23 @@ import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.Speed;
 import com.android.utils.Pair;
+import com.google.common.base.Joiner;
+import com.google.common.collect.Lists;
+
+import java.util.List;
 
 /**
  * Checks for errors related to locale handling
  */
 public class LocaleFolderDetector extends Detector implements Detector.ResourceFolderScanner {
-    public static final Implementation IMPLEMENTATION = new Implementation(
+    private static final Implementation IMPLEMENTATION = new Implementation(
             LocaleFolderDetector.class,
             Scope.RESOURCE_FOLDER_SCOPE);
 
     /**
      * Using a locale folder that is not consulted
      */
-    public static final Issue ISSUE = Issue.create(
+    public static final Issue DEPRECATED_CODE = Issue.create(
             "LocaleFolder", //$NON-NLS-1$
             "Wrong locale name",
             "From the `java.util.Locale` documentation:\n" +
@@ -58,10 +63,37 @@ public class LocaleFolderDetector extends Detector implements Detector.ResourceF
             Category.CORRECTNESS,
             6,
             Severity.WARNING,
-            new Implementation(
-                    LocaleFolderDetector.class,
-                    Scope.RESOURCE_FOLDER_SCOPE)).addMoreInfo(
+            IMPLEMENTATION).addMoreInfo(
             "http://developer.android.com/reference/java/util/Locale.html");
+
+    /**
+     * Using a region that might not be a match for the given language
+     */
+    public static final Issue WRONG_REGION = Issue.create(
+            "WrongRegion", //$NON-NLS-1$
+            "Suspicious Language/Region Combination",
+            "Android uses the letter codes ISO 639-1 for languages, and the letter codes " +
+            "ISO 3166-1 for the region codes. In many cases, the language code and the " +
+            "country where the language is spoken is the same, but it is also often not " +
+            "the case. For example, while 'se' refers to Sweden, where Swedish is spoken, " +
+            "the language code for Swedish is *not* `se` (which refers to the Northern " +
+            "Sami language), the language code is `sv`. And similarly the region code for " +
+            "`sv` is El Salvador.\n" +
+            "\n" +
+            "This lint check looks for suspicious language and region combinations, to help " +
+            "catch cases where you've accidentally used the wrong language or region code. " +
+            "Lint knows about the most common regions where a language is spoken, and if " +
+            "a folder combination is not one of these, it is flagged as suspicious.\n" +
+            "\n" +
+            "Note however that it may not be an error: you can theoretically have speakers " +
+            "of any language in any region and want to target that with your resources, so " +
+            "this check is aimed at tracking down likely mistakes, not to enforce a specific " +
+            "set of region and language combinations.",
+
+            Category.CORRECTNESS,
+            6,
+            Severity.WARNING,
+            IMPLEMENTATION);
 
     /**
      * Constructs a new {@link LocaleFolderDetector}
@@ -104,7 +136,26 @@ public class LocaleFolderDetector extends Detector implements Detector.ResourceF
                                     + "called \"`%2$s`\" instead; see the "
                                     + "`java.util.Locale` documentation",
                             language, replace);
-                    context.report(ISSUE, Location.create(context.file), message);
+                    context.report(DEPRECATED_CODE, Location.create(context.file), message);
+                }
+
+                String region = locale.getSecond();
+                if (region != null) {
+                    List<String> relevantRegions = LocaleManager.getRelevantRegions(language);
+                    if (!relevantRegions.isEmpty() && !relevantRegions.contains(region)) {
+                        List<String> suggestions = Lists.newArrayList();
+                        for (String code : relevantRegions) {
+                            suggestions.add(code + " (" + LocaleManager.getRegionName(code) + ")");
+                        }
+                        String message = String.format(
+                                "Suspicious language and region combination %1$s (%2$s) "
+                                        + "with %3$s (%4$s): language %5$s is usually "
+                                        + "paired with: %6$s",
+                                language, LocaleManager.getLanguageName(language), region,
+                                LocaleManager.getRegionName(region), language,
+                                Joiner.on(", ").join(suggestions));
+                        context.report(WRONG_REGION, Location.create(context.file), message);
+                    }
                 }
             }
         }
