@@ -497,7 +497,13 @@ final class Device implements IDevice {
     @Override
     public RawImage getScreenshot()
             throws TimeoutException, AdbCommandRejectedException, IOException {
-        return AdbHelper.getFrameBuffer(AndroidDebugBridge.getSocketAddress(), this);
+        return getScreenshot(0, TimeUnit.MILLISECONDS);
+    }
+
+    @Override
+    public RawImage getScreenshot(long timeout, TimeUnit unit)
+            throws TimeoutException, AdbCommandRejectedException, IOException {
+        return AdbHelper.getFrameBuffer(AndroidDebugBridge.getSocketAddress(), this, timeout, unit);
     }
 
     @Override

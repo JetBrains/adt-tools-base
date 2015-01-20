@@ -312,8 +312,10 @@ public interface IDevice extends IShellEnabledDevice {
      * @throws AdbCommandRejectedException if adb rejects the command
      * @throws IOException in case of I/O error on the connection.
      */
-    public RawImage getScreenshot() throws TimeoutException, AdbCommandRejectedException,
-            IOException;
+    RawImage getScreenshot() throws TimeoutException, AdbCommandRejectedException, IOException;
+
+    RawImage getScreenshot(long timeout, TimeUnit unit)
+            throws TimeoutException, AdbCommandRejectedException, IOException;
 
     /**
      * Initiates screen recording on the device if the device supports {@link Feature#SCREEN_RECORD}.
