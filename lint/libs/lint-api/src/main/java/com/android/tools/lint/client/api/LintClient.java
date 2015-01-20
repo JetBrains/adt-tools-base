@@ -757,7 +757,47 @@ public abstract class LintClient {
      */
     @Nullable
     public String getSuperClass(@NonNull Project project, @NonNull String name) {
+        assert name.indexOf('.') == -1 : "Use VM signatures, e.g. java/lang/Integer";
+
+        if ("java/lang/Object".equals(name)) {  //$NON-NLS-1$
+            return null;
+        }
+
+        String superClass = project.getSuperClassMap().get(name);
+        if (superClass != null) {
+            return superClass;
+        }
+
+        for (Project library : project.getAllLibraries()) {
+            superClass = library.getSuperClassMap().get(name);
+            if (superClass != null) {
+                return superClass;
+            }
+        }
+
         return null;
+    }
+
+    /**
+     * Creates a super class map for the given project. The map maps from
+     * internal class name (e.g. java/lang/Integer, not java.lang.Integer) to its
+     * corresponding super class name. The root class, java/lang/Object, is not in the map.
+     *
+     * @param project the project to initialize the super class with; this will include
+     *                local classes as well as any local .jar libraries; not transitive
+     *                dependencies
+     * @return a map from class to its corresponding super class; never null
+     */
+    @NonNull
+    public Map<String, String> createSuperClassMap(@NonNull Project project) {
+        List<File> libraries = project.getJavaLibraries();
+        List<File> classFolders = project.getJavaClassFolders();
+        List<ClassEntry> classEntries = ClassEntry.fromClassPath(this, classFolders, true);
+        if (libraries.isEmpty()) {
+            return ClassEntry.createSuperClassMap(this, classEntries);
+        }
+        List<ClassEntry> libraryEntries = ClassEntry.fromClassPath(this, libraries, true);
+        return ClassEntry.createSuperClassMap(this, libraryEntries, classEntries);
     }
 
     /**

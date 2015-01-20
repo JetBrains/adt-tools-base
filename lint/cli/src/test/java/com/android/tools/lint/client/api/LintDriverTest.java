@@ -19,12 +19,9 @@ package com.android.tools.lint.client.api;
 import com.android.annotations.NonNull;
 import com.android.tools.lint.checks.AbstractCheckTest;
 import com.android.tools.lint.checks.AccessibilityDetector;
-import com.android.tools.lint.client.api.LintDriver.ClassEntry;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Project;
 import com.google.common.collect.Lists;
-
-import junit.framework.TestCase;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -34,6 +31,7 @@ import java.util.List;
 
 @SuppressWarnings("javadoc")
 public class LintDriverTest extends AbstractCheckTest {
+    @SuppressWarnings({"ResultOfMethodCallIgnored", "ConstantConditions"})
     public void testClassEntryCompare() throws Exception {
         ClassEntry c0 = new ClassEntry(new File("/a1/Foo.class"), null, null, null);
         ClassEntry c1 = new ClassEntry(new File("/a1/Foo.clazz"), null, null, null);
@@ -56,6 +54,7 @@ public class LintDriverTest extends AbstractCheckTest {
         assertEquals(expected, list3);
     }
 
+    @SuppressWarnings("ConstantConditions")
     public void testClassEntryCompareContract() throws Exception {
         ClassEntry c0 = new ClassEntry(new File("abcde"), null, null, null);
         ClassEntry c1 = new ClassEntry(new File("abcde"), null, null, null);
