@@ -285,12 +285,15 @@ public class LintUtils {
      * @param id2 the second id to compare
      * @return true if the two id references refer to the same id
      */
-    public static boolean idReferencesMatch(String id1, String id2) {
+    public static boolean idReferencesMatch(@Nullable String id1, @Nullable String id2) {
+        if (id1 == null || id2 == null || id1.isEmpty() || id2.isEmpty()) {
+            return false;
+        }
         if (id1.startsWith(NEW_ID_PREFIX)) {
             if (id2.startsWith(NEW_ID_PREFIX)) {
                 return id1.equals(id2);
             } else {
-                assert id2.startsWith(ID_PREFIX);
+                assert id2.startsWith(ID_PREFIX) : id2;
                 return ((id1.length() - id2.length())
                             == (NEW_ID_PREFIX.length() - ID_PREFIX.length()))
                         && id1.regionMatches(NEW_ID_PREFIX.length(), id2,
@@ -298,7 +301,7 @@ public class LintUtils {
                                 id2.length() - ID_PREFIX.length());
             }
         } else {
-            assert id1.startsWith(ID_PREFIX);
+            assert id1.startsWith(ID_PREFIX) : id1;
             if (id2.startsWith(ID_PREFIX)) {
                 return id1.equals(id2);
             } else {
