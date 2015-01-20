@@ -62,7 +62,6 @@ import org.gradle.tooling.BuildException
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry
 
 import java.security.MessageDigest
-import java.util.Calendar
 import java.util.jar.Attributes
 import java.util.jar.Manifest
 import java.util.regex.Pattern
@@ -76,7 +75,6 @@ import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_STORE_FI
 import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_STORE_PASSWORD
 import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_STORE_TYPE
 import static java.io.File.separator
-
 /**
  * Base class for all Android plugins
  */
@@ -84,7 +82,6 @@ import static java.io.File.separator
 public abstract class BasePlugin {
 
     private static final String GRADLE_MIN_VERSION = "2.2"
-    public static final String GRADLE_TEST_VERSION = "2.2"
     public static final Pattern GRADLE_ACCEPTABLE_VERSIONS = Pattern.compile("2\\.[2-9].*")
     private static final String GRADLE_VERSION_CHECK_OVERRIDE_PROPERTY =
             "com.android.build.gradle.overrideVersionCheck"
