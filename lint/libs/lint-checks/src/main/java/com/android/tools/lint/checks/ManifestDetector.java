@@ -855,7 +855,7 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
 
             if (context.isEnabled(MIPMAP)
                     // Only complain if this app is skipping some densities
-                    && context.getProject().getApplicableDensities() == null) {
+                    && context.getProject().getApplicableDensities() != null) {
                 context.report(MIPMAP, element, context.getLocation(attribute),
                         "Should use `@mipmap` instead of `@drawable` for launcher icons");
             }
