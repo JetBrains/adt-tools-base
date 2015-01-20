@@ -120,7 +120,8 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(LayoutConsistencyDetector.INCONSISTENT_IDS);
         issues.add(LayoutInflationDetector.ISSUE);
         issues.add(LocaleDetector.STRING_LOCALE);
-        issues.add(LocaleFolderDetector.ISSUE);
+        issues.add(LocaleFolderDetector.DEPRECATED_CODE);
+        issues.add(LocaleFolderDetector.WRONG_REGION);
         issues.add(ManifestDetector.ALLOW_BACKUP);
         issues.add(ManifestDetector.APPLICATION_ICON);
         issues.add(ManifestDetector.DEVICE_ADMIN);
