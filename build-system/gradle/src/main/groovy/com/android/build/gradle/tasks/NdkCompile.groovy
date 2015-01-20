@@ -15,7 +15,6 @@
  */
 
 package com.android.build.gradle.tasks
-
 import com.android.annotations.NonNull
 import com.android.build.gradle.internal.core.NdkConfig
 import com.android.build.gradle.internal.tasks.NdkTask
@@ -30,6 +29,7 @@ import org.gradle.api.file.FileTree
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
@@ -55,6 +55,7 @@ class NdkCompile extends NdkTask {
     @OutputDirectory
     File objFolder
 
+    @Optional
     @InputDirectory
     File ndkDirectory
 
