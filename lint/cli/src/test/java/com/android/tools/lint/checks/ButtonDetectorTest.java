@@ -426,4 +426,15 @@ public class ButtonDetectorTest extends AbstractCheckTest {
                         "apicheck/minsdk4.xml=>AndroidManifest.xml",
                         "res/layout/yesno.xml"));
     }
+
+    public void testIssue101279() throws Exception {
+        // Regression test for https://code.google.com/p/android/issues/detail?id=101279
+        sTestIssue = ButtonDetector.STYLE;
+        assertEquals(
+                "No warnings.",
+
+                lintProject(
+                        "apicheck/minsdk4.xml=>AndroidManifest.xml",
+                        "res/layout/buttonbar5.xml"));
+    }
 }
