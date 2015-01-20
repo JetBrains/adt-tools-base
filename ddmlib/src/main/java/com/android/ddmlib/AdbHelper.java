@@ -31,7 +31,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Helper class to handle requests and connections to adb.
- * <p/>{@link DebugBridgeServer} is the public API to connection to adb, while {@link AdbHelper}
+ * <p/>{@link AndroidDebugBridge} is the public API to connection to adb, while {@link AdbHelper}
  * does the low level stuff.
  * <p/>This currently uses spin-wait non-blocking I/O. A Selector would be more efficient,
  * but seems like overkill for what we're doing here.
@@ -270,12 +270,15 @@ final class AdbHelper {
     }
 
     /**
-     * Retrieve the frame buffer from the device.
+     * Retrieve the frame buffer from the device with the given timeout. A timeout of 0 indicates
+     * that it will wait forever.
+     *
      * @throws TimeoutException in case of timeout on the connection.
      * @throws AdbCommandRejectedException if adb rejects the command
      * @throws IOException in case of I/O error on the connection.
      */
-    static RawImage getFrameBuffer(InetSocketAddress adbSockAddr, Device device)
+    static RawImage getFrameBuffer(InetSocketAddress adbSockAddr, Device device, long timeout,
+      TimeUnit unit)
             throws TimeoutException, AdbCommandRejectedException, IOException {
 
         RawImage imageParams = new RawImage();
@@ -333,7 +336,7 @@ final class AdbHelper {
             write(adbChan, nudge);
 
             reply = new byte[imageParams.size];
-            read(adbChan, reply);
+            read(adbChan, reply, imageParams.size, unit.toMillis(timeout));
 
             imageParams.data = reply;
         } finally {
@@ -745,9 +748,9 @@ final class AdbHelper {
      *      mode for timeouts to work
      * @param data the buffer to store the read data into.
      * @param length the length to read or -1 to fill the data buffer completely
-     * @param timeout The timeout value. A timeout of zero means "wait forever".
+     * @param timeout The timeout value in ms. A timeout of zero means "wait forever".
      */
-    static void read(SocketChannel chan, byte[] data, int length, int timeout)
+    static void read(SocketChannel chan, byte[] data, int length, long timeout)
             throws TimeoutException, IOException {
         ByteBuffer buf = ByteBuffer.wrap(data, 0, length != -1 ? length : data.length);
         int numWaits = 0;
