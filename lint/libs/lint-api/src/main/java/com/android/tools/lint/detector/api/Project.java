@@ -76,6 +76,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -127,6 +128,7 @@ public class Project {
     protected Boolean mGradleProject;
     protected Boolean mSupportLib;
     protected Boolean mAppCompat;
+    private Map<String, String> mSuperClassMap;
 
     /**
      * Creates a new {@link Project} for the given directory.
@@ -186,6 +188,7 @@ public class Project {
      *
      * @return the project model, or null
      */
+    @SuppressWarnings("UnusedDeclaration")
     @Nullable
     public AndroidLibrary getGradleLibraryModel() {
         return null;
@@ -912,15 +915,6 @@ public class Project {
     }
 
     /**
-     * Sets whether manifest merging is in effect.
-     *
-     * @param merging whether manifest merging is in effect
-     */
-    public void setMergingManifests(boolean merging) {
-        mMergeManifests = merging;
-    }
-
-    /**
      * Returns whether manifest merging is in effect
      *
      * @return true if manifests in library projects should be merged into main projects
@@ -962,6 +956,7 @@ public class Project {
         }
 
         parent = parent.getParentFile();
+        //noinspection RedundantIfStatement
         if (parent == null || !parent.getName().equals("frameworks")) { //$NON-NLS-1$
             return false;
         }
@@ -1272,6 +1267,20 @@ public class Project {
         }
 
         return mCachedApplicableDensities.isEmpty() ? null : mCachedApplicableDensities;
+    }
+
+    /**
+     * Returns a super class map for this project. The keys and values are internal
+     * class names (e.g. java/lang/Integer, not java.lang.Integer).
+     * @return a map, possibly empty but never null
+     */
+    @NonNull
+    public Map<String, String> getSuperClassMap() {
+        if (mSuperClassMap == null) {
+            mSuperClassMap = mClient.createSuperClassMap(this);
+        }
+
+        return mSuperClassMap;
     }
 
     /**
