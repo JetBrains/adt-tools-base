@@ -26,7 +26,6 @@ public class JavaPerformanceDetectorTest extends AbstractCheckTest {
     }
 
     public void test() throws Exception {
-        boolean isInAospEnvironment = System.getenv("ANDROID_BUILD_TOP") != null;
         assertEquals(
             "src/test/pkg/JavaPerformanceTest.java:28: Warning: Avoid object allocations during draw/layout operations (preallocate and reuse instead) [DrawAllocation]\n" +
             "        new String(\"foo\");\n" +
@@ -67,12 +66,6 @@ public class JavaPerformanceDetectorTest extends AbstractCheckTest {
             "src/test/pkg/JavaPerformanceTest.java:190: Warning: Use new SparseIntArray(...) instead for better performance [UseSparseArrays]\n" +
             "        new SparseArray<Integer>(); // Use SparseIntArray instead\n" +
             "        ~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
-
-            (isInAospEnvironment ?
-            "src/test/pkg/JavaPerformanceTest.java:191: Warning: Use new SparseLongArray(...) instead for better performance [UseSparseArrays]\n" +
-            "        new SparseArray<Long>();    // Use SparseLongArray instead\n" +
-            "        ~~~~~~~~~~~~~~~~~~~~~~~\n" : "") +
-
             "src/test/pkg/JavaPerformanceTest.java:192: Warning: Use new SparseBooleanArray(...) instead for better performance [UseSparseArrays]\n" +
             "        new SparseArray<Boolean>(); // Use SparseBooleanArray instead\n" +
             "        ~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
@@ -100,8 +93,7 @@ public class JavaPerformanceDetectorTest extends AbstractCheckTest {
             "src/test/pkg/JavaPerformanceTest.java:150: Warning: Use Double.valueOf(1.0) instead [UseValueOf]\n" +
             "        Double d1 = new Double(1.0);\n" +
             "                    ~~~~~~~~~~~~~~~\n" +
-            (isInAospEnvironment ?
-            "0 errors, 23 warnings\n" : "0 errors, 22 warnings\n"),
+            "0 errors, 22 warnings\n",
 
             lintProject("src/test/pkg/JavaPerformanceTest.java.txt=>" +
                     "src/test/pkg/JavaPerformanceTest.java"));
