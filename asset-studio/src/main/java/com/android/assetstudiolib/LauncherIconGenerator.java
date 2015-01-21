@@ -16,6 +16,7 @@
 
 package com.android.assetstudiolib;
 
+import com.android.annotations.NonNull;
 import com.android.resources.Density;
 import com.android.utils.Pair;
 
@@ -142,6 +143,12 @@ public class LauncherIconGenerator extends GraphicGenerator {
     }
 
     @Override
+    protected boolean includeDensity(@NonNull Density density) {
+        // Launcher icons should include xxxhdpi as well
+        return super.includeDensity(density) || density == Density.XXXHIGH;
+    }
+
+    @Override
     public void generate(String category, Map<String, Map<String, BufferedImage>> categoryMap,
             GraphicGeneratorContext context, Options options, String name) {
         LauncherOptions launcherOptions = (LauncherOptions) options;
@@ -172,6 +179,10 @@ public class LauncherIconGenerator extends GraphicGenerator {
 
     /** Options specific to generating launcher icons */
     public static class LauncherOptions extends GraphicGenerator.Options {
+        public LauncherOptions() {
+            mipmap = true;
+        }
+
         /** Background color, as an RRGGBB packed integer */
         public int backgroundColor = 0;
 
