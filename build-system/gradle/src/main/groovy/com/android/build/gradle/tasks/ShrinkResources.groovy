@@ -22,6 +22,7 @@ import com.android.builder.core.AaptPackageProcessBuilder
 import org.gradle.api.logging.LogLevel
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.OutputFile
+import org.gradle.api.tasks.ParallelizableTask
 import org.gradle.api.tasks.TaskAction
 
 /**
@@ -43,6 +44,7 @@ import org.gradle.api.tasks.TaskAction
  *      potential string lookups
  * </ul>
  */
+@ParallelizableTask
 public class ShrinkResources extends BaseTask {
     /**
      * Associated variant data that the strip task will be run against. Used to locate
