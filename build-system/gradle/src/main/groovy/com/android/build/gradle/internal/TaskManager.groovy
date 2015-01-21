@@ -1478,8 +1478,8 @@ abstract class TaskManager {
                         createMockableJar.outputFile)
             }
 
-            runTestsTask.dependsOn createMockableJar
             topLevelTest.dependsOn runTestsTask
+            variantData.assembleVariantTask.dependsOn createMockableJar
         }
 
         Task check = project.tasks.getByName(JavaBasePlugin.CHECK_TASK_NAME)
