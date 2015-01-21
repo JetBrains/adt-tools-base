@@ -44,7 +44,9 @@ class NdkConfiguration {
             NdkExtension ndkExtension,
             NdkHandler ndkHandler) {
         Collection<String> abiList = ndkHandler.getSupportedAbis()
-        library.targetPlatform(abiList.toArray(new String[abiList.size()]))
+        abiList.each {
+            library.targetPlatform(it)
+        }
 
         library.binaries.withType(SharedLibraryBinarySpec) { binary ->
             sourceIfExist(binary, sources, "main")
