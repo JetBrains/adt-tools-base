@@ -36,7 +36,7 @@ import junit.framework.TestCase;
  */
 public abstract class GeneratorTest extends TestCase implements GraphicGeneratorContext {
     private static final String TEST_DATA_REL_PATH =
-            "assetstudio/tests/src/com/android/assetstudiolib/testdata";
+            "tools/base/asset-studio/src/test/java/com/android/assetstudiolib/testdata";
 
     protected void checkGraphic(int expectedFileCount, String folderName, String baseName,
             GraphicGenerator generator, GraphicGenerator.Options options)
@@ -63,7 +63,7 @@ public abstract class GeneratorTest extends TestCase implements GraphicGenerator
                 if (is == null) {
                     if (targetDir == null) {
                         fail("Did not find " + path
-                                + ". Set ADT_SDK_SOURCE_PATH to have it created automatically");
+                                + ". Set ADT_TOOLS_BASE_SOURCE_PATH to have it created automatically");
                     }
                     File fileName = new File(targetDir, folderName + File.separator
                             + relativePath);
@@ -210,7 +210,7 @@ public abstract class GeneratorTest extends TestCase implements GraphicGenerator
 
     /** Get the location to write missing golden files to */
     protected File getTargetDir() {
-        // Set $ADT_SDK_SOURCE_PATH to point to your git "sdk" directory
+        // Set $ADT_SDK_SOURCE_PATH to point to your git AOSP working tree
         String sdk = System.getenv("ADT_SDK_SOURCE_PATH");
         if (sdk != null) {
             File sdkPath = new File(sdk);
