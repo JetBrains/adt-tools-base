@@ -39,6 +39,7 @@ import org.gradle.model.Path
 import org.gradle.model.RuleSource
 import org.gradle.model.collection.CollectionBuilder
 import org.gradle.model.internal.core.ModelCreators
+import org.gradle.model.internal.core.ModelPath
 import org.gradle.model.internal.core.ModelReference
 import org.gradle.model.internal.registry.ModelRegistry
 import org.gradle.platform.base.BinaryContainer
@@ -78,7 +79,8 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
                 ModelCreators.bridgedInstance(
                         ModelReference.of("projectModel", Project), project)
                                 .simpleDescriptor("Model of project.")
-                                .build())
+                                .build(),
+                ModelPath.ROOT)
     }
 
     @RuleSource
@@ -90,13 +92,28 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
         }
 
         @Model("android")
-        void android(
+        void android(AndroidModel androidModel) {
+        }
+
+        // Initialize each component separately to ensure correct ordering.
+        @Defaults
+        void androidModelBuildTypes (
                 AndroidModel androidModel,
-                @Path("androidBuildTypes") NamedDomainObjectContainer<BuildType> buildTypes,
-                @Path("androidProductFlavors") NamedDomainObjectContainer<GroupableProductFlavor> productFlavors,
-                @Path("androidSources") AndroidComponentModelSourceSet sources) {
+                @Path("androidBuildTypes") NamedDomainObjectContainer<BuildType> buildTypes) {
             androidModel.buildTypes = buildTypes
+        }
+
+        @Defaults
+        void androidModelProductFlavors (
+                AndroidModel androidModel,
+                @Path("androidProductFlavors") NamedDomainObjectContainer<GroupableProductFlavor> productFlavors) {
             androidModel.productFlavors = productFlavors
+        }
+
+        @Defaults
+        void androidModelSources (
+                AndroidModel androidModel,
+                @Path("androidSources") AndroidComponentModelSourceSet sources) {
             androidModel.sources = sources
         }
 
@@ -179,10 +196,12 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
 
         /**
          * Create all source sets for each AndroidBinary.
+         *
+         * Need to ensure this is done before model mutation in build.gradle.
          */
-        @Defaults
+        @Mutate
         void createVariantSourceSet(
-                @Path("android.sources") AndroidComponentModelSourceSet sources,
+                @Path("androidSources") AndroidComponentModelSourceSet sources,
                 @Path("android.buildTypes") NamedDomainObjectContainer<BuildType> buildTypes,
                 @Path("android.productFlavors") NamedDomainObjectContainer<GroupableProductFlavor> flavors,
                 List<ProductFlavorCombo> flavorGroups) {

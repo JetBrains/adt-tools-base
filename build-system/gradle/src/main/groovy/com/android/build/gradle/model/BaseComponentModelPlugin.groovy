@@ -62,6 +62,7 @@ import org.gradle.model.Mutate
 import org.gradle.model.Path
 import org.gradle.model.RuleSource
 import org.gradle.model.internal.core.ModelCreators
+import org.gradle.model.internal.core.ModelPath
 import org.gradle.model.internal.core.ModelReference
 import org.gradle.model.internal.registry.ModelRegistry
 import org.gradle.platform.base.BinaryContainer
@@ -118,7 +119,8 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
                 ModelCreators.bridgedInstance(
                         ModelReference.of("androidBasePlugin", BasePlugin.class), this)
                                 .simpleDescriptor("Android BaseComponentModelPlugin.")
-                                .build())
+                                .build(),
+                ModelPath.ROOT)
     }
 
     @RuleSource
