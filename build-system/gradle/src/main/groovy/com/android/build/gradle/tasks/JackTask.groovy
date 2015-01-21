@@ -25,11 +25,13 @@ import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputFile
+import org.gradle.api.tasks.ParallelizableTask
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.compile.AbstractCompile
 /**
  * Jack task.
  */
+@ParallelizableTask
 public class JackTask extends AbstractCompile {
 
     final static FullRevision JACK_MIN_REV = new FullRevision(21, 1, 0)

@@ -28,8 +28,10 @@ import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Nested
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputFile
+import org.gradle.api.tasks.ParallelizableTask
 import org.gradle.tooling.BuildException
 
+@ParallelizableTask
 public class PackageApplication extends IncrementalTask implements OutputFileTask {
 
     // ----- PUBLIC TASK API -----

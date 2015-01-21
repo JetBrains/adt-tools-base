@@ -29,6 +29,7 @@ import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Nested
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
+import org.gradle.api.tasks.ParallelizableTask
 import org.gradle.api.tasks.OutputFiles
 import org.gradle.api.tasks.TaskAction
 
@@ -38,6 +39,7 @@ import java.util.regex.Pattern
 /**
  * Package each split resources into a specific signed apk file.
  */
+@ParallelizableTask
 class PackageSplitRes extends BaseTask {
 
     @Input

@@ -22,8 +22,10 @@ import com.google.common.collect.Lists
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
+import org.gradle.api.tasks.ParallelizableTask
 import org.gradle.api.tasks.TaskAction
 
+@ParallelizableTask
 public class GenerateBuildConfig extends BaseTask {
 
     // ----- PUBLIC TASK API -----
