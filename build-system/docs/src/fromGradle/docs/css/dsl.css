@@ -143,3 +143,8 @@ table .caution {
 div.chapter h5 {
     margin-left: 0px;
 }
+
+#copyright {
+    font-size: 11px;
+    margin-top: 25px;
+}
