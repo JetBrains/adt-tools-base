@@ -244,16 +244,11 @@ public class ResourceResolverTest extends TestCase {
         assertEquals("#ffffffff",
                 resolver.resolveValue(ResourceType.STRING, "bright_foreground_dark",
                         "@android:color/background_light", true).getValue());
+        assertFalse(resolver.resolveValue(null, "id", "@+id/some_framework_id", false)
+                .isFramework());
         // error expected.
         boolean failed = false;
         ResourceValue val = null;
-        try {
-            val = resolver.resolveValue(null, "id", "@+id/some_framework_id", false);
-        } catch (AssertionFailedError expected) {
-            failed = true;
-        }
-        assertTrue("incorrect resource returned: " + val, failed);
-        failed = false;
         try {
             val = resolver.resolveValue(ResourceType.STRING, "bright_foreground_dark",
                     "@color/background_light", false);
