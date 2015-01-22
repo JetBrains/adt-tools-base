@@ -43,9 +43,9 @@
 
     <!-- customize the page titles -->
     <xsl:template match="book" mode="object.title.markup.textonly">
-        <xsl:value-of select="bookinfo/titleabbrev"/>
-        <xsl:text> Version </xsl:text>
+        <xsl:text>Android Plugin </xsl:text>
         <xsl:value-of select="bookinfo/releaseinfo"/>
+        <xsl:text> DSL Reference</xsl:text>
     </xsl:template>
 
     <xsl:template match="chapter" mode="object.title.markup.textonly">
@@ -79,6 +79,10 @@
                 </div>
                 <div class="content">
                     <xsl:copy-of select="$content"/>
+                   <div id="copyright">
+                       Except as noted, this content is licensed under <a href="http://www.apache.org/licenses/LICENSE-2.0">Apache 2.0</a>.
+                       For details and restrictions, see the <a href="http://developer.android.com/license.html">Content License</a>.
+                   </div>
                 </div>
                 <!--<script src="sidebar.js" type="text/javascript"/>-->
             </body>
