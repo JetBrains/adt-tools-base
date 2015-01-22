@@ -19,13 +19,18 @@ package com.android.build.gradle.integration.common.truth;
 import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.base.Charsets;
+import com.google.common.collect.ImmutableList;
 import com.google.common.io.ByteStreams;
 import com.google.common.truth.FailureStrategy;
+import com.google.common.truth.IterableSubject;
 import com.google.common.truth.Subject;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Enumeration;
+import java.util.List;
+import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -61,6 +66,34 @@ public class ZipFileSubject extends Subject<ZipFileSubject, File> {
         if (zip.getEntry(path) != null) {
             failWithRawMessage("'%s' unexpectedly contains '%s'", zip.getName(), path);
         }
+    }
+
+    /**
+     * Returns a {@link IterableSubject} of all the Zip entries which name matches the passed
+     * regular expression.
+     *
+     * @param conformingTo a regular expression to match entries we are interested in.
+     * @return a {@link IterableSubject} propositions for matching entries.
+     * @throws IOException of the zip file cann be opened.
+     */
+    public IterableSubject<? extends IterableSubject<?, String, List<String>>, String, List<String>>
+    entries(String conformingTo) throws IOException {
+
+        ImmutableList.Builder<String> entries = ImmutableList.builder();
+        Pattern pattern = Pattern.compile(conformingTo);
+        ZipFile zipFile = new ZipFile(getSubject());
+        try {
+            Enumeration<? extends ZipEntry> zipFileEntries = zipFile.entries();
+            while (zipFileEntries.hasMoreElements()) {
+                ZipEntry zipEntry = zipFileEntries.nextElement();
+                if (pattern.matcher(zipEntry.getName()).matches()) {
+                    entries.add(zipEntry.getName());
+                }
+            }
+        } finally {
+            zipFile.close();
+        }
+        return assertThat(entries.build());
     }
 
     /**
