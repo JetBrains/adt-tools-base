@@ -1128,6 +1128,7 @@ public final class SdkConstants {
     public static final String DRAWABLE_PREFIX = "@drawable/";          //$NON-NLS-1$
     public static final String STRING_PREFIX = "@string/";              //$NON-NLS-1$
     public static final String DIMEN_PREFIX = "@dimen/";                //$NON-NLS-1$
+    public static final String MIPMAP_PREFIX = "@mipmap/";              //$NON-NLS-1$
 
     public static final String ANDROID_LAYOUT_RESOURCE_PREFIX = "@android:layout/"; //$NON-NLS-1$
     public static final String ANDROID_STYLE_RESOURCE_PREFIX = "@android:style/";   //$NON-NLS-1$
