@@ -35,6 +35,8 @@ apply plugin: 'javascript-base'
 
 def generatedResourcesDir = file("$buildDir/generated-resources/main")
 
+version = rootProject.buildVersion
+
 repositories {
     maven { url 'https://repo.gradle.org/gradle/libs' }
 
