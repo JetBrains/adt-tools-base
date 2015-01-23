@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 The Android Open Source Project
+ * Copyright (C) 2015 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,22 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.android.ide.common.blame.parser;
 
-package com.android.builder.internal;
 
 import com.android.annotations.NonNull;
 
-import java.util.Locale;
-
 /**
+ * Indicates that an error occurred while parsing the output of a compiler.
  */
-public class StringHelper {
+public class ParsingFailedException extends Exception {
 
-    @NonNull
-    public static String capitalize(@NonNull String string) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(string.substring(0, 1).toUpperCase(Locale.US)).append(string.substring(1));
+    public ParsingFailedException() {
+    }
 
-        return sb.toString();
+    public ParsingFailedException(@NonNull Throwable cause) {
+        super(cause);
     }
 }
