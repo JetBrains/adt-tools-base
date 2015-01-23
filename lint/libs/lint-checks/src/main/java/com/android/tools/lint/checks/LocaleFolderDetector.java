@@ -32,6 +32,8 @@ import com.android.utils.Pair;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -118,7 +120,7 @@ public class LocaleFolderDetector extends Detector implements Detector.ResourceF
     public void checkFolder(@NonNull ResourceContext context, @NonNull String folderName) {
         Pair<String, String> locale = TypoDetector.getLocale(folderName);
         if (locale != null) {
-            String language = locale.getFirst();
+            final String language = locale.getFirst();
             if (language != null) {
                 String replace = null;
                 if (language.equals("he")) {
@@ -143,10 +145,12 @@ public class LocaleFolderDetector extends Detector implements Detector.ResourceF
                 if (region != null) {
                     List<String> relevantRegions = LocaleManager.getRelevantRegions(language);
                     if (!relevantRegions.isEmpty() && !relevantRegions.contains(region)) {
+                        List<String> sortedRegions = sortRegions(language, relevantRegions);
                         List<String> suggestions = Lists.newArrayList();
-                        for (String code : relevantRegions) {
+                        for (String code : sortedRegions) {
                             suggestions.add(code + " (" + LocaleManager.getRegionName(code) + ")");
                         }
+
                         String message = String.format(
                                 "Suspicious language and region combination %1$s (%2$s) "
                                         + "with %3$s (%4$s): language %5$s is usually "
@@ -159,5 +163,34 @@ public class LocaleFolderDetector extends Detector implements Detector.ResourceF
                 }
             }
         }
+    }
+
+    /**
+     * Sort the "usually combined with" regions such that the preferred region
+     * for the language is first, followed by the default primary region (if
+     * not the same, followed by the same letter codes, followed by alphabetical
+     * order.
+     */
+    private static List<String> sortRegions(
+            @NonNull final String language,
+            @NonNull List<String> regions) {
+        List<String> sortedRegions = Lists.newArrayList(regions);
+        final String primary = LocaleManager.getLanguageRegion(language);
+        final String secondary = LocaleManager.getDefaultLanguageRegion(language);
+        Collections.sort(sortedRegions, new Comparator<String>() {
+            @Override
+            public int compare(@NonNull String r1, @NonNull String r2) {
+                int rank1 = r1.equals(primary) ? 1
+                        : r1.equals(secondary) ? 2 : r1.equalsIgnoreCase(language) ? 3 : 4;
+                int rank2 = r2.equals(primary) ? 1
+                        : r2.equals(secondary) ? 2 : r2.equalsIgnoreCase(language) ? 3 : 4;
+                int delta = rank1 - rank2;
+                if (delta == 0) {
+                    delta = r1.compareTo(r2);
+                }
+                return delta;
+            }
+        });
+        return sortedRegions;
     }
 }
