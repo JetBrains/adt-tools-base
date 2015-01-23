@@ -265,7 +265,7 @@ public class VariantManager implements VariantModel {
             }
 
             // If the variant being tested is a library variant, VariantDependencies must be
-            // computed the tasks for the tested variant is created.  Therefore, the
+            // computed after the tasks for the tested variant is created.  Therefore, the
             // VariantDependencies is computed here instead of when the VariantData was created.
             VariantDependencies variantDep = VariantDependencies.compute(
                     project, testVariantConfig.getFullName(),
@@ -275,7 +275,10 @@ public class VariantManager implements VariantModel {
                             new ConfigurationProvider[testVariantProviders.size()]));
             variantData.setVariantDependency(variantDep);
 
-            taskManager.resolveDependencies(variantDep, testedVariantData.getVariantDependency());
+            taskManager.resolveDependencies(variantDep,
+                    testVariantConfig.getTestedConfig().getType() == VariantType.LIBRARY
+                        ? null
+                        : testedVariantData.getVariantDependency());
             testVariantConfig.setDependencies(variantDep);
             switch (variantType) {
                 case ANDROID_TEST:
