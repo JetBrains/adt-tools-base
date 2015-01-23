@@ -933,7 +933,7 @@ class TaskManager {
             return null
         }
         zipAlign.outputDirectory = new File("$project.buildDir/outputs/apk")
-        zipAlign.inputDirectory = variantOutputData.packageSplitResourcesTask.outputDirectory
+        zipAlign.inputFiles.addAll(variantOutputData.packageSplitResourcesTask.getOutputFiles())
         zipAlign.outputBaseName = config.baseName
         zipAlign.abiFilters = abiFilters
         zipAlign.languageFilters = languageFilters
@@ -990,8 +990,7 @@ class TaskManager {
         variantOutputData.packageSplitAbiTask =
                 project.tasks.create("package${config.fullName.capitalize()}SplitAbi",
                         PackageSplitAbi);
-        variantOutputData.packageSplitAbiTask
-        variantOutputData.packageSplitAbiTask.inputDirectory = generateSplitAbiRes.outputDirectory
+        variantOutputData.packageSplitAbiTask.inputFiles = generateSplitAbiRes.getOutputFiles()
         variantOutputData.packageSplitAbiTask.splits = filters
         variantOutputData.packageSplitAbiTask.outputBaseName = config.baseName
         variantOutputData.packageSplitAbiTask.signingConfig =
@@ -1008,6 +1007,9 @@ class TaskManager {
                 map("jniDebuggable") { config.buildType.jniDebuggable }
         conventionMapping(variantOutputData.packageSplitAbiTask).
                 map("packagingOptions") { getExtension().packagingOptions }
+
+        ((ApkVariantOutputData) variantOutputData).splitZipAlign.inputFiles.addAll(
+                variantOutputData.packageSplitAbiTask.getOutputFiles())
 
         ((ApkVariantOutputData) variantOutputData).splitZipAlign.dependsOn variantOutputData.packageSplitAbiTask
     }

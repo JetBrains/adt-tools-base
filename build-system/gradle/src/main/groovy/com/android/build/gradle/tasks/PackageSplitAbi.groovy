@@ -29,9 +29,10 @@ import com.google.common.collect.ImmutableList
 import com.google.common.collect.ImmutableSet
 import com.google.common.util.concurrent.Callables
 import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Nested
 import org.gradle.api.tasks.Optional
-import org.gradle.api.tasks.OutputDirectory
+import org.gradle.api.tasks.OutputFiles
 import org.gradle.api.tasks.TaskAction
 
 import java.util.regex.Matcher
@@ -44,10 +45,9 @@ class PackageSplitAbi extends BaseTask {
 
     ImmutableList<ApkOutputFile> outputFiles;
 
-    @Input
-    File inputDirectory
+    @InputFiles
+    Collection<File> inputFiles
 
-    @OutputDirectory
     File outputDirectory
 
     @Input
@@ -68,38 +68,24 @@ class PackageSplitAbi extends BaseTask {
     @Input
     Collection<File> jniFolders;
 
+    @OutputFiles
+    public List<File> getOutputFiles() {
+        return getOutputSplitFiles()*.getOutputFile();
+    }
+
     @NonNull
     public synchronized  ImmutableList<ApkOutputFile> getOutputSplitFiles() {
 
         if (outputFiles == null) {
             ImmutableList.Builder<ApkOutputFile> builder = ImmutableList.builder();
-            if (outputDirectory.exists() && outputDirectory.listFiles().length > 0) {
-                final Pattern pattern = Pattern.compile(
-                        "${project.archivesBaseName}-${outputBaseName}_(.*)")
-                for (File file : outputDirectory.listFiles()) {
-                    Matcher matcher = pattern.matcher(file.getName());
-                    if (matcher.matches() && isAbiSplit(file.getName())) {
-                        builder.add(new ApkOutputFile(
-                                OutputFile.OutputType.SPLIT,
-                                ImmutableList.<FilterData> of(FilterDataImpl.Builder.build(
-                                        OutputFile.ABI,
-                                        matcher.group(1))),
-                                Callables.returning(file)));
-                    }
-                }
-            } else {
-                // the project has not been built yet so we extrapolate what the package step result
-                // might look like. So far, we only handle density splits, eventually we will need
-                // to disambiguate.
-                for (String split : splits) {
-                    ApkOutputFile apkOutput = new ApkOutputFile(
-                            OutputFile.OutputType.SPLIT,
-                            ImmutableList.<FilterData>of(
-                                    FilterDataImpl.Builder.build(OutputFile.ABI,
-                                            "${project.archivesBaseName}-${outputBaseName}_${split}")),
-                            Callables.returning(new File(outputDirectory, split)))
-                    builder.add(apkOutput)
-                }
+            for (String split : splits) {
+                String apkName = getApkName(split);
+                ApkOutputFile apkOutput = new ApkOutputFile(
+                        OutputFile.OutputType.SPLIT,
+                        ImmutableList.<FilterData> of(
+                                FilterDataImpl.Builder.build(OutputFile.ABI, apkName)),
+                        Callables.returning(new File(outputDirectory, apkName)))
+                builder.add(apkOutput)
             }
             outputFiles = builder.build()
         }
@@ -122,14 +108,10 @@ class PackageSplitAbi extends BaseTask {
         final Pattern pattern = Pattern.compile(
                 "resources-${getOutputBaseName()}-(.*).ap_")
         List<String> unprocessedSplits = new ArrayList(splits);
-        for (File file : getInputDirectory().listFiles()) {
+        for (File file : inputFiles) {
             Matcher matcher = pattern.matcher(file.getName());
             if (matcher.matches() && isAbiSplit(file.getName())) {
-                String apkName = "${project.archivesBaseName}-${getOutputBaseName()}_" +
-                        "${matcher.group(1)}"
-                apkName = apkName + (getSigningConfig() == null
-                        ? "-unsigned.apk"
-                        : "-unaligned.apk")
+                String apkName = getApkName(matcher.group(1))
 
                 File outFile = new File(getOutputDirectory(), apkName);
                 getBuilder().packageApk(
@@ -153,5 +135,12 @@ class PackageSplitAbi extends BaseTask {
             logger.error(message);
             throw new IllegalStateException(message);
         }
+    }
+
+    private String getApkName(String split) {
+        String apkName = "${project.archivesBaseName}-${getOutputBaseName()}_${split}"
+        return apkName + (getSigningConfig() == null
+                ? "-unsigned.apk"
+                : "-unaligned.apk")
     }
 }
