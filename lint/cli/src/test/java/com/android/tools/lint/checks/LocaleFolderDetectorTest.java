@@ -44,9 +44,10 @@ public class LocaleFolderDetectorTest extends AbstractCheckTest {
 
     public void testSuspiciousRegion() throws Exception {
         assertEquals(""
-                + "res/values-ff-rNO: Warning: Suspicious language and region combination ff (Fulah) with NO (Norway): language ff is usually paired with: CM (Cameroon), GN (Guinea), MR (Mauritania), SN (Senegal) [WrongRegion]\n"
+                + "res/values-ff-rNO: Warning: Suspicious language and region combination ff (Fulah) with NO (Norway): language ff is usually paired with: SN (Senegal), CM (Cameroon), GN (Guinea), MR (Mauritania) [WrongRegion]\n"
                 + "res/values-nb-rSE: Warning: Suspicious language and region combination nb (Norwegian Bokm\u00e5l) with SE (Sweden): language nb is usually paired with: NO (Norway), SJ (Svalbard and Jan Mayen) [WrongRegion]\n"
-                + "0 errors, 2 warnings\n",
+                + "res/values-sv-rSV: Warning: Suspicious language and region combination sv (Swedish) with SV (El Salvador): language sv is usually paired with: SE (Sweden), AX (Åland Islands), FI (Finland) [WrongRegion]\n"
+                + "0 errors, 3 warnings\n",
 
                 lintProject(
                         "res/values/strings.xml",
@@ -54,6 +55,7 @@ public class LocaleFolderDetectorTest extends AbstractCheckTest {
                         "res/values/strings.xml=>res/values-nb-rNO/strings.xml",
                         "res/values/strings.xml=>res/values-nb-rSJ/strings.xml",
                         "res/values/strings.xml=>res/values-nb-rSE/strings.xml",
+                        "res/values/strings.xml=>res/values-sv-rSV/strings.xml",
                         "res/values/strings.xml=>res/values-ff-rNO/strings.xml"
                 )
         );
