@@ -28,7 +28,9 @@ import com.android.ide.common.rendering.api.ResourceValue;
 import com.android.ide.common.resources.ResourceUrl;
 import com.android.ide.common.resources.configuration.Configurable;
 import com.android.ide.common.resources.configuration.FolderConfiguration;
+import com.android.ide.common.resources.configuration.LocaleQualifier;
 import com.android.resources.ResourceType;
+import com.android.utils.Pair;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Lists;
@@ -468,6 +470,11 @@ public abstract class AbstractResourceRepository {
                 if (qualifier.length() == 2 && Character.isLetter(qualifier.charAt(0))
                         && Character.isLetter(qualifier.charAt(1))) {
                     set.add(qualifier);
+                } else if (qualifier.startsWith(LocaleQualifier.PREFIX)) {
+                    Pair<String, String> pair = LocaleQualifier.parseBcp47(qualifier);
+                    if (pair != null) {
+                        set.add(pair.getFirst());
+                    }
                 }
             }
         }
@@ -507,6 +514,12 @@ public abstract class AbstractResourceRepository {
                         && Character.isUpperCase(qualifier.charAt(1))
                         && Character.isUpperCase(qualifier.charAt(2))) {
                     set.add(qualifier.substring(1));
+                } else if (qualifier.startsWith(LocaleQualifier.PREFIX)) {
+                    Pair<String, String> pair = LocaleQualifier.parseBcp47(qualifier);
+                    if (pair != null && pair.getSecond() != null
+                            && pair.getFirst().equals(currentLanguage)) {
+                        set.add(pair.getSecond());
+                    }
                 }
             }
         }

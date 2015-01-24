@@ -35,6 +35,9 @@ import com.android.builder.model.ProductFlavor;
 import com.android.builder.model.ProductFlavorContainer;
 import com.android.builder.model.Variant;
 import com.android.ide.common.resources.LocaleManager;
+import com.android.ide.common.resources.configuration.FolderConfiguration;
+import com.android.ide.common.resources.configuration.LanguageQualifier;
+import com.android.ide.common.resources.configuration.RegionQualifier;
 import com.android.resources.ResourceFolderType;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
@@ -499,7 +502,7 @@ public class TranslationDetector extends ResourceXmlDetector {
         String regionCode = null;
         String languageCode = locale;
         if (index != -1) {
-            regionCode = locale.substring(index + 2).toUpperCase(Locale.US); // +2: Skip "r"
+            regionCode = locale.substring(index + 1).toUpperCase(Locale.US);
             languageCode = locale.substring(0, index).toLowerCase(Locale.US);
         }
 
@@ -521,33 +524,24 @@ public class TranslationDetector extends ResourceXmlDetector {
 
     /** Look up the language for the given folder name */
     private static String getLanguage(String name) {
-        String[] segments = name.split("-"); //$NON-NLS-1$
-
-        // TODO: To get an accurate answer, this should later do a
-        //   FolderConfiguration.getConfig(String[] folderSegments)
-        // to obtain a FolderConfiguration, then call
-        // getLanguageQualifier() on it, and if not null, call getValue() to get the
-        // actual language value.
-        // However, we don't have sdk-common on the build path for lint, so for now
-        // use a simple guess about what constitutes a language qualifier here:
-
-        String language = null;
-        for (String segment : segments) {
-            // Language
-            if (language == null && segment.length() == 2
-                    && LANGUAGE_PATTERN.matcher(segment).matches()) {
-                language = segment;
-            }
-
-            // Add in region
-            if (language != null && segment.length() == 3
-                    && REGION_PATTERN.matcher(segment).matches()) {
-                language = language + '-' + segment;
-                break;
-            }
+        if (FD_RES_VALUES.equals(name)) {
+            return null;
         }
 
-        return language;
+        FolderConfiguration configuration = FolderConfiguration.getConfigForFolder(name);
+        if (configuration != null) {
+          LanguageQualifier language = configuration.getEffectiveLanguage();
+          if (language != null && !language.hasFakeValue()) {
+              RegionQualifier region = configuration.getRegionQualifier();
+              if (region != null && !region.hasFakeValue()) {
+                  return language.getValue() + '-' + region.getValue();
+              } else {
+                  return language.getValue();
+              }
+          }
+        }
+
+        return null;
     }
 
     @Override
@@ -605,6 +599,7 @@ public class TranslationDetector extends ResourceXmlDetector {
             Attr translatable = element.getAttributeNode(ATTR_TRANSLATABLE);
             if (translatable != null && !Boolean.valueOf(translatable.getValue())) {
                 String l = LintUtils.getLocaleAndRegion(context.file.getParentFile().getName());
+                //noinspection VariableNotUsedInsideIf
                 if (l != null) {
                     context.report(EXTRA, translatable, context.getLocation(translatable),
                         "Non-translatable resources should only be defined in the base " +

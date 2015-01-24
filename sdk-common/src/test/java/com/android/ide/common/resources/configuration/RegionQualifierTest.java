@@ -42,6 +42,9 @@ public class RegionQualifierTest extends TestCase {
         assertEquals(true, rq.checkAndSet("rUS", config));//$NON-NLS-1$
         assertTrue(config.getRegionQualifier() != null);
         assertEquals("US", config.getRegionQualifier().getValue()); //$NON-NLS-1$
+        //noinspection ConstantConditions
+        assertEquals("US", config.getEffectiveRegion().getValue()); //$NON-NLS-1$
+        assertEquals("rUS", config.getRegionQualifier().toString()); //$NON-NLS-1$
         assertEquals("rUS", config.getRegionQualifier().toString()); //$NON-NLS-1$
     }
 
