@@ -64,12 +64,16 @@ public class ResourceRepositoryTest2 extends TestCase {
         File values = new File(mRes, FD_RES_VALUES);
         File valuesEs = new File(mRes, FD_RES_VALUES + "-es");
         File valuesEsUs = new File(mRes, FD_RES_VALUES + "-es-rUS");
+        File valuesKok = new File(mRes, FD_RES_VALUES + "-b+kok");
+        File valuesKokIn = new File(mRes, FD_RES_VALUES + "-b+kok+IN");
         File drawable = new File(mRes, FD_RES_DRAWABLE);
         layout.mkdirs();
         layoutLand.mkdirs();
         values.mkdirs();
         valuesEs.mkdirs();
         valuesEsUs.mkdirs();
+        valuesKok.mkdirs();
+        valuesKokIn.mkdirs();
         drawable.mkdirs();
         new File(layout, "layout1.xml").createNewFile();
         new File(layoutLand, "layout1.xml").createNewFile();
@@ -101,6 +105,16 @@ public class ResourceRepositoryTest2 extends TestCase {
                 + "<resources>\n"
                 + "    <string name=\"show_all_apps\">Todo</string>\n"
                 + "</resources>\n", new File(valuesEsUs, "strings.xml"), Charsets.UTF_8);
+        Files.write(""
+                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                + "<resources>\n"
+                + "    <string name=\"show_all_apps\">Todo</string>\n"
+                + "</resources>\n", new File(valuesKok, "strings.xml"), Charsets.UTF_8);
+        Files.write(""
+                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                + "<resources>\n"
+                + "    <string name=\"show_all_apps\">Todo</string>\n"
+                + "</resources>\n", new File(valuesKokIn, "strings.xml"), Charsets.UTF_8);
 
         if ("testGetMatchingFileAliases".equals(getName())) {
             Files.write(""
@@ -212,9 +226,11 @@ public class ResourceRepositoryTest2 extends TestCase {
         assertEquals(2, itemList.size());
 
         SortedSet<String> languages = mRepository.getLanguages();
-        assertEquals(1, languages.size());
+        assertEquals(2, languages.size());
         assertTrue(languages.contains("es"));
+        assertTrue(languages.contains("kok"));
         assertEquals(Collections.singleton("US"), mRepository.getRegions("es"));
+        assertEquals(Collections.singleton("IN"), mRepository.getRegions("kok"));
 
 //        List<ResourceFile> layouts = mRepository.getSourceFiles(ResourceType.LAYOUT, "layout1",
 //                folderConfig);
