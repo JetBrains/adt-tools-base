@@ -19,12 +19,12 @@
 package com.android.build.gradle.integration.application
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.utils.ZipHelper
 import com.google.common.collect.ImmutableList
 import org.junit.AfterClass
 import org.junit.ClassRule
 import org.junit.Test
 
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatZip
 import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_KEY_ALIAS
 import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_KEY_PASSWORD
 import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_STORE_FILE
@@ -56,7 +56,6 @@ class SigningConfigTest {
         project.execute(args, "clean", "assembleRelease")
 
         // Check for signing file inside the archive.
-        File releaseApk = project.getApk("release")
-        ZipHelper.checkFileExists(releaseApk, "META-INF/CERT.RSA")
+        assertThatZip(project.getApk("release")).contains("META-INF/CERT.RSA")
     }
 }

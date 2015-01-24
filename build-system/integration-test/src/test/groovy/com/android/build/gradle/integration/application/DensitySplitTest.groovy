@@ -19,7 +19,6 @@ import com.android.build.OutputFile
 import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.utils.ModelHelper
-import com.android.build.gradle.integration.common.utils.ZipHelper
 import com.android.builder.model.AndroidArtifact
 import com.android.builder.model.AndroidArtifactOutput
 import com.android.builder.model.AndroidProject
@@ -33,6 +32,7 @@ import org.junit.Test
 import org.junit.experimental.categories.Category
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatZip
 import static com.android.builder.core.BuilderConstants.DEBUG
 import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertNotNull
@@ -76,9 +76,8 @@ class DensitySplitTest {
             assertEquals(5, mainArtifact.getOutputs().size())
 
             for (AndroidArtifactOutput output : mainArtifact.getOutputs()) {
-                ZipHelper.checkFileExists(
-                        output.getMainOutputFile().getOutputFile(),
-                        "res/drawable-mdpi-v4/other.png")
+                assertThatZip(output.getMainOutputFile().getOutputFile())
+                        .contains("res/drawable-mdpi-v4/other.png")
             }
         }
     }
