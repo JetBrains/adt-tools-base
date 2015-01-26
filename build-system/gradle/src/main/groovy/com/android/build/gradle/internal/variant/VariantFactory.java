@@ -54,15 +54,6 @@ public interface VariantFactory<T extends BaseVariantData<? extends BaseVariantO
     boolean isLibrary();
 
     /**
-     * Creates the tasks for a given BaseVariantData.
-     * @param variantData the non-null BaseVariantData.
-     * @param assembleTask an optional assembleTask to be used. If null, a new one is created.
-     */
-    void createTasks(
-            @NonNull BaseVariantData<?> variantData,
-            @Nullable Task assembleTask);
-
-    /**
      * Fail if the model is configured incorrectly.
      * @param model the non-null model to validate, as implemented by the VariantManager.
      * @throws org.gradle.api.GradleException when the model does not validate.
