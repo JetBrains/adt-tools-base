@@ -854,7 +854,7 @@ final class Device implements IDevice {
     }
 
     @Override
-    public void installPackages(List<String> apkFilePaths, int timeOut, boolean reinstall,
+    public void installPackages(List<String> apkFilePaths, int timeOutInMs, boolean reinstall,
             String... extraArgs) throws InstallException {
 
         assert(!apkFilePaths.isEmpty());
@@ -890,7 +890,7 @@ final class Device implements IDevice {
                     ? "pm install-commit " + sessionId
                     : "pm install-abandon " + sessionId;
             InstallReceiver receiver = new InstallReceiver();
-            executeShellCommand(command, receiver, timeOut);
+            executeShellCommand(command, receiver, timeOutInMs, TimeUnit.MILLISECONDS);
             String errorMessage = receiver.getErrorMessage();
             if (errorMessage != null) {
                 String message = String.format("Failed to finalize session : %1$s", errorMessage);

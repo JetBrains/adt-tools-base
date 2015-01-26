@@ -88,6 +88,10 @@ android {
         ignoreAssetsPattern "!.svn:!.git:!.ds_store:!*.scc:.*:<dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"
     }
 
+    adbOptions {
+          timeOutInMs 5000 // 5 seconds in ms.
+    }
+
     lintOptions {
         // set to true to turn off analysis progress reporting by lint
         quiet true
