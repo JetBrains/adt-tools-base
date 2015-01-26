@@ -83,8 +83,7 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
                 ModelPath.ROOT)
     }
 
-    @RuleSource
-    static class Rules {
+    static class Rules extends RuleSource {
         @LanguageType
         void registerLanguage(LanguageTypeBuilder<AndroidLanguageSourceSet> builder) {
             builder.setLanguageName("android")

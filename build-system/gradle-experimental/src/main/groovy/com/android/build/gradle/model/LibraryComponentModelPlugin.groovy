@@ -57,8 +57,7 @@ public class LibraryComponentModelPlugin implements Plugin<Project> {
         void apply(Project project) {
         }
 
-        @RuleSource
-        static class Rules {
+        static class Rules extends RuleSource{
 
             @Model
             Boolean isApplication() {
