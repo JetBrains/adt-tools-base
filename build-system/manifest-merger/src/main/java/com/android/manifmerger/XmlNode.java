@@ -103,15 +103,9 @@ public abstract class XmlNode {
         void addToNode(Element to, String withValue);
 
         /**
-         * Persist itself inside a {@link org.w3c.dom.Element}
-         */
-        void persistTo(Element node);
-
-        /**
          * The local name.
          */
         String getLocalName();
-
     }
 
     /**
@@ -176,7 +170,7 @@ public abstract class XmlNode {
      * Implementation of {@link com.android.manifmerger.XmlNode.NodeName} for an
      * node's declaration not using a namespace.
      */
-    private static final class Name implements NodeName {
+    public static final class Name implements NodeName {
         private final String mName;
 
         private Name(@NonNull String name) {
@@ -209,11 +203,6 @@ public abstract class XmlNode {
         }
 
         @Override
-        public void persistTo(Element node) {
-            node.setAttribute("name", mName);
-        }
-
-        @Override
         public String getLocalName() {
             return mName;
         }
@@ -222,8 +211,10 @@ public abstract class XmlNode {
     /**
      * Implementation of the {@link com.android.manifmerger.XmlNode.NodeName} for a namespace aware attribute.
      */
-    private static final class NamespaceAwareName implements NodeName {
+    public static final class NamespaceAwareName implements NodeName {
+
         private final String mNamespaceURI;
+
         // ignore for comparison and hashcoding since different documents can use different
         // prefixes for the same namespace URI.
         private final String mPrefix;
@@ -269,13 +260,6 @@ public abstract class XmlNode {
         @Override
         public String toString() {
             return mPrefix + ":" + mLocalName;
-        }
-
-        @Override
-        public void persistTo(Element node) {
-            node.setAttribute("prefix", mPrefix);
-            node.setAttribute("local-name", mLocalName);
-            node.setAttribute("namespace-uri", mNamespaceURI);
         }
 
         @Override
