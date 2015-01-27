@@ -83,7 +83,8 @@ public class VariantManager implements VariantModel {
     private final VariantFactory variantFactory;
     @NonNull
     private final TaskManager taskManager;
-
+    @NonNull
+    private ProductFlavorData<ProductFlavor> defaultConfigData;
     @NonNull
     private final Map<String, BuildTypeData> buildTypes = Maps.newHashMap();
     @NonNull
@@ -110,12 +111,23 @@ public class VariantManager implements VariantModel {
         this.project = project;
         this.variantFactory = variantFactory;
         this.taskManager = taskManager;
+
+        DefaultAndroidSourceSet mainSourceSet =
+                (DefaultAndroidSourceSet) extension.getSourceSets().getByName(extension.getDefaultConfig().getName());
+        DefaultAndroidSourceSet androidTestSourceSet =
+                (DefaultAndroidSourceSet) extension.getSourceSets().getByName(ANDROID_TEST.getPrefix());
+        DefaultAndroidSourceSet unitTestSourceSet =
+                (DefaultAndroidSourceSet) extension.getSourceSets().getByName(UNIT_TEST.getPrefix());
+
+        defaultConfigData = new ProductFlavorData<ProductFlavor>(
+                extension.getDefaultConfig(), mainSourceSet,
+                androidTestSourceSet, unitTestSourceSet, project);
     }
 
     @NonNull
     @Override
     public ProductFlavorData<ProductFlavor> getDefaultConfig() {
-        return basePlugin.getDefaultConfigData();
+        return defaultConfigData;
     }
 
     @Override
@@ -256,8 +268,7 @@ public class VariantManager implements VariantModel {
             }
 
             // now add the default config
-            testVariantProviders.add(
-                    basePlugin.getDefaultConfigData().getTestConfigurationProvider(variantType));
+            testVariantProviders.add(defaultConfigData.getTestConfigurationProvider(variantType));
 
             assert(testVariantConfig.getTestedConfig() != null);
             if (testVariantConfig.getTestedConfig().getType() == VariantType.LIBRARY) {
@@ -387,8 +398,6 @@ public class VariantManager implements VariantModel {
         densities = densities.isEmpty() ? Collections.singleton(NO_FILTER) : densities;
         abis = abis.isEmpty() ? Collections.singleton(NO_FILTER) : abis;
 
-        ProductFlavorData<ProductFlavor> defaultConfigData = basePlugin.getDefaultConfigData();
-
         ProductFlavor defaultConfig = defaultConfigData.getProductFlavor();
         DefaultAndroidSourceSet defaultConfigSourceSet = defaultConfigData.getSourceSet();
 
@@ -495,7 +504,6 @@ public class VariantManager implements VariantModel {
             BaseVariantData testedVariantData,
             com.android.builder.model.SigningConfig signingOverride,
             VariantType type) {
-        ProductFlavorData<ProductFlavor> defaultConfigData = basePlugin.getDefaultConfigData();
         ProductFlavor defaultConfig = defaultConfigData.getProductFlavor();
         BuildType buildType = testedVariantData.getVariantConfiguration().getBuildType();
         BuildTypeData buildTypeData = buildTypes.get(buildType.getName());
@@ -555,7 +563,6 @@ public class VariantManager implements VariantModel {
 
         BaseVariantData variantForAndroidTest = null;
 
-        ProductFlavorData<ProductFlavor> defaultConfigData = basePlugin.getDefaultConfigData();
         ProductFlavor defaultConfig = defaultConfigData.getProductFlavor();
 
         Closure<Void> variantFilterClosure = basePlugin.getExtension().getVariantFilter();
