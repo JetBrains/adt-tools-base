@@ -50,13 +50,13 @@ public class TranslationDetectorTest extends AbstractCheckTest {
         TranslationDetector.sCompleteRegions = false;
         assertEquals(
             // Sample files from the Home app
-            "res/values/strings.xml:20: Error: \"show_all_apps\" is not translated in \"nl-rNL\" (Dutch: Netherlands) [MissingTranslation]\n" +
+            "res/values/strings.xml:20: Error: \"show_all_apps\" is not translated in \"nl-NL\" (Dutch: Netherlands) [MissingTranslation]\n" +
             "    <string name=\"show_all_apps\">All</string>\n" +
             "            ~~~~~~~~~~~~~~~~~~~~\n" +
-            "res/values/strings.xml:23: Error: \"menu_wallpaper\" is not translated in \"nl-rNL\" (Dutch: Netherlands) [MissingTranslation]\n" +
+            "res/values/strings.xml:23: Error: \"menu_wallpaper\" is not translated in \"nl-NL\" (Dutch: Netherlands) [MissingTranslation]\n" +
             "    <string name=\"menu_wallpaper\">Wallpaper</string>\n" +
             "            ~~~~~~~~~~~~~~~~~~~~~\n" +
-            "res/values/strings.xml:25: Error: \"menu_settings\" is not translated in \"cs\" (Czech), \"de-rDE\" (German: Germany), \"es\" (Spanish), \"es-rUS\" (Spanish: United States), \"nl-rNL\" (Dutch: Netherlands) [MissingTranslation]\n" +
+            "res/values/strings.xml:25: Error: \"menu_settings\" is not translated in \"cs\" (Czech), \"de-DE\" (German: Germany), \"es\" (Spanish), \"es-US\" (Spanish: United States), \"nl-NL\" (Dutch: Netherlands) [MissingTranslation]\n" +
             "    <string name=\"menu_settings\">Settings</string>\n" +
             "            ~~~~~~~~~~~~~~~~~~~~\n" +
             "res/values-cs/arrays.xml:3: Error: \"security_questions\" is translated here but not found in default locale [ExtraTranslation]\n" +
@@ -84,19 +84,19 @@ public class TranslationDetectorTest extends AbstractCheckTest {
         TranslationDetector.sCompleteRegions = true;
         assertEquals(
             // Sample files from the Home app
-            "res/values/strings.xml:19: Error: \"home_title\" is not translated in \"es-rUS\" (Spanish: United States) [MissingTranslation]\n" +
+            "res/values/strings.xml:19: Error: \"home_title\" is not translated in \"es-US\" (Spanish: United States) [MissingTranslation]\n" +
             "    <string name=\"home_title\">Home Sample</string>\n" +
             "            ~~~~~~~~~~~~~~~~~\n" +
-            "res/values/strings.xml:20: Error: \"show_all_apps\" is not translated in \"es-rUS\" (Spanish: United States), \"nl-rNL\" (Dutch: Netherlands) [MissingTranslation]\n" +
+            "res/values/strings.xml:20: Error: \"show_all_apps\" is not translated in \"es-US\" (Spanish: United States), \"nl-NL\" (Dutch: Netherlands) [MissingTranslation]\n" +
             "    <string name=\"show_all_apps\">All</string>\n" +
             "            ~~~~~~~~~~~~~~~~~~~~\n" +
-            "res/values/strings.xml:23: Error: \"menu_wallpaper\" is not translated in \"es-rUS\" (Spanish: United States), \"nl-rNL\" (Dutch: Netherlands) [MissingTranslation]\n" +
+            "res/values/strings.xml:23: Error: \"menu_wallpaper\" is not translated in \"es-US\" (Spanish: United States), \"nl-NL\" (Dutch: Netherlands) [MissingTranslation]\n" +
             "    <string name=\"menu_wallpaper\">Wallpaper</string>\n" +
             "            ~~~~~~~~~~~~~~~~~~~~~\n" +
-            "res/values/strings.xml:25: Error: \"menu_settings\" is not translated in \"cs\" (Czech), \"de-rDE\" (German: Germany), \"es-rUS\" (Spanish: United States), \"nl-rNL\" (Dutch: Netherlands) [MissingTranslation]\n" +
+            "res/values/strings.xml:25: Error: \"menu_settings\" is not translated in \"cs\" (Czech), \"de-DE\" (German: Germany), \"es-US\" (Spanish: United States), \"nl-NL\" (Dutch: Netherlands) [MissingTranslation]\n" +
             "    <string name=\"menu_settings\">Settings</string>\n" +
             "            ~~~~~~~~~~~~~~~~~~~~\n" +
-            "res/values/strings.xml:29: Error: \"wallpaper_instructions\" is not translated in \"es-rUS\" (Spanish: United States) [MissingTranslation]\n" +
+            "res/values/strings.xml:29: Error: \"wallpaper_instructions\" is not translated in \"es-US\" (Spanish: United States) [MissingTranslation]\n" +
             "    <string name=\"wallpaper_instructions\">Tap picture to set portrait wallpaper</string>\n" +
             "            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
             "    res/values-land/strings.xml:19: <No location-specific message\n" +
@@ -112,6 +112,19 @@ public class TranslationDetectorTest extends AbstractCheckTest {
                  "res/values-es-rUS/strings.xml",
                  "res/values-land/strings.xml",
                  "res/values-nl-rNL/strings.xml"));
+    }
+
+    public void testBcp47() throws Exception {
+        TranslationDetector.sCompleteRegions = false;
+        assertEquals(""
+                + "res/values/strings.xml:25: Error: \"menu_settings\" is not translated in \"tlh\" (Klingon; tlhIngan-Hol) [MissingTranslation]\n"
+                + "    <string name=\"menu_settings\">Settings</string>\n"
+                + "            ~~~~~~~~~~~~~~~~~~~~\n"
+                + "1 errors, 0 warnings\n",
+
+                lintProject(
+                        "res/values/strings.xml",
+                        "res/values-cs/strings.xml=>res/values-b+tlh/strings.xml"));
     }
 
     public void testHandleBom() throws Exception {
@@ -296,7 +309,7 @@ public class TranslationDetectorTest extends AbstractCheckTest {
         // No tools:locale specified in the base folder: *assume* English
         // Regression test for https://code.google.com/p/android/issues/detail?id=75879
         assertEquals(""
-                + "res/values/strings.xml:5: Error: \"other\" is not translated in \"de-rDE\" (German: Germany) [MissingTranslation]\n"
+                + "res/values/strings.xml:5: Error: \"other\" is not translated in \"de-DE\" (German: Germany) [MissingTranslation]\n"
                 + "    <string name=\"other\">other</string>\n"
                 + "            ~~~~~~~~~~~~\n"
                 + "1 errors, 0 warnings\n",
@@ -324,7 +337,7 @@ public class TranslationDetectorTest extends AbstractCheckTest {
     public void testResConfigs() throws Exception {
         TranslationDetector.sCompleteRegions = false;
         assertEquals(""
-                + "res/values/strings.xml:25: Error: \"menu_settings\" is not translated in \"cs\" (Czech), \"de-rDE\" (German: Germany) [MissingTranslation]\n"
+                + "res/values/strings.xml:25: Error: \"menu_settings\" is not translated in \"cs\" (Czech), \"de-DE\" (German: Germany) [MissingTranslation]\n"
                 + "    <string name=\"menu_settings\">Settings</string>\n"
                 + "            ~~~~~~~~~~~~~~~~~~~~\n"
                 + "res/values-cs/arrays.xml:3: Error: \"security_questions\" is translated here but not found in default locale [ExtraTranslation]\n"

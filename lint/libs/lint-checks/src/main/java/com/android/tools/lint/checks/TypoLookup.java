@@ -89,7 +89,7 @@ public class TypoLookup {
         synchronized (TypoLookup.class) {
             String key = locale;
 
-            if (region != null) {
+            if (region != null && region.length() == 2) { // skip BCP-47 regions
                 // Allow for region-specific dictionaries. See for example
                 // http://en.wikipedia.org/wiki/American_and_British_English_spelling_differences
                 assert region.length() == 2
