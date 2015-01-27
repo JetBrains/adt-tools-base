@@ -22,7 +22,6 @@ import com.android.resources.ScreenSize;
 /**
  * Base class for rendering parameters. This include the generic parameters but not what needs
  * to be rendered or additional parameters.
- *
  */
 public abstract class RenderParams {
 
@@ -40,6 +39,7 @@ public abstract class RenderParams {
     private int mCustomBackgroundColor;
     private long mTimeout;
 
+    private AssetRepository mAssetRepository;
     private IImageFactory mImageFactory;
 
     private String mAppIcon;
@@ -50,7 +50,6 @@ public abstract class RenderParams {
     private boolean mSupportsRtl;
 
     /**
-     *
      * @param projectKey An Object identifying the project. This is used for the cache mechanism.
      * @param hardwareConfig the {@link HardwareConfig}.
      * @param renderResources a {@link RenderResources} object providing access to the resources.
@@ -85,6 +84,7 @@ public abstract class RenderParams {
         mProjectKey = params.mProjectKey;
         mHardwareConfig = params.mHardwareConfig;
         mRenderResources = params.mRenderResources;
+        mAssetRepository = params.mAssetRepository;
         mProjectCallback = params.mProjectCallback;
         mMinSdkVersion = params.mMinSdkVersion;
         mTargetSdkVersion = params.mTargetSdkVersion;
@@ -136,6 +136,10 @@ public abstract class RenderParams {
 
     public void setRtlSupport(boolean supportsRtl) {
         mSupportsRtl = supportsRtl;
+    }
+
+    public void setAssetRepository(AssetRepository assetRepository) {
+        mAssetRepository = assetRepository;
     }
 
     public Object getProjectKey() {
@@ -196,6 +200,10 @@ public abstract class RenderParams {
 
     public RenderResources getResources() {
         return mRenderResources;
+    }
+
+    public AssetRepository getAssets() {
+        return mAssetRepository;
     }
 
     public IProjectCallback getProjectCallback() {
