@@ -26,9 +26,9 @@ import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Callables
 import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.InputFile
-import org.gradle.api.tasks.OutputDirectory
+import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.OutputFiles
 import org.gradle.api.tasks.TaskAction
 
 import java.util.regex.Matcher
@@ -39,8 +39,8 @@ import java.util.regex.Pattern
  */
 class SplitZipAlign extends DefaultTask {
 
-    @InputDirectory
-    File inputDirectory;
+    @InputFiles
+    List<File> inputFiles = new ArrayList<>();
 
     @Input
     String outputBaseName;
@@ -54,11 +54,15 @@ class SplitZipAlign extends DefaultTask {
     @Input
     Set<String> languageFilters;
 
-    @OutputDirectory
     File outputDirectory;
 
     @InputFile
     File zipAlignExe
+
+    @OutputFiles
+    public List<File> getOutputFiles() {
+        return getOutputSplitFiles()*.getOutputFile()
+    }
 
     ImmutableList<ApkOutputFile> mOutputFiles;
 
@@ -137,7 +141,7 @@ class SplitZipAlign extends DefaultTask {
         Pattern unsignedPattern = Pattern.compile(
                 "${project.archivesBaseName}-${outputBaseName}_(.*)-unsigned.apk")
 
-        for (File file : inputDirectory.listFiles()) {
+        for (File file : inputFiles) {
             Matcher unaligned = unalignedPattern.matcher(file.getName())
             if (unaligned.matches()) {
                 File out = new File(getOutputDirectory(),
