@@ -28,7 +28,11 @@ import java.util.Collection;
  */
 public interface AndroidProject {
     //  Injectable properties to use with -P
+    // Sent by Studio 1.0 ONLY
     String PROPERTY_BUILD_MODEL_ONLY =  "android.injected.build.model.only";
+    // Sent by Studio 1.1+
+    String PROPERTY_BUILD_MODEL_ONLY_ADVANCED =  "android.injected.build.model.only.advanced";
+
     String PROPERTY_INVOKED_FROM_IDE = "android.injected.invoked.from.ide";
 
     String PROPERTY_SIGNING_STORE_FILE = "android.injected.signing.store.file";
