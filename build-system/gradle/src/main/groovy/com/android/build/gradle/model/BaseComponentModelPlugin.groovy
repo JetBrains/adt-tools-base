@@ -94,6 +94,18 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
     }
 
     @Override
+    protected TaskManager createTaskManager(
+            Project project,
+            TaskContainer tasks,
+            AndroidBuilder androidBuilder,
+            BaseExtension extension,
+            SdkHandler sdkHandler,
+            DependencyManager dependencyManager,
+            ToolingModelBuilderRegistry toolingRegistry) {
+        throw new RuntimeException("createTaskManager should not called for component model plugin.")
+    }
+
+    @Override
     protected Class<? extends BaseExtension> getExtensionClass() {
         throw new RuntimeException("getExtensionClass should not called for component model plugin.")
     }
@@ -206,24 +218,6 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
 
         @Mutate
         void closeProjectSourceSet(AndroidComponentModelSourceSet sources) {
-        }
-
-        @Model
-        TaskManager createTaskManager(
-                BaseExtension androidExtension,
-                Project project,
-                BasePlugin plugin,
-                ToolingModelBuilderRegistry toolingRegistry) {
-            DependencyManager dependencyManager = new DependencyManager(project, plugin.extraModelInfo)
-
-            return new TaskManager(
-                    project,
-                    project.tasks,
-                    plugin.androidBuilder,
-                    androidExtension,
-                    plugin.sdkHandler,
-                    dependencyManager,
-                    toolingRegistry)
         }
 
         @Mutate

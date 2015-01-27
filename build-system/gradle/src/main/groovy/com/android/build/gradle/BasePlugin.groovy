@@ -64,6 +64,7 @@ import org.gradle.api.logging.LogLevel
 import org.gradle.api.logging.Logger
 import org.gradle.api.plugins.JavaBasePlugin
 import org.gradle.api.plugins.JavaPlugin
+import org.gradle.api.tasks.TaskContainer
 import org.gradle.internal.reflect.Instantiator
 import org.gradle.tooling.BuildException
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry
@@ -130,6 +131,14 @@ public abstract class BasePlugin {
 
     protected abstract Class<? extends BaseExtension> getExtensionClass()
     protected abstract VariantFactory getVariantFactory()
+    protected abstract TaskManager createTaskManager(
+            Project project,
+            TaskContainer tasks,
+            AndroidBuilder androidBuilder,
+            BaseExtension extension,
+            SdkHandler sdkHandler,
+            DependencyManager dependencyManager,
+            ToolingModelBuilderRegistry toolingRegistry)
 
     /**
      * Return whether this plugin creates Android library.  Should be overridden if true.
@@ -234,7 +243,7 @@ public abstract class BasePlugin {
                 buildTypeContainer, productFlavorContainer, signingConfigContainer, isLibrary())
 
         DependencyManager dependencyManager = new DependencyManager(project, extraModelInfo)
-        taskManager = new TaskManager(
+        taskManager = createTaskManager(
                 project,
                 project.tasks,
                 androidBuilder,
