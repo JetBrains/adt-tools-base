@@ -22,7 +22,9 @@ import com.android.build.OutputFile
 import com.android.build.gradle.api.ApkOutputFile
 import com.android.build.gradle.internal.model.FilterDataImpl
 import com.google.common.base.Optional
+import com.google.common.collect.ImmutableCollection
 import com.google.common.collect.ImmutableList
+import com.google.common.collect.ImmutableSet
 import com.google.common.util.concurrent.Callables
 import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.Input
@@ -135,6 +137,32 @@ class SplitZipAlign extends DefaultTask {
         }
     }
 
+    /**
+     * Returns true if the passed string is one of the filter we must process potentially followed
+     * by a prefix (some density filters get V4, V16, etc... appended).
+     */
+    private boolean isFilter(String potentialFilterWithSuffix) {
+        for (String density : densityFilters) {
+            if (potentialFilterWithSuffix.startsWith(density)) {
+                return true;
+            }
+        }
+        if (languageFilters.contains(potentialFilterWithSuffix)) {
+            return true;
+        }
+        if (abiFilters.contains(potentialFilterWithSuffix)) {
+            return true;
+        }
+    }
+
+    private Set<File> collectDirectories(List<File> files) {
+        ImmutableSet.Builder<File> directories = ImmutableSet.builder();
+        for (File file : files) {
+            directories.add(file.getParentFile())
+        }
+        return directories.build();
+    }
+
     @TaskAction
     void splitZipAlign() {
 
@@ -143,27 +171,30 @@ class SplitZipAlign extends DefaultTask {
         Pattern unsignedPattern = Pattern.compile(
                 "${project.archivesBaseName}-${outputBaseName}_(.*)-unsigned.apk")
 
-        for (File file : inputFiles) {
-            Matcher unaligned = unalignedPattern.matcher(file.getName())
-            if (unaligned.matches()) {
-                File out = new File(getOutputDirectory(),
-                        "${project.archivesBaseName}-${outputBaseName}_${unaligned.group(1)}.apk")
-                project.exec {
-                    executable = getZipAlignExe()
-                    args '-f', '4'
-                    args file.absolutePath
-                    args out
-                }
-            } else {
-                Matcher unsigned = unsignedPattern.matcher(file.getName())
-                if (unsigned.matches()) {
+        def directories = collectDirectories(inputFiles);
+        for (File directory : directories) {
+            for (File file : directory.listFiles()) {
+                Matcher unaligned = unalignedPattern.matcher(file.getName())
+                if (unaligned.matches() && isFilter(unaligned.group(1))) {
                     File out = new File(getOutputDirectory(),
-                            "${project.archivesBaseName}-${outputBaseName}_${unsigned.group(1)}.apk")
+                            "${project.archivesBaseName}-${outputBaseName}_${unaligned.group(1)}.apk")
                     project.exec {
                         executable = getZipAlignExe()
                         args '-f', '4'
                         args file.absolutePath
                         args out
+                    }
+                } else {
+                    Matcher unsigned = unsignedPattern.matcher(file.getName())
+                    if (unsigned.matches() && isFilter(unsigned.group(1))) {
+                        File out = new File(getOutputDirectory(),
+                                "${project.archivesBaseName}-${outputBaseName}_${unsigned.group(1)}.apk")
+                        project.exec {
+                            executable = getZipAlignExe()
+                            args '-f', '4'
+                            args file.absolutePath
+                            args out
+                        }
                     }
                 }
             }
