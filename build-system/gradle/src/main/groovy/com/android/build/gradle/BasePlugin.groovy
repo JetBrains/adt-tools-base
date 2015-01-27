@@ -256,7 +256,7 @@ public abstract class BasePlugin {
 
         // Register a builder for the custom tooling model
         ModelBuilder modelBuilder = new ModelBuilder(
-                androidBuilder, variantManager, extension, extraModelInfo, isLibrary());
+                androidBuilder, variantManager, taskManager, extension, extraModelInfo, isLibrary());
         registry.register(modelBuilder);
 
         // map the whenObjectAdded callbacks on the containers.

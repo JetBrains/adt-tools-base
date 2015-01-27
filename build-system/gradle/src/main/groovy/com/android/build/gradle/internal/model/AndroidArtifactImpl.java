@@ -23,6 +23,7 @@ import com.android.builder.model.AndroidArtifactOutput;
 import com.android.builder.model.ClassField;
 import com.android.builder.model.Dependencies;
 import com.android.builder.model.SourceProvider;
+import com.google.common.collect.Sets;
 
 import java.io.File;
 import java.io.Serializable;
@@ -117,6 +118,12 @@ public class AndroidArtifactImpl extends BaseArtifactImpl implements AndroidArti
     @Override
     public String getSourceGenTaskName() {
         return sourceGenTaskName;
+    }
+
+    @NonNull
+    @Override
+    public Set<String> getIdeSetupTaskNames() {
+        return Sets.newHashSet(getSourceGenTaskName());
     }
 
     @NonNull
