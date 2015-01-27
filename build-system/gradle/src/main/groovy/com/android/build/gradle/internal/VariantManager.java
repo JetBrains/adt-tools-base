@@ -226,7 +226,7 @@ public class VariantManager implements VariantModel {
             populateVariantDataList(signingOverride);
         }
 
-        for (BaseVariantData variantData : variantDataList) {
+        for (BaseVariantData<? extends BaseVariantOutputData> variantData : variantDataList) {
             createTasksForVariantData(project.getTasks(), variantData);
         }
 
@@ -246,7 +246,8 @@ public class VariantManager implements VariantModel {
     /**
      * Create tasks for the specified variantData.
      */
-    public void createTasksForVariantData(TaskContainer tasks, BaseVariantData variantData) {
+    public void createTasksForVariantData(TaskContainer tasks,
+            BaseVariantData<? extends BaseVariantOutputData> variantData) {
         VariantType variantType = variantData.getType();
 
         if (variantType.isForTesting()) {
@@ -303,13 +304,13 @@ public class VariantManager implements VariantModel {
             }
         } else {
             if (productFlavors.isEmpty()) {
-                variantFactory.createTasks(
+                taskManager.createTasksForVariantData(
                         variantData,
                         buildTypes.get(
                                 variantData.getVariantConfiguration().getBuildType().getName())
                                 .getAssembleTask());
             } else {
-                variantFactory.createTasks(variantData, null);
+                taskManager.createTasksForVariantData(variantData, null);
 
                 // setup the task dependencies
                 // build type
