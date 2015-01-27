@@ -770,7 +770,7 @@ public abstract class ResourceRepository {
         for (List<ResourceFolder> folderSubList : folderList) {
             for (ResourceFolder folder : folderSubList) {
                 FolderConfiguration config = folder.getConfiguration();
-                LanguageQualifier lang = config.getLanguageQualifier();
+                LanguageQualifier lang = config.getEffectiveLanguage();
                 if (lang != null) {
                     set.add(lang.getShortDisplayValue());
                 }
@@ -796,9 +796,9 @@ public abstract class ResourceRepository {
                 FolderConfiguration config = folder.getConfiguration();
 
                 // get the language
-                LanguageQualifier lang = config.getLanguageQualifier();
+                LanguageQualifier lang = config.getEffectiveLanguage();
                 if (lang != null && lang.getShortDisplayValue().equals(currentLanguage)) {
-                    RegionQualifier region = config.getRegionQualifier();
+                    RegionQualifier region = config.getEffectiveRegion();
                     if (region != null) {
                         set.add(region.getShortDisplayValue());
                     }

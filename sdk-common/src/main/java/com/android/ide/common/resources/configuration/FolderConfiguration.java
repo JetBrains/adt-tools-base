@@ -55,24 +55,25 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
     private static final int INDEX_NETWORK_CODE          = 1;
     private static final int INDEX_LANGUAGE              = 2;
     private static final int INDEX_REGION                = 3;
-    private static final int INDEX_LAYOUT_DIR            = 4;
-    private static final int INDEX_SMALLEST_SCREEN_WIDTH = 5;
-    private static final int INDEX_SCREEN_WIDTH          = 6;
-    private static final int INDEX_SCREEN_HEIGHT         = 7;
-    private static final int INDEX_SCREEN_LAYOUT_SIZE    = 8;
-    private static final int INDEX_SCREEN_RATIO          = 9;
-    private static final int INDEX_SCREEN_ORIENTATION    = 10;
-    private static final int INDEX_UI_MODE               = 11;
-    private static final int INDEX_NIGHT_MODE            = 12;
-    private static final int INDEX_PIXEL_DENSITY         = 13;
-    private static final int INDEX_TOUCH_TYPE            = 14;
-    private static final int INDEX_KEYBOARD_STATE        = 15;
-    private static final int INDEX_TEXT_INPUT_METHOD     = 16;
-    private static final int INDEX_NAVIGATION_STATE      = 17;
-    private static final int INDEX_NAVIGATION_METHOD     = 18;
-    private static final int INDEX_SCREEN_DIMENSION      = 19;
-    private static final int INDEX_VERSION               = 20;
-    private static final int INDEX_COUNT                 = 21;
+    private static final int INDEX_LOCALE                = 4;
+    private static final int INDEX_LAYOUT_DIR            = 5;
+    private static final int INDEX_SMALLEST_SCREEN_WIDTH = 6;
+    private static final int INDEX_SCREEN_WIDTH          = 7;
+    private static final int INDEX_SCREEN_HEIGHT         = 8;
+    private static final int INDEX_SCREEN_LAYOUT_SIZE    = 9;
+    private static final int INDEX_SCREEN_RATIO          = 10;
+    private static final int INDEX_SCREEN_ORIENTATION    = 11;
+    private static final int INDEX_UI_MODE               = 12;
+    private static final int INDEX_NIGHT_MODE            = 13;
+    private static final int INDEX_PIXEL_DENSITY         = 14;
+    private static final int INDEX_TOUCH_TYPE            = 15;
+    private static final int INDEX_KEYBOARD_STATE        = 16;
+    private static final int INDEX_TEXT_INPUT_METHOD     = 17;
+    private static final int INDEX_NAVIGATION_STATE      = 18;
+    private static final int INDEX_NAVIGATION_METHOD     = 19;
+    private static final int INDEX_SCREEN_DIMENSION      = 20;
+    private static final int INDEX_VERSION               = 21;
+    private static final int INDEX_COUNT                 = 22;
 
     /**
      * Creates a {@link FolderConfiguration} matching the folder segments.
@@ -348,6 +349,9 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
         } else if (qualifier instanceof VersionQualifier) {
             mQualifiers[INDEX_VERSION] = qualifier;
 
+        } else if (qualifier instanceof LocaleQualifier) {
+            mQualifiers[INDEX_LOCALE] = qualifier;
+
         }
     }
 
@@ -409,6 +413,15 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
     @Nullable
     public RegionQualifier getRegionQualifier() {
         return (RegionQualifier)mQualifiers[INDEX_REGION];
+    }
+
+    public void setLocaleQualifier(LocaleQualifier qualifier) {
+        mQualifiers[INDEX_LOCALE] = qualifier;
+    }
+
+    @Nullable
+    public LocaleQualifier getLocaleQualifier() {
+        return (LocaleQualifier)mQualifiers[INDEX_LOCALE];
     }
 
     public void setLayoutDirectionQualifier(LayoutDirectionQualifier qualifier) {
@@ -958,9 +971,35 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
             if (found) {
                 for (int i = 0 ; i < matchingConfigurables.size(); ) {
                     Configurable configurable = matchingConfigurables.get(i);
-                    ResourceQualifier qualifier = configurable.getConfiguration().getQualifier(q);
+                    FolderConfiguration configuration = configurable.getConfiguration();
+                    ResourceQualifier qualifier = configuration.getQualifier(q);
 
                     if (qualifier == null) {
+                        if (q == INDEX_LANGUAGE && configuration.getLocaleQualifier() != null) {
+                            LanguageQualifier language = configuration.getEffectiveLanguage();
+                            if (bestMatch != null && !bestMatch.equals(language)) {
+                                // there's a reference qualifier and there is a better match for
+                                // it than this resource, so we reject it.
+                                matchingConfigurables.remove(configurable);
+                                continue;
+                            }
+                            // looks like we keep this resource, move on to the next one.
+                            //noinspection AssignmentToForLoopParameter
+                            i++;
+                            continue;
+                        } else if (q == INDEX_LOCALE
+                                && configuration.getLanguageQualifier() != null) {
+                            LocaleQualifier locale = (LocaleQualifier)referenceQualifier;
+                            if (!configuration.getLanguageQualifier().equals(
+                                    locale.getLanguageQualifier())) {
+                                matchingConfigurables.remove(configurable);
+                                continue;
+                            }
+                            // looks like we keep this resource, move on to the next one.
+                            //noinspection AssignmentToForLoopParameter
+                            i++;
+                            continue;
+                        }
                         // this resources has no qualifier of this type: rejected.
                         matchingConfigurables.remove(configurable);
                     } else if (bestMatch != null && !bestMatch.equals(qualifier)) {
@@ -1009,6 +1048,39 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
             // it's only a non match if both qualifiers are non-null, and they don't match.
             if (testQualifier != null && referenceQualifier != null &&
                     !testQualifier.isMatchFor(referenceQualifier)) {
+
+                if (i >= INDEX_LANGUAGE && i <= INDEX_LOCALE) {
+                    // In aapt, locales are all normalized into a single BCP-47 format,
+                    // such that "en-rUS" and "-b+en+US" are considered a match. However,
+                    // here in the FolderConfiguration we are modelling the actual folder
+                    // names (to preserve the actual directory name semantics) so we need
+                    // to special case comparisons where these different incompatible
+                    // qualifiers are compared as a special case
+                }
+
+                return false;
+            }
+        }
+
+        // Also make sure that the locale matches if they differ in whether they
+        // specify locales as old 2-letter ISO codes or via BCP-47.
+        // In aapt, locales are all normalized into a single BCP-47 format,
+        // such that "en-rUS" and "-b+en+US" are considered a match. However,
+        // here in the FolderConfiguration we are modelling the actual folder
+        // names (to preserve the actual directory name semantics) so we need
+        // to special case comparisons.
+        if (mQualifiers[INDEX_LOCALE] != null
+                || referenceConfig.mQualifiers[INDEX_LOCALE] != null) {
+            ResourceQualifier testQualifier = getEffectiveLanguage();
+            ResourceQualifier referenceQualifier = referenceConfig.getEffectiveLanguage();
+            if (testQualifier != null && referenceQualifier != null &&
+                    !testQualifier.isMatchFor(referenceQualifier)) {
+                return false;
+            }
+            testQualifier = getEffectiveRegion();
+            referenceQualifier = referenceConfig.getEffectiveRegion();
+            if (testQualifier != null && referenceQualifier != null &&
+                    !testQualifier.isMatchFor(referenceQualifier)) {
                 return false;
             }
         }
@@ -1041,6 +1113,7 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
         mQualifiers[INDEX_NETWORK_CODE] = new NetworkCodeQualifier();
         mQualifiers[INDEX_LANGUAGE] = new LanguageQualifier();
         mQualifiers[INDEX_REGION] = new RegionQualifier();
+        mQualifiers[INDEX_LOCALE] = new LocaleQualifier();
         mQualifiers[INDEX_LAYOUT_DIR] = new LayoutDirectionQualifier();
         mQualifiers[INDEX_SMALLEST_SCREEN_WIDTH] = new SmallestScreenWidthQualifier();
         mQualifiers[INDEX_SCREEN_WIDTH] = new ScreenWidthQualifier();
@@ -1081,5 +1154,45 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
         }
 
         return array;
+    }
+
+    /**
+     * Returns the effective language for this folder configuration.
+     * This will return the language code from either the normal language string,
+     * or a BCP-47 qualifier.
+     *
+     * @return a language qualifier for this folder configuration, if any
+     */
+    @Nullable
+    public LanguageQualifier getEffectiveLanguage() {
+        LanguageQualifier qualifier = getLanguageQualifier();
+        if (qualifier != null) {
+            return qualifier;
+        }
+        LocaleQualifier locale = getLocaleQualifier();
+        if (locale != null) {
+            return locale.getLanguageQualifier();
+        }
+        return null;
+    }
+
+    /**
+     * Returns the effective region for this folder configuration.
+     * This will return the region  code from either the normal region string,
+     * or a BCP-47 qualifier.
+     *
+     * @return a region qualifier for this folder configuration, if any
+     */
+    @Nullable
+    public RegionQualifier getEffectiveRegion() {
+        RegionQualifier qualifier = getRegionQualifier();
+        if (qualifier != null) {
+            return qualifier;
+        }
+        LocaleQualifier locale = getLocaleQualifier();
+        if (locale != null) {
+            return locale.getRegionQualifier();
+        }
+        return null;
     }
 }

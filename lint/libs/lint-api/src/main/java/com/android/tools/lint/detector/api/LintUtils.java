@@ -26,6 +26,7 @@ import static com.android.SdkConstants.DOT_JPG;
 import static com.android.SdkConstants.DOT_PNG;
 import static com.android.SdkConstants.DOT_WEBP;
 import static com.android.SdkConstants.DOT_XML;
+import static com.android.SdkConstants.FD_RES_VALUES;
 import static com.android.SdkConstants.ID_PREFIX;
 import static com.android.SdkConstants.NEW_ID_PREFIX;
 import static com.android.SdkConstants.UTF_8;
@@ -40,6 +41,7 @@ import com.android.ide.common.rendering.api.StyleResourceValue;
 import com.android.ide.common.res2.AbstractResourceRepository;
 import com.android.ide.common.res2.ResourceItem;
 import com.android.ide.common.resources.ResourceUrl;
+import com.android.ide.common.resources.configuration.LocaleQualifier;
 import com.android.resources.FolderTypeRelationship;
 import com.android.resources.ResourceFolderType;
 import com.android.resources.ResourceType;
@@ -48,6 +50,7 @@ import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.SdkVersionInfo;
 import com.android.sdklib.repository.FullRevision;
 import com.android.tools.lint.client.api.LintClient;
+import com.android.utils.Pair;
 import com.android.utils.PositionXmlParser;
 import com.android.utils.SdkUtils;
 import com.google.common.annotations.Beta;
@@ -745,7 +748,7 @@ public class LintUtils {
 
     /**
      * Look up the locale and region from the given parent folder name and
-     * return it as a combined string, such as "en", "en-rUS", etc, or null if
+     * return it as a combined string, such as "en", "en-rUS", b+eng-US, etc, or null if
      * no language is specified.
      *
      * @param folderName the folder name
@@ -753,18 +756,18 @@ public class LintUtils {
      */
     @Nullable
     public static String getLocaleAndRegion(@NonNull String folderName) {
-         if (folderName.equals("values")) { //$NON-NLS-1$
+        if (folderName.indexOf('-') == -1) {
             return null;
-         }
+        }
 
-         String locale = null;
+        String locale = null;
 
-         for (String qualifier : Splitter.on('-').split(folderName)) {
+        for (String qualifier : Splitter.on('-').split(folderName)) {
             int qualifierLength = qualifier.length();
             if (qualifierLength == 2) {
-                 char first = qualifier.charAt(0);
+                char first = qualifier.charAt(0);
                 char second = qualifier.charAt(1);
-                 if (first >= 'a' && first <= 'z' && second >= 'a' && second <= 'z') {
+                if (first >= 'a' && first <= 'z' && second >= 'a' && second <= 'z') {
                     locale = qualifier;
                 }
             } else if (qualifierLength == 3 && qualifier.charAt(0) == 'r' && locale != null) {
@@ -774,11 +777,13 @@ public class LintUtils {
                     return locale + '-' + qualifier;
                 }
                 break;
-             }
-         }
+            } else if (qualifier.startsWith(LocaleQualifier.PREFIX)) {
+                return qualifier;
+            }
+        }
 
-         return locale;
-     }
+        return locale;
+    }
 
     /**
      * Returns true if the given class (specified by a fully qualified class
