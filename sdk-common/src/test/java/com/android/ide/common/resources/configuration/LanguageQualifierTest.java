@@ -41,6 +41,8 @@ public class LanguageQualifierTest extends TestCase {
         assertEquals(true, lq.checkAndSet("en", config)); //$NON-NLS-1$
         assertTrue(config.getLanguageQualifier() != null);
         assertEquals("en", config.getLanguageQualifier().toString()); //$NON-NLS-1$
+        //noinspection ConstantConditions
+        assertEquals("en", config.getEffectiveLanguage().toString()); //$NON-NLS-1$
     }
 
     public void testCheckAndSetCaseInsensitive() {
