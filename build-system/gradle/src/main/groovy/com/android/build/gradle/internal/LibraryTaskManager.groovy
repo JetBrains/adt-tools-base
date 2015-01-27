@@ -152,9 +152,7 @@ class LibraryTaskManager extends TaskManager {
                 Sync)
 
         // Add dependencies on NDK tasks if NDK plugin is applied.
-        if (extension.getUseNewNativePlugin()) {
-            throw new RuntimeException("useNewNativePlugin is currently not supported.")
-        } else {
+        if (!extension.getUseNewNativePlugin()) {
             // Add NDK tasks
             createNdkTasks(variantData);
             packageJniLibs.dependsOn variantData.ndkCompileTask
