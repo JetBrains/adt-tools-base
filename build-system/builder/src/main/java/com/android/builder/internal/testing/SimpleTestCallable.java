@@ -28,6 +28,7 @@ import com.android.ddmlib.testrunner.TestIdentifier;
 import com.android.ddmlib.testrunner.TestRunResult;
 import com.android.utils.ILogger;
 import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableList;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -114,12 +115,13 @@ public class SimpleTestCallable implements Callable<Boolean> {
             device.connect(timeout, logger);
 
             if (!testedApks.isEmpty()) {
-                logger.verbose("DeviceConnector '%s': installing %s", deviceName, Joiner.on(',').join(testedApks));
-                if (testedApks.size() > 1 || device.getApiLevel() >= 21) {
-                    if (device.getApiLevel() < 21) {
-                        throw new InstallException("Internal error, file a bug, multi-apk applications"
-                                + " require a device with API level 21+");
-                    }
+                logger.verbose("DeviceConnector '%s': installing %s", deviceName,
+                        Joiner.on(',').join(testedApks));
+                if (testedApks.size() > 1 && device.getApiLevel() < 21) {
+                    throw new InstallException("Internal error, file a bug, multi-apk applications"
+                            + " require a device with API level 21+");
+                }
+                if (device.getApiLevel() >= 21) {
                     device.installPackages(testedApks, timeout, logger);
                 } else {
                     device.installPackage(testedApks.get(0), timeout, logger);
@@ -127,7 +129,7 @@ public class SimpleTestCallable implements Callable<Boolean> {
             }
 
             logger.verbose("DeviceConnector '%s': installing %s", deviceName, testApk);
-            device.installPackage(testApk, timeout, logger);
+            device.installPackages(ImmutableList.of(testApk), timeout, logger);
             isInstalled = true;
 
             RemoteAndroidTestRunner runner = new RemoteAndroidTestRunner(

@@ -146,4 +146,7 @@ public abstract class DeviceConnector implements IShellEnabledDevice {
 
     @NonNull
     public abstract String getProperty(String propertyName);
+
+    @NonNull
+    public abstract DeviceConfig getDeviceConfig() throws DeviceException;
 }

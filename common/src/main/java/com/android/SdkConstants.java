@@ -226,6 +226,9 @@ public final class SdkConstants {
     /** jill.jar */
     public static final String FN_JILL = "jill.jar";                                  //$NON-NLS-1$
 
+    /** split-select */
+    public static final String FN_SPLIT_SELECT = "split-select" + ext(".exe", "");
+
 
     /** properties file for SDK Updater packages */
     public static final String FN_SOURCE_PROP = "source.properties";                  //$NON-NLS-1$
