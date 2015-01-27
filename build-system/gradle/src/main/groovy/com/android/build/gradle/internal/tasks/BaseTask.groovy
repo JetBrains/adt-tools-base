@@ -30,7 +30,7 @@ public abstract class BaseTask extends DefaultTask {
         return androidBuilder
     }
 
-    protected getILogger() {
+    protected ILogger getILogger() {
         if (iLogger == null) {
             iLogger = new LoggerWrapper(getLogger())
         }

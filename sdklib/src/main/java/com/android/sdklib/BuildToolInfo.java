@@ -29,6 +29,7 @@ import static com.android.SdkConstants.FN_LD_ARM;
 import static com.android.SdkConstants.FN_LD_MIPS;
 import static com.android.SdkConstants.FN_LD_X86;
 import static com.android.SdkConstants.FN_RENDERSCRIPT;
+import static com.android.SdkConstants.FN_SPLIT_SELECT;
 import static com.android.SdkConstants.FN_ZIPALIGN;
 import static com.android.SdkConstants.OS_FRAMEWORK_RS;
 import static com.android.SdkConstants.OS_FRAMEWORK_RS_CLANG;
@@ -46,6 +47,7 @@ import static com.android.sdklib.BuildToolInfo.PathId.LD_ARM;
 import static com.android.sdklib.BuildToolInfo.PathId.LD_MIPS;
 import static com.android.sdklib.BuildToolInfo.PathId.LD_X86;
 import static com.android.sdklib.BuildToolInfo.PathId.LLVM_RS_CC;
+import static com.android.sdklib.BuildToolInfo.PathId.SPLIT_SELECT;
 import static com.android.sdklib.BuildToolInfo.PathId.ZIP_ALIGN;
 
 import com.android.annotations.NonNull;
@@ -118,7 +120,9 @@ public class BuildToolInfo {
 
         // --- NEW IN 21.x.y ---
         JACK("21.1.0"),
-        JILL("21.1.0");
+        JILL("21.1.0"),
+
+        SPLIT_SELECT("22.0.0");
 
         /**
          * min revision this element was introduced.
@@ -176,6 +180,7 @@ public class BuildToolInfo {
         add(ZIP_ALIGN, FN_ZIPALIGN);
         add(JACK, FN_JACK);
         add(JILL, FN_JILL);
+        add(SPLIT_SELECT, FN_SPLIT_SELECT);
     }
 
     public BuildToolInfo(

@@ -15,20 +15,34 @@
  */
 package com.android.build.gradle.internal.tasks
 
+import com.android.annotations.NonNull
 import com.android.build.OutputFile
+import com.android.build.VariantOutput
 import com.android.build.gradle.api.ApkOutputFile
 import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.build.gradle.internal.variant.BaseVariantOutputData
 import com.android.builder.core.VariantConfiguration
 import com.android.builder.internal.InstallUtils
 import com.android.builder.testing.ConnectedDeviceProvider
+import com.android.builder.testing.api.DeviceConfig
 import com.android.builder.testing.api.DeviceConnector
 import com.android.builder.testing.api.DeviceProvider
 import com.android.ddmlib.IDevice
 import com.android.ide.common.build.SplitOutputMatcher
+import com.android.ide.common.process.BaseProcessOutputHandler
+import com.android.ide.common.process.BaseProcessOutputHandler.BaseProcessOutput
+import com.android.ide.common.process.ProcessException
+import com.android.ide.common.process.ProcessExecutor
+import com.android.ide.common.process.ProcessInfoBuilder
+import com.android.ide.common.process.ProcessOutput
+import com.android.utils.ILogger
 import com.google.common.base.Joiner
+import com.google.common.collect.Lists
 import org.gradle.api.GradleException
+import org.gradle.api.internal.tasks.options.Option
+import org.gradle.api.logging.Logger
 import org.gradle.api.tasks.InputFile
+import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.TaskAction
 
 /**
@@ -36,8 +50,15 @@ import org.gradle.api.tasks.TaskAction
  * variant output on each device.
  */
 public class InstallVariantTask extends BaseTask {
+
     @InputFile
     File adbExe
+
+    @InputFile
+    @Optional
+    File splitSelectExe
+
+    ProcessExecutor processExecutor;
 
     String projectName
 
@@ -73,25 +94,64 @@ public class InstallVariantTask extends BaseTask {
                         device, variantConfig.minSdkVersion, getILogger(), projectName,
                         variantName)) {
 
-                    // now look for a matching output file
-                    List<OutputFile> outputFiles = SplitOutputMatcher.computeBestOutput(
-                            variantData.outputs,
-                            variantData.variantConfiguration.getSupportedAbis(),
-                            device.getDensity(),
-                            device.getLanguage(),
-                            device.getRegion(),
-                            device.getAbis())
+                    // build the list of APKs.
+                    List<String> apksPath = new ArrayList<>();
+                    for (VariantOutput output : variantData.outputs) {
+                        for (OutputFile outputFile : output.getOutputs()) {
+                            apksPath.add(outputFile.outputFile.getAbsolutePath());
+                        }
+                    }
 
-                    if (outputFiles.isEmpty()) {
+                    List<File> apkFiles = new ArrayList<>();
+                    // starting in API 22, we can delegate to split-select the APK selection.
+                    if (apksPath.size() > 1 && device.getApiLevel() >= 22) {
+                        DeviceConfig deviceConfig = device.getDeviceConfig();
+
+                        Set<String> resultApksPath = new HashSet<String>();
+                        for (String abi : device.getAbis()) {
+                            ProcessInfoBuilder processBuilder = new ProcessInfoBuilder();
+                            processBuilder.setExecutable(getSplitSelectExe());
+
+                            processBuilder.addArgs("--target", deviceConfig.getConfigFor(abi));
+                            for (String apkPath : apksPath) {
+                                processBuilder.addArgs("--split", apkPath);
+                            }
+                            SplitSelectOutputHandler outputHandler =
+                                    new SplitSelectOutputHandler(getLogger());
+
+                            processExecutor.execute(processBuilder.createProcess(), outputHandler)
+                                    .rethrowFailure()
+                                    .assertNormalExitValue();
+
+                            for (String apkPath : outputHandler.getResultApks()) {
+                                resultApksPath.add(apkPath);
+                            }
+                        }
+                        for (String resultApkPath : resultApksPath) {
+                            apkFiles.add(new File(resultApkPath));
+                        }
+                    } else {
+                        // now look for a matching output file
+                        List<OutputFile> outputFiles = SplitOutputMatcher.computeBestOutput(
+                                variantData.outputs,
+                                variantData.variantConfiguration.getSupportedAbis(),
+                                device.getDensity(),
+                                device.getLanguage(),
+                                device.getRegion(),
+                                device.getAbis())
+
+                        apkFiles = ((List<ApkOutputFile>) outputFiles)*.getOutputFile()
+                    }
+
+                    if (apkFiles.isEmpty()) {
                         logger.lifecycle(
                                 "Skipping device '${device.getName()}' for '${projectName}:${variantName}': " +
-                                "Could not find build of variant which supports density ${device.getDensity()} " +
-                                "and an ABI in " + Joiner.on(", ").join(device.getAbis()));
+                                        "Could not find build of variant which supports density ${device.getDensity()} " +
+                                        "and an ABI in " + Joiner.on(", ").join(device.getAbis()));
                     } else {
-                        List<File> apkFiles = ((List<ApkOutputFile>) outputFiles)*.getOutputFile()
                         logger.lifecycle("Installing APK '${Joiner.on(", ").join(apkFiles*.getName())}'" +
                                 " on '${device.getName()}'")
-                        if (outputFiles.size() > 1 || device.getApiLevel() >= 21) {
+                        if (apkFiles.size() > 1 || device.getApiLevel() >= 21) {
                             device.installPackages(apkFiles, getTimeOut(), getILogger());
                             successfulInstallCount++
                         } else {
@@ -102,19 +162,58 @@ public class InstallVariantTask extends BaseTask {
                 } // When InstallUtils.checkDeviceApiLevel returns false, it logs the reason.
             } else {
                 logger.lifecycle(
-                        "Skipping device '${device.getName()}' for '${projectName}:${variantName}': Device not authorized, see http://developer.android.com/tools/help/adb.html#Enabling.");
+                        "Skipping device '${device.getName()}' for '${projectName}:${variantName}" +
+                                "': Device not authorized, see http://developer.android.com/tools/help/adb.html#Enabling.");
 
             }
         }
 
         if (successfulInstallCount == 0) {
             if (serial != null) {
-                throw new GradleException("Failed to find device with serial '${serial}'. Unset ANDROID_SERIAL to search for any device.")
+                throw new GradleException("Failed to find device with serial '${serial}'. " +
+                        "Unset ANDROID_SERIAL to search for any device.")
             } else {
                 throw new GradleException("Failed to install on any devices.")
             }
         } else {
             logger.quiet("Installed on ${successfulInstallCount} ${successfulInstallCount==1?'device':'devices'}.");
+        }
+    }
+
+    private static class SplitSelectOutputHandler extends BaseProcessOutputHandler {
+
+        private final List<String> resultApks = new ArrayList<>();
+
+        @NonNull
+        private final Logger mLogger;
+
+        public SplitSelectOutputHandler(@NonNull Logger logger) {
+            mLogger = logger;
+        }
+
+        @NonNull
+        public List<String> getResultApks() {
+            return resultApks;
+        }
+
+        @Override
+        public void handleOutput(@NonNull ProcessOutput processOutput) throws ProcessException {
+            if (processOutput instanceof BaseProcessOutput) {
+                BaseProcessOutput impl = (BaseProcessOutput) processOutput;
+                String stdout = impl.getStandardOutputAsString();
+                if (!stdout.isEmpty()) {
+                    mLogger.info(stdout);
+                    resultApks.addAll(stdout.readLines());
+                }
+                String stderr = impl.getErrorOutputAsString();
+                if (!stderr.isEmpty()) {
+                    mLogger.error(stderr);
+                    resultApks.addAll(stderr.readLines());
+                }
+            } else {
+                throw new IllegalArgumentException(
+                        "processOutput was not created by this handler.");
+            }
         }
     }
 }

@@ -18,11 +18,13 @@ package com.android.builder.testing;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.builder.testing.api.DeviceConfig;
 import com.android.builder.testing.api.DeviceConnector;
 import com.android.builder.testing.api.DeviceException;
 import com.android.ddmlib.AdbCommandRejectedException;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.IShellOutputReceiver;
+import com.android.ddmlib.MultiLineReceiver;
 import com.android.ddmlib.ShellCommandUnresponsiveException;
 import com.android.ddmlib.SyncException;
 import com.android.ddmlib.TimeoutException;
@@ -33,6 +35,8 @@ import com.google.common.collect.Lists;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -222,5 +226,28 @@ public class ConnectedDevice extends DeviceConnector {
     @NonNull
     public String getProperty(String propertyName) {
         return iDevice.getProperty(propertyName);
+    }
+
+    @NonNull
+    @Override
+    public DeviceConfig getDeviceConfig() throws DeviceException {
+        final List<String> output = new ArrayList<String>();
+        final MultiLineReceiver receiver = new MultiLineReceiver() {
+            @Override
+            public void processNewLines(String[] lines) {
+                output.addAll(Arrays.asList(lines));
+            }
+
+            @Override
+            public boolean isCancelled() {
+                return false;
+            }
+        };
+        try {
+            executeShellCommand("am get-config", receiver, 5, TimeUnit.SECONDS);
+            return DeviceConfig.Builder.parse(output);
+        } catch (Exception e) {
+            throw new DeviceException(e);
+        }
     }
 }
