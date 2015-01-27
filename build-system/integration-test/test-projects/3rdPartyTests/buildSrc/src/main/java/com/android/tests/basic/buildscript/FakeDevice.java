@@ -1,6 +1,7 @@
 package com.android.tests.basic.buildscript;
 
 import com.android.annotations.NonNull;
+import com.android.builder.testing.api.DeviceConfig;
 import com.android.builder.testing.api.DeviceConnector;
 import com.android.builder.testing.api.DeviceException;
 import com.android.ddmlib.AdbCommandRejectedException;
@@ -250,5 +251,9 @@ public class FakeDevice extends DeviceConnector {
 
     public Future<String> getSystemProperty(@NonNull String name) {
         return SettableFuture.create();
+    }
+
+    public DeviceConfig getDeviceConfig() {
+        return DeviceConfig.Builder.parse(Collections.<String>emptyList());
     }
 }
