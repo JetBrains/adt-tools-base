@@ -28,7 +28,9 @@ import com.android.sdklib.BuildToolInfo
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.OutputDirectory
+import org.gradle.api.tasks.ParallelizableTask
 
+@ParallelizableTask
 public class MergeResources extends IncrementalTask {
 
     // ----- PUBLIC TASK API -----
