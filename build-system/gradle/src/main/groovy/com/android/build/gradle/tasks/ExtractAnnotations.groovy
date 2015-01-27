@@ -47,7 +47,6 @@ import static com.android.SdkConstants.DOT_JAVA
 import static com.android.SdkConstants.UTF_8
 
 class ExtractAnnotations extends AbstractCompile {
-    public BasePlugin plugin
     public BaseVariantData variant
 
     /** Boot classpath: typically android.jar */
