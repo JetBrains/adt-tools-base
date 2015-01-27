@@ -63,55 +63,34 @@ public class LocaleManagerTest extends TestCase {
     private static final boolean DUMP_INFERRED_REGIONS = false;
 
     public void testIntegrity() {
-        LocaleManager localeManager = LocaleManager.get();
-        assertSame(localeManager, LocaleManager.get());
+        // Make sure we get a name for every single region and language
+        // and that (with the exception of the aliases) they are all unique
 
-        Map<String, String> languageToCountry = LocaleManager.getLanguageToCountryMap();
-        Map<String, String> languageNames = LocaleManager.getLanguageNamesMap();
-        Map<String, String> regionNames = LocaleManager.getRegionNamesMap();
-        assertEquals("Make sure to update initial capacity in declaration after editing map",
-                176, languageToCountry.size());
-        assertEquals("Make sure to update initial capacity in declaration after editing map",
-                187, languageNames.size());
-        assertEquals("Make sure to update initial capacity in declaration after editing map",
-                249, regionNames.size());
+        // Make sure all the languages codes are lowercase, and that all the
+        // region codes are upper case, and that nothing is empty
+        // Make sure the region names have been capitalized
+        List<String> languages = LocaleManager.getLanguageCodes(true);
+        List<String> regions = LocaleManager.getRegionCodes(true);
 
-        assertTrue(Sets.difference(languageToCountry.keySet(),
-                languageNames.keySet()).isEmpty());
-        for (Map.Entry<String, String> entry : languageToCountry.entrySet()) {
-            assertTrue(entry.getValue(), entry.getKey().length() > 0);
-            assertTrue(entry.getKey(), entry.getValue().length() > 0);
+        for (String language : languages) {
+            assertFalse(language.isEmpty());
+            assertTrue(language.length() == 2 || language.length() == 3);
+            assertEquals(language.toLowerCase(Locale.US), language);
+            String name = LocaleManager.getLanguageName(language);
+            assertNotNull(name);
+            assertFalse(name.isEmpty());
+            assertTrue(name, name.length() >= 2 && Character.isUpperCase(name.charAt(0)));
         }
-        for (Map.Entry<String, String> entry : regionNames.entrySet()) {
-            assertTrue(entry.getValue(), entry.getKey().length() > 0);
-            assertTrue(entry.getKey(), entry.getValue().length() > 0);
+
+        for (String region : regions) {
+            assertFalse(region.isEmpty());
+            assertTrue(region.length() == 2 || region.length() == 3);
+            assertEquals(region.toUpperCase(Locale.US), region);
+            String name = LocaleManager.getRegionName(region);
+            assertNotNull(name);
+            assertFalse(name.isEmpty());
+            assertTrue(name, name.length() > 2 && Character.isUpperCase(name.charAt(0)));
         }
-        for (Map.Entry<String, String> entry : languageNames.entrySet()) {
-            assertTrue(entry.getValue(), entry.getKey().length() > 0);
-            assertTrue(entry.getKey(), entry.getValue().length() > 0);
-        }
-        for (String s : languageToCountry.keySet()) {
-            assertTrue(s, s.length() == 2 && s.equals(s.toLowerCase(Locale.US)));
-        }
-        for (String s : languageNames.keySet()) {
-            assertTrue(s, s.length() == 2 && s.equals(s.toLowerCase(Locale.US)));
-        }
-        for (String s : languageNames.values()) {
-            assertTrue(s, s.length() > 2 && Character.isUpperCase(s.charAt(0)));
-        }
-        for (String s : languageToCountry.values()) {
-            assertTrue(s, s.length() == 2 && s.equals(s.toUpperCase(Locale.US)));
-        }
-        for (String s : regionNames.keySet()) {
-            assertTrue(s, s.length() == 2 && s.equals(s.toUpperCase(Locale.US)));
-        }
-        for (String s : regionNames.values()) {
-            assertTrue(s, s.length() > 2 && Character.isUpperCase(s.charAt(0)));
-        }
-        assertNull(languageToCountry.get(""));
-        assertNull(languageNames.get(""));
-        assertTrue(Sets.difference(languageToCountry.keySet(),
-                languageNames.keySet()).isEmpty());
     }
 
     public void testGetLanguageNames() throws Exception {
@@ -121,6 +100,11 @@ public class LocaleManagerTest extends TestCase {
         assertEquals("French", LocaleManager.getLanguageName("fr"));
         assertEquals("German", LocaleManager.getLanguageName("de"));
         assertEquals("Hindi", LocaleManager.getLanguageName("hi"));
+
+        // 3 letter language lookup
+        assertEquals("English", LocaleManager.getLanguageName("eng"));
+        assertEquals("Norwegian", LocaleManager.getLanguageName("nor"));
+        assertEquals("French", LocaleManager.getLanguageName("fra"));
     }
 
     public void testGetRegionNames() {
@@ -128,6 +112,56 @@ public class LocaleManagerTest extends TestCase {
         assertEquals("Norway", LocaleManager.getRegionName("NO"));
         assertEquals("France", LocaleManager.getRegionName("FR"));
         assertEquals("India", LocaleManager.getRegionName("IN"));
+
+        // 3 letter region lookup
+        assertEquals("United States", LocaleManager.getRegionName("USA"));
+        assertEquals("Norway", LocaleManager.getRegionName("NOR"));
+        assertEquals("France", LocaleManager.getRegionName("FRA"));
+    }
+
+    public void testGetLanguageCodes() {
+        for (String code : LocaleManager.getLanguageCodes(false)) {
+            assertEquals(2, code.length());
+        }
+        for (String code : LocaleManager.getRegionCodes(false)) {
+            assertEquals(2, code.length());
+        }
+
+        // Check languages including 3 letters: make sure we find both
+        boolean found2 = false;
+        boolean found3 = false;
+        for (String code : LocaleManager.getLanguageCodes(true)) {
+            int length = code.length();
+            if (length == 3) {
+                found3 = true;
+            }
+            if (length == 2) {
+                found2 = true;
+            }
+            assertTrue(length == 2 || length == 3);
+        }
+        assertTrue(found2);
+        assertTrue(found3);
+
+        /* Turns out we don't have 3-letter regions imported yet
+        found2 = false;
+        found3 = false;
+        for (String code : LocaleManager.getRegionCodes(true)) {
+            int length = code.length();
+            if (length == 3) {
+                found3 = true;
+            }
+            if (length == 2) {
+                found2 = true;
+            }
+            assertTrue(length == 2 || length == 3);
+            if (found3) {
+                System.out.println(code + " : " + LocaleManager.getRegionName(code));
+            }
+        }
+        assertTrue(found2);
+        assertTrue(found3);
+        */
     }
 
     @SuppressWarnings("ArraysAsListWithZeroOrOneArgument")
@@ -137,6 +171,9 @@ public class LocaleManagerTest extends TestCase {
         assertEquals(Arrays.asList("DK","GL"), LocaleManager.getRelevantRegions("da"));
         assertTrue(LocaleManager.getRelevantRegions("en").contains("US"));
         assertTrue(LocaleManager.getRelevantRegions("en").contains("GB"));
+
+        // 3 letter lookup
+        assertTrue(LocaleManager.getRelevantRegions("eng").contains("US"));
     }
 
     public void testGetTimeZoneRegion() {
@@ -155,6 +192,13 @@ public class LocaleManagerTest extends TestCase {
         assertEquals("LY", LocaleManager.getTimeZoneRegion(new SimpleTimeZone(3600000, "Africa/Tripoli")));
         assertEquals("LY", LocaleManager.getTimeZoneRegion(new SimpleTimeZone(7200000, "Africa/Tripoli"))); // changed in jdk8
         assertNull(LocaleManager.getTimeZoneRegion(new SimpleTimeZone(-42, "Africa/Tripoli"))); // wrong
+    }
+
+    public void testAlpha23Conversions() {
+        assertEquals("nob", LocaleManager.getLanguageAlpha3("nb"));
+        assertEquals("nb", LocaleManager.getLanguageAlpha2("nob"));
+        assertEquals("NOR", LocaleManager.getRegionAlpha3("NO"));
+        assertEquals("NO", LocaleManager.getRegionAlpha2("NOR"));
     }
 
     @SuppressWarnings("ConstantConditions")
@@ -252,8 +296,8 @@ public class LocaleManagerTest extends TestCase {
                 "zh_HK", "zh_MO", "zh_SG", "zh_TW", "zu_ZA"
         };
 
-        Set<String> languages = LocaleManager.getLanguageCodes();
-        Set<String> regions = LocaleManager.getRegionCodes();
+        List<String> languages = LocaleManager.getLanguageCodes();
+        List<String> regions = LocaleManager.getRegionCodes();
 
         Multimap<String,String> regionMap = ArrayListMultimap.create();
 
@@ -518,6 +562,9 @@ public class LocaleManagerTest extends TestCase {
         for (Map.Entry<String, Set<TimeZone>> entry : regionToZones.entrySet()) {
             String region = entry.getKey();
             for (TimeZone zone : entry.getValue()) {
+                if (zone.getID().equals("GMT")) {
+                    continue;
+                }
                 if (zoneToRegion.containsKey(zone) && !zoneToRegion.get(zone).equals(region)) {
                     fail("Didn't expect multiple regions to have the same time zone: " +
                             zone.getID() + " in both " + zoneToRegion.get(zone) +
