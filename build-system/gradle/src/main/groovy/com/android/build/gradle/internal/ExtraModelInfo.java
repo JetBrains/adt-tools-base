@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal;
 
 import static com.android.builder.model.AndroidProject.PROPERTY_BUILD_MODEL_ONLY;
+import static com.android.builder.model.AndroidProject.PROPERTY_BUILD_MODEL_ONLY_ADVANCED;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -36,7 +37,6 @@ import com.android.builder.model.SourceProviderContainer;
 import com.android.builder.model.SyncIssue;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 import org.gradle.api.GradleException;
@@ -45,7 +45,6 @@ import org.gradle.api.artifacts.Configuration;
 
 import java.io.File;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -53,7 +52,11 @@ import java.util.Map;
  */
 public class ExtraModelInfo {
 
-    private boolean buildModelForIde;
+    public static enum ModelQueryMode {
+        STANDARD, IDE, IDE_ADVANCED
+    }
+
+    private ModelQueryMode modelQueryMode;
 
     private final Map<SyncIssueKey, SyncIssue> syncIssues = Maps.newHashMap();
 
@@ -72,23 +75,32 @@ public class ExtraModelInfo {
     private final ListMultimap<String, SourceProviderContainer> extraMultiFlavorSourceProviders = ArrayListMultimap.create();
 
     public ExtraModelInfo(Project project) {
-        buildModelForIde = getBuildModelForIde(project);
+        modelQueryMode = computeModelQueryMode(project);
     }
 
     public Map<SyncIssueKey, SyncIssue> getSyncIssues() {
         return syncIssues;
     }
 
-    public boolean isBuildModelForIde() {
-        return buildModelForIde;
+    public ModelQueryMode getModelQueryMode() {
+        return modelQueryMode;
     }
 
     public void handleSyncError(String data, int type, String msg) {
-        if (!buildModelForIde) {
-            throw new GradleException(msg);
-        } else {
-            SyncIssue syncIssue = new SyncIssueImpl(type, SyncIssue.SEVERITY_ERROR, data, msg);
-            syncIssues.put(SyncIssueKey.from(syncIssue), syncIssue);
+        switch (modelQueryMode) {
+            case STANDARD:
+                throw new GradleException(msg);
+            case IDE:
+                // compat mode for the only issue supported before the addition of SyncIssue
+                // in the model.
+                if (type != SyncIssue.TYPE_UNRESOLVED_DEPENDENCY) {
+                    throw new GradleException(msg);
+                }
+                // intended fall-through
+            case IDE_ADVANCED:
+                // new IDE, able to support SyncIssue.
+                SyncIssue syncIssue = new SyncIssueImpl(type, SyncIssue.SEVERITY_ERROR, data, msg);
+                syncIssues.put(SyncIssueKey.from(syncIssue), syncIssue);
         }
     }
 
@@ -198,14 +210,28 @@ public class ExtraModelInfo {
      * means we will attempt to resolve dependencies even if some are broken/unsupported to avoid
      * failing the import in the IDE.
      */
-    private boolean getBuildModelForIde(Project project) {
-        boolean flagValue = false;
-        if (project.hasProperty(PROPERTY_BUILD_MODEL_ONLY)) {
-            Object value = project.getProperties().get(PROPERTY_BUILD_MODEL_ONLY);
+    private static ModelQueryMode computeModelQueryMode(@NonNull Project project) {
+        if (isPropertyTrue(project, PROPERTY_BUILD_MODEL_ONLY_ADVANCED)) {
+            return ModelQueryMode.IDE_ADVANCED;
+        }
+
+        if (isPropertyTrue(project, PROPERTY_BUILD_MODEL_ONLY)) {
+            return ModelQueryMode.IDE;
+        }
+
+        return ModelQueryMode.STANDARD;
+    }
+
+    private static boolean isPropertyTrue(
+            @NonNull Project project,
+            @NonNull String propertyName) {
+        if (project.hasProperty(propertyName)) {
+            Object value = project.getProperties().get(propertyName);
             if (value instanceof String) {
-                flagValue = Boolean.parseBoolean((String) value);
+                return Boolean.parseBoolean((String) value);
             }
         }
-        return flagValue;
+
+        return false;
     }
 }
