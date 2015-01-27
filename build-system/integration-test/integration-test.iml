@@ -11,6 +11,6 @@
     <orderEntry type="module" module-name="gradle" />
     <orderEntry type="module" module-name="sdk-common-base" />
     <orderEntry type="library" name="jacoco" level="project" />
-    <orderEntry type="library" name="truth-0.24" level="project" />
+    <orderEntry type="library" name="truth" level="project" />
   </component>
 </module>
