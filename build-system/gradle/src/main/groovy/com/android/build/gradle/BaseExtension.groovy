@@ -490,10 +490,12 @@ public abstract class BaseExtension {
             @NonNull BaseVariant variant,
             @NonNull String assembleTaskName,
             @NonNull String javaCompileTaskName,
+            @NonNull Iterable<String> ideSetupTaskNames,
             @NonNull Configuration configuration,
             @NonNull File classesFolder,
             @Nullable SourceProvider sourceProvider) {
-        plugin.extraModelInfo.registerJavaArtifact(name, variant, assembleTaskName, javaCompileTaskName,
+        plugin.extraModelInfo.registerJavaArtifact(name, variant, assembleTaskName,
+                javaCompileTaskName, ideSetupTaskNames,
                 configuration, classesFolder, sourceProvider)
     }
 
