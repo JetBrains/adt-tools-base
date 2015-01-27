@@ -306,6 +306,7 @@ public class LintUtilsTest extends TestCase {
         assertNull(getLocaleAndRegion("values-xlarge-port"));
         assertEquals("en", getLocaleAndRegion("values-en"));
         assertEquals("pt-rPT", getLocaleAndRegion("values-pt-rPT-nokeys"));
+        assertEquals("b+pt+PT", getLocaleAndRegion("values-b+pt+PT-nokeys"));
         assertEquals("zh-rCN", getLocaleAndRegion("values-zh-rCN-keyshidden"));
         assertEquals("ms", getLocaleAndRegion("values-ms-keyshidden"));
     }
