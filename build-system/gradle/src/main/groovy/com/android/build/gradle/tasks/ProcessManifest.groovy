@@ -22,10 +22,12 @@ import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Optional
+import org.gradle.api.tasks.ParallelizableTask
 
 /**
  * a Task that only merge a single manifest with its overlays.
  */
+@ParallelizableTask
 class ProcessManifest extends ManifestProcessorTask {
 
     // ----- PUBLIC TASK API -----

@@ -23,9 +23,12 @@ import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Optional
+import org.gradle.api.tasks.ParallelizableTask
+
 /**
  * A task that processes the manifest
  */
+@ParallelizableTask
 public class MergeManifests extends ManifestProcessorTask {
 
     // ----- PRIVATE TASK API -----
