@@ -28,7 +28,7 @@ import java.io.Serializable;
 /**
  * Implementation of BaseArtifact that is serializable
  */
-class BaseArtifactImpl implements BaseArtifact, Serializable {
+abstract class BaseArtifactImpl implements BaseArtifact, Serializable {
     private static final long serialVersionUID = 1L;
 
     private final String name;

@@ -15,17 +15,15 @@
  */
 
 package com.android.build.gradle.internal.model
-
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
 import com.android.build.OutputFile
 import com.android.build.gradle.BaseExtension
-import com.android.build.gradle.BasePlugin
-import com.android.build.gradle.LibraryPlugin
 import com.android.build.gradle.api.ApkOutputFile
 import com.android.build.gradle.internal.BuildTypeData
 import com.android.build.gradle.internal.ExtraModelInfo
 import com.android.build.gradle.internal.ProductFlavorData
+import com.android.build.gradle.internal.TaskManager
 import com.android.build.gradle.internal.VariantManager
 import com.android.build.gradle.internal.variant.ApkVariantOutputData
 import com.android.build.gradle.internal.variant.BaseVariantData
@@ -63,7 +61,6 @@ import java.util.jar.Attributes
 import java.util.jar.Manifest
 
 import static com.android.builder.model.AndroidProject.ARTIFACT_MAIN
-
 /**
  * Builder for the custom Android model.
  */
@@ -77,11 +74,14 @@ public class ModelBuilder implements ToolingModelBuilder {
 
     VariantManager variantManager
 
+    TaskManager taskManager
+
     boolean isLibrary
 
     ModelBuilder(
             AndroidBuilder androidBuilder,
             VariantManager variantManager,
+            TaskManager taskManager,
             BaseExtension extension,
             ExtraModelInfo extraModelInfo,
             boolean isLibrary) {
@@ -89,6 +89,7 @@ public class ModelBuilder implements ToolingModelBuilder {
         this.extension = extension
         this.extraModelInfo = extraModelInfo
         this.variantManager = variantManager
+        this.taskManager = taskManager
         this.isLibrary = isLibrary
     }
 
@@ -160,8 +161,7 @@ public class ModelBuilder implements ToolingModelBuilder {
 
         for (BaseVariantData variantData : variantManager.variantDataList) {
             if (!variantData.type.isForTesting()) {
-                androidProject.addVariant(
-                        createVariant(variantData, androidBuilder, extraModelInfo, gradleProjects))
+                androidProject.addVariant(createVariant(variantData, gradleProjects))
             }
         }
 
@@ -190,10 +190,8 @@ public class ModelBuilder implements ToolingModelBuilder {
     }
 
     @NonNull
-    private static VariantImpl createVariant(
+    private VariantImpl createVariant(
             @NonNull BaseVariantData variantData,
-            @NonNull AndroidBuilder androidBuilder,
-            @NonNull ExtraModelInfo extraModelInfo,
             @NonNull Set<Project> gradleProjects) {
         AndroidArtifact mainArtifact = createAndroidArtifact(
                 ARTIFACT_MAIN, variantData, androidBuilder, extraModelInfo, gradleProjects)
@@ -219,11 +217,9 @@ public class ModelBuilder implements ToolingModelBuilder {
                                 gradleProjects))
                         break
                     case VariantType.UNIT_TEST:
-                        extraJavaArtifacts.add(createJavaArtifact(
+                        extraJavaArtifacts.add(createUnitTestsJavaArtifact(
                                 variantType,
                                 testVariantData,
-                                androidBuilder,
-                                extraModelInfo,
                                 gradleProjects))
                         break
                     case null:
@@ -260,20 +256,27 @@ public class ModelBuilder implements ToolingModelBuilder {
         return variant
     }
 
-    private static JavaArtifactImpl createJavaArtifact(
+    private JavaArtifactImpl createUnitTestsJavaArtifact(
             @NonNull VariantType variantType,
             @NonNull BaseVariantData variantData,
-            @NonNull AndroidBuilder androidBuilder,
-            @NonNull ExtraModelInfo extraModelInfo,
             @NonNull Set<Project> gradleProjects) {
         def sourceProviders = determineSourceProviders(variantType.artifactName, variantData, extraModelInfo)
+        def dependencies = DependenciesImpl.cloneDependencies(variantData, androidBuilder, gradleProjects)
+
+        // Add the mockable JAR path. It will be created before tests are actually run from the IDE.
+        dependencies.javaLibraries.add(
+                new JavaLibraryImpl(
+                        taskManager.createMockableJar.outputFile,
+                        null,
+                        null))
 
         return new JavaArtifactImpl(
                 variantType.artifactName,
                 variantData.assembleVariantTask.name,
                 variantData.compileTask.name,
+                [taskManager.createMockableJar.name] as Set,
                 variantData.javaCompileTask.destinationDir,
-                DependenciesImpl.cloneDependencies(variantData, androidBuilder, gradleProjects),
+                dependencies,
                 sourceProviders.variantSourceProvider,
                 sourceProviders.multiFlavorSourceProvider)
     }
