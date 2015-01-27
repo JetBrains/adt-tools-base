@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 The Android Open Source Project
+ * Copyright (C) 2015 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,29 +14,29 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.integration.application
+package com.android.build.gradle.integration.dependencies
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
-import com.android.builder.model.SyncIssue
 import groovy.transform.CompileStatic
-import org.junit.Before
-import org.junit.Rule
+import org.gradle.tooling.BuildException
+import org.junit.AfterClass
+import org.junit.BeforeClass
+import org.junit.ClassRule
 import org.junit.Test
 
-import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 /**
- * General Model tests
+ * test for package (apk) local aar in app
  */
 @CompileStatic
-class ModelTest {
+class AppWithCompileLocalAarFromOlderIdeTest {
 
-    @Rule
-    public GradleTestProject project = GradleTestProject.builder().create()
+    @ClassRule
+    static public GradleTestProject project = GradleTestProject.builder()
+            .fromTestProject("projectWithLocalDeps")
+            .create()
 
-    @Before
-    public void setUp() {
-        new HelloWorldApp().writeSources(project.testDir)
+    @BeforeClass
+    static void setUp() {
         project.getBuildFile() << """
 apply plugin: 'com.android.application'
 
@@ -44,19 +44,21 @@ android {
     compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
     buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
 }
-"""
-    }
 
-    @Test
-    public void unresolvedDependencies() {
-        project.getBuildFile() << """
 dependencies {
-    compile 'foo:bar:1.2.3'
+    compile files('libs/baseLib-1.0.aar')
 }
 """
-        assertThat(project.getSingleModel()).issues().hasSingleIssue(
-                SyncIssue.SEVERITY_ERROR,
-                SyncIssue.TYPE_UNRESOLVED_DEPENDENCY,
-                'foo:bar:1.2.3')
+
+    }
+
+    @AfterClass
+    static void cleanUp() {
+        project = null
+    }
+
+    @Test(expected=BuildException.class)
+    void "check model failed to load"() {
+        project.getSingleModel(true /*emulateStudio_1_0*/)
     }
 }
