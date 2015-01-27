@@ -36,9 +36,11 @@ import com.google.common.collect.Maps
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.Project
+import org.gradle.api.tasks.ParallelizableTask
 import org.gradle.api.tasks.TaskAction
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry
 
+@ParallelizableTask
 public class Lint extends DefaultTask {
     @NonNull private LintOptions mLintOptions
     @Nullable private String mVariantName
