@@ -124,6 +124,7 @@ import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.api.tasks.testing.Test
 import org.gradle.language.jvm.tasks.ProcessResources
 import org.gradle.tooling.BuildException
+import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry
 import proguard.gradle.ProGuardTask
 
 import static com.android.SdkConstants.FN_ANDROID_MANIFEST_XML
@@ -179,11 +180,13 @@ class TaskManager {
 
     private BaseExtension extension
 
+    private ToolingModelBuilderRegistry toolingRegistry
+
     private Logger logger
 
+    // Tasks
     private Task mainPreBuild
 
-    // Tasks
     private Task uninstallAll
 
     private Task assembleAndroidTest
@@ -206,12 +209,14 @@ class TaskManager {
             AndroidBuilder androidBuilder,
             BaseExtension extension,
             SdkHandler sdkHandler,
-            DependencyManager dependencyManager) {
+            DependencyManager dependencyManager,
+            ToolingModelBuilderRegistry toolingRegistry) {
         this.project = project
         this.tasks = tasks
         this.androidBuilder = androidBuilder
         this.sdkHandler = sdkHandler
         this.extension = extension
+        this.toolingRegistry = toolingRegistry
         this.dependencyManager = dependencyManager
         logger = Logging.getLogger(this.class)
     }
@@ -1367,6 +1372,7 @@ class TaskManager {
         lint.group = JavaBasePlugin.VERIFICATION_GROUP
         lint.setLintOptions(getExtension().lintOptions)
         lint.setSdkHome(sdkHandler.getSdkFolder())
+        lint.setToolingRegistry(toolingRegistry)
         project.tasks.getByName(JavaBasePlugin.CHECK_TASK_NAME).dependsOn lint
         lintAll = lint
 
@@ -1396,6 +1402,7 @@ class TaskManager {
             variantLintCheck.setLintOptions(getExtension().lintOptions)
             variantLintCheck.setSdkHome(sdkHandler.getSdkFolder())
             variantLintCheck.setVariantName(variantName)
+            variantLintCheck.setToolingRegistry(toolingRegistry)
             variantLintCheck.description = "Runs lint on the " + capitalizedVariantName + " build"
             variantLintCheck.group = JavaBasePlugin.VERIFICATION_GROUP
         }
@@ -1415,6 +1422,7 @@ class TaskManager {
             lintReleaseCheck.setLintOptions(getExtension().lintOptions)
             lintReleaseCheck.setSdkHome(sdkHandler.getSdkFolder())
             lintReleaseCheck.setVariantName(variantName)
+            lintReleaseCheck.setToolingRegistry(toolingRegistry)
             lintReleaseCheck.setFatalOnly(true)
             lintReleaseCheck.description = "Runs lint on just the fatal issues in the " +
                     capitalizedVariantName + " build"
