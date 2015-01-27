@@ -16,6 +16,7 @@
 
 package com.android.build.gradle
 
+import com.android.annotations.Nullable
 import com.android.build.gradle.internal.BadPluginException
 import com.android.build.gradle.internal.DependencyManager
 import com.android.build.gradle.internal.ExtraModelInfo
@@ -67,6 +68,8 @@ import org.gradle.internal.reflect.Instantiator
 import org.gradle.tooling.BuildException
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry
 
+import java.security.MessageDigest
+import java.util.Calendar
 import java.util.jar.Attributes
 import java.util.jar.Manifest
 import java.util.regex.Pattern
@@ -93,6 +96,9 @@ public abstract class BasePlugin {
     private static final String GRADLE_VERSION_CHECK_OVERRIDE_PROPERTY =
             "com.android.build.gradle.overrideVersionCheck"
 
+    // default retirement age in days since its inception date for RC or beta versions.
+    private static final int DEFAULT_RETIREMENT_AGE_FOR_NON_RELEASE = 40;
+
     public static File TEST_SDK_DIR;
 
     protected Instantiator instantiator
@@ -115,6 +121,11 @@ public abstract class BasePlugin {
 
     private boolean hasCreatedTasks = false
 
+    // set the creation date of this plugin. Remember than month is zero based (0 is January).
+    private static final GregorianCalendar inceptionDate = new GregorianCalendar(2015, 0, 26)
+    // retirement age for the plugin in days from the inceptionDate, -1 for eternal.
+    private static final int retirementAge = 40
+
     protected BasePlugin(Instantiator instantiator, ToolingModelBuilderRegistry registry) {
         this.instantiator = instantiator
         this.registry = registry
@@ -124,6 +135,75 @@ public abstract class BasePlugin {
         } else  {
             creator = "Android Gradle"
         }
+        verifyRetirementAge()
+    }
+
+    /**
+     * Verify that this plugin execution is within its public time range.
+     */
+    private void verifyRetirementAge() {
+
+        Manifest manifest;
+        URLClassLoader cl = (URLClassLoader) getClass().getClassLoader();
+        try {
+            URL url = cl.findResource("META-INF/MANIFEST.MF");
+            manifest = new Manifest(url.openStream());
+        } catch (IOException ignore) {
+            getLogger().info(ignore.toString());
+            return;
+        }
+
+        String inceptionDateAttr = manifest.mainAttributes.getValue("Inception-Date")
+        // when running in unit tests, etc... the manifest entries are absent.
+        if (inceptionDateAttr == null) {
+            return;
+        }
+        def items = inceptionDateAttr.split(':')
+        GregorianCalendar inceptionDate = new GregorianCalendar(Integer.parseInt(items[0]),
+                Integer.parseInt(items[1]), Integer.parseInt(items[2]));
+
+        int retirementAge = getRetirementAge(manifest.mainAttributes.getValue("Plugin-Version"))
+
+        if (retirementAge == -1) {
+            return;
+        }
+        Calendar now = GregorianCalendar.getInstance()
+        int days = now.minus(inceptionDate)
+        if (days > retirementAge) {
+            // this plugin is too old.
+            String dailyOverride = System.getenv("ANDROID_DAILY_OVERRIDE")
+            MessageDigest cript = MessageDigest.getInstance("SHA-1")
+            cript.reset()
+            // encode the day, not the current time.
+            cript.update(
+                    "${now.get(Calendar.YEAR)}:${now.get(Calendar.MONTH)}:${now.get(Calendar.DATE)}"
+                            .getBytes("utf8"))
+            String overrideValue = new BigInteger(1, cript.digest()).toString(16)
+            if (dailyOverride == null) {
+                String message = """
+                    Plugin is too old, please update to a more recent version,
+                    or set ANDROID_DAILY_OVERRIDE environment variable to
+                    \"${overrideValue}\""""
+                System.err.println(message)
+                throw new RuntimeException(message)
+            } else {
+                if (!dailyOverride.equals(overrideValue)) {
+                    String message = """
+                    Plugin is too old and ANDROID_DAILY_OVERRIDE value is
+                    also outdated, please use new value :
+                    \"${overrideValue}\""""
+                    System.err.println(message)
+                    throw new RuntimeException(message)
+                }
+            }
+        }
+    }
+
+    private static int getRetirementAge(@Nullable String version) {
+        if (version == null || version.contains("rc") || version.contains("beta")) {
+            return DEFAULT_RETIREMENT_AGE_FOR_NON_RELEASE
+        }
+        return -1;
     }
 
     protected abstract Class<? extends BaseExtension> getExtensionClass()
