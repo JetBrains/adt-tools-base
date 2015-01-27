@@ -27,11 +27,11 @@ import com.google.common.io.Files
 import org.gradle.api.GradleException
 import org.gradle.api.file.FileTree
 import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.OutputFile
+import org.gradle.api.tasks.SkipWhenEmpty
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.incremental.IncrementalTaskInputs
 import org.gradle.api.tasks.util.PatternSet
@@ -56,7 +56,7 @@ class NdkCompile extends NdkTask {
     File objFolder
 
     @Optional
-    @InputDirectory
+    @Input
     File ndkDirectory
 
     @Input
@@ -65,6 +65,7 @@ class NdkCompile extends NdkTask {
     @Input
     boolean ndkCygwinMode
 
+    @SkipWhenEmpty
     @InputFiles
     FileTree getSource() {
         FileTree src = null
