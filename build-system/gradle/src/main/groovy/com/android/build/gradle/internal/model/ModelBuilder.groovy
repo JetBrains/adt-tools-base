@@ -19,16 +19,20 @@ package com.android.build.gradle.internal.model
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
 import com.android.build.OutputFile
+import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.BasePlugin
 import com.android.build.gradle.LibraryPlugin
 import com.android.build.gradle.api.ApkOutputFile
 import com.android.build.gradle.internal.BuildTypeData
+import com.android.build.gradle.internal.ExtraModelInfo
 import com.android.build.gradle.internal.ProductFlavorData
+import com.android.build.gradle.internal.VariantManager
 import com.android.build.gradle.internal.variant.ApkVariantOutputData
 import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.build.gradle.internal.variant.BaseVariantOutputData
 import com.android.build.gradle.internal.variant.TestVariantData
 import com.android.build.gradle.internal.variant.TestedVariantData
+import com.android.builder.core.AndroidBuilder
 import com.android.builder.core.DefaultProductFlavor
 import com.android.builder.core.VariantConfiguration
 import com.android.builder.core.VariantType
@@ -65,6 +69,29 @@ import static com.android.builder.model.AndroidProject.ARTIFACT_MAIN
  */
 @CompileStatic
 public class ModelBuilder implements ToolingModelBuilder {
+    AndroidBuilder androidBuilder
+
+    BaseExtension extension
+
+    ExtraModelInfo extraModelInfo
+
+    VariantManager variantManager
+
+    boolean isLibrary
+
+    ModelBuilder(
+            AndroidBuilder androidBuilder,
+            VariantManager variantManager,
+            BaseExtension extension,
+            ExtraModelInfo extraModelInfo,
+            boolean isLibrary) {
+        this.androidBuilder = androidBuilder
+        this.extension = extension
+        this.extraModelInfo = extraModelInfo
+        this.variantManager = variantManager
+        this.isLibrary = isLibrary
+    }
+
     @Override
     public boolean canBuild(String modelName) {
         // The default name for a model is the name of the Java interface.
@@ -75,39 +102,31 @@ public class ModelBuilder implements ToolingModelBuilder {
     public Object buildAll(String modelName, Project project) {
         NamedDomainObjectContainer<SigningConfig> signingConfigs
 
-        BasePlugin basePlugin = BasePlugin.findBasePlugin(project);
-
-        if (basePlugin == null) {
-            project.logger.error("Failed to find Android plugin for project " + project.name)
-            return null
-        }
-
         // Cast is needed due to covariance issues.
-        signingConfigs =
-                basePlugin.extension.signingConfigs as NamedDomainObjectContainer<SigningConfig>
+        signingConfigs = extension.signingConfigs as NamedDomainObjectContainer<SigningConfig>
 
         // Get the boot classpath. This will ensure the target is configured.
-        List<String> bootClasspath = basePlugin.bootClasspathAsStrings
+        List<String> bootClasspath = androidBuilder.bootClasspathAsStrings
 
         List<File> frameworkSource = Collections.emptyList();
 
         // List of extra artifacts, with all test variants added.
-        List<ArtifactMetaData> artifactMetaDataList = basePlugin.extraModelInfo.extraArtifacts.collect()
+        List<ArtifactMetaData> artifactMetaDataList = extraModelInfo.extraArtifacts.collect()
 
         VariantType.testingTypes
                 .collect { new ArtifactMetaDataImpl(it.artifactName, true, it.artifactType) }
                 .each artifactMetaDataList.&add
 
-        LintOptions lintOptions = com.android.build.gradle.internal.dsl.LintOptions.create(basePlugin.extension.lintOptions)
+        LintOptions lintOptions = com.android.build.gradle.internal.dsl.LintOptions.create(extension.lintOptions)
 
-        AaptOptions aaptOptions = AaptOptionsImpl.create(basePlugin.extension.aaptOptions)
+        AaptOptions aaptOptions = AaptOptionsImpl.create(extension.aaptOptions)
 
-        List<SyncIssue> syncIssues = Lists.newArrayList(basePlugin.extraModelInfo.syncIssues.values());
+        List<SyncIssue> syncIssues = Lists.newArrayList(extraModelInfo.syncIssues.values());
 
         DefaultAndroidProject androidProject = new DefaultAndroidProject(
                 getModelVersion(),
                 project.name,
-                basePlugin.getAndroidBuilder().getTarget().hashString(),
+                androidBuilder.getTarget().hashString(),
                 bootClasspath,
                 frameworkSource,
                 cloneSigningConfigs(signingConfigs),
@@ -115,31 +134,34 @@ public class ModelBuilder implements ToolingModelBuilder {
                 artifactMetaDataList,
                 findUnresolvedDependencies(syncIssues),
                 syncIssues,
-                basePlugin.extension.compileOptions,
+                extension.compileOptions,
                 lintOptions,
                 project.getBuildDir(),
-                basePlugin.extension.resourcePrefix,
-                basePlugin instanceof LibraryPlugin)
-                    .setDefaultConfig(ProductFlavorContainerImpl.createProductFlavorContainer(
-                        basePlugin.defaultConfigData,
-                        basePlugin.extraModelInfo.getExtraFlavorSourceProviders(basePlugin.defaultConfigData.productFlavor.name)))
+                extension.resourcePrefix,
+                isLibrary)
 
-        for (BuildTypeData btData : basePlugin.variantManager.buildTypes.values()) {
+        androidProject.setDefaultConfig(ProductFlavorContainerImpl.createProductFlavorContainer(
+                variantManager.defaultConfig,
+                extraModelInfo.getExtraFlavorSourceProviders(
+                        variantManager.defaultConfig.productFlavor.name)))
+
+        for (BuildTypeData btData : variantManager.buildTypes.values()) {
             androidProject.addBuildType(BuildTypeContainerImpl.create(
                     btData,
-                    basePlugin.extraModelInfo.getExtraBuildTypeSourceProviders(btData.buildType.name)))
+                    extraModelInfo.getExtraBuildTypeSourceProviders(btData.buildType.name)))
         }
-        for (ProductFlavorData pfData : basePlugin.variantManager.productFlavors.values()) {
+        for (ProductFlavorData pfData : variantManager.productFlavors.values()) {
             androidProject.addProductFlavors(ProductFlavorContainerImpl.createProductFlavorContainer(
                     pfData,
-                    basePlugin.extraModelInfo.getExtraFlavorSourceProviders(pfData.productFlavor.name)))
+                    extraModelInfo.getExtraFlavorSourceProviders(pfData.productFlavor.name)))
         }
 
         Set<Project> gradleProjects = project.getRootProject().getAllprojects();
 
-        for (BaseVariantData variantData : basePlugin.variantDataList) {
+        for (BaseVariantData variantData : variantManager.variantDataList) {
             if (!variantData.type.isForTesting()) {
-                androidProject.addVariant(createVariant(variantData, basePlugin, gradleProjects))
+                androidProject.addVariant(
+                        createVariant(variantData, androidBuilder, extraModelInfo, gradleProjects))
             }
         }
 
@@ -168,19 +190,21 @@ public class ModelBuilder implements ToolingModelBuilder {
     }
 
     @NonNull
-    private static VariantImpl createVariant(@NonNull BaseVariantData variantData,
-                                             @NonNull BasePlugin basePlugin,
-                                             @NonNull Set<Project> gradleProjects) {
+    private static VariantImpl createVariant(
+            @NonNull BaseVariantData variantData,
+            @NonNull AndroidBuilder androidBuilder,
+            @NonNull ExtraModelInfo extraModelInfo,
+            @NonNull Set<Project> gradleProjects) {
         AndroidArtifact mainArtifact = createAndroidArtifact(
-                ARTIFACT_MAIN, variantData, basePlugin, gradleProjects)
+                ARTIFACT_MAIN, variantData, androidBuilder, extraModelInfo, gradleProjects)
 
         String variantName = variantData.variantConfiguration.fullName
 
         List<AndroidArtifact> extraAndroidArtifacts = Lists.newArrayList(
-                basePlugin.extraModelInfo.getExtraAndroidArtifacts(variantName))
+                extraModelInfo.getExtraAndroidArtifacts(variantName))
         // Make sure all extra artifacts are serializable.
         List<JavaArtifact> extraJavaArtifacts =
-                basePlugin.extraModelInfo.getExtraJavaArtifacts(variantName).collect(JavaArtifactImpl.&clone)
+                extraModelInfo.getExtraJavaArtifacts(variantName).collect(JavaArtifactImpl.&clone)
 
         if (variantData instanceof TestedVariantData) {
             for (variantType in VariantType.testingTypes) {
@@ -190,14 +214,16 @@ public class ModelBuilder implements ToolingModelBuilder {
                         extraAndroidArtifacts.add(createAndroidArtifact(
                                 variantType.artifactName,
                                 testVariantData,
-                                basePlugin,
+                                androidBuilder,
+                                extraModelInfo,
                                 gradleProjects))
                         break
                     case VariantType.UNIT_TEST:
                         extraJavaArtifacts.add(createJavaArtifact(
                                 variantType,
                                 testVariantData,
-                                basePlugin,
+                                androidBuilder,
+                                extraModelInfo,
                                 gradleProjects))
                         break
                     case null:
@@ -212,7 +238,7 @@ public class ModelBuilder implements ToolingModelBuilder {
 
         // if the target is a codename, override the model value.
         ApiVersion sdkVersionOverride = null
-        IAndroidTarget androidTarget = basePlugin.androidBuilder.getTargetInfo().target
+        IAndroidTarget androidTarget = androidBuilder.getTargetInfo().target
         AndroidVersion version = androidTarget.getVersion()
         if (version.codename != null) {
             sdkVersionOverride = ApiVersionImpl.clone(version)
@@ -237,16 +263,17 @@ public class ModelBuilder implements ToolingModelBuilder {
     private static JavaArtifactImpl createJavaArtifact(
             @NonNull VariantType variantType,
             @NonNull BaseVariantData variantData,
-            @NonNull BasePlugin basePlugin,
+            @NonNull AndroidBuilder androidBuilder,
+            @NonNull ExtraModelInfo extraModelInfo,
             @NonNull Set<Project> gradleProjects) {
-        def sourceProviders = determineSourceProviders(variantType.artifactName, variantData, basePlugin)
+        def sourceProviders = determineSourceProviders(variantType.artifactName, variantData, extraModelInfo)
 
         return new JavaArtifactImpl(
                 variantType.artifactName,
                 variantData.assembleVariantTask.name,
                 variantData.compileTask.name,
                 variantData.javaCompileTask.destinationDir,
-                DependenciesImpl.cloneDependencies(variantData, basePlugin, gradleProjects),
+                DependenciesImpl.cloneDependencies(variantData, androidBuilder, gradleProjects),
                 sourceProviders.variantSourceProvider,
                 sourceProviders.multiFlavorSourceProvider)
     }
@@ -254,7 +281,8 @@ public class ModelBuilder implements ToolingModelBuilder {
     private static AndroidArtifact createAndroidArtifact(
             @NonNull String name,
             @NonNull BaseVariantData variantData,
-            @NonNull BasePlugin basePlugin,
+            @NonNull AndroidBuilder androidBuilder,
+            @NonNull ExtraModelInfo extraModelInfo,
             @NonNull Set<Project> gradleProjects) {
         VariantConfiguration variantConfiguration = variantData.variantConfiguration
 
@@ -264,7 +292,7 @@ public class ModelBuilder implements ToolingModelBuilder {
             signingConfigName = signingConfig.name
         }
 
-        def sourceProviders = determineSourceProviders(name, variantData, basePlugin)
+        def sourceProviders = determineSourceProviders(name, variantData, extraModelInfo)
 
         // get the outputs
         List<? extends BaseVariantOutputData> variantOutputs = variantData.outputs
@@ -317,7 +345,7 @@ public class ModelBuilder implements ToolingModelBuilder {
                 getGeneratedSourceFolders(variantData),
                 getGeneratedResourceFolders(variantData),
                 compileTask.destinationDir,
-                DependenciesImpl.cloneDependencies(variantData, basePlugin, gradleProjects),
+                DependenciesImpl.cloneDependencies(variantData, androidBuilder, gradleProjects),
                 sourceProviders.variantSourceProvider,
                 sourceProviders.multiFlavorSourceProvider,
                 variantConfiguration.supportedAbis,
@@ -328,7 +356,7 @@ public class ModelBuilder implements ToolingModelBuilder {
     private static SourceProviders determineSourceProviders(
             @NonNull String name,
             @NonNull BaseVariantData variantData,
-            @NonNull BasePlugin basePlugin) {
+            @NonNull ExtraModelInfo extraModelInfo) {
         SourceProvider variantSourceProvider = null
         SourceProvider multiFlavorSourceProvider = null
 
@@ -337,7 +365,7 @@ public class ModelBuilder implements ToolingModelBuilder {
             multiFlavorSourceProvider = variantData.variantConfiguration.multiFlavorSourceProvider
         } else {
             SourceProviderContainer container = getSourceProviderContainer(
-                    basePlugin.extraModelInfo.getExtraVariantSourceProviders(
+                    extraModelInfo.getExtraVariantSourceProviders(
                             variantData.getVariantConfiguration().getFullName()),
                     name)
             if (container != null) {

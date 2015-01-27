@@ -51,6 +51,11 @@ public class LibraryPlugin extends BasePlugin implements Plugin<Project> {
     }
 
     @Override
+    protected boolean isLibrary() {
+        return true;
+    }
+
+    @Override
     void apply(Project project) {
         super.apply(project)
 

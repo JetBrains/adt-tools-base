@@ -26,18 +26,21 @@ import com.android.build.gradle.api.AndroidSourceSet
 import com.android.build.gradle.internal.BuildTypeData
 import com.android.build.gradle.internal.DependencyManager
 import com.android.build.gradle.internal.ProductFlavorData
+import com.android.build.gradle.internal.SdkHandler
 import com.android.build.gradle.internal.TaskManager
 import com.android.build.gradle.internal.VariantManager
 import com.android.build.gradle.internal.dsl.BuildType
 import com.android.build.gradle.internal.dsl.GroupableProductFlavor
 import com.android.build.gradle.internal.dsl.SigningConfig
 import com.android.build.gradle.internal.dsl.SigningConfigFactory
+import com.android.build.gradle.internal.model.ModelBuilder
 import com.android.build.gradle.internal.tasks.DependencyReportTask
 import com.android.build.gradle.internal.tasks.SigningReportTask
 import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.build.gradle.internal.variant.TestVariantData
 import com.android.build.gradle.internal.variant.VariantFactory
 import com.android.build.gradle.ndk.NdkExtension
+import com.android.builder.core.AndroidBuilder
 import com.android.builder.core.BuilderConstants
 import com.google.common.collect.Lists
 import groovy.transform.CompileStatic
@@ -87,6 +90,7 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
             ModelRegistry modelRegistry) {
         super(instantiator, registry);
         this.modelRegistry = modelRegistry
+
     }
 
     @Override
@@ -121,6 +125,13 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
                                 .simpleDescriptor("Android BaseComponentModelPlugin.")
                                 .build(),
                 ModelPath.ROOT)
+
+        modelRegistry.create(
+                ModelCreators.bridgedInstance(
+                        ModelReference.of("toolingRegistry", ToolingModelBuilderRegistry), registry)
+                        .simpleDescriptor("Tooling model builder model registry.")
+                        .build(),
+                ModelPath.ROOT)
     }
 
     @RuleSource
@@ -150,10 +161,10 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
             BaseExtension extension = (BaseExtension)instantiator.newInstance(extensionClass,
                     plugin, (ProjectInternal) project, instantiator,
                     buildTypeContainer, productFlavorContainer, signingConfigContainer, false)
-            plugin.setBaseExtension(extension)
 
             // Android component model always use new plugin.
             extension.useNewNativePlugin = true
+            plugin.setBaseExtension(extension)
 
             return extension
         }
@@ -198,9 +209,21 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
         }
 
         @Model
-        TaskManager createTaskManager(BaseExtension androidExtension, Project project, BasePlugin plugin) {
+        TaskManager createTaskManager(
+                BaseExtension androidExtension,
+                Project project,
+                BasePlugin plugin,
+                ToolingModelBuilderRegistry toolingRegistry) {
             DependencyManager dependencyManager = new DependencyManager(project, plugin.extraModelInfo)
-            return new TaskManager(project, project.tasks, plugin.androidBuilder, androidExtension, plugin.sdkHandler, dependencyManager)
+
+            return new TaskManager(
+                    project,
+                    project.tasks,
+                    plugin.androidBuilder,
+                    androidExtension,
+                    plugin.sdkHandler,
+                    dependencyManager,
+                    toolingRegistry)
         }
 
         @Mutate
@@ -213,7 +236,9 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
                 VariantFactory variantFactory,
                 TaskManager taskManager,
                 Project project,
-                BasePlugin plugin) {
+                BasePlugin plugin,
+                ToolingModelBuilderRegistry toolingRegistry,
+                @Path("isApplication") Boolean isApplication) {
             plugin.ensureTargetSetup()
 
             VariantManager variantManager = new VariantManager(
@@ -233,6 +258,11 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
                 variantManager.addProductFlavor(productFlavor)
             }
             plugin.variantManager = variantManager;
+
+            ModelBuilder modelBuilder = new ModelBuilder(
+                    plugin.androidBuilder, plugin.variantManager, androidExtension, plugin.extraModelInfo, !isApplication);
+            toolingRegistry.register(modelBuilder);
+
 
             def spec = androidSpec as DefaultAndroidComponentSpec
             spec.extension = androidExtension
@@ -273,7 +303,7 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
             DefaultAndroidComponentSpec spec = (DefaultAndroidComponentSpec) androidSpec
             VariantManager variantManager = spec.variantManager
 
-            applyProjectSourceSet(spec, androidSources, plugin)
+            applyProjectSourceSet(spec, androidSources, spec.extension)
 
             // Create lifecycle tasks.
             taskManager.createTasks()
@@ -340,16 +370,16 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
         private static void applyProjectSourceSet(
                 AndroidComponentSpec androidSpec,
                 AndroidComponentModelSourceSet sources,
-                BasePlugin plugin) {
+                BaseExtension baseExtension) {
             DefaultAndroidComponentSpec spec = (DefaultAndroidComponentSpec)androidSpec
             VariantManager variantManager = spec.variantManager
             for (FunctionalSourceSet source : sources) {
                 String name = source.getName();
                 AndroidSourceSet androidSource = (
                         name.equals(BuilderConstants.MAIN)
-                                ? plugin.mainSourceSet
+                                ? baseExtension.sourceSets.getByName(baseExtension.getDefaultConfig().getName())
                                 : (name.equals(ANDROID_TEST.prefix)
-                                        ? plugin.androidTestSourceSet
+                                        ? baseExtension.sourceSets.getByName(ANDROID_TEST.getPrefix())
                                         : findAndroidSourceSet(variantManager, name)))
 
                 if (androidSource == null) {

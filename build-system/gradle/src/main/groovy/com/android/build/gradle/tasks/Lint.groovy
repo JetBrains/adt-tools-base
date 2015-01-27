@@ -37,12 +37,14 @@ import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.tasks.TaskAction
+import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry
 
 public class Lint extends DefaultTask {
     @NonNull private LintOptions mLintOptions
     @Nullable private String mVariantName
     @Nullable private File mSdkHome
     private boolean mFatalOnly
+    private ToolingModelBuilderRegistry mToolingRegistry
 
     public void setLintOptions(@NonNull LintOptions lintOptions) {
         mLintOptions = lintOptions
@@ -54,6 +56,10 @@ public class Lint extends DefaultTask {
 
     public void setVariantName(@NonNull String variantName) {
         mVariantName = variantName
+    }
+
+    void setToolingRegistry(ToolingModelBuilderRegistry toolingRegistry) {
+        mToolingRegistry = toolingRegistry
     }
 
     public void setFatalOnly(boolean fatalOnly) {
@@ -217,10 +223,11 @@ public class Lint extends DefaultTask {
         }
     }
 
-    private static AndroidProject createAndroidProject(@NonNull Project gradleProject) {
+    private AndroidProject createAndroidProject(@NonNull Project gradleProject) {
         String modelName = AndroidProject.class.getName()
-        ModelBuilder builder = new ModelBuilder()
-        return (AndroidProject) builder.buildAll(modelName, gradleProject)
+        ModelBuilder modelBuilder = mToolingRegistry.getBuilder(modelName) as ModelBuilder
+        assert modelBuilder != null
+        return (AndroidProject) modelBuilder.buildAll(modelName, gradleProject)
     }
 
     private static BuiltinIssueRegistry createIssueRegistry() {
