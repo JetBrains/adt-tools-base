@@ -15,6 +15,7 @@ import com.google.common.util.concurrent.SettableFuture;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Future;
@@ -50,7 +51,8 @@ public class FakeDevice extends DeviceConnector {
     }
 
     @Override
-    public void installPackage(@NonNull File apkFile, int timeout, ILogger logger) throws DeviceException {
+    public void installPackage(@NonNull File apkFile, Collection<String> installOptions,
+            int timeout, ILogger logger) throws DeviceException {
         logger.info("INSTALL(%S) CALLED", name);
 
         if (apkFile == null) {
@@ -76,7 +78,8 @@ public class FakeDevice extends DeviceConnector {
         installCalled = true;
     }
 
-    public void installPackages(@NonNull List<File> apkFiles, int timeout, ILogger logger)
+    public void installPackages(@NonNull List<File> apkFiles, Collection<String> installOptions,
+            int timeout, ILogger logger)
             throws DeviceException {
 
         if (apkFiles == null || apkFiles.isEmpty()) {

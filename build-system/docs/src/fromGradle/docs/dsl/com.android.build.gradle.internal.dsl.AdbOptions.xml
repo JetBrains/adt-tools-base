@@ -6,6 +6,7 @@
                 <tr><td>Name</td></tr>
             </thead>
             <tr><td>timeOutInMs</td></tr>
+            <tr><td>installOptions</td></tr>
         </table>
     </section>
     <section>

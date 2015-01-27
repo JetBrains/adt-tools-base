@@ -1742,6 +1742,7 @@ abstract class TaskManager {
         testTask.testVariantData = testVariantData
         testTask.flavorName = testVariantData.variantConfiguration.flavorName.capitalize()
         testTask.deviceProvider = deviceProvider
+        testTask.installOptions = getExtension().getAdbOptions().getInstallOptions();
 
         conventionMapping(testTask).map("resultsDir") {
             String rootLocation = getExtension().testOptions.resultsDir != null ?
@@ -2519,13 +2520,19 @@ abstract class TaskManager {
             installTask.group = INSTALL_GROUP
             installTask.projectName = project.name
             installTask.variantData = variantData
-            installTask.timeOutInMs = getExtension().getAdbOptions().getTimeOutInMs();
+            installTask.timeOutInMs = getExtension().getAdbOptions().getTimeOutInMs()
+            installTask.installOptions = getExtension().getAdbOptions().getInstallOptions()
             installTask.processExecutor = androidBuilder.getProcessExecutor()
             conventionMapping(installTask).map("adbExe") { sdkHandler.sdkInfo?.adb }
             conventionMapping(installTask).map("splitSelectExe") {
                 String path = androidBuilder.targetInfo?.buildTools?.getPath(
-                        BuildToolInfo.PathId.SPLIT_SELECT);
-                path != null ? new File(path) : null;
+                        BuildToolInfo.PathId.SPLIT_SELECT)
+                if (path != null) {
+                    File splitSelectExe = new File(path)
+                    return splitSelectExe.exists() ? splitSelectExe : null;
+                } else {
+                    return null;
+                }
             }
             installTask.dependsOn variantData.assembleVariantTask
             variantData.installTask = installTask
