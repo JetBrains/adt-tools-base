@@ -65,6 +65,8 @@ apply from: "$rootDir/buildSrc/base/publish.gradle"
 apply from: "$rootDir/buildSrc/base/bintray.gradle"
 
 jar.manifest.attributes("Plugin-Version": version)
+jar.manifest.attributes("Inception-Date":"${Calendar.getInstance().get(Calendar.YEAR)}:" +
+        "${Calendar.getInstance().get(Calendar.MONTH)}:${Calendar.getInstance().get(Calendar.DATE)}")
 
 test {
     environment("CUSTOM_REPO", rootProject.file("../out/repo"))
