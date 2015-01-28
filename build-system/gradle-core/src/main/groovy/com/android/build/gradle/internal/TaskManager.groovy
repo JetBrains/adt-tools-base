@@ -59,7 +59,6 @@ import com.android.build.gradle.internal.variant.BaseVariantOutputData
 import com.android.build.gradle.internal.variant.LibraryVariantData
 import com.android.build.gradle.internal.variant.TestVariantData
 import com.android.build.gradle.internal.variant.TestedVariantData
-import com.android.build.gradle.model.NdkComponentModelPlugin
 import com.android.build.gradle.tasks.AidlCompile
 import com.android.build.gradle.tasks.CompatibleScreensManifest
 import com.android.build.gradle.tasks.Dex
@@ -182,6 +181,8 @@ abstract class TaskManager {
 
     private Logger logger
 
+    protected boolean isNdkTaskNeeded = true
+
     // Tasks
     private Task mainPreBuild
 
@@ -235,6 +236,23 @@ abstract class TaskManager {
     abstract public void createTasksForVariantData(
             @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData,
             @Nullable Task assembleTask)
+
+    /**
+     * Returns a collection of buildables that creates native object.
+     *
+     * A buildable is considered to be any object that can be used as the argument to
+     * Task.dependsOn.  This could be a Task or a BuildableModelElement (e.g. BinarySpec).
+     */
+    protected Collection<Object> getNdkBuildable(BaseVariantData variantData) {
+        return Collections.singleton(variantData.ndkCompileTask)
+    }
+
+    /**
+     * Returns the directories of the NDK buildables.
+     */
+    protected Collection<File> getNdkOutputDirectories(BaseVariantData variantData) {
+        return Collections.singleton(variantData.ndkCompileTask.soFolder)
+    }
 
     private BaseExtension getExtension() {
         return extension
@@ -1038,18 +1056,10 @@ abstract class TaskManager {
         VariantConfiguration config = variantData.variantConfiguration
         // for now only the project's compilation output.
         Set<File> set = Sets.newHashSet()
-        if (getExtension().getUseNewNativePlugin()) {
-            NdkComponentModelPlugin ndkPlugin = project.plugins.getPlugin(NdkComponentModelPlugin.class)
-            set.addAll(ndkPlugin.getOutputDirectories(config))
-        } else {
-            set.addAll(variantData.ndkCompileTask.soFolder)
-        }
+        set.addAll(getNdkOutputDirectories(variantData))
         set.addAll(variantData.renderscriptCompileTask.libOutputDir)
         set.addAll(config.libraryJniFolders)
         set.addAll(config.jniLibsList)
-        if (extension.ndkLib != null) {
-            set.addAll(extension.ndkLib.getOutputDirectories(config))
-        }
 
         if (config.mergedFlavor.renderscriptSupportModeEnabled) {
             File rsLibs = androidBuilder.getSupportNativeLibFolder()
@@ -1330,7 +1340,7 @@ abstract class TaskManager {
         createAidlTask(variantData, null /*parcelableDir*/)
 
         // Add NDK tasks
-        if (!getExtension().getUseNewNativePlugin()) {
+        if (isNdkTaskNeeded) {
             createNdkTasks(variantData)
         }
 
@@ -2321,18 +2331,7 @@ abstract class TaskManager {
                 packageApp.dependsOn variantOutputData.packageSplitAbiTask
             }
 
-            // Add dependencies on NDK tasks if NDK plugin is applied.
-            if (extension.getUseNewNativePlugin()) {
-                NdkComponentModelPlugin ndkPlugin = project.plugins.getPlugin(NdkComponentModelPlugin.class)
-                packageApp.dependsOn ndkPlugin.getBinaries(config)
-            } else {
-                packageApp.dependsOn variantData.ndkCompileTask
-            }
-
-            if (extension.ndkLib != null) {
-                project.evaluationDependsOn(extension.ndkLib.targetProjectName)
-                packageApp.dependsOn extension.ndkLib.getBinaries(config)
-            }
+            packageApp.dependsOn getNdkBuildable(variantData)
 
             packageApp.androidBuilder = androidBuilder
 
