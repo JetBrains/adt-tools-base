@@ -19,13 +19,12 @@ package com.android.tools.perflib.heap;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.tools.perflib.heap.io.HprofBuffer;
-import com.google.common.collect.Sets;
+import com.google.common.collect.ImmutableList;
 import com.google.common.primitives.UnsignedBytes;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
 
 public abstract class Instance {
 
@@ -80,14 +79,9 @@ public abstract class Instance {
     }
 
     public final int getCompositeSize() {
-        CollectingVisitor visitor = new CollectingVisitor();
-        this.accept(visitor);
-
-        int size = 0;
-        for (Instance instance : visitor.getVisited()) {
-            size += instance.getSize();
-        }
-        return size;
+        CompositeSizeVisitor visitor = new CompositeSizeVisitor();
+        visitor.doVisit(ImmutableList.of(this));
+        return visitor.getCompositeSize();
     }
 
     //  Returns the instrinsic size of a given object
@@ -209,22 +203,18 @@ public abstract class Instance {
         return mHeap.mSnapshot.mBuffer;
     }
 
-    public static class CollectingVisitor implements Visitor {
 
-        private final Set<Instance> mVisited = Sets.newHashSet();
+    public static class CompositeSizeVisitor extends NonRecursiveVisitor {
 
-        @Override
-        public boolean visitEnter(Instance instance) {
-            //  If we're in the set then we and our children have been visited
-            return mVisited.add(instance);
-        }
+        int mSize = 0;
 
         @Override
-        public void visitLeave(Instance instance) {
+        protected void defaultAction(Instance node) {
+            mSize += node.getSize();
         }
 
-        public Set<Instance> getVisited() {
-            return mVisited;
+        public int getCompositeSize() {
+            return mSize;
         }
-      }
+    }
 }
