@@ -136,6 +136,13 @@ public class DuplicateResourceDetectorTest extends AbstractCheckTest {
                 "Unexpected resource reference type; expected value of type @string/", TEXT));
     }
 
+    public void testMipmapDrawable() throws Exception {
+        // https://code.google.com/p/android/issues/detail?id=109892
+        assertEquals("No warnings.",
+
+                lintProject("res/values/refs2.xml"));
+    }
+
     @Override
     protected void checkReportedError(@NonNull Context context, @NonNull Issue issue,
             @NonNull Severity severity, @Nullable Location location, @NonNull String message) {

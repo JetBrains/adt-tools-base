@@ -180,9 +180,10 @@ public class DuplicateResourceDetector extends ResourceXmlDetector {
                                 typeString.length()) && context.isEnabled(TYPE_MISMATCH)) {
                             ResourceUrl url = ResourceUrl.parse(text.trim());
                             if (url != null && url.type != type &&
-                                // colors can apparently be used as drawables
+                                // colors and mipmaps can apparently be used as drawables
                                 !(type == ResourceType.DRAWABLE
-                                        && url.type == ResourceType.COLOR)) {
+                                        && (url.type == ResourceType.COLOR
+                                            || url.type == ResourceType.MIPMAP))) {
                                 String message = "Unexpected resource reference type; "
                                         + "expected value of type `@" + type + "/`";
                                 context.report(TYPE_MISMATCH, element,
