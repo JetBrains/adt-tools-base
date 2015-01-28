@@ -17,7 +17,6 @@
 package com.android.build.gradle.internal;
 
 import static com.android.SdkConstants.FN_LOCAL_PROPERTIES;
-import static com.android.build.gradle.BasePlugin.TEST_SDK_DIR;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -47,6 +46,9 @@ import java.util.Properties;
  */
 public class SdkHandler {
 
+    // Used for injecting SDK location in tests.
+    public static File sTestSdkFolder;
+
     @NonNull
     private final ILogger logger;
 
@@ -54,6 +56,10 @@ public class SdkHandler {
     private File sdkFolder;
     private File ndkFolder;
     private boolean isRegularSdk = true;
+
+    public static void setTestSdkFolder(File testSdkFolder) {
+        sTestSdkFolder = testSdkFolder;
+    }
 
     public SdkHandler(@NonNull Project project,
                       @NonNull ILogger logger) {
@@ -108,9 +114,9 @@ public class SdkHandler {
 
                 // check if the SDK folder actually exist.
                 // For internal test we provide a fake SDK location through
-                // TEST_SDK_DIR in order to have an SDK, even though we don't use it
+                // setTestSdkFolder in order to have an SDK, even though we don't use it
                 // so in this case we ignore the check.
-                if (TEST_SDK_DIR == null && !sdkFolder.isDirectory()) {
+                if (sTestSdkFolder == null && !sdkFolder.isDirectory()) {
                     throw new RuntimeException(String.format(
                             "The SDK directory '%s' does not exist.", sdkFolder));
                 }
@@ -184,8 +190,8 @@ public class SdkHandler {
     }
 
     private void findLocation(@NonNull Project project) {
-        if (TEST_SDK_DIR != null) {
-            sdkFolder = TEST_SDK_DIR;
+        if (sTestSdkFolder != null) {
+            sdkFolder = sTestSdkFolder;
             return;
         }
 

@@ -22,11 +22,14 @@ import com.android.build.gradle.LibraryExtension
 import com.android.build.gradle.internal.LibraryTaskManager
 import com.android.build.gradle.internal.DependencyManager
 import com.android.build.gradle.internal.TaskManager
+import com.android.build.gradle.internal.variant.ApplicationVariantFactory
 import com.android.build.gradle.internal.variant.LibraryVariantFactory
 import com.android.build.gradle.internal.variant.VariantFactory
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
+import org.gradle.internal.reflect.Instantiator
+import org.gradle.internal.service.ServiceRegistry
 import org.gradle.model.Model
 import org.gradle.model.RuleSource
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry
@@ -81,9 +84,14 @@ public class LibraryComponentModelPlugin implements Plugin<Project> {
             }
 
             @Model
-            VariantFactory createVariantFactory(BasePlugin plugin, BaseExtension extension) {
+            VariantFactory createVariantFactory(
+                    ServiceRegistry serviceRegistry,
+                    BasePlugin plugin,
+                    BaseExtension extension) {
+                Instantiator instantiator = serviceRegistry.get(Instantiator.class);
                 return new LibraryVariantFactory(
-                        plugin,
+                        instantiator,
+                        plugin.androidBuilder,
                         (LibraryExtension) extension);
             }
         }

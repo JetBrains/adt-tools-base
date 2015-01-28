@@ -17,7 +17,6 @@
 package com.android.build.gradle.tasks
 
 import com.android.annotations.NonNull
-import com.android.build.gradle.BasePlugin
 import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.build.gradle.tasks.annotations.ApiDatabase
 import com.android.build.gradle.tasks.annotations.Extractor

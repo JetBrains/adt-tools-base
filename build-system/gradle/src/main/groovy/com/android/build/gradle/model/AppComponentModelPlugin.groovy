@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.model
 
+import com.android.annotations.NonNull
 import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.BasePlugin
 import com.android.build.gradle.internal.ApplicationTaskManager
@@ -25,9 +26,13 @@ import com.android.build.gradle.internal.variant.ApplicationVariantFactory
 import com.android.build.gradle.internal.variant.VariantFactory
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.internal.reflect.Instantiator
+import org.gradle.internal.service.ServiceRegistry
 import org.gradle.model.Model
 import org.gradle.model.RuleSource
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry
+
+import javax.xml.ws.Service
 
 /**
  * Gradle component model plugin class for 'application' projects.
@@ -74,8 +79,15 @@ public class AppComponentModelPlugin implements Plugin<Project> {
 
 
             @Model
-            VariantFactory createVariantFactory(BasePlugin plugin) {
-                return new ApplicationVariantFactory(plugin)
+            VariantFactory createVariantFactory(
+                    ServiceRegistry serviceRegistry,
+                    BasePlugin plugin,
+                    BaseExtension extension) {
+                Instantiator instantiator = serviceRegistry.get(Instantiator.class);
+                return new ApplicationVariantFactory(
+                        instantiator,
+                        plugin.androidBuilder,
+                        extension)
             }
         }
     }
