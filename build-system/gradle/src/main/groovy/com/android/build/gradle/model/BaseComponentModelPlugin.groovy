@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.model
 
+import com.android.annotations.NonNull
 import com.android.annotations.Nullable
 import com.android.build.gradle.AppExtension
 import com.android.build.gradle.BaseExtension
@@ -25,6 +26,7 @@ import com.android.build.gradle.api.AndroidSourceDirectorySet
 import com.android.build.gradle.api.AndroidSourceSet
 import com.android.build.gradle.internal.BuildTypeData
 import com.android.build.gradle.internal.DependencyManager
+import com.android.build.gradle.internal.ExtraModelInfo
 import com.android.build.gradle.internal.ProductFlavorData
 import com.android.build.gradle.internal.SdkHandler
 import com.android.build.gradle.internal.TaskManager
@@ -115,16 +117,12 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
         throw new RuntimeException("getVariantFactory should not called for component model plugin.")
     }
 
-    @Override
-    void apply(Project project) {
-        super.apply(project)
-    }
-
     /**
      * Replace BasePlugin's apply method for component model.
      */
     @Override
-    protected void doApply() {
+    public void apply(Project project) {
+        this.project = project
         project.apply plugin: AndroidComponentModelPlugin
 
         configureProject()
@@ -164,15 +162,17 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
                 @Path("androidProductFlavors") NamedDomainObjectContainer<GroupableProductFlavor> productFlavorContainer,
                 @Path("androidSigningConfigs") NamedDomainObjectContainer<SigningConfig> signingConfigContainer,
                 @Path("isApplication") Boolean isApplication,
+                Project project,
                 BasePlugin plugin) {
             Instantiator instantiator = serviceRegistry.get(Instantiator.class);
-            Project project = plugin.getProject()
 
             Class extensionClass = isApplication ? AppExtension : LibraryExtension
 
             BaseExtension extension = (BaseExtension)instantiator.newInstance(extensionClass,
-                    plugin, (ProjectInternal) project, instantiator,
-                    buildTypeContainer, productFlavorContainer, signingConfigContainer, false)
+                    (ProjectInternal) project, instantiator, plugin.androidBuilder,
+                    plugin.sdkHandler,
+                    buildTypeContainer, productFlavorContainer, signingConfigContainer,
+                    plugin.extraModelInfo, !isApplication)
 
             // Android component model always use new plugin.
             extension.useNewNativePlugin = true
@@ -204,9 +204,8 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
 
         @Model("androidSigningConfigs")
         NamedDomainObjectContainer<SigningConfig> signingConfig(ServiceRegistry serviceRegistry,
-                BasePlugin plugin) {
+                Project project) {
             Instantiator instantiator = serviceRegistry.get(Instantiator.class);
-            Project project = plugin.getProject()
             def signingConfigContainer = project.container(SigningConfig,
                 new SigningConfigFactory(instantiator))
             signingConfigContainer.create(DEBUG)
@@ -223,6 +222,7 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
         @Mutate
         void createAndroidComponents(
                 AndroidComponentSpec androidSpec,
+                ServiceRegistry serviceRegistry,
                 BaseExtension androidExtension,
                 @Path("android.buildTypes") NamedDomainObjectContainer<BuildType> buildTypeContainer,
                 @Path("android.productFlavors") NamedDomainObjectContainer<GroupableProductFlavor> productFlavorContainer,
@@ -233,14 +233,17 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
                 BasePlugin plugin,
                 ToolingModelBuilderRegistry toolingRegistry,
                 @Path("isApplication") Boolean isApplication) {
+            Instantiator instantiator = serviceRegistry.get(Instantiator.class);
+
             plugin.ensureTargetSetup()
 
             VariantManager variantManager = new VariantManager(
                     project,
-                    plugin,
+                    plugin.androidBuilder,
                     androidExtension,
                     variantFactory,
-                    taskManager)
+                    taskManager,
+                    instantiator)
 
             signingConfigContainer.all { SigningConfig signingConfig ->
                 variantManager.addSigningConfig(signingConfig)
@@ -251,10 +254,10 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
             productFlavorContainer.all { GroupableProductFlavor productFlavor ->
                 variantManager.addProductFlavor(productFlavor)
             }
-            plugin.variantManager = variantManager;
 
             ModelBuilder modelBuilder = new ModelBuilder(
-                    plugin.androidBuilder, plugin.variantManager, androidExtension, plugin.extraModelInfo, !isApplication);
+                    plugin.androidBuilder, variantManager, plugin.taskManager,
+                    androidExtension, plugin.extraModelInfo, !isApplication);
             toolingRegistry.register(modelBuilder);
 
 

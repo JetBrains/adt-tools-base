@@ -18,7 +18,8 @@ package com.android.build.gradle.internal.variant;
 import com.android.annotations.NonNull;
 import com.android.build.FilterData;
 import com.android.build.OutputFile;
-import com.android.build.gradle.BasePlugin;
+import com.android.build.gradle.BaseExtension;
+import com.android.build.gradle.internal.TaskManager;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.tasks.Dex;
 import com.android.build.gradle.tasks.PreDex;
@@ -38,9 +39,10 @@ public abstract class ApkVariantData extends BaseVariantData<ApkVariantOutputDat
     public DefaultTask uninstallTask;
 
     protected ApkVariantData(
-            @NonNull BasePlugin basePlugin,
+            @NonNull BaseExtension baseExtension,
+            @NonNull TaskManager taskManager,
             @NonNull GradleVariantConfiguration config) {
-        super(basePlugin, config);
+        super(baseExtension, taskManager, config);
     }
 
     @Override
@@ -48,7 +50,7 @@ public abstract class ApkVariantData extends BaseVariantData<ApkVariantOutputDat
     protected ApkVariantOutputData doCreateOutput(
             OutputFile.OutputType outputType,
             Collection<FilterData> filters) {
-        return new ApkVariantOutputData(outputType, filters, this);
+        return new ApkVariantOutputData(outputType, filters, this, taskManager);
     }
 
     @Override

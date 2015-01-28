@@ -17,12 +17,12 @@
 package com.android.build.gradle.internal.api;
 
 import com.android.annotations.NonNull;
-import com.android.build.gradle.BasePlugin;
 import com.android.build.gradle.api.BaseVariant;
 import com.android.build.gradle.api.TestVariant;
 import com.android.build.gradle.internal.variant.ApkVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.TestVariantData;
+import com.android.builder.core.AndroidBuilder;
 
 import org.gradle.api.DefaultTask;
 
@@ -43,9 +43,9 @@ public class TestVariantImpl extends ApkVariantImpl implements TestVariant {
 
     public TestVariantImpl(
             @NonNull TestVariantData variantData,
-            @NonNull BasePlugin plugin,
+            @NonNull AndroidBuilder androidBuilder,
             @NonNull ReadOnlyObjectProvider readOnlyObjectProvider) {
-        super(plugin, readOnlyObjectProvider);
+        super(androidBuilder, readOnlyObjectProvider);
         this.variantData = variantData;
     }
 

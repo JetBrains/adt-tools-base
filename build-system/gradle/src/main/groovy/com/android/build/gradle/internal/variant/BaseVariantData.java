@@ -20,9 +20,10 @@ import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.build.FilterData;
 import com.android.build.OutputFile;
-import com.android.build.gradle.BasePlugin;
+import com.android.build.gradle.BaseExtension;
 import com.android.build.gradle.api.AndroidSourceSet;
 import com.android.build.gradle.internal.StringHelper;
+import com.android.build.gradle.internal.TaskManager;
 import com.android.build.gradle.internal.api.DefaultAndroidSourceSet;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.coverage.JacocoInstrumentTask;
@@ -74,7 +75,9 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
 
 
     @NonNull
-    protected final BasePlugin basePlugin;
+    protected final BaseExtension baseExtension;
+    @NonNull
+    protected final TaskManager taskManager;
     @NonNull
     private final GradleVariantConfiguration variantConfiguration;
 
@@ -129,14 +132,16 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
 
 
     public BaseVariantData(
-            @NonNull BasePlugin basePlugin,
+            @NonNull BaseExtension baseExtension,
+            @NonNull TaskManager taskManager,
             @NonNull GradleVariantConfiguration variantConfiguration) {
-        this.basePlugin = basePlugin;
+        this.baseExtension = baseExtension;
         this.variantConfiguration = variantConfiguration;
+        this.taskManager = taskManager;
 
         // eventually, this will require a more open ended comparison.
         mSplitHandlingPolicy =
-                basePlugin.getExtension().getGeneratePureSplits()
+                baseExtension.getGeneratePureSplits()
                     && variantConfiguration.getMinSdkVersion().getApiLevel() >= 21
                     ? SplitHandlingPolicy.RELEASE_21_AND_AFTER_POLICY
                     : SplitHandlingPolicy.PRE_21_POLICY;
