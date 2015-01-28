@@ -147,7 +147,7 @@ class LibraryTaskManager extends TaskManager {
                 Sync)
 
         // Add dependencies on NDK tasks if NDK plugin is applied.
-        if (!extension.getUseNewNativePlugin()) {
+        if (isNdkTaskNeeded) {
             // Add NDK tasks
             createNdkTasks(variantData);
             packageJniLibs.dependsOn variantData.ndkCompileTask

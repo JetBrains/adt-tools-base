@@ -19,12 +19,15 @@ package com.android.build.gradle.model
 import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.BasePlugin
 import com.android.build.gradle.LibraryExtension
+import com.android.build.gradle.internal.ExtraModelInfo
 import com.android.build.gradle.internal.LibraryTaskManager
 import com.android.build.gradle.internal.DependencyManager
+import com.android.build.gradle.internal.SdkHandler
 import com.android.build.gradle.internal.TaskManager
 import com.android.build.gradle.internal.variant.ApplicationVariantFactory
 import com.android.build.gradle.internal.variant.LibraryVariantFactory
 import com.android.build.gradle.internal.variant.VariantFactory
+import com.android.builder.core.AndroidBuilder
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
@@ -69,29 +72,31 @@ public class LibraryComponentModelPlugin implements Plugin<Project> {
             TaskManager createTaskManager(
                     BaseExtension androidExtension,
                     Project project,
-                    BasePlugin plugin,
+                    AndroidBuilder androidBuilder,
+                    SdkHandler sdkHandler,
+                    ExtraModelInfo extraModelInfo,
                     ToolingModelBuilderRegistry toolingRegistry) {
-                DependencyManager dependencyManager = new DependencyManager(project, plugin.extraModelInfo)
+                DependencyManager dependencyManager = new DependencyManager(project, extraModelInfo)
 
-                return new LibraryTaskManager(
+                return new LibraryComponentTaskManager(
                         project,
                         project.tasks,
-                        plugin.androidBuilder,
+                        androidBuilder,
                         androidExtension,
-                        plugin.sdkHandler,
+                        sdkHandler,
                         dependencyManager,
-                        toolingRegistry)
+                        toolingRegistry);
             }
 
             @Model
             VariantFactory createVariantFactory(
                     ServiceRegistry serviceRegistry,
-                    BasePlugin plugin,
+                    AndroidBuilder androidBuilder,
                     BaseExtension extension) {
                 Instantiator instantiator = serviceRegistry.get(Instantiator.class);
                 return new LibraryVariantFactory(
                         instantiator,
-                        plugin.androidBuilder,
+                        androidBuilder,
                         (LibraryExtension) extension);
             }
         }

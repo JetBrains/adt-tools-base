@@ -21,9 +21,14 @@ import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.BasePlugin
 import com.android.build.gradle.internal.ApplicationTaskManager
 import com.android.build.gradle.internal.DependencyManager
+import com.android.build.gradle.internal.ExtraModelInfo
+import com.android.build.gradle.internal.SdkHandler
 import com.android.build.gradle.internal.TaskManager
 import com.android.build.gradle.internal.variant.ApplicationVariantFactory
+import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.build.gradle.internal.variant.VariantFactory
+import com.android.builder.core.AndroidBuilder
+import com.google.common.collect.ImmutableList
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.internal.reflect.Instantiator
@@ -63,30 +68,32 @@ public class AppComponentModelPlugin implements Plugin<Project> {
             TaskManager createTaskManager(
                     BaseExtension androidExtension,
                     Project project,
-                    BasePlugin plugin,
+                    AndroidBuilder androidBuilder,
+                    SdkHandler sdkHandler,
+                    ExtraModelInfo extraModelInfo,
                     ToolingModelBuilderRegistry toolingRegistry) {
-                DependencyManager dependencyManager = new DependencyManager(project, plugin.extraModelInfo)
+                DependencyManager dependencyManager = new DependencyManager(project, extraModelInfo)
 
-                return new ApplicationTaskManager(
+                return new ApplicationComponentTaskManager(
                         project,
                         project.tasks,
-                        plugin.androidBuilder,
+                        androidBuilder,
                         androidExtension,
-                        plugin.sdkHandler,
+                        sdkHandler,
                         dependencyManager,
-                        toolingRegistry)
+                        toolingRegistry);
             }
 
 
             @Model
             VariantFactory createVariantFactory(
                     ServiceRegistry serviceRegistry,
-                    BasePlugin plugin,
+                    AndroidBuilder androidBuilder,
                     BaseExtension extension) {
                 Instantiator instantiator = serviceRegistry.get(Instantiator.class);
                 return new ApplicationVariantFactory(
                         instantiator,
-                        plugin.androidBuilder,
+                        androidBuilder,
                         extension)
             }
         }

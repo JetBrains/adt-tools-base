@@ -22,7 +22,6 @@ import com.android.build.gradle.api.AndroidSourceSet
 import com.android.build.gradle.api.BaseVariant
 import com.android.build.gradle.api.TestVariant
 import com.android.build.gradle.internal.CompileOptions
-import com.android.build.gradle.internal.NdkLibrarySpecification
 import com.android.build.gradle.internal.ExtraModelInfo
 import com.android.build.gradle.internal.LoggingUtil
 import com.android.build.gradle.internal.SdkHandler
@@ -124,10 +123,6 @@ public abstract class BaseExtension {
 
     private String defaultPublishConfig = "release"
     private boolean publishNonDefault = false
-
-    NdkLibrarySpecification ndkLib
-
-    private boolean useNewNativePlugin = false
 
     private Closure<Void> variantFilter
 
@@ -622,17 +617,5 @@ public abstract class BaseExtension {
 
     public getEnforceUniquePackageName() {
         return enforceUniquePackageName
-    }
-
-    public boolean getUseNewNativePlugin() {
-        return useNewNativePlugin
-    }
-
-    public void setUseNewNativePlugin(boolean value) {
-        useNewNativePlugin = value
-    }
-
-    public ndkLib(String targetProject) {
-        ndkLib = new NdkLibrarySpecification(project, targetProject);
     }
 }

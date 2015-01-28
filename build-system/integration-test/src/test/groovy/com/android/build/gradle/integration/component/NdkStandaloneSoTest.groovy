@@ -21,12 +21,14 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
+import org.junit.Ignore
 import org.junit.Test
 import org.junit.experimental.categories.Category
 
 /**
  * Assemble tests for ndkStandaloneSo.
  */
+@Ignore("Test is disabled until new dependency model is ready.")
 class NdkStandaloneSoTest {
 
     @ClassRule

@@ -16,34 +16,46 @@
 
 package com.android.build.gradle.model
 
-import com.android.annotations.NonNull
 import com.android.annotations.Nullable
 import com.android.build.gradle.AppExtension
 import com.android.build.gradle.BaseExtension
-import com.android.build.gradle.BasePlugin
 import com.android.build.gradle.LibraryExtension
 import com.android.build.gradle.api.AndroidSourceDirectorySet
 import com.android.build.gradle.api.AndroidSourceSet
 import com.android.build.gradle.internal.BuildTypeData
 import com.android.build.gradle.internal.DependencyManager
 import com.android.build.gradle.internal.ExtraModelInfo
+import com.android.build.gradle.internal.LibraryCache
+import com.android.build.gradle.internal.LoggerWrapper
 import com.android.build.gradle.internal.ProductFlavorData
 import com.android.build.gradle.internal.SdkHandler
 import com.android.build.gradle.internal.TaskManager
 import com.android.build.gradle.internal.VariantManager
+import com.android.build.gradle.internal.coverage.JacocoPlugin
 import com.android.build.gradle.internal.dsl.BuildType
 import com.android.build.gradle.internal.dsl.GroupableProductFlavor
 import com.android.build.gradle.internal.dsl.SigningConfig
 import com.android.build.gradle.internal.dsl.SigningConfigFactory
 import com.android.build.gradle.internal.model.ModelBuilder
+import com.android.build.gradle.internal.process.GradleJavaProcessExecutor
+import com.android.build.gradle.internal.process.GradleProcessExecutor
 import com.android.build.gradle.internal.tasks.DependencyReportTask
 import com.android.build.gradle.internal.tasks.SigningReportTask
 import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.build.gradle.internal.variant.TestVariantData
 import com.android.build.gradle.internal.variant.VariantFactory
 import com.android.build.gradle.ndk.NdkExtension
+import com.android.build.gradle.tasks.JillTask
+import com.android.build.gradle.tasks.PreDex
 import com.android.builder.core.AndroidBuilder
 import com.android.builder.core.BuilderConstants
+import com.android.builder.internal.compiler.JackConversionCache
+import com.android.builder.internal.compiler.PreDexCache
+import com.android.builder.sdk.TargetInfo
+import com.android.ide.common.blame.output.BlameAwareLoggedProcessOutputHandler
+import com.android.ide.common.internal.ExecutorSingleton
+import com.android.ide.common.process.LoggedProcessOutputHandler
+import com.android.utils.ILogger
 import com.google.common.collect.Lists
 import groovy.transform.CompileStatic
 import org.gradle.api.DefaultTask
@@ -52,8 +64,11 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.artifacts.repositories.MavenArtifactRepository
+import org.gradle.api.execution.TaskExecutionGraph
 import org.gradle.api.file.SourceDirectorySet
 import org.gradle.api.internal.project.ProjectInternal
+import org.gradle.api.logging.LogLevel
+import org.gradle.api.plugins.JavaBasePlugin
 import org.gradle.api.tasks.TaskContainer
 import org.gradle.internal.reflect.Instantiator
 import org.gradle.internal.service.ServiceRegistry
@@ -80,41 +95,19 @@ import javax.inject.Inject
 
 import static com.android.builder.core.BuilderConstants.DEBUG
 import static com.android.builder.core.VariantType.ANDROID_TEST
+import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
 
 @CompileStatic
-public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Project> {
+public class BaseComponentModelPlugin implements Plugin<Project> {
+    ToolingModelBuilderRegistry toolingRegistry
     ModelRegistry modelRegistry
 
     @Inject
     protected BaseComponentModelPlugin(
-            Instantiator instantiator,
-            ToolingModelBuilderRegistry registry,
+            ToolingModelBuilderRegistry toolingRegistry,
             ModelRegistry modelRegistry) {
-        super(instantiator, registry);
+        this.toolingRegistry = toolingRegistry
         this.modelRegistry = modelRegistry
-
-    }
-
-    @Override
-    protected TaskManager createTaskManager(
-            Project project,
-            TaskContainer tasks,
-            AndroidBuilder androidBuilder,
-            BaseExtension extension,
-            SdkHandler sdkHandler,
-            DependencyManager dependencyManager,
-            ToolingModelBuilderRegistry toolingRegistry) {
-        throw new RuntimeException("createTaskManager should not called for component model plugin.")
-    }
-
-    @Override
-    protected Class<? extends BaseExtension> getExtensionClass() {
-        throw new RuntimeException("getExtensionClass should not called for component model plugin.")
-    }
-
-    @Override
-    protected VariantFactory getVariantFactory() {
-        throw new RuntimeException("getVariantFactory should not called for component model plugin.")
     }
 
     /**
@@ -122,27 +115,24 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
      */
     @Override
     public void apply(Project project) {
-        this.project = project
         project.apply plugin: AndroidComponentModelPlugin
 
-        configureProject()
+        project.apply plugin: JavaBasePlugin
+        project.apply plugin: JacocoPlugin
+
+        project.tasks.getByName("assemble").description =
+                "Assembles all variants of all applications and secondary packages."
 
         project.apply plugin: NdkComponentModelPlugin
 
         modelRegistry.create(
                 ModelCreators.bridgedInstance(
-                        ModelReference.of("androidBasePlugin", BasePlugin.class), this)
-                                .simpleDescriptor("Android BaseComponentModelPlugin.")
-                                .build(),
-                ModelPath.ROOT)
-
-        modelRegistry.create(
-                ModelCreators.bridgedInstance(
-                        ModelReference.of("toolingRegistry", ToolingModelBuilderRegistry), registry)
+                        ModelReference.of("toolingRegistry", ToolingModelBuilderRegistry), toolingRegistry)
                         .simpleDescriptor("Tooling model builder model registry.")
                         .build(),
                 ModelPath.ROOT)
     }
+
 
     @RuleSource
     static class Rules {
@@ -155,6 +145,69 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
             androidModel.signingConfigs = signingConfigs
         }
 
+        // TODO: Remove code duplicated from BasePlugin.
+        @Model
+        ExtraModelInfo createExtraModelInfo(Project project) {
+            return new ExtraModelInfo(project)
+        }
+
+        @Model
+        SdkHandler createSdkHandler(Project project) {
+            ILogger logger = new LoggerWrapper(project.logger)
+            SdkHandler sdkHandler = new SdkHandler(project, logger)
+
+            // call back on execution. This is called after the whole build is done (not
+            // after the current project is done).
+            // This is will be called for each (android) projects though, so this should support
+            // being called 2+ times.
+            project.gradle.buildFinished {
+                ExecutorSingleton.shutdown()
+                sdkHandler.unload()
+                PreDexCache.getCache().clear(
+                        project.rootProject.file(
+                                "${project.rootProject.buildDir}/${FD_INTERMEDIATES}/dex-cache/cache.xml"),
+                        logger)
+                JackConversionCache.getCache().clear(
+                        project.rootProject.file(
+                                "${project.rootProject.buildDir}/${FD_INTERMEDIATES}/jack-cache/cache.xml"),
+                        logger)
+                LibraryCache.getCache().unload()
+            }
+
+            project.gradle.taskGraph.whenReady { TaskExecutionGraph taskGraph ->
+                for (Task task : taskGraph.allTasks) {
+                    if (task instanceof PreDex) {
+                        PreDexCache.getCache().load(
+                                project.rootProject.file(
+                                        "${project.rootProject.buildDir}/${FD_INTERMEDIATES}/dex-cache/cache.xml"))
+                        break;
+                    } else if (task instanceof JillTask) {
+                        JackConversionCache.getCache().load(
+                                project.rootProject.file(
+                                        "${project.rootProject.buildDir}/${FD_INTERMEDIATES}/jack-cache/cache.xml"))
+                        break;
+                    }
+                }
+            }
+            return sdkHandler
+        }
+
+        @Model
+        AndroidBuilder createAndroidBuilder(Project project) {
+            String creator = "Android Gradle"
+            ILogger logger = new LoggerWrapper(project.logger)
+
+            return new AndroidBuilder(
+                    project == project.rootProject ? project.name : project.path,
+                    creator,
+                    new GradleProcessExecutor(project),
+                    new GradleJavaProcessExecutor(project),
+                    new LoggedProcessOutputHandler(logger),
+                    logger,
+                    project.logger.isEnabled(LogLevel.INFO))
+
+        }
+
         @Model("androidConfig")
         BaseExtension androidConfig(
                 ServiceRegistry serviceRegistry,
@@ -162,21 +215,18 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
                 @Path("androidProductFlavors") NamedDomainObjectContainer<GroupableProductFlavor> productFlavorContainer,
                 @Path("androidSigningConfigs") NamedDomainObjectContainer<SigningConfig> signingConfigContainer,
                 @Path("isApplication") Boolean isApplication,
-                Project project,
-                BasePlugin plugin) {
+                AndroidBuilder androidBuilder,
+                SdkHandler sdkHandler,
+                ExtraModelInfo extraModelInfo,
+                Project project) {
             Instantiator instantiator = serviceRegistry.get(Instantiator.class);
 
             Class extensionClass = isApplication ? AppExtension : LibraryExtension
 
             BaseExtension extension = (BaseExtension)instantiator.newInstance(extensionClass,
-                    (ProjectInternal) project, instantiator, plugin.androidBuilder,
-                    plugin.sdkHandler,
-                    buildTypeContainer, productFlavorContainer, signingConfigContainer,
-                    plugin.extraModelInfo, !isApplication)
-
-            // Android component model always use new plugin.
-            extension.useNewNativePlugin = true
-            plugin.setBaseExtension(extension)
+                    (ProjectInternal) project, instantiator, androidBuilder,
+                    sdkHandler, buildTypeContainer, productFlavorContainer, signingConfigContainer,
+                    extraModelInfo, !isApplication)
 
             return extension
         }
@@ -230,16 +280,25 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
                 VariantFactory variantFactory,
                 TaskManager taskManager,
                 Project project,
-                BasePlugin plugin,
+                AndroidBuilder androidBuilder,
+                SdkHandler sdkHandler,
+                ExtraModelInfo extraModelInfo,
                 ToolingModelBuilderRegistry toolingRegistry,
                 @Path("isApplication") Boolean isApplication) {
             Instantiator instantiator = serviceRegistry.get(Instantiator.class);
 
-            plugin.ensureTargetSetup()
+            // check if the target has been set.
+            TargetInfo targetInfo = androidBuilder.getTargetInfo()
+            if (targetInfo == null) {
+                sdkHandler.initTarget(
+                        androidExtension.getCompileSdkVersion(),
+                        androidExtension.buildToolsRevision,
+                        androidBuilder)
+            }
 
             VariantManager variantManager = new VariantManager(
                     project,
-                    plugin.androidBuilder,
+                    androidBuilder,
                     androidExtension,
                     variantFactory,
                     taskManager,
@@ -256,15 +315,14 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
             }
 
             ModelBuilder modelBuilder = new ModelBuilder(
-                    plugin.androidBuilder, variantManager, plugin.taskManager,
-                    androidExtension, plugin.extraModelInfo, !isApplication);
+                    androidBuilder, variantManager, taskManager,
+                    androidExtension, extraModelInfo, !isApplication);
             toolingRegistry.register(modelBuilder);
 
 
             def spec = androidSpec as DefaultAndroidComponentSpec
             spec.extension = androidExtension
             spec.variantManager = variantManager
-            spec.signingOverride = plugin.getSigningOverride()
         }
 
         @BinaryType
@@ -295,7 +353,8 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
                 BinaryContainer binaries,
                 AndroidComponentSpec androidSpec,
                 TaskManager taskManager,
-                BasePlugin plugin,
+                SdkHandler sdkHandler,
+                Project project,
                 AndroidComponentModelSourceSet androidSources) {
             DefaultAndroidComponentSpec spec = (DefaultAndroidComponentSpec) androidSpec
             VariantManager variantManager = spec.variantManager
@@ -306,8 +365,8 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
             taskManager.createTasks()
 
             // setup SDK repositories.
-            for (File file : plugin.sdkHandler.sdkLoader.repositories) {
-                plugin.project.repositories.maven { MavenArtifactRepository repo ->
+            for (File file : sdkHandler.sdkLoader.repositories) {
+                project.repositories.maven { MavenArtifactRepository repo ->
                     repo.url = file.toURI()
                 }
             }
@@ -320,8 +379,7 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
             binaries.withType(AndroidBinary) { DefaultAndroidBinary binary ->
                 BaseVariantData variantData = variantManager.createVariantData(
                         binary.buildType,
-                        binary.productFlavors,
-                        plugin.signingOverride)
+                        binary.productFlavors)
                 binary.variantData = variantData
                 variantManager.getVariantDataList().add(variantData)
                 variantManager.createTasksForVariantData(tasks, variantData)
@@ -332,9 +390,8 @@ public class BaseComponentModelPlugin extends BasePlugin implements Plugin<Proje
                 def binary = binarySpec as DefaultAndroidTestBinary
                 TestVariantData testVariantData =
                         variantManager.createTestVariantData(
-                            (binary.testedBinary as DefaultAndroidBinary).variantData,
-                            plugin.signingOverride as com.android.builder.model.SigningConfig,
-                            ANDROID_TEST)
+                                (binary.testedBinary as DefaultAndroidBinary).variantData,
+                                ANDROID_TEST)
                 variantManager.getVariantDataList().add(testVariantData);
                 variantManager.createTasksForVariantData(tasks, testVariantData)
             }
