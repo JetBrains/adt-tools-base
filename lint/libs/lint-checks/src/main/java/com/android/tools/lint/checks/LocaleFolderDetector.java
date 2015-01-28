@@ -185,7 +185,7 @@ public class LocaleFolderDetector extends Detector implements Detector.ResourceF
                     if (languageAlpha2 != null) {
                         String message = String.format("For compatibility, should use 2-letter "
                                        + "language codes when available; use `%1$s` instead of `%2$s`",
-                                language, languageAlpha2);
+                                languageAlpha2, language);
                         context.report(USE_ALPHA_2, Location.create(context.file), message);
                     }
                 }
@@ -196,7 +196,7 @@ public class LocaleFolderDetector extends Detector implements Detector.ResourceF
                     if (regionAlpha2 != null) {
                         String message = String.format("For compatibility, should use 2-letter "
                                         + "region codes when available; use `%1$s` instead of `%2$s`",
-                                region, regionAlpha2);
+                                regionAlpha2 , region);
                         context.report(USE_ALPHA_2, Location.create(context.file), message);
 
                     }
