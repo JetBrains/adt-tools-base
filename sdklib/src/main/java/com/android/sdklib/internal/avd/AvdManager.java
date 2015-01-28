@@ -1694,6 +1694,9 @@ public class AvdManager {
             }
         }
 
+        // Check the system image from the target
+        ISystemImage sysImage = target.getSystemImage(tag, abiType);
+
         // Get the device status if this AVD is associated with a device
         DeviceStatus deviceStatus = null;
         boolean updateHashV2 = false;
@@ -1750,6 +1753,8 @@ public class AvdManager {
             status = AvdStatus.ERROR_DEVICE_CHANGED;
         } else if (deviceStatus == DeviceStatus.MISSING) {
             status = AvdStatus.ERROR_DEVICE_MISSING;
+        } else if (sysImage == null) {
+            status = AvdStatus.ERROR_IMAGE_MISSING;
         } else {
             status = AvdStatus.OK;
         }
