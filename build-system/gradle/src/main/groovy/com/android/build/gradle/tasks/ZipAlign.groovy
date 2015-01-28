@@ -19,8 +19,10 @@ import com.android.build.gradle.internal.tasks.OutputFileTask
 import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.OutputFile
+import org.gradle.api.tasks.ParallelizableTask
 import org.gradle.api.tasks.TaskAction
 
+@ParallelizableTask
 public class ZipAlign extends DefaultTask implements OutputFileTask {
 
     // ----- PUBLIC TASK API -----

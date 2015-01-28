@@ -24,7 +24,9 @@ import com.android.ide.common.res2.MergedAssetWriter
 import com.android.ide.common.res2.MergingException
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.OutputDirectory
+import org.gradle.api.tasks.ParallelizableTask
 
+@ParallelizableTask
 public class MergeAssets extends IncrementalTask {
 
     // ----- PUBLIC TASK API -----

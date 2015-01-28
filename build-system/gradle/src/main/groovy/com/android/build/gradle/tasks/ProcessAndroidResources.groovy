@@ -27,7 +27,9 @@ import org.gradle.api.tasks.Nested
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.OutputFile
+import org.gradle.api.tasks.ParallelizableTask
 
+@ParallelizableTask
 public class ProcessAndroidResources extends IncrementalTask {
 
     // ----- PUBLIC TASK API -----
