@@ -21,15 +21,19 @@ import com.android.annotations.Nullable;
 import com.android.builder.model.Dependencies;
 import com.android.builder.model.JavaArtifact;
 import com.android.builder.model.SourceProvider;
+import com.google.common.collect.Sets;
 
 import java.io.File;
 import java.io.Serializable;
+import java.util.Set;
 
 /**
  * Implementation of JavaArtifact that is serializable
  */
 public class JavaArtifactImpl extends BaseArtifactImpl implements JavaArtifact, Serializable {
     private static final long serialVersionUID = 1L;
+
+    private final Set<String> ideSetupTaskNames;
 
     public static JavaArtifactImpl clone(@NonNull JavaArtifact javaArtifact) {
         SourceProvider variantSP = javaArtifact.getVariantSourceProvider();
@@ -39,6 +43,7 @@ public class JavaArtifactImpl extends BaseArtifactImpl implements JavaArtifact, 
                 javaArtifact.getName(),
                 javaArtifact.getAssembleTaskName(),
                 javaArtifact.getCompileTaskName(),
+                javaArtifact.getIdeSetupTaskNames(),
                 javaArtifact.getClassesFolder(),
                 DependenciesImpl.cloneDependenciesForJavaArtifacts(javaArtifact.getDependencies()),
                 variantSP != null ? SourceProviderImpl.cloneProvider(variantSP) : null,
@@ -48,11 +53,19 @@ public class JavaArtifactImpl extends BaseArtifactImpl implements JavaArtifact, 
     public JavaArtifactImpl(@NonNull String name,
                             @NonNull String assembleTaskName,
                             @NonNull String compileTaskName,
+                            @NonNull Iterable<String> ideSetupTaskNames,
                             @NonNull File classesFolder,
                             @NonNull Dependencies dependencies,
                             @Nullable SourceProvider variantSourceProvider,
                             @Nullable SourceProvider multiFlavorSourceProviders) {
         super(name, assembleTaskName, compileTaskName, classesFolder, dependencies,
                 variantSourceProvider, multiFlavorSourceProviders);
+        this.ideSetupTaskNames = Sets.newHashSet(ideSetupTaskNames);
+    }
+
+    @NonNull
+    @Override
+    public Set<String> getIdeSetupTaskNames() {
+        return ideSetupTaskNames;
     }
 }
