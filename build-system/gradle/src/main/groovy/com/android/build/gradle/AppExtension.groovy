@@ -15,11 +15,15 @@
  */
 package com.android.build.gradle
 
+import com.android.annotations.NonNull
 import com.android.build.gradle.api.ApplicationVariant
 import com.android.build.gradle.api.BaseVariant
+import com.android.build.gradle.internal.ExtraModelInfo
+import com.android.build.gradle.internal.SdkHandler
 import com.android.build.gradle.internal.dsl.BuildType
 import com.android.build.gradle.internal.dsl.GroupableProductFlavor
 import com.android.build.gradle.internal.dsl.SigningConfig
+import com.android.builder.core.AndroidBuilder
 import groovy.transform.CompileStatic
 import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.internal.DefaultDomainObjectSet
@@ -36,12 +40,18 @@ public class AppExtension extends BaseExtension {
     private final DefaultDomainObjectSet<ApplicationVariant> applicationVariantList =
         new DefaultDomainObjectSet<ApplicationVariant>(ApplicationVariant.class)
 
-    AppExtension(AppPlugin plugin, ProjectInternal project, Instantiator instantiator,
-                 NamedDomainObjectContainer<BuildType> buildTypes,
-                 NamedDomainObjectContainer<GroupableProductFlavor> productFlavors,
-                 NamedDomainObjectContainer<SigningConfig> signingConfigs,
-                 boolean isLibrary) {
-        super(plugin, project, instantiator, buildTypes, productFlavors, signingConfigs, isLibrary)
+    AppExtension(
+            @NonNull ProjectInternal project,
+            @NonNull Instantiator instantiator,
+            @NonNull AndroidBuilder androidBuilder,
+            @NonNull SdkHandler sdkHandler,
+            @NonNull NamedDomainObjectContainer<BuildType> buildTypes,
+            @NonNull NamedDomainObjectContainer<GroupableProductFlavor> productFlavors,
+            @NonNull NamedDomainObjectContainer<SigningConfig> signingConfigs,
+            @NonNull ExtraModelInfo extraModelInfo,
+            boolean isLibrary) {
+        super(project, instantiator, androidBuilder, sdkHandler, buildTypes, productFlavors,
+                signingConfigs, extraModelInfo, isLibrary)
     }
 
     /**

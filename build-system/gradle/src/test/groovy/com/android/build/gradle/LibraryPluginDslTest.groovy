@@ -18,6 +18,7 @@ package com.android.build.gradle
 import com.android.annotations.NonNull
 import com.android.build.gradle.api.LibraryVariant
 import com.android.build.gradle.api.TestVariant
+import com.android.build.gradle.internal.SdkHandler
 import com.android.build.gradle.internal.test.BaseTest
 import com.android.builder.model.SigningConfig
 import org.gradle.api.Project
@@ -30,7 +31,7 @@ public class LibraryPluginDslTest extends BaseTest {
 
     @Override
     protected void setUp() throws Exception {
-        BasePlugin.TEST_SDK_DIR = new File("foo")
+        SdkHandler.testSdkFolder = new File("foo")
     }
 
     public void testBasic() {

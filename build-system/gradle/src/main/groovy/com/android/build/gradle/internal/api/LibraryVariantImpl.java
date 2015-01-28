@@ -18,11 +18,11 @@ package com.android.build.gradle.internal.api;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.gradle.BasePlugin;
 import com.android.build.gradle.api.LibraryVariant;
 import com.android.build.gradle.api.TestVariant;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.LibraryVariantData;
+import com.android.builder.core.AndroidBuilder;
 
 /**
  * implementation of the {@link LibraryVariant} interface around a
@@ -40,9 +40,9 @@ public class LibraryVariantImpl extends BaseVariantImpl implements LibraryVarian
 
     public LibraryVariantImpl(
             @NonNull LibraryVariantData variantData,
-            @NonNull BasePlugin plugin,
+            @NonNull AndroidBuilder androidBuilder,
             @NonNull ReadOnlyObjectProvider readOnlyObjectProvider) {
-        super(plugin, readOnlyObjectProvider);
+        super(androidBuilder, readOnlyObjectProvider);
         this.variantData = variantData;
     }
 
