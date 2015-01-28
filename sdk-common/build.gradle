@@ -18,6 +18,7 @@ dependencies {
     compile project(':base:sdklib')
     compile project(':base:builder-test-api')
     compile project(':base:builder-model')
+    compile 'com.google.code.gson:gson:2.2.4'
 
     testCompile 'junit:junit:3.8.1'
     testCompile project(':base:sdklib').sourceSets.test.output
