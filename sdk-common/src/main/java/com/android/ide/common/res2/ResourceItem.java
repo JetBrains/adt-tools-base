@@ -160,7 +160,7 @@ public class ResourceItem extends DataItem<ResourceFile>
             return new FolderConfiguration();
         }
 
-        return FolderConfiguration.getConfigFromQualifiers(Splitter.on('-').split(qualifier));
+        return FolderConfiguration.getConfigForQualifierString(qualifier);
     }
 
     /**

@@ -23,6 +23,7 @@ import static com.android.SdkConstants.DOT_XML;
 import static com.android.SdkConstants.LAYOUT_RESOURCE_PREFIX;
 import static com.android.SdkConstants.NEW_ID_PREFIX;
 import static com.android.SdkConstants.VIEW_INCLUDE;
+import static com.android.ide.common.resources.configuration.FolderConfiguration.QUALIFIER_SPLITTER;
 
 import com.android.annotations.NonNull;
 import com.android.resources.ResourceFolderType;
@@ -463,17 +464,13 @@ public class DuplicateIdDetector extends LayoutDetector {
                 return true;
             }
 
-            String[] fromQualifiers = fromFolder.getName().split("-"); //$NON-NLS-1$
-            String[] toQualifiers = toFolder.getName().split("-"); //$NON-NLS-1$
+            Iterable<String> fromQualifiers = QUALIFIER_SPLITTER.split(fromFolder.getName());
+            Iterable<String> toQualifiers = QUALIFIER_SPLITTER.split(toFolder.getName());
 
-            if (isPortrait(fromQualifiers) != isPortrait(toQualifiers)) {
-                return false;
-            }
-
-            return true;
+            return isPortrait(fromQualifiers) == isPortrait(toQualifiers);
         }
 
-        private boolean isPortrait(String[] qualifiers) {
+        private boolean isPortrait(Iterable<String> qualifiers) {
             for (String qualifier : qualifiers) {
                 if (qualifier.equals("port")) { //$NON-NLS-1$
                     return true;
