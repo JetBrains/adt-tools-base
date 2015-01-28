@@ -25,7 +25,6 @@ import static com.android.builder.core.VariantType.UNIT_TEST;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.BaseExtension;
-import com.android.build.gradle.BasePlugin;
 import com.android.build.gradle.api.AndroidSourceSet;
 import com.android.build.gradle.api.BaseVariant;
 import com.android.build.gradle.internal.ProductFlavorData.ConfigurationProviderImpl;
@@ -47,6 +46,7 @@ import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.internal.variant.TestVariantData;
 import com.android.build.gradle.internal.variant.TestedVariantData;
 import com.android.build.gradle.internal.variant.VariantFactory;
+import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.VariantType;
 import com.google.common.base.Function;
 import com.google.common.collect.Iterables;
@@ -57,6 +57,7 @@ import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
 import org.gradle.api.tasks.TaskContainer;
+import org.gradle.internal.reflect.Instantiator;
 
 import java.util.Collections;
 import java.util.List;
@@ -76,13 +77,15 @@ public class VariantManager implements VariantModel {
     @NonNull
     private final Project project;
     @NonNull
-    private final BasePlugin basePlugin;
+    private final AndroidBuilder androidBuilder;
     @NonNull
     private final BaseExtension extension;
     @NonNull
     private final VariantFactory variantFactory;
     @NonNull
     private final TaskManager taskManager;
+    @NonNull
+    private final Instantiator instantiator;
     @NonNull
     private ProductFlavorData<ProductFlavor> defaultConfigData;
     @NonNull
@@ -102,15 +105,17 @@ public class VariantManager implements VariantModel {
 
     public VariantManager(
             @NonNull Project project,
-            @NonNull BasePlugin basePlugin,
+            @NonNull AndroidBuilder androidBuilder,
             @NonNull BaseExtension extension,
             @NonNull VariantFactory variantFactory,
-            @NonNull TaskManager taskManager) {
+            @NonNull TaskManager taskManager,
+            @NonNull Instantiator instantiator) {
         this.extension = extension;
-        this.basePlugin = basePlugin;
+        this.androidBuilder = androidBuilder;
         this.project = project;
         this.variantFactory = variantFactory;
         this.taskManager = taskManager;
+        this.instantiator = instantiator;
 
         DefaultAndroidSourceSet mainSourceSet =
                 (DefaultAndroidSourceSet) extension.getSourceSets().getByName(extension.getDefaultConfig().getName());
@@ -391,7 +396,7 @@ public class VariantManager implements VariantModel {
             @NonNull com.android.builder.model.BuildType buildType,
             @NonNull List<com.android.build.gradle.api.GroupableProductFlavor> productFlavorList,
             @Nullable com.android.builder.model.SigningConfig signingOverride) {
-        Splits splits = basePlugin.getExtension().getSplits();
+        Splits splits = extension.getSplits();
         Set<String> densities = splits.getDensityFilters();
         Set<String> abis = splits.getAbiFilters();
 
@@ -404,7 +409,7 @@ public class VariantManager implements VariantModel {
 
         BuildTypeData buildTypeData = buildTypes.get(buildType.getName());
 
-        Set<String> compatibleScreens = basePlugin.getExtension().getSplits().getDensity()
+        Set<String> compatibleScreens = extension.getSplits().getDensity()
                 .getCompatibleScreens();
 
         GradleVariantConfiguration variantConfig = new GradleVariantConfiguration(
@@ -476,7 +481,7 @@ public class VariantManager implements VariantModel {
 
         // Done. Create the variant and get its internal storage object.
         BaseVariantData<?> variantData = variantFactory.createVariantData(variantConfig,
-                densities, abis, compatibleScreens);
+                densities, abis, compatibleScreens, taskManager);
 
         VariantDependencies variantDep = VariantDependencies.compute(
                 project, variantConfig.getFullName(),
@@ -538,7 +543,7 @@ public class VariantManager implements VariantModel {
 
         // create the internal storage for this variant.
         TestVariantData testVariantData = new TestVariantData(
-                basePlugin, testVariantConfig, (TestedVariantData) testedVariantData);
+                extension, taskManager, testVariantConfig, (TestedVariantData) testedVariantData);
         // link the testVariant to the tested variant in the other direction
         ((TestedVariantData) testedVariantData).setTestVariantData(testVariantData, type);
 
@@ -566,7 +571,7 @@ public class VariantManager implements VariantModel {
 
         ProductFlavor defaultConfig = defaultConfigData.getProductFlavor();
 
-        Closure<Void> variantFilterClosure = basePlugin.getExtension().getVariantFilter();
+        Closure<Void> variantFilterClosure = extension.getVariantFilter();
 
         for (BuildTypeData buildTypeData : buildTypes.values()) {
             boolean ignore = false;
@@ -624,15 +629,15 @@ public class VariantManager implements VariantModel {
                     ((TestedVariantData) variantData).getTestVariantData(ANDROID_TEST);
 
             if (androidTestVariantData != null) {
-                TestVariantImpl androidTestVariant = basePlugin.getInstantiator().newInstance(
+                TestVariantImpl androidTestVariant = instantiator.newInstance(
                         TestVariantImpl.class,
                         androidTestVariantData,
-                        basePlugin,
+                        androidBuilder,
                         readOnlyObjectProvider);
 
                 // add the test output.
                 ApplicationVariantFactory.createApkOutputApiObjects(
-                        basePlugin,
+                        instantiator,
                         androidTestVariantData,
                         androidTestVariant);
 

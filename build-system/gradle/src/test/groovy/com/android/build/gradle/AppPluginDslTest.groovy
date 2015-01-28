@@ -21,6 +21,8 @@ import com.android.build.gradle.api.ApkVariantOutput
 import com.android.build.gradle.api.ApplicationVariant
 import com.android.build.gradle.api.BaseVariantOutput
 import com.android.build.gradle.api.TestVariant
+import com.android.build.gradle.internal.SdkHandler
+import com.android.build.gradle.internal.VariantManager
 import com.android.build.gradle.internal.core.GradleVariantConfiguration
 import com.android.build.gradle.internal.test.BaseTest
 import org.gradle.api.JavaVersion
@@ -37,7 +39,7 @@ public class AppPluginDslTest extends BaseTest {
 
     @Override
     protected void setUp() throws Exception {
-        BasePlugin.TEST_SDK_DIR = new File("foo")
+        SdkHandler.testSdkFolder = new File("foo")
     }
 
     public void testBasic() {
@@ -53,7 +55,7 @@ public class AppPluginDslTest extends BaseTest {
         AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
 
         plugin.createAndroidTasks(false)
-        assertEquals(DEFAULT_VARIANTS.size(), plugin.variantDataList.size())
+        assertEquals(DEFAULT_VARIANTS.size(), plugin.variantManager.variantDataList.size())
 
         // we can now call this since the variants/tasks have been created
         Set<ApplicationVariant> variants = project.android.applicationVariants
@@ -82,7 +84,7 @@ public class AppPluginDslTest extends BaseTest {
         AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
 
         plugin.createAndroidTasks(false)
-        assertEquals(DEFAULT_VARIANTS.size(), plugin.variantDataList.size())
+        assertEquals(DEFAULT_VARIANTS.size(), plugin.variantManager.variantDataList.size())
 
         // we can now call this since the variants/tasks have been created
         Set<ApplicationVariant> variants = project.android.applicationVariants
@@ -108,7 +110,7 @@ public class AppPluginDslTest extends BaseTest {
         AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
 
         plugin.createAndroidTasks(false)
-        assertEquals(DEFAULT_VARIANTS.size(), plugin.variantDataList.size())
+        assertEquals(DEFAULT_VARIANTS.size(), plugin.variantManager.variantDataList.size())
 
         // we can now call this since the variants/tasks have been created
         Set<ApplicationVariant> variants = project.android.applicationVariants
@@ -164,7 +166,7 @@ public class AppPluginDslTest extends BaseTest {
         plugin.createAndroidTasks(false)
         assertEquals(
                 countVariants(appVariants: 3, unitTest: 3, androidTests: 1),
-                plugin.variantDataList.size())
+                plugin.variantManager.variantDataList.size())
 
         // we can now call this since the variants/tasks have been created
 
@@ -205,7 +207,7 @@ public class AppPluginDslTest extends BaseTest {
         plugin.createAndroidTasks(false)
         assertEquals(
                 countVariants(appVariants: 4, unitTest: 4, androidTests: 2),
-                plugin.variantDataList.size())
+                plugin.variantManager.variantDataList.size())
 
         // we can now call this since the variants/tasks have been created
 
@@ -259,7 +261,7 @@ public class AppPluginDslTest extends BaseTest {
         plugin.createAndroidTasks(false)
         assertEquals(
                 countVariants(appVariants: 12, unitTest: 12, androidTests: 6),
-                plugin.variantDataList.size())
+                plugin.variantManager.variantDataList.size())
 
         // we can now call this since the variants/tasks have been created
 
@@ -323,7 +325,7 @@ public class AppPluginDslTest extends BaseTest {
         AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
 
         plugin.createAndroidTasks(false)
-        assertEquals(DEFAULT_VARIANTS.size(), plugin.variantDataList.size())
+        assertEquals(DEFAULT_VARIANTS.size(), plugin.variantManager.variantDataList.size())
 
         // we can now call this since the variants/tasks have been created
 
