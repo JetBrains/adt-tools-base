@@ -65,8 +65,8 @@ public class LocaleFolderDetectorTest extends AbstractCheckTest {
 
     public void testAlpha3() throws Exception {
         assertEquals(""
-                + "res/values-b+nor+NOR: Warning: For compatibility, should use 2-letter language codes when available; use nor instead of no [UseAlpha2]\n"
-                + "res/values-b+nor+NOR: Warning: For compatibility, should use 2-letter region codes when available; use NOR instead of NO [UseAlpha2]\n"
+                + "res/values-b+nor+NOR: Warning: For compatibility, should use 2-letter language codes when available; use no instead of nor [UseAlpha2]\n"
+                + "res/values-b+nor+NOR: Warning: For compatibility, should use 2-letter region codes when available; use NO instead of NOR [UseAlpha2]\n"
                 + "0 errors, 2 warnings\n",
 
                 lintProject(
