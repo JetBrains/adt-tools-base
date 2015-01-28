@@ -106,8 +106,7 @@ public class DominatorsTest extends TestCase {
         mSnapshot.computeDominators();
 
         assertEquals(45, mSnapshot.findReference(1).getRetainedSize(1));
-        assertEquals(44, mSnapshot.findReference(2).getRetainedSize(1));
-        for (int i = 3; i <= 9; i++) {
+        for (int i = 2; i <= 9; i++) {
             assertEquals(i, mSnapshot.findReference(i).getRetainedSize(1));
         }
     }
