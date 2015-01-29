@@ -19,7 +19,11 @@ package com.android.build.gradle.internal.dsl;
 import static com.android.build.OutputFile.NO_FILTER;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+import com.android.build.OutputFile;
+import com.google.common.collect.ImmutableSet;
 
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -51,5 +55,22 @@ public class AbiSplitOptions extends SplitOptions {
         }
 
         return list;
+    }
+
+    /**
+     * Returns the list of actual abi filters, each value of the collection is guaranteed to be non
+     * null and of the possible API value.
+     * @param allFilters list of applicable filters {@see #getApplicationFilters}
+     */
+    @NonNull
+    public static ImmutableSet<String> getAbiFilters(@NonNull Set<String> allFilters) {
+        ImmutableSet.Builder<String> filters = ImmutableSet.builder();
+        for (@Nullable String abi : allFilters) {
+            // use object equality since abi can be null.
+            if (abi != OutputFile.NO_FILTER) {
+                filters.add(abi);
+            }
+        }
+        return filters.build();
     }
 }
