@@ -362,7 +362,6 @@ public class VariantManager implements VariantModel {
 
     /**
      * Create all variants.
-     *
      */
     public void populateVariantDataList() {
         // Add a compile lint task
