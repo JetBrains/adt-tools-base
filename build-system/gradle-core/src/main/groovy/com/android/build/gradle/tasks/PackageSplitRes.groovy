@@ -76,8 +76,6 @@ class PackageSplitRes extends BaseTask {
                 String filePath = "${project.archivesBaseName}-${outputBaseName}_${density}";
                 for (File potentialFile : potentialFiles) {
                     // density related APKs have a suffix.
-                    // see https://cs.corp.google.com/#android/frameworks/base/tools/aapt/
-                    // AaptConfig.cpp&sq=package:android&q=AaptConfig&l=238
                    if (potentialFile.getName().startsWith(filePath)) {
                        builder.add(new ApkOutputFile(
                                OutputFile.OutputType.SPLIT,
