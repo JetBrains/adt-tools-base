@@ -124,6 +124,11 @@ public class LayoutLog {
     public static final String TAG_XFERMODE = "xfermode";
 
     /**
+     * Tag for reporting missing assets, or problem loading them.
+     */
+    public static final String TAG_MISSING_ASSET = "missingasset";
+
+    /**
      * Logs a warning.
      * @param tag a tag describing the type of the warning
      * @param message the message of the warning
