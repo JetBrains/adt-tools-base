@@ -36,7 +36,7 @@ import org.gradle.internal.reflect.Instantiator
 
 /**
  */
-public class LibraryVariantFactory implements VariantFactory<LibraryVariantData> {
+public class LibraryVariantFactory implements VariantFactory {
 
     @NonNull
     Instantiator instantiator
@@ -56,7 +56,7 @@ public class LibraryVariantFactory implements VariantFactory<LibraryVariantData>
 
     @Override
     @NonNull
-    public LibraryVariantData createVariantData(
+    public BaseVariantData createVariantData(
             @NonNull GradleVariantConfiguration variantConfiguration,
             @NonNull Set<String> densities,
             @NonNull Set<String> abis,

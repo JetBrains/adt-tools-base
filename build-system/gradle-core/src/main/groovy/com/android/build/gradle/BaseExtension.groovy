@@ -127,7 +127,6 @@ public abstract class BaseExtension {
 
     private String defaultPublishConfig = "release"
     private boolean publishNonDefault = false
-    private boolean useNewNativePlugin = false
 
     private Closure<Void> variantFilter
 
@@ -631,13 +630,5 @@ public abstract class BaseExtension {
 
     public getEnforceUniquePackageName() {
         return enforceUniquePackageName
-    }
-
-    public boolean getUseNewNativePlugin() {
-        return useNewNativePlugin
-    }
-
-    public void setUseNewNativePlugin(boolean value) {
-        useNewNativePlugin = value
     }
 }
