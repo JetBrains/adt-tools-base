@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.build.FilterData;
 import com.android.build.OutputFile;
 import com.android.build.gradle.api.ApkOutputFile;
+import com.android.build.gradle.internal.TaskManager;
 import com.android.build.gradle.tasks.PackageApplication;
 import com.android.build.gradle.tasks.SplitZipAlign;
 import com.android.build.gradle.tasks.ZipAlign;
@@ -37,14 +38,17 @@ public class ApkVariantOutputData extends BaseVariantOutputData {
     public ZipAlign zipAlignTask;
     public SplitZipAlign splitZipAlign;
 
+    private TaskManager taskManager;
     private int versionCodeOverride = -1;
     private String versionNameOverride = null;
 
     public ApkVariantOutputData(
             @NonNull OutputFile.OutputType outputType,
             @NonNull Collection<FilterData> filters,
-            @NonNull BaseVariantData variantData) {
+            @NonNull BaseVariantData variantData,
+            @NonNull TaskManager taskManager) {
         super(outputType, filters, variantData);
+        this.taskManager = taskManager;
     }
 
     @Override
@@ -90,7 +94,7 @@ public class ApkVariantOutputData extends BaseVariantOutputData {
                     "ZipAlign task for variant '%s' already exists.", variantData.getName()));
         }
 
-        zipAlignTask = variantData.basePlugin.getTaskManager().createZipAlignTask(taskName, inputFile, outputFile);
+        zipAlignTask = taskManager.createZipAlignTask(taskName, inputFile, outputFile);
 
         // setup dependencies
         assembleTask.dependsOn(zipAlignTask);

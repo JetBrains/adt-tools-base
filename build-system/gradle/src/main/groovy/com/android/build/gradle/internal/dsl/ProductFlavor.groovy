@@ -18,7 +18,7 @@ package com.android.build.gradle.internal.dsl
 
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
-import com.android.build.gradle.BasePlugin
+import com.android.build.gradle.internal.LoggingUtil
 import com.android.build.gradle.internal.core.NdkConfig
 import com.android.builder.core.AndroidBuilder
 import com.android.builder.core.BuilderConstants
@@ -248,7 +248,7 @@ class ProductFlavor extends DefaultProductFlavor {
 
     void ndk(Action<NdkOptions> action) {
         action.execute(ndkConfig)
-        BasePlugin.displayDeprecationWarning(
+        LoggingUtil.displayDeprecationWarning(
                 logger,
                 project,
                 "Current NDK support is deprecated.  Alternative will be provided in the future.");
