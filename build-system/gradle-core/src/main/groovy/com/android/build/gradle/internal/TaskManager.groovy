@@ -874,7 +874,7 @@ abstract class TaskManager {
             if (generateResourcePackage) {
                 conventionMapping(processResources).map("packageOutputFile") {
                     project.file(
-                            "$project.buildDir/${FD_INTERMEDIATES}/res/resources-${outputBaseName}.ap_")
+                            "$project.buildDir/${FD_INTERMEDIATES}/resources/resources-${outputBaseName}.ap_")
                 }
             }
 
@@ -924,7 +924,7 @@ abstract class TaskManager {
                 project.tasks.create("package${config.fullName.capitalize()}SplitResources",
                         PackageSplitRes);
         variantOutputData.packageSplitResourcesTask.inputDirectory =
-                new File("$project.buildDir/${FD_INTERMEDIATES}/res")
+                variantOutputData.processResourcesTask.packageOutputFile.getParentFile()
         variantOutputData.packageSplitResourcesTask.densitySplits = densityFilters
         variantOutputData.packageSplitResourcesTask.languageSplits = languageFilters
         variantOutputData.packageSplitResourcesTask.outputBaseName = config.baseName
@@ -2810,8 +2810,8 @@ abstract class TaskManager {
 
         String outputBaseName = variantOutputData.baseName
         conventionMapping(task).map("compressedResources") {
-            project.file(
-                    "$project.buildDir/${FD_INTERMEDIATES}/res/resources-${outputBaseName}-stripped.ap_")
+            project.file("$project.buildDir/${FD_INTERMEDIATES}/resources/" +
+                            "resources-${outputBaseName}-stripped.ap_")
         }
 
         conventionMapping(task).map("uncompressedResources") {
