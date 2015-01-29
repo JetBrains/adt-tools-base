@@ -38,6 +38,7 @@ public class ProcessAndroidResources extends IncrementalTask {
     File manifestFile
 
     @InputDirectory
+    @OutputDirectory
     File resDir
 
     @InputDirectory @Optional
@@ -91,6 +92,17 @@ public class ProcessAndroidResources extends IncrementalTask {
     @Nested
     AaptOptions aaptOptions
 
+    private boolean isSplitPackage(File file, File resBaseName) {
+        if (file.getName().startsWith(resBaseName.getName())) {
+            for (String split : splits) {
+                if (file.getName().contains(split)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     @Override
     protected void doFullTaskAction() {
         // we have to clean the source folder output in case the package name changed.
@@ -100,6 +112,18 @@ public class ProcessAndroidResources extends IncrementalTask {
         }
 
         File resOutBaseNameFile = getPackageOutputFile()
+
+        // we have to check the resource output folder in case some splits were removed, we should
+        // manually remove them.
+        File packageOutputFolder = getResDir()
+        if (resOutBaseNameFile != null) {
+            for (File file : packageOutputFolder.listFiles()) {
+                if (!isSplitPackage(file, resOutBaseNameFile)) {
+                    file.delete();
+                }
+            }
+        }
+
         AaptPackageProcessBuilder aaptPackageCommandBuilder =
                 new AaptPackageProcessBuilder(getManifestFile(), getAaptOptions())
                     .setAssetsFolder(getAssetsDir())
