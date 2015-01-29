@@ -20,23 +20,31 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ide.common.blame.SourceFragmentPositionRange;
 import com.google.common.base.Objects;
+import com.google.gson.annotations.SerializedName;
 
 /**
  * Message produced by tools invoked when building an Android project.
  */
 public class GradleMessage {
 
+    @SerializedName("kind")
     @NonNull
     private final Kind mKind;
 
+    @SerializedName("text")
     @NonNull
     private final String mText;
 
+    @SerializedName("sourcePath")
     @Nullable
     private final String mSourcePath;
 
+    @SerializedName("position")
+    @NonNull
     private final SourceFragmentPositionRange mPosition;
 
+    @SerializedName("original")
+    @NonNull
     private final String mOriginal;
 
     public GradleMessage(@NonNull Kind kind, @NonNull String text) {

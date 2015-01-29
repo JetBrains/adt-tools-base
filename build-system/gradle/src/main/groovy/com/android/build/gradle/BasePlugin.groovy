@@ -44,8 +44,8 @@ import com.android.builder.core.DefaultBuildType
 import com.android.builder.internal.compiler.JackConversionCache
 import com.android.builder.internal.compiler.PreDexCache
 import com.android.builder.sdk.TargetInfo
+import com.android.ide.common.blame.output.BlameAwareLoggedProcessOutputHandler
 import com.android.ide.common.internal.ExecutorSingleton
-import com.android.ide.common.process.LoggedProcessOutputHandler
 import com.android.utils.ILogger
 import groovy.transform.CompileStatic
 import org.gradle.api.Project
@@ -251,7 +251,8 @@ public abstract class BasePlugin {
                 creator,
                 new GradleProcessExecutor(project),
                 new GradleJavaProcessExecutor(project),
-                new LoggedProcessOutputHandler(getLogger()),
+                new BlameAwareLoggedProcessOutputHandler(getLogger(),
+                        extraModelInfo.getErrorFormatMode()),
                 logger,
                 verbose)
 
