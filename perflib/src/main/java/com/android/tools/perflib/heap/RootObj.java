@@ -58,16 +58,11 @@ public class RootObj extends Instance {
     }
 
     @Override
-    public final int getSize() {
-        Instance instance = getReferredInstance();
-        return instance != null ? instance.getSize() : 0;
-    }
-
-    @Override
     public final void accept(Visitor visitor) {
+        visitor.visitRootObj(this);
         Instance instance = getReferredInstance();
         if (instance != null) {
-            instance.accept(visitor);
+            visitor.visitLater(instance);
         }
     }
 
