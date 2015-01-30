@@ -18,7 +18,7 @@ package com.android.build.gradle.internal.publishing;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.gradle.internal.tasks.OutputFileTask;
+import com.google.common.base.Supplier;
 
 import org.gradle.api.Task;
 import org.gradle.api.artifacts.PublishArtifact;
@@ -41,7 +41,7 @@ public class ApkPublishArtifact implements PublishArtifact {
     private final String classifier;
 
     @NonNull
-    private final OutputFileTask outputFileTask;
+    private final Supplier<File> outputFileSupplier;
 
     @NonNull
     private final TaskDependency taskDependency;
@@ -64,11 +64,11 @@ public class ApkPublishArtifact implements PublishArtifact {
     public ApkPublishArtifact(
             @NonNull String name,
             @Nullable String classifier,
-            @NonNull OutputFileTask outputFileTask,
+            @NonNull Supplier<File> outputFileSupplier,
             @NonNull Task task) {
         this.name = name;
         this.classifier = classifier;
-        this.outputFileTask = outputFileTask;
+        this.outputFileSupplier = outputFileSupplier;
         this.taskDependency = new DefaultTaskDependency(task);
     }
 
@@ -96,7 +96,7 @@ public class ApkPublishArtifact implements PublishArtifact {
 
     @Override
     public File getFile() {
-        return outputFileTask.getOutputFile();
+        return outputFileSupplier.get();
     }
 
     @Override

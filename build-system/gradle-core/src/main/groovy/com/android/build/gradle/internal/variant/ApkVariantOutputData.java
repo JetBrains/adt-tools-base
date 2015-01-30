@@ -17,15 +17,14 @@
 package com.android.build.gradle.internal.variant;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.concurrency.Immutable;
 import com.android.build.FilterData;
 import com.android.build.OutputFile;
 import com.android.build.gradle.api.ApkOutputFile;
 import com.android.build.gradle.internal.TaskManager;
-import com.android.build.gradle.internal.tasks.OutputFileTask;
 import com.android.build.gradle.tasks.PackageApplication;
 import com.android.build.gradle.tasks.SplitZipAlign;
 import com.android.build.gradle.tasks.ZipAlign;
+import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableList;
 
 import java.io.File;
@@ -145,21 +144,21 @@ public class ApkVariantOutputData extends BaseVariantOutputData {
     }
 
     /**
-     * Returns the list of {@link OutputFileTask} for this variant. Some variant can produce more
+     * Returns the list of {@link Supplier} for this variant. Some variant can produce more
      * than one file when dealing with pure splits.
      * @return the complete list of tasks producing an APK for this variant.
      */
-    public List<OutputFileTask> getOutputTasks() {
-        ImmutableList.Builder<OutputFileTask> tasks = ImmutableList.builder();
+    public List<Supplier<File>> getOutputFileSuppliers() {
+        ImmutableList.Builder<Supplier<File>> tasks = ImmutableList.builder();
         tasks.add(zipAlignTask == null ? packageApplicationTask : zipAlignTask);
         if (splitZipAlign != null || packageSplitResourcesTask != null) {
-            tasks.addAll(splitZipAlign == null ? packageSplitResourcesTask.getOutputTasks()
-                : splitZipAlign.getOutputTasks());
+            tasks.addAll(splitZipAlign == null ? packageSplitResourcesTask.getOutputFileSuppliers()
+                : splitZipAlign.getOutputFileSuppliers());
         }
         // ABI splits zip are aligned together with the other densities in the splitZipAlign task
         // so only add the ABI splits from the package task if there was no splitZipAlign task.
         if (packageSplitAbiTask != null && splitZipAlign == null) {
-            tasks.addAll(packageSplitAbiTask.getOutputTasks());
+            tasks.addAll(packageSplitAbiTask.getOutputFileSuppliers());
         }
         return tasks.build();
     }
