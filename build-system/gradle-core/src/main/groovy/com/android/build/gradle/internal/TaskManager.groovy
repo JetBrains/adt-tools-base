@@ -355,7 +355,8 @@ abstract class TaskManager {
                 List<ManifestDependencyImpl> manifests =
                         getManifestDependencies(config.directLibraries)
 
-                if (variantData.generateApkDataTask != null) {
+                if (variantData.generateApkDataTask != null &&
+                    variantData.getVariantConfiguration().getBuildType().isEmbedMicroApp()) {
                     manifests.add(new ManifestDependencyImpl(
                             variantData.generateApkDataTask.getManifestFile(), []))
                 }
@@ -660,7 +661,8 @@ abstract class TaskManager {
             if (variantData.extraGeneratedResFolders != null) {
                 generatedResFolders += variantData.extraGeneratedResFolders
             }
-            if (variantData.generateApkDataTask != null) {
+            if (variantData.generateApkDataTask != null &&
+                    variantData.getVariantConfiguration().getBuildType().isEmbedMicroApp()) {
                 generatedResFolders.add(variantData.generateApkDataTask.getResOutputDir())
             }
             variantData.variantConfiguration.getResourceSets(generatedResFolders,

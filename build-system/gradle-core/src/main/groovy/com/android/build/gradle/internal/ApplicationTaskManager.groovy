@@ -112,30 +112,28 @@ class ApplicationTaskManager extends TaskManager {
      */
     private void handleMicroApp(
             @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData) {
-        if (variantData.getVariantConfiguration().getBuildType().isEmbedMicroApp()) {
-            // get all possible configurations for the variant. We'll take the highest priority
-            // of them that have a file.
-            List<String> wearConfigNames = variantData.getWearConfigNames();
+        // get all possible configurations for the variant. We'll take the highest priority
+        // of them that have a file.
+        List<String> wearConfigNames = variantData.getWearConfigNames();
 
-            for (String configName : wearConfigNames) {
-                Configuration config = project.getConfigurations().findByName(
-                        configName);
-                // this shouldn't happen, but better safe.
-                if (config == null) {
-                    continue;
-                }
+        for (String configName : wearConfigNames) {
+            Configuration config = project.getConfigurations().findByName(
+                    configName);
+            // this shouldn't happen, but better safe.
+            if (config == null) {
+                continue;
+            }
 
-                Set<File> file = config.getFiles();
+            Set<File> file = config.getFiles();
 
-                int count = file.size();
-                if (count == 1) {
-                    createGenerateMicroApkDataTask(variantData, config);
-                    // found one, bail out.
-                    return;
-                } else if (count > 1) {
-                    throw new RuntimeException(String.format(
-                            "Configuration '%s' resolves to more than one apk.", configName));
-                }
+            int count = file.size();
+            if (count == 1) {
+                createGenerateMicroApkDataTask(variantData, config);
+                // found one, bail out.
+                return;
+            } else if (count > 1) {
+                throw new RuntimeException(String.format(
+                        "Configuration '%s' resolves to more than one apk.", configName));
             }
         }
     }
