@@ -25,12 +25,14 @@ import com.android.build.gradle.internal.model.FilterDataImpl
 import com.android.build.gradle.internal.tasks.BaseTask
 import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Callables
+import org.gradle.api.Nullable
 import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Nested
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
-import org.gradle.api.tasks.ParallelizableTask
 import org.gradle.api.tasks.OutputFiles
+import org.gradle.api.tasks.ParallelizableTask
 import org.gradle.api.tasks.TaskAction
 
 import java.util.regex.Matcher
@@ -41,12 +43,6 @@ import java.util.regex.Pattern
  */
 @ParallelizableTask
 class PackageSplitRes extends BaseTask {
-
-    @Input
-    File inputDirectory
-
-    @OutputDirectory
-    File outputDirectory
 
     @Input
     Set<String> densitySplits
@@ -60,74 +56,99 @@ class PackageSplitRes extends BaseTask {
     @Nested @Optional
     SigningConfig signingConfig
 
-    @OutputFiles
-    public List<File> getOutputFiles() {
-        return getOutputSplitFiles()*.getOutputFile();
+    @InputFiles
+    List<File> getInputFiles() {
+        ImmutableList.Builder<File> builder = ImmutableList.builder();
+        forEachInputFile { split, file ->
+            builder.add(file)
+        }
+        return builder.build()
     }
 
-    @NonNull
-    public ImmutableList<ApkOutputFile> getOutputSplitFiles() {
+    @OutputFiles
+    public List<File> getOutputFiles() {
+        getOutputSplitFiles()*.getOutputFile()
+    }
 
-        // ABI splits are treated in PackageSplitAbi task.
+    /**
+     * This directories are not officially input/output to the task as
+     * they are shared among tasks. To be parallelizable, we must only
+     * define our I/O in terms of files...
+     */
+    File inputDirectory
+    File outputDirectory
+
+    /**
+     * Calculates the list of output files, coming from the list of input files, mangling the
+     * output file name.
+     */
+    public List<ApkOutputFile> getOutputSplitFiles() {
         ImmutableList.Builder<ApkOutputFile> builder = ImmutableList.builder();
-        if (outputDirectory.exists() && outputDirectory.listFiles().length > 0) {
-            File[] potentialFiles = outputDirectory.listFiles();
+        forEachInputFile { String split, File file ->
+            // find the split identification, if null, the split is not requested any longer.
+            FilterData filterData = null;
             for (String density : densitySplits) {
-                String filePath = "${project.archivesBaseName}-${outputBaseName}_${density}";
-                for (File potentialFile : potentialFiles) {
-                    // density related APKs have a suffix.
-                   if (potentialFile.getName().startsWith(filePath)) {
-                       builder.add(new ApkOutputFile(
-                               OutputFile.OutputType.SPLIT,
-                               ImmutableList.<FilterData> of(FilterDataImpl.Builder.build(
-                                       OutputFile.DENSITY,
-                                       density)),
-                               Callables.returning(potentialFile)));
-                   }
+                if (split.startsWith(density)) {
+                    filterData = FilterDataImpl.Builder.build(
+                            OutputFile.FilterType.DENSITY.toString(), density)
                 }
             }
-        } else {
-            // the project has not been built yet so we extrapolate what the package step result
-            // might look like. So far, we only handle density splits, eventually we will need
-            // to disambiguate.
-            addAllSplits(densitySplits, OutputFile.FilterType.DENSITY, builder);
+            if (languageSplits.contains(split)) {
+                filterData = FilterDataImpl.Builder.build(
+                        OutputFile.FilterType.LANGUAGE.toString(), split);
+            }
+            if (filterData != null) {
+                builder.add(new ApkOutputFile(OutputFile.OutputType.SPLIT,
+                        ImmutableList.of(filterData),
+                        Callables.<File>returning(
+                                new File(outputDirectory, this.getOutputFileNameForSplit(split)))))
+            }
         }
-        // now do languages.
-        addAllSplits(languageSplits, OutputFile.FilterType.LANGUAGE, builder);
-        return builder.build()
+        return builder.build();
     }
 
     @TaskAction
     protected void doFullTaskAction() {
 
+        forEachInputFile { String split, File file ->
+            File outFile = new File(outputDirectory, this.getOutputFileNameForSplit(split));
+            getBuilder().signApk(file, signingConfig, outFile)
+        }
+    }
+
+    /**
+     * Runs the closure for each task input file, providing the split identifier (possibly with
+     * a suffix generated by aapt) and the input file handle.
+     * @param closure groovy closure to run on each input file.
+     */
+    public void forEachInputFile(Closure closure) {
         Pattern resourcePattern = Pattern.compile(
                 "resources-${outputBaseName}.ap__(.*)")
 
         // resources- and .ap_ should be shared in a setting somewhere. see BasePlugin:1206
         for (File file : inputDirectory.listFiles()) {
-            Matcher matcher = resourcePattern.matcher(file.getName());
-            if (matcher.matches() && !matcher.group(1).isEmpty()) {
-                File outFile = new File(outputDirectory, getOuputFileNameForSplit(matcher.group(1)));
-                getBuilder().signApk(file, signingConfig, outFile)
+            Matcher match = resourcePattern.matcher(file.getName());
+            if (match.matches() && !match.group(1).isEmpty() && isValidSplit(match.group(1))) {
+                closure(match.group(1), file)
             }
         }
     }
 
-    private void addAllSplits(Collection<String> filters,
-            OutputFile.FilterType filterType,
-            ImmutableList.Builder<ApkOutputFile> builder) {
-        for (String filter : filters) {
-            ApkOutputFile apkOutput = new ApkOutputFile(
-                    OutputFile.OutputType.SPLIT,
-                    ImmutableList.<FilterData>of(
-                            FilterDataImpl.Builder.build(filterType.name(), filter)),
-                    Callables.returning(
-                            new File(outputDirectory, getOuputFileNameForSplit(filter))))
-            builder.add(apkOutput)
+    /**
+     * Returns true if the passed split identifier is a valid identifier (valid mean it is a
+     * requested split for this task). A density split identifier can be suffixed with characters
+     * added by aapt.
+     */
+    private boolean isValidSplit(@NonNull String splitWithOptionalSuffix) {
+        for (String density : densitySplits) {
+            if (splitWithOptionalSuffix.startsWith(density)) {
+                return true;
+            }
         }
+        return languageSplits.contains(splitWithOptionalSuffix);
     }
 
-    private String getOuputFileNameForSplit(String split) {
+    String getOutputFileNameForSplit(String split) {
         String apkName = "${project.archivesBaseName}-${outputBaseName}_${split}"
         return apkName + (signingConfig == null ? "-unsigned.apk" : "-unaligned.apk")
     }
