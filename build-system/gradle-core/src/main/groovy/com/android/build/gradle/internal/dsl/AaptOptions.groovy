@@ -29,7 +29,7 @@ public class AaptOptions implements com.android.builder.model.AaptOptions {
     private List<String> noCompressList
 
     @Input
-    private boolean useNewCruncher = false
+    private boolean useNewCruncher = true
 
     @Input
     private boolean cruncherEnabled = true
