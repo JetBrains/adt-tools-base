@@ -16,7 +16,6 @@
 package com.android.ide.common.blame.parser;
 
 import com.android.annotations.NonNull;
-import com.android.ide.common.blame.output.BlameRewritingLogger;
 import com.android.ide.common.blame.SourceFragmentPositionRange;
 import com.android.ide.common.blame.output.GradleMessage;
 import com.android.ide.common.blame.output.GradleMessageRewriter;
