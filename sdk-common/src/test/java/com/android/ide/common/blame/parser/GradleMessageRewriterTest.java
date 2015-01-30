@@ -48,13 +48,14 @@ public class GradleMessageRewriterTest extends TestCase {
     public void testRewriteGradleMessages() {
         String original = "error example\ntwo line error\nnext line\nsomething else";
         String rewriten = mGradleMessageRewriter.rewriteMessages(original);
-        String expected = "{\"kind\":\"ERROR\",\"text\":\"errorText\",\"sourcePath\":\"error/source\","
+        String expected = "Android Gradle Plugin - Build Issue: "
+                + "{\"kind\":\"ERROR\",\"text\":\"errorText\",\"sourcePath\":\"error/source\","
                 + "\"position\":{\"startLine\":1,\"startColumn\":2,\"startOffset\":3,"
                 + "\"endLine\":4,\"endColumn\":5,\"endOffset\":6},\"original\":\"\"}\n"
-                + "{\"kind\":\"WARNING\",\"text\":"
+                + "Android Gradle Plugin - Build Issue: {\"kind\":\"WARNING\",\"text\":"
                 + "\"two line warning\",\"sourcePath\":\"sourcePath\","
                 + "\"position\":{\"startLine\":1,\"startColumn\":2},\"original\":\"\"}\n"
-                + "{\"kind\":\"SIMPLE\","
+                + "Android Gradle Plugin - Build Issue: {\"kind\":\"SIMPLE\","
                 + "\"text\":\"something else\",\"position\":{},\"original\":\"something else\"}";
         assertEquals(expected.trim(), rewriten.trim());
     }

@@ -123,7 +123,7 @@ public class GradleMessage {
                 ']';
     }
 
-    public SourceFragmentPositionRange getPosition() {
+    public Object getPosition() {
         return mPosition;
     }
 
