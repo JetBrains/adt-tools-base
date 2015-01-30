@@ -30,6 +30,7 @@ import com.android.build.gradle.internal.dependency.LibraryDependencyImpl
 import com.android.build.gradle.internal.dependency.ManifestDependencyImpl
 import com.android.build.gradle.internal.dependency.SymbolFileProviderImpl
 import com.android.build.gradle.internal.dependency.VariantDependencies
+import com.android.build.gradle.internal.dsl.AbiSplitOptions
 import com.android.build.gradle.internal.dsl.SigningConfig
 import com.android.build.gradle.internal.publishing.ApkPublishArtifact
 import com.android.build.gradle.internal.tasks.AndroidReportTask
@@ -961,12 +962,8 @@ abstract class TaskManager {
                 BaseVariantData.SplitHandlingPolicy.RELEASE_21_AND_AFTER_POLICY;
 
         VariantConfiguration config = variantData.variantConfiguration
-        Set<String> filters = new HashSet<String>();
-        for (String abi : getExtension().getSplits().getAbiFilters()) {
-            if (abi != null) {
-                filters.add(abi);
-            }
-        }
+        Set<String> filters = AbiSplitOptions.getAbiFilters(
+                getExtension().getSplits().getAbiFilters())
         if (filters.isEmpty()) {
             return;
         }
@@ -2368,7 +2365,9 @@ abstract class TaskManager {
                 getOptionalDir(variantData.processJavaResourcesTask.destinationDir)
             }
             conventionMapping(packageApp).map("jniFolders") {
-                getJniFolders(variantData);
+                Set<String> filters = AbiSplitOptions.getAbiFilters(
+                        getExtension().getSplits().getAbiFilters())
+                return filters.isEmpty() ? getJniFolders(variantData) : Collections.emptySet();
             }
             conventionMapping(packageApp).map("abiFilters") {
                 if (variantOutputData.getMainOutputFile().getFilter(OutputFile.ABI) != null) {
