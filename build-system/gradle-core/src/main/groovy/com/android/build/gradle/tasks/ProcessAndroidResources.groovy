@@ -38,7 +38,6 @@ public class ProcessAndroidResources extends IncrementalTask {
     File manifestFile
 
     @InputDirectory
-    @OutputDirectory
     File resDir
 
     @InputDirectory @Optional
