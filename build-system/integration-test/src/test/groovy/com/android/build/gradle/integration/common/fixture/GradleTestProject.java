@@ -294,6 +294,7 @@ public class GradleTestProject implements TestRule {
                                     "    }\n" +
                                     "    dependencies {\n" +
                                     "        classpath \"com.android.tools.build:gradle:" + ANDROID_GRADLE_VERSION + "\"\n" +
+                                    "        classpath \"com.android.tools.build:gradle-experimental:" + ANDROID_GRADLE_VERSION + "\"\n" +
                                     "    }\n" +
                                     "}\n",
                             buildFile,

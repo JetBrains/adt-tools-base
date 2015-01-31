@@ -16,38 +16,40 @@
 
 package com.android.build.gradle.model
 
-import com.android.annotations.NonNull
 import com.android.build.gradle.BaseExtension
-import com.android.build.gradle.BasePlugin
-import com.android.build.gradle.internal.ApplicationTaskManager
-import com.android.build.gradle.internal.DependencyManager
+import com.android.build.gradle.LibraryExtension
 import com.android.build.gradle.internal.ExtraModelInfo
+import com.android.build.gradle.internal.DependencyManager
 import com.android.build.gradle.internal.SdkHandler
 import com.android.build.gradle.internal.TaskManager
-import com.android.build.gradle.internal.variant.ApplicationVariantFactory
-import com.android.build.gradle.internal.variant.BaseVariantData
+import com.android.build.gradle.internal.variant.LibraryVariantFactory
 import com.android.build.gradle.internal.variant.VariantFactory
 import com.android.builder.core.AndroidBuilder
-import com.google.common.collect.ImmutableList
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.Task
 import org.gradle.internal.reflect.Instantiator
 import org.gradle.internal.service.ServiceRegistry
 import org.gradle.model.Model
 import org.gradle.model.RuleSource
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry
 
-import javax.xml.ws.Service
-
 /**
  * Gradle component model plugin class for 'application' projects.
  */
-public class AppComponentModelPlugin implements Plugin<Project> {
+public class LibraryComponentModelPlugin implements Plugin<Project> {
+    /**
+     * Default assemble task for the default-published artifact. this is needed for
+     * the prepare task on the consuming project.
+     */
+    Task assembleDefault
 
     @Override
     void apply(Project project) {
         project.plugins.apply(InitializationPlugin)
         project.plugins.apply(BaseComponentModelPlugin)
+
+        assembleDefault = project.tasks.create("assembleDefault")
     }
 
     private static class InitializationPlugin implements Plugin<Project> {
@@ -60,8 +62,7 @@ public class AppComponentModelPlugin implements Plugin<Project> {
 
             @Model
             Boolean isApplication() {
-                // TODO: Determine a better way to do this.
-                return true
+                return false
             }
 
             @Model
@@ -74,7 +75,7 @@ public class AppComponentModelPlugin implements Plugin<Project> {
                     ToolingModelBuilderRegistry toolingRegistry) {
                 DependencyManager dependencyManager = new DependencyManager(project, extraModelInfo)
 
-                return new ApplicationComponentTaskManager(
+                return new LibraryComponentTaskManager(
                         project,
                         project.tasks,
                         androidBuilder,
@@ -84,17 +85,16 @@ public class AppComponentModelPlugin implements Plugin<Project> {
                         toolingRegistry);
             }
 
-
             @Model
             VariantFactory createVariantFactory(
                     ServiceRegistry serviceRegistry,
                     AndroidBuilder androidBuilder,
                     BaseExtension extension) {
                 Instantiator instantiator = serviceRegistry.get(Instantiator.class);
-                return new ApplicationVariantFactory(
+                return new LibraryVariantFactory(
                         instantiator,
                         androidBuilder,
-                        extension)
+                        (LibraryExtension) extension);
             }
         }
     }
