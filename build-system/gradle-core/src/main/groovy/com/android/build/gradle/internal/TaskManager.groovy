@@ -1030,6 +1030,7 @@ abstract class TaskManager {
                 new File("$project.buildDir/${FD_INTERMEDIATES}/splits/${config.dirName}")
         variantOutputData.packageSplitAbiTask.androidBuilder = androidBuilder
         variantOutputData.packageSplitAbiTask.dependsOn generateSplitAbiRes
+        variantOutputData.packageSplitAbiTask.dependsOn getNdkBuildable(variantData)
 
         conventionMapping(variantOutputData.packageSplitAbiTask).map("jniFolders") {
             getJniFolders(variantData);
