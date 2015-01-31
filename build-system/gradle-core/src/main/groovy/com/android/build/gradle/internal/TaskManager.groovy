@@ -997,7 +997,7 @@ abstract class TaskManager {
         }
         generateSplitAbiRes.dependsOn variantOutputData.processResourcesTask
 
-        // then package those resources witth the appropriate JNI libraries.
+        // then package those resources with the appropriate JNI libraries.
         variantOutputData.packageSplitAbiTask =
                 project.tasks.create("package${config.fullName.capitalize()}SplitAbi",
                         PackageSplitAbi);
