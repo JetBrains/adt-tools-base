@@ -27,6 +27,7 @@ import org.junit.experimental.categories.Category
 
 import java.util.zip.ZipFile
 
+import static com.google.common.truth.Truth.assertThat
 import static org.junit.Assert.assertNotNull
 import static org.junit.Assert.assertNull
 
@@ -82,6 +83,18 @@ model {
     @AfterClass
     static void cleanUp() {
         project = null
+    }
+
+    @Test
+    public void "check old ndk tasks are not created"() {
+        List<String> tasks = project.getTaskList()
+        assertThat(tasks).containsNoneOf(
+                "compileArmDebugNdk",
+                "compileX86DebugNdk",
+                "compileMipsDebugNdk",
+                "compileArmReleaseNdk",
+                "compileX86ReleaseNdk",
+                "compileMipsReleaseNdk")
     }
 
     @Test

@@ -24,6 +24,8 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.experimental.categories.Category
 
+import static com.google.common.truth.Truth.assertThat
+
 /**
  * Basic integration test for AppComponentModelPlugin.
  */
@@ -49,7 +51,7 @@ model {
 
     @Test
     public void basicAssemble() {
-        project.execute("assembleDebug");
+        project.execute("assemble");
     }
 
     @Test
@@ -65,8 +67,9 @@ model {
     }
 }
 """
-        // Runs all assemble tasks and ensure all combinations of assemble* tasks are created.
-        project.execute(
+        // Ensure all combinations of assemble* tasks are created.
+        List<String> tasks = project.getTaskList()
+        assertThat(tasks).containsAllOf(
                 "assemble",
                 "assembleB1",
                 "assembleDebug",
@@ -82,6 +85,7 @@ model {
                 "assembleAndroidTest",
                 "assembleF1DebugAndroidTest",
                 "assembleF2DebugAndroidTest");
+
     }
 
     @Test

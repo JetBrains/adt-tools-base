@@ -45,6 +45,7 @@ public class ApplicationComponentTaskManager extends ApplicationTaskManager {
             DependencyManager dependencyManager,
             ToolingModelBuilderRegistry toolingRegistry) {
         super(project, tasks, androidBuilder, extension, sdkHandler, dependencyManager, toolingRegistry);
+        isNdkTaskNeeded = false;
     }
 
     @Override
