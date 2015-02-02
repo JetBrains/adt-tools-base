@@ -53,7 +53,6 @@ project.ext.pomDesc = 'Core library to build Android Gradle plugin.'
 
 apply from: "$rootDir/buildSrc/base/publish.gradle"
 apply from: "$rootDir/buildSrc/base/bintray.gradle"
-apply from: "$rootDir/buildSrc/base/javadoc.gradle"
 
 test {
     environment("CUSTOM_REPO", rootProject.file("../out/repo"))
