@@ -179,7 +179,6 @@ public class ImageEditorPanel extends JPanel {
 
         zoomSlider = new JSlider(ImageViewer.MIN_ZOOM, ImageViewer.MAX_ZOOM,
                 ImageViewer.DEFAULT_ZOOM);
-        zoomSlider.setSnapToTicks(true);
         zoomSlider.putClientProperty("JComponent.sizeVariant", "small");
         zoomSlider.addChangeListener(new ChangeListener() {
             @Override
@@ -213,7 +212,6 @@ public class ImageEditorPanel extends JPanel {
                 new Insets(0, 0, 0, 0), 0, 0));
 
         JSlider jSlider = new JSlider(200, 600, (int) (StretchesViewer.DEFAULT_SCALE * 100.0f));
-        jSlider.setSnapToTicks(true);
         jSlider.putClientProperty("JComponent.sizeVariant", "small");
         jSlider.addChangeListener(new ChangeListener() {
             @Override
