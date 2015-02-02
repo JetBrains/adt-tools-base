@@ -1,3 +1,12 @@
+buildscript {
+    repositories {
+        maven { url = uri(rootProject.cloneArtifacts.repository) }
+    }
+    dependencies {
+        classpath "com.jfrog.bintray.gradle:gradle-bintray-plugin:1.0"
+    }
+}
+
 apply plugin: 'java'
 apply plugin: 'sdk-java-lib'
 
@@ -39,4 +48,5 @@ project.ext.pomName = 'Android Lint Tool'
 project.ext.pomDesc = 'Lint tools. Both a Command line tool and a library to add lint features to other tools'
 
 apply from: "$rootDir/buildSrc/base/publish.gradle"
+apply from: "$rootDir/buildSrc/base/bintray.gradle"
 apply from: "$rootDir/buildSrc/base/javadoc.gradle"

@@ -118,6 +118,7 @@ public class EcjParser extends JavaParser {
     private Map<File, ICompilationUnit> mSourceUnits;
     private Map<ICompilationUnit, CompilationUnitDeclaration> mCompiled;
     private Parser mParser;
+    private INameEnvironment mEnvironment;
 
     public EcjParser(@NonNull LintCliClient client, @Nullable Project project) {
         mClient = client;
@@ -209,7 +210,7 @@ public class EcjParser extends JavaParser {
         List<String> classPath = computeClassPath(contexts);
         mCompiled = Maps.newHashMapWithExpectedSize(mSourceUnits.size());
         try {
-            parse(createCompilerOptions(), sources, classPath, mCompiled, mClient);
+            mEnvironment = parse(createCompilerOptions(), sources, classPath, mCompiled, mClient);
         } catch (Throwable t) {
             mClient.log(t, "ECJ compiler crashed");
         }
@@ -235,7 +236,7 @@ public class EcjParser extends JavaParser {
     }
 
     /** Parse the given source units and class path and store it into the given output map */
-    public static void parse(
+    public static INameEnvironment parse(
             CompilerOptions options,
             @NonNull List<ICompilationUnit> sourceUnits,
             @NonNull List<String> classPath,
@@ -260,6 +261,8 @@ public class EcjParser extends JavaParser {
         try {
             compiler.compile(sourceUnits.toArray(new ICompilationUnit[sourceUnits.size()]));
         } catch (OutOfMemoryError e) {
+            environment.cleanup();
+
             // Since we're running out of memory, if it's all still held we could potentially
             // fail attempting to log the failure. Actively get rid of the large ECJ data
             // structure references first so minimize the chance of that
@@ -296,7 +299,14 @@ public class EcjParser extends JavaParser {
             } else {
                 t.printStackTrace();
             }
+
+            if (environment != null) {
+                environment.cleanup();
+                environment = null;
+            }
         }
+
+        return environment;
     }
 
     @NonNull
@@ -457,6 +467,14 @@ public class EcjParser extends JavaParser {
                 mSourceUnits.remove(context.file);
                 mCompiled.remove(sourceUnit);
             }
+        }
+    }
+
+    @Override
+    public void dispose() {
+        if (mEnvironment != null) {
+            mEnvironment.cleanup();
+            mEnvironment = null;
         }
     }
 

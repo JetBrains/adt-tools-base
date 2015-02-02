@@ -1125,13 +1125,15 @@ public abstract class BasePlugin {
                 }
 
                 if (config.buildType.isMinifyEnabled()) {
+                    if (config.buildType.shrinkResources && config.useJack) {
+                        displayWarning(logger, project,
+                                "WARNING: shrinkResources does not yet work with useJack=true")
+                    }
                     processResources.conventionMapping.proguardOutputFile = {
                         project.file(
                                 "$project.buildDir/${FD_INTERMEDIATES}/proguard-rules/${config.dirName}/aapt_rules.txt")
                     }
                 } else if (config.buildType.shrinkResources) {
-                    // This warning is temporary; we'll eventually make shrinking enabled by default
-                    // so users typically will only opt out of it, we won't have shrink=true, proguard=false
                     displayWarning(logger, project,
                             "WARNING: To shrink resources you must also enable ProGuard")
                 }
@@ -1989,7 +1991,8 @@ public abstract class BasePlugin {
         dexTask.dexOptions = extension.dexOptions
         dexTask.multiDexEnabled = isMultiDexEnabled
         dexTask.legacyMultiDexMode = isLegacyMultiDexMode
-        dexTask.optimize = !variantData.variantConfiguration.buildType.debuggable
+        // dx doesn't work with receving --no-optimize in debug so we disable it for now.
+        dexTask.optimize = true //!variantData.variantConfiguration.buildType.debuggable
 
         // data holding dependencies and input for the dex. This gets updated as new
         // post-compilation steps are inserted between the compilation and dx.
@@ -2469,7 +2472,7 @@ public abstract class BasePlugin {
 
             packageApp.plugin = this
 
-            if (config.minifyEnabled && config.buildType.shrinkResources) {
+            if (config.minifyEnabled && config.buildType.shrinkResources && !config.useJack) {
                 def shrinkTask = createShrinkResourcesTask(vod)
 
                 // When shrinking resources, rather than having the packaging task
