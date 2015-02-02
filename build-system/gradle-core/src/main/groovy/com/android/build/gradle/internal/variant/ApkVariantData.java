@@ -57,7 +57,7 @@ public abstract class ApkVariantData extends BaseVariantData<ApkVariantOutputDat
     @NonNull
     public String getDescription() {
         if (getVariantConfiguration().hasFlavors()) {
-            return String.format("%s build for flavor %s",
+            return String.format("%s%s build",
                     getCapitalizedBuildTypeName(),
                     getCapitalizedFlavorName());
         } else {

@@ -45,7 +45,7 @@ class BuildTypeData implements ConfigurationProvider {
         this.unitTestSourceSet = unitTestSourceSet
 
         assembleTask = project.tasks.create("assemble${buildType.name.capitalize()}")
-        assembleTask.description = "Assembles all ${buildType.name.capitalize()} builds"
+        assembleTask.description = "Assembles all ${buildType.name.capitalize()} builds."
         assembleTask.group = "Build"
     }
 
