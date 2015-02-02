@@ -25,7 +25,7 @@ import java.util.List;
 
 public class GradleMessageRewriter {
 
-    public static final String STDOUT_ERROR_TAG = "Android Gradle Plugin - Build Issue: ";
+    public static final String STDOUT_ERROR_TAG = "AGPBI: ";
 
     public static enum ErrorFormatMode {
         MACHINE_PARSABLE, HUMAN_READABLE
@@ -33,10 +33,12 @@ public class GradleMessageRewriter {
 
     private final ToolOutputParser mParser;
     private final Gson mGson;
+    private final ErrorFormatMode mErrorFormatMode;
 
     public GradleMessageRewriter(ToolOutputParser parser, ErrorFormatMode errorFormatMode) {
         mParser = parser;
-        mGson = createGson(errorFormatMode);
+        mErrorFormatMode = errorFormatMode;
+        mGson = createGson();
     }
 
     public String rewriteMessages(@NonNull String originalMessage) {
@@ -48,19 +50,28 @@ public class GradleMessageRewriter {
 
         StringBuilder errorStringBuilder = new StringBuilder();
         for (GradleMessage message: messages) {
-            errorStringBuilder.append(STDOUT_ERROR_TAG)
+            if (mErrorFormatMode == ErrorFormatMode.HUMAN_READABLE) {
+                if (message.getPosition() != null && message.getPosition().getStartLine() != -1) {
+                    errorStringBuilder.append(" Position ");
+                    errorStringBuilder.append(message.getPosition().toString());
+                    errorStringBuilder.append(" : ");
+
+                }
+                errorStringBuilder.append(message.getText())
+                        .append("\n");
+
+            } else {
+                errorStringBuilder.append(STDOUT_ERROR_TAG)
                     .append(mGson.toJson(message)).append("\n");
+            }
         }
         return errorStringBuilder.toString();
     }
 
-    private static Gson createGson(ErrorFormatMode errorFormatMode) {
+    private static Gson createGson() {
         GsonBuilder gsonBuilder = new GsonBuilder();
         gsonBuilder.registerTypeAdapter(SourceFragmentPositionRange.class,
                 new SourceFragmentPositionRange.Serializer());
-        if (errorFormatMode == ErrorFormatMode.HUMAN_READABLE) {
-            gsonBuilder.setPrettyPrinting();
-        }
         return gsonBuilder.create();
     }
 }
