@@ -48,53 +48,53 @@ public class AtomInfo implements BinaryObject {
     return Type;
   }
 
-  public String getName() {
-    return Name;
-  }
-
-  public ParameterInfo[] getParameters() {
-    return Parameters;
-  }
-
-  public boolean getIsCommand() {
-    return IsCommand;
-  }
-
-  public boolean getIsDrawCall() {
-    return IsDrawCall;
-  }
-
-  public boolean getIsEndOfFrame() {
-    return IsEndOfFrame;
-  }
-
-  public String getDocumentationUrl() {
-    return DocumentationUrl;
-  }
-
   // Setters
   public void setType(int v) {
     Type = v;
+  }
+
+  public String getName() {
+    return Name;
   }
 
   public void setName(String v) {
     Name = v;
   }
 
+  public ParameterInfo[] getParameters() {
+    return Parameters;
+  }
+
   public void setParameters(ParameterInfo[] v) {
     Parameters = v;
+  }
+
+  public boolean getIsCommand() {
+    return IsCommand;
   }
 
   public void setIsCommand(boolean v) {
     IsCommand = v;
   }
 
+  public boolean getIsDrawCall() {
+    return IsDrawCall;
+  }
+
   public void setIsDrawCall(boolean v) {
     IsDrawCall = v;
   }
 
+  public boolean getIsEndOfFrame() {
+    return IsEndOfFrame;
+  }
+
   public void setIsEndOfFrame(boolean v) {
     IsEndOfFrame = v;
+  }
+
+  public String getDocumentationUrl() {
+    return DocumentationUrl;
   }
 
   public void setDocumentationUrl(String v) {

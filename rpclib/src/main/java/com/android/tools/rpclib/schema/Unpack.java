@@ -26,7 +26,7 @@ import java.io.IOException;
  * A helper class to unpack schema defined types into Java objects.
  */
 public class Unpack {
-  @NotNull private static final Logger LOG = Logger.getInstance(Unpack.class);
+  @NotNull private static final Logger LOG = Logger.getInstance(Unpack.class.getName());
 
   public static Object Type(TypeInfo type, Decoder decoder) throws IOException {
     switch (type.getKind()) {
@@ -79,8 +79,6 @@ public class Unpack {
         }
         return new Class(info, fields);
       }
-      case ClassId:
-        return decoder.uint32(); // TODO: ClassId
       case Array: {
         ArrayInfo info = (ArrayInfo)type;
         int count = (int)decoder.uint32();

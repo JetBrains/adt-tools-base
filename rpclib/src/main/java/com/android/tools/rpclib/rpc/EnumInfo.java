@@ -45,19 +45,6 @@ public class EnumInfo implements TypeInfo {
     return Name;
   }
 
-  @Override
-  public TypeKind getKind() {
-    return Kind;
-  }
-
-  public EnumEntry[] getEntries() {
-    return Entries;
-  }
-
-  public EnumInfo[] getExtends() {
-    return Extends;
-  }
-
   // Setters
   @Override
   public void setName(String v) {
@@ -65,12 +52,25 @@ public class EnumInfo implements TypeInfo {
   }
 
   @Override
+  public TypeKind getKind() {
+    return Kind;
+  }
+
+  @Override
   public void setKind(TypeKind v) {
     Kind = v;
   }
 
+  public EnumEntry[] getEntries() {
+    return Entries;
+  }
+
   public void setEntries(EnumEntry[] v) {
     Entries = v;
+  }
+
+  public EnumInfo[] getExtends() {
+    return Extends;
   }
 
   public void setExtends(EnumInfo[] v) {

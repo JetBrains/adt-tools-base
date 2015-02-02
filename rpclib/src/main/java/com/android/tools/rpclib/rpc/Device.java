@@ -29,6 +29,8 @@ public class Device implements BinaryObject {
   String Name;
   String Model;
   String OS;
+  short PointerSize;
+  short PointerAlignment;
   long MaxMemorySize;
   boolean RequiresShaderPatching;
 
@@ -46,37 +48,53 @@ public class Device implements BinaryObject {
     return Name;
   }
 
-  public String getModel() {
-    return Model;
-  }
-
-  public String getOS() {
-    return OS;
-  }
-
-  public long getMaxMemorySize() {
-    return MaxMemorySize;
-  }
-
-  public boolean getRequiresShaderPatching() {
-    return RequiresShaderPatching;
-  }
-
   // Setters
   public void setName(String v) {
     Name = v;
+  }
+
+  public String getModel() {
+    return Model;
   }
 
   public void setModel(String v) {
     Model = v;
   }
 
+  public String getOS() {
+    return OS;
+  }
+
   public void setOS(String v) {
     OS = v;
   }
 
+  public short getPointerSize() {
+    return PointerSize;
+  }
+
+  public void setPointerSize(short v) {
+    PointerSize = v;
+  }
+
+  public short getPointerAlignment() {
+    return PointerAlignment;
+  }
+
+  public void setPointerAlignment(short v) {
+    PointerAlignment = v;
+  }
+
+  public long getMaxMemorySize() {
+    return MaxMemorySize;
+  }
+
   public void setMaxMemorySize(long v) {
     MaxMemorySize = v;
+  }
+
+  public boolean getRequiresShaderPatching() {
+    return RequiresShaderPatching;
   }
 
   public void setRequiresShaderPatching(boolean v) {

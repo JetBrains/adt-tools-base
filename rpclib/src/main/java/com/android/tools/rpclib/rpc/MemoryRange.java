@@ -43,13 +43,13 @@ public class MemoryRange implements BinaryObject {
     return Base;
   }
 
-  public long getSize() {
-    return Size;
-  }
-
   // Setters
   public void setBase(long v) {
     Base = v;
+  }
+
+  public long getSize() {
+    return Size;
   }
 
   public void setSize(long v) {

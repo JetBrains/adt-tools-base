@@ -43,13 +43,13 @@ public class AtomRange implements BinaryObject {
     return First;
   }
 
-  public long getCount() {
-    return Count;
-  }
-
   // Setters
   public void setFirst(long v) {
     First = v;
+  }
+
+  public long getCount() {
+    return Count;
   }
 
   public void setCount(long v) {

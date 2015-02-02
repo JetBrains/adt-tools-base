@@ -44,15 +44,6 @@ public class ArrayInfo implements TypeInfo {
     return Name;
   }
 
-  @Override
-  public TypeKind getKind() {
-    return Kind;
-  }
-
-  public TypeInfo getElementType() {
-    return ElementType;
-  }
-
   // Setters
   @Override
   public void setName(String v) {
@@ -60,8 +51,17 @@ public class ArrayInfo implements TypeInfo {
   }
 
   @Override
+  public TypeKind getKind() {
+    return Kind;
+  }
+
+  @Override
   public void setKind(TypeKind v) {
     Kind = v;
+  }
+
+  public TypeInfo getElementType() {
+    return ElementType;
   }
 
   public void setElementType(TypeInfo v) {

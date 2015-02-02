@@ -45,19 +45,6 @@ public class ClassInfo implements TypeInfo {
     return Name;
   }
 
-  @Override
-  public TypeKind getKind() {
-    return Kind;
-  }
-
-  public FieldInfo[] getFields() {
-    return Fields;
-  }
-
-  public ClassInfo[] getExtends() {
-    return Extends;
-  }
-
   // Setters
   @Override
   public void setName(String v) {
@@ -65,12 +52,25 @@ public class ClassInfo implements TypeInfo {
   }
 
   @Override
+  public TypeKind getKind() {
+    return Kind;
+  }
+
+  @Override
   public void setKind(TypeKind v) {
     Kind = v;
   }
 
+  public FieldInfo[] getFields() {
+    return Fields;
+  }
+
   public void setFields(FieldInfo[] v) {
     Fields = v;
+  }
+
+  public ClassInfo[] getExtends() {
+    return Extends;
   }
 
   public void setExtends(ClassInfo[] v) {

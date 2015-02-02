@@ -17,6 +17,7 @@
 */
 package com.android.tools.rpclib.rpc;
 
+import com.android.tools.rpclib.binary.BinaryObject;
 import com.android.tools.rpclib.binary.Decoder;
 import com.android.tools.rpclib.binary.Encoder;
 import com.android.tools.rpclib.binary.ObjectTypeID;
@@ -24,48 +25,44 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 
-public class ClassIdInfo implements TypeInfo {
-  String Name;
-  TypeKind Kind;
-  ClassInfo Klass;
+public class AtomRangeTimer implements BinaryObject {
+  long FromAtomId;
+  long ToAtomId;
+  long Nanoseconds;
 
-  // Constructs a default-initialized {@link ClassIdInfo}.
-  public ClassIdInfo() {
+  // Constructs a default-initialized {@link AtomRangeTimer}.
+  public AtomRangeTimer() {
   }
 
-  // Constructs and decodes a {@link ClassIdInfo} from the {@link Decoder} d.
-  public ClassIdInfo(Decoder d) throws IOException {
+  // Constructs and decodes a {@link AtomRangeTimer} from the {@link Decoder} d.
+  public AtomRangeTimer(Decoder d) throws IOException {
     decode(d);
   }
 
   // Getters
-  @Override
-  public String getName() {
-    return Name;
-  }
-
-  @Override
-  public TypeKind getKind() {
-    return Kind;
-  }
-
-  public ClassInfo getKlass() {
-    return Klass;
+  public long getFromAtomId() {
+    return FromAtomId;
   }
 
   // Setters
-  @Override
-  public void setName(String v) {
-    Name = v;
+  public void setFromAtomId(long v) {
+    FromAtomId = v;
   }
 
-  @Override
-  public void setKind(TypeKind v) {
-    Kind = v;
+  public long getToAtomId() {
+    return ToAtomId;
   }
 
-  public void setKlass(ClassInfo v) {
-    Klass = v;
+  public void setToAtomId(long v) {
+    ToAtomId = v;
+  }
+
+  public long getNanoseconds() {
+    return Nanoseconds;
+  }
+
+  public void setNanoseconds(long v) {
+    Nanoseconds = v;
   }
 
   @Override
@@ -80,6 +77,6 @@ public class ClassIdInfo implements TypeInfo {
 
   @Override
   public ObjectTypeID type() {
-    return ObjectFactory.ClassIdInfoID;
+    return ObjectFactory.AtomRangeTimerID;
   }
 }

@@ -44,21 +44,21 @@ public class AtomGroup implements BinaryObject {
     return Name;
   }
 
-  public AtomRange getRange() {
-    return Range;
-  }
-
-  public AtomGroup[] getSubGroups() {
-    return SubGroups;
-  }
-
   // Setters
   public void setName(String v) {
     Name = v;
   }
 
+  public AtomRange getRange() {
+    return Range;
+  }
+
   public void setRange(AtomRange v) {
     Range = v;
+  }
+
+  public AtomGroup[] getSubGroups() {
+    return SubGroups;
   }
 
   public void setSubGroups(AtomGroup[] v) {
