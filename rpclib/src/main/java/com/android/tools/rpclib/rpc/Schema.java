@@ -31,7 +31,6 @@ public class Schema implements BinaryObject {
   EnumInfo[] Enums;
   StructInfo[] Structs;
   ClassInfo[] Classes;
-  ClassIdInfo[] ClassIds;
   AtomInfo[] Atoms;
   StructInfo State;
 
@@ -49,61 +48,53 @@ public class Schema implements BinaryObject {
     return Arrays;
   }
 
-  public MapInfo[] getMaps() {
-    return Maps;
-  }
-
-  public EnumInfo[] getEnums() {
-    return Enums;
-  }
-
-  public StructInfo[] getStructs() {
-    return Structs;
-  }
-
-  public ClassInfo[] getClasses() {
-    return Classes;
-  }
-
-  public ClassIdInfo[] getClassIds() {
-    return ClassIds;
-  }
-
-  public AtomInfo[] getAtoms() {
-    return Atoms;
-  }
-
-  public StructInfo getState() {
-    return State;
-  }
-
   // Setters
   public void setArrays(ArrayInfo[] v) {
     Arrays = v;
+  }
+
+  public MapInfo[] getMaps() {
+    return Maps;
   }
 
   public void setMaps(MapInfo[] v) {
     Maps = v;
   }
 
+  public EnumInfo[] getEnums() {
+    return Enums;
+  }
+
   public void setEnums(EnumInfo[] v) {
     Enums = v;
+  }
+
+  public StructInfo[] getStructs() {
+    return Structs;
   }
 
   public void setStructs(StructInfo[] v) {
     Structs = v;
   }
 
+  public ClassInfo[] getClasses() {
+    return Classes;
+  }
+
   public void setClasses(ClassInfo[] v) {
     Classes = v;
   }
 
-  public void setClassIds(ClassIdInfo[] v) {
-    ClassIds = v;
+  public AtomInfo[] getAtoms() {
+    return Atoms;
   }
 
   public void setAtoms(AtomInfo[] v) {
     Atoms = v;
+  }
+
+  public StructInfo getState() {
+    return State;
   }
 
   public void setState(StructInfo v) {

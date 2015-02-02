@@ -44,21 +44,21 @@ public class ParameterInfo implements BinaryObject {
     return Name;
   }
 
-  public TypeInfo getType() {
-    return Type;
-  }
-
-  public boolean getOut() {
-    return Out;
-  }
-
   // Setters
   public void setName(String v) {
     Name = v;
   }
 
+  public TypeInfo getType() {
+    return Type;
+  }
+
   public void setType(TypeInfo v) {
     Type = v;
+  }
+
+  public boolean getOut() {
+    return Out;
   }
 
   public void setOut(boolean v) {

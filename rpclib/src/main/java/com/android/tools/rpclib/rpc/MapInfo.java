@@ -45,19 +45,6 @@ public class MapInfo implements TypeInfo {
     return Name;
   }
 
-  @Override
-  public TypeKind getKind() {
-    return Kind;
-  }
-
-  public TypeInfo getKeyType() {
-    return KeyType;
-  }
-
-  public TypeInfo getValueType() {
-    return ValueType;
-  }
-
   // Setters
   @Override
   public void setName(String v) {
@@ -65,12 +52,25 @@ public class MapInfo implements TypeInfo {
   }
 
   @Override
+  public TypeKind getKind() {
+    return Kind;
+  }
+
+  @Override
   public void setKind(TypeKind v) {
     Kind = v;
   }
 
+  public TypeInfo getKeyType() {
+    return KeyType;
+  }
+
   public void setKeyType(TypeInfo v) {
     KeyType = v;
+  }
+
+  public TypeInfo getValueType() {
+    return ValueType;
   }
 
   public void setValueType(TypeInfo v) {

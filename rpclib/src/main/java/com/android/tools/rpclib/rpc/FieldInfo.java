@@ -43,13 +43,13 @@ public class FieldInfo implements BinaryObject {
     return Name;
   }
 
-  public TypeInfo getType() {
-    return Type;
-  }
-
   // Setters
   public void setName(String v) {
     Name = v;
+  }
+
+  public TypeInfo getType() {
+    return Type;
   }
 
   public void setType(TypeInfo v) {

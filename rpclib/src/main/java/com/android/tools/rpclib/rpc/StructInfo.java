@@ -44,15 +44,6 @@ public class StructInfo implements TypeInfo {
     return Name;
   }
 
-  @Override
-  public TypeKind getKind() {
-    return Kind;
-  }
-
-  public FieldInfo[] getFields() {
-    return Fields;
-  }
-
   // Setters
   @Override
   public void setName(String v) {
@@ -60,8 +51,17 @@ public class StructInfo implements TypeInfo {
   }
 
   @Override
+  public TypeKind getKind() {
+    return Kind;
+  }
+
+  @Override
   public void setKind(TypeKind v) {
     Kind = v;
+  }
+
+  public FieldInfo[] getFields() {
+    return Fields;
   }
 
   public void setFields(FieldInfo[] v) {
