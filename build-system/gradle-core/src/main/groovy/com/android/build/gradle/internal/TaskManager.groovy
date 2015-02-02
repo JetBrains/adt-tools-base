@@ -236,8 +236,7 @@ abstract class TaskManager {
      * @param assembleTask an optional assembleTask to be used. If null, a new one is created.
      */
     abstract public void createTasksForVariantData(
-            @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData,
-            @Nullable Task assembleTask)
+            @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData)
 
     /**
      * Returns a collection of buildables that creates native object.
@@ -1285,7 +1284,6 @@ abstract class TaskManager {
         BaseVariantData testedVariantData = variantData.getTestedVariantData() as BaseVariantData
         createCompileAnchorTask(variantData)
         createCompileTask(variantData, testedVariantData)
-        variantData.assembleVariantTask = createAssembleTask(variantData)
         variantData.assembleVariantTask.dependsOn variantData.compileTask
     }
 
@@ -1353,7 +1351,7 @@ abstract class TaskManager {
             createPostCompilationTasks(variantData);
         }
 
-        createPackagingTask(variantData, null /*assembleTask*/, false /*publishApk*/)
+        createPackagingTask(variantData, false /*publishApk*/)
 
         assembleAndroidTest.dependsOn variantOutputData.assembleTask
     }
@@ -2291,10 +2289,7 @@ abstract class TaskManager {
      *                assembleTask is always set in the Variant.
      * @param publishApk if true the generated APK gets published.
      */
-    public void createPackagingTask(
-            @NonNull ApkVariantData variantData,
-            Task assembleTask,
-            boolean publishApk) {
+    public void createPackagingTask(@NonNull ApkVariantData variantData, boolean publishApk) {
         GradleVariantConfiguration config = variantData.variantConfiguration
 
         boolean signedApk = variantData.isSigned()
@@ -2461,33 +2456,20 @@ abstract class TaskManager {
 
                     outputFileTask = zipAlignTask
                 }
-
             }
+
+            assert variantData.assembleVariantTask != null
 
             // Add an assemble task
             if (multiOutput) {
                 // create a task for this output
                 variantOutputData.assembleTask = createAssembleTask(variantOutputData)
 
-                // figure out the variant assemble task if it's not present yet.
-                if (variantData.assembleVariantTask == null) {
-                    if (assembleTask != null) {
-                        variantData.assembleVariantTask = assembleTask
-                    } else {
-                        variantData.assembleVariantTask = createAssembleTask(variantData)
-                    }
-                }
-
                 // variant assemble task depends on each output assemble task.
                 variantData.assembleVariantTask.dependsOn variantOutputData.assembleTask
             } else {
                 // single output
-                if (assembleTask != null) {
-                    variantData.assembleVariantTask = variantOutputData.assembleTask = assembleTask
-                } else {
-                    variantData.assembleVariantTask =
-                            variantOutputData.assembleTask = createAssembleTask(variantData)
-                }
+                variantOutputData.assembleTask = variantData.assembleVariantTask
             }
 
             if (!signedApk && variantOutputData.packageSplitResourcesTask != null) {
