@@ -17,7 +17,6 @@
 package com.android.build.gradle.internal
 
 import com.android.annotations.NonNull
-import com.android.annotations.Nullable
 import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.internal.variant.ApplicationVariantData
 import com.android.build.gradle.internal.variant.BaseVariantData
@@ -25,7 +24,6 @@ import com.android.build.gradle.internal.variant.BaseVariantOutputData
 import com.android.builder.core.AndroidBuilder
 import groovy.transform.CompileStatic
 import org.gradle.api.Project
-import org.gradle.api.Task
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.tasks.TaskContainer
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry
@@ -47,8 +45,7 @@ class ApplicationTaskManager extends TaskManager {
 
     @Override
     public void createTasksForVariantData(
-            @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData,
-            @Nullable Task assembleTask) {
+            @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData) {
 
         assert variantData instanceof ApplicationVariantData;
         ApplicationVariantData appVariantData = (ApplicationVariantData) variantData;
@@ -104,7 +101,7 @@ class ApplicationTaskManager extends TaskManager {
             createSplitAbiTasks(appVariantData);
         }
 
-        createPackagingTask(appVariantData, assembleTask, true /*publishApk*/);
+        createPackagingTask(appVariantData, true /*publishApk*/);
     }
 
     /**

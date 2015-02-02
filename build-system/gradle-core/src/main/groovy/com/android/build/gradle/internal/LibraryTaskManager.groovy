@@ -76,8 +76,7 @@ class LibraryTaskManager extends TaskManager {
 
     @Override
     public void createTasksForVariantData(
-            @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData,
-            @Nullable Task assembleTask) {
+            @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData) {
         LibraryVariantData libVariantData = variantData as LibraryVariantData
         GradleVariantConfiguration variantConfig = variantData.variantConfiguration
         DefaultBuildType buildType = variantConfig.buildType
@@ -294,11 +293,8 @@ class LibraryTaskManager extends TaskManager {
         LibVariantOutputData variantOutputData = libVariantData.outputs.get(0)
         variantOutputData.packageLibTask = bundle
 
-        if (assembleTask == null) {
-            assembleTask = createAssembleTask(variantData)
-        }
-        assembleTask.dependsOn bundle
-        variantData.assembleVariantTask = variantOutputData.assembleTask = assembleTask
+        variantData.assembleVariantTask.dependsOn bundle
+        variantOutputData.assembleTask = variantData.assembleVariantTask
 
         if (extension.defaultPublishConfig.equals(fullName)) {
             VariantHelper.setupDefaultConfig(project,
