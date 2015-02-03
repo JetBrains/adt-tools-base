@@ -16,15 +16,16 @@
 
 package com.android.build.gradle.internal.dsl
 
-import org.gradle.api.tasks.Input
+import com.google.common.collect.ImmutableList
 
 /**
  * Options for the adb tool.
  */
 public class AdbOptions implements com.android.builder.model.AdbOptions {
 
-    @Input
     int timeOutInMs
+
+    List<String> installOptions;
 
     @Override
     public int getTimeOutInMs() {
@@ -37,5 +38,26 @@ public class AdbOptions implements com.android.builder.model.AdbOptions {
 
     public void timeOutInMs(int timeOutInMs) {
         setTimeOutInMs(timeOutInMs);
+    }
+
+    @Override
+    Collection<String> getInstallOptions() {
+        return installOptions;
+    }
+
+    void setInstallOptions(String option) {
+        installOptions = ImmutableList.of(option);
+    }
+
+    void setInstallOptions(String...options) {
+        installOptions = ImmutableList.copyOf(options);
+    }
+
+    void installOptions(String option) {
+        installOptions = ImmutableList.of(option);
+    }
+
+    void installOptions(String...options) {
+        installOptions = ImmutableList.copyOf(options);
     }
 }

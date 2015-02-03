@@ -24,7 +24,9 @@ import com.android.builder.internal.testing.SimpleTestCallable
 import com.android.builder.testing.SimpleTestRunner
 import com.android.builder.testing.TestRunner
 import com.android.builder.testing.api.DeviceProvider
+import com.google.common.collect.ImmutableList
 import org.gradle.api.GradleException
+import org.gradle.api.Nullable
 import org.gradle.api.tasks.TaskAction
 import org.gradle.logging.ConsoleRenderer
 /**
@@ -37,6 +39,9 @@ public class DeviceProviderInstrumentTestTask extends BaseTask implements Androi
     File coverageDir
 
     String flavorName
+
+    @Nullable
+    Collection<String> installOptions;
 
     DeviceProvider deviceProvider
     TestVariantData testVariantData
@@ -75,12 +80,15 @@ public class DeviceProviderInstrumentTestTask extends BaseTask implements Androi
             TestRunner testRunner = new SimpleTestRunner(getAdbExec());
             deviceProvider.init();
 
+            Collection<String> extraArgs = installOptions == null || installOptions.isEmpty() ?
+                    ImmutableList.of() : installOptions;
             try {
                 success = testRunner.runTests(project.name, flavor,
                         testApk, new TestDataImpl(testVariantData),
                         deviceProvider.devices,
                         deviceProvider.getMaxThreads(),
                         deviceProvider.getTimeoutInMs(),
+                        extraArgs,
                         resultsOutDir, coverageOutDir, getILogger());
             } finally {
                 deviceProvider.terminate();
