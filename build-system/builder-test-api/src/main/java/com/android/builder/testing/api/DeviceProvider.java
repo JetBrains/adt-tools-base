@@ -53,9 +53,9 @@ public abstract class DeviceProvider {
 
     /**
      * Returns the timeout to use.
-     * @return the time out.
+     * @return the time out in milliseconds.
      */
-    public abstract int getTimeout();
+    public abstract int getTimeoutInMs();
 
     /**
      * Returns true if the provider is configured and able to run.
