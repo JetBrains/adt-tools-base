@@ -2369,6 +2369,10 @@ abstract class TaskManager {
                 getOptionalDir(variantData.processJavaResourcesTask.destinationDir)
             }
             conventionMapping(packageApp).map("jniFolders") {
+                if (variantData.getSplitHandlingPolicy() ==
+                        BaseVariantData.SplitHandlingPolicy.PRE_21_POLICY) {
+                    return getJniFolders(variantData)
+                }
                 Set<String> filters = AbiSplitOptions.getAbiFilters(
                         getExtension().getSplits().getAbiFilters())
                 return filters.isEmpty() ? getJniFolders(variantData) : Collections.emptySet();
