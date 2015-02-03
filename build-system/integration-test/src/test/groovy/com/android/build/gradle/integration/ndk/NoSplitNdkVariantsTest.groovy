@@ -31,9 +31,9 @@ import static org.junit.Assert.assertNotNull
 import static org.junit.Assert.assertNull
 
 /**
- * Integration test of the native plugin with multiple variants.
+ * Integration test of the native plugin with multiple variants without using splits.
  */
-class NdkVariantIntegTest {
+class NoSplitNdkVariantsTest {
 
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder().create()
