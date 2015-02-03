@@ -298,7 +298,7 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
      * @return the FolderData object.
      */
     @Nullable
-    private static FolderData getFolderData(File folder) {
+    private static FolderData getFolderData(File folder) throws MergingException {
         FolderData fd = new FolderData();
 
         String folderName = folder.getName();
@@ -311,7 +311,7 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
 
             FolderConfiguration folderConfiguration = FolderConfiguration.getConfigForFolder(folderName);
             if (folderConfiguration == null) {
-                return null;
+                throw new MergingException("Invalid resource directory name").setFile(folder);
             }
 
             // normalize it
