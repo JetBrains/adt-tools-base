@@ -90,6 +90,7 @@ android {
 
     adbOptions {
           timeOutInMs 5000 // 5 seconds in ms.
+          installOptions "-d","-t"
     }
 
     lintOptions {

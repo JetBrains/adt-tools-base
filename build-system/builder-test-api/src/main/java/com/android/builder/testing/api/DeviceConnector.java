@@ -26,6 +26,7 @@ import com.google.common.annotations.Beta;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -55,7 +56,11 @@ public abstract class DeviceConnector implements IShellEnabledDevice {
      * @param logger the logger to use to log debug, warnings and errors.
      * @throws DeviceException
      */
-    public abstract void installPackage(@NonNull File apkFile, int timeout, ILogger logger)
+    public abstract void installPackage(
+            @NonNull File apkFile,
+            @NonNull Collection<String> options,
+            int timeout,
+            ILogger logger)
             throws DeviceException;
 
     /**
@@ -63,11 +68,16 @@ public abstract class DeviceConnector implements IShellEnabledDevice {
      * a {@link com.android.builder.testing.api.DeviceException} will be thrown.
      *
      * @param apkFiles the APK files to install.
+     * @param options the install options.
      * @param timeoutInMs the time out in milliseconds.
      * @param logger the logger to use to log debug, warnings and errors.
      * @throws DeviceException
      */
-    public abstract void installPackages(@NonNull List<File> apkFiles, int timeoutInMs, ILogger logger)
+    public abstract void installPackages(
+            @NonNull List<File> apkFiles,
+            @NonNull Collection<String> options,
+            int timeoutInMs,
+            ILogger logger)
             throws DeviceException;
 
     /**

@@ -37,6 +37,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -82,9 +83,12 @@ public class ConnectedDevice extends DeviceConnector {
     }
 
     @Override
-    public void installPackage(@NonNull File apkFile, int timeout, ILogger logger) throws DeviceException {
+    public void installPackage(@NonNull File apkFile,
+            @NonNull Collection<String> options,
+            int timeout,
+            ILogger logger) throws DeviceException {
         try {
-            iDevice.installPackage(apkFile.getAbsolutePath(), true /*reinstall*/);
+            iDevice.installPackage(apkFile.getAbsolutePath(), true /*reinstall*/, options);
         } catch (Exception e) {
             logger.error(e, "Unable to install " + apkFile.getAbsolutePath());
             throw new DeviceException(e);
@@ -92,7 +96,10 @@ public class ConnectedDevice extends DeviceConnector {
     }
 
     @Override
-    public void installPackages(@NonNull List<File> splitApkFiles, int timeoutInMs, ILogger logger)
+    public void installPackages(@NonNull List<File> splitApkFiles,
+            @NonNull Collection<String> options,
+            int timeoutInMs,
+            ILogger logger)
             throws DeviceException {
 
         List<String> apkFileNames = Lists.transform(splitApkFiles, new Function<File, String>() {
@@ -102,7 +109,7 @@ public class ConnectedDevice extends DeviceConnector {
             }
         });
         try {
-            iDevice.installPackages(apkFileNames, timeoutInMs, true /*reinstall*/);
+            iDevice.installPackages(apkFileNames, timeoutInMs, true /*reinstall*/,  options);
         } catch (Exception e) {
             logger.error(e, "Unable to install " + Joiner.on(',').join(apkFileNames));
             throw new DeviceException(e);

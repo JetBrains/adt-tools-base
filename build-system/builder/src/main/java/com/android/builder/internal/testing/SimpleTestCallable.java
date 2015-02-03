@@ -33,6 +33,7 @@ import com.google.common.collect.ImmutableList;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.PrintWriter;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -67,6 +68,8 @@ public class SimpleTestCallable implements Callable<Boolean> {
     private final List<File> testedApks;
     @NonNull
     private final File adbExec;
+    @NonNull
+    private final Collection<String> installOptions;
 
     private final int timeoutInMs;
     @NonNull
@@ -83,6 +86,7 @@ public class SimpleTestCallable implements Callable<Boolean> {
             @NonNull  File resultsDir,
             @NonNull  File coverageDir,
                       int timeoutInMs,
+            @NonNull Collection<String> installOptions,
             @NonNull  ILogger logger) {
         this.projectName = projectName;
         this.device = device;
@@ -94,6 +98,7 @@ public class SimpleTestCallable implements Callable<Boolean> {
         this.testData = testData;
         this.adbExec = adbExec;
         this.timeoutInMs = timeoutInMs;
+        this.installOptions = installOptions;
         this.logger = logger;
     }
 
@@ -122,14 +127,16 @@ public class SimpleTestCallable implements Callable<Boolean> {
                             + " require a device with API level 21+");
                 }
                 if (device.getApiLevel() >= 21) {
-                    device.installPackages(testedApks, timeoutInMs, logger);
+                    device.installPackages(testedApks,
+                            ImmutableList.<String>of() /* installOptions */, timeoutInMs, logger);
                 } else {
-                    device.installPackage(testedApks.get(0), timeoutInMs, logger);
+                    device.installPackage(testedApks.get(0),
+                            ImmutableList.<String>of() /* installOptions */, timeoutInMs, logger);
                 }
             }
 
             logger.verbose("DeviceConnector '%s': installing %s", deviceName, testApk);
-            device.installPackage(testApk, timeoutInMs, logger);
+            device.installPackage(testApk, installOptions, timeoutInMs, logger);
             isInstalled = true;
 
             RemoteAndroidTestRunner runner = new RemoteAndroidTestRunner(
