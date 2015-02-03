@@ -976,8 +976,7 @@ abstract class TaskManager {
         zipAlign.dependsOn(variantOutputData.packageSplitResourcesTask)
     }
 
-    public void createSplitAbiTasks(
-            @NonNull ApplicationVariantData variantData) {
+    public void createSplitAbiTasks(@NonNull ApplicationVariantData variantData) {
 
         assert variantData.getSplitHandlingPolicy() ==
                 BaseVariantData.SplitHandlingPolicy.RELEASE_21_AND_AFTER_POLICY;
