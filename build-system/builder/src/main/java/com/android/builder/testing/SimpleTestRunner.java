@@ -53,7 +53,7 @@ public class SimpleTestRunner implements TestRunner {
             @NonNull TestData testData,
             @NonNull List<? extends DeviceConnector> deviceList,
                      int maxThreads,
-                     int timeout,
+                     int timeoutInMs,
             @NonNull File resultsDir,
             @NonNull File coverageDir,
             @NonNull ILogger logger) throws TestException, NoAuthorizedDeviceFoundException, InterruptedException {
@@ -87,7 +87,7 @@ public class SimpleTestRunner implements TestRunner {
                     compatibleDevices++;
                     executor.execute(new SimpleTestCallable(device, projectName, variantName,
                             testApk, testedApks, mAdbExec, testData,
-                            resultsDir, coverageDir, timeout, logger));
+                            resultsDir, coverageDir, timeoutInMs, logger));
                 }
             } else {
                 unAuthorizedDevices++;

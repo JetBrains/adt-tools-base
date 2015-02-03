@@ -68,7 +68,7 @@ public class SimpleTestCallable implements Callable<Boolean> {
     @NonNull
     private final File adbExec;
 
-    private final int timeout;
+    private final int timeoutInMs;
     @NonNull
     private final ILogger logger;
 
@@ -82,7 +82,7 @@ public class SimpleTestCallable implements Callable<Boolean> {
             @NonNull  TestData testData,
             @NonNull  File resultsDir,
             @NonNull  File coverageDir,
-                      int timeout,
+                      int timeoutInMs,
             @NonNull  ILogger logger) {
         this.projectName = projectName;
         this.device = device;
@@ -93,7 +93,7 @@ public class SimpleTestCallable implements Callable<Boolean> {
         this.testedApks = testedApks;
         this.testData = testData;
         this.adbExec = adbExec;
-        this.timeout = timeout;
+        this.timeoutInMs = timeoutInMs;
         this.logger = logger;
     }
 
@@ -112,7 +112,7 @@ public class SimpleTestCallable implements Callable<Boolean> {
         String coverageFile = "/data/data/" + testData.getTestedApplicationId() + "/" + FILE_COVERAGE_EC;
 
         try {
-            device.connect(timeout, logger);
+            device.connect(timeoutInMs, logger);
 
             if (!testedApks.isEmpty()) {
                 logger.verbose("DeviceConnector '%s': installing %s", deviceName,
@@ -122,14 +122,14 @@ public class SimpleTestCallable implements Callable<Boolean> {
                             + " require a device with API level 21+");
                 }
                 if (device.getApiLevel() >= 21) {
-                    device.installPackages(testedApks, timeout, logger);
+                    device.installPackages(testedApks, timeoutInMs, logger);
                 } else {
-                    device.installPackage(testedApks.get(0), timeout, logger);
+                    device.installPackage(testedApks.get(0), timeoutInMs, logger);
                 }
             }
 
             logger.verbose("DeviceConnector '%s': installing %s", deviceName, testApk);
-            device.installPackages(ImmutableList.of(testApk), timeout, logger);
+            device.installPackage(testApk, timeoutInMs, logger);
             isInstalled = true;
 
             RemoteAndroidTestRunner runner = new RemoteAndroidTestRunner(
@@ -143,7 +143,7 @@ public class SimpleTestCallable implements Callable<Boolean> {
             }
 
             runner.setRunName(deviceName);
-            runner.setMaxtimeToOutputResponse(timeout);
+            runner.setMaxtimeToOutputResponse(timeoutInMs);
 
             runner.run(runListener);
 
@@ -235,7 +235,7 @@ public class SimpleTestCallable implements Callable<Boolean> {
                 }
             }
 
-            device.disconnect(timeout, logger);
+            device.disconnect(timeoutInMs, logger);
         }
     }
 
@@ -244,7 +244,7 @@ public class SimpleTestCallable implements Callable<Boolean> {
             throws DeviceException {
         if (packageName != null) {
             logger.verbose("DeviceConnector '%s': uninstalling %s", deviceName, packageName);
-            device.uninstallPackage(packageName, timeout, logger);
+            device.uninstallPackage(packageName, timeoutInMs, logger);
         } else {
             logger.verbose("DeviceConnector '%s': unable to uninstall %s: unable to get package name",
                     deviceName, apkFile);

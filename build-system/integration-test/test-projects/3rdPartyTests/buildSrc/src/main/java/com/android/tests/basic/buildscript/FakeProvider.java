@@ -39,7 +39,7 @@ public class FakeProvider extends DeviceProvider {
     }
 
     @Override
-    public int getTimeout() {
+    public int getTimeoutInMs() {
         return 0;
     }
 

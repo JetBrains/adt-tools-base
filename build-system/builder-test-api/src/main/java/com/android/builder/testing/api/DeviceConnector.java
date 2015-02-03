@@ -63,11 +63,11 @@ public abstract class DeviceConnector implements IShellEnabledDevice {
      * a {@link com.android.builder.testing.api.DeviceException} will be thrown.
      *
      * @param apkFiles the APK files to install.
-     * @param timeout the time out.
+     * @param timeoutInMs the time out in milliseconds.
      * @param logger the logger to use to log debug, warnings and errors.
      * @throws DeviceException
      */
-    public abstract void installPackages(@NonNull List<File> apkFiles, int timeout, ILogger logger)
+    public abstract void installPackages(@NonNull List<File> apkFiles, int timeoutInMs, ILogger logger)
             throws DeviceException;
 
     /**
