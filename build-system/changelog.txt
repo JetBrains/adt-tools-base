@@ -1,3 +1,12 @@
+1.1.0
+- Unit testing support. Unit testing code is run on the local JVM, against a
+  special version of android.jar that is compatible with popular mocking
+  frameworks (e.g. Mockito).
+  * New tasks: test, testDebug/testRelease, testMyFlavorDebug (when using flavors).
+  * New source folders recognized as unit tests: src/test/java, src/testDebug/java etc.
+  * New configurations for adding test-only dependencies, e.g.
+      testCompile 'junit:junit:4.11'
+
 1.0.0-rc2
 - Enhanced manifest merger logging by specifying library coordinates.
 - Allow manifest placeholder to be of any type as long as toString() is implemented.
