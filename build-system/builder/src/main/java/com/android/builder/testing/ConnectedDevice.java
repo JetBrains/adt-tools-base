@@ -92,7 +92,7 @@ public class ConnectedDevice extends DeviceConnector {
     }
 
     @Override
-    public void installPackages(@NonNull List<File> splitApkFiles, int timeout, ILogger logger)
+    public void installPackages(@NonNull List<File> splitApkFiles, int timeoutInMs, ILogger logger)
             throws DeviceException {
 
         List<String> apkFileNames = Lists.transform(splitApkFiles, new Function<File, String>() {
@@ -102,7 +102,7 @@ public class ConnectedDevice extends DeviceConnector {
             }
         });
         try {
-            iDevice.installPackages(apkFileNames, timeout, true /*reinstall*/);
+            iDevice.installPackages(apkFileNames, timeoutInMs, true /*reinstall*/);
         } catch (Exception e) {
             logger.error(e, "Unable to install " + Joiner.on(',').join(apkFileNames));
             throw new DeviceException(e);

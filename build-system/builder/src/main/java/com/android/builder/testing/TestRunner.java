@@ -40,7 +40,7 @@ public interface TestRunner {
      * @param testData
      * @param deviceList
      * @param maxThreads the max number of threads to run in parallel. 0 means unlimited.
-     * @param timeout
+     * @param timeoutInMs time out in milliseconds
      * @param resultsDir
      * @param coverageDir
      * @param logger
@@ -56,7 +56,7 @@ public interface TestRunner {
             @NonNull  TestData testData,
             @NonNull  List<? extends DeviceConnector> deviceList,
                       int maxThreads,
-                      int timeout,
+                      int timeoutInMs,
             @NonNull  File resultsDir,
             @NonNull  File coverageDir,
             @NonNull  ILogger logger)

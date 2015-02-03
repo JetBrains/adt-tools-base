@@ -47,6 +47,7 @@
             <tr><td>packagingOptions</td></tr>
             <tr><td>jacoco</td></tr>
             <tr><td>splits</td></tr>
+            <tr><td>adbOptions</td></tr>
         </table>
     </section>
 </section>

@@ -35,11 +35,9 @@ import com.android.ide.common.process.ProcessException
 import com.android.ide.common.process.ProcessExecutor
 import com.android.ide.common.process.ProcessInfoBuilder
 import com.android.ide.common.process.ProcessOutput
-import com.android.utils.ILogger
 import com.google.common.base.Joiner
-import com.google.common.collect.Lists
 import org.gradle.api.GradleException
-import org.gradle.api.internal.tasks.options.Option
+import org.gradle.api.tasks.Input
 import org.gradle.api.logging.Logger
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.Optional
@@ -62,7 +60,8 @@ public class InstallVariantTask extends BaseTask {
 
     String projectName
 
-    int timeOut = 0
+    @Input
+    int timeOutInMs = 0
 
     BaseVariantData<? extends BaseVariantOutputData> variantData
     InstallVariantTask() {
@@ -152,10 +151,10 @@ public class InstallVariantTask extends BaseTask {
                         logger.lifecycle("Installing APK '${Joiner.on(", ").join(apkFiles*.getName())}'" +
                                 " on '${device.getName()}'")
                         if (apkFiles.size() > 1 || device.getApiLevel() >= 21) {
-                            device.installPackages(apkFiles, getTimeOut(), getILogger());
+                            device.installPackages(apkFiles, getTimeOutInMs(), getILogger());
                             successfulInstallCount++
                         } else {
-                            device.installPackage(apkFiles.get(0), getTimeOut(), getILogger())
+                            device.installPackage(apkFiles.get(0), getTimeOutInMs(), getILogger())
                             successfulInstallCount++
                         }
                     }
