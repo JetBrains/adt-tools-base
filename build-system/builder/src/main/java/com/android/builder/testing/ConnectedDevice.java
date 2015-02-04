@@ -88,7 +88,8 @@ public class ConnectedDevice extends DeviceConnector {
             int timeout,
             ILogger logger) throws DeviceException {
         try {
-            iDevice.installPackage(apkFile.getAbsolutePath(), true /*reinstall*/, options);
+            iDevice.installPackage(apkFile.getAbsolutePath(), true /*reinstall*/,
+                    options.isEmpty() ? null : options.toArray(new String[options.size()]));
         } catch (Exception e) {
             logger.error(e, "Unable to install " + apkFile.getAbsolutePath());
             throw new DeviceException(e);
@@ -109,7 +110,8 @@ public class ConnectedDevice extends DeviceConnector {
             }
         });
         try {
-            iDevice.installPackages(apkFileNames, timeoutInMs, true /*reinstall*/,  options);
+            iDevice.installPackages(apkFileNames, timeoutInMs, true /*reinstall*/,
+                    options.isEmpty() ? null : options.toArray(new String[options.size()]));
         } catch (Exception e) {
             logger.error(e, "Unable to install " + Joiner.on(',').join(apkFileNames));
             throw new DeviceException(e);
