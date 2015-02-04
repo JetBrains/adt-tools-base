@@ -79,7 +79,7 @@ public class ShrinkResources extends BaseTask {
                     sourceDir,
                     variantData.obfuscatedClassesJar,
                     mergedManifest,
-                    variantData.mappingFile,
+                    variantData.getMappingFile(),
                     resourceDir)
             analyzer.verbose = project.logger.isEnabled(LogLevel.INFO)
             analyzer.debug = project.logger.isEnabled(LogLevel.DEBUG)

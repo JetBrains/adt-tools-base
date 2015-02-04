@@ -332,11 +332,6 @@ public class ModelBuilder implements ToolingModelBuilder {
                     intVersionCode));
         }
 
-        AbstractCompile compileTask = variantData.javaCompileTask
-        if (compileTask == null) {
-            compileTask = variantData.jackTask
-        }
-
         return new AndroidArtifactImpl(
                 name,
                 outputs,
@@ -348,7 +343,7 @@ public class ModelBuilder implements ToolingModelBuilder {
                 variantData.compileTask.name,
                 getGeneratedSourceFolders(variantData),
                 getGeneratedResourceFolders(variantData),
-                compileTask.destinationDir,
+                variantData.javaCompileTask.destinationDir,
                 DependenciesImpl.cloneDependencies(variantData, androidBuilder, gradleProjects),
                 sourceProviders.variantSourceProvider,
                 sourceProviders.multiFlavorSourceProvider,

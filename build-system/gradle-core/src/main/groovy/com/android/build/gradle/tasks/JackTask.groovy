@@ -15,6 +15,7 @@
  */
 
 package com.android.build.gradle.tasks
+
 import com.android.builder.core.AndroidBuilder
 import com.android.sdklib.BuildToolInfo
 import com.android.sdklib.repository.FullRevision
@@ -32,7 +33,7 @@ import org.gradle.api.tasks.compile.AbstractCompile
  * Jack task.
  */
 @ParallelizableTask
-public class JackTask extends AbstractCompile {
+public class JackTask extends AbstractCompile implements MappingFileProviderTask {
 
     final static FullRevision JACK_MIN_REV = new FullRevision(21, 1, 0)
 
@@ -50,7 +51,8 @@ public class JackTask extends AbstractCompile {
     @InputFiles
     Collection<File> packagedLibraries
 
-    @InputFiles @Optional
+    @InputFiles
+    @Optional
     Collection<File> proguardFiles
 
     @Input
@@ -61,7 +63,8 @@ public class JackTask extends AbstractCompile {
     @OutputFile
     File jackFile
 
-    @OutputFile @Optional
+    @OutputFile
+    @Optional
     File mappingFile
 
     @Input
