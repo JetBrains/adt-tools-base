@@ -61,7 +61,7 @@ public class HelloWorld extends Activity {
 }
 """))
 
-        testApp.writeSources(androidProject.testDir)
+        testApp.write(androidProject.testDir, null)
 
         androidProject.getBuildFile() << """\
 apply plugin: 'com.android.library'
@@ -94,7 +94,7 @@ public class LibInJar {
     }
 }
 """))
-        libraryInJar.writeSources(libraryInJarProject.testDir)
+        libraryInJar.write(libraryInJarProject.testDir, null)
         libraryInJarProject.buildFile << "apply plugin: 'java'"
         libraryInJarProject.execute("assemble")
 
