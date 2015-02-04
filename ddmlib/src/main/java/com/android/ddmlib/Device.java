@@ -1219,10 +1219,14 @@ final class Device implements IDevice {
     public int getDensity() {
         String densityValue = getProperty(IDevice.PROP_DEVICE_DENSITY);
         if (densityValue != null) {
-            return Integer.parseInt(densityValue);
+            try {
+                return Integer.parseInt(densityValue);
+            } catch (NumberFormatException e) {
+                return -1;
+            }
         }
 
-        return 0;
+        return -1;
     }
 
     @Override

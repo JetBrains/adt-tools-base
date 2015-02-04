@@ -612,9 +612,10 @@ public interface IDevice extends IShellEnabledDevice {
     public List<String> getAbis();
 
     /**
-     * Returns the density bucket of the device screen.
+     * Returns the density bucket of the device screen by reading the value for system property
+     * {@link #PROP_DEVICE_DENSITY}.
      *
-     * @return the density, or 0 if it's unknown.
+     * @return the density, or -1 if it cannot be determined.
      */
     public int getDensity();
 
