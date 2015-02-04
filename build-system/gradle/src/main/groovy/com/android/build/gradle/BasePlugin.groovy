@@ -16,7 +16,6 @@
 
 package com.android.build.gradle
 
-import com.android.annotations.NonNull
 import com.android.annotations.Nullable
 import com.android.annotations.VisibleForTesting
 import com.android.build.gradle.internal.BadPluginException
@@ -78,7 +77,6 @@ import static java.io.File.separator
 public abstract class BasePlugin {
 
     private static final String GRADLE_MIN_VERSION = "2.2"
-    public static final String GRADLE_TEST_VERSION = "2.4-20150115230034+0000"
     public static final Pattern GRADLE_ACCEPTABLE_VERSIONS = Pattern.compile("2\\.[2-9].*")
     private static final String GRADLE_VERSION_CHECK_OVERRIDE_PROPERTY =
             "com.android.build.gradle.overrideVersionCheck"
@@ -100,13 +98,13 @@ public abstract class BasePlugin {
 
     protected Instantiator instantiator
 
-    protected ToolingModelBuilderRegistry registry
+    private ToolingModelBuilderRegistry registry
 
     private JacocoPlugin jacocoPlugin
 
     private LoggerWrapper loggerWrapper
 
-    protected ExtraModelInfo extraModelInfo
+    private ExtraModelInfo extraModelInfo
 
     private String creator
 
@@ -368,10 +366,6 @@ public abstract class BasePlugin {
         }
     }
 
-    public void setBaseExtension(@NonNull BaseExtension extension) {
-        this.extension = extension
-    }
-
     private void checkGradleVersion() {
         if (!GRADLE_ACCEPTABLE_VERSIONS.matcher(project.getGradle().gradleVersion).matches()) {
             boolean allowNonMatching = Boolean.getBoolean(GRADLE_VERSION_CHECK_OVERRIDE_PROPERTY)
@@ -433,7 +427,7 @@ public abstract class BasePlugin {
         return project.logger.isEnabled(LogLevel.INFO)
     }
 
-    public void ensureTargetSetup() {
+    private void ensureTargetSetup() {
         // check if the target has been set.
         TargetInfo targetInfo = androidBuilder.getTargetInfo()
         if (targetInfo == null) {
