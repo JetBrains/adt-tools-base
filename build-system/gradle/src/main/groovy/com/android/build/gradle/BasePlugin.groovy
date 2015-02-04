@@ -71,7 +71,6 @@ import static com.android.builder.core.BuilderConstants.DEBUG
 import static com.android.builder.core.BuilderConstants.RELEASE
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
 import static java.io.File.separator
-
 /**
  * Base class for all Android plugins
  */
@@ -80,12 +79,12 @@ public abstract class BasePlugin {
 
     private static final String GRADLE_MIN_VERSION = "2.2"
     public static final String GRADLE_TEST_VERSION = "2.4-20150115230034+0000"
-    public static final Pattern GRADLE_ACCEPTABLE_VERSIONS = Pattern.compile("2\\.[2-9].*");
+    public static final Pattern GRADLE_ACCEPTABLE_VERSIONS = Pattern.compile("2\\.[2-9].*")
     private static final String GRADLE_VERSION_CHECK_OVERRIDE_PROPERTY =
             "com.android.build.gradle.overrideVersionCheck"
 
     // default retirement age in days since its inception date for RC or beta versions.
-    private static final int DEFAULT_RETIREMENT_AGE_FOR_NON_RELEASE = 40;
+    private static final int DEFAULT_RETIREMENT_AGE_FOR_NON_RELEASE = 40
 
     protected BaseExtension extension
 
