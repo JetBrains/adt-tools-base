@@ -23,7 +23,6 @@ import static org.junit.Assert.fail;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.gradle.BasePlugin;
 import com.android.build.gradle.integration.common.fixture.app.AbstractAndroidTestApp;
 import com.android.build.gradle.integration.common.fixture.app.AndroidTestApp;
 import com.android.build.gradle.integration.common.fixture.app.TestSourceFile;
@@ -80,6 +79,7 @@ public class GradleTestProject implements TestRule {
 
     public static final int DEFAULT_COMPILE_SDK_VERSION = 21;
     public static final String DEFAULT_BUILD_TOOL_VERSION = "21.0.1";
+    public static final String GRADLE_TEST_VERSION = "2.2";
 
     private static final String ANDROID_GRADLE_VERSION = "1.1.0-rc1";
     private static final String COMMON_HEADER = "commonHeader.gradle";
@@ -720,7 +720,7 @@ public class GradleTestProject implements TestRule {
         ((DefaultGradleConnector) connector).daemonMaxIdleTime(10, TimeUnit.SECONDS);
 
         return connector
-                .useGradleVersion(BasePlugin.GRADLE_TEST_VERSION)
+                .useGradleVersion(GRADLE_TEST_VERSION)
                 .forProjectDirectory(testDir)
                 .connect();
     }
