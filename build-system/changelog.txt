@@ -3,9 +3,17 @@
   special version of android.jar that is compatible with popular mocking
   frameworks (e.g. Mockito).
   * New tasks: test, testDebug/testRelease, testMyFlavorDebug (when using flavors).
-  * New source folders recognized as unit tests: src/test/java, src/testDebug/java etc.
+  * New source folders recognized as unit tests:
+      src/test/java, src/testDebug/java, src/testMyFlavor/java etc.
   * New configurations for adding test-only dependencies, e.g.
       testCompile 'junit:junit:4.11'
+      testMyFlavorCompile 'some:library:1.0'
+- Task names that used to contain 'Test', e.g. 'assembleDebugTest' now use
+  'AndroidTest', e.g. 'assembleDebugAndroidTest'. This is to distinguish them
+  from the unit test tasks, e.g. 'assembleDebugUnitTest'.
+- ProGuard configuration files are no longer applied to the test APK. If
+  minification is enabled, the test APK will be processed by ProGuard only to apply
+  the mapping file generated when minifying the main APK.
 
 1.0.0-rc2
 - Enhanced manifest merger logging by specifying library coordinates.
