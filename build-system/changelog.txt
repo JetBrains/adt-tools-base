@@ -20,6 +20,14 @@
   * sync tested and test dependency trees:
      - if the same version of an artifact is present in both, it'll get skipped in the test app.
      - if the version is different it'll generate a build error. Gradle provides mechanism to resolve this.
+- Made queue based cruncher the default png cruncher which should bring significant performance
+  improvement when crunching multiple png files.
+  To turn it off :
+    android {
+        aaptOptions {
+            useNewCruncher false
+        }
+    }
 
 1.0.0
 - Final 1.0.0 version
