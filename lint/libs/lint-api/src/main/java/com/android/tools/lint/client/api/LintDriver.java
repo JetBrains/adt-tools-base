@@ -29,6 +29,7 @@ import static com.android.SdkConstants.RES_FOLDER;
 import static com.android.SdkConstants.SUPPRESS_ALL;
 import static com.android.SdkConstants.SUPPRESS_LINT;
 import static com.android.SdkConstants.TOOLS_URI;
+import static com.android.ide.common.resources.configuration.FolderConfiguration.QUALIFIER_SPLITTER;
 import static com.android.tools.lint.detector.api.LintUtils.isAnonymousClass;
 import static java.io.File.separator;
 
@@ -56,7 +57,6 @@ import com.android.tools.lint.detector.api.TextFormat;
 import com.android.tools.lint.detector.api.XmlContext;
 import com.google.common.annotations.Beta;
 import com.google.common.base.Objects;
-import com.google.common.base.Splitter;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -2507,7 +2507,7 @@ public class LintDriver {
         mCachedFolder = parent;
         mCachedFolderVersion = -1;
 
-        for (String qualifier : Splitter.on('-').split(parent.getName())) {
+        for (String qualifier : QUALIFIER_SPLITTER.split(parent.getName())) {
             Matcher matcher = VERSION_PATTERN.matcher(qualifier);
             if (matcher.matches()) {
                 String group = matcher.group(1);

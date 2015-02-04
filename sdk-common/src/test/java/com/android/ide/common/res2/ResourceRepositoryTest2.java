@@ -24,8 +24,7 @@ import static com.android.SdkConstants.FD_RES_VALUES;
 import com.android.ide.common.rendering.api.ResourceValue;
 import com.android.ide.common.resources.TestResourceRepository;
 import com.android.ide.common.resources.configuration.FolderConfiguration;
-import com.android.ide.common.resources.configuration.LanguageQualifier;
-import com.android.ide.common.resources.configuration.RegionQualifier;
+import com.android.ide.common.resources.configuration.LocaleQualifier;
 import com.android.ide.common.resources.configuration.ScreenOrientationQualifier;
 import com.android.resources.ResourceType;
 import com.android.resources.ScreenOrientation;
@@ -196,7 +195,7 @@ public class ResourceRepositoryTest2 extends TestCase {
         }
         //assertTrue(item.hasDefault());
         FolderConfiguration folderConfig = new FolderConfiguration();
-        folderConfig.setLanguageQualifier(new LanguageQualifier("en"));
+        folderConfig.setLocaleQualifier(LocaleQualifier.getQualifier("en"));
         Map<ResourceType, Map<String, ResourceValue>> configuredItems = mRepository
                 .getConfiguredResources(folderConfig);
         ResourceValue value = configuredItems.get(ResourceType.STRING).get("show_all_apps");
@@ -205,7 +204,7 @@ public class ResourceRepositoryTest2 extends TestCase {
         assertSame(ResourceType.STRING, value.getResourceType());
 
         folderConfig = new FolderConfiguration();
-        folderConfig.setLanguageQualifier(new LanguageQualifier("es"));
+        folderConfig.setLocaleQualifier(LocaleQualifier.getQualifier("es"));
         configuredItems = mRepository.getConfiguredResources(folderConfig);
         value = configuredItems.get(ResourceType.STRING).get("show_all_apps");
         assertNotNull(value);
@@ -243,7 +242,7 @@ public class ResourceRepositoryTest2 extends TestCase {
 
     public void testGetConfiguredResources() throws Exception {
         FolderConfiguration folderConfig = new FolderConfiguration();
-        folderConfig.setLanguageQualifier(new LanguageQualifier("es"));
+        folderConfig.setLocaleQualifier(LocaleQualifier.getQualifier("es"));
         folderConfig.setScreenOrientationQualifier(
                 new ScreenOrientationQualifier(ScreenOrientation.LANDSCAPE));
 
@@ -275,7 +274,7 @@ public class ResourceRepositoryTest2 extends TestCase {
 
     public void testGetMatchingFileAliases() throws Exception {
         FolderConfiguration folderConfig = new FolderConfiguration();
-        folderConfig.setLanguageQualifier(new LanguageQualifier("es"));
+        folderConfig.setLocaleQualifier(LocaleQualifier.getQualifier("es"));
         folderConfig.setScreenOrientationQualifier(
                 new ScreenOrientationQualifier(ScreenOrientation.LANDSCAPE));
 
@@ -285,7 +284,7 @@ public class ResourceRepositoryTest2 extends TestCase {
         assertEquals(6, layouts.size());
         assertNotNull(layouts.get("layout1"));
 
-        folderConfig.setRegionQualifier(new RegionQualifier("ES"));
+        folderConfig.setLocaleQualifier(LocaleQualifier.getQualifier("es-rES"));
         ResourceFile file = mRepository.getMatchingFile("dialog_min_width_major",
                 ResourceType.DIMEN, folderConfig);
         assertNotNull(file);
@@ -294,7 +293,7 @@ public class ResourceRepositoryTest2 extends TestCase {
         assertEquals("layout2.xml", file.getFile().getName());
         assertEquals("", file.getQualifiers());
 
-        folderConfig.setRegionQualifier(new RegionQualifier("US"));
+        folderConfig.setLocaleQualifier(LocaleQualifier.getQualifier("es-rUS"));
         file = mRepository.getMatchingFile("layout2", ResourceType.LAYOUT, folderConfig);
         assertNotNull(file);
         assertEquals("layout1.xml", file.getFile().getName());

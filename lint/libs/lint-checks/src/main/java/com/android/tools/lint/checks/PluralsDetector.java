@@ -21,6 +21,7 @@ import static com.android.SdkConstants.TAG_ITEM;
 import static com.android.SdkConstants.TAG_PLURALS;
 
 import com.android.annotations.NonNull;
+import com.android.ide.common.resources.configuration.LocaleQualifier;
 import com.android.resources.ResourceFolderType;
 import com.android.tools.lint.checks.PluralsDatabase.Quantity;
 import com.android.tools.lint.detector.api.Category;
@@ -31,7 +32,6 @@ import com.android.tools.lint.detector.api.ResourceXmlDetector;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.XmlContext;
-import com.android.utils.Pair;
 
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -138,14 +138,11 @@ public class PluralsDetector extends ResourceXmlDetector {
             return;
         }
 
-        Pair<String, String> locale = TypoDetector.getLocale(context);
-        if (locale == null) {
+        LocaleQualifier locale = LintUtils.getLocale(context);
+        if (locale == null || !locale.hasLanguage()) {
             return;
         }
-        String language = locale.getFirst();
-        if (language == null) {
-            return;
-        }
+        String language = locale.getLanguage();
 
         PluralsDatabase plurals = PluralsDatabase.get();
 

@@ -279,7 +279,7 @@ public class ButtonDetector extends ResourceXmlDetector {
                                     foundResource(context, name, element);
 
                                     if (!label.equals(CANCEL_LABEL)
-                                            && isEnglishResource(context)
+                                            && LintUtils.isEnglishResource(context, true)
                                             && context.isEnabled(CASE)) {
                                         assert label.equalsIgnoreCase(CANCEL_LABEL);
                                         context.report(CASE, child, context.getLocation(child),
@@ -296,7 +296,7 @@ public class ButtonDetector extends ResourceXmlDetector {
                                     foundResource(context, name, element);
 
                                     if (!label.equals(OK_LABEL)
-                                            && isEnglishResource(context)
+                                            && LintUtils.isEnglishResource(context, true)
                                             && context.isEnabled(CASE)) {
                                         assert text.trim().equalsIgnoreCase(OK_LABEL) : text;
                                         context.report(CASE, child, context.getLocation(child),
@@ -410,28 +410,6 @@ public class ButtonDetector extends ResourceXmlDetector {
         report(context, element, true /*isCancel*/);
     }
 
-
-    /** The Ok/Cancel detector only works with default and English locales currently.
-      * TODO: Add in patterns for other languages. We can use the
-     * {@code @android:string/ok} and {@code @android:string/cancel} localizations to look
-     * up the canonical ones. */
-    private static boolean isEnglishResource(XmlContext context) {
-        String folder = context.file.getParentFile().getName();
-        if (folder.indexOf('-') != -1) {
-            String[] qualifiers = folder.split("-"); //$NON-NLS-1$
-            for (String qualifier : qualifiers) {
-                if (qualifier.equals("en")) { //$NON-NLS-1$
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        // Default folder ("values") - may not be English but we'll consider matches
-        // on "OK", "Cancel" and "Back" as matches there
-        return true;
-    }
-
     /**
      * We've found a resource reference to some label we're interested in ("OK",
      * "Cancel", "Back", ...). Record the corresponding name such that in the
@@ -439,7 +417,7 @@ public class ButtonDetector extends ResourceXmlDetector {
      * button order etc).
      */
     private void foundResource(XmlContext context, String name, Element element) {
-        if (!isEnglishResource(context)) {
+        if (!LintUtils.isEnglishResource(context, true)) {
             return;
         }
 
