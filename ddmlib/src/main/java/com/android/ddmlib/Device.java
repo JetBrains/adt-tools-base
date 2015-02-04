@@ -837,15 +837,8 @@ final class Device implements IDevice {
     }
 
     @Override
-    public String installPackage(String packageFilePath, boolean reinstall)
-            throws InstallException {
-        return installPackage(
-                packageFilePath, reinstall, ImmutableList.<String>of() /* extraArgs */);
-    }
-
-    @Override
     public String installPackage(String packageFilePath, boolean reinstall,
-            @NonNull Collection<String> extraArgs)
+            String... extraArgs)
             throws InstallException {
         try {
             String remoteFilePath = syncPackageToDevice(packageFilePath);
@@ -865,7 +858,7 @@ final class Device implements IDevice {
 
     @Override
     public void installPackages(List<String> apkFilePaths, int timeOutInMs, boolean reinstall,
-            @NonNull Collection<String> extraArgs) throws InstallException {
+            String... extraArgs) throws InstallException {
 
         assert(!apkFilePaths.isEmpty());
         if (getApiLevel() < 21) {
@@ -879,9 +872,13 @@ final class Device implements IDevice {
                         getSerialNumber()));
 
         try {
-
             // create a installation session.
-            String sessionId = createMultiInstallSession(apkFilePaths, extraArgs, reinstall);
+
+            List<String> extraArgsList = extraArgs != null
+                    ? ImmutableList.copyOf(extraArgs)
+                    : ImmutableList.<String>of();
+
+            String sessionId = createMultiInstallSession(apkFilePaths, extraArgsList, reinstall);
             if (sessionId == null) {
                 Log.d(mainPackageFilePath, "Failed to establish session, quit installation");
                 throw new InstallException("Failed to establish session");
@@ -1094,14 +1091,16 @@ final class Device implements IDevice {
 
     @Override
     public String installRemotePackage(String remoteFilePath, boolean reinstall,
-            @NonNull Collection<String> extraArgs) throws InstallException {
+            String... extraArgs) throws InstallException {
         try {
             InstallReceiver receiver = new InstallReceiver();
             StringBuilder optionString = new StringBuilder();
             if (reinstall) {
                 optionString.append("-r ");
             }
-            optionString.append(Joiner.on(' ').join(extraArgs));
+            if (extraArgs != null) {
+                optionString.append(Joiner.on(' ').join(extraArgs));
+            }
             String cmd = String.format("pm install %1$s \"%2$s\"", optionString.toString(),
                     remoteFilePath);
             executeShellCommand(cmd, receiver, INSTALL_TIMEOUT_MINUTES, TimeUnit.MINUTES);
