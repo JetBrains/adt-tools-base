@@ -14,6 +14,15 @@
 - ProGuard configuration files are no longer applied to the test APK. If
   minification is enabled, the test APK will be processed by ProGuard only to apply
   the mapping file generated when minifying the main APK.
+- Fixes and changes to the dependency management:
+  * Properly handle 'provided' and 'package' scopes to do what they should be doing.
+  * 'provided' and 'package' cannot be used with Android Libraries, and will generate an error
+  * sync tested and test dependency trees:
+     - if the same version of an artifact is present in both, it'll get skipped in the test app.
+     - if the version is different it'll generate a build error. Gradle provides mechanism to resolve this.
+
+1.0.0
+- Final 1.0.0 version
 
 1.0.0-rc2
 - Enhanced manifest merger logging by specifying library coordinates.
