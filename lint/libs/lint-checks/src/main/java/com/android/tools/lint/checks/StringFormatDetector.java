@@ -43,6 +43,7 @@ import com.android.annotations.VisibleForTesting;
 import com.android.ide.common.rendering.api.ResourceValue;
 import com.android.ide.common.res2.AbstractResourceRepository;
 import com.android.ide.common.res2.ResourceItem;
+import com.android.ide.common.resources.configuration.LocaleQualifier;
 import com.android.resources.ResourceFolderType;
 import com.android.resources.ResourceType;
 import com.android.tools.lint.client.api.JavaParser;
@@ -453,8 +454,7 @@ public class StringFormatDetector extends ResourceXmlDetector implements Detecto
         }
 
         // This heuristic only works in English!
-        Pair<String, String> locale = TypoDetector.getLocale(context);
-        if (locale == null || "en".equals(locale.getFirst())) {
+        if (LintUtils.isEnglishResource(context, true)) {
             String message = String.format("Formatting %%d followed by words (\"%1$s\"): "
                             + "This should probably be a plural rather than a string", word);
             context.report(POTENTIAL_PLURAL, element,

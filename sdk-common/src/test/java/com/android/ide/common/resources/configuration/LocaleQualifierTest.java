@@ -16,6 +16,8 @@
 
 package com.android.ide.common.resources.configuration;
 
+import static com.android.ide.common.resources.configuration.LocaleQualifier.FAKE_VALUE;
+import static com.android.ide.common.resources.configuration.LocaleQualifier.getQualifier;
 import static com.android.ide.common.resources.configuration.LocaleQualifier.isNormalizedCase;
 import static com.android.ide.common.resources.configuration.LocaleQualifier.normalizeCase;
 import static com.android.ide.common.resources.configuration.LocaleQualifier.parseBcp47;
@@ -62,67 +64,164 @@ public class LocaleQualifierTest extends TestCase {
     }
 
     @SuppressWarnings("ConstantConditions")
+    public void testGetQualifier() {
+        assertNull(getQualifier("v4")); // version qualifier shouldn't match
+
+        assertNull(getQualifier(""));
+        assertEquals("en", getQualifier("en").getLanguage());
+        assertNull(getQualifier("en").getRegion());
+        assertNull(getQualifier("en").getScript());
+        assertEquals("en", getQualifier("EN").getLanguage());
+        assertEquals("en", getQualifier("EN").getFull());
+
+        assertEquals("en", getQualifier("en-rUS").getLanguage());
+        assertEquals("US", getQualifier("en-rUS").getRegion());
+        assertNull(getQualifier("en-rUS").getScript());
+        assertEquals("en", getQualifier("EN-RUS").getLanguage());
+        assertEquals("en", getQualifier("EN-RUS").getLanguage());
+        assertEquals("US", getQualifier("EN-RUS").getRegion());
+        assertNull(getQualifier("EN-RUS").getScript());
+        assertEquals("en-rUS", getQualifier("EN-RUS").getFull());
+
+        assertNull(getQualifier("kok-rIN"));
+        assertEquals("kok", getQualifier("b+kok").getLanguage());
+        assertNull(getQualifier("b+kok").getRegion());
+        assertEquals("kok", getQualifier("b+kok+VARIANT").getLanguage());
+        assertNull(getQualifier("b+kok+VARIANT").getRegion());
+        assertEquals("kok", getQualifier("b+kok+Knda+419+VARIANT").getLanguage());
+        assertEquals("419", getQualifier("b+kok+Knda+419+VARIANT").getRegion());
+        assertEquals("Knda", getQualifier("b+kok+Knda+419+VARIANT").getScript());
+        assertEquals("kok", getQualifier("b+kok+VARIANT").getLanguage());
+        assertNull(getQualifier("b+kok+VARIANT").getRegion());
+        assertEquals("kok", getQualifier("b+kok+IN").getLanguage());
+        assertEquals("IN", getQualifier("b+kok+IN").getRegion());
+        assertEquals("kok", getQualifier("b+kok+Knda").getLanguage());
+        assertNull(getQualifier("b+kok+Knda").getRegion());
+        assertEquals("kok", getQualifier("b+kok+Knda+419").getLanguage());
+        assertEquals("419", getQualifier("b+kok+Knda+419").getRegion());
+        assertEquals("b+kok+Knda+419", getQualifier("b+KOK+knda+419").getFull());
+    }
+
+    public void testSetRegion() {
+        LocaleQualifier qualifier = getQualifier("en");
+        assertNotNull(qualifier);
+        qualifier.setRegionSegment("rUS");
+        assertEquals("en", qualifier.getLanguage());
+        assertEquals("US", qualifier.getRegion());
+        assertEquals("en-rUS", qualifier.getFull());
+
+        // Case check
+        qualifier = getQualifier("EN");
+        assertNotNull(qualifier);
+        qualifier.setRegionSegment("Rus");
+        assertEquals("en", qualifier.getLanguage());
+        assertEquals("US", qualifier.getRegion());
+        assertEquals("en-rUS", qualifier.getFull());
+    }
+
+    public void testEquals() {
+        LocaleQualifier qualifier1 = getQualifier("b+KOK+knda+419");
+        LocaleQualifier qualifier2 = getQualifier("b+kok+knda+419");
+        assertNotNull(qualifier1);
+        assertNotNull(qualifier2);
+        assertEquals(qualifier1, qualifier2);
+        assertEquals(qualifier2, qualifier1);
+
+        qualifier2 = getQualifier("b+kok+knda");
+        assertNotNull(qualifier2);
+        assertFalse(qualifier1.equals(qualifier2));
+        assertFalse(qualifier2.equals(qualifier1));
+
+        // Equivalent, with different syntax
+        qualifier1 = getQualifier("b+en+US");
+        qualifier2 = getQualifier("en-rUS");
+        assertNotNull(qualifier1);
+        assertNotNull(qualifier1);
+        assertNotNull(qualifier2);
+        assertEquals(qualifier1, qualifier2);
+        assertEquals(qualifier2, qualifier1);
+    }
+
+    @SuppressWarnings("ConstantConditions")
     public void testParseBcp47() {
 
         assertNull(parseBcp47("kok-rIN"));
+        assertEquals("kok", parseBcp47("b+kok").getLanguage());
+        assertNull(parseBcp47("b+kok").getRegion());
 
-        assertEquals("kok", parseBcp47("b+kok").getFirst());
-        assertNull(parseBcp47("b+kok").getSecond());
+        assertEquals("kok", parseBcp47("b+kok+VARIANT").getLanguage());
+        assertNull(parseBcp47("b+kok+VARIANT").getRegion());
 
-        assertEquals("kok", parseBcp47("b+kok+VARIANT").getFirst());
-        assertNull(parseBcp47("b+kok+VARIANT").getSecond());
+        assertEquals("kok", parseBcp47("b+kok+Knda+419+VARIANT").getLanguage());
+        assertEquals("419", parseBcp47("b+kok+Knda+419+VARIANT").getRegion());
+        assertEquals("Knda", parseBcp47("b+kok+Knda+419+VARIANT").getScript());
 
-        assertEquals("kok", parseBcp47("b+kok+Knda+419+VARIANT").getFirst());
-        assertEquals("419", parseBcp47("b+kok+Knda+419+VARIANT").getSecond());
+        assertEquals("kok", parseBcp47("b+kok+VARIANT").getLanguage());
+        assertNull(parseBcp47("b+kok+VARIANT").getRegion());
 
-        assertEquals("kok", parseBcp47("b+kok+VARIANT").getFirst());
-        assertNull(parseBcp47("b+kok+VARIANT").getSecond());
+        assertEquals("kok", parseBcp47("b+kok+IN").getLanguage());
+        assertEquals("IN", parseBcp47("b+kok+IN").getRegion());
 
-        assertEquals("kok", parseBcp47("b+kok+IN").getFirst());
-        assertEquals("IN", parseBcp47("b+kok+IN").getSecond());
+        assertEquals("kok", parseBcp47("b+kok+Knda").getLanguage());
+        assertEquals("Knda", parseBcp47("b+kok+Knda").getScript());
+        assertNull(parseBcp47("b+kok+Knda").getRegion());
 
-        assertEquals("kok", parseBcp47("b+kok+Knda").getFirst());
-        assertNull(parseBcp47("b+kok+Knda").getSecond());
-
-        assertEquals("kok", parseBcp47("b+kok+Knda+419").getFirst());
-        assertEquals("419", parseBcp47("b+kok+Knda+419").getSecond());
+        assertEquals("kok", parseBcp47("b+kok+Knda+419").getLanguage());
+        assertEquals("419", parseBcp47("b+kok+Knda+419").getRegion());
+        assertEquals("Knda", parseBcp47("b+kok+Knda+419").getScript());
     }
 
     @SuppressWarnings("ConstantConditions")
     public void testGetLanguageAndGetRegion() {
         assertEquals(true, lq.checkAndSet("b+kok", config)); //$NON-NLS-1$
         assertEquals("b+kok", config.getLocaleQualifier().getValue());
-        assertNull("kok", config.getLanguageQualifier());
-        assertEquals("kok", config.getEffectiveLanguage().getValue());
-        assertNull("kok", config.getEffectiveRegion());
+        assertEquals("kok", config.getLocaleQualifier().getLanguage());
+        assertEquals("kok", config.getLocaleQualifier().getLanguage());
+        assertNull("kok", config.getLocaleQualifier().getRegion());
 
         assertEquals(true, lq.checkAndSet("b+kok+VARIANT", config)); //$NON-NLS-1$
         assertEquals("b+kok+variant", config.getLocaleQualifier().getValue());
-        assertEquals("kok", config.getEffectiveLanguage().getValue());
-        assertNull("kok", config.getEffectiveRegion());
+        assertEquals("kok", config.getLocaleQualifier().getLanguage());
+        assertNull("kok", config.getLocaleQualifier().getRegion());
 
         assertEquals(true, lq.checkAndSet("b+kok+Knda+419+VARIANT", config)); //$NON-NLS-1$
         assertEquals("b+kok+Knda+419+variant", config.getLocaleQualifier().getValue());
-        assertEquals("kok", config.getEffectiveLanguage().getValue());
-        assertEquals("419", config.getEffectiveRegion().getValue());
+        assertEquals("kok", config.getLocaleQualifier().getLanguage());
+        assertEquals("419", config.getLocaleQualifier().getRegion());
 
         assertEquals(true, lq.checkAndSet("b+kok+IN", config)); //$NON-NLS-1$
         assertEquals("b+kok+IN", config.getLocaleQualifier().getValue());
-        assertEquals("kok", config.getEffectiveLanguage().getValue());
-        assertEquals("IN", config.getEffectiveRegion().getValue());
+        assertEquals("kok", config.getLocaleQualifier().getLanguage());
+        assertEquals("IN", config.getLocaleQualifier().getRegion());
 
         assertEquals(true, lq.checkAndSet("b+kok+Knda", config)); //$NON-NLS-1$
         assertEquals("b+kok+Knda", config.getLocaleQualifier().getValue());
-        assertEquals("kok", config.getEffectiveLanguage().getValue());
-        assertNull(config.getEffectiveRegion());
+        assertEquals("kok", config.getLocaleQualifier().getLanguage());
+        assertNull(config.getLocaleQualifier().getRegion());
 
         assertEquals(true, lq.checkAndSet("b+kok+Knda+419", config)); //$NON-NLS-1$
         assertEquals("b+kok+Knda+419", config.getLocaleQualifier().getValue());
-        assertEquals("kok", config.getEffectiveLanguage().getValue());
-        assertEquals("419", config.getEffectiveRegion().getValue());
+        assertEquals("kok", config.getLocaleQualifier().getLanguage());
+        assertEquals("419", config.getLocaleQualifier().getRegion());
     }
 
     public void testIsNormalCase() {
+        // Language
+        assertFalse(isNormalizedCase("LL"));
+        assertFalse(isNormalizedCase("Ll"));
+        assertFalse(isNormalizedCase("lL"));
+        assertTrue(isNormalizedCase("ll"));
+
+        // Language + Region
+        assertFalse(isNormalizedCase("LL-rRR"));
+        assertFalse(isNormalizedCase("ll-rrr"));
+        assertFalse(isNormalizedCase("LL-rrr"));
+        assertFalse(isNormalizedCase("ll-RRR"));
+        assertFalse(isNormalizedCase("lL-frR"));
+        assertFalse(isNormalizedCase("Ll-fRr"));
+        assertTrue(isNormalizedCase("ll-rRR"));
+
+        // BCP 47
         assertFalse(isNormalizedCase("b+en+CA+x+ca".toLowerCase(Locale.US)));
         assertTrue(isNormalizedCase("b+en+CA+x+ca"));
         assertFalse(isNormalizedCase("b+sgn+BE+FR".toLowerCase(Locale.US)));
@@ -136,12 +235,67 @@ public class LocaleQualifierTest extends TestCase {
     }
 
     public void testNormalizeCase() {
+        assertEquals("bb", normalizeCase("BB"));
+        assertEquals("ll-rRR", normalizeCase("LL-Rrr"));
+
         assertEquals("b+en+CA+x+ca", normalizeCase("b+en+CA+x+ca".toLowerCase(Locale.US)));
         assertEquals("b+sgn+BE+FR", normalizeCase("b+sgn+BE+FR".toLowerCase(Locale.US)));
         assertEquals("b+az+Latn+x+latn", normalizeCase("b+az+Latn+x+latn".toLowerCase(Locale.US)));
         assertEquals("b+mn+Cyrl+MN", normalizeCase("b+MN+cYRL+mn".toLowerCase(Locale.US)));
         assertEquals("b+zh+CN+a+myext+x+private", normalizeCase(
                 "b+zh+CN+a+myext+x+private".toLowerCase(Locale.US)));
+    }
+
+    @SuppressWarnings("ConstantConditions")
+    public void testIsMatchFor() {
+        assertTrue(getQualifier("en").isMatchFor(getQualifier("en")));
+        assertFalse(getQualifier("en").isMatchFor(getQualifier("fr")));
+        assertFalse(getQualifier("fr").isMatchFor(getQualifier("en")));
+
+        assertTrue(getQualifier("en-rUS").isMatchFor(getQualifier("en-rUS")));
+        assertFalse(getQualifier("en-rUS").isMatchFor(getQualifier("en-rGB")));
+        assertFalse(getQualifier("en-rGB").isMatchFor(getQualifier("en-rUS")));
+        assertFalse(getQualifier("fr-rGB").isMatchFor(getQualifier("en-rGB")));
+
+        assertTrue(getQualifier("en-rUS").isMatchFor(getQualifier("en-rUS")));
+        assertTrue(getQualifier("en-rUS").isMatchFor(getQualifier("en")));
+        assertTrue(getQualifier("b+en+US").isMatchFor(getQualifier("b+en+US")));
+        assertTrue(getQualifier("b+en+US").isMatchFor(getQualifier("b+en")));
+        assertTrue(getQualifier("b+en+US").isMatchFor(getQualifier("en")));
+
+        assertTrue(getQualifier("b+en+US").isMatchFor(getQualifier("b+en+US")));
+        assertTrue(getQualifier("b+en+Knda+US").isMatchFor(getQualifier("b+en+Knda+US")));
+        assertTrue(getQualifier("b+en+Knda+US").isMatchFor(getQualifier("b+en")));
+
+        // Apparently isMatchFor is a bit more general than you would think; it
+        // can't restrict as shown in these two conditions because then other
+        // configuration matching code will fail
+        //assertFalse(getQualifier("en").isMatchFor(getQualifier("en-rUS")));
+        //assertFalse(getQualifier("b+en").isMatchFor(getQualifier("b+en+Knda+US")));
+    }
+
+    @SuppressWarnings("ConstantConditions")
+    public void testGetTag() {
+        assertEquals("en-CA", getQualifier("b+en+CA".toLowerCase(Locale.US)).getTag());
+        assertEquals("en-CA-x-ca", getQualifier("b+en+CA+x+ca".toLowerCase(Locale.US)).getTag());
+        assertEquals("en", getQualifier("EN").getTag());
+        assertEquals("en-US", getQualifier("EN-rUS").getTag());
+    }
+
+    public void testHasLanguage() {
+        //noinspection ConstantConditions
+        assertTrue(LocaleQualifier.getQualifier("b+en+CA+x+ca").hasLanguage());
+        assertTrue(new LocaleQualifier("en").hasLanguage());
+        assertFalse(new LocaleQualifier(FAKE_VALUE).hasLanguage());
+    }
+
+    public void testHasRegion() {
+        //noinspection ConstantConditions
+        assertTrue(LocaleQualifier.getQualifier("b+en+CA+x+ca").hasRegion());
+        //noinspection ConstantConditions
+        assertFalse(LocaleQualifier.getQualifier("b+en").hasRegion());
+        assertFalse(new LocaleQualifier(FAKE_VALUE).hasRegion());
+        assertFalse(new LocaleQualifier("", FAKE_VALUE, FAKE_VALUE, null).hasRegion());
     }
 }
 

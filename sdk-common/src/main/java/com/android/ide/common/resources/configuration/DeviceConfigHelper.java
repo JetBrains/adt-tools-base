@@ -70,10 +70,9 @@ public class DeviceConfigHelper {
         config.setUiModeQualifier(new UiModeQualifier(UiMode.NORMAL));
         config.setNightModeQualifier(new NightModeQualifier(NightMode.NOTNIGHT));
         config.setCountryCodeQualifier(new CountryCodeQualifier());
-        config.setLanguageQualifier(new LanguageQualifier());
+        config.setLocaleQualifier(new LocaleQualifier());
         config.setLayoutDirectionQualifier(new LayoutDirectionQualifier());
         config.setNetworkCodeQualifier(new NetworkCodeQualifier());
-        config.setRegionQualifier(new RegionQualifier());
         config.setVersionQualifier(new VersionQualifier());
 
         return config;
