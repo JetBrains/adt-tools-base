@@ -133,9 +133,7 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
                 ModelPath.ROOT)
     }
 
-
-    @RuleSource
-    static class Rules {
+    static class Rules extends RuleSource {
         @Mutate
         void configureAndroidModel(
                 AndroidModel androidModel,
