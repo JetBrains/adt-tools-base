@@ -17,8 +17,8 @@
 package com.android.build.gradle.api
 import com.android.annotations.NonNull
 /**
- * A {@code AndroidSourceSet} represents a logical group of Java, aidl, renderscript source
- * as well as Android and non-Android resources.
+ * An AndroidSourceSet represents a logical group of Java, aidl and RenderScript sources
+ * as well as Android and non-Android (Java-style) resources.
  */
 public interface AndroidSourceSet {
 
@@ -180,7 +180,7 @@ public interface AndroidSourceSet {
     AndroidSourceSet aidl(Closure configureClosure);
 
     /**
-     * The Android Renderscript source directory for this source set.
+     * The Android RenderScript source directory for this source set.
      *
      * @return the source. Never returns null.
      */
@@ -188,7 +188,7 @@ public interface AndroidSourceSet {
     AndroidSourceDirectorySet getRenderscript();
 
     /**
-     * Configures the location of the Android Renderscript source for this set.
+     * Configures the location of the Android RenderScript source for this set.
      *
      * <p>The given closure is used to configure the {@link AndroidSourceDirectorySet}
      * which contains the Renderscript source.

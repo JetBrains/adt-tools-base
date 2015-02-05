@@ -30,7 +30,9 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Data for per-density splits.
+ * DSL object for configuring per-density splits options.
+ *
+ * <p>See <a href="http://tools.android.com/tech-docs/new-build-system/user-guide/apk-splits">APK Splits</a>.
  */
 public class DensitySplitOptions extends SplitOptions {
 
@@ -78,6 +80,11 @@ public class DensitySplitOptions extends SplitOptions {
         compatibleScreens = Sets.newHashSet(sizes);
     }
 
+    /**
+     * Adds a new compatible screen.
+     *
+     * <p>See {@link #getCompatibleScreens()}.
+     */
     public void compatibleScreens(@NonNull String... sizes) {
         if (compatibleScreens == null) {
             compatibleScreens = Sets.newHashSet(sizes);
@@ -88,7 +95,10 @@ public class DensitySplitOptions extends SplitOptions {
     }
 
     /**
-     * TODO: Document.
+     * A list of compatible screens.
+     *
+     * <p>This will inject a matching <code>&lt;compatible-screens&gt;&lt;screen ...&gt;</code>
+     * node in the manifest. This is optional.
      */
     @NonNull
     public Set<String> getCompatibleScreens() {
