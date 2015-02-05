@@ -183,7 +183,9 @@ public class FolderConfigurationTest extends TestCase {
         doTestNormalize(13, "sw42dp", "large");
 
         // test where different values have different minSdk
+        /* Ambiguous now that aapt accepts 3 letter language codes; get clarification.
         doTestNormalize(8, "car");
+        */
         doTestNormalize(13, "television");
         doTestNormalize(16, "appliance");
 

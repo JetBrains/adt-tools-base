@@ -80,10 +80,9 @@ public class LocaleFolderDetectorTest extends AbstractCheckTest {
 
     public void testInvalidFolder() throws Exception {
         assertEquals(""
-                + "res/values-kok-rIN: Error: Invalid resource folder; did you mean b+kok+IN ? [InvalidResourceFolder]\n"
                 + "res/values-ldtrl-mnc123: Error: Invalid resource folder: make sure qualifiers appear in the correct order, are spelled correctly, etc. [InvalidResourceFolder]\n"
                 + "res/values-no-rNOR: Error: Invalid resource folder; did you mean b+no+NO ? [InvalidResourceFolder]\n"
-                + "3 errors, 0 warnings\n",
+                + "2 errors, 0 warnings\n",
 
                 lintProject(
                         "res/values/strings.xml",
