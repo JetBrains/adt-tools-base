@@ -48,19 +48,19 @@ public class LocaleQualifierTest extends TestCase {
     public void testCheckAndSet() {
         assertEquals(true, lq.checkAndSet("b+kok", config)); //$NON-NLS-1$
         assertTrue(config.getLocaleQualifier() != null);
-        assertEquals("b+kok", config.getLocaleQualifier().toString()); //$NON-NLS-1$
+        assertEquals("kok", config.getLocaleQualifier().toString()); //$NON-NLS-1$
     }
 
     public void testCheckAndSetCaseInsensitive() {
         assertEquals(true, lq.checkAndSet("b+KOK", config)); //$NON-NLS-1$
         assertTrue(config.getLocaleQualifier() != null);
-        assertEquals("b+kok", config.getLocaleQualifier().toString()); //$NON-NLS-1$
-        assertEquals("b+kok", LocaleQualifier.getFolderSegment("b+KOK"));
+        assertEquals("kok", config.getLocaleQualifier().toString()); //$NON-NLS-1$
     }
 
     public void testFailures() {
         assertEquals(false, lq.checkAndSet("", config)); //$NON-NLS-1$
-        assertEquals(false, lq.checkAndSet("abc", config)); //$NON-NLS-1$
+        assertEquals(false, lq.checkAndSet("abcd", config)); //$NON-NLS-1$
+        assertEquals(false, lq.checkAndSet("en-USofA", config)); //$NON-NLS-1$
     }
 
     @SuppressWarnings("ConstantConditions")
@@ -83,7 +83,23 @@ public class LocaleQualifierTest extends TestCase {
         assertNull(getQualifier("EN-RUS").getScript());
         assertEquals("en-rUS", getQualifier("EN-RUS").getFull());
 
-        assertNull(getQualifier("kok-rIN"));
+        assertEquals("eng", getQualifier("eng").getLanguage());
+        assertNull(getQualifier("eng").getRegion());
+        assertNull(getQualifier("eng").getScript());
+        assertEquals("eng", getQualifier("ENG").getLanguage());
+        assertEquals("eng", getQualifier("ENG").getFull());
+
+        assertEquals("eng", getQualifier("eng-rUS").getLanguage());
+        assertEquals("US", getQualifier("eng-rUS").getRegion());
+        assertNull(getQualifier("eng-rUS").getScript());
+        assertEquals("eng", getQualifier("ENG-RUS").getLanguage());
+        assertEquals("eng", getQualifier("ENG-RUS").getLanguage());
+        assertEquals("US", getQualifier("ENG-RUS").getRegion());
+        assertNull(getQualifier("ENG-RUS").getScript());
+        assertEquals("eng-rUS", getQualifier("ENG-RUS").getFull());
+        assertNull(getQualifier("eng-rUSA"));
+
+        assertNull(getQualifier("kok-rIND"));
         assertEquals("kok", getQualifier("b+kok").getLanguage());
         assertNull(getQualifier("b+kok").getRegion());
         assertEquals("kok", getQualifier("b+kok+VARIANT").getLanguage());
@@ -117,6 +133,14 @@ public class LocaleQualifierTest extends TestCase {
         assertEquals("en", qualifier.getLanguage());
         assertEquals("US", qualifier.getRegion());
         assertEquals("en-rUS", qualifier.getFull());
+
+        // 3 letter language
+        qualifier = getQualifier("eng");
+        assertNotNull(qualifier);
+        qualifier.setRegionSegment("rUS");
+        assertEquals("eng", qualifier.getLanguage());
+        assertEquals("US", qualifier.getRegion());
+        assertEquals("eng-rUS", qualifier.getFull());
     }
 
     public void testEquals() {
@@ -135,6 +159,14 @@ public class LocaleQualifierTest extends TestCase {
         // Equivalent, with different syntax
         qualifier1 = getQualifier("b+en+US");
         qualifier2 = getQualifier("en-rUS");
+        assertNotNull(qualifier1);
+        assertNotNull(qualifier1);
+        assertNotNull(qualifier2);
+        assertEquals(qualifier1, qualifier2);
+        assertEquals(qualifier2, qualifier1);
+
+        qualifier1 = getQualifier("b+eng+US");
+        qualifier2 = getQualifier("eng-rUS");
         assertNotNull(qualifier1);
         assertNotNull(qualifier1);
         assertNotNull(qualifier2);
@@ -174,7 +206,7 @@ public class LocaleQualifierTest extends TestCase {
     @SuppressWarnings("ConstantConditions")
     public void testGetLanguageAndGetRegion() {
         assertEquals(true, lq.checkAndSet("b+kok", config)); //$NON-NLS-1$
-        assertEquals("b+kok", config.getLocaleQualifier().getValue());
+        assertEquals("kok", config.getLocaleQualifier().getValue());
         assertEquals("kok", config.getLocaleQualifier().getLanguage());
         assertEquals("kok", config.getLocaleQualifier().getLanguage());
         assertNull("kok", config.getLocaleQualifier().getRegion());
@@ -190,7 +222,7 @@ public class LocaleQualifierTest extends TestCase {
         assertEquals("419", config.getLocaleQualifier().getRegion());
 
         assertEquals(true, lq.checkAndSet("b+kok+IN", config)); //$NON-NLS-1$
-        assertEquals("b+kok+IN", config.getLocaleQualifier().getValue());
+        assertEquals("kok-rIN", config.getLocaleQualifier().getValue());
         assertEquals("kok", config.getLocaleQualifier().getLanguage());
         assertEquals("IN", config.getLocaleQualifier().getRegion());
 
@@ -210,7 +242,9 @@ public class LocaleQualifierTest extends TestCase {
         assertFalse(isNormalizedCase("LL"));
         assertFalse(isNormalizedCase("Ll"));
         assertFalse(isNormalizedCase("lL"));
+        assertFalse(isNormalizedCase("LLL"));
         assertTrue(isNormalizedCase("ll"));
+        assertTrue(isNormalizedCase("lll"));
 
         // Language + Region
         assertFalse(isNormalizedCase("LL-rRR"));
@@ -219,7 +253,9 @@ public class LocaleQualifierTest extends TestCase {
         assertFalse(isNormalizedCase("ll-RRR"));
         assertFalse(isNormalizedCase("lL-frR"));
         assertFalse(isNormalizedCase("Ll-fRr"));
+        assertFalse(isNormalizedCase("llL-frr"));
         assertTrue(isNormalizedCase("ll-rRR"));
+        assertTrue(isNormalizedCase("lll-rRR"));
 
         // BCP 47
         assertFalse(isNormalizedCase("b+en+CA+x+ca".toLowerCase(Locale.US)));
@@ -237,6 +273,7 @@ public class LocaleQualifierTest extends TestCase {
     public void testNormalizeCase() {
         assertEquals("bb", normalizeCase("BB"));
         assertEquals("ll-rRR", normalizeCase("LL-Rrr"));
+        assertEquals("lll-rRR", normalizeCase("LLL-Rrr"));
 
         assertEquals("b+en+CA+x+ca", normalizeCase("b+en+CA+x+ca".toLowerCase(Locale.US)));
         assertEquals("b+sgn+BE+FR", normalizeCase("b+sgn+BE+FR".toLowerCase(Locale.US)));
@@ -277,6 +314,7 @@ public class LocaleQualifierTest extends TestCase {
     @SuppressWarnings("ConstantConditions")
     public void testGetTag() {
         assertEquals("en-CA", getQualifier("b+en+CA".toLowerCase(Locale.US)).getTag());
+        assertEquals("eng-CA", getQualifier("b+eng+CA".toLowerCase(Locale.US)).getTag());
         assertEquals("en-CA-x-ca", getQualifier("b+en+CA+x+ca".toLowerCase(Locale.US)).getTag());
         assertEquals("en", getQualifier("EN").getTag());
         assertEquals("en-US", getQualifier("EN-rUS").getTag());
@@ -298,4 +336,3 @@ public class LocaleQualifierTest extends TestCase {
         assertFalse(new LocaleQualifier("", FAKE_VALUE, FAKE_VALUE, null).hasRegion());
     }
 }
-
