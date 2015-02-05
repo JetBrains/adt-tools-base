@@ -27,8 +27,7 @@ import com.android.annotations.Nullable;
 import com.android.ide.common.rendering.api.ResourceValue;
 import com.android.ide.common.resources.configuration.Configurable;
 import com.android.ide.common.resources.configuration.FolderConfiguration;
-import com.android.ide.common.resources.configuration.LanguageQualifier;
-import com.android.ide.common.resources.configuration.RegionQualifier;
+import com.android.ide.common.resources.configuration.LocaleQualifier;
 import com.android.io.IAbstractFile;
 import com.android.io.IAbstractFolder;
 import com.android.io.IAbstractResource;
@@ -770,9 +769,9 @@ public abstract class ResourceRepository {
         for (List<ResourceFolder> folderSubList : folderList) {
             for (ResourceFolder folder : folderSubList) {
                 FolderConfiguration config = folder.getConfiguration();
-                LanguageQualifier lang = config.getEffectiveLanguage();
-                if (lang != null) {
-                    set.add(lang.getShortDisplayValue());
+                LocaleQualifier locale = config.getLocaleQualifier();
+                if (locale != null) {
+                    set.add(locale.getLanguage());
                 }
             }
         }
@@ -796,12 +795,10 @@ public abstract class ResourceRepository {
                 FolderConfiguration config = folder.getConfiguration();
 
                 // get the language
-                LanguageQualifier lang = config.getEffectiveLanguage();
-                if (lang != null && lang.getShortDisplayValue().equals(currentLanguage)) {
-                    RegionQualifier region = config.getEffectiveRegion();
-                    if (region != null) {
-                        set.add(region.getShortDisplayValue());
-                    }
+                LocaleQualifier locale = config.getLocaleQualifier();
+                if (locale != null && currentLanguage.equals(locale.getLanguage())
+                        && locale.getRegion() != null) {
+                    set.add(locale.getRegion());
                 }
             }
         }

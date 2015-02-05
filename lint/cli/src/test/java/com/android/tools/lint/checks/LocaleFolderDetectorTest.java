@@ -66,7 +66,7 @@ public class LocaleFolderDetectorTest extends AbstractCheckTest {
     public void testAlpha3() throws Exception {
         assertEquals(""
                 + "res/values-b+nor+NOR: Warning: For compatibility, should use 2-letter language codes when available; use no instead of nor [UseAlpha2]\n"
-                + "res/values-b+nor+NOR: Warning: For compatibility, should use 2-letter region codes when available; use NO instead of NOR [UseAlpha2]\n"
+                + "res/values-b+nor+NOR: Warning: For compatibility, should use 2-letter region codes when available; use NO instead of nor [UseAlpha2]\n"
                 + "0 errors, 2 warnings\n",
 
                 lintProject(
@@ -90,6 +90,28 @@ public class LocaleFolderDetectorTest extends AbstractCheckTest {
                         "res/values/strings.xml=>res/values-ldtrl-mnc123/strings.xml",
                         "res/values/strings.xml=>res/values-kok-rIN//strings.xml",
                         "res/values/strings.xml=>res/values-no-rNOR/strings.xml"
+                )
+        );
+    }
+
+    public void testConflictingScripts() throws Exception {
+        assertEquals(""
+                + "res/values-b+en+Scr1: Error: Multiple locale folders for language en map to a single folder in versions < API 21: values-b+en+Scr2, values-b+en+Scr1 [InvalidResourceFolder]\n"
+                + "    res/values-b+en+Scr2: <No location-specific message\n"
+                + "1 errors, 0 warnings\n",
+
+                lintProject(
+                        "res/values/strings.xml",
+                        "res/values/strings.xml=>res/values-b+en+Scr1/strings.xml",
+                        "res/values/strings.xml=>res/values-b+en+Scr2/strings.xml",
+                        "res/values/strings.xml=>res/values-b+en+Scr3-v21/strings.xml",
+                        "res/values/strings.xml=>res/values-b+fr+Scr1-v21/strings.xml",
+                        "res/values/strings.xml=>res/values-b+fr+Scr2-v21/strings.xml",
+                        "res/values/strings.xml=>res/values-b+no+Scr1/strings.xml",
+                        "res/values/strings.xml=>res/values-b+no+Scr2-v21/strings.xml",
+                        "res/values/strings.xml=>res/values-b+se+Scr1/strings.xml",
+                        "res/values/strings.xml=>res/values-b+de+Scr1+DE/strings.xml",
+                        "res/values/strings.xml=>res/values-b+de+Scr2+AT/strings.xml"
                 )
         );
     }
