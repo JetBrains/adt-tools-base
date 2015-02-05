@@ -28,7 +28,9 @@ import java.util.Locale;
  * A locale qualifier, which can be constructed from:
  * <ul>
  *     <li>A plain 2-letter language descriptor</li>
- *     <li>A 2-letter language descriptor followed by a -r region qualifier</li>
+ *     <li>A 2-letter language descriptor followed by a -r 2 letter region qualifier</li>
+ *     <li>A plain 3-letter language descriptor</li>
+ *     <li>A 3-letter language descriptor followed by a -r 2 letter region qualifier</li>
  *     <li>A BCP 47 language tag. The BCP-47 tag uses + instead of - as separators,
  *         and has the prefix b+. Therefore, the BCP-47 tag "zh-Hans-CN" would be
  *         written as "b+zh+Hans+CN" instead.</li>
@@ -50,7 +52,7 @@ public final class LocaleQualifier extends ResourceQualifier {
     }
 
     public LocaleQualifier(@NonNull String language) {
-        assert language.length() == 2;
+        assert language.length() == 2 || language.length() == 3;
         mLanguage = language;
         mFull = language;
     }
@@ -58,7 +60,7 @@ public final class LocaleQualifier extends ResourceQualifier {
     public LocaleQualifier(@Nullable String full, @NonNull String language,
                            @Nullable String region, @Nullable String script) {
         if (full == null) {
-            if (language.length() == 3 || region != null && region.length() == 3 || script != null) {
+            if (region != null && region.length() == 3 || script != null) {
                 StringBuilder sb = new StringBuilder(BCP_47_PREFIX);
                 sb.append(language);
                 if (region != null) {
@@ -95,14 +97,21 @@ public final class LocaleQualifier extends ResourceQualifier {
      */
     @Nullable
     public static LocaleQualifier getQualifier(@NonNull String segment) {
-        if (segment.length() == 2
+        int length = segment.length();
+        if (length == 2
                 && Character.isLetter(segment.charAt(0))
                 && Character.isLetter(segment.charAt(1))) { // to make sure we don't match e.g. "v4"
             segment = segment.toLowerCase(Locale.US);
             return new LocaleQualifier(segment, segment, null, null);
+        } else if (length == 3
+                && Character.isLetter(segment.charAt(0))
+                && Character.isLetter(segment.charAt(1))
+                && Character.isLetter(segment.charAt(2))) {
+            segment = segment.toLowerCase(Locale.US);
+            return new LocaleQualifier(segment, segment, null, null);
         } else if (segment.startsWith(BCP_47_PREFIX)) {
             return parseBcp47(segment);
-        } else if (segment.length() == 6 && segment.charAt(2) == '-'
+        } else if (length == 6 && segment.charAt(2) == '-'
                 && Character.toLowerCase(segment.charAt(3)) == 'r'
                 && Character.isLetter(segment.charAt(0))
                 && Character.isLetter(segment.charAt(1))
@@ -117,6 +126,23 @@ public final class LocaleQualifier extends ResourceQualifier {
                     Character.toUpperCase(segment.charAt(5))
             });
 
+            return new LocaleQualifier(language + "-r" + region, language, region, null);
+        } else if (length == 7 && segment.charAt(3) == '-'
+                && Character.toLowerCase(segment.charAt(4)) == 'r'
+                && Character.isLetter(segment.charAt(0))
+                && Character.isLetter(segment.charAt(1))
+                && Character.isLetter(segment.charAt(2))
+                && Character.isLetter(segment.charAt(5))
+                && Character.isLetter(segment.charAt(6))) {
+            String language = new String(new char[] {
+                    Character.toLowerCase(segment.charAt(0)),
+                    Character.toLowerCase(segment.charAt(1)),
+                    Character.toLowerCase(segment.charAt(2))
+            });
+            String region = new String(new char[] {
+                    Character.toUpperCase(segment.charAt(5)),
+                    Character.toUpperCase(segment.charAt(6))
+            });
             return new LocaleQualifier(language + "-r" + region, language, region, null);
         }
         return null;
@@ -193,6 +219,15 @@ public final class LocaleQualifier extends ResourceQualifier {
             sb.append(Character.toLowerCase(segment.charAt(3))); // r
             sb.append(Character.toUpperCase(segment.charAt(4)));
             sb.append(Character.toUpperCase(segment.charAt(5)));
+        } else if (segment.length() == 7) {
+            // Language + region: lll-rRR
+            sb.append(Character.toLowerCase(segment.charAt(0)));
+            sb.append(Character.toLowerCase(segment.charAt(1)));
+            sb.append(Character.toLowerCase(segment.charAt(2)));
+            sb.append(segment.charAt(3)); // -
+            sb.append(Character.toLowerCase(segment.charAt(4))); // r
+            sb.append(Character.toUpperCase(segment.charAt(5)));
+            sb.append(Character.toUpperCase(segment.charAt(6)));
         } else {
             sb.append(segment.toLowerCase(Locale.US));
         }
@@ -247,6 +282,11 @@ public final class LocaleQualifier extends ResourceQualifier {
             // Just a language: ll
             return Character.isLowerCase(segment.charAt(0))
                     && Character.isLowerCase(segment.charAt(1));
+        } else if (segment.length() == 3) {
+            // Just a language: lll
+            return Character.isLowerCase(segment.charAt(0))
+                    && Character.isLowerCase(segment.charAt(1))
+                    && Character.isLowerCase(segment.charAt(2));
         } else if (segment.length() == 6) {
             // Language + region: ll-rRR
             return Character.isLowerCase(segment.charAt(0))
@@ -254,6 +294,14 @@ public final class LocaleQualifier extends ResourceQualifier {
                     && Character.isLowerCase(segment.charAt(3))
                     && Character.isUpperCase(segment.charAt(4))
                     && Character.isUpperCase(segment.charAt(5));
+        } else if (segment.length() == 7) {
+            // Language + region: lll-rRR
+            return Character.isLowerCase(segment.charAt(0))
+                    && Character.isLowerCase(segment.charAt(1))
+                    && Character.isLowerCase(segment.charAt(2))
+                    && Character.isLowerCase(segment.charAt(4))
+                    && Character.isUpperCase(segment.charAt(5))
+                    && Character.isUpperCase(segment.charAt(6));
         }
 
         return true;
@@ -277,21 +325,6 @@ public final class LocaleQualifier extends ResourceQualifier {
         }
 
         return false;
-    }
-
-    /**
-     * Returns the folder name segment for the given value. This is equivalent to calling
-     * {@link #toString()} on a {@link LocaleQualifier} object.
-     * @param value the value of the qualifier, as returned by {@link #getValue()}.
-     */
-    @Nullable
-    public static String getFolderSegment(@NonNull String value) {
-        String segment = value.toLowerCase(Locale.US);
-        if (segment.startsWith(BCP_47_PREFIX)) {
-            return segment;
-        }
-
-        return null;
     }
 
     @NonNull
@@ -463,8 +496,8 @@ public final class LocaleQualifier extends ResourceQualifier {
                             region = next;
                         }
                     }
-                    if (script == null && language.length() == 2 && (region == null ||
-                        region.length() == 2) && !iterator.hasNext()) {
+                    if (script == null && (region == null || region.length() == 2)
+                            && !iterator.hasNext()) {
                         // Switch from BCP 47 syntax to plain
                         qualifier = language.toLowerCase(Locale.US);
                         if (region != null) {
