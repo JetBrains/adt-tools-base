@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.tasks
 
+import com.android.annotations.NonNull
 import com.android.builder.core.AndroidBuilder
 import com.android.sdklib.BuildToolInfo
 import com.android.sdklib.repository.FullRevision
@@ -33,7 +34,8 @@ import org.gradle.api.tasks.compile.AbstractCompile
  * Jack task.
  */
 @ParallelizableTask
-public class JackTask extends AbstractCompile implements MappingFileProviderTask {
+public class JackTask extends AbstractCompile
+        implements MappingFileProviderTask, BinaryFileProviderTask {
 
     final static FullRevision JACK_MIN_REV = new FullRevision(21, 1, 0)
 
@@ -125,5 +127,13 @@ public class JackTask extends AbstractCompile implements MappingFileProviderTask
         }
 
         return sb.toString()
+    }
+
+    @Override
+    @NonNull
+    BinaryFileProviderTask.Artifact getArtifact() {
+        return new BinaryFileProviderTask.Artifact(
+                BinaryFileProviderTask.BinaryArtifactType.JACK,
+                getJackFile())
     }
 }

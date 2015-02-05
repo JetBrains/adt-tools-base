@@ -86,7 +86,7 @@ class ApplicationTaskManager extends TaskManager {
             createJackTask(appVariantData, null /*testedVariant*/);
         } else{
             createCompileTask(variantData, null /*testedVariant*/);
-
+            createJarTask(variantData);
             createPostCompilationTasks(appVariantData);
         }
 
