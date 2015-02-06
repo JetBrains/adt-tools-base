@@ -45,9 +45,7 @@ public class FilterDataImpl implements FilterData, Serializable {
         return filterType;
     }
 
-    public static class Builder {
-        public static FilterData build(final String filterType, final String identifier) {
-            return new FilterDataImpl(filterType, identifier);
-        }
+    public static FilterData build(final String filterType, final String identifier) {
+        return new FilterDataImpl(filterType, identifier);
     }
 }
