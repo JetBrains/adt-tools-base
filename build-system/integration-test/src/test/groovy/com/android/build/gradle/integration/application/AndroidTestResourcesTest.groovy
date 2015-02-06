@@ -97,7 +97,7 @@ class AndroidTestResourcesTest {
      */
     @BeforeClass
     static void setUp() {
-        testApp.writeSources(appProject.testDir)
+        testApp.write(appProject.testDir, null)
         appProject.getBuildFile() << """
                 apply plugin: 'com.android.application'
                 android {
@@ -107,7 +107,7 @@ class AndroidTestResourcesTest {
                 """.stripIndent()
         appProject.execute("assembleDebugAndroidTest")
 
-        testApp.writeSources(libProject.testDir)
+        testApp.write(libProject.testDir, null)
         libProject.getBuildFile() << """
                 apply plugin: 'com.android.library'
                 android {

@@ -40,6 +40,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 
+import org.gradle.tooling.BuildAction;
 import org.gradle.tooling.BuildActionExecuter;
 import org.gradle.tooling.BuildLauncher;
 import org.gradle.tooling.GradleConnector;
@@ -94,7 +95,7 @@ public class GradleTestProject implements TestRule {
         private String name;
 
         @Nullable
-        private AndroidTestApp testApp = null;
+        private TestProject testProject = null;
 
         boolean captureStdOut = false;
 
@@ -102,7 +103,7 @@ public class GradleTestProject implements TestRule {
          * Create a GradleTestProject.
          */
         public GradleTestProject create()  {
-            return new GradleTestProject(name, testApp, captureStdOut);
+            return new GradleTestProject(name, testProject, captureStdOut);
         }
 
         /**
@@ -121,10 +122,10 @@ public class GradleTestProject implements TestRule {
         }
 
         /**
-         * Create GradleTestProject from an AndroidTestApp.
+         * Create GradleTestProject from a TestProject.
          */
-        public Builder fromTestApp(@NonNull AndroidTestApp testApp) {
-            this.testApp = testApp;
+        public Builder fromTestApp(@NonNull TestProject testProject) {
+            this.testProject = testProject;
             return this;
         }
 
@@ -172,7 +173,7 @@ public class GradleTestProject implements TestRule {
     private ByteArrayOutputStream stdout;
 
     @Nullable
-    private AndroidTestApp testApp;
+    private TestProject testProject;
 
     private GradleTestProject() {
         this(null, null, false);
@@ -180,14 +181,14 @@ public class GradleTestProject implements TestRule {
 
     private GradleTestProject(
             @Nullable String name,
-            @Nullable AndroidTestApp testApp,
+            @Nullable TestProject testProject,
             boolean captureStdOut) {
         sdkDir = SdkHelper.findSdkDir();
         ndkDir = findNdkDir();
         String buildDir = System.getenv("PROJECT_BUILD_DIR");
         outDir = (buildDir == null) ? new File("build/tests") : new File(buildDir, "tests");
         this.name = (name == null) ? DEFAULT_TEST_PROJECT_NAME : name;
-        this.testApp = testApp;
+        this.testProject = testProject;
         if (captureStdOut) {
             stdout = new ByteArrayOutputStream();
         }
@@ -212,7 +213,7 @@ public class GradleTestProject implements TestRule {
         ndkDir = rootProject.ndkDir;
         sdkDir = rootProject.sdkDir;
         stdout = rootProject.stdout;
-        testApp = null;
+        testProject = null;
     }
 
     public static Builder builder() {
@@ -286,18 +287,11 @@ public class GradleTestProject implements TestRule {
                         new File(Builder.TEST_PROJECT_DIR, COMMON_BUILD_SCRIPT),
                         new File(testDir.getParent(), COMMON_BUILD_SCRIPT));
 
-                if (testApp != null) {
-                    testApp.writeSources(testDir);
+                if (testProject != null) {
+                    testProject.write(testDir, getGradleBuildscript());
                 } else {
                     Files.write(
-                            "buildscript {\n" +
-                                    "    repositories {\n" +
-                                    "        maven { url '" + getRepoDir().toString() + "' }\n" +
-                                    "    }\n" +
-                                    "    dependencies {\n" +
-                                    "        classpath \"com.android.tools.build:gradle:" + ANDROID_GRADLE_VERSION + "\"\n" +
-                                    "    }\n" +
-                                    "}\n",
+                            getGradleBuildscript(),
                             buildFile,
                             Charsets.UTF_8);
                 }
@@ -426,6 +420,20 @@ public class GradleTestProject implements TestRule {
     }
 
     /**
+     * Returns a string that contains the gradle buildscript content
+     */
+    public String getGradleBuildscript() {
+        return "buildscript {\n" +
+                "    repositories {\n" +
+                "        maven { url '" + getRepoDir().toString() + "' }\n" +
+                "    }\n" +
+                "    dependencies {\n" +
+                "        classpath \"com.android.tools.build:gradle:" + ANDROID_GRADLE_VERSION + "\"\n" +
+                "    }\n" +
+                "}\n";
+    }
+
+    /**
      * Return a list of all task names of the project.
      */
     public List<String> getTaskList() {
@@ -510,13 +518,12 @@ public class GradleTestProject implements TestRule {
         try {
             executeBuild(Collections.<String>emptyList(), connection, tasks);
 
-            return buildModel(connection, emulateStudio_1_0);
+            return buildModel(connection, new GetAndroidModelAction(), emulateStudio_1_0);
 
         } finally {
             connection.close();
         }
     }
-
 
     /**
      * Returns the project model without building.
@@ -539,7 +546,10 @@ public class GradleTestProject implements TestRule {
     public AndroidProject getSingleModel(boolean emulateStudio_1_0) {
         ProjectConnection connection = getProjectConnection();
         try {
-            Map<String, AndroidProject> modelMap = buildModel(connection, emulateStudio_1_0);
+            Map<String, AndroidProject> modelMap = buildModel(
+                    connection,
+                    new GetAndroidModelAction(),
+                    emulateStudio_1_0);
 
             // ensure there was only one project
             assertEquals("Quering GradleTestProject.getModel() with multi-project settings",
@@ -556,19 +566,32 @@ public class GradleTestProject implements TestRule {
      */
     @NonNull
     public Map<String, AndroidProject> getAllModels() {
-        return getAllModels(false);
+        return getAllModels(new GetAndroidModelAction(), false);
     }
 
     /**
      * Returns a project model for each sub-project without building.
      *
+     * @param action the build action to gather the model
+     */
+    @NonNull
+    public <K, V> Map<K, V> getAllModels(@NonNull BuildAction<Map<K, V>> action) {
+        return getAllModels(action, false);
+    }
+
+    /**
+     * Returns a project model for each sub-project without building.
+     *
+     * @param action the build action to gather the model
      * @param emulateStudio_1_0 whether to emulate an older IDE (studio 1.0) querying the model.
      */
     @NonNull
-    public Map<String, AndroidProject> getAllModels(boolean emulateStudio_1_0) {
+    public <K, V> Map<K, V> getAllModels(
+            @NonNull BuildAction<Map<K, V>> action,
+            boolean emulateStudio_1_0) {
         ProjectConnection connection = getProjectConnection();
         try {
-            return buildModel(connection, emulateStudio_1_0);
+            return buildModel(connection, action, emulateStudio_1_0);
 
         } finally {
             connection.close();
@@ -596,7 +619,10 @@ public class GradleTestProject implements TestRule {
             executeBuild(arguments, connection, tasks);
 
             if (returnModel) {
-                Map<String, AndroidProject> modelMap = buildModel(connection, emulateStudio_1_0);
+                Map<String, AndroidProject> modelMap = buildModel(
+                        connection,
+                        new GetAndroidModelAction(),
+                        emulateStudio_1_0);
 
                 // ensure there was only one project
                 assertEquals("Quering GradleTestProject.getModel() with multi-project settings",
@@ -649,15 +675,16 @@ public class GradleTestProject implements TestRule {
      * Returns a project model for each sub-project without building.
      *
      * @param connection the opened ProjectConnection
+     * @param action the build action to gather the model
      * @param emulateStudio_1_0 whether to emulate an older IDE (studio 1.0) querying the model.
      */
     @NonNull
-    private static Map<String, AndroidProject> buildModel(
+    private static <K,V> Map<K, V> buildModel(
             @NonNull ProjectConnection connection,
+            @NonNull BuildAction<Map<K, V>> action,
             boolean emulateStudio_1_0) {
-        GetModelAction getModelAction = new GetModelAction();
-        BuildActionExecuter<Map<String, AndroidProject>> executer
-                = connection.action(getModelAction);
+
+        BuildActionExecuter<Map<K, V>> executer = connection.action(action);
 
         executer.withArguments(
                 "-P" + AndroidProject.PROPERTY_BUILD_MODEL_ONLY + "=true",

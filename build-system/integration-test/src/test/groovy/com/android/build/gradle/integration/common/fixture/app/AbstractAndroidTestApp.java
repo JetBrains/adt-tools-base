@@ -16,6 +16,8 @@
 
 package com.android.build.gradle.integration.common.fixture.app;
 
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.google.common.base.Joiner;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ArrayListMultimap;
@@ -80,9 +82,10 @@ public abstract class AbstractAndroidTestApp implements AndroidTestApp {
     }
 
     @Override
-    public void writeSources(File sourceDir) throws IOException {
+    public void write(@NonNull File projectDir, @Nullable String buildScriptContent)
+            throws IOException {
         for (TestSourceFile srcFile : getAllSourceFiles()) {
-            srcFile.writeToDir(sourceDir);
+            srcFile.writeToDir(projectDir);
         }
     }
 
