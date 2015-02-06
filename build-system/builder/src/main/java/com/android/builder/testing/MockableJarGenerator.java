@@ -142,14 +142,14 @@ public class MockableJarGenerator {
         List<MethodNode> methodNodes = classNode.methods;
         for (MethodNode methodNode : methodNodes) {
             methodNode.access &= ~Opcodes.ACC_FINAL;
-            fixMethodBody(methodNode);
+            fixMethodBody(methodNode, classNode);
         }
     }
 
     /**
      * Rewrites the method bytecode to remove the "Stub!" exception.
      */
-    private void fixMethodBody(MethodNode methodNode) {
+    private void fixMethodBody(MethodNode methodNode, ClassNode classNode) {
         if ((methodNode.access & Opcodes.ACC_NATIVE) != 0
                 || (methodNode.access & Opcodes.ACC_ABSTRACT) != 0) {
             // Abstract and native method don't have bodies to rewrite.
@@ -192,12 +192,12 @@ public class MockableJarGenerator {
 
                 instructions.add(new InsnNode(returnType.getOpcode(Opcodes.IRETURN)));
             } else {
-                instructions.insert(throwExceptionsList(methodNode));
+                instructions.insert(throwExceptionsList(methodNode, classNode));
             }
         }
     }
 
-    private static InsnList throwExceptionsList(MethodNode methodNode) {
+    private static InsnList throwExceptionsList(MethodNode methodNode, ClassNode classNode) {
         try {
             String runtimeException = Type.getInternalName(RuntimeException.class);
             Constructor<RuntimeException> constructor =
@@ -207,9 +207,11 @@ public class MockableJarGenerator {
             instructions.add(
                     new TypeInsnNode(Opcodes.NEW, runtimeException));
             instructions.add(new InsnNode(Opcodes.DUP));
-            instructions.add(new LdcInsnNode("Method " + methodNode.name + " not mocked."
-                    + "Set android.testOptions.unitTests.returnDefaultValues=true in build.gradle "
-                    + "to make all methods return zero or null."));
+
+            String className = classNode.name.replace('/', '.');
+            instructions.add(new LdcInsnNode("Method " + methodNode.name + " in " + className
+                    + " not mocked. "
+                    + "See https://sites.google.com/a/android.com/tools/tech-docs/unit-testing-support for details."));
             instructions.add(new MethodInsnNode(
                     Opcodes.INVOKESPECIAL,
                     runtimeException,
