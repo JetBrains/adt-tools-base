@@ -518,6 +518,34 @@ public class IconDetectorTest extends AbstractCheckTest {
                 ));
     }
 
+    public void testDuplicatesWithDpNames() throws Exception {
+        // Regression test for https://code.google.com/p/android/issues/detail?id=74584
+        mEnabled = Collections.singleton(IconDetector.DUPLICATES_NAMES);
+        assertEquals("No warnings.",
+
+                lintProject(
+                        "res/drawable-hdpi/unrelated.png=>res/drawable-mdpi/foo_72dp.png",
+                        "res/drawable-hdpi/unrelated.png=>res/drawable-xhdpi/foo_36dp.png"
+                ));
+    }
+
+    public void testClaimedSize() throws Exception {
+        // Check that icons which declare a dp size actually correspond to that dp size
+        mEnabled = Collections.singleton(IconDetector.ICON_DIP_SIZE);
+        assertEquals(""
+                + "res/drawable-xhdpi/foo_30dp.png: Warning: Suspicious file name foo_30dp.png: The implied 30 dp size does not match the actual dp size (pixel size 72\u00d772 in a drawable-xhdpi folder computes to 36\u00d736 dp) [IconDipSize]\n"
+                + "res/drawable-mdpi/foo_80dp.png: Warning: Suspicious file name foo_80dp.png: The implied 80 dp size does not match the actual dp size (pixel size 72\u00d772 in a drawable-mdpi folder computes to 72\u00d772 dp) [IconDipSize]\n"
+                + "0 errors, 2 warnings\n",
+
+                lintProject(
+                        "res/drawable-hdpi/unrelated.png=>res/drawable-mdpi/foo_72dp.png", // ok
+                        "res/drawable-hdpi/unrelated.png=>res/drawable-mdpi/foo_80dp.png", // wrong
+                        "res/drawable-hdpi/unrelated.png=>res/drawable-xhdpi/foo_36dp.png",  // ok
+                        "res/drawable-hdpi/unrelated.png=>res/drawable-xhdpi/foo_35dp.png",  // ~ok
+                        "res/drawable-hdpi/unrelated.png=>res/drawable-xhdpi/foo_30dp.png"  // wrong
+                ));
+    }
+
     public void testResConfigs1() throws Exception {
         // resConfigs in the Gradle model sets up the specific set of resource configs
         // that are included in the packaging: we use this to limit the set of required
