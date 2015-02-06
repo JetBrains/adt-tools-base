@@ -405,8 +405,8 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
         flavor.addResourceConfigurations(base.getResourceConfigurations());
         flavor.addResourceConfigurations(overlay.getResourceConfigurations());
 
-        flavor.addManifestPlaceHolders(base.getManifestPlaceholders());
-        flavor.addManifestPlaceHolders(overlay.getManifestPlaceholders());
+        flavor.addManifestPlaceholders(base.getManifestPlaceholders());
+        flavor.addManifestPlaceholders(overlay.getManifestPlaceholders());
 
         flavor.addResValues(base.getResValues());
         flavor.addResValues(overlay.getResValues());
@@ -457,7 +457,7 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
         flavor.mSigningConfig = productFlavor.getSigningConfig();
 
         flavor.addResourceConfigurations(productFlavor.getResourceConfigurations());
-        flavor.addManifestPlaceHolders(productFlavor.getManifestPlaceholders());
+        flavor.addManifestPlaceholders(productFlavor.getManifestPlaceholders());
 
         flavor.addResValues(productFlavor.getResValues());
         flavor.addBuildConfigFields(productFlavor.getBuildConfigFields());
