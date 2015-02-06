@@ -36,6 +36,7 @@ import com.google.common.collect.Lists;
 
 import org.gradle.api.Task;
 import org.gradle.api.tasks.Copy;
+import org.gradle.api.tasks.compile.AbstractCompile;
 import org.gradle.api.tasks.compile.JavaCompile;
 
 import java.io.File;
@@ -181,8 +182,16 @@ abstract class BaseVariantImpl implements BaseVariant {
     }
 
     @Override
-    @NonNull
+    @Nullable
     public JavaCompile getJavaCompile() {
+        return getVariantData().javaCompileTask instanceof JavaCompile
+                ? (JavaCompile) getVariantData().javaCompileTask
+                : null;
+    }
+
+    @NonNull
+    @Override
+    public AbstractCompile getJavaCompiler() {
         return getVariantData().javaCompileTask;
     }
 
@@ -201,7 +210,7 @@ abstract class BaseVariantImpl implements BaseVariant {
     @Nullable
     @Override
     public File getMappingFile() {
-        return getVariantData().mappingFile;
+        return getVariantData().getMappingFile();
     }
 
     @Override
