@@ -61,10 +61,10 @@ public class TestVariantData extends ApkVariantData {
         String prefix;
         switch (getType()) {
             case ANDROID_TEST:
-                prefix = "Android (on device) tests";
+                prefix = "android (on device) tests";
                 break;
             case UNIT_TEST:
-                prefix = "Unit tests";
+                prefix = "unit tests";
                 break;
             default:
                 throw new IllegalStateException("Unknown test variant type.");
