@@ -15,7 +15,7 @@
  */
 package com.android.build.gradle.tasks
 
-import com.android.build.gradle.internal.tasks.OutputFileTask
+import com.google.common.base.Supplier
 import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.OutputFile
@@ -23,7 +23,7 @@ import org.gradle.api.tasks.ParallelizableTask
 import org.gradle.api.tasks.TaskAction
 
 @ParallelizableTask
-public class ZipAlign extends DefaultTask implements OutputFileTask {
+public class ZipAlign extends DefaultTask implements Supplier<File> {
 
     // ----- PUBLIC TASK API -----
 
@@ -46,5 +46,10 @@ public class ZipAlign extends DefaultTask implements OutputFileTask {
             args getInputFile()
             args getOutputFile()
         }
+    }
+
+    @Override
+    File get() {
+        return getOutputFile()
     }
 }

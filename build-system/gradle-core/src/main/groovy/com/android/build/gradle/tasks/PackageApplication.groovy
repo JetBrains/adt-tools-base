@@ -18,8 +18,8 @@ package com.android.build.gradle.tasks
 import com.android.build.gradle.internal.dsl.PackagingOptions
 import com.android.build.gradle.internal.dsl.SigningConfig
 import com.android.build.gradle.internal.tasks.IncrementalTask
-import com.android.build.gradle.internal.tasks.OutputFileTask
 import com.android.builder.packaging.DuplicateFileException
+import com.google.common.base.Supplier
 import org.gradle.api.file.FileTree
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputDirectory
@@ -32,7 +32,7 @@ import org.gradle.api.tasks.ParallelizableTask
 import org.gradle.tooling.BuildException
 
 @ParallelizableTask
-public class PackageApplication extends IncrementalTask implements OutputFileTask {
+public class PackageApplication extends IncrementalTask implements Supplier<File> {
 
     // ----- PUBLIC TASK API -----
 
@@ -111,5 +111,10 @@ public class PackageApplication extends IncrementalTask implements OutputFileTas
         } catch (Exception e) {
             throw new BuildException(e.getMessage(), e);
         }
+    }
+
+    @Override
+    File get() {
+        return getOutputFile()
     }
 }
