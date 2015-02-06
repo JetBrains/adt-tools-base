@@ -54,3 +54,7 @@ android {
         abortOnError !rootProject.ext.useJack
     }
 }
+
+dependencies {
+    testCompile 'junit:junit:4.11'
+}
