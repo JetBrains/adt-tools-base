@@ -791,7 +791,7 @@ public class ManifestMerger2 {
 
         protected final ILogger mLogger;
 
-        protected final ImmutableMap.Builder<String, Object> mPlaceHolders =
+        protected final ImmutableMap.Builder<String, Object> mPlaceholders =
                 new ImmutableMap.Builder<String, Object>();
 
         private final ImmutableList.Builder<Pair<String, File>> mLibraryFilesBuilder =
@@ -819,7 +819,7 @@ public class ManifestMerger2 {
          * @return itself.
          */
         public Invoker setPlaceHolderValues(Map<String, String> keyValuePairs) {
-            mPlaceHolders.putAll(keyValuePairs);
+            mPlaceholders.putAll(keyValuePairs);
             return thisAsT();
         }
 
@@ -828,7 +828,7 @@ public class ManifestMerger2 {
          * @return itself.
          */
         public Invoker setPlaceHolderValue(String placeHolderName, String value) {
-            mPlaceHolders.put(placeHolderName, value);
+            mPlaceholders.put(placeHolderName, value);
             return thisAsT();
         }
 
@@ -972,8 +972,8 @@ public class ManifestMerger2 {
             // provide some free placeholders values.
             ImmutableMap<SystemProperty, Object> systemProperties = mSystemProperties.build();
             if (systemProperties.containsKey(SystemProperty.PACKAGE)) {
-                mPlaceHolders.put("packageName", systemProperties.get(SystemProperty.PACKAGE));
-                mPlaceHolders.put("applicationId", systemProperties.get(SystemProperty.PACKAGE));
+                mPlaceholders.put("packageName", systemProperties.get(SystemProperty.PACKAGE));
+                mPlaceholders.put("applicationId", systemProperties.get(SystemProperty.PACKAGE));
             }
 
             ManifestMerger2 manifestMerger =
@@ -983,7 +983,7 @@ public class ManifestMerger2 {
                             mLibraryFilesBuilder.build(),
                             mFlavorsAndBuildTypeFiles.build(),
                             mFeaturesBuilder.build(),
-                            mPlaceHolders.build(),
+                            mPlaceholders.build(),
                             new MapBasedKeyBasedValueResolver<SystemProperty>(systemProperties),
                             mMergeType,
                             Optional.fromNullable(mReportFile));
