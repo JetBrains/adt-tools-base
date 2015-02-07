@@ -83,10 +83,10 @@ public class ApplicationVariantFactory implements VariantFactory {
                 for (String abi : abis) {
                     ImmutableList.Builder<FilterData> builder = ImmutableList.builder();
                     if (density != null) {
-                        builder.add(FilterDataImpl.Builder.build(OutputFile.DENSITY, density));
+                        builder.add(FilterDataImpl.build(OutputFile.DENSITY, density));
                     }
                     if (abi != null) {
-                        builder.add(FilterDataImpl.Builder.build(OutputFile.ABI, abi));
+                        builder.add(FilterDataImpl.build(OutputFile.ABI, abi));
                     }
                     variant.createOutput(
                             OutputFile.OutputType.FULL_SPLIT,

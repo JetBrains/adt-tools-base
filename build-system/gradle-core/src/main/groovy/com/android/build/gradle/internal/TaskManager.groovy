@@ -99,6 +99,7 @@ import com.android.sdklib.AndroidTargetHash
 import com.android.sdklib.BuildToolInfo
 import com.android.sdklib.IAndroidTarget
 import com.android.sdklib.SdkVersionInfo
+import com.google.common.base.Supplier
 import com.google.common.collect.ImmutableSet
 import com.google.common.collect.Lists
 import com.google.common.collect.Sets
@@ -2492,33 +2493,28 @@ abstract class TaskManager {
             variantOutputData.assembleTask.dependsOn appTask
 
             if (publishApk) {
+                // if this variant is the default publish config or we also should publish non
+                // defaults, proceed with declaring our artifacts.
                 if (getExtension().defaultPublishConfig.equals(outputName)) {
-                    // add the artifact that will be published
-                    project.artifacts.add("default", new ApkPublishArtifact(
-                            projectBaseName,
-                            null,
-                            outputFileTask))
+                    for (OutputFileTask outputFileProvider : variantOutputData.getOutputTasks()) {
+                        project.artifacts.add("default", new ApkPublishArtifact(
+                                projectBaseName,
+                                null,
+                                outputFileProvider,
+                                appTask))
+                    }
                 }
 
-                // also publish the artifact with its full config name
                 if (getExtension().publishNonDefault) {
-                    // classifier cannot just be the publishing config as we need
-                    // to add the filters if needed.
-                    String classifier = variantData.variantDependency.publishConfiguration.name
-                    if (variantOutputData.getMainOutputFile().getFilter(OutputFile.DENSITY) != null) {
-                        classifier =
-                                "${classifier}-${variantOutputData.getMainOutputFile().getFilter(OutputFile.DENSITY)}"
-                    }
-                    if (variantOutputData.getMainOutputFile().getFilter(OutputFile.ABI) != null) {
-                        classifier =
-                                "${classifier}-${variantOutputData.getMainOutputFile().getFilter(OutputFile.ABI)}"
-                    }
-
-                    project.artifacts.add(variantData.variantDependency.publishConfiguration.name,
-                            new ApkPublishArtifact(
+                    for (OutputFileTask outputFileProvider : variantOutputData.getOutputTasks()) {
+                        project.artifacts.add(
+                                variantData.variantDependency.publishConfiguration.name,
+                                new ApkPublishArtifact(
                                     projectBaseName,
-                                    classifier,
-                                    outputFileTask))
+                                    null,
+                                    outputFileProvider,
+                                    appTask))
+                    }
                 }
             }
         }
