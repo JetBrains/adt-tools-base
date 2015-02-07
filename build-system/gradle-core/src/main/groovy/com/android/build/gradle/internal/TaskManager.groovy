@@ -1285,6 +1285,9 @@ abstract class TaskManager {
         createCompileAnchorTask(variantData)
         createCompileTask(variantData, testedVariantData)
         variantData.assembleVariantTask.dependsOn variantData.compileTask
+
+        // This hides the assemble unit test task from the task list.
+        variantData.assembleVariantTask.group = null
     }
 
     /**
