@@ -16,16 +16,16 @@
 
 package com.android.build.gradle.integration.common.fixture.app;
 
-import java.io.File;
-import java.io.IOException;
+import com.android.build.gradle.integration.common.fixture.TestProject;
+
 import java.util.Collection;
 
 /**
- * Interface for an Android test application.
+ * Interface for an single module Android test application.
  *
  * A test application is a collection of source code that may be reused for multiple tests.
  */
-public interface AndroidTestApp {
+public interface AndroidTestApp extends TestProject {
     /**
      * Return a source file in the test app with the specified filename.
      */
@@ -50,11 +50,4 @@ public interface AndroidTestApp {
      * Remove a source file from the test app.
      */
     boolean removeFile(TestSourceFile file);
-
-    /**
-     * Create all source files in the specified directory.
-     *
-     * @param sourceDir Directory to create the source files in.
-     */
-    void writeSources(File sourceDir) throws IOException;
 }
