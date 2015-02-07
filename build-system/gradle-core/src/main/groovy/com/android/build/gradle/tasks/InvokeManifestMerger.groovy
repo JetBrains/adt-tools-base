@@ -17,10 +17,10 @@
 package com.android.build.gradle.tasks
 
 import com.android.build.gradle.internal.LoggerWrapper
-import com.android.build.gradle.internal.tasks.OutputFileTask
 import com.android.manifmerger.ManifestMerger2
 import com.android.manifmerger.MergingReport
 import com.android.utils.ILogger
+import com.google.common.base.Supplier
 import org.apache.tools.ant.BuildException
 import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.InputFile
@@ -34,7 +34,7 @@ import org.gradle.api.tasks.TaskAction
  * or overlay manifests
  */
 @ParallelizableTask
-class InvokeManifestMerger extends DefaultTask implements OutputFileTask {
+class InvokeManifestMerger extends DefaultTask implements Supplier<File> {
 
     @InputFile
     File mainManifestFile;
@@ -66,5 +66,10 @@ class InvokeManifestMerger extends DefaultTask implements OutputFileTask {
                 fileWriter.close()
             }
         }
+    }
+
+    @Override
+    File get() {
+        return getOutputFile()
     }
 }
