@@ -60,6 +60,7 @@ import com.android.build.gradle.internal.variant.LibraryVariantData
 import com.android.build.gradle.internal.variant.TestVariantData
 import com.android.build.gradle.internal.variant.TestedVariantData
 import com.android.build.gradle.tasks.AidlCompile
+import com.android.build.gradle.tasks.AndroidProGuardTask
 import com.android.build.gradle.tasks.CompatibleScreensManifest
 import com.android.build.gradle.tasks.Dex
 import com.android.build.gradle.tasks.GenerateBuildConfig
@@ -1403,14 +1404,13 @@ abstract class TaskManager {
 
             // wire the main lint task dependency.
             lint.dependsOn lintCompile
-            optionalDependsOn(lint, baseVariantData.javaCompileTask, baseVariantData.jackTask)
+            optionalDependsOn(lint, baseVariantData.javaCompileTask)
 
             String variantName = baseVariantData.variantConfiguration.fullName
             def capitalizedVariantName = variantName.capitalize()
             Lint variantLintCheck = project.tasks.create("lint" + capitalizedVariantName, Lint)
             variantLintCheck.dependsOn lintCompile
-            optionalDependsOn(variantLintCheck, baseVariantData.javaCompileTask,
-                    baseVariantData.jackTask)
+            optionalDependsOn(variantLintCheck, baseVariantData.javaCompileTask)
 
             // Note that we don't do "lint.dependsOn lintCheck"; the "lint" target will
             // on its own run through all variants (and compare results), it doesn't delegate
@@ -1482,7 +1482,7 @@ abstract class TaskManager {
             fixTestTaskSources(runTestsTask)
 
             runTestsTask.dependsOn variantData.assembleVariantTask
-            JavaCompile testCompileTask = variantData.javaCompileTask
+            AbstractCompile testCompileTask = variantData.javaCompileTask
             runTestsTask.testClassesDir = testCompileTask.destinationDir
 
             conventionMapping(runTestsTask).map("classpath") {
@@ -1637,11 +1637,7 @@ abstract class TaskManager {
                                 SimpleTestCallable.FILE_COVERAGE_EC)
                     }
                     conventionMapping(reportTask).map("classDir") {
-                        if (baseVariantData.javaCompileTask != null) {
-                            return baseVariantData.javaCompileTask.destinationDir
-                        }
-
-                        return baseVariantData.jackTask.destinationDir
+                        return baseVariantData.javaCompileTask.destinationDir
                     }
                     conventionMapping(reportTask).
                             map("sourceDir") { baseVariantData.getJavaSourceFoldersForCoverage() }
@@ -2033,7 +2029,9 @@ abstract class TaskManager {
 
                 conventionMapping(retraceTask).
                         map("mainDexListFile") { createMainDexListTask.outputFile }
-                conventionMapping(retraceTask).map("mappingFile") { variantData.mappingFile }
+                conventionMapping(retraceTask).map("mappingFile") {
+                    variantData.getMappingFile()
+                }
                 retraceTask.outputFile = project.file(
                         "${project.buildDir}/${FD_INTERMEDIATES}/multi-dex/${config.dirName}/maindexlist_deobfuscated.txt")
                 dexTask.dependsOn retraceTask
@@ -2160,9 +2158,12 @@ abstract class TaskManager {
         compileTask.isVerbose = isVerbose()
         compileTask.isDebugLog = isDebugLog()
 
-        variantData.jackTask = compileTask
-        variantData.jackTask.dependsOn variantData.sourceGenTask, jillRuntimeTask, jillPackagedTask
-        variantData.compileTask.dependsOn variantData.jackTask
+        // Jack is compiling and also providing the mapping file.
+        variantData.javaCompileTask = compileTask
+        variantData.mappingFileProviderTask = compileTask
+
+        variantData.javaCompileTask.dependsOn variantData.sourceGenTask, jillRuntimeTask, jillPackagedTask
+        variantData.compileTask.dependsOn variantData.javaCompileTask
         // TODO - dependency information for the compile classpath is being lost.
         // Add a temporary approximation
         compileTask.dependsOn variantData.variantDependency.compileConfiguration.buildDependencies
@@ -2180,10 +2181,11 @@ abstract class TaskManager {
         // it's done automatically since the classpath includes the library output as a normal
         // dependency.
         if (testedVariantData instanceof ApplicationVariantData) {
+            JackTask jackTask = (JackTask) testedVariantData.javaCompileTask
             conventionMapping(compileTask).map("classpath") {
                 project.fileTree(jillRuntimeTask.outputFolder) +
-                        testedVariantData.jackTask.classpath +
-                        project.fileTree(testedVariantData.jackTask.jackFile)
+                        jackTask.classpath +
+                        project.fileTree(jackTask.jackFile)
             }
         } else {
             conventionMapping(compileTask).map("classpath") {
@@ -2233,7 +2235,7 @@ abstract class TaskManager {
                 return proguardFiles
             }
 
-            compileTask.mappingFile = variantData.mappingFile = project.file(
+            compileTask.mappingFile = project.file(
                     "${project.buildDir}/${FD_OUTPUTS}/mapping/${variantData.variantConfiguration.dirName}/mapping.txt")
         }
 
@@ -2321,7 +2323,7 @@ abstract class TaskManager {
             packageApp.dependsOn variantOutputData.processResourcesTask,
                     variantData.processJavaResourcesTask
 
-            optionalDependsOn(packageApp, variantData.dexTask, variantData.jackTask)
+            optionalDependsOn(packageApp, variantData.dexTask, variantData.javaCompileTask)
 
             if (variantOutputData.packageSplitResourcesTask != null) {
                 packageApp.dependsOn variantOutputData.packageSplitResourcesTask
@@ -2356,8 +2358,8 @@ abstract class TaskManager {
                     return variantData.dexTask.outputFolder
                 }
 
-                if (variantData.jackTask != null) {
-                    return variantData.jackTask.getDestinationDir()
+                if (variantData.javaCompileTask != null) {
+                    return variantData.javaCompileTask.getDestinationDir()
                 }
 
                 return null
@@ -2506,6 +2508,22 @@ abstract class TaskManager {
                                 outputFileProvider,
                                 appTask))
                     }
+
+//                    // TODO: next step is to create configurations before publishing.
+//                    if (variantData.getMappingFileProvider() != null) {
+//                        project.artifacts.add(configurationName + "-mapping-file",
+//                                new ApkPublishArtifact(projectBaseName,
+//                                        null,
+//                                        new Supplier<File>() {
+//
+//                                            @Override
+//                                            File get() {
+//                                                variantData.getMappingFileProvider().
+//                                                        getMappingFile();
+//                                            }
+//                                        },
+//                                        variantData.getMappingFileProvider()));
+//                    }
                 }
 
                 if (getExtension().publishNonDefault) {
@@ -2651,13 +2669,14 @@ abstract class TaskManager {
 
         def proguardTask = project.tasks.create(
                 "proguard${variantData.variantConfiguration.fullName.capitalize()}",
-                ProGuardTask)
+                AndroidProGuardTask)
 
         if (testedVariantData != null) {
             proguardTask.dependsOn testedVariantData.obfuscationTask
         }
 
         variantData.obfuscationTask = proguardTask
+        variantData.mappingFileProviderTask = proguardTask
 
         // --- Output File ---
 
@@ -2790,7 +2809,7 @@ abstract class TaskManager {
         proguardTask.dump(new File(proguardOut, "dump.txt"))
         proguardTask.printseeds(new File(proguardOut, "seeds.txt"))
         proguardTask.printusage(new File(proguardOut, "usage.txt"))
-        proguardTask.printmapping(variantData.mappingFile = new File(proguardOut, "mapping.txt"))
+        proguardTask.printmapping(new File(proguardOut, "mapping.txt"))
 
         // proguard doesn't verify that the seed/mapping/usage folders exist and will fail
         // if they don't so create them.
