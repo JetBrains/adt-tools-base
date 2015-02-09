@@ -30,7 +30,7 @@ import java.util.Map;
 /**
  * a Build Action that returns all the models for all the Gradle projects
  */
-public class GetModelAction implements BuildAction<Map<String, AndroidProject>> {
+public class GetAndroidModelAction implements BuildAction<Map<String, AndroidProject>> {
 
     @Override
     public Map<String, AndroidProject> execute(BuildController buildController) {
