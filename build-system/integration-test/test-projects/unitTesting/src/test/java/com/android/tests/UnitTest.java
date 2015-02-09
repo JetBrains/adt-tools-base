@@ -9,6 +9,7 @@ import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.util.ArrayMap;
 import android.os.Debug;
+import android.os.PowerManager;
 import org.junit.Test;
 
 import java.lang.RuntimeException;
@@ -42,6 +43,13 @@ public class UnitTest {
 
         verify(adapter).isEnabled();
         verifyNoMoreInteractions(adapter);
+    }
+
+    @Test
+    public void mockInnerClass() throws Exception {
+        PowerManager.WakeLock wakeLock = mock(PowerManager.WakeLock.class);
+        when(wakeLock.isHeld()).thenReturn(true);
+        assertTrue(wakeLock.isHeld());
     }
 
     @Test

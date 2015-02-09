@@ -26,6 +26,7 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.InnerClassNode;
 import org.objectweb.asm.tree.InsnList;
 import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.LdcInsnNode;
@@ -143,6 +144,11 @@ public class MockableJarGenerator {
         for (MethodNode methodNode : methodNodes) {
             methodNode.access &= ~Opcodes.ACC_FINAL;
             fixMethodBody(methodNode, classNode);
+        }
+
+        List<InnerClassNode> innerClasses = classNode.innerClasses;
+        for (InnerClassNode innerClassNode : innerClasses) {
+            innerClassNode.access &= ~Opcodes.ACC_FINAL;
         }
     }
 
