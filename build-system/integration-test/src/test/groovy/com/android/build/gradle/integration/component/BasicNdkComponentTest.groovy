@@ -39,7 +39,7 @@ class BasicNdkComponentTest {
 
     @BeforeClass
     public static void setUp() {
-        new HelloWorldJniApp(true /* useCppSource */).write(project.testDir, null)
+        new HelloWorldJniApp(jniDir: "cpp", useCppSource: true).write(project.testDir, null)
         project.getBuildFile() << """
 apply plugin: 'com.android.model.application'
 
