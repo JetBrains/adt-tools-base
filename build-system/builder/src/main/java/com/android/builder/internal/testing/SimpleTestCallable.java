@@ -136,7 +136,13 @@ public class SimpleTestCallable implements Callable<Boolean> {
             }
 
             logger.verbose("DeviceConnector '%s': installing %s", deviceName, testApk);
-            device.installPackage(testApk, installOptions, timeoutInMs, logger);
+            if (device.getApiLevel() >= 21) {
+                device.installPackages(ImmutableList.of(testApk),
+                        ImmutableList.<String>of() /* installOptions */,timeoutInMs, logger);
+            } else {
+                device.installPackage(testApk,
+                        ImmutableList.<String>of() /* installOptions */, timeoutInMs, logger);
+            }
             isInstalled = true;
 
             RemoteAndroidTestRunner runner = new RemoteAndroidTestRunner(
