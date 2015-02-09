@@ -327,13 +327,23 @@ public class LocaleManager {
         // among them based on heuristics.
         List<String> regions = getRelevantRegions(languageCode);
         if (regions.size() > 1) {
+            // Some languages are used in a huge number of regions (English is
+            // in 90+ regions for example), and similarly, some regions have multiple
+            // major languages (Switzerland for example). In these cases we don't want
+            // to show a region flag for the local region (e.g. for Switzerland you
+            // would see the same flag for German, French, Italian, ...).
+            // Therefore, only use region lookup for a subset of languages where
+            // we're not sure.
+            List<String> relevant = getDisambiguateRegions(languageCode);
+
             // (3) Check the user's country. The user may not be using the target
             //     language, but if the current country matches one of the relevant
             //     regions, use it.
             String country = locale.getCountry();
-            if (!country.isEmpty()) {
+            if (!country.isEmpty() && relevant != null) {
                 country = country.toUpperCase(US);
-                if (country.length() == 2 && regions.contains(country)) {
+                if (country.length() == 2 && regions.contains(country) &&
+                        (relevant.isEmpty() || relevant.contains(country))) {
                     return country;
                 }
             }
@@ -358,9 +368,12 @@ public class LocaleManager {
             //     not only map from timezone to region code, but to look at
             //     the continent and raw offsets for further clues to guide the
             //     region choice.)
-            String region = getTimeZoneRegionAlpha2(TimeZone.getDefault());
-            if (region != null && regions.contains(region)) {
-                return region;
+            if (relevant != null) {
+                String region = getTimeZoneRegionAlpha2(TimeZone.getDefault());
+                if (region != null && regions.contains(region) &&
+                        (relevant.isEmpty() || relevant.contains(region))) {
+                    return region;
+                }
             }
 
             //
@@ -384,7 +397,8 @@ public class LocaleManager {
                     }
                 }
             }
-            if (candidate != null) {
+            if (candidate != null && relevant != null &&
+                    (relevant.isEmpty() || relevant.contains(candidate.getCountry()))) {
                 return candidate.getCountry();
             }
 
@@ -435,6 +449,22 @@ public class LocaleManager {
 
         // Finally just pick the default one
         return getDefaultLanguageRegion(languageCode);
+    }
+
+    @Nullable
+    private static List<String> getDisambiguateRegions(@NonNull String languageCode) {
+        if ("ar".equals(languageCode) || "zh".equals(languageCode)) {
+            return Collections.emptyList();
+        } else if ("en".equals(languageCode)) {
+            return Arrays.asList("US", "GB");
+        } else if ("es".equals(languageCode)) {
+            return Arrays.asList("MX", "AR", "CL", "CO", "CR", "CU", "DO", "GT", "HN", "NI",
+                    "PA", "PY", "SV", "UY", "VE", "ME");
+        } else if ("pt".equals(languageCode)) {
+            return Arrays.asList("PT", "BR");
+        } else {
+            return null;
+        }
     }
 
     /**

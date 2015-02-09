@@ -204,6 +204,24 @@ public class LocaleManagerTest extends TestCase {
             Locale.setDefault(Locale.CANADA);
             TimeZone.setDefault(TimeZone.getTimeZone("Europe/Oslo"));
             assertEquals("CA", LocaleManager.getLanguageRegion("en"));
+
+            // Swedish should map to Sweden even though FI is a relevant region for sv
+            // Regression test for issue 136001
+            Locale.setDefault(Locale.FRANCE); // unrelated locale to this test
+            TimeZone.setDefault(TimeZone.getTimeZone("Europe/Helsinki"));
+            assertEquals("SE", LocaleManager.getLanguageRegion("sv"));
+
+            TimeZone.setDefault(TimeZone.getTimeZone("Europe/London"));
+            assertEquals("GB", LocaleManager.getLanguageRegion("en"));
+            TimeZone.setDefault(TimeZone.getTimeZone("America/Chicago"));
+            assertEquals("US", LocaleManager.getLanguageRegion("en"));
+            assertEquals("ES", LocaleManager.getLanguageRegion("es"));
+            TimeZone.setDefault(TimeZone.getTimeZone("America/Manaus"));
+            assertEquals("BR", LocaleManager.getLanguageRegion("pt"));
+            TimeZone.setDefault(TimeZone.getTimeZone("Europe/Lisbon"));
+            assertEquals("PT", LocaleManager.getLanguageRegion("pt"));
+            TimeZone.setDefault(TimeZone.getTimeZone("Europe/Oslo"));
+            assertEquals("PT", LocaleManager.getLanguageRegion("pt"));
         } finally {
             Locale.setDefault(prevLocale);
             TimeZone.setDefault(prevTimeZone);
