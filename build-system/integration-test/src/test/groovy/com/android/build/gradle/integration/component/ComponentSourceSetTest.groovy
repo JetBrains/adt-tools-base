@@ -49,7 +49,7 @@ class ComponentSourceSetTest {
                 new TestSourceFile("src/flavor1/c/hello-jni.c", cSource.name, cSource.content))
         app.addFile(new TestSourceFile("src/flavor2Debug/c/hello-jni.c", cSource.name,
                 cSource.content))
-        app.writeSources(project.testDir)
+        app.write(project.testDir, null)
 
         project.buildFile << """
 apply plugin: "com.android.model.application"
