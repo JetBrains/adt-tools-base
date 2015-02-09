@@ -22,15 +22,12 @@ import com.android.build.OutputFile
 import com.android.build.gradle.api.ApkOutputFile
 import com.android.build.gradle.internal.dsl.SigningConfig
 import com.android.build.gradle.internal.model.FilterDataImpl
-import com.android.build.gradle.internal.tasks.BaseTask
 import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Callables
-import org.gradle.api.Nullable
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Nested
 import org.gradle.api.tasks.Optional
-import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.OutputFiles
 import org.gradle.api.tasks.ParallelizableTask
 import org.gradle.api.tasks.TaskAction
@@ -42,7 +39,7 @@ import java.util.regex.Pattern
  * Package each split resources into a specific signed apk file.
  */
 @ParallelizableTask
-class PackageSplitRes extends BaseTask {
+class PackageSplitRes extends SplitRelatedTask {
 
     @Input
     Set<String> densitySplits
@@ -89,12 +86,12 @@ class PackageSplitRes extends BaseTask {
             FilterData filterData = null;
             for (String density : densitySplits) {
                 if (split.startsWith(density)) {
-                    filterData = FilterDataImpl.Builder.build(
+                    filterData = FilterDataImpl.build(
                             OutputFile.FilterType.DENSITY.toString(), density)
                 }
             }
             if (languageSplits.contains(split)) {
-                filterData = FilterDataImpl.Builder.build(
+                filterData = FilterDataImpl.build(
                         OutputFile.FilterType.LANGUAGE.toString(), split);
             }
             if (filterData != null) {
@@ -151,5 +148,13 @@ class PackageSplitRes extends BaseTask {
     String getOutputFileNameForSplit(String split) {
         String apkName = "${project.archivesBaseName}-${outputBaseName}_${split}"
         return apkName + (signingConfig == null ? "-unsigned.apk" : "-unaligned.apk")
+    }
+
+    @Override
+    List<FilterData> getSplitsData() {
+        ImmutableList.Builder<FilterData> filterDataBuilder = ImmutableList.builder();
+        addAllFilterData(filterDataBuilder, densitySplits, OutputFile.FilterType.DENSITY);
+        addAllFilterData(filterDataBuilder, languageSplits, OutputFile.FilterType.LANGUAGE);
+        return filterDataBuilder.build();
     }
 }
