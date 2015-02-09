@@ -54,7 +54,7 @@ public class HelloJni extends Activity {
 
     // JNI Implementation in C.
     static private final TestSourceFile cSource =
-            new TestSourceFile("src/main/c", "hello-jni.c",
+            new TestSourceFile("src/main/jni", "hello-jni.c",
 """
 #include <string.h>
 #include <jni.h>
@@ -70,7 +70,7 @@ Java_com_example_hellojni_HelloJni_stringFromJNI(JNIEnv* env, jobject thiz)
 
     // JNI Implementation in C++.
     static private final TestSourceFile cppSource =
-            new TestSourceFile("src/main/cpp", "hello-jni.cpp",
+            new TestSourceFile("src/main/jni", "hello-jni.cpp",
 """
 #include <string.h>
 #include <jni.h>
@@ -156,13 +156,15 @@ public class HelloJniTest extends ActivityInstrumentationTestCase<HelloJni> {
 }
 """);
 
-    public HelloWorldJniApp() {
-        this(false);
+    public HelloWorldJniApp(Map args = [:]) {
+        def defaultArgs = [jniDir: "jni", useCppSource: false]
+        defaultArgs << args
+        TestSourceFile jniSource = defaultArgs.useCppSource ? cppSource : cSource
+        addFiles(
+                javaSource,
+                new TestSourceFile("src/main/$defaultArgs.jniDir", jniSource.name, jniSource.content),
+                resSource,
+                manifest,
+                androidTestSource);
     }
-
-    public HelloWorldJniApp(boolean useCppSource) {
-        addFiles(javaSource, useCppSource ? cppSource : cSource, resSource, manifest, androidTestSource);
-    }
-
-
 }

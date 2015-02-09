@@ -41,7 +41,7 @@ class NdkComponentVariantTest {
 
     @BeforeClass
     public static void setUp() {
-        new HelloWorldJniApp().write(project.testDir, null)
+        new HelloWorldJniApp(jniDir: "c").write(project.testDir, null)
 
         project.getBuildFile() << """
 apply plugin: 'com.android.model.application'

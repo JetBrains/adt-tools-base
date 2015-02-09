@@ -36,7 +36,7 @@ import static org.junit.Assert.fail
  * This unit test is parameterized and will be executed for various values of STL.
  */
 @RunWith(Parameterized.class)
-public class NdkStlIntegTest {
+public class NdkStlTest {
 
     @Parameterized.Parameters
     public static Collection<Object[]> data() {
@@ -56,7 +56,7 @@ public class NdkStlIntegTest {
 
     private String stl;
 
-    NdkStlIntegTest(String stl) {
+    NdkStlTest(String stl) {
         this.stl = stl;
     }
 
@@ -65,7 +65,7 @@ public class NdkStlIntegTest {
 
     @Before
     public void setUp() {
-        new HelloWorldJniApp().write(project.testDir, null)
+        new HelloWorldJniApp(jniDir: "cpp", useCppSource: true).write(project.testDir, null)
         project.getBuildFile() << """
 apply plugin: 'com.android.model.application'
 

@@ -76,13 +76,6 @@ android {
             }
         }
     }
-    sourceSets {
-        main {
-            jni {
-                srcDir "src/main/c"
-            }
-        }
-    }
 }
 """
     }
