@@ -36,7 +36,7 @@ class AppComponentPluginTest {
 
     @Before
     public void setUp() {
-        new HelloWorldApp().writeSources(project.testDir)
+        new HelloWorldApp().write(project.testDir, null)
         project.buildFile << """
 apply plugin: "com.android.model.application"
 
