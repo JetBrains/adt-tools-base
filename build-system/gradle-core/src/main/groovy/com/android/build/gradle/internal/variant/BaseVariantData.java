@@ -35,6 +35,7 @@ import com.android.build.gradle.tasks.AidlCompile;
 import com.android.build.gradle.tasks.GenerateBuildConfig;
 import com.android.build.gradle.tasks.GenerateResValues;
 import com.android.build.gradle.tasks.JackTask;
+import com.android.build.gradle.tasks.MappingFileProviderTask;
 import com.android.build.gradle.tasks.MergeAssets;
 import com.android.build.gradle.tasks.MergeResources;
 import com.android.build.gradle.tasks.NdkCompile;
@@ -47,6 +48,7 @@ import com.google.common.collect.Lists;
 
 import org.gradle.api.Task;
 import org.gradle.api.tasks.Copy;
+import org.gradle.api.tasks.compile.AbstractCompile;
 import org.gradle.api.tasks.compile.JavaCompile;
 
 import java.io.File;
@@ -104,13 +106,16 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
     public Copy processJavaResourcesTask;
     public NdkCompile ndkCompileTask;
 
-    public JavaCompile javaCompileTask;
-    public JackTask jackTask;
+    // can be JavaCompile or JackTask depending on user's settings.
+    public AbstractCompile javaCompileTask;
+    // empty anchor compile task to set all compilations tasks as dependents.
     public Task compileTask;
     public JacocoInstrumentTask jacocoInstrumentTask;
+
+    public MappingFileProviderTask mappingFileProviderTask;
+    // TODO : why is Jack not registered as the obfuscationTask ???
     public Task obfuscationTask;
     public File obfuscatedClassesJar;
-    public File mappingFile;
 
     // Task to assemble the variant and all its output.
     public Task assembleVariantTask;
@@ -398,5 +403,15 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
         return Objects.toStringHelper(this)
                 .addValue(variantConfiguration.getFullName())
                 .toString();
+    }
+
+    @Nullable
+    public MappingFileProviderTask getMappingFileProvider() {
+        return mappingFileProviderTask;
+    }
+
+    @Nullable
+    public File getMappingFile() {
+        return mappingFileProviderTask != null ? mappingFileProviderTask.getMappingFile() : null;
     }
 }
