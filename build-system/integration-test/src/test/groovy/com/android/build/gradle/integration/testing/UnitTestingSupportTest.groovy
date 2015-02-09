@@ -41,6 +41,7 @@ class UnitTestingSupportTest {
                 [ "referenceProductionCode",
                   "exceptions",
                   "mockFinalClass",
+                  "mockInnerClass",
                   "mockFinalMethod" ])
 
         checkResults(
