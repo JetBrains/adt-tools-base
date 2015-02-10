@@ -1,11 +1,12 @@
-apply plugin: 'com.android.library'
+apply plugin: 'com.android.model.library'
 
-android {
-    compileSdkVersion 19
-    buildToolsVersion = rootProject.ext.buildToolsVersion
+model {
+    android.config {
+        compileSdkVersion 19
+        buildToolsVersion = rootProject.ext.buildToolsVersion
+    }
 
-    useNewNativePlugin true
-    ndk {
+    android.ndk {
         moduleName "hello-jni"
     }
 }
