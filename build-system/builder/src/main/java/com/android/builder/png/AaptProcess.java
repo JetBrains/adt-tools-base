@@ -78,9 +78,9 @@ public class AaptProcess {
                 new NotifierProcessOutput(job, mProcessOutputFacade, mLogger);
 
         mProcessOutputFacade.setNotifier(notifier);
-        mWriter.write("s ");
+        mWriter.write("s\n");
         mWriter.write(in.getAbsolutePath());
-        mWriter.write(" ");
+        mWriter.write("\n");
         mWriter.write(out.getAbsolutePath());
         mWriter.write("\n");
         mWriter.flush();
