@@ -13,6 +13,6 @@ buildscript {
         }
     }
     dependencies {
-        classpath "com.android.tools.build:gradle:$gradleVersion"
+        classpath "com.android.tools.build:gradle-experimental:$gradleVersion"
     }
 }

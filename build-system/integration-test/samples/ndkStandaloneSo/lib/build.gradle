@@ -1,11 +1,8 @@
 apply plugin: 'com.android.native'
 
-android {
-    compileSdkVersion 19
-    moduleName "hello-jni"
-    sourceSets {
-        main {
-            srcDir "src"
-        }
+model {
+    android.ndk {
+        compileSdkVersion 19
+        moduleName "hello-jni"
     }
 }

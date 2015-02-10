@@ -82,7 +82,7 @@ public abstract class BasePlugin {
             "com.android.build.gradle.overrideVersionCheck"
 
     // default retirement age in days since its inception date for RC or beta versions.
-    private static final int DEFAULT_RETIREMENT_AGE_FOR_NON_RELEASE = 40;
+    private static final int DEFAULT_RETIREMENT_AGE_FOR_NON_RELEASE = 40
 
     protected BaseExtension extension
 

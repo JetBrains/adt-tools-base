@@ -80,7 +80,7 @@ public class GradleTestProject implements TestRule {
 
     public static final int DEFAULT_COMPILE_SDK_VERSION = 21;
     public static final String DEFAULT_BUILD_TOOL_VERSION = "21.0.1";
-    public static final String GRADLE_TEST_VERSION = "2.2";
+    public static final String GRADLE_TEST_VERSION = "2.4-20150121230028+0000";
 
     private static final String ANDROID_GRADLE_VERSION = "1.1.0-rc2";
     private static final String COMMON_HEADER = "commonHeader.gradle";
@@ -429,6 +429,7 @@ public class GradleTestProject implements TestRule {
                 "    }\n" +
                 "    dependencies {\n" +
                 "        classpath \"com.android.tools.build:gradle:" + ANDROID_GRADLE_VERSION + "\"\n" +
+                "        classpath \"com.android.tools.build:gradle-experimental:" + ANDROID_GRADLE_VERSION + "\"\n" +
                 "    }\n" +
                 "}\n";
     }
