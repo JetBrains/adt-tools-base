@@ -20,7 +20,7 @@ import com.android.resources.Density;
 
 import junit.framework.TestCase;
 
-public class PixelDensityQualifierTest extends TestCase {
+public class DensityQualifierTest extends TestCase {
 
     private DensityQualifier pdq;
     private FolderConfiguration config;
@@ -59,6 +59,7 @@ public class PixelDensityQualifierTest extends TestCase {
         DensityQualifier mdpi = new DensityQualifier(Density.MEDIUM);
         DensityQualifier hdpi = new DensityQualifier(Density.HIGH);
         DensityQualifier xhdpi = new DensityQualifier(Density.XHIGH);
+        DensityQualifier anydpi = new DensityQualifier(Density.ANYDPI);
 
         // first test that each Q is a better match than all other Qs when the ref is the same Q.
         assertTrue(ldpi.isBetterMatchThan(mdpi, ldpi));
@@ -77,16 +78,23 @@ public class PixelDensityQualifierTest extends TestCase {
         assertTrue(xhdpi.isBetterMatchThan(mdpi, xhdpi));
         assertTrue(xhdpi.isBetterMatchThan(hdpi, xhdpi));
 
+        assertTrue(anydpi.isBetterMatchThan(ldpi, anydpi));
+        assertTrue(anydpi.isBetterMatchThan(mdpi, anydpi));
+        assertTrue(anydpi.isBetterMatchThan(hdpi, anydpi));
+
         // now test that the highest dpi is always preferable if there's no exact match
 
         // looking for ldpi:
         assertTrue(hdpi.isBetterMatchThan(mdpi, ldpi));
         assertTrue(xhdpi.isBetterMatchThan(mdpi, ldpi));
         assertTrue(xhdpi.isBetterMatchThan(hdpi, ldpi));
+        assertTrue(anydpi.isBetterMatchThan(hdpi, ldpi));
+
         // the other way around
         assertFalse(mdpi.isBetterMatchThan(hdpi, ldpi));
         assertFalse(mdpi.isBetterMatchThan(xhdpi, ldpi));
         assertFalse(hdpi.isBetterMatchThan(xhdpi, ldpi));
+        assertFalse(hdpi.isBetterMatchThan(anydpi, ldpi));
 
         // looking for mdpi
         assertTrue(hdpi.isBetterMatchThan(ldpi, mdpi));
@@ -114,5 +122,11 @@ public class PixelDensityQualifierTest extends TestCase {
         assertFalse(ldpi.isBetterMatchThan(mdpi, xhdpi));
         assertFalse(ldpi.isBetterMatchThan(hdpi, xhdpi));
         assertFalse(mdpi.isBetterMatchThan(hdpi, xhdpi));
+
+        // looking for anydpi
+        assertTrue(anydpi.isBetterMatchThan(ldpi, anydpi));
+        assertTrue(anydpi.isBetterMatchThan(ldpi, anydpi));
+        assertTrue(anydpi.isBetterMatchThan(mdpi, anydpi));
+        assertTrue(anydpi.isBetterMatchThan(xhdpi, anydpi));
     }
 }
