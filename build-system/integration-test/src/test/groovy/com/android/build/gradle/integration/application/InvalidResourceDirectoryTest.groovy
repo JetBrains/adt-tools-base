@@ -15,6 +15,7 @@
  */
 
 package com.android.build.gradle.integration.application
+
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.AndroidTestApp
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
@@ -29,15 +30,9 @@ import org.junit.Test
 @CompileStatic
 class InvalidResourceDirectoryTest {
 
-    @ClassRule
-    public static GradleTestProject project = GradleTestProject.builder().create()
+    public static AndroidTestApp app = new HelloWorldApp()
 
-    public static final String INVALID_LAYOUT_FOLDER = "src/main/res/layout-hdpi-land"
-
-
-    @BeforeClass
-    public static void setUp() {
-        AndroidTestApp app = new HelloWorldApp()
+    static {
         app.addFile(new TestSourceFile(INVALID_LAYOUT_FOLDER, "main.xml",
                 """<?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
@@ -53,6 +48,16 @@ class InvalidResourceDirectoryTest {
     />
 </LinearLayout>
 """));
+    }
+
+    @ClassRule
+    public static GradleTestProject project = GradleTestProject.builder().fromTestApp(app).create()
+
+    public static final String INVALID_LAYOUT_FOLDER = "src/main/res/layout-hdpi-land"
+
+
+    @BeforeClass
+    public static void setUp() {
         project.getBuildFile() << """
 apply plugin: 'com.android.application'
 
@@ -61,7 +66,6 @@ android {
     buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
 }
 """
-        app.write(project.testDir, null)
     }
 
     @Test

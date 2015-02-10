@@ -35,9 +35,8 @@ import static org.junit.Assert.assertTrue
  * Check resources in androidTest are available in the generated R.java.
  */
 class AndroidTestResourcesTest {
-    private static AndroidTestApp testApp
+    private static AndroidTestApp testApp = new HelloWorldApp()
     static {
-        testApp =  new HelloWorldApp()
 
         testApp.addFile(new TestSourceFile("src/androidTest/res/layout", "test_layout_1.xml", """\
                 <?xml version="1.0" encoding="utf-8"?>
@@ -87,17 +86,21 @@ class AndroidTestResourcesTest {
 
     @ClassRule
     public static GradleTestProject appProject = GradleTestProject.builder()
-            .withName("application").create()
+            .withName("application")
+            .fromTestApp(testApp)
+            .create()
+
     @ClassRule
     public static GradleTestProject libProject = GradleTestProject.builder()
-            .withName("library").create()
+            .withName("library")
+            .fromTestApp(testApp)
+            .create()
 
     /**
      * Use the test app to create an application and a library project.
      */
     @BeforeClass
     static void setUp() {
-        testApp.write(appProject.testDir, null)
         appProject.getBuildFile() << """
                 apply plugin: 'com.android.application'
                 android {
@@ -107,7 +110,6 @@ class AndroidTestResourcesTest {
                 """.stripIndent()
         appProject.execute("assembleDebugAndroidTest")
 
-        testApp.write(libProject.testDir, null)
         libProject.getBuildFile() << """
                 apply plugin: 'com.android.library'
                 android {

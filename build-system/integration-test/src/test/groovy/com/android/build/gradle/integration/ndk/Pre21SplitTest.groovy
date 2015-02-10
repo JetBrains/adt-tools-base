@@ -30,12 +30,12 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
  */
 class Pre21SplitTest {
     @ClassRule
-    static public GradleTestProject project = GradleTestProject.builder().create()
+    static public GradleTestProject project = GradleTestProject.builder()
+            .fromTestApp(new HelloWorldJniApp())
+            .create()
 
     @BeforeClass
     static public void setUp() {
-        new HelloWorldJniApp().write(project.testDir, null)
-
         project.getBuildFile() << """
 apply plugin: 'com.android.application'
 

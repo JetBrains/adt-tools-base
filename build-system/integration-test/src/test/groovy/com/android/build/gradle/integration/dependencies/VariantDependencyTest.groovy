@@ -46,14 +46,15 @@ import static org.junit.Assert.assertTrue
 
 class VariantDependencyTest {
     @ClassRule
-    public static GradleTestProject project = GradleTestProject.builder().create()
+    public static GradleTestProject project = GradleTestProject.builder()
+            .fromTestApp(new HelloWorldApp())
+            .create()
 
     private static AndroidProject model
     private static ApkInfoParser apkInfoParser
 
     @BeforeClass
     public static void setUp() {
-        new HelloWorldApp().write(project.testDir, null)
         project.getBuildFile() << """
             apply plugin: 'com.android.application'
 
