@@ -41,9 +41,17 @@ public class LibInfo extends LibraryDependencyImpl {
             @NonNull Collection<JarInfo> jarDependencies,
             @Nullable String name,
             @Nullable String variantName,
+            @Nullable String projectPath,
             @Nullable MavenCoordinates requestedCoordinates,
             @Nullable MavenCoordinates resolvedCoordinates) {
-        super(bundle, explodedBundle, dependencies, name, variantName, requestedCoordinates, resolvedCoordinates);
+        super(bundle,
+                explodedBundle,
+                dependencies,
+                name,
+                variantName,
+                projectPath,
+                requestedCoordinates,
+                resolvedCoordinates);
         this.jarDependencies = jarDependencies;
     }
 
