@@ -375,6 +375,7 @@ public class AaptPackageProcessBuilder extends ProcessEnvBuilder<AaptPackageProc
             resourceConfigs.add(mPreferredDensity);
             // when adding a density filter, also always add the nodpi option.
             resourceConfigs.add(Density.NODPI.getResourceValue());
+            resourceConfigs.add(Density.ANYDPI.getResourceValue());
         }
 
         if (!resourceConfigs.isEmpty()) {
