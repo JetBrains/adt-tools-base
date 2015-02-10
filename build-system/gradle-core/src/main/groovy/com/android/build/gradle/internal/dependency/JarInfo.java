@@ -33,6 +33,10 @@ public class JarInfo {
     @NonNull
     private final File jarFile;
 
+    /** if the dependency is a sub-project, then the gradle project path */
+    @Nullable
+    private final String gradlePath;
+
     private boolean compiled = false;
     private boolean packaged = false;
 
@@ -45,9 +49,11 @@ public class JarInfo {
     public JarInfo(
             @NonNull File jarFile,
             @Nullable MavenCoordinates resolvedCoordinates,
+            @Nullable String gradlePath,
             @NonNull List<JarInfo> dependencies) {
         this.jarFile = jarFile;
         this.resolvedCoordinates = resolvedCoordinates;
+        this.gradlePath = gradlePath;
         this.dependencies.addAll(dependencies);
     }
 
@@ -73,6 +79,11 @@ public class JarInfo {
         return resolvedCoordinates;
     }
 
+    @Nullable
+    public String getGradlePath() {
+        return gradlePath;
+    }
+
     @NonNull
     public List<JarInfo> getDependencies() {
         return dependencies;
@@ -85,8 +96,8 @@ public class JarInfo {
                 compiled,
                 packaged,
                 true /*proguarded*/,
-                resolvedCoordinates
-        );
+                resolvedCoordinates,
+                gradlePath);
     }
 
     @Override
