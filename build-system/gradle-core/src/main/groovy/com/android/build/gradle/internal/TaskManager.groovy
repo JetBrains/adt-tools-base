@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.internal
 
+import com.android.SdkConstants
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
 import com.android.build.OutputFile
@@ -1152,57 +1153,59 @@ abstract class TaskManager {
         variantData.javaCompileTask.dependsOn verificationTask
     }
 
-    public void createCompileTask(
+    public void createJavaCompileTask(
             @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData,
             @Nullable BaseVariantData<? extends BaseVariantOutputData> testedVariantData) {
-        def compileTask = project.tasks.create(
+        def javaCompileTask = project.tasks.create(
                 "compile${variantData.variantConfiguration.fullName.capitalize()}Java",
                 JavaCompile)
 
-        variantData.javaCompileTask = compileTask
+        variantData.javaCompileTask = javaCompileTask
         variantData.compileTask.dependsOn variantData.javaCompileTask
         optionalDependsOn(
                 variantData.javaCompileTask, variantData.sourceGenTask)
 
-        compileTask.source = variantData.getJavaSources()
+        javaCompileTask.source = variantData.getJavaSources()
 
         VariantConfiguration config = variantData.variantConfiguration
 
-        // if the tested variant is an app, add its classpath. For the libraries,
+        // If the tested variant is an app, add its classpath. For the libraries,
         // it's done automatically since the classpath includes the library output as a normal
         // dependency.
         if (testedVariantData instanceof ApplicationVariantData) {
-            conventionMapping(compileTask).map("classpath") {
+            conventionMapping(javaCompileTask).map("classpath") {
                 project.files(androidBuilder.getCompileClasspath(config)) +
                         testedVariantData.javaCompileTask.classpath +
                         testedVariantData.javaCompileTask.outputs.files
             }
         } else {
-            conventionMapping(compileTask).map("classpath") {
+            conventionMapping(javaCompileTask).map("classpath") {
                 project.files(androidBuilder.getCompileClasspath(config))
             }
         }
 
+        javaCompileTask.dependsOn variantData.prepareDependenciesTask
+
         // TODO - dependency information for the compile classpath is being lost.
         // Add a temporary approximation
-        compileTask.dependsOn variantData.variantDependency.compileConfiguration.buildDependencies
+        javaCompileTask.dependsOn variantData.variantDependency.compileConfiguration.buildDependencies
 
-        conventionMapping(compileTask).map("destinationDir") {
+        conventionMapping(javaCompileTask).map("destinationDir") {
             project.file(
                     "$project.buildDir/${FD_INTERMEDIATES}/classes/${variantData.variantConfiguration.dirName}")
         }
-        conventionMapping(compileTask).map("dependencyCacheDir") {
+        conventionMapping(javaCompileTask).map("dependencyCacheDir") {
             project.file(
                     "$project.buildDir/${FD_INTERMEDIATES}/dependency-cache/${variantData.variantConfiguration.dirName}")
         }
 
-        configureLanguageLevel(compileTask)
-        compileTask.options.encoding = getExtension().compileOptions.encoding
+        configureLanguageLevel(javaCompileTask)
+        javaCompileTask.options.encoding = getExtension().compileOptions.encoding
 
         // setup the boot classpath just before the task actually runs since this will
         // force the sdk to be parsed.
-        compileTask.doFirst {
-            compileTask.options.bootClasspath =
+        javaCompileTask.doFirst {
+            javaCompileTask.options.bootClasspath =
                     androidBuilder.getBootClasspathAsStrings().join(File.pathSeparator)
         }
 
@@ -1212,7 +1215,7 @@ abstract class TaskManager {
                     "package${variantData.variantConfiguration.fullName.capitalize()}JarArtifact",
                     Jar);
             variantData.classesJarTask = jar
-            jar.dependsOn compileTask
+            jar.dependsOn javaCompileTask
 
             // add the class files (whether they are instrumented or not.
             jar.from({ variantData.javaCompileTask.destinationDir })
@@ -1322,10 +1325,10 @@ abstract class TaskManager {
      */
     void createUnitTestVariantTasks(@NonNull TestVariantData variantData) {
         BaseVariantData testedVariantData = variantData.getTestedVariantData() as BaseVariantData
+        createPreBuildTasks(variantData)
         createCompileAnchorTask(variantData)
-        createCompileTask(variantData, testedVariantData)
+        createJavaCompileTask(variantData, testedVariantData)
         createJackAndUnitTestVerificationTask(variantData, testedVariantData)
-        variantData.assembleVariantTask.dependsOn variantData.compileTask
 
         // This hides the assemble unit test task from the task list.
         variantData.assembleVariantTask.group = null
@@ -1391,7 +1394,7 @@ abstract class TaskManager {
         if (variantData.getVariantConfiguration().useJack) {
             createJackTask(variantData, testedVariantData);
         } else {
-            createCompileTask(variantData, testedVariantData)
+            createJavaCompileTask(variantData, testedVariantData)
             createPostCompilationTasks(variantData);
         }
 
@@ -1518,7 +1521,9 @@ abstract class TaskManager {
 
             fixTestTaskSources(runTestsTask)
 
+            variantData.assembleVariantTask.dependsOn createMockableJar
             runTestsTask.dependsOn variantData.assembleVariantTask
+
             AbstractCompile testCompileTask = variantData.javaCompileTask
             runTestsTask.testClassesDir = testCompileTask.destinationDir
 
@@ -1526,7 +1531,9 @@ abstract class TaskManager {
                 project.files(
                         testCompileTask.classpath,
                         testCompileTask.outputs.files,
-                        androidBuilder.bootClasspath.findAll { it.name != "android.jar"},
+                        androidBuilder.bootClasspath.findAll {
+                            it.name != SdkConstants.FN_FRAMEWORK_LIBRARY
+                        },
                         createMockableJar.outputFile)
             }
 
@@ -1538,7 +1545,6 @@ abstract class TaskManager {
             }
 
             topLevelTest.dependsOn runTestsTask
-            variantData.assembleVariantTask.dependsOn createMockableJar
         }
 
         Task check = project.tasks.getByName(JavaBasePlugin.CHECK_TASK_NAME)
@@ -2926,6 +2932,21 @@ abstract class TaskManager {
 
     public void createAnchorTasks(
             @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData) {
+        createPreBuildTasks(variantData)
+
+        // also create sourceGenTask
+        variantData.sourceGenTask = project.tasks.create(
+                "generate${variantData.variantConfiguration.fullName.capitalize()}Sources")
+        // and resGenTask
+        variantData.resourceGenTask = project.tasks.create(
+                "generate${variantData.variantConfiguration.fullName.capitalize()}Resources")
+        variantData.assetGenTask = project.tasks.create(
+                "generate${variantData.variantConfiguration.fullName.capitalize()}Assets")
+        // and compile task
+        createCompileAnchorTask(variantData)
+    }
+
+    private void createPreBuildTasks(BaseVariantData<? extends BaseVariantOutputData> variantData) {
         variantData.preBuildTask = project.tasks.create(
                 "pre${variantData.variantConfiguration.fullName.capitalize()}Build")
         variantData.preBuildTask.dependsOn mainPreBuild
@@ -2948,17 +2969,6 @@ abstract class TaskManager {
         for (LibraryDependencyImpl lib : configurationDependencies.libraries) {
             dependencyManager.addDependencyToPrepareTask(variantData, prepareDependenciesTask, lib)
         }
-
-        // also create sourceGenTask
-        variantData.sourceGenTask = project.tasks.create(
-                "generate${variantData.variantConfiguration.fullName.capitalize()}Sources")
-        // and resGenTask
-        variantData.resourceGenTask = project.tasks.create(
-                "generate${variantData.variantConfiguration.fullName.capitalize()}Resources")
-        variantData.assetGenTask = project.tasks.create(
-                "generate${variantData.variantConfiguration.fullName.capitalize()}Assets")
-        // and compile task
-        createCompileAnchorTask(variantData)
     }
 
     private void createCompileAnchorTask(
@@ -2966,6 +2976,8 @@ abstract class TaskManager {
         variantData.compileTask = project.tasks.create(
                 "compile${variantData.variantConfiguration.fullName.capitalize()}Sources")
         variantData.compileTask.group = BUILD_GROUP
+
+        variantData.assembleVariantTask.dependsOn variantData.compileTask
     }
 
     public void createCheckManifestTask(
