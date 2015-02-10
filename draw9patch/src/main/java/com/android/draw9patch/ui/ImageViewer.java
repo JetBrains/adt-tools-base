@@ -37,6 +37,7 @@ import java.awt.event.AWTEventListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionAdapter;
@@ -62,6 +63,7 @@ public class ImageViewer extends JComponent {
     private final Color PATCH_COLOR = new Color(1.0f, 0.37f, 0.99f, 0.5f);
     private final Color PATCH_ONEWAY_COLOR = new Color(0.37f, 1.0f, 0.37f, 0.5f);
     private final Color HIGHLIGHT_REGION_COLOR = new Color(0.5f, 0.5f, 0.5f, 0.5f);
+    private final Color FOCUS_COLOR = Color.BLUE;
 
     private static final float STRIPES_WIDTH = 4.0f;
     private static final double STRIPES_SPACING = 6.0;
@@ -108,6 +110,12 @@ public class ImageViewer extends JComponent {
     private int lineToX;
     private int lineToY;
     private boolean showDrawingLine;
+
+    // When this view is in focus, we want to support editing patches using the keyboard.
+    // These fields maintain state of the currently focused pixel border location, and
+    // pressing the space key would alter the pixel value at the currently focused location.
+    private int focusX = 0;
+    private int focusY = 0;
 
     private final List<Rectangle> hoverHighlightRegions = new ArrayList<Rectangle>();
     private String toolTipText;
@@ -159,6 +167,7 @@ public class ImageViewer extends JComponent {
 
         setLayout(new GridBagLayout());
         setOpaque(true);
+        setFocusable(true);
 
         // Exact size will be set by setZoom() in AncestorListener#ancestorMoved.
         size = new Dimension(0, 0);
@@ -246,6 +255,49 @@ public class ImageViewer extends JComponent {
                 hoverHighlightRegions.clear();
                 updateSize();
                 repaint();
+            }
+        });
+
+        // This provides a way to change the patch information via a keyboard. This feature works
+        // as follows: When this component receives focus, the (focusX, focusY) pair indicates the
+        // pixel that is in focus. The location of this focused point is painted with FOCUS_COLOR.
+        // Users can move this pixel around using the right/left/up/down arrow keys. Pressing the
+        // space key modifies the pixel data at the point that is in focus.
+        addKeyListener(new KeyListener() {
+            @Override
+            public void keyTyped(KeyEvent e) {
+            }
+
+            @Override
+            public void keyPressed(KeyEvent e) {
+                int increment = e.isControlDown() ? 10 : 1;
+                if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
+                    focusX = (focusX + increment) % ImageViewer.this.image.getWidth();
+                } else if (e.getKeyCode() == KeyEvent.VK_LEFT) {
+                    focusX = Math.max(focusX - increment, 0);
+                } else if (e.getKeyCode() == KeyEvent.VK_DOWN) {
+                    focusY = (focusY + increment) % ImageViewer.this.image.getHeight();
+                } else if (e.getKeyCode() == KeyEvent.VK_UP) {
+                    focusY = Math.max(focusY - increment, 0);
+                } else if (e.getKeyCode() == KeyEvent.VK_SPACE) {
+                    int rgb = ImageViewer.this.image.getRGB(focusX, focusY);
+
+                    // cycle across from BLACK -> RED -> transparent
+                    if (rgb == PatchInfo.BLACK_TICK) {
+                        rgb = PatchInfo.RED_TICK;
+                    } else if (rgb == PatchInfo.RED_TICK) {
+                        rgb = 0;
+                    } else if (rgb == 0) {
+                        rgb = PatchInfo.BLACK_TICK;
+                    }
+                    ImageViewer.this.image.setRGB(focusX, focusY, rgb);
+                    patchesChanged();
+                }
+                repaint();
+            }
+
+            @Override
+            public void keyReleased(KeyEvent e) {
             }
         });
 
@@ -919,12 +971,17 @@ public class ImageViewer extends JComponent {
         g2.translate(x, y);
         g2.setPaint(texture);
         g2.fillRect(0, 0, size.width, size.height);
+
         g2.scale(zoom, zoom);
-        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
-                RenderingHints.VALUE_ANTIALIAS_ON);
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
-                RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+          RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
         g2.drawImage(image, 0, 0, null);
+
+        if (isFocusOwner()) {
+            g2.setColor(FOCUS_COLOR);
+            g2.drawRect(focusX, focusY, 1, 1);
+        }
 
         if (showPatches) {
             g2.setColor(PATCH_COLOR);
