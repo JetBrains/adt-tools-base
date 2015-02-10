@@ -37,6 +37,10 @@ public class JarDependency {
     private final boolean mPackaged;
     private final boolean mProguarded;
 
+    /** if the dependency is a sub-project, then the project path */
+    @Nullable
+    private final String mProjectPath;
+
     @Nullable
     private final MavenCoordinates mResolvedCoordinates;
 
@@ -45,20 +49,23 @@ public class JarDependency {
             boolean compiled,
             boolean packaged,
             boolean proguarded,
-            @Nullable MavenCoordinates resolvedCoordinates) {
+            @Nullable MavenCoordinates resolvedCoordinates,
+            @Nullable String projectPath) {
         mJarFile = jarFile;
         mCompiled = compiled;
         mPackaged = packaged;
         mProguarded = proguarded;
         mResolvedCoordinates = resolvedCoordinates;
+        mProjectPath = projectPath;
     }
 
     public JarDependency(
             @NonNull File jarFile,
             boolean compiled,
             boolean packaged,
-            @Nullable MavenCoordinates resolvedCoordinates) {
-        this(jarFile, compiled, packaged, true, resolvedCoordinates);
+            @Nullable MavenCoordinates resolvedCoordinates,
+            @Nullable String projectPath) {
+        this(jarFile, compiled, packaged, true, resolvedCoordinates, projectPath);
     }
 
     @NonNull
@@ -81,6 +88,11 @@ public class JarDependency {
     @Nullable
     public MavenCoordinates getResolvedCoordinates() {
         return mResolvedCoordinates;
+    }
+
+    @Nullable
+    public String getProjectPath() {
+        return mProjectPath;
     }
 
     @Override

@@ -35,9 +35,10 @@ public abstract class LibraryBundle implements LibraryDependency {
 
     public static final String FN_PROGUARD_TXT = "proguard.txt";
 
-    private final String mName;
     private final File mBundle;
     private final File mBundleFolder;
+    private final String mName;
+    private final String mProjectPath;
 
     /**
      * Creates the bundle dependency with an optional name
@@ -45,13 +46,17 @@ public abstract class LibraryBundle implements LibraryDependency {
      * @param bundle the library's aar bundle file
      * @param bundleFolder the folder containing the unarchived library content
      * @param name an optional name
+     * @param projectPath an optional project path.
      */
-    protected LibraryBundle(@NonNull File bundle,
-                            @NonNull File bundleFolder,
-                            @Nullable String name) {
+    protected LibraryBundle(
+            @NonNull File bundle,
+            @NonNull File bundleFolder,
+            @Nullable String name,
+            @Nullable String projectPath) {
         mBundle = bundle;
         mBundleFolder = bundleFolder;
         mName = name;
+        mProjectPath = projectPath;
     }
 
     @Override
@@ -68,7 +73,7 @@ public abstract class LibraryBundle implements LibraryDependency {
     @Nullable
     @Override
     public String getProject() {
-        return null;
+        return mProjectPath;
     }
 
     @Nullable
@@ -113,7 +118,7 @@ public abstract class LibraryBundle implements LibraryDependency {
         List<File> jars = getLocalJars();
         List<JarDependency> localDependencies = Lists.newArrayListWithCapacity(jars.size());
         for (File jar : jars) {
-            localDependencies.add(new JarDependency(jar, true, true, null));
+            localDependencies.add(new JarDependency(jar, true, true, null, null));
         }
 
         return localDependencies;
