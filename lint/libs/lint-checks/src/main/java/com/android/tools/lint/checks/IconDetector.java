@@ -1111,7 +1111,7 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
                 for (String densityName : flavor.getResourceConfigurations()) {
                     Density density = Density.getEnum(densityName);
                     if (density != null && density.isRecommended()
-                            && density != Density.NODPI) {
+                            && density != Density.NODPI && density != Density.ANYDPI) {
                         relevantDensities.add(densityName);
                     }
                 }

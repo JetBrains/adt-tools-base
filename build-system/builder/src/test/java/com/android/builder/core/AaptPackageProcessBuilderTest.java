@@ -291,7 +291,7 @@ public class AaptPackageProcessBuilderTest extends TestCase {
 
         List<String> command = processInfo.getArgs();
 
-        assertTrue("res1,res2,xhdpi,nodpi".equals(command.get(command.indexOf("-c") + 1)));
+        assertTrue("res1,res2,xhdpi,nodpi,anydpi".equals(command.get(command.indexOf("-c") + 1)));
         assertTrue(command.indexOf("--preferred-density") == -1);
     }
 
