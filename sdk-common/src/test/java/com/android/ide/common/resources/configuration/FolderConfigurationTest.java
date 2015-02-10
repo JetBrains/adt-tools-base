@@ -21,6 +21,7 @@ import com.android.ide.common.res2.ResourceItem;
 import com.android.resources.ResourceFolderType;
 import com.android.resources.ResourceType;
 import com.android.resources.ScreenOrientation;
+import com.android.resources.UiMode;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -328,6 +329,20 @@ public class FolderConfigurationTest extends TestCase {
         assertNotNull(versionQualifier);
         assertEquals(expectedVersion, versionQualifier.getVersion());
 
+    }
+
+    public void testCarModeAndLanguage() {
+        FolderConfiguration config = FolderConfiguration.getConfigForFolder("values-car");
+        assertNotNull(config);
+        assertNull(config.getLocaleQualifier());
+        assertNotNull(config.getUiModeQualifier());
+        assertEquals(UiMode.CAR, config.getUiModeQualifier().getValue());
+
+        config = FolderConfiguration.getConfigForFolder("values-b+car");
+        assertNotNull(config);
+        assertNotNull(config.getLocaleQualifier());
+        assertNull(config.getUiModeQualifier());
+        assertEquals("car", config.getLocaleQualifier().getLanguage());
     }
 
     public void testIsMatchForBcp47() {
