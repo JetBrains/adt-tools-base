@@ -108,6 +108,13 @@ public final class LocaleQualifier extends ResourceQualifier {
                 && Character.isLetter(segment.charAt(1))
                 && Character.isLetter(segment.charAt(2))) {
             segment = segment.toLowerCase(Locale.US);
+            if ("car".equals(segment)) {
+                // Special case: "car" is a valid 3 letter language code, but
+                // it conflicts with the (much older) UI mode constant for
+                // car dock mode, so this specific language string should not be recognized
+                // as a 3 letter language string; it should match car dock mode instead.
+                return null;
+            }
             return new LocaleQualifier(segment, segment, null, null);
         } else if (segment.startsWith(BCP_47_PREFIX)) {
             return parseBcp47(segment);
