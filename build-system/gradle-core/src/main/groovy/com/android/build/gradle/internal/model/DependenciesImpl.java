@@ -70,8 +70,7 @@ public class DependenciesImpl implements Dependencies, Serializable {
     @NonNull
     static DependenciesImpl cloneDependencies(
             @NonNull BaseVariantData variantData,
-            @NonNull AndroidBuilder androidBuilder,
-            @NonNull Set<Project> gradleProjects) {
+            @NonNull AndroidBuilder androidBuilder) {
         VariantDependencies variantDependencies = variantData.getVariantDependency();
 
         List<AndroidLibrary> libraries;
@@ -81,7 +80,7 @@ public class DependenciesImpl implements Dependencies, Serializable {
         List<LibraryDependencyImpl> libs = variantDependencies.getLibraries();
         libraries = Lists.newArrayListWithCapacity(libs.size());
         for (LibraryDependencyImpl libImpl : libs) {
-            AndroidLibrary clonedLib = getAndroidLibrary(libImpl, gradleProjects);
+            AndroidLibrary clonedLib = getAndroidLibrary(libImpl);
             libraries.add(clonedLib);
         }
 
@@ -98,10 +97,8 @@ public class DependenciesImpl implements Dependencies, Serializable {
                         jarDep.getResolvedCoordinates().getClassifier() != null;
 
                 File jarFile = jarDep.getJarFile();
-                Project projectMatch;
-                if (!customArtifact &&
-                        (projectMatch = getProject(jarFile, gradleProjects)) != null) {
-                    projects.add(projectMatch.getPath());
+                if (!customArtifact && jarDep.getProjectPath() != null) {
+                    projects.add(jarDep.getProjectPath());
                 } else {
                     javaLibraries.add(
                             new JavaLibraryImpl(jarFile, null, jarDep.getResolvedCoordinates()));
@@ -165,16 +162,11 @@ public class DependenciesImpl implements Dependencies, Serializable {
     }
 
     @NonNull
-    private static AndroidLibrary getAndroidLibrary(
-            @NonNull LibraryDependency libraryDependency,
-            @NonNull Set<Project> gradleProjects) {
-        File bundle = libraryDependency.getBundle();
-        Project projectMatch = getProject(bundle, gradleProjects);
-
+    private static AndroidLibrary getAndroidLibrary(@NonNull LibraryDependency libraryDependency) {
         List<LibraryDependency> deps = libraryDependency.getDependencies();
         List<AndroidLibrary> clonedDeps = Lists.newArrayListWithCapacity(deps.size());
         for (LibraryDependency child : deps) {
-            AndroidLibrary clonedLib = getAndroidLibrary(child, gradleProjects);
+            AndroidLibrary clonedLib = getAndroidLibrary(child);
             clonedDeps.add(clonedLib);
         }
 
@@ -185,7 +177,7 @@ public class DependenciesImpl implements Dependencies, Serializable {
                 libraryDependency,
                 clonedDeps,
                 localJarOverride,
-                projectMatch != null ? projectMatch.getPath() : null,
+                libraryDependency.getProject(),
                 libraryDependency.getProjectVariant(),
                 libraryDependency.getRequestedCoordinates(),
                 libraryDependency.getResolvedCoordinates());
@@ -242,36 +234,5 @@ public class DependenciesImpl implements Dependencies, Serializable {
         }
 
         return Collections.emptyList();
-    }
-
-    @Nullable
-    public static Project getProject(File outputFile, Set<Project> gradleProjects) {
-        // search for a project that contains this file in its output folder.
-        Project projectMatch = null;
-        for (Project project : gradleProjects) {
-            File buildDir = project.getBuildDir();
-            if (contains(buildDir, outputFile)) {
-                projectMatch = project;
-                break;
-            }
-        }
-        return projectMatch;
-    }
-
-    private static boolean contains(@NonNull File dir, @NonNull File file) {
-        try {
-            dir = dir.getCanonicalFile();
-            file = file.getCanonicalFile();
-        } catch (IOException e) {
-            return false;
-        }
-
-        // quick fail
-        return file.getAbsolutePath().startsWith(dir.getAbsolutePath()) && doContains(dir, file);
-    }
-
-    private static boolean doContains(@NonNull File dir, @NonNull File file) {
-        File parent = file.getParentFile();
-        return parent != null && (parent.equals(dir) || doContains(dir, parent));
     }
 }

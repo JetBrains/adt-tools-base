@@ -42,14 +42,16 @@ public class LibraryDependencyImpl extends LibraryBundle {
     @Nullable
     private final MavenCoordinates resolvedCoordinates;
 
-    public LibraryDependencyImpl(@NonNull File bundle,
-                                 @NonNull File explodedBundle,
-                                 @NonNull List<LibraryDependency> dependencies,
-                                 @Nullable String name,
-                                 @Nullable String variantName,
-                                 @Nullable MavenCoordinates requestedCoordinates,
-                                 @Nullable MavenCoordinates resolvedCoordinates) {
-        super(bundle, explodedBundle, name);
+    public LibraryDependencyImpl(
+            @NonNull File bundle,
+            @NonNull File explodedBundle,
+            @NonNull List<LibraryDependency> dependencies,
+            @Nullable String name,
+            @Nullable String variantName,
+            @Nullable String projectPath,
+            @Nullable MavenCoordinates requestedCoordinates,
+            @Nullable MavenCoordinates resolvedCoordinates) {
+        super(bundle, explodedBundle, name, projectPath);
         this.dependencies = dependencies;
         this.variantName = variantName;
         this.requestedCoordinates = requestedCoordinates;
