@@ -98,7 +98,7 @@ public class Splits {
         Density[] values = Density.values();
         Set<String> fullList = Sets.newHashSetWithExpectedSize(values.length - 1);
         for (Density value : values) {
-            if (value != Density.NODPI && value.isRecommended()) {
+            if (value != Density.NODPI && value != Density.ANYDPI && value.isRecommended()) {
                 fullList.add(value.getResourceValue());
             }
         }
