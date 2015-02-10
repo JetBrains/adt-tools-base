@@ -162,6 +162,23 @@ public class CleanupDetectorTest extends AbstractCheckTest {
                 ));
     }
 
+    public void testCommitChainedCalls() throws Exception {
+        // Regression test for https://code.google.com/p/android/issues/detail?id=135204
+        assertEquals("No warnings.",
+
+                lintProject(
+                        "apicheck/classpath=>.classpath",
+                        "apicheck/minsdk4.xml=>AndroidManifest.xml",
+                        "project.properties19=>project.properties",
+                        "src/test/pkg/TransactionTest.java.txt=>src/test/pkg/TransactionTest.java",
+                        // Stubs just to be able to do type resolution without needing the full appcompat jar
+                        "appcompat/Fragment.java.txt=>src/android/support/v4/app/Fragment.java",
+                        "appcompat/DialogFragment.java.txt=>src/android/support/v4/app/DialogFragment.java",
+                        "appcompat/FragmentTransaction.java.txt=>src/android/support/v4/app/FragmentTransaction.java",
+                        "appcompat/FragmentManager.java.txt=>src/android/support/v4/app/FragmentManager.java"
+                ));
+    }
+
     public void testSurfaceTexture() throws Exception {
         assertEquals(
             "src/test/pkg/SurfaceTextureTest.java:18: Warning: This SurfaceTexture should be freed up after use with #release() [Recycle]\n" +
