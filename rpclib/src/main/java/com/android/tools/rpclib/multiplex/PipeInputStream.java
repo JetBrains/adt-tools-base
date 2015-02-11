@@ -34,38 +34,43 @@ import java.util.concurrent.Semaphore;
  */
 public class PipeInputStream extends InputStream {
   private static final Item ITEM_CLOSE = new Item(null, 0, 0);
-  public final OutputStream source;
-  private final LinkedList<Item> queue;
-  private final Semaphore semaphore;
-  private final byte[] b1;
-  private boolean closed;
+  private final OutputStream mSource;
+  private final LinkedList<Item> mQueue;
+  private final Semaphore mSemaphore;
+  private final byte[] mByte;
 
   PipeInputStream() {
-    queue = new LinkedList<Item>();
-    semaphore = new Semaphore(0);
-    b1 = new byte[1];
-    source = new Writer();
+    mQueue = new LinkedList<Item>();
+    mSemaphore = new Semaphore(0);
+    mByte = new byte[1];
+    mSource = new Writer();
+  }
+
+  public OutputStream getSource() {
+    return mSource;
   }
 
   @Override
   public int read() throws IOException {
-    return (read(b1, 0, 1) > 0) ? b1[0] : -1;
+    return (read(mByte, 0, 1) > 0) ? mByte[0] : -1;
   }
 
+  @Override
   public int read(byte b[], int off, int len) throws IOException {
     int n = 0;
+    boolean closed = false;
     while (!closed && len > n) {
       try {
-        semaphore.acquire();
-        synchronized (queue) {
-          Item item = queue.getFirst();
+        mSemaphore.acquire();
+        synchronized (mQueue) {
+          Item item = mQueue.getFirst();
           if (item != ITEM_CLOSE) {
             n += item.read(b, off + n, len - n);
             if (item.remaining() == 0) {
-              queue.removeFirst();
+              mQueue.removeFirst();
             }
             else {
-              semaphore.release();
+              mSemaphore.release();
             }
           }
           else {
@@ -84,18 +89,14 @@ public class PipeInputStream extends InputStream {
   }
 
   private static class Item {
-    private final byte[] data;
-    private final int count;
-    private int offset;
+    private final byte[] mData;
+    private final int mCount;
+    private int mOffset;
 
     public Item(byte[] data, int offset, int count) {
-      this.data = data;
-      this.count = count;
-      this.offset = offset;
-    }
-
-    public boolean isClose() {
-      return data == null;
+      mData = data;
+      mCount = count;
+      mOffset = offset;
     }
 
     public int read(byte[] out, int offset, int count) {
@@ -103,13 +104,13 @@ public class PipeInputStream extends InputStream {
       if (count > remaining) {
         count = remaining;
       }
-      System.arraycopy(data, this.offset, out, offset, count);
-      this.offset += count;
+      System.arraycopy(mData, mOffset, out, offset, count);
+      mOffset += count;
       return count;
     }
 
     public int remaining() {
-      return count - offset;
+      return mCount - mOffset;
     }
   }
 
@@ -122,18 +123,18 @@ public class PipeInputStream extends InputStream {
     @Override
     public void write(byte b[], int off, int len) throws IOException {
       if (len > 0) {
-        synchronized (queue) {
-          queue.addLast(new Item(b, off, len));
+        synchronized (mQueue) {
+          mQueue.addLast(new Item(b, off, len));
         }
-        semaphore.release();
+        mSemaphore.release();
       }
     }
 
     @Override
     public void close() throws IOException {
-      synchronized (queue) {
-        queue.addLast(ITEM_CLOSE);
-        semaphore.release();
+      synchronized (mQueue) {
+        mQueue.addLast(ITEM_CLOSE);
+        mSemaphore.release();
       }
     }
   }

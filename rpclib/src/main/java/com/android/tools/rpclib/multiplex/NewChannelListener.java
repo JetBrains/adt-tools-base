@@ -15,6 +15,8 @@
  */
 package com.android.tools.rpclib.multiplex;
 
+import org.jetbrains.annotations.NotNull;
+
 public interface NewChannelListener {
-  void onNewChannel(Channel channel);
+  void onNewChannel(@NotNull Channel channel);
 }

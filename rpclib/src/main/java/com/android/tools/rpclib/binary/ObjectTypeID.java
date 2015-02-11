@@ -16,6 +16,7 @@
 package com.android.tools.rpclib.binary;
 
 import java.io.IOException;
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -28,21 +29,20 @@ import java.util.Map;
  */
 public class ObjectTypeID {
   private static final int SIZE = 20;
-
   private static Map<ObjectTypeID, BinaryObjectCreator> registry = new HashMap<ObjectTypeID, BinaryObjectCreator>();
-  private byte[] value;
-  private int hash;
+  private byte[] mValue;
+  private int mHash;
 
   public ObjectTypeID(byte[] value) {
-    this.value = value;
-    hash = ByteBuffer.wrap(this.value).getInt();
-    // TODO verify length == SIZE
+    mValue = value;
+    mHash = ByteBuffer.wrap(mValue).getInt();
+    assert value.length == SIZE;
   }
 
   public ObjectTypeID(Decoder d) throws IOException {
-    value = new byte[SIZE];
-    d.read(value, SIZE);
-    hash = ByteBuffer.wrap(this.value).getInt();
+    mValue = new byte[SIZE];
+    d.read(mValue, SIZE);
+    mHash = ByteBuffer.wrap(mValue).getInt();
   }
 
   public static void register(ObjectTypeID id, BinaryObjectCreator creator) {
@@ -54,7 +54,7 @@ public class ObjectTypeID {
   }
 
   public void encode(Encoder e) throws IOException {
-    e.stream().write(value, 0, SIZE);
+    e.stream().write(mValue, 0, SIZE);
   }
 
   @Override
@@ -62,11 +62,16 @@ public class ObjectTypeID {
     if (other == null) return false;
     if (other == this) return true;
     if (!(other instanceof ObjectTypeID)) return false;
-    return Arrays.equals(this.value, ((ObjectTypeID)other).value);
+    return Arrays.equals(mValue, ((ObjectTypeID)other).mValue);
   }
 
   @Override
   public int hashCode() {
-    return hash;
+    return mHash;
+  }
+
+  @Override
+  public String toString() {
+    return String.format("%020x", new BigInteger(mValue));
   }
 }
