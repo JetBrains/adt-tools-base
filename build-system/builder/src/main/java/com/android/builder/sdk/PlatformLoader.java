@@ -53,11 +53,13 @@ public class PlatformLoader implements SdkLoader {
 
     public static synchronized SdkLoader getLoader(
             @NonNull File treeLocation) {
-        if (sLoader != null && !treeLocation.equals(sLoader.mTreeLocation)) {
+        if (sLoader == null) {
+            sLoader = new PlatformLoader(treeLocation);
+        } else if (!treeLocation.equals(sLoader.mTreeLocation)) {
             throw new IllegalStateException("Already created an SDK Loader with different SDK Path");
         }
 
-        return sLoader = new PlatformLoader(treeLocation);
+        return sLoader;
     }
 
     public static synchronized void unload() {
