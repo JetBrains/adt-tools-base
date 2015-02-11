@@ -20,6 +20,8 @@ import com.android.draw9patch.graphics.GraphicsUtilities;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Component;
+import java.awt.FlowLayout;
 import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -35,6 +37,7 @@ import java.io.IOException;
 import java.net.URL;
 
 import javax.swing.Box;
+import javax.swing.BoxLayout;
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JFileChooser;
@@ -43,6 +46,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSlider;
 import javax.swing.JSplitPane;
+import javax.swing.border.EmptyBorder;
 import javax.swing.event.AncestorEvent;
 import javax.swing.event.AncestorListener;
 import javax.swing.event.ChangeEvent;
@@ -50,6 +54,7 @@ import javax.swing.event.ChangeListener;
 
 public class ImageEditorPanel extends JPanel {
     private static final String EXTENSION_9PATCH = ".9.png";
+    private static final Color HELP_COLOR = new Color(0xffffe1);
 
     private String name;
     private BufferedImage image;
@@ -125,6 +130,9 @@ public class ImageEditorPanel extends JPanel {
     }
 
     private void buildImageViewer() {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.add(createHelpPanel(), BorderLayout.NORTH);
+
         viewer = new ImageViewer(this, texture, image, new ImageViewer.StatusBar() {
             @Override
             public void setPointerLocation(int x, int y) {
@@ -147,7 +155,26 @@ public class ImageEditorPanel extends JPanel {
         splitter.setLeftComponent(scroller);
         splitter.setRightComponent(buildStretchesViewer());
 
-        add(splitter);
+        panel.add(splitter, BorderLayout.CENTER);
+        add(panel);
+    }
+
+    private static Component createHelpPanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBorder(new EmptyBorder(0, 6, 0, 6));
+        panel.setBackground(HELP_COLOR);
+        JLabel label = new JLabel("Press Control/Shift while dragging on the border to modify layout bounds.");
+        label.putClientProperty("JComponent.sizeVariant", "small");
+
+        // Labels are not opaque by default, as a result, if there is not enough space,
+        // the label will be painted over the button we add below. However, we still want the same
+        // background as the panel, so we explicitly set that background as well
+        // https://code.google.com/p/android/issues/detail?id=62576
+        label.setOpaque(true);
+        label.setBackground(HELP_COLOR);
+        panel.add(label, BorderLayout.WEST);
+
+        return panel;
     }
 
     private JComponent buildStretchesViewer() {
@@ -269,6 +296,19 @@ public class ImageEditorPanel extends JPanel {
         status.add(showPadding, new GridBagConstraints(5, 0, 1, 1, 0.0f, 0.0f,
                 GridBagConstraints.LINE_START, GridBagConstraints.NONE,
                 new Insets(0, 12, 0, 0), 0, 0));
+
+        JCheckBox showBadPatches = new JCheckBox("Show bad patches");
+        showBadPatches.setOpaque(false);
+        showBadPatches.putClientProperty("JComponent.sizeVariant", "small");
+        showBadPatches.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent event) {
+                viewer.setShowBadPatches(((JCheckBox) event.getSource()).isSelected());
+            }
+        });
+        status.add(showBadPatches, new GridBagConstraints(5, 1, 1, 1, 0.0f, 0.0f,
+          GridBagConstraints.LINE_START, GridBagConstraints.NONE,
+          new Insets(0, 12, 0, 0), 0, 0));
 
         status.add(Box.createHorizontalGlue(), new GridBagConstraints(6, 0, 1, 1, 1.0f, 1.0f,
                 GridBagConstraints.LINE_START, GridBagConstraints.BOTH,
