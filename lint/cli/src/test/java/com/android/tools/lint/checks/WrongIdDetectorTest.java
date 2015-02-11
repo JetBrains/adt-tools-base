@@ -177,7 +177,7 @@ public class WrongIdDetectorTest extends AbstractCheckTest {
         // Make sure we highlight direct references to self
         // Regression test for https://code.google.com/p/android/issues/detail?id=136103
         assertEquals(""
-                + "res/layout/layout3.xml:12: Error: Cannot be relative to self: id=tv_portfolio_title, layout_below=tv_portfolio_title [NotSibling]\n"
+                + "res/layout/layout3.xml:9: Error: Cannot be relative to self: id=tv_portfolio_title, layout_below=tv_portfolio_title [NotSibling]\n"
                 + "        android:layout_below=\"@+id/tv_portfolio_title\"/>\n"
                 + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                 + "1 errors, 0 warnings\n",
