@@ -2557,10 +2557,12 @@ abstract class TaskManager {
             installTask.variantData = variantData
             installTask.processExecutor = androidBuilder.getProcessExecutor()
             conventionMapping(installTask).map("adbExe") { sdkHandler.sdkInfo?.adb }
-            conventionMapping(installTask).map("splitSelectExe") {
-                String path = androidBuilder.targetInfo?.buildTools?.getPath(
-                        BuildToolInfo.PathId.SPLIT_SELECT);
-                path != null ? new File(path) : null;
+            if (androidBuilder.targetInfo.getBuildTools().revision.major >= 22) {
+                conventionMapping(installTask).map("splitSelectExe") {
+                    String path = androidBuilder.targetInfo?.buildTools?.getPath(
+                            BuildToolInfo.PathId.SPLIT_SELECT);
+                    path != null ? new File(path) : null;
+                }
             }
             installTask.dependsOn variantData.assembleVariantTask
             variantData.installTask = installTask
