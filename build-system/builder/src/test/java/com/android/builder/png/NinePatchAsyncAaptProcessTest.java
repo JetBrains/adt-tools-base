@@ -18,68 +18,73 @@ package com.android.builder.png;
 
 import com.android.annotations.NonNull;
 import com.android.ide.common.internal.PngCruncher;
+import com.android.ide.common.internal.PngException;
 import com.android.sdklib.repository.FullRevision;
+import com.android.utils.ILogger;
 import com.android.utils.StdLogger;
+import com.google.common.collect.Maps;
 
-import junit.framework.Test;
-import junit.framework.TestSuite;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 
 import java.io.File;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.zip.DataFormatException;
 
 /**
  * Asynchronous version of the aapt cruncher test.
  */
-public class NinePatchAsyncAaptProcessTest extends NinePatchAaptProcessorTest {
+@Ignore  // TODO: Re-enable when build tools 22 are available.
+@RunWith(Parameterized.class)
+public class NinePatchAsyncAaptProcessTest {
 
-    private static StdLogger sLogger = new StdLogger(StdLogger.Level.VERBOSE);
+    private static Map<File, File> mSourceAndCrunchedFiles;
 
-    public static Test suite() {
-        TestSuite suite = new TestSuite();
-        suite.setName("NinePatchAsyncAaptProcessor");
+    private static final AtomicLong classStartTime = new AtomicLong();
 
-        NinePatchAaptProcessorTest test = null;
-        for (File file : getNinePatches()) {
-            String testName = "process_async_aapt_" + file.getName();
+    private final File mFile;
 
-            test = (NinePatchAsyncAaptProcessTest) TestSuite.createTest(
-                    NinePatchAsyncAaptProcessTest.class, testName);
-
-            test.setFile(file);
-
-            suite.addTest(test);
-        }
-        if (test != null) {
-            test.setIsFinal(true);
-        }
-        return suite;
+    public NinePatchAsyncAaptProcessTest(File file, String testName) {
+        mFile = file;
     }
 
-    @Override
-    protected File getAapt() {
-        return super.getAapt(FullRevision.parseRevision("22"));
+    @BeforeClass
+    public static void setup() {
+        mSourceAndCrunchedFiles = Maps.newHashMap();
     }
 
-    /* TODO: Remove this override once build tools 22 is released.
-             Then the tests will fail if build tools 22 is not available, rather than just logging
-             a warning */
-    @Override
-    protected void runTest() throws Throwable {
-        try {
-            super.runTest();
-        } catch (RuntimeException e) {
-            if (e.getMessage().startsWith("Test requires build-tools 22")) {
-                sLogger.warning("Skipped " + this.getName() + " as it requires build tools 22.");
+    @Test
+    public void run() throws PngException, IOException {
+        File outFile = NinePatchAaptProcessorTestUtils.crunchFile(mFile, getCruncher());
+        mSourceAndCrunchedFiles.put(mFile, outFile);
+    }
 
-            } else {
-                throw e;
-            }
-        }
+    @AfterClass
+    public static void tearDownAndCheck() throws IOException, DataFormatException {
+        NinePatchAaptProcessorTestUtils
+                .tearDownAndCheck(mSourceAndCrunchedFiles, getCruncher(), classStartTime);
+        mSourceAndCrunchedFiles = null;
     }
 
     @NonNull
-    @Override
-    protected PngCruncher getCruncher() {
-        File aapt = getAapt();
-        return QueuedCruncher.Builder.INSTANCE.newCruncher(aapt.getAbsolutePath(), sLogger);
+    private static PngCruncher getCruncher() {
+        ILogger logger = new StdLogger(StdLogger.Level.VERBOSE);
+        File aapt = NinePatchAaptProcessorTestUtils.getAapt(FullRevision.parseRevision("22"));
+        return QueuedCruncher.Builder.INSTANCE.newCruncher(aapt.getAbsolutePath(), logger);
+    }
+
+    @Parameters(name = "{1}")
+    public static Collection<Object[]> getNinePatches() {
+        Collection<Object[]> params = NinePatchAaptProcessorTestUtils.getNinePatches();
+        classStartTime.set(System.currentTimeMillis());
+        return params;
     }
 }
