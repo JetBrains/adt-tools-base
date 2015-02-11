@@ -3,8 +3,8 @@ package com.android.tests;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
-import android.app.Application;
 import android.app.Activity;
+import android.app.Application;
 import android.bluetooth.BluetoothAdapter;
 import android.content.SyncResult;
 import android.content.SyncStats;
@@ -17,6 +17,8 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.lang.reflect.Field;
+import java.io.InputStream;
+import java.net.URL;
 
 public class UnitTest {
     @Test
@@ -120,8 +122,21 @@ public class UnitTest {
     }
 
     @Test
+    public void resourcesOnClasspath() throws Exception {
+        URL url = UnitTest.class.getClassLoader().getResource("resource_file.txt");
+        assertNotNull("expected resource_file.txt to be in the ClassLoader's resources", url);
+
+        InputStream stream = UnitTest.class.getClassLoader().getResourceAsStream("resource_file.txt");
+        assertNotNull("expected resource_file.txt to be opened as a stream", stream);
+        byte[] line = new byte[1024];
+        assertTrue("Expected >0 bytes read from input stream", stream.read(line) > 0);
+        String s = new String(line, "UTF-8").trim();
+        assertEquals("Expected success from resource file", "success", s);
+    }
+
+    @Test
     @Ignore
     public void thisIsIgnored() {
-      // Just excercise more JUnit features.
+        // Just excercise more JUnit features.
     }
 }
