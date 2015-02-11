@@ -60,6 +60,7 @@ import com.android.build.gradle.internal.variant.LibraryVariantData
 import com.android.build.gradle.internal.variant.TestVariantData
 import com.android.build.gradle.internal.variant.TestedVariantData
 import com.android.build.gradle.tasks.AidlCompile
+import com.android.build.gradle.tasks.AndroidJarTask
 import com.android.build.gradle.tasks.AndroidProGuardTask
 import com.android.build.gradle.tasks.CompatibleScreensManifest
 import com.android.build.gradle.tasks.Dex
@@ -1827,6 +1828,21 @@ abstract class TaskManager {
         Closure<List<File>> inputLibraries
     }
 
+    public void createJarTask(@NonNull ApkVariantData variantData) {
+
+        GradleVariantConfiguration config = variantData.variantConfiguration
+        AndroidJarTask jarTask = project.tasks.create(
+                "jar${config.fullName.capitalize()}Classes",
+                AndroidJarTask)
+
+        jarTask.setArchiveName("classes.jar");
+        jarTask.setDestinationDir(project.file(
+                "$project.buildDir/${FD_INTERMEDIATES}/packaged/${config.dirName}/"))
+        jarTask.from(variantData.javaCompileTask.destinationDir)
+        jarTask.dependsOn variantData.javaCompileTask
+        variantData.binayFileProviderTask = jarTask
+    }
+
     /**
      * Creates the post-compilation tasks for the given Variant.
      *
@@ -2165,14 +2181,15 @@ abstract class TaskManager {
 
         // ----- Create Jack Task -----
         JackTask compileTask = project.tasks.create(
-                "compile${config.fullName.capitalize()}Java",
+                "compile${config.fullName.capitalize()}JavaWithJack",
                 JackTask)
         compileTask.isVerbose = isVerbose()
         compileTask.isDebugLog = isDebugLog()
 
-        // Jack is compiling and also providing the mapping file.
+        // Jack is compiling and also providing the binary and mapping files.
         variantData.javaCompileTask = compileTask
         variantData.mappingFileProviderTask = compileTask
+        variantData.binayFileProviderTask = compileTask
 
         variantData.javaCompileTask.dependsOn variantData.sourceGenTask, jillRuntimeTask, jillPackagedTask
         variantData.compileTask.dependsOn variantData.javaCompileTask
@@ -2215,7 +2232,7 @@ abstract class TaskManager {
 
         conventionMapping(compileTask).map("jackFile") {
             project.file(
-                    "$project.buildDir/${FD_INTERMEDIATES}/classes/${config.dirName}/classes.zip")
+                    "$project.buildDir/${FD_INTERMEDIATES}/packaged/${config.dirName}/classes.zip")
         }
 
         conventionMapping(compileTask).map("tempFolder") {

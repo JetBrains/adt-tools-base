@@ -32,6 +32,7 @@ import com.android.build.gradle.internal.tasks.CheckManifest;
 import com.android.build.gradle.internal.tasks.GenerateApkDataTask;
 import com.android.build.gradle.internal.tasks.PrepareDependenciesTask;
 import com.android.build.gradle.tasks.AidlCompile;
+import com.android.build.gradle.tasks.BinaryFileProviderTask;
 import com.android.build.gradle.tasks.GenerateBuildConfig;
 import com.android.build.gradle.tasks.GenerateResValues;
 import com.android.build.gradle.tasks.JackTask;
@@ -113,6 +114,8 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
     public JacocoInstrumentTask jacocoInstrumentTask;
 
     public MappingFileProviderTask mappingFileProviderTask;
+    public BinaryFileProviderTask binayFileProviderTask;
+
     // TODO : why is Jack not registered as the obfuscationTask ???
     public Task obfuscationTask;
     public File obfuscatedClassesJar;
