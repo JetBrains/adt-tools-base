@@ -18,7 +18,7 @@ dependencies {
     compile project(':base:common')
     compile 'net.sf.kxml:kxml2:2.3.0'
 
-    testCompile 'junit:junit:3.8.1'
+    testCompile 'junit:junit:4.12'
 }
 
 project.ext.pomName = 'Android Tools layoutlib-api'
