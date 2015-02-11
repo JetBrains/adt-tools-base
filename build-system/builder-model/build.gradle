@@ -22,9 +22,13 @@ version = rootProject.ext.buildVersion
 project.ext.pomName = 'Android Builder Model library'
 project.ext.pomDesc = 'Model for the Builder library.'
 
+project.ext.apiVersion = rootProject.ext.apiVersion ?: 0
+
 apply from: "$rootDir/buildSrc/base/publish.gradle"
 apply from: "$rootDir/buildSrc/base/bintray.gradle"
 apply from: "$rootDir/buildSrc/base/javadoc.gradle"
 
-jar.manifest.attributes("Model-Version": "$version")
-sdkJar.manifest.attributes("Model-Version": "$version")
+["Model-Version": version, "Model-Api-Version": apiVersion].each { key, value ->
+    jar.manifest.attributes((key): value)
+    sdkJar.manifest.attributes((key): value)
+}
