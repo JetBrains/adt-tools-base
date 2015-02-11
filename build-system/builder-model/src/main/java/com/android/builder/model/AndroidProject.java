@@ -61,6 +61,21 @@ public interface AndroidProject {
     String getModelVersion();
 
     /**
+     * Returns the model api version.
+     * <p/>
+     * This is different from {@link #getModelVersion()} in a way that new model
+     * version might increment model version but keep existing api. That means that
+     * code which was built against particular 'api version' might be safely re-used for all
+     * new model versions as long as they don't change the api.
+     * <p/>
+     * Every new model version is assumed to return an 'api version' value which
+     * is equal or greater than the value used by the previous model version.
+     *
+     * @return model's api version
+     */
+    int getApiVersion();
+
+    /**
      * Returns the name of the module.
      *
      * @return the name of the module.
