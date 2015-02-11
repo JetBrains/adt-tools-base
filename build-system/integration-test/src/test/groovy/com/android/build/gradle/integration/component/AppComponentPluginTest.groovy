@@ -32,7 +32,9 @@ import static com.google.common.truth.Truth.assertThat
 class AppComponentPluginTest {
 
     @Rule
-    public GradleTestProject project = GradleTestProject.builder().create();
+    public GradleTestProject project = GradleTestProject.builder()
+            .forExpermimentalPlugin(true)
+            .create();
 
     @Before
     public void setUp() {
