@@ -103,7 +103,7 @@ public class NinePatchAaptProcessorTest extends BasePngTest {
         assert sdkManager != null;
         BuildToolInfo buildToolInfo = sdkManager.getBuildTool(fullRevision);
         if (buildToolInfo == null) {
-            throw new RuntimeException("Test requires build-tools 20");
+            throw new RuntimeException("Test requires build-tools " + fullRevision.toShortString());
         }
         return new File(buildToolInfo.getPath(BuildToolInfo.PathId.AAPT));
     }
