@@ -198,7 +198,8 @@ public class ResourceItem extends DataItem<ResourceFile>
             //noinspection VariableNotUsedInsideIf
             if (mValue == null) {
                 // Density based resource value?
-                Density density = mType == ResourceType.DRAWABLE ? getFolderDensity() : null;
+                Density density = mType == ResourceType.DRAWABLE || mType == ResourceType.MIPMAP
+                        ? getFolderDensity() : null;
                 if (density != null) {
                     mResourceValue = new DensityBasedResourceValue(mType, getName(),
                             getSource().getFile().getAbsolutePath(), density, isFrameworks);
