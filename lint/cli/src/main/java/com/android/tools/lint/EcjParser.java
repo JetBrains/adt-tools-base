@@ -329,7 +329,7 @@ public class EcjParser extends JavaParser {
         IAndroidTarget compileTarget = mProject.getBuildTarget();
         if (compileTarget != null) {
             String androidJar = compileTarget.getPath(IAndroidTarget.ANDROID_JAR);
-            if (androidJar != null) {
+            if (androidJar != null && new File(androidJar).exists()) {
                 classPath.add(androidJar);
             }
         }
@@ -354,7 +354,9 @@ public class EcjParser extends JavaParser {
         }
 
         for (File file : libraries) {
-            classPath.add(file.getPath());
+            if (file.exists()) {
+                classPath.add(file.getPath());
+            }
         }
 
         // In incremental mode we may need to point to other sources in the project
@@ -363,7 +365,9 @@ public class EcjParser extends JavaParser {
         if (!scope.contains(Scope.ALL_JAVA_FILES)) {
             // May need other compiled classes too
             for (File dir : mProject.getJavaClassFolders()) {
-                classPath.add(dir.getPath());
+                if (dir.exists()) {
+                    classPath.add(dir.getPath());
+                }
             }
         }
 
