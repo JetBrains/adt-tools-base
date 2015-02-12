@@ -39,14 +39,16 @@ public class TestVariantImpl extends ApkVariantImpl implements TestVariant {
     @NonNull
     private final TestVariantData variantData;
     @NonNull
-    private BaseVariant testedVariant;
+    private final BaseVariant testedVariantData;
 
     public TestVariantImpl(
             @NonNull TestVariantData variantData,
+            @NonNull BaseVariant testedVariantData,
             @NonNull AndroidBuilder androidBuilder,
             @NonNull ReadOnlyObjectProvider readOnlyObjectProvider) {
         super(androidBuilder, readOnlyObjectProvider);
         this.variantData = variantData;
+        this.testedVariantData = testedVariantData;
     }
 
     @Override
@@ -64,11 +66,7 @@ public class TestVariantImpl extends ApkVariantImpl implements TestVariant {
     @Override
     @NonNull
     public BaseVariant getTestedVariant() {
-        return testedVariant;
-    }
-
-    public void setTestedVariant(@NonNull BaseVariant testedVariant) {
-        this.testedVariant = testedVariant;
+        return testedVariantData;
     }
 
     @Override
