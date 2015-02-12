@@ -632,6 +632,7 @@ public class VariantManager implements VariantModel {
                 TestVariantImpl androidTestVariant = instantiator.newInstance(
                         TestVariantImpl.class,
                         androidTestVariantData,
+                        variantApi,
                         androidBuilder,
                         readOnlyObjectProvider);
 
@@ -643,8 +644,6 @@ public class VariantManager implements VariantModel {
 
                 extension.addTestVariant(androidTestVariant);
                 ((TestedVariant) variantApi).setTestVariant(androidTestVariant);
-
-                androidTestVariant.setTestedVariant(variantApi);
             }
         }
     }
