@@ -80,7 +80,7 @@ public class MergeResources extends IncrementalTask {
                         builder.getTargetInfo().buildTools.getPath(
                                 BuildToolInfo.PathId.AAPT), builder.getLogger())
             }
-            logger.warn("Warning : new cruncher can only be used with build tools 22 and above")
+            logger.info("New PNG cruncher will be enabled with build tools 22 and above.")
         }
         return builder.aaptCruncher;
     }
