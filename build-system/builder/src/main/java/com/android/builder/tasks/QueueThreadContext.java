@@ -16,6 +16,8 @@
 
 package com.android.builder.tasks;
 
+import com.android.annotations.NonNull;
+
 import java.io.IOException;
 
 /**
@@ -28,14 +30,14 @@ public interface QueueThreadContext<T> {
      * @param t the thread being associated.
      * @throws IOException
      */
-    public void creation(Thread t) throws IOException;
+    void creation(@NonNull Thread t) throws IOException;
 
     /**
      * Notification of a scheduled task execution.
      * @param job the job that should be executed on the current thread.
      * @throws Exception
      */
-    public void runTask(Job<T> job) throws Exception;
+    void runTask(@NonNull Job<T> job) throws Exception;
 
     /**
      * Notification of the removal of the passed thread as a queue worker thread.
@@ -43,12 +45,12 @@ public interface QueueThreadContext<T> {
      * @throws IOException
      * @throws InterruptedException
      */
-    public void destruction(Thread t) throws IOException, InterruptedException;
+    void destruction(@NonNull Thread t) throws IOException, InterruptedException;
 
     /**
      * Notification of the queue temporary shutdown. All native resources must be released.
      * Once shutdown is called, at least one {@link #creation} must be made before any call to
      * {@link #runTask}.
      */
-    public void shutdown();
+    void shutdown();
 }
