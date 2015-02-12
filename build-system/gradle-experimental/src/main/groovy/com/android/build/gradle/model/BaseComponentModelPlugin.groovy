@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.model
 
+import com.android.annotations.NonNull
 import com.android.annotations.Nullable
 import com.android.build.gradle.AppExtension
 import com.android.build.gradle.BaseExtension
@@ -61,6 +62,8 @@ import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
+import org.gradle.api.artifacts.Configuration
+import org.gradle.api.artifacts.ConfigurationContainer
 import org.gradle.api.artifacts.repositories.MavenArtifactRepository
 import org.gradle.api.execution.TaskExecutionGraph
 import org.gradle.api.file.SourceDirectorySet
@@ -117,6 +120,14 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
 
         project.apply plugin: JavaBasePlugin
         project.apply plugin: JacocoPlugin
+
+        // TODO: Create configurations for build types and flavors, or migrate to new dependency
+        // management if it's ready.
+        ConfigurationContainer configurations = project.getConfigurations()
+        createConfiguration(
+                configurations,
+                "compile",
+                "Classpath for default sources.")
 
         project.tasks.getByName("assemble").description =
                 "Assembles all variants of all applications and secondary packages."
@@ -524,4 +535,17 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
             return false
         }
     }
+
+    private void createConfiguration(
+            @NonNull ConfigurationContainer configurations,
+            @NonNull String configurationName,
+            @NonNull String configurationDescription) {
+        Configuration configuration = configurations.findByName(configurationName)
+        if (configuration == null) {
+            configuration = configurations.create(configurationName)
+        }
+        configuration.setVisible(false);
+        configuration.setDescription(configurationDescription)
+    }
+
 }
