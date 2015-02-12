@@ -19,25 +19,8 @@ sourceSets {
 
 ext.proguardVersion = "5.1"
 
-// Extract gradle libraries to ensure gradle-core is compatible with older version.
-String gradleVersion = "2.2"
-File gradleBinary = file("$rootProject.projectDir/external/gradle/gradle-$gradleVersion-bin.zip")
-File gradleLib = file("$rootProject.ext.androidHostOut/alternate-gradle/gradle-$gradleVersion/lib")
-
-task extractGradleLibs(type: Copy) {
-    from zipTree(gradleBinary)
-    into gradleLib.parentFile.parentFile
-}
-
-compileJava.dependsOn extractGradleLibs
-
-task setupGradleInIde {
-    dependsOn extractGradleLibs
-}
-
-
 dependencies {
-    compile fileTree(gradleLib)
+    compile gradleApi()
     compile localGroovy()
     compile project(':base:builder')
     compile project(':base:lint')
@@ -46,20 +29,6 @@ dependencies {
     testCompile 'junit:junit:3.8.1'
     testCompile project(':base:project-test-lib')
 }
-
-// configuration for dependencies provided by the runtime,
-// in this case proguard.
-configurations{
-    provided
-}
-
-dependencies{
-    provided "net.sf.proguard:proguard-gradle:${project.ext.proguardVersion}"
-}
-
-//Include provided for compilation
-sourceSets.main.compileClasspath += configurations.provided
-
 
 group = 'com.android.tools.build'
 archivesBaseName = 'gradle-core'

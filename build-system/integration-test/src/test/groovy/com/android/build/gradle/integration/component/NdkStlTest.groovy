@@ -61,7 +61,7 @@ public class NdkStlTest {
     }
 
     @Rule
-    public GradleTestProject project = GradleTestProject.builder().create();
+    public GradleTestProject project = GradleTestProject.builder().forExpermimentalPlugin(true).create();
 
     @Before
     public void setUp() {

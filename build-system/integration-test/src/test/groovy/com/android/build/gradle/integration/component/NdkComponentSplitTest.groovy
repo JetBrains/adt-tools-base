@@ -37,7 +37,9 @@ import static org.junit.Assert.assertNull
 class NdkComponentSplitTest {
 
     @ClassRule
-    public static GradleTestProject project = GradleTestProject.builder().create();
+    public static GradleTestProject project = GradleTestProject.builder()
+            .forExpermimentalPlugin(true)
+            .create();
 
     @BeforeClass
     public static void setUp() {
