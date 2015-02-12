@@ -22,11 +22,13 @@ import static com.android.tools.lint.client.api.JavaParser.ResolvedMethod;
 import static com.android.tools.lint.client.api.JavaParser.ResolvedNode;
 import static com.android.tools.lint.client.api.JavaParser.ResolvedVariable;
 
+import com.android.annotations.NonNull;
 import com.android.tools.lint.checks.AbstractCheckTest;
 import com.android.tools.lint.checks.SdCardDetector;
 import com.android.tools.lint.client.api.JavaParser;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.LintUtilsTest;
+import com.android.tools.lint.detector.api.Project;
 
 import junit.framework.Assert;
 
@@ -591,6 +593,21 @@ public class EcjParserTest extends AbstractCheckTest {
     @Override
     protected Detector getDetector() {
         return new SdCardDetector();
+    }
+
+    @Override
+    protected TestLintClient createClient() {
+        return new TestLintClient() {
+            @NonNull
+            @Override
+            protected ClassPathInfo getClassPath(@NonNull Project project) {
+                ClassPathInfo classPath = super.getClassPath(project);
+                // Insert fake classpath entries (non existent directories) to
+                // make sure the parser handles that gracefully. See issue 87740.
+                classPath.getLibraries().add(new File("nonexistent path"));
+                return classPath;
+            }
+        };
     }
 
     public static class AstPrettyPrinter implements SourceFormatter {
