@@ -16,6 +16,8 @@
 
 package com.android.builder.tasks;
 
+import com.android.annotations.NonNull;
+
 import java.io.IOException;
 
 /**
@@ -30,5 +32,5 @@ public interface Task<T> {
      * @throws java.io.IOException an exception occured while processing
      * the task.
      */
-    void run(Job<T> job, JobContext<T> context) throws IOException;
+    void run(@NonNull Job<T> job, @NonNull JobContext<T> context) throws IOException;
 }

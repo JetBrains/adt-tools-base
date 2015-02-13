@@ -89,7 +89,7 @@ public class QueuedCruncher implements PngCruncher {
             @NonNull private final Map<String, AaptProcess> mAaptProcesses = new HashMap<String, AaptProcess>();
 
             @Override
-            public void creation(Thread t) throws IOException {
+            public void creation(@NonNull Thread t) throws IOException {
                 try {
                     mLogger.verbose("Thread(%1$s): create aapt slave",
                             Thread.currentThread().getName());
@@ -104,13 +104,13 @@ public class QueuedCruncher implements PngCruncher {
             }
 
             @Override
-            public void runTask(Job<AaptProcess> job) throws Exception {
+            public void runTask(@NonNull Job<AaptProcess> job) throws Exception {
                 job.runTask(
                         new JobContext<AaptProcess>(mAaptProcesses.get(Thread.currentThread().getName())));
             }
 
             @Override
-            public void destruction(Thread t) throws IOException, InterruptedException {
+            public void destruction(@NonNull Thread t) throws IOException, InterruptedException {
 
                 AaptProcess aaptProcess = mAaptProcesses.get(Thread.currentThread().getName());
                 if (aaptProcess != null) {
@@ -150,8 +150,8 @@ public class QueuedCruncher implements PngCruncher {
                     "Cruncher " + from.getName(),
                     new Task<AaptProcess>() {
                         @Override
-                        public void run(Job<AaptProcess> job, JobContext<AaptProcess> context)
-                                throws IOException {
+                        public void run(@NonNull Job<AaptProcess> job,
+                                @NonNull JobContext<AaptProcess> context) throws IOException {
                             mLogger.verbose("Thread(%1$s): begin executing job %2$s",
                                     Thread.currentThread().getName(), job.getJobTitle());
                             context.getPayload().crunch(from, to, job);

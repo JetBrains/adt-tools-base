@@ -12,7 +12,6 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="builder-test-api" exported="" />
     <orderEntry type="module" module-name="builder-model" exported="" />
-    <orderEntry type="library" scope="TEST" name="JUnit3" level="project" />
     <orderEntry type="module" module-name="testutils" scope="TEST" />
     <orderEntry type="module" module-name="ddmlib" exported="" />
     <orderEntry type="library" exported="" name="javawriter" level="project" />
@@ -21,5 +20,7 @@
     <orderEntry type="module" module-name="sdk-common-base" />
     <orderEntry type="module" module-name="manifest-merger-base" />
     <orderEntry type="library" exported="" name="asm-tools" level="project" />
+    <orderEntry type="library" name="gson" level="project" />
+    <orderEntry type="library" scope="TEST" name="JUnit4" level="project" />
   </component>
 </module>

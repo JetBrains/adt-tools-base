@@ -28,8 +28,9 @@ dependencies {
     compile 'org.bouncycastle:bcprov-jdk15on:1.48'
     compile 'org.ow2.asm:asm:5.0.3'
     compile 'org.ow2.asm:asm-tree:5.0.3'
+    compile 'com.google.code.gson:gson:2.2.4'
 
-    testCompile 'junit:junit:3.8.1'
+    testCompile 'junit:junit:4.10'
     testCompile 'org.mockito:mockito-all:1.9.5'
     testCompile project(':base:testutils')
     testCompile project(':base:sdklib').sourceSets.test.output
