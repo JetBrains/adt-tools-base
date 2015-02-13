@@ -75,7 +75,7 @@ class EmbedTest {
                 [ "flavor2-debug",            null ]
         ]
 
-        for (String[] data : variantData) {
+        for (List<String> data : variantData) {
             File fullApk = project.getSubproject("main").getApk(data[0])
             File embeddedApk = ZipHelper.extractFile(fullApk, embeddedApkPath)
 
