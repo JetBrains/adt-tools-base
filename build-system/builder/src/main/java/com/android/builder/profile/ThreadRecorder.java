@@ -17,6 +17,7 @@
 package com.android.builder.profile;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.google.common.collect.ImmutableList;
 
 import java.util.ArrayDeque;
@@ -33,92 +34,106 @@ import java.util.logging.Logger;
  * // TODO : provide facilities to create a new ThreadRecorder using a parent so the slave threads
  * can be connected to the parent's task.
  */
-public class ThreadRecorder {
+public class ThreadRecorder implements Recorder {
 
     private static final Logger logger = Logger.getLogger(ThreadRecorder.class.getName());
 
-
-    public static Recorder get() {
-        return recorder.get();
-    }
-
-    private static final ThreadLocal<Recorder> recorder = new ThreadLocal<Recorder>() {
+    // Dummy implementation that records nothing but comply to the overall recording contracts.
+    private static final Recorder dummyRecorder = new Recorder() {
+        @Nullable
         @Override
-        protected Recorder initialValue() {
-
-            class PartialRecord {
-                final ExecutionType executionType;
-                final long recordId;
-                final long parentRecordId;
-                final long startTimeInMs;
-
-                final List<Recorder.Property> extraArgs;
-
-                PartialRecord(ExecutionType executionType,
-                        long recordId,
-                        long parentId,
-                        long startTimeInMs,
-                        List<Recorder.Property> extraArgs) {
-                    this.executionType = executionType;
-                    this.recordId = recordId;
-                    this.parentRecordId = parentId;
-                    this.startTimeInMs = startTimeInMs;
-                    this.extraArgs = extraArgs;
-                }
+        public <T> T record(@NonNull ExecutionType executionType, @NonNull Block<T> block,
+                Property... properties) {
+            try {
+                return block.call();
+            } catch (Exception e) {
+                block.handleException(e);
             }
-
-            final long threadId = Thread.currentThread().getId();
-            final Deque<PartialRecord> stackOfRecords = new ArrayDeque<PartialRecord>();
-            final AtomicLong recordId = new AtomicLong(0); 
-                    
-
-            return new Recorder() {
-                @Override
-                public <T> T record(@NonNull ExecutionType executionType,
-                        @NonNull Block<T> block, Property... properties) {
-
-                    long thisRecordId = recordId.incrementAndGet();
-                    
-                    // am I a child ?
-                    PartialRecord parentRecord = stackOfRecords.peek();
-                    long parentRecordId = parentRecord == null ? 0 : parentRecord.recordId;
-
-                    List<Recorder.Property> propertyList = properties == null
-                            ? ImmutableList.<Recorder.Property>of()
-                            : ImmutableList.copyOf(properties);
-
-                    long startTimeInMs = System.currentTimeMillis();
-
-                    PartialRecord partialRecord = new PartialRecord(executionType,
-                            thisRecordId, parentRecordId,
-                            startTimeInMs, propertyList);
-
-                    stackOfRecords.push(partialRecord);
-                    try {
-                        return block.call();
-                    } catch (Exception e) {
-                        block.handleException(e);
-                    } finally {
-                        PartialRecord currentRecord = stackOfRecords.pop();
-                        // check that our current record is the one we are expecting.
-                        if (currentRecord.executionType != executionType ||
-                                currentRecord.startTimeInMs != startTimeInMs) {
-                            // records got messed up, probably some threading issues...
-                            logger.log(Level.SEVERE, "messed up !");
-                        }
-                        ProcessRecorder.get().writeRecord(
-                                new ExecutionRecord(currentRecord.recordId,
-                                        currentRecord.parentRecordId,
-                                        currentRecord.startTimeInMs,
-                                        System.currentTimeMillis() - currentRecord.startTimeInMs,
-                                        currentRecord.executionType,
-                                        currentRecord.extraArgs));
-                    }
-                    // we always return null when an exception occurred and was not rethrown.
-                    return null;
-                }
-            };
+            return null;
         }
     };
 
+    private static final Recorder recorder = new ThreadRecorder();
+
+
+    public static Recorder get() {
+        return ProcessRecorderFactory.isEnabled() ? recorder : dummyRecorder;
+    }
+
+    private static  class PartialRecord {
+        final ExecutionType executionType;
+        final long recordId;
+        final long parentRecordId;
+        final long startTimeInMs;
+
+        final List<Recorder.Property> extraArgs;
+
+        PartialRecord(ExecutionType executionType,
+                long recordId,
+                long parentId,
+                long startTimeInMs,
+                List<Recorder.Property> extraArgs) {
+            this.executionType = executionType;
+            this.recordId = recordId;
+            this.parentRecordId = parentId;
+            this.startTimeInMs = startTimeInMs;
+            this.extraArgs = extraArgs;
+        }
+    }
+
+    /**
+     * Do not put anything else than JDK classes in the ThreadLocal as it prevents that class
+     * and therefore the plugin classloader to be gc'ed leading to OOM or PermGen issues.
+     */
+    private static final ThreadLocal<Deque<Long>> recordStacks =
+            new ThreadLocal<Deque<Long>>() {
+        @Override
+        protected Deque<Long> initialValue() {
+            return  new ArrayDeque<Long>();
+        }
+    };
+
+    private static final AtomicLong lastRecordId = new AtomicLong(0);
+
+    @Nullable
+    @Override
+    public <T> T record(@NonNull ExecutionType executionType, @NonNull Block<T> block,
+            Property... properties) {
+
+        long thisRecordId = lastRecordId.incrementAndGet();
+
+        // am I a child ?
+        Long parentId = recordStacks.get().peek();
+
+        List<Recorder.Property> propertyList = properties == null
+                ? ImmutableList.<Recorder.Property>of()
+                : ImmutableList.copyOf(properties);
+
+        long startTimeInMs = System.currentTimeMillis();
+
+        final PartialRecord currentRecord = new PartialRecord(executionType,
+                thisRecordId, parentId == null ? 0 : parentId,
+                startTimeInMs, propertyList);
+
+        recordStacks.get().push(thisRecordId);
+        try {
+            return block.call();
+        } catch (Exception e) {
+            block.handleException(e);
+        } finally {
+            // pop this record from the stack.
+            if (recordStacks.get().pop() != currentRecord.recordId) {
+                logger.log(Level.SEVERE, "Profiler stack corrupted");
+            }
+            ProcessRecorder.get().writeRecord(
+                    new ExecutionRecord(currentRecord.recordId,
+                            currentRecord.parentRecordId,
+                            currentRecord.startTimeInMs,
+                            System.currentTimeMillis() - currentRecord.startTimeInMs,
+                            currentRecord.executionType,
+                            currentRecord.extraArgs));
+        }
+        // we always return null when an exception occurred and was not rethrown.
+        return null;
+    }
 }

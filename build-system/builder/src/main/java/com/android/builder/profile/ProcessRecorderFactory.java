@@ -18,13 +18,14 @@ package com.android.builder.profile;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.annotations.VisibleForTesting;
 import com.android.utils.ILogger;
 import com.android.utils.StdLogger;
+import com.google.common.base.Strings;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.Writer;
 
 /**
  * Configures and creates instances of {@link ProcessRecorder}.
@@ -36,6 +37,37 @@ import java.io.Writer;
  *
  */
 public class ProcessRecorderFactory {
+
+    public static void shutdown() throws InterruptedException {
+        synchronized (LOCK) {
+            if (sINSTANCE.isInitialized()) {
+                sINSTANCE.get().finish();
+            }
+            sINSTANCE.processRecorder = null;
+        }
+    }
+
+    public static void initialize(ILogger logger, File out) throws IOException {
+
+        synchronized (LOCK) {
+            if (sINSTANCE.isInitialized() || !isEnabled()) {
+                return;
+            }
+            sINSTANCE.setLogger(logger);
+            sINSTANCE.setRecordWriter(new ProcessRecorder.JsonRecordWriter(new FileWriter(out)));
+        }
+    }
+
+    private static boolean sENABLED = !Strings.isNullOrEmpty(System.getenv("RECORD_SPANS"));
+
+    static boolean isEnabled() {
+        return sENABLED;
+    }
+
+    @VisibleForTesting
+    static void setEnabled(boolean enabled) {
+        sENABLED = enabled;
+    }
 
     /**
      * Sets the {@link ProcessRecorder.JsonRecordWriter }
@@ -52,13 +84,23 @@ public class ProcessRecorderFactory {
         this.iLogger = iLogger;
     }
 
+    public static ProcessRecorderFactory getFactory() {
+        return sINSTANCE;
+    }
+
+    private boolean isInitialized() {
+        return processRecorder != null;
+    }
+
+    @SuppressWarnings("VariableNotUsedInsideIf")
     private void assertRecorderNotCreated() {
-        if (processRecorder != null) {
+        if (isInitialized()) {
             throw new RuntimeException("ProcessRecorder already created.");
         }
     }
 
-    static ProcessRecorderFactory INSTANCE = new ProcessRecorderFactory();
+    static final Object LOCK = new Object();
+    static ProcessRecorderFactory sINSTANCE = new ProcessRecorderFactory();
 
     @Nullable
     private ProcessRecorder processRecorder = null;
@@ -79,7 +121,4 @@ public class ProcessRecorderFactory {
         }
         return processRecorder;
     }
-
-
-
 }
