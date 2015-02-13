@@ -73,6 +73,7 @@ public class GetSignaturesDetectorTest extends AbstractCheckTest {
                 ));
     }
 
+    /* Temporarily disabled
     public void testLintWarningOnFlagsInStaticField() throws Exception {
         assertEquals(
                 "src/test/pkg/GetSignaturesStaticFieldTest.java:9: Information: Reading app signatures from getPackageInfo: The app signatures could be exploited if not validated properly; see issue explanation for details. [PackageManagerGetSignatures]\n"
@@ -84,6 +85,7 @@ public class GetSignaturesDetectorTest extends AbstractCheckTest {
                                 "=>src/test/pkg/GetSignaturesStaticFieldTest.java"
                 ));
     }
+    */
 
     public void testNoLintWarningOnFlagsInLocalVariable() throws Exception {
         assertEquals(
