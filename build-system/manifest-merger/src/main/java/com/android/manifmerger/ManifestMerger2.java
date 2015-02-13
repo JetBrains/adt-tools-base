@@ -16,7 +16,9 @@
 
 package com.android.manifmerger;
 
+import static com.android.manifmerger.PlaceholderHandler.APPLICATION_ID;
 import static com.android.manifmerger.PlaceholderHandler.KeyBasedValueResolver;
+import static com.android.manifmerger.PlaceholderHandler.PACKAGE_NAME;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
@@ -132,11 +134,11 @@ public class ManifestMerger2 {
 
         // check for placeholders presence.
         Map<String, Object> finalPlaceHolderValues = mPlaceHolderValues;
-        if (!mPlaceHolderValues.containsKey("applicationId")) {
+        if (!mPlaceHolderValues.containsKey(APPLICATION_ID)) {
             finalPlaceHolderValues =
                     ImmutableMap.<String, Object>builder().putAll(mPlaceHolderValues)
-                            .put("packageName", mainPackageAttribute.get().getValue())
-                            .put("applicationId", mainPackageAttribute.get().getValue())
+                            .put(PACKAGE_NAME, mainPackageAttribute.get().getValue())
+                            .put(APPLICATION_ID, mainPackageAttribute.get().getValue())
                             .build();
         }
 
@@ -413,15 +415,21 @@ public class ManifestMerger2 {
             XmlDocument xmlDocument,
             MergingReport.Builder mergingReportBuilder) {
 
-        // check for placeholders presence.
+        // check for placeholders presence, switch first the packageName and application id if
+        // it is not explicitly set.
         Map<String, Object> finalPlaceHolderValues = mPlaceHolderValues;
         if (!mPlaceHolderValues.containsKey("applicationId")) {
             String packageName = manifestInfo.getMainManifestPackageName().isPresent()
                     ? manifestInfo.getMainManifestPackageName().get()
                     : xmlDocument.getPackageName();
-            finalPlaceHolderValues =
-                    ImmutableMap.<String, Object>builder().putAll(mPlaceHolderValues)
-                            .put(PlaceholderHandler.PACKAGE_NAME, packageName)
+            // add all existing placeholders except package name that will be swapped.
+            ImmutableMap.Builder<String, Object> builder = ImmutableMap.<String, Object>builder();
+            for (Map.Entry<String, Object> entry : mPlaceHolderValues.entrySet()) {
+                if (!entry.getKey().equals(PlaceholderHandler.PACKAGE_NAME)) {
+                    builder.put(entry);
+                }
+            }
+            finalPlaceHolderValues = builder.put(PlaceholderHandler.PACKAGE_NAME, packageName)
                             .put(PlaceholderHandler.APPLICATION_ID, packageName)
                             .build();
         }
@@ -972,8 +980,8 @@ public class ManifestMerger2 {
             // provide some free placeholders values.
             ImmutableMap<SystemProperty, Object> systemProperties = mSystemProperties.build();
             if (systemProperties.containsKey(SystemProperty.PACKAGE)) {
-                mPlaceholders.put("packageName", systemProperties.get(SystemProperty.PACKAGE));
-                mPlaceholders.put("applicationId", systemProperties.get(SystemProperty.PACKAGE));
+                mPlaceholders.put(PACKAGE_NAME, systemProperties.get(SystemProperty.PACKAGE));
+                mPlaceholders.put(APPLICATION_ID, systemProperties.get(SystemProperty.PACKAGE));
             }
 
             ManifestMerger2 manifestMerger =

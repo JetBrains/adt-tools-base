@@ -109,7 +109,9 @@ public class PlaceholderHandler {
                                         matcher.group(2)
                                 ));
                         // we add back the placeholder key, since this is not an error for libraries
+                        resultString.append("${");
                         resultString.append(matcher.group(2));
+                        resultString.append("}");
                     } else {
                         // record the attribute set
                         mergingReportBuilder.getActionRecorder().recordAttributeAction(
