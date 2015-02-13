@@ -102,6 +102,11 @@ public class LibraryVariantFactory implements VariantFactory {
         return true
     }
 
+    @Override
+    boolean hasTestScope() {
+        return true
+    }
+
     /***
      * Prevent customization of applicationId or applicationIdSuffix.
      */

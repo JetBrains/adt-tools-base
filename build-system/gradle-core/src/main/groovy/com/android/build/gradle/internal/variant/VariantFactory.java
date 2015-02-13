@@ -55,6 +55,8 @@ public interface VariantFactory {
 
     boolean isLibrary();
 
+    boolean hasTestScope();
+
     /**
      * Fail if the model is configured incorrectly.
      * @param model the non-null model to validate, as implemented by the VariantManager.

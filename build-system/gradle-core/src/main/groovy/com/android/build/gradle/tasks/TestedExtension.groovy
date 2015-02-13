@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 The Android Open Source Project
+ * Copyright (C) 2015 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,17 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.build.gradle
+package com.android.build.gradle.tasks
 
 import com.android.annotations.NonNull
+import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.api.ApplicationVariant
 import com.android.build.gradle.api.BaseVariant
+import com.android.build.gradle.api.TestVariant
 import com.android.build.gradle.internal.ExtraModelInfo
 import com.android.build.gradle.internal.SdkHandler
 import com.android.build.gradle.internal.dsl.BuildType
 import com.android.build.gradle.internal.dsl.GroupableProductFlavor
 import com.android.build.gradle.internal.dsl.SigningConfig
-import com.android.build.gradle.tasks.TestedExtension
 import com.android.builder.core.AndroidBuilder
 import groovy.transform.CompileStatic
 import org.gradle.api.NamedDomainObjectContainer
@@ -32,16 +33,18 @@ import org.gradle.api.internal.project.ProjectInternal
 import org.gradle.internal.reflect.Instantiator
 
 /**
- * 'android' extension for 'com.android.application' project.
+ * base 'android' extension for plugins that have a test component.
  * This extends {@link BaseExtension}
  */
 @CompileStatic
-public class AppExtension extends TestedExtension {
+public abstract class TestedExtension extends BaseExtension {
 
-    private final DefaultDomainObjectSet<ApplicationVariant> applicationVariantList =
-        new DefaultDomainObjectSet<ApplicationVariant>(ApplicationVariant.class)
+    private final DefaultDomainObjectSet<TestVariant> testVariantList =
+            new DefaultDomainObjectSet<TestVariant>(TestVariant.class)
 
-    AppExtension(
+    String testBuildType = "debug"
+
+    TestedExtension(
             @NonNull ProjectInternal project,
             @NonNull Instantiator instantiator,
             @NonNull AndroidBuilder androidBuilder,
@@ -50,22 +53,22 @@ public class AppExtension extends TestedExtension {
             @NonNull NamedDomainObjectContainer<GroupableProductFlavor> productFlavors,
             @NonNull NamedDomainObjectContainer<SigningConfig> signingConfigs,
             @NonNull ExtraModelInfo extraModelInfo,
-            boolean isLibrary) {
+            boolean isLibrary,
+            boolean hasTestScope) {
         super(project, instantiator, androidBuilder, sdkHandler, buildTypes, productFlavors,
-                signingConfigs, extraModelInfo, isLibrary, true /*hasTestScope*/)
+                signingConfigs, extraModelInfo, isLibrary, hasTestScope)
     }
 
     /**
-     * Returns the list of Application variants. Since the collections is built after evaluation,
+     * Returns the list of test variants. Since the collections is built after evaluation,
      * it should be used with Groovy's <code>all</code> iterator to process future items.
-     *
      */
-    public DefaultDomainObjectSet<ApplicationVariant> getApplicationVariants() {
-        return applicationVariantList
+    @NonNull
+    public DefaultDomainObjectSet<TestVariant> getTestVariants() {
+        return testVariantList
     }
 
-    @Override
-    void addVariant(BaseVariant variant) {
-        applicationVariantList.add((ApplicationVariant) variant)
+    void addTestVariant(TestVariant testVariant) {
+        testVariantList.add(testVariant)
     }
 }

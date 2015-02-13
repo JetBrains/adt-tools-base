@@ -131,10 +131,17 @@ public class VariantManager implements VariantModel {
 
         DefaultAndroidSourceSet mainSourceSet =
                 (DefaultAndroidSourceSet) extension.getSourceSets().getByName(extension.getDefaultConfig().getName());
-        DefaultAndroidSourceSet androidTestSourceSet =
-                (DefaultAndroidSourceSet) extension.getSourceSets().getByName(ANDROID_TEST.getPrefix());
-        DefaultAndroidSourceSet unitTestSourceSet =
-                (DefaultAndroidSourceSet) extension.getSourceSets().getByName(UNIT_TEST.getPrefix());
+
+        DefaultAndroidSourceSet androidTestSourceSet = null;
+        DefaultAndroidSourceSet unitTestSourceSet = null;
+        if (variantFactory.hasTestScope()) {
+            androidTestSourceSet =
+                    (DefaultAndroidSourceSet) extension.getSourceSets()
+                            .getByName(ANDROID_TEST.getPrefix());
+            unitTestSourceSet =
+                    (DefaultAndroidSourceSet) extension.getSourceSets()
+                            .getByName(UNIT_TEST.getPrefix());
+        }
 
         defaultConfigData = new ProductFlavorData<ProductFlavor>(
                 extension.getDefaultConfig(), mainSourceSet,
@@ -186,10 +193,16 @@ public class VariantManager implements VariantModel {
         }
 
         DefaultAndroidSourceSet mainSourceSet = (DefaultAndroidSourceSet) extension.getSourceSetsContainer().maybeCreate(name);
-        DefaultAndroidSourceSet unitTestSourceSet = (DefaultAndroidSourceSet) extension.getSourceSetsContainer().maybeCreate(
-                UNIT_TEST.getPrefix() + StringHelper.capitalize(buildType.getName()));
 
-        BuildTypeData buildTypeData = new BuildTypeData(buildType, project, mainSourceSet, unitTestSourceSet);
+        DefaultAndroidSourceSet unitTestSourceSet = null;
+        if (variantFactory.hasTestScope()) {
+            unitTestSourceSet = (DefaultAndroidSourceSet) extension
+                    .getSourceSetsContainer().maybeCreate(
+                            UNIT_TEST.getPrefix() + StringHelper.capitalize(buildType.getName()));
+        }
+
+        BuildTypeData buildTypeData = new BuildTypeData(
+                buildType, project, mainSourceSet, unitTestSourceSet);
         project.getTasks().getByName("assemble").dependsOn(buildTypeData.getAssembleTask());
 
         buildTypes.put(name, buildTypeData);
@@ -211,15 +224,27 @@ public class VariantManager implements VariantModel {
 
         DefaultAndroidSourceSet mainSourceSet = (DefaultAndroidSourceSet) extension.getSourceSetsContainer().maybeCreate(
                 productFlavor.getName());
-        DefaultAndroidSourceSet androidTestSourceSet = (DefaultAndroidSourceSet) extension.getSourceSetsContainer().maybeCreate(
-                ANDROID_TEST.getPrefix() + StringHelper.capitalize(productFlavor.getName()));
-        DefaultAndroidSourceSet unitTestSourceSet = (DefaultAndroidSourceSet) extension.getSourceSetsContainer().maybeCreate(
-                UNIT_TEST.getPrefix() + StringHelper.capitalize(productFlavor.getName()));
+
+        DefaultAndroidSourceSet androidTestSourceSet = null;
+        DefaultAndroidSourceSet unitTestSourceSet = null;
+        if (variantFactory.hasTestScope()) {
+            androidTestSourceSet = (DefaultAndroidSourceSet) extension
+                    .getSourceSetsContainer().maybeCreate(
+                            ANDROID_TEST.getPrefix() + StringHelper
+                                    .capitalize(productFlavor.getName()));
+            unitTestSourceSet = (DefaultAndroidSourceSet) extension
+                    .getSourceSetsContainer().maybeCreate(
+                            UNIT_TEST.getPrefix() + StringHelper
+                                    .capitalize(productFlavor.getName()));
+        }
 
         ProductFlavorData<GroupableProductFlavor> productFlavorData =
                 new ProductFlavorData<GroupableProductFlavor>(
-                        productFlavor, mainSourceSet, androidTestSourceSet,
-                        unitTestSourceSet, project);
+                        productFlavor,
+                        mainSourceSet,
+                        androidTestSourceSet,
+                        unitTestSourceSet,
+                        project);
 
         productFlavors.put(productFlavor.getName(), productFlavorData);
     }
@@ -557,6 +582,7 @@ public class VariantManager implements VariantModel {
         List<? extends com.android.build.gradle.api.GroupableProductFlavor> productFlavorList = testedConfig.getProductFlavors();
 
         // handle test variant
+        @SuppressWarnings("ConstantConditions")
         GradleVariantConfiguration testVariantConfig = new GradleVariantConfiguration(
                 testedVariantData.getVariantConfiguration(),
                 defaultConfig,
@@ -574,6 +600,7 @@ public class VariantManager implements VariantModel {
             if (dimensionName == null) {
                 dimensionName = "";
             }
+            //noinspection ConstantConditions
             testVariantConfig.addProductFlavor(
                     data.getProductFlavor(),
                     data.getTestSourceSet(type),
@@ -624,17 +651,21 @@ public class VariantManager implements VariantModel {
                         productFlavorList);
                 variantDataList.add(variantData);
 
-                TestVariantData unitTestVariantData = createTestVariantData(
-                        variantData,
-                        UNIT_TEST);
-                variantDataList.add(unitTestVariantData);
+                if (variantFactory.hasTestScope()) {
+                    TestVariantData unitTestVariantData = createTestVariantData(
+                            variantData,
+                            UNIT_TEST);
+                    variantDataList.add(unitTestVariantData);
 
-                if (buildTypeData == testBuildTypeData) {
-                    GradleVariantConfiguration variantConfig = variantData.getVariantConfiguration();
-                    if (variantConfig.isMinifyEnabled() && variantConfig.getUseJack()) {
-                        throw new RuntimeException("Cannot test obfuscated variants when compiling with jack.");
+                    if (buildTypeData == testBuildTypeData) {
+                        GradleVariantConfiguration variantConfig = variantData
+                                .getVariantConfiguration();
+                        if (variantConfig.isMinifyEnabled() && variantConfig.getUseJack()) {
+                            throw new RuntimeException(
+                                    "Cannot test obfuscated variants when compiling with jack.");
+                        }
+                        variantForAndroidTest = variantData;
                     }
-                    variantForAndroidTest = variantData;
                 }
             }
         }
@@ -658,26 +689,28 @@ public class VariantManager implements VariantModel {
                     variantFactory.createVariantApi(variantData, readOnlyObjectProvider);
             extension.addVariant(variantApi);
 
-            // TODO: Handle UNIT_TEST variants as well.
-            TestVariantData androidTestVariantData =
-                    ((TestedVariantData) variantData).getTestVariantData(ANDROID_TEST);
+            if (variantFactory.hasTestScope()) {
+                // TODO: Handle UNIT_TEST variants as well.
+                TestVariantData androidTestVariantData =
+                        ((TestedVariantData) variantData).getTestVariantData(ANDROID_TEST);
 
-            if (androidTestVariantData != null) {
-                TestVariantImpl androidTestVariant = instantiator.newInstance(
-                        TestVariantImpl.class,
-                        androidTestVariantData,
-                        variantApi,
-                        androidBuilder,
-                        readOnlyObjectProvider);
+                if (androidTestVariantData != null) {
+                    TestVariantImpl androidTestVariant = instantiator.newInstance(
+                            TestVariantImpl.class,
+                            androidTestVariantData,
+                            variantApi,
+                            androidBuilder,
+                            readOnlyObjectProvider);
 
-                // add the test output.
-                ApplicationVariantFactory.createApkOutputApiObjects(
-                        instantiator,
-                        androidTestVariantData,
-                        androidTestVariant);
+                    // add the test output.
+                    ApplicationVariantFactory.createApkOutputApiObjects(
+                            instantiator,
+                            androidTestVariantData,
+                            androidTestVariant);
 
-                extension.addTestVariant(androidTestVariant);
-                ((TestedVariant) variantApi).setTestVariant(androidTestVariant);
+                    extension.addTestVariant(androidTestVariant);
+                    ((TestedVariant) variantApi).setTestVariant(androidTestVariant);
+                }
             }
         }
     }

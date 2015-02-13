@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 The Android Open Source Project
+ * Copyright (C) 2015 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,9 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.build.gradle
+package com.android.build.gradle.tasks
 
 import com.android.annotations.NonNull
+import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.api.ApplicationVariant
 import com.android.build.gradle.api.BaseVariant
 import com.android.build.gradle.internal.ExtraModelInfo
@@ -23,7 +24,6 @@ import com.android.build.gradle.internal.SdkHandler
 import com.android.build.gradle.internal.dsl.BuildType
 import com.android.build.gradle.internal.dsl.GroupableProductFlavor
 import com.android.build.gradle.internal.dsl.SigningConfig
-import com.android.build.gradle.tasks.TestedExtension
 import com.android.builder.core.AndroidBuilder
 import groovy.transform.CompileStatic
 import org.gradle.api.NamedDomainObjectContainer
@@ -32,16 +32,19 @@ import org.gradle.api.internal.project.ProjectInternal
 import org.gradle.internal.reflect.Instantiator
 
 /**
- * 'android' extension for 'com.android.application' project.
+ * 'android' extension for 'com.android.test' project.
  * This extends {@link BaseExtension}
  */
 @CompileStatic
-public class AppExtension extends TestedExtension {
+public class TestExtension extends BaseExtension {
 
     private final DefaultDomainObjectSet<ApplicationVariant> applicationVariantList =
         new DefaultDomainObjectSet<ApplicationVariant>(ApplicationVariant.class)
 
-    AppExtension(
+    String targetProjectPath = null
+    String targetVariant = "debug"
+
+    TestExtension(
             @NonNull ProjectInternal project,
             @NonNull Instantiator instantiator,
             @NonNull AndroidBuilder androidBuilder,
@@ -52,7 +55,7 @@ public class AppExtension extends TestedExtension {
             @NonNull ExtraModelInfo extraModelInfo,
             boolean isLibrary) {
         super(project, instantiator, androidBuilder, sdkHandler, buildTypes, productFlavors,
-                signingConfigs, extraModelInfo, isLibrary, true /*hasTestScope*/)
+                signingConfigs, extraModelInfo, isLibrary, false /*hasTestScope*/)
     }
 
     /**

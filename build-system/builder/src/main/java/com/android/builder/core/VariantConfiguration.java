@@ -218,6 +218,10 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
             @NonNull VariantType type,
             @Nullable VariantConfiguration testedConfig,
             @Nullable SigningConfig signingConfigOverride) {
+        checkNotNull(defaultConfig);
+        checkNotNull(defaultSourceProvider);
+        checkNotNull(buildType);
+        checkNotNull(type);
         checkArgument(
                 !type.isForTesting() || testedConfig != null,
                 "You have to specify the tested variant for this variant type.");

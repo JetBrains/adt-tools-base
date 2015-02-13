@@ -150,6 +150,11 @@ public class ApplicationVariantFactory implements VariantFactory {
     }
 
     @Override
+    public boolean hasTestScope() {
+        return true;
+    }
+
+    @Override
     public void validateModel(@NonNull VariantModel model){
         // No additional checks for ApplicationVariantFactory, so just return.
     }
