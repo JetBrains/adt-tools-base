@@ -39,55 +39,47 @@ public class AppComponentModelPlugin implements Plugin<Project> {
 
     @Override
     void apply(Project project) {
-        project.plugins.apply(InitializationPlugin)
         project.plugins.apply(BaseComponentModelPlugin)
     }
 
-    private static class InitializationPlugin implements Plugin<Project> {
-        @Override
-        void apply(Project project) {
+    static class Rules extends RuleSource {
+
+        @Model
+        Boolean isApplication() {
+            return true
         }
 
-        static class Rules extends RuleSource {
+        @Model
+        TaskManager createTaskManager(
+                BaseExtension androidExtension,
+                Project project,
+                AndroidBuilder androidBuilder,
+                SdkHandler sdkHandler,
+                ExtraModelInfo extraModelInfo,
+                ToolingModelBuilderRegistry toolingRegistry) {
+            DependencyManager dependencyManager = new DependencyManager(project, extraModelInfo)
 
-            @Model
-            Boolean isApplication() {
-                // TODO: Determine a better way to do this.
-                return true
-            }
-
-            @Model
-            TaskManager createTaskManager(
-                    BaseExtension androidExtension,
-                    Project project,
-                    AndroidBuilder androidBuilder,
-                    SdkHandler sdkHandler,
-                    ExtraModelInfo extraModelInfo,
-                    ToolingModelBuilderRegistry toolingRegistry) {
-                DependencyManager dependencyManager = new DependencyManager(project, extraModelInfo)
-
-                return new ApplicationComponentTaskManager(
-                        project,
-                        project.tasks,
-                        androidBuilder,
-                        androidExtension,
-                        sdkHandler,
-                        dependencyManager,
-                        toolingRegistry);
-            }
+            return new ApplicationComponentTaskManager(
+                    project,
+                    project.tasks,
+                    androidBuilder,
+                    androidExtension,
+                    sdkHandler,
+                    dependencyManager,
+                    toolingRegistry);
+        }
 
 
-            @Model
-            VariantFactory createVariantFactory(
-                    ServiceRegistry serviceRegistry,
-                    AndroidBuilder androidBuilder,
-                    BaseExtension extension) {
-                Instantiator instantiator = serviceRegistry.get(Instantiator.class);
-                return new ApplicationVariantFactory(
-                        instantiator,
-                        androidBuilder,
-                        extension)
-            }
+        @Model
+        VariantFactory createVariantFactory(
+                ServiceRegistry serviceRegistry,
+                AndroidBuilder androidBuilder,
+                BaseExtension extension) {
+            Instantiator instantiator = serviceRegistry.get(Instantiator.class);
+            return new ApplicationVariantFactory(
+                    instantiator,
+                    androidBuilder,
+                    extension)
         }
     }
 }
