@@ -844,7 +844,9 @@ public class ResourceResolver extends RenderResources {
 
         @Override
         public ResourceValue resolveResValue(ResourceValue resValue) {
-            mLookupChain.add(resValue);
+            if (resValue != null) {
+                mLookupChain.add(resValue);
+            }
 
             return super.resolveResValue(resValue);
         }
