@@ -35,19 +35,21 @@ class UnitTestingSupportTest {
     void testSimpleScenario() {
         simpleProject.execute("test")
 
-        checkResults(
-                "build/test-results/TEST-com.android.tests.UnitTest.xml",
-                ["thisIsIgnored"],
-                [ "referenceProductionCode",
-                  "exceptions",
-                  "mockFinalClass",
-                  "mockInnerClass",
-                  "mockFinalMethod" ])
+        for (variant in ["debug", "release"]) {
+            checkResults(
+                    "build/test-results/${variant}/TEST-com.android.tests.UnitTest.xml",
+                    ["thisIsIgnored"],
+                    [ "referenceProductionCode",
+                      "exceptions",
+                      "mockFinalClass",
+                      "mockInnerClass",
+                      "mockFinalMethod" ])
 
-        checkResults(
-                "build/test-results/TEST-com.android.tests.NonStandardName.xml",
-                [],
-                ["passingTest"])
+            checkResults(
+                    "build/test-results/${variant}/TEST-com.android.tests.NonStandardName.xml",
+                    [],
+                    ["passingTest"])
+        }
     }
 
     private static void checkResults(String xmlPath, ArrayList<String> ignored, ArrayList<String> passed) {
