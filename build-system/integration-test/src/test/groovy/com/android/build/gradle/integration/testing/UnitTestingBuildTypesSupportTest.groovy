@@ -37,7 +37,7 @@ class UnitTestingBuildTypesSupportTest {
         flavorsProject.execute("clean", "testDebug")
 
         def results = new JUnitResults(
-                flavorsProject.file("build/test-results/TEST-com.android.tests.UnitTest.xml"))
+                flavorsProject.file("build/test-results/debug/TEST-com.android.tests.UnitTest.xml"))
 
         assert results.outcome("referenceProductionCode") == PASSED
 
