@@ -10,7 +10,7 @@ version = rootProject.ext.baseVersion
 dependencies {
     compile project(':base:sdklib')
     compile project(':base:dvlib').sourceSets.test.output
-    compile 'junit:junit:3.8.1'
+    compile 'junit:junit:4.12'
 }
 
 sourceSets {

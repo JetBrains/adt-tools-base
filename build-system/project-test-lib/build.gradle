@@ -7,7 +7,7 @@ dependencies {
     compile project(':base:builder-model')
     compile project(':base:common')
 
-    testCompile 'junit:junit:3.8.1'
+    testCompile 'junit:junit:4.12'
 
     // Need an SLF4J implementation at runtime
     testRuntime 'org.slf4j:slf4j-simple:1.7.2'

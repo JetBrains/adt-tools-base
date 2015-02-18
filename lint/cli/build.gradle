@@ -19,7 +19,7 @@ dependencies {
     compile 'org.eclipse.jdt.core.compiler:ecj:4.4'
 
     testCompile 'org.easymock:easymock:3.3'
-    testCompile 'junit:junit:3.8.1'
+    testCompile 'junit:junit:4.12'
     testCompile project(':base:testutils')
     testCompile 'org.codehaus.groovy:groovy-all:2.2.1'
 }

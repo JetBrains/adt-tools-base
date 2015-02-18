@@ -13,7 +13,7 @@
     <orderEntry type="module" module-name="common" exported="" />
     <orderEntry type="library" exported="" name="kxml2" level="project" />
     <orderEntry type="library" scope="TEST" name="easymock-tools" level="project" />
-    <orderEntry type="library" scope="TEST" name="JUnit3" level="project" />
+    <orderEntry type="library" scope="TEST" name="JUnit4" level="project" />
   </component>
 </module>
 

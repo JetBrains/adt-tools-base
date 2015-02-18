@@ -12,7 +12,7 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="inheritedJdk" />
     <orderEntry type="library" exported="" name="kxml2" level="project" />
-    <orderEntry type="library" exported="" scope="TEST" name="JUnit3" level="project" />
+    <orderEntry type="library" exported="" scope="TEST" name="JUnit4" level="project" />
   </component>
 </module>
 
