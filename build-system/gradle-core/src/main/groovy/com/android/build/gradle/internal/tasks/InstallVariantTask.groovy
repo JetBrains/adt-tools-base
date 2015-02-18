@@ -113,7 +113,8 @@ public class InstallVariantTask extends BaseTask {
 
                     List<File> apkFiles = new ArrayList<>();
                     // starting in API 22, we can delegate to split-select the APK selection.
-                    if (splitApksPath.size() > 0 && mainApk != null && device.getApiLevel() >= 22) {
+                    if (getSplitSelectExe() != null && splitApksPath.size() > 0
+                            && mainApk != null && device.getApiLevel() >= 22) {
 
                         DeviceConfig deviceConfig = device.getDeviceConfig();
 
