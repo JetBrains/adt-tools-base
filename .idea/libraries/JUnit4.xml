@@ -1,11 +1,11 @@
 <component name="libraryTable">
   <library name="JUnit4">
     <CLASSES>
-      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/junit/junit/4.10/junit-4.10.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/junit/junit/4.12/junit-4.12.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES>
-      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/junit/junit/4.10/junit-4.10-sources.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/junit/junit/4.12/junit-4.12-sources.jar!/" />
     </SOURCES>
   </library>
 </component>

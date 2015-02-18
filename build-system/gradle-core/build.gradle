@@ -26,7 +26,7 @@ dependencies {
     compile project(':base:lint')
     compile "net.sf.proguard:proguard-gradle:${project.ext.proguardVersion}"
 
-    testCompile 'junit:junit:3.8.1'
+    testCompile 'junit:junit:4.12'
     testCompile project(':base:project-test-lib')
 }
 
