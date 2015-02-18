@@ -1092,6 +1092,8 @@ public final class SdkConstants {
     public static final String DOT_TXT = ".txt"; //$NON-NLS-1$
     /** Dot-Extension for Android archive files */
     public static final String DOT_AAR = DOT + EXT_AAR; //$NON-NLS-1$
+    /** Dot-Extension for Java heap dumps. */
+    public static final String DOT_HPROF = DOT + EXT_HPROF; //$NON-NLS-1$
 
     /** Resource base name for java files and classes */
     public static final String FN_RESOURCE_BASE = "R"; //$NON-NLS-1$
