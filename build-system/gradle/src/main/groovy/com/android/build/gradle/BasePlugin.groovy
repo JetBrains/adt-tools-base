@@ -110,11 +110,6 @@ public abstract class BasePlugin {
 
     private boolean hasCreatedTasks = false
 
-    // set the creation date of this plugin. Remember than month is zero based (0 is January).
-    private static final GregorianCalendar inceptionDate = new GregorianCalendar(2015, 0, 26)
-    // retirement age for the plugin in days from the inceptionDate, -1 for eternal.
-    private static final int retirementAge = 40
-
     protected BasePlugin(Instantiator instantiator, ToolingModelBuilderRegistry registry) {
         this.instantiator = instantiator
         this.registry = registry
