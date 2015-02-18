@@ -67,7 +67,6 @@ import com.android.build.gradle.tasks.Dex
 import com.android.build.gradle.tasks.GenerateBuildConfig
 import com.android.build.gradle.tasks.GenerateResValues
 import com.android.build.gradle.tasks.GenerateSplitAbiRes
-import com.android.build.gradle.tasks.PreCompilationVerificationTask
 import com.android.build.gradle.tasks.JackTask
 import com.android.build.gradle.tasks.JillTask
 import com.android.build.gradle.tasks.Lint
@@ -78,6 +77,7 @@ import com.android.build.gradle.tasks.NdkCompile
 import com.android.build.gradle.tasks.PackageApplication
 import com.android.build.gradle.tasks.PackageSplitAbi
 import com.android.build.gradle.tasks.PackageSplitRes
+import com.android.build.gradle.tasks.PreCompilationVerificationTask
 import com.android.build.gradle.tasks.PreDex
 import com.android.build.gradle.tasks.ProcessAndroidResources
 import com.android.build.gradle.tasks.ProcessManifest
@@ -121,11 +121,13 @@ import org.gradle.api.plugins.BasePlugin
 import org.gradle.api.plugins.BasePluginConvention
 import org.gradle.api.plugins.JavaBasePlugin
 import org.gradle.api.plugins.JavaPlugin
+import org.gradle.api.reporting.ConfigurableReport
 import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.TaskContainer
 import org.gradle.api.tasks.compile.AbstractCompile
 import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.api.tasks.testing.Test
+import org.gradle.api.tasks.testing.TestTaskReports
 import org.gradle.language.jvm.tasks.ProcessResources
 import org.gradle.tooling.BuildException
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry
@@ -1504,6 +1506,13 @@ abstract class TaskManager {
                         testCompileTask.outputs.files,
                         androidBuilder.bootClasspath.findAll { it.name != "android.jar"},
                         createMockableJar.outputFile)
+            }
+
+            // Put the variant name in the report path, so that different testing tasks don't
+            // overwrite each other's reports.
+            TestTaskReports testTaskReports = runTestsTask.reports
+            for (ConfigurableReport report in [testTaskReports.junitXml, testTaskReports.html]) {
+                report.destination = new File(report.destination, testedVariantData.name)
             }
 
             topLevelTest.dependsOn runTestsTask

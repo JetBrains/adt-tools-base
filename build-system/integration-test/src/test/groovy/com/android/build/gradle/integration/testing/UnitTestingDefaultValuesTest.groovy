@@ -32,10 +32,10 @@ class UnitTestingDefaultValuesTest {
 
     @Test
     void testSimpleScenario() {
-        simpleProject.execute("test")
+        simpleProject.execute("testDebug")
 
         def results = new JUnitResults(
-                simpleProject.file("build/test-results/TEST-com.android.tests.UnitTest.xml"))
+                simpleProject.file("build/test-results/debug/TEST-com.android.tests.UnitTest.xml"))
 
         assertThat(results.allTestCases).containsExactly("defaultValues")
         assert results.outcome("defaultValues") == PASSED
