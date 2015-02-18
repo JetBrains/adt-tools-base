@@ -17,11 +17,13 @@
 package com.android.build.gradle.tasks
 
 import com.android.annotations.NonNull
+import com.android.build.gradle.internal.tasks.FileSupplierTask
 import com.android.builder.core.AndroidBuilder
 import com.android.sdklib.BuildToolInfo
 import com.android.sdklib.repository.FullRevision
 import com.google.common.base.Charsets
 import com.google.common.io.Files
+import org.gradle.api.Task
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
@@ -35,7 +37,7 @@ import org.gradle.api.tasks.compile.AbstractCompile
  */
 @ParallelizableTask
 public class JackTask extends AbstractCompile
-        implements MappingFileProviderTask, BinaryFileProviderTask {
+        implements FileSupplierTask, BinaryFileProviderTask {
 
     final static FullRevision JACK_MIN_REV = new FullRevision(21, 1, 0)
 
@@ -135,5 +137,16 @@ public class JackTask extends AbstractCompile
         return new BinaryFileProviderTask.Artifact(
                 BinaryFileProviderTask.BinaryArtifactType.JACK,
                 getJackFile())
+    }
+
+    // ----- FileSupplierTask ----
+    @Override
+    Task getTask() {
+        return this
+    }
+
+    @Override
+    File get() {
+        return getMappingFile()
     }
 }

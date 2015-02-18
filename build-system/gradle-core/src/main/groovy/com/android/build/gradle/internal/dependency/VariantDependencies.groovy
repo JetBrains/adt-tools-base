@@ -44,6 +44,11 @@ public class VariantDependencies implements DependencyContainer, ConfigurationPr
     @NonNull
     private final Configuration publishConfiguration
 
+    @Nullable
+    private final Configuration mappingConfiguration
+    @Nullable
+    private final Configuration classesConfiguration
+
     @NonNull
     private final List<LibraryDependencyImpl> libraries = []
     @NonNull
@@ -89,7 +94,7 @@ public class VariantDependencies implements DependencyContainer, ConfigurationPr
         apk.description = "## Internal use, do not manually configure ##"
         apk.setExtendsFrom(apkConfigs)
 
-        Configuration publish = null;
+        Configuration publish = null, mapping = null, classes = null;
         if (publishVariant) {
             publish = project.configurations.create(name)
             publish.description = "Published Configuration for Variant ${name}"
@@ -99,19 +104,32 @@ public class VariantDependencies implements DependencyContainer, ConfigurationPr
             if (isLibrary) {
                 publish.setExtendsFrom(apkConfigs)
             }
+
+            // create configuration for -mapping and -classes.
+            mapping = project.configurations.create("$name-mapping")
+            mapping.description = "Published mapping configuration for Variant $name"
+
+            classes = project.configurations.create("$name-classes")
+            classes.description = "Published classes configuration for Variant $name"
+            // because we need the transitive dependencies for the classes, extend the compile config.
+            classes.setExtendsFrom(compileConfigs)
         }
 
-        return new VariantDependencies(name, compile, apk, publish);
+        return new VariantDependencies(name, compile, apk, publish, mapping, classes);
     }
 
     private VariantDependencies(@NonNull  String name,
                                 @NonNull  Configuration compileConfiguration,
                                 @NonNull  Configuration packageConfiguration,
-                                @Nullable Configuration publishConfiguration) {
+                                @Nullable Configuration publishConfiguration,
+                                @Nullable Configuration mappingConfiguration,
+                                @Nullable Configuration classesConfiguration) {
         this.name = name
         this.compileConfiguration = compileConfiguration
         this.packageConfiguration = packageConfiguration
         this.publishConfiguration = publishConfiguration
+        this.mappingConfiguration = mappingConfiguration
+        this.classesConfiguration = classesConfiguration
     }
 
     public String getName() {
@@ -139,6 +157,16 @@ public class VariantDependencies implements DependencyContainer, ConfigurationPr
     @Nullable
     Configuration getPublishConfiguration() {
         return publishConfiguration
+    }
+
+    @Nullable
+    Configuration getMappingConfiguration() {
+        return mappingConfiguration
+    }
+
+    @Nullable
+    Configuration getClassesConfiguration() {
+        return classesConfiguration
     }
 
     void addLibraries(@NonNull List<LibraryDependencyImpl> list) {

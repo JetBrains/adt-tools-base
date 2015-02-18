@@ -317,6 +317,9 @@ public abstract class BasePlugin {
                 buildTypeContainer, productFlavorContainer, signingConfigContainer,
                 extraModelInfo, isLibrary())
 
+        // create the default mapping configuration.
+        project.configurations.create("default-mapping").description = "Configuration for default mapping artifacts."
+
         DependencyManager dependencyManager = new DependencyManager(project, extraModelInfo)
         taskManager = createTaskManager(
                 project,

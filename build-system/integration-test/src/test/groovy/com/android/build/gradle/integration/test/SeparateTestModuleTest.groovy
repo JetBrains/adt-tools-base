@@ -41,16 +41,21 @@ class SeparateTestModuleTest {
             .fromTestProject("separateTestModule")
             .create()
 
+    static Map<String, AndroidProject> models
+
     @BeforeClass
     static void setUp() {
+        models = project.executeAndReturnMultiModel("assemble")
     }
 
     @AfterClass
     static void cleanUp() {
+        project = null
+        models = null
     }
 
     @Test
-    void "check there is a dep on the test variant"() throws Exception {
-        project.evaluate()
+    void "check model"() throws Exception {
+        // check the content of the test model.
     }
 }

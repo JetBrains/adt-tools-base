@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 The Android Open Source Project
+ * Copyright (C) 2015 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,11 +26,11 @@ import org.gradle.api.Task;
 import java.io.File;
 
 /**
- * custom implementation of PublishArtifact for published APKs.
+ * custom implementation of PublishArtifact for published mapping files.
  */
-public class ApkPublishArtifact extends BasePublishArtifact {
+public class MappingPublishArtifact extends BasePublishArtifact {
 
-    public ApkPublishArtifact(
+    public MappingPublishArtifact(
             @NonNull String name,
             @Nullable String classifier,
             @NonNull FileSupplierTask outputFileSupplier) {
@@ -39,11 +39,11 @@ public class ApkPublishArtifact extends BasePublishArtifact {
 
     @Override
     public String getExtension() {
-        return "apk";
+        return "map";
     }
 
     @Override
     public String getType() {
-        return "apk";
+        return "map";
     }
 }

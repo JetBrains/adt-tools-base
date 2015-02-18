@@ -33,11 +33,13 @@ import com.android.build.gradle.internal.dependency.VariantDependencies
 import com.android.build.gradle.internal.dsl.AbiSplitOptions
 import com.android.build.gradle.internal.dsl.SigningConfig
 import com.android.build.gradle.internal.publishing.ApkPublishArtifact
+import com.android.build.gradle.internal.publishing.MappingPublishArtifact
 import com.android.build.gradle.internal.tasks.AndroidReportTask
 import com.android.build.gradle.internal.tasks.CheckManifest
 import com.android.build.gradle.internal.tasks.DependencyReportTask
 import com.android.build.gradle.internal.tasks.DeviceProviderInstrumentTestLibraryTask
 import com.android.build.gradle.internal.tasks.DeviceProviderInstrumentTestTask
+import com.android.build.gradle.internal.tasks.FileSupplierTask
 import com.android.build.gradle.internal.tasks.GenerateApkDataTask
 import com.android.build.gradle.internal.tasks.InstallVariantTask
 import com.android.build.gradle.internal.tasks.MockableAndroidJarTask
@@ -124,6 +126,7 @@ import org.gradle.api.plugins.JavaPlugin
 import org.gradle.api.reporting.ConfigurableReport
 import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.TaskContainer
+import org.gradle.api.tasks.bundling.Jar
 import org.gradle.api.tasks.compile.AbstractCompile
 import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.api.tasks.testing.Test
@@ -1199,6 +1202,20 @@ abstract class TaskManager {
             compileTask.options.bootClasspath =
                     androidBuilder.getBootClasspathAsStrings().join(File.pathSeparator)
         }
+
+        // Create jar task for uses by external modules.
+        Jar jar = project.tasks.create(
+                "package${variantData.variantConfiguration.fullName.capitalize()}Jar",
+                Jar);
+        variantData.classesJarTask = jar
+        jar.dependsOn compileTask
+
+        // add the class files (whether they are instrumented or not.
+        jar.from({ variantData.javaCompileTask.destinationDir })
+
+        jar.destinationDir = project.file(
+                "$project.buildDir/${FD_INTERMEDIATES}/classes-jar/${variantData.variantConfiguration.dirName}")
+        jar.archiveName = "classes.jar"
     }
 
     public void createGenerateMicroApkDataTask(
@@ -2531,49 +2548,47 @@ abstract class TaskManager {
             if (publishApk) {
                 // if this variant is the default publish config or we also should publish non
                 // defaults, proceed with declaring our artifacts.
-                if (getExtension().defaultPublishConfig.equals(outputName)
-                        || getExtension().publishNonDefault) {
+                if (getExtension().defaultPublishConfig.equals(outputName)) {
 
-                    String configurationName =
-                            getExtension().defaultPublishConfig.equals(outputName) ? "default"
-                                    : variantData.variantDependency.publishConfiguration.name
-
-                    for (Supplier<File> outputFileProvider : 
+                    for (FileSupplierTask outputFileProvider :
                             variantOutputData.getOutputFileSuppliers()) {
-                        project.artifacts.add(configurationName, new ApkPublishArtifact(
+                        project.artifacts.add("default", new ApkPublishArtifact(
                                 projectBaseName,
                                 null,
-                                outputFileProvider,
-                                appTask))
+                                outputFileProvider))
                     }
 
-//                    // TODO: next step is to create configurations before publishing.
-//                    if (variantData.getMappingFileProvider() != null) {
-//                        project.artifacts.add(configurationName + "-mapping-file",
-//                                new ApkPublishArtifact(projectBaseName,
-//                                        null,
-//                                        new Supplier<File>() {
-//
-//                                            @Override
-//                                            File get() {
-//                                                variantData.getMappingFileProvider().
-//                                                        getMappingFile();
-//                                            }
-//                                        },
-//                                        variantData.getMappingFileProvider()));
-//                    }
+                    if (variantData.getMappingFileProvider() != null) {
+                        project.artifacts.add("default-mapping",
+                                new MappingPublishArtifact(projectBaseName,
+                                        null,
+                                        variantData.getMappingFileProvider()));
+                    }
                 }
 
                 if (getExtension().publishNonDefault) {
-                    for (Supplier<File> outputFileProvider : 
+                    for (FileSupplierTask outputFileProvider :
                             variantOutputData.getOutputFileSuppliers()) {
                         project.artifacts.add(
                                 variantData.variantDependency.publishConfiguration.name,
                                 new ApkPublishArtifact(
                                     projectBaseName,
                                     null,
-                                    outputFileProvider,
-                                    appTask))
+                                    outputFileProvider))
+                    }
+
+                    if (variantData.getMappingFileProvider() != null) {
+                        project.artifacts.add(
+                                variantData.variantDependency.mappingConfiguration.name,
+                                new MappingPublishArtifact(projectBaseName,
+                                        null,
+                                        variantData.getMappingFileProvider()));
+                    }
+
+                    if (variantData.classesJarTask != null) {
+                        project.artifacts.add(
+                                variantData.variantDependency.classesConfiguration.name,
+                                variantData.classesJarTask)
                     }
                 }
             }
