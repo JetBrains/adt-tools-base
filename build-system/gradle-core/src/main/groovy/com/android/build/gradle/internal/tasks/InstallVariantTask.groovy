@@ -98,16 +98,23 @@ public class InstallVariantTask extends BaseTask {
                         variantName)) {
 
                     // build the list of APKs.
-                    List<String> apksPath = new ArrayList<>();
+                    List<String> splitApksPath = new ArrayList<>();
+                    OutputFile mainApk;
                     for (VariantOutput output : variantData.outputs) {
                         for (OutputFile outputFile : output.getOutputs()) {
-                            apksPath.add(outputFile.outputFile.getAbsolutePath());
+                            if (outputFile.getOutputFile().getAbsolutePath() !=
+                                output.getMainOutputFile().getOutputFile().getAbsolutePath()) {
+
+                                splitApksPath.add(outputFile.outputFile.getAbsolutePath())
+                            }
                         }
+                        mainApk = output.getMainOutputFile()
                     }
 
                     List<File> apkFiles = new ArrayList<>();
                     // starting in API 22, we can delegate to split-select the APK selection.
-                    if (apksPath.size() > 1 && device.getApiLevel() >= 22) {
+                    if (splitApksPath.size() > 0 && mainApk != null && device.getApiLevel() >= 22) {
+
                         DeviceConfig deviceConfig = device.getDeviceConfig();
 
                         Set<String> resultApksPath = new HashSet<String>();
@@ -116,7 +123,13 @@ public class InstallVariantTask extends BaseTask {
                             processBuilder.setExecutable(getSplitSelectExe());
 
                             processBuilder.addArgs("--target", deviceConfig.getConfigFor(abi));
-                            for (String apkPath : apksPath) {
+
+                            // specify the main APK parameter
+                            processBuilder.addArgs("--base",
+                                    mainApk.getOutputFile().getAbsolutePath())
+
+                            // and the splits...
+                            for (String apkPath : splitApksPath) {
                                 processBuilder.addArgs("--split", apkPath);
                             }
                             SplitSelectOutputHandler outputHandler =
@@ -130,9 +143,12 @@ public class InstallVariantTask extends BaseTask {
                                 resultApksPath.add(apkPath);
                             }
                         }
+                        // add all split APKs returned by the split-select tool
                         for (String resultApkPath : resultApksPath) {
                             apkFiles.add(new File(resultApkPath));
                         }
+                        // and add back the main APK.
+                        apkFiles.add(mainApk.getOutputFile())
                     } else {
                         // now look for a matching output file
                         List<OutputFile> outputFiles = SplitOutputMatcher.computeBestOutput(
