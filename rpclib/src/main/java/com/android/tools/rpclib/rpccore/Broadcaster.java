@@ -25,14 +25,16 @@ import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.concurrent.ExecutorService;
 
 public class Broadcaster {
-  private final Multiplexer multiplexer;
-  private final int mtu;
+  private final Multiplexer mMultiplexer;
+  private final int mMtu;
 
-  public Broadcaster(@NotNull InputStream in, @NotNull OutputStream out, int mtu) {
-    multiplexer = new Multiplexer(in, out, mtu, null);
-    this.mtu = mtu;
+  public Broadcaster(@NotNull InputStream in, @NotNull OutputStream out, int mtu,
+                     @NotNull ExecutorService executorService) {
+    mMultiplexer = new Multiplexer(in, out, mtu, executorService, null);
+    mMtu = mtu;
   }
 
   private static void writeHeader(@NotNull Encoder encoder) throws IOException {
@@ -43,12 +45,12 @@ public class Broadcaster {
   }
 
   public Result Send(@NotNull Call call) throws IOException, RpcException {
-    Channel channel = multiplexer.openChannel();
+    Channel channel = mMultiplexer.openChannel();
 
     try {
-      BufferedOutputStream out = new BufferedOutputStream(channel.out, mtu);
+      BufferedOutputStream out = new BufferedOutputStream(channel.getOutputStream(), mMtu);
       Encoder e = new Encoder(out);
-      Decoder d = new Decoder(channel.in);
+      Decoder d = new Decoder(channel.getInputStream());
 
       // Write the RPC header
       writeHeader(e);
@@ -73,5 +75,10 @@ public class Broadcaster {
       // Close the channel
       channel.close();
     }
+  }
+
+  static {
+    // Make sure the RpcError type is properly registered.
+    assert ObjectFactory.RpcErrorID != null;
   }
 }

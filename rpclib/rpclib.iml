@@ -9,5 +9,6 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="annotations" />
     <orderEntry type="module" module-name="util" />
+    <orderEntry type="module" module-name="android-annotations" />
   </component>
 </module>

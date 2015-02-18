@@ -27,17 +27,17 @@ import java.io.IOException;
  * resource data from the server.
  */
 public class ResourceId {
-  final public String value;
+  public final String mValue;
 
   public ResourceId(String value) {
-    this.value = value;
+    mValue = value;
   }
 
   public ResourceId(Decoder d) throws IOException {
-    this.value = d.string();
+    mValue = d.string();
   }
 
   public void encode(Encoder e) throws IOException {
-    e.string(this.value);
+    e.string(mValue);
   }
 }

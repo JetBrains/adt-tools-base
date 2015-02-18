@@ -16,37 +16,44 @@
 package com.android.tools.rpclib.multiplex;
 
 import com.android.tools.rpclib.binary.Encoder;
+import gnu.trove.TLongObjectHashMap;
+import gnu.trove.TLongObjectIterator;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.Queue;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 
 class Sender {
   private static final int MAX_PENDING_SEND_COUNT = 1024;
   private static final SendItem NOP_ITEM = new SendNop();
-  private final int mtu;
-  private final LinkedBlockingQueue<SendItem> pending;
-  private Worker worker;
+  private final int mMtu;
+  @NotNull private ExecutorService mExecutorService;
+  @NotNull private final LinkedBlockingQueue<SendItem> mPendingItems;
+  private Worker mWorker;
 
-  Sender(int mtu) {
-    this.mtu = mtu;
-    pending = new LinkedBlockingQueue(MAX_PENDING_SEND_COUNT);
+  Sender(int mtu, @NotNull ExecutorService executorService) {
+    mMtu = mtu;
+    mExecutorService = executorService;
+    mPendingItems = new LinkedBlockingQueue<SendItem>(MAX_PENDING_SEND_COUNT);
   }
 
   void begin(Encoder out) {
-    worker = new Worker(out);
-    worker.start();
+    mWorker = new Worker(out);
+    mExecutorService.execute(mWorker);
   }
 
   void end() {
     try {
-      synchronized (worker) {
-        worker.running = false;
-        pending.add(NOP_ITEM); // Unblock the sender
-        while (!worker.stopped) {
-          worker.wait();
+      synchronized (mWorker) {
+        mWorker.setRunning(false);
+        mPendingItems.add(NOP_ITEM); // Unblock the sender
+        while (!mWorker.isStopped()) {
+          mWorker.wait();
         }
-        worker = null;
+        mWorker = null;
       }
     }
     catch (InterruptedException e) {
@@ -66,20 +73,20 @@ class Sender {
   }
 
   private void send(SendItem item) throws IOException {
-    if (worker == null) {
+    if (mWorker == null) {
       throw new RuntimeException("Attempting to send item when sender is not running");
     }
-    pending.add(item);
+    mPendingItems.add(item);
     item.sync();
   }
 
   private static abstract class SendItem {
-    final long channel;
-    private boolean done;
-    private IOException exception;
+    final long mChannel;
+    private boolean mDone;
+    private IOException mException;
 
     SendItem(long channel) {
-      this.channel = channel;
+      mChannel = channel;
     }
 
     /**
@@ -93,14 +100,14 @@ class Sender {
       }
       catch (IOException exception) {
         synchronized (this) {
-          this.exception = exception;
+          mException = exception;
         }
         return true;
       }
       finally {
         synchronized (this) {
-          this.done = true;
-          this.notifyAll();
+          mDone = true;
+          notifyAll();
         }
       }
     }
@@ -111,21 +118,21 @@ class Sender {
      */
     final void sync() throws IOException {
       synchronized (this) {
-        while (!done) {
+        while (!mDone) {
           try {
             this.wait();
           }
           catch (InterruptedException e) {
           }
         }
-        if (exception != null) {
-          throw exception;
+        if (mException != null) {
+          throw mException;
         }
       }
     }
 
 
-    // Returns true if the item was fully sent, or false if there is more to send.
+    /** @return true if the item was fully sent, or false if there is more to send. */
     protected abstract boolean encode(Encoder e) throws IOException;
   }
 
@@ -137,7 +144,7 @@ class Sender {
     @Override
     protected boolean encode(Encoder e) throws IOException {
       e.uint8(Message.OPEN_CHANNEL);
-      e.uint32(channel);
+      e.uint32(mChannel);
       return true;
     }
   }
@@ -150,12 +157,12 @@ class Sender {
     @Override
     protected boolean encode(Encoder e) throws IOException {
       e.uint8(Message.CLOSE_CHANNEL);
-      e.uint32(channel);
+      e.uint32(mChannel);
       return true;
     }
   }
 
-  // SendNop encodes nothing, and is simply used to unblock the sender in {@link #end}.
+  /** SendNop encodes nothing, and is simply used to unblock the sender in {@link #end}. */
   private static class SendNop extends SendItem {
     SendNop() {
       super(0);
@@ -168,42 +175,50 @@ class Sender {
   }
 
   private final class Worker extends Thread {
-    private final Encoder encoder;
-    boolean running;
-    boolean stopped;
+    private final Encoder mEncoder;
+    private boolean mIsRunning;
+    private boolean mIsStopped;
 
     Worker(Encoder encoder) {
-      super("Multiplex sender");
-      this.encoder = encoder;
-      this.running = true;
+      super("rpclib.multiplex Sender");
+      mEncoder = encoder;
+      mIsRunning = true;
+    }
+
+    public boolean isStopped() {
+      return mIsStopped;
+    }
+
+    public void setRunning(boolean running) {
+      mIsRunning = running;
     }
 
     @Override
     public void run() {
       SendMap map = new SendMap();
       try {
-        while (running) {
+        while (mIsRunning) {
           SendItem item;
           if (map.size() == 0) {
             // If there's nothing being worked on, block until we have something.
-            item = pending.take();
+            item = mPendingItems.take();
           }
           else {
             // If we're busy, grab more work only if there's something there.
-            item = pending.poll();
+            item = mPendingItems.poll();
           }
           if (item != null) {
             map.add(item);
-            map.flush(encoder);
+            map.flush(mEncoder);
           }
         }
         // Drain map
         while (map.size() > 0) {
-          map.flush(encoder);
+          map.flush(mEncoder);
         }
         // Signal that this thread is done
         synchronized (this) {
-          stopped = true;
+          mIsStopped = true;
           notifyAll();
         }
       }
@@ -214,52 +229,53 @@ class Sender {
   }
 
   private class SendData extends SendItem {
-    final byte data[];
-    int off;
-    int len;
+    final byte[] mData;
+    int mOffset;
+    int mLength;
 
-    SendData(long channel, byte data[], int off, int len) {
+    SendData(long channel, byte[] data, int off, int len) {
       super(channel);
-      this.data = data;
-      this.off = off;
-      this.len = len;
+      mData = data;
+      mOffset = off;
+      mLength = len;
     }
 
     @Override
     protected boolean encode(Encoder e) throws IOException {
       e.uint8(Message.DATA);
-      e.uint32(channel);
-      int c = Math.min(len, mtu);
+      e.uint32(mChannel);
+      int c = Math.min(mLength, mMtu);
       e.uint32(c);
-      e.stream().write(data, off, c);
-      off += c;
-      len -= c;
-      return len == 0;
+      e.stream().write(mData, mOffset, c);
+      mOffset += c;
+      mLength -= c;
+      return mLength == 0;
     }
   }
 
   private class SendMap {
-    private final Map<Long, Queue<SendItem>> map = new HashMap<Long, Queue<SendItem>>();
+    @NotNull private final TLongObjectHashMap<Queue<SendItem>> mQueues =
+      new TLongObjectHashMap<Queue<SendItem>>();
 
     public int size() {
-      return map.size();
+      return mQueues.size();
     }
 
     public void add(SendItem item) {
-      long channel = item.channel;
-      Queue<SendItem> queue = map.get(channel);
+      long channel = item.mChannel;
+      Queue<SendItem> queue = mQueues.get(channel);
       if (queue == null) {
         queue = new ArrayDeque<SendItem>();
-        map.put(channel, queue);
+        mQueues.put(channel, queue);
       }
       queue.add(item);
     }
 
     public void flush(Encoder e) {
-      Iterator<Map.Entry<Long, Queue<SendItem>>> it = map.entrySet().iterator();
-      while (it.hasNext()) {
-        Map.Entry<Long, Queue<SendItem>> entry = it.next();
-        Queue<SendItem> queue = entry.getValue();
+      TLongObjectIterator<Queue<SendItem>> it = mQueues.iterator();
+      for (int i = mQueues.size(); i-- > 0; ) {
+        it.advance();
+        Queue<SendItem> queue = it.value();
         SendItem item = queue.peek();
         if (item.send(e)) {
           // Item has been fully encoded.

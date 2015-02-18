@@ -15,91 +15,90 @@
  */
 package com.android.tools.rpclib.binary;
 
+import gnu.trove.TIntObjectHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * A decoder of various RPC primitive types.
  */
 public class Decoder {
-  @NotNull private final Map<Integer, BinaryObject> decoded;
-  @NotNull private final InputStream in;
-  @NotNull private final byte[] buf;
+  @NotNull private final TIntObjectHashMap<BinaryObject> mDecodedMap;
+  @NotNull private final InputStream mInputStream;
+  @NotNull private final byte[] mBuffer;
 
   public Decoder(@NotNull InputStream in) {
-    this.decoded = new HashMap<Integer, BinaryObject>();
-    this.in = in;
-    this.buf = new byte[8];
+    mDecodedMap = new TIntObjectHashMap<BinaryObject>();
+    mInputStream = in;
+    mBuffer = new byte[8];
   }
 
   public void read(byte[] buf, int count) throws IOException {
     int off = 0;
     while (off < count) {
-      off += in.read(buf, off, count - off);
+      off += mInputStream.read(buf, off, count - off);
     }
   }
 
   private void read(int count) throws IOException {
-    read(this.buf, count);
+    read(mBuffer, count);
   }
 
   public boolean bool() throws IOException {
     read(1);
-    return buf[0] != 0;
+    return mBuffer[0] != 0;
   }
 
   public byte int8() throws IOException {
     read(1);
-    return buf[0];
+    return mBuffer[0];
   }
 
-  public short uint8() throws IOException {
-    return (short)(int8() & 0xff);
+  public byte uint8() throws IOException {
+    return int8();
   }
 
   public short int16() throws IOException {
     read(2);
     int i = 0;
-    i |= (buf[0] & 0xff) << 0;
-    i |= (buf[1] & 0xff) << 8;
+    i |= (mBuffer[0] & 0xff);
+    i |= (mBuffer[1] & 0xff) << 8;
     return (short)i;
   }
 
-  public int uint16() throws IOException {
-    return int16() & 0xffff;
+  public short uint16() throws IOException {
+    return int16();
   }
 
   public int int32() throws IOException {
     read(4);
     int i = 0;
-    i |= (buf[0] & 0xff) << 0;
-    i |= (buf[1] & 0xff) << 8;
-    i |= (buf[2] & 0xff) << 16;
-    i |= (buf[3] & 0xff) << 24;
+    i |= (mBuffer[0] & 0xff);
+    i |= (mBuffer[1] & 0xff) << 8;
+    i |= (mBuffer[2] & 0xff) << 16;
+    i |= (mBuffer[3] & 0xff) << 24;
     return i;
   }
 
-  public long uint32() throws IOException {
-    return int32() & 0xffffffffL;
+  public int uint32() throws IOException {
+    return int32();
   }
 
   public long int64() throws IOException {
     read(8);
     long i = 0;
-    i |= (buf[0] & 0xffL) << 0;
-    i |= (buf[1] & 0xffL) << 8;
-    i |= (buf[2] & 0xffL) << 16;
-    i |= (buf[3] & 0xffL) << 24;
-    i |= (buf[4] & 0xffL) << 32;
-    i |= (buf[5] & 0xffL) << 40;
-    i |= (buf[6] & 0xffL) << 48;
-    i |= (buf[7] & 0xffL) << 56;
+    i |= (mBuffer[0] & 0xffL);
+    i |= (mBuffer[1] & 0xffL) << 8;
+    i |= (mBuffer[2] & 0xffL) << 16;
+    i |= (mBuffer[3] & 0xffL) << 24;
+    i |= (mBuffer[4] & 0xffL) << 32;
+    i |= (mBuffer[5] & 0xffL) << 40;
+    i |= (mBuffer[6] & 0xffL) << 48;
+    i |= (mBuffer[7] & 0xffL) << 56;
     return i;
   }
 
@@ -137,7 +136,7 @@ public class Decoder {
       return null;
     }
 
-    BinaryObject obj = decoded.get(key);
+    BinaryObject obj = mDecodedMap.get(key);
     if (obj != null) {
       return obj;
     }
@@ -145,16 +144,16 @@ public class Decoder {
     ObjectTypeID type = new ObjectTypeID(this);
     BinaryObjectCreator creator = ObjectTypeID.lookup(type);
     if (creator == null) {
-      throw new RuntimeException("Unknown type id encountered");
+      throw new RuntimeException("Unknown type id encountered: " + type);
     }
     obj = creator.create();
     obj.decode(this);
 
-    decoded.put(key, obj);
+    mDecodedMap.put(key, obj);
     return obj;
   }
 
   public InputStream stream() {
-    return in;
+    return mInputStream;
   }
 }

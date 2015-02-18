@@ -16,9 +16,14 @@
 package com.android.tools.rpclib.rpccore;
 
 public class RpcException extends Exception {
-  public final RpcError error;
+  public final RpcError mError;
 
   public RpcException(RpcError error) {
-    this.error = error;
+    mError = error;
+  }
+
+  @Override
+  public String getMessage() {
+    return mError.mMessage;
   }
 }
