@@ -34,12 +34,12 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.zip.DataFormatException;
 
@@ -48,7 +48,9 @@ public class NinePatchAaptProcessorTest {
 
     private static Map<File, File> mSourceAndCrunchedFiles;
 
-    private static AtomicLong classStartTime = new AtomicLong();
+    private static AtomicLong sClassStartTime = new AtomicLong();
+    private static final AtomicInteger sCruncherKey = new AtomicInteger();
+    private static final PngCruncher sCruncher = getCruncher();
 
     private final File mFile;
 
@@ -59,19 +61,21 @@ public class NinePatchAaptProcessorTest {
     @BeforeClass
     public static void setup() {
         mSourceAndCrunchedFiles = Maps.newHashMap();
+        sCruncherKey.set(sCruncher.start());
     }
 
     @Test
     public void run() throws PngException, IOException {
-        File outFile = NinePatchAaptProcessorTestUtils.crunchFile(mFile, getCruncher());
+        File outFile = NinePatchAaptProcessorTestUtils.crunchFile(
+                sCruncherKey.get(), mFile, sCruncher);
         mSourceAndCrunchedFiles.put(mFile, outFile);
     }
 
 
     @AfterClass
     public static void tearDownAndCheck() throws IOException, DataFormatException {
-        NinePatchAaptProcessorTestUtils
-                .tearDownAndCheck(mSourceAndCrunchedFiles, getCruncher(), classStartTime);
+        NinePatchAaptProcessorTestUtils.tearDownAndCheck(
+                sCruncherKey.get(), mSourceAndCrunchedFiles, sCruncher, sClassStartTime);
         mSourceAndCrunchedFiles = null;
     }
 
@@ -84,10 +88,10 @@ public class NinePatchAaptProcessorTest {
         return new AaptCruncher(aapt.getAbsolutePath(), processExecutor, processOutputHandler);
     }
 
-    @Parameters(name = "{1}")
+    @Parameterized.Parameters(name = "{1}")
     public static Collection<Object[]> getNinePatches() {
         Collection<Object[]> params = NinePatchAaptProcessorTestUtils.getNinePatches();
-        classStartTime.set(System.currentTimeMillis());
+        sClassStartTime.set(System.currentTimeMillis());
         return params;
     }
 }

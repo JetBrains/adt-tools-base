@@ -48,8 +48,8 @@ public class BooleanLatch {
     public void await() throws InterruptedException {
         sync.acquireSharedInterruptibly(1);
     }
-    public void await(long nanosTimeout) throws InterruptedException {
-        sync.tryAcquireSharedNanos(1, nanosTimeout);
+    public boolean await(long nanosTimeout) throws InterruptedException {
+        return sync.tryAcquireSharedNanos(1, nanosTimeout);
     }
 
     @Override

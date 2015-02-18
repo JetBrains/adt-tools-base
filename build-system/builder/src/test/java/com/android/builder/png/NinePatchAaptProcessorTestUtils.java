@@ -74,12 +74,12 @@ public class NinePatchAaptProcessorTestUtils {
     }
 
 
-    public static void tearDownAndCheck(Map<File, File> sourceAndCrunchedFiles,
+    public static void tearDownAndCheck(int cruncherKey, Map<File, File> sourceAndCrunchedFiles,
             PngCruncher cruncher, AtomicLong classStartTime)
             throws IOException, DataFormatException {
         long startTime = System.currentTimeMillis();
         try {
-            cruncher.end();
+            cruncher.end(cruncherKey);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -126,12 +126,12 @@ public class NinePatchAaptProcessorTestUtils {
 
 
     @NonNull
-    static File crunchFile(@NonNull File file, PngCruncher aaptCruncher)
+    static File crunchFile(int crunchKey, @NonNull File file, PngCruncher aaptCruncher)
             throws PngException, IOException {
         File outFile = File.createTempFile("pngWriterTest", ".png");
         outFile.deleteOnExit();
         try {
-            aaptCruncher.crunchPng(file, outFile);
+            aaptCruncher.crunchPng(crunchKey, file, outFile);
         } catch (PngException e) {
             e.printStackTrace();
             throw e;
