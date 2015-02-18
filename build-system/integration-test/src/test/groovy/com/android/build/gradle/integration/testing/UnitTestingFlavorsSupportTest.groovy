@@ -40,7 +40,7 @@ class UnitTestingFlavorsSupportTest {
         flavorsProject.execute("clean", "testBuildsPassesDebug")
 
         def results = new JUnitResults(
-                flavorsProject.file("build/test-results/TEST-com.android.tests.PassingTest.xml"))
+                flavorsProject.file("build/test-results/buildsPassesDebug/TEST-com.android.tests.PassingTest.xml"))
 
         assert results.outcome("referenceFlavorSpecificCode") == PASSED
 
@@ -65,7 +65,7 @@ class UnitTestingFlavorsSupportTest {
             assert Throwables.getRootCause(e).message.startsWith("There were failing tests.")
 
             def results = new JUnitResults(
-                    flavorsProject.file("build/test-results/TEST-com.android.tests.FailingTest.xml"))
+                    flavorsProject.file("build/test-results/buildsFailsDebug/TEST-com.android.tests.FailingTest.xml"))
             assert results.outcome("failingTest") == FAILED
         }
     }
