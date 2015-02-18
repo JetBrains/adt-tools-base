@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-def gradleVersion = System.env.CUSTOM_GRADLE ?: '1.1.0'
+def gradleVersion = System.env.CUSTOM_GRADLE ?: '1.2.0-alpha1'
 
 repositories {
     if (System.env.CUSTOM_REPO != null) {
