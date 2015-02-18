@@ -41,8 +41,6 @@ import com.android.build.gradle.internal.process.GradleJavaProcessExecutor
 import com.android.build.gradle.internal.process.GradleProcessExecutor
 import com.android.build.gradle.internal.tasks.DependencyReportTask
 import com.android.build.gradle.internal.tasks.SigningReportTask
-import com.android.build.gradle.internal.variant.BaseVariantData
-import com.android.build.gradle.internal.variant.TestVariantData
 import com.android.build.gradle.internal.variant.VariantFactory
 import com.android.build.gradle.ndk.NdkExtension
 import com.android.build.gradle.tasks.JillTask
@@ -55,7 +53,6 @@ import com.android.builder.sdk.TargetInfo
 import com.android.ide.common.internal.ExecutorSingleton
 import com.android.ide.common.process.LoggedProcessOutputHandler
 import com.android.utils.ILogger
-import com.google.common.collect.Lists
 import groovy.transform.CompileStatic
 import org.gradle.api.DefaultTask
 import org.gradle.api.NamedDomainObjectContainer
@@ -77,19 +74,18 @@ import org.gradle.language.base.FunctionalSourceSet
 import org.gradle.language.base.LanguageSourceSet
 import org.gradle.language.base.internal.SourceTransformTaskConfig
 import org.gradle.language.base.internal.registry.LanguageTransform
-import org.gradle.model.Finalize
 import org.gradle.model.Model
 import org.gradle.model.Mutate
 import org.gradle.model.Path
 import org.gradle.model.RuleSource
+import org.gradle.model.collection.CollectionBuilder
 import org.gradle.model.internal.core.ModelCreators
 import org.gradle.model.internal.core.ModelPath
 import org.gradle.model.internal.core.ModelReference
 import org.gradle.model.internal.registry.ModelRegistry
 import org.gradle.platform.base.BinaryContainer
 import org.gradle.platform.base.BinarySpec
-import org.gradle.platform.base.BinaryType
-import org.gradle.platform.base.BinaryTypeBuilder
+import org.gradle.platform.base.BinaryTasks
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry
 
 import javax.inject.Inject
@@ -142,7 +138,9 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
                 ModelPath.ROOT)
     }
 
+    @SuppressWarnings("GrMethodMayBeStatic")
     static class Rules extends RuleSource {
+
         @Mutate
         void configureAndroidModel(
                 AndroidModel androidModel,
@@ -230,7 +228,7 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
 
             Class extensionClass = isApplication ? AppExtension : LibraryExtension
 
-            BaseExtension extension = (BaseExtension)instantiator.newInstance(extensionClass,
+            BaseExtension extension = (BaseExtension) instantiator.newInstance(extensionClass,
                     (ProjectInternal) project, instantiator, androidBuilder,
                     sdkHandler, buildTypeContainer, productFlavorContainer, signingConfigContainer,
                     extraModelInfo, !isApplication)
@@ -239,7 +237,7 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
         }
 
         @Mutate
-        void addDefaulAndroidSourceSet(AndroidComponentModelSourceSet sources) {
+        void addDefaultAndroidSourceSet(AndroidComponentModelSourceSet sources) {
             sources.addDefaultSourceSet("resources", AndroidLanguageSourceSet.class);
             sources.addDefaultSourceSet("java", AndroidLanguageSourceSet.class);
             sources.addDefaultSourceSet("manifest", AndroidLanguageSourceSet.class);
@@ -263,8 +261,8 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
         NamedDomainObjectContainer<SigningConfig> signingConfig(ServiceRegistry serviceRegistry,
                 Project project) {
             Instantiator instantiator = serviceRegistry.get(Instantiator.class);
-            def signingConfigContainer = project.container(SigningConfig,
-                new SigningConfigFactory(instantiator))
+            def signingConfigContainer =
+                    project.container(SigningConfig, new SigningConfigFactory(instantiator))
             signingConfigContainer.create(DEBUG)
             signingConfigContainer.whenObjectRemoved {
                 throw new UnsupportedOperationException("Removing signingConfigs is not supported.")
@@ -332,39 +330,40 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
             spec.variantManager = variantManager
         }
 
-        @BinaryType
-        void defineBinaryType(BinaryTypeBuilder<AndroidTestBinary> builder) {
-            builder.defaultImplementation(DefaultAndroidTestBinary)
-        }
-
-        // Must run after AndroidBinaries are created.
-        @Finalize
-        void createTestBinary(BinaryContainer binaries, AndroidComponentSpec spec) {
-            List<AndroidTestBinary> testBinaries = Lists.newArrayList();
-            spec.binaries.each { binarySpec ->
-                def binary = binarySpec as AndroidBinary
-                if (binary.buildType.name.equals(DEBUG)) {
-                    DefaultAndroidTestBinary testBinary =
-                            (DefaultAndroidTestBinary) binaries.create(
-                                    binary.name + "Test", AndroidTestBinary);
-                    testBinary.testedBinary = binary
-                    testBinaries.add(testBinary)
-                }
-            }
-            spec.binaries.addAll(testBinaries)
+        // TODO: Need a way to hide the variant manager from user.
+        @Model
+        VariantManager variantManager(AndroidComponentSpec spec) {
+            return (spec as DefaultAndroidComponentSpec).variantManager
         }
 
         @Mutate
+        void createVariants(
+                VariantManager variantManager,
+                BinaryContainer binaries) {
+
+            binaries.withType(AndroidBinary) {
+                DefaultAndroidBinary binary = it as DefaultAndroidBinary
+
+                // Create tasks for each binaries.
+                binary.variantData =
+                        variantManager.createVariantData(binary.buildType, binary.productFlavors)
+                variantManager.getVariantDataList().add(binary.variantData);
+            }
+        }
+
+        // TODO: The dependencies on VariantManager ensure this rule is run before
+        // createVariantTasks, but breaks the assumption by Gradle as it is actually modifying the
+        // the TaskContainer.  This must be fixed when the tasks for variants is changed to depend
+        // on the name of the task instead of the task itself.
+        @Mutate
         void createAndroidTasks(
-                TaskContainer tasks,
-                BinaryContainer binaries,
+                VariantManager variantManager,
                 AndroidComponentSpec androidSpec,
                 TaskManager taskManager,
                 SdkHandler sdkHandler,
                 Project project,
                 AndroidComponentModelSourceSet androidSources) {
             DefaultAndroidComponentSpec spec = (DefaultAndroidComponentSpec) androidSpec
-            VariantManager variantManager = spec.variantManager
 
             applyProjectSourceSet(spec, androidSources, spec.extension)
 
@@ -382,49 +381,55 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
 
             taskManager.createAssembleAndroidTestTask()
 
-            // Create tasks for each binaries.
-            binaries.withType(AndroidBinary) { DefaultAndroidBinary binary ->
-                BaseVariantData variantData = variantManager.createVariantData(
-                        binary.buildType,
-                        binary.productFlavors)
-                binary.variantData = variantData
-                variantManager.getVariantDataList().add(variantData)
-                variantManager.createTasksForVariantData(tasks, variantData)
-            }
+            // TODO: determine how to provide functionalities of variant API objects.
+        }
 
-            // Create test tasks.
-            binaries.withType(AndroidTestBinary) { binarySpec ->
-                def binary = binarySpec as DefaultAndroidTestBinary
-                TestVariantData testVariantData =
-                        variantManager.createTestVariantData(
-                                (binary.testedBinary as DefaultAndroidBinary).variantData,
-                                ANDROID_TEST)
-                variantManager.getVariantDataList().add(testVariantData);
-                variantManager.createTasksForVariantData(tasks, testVariantData)
-            }
+        @BinaryTasks
+        void createVariantTasks(
+                CollectionBuilder<Task> tasks,
+                AndroidBinary androidBinary,
+                VariantManager variantManager,
+                AndroidComponentSpec androidSpec) {
+            DefaultAndroidBinary binary = androidBinary as DefaultAndroidBinary
+            variantManager.createTasksForVariantData(
+                    new TaskCollectionBuilderAdaptor(tasks),
+                    binary.variantData)
+        }
 
+        /**
+         * Create tasks that must be created after other tasks for variants are created.
+         */
+        @Mutate
+        void createRemainingTasks(
+                TaskContainer tasks,
+                @Path("tasks.assemble") Task assembleTask,
+                TaskManager taskManager,
+                VariantManager variantManager) {
             // create the lint tasks.
             taskManager.createLintTasks(variantManager.variantDataList);
 
             // create the test tasks.
-            taskManager.createConnectedCheckTasks(
+            taskManager.createConnectedCheckTasks (
                     variantManager.variantDataList,
                     !variantManager.productFlavors.isEmpty() /*hasFlavors*/,
-                    false /*isLibrary*/);
+                    false /*isLibrary*/ );
+        }
 
-            // Create the variant API objects after the tasks have been created!
-            variantManager.createApiObjects();
+        @Mutate
+        void createReportTasks(
+                CollectionBuilder<Task> tasks,
+                VariantManager variantManager) {
+            tasks.create("androidDependencies", DependencyReportTask) { DependencyReportTask dependencyReportTask ->
+                dependencyReportTask.setDescription("Displays the Android dependencies of the project")
+                dependencyReportTask.setVariants(variantManager.variantDataList)
+                dependencyReportTask.setGroup("Android")
+            }
 
-            // Create report tasks.
-            def dependencyReportTask = tasks.create("androidDependencies", DependencyReportTask)
-            dependencyReportTask.setDescription("Displays the Android dependencies of the project")
-            dependencyReportTask.setVariants(variantManager.variantDataList)
-            dependencyReportTask.setGroup("Android")
-
-            def signingReportTask = tasks.create("signingReport", SigningReportTask)
-            signingReportTask.setDescription("Displays the signing info for each variant")
-            signingReportTask.setVariants(variantManager.variantDataList)
-            signingReportTask.setGroup("Android")
+            tasks.create("signingReport", SigningReportTask) { SigningReportTask signingReportTask ->
+                signingReportTask.setDescription("Displays the signing info for each variant")
+                signingReportTask.setVariants(variantManager.variantDataList)
+                signingReportTask.setGroup("Android")
+            }
         }
 
 
