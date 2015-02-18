@@ -25,47 +25,35 @@ import com.android.builder.tasks.WorkQueue;
 import com.android.utils.ILogger;
 import com.google.gson.Gson;
 
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Records all the {@link ExecutionRecord} for a process, in order it was received and sends then
  * synchronously to a {@link JsonRecordWriter}.
  */
-public class ProcessRecorder {
+class ProcessRecorder {
 
     @NonNull
     static ProcessRecorder get() {
-        return ProcessRecorderFactory.INSTANCE.get();
+        return ProcessRecorderFactory.sINSTANCE.get();
     }
 
+    /**
+     * Abstraction for a {@link ExecutionRecord} writer.
+     */
     public interface ExecutionRecordWriter {
-        void write(@NonNull ExecutionRecord executionRecord);
+
+        void write(@NonNull ExecutionRecord executionRecord) throws IOException;
+
+        void close() throws IOException;
     }
 
-    static class JsonRecordWriter implements ExecutionRecordWriter {
 
-        @NonNull
-        private final Gson gson;
-        @NonNull
-        private final Writer writer;
-
-        JsonRecordWriter(@NonNull Writer writer) {
-            this.gson = new Gson();
-            this.writer = writer;
-        }
-
-        @Override
-        public void write(@NonNull ExecutionRecord executionRecord) {
-            String json = gson.toJson(executionRecord);
-            try {
-                writer.append(json);
-                writer.append("\n");
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-    }
 
     private class WorkQueueContext implements QueueThreadContext<ExecutionRecordWriter> {
         @Override
@@ -83,6 +71,11 @@ public class ProcessRecorder {
 
         @Override
         public void shutdown() {
+            try {
+                singletonJobContext.getPayload().close();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
@@ -94,7 +87,7 @@ public class ProcessRecorder {
     ProcessRecorder(@NonNull ExecutionRecordWriter outWriter, @NonNull ILogger iLogger) {
         this.singletonJobContext = new JobContext<ExecutionRecordWriter>(outWriter);
         workQueue = new WorkQueue<ExecutionRecordWriter>(
-                iLogger, new WorkQueueContext(), "execRecordWriter", 1, 0);
+                iLogger, new WorkQueueContext(), "execRecordWriter", 1);
     }
 
     void writeRecord(@NonNull final ExecutionRecord executionRecord) {
@@ -120,8 +113,51 @@ public class ProcessRecorder {
      *
      * @throws InterruptedException
      */
-    public void finish() throws InterruptedException {
+    void finish() throws InterruptedException {
         workQueue.shutdown();
     }
 
+    /**
+     * Implementation of {@link ExecutionRecordWriter} that persist in json format.
+     */
+    static class JsonRecordWriter implements ExecutionRecordWriter {
+
+        @NonNull
+        private final Gson gson;
+
+        @NonNull
+        private final Writer writer;
+
+        @NonNull
+        private final AtomicBoolean closed = new AtomicBoolean(false);
+
+        public JsonRecordWriter(@NonNull Writer writer) {
+            this.gson = new Gson();
+            this.writer = writer;
+        }
+
+        @Override
+        public synchronized void write(@NonNull ExecutionRecord executionRecord)
+                throws IOException {
+
+            if (closed.get()) {
+                return;
+            }
+            String json = gson.toJson(executionRecord);
+            writer.append(json);
+            writer.append("\n");
+        }
+
+        @Override
+        public void close() throws IOException {
+            synchronized (this) {
+                if (closed.get()) {
+                    return;
+                }
+                closed.set(true);
+            }
+            writer.flush();
+            writer.close();
+        }
+    }
 }

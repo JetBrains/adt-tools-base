@@ -140,7 +140,8 @@ public class QueuedCruncher implements PngCruncher {
                 mAaptProcesses.clear();
             }
         };
-        mCrunchingRequests = new WorkQueue<AaptProcess>(mLogger, queueThreadContext, "png-cruncher", 5, 2);
+        mCrunchingRequests = new WorkQueue<AaptProcess>(
+                mLogger, queueThreadContext, "png-cruncher", 5, 2f);
     }
 
     @Override
