@@ -21,9 +21,13 @@ package com.android.builder.profile;
  */
 public enum ExecutionType {
 
-    SOME_RANDOM_PROCESSING(1);
+    SOME_RANDOM_PROCESSING(1),
+    BASEPLUGIN_PROJECT_CONFIGURE(2),
+    BASEPLUGIN_PROJECT_BASE_EXTENSTION_CREATION(3),
+    BASEPLUGIN_PROJECT_TASKS_CREATION(4),
+    BASEPLUGIN_BUILD_FINISHED(5);
 
-    // LAST ID = 1,
+    // LAST ID = 5,
     // increment for each new execution type;
 
     int getId() {

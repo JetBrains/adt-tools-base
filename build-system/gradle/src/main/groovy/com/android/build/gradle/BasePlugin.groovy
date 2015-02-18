@@ -36,6 +36,7 @@ import com.android.build.gradle.internal.dsl.SigningConfigFactory
 import com.android.build.gradle.internal.model.ModelBuilder
 import com.android.build.gradle.internal.process.GradleJavaProcessExecutor
 import com.android.build.gradle.internal.process.GradleProcessExecutor
+import com.android.build.gradle.internal.profile.GroovyRecorder
 import com.android.build.gradle.internal.variant.VariantFactory
 import com.android.build.gradle.tasks.JillTask
 import com.android.build.gradle.tasks.PreDex
@@ -43,6 +44,10 @@ import com.android.builder.core.AndroidBuilder
 import com.android.builder.core.DefaultBuildType
 import com.android.builder.internal.compiler.JackConversionCache
 import com.android.builder.internal.compiler.PreDexCache
+import com.android.builder.profile.ExecutionType
+import com.android.builder.profile.ProcessRecorderFactory
+import com.android.builder.profile.Recorder
+import com.android.builder.profile.ThreadRecorder
 import com.android.builder.sdk.TargetInfo
 import com.android.ide.common.blame.output.BlameAwareLoggedProcessOutputHandler
 import com.android.ide.common.internal.ExecutorSingleton
@@ -62,6 +67,7 @@ import org.gradle.tooling.BuildException
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry
 
 import java.security.MessageDigest
+import java.util.concurrent.Callable
 import java.util.jar.Attributes
 import java.util.jar.Manifest
 import java.util.regex.Pattern
@@ -225,9 +231,20 @@ public abstract class BasePlugin {
 
     protected void apply(Project project) {
         this.project = project
-        configureProject()
-        createExtension()
-        createTasks()
+        ProcessRecorderFactory.initialize(logger, project.rootProject.
+                file("profiler" + System.currentTimeMillis() + ".json"))
+
+        GroovyRecorder.record(project, ExecutionType.BASEPLUGIN_PROJECT_CONFIGURE) {
+            configureProject()
+        }
+
+        GroovyRecorder.record(project, ExecutionType.BASEPLUGIN_PROJECT_BASE_EXTENSTION_CREATION) {
+            createExtension()
+        }
+
+        GroovyRecorder.record(project, ExecutionType.BASEPLUGIN_PROJECT_TASKS_CREATION) {
+            createTasks()
+        }
     }
 
     protected void configureProject() {
@@ -259,15 +276,18 @@ public abstract class BasePlugin {
         project.gradle.buildFinished {
             ExecutorSingleton.shutdown()
             sdkHandler.unload()
-            PreDexCache.getCache().clear(
-                    project.rootProject.file(
-                            "${project.rootProject.buildDir}/${FD_INTERMEDIATES}/dex-cache/cache.xml"),
-                    logger)
-            JackConversionCache.getCache().clear(
-                    project.rootProject.file(
-                            "${project.rootProject.buildDir}/${FD_INTERMEDIATES}/jack-cache/cache.xml"),
-                    logger)
-            LibraryCache.getCache().unload()
+            GroovyRecorder.record(project, ExecutionType.BASEPLUGIN_BUILD_FINISHED) {
+                PreDexCache.getCache().clear(
+                        project.rootProject.file(
+                                "${project.rootProject.buildDir}/${FD_INTERMEDIATES}/dex-cache/cache.xml"),
+                        logger)
+                JackConversionCache.getCache().clear(
+                        project.rootProject.file(
+                                "${project.rootProject.buildDir}/${FD_INTERMEDIATES}/jack-cache/cache.xml"),
+                        logger)
+                LibraryCache.getCache().unload()
+            }
+            ProcessRecorderFactory.shutdown();
         }
 
         project.gradle.taskGraph.whenReady { TaskExecutionGraph taskGraph ->
