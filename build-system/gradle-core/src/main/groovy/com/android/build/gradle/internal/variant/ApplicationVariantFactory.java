@@ -16,6 +16,9 @@
 
 package com.android.build.gradle.internal.variant;
 
+import static com.android.builder.core.BuilderConstants.DEBUG;
+import static com.android.builder.core.BuilderConstants.RELEASE;
+
 import com.android.annotations.NonNull;
 import com.android.build.FilterData;
 import com.android.build.OutputFile;
@@ -29,12 +32,16 @@ import com.android.build.gradle.internal.api.ApkVariantOutputImpl;
 import com.android.build.gradle.internal.api.ApplicationVariantImpl;
 import com.android.build.gradle.internal.api.ReadOnlyObjectProvider;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
+import com.android.build.gradle.internal.dsl.BuildType;
+import com.android.build.gradle.internal.dsl.GroupableProductFlavor;
+import com.android.build.gradle.internal.dsl.SigningConfig;
 import com.android.build.gradle.internal.model.FilterDataImpl;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.VariantType;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
+import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.Project;
 import org.gradle.internal.reflect.Instantiator;
 
@@ -163,5 +170,17 @@ public class ApplicationVariantFactory implements VariantFactory {
     @Override
     public void preVariantWork(Project project) {
         // nothing to be done here.
+    }
+
+    @Override
+    public void createDefaultComponents(
+            @NonNull NamedDomainObjectContainer<BuildType> buildTypes,
+            @NonNull NamedDomainObjectContainer<GroupableProductFlavor> productFlavors,
+            @NonNull NamedDomainObjectContainer<SigningConfig> signingConfigs) {
+        // must create signing config first so that build type 'debug' can be initialized
+        // with the debug signing config.
+        signingConfigs.create(DEBUG);
+        buildTypes.create(DEBUG);
+        buildTypes.create(RELEASE);
     }
 }

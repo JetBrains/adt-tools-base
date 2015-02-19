@@ -23,8 +23,12 @@ import com.android.build.gradle.internal.TaskManager;
 import com.android.build.gradle.internal.VariantModel;
 import com.android.build.gradle.internal.api.ReadOnlyObjectProvider;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
+import com.android.build.gradle.internal.dsl.BuildType;
+import com.android.build.gradle.internal.dsl.GroupableProductFlavor;
+import com.android.build.gradle.internal.dsl.SigningConfig;
 import com.android.builder.core.VariantType;
 
+import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
 
@@ -66,4 +70,9 @@ public interface VariantFactory {
     void validateModel(@NonNull VariantModel model);
 
     void preVariantWork(Project project);
+
+    void createDefaultComponents(
+            @NonNull NamedDomainObjectContainer<BuildType> buildTypes,
+            @NonNull NamedDomainObjectContainer<GroupableProductFlavor> productFlavors,
+            @NonNull NamedDomainObjectContainer<SigningConfig> signingConfigs);
 }

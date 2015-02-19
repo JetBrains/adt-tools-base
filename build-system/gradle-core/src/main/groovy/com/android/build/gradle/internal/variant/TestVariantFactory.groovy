@@ -18,12 +18,18 @@ package com.android.build.gradle.internal.variant
 
 import com.android.annotations.NonNull
 import com.android.build.gradle.BaseExtension
+import com.android.build.gradle.internal.dsl.BuildType
+import com.android.build.gradle.internal.dsl.GroupableProductFlavor
+import com.android.build.gradle.internal.dsl.SigningConfig
 import com.android.build.gradle.tasks.TestExtension
 import com.android.builder.core.AndroidBuilder
 import org.gradle.api.GradleException
+import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.Project
 import org.gradle.api.artifacts.dsl.DependencyHandler
 import org.gradle.internal.reflect.Instantiator
+
+import static com.android.builder.core.BuilderConstants.DEBUG
 
 /**
  */
@@ -58,5 +64,17 @@ public class TestVariantFactory extends ApplicationVariantFactory {
 
         DependencyHandler handler = project.getDependencies()
         handler.add("compile", handler.project(path: path, configuration: variant))
+    }
+
+    @Override
+    public void createDefaultComponents(
+            @NonNull NamedDomainObjectContainer<BuildType> buildTypes,
+            @NonNull NamedDomainObjectContainer<GroupableProductFlavor> productFlavors,
+            @NonNull NamedDomainObjectContainer<SigningConfig> signingConfigs) {
+        // don't call super as we don't want the default app version.
+        // must create signing config first so that build type 'debug' can be initialized
+        // with the debug signing config.
+        signingConfigs.create(DEBUG);
+        buildTypes.create(DEBUG);
     }
 }

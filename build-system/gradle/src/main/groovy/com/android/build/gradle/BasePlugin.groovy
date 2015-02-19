@@ -330,11 +330,12 @@ public abstract class BasePlugin {
                 dependencyManager,
                 registry)
 
+        VariantFactory variantFactory = getVariantFactory()
         variantManager = new VariantManager(
                 project,
                 androidBuilder,
                 extension,
-                getVariantFactory(),
+                variantFactory,
                 taskManager,
                 instantiator)
 
@@ -356,11 +357,6 @@ public abstract class BasePlugin {
             variantManager.addProductFlavor(productFlavor)
         }
 
-        // create default Objects, signingConfig first as its used by the BuildTypes.
-        signingConfigContainer.create(DEBUG)
-        buildTypeContainer.create(DEBUG)
-        buildTypeContainer.create(RELEASE)
-
         // map whenObjectRemoved on the containers to throw an exception.
         signingConfigContainer.whenObjectRemoved {
             throw new UnsupportedOperationException("Removing signingConfigs is not supported.")
@@ -371,6 +367,9 @@ public abstract class BasePlugin {
         productFlavorContainer.whenObjectRemoved {
             throw new UnsupportedOperationException("Removing product flavors is not supported.")
         }
+
+        // create default Objects, signingConfig first as its used by the BuildTypes.
+        variantFactory.createDefaultComponents(buildTypeContainer, productFlavorContainer, signingConfigContainer)
     }
 
     private void createTasks() {
