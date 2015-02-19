@@ -228,7 +228,7 @@ public abstract class BaseExtension {
         isWritable = false
     }
 
-    private checkWritability() {
+    protected checkWritability() {
         if (!isWritable) {
             throw new GradleException(
                     "Android tasks have already been created.\n" +

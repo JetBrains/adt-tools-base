@@ -375,7 +375,7 @@ public abstract class BasePlugin {
 
     private void createTasks() {
         SpanRecorders.record(project, ExecutionType.TASK_MANAGER_CREATE_TASKS) {
-            taskManager.createTasks()
+            taskManager.createTasksBeforeEvaluate()
         }
 
         project.afterEvaluate {

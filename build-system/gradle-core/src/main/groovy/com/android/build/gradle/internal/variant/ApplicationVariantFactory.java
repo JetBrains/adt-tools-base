@@ -35,6 +35,7 @@ import com.android.builder.core.VariantType;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
+import org.gradle.api.Project;
 import org.gradle.internal.reflect.Instantiator;
 
 import java.util.Collections;
@@ -47,7 +48,7 @@ public class ApplicationVariantFactory implements VariantFactory {
 
     Instantiator instantiator;
     @NonNull
-    private final BaseExtension extension;
+    protected final BaseExtension extension;
     @NonNull
     private final AndroidBuilder androidBuilder;
 
@@ -157,5 +158,10 @@ public class ApplicationVariantFactory implements VariantFactory {
     @Override
     public void validateModel(@NonNull VariantModel model){
         // No additional checks for ApplicationVariantFactory, so just return.
+    }
+
+    @Override
+    public void preVariantWork(Project project) {
+        // nothing to be done here.
     }
 }

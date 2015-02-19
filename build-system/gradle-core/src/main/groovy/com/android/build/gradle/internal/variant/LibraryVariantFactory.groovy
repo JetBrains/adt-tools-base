@@ -32,6 +32,7 @@ import com.android.builder.core.AndroidBuilder
 import com.android.builder.core.VariantType
 import com.google.common.collect.Lists
 import org.gradle.api.GradleException
+import org.gradle.api.Project
 import org.gradle.internal.reflect.Instantiator
 
 /**
@@ -136,5 +137,10 @@ public class LibraryVariantFactory implements VariantFactory {
             }
         }
 
+    }
+
+    @Override
+    void preVariantWork(Project project) {
+        // nothing to be done here.
     }
 }

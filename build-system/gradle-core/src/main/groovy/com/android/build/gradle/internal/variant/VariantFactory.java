@@ -25,6 +25,7 @@ import com.android.build.gradle.internal.api.ReadOnlyObjectProvider;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.builder.core.VariantType;
 
+import org.gradle.api.Project;
 import org.gradle.api.Task;
 
 import java.util.Set;
@@ -63,4 +64,6 @@ public interface VariantFactory {
      * @throws org.gradle.api.GradleException when the model does not validate.
      */
     void validateModel(@NonNull VariantModel model);
+
+    void preVariantWork(Project project);
 }

@@ -41,8 +41,8 @@ public class TestExtension extends BaseExtension {
     private final DefaultDomainObjectSet<ApplicationVariant> applicationVariantList =
         new DefaultDomainObjectSet<ApplicationVariant>(ApplicationVariant.class)
 
-    String targetProjectPath = null
-    String targetVariant = "debug"
+    private String targetProjectPath = null
+    private String targetVariant = "debug"
 
     TestExtension(
             @NonNull ProjectInternal project,
@@ -70,5 +70,31 @@ public class TestExtension extends BaseExtension {
     @Override
     void addVariant(BaseVariant variant) {
         applicationVariantList.add((ApplicationVariant) variant)
+    }
+
+    String getTargetProjectPath() {
+        return targetProjectPath
+    }
+
+    void setTargetProjectPath(String targetProjectPath) {
+        checkWritability()
+        this.targetProjectPath = targetProjectPath
+    }
+
+    void targetProjectPath(String targetProjectPath) {
+        setTargetProjectPath(targetProjectPath)
+    }
+
+    String getTargetVariant() {
+        return targetVariant
+    }
+
+    void setTargetVariant(String targetVariant) {
+        checkWritability()
+        this.targetVariant = targetVariant
+    }
+
+    void targetVariant(String targetVariant) {
+        setTargetVariant(targetVariant)
     }
 }

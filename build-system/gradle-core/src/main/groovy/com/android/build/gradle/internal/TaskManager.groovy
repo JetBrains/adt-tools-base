@@ -273,7 +273,11 @@ abstract class TaskManager {
         dependencyManager.resolveDependencies(variantDeps, testedVariantDeps)
     }
 
-    public void createTasks() {
+    /**
+     * Create tasks before the evaluation (on plugin apply). This is useful for tasks that
+     * could be referenced by custom build logic.
+     */
+    public void createTasksBeforeEvaluate() {
         uninstallAll = project.tasks.create("uninstallAll")
         uninstallAll.description = "Uninstall all applications."
         uninstallAll.group = INSTALL_GROUP
@@ -1204,18 +1208,20 @@ abstract class TaskManager {
         }
 
         // Create jar task for uses by external modules.
-        Jar jar = project.tasks.create(
-                "package${variantData.variantConfiguration.fullName.capitalize()}Jar",
-                Jar);
-        variantData.classesJarTask = jar
-        jar.dependsOn compileTask
+        if (variantData.variantDependency.classesConfiguration != null) {
+            Jar jar = project.tasks.create(
+                    "package${variantData.variantConfiguration.fullName.capitalize()}Jar",
+                    Jar);
+            variantData.classesJarTask = jar
+            jar.dependsOn compileTask
 
-        // add the class files (whether they are instrumented or not.
-        jar.from({ variantData.javaCompileTask.destinationDir })
+            // add the class files (whether they are instrumented or not.
+            jar.from({ variantData.javaCompileTask.destinationDir })
 
-        jar.destinationDir = project.file(
-                "$project.buildDir/${FD_INTERMEDIATES}/classes-jar/${variantData.variantConfiguration.dirName}")
-        jar.archiveName = "classes.jar"
+            jar.destinationDir = project.file(
+                    "$project.buildDir/${FD_INTERMEDIATES}/classes-jar/${variantData.variantConfiguration.dirName}")
+            jar.archiveName = "classes.jar"
+        }
     }
 
     public void createGenerateMicroApkDataTask(
