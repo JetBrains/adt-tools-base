@@ -1837,7 +1837,7 @@ abstract class TaskManager {
         Closure<List<File>> inputLibraries
     }
 
-    public void createJarTask(@NonNull ApkVariantData variantData) {
+    public void createJarTask(@NonNull BaseVariantData variantData) {
 
         GradleVariantConfiguration config = variantData.variantConfiguration
         AndroidJarTask jarTask = project.tasks.create(

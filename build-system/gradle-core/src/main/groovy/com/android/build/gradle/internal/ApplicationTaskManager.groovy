@@ -18,11 +18,12 @@ package com.android.build.gradle.internal
 
 import com.android.annotations.NonNull
 import com.android.build.gradle.BaseExtension
+import com.android.build.gradle.internal.profile.SpanRecorders
 import com.android.build.gradle.internal.variant.ApplicationVariantData
 import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.build.gradle.internal.variant.BaseVariantOutputData
 import com.android.builder.core.AndroidBuilder
-import groovy.transform.CompileStatic
+import com.android.builder.profile.ExecutionType
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.tasks.TaskContainer
@@ -44,7 +45,7 @@ class ApplicationTaskManager extends TaskManager {
     }
 
     @Override
-    public void createTasksForVariantData(
+    public void  createTasksForVariantData(
             @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData) {
 
         assert variantData instanceof ApplicationVariantData;
@@ -56,43 +57,64 @@ class ApplicationTaskManager extends TaskManager {
         handleMicroApp(variantData);
 
         // Add a task to process the manifest(s)
-        createMergeAppManifestsTask(variantData);
+        SpanRecorders.record(ExecutionType.APP_TASK_MANAGER_CREATE_MERGE_MANIFEST_TASK) {
+            createMergeAppManifestsTask(variantData)
+        }
 
         // Add a task to create the res values
-        createGenerateResValuesTask(variantData);
+        SpanRecorders.record(ExecutionType.APP_TASK_MANAGER_CREATE_GENERATE_RES_VALUES_TASK) {
+            createGenerateResValuesTask(variantData);
+        }
 
         // Add a task to compile renderscript files.
-        createRenderscriptTask(variantData);
+        SpanRecorders.record(ExecutionType.APP_TASK_MANAGER_CREATE_CREATE_RENDERSCRIPT_TASK) {
+            createRenderscriptTask(variantData);
+        }
 
         // Add a task to merge the resource folders
-        createMergeResourcesTask(variantData, true /*process9Patch*/);
+        SpanRecorders.record(ExecutionType.APP_TASK_MANAGER_CREATE_MERGE_RESOURCES_TASK) {
+            createMergeResourcesTask(variantData, true /*process9Patch*/);
+        }
 
         // Add a task to merge the asset folders
-        createMergeAssetsTask(variantData, null /*default location*/, true /*includeDependencies*/);
+        SpanRecorders.record(ExecutionType.APP_TASK_MANAGER_CREATE_MERGE_ASSETS_TASK) {
+            createMergeAssetsTask(
+                    variantData, null /*default location*/, true /*includeDependencies*/);
+        }
 
         // Add a task to create the BuildConfig class
-        createBuildConfigTask(variantData);
+        SpanRecorders.record(ExecutionType.APP_TASK_MANAGER_CREATE_BUILD_CONFIG_TASK) {
+            createBuildConfigTask(variantData);
+        }
 
-        // Add a task to process the Android Resources and generate source files
-        createProcessResTask(variantData, true /*generateResourcePackage*/);
+        SpanRecorders.record(ExecutionType.APP_TASK_MANAGER_CREATE_PROCESS_RES_TASK) {
+            // Add a task to process the Android Resources and generate source files
+            createProcessResTask(variantData, true /*generateResourcePackage*/);
 
-        // Add a task to process the java resources
-        createProcessJavaResTask(variantData);
+            // Add a task to process the java resources
+            createProcessJavaResTask(variantData);
+        }
 
-        createAidlTask(variantData, null /*parcelableDir*/);
+        SpanRecorders.record(ExecutionType.APP_TASK_MANAGER_CREATE_AIDL_TASK) {
+            createAidlTask(variantData, null /*parcelableDir*/);
+        }
 
         // Add a compile task
-        if (variantData.getVariantConfiguration().getUseJack()) {
-            createJackTask(appVariantData, null /*testedVariant*/);
-        } else{
-            createCompileTask(variantData, null /*testedVariant*/);
-            createJarTask(variantData);
-            createPostCompilationTasks(appVariantData);
+        SpanRecorders.record(ExecutionType.APP_TASK_MANAGER_CREATE_COMPILE_TASK) {
+            if (variantData.getVariantConfiguration().getUseJack()) {
+                createJackTask(appVariantData, null /*testedVariant*/);
+            } else {
+                createCompileTask(variantData, null /*testedVariant*/);
+                createJarTask(variantData);
+                createPostCompilationTasks(appVariantData);
+            }
         }
 
         // Add NDK tasks
         if (isNdkTaskNeeded) {
-            createNdkTasks(variantData);
+            SpanRecorders.record(ExecutionType.APP_TASK_MANAGER_CREATE_NDK_TASK) {
+                createNdkTasks(variantData);
+            }
         }
 
         if (variantData.getSplitHandlingPolicy() ==
@@ -100,11 +122,14 @@ class ApplicationTaskManager extends TaskManager {
             if (extension.getBuildToolsRevision().getMajor() < 21) {
                 throw new RuntimeException("Pure splits can only be used with buildtools 21 and later")
             }
-            createSplitResourcesTasks(appVariantData);
-            createSplitAbiTasks(appVariantData);
+            SpanRecorders.record(ExecutionType.APP_TASK_MANAGER_CREATE_SPLIT_TASK) {
+                createSplitResourcesTasks(appVariantData);
+                createSplitAbiTasks(appVariantData);
+            }
         }
-
-        createPackagingTask(appVariantData, true /*publishApk*/);
+        SpanRecorders.record(ExecutionType.APP_TASK_MANAGER_CREATE_PACKAGING_TASK) {
+            createPackagingTask(appVariantData, true /*publishApk*/);
+        }
     }
 
     /**
