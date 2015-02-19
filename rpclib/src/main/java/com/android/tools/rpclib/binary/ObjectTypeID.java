@@ -16,9 +16,6 @@
 package com.android.tools.rpclib.binary;
 
 import java.io.IOException;
-import java.math.BigInteger;
-import java.nio.ByteBuffer;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -27,22 +24,15 @@ import java.util.Map;
  * </p>
  * See: {@link BinaryObject}
  */
-public class ObjectTypeID {
-  private static final int SIZE = 20;
+public class ObjectTypeID extends Handle {
   private static Map<ObjectTypeID, BinaryObjectCreator> registry = new HashMap<ObjectTypeID, BinaryObjectCreator>();
-  private byte[] mValue;
-  private int mHash;
 
   public ObjectTypeID(byte[] value) {
-    mValue = value;
-    mHash = ByteBuffer.wrap(mValue).getInt();
-    assert value.length == SIZE;
+    super(value);
   }
 
   public ObjectTypeID(Decoder d) throws IOException {
-    mValue = new byte[SIZE];
-    d.read(mValue, SIZE);
-    mHash = ByteBuffer.wrap(mValue).getInt();
+    super(d);
   }
 
   public static void register(ObjectTypeID id, BinaryObjectCreator creator) {
@@ -51,27 +41,5 @@ public class ObjectTypeID {
 
   public static BinaryObjectCreator lookup(ObjectTypeID id) {
     return registry.get(id);
-  }
-
-  public void encode(Encoder e) throws IOException {
-    e.stream().write(mValue, 0, SIZE);
-  }
-
-  @Override
-  public boolean equals(Object other) {
-    if (other == null) return false;
-    if (other == this) return true;
-    if (!(other instanceof ObjectTypeID)) return false;
-    return Arrays.equals(mValue, ((ObjectTypeID)other).mValue);
-  }
-
-  @Override
-  public int hashCode() {
-    return mHash;
-  }
-
-  @Override
-  public String toString() {
-    return String.format("%020x", new BigInteger(mValue));
   }
 }
