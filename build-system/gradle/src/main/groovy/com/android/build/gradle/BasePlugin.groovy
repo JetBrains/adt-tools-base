@@ -37,6 +37,7 @@ import com.android.build.gradle.internal.model.ModelBuilder
 import com.android.build.gradle.internal.process.GradleJavaProcessExecutor
 import com.android.build.gradle.internal.process.GradleProcessExecutor
 import com.android.build.gradle.internal.profile.SpanRecorders
+import com.android.build.gradle.internal.profile.RecordingBuildListener
 import com.android.build.gradle.internal.variant.VariantFactory
 import com.android.build.gradle.tasks.JillTask
 import com.android.build.gradle.tasks.PreDex
@@ -136,7 +137,6 @@ public abstract class BasePlugin {
             URL url = cl.findResource("META-INF/MANIFEST.MF");
             manifest = new Manifest(url.openStream());
         } catch (IOException ignore) {
-            getLogger().info(ignore.toString());
             return;
         }
 
@@ -230,6 +230,7 @@ public abstract class BasePlugin {
         this.project = project
         ProcessRecorderFactory.initialize(logger, project.rootProject.
                 file("profiler" + System.currentTimeMillis() + ".json"))
+        project.gradle.addListener(new RecordingBuildListener());
 
         SpanRecorders.record(project, ExecutionType.BASE_PLUGIN_PROJECT_CONFIGURE) {
             configureProject()
