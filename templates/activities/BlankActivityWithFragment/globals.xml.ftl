@@ -1,5 +1,6 @@
 <?xml version="1.0"?>
 <globals>
+    <global id="fragmentClass" value="${activityClass}Fragment" />
     <global id="manifestOut" value="${manifestDir}" />
     <global id="appCompat" type="boolean" value="${(hasDependency('com.android.support:appcompat-v7'))?string}" />
     <!-- e.g. getSupportActionBar vs. getActionBar -->
