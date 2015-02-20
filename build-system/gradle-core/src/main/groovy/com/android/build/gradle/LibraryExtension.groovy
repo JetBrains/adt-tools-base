@@ -34,7 +34,6 @@ import org.gradle.internal.reflect.Instantiator
 
 /**
  * 'android' extension for 'com.android.library' project.
- * This extends {@link BaseExtension}
  */
 @CompileStatic
 public class LibraryExtension extends TestedExtension {
@@ -53,12 +52,12 @@ public class LibraryExtension extends TestedExtension {
             @NonNull ExtraModelInfo extraModelInfo,
             boolean isLibrary) {
         super(project, instantiator, androidBuilder, sdkHandler, buildTypes, productFlavors,
-                signingConfigs, extraModelInfo, isLibrary, true /*hasTestScope*/)
+                signingConfigs, extraModelInfo, isLibrary)
     }
 
     /**
      * Returns the list of library variants. Since the collections is built after evaluation,
-     * it should be used with Groovy's <code>all</code> iterator to process future items.
+     * it should be used with Gradle's <code>all</code> iterator to process future items.
      */
     public DefaultDomainObjectSet<LibraryVariant> getLibraryVariants() {
         return libraryVariantList
