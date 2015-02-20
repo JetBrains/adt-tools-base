@@ -1213,7 +1213,7 @@ abstract class TaskManager {
         // Create jar task for uses by external modules.
         if (variantData.variantDependency.classesConfiguration != null) {
             Jar jar = project.tasks.create(
-                    "package${variantData.variantConfiguration.fullName.capitalize()}Jar",
+                    "package${variantData.variantConfiguration.fullName.capitalize()}JarArtifact",
                     Jar);
             variantData.classesJarTask = jar
             jar.dependsOn compileTask
