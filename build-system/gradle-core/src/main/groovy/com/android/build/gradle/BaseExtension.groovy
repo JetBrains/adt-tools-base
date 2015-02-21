@@ -41,6 +41,7 @@ import com.android.build.gradle.internal.dsl.TestOptions
 import com.android.builder.core.AndroidBuilder
 import com.android.builder.core.BuilderConstants
 import com.android.builder.model.SourceProvider
+import com.android.builder.sdk.TargetInfo
 import com.android.builder.testing.api.DeviceProvider
 import com.android.builder.testing.api.TestServer
 import com.android.sdklib.repository.FullRevision
@@ -570,6 +571,7 @@ public abstract class BaseExtension {
     }
 
     public List<File> getBootClasspath() {
+        ensureTargetSetup()
         return androidBuilder.getBootClasspath()
     }
 
@@ -614,5 +616,16 @@ public abstract class BaseExtension {
 
     public getEnforceUniquePackageName() {
         return enforceUniquePackageName
+    }
+
+    private void ensureTargetSetup() {
+        // check if the target has been set.
+        TargetInfo targetInfo = androidBuilder.getTargetInfo()
+        if (targetInfo == null) {
+            sdkHandler.initTarget(
+                    getCompileSdkVersion(),
+                    buildToolsRevision,
+                    androidBuilder)
+        }
     }
 }
