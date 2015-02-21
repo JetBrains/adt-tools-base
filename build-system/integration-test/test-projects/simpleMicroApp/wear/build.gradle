@@ -1,0 +1,15 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 21
+    buildToolsVersion = rootProject.ext.buildToolsVersion
+
+    defaultConfig {
+        versionCode 42
+        versionName "default"
+    }
+}
+
+dependencies {
+    compile 'com.android.support:support-v4:13.0.0'
+}
