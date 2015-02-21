@@ -24,6 +24,7 @@ import com.android.build.gradle.internal.ExtraModelInfo
 import com.android.build.gradle.internal.LibraryCache
 import com.android.build.gradle.internal.LoggerWrapper
 import com.android.build.gradle.internal.SdkHandler
+import com.android.build.gradle.internal.TaskContainerAdaptor
 import com.android.build.gradle.internal.TaskManager
 import com.android.build.gradle.internal.VariantManager
 import com.android.build.gradle.internal.coverage.JacocoPlugin
@@ -73,6 +74,7 @@ import static com.android.builder.core.BuilderConstants.DEBUG
 import static com.android.builder.core.BuilderConstants.RELEASE
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
 import static java.io.File.separator
+
 /**
  * Base class for all Android plugins
  */
@@ -198,7 +200,6 @@ public abstract class BasePlugin {
     protected abstract VariantFactory getVariantFactory()
     protected abstract TaskManager createTaskManager(
             Project project,
-            TaskContainer tasks,
             AndroidBuilder androidBuilder,
             BaseExtension extension,
             SdkHandler sdkHandler,
@@ -323,7 +324,6 @@ public abstract class BasePlugin {
         DependencyManager dependencyManager = new DependencyManager(project, extraModelInfo)
         taskManager = createTaskManager(
                 project,
-                project.tasks,
                 androidBuilder,
                 extension,
                 sdkHandler,
@@ -374,7 +374,7 @@ public abstract class BasePlugin {
 
     private void createTasks() {
         SpanRecorders.record(project, ExecutionType.TASK_MANAGER_CREATE_TASKS) {
-            taskManager.createTasksBeforeEvaluate()
+            taskManager.createTasksBeforeEvaluate(new TaskContainerAdaptor(project.getTasks()))
         }
 
         project.afterEvaluate {

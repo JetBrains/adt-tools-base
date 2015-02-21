@@ -63,7 +63,6 @@ public class LibraryComponentModelPlugin implements Plugin<Project> {
 
             return new LibraryComponentTaskManager(
                     project,
-                    project.tasks,
                     androidBuilder,
                     androidExtension,
                     sdkHandler,

@@ -48,7 +48,6 @@ class TestPlugin extends BasePlugin implements Plugin<Project> {
     @Override
     protected TaskManager createTaskManager(
             Project project,
-            TaskContainer tasks,
             AndroidBuilder androidBuilder,
             BaseExtension extension,
             SdkHandler sdkHandler,
@@ -56,7 +55,6 @@ class TestPlugin extends BasePlugin implements Plugin<Project> {
             ToolingModelBuilderRegistry toolingRegistry) {
         return new ApplicationTaskManager (
                 project,
-                tasks,
                 androidBuilder,
                 extension,
                 sdkHandler,

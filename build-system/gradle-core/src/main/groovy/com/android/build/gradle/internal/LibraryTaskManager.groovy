@@ -43,9 +43,9 @@ import com.android.builder.profile.ExecutionType
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.internal.ConventionMapping
+import org.gradle.api.plugins.BasePlugin
 import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.Sync
-import org.gradle.api.tasks.TaskContainer
 import org.gradle.api.tasks.bundling.Jar
 import org.gradle.api.tasks.bundling.Zip
 import org.gradle.tooling.BuildException
@@ -67,17 +67,17 @@ class LibraryTaskManager extends TaskManager {
 
     public LibraryTaskManager (
             Project project,
-            TaskContainer tasks,
             AndroidBuilder androidBuilder,
             BaseExtension extension,
             SdkHandler sdkHandler,
             DependencyManager dependencyManager,
             ToolingModelBuilderRegistry toolingRegistry) {
-        super(project, tasks, androidBuilder, extension, sdkHandler, dependencyManager, toolingRegistry)
+        super(project, androidBuilder, extension, sdkHandler, dependencyManager, toolingRegistry)
     }
 
     @Override
     public void createTasksForVariantData(
+            @NonNull TaskFactory tasks,
             @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData) {
         LibraryVariantData libVariantData = variantData as LibraryVariantData
         GradleVariantConfiguration variantConfig = variantData.variantConfiguration
@@ -400,7 +400,7 @@ class LibraryTaskManager extends TaskManager {
                 ExtractAnnotations)
         task.description =
                 "Extracts Android annotations for the ${fullName} variant into the archive file"
-        task.group = org.gradle.api.plugins.BasePlugin.BUILD_GROUP
+        task.group = BasePlugin.BUILD_GROUP
         task.variant = variantData
         task.destinationDir = project.file("$project.buildDir/${FD_INTERMEDIATES}/$ANNOTATIONS/${dirName}")
         task.output = new File(task.destinationDir, FN_ANNOTATIONS_ZIP)
