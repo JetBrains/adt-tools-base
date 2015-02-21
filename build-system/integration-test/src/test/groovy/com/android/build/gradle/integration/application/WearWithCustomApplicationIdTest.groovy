@@ -30,7 +30,7 @@ import static junit.framework.Assert.fail
  * Debug builds with a wearApp with applicationId that does not match that of the main application
  * should fail.
  */
-class EmbedApplicationIdTest {
+class WearWithCustomApplicationIdTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
             .fromSample("embedded")
@@ -54,7 +54,7 @@ class EmbedApplicationIdTest {
     @Test
     public void "build should fail on applicationId mismatch"() {
         try {
-            project.execute("clean", ":main:assembleFlavor1Debug")
+            project.execute("clean", ":main:assembleFlavor1Release")
             fail("Build should fail: applicationId of wear app does not match the main application")
         } catch (BuildException e) {
             assert Throwables.getRootCause(e).message.contains(
