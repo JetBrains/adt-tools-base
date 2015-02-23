@@ -43,7 +43,7 @@ class CombinedDensityAndLanguageTest {
 
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("combinedDensityAndLanguagePureSplits")
+            .fromTestProject("combinedDensityAndLanguagePureSplits")
             .create()
 
     @BeforeClass

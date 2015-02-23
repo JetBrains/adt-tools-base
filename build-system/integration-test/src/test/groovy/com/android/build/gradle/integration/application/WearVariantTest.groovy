@@ -39,7 +39,7 @@ import static org.junit.Assert.assertNull
 class WearVariantTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("embedded")
+            .fromTestProject("embedded")
             .create()
 
     @BeforeClass

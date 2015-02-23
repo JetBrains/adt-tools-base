@@ -33,7 +33,7 @@ import static org.junit.Assert.assertFalse
 class FilteredOutVariantsTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("filteredOutVariants")
+            .fromTestProject("filteredOutVariants")
             .create()
     static AndroidProject model
 

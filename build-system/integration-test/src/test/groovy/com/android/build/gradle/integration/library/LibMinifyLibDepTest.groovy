@@ -30,7 +30,7 @@ import org.junit.experimental.categories.Category
 class LibMinifyLibDepTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("libMinifyLibDep")
+            .fromTestProject("libMinifyLibDep")
             .create()
 
     @BeforeClass

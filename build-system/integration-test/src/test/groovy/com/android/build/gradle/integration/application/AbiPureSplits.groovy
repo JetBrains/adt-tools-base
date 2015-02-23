@@ -15,7 +15,6 @@
  */
 
 package com.android.build.gradle.integration.application
-
 import com.android.build.OutputFile
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.utils.ModelHelper
@@ -34,10 +33,6 @@ import static com.android.builder.core.BuilderConstants.DEBUG
 import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertNotNull
 import static org.junit.Assert.assertTrue
-
-import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
-
-
 /**
  * Test drive for the abiPureSplits samples test.
  */
@@ -46,7 +41,7 @@ class AbiPureSplits {
 
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("abiPureSplits")
+            .fromTestProject("abiPureSplits")
             .create()
 
     @BeforeClass

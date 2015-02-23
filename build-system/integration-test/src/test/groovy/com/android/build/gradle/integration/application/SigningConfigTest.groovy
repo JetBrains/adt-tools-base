@@ -36,7 +36,7 @@ import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_STORE_PA
 class SigningConfigTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("basic")
+            .fromTestProject("basic")
             .create()
 
     @AfterClass

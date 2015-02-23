@@ -32,7 +32,7 @@ class NdkSanAngeles2Test {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
             .forExpermimentalPlugin(true)
-            .fromSample("ndkSanAngeles2")
+            .fromTestProject("ndkSanAngeles2")
             .create()
 
     @BeforeClass

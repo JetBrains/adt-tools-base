@@ -36,7 +36,7 @@ import static org.junit.Assert.assertTrue
 class NdkPrebuiltsTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("ndkPrebuilts")
+            .fromTestProject("ndkPrebuilts")
             .create()
 
     static AndroidProject model

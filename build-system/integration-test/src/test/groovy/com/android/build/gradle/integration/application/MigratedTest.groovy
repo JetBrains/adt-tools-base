@@ -40,7 +40,7 @@ import static org.junit.Assert.assertNotNull
 class MigratedTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("migrated")
+            .fromTestProject("migrated")
             .create()
 
     static AndroidProject model

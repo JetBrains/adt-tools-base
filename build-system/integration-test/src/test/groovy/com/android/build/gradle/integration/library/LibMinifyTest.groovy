@@ -29,7 +29,7 @@ import org.junit.Test
 class LibMinifyTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("libMinify")
+            .fromTestProject("libMinify")
             .create()
 
     @BeforeClass

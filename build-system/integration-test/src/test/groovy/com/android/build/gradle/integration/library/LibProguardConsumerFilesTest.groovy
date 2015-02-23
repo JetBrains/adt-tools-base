@@ -32,7 +32,7 @@ class LibProguardConsumerFilesTest {
 
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("libProguardConsumerFiles")
+            .fromTestProject("libProguardConsumerFiles")
             .create()
 
     @BeforeClass

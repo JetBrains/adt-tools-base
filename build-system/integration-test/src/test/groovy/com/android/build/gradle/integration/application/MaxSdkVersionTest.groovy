@@ -31,7 +31,7 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
 class MaxSdkVersionTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("maxSdkVersion")
+            .fromTestProject("maxSdkVersion")
             .create()
 
     @BeforeClass

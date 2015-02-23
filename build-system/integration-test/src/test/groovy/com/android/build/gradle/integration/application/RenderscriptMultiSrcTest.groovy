@@ -28,7 +28,7 @@ import org.junit.Test
 class RenderscriptMultiSrcTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("renderscriptMultiSrc")
+            .fromTestProject("renderscriptMultiSrc")
             .create()
 
     @BeforeClass

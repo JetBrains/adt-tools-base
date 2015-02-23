@@ -30,7 +30,7 @@ import org.junit.experimental.categories.Category
 class SameNamedLibsTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("sameNamedLibs")
+            .fromTestProject("sameNamedLibs")
             .create()
 
     @BeforeClass

@@ -42,7 +42,7 @@ import static org.junit.Assert.assertTrue
 class FlavorlibTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("flavorlib")
+            .fromTestProject("flavorlib")
             .create()
     static Map<String, AndroidProject> models
 

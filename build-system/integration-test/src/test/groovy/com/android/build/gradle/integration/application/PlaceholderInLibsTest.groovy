@@ -40,7 +40,7 @@ class PlaceholderInLibsTest {
 
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("placeholderInLibsTest")
+            .fromTestProject("placeholderInLibsTest")
             .create()
 
     @BeforeClass
