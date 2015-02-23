@@ -54,31 +54,29 @@ import java.util.Map;
  */
 public class ExtraModelInfo {
 
-    public static enum ModelQueryMode {
+    public enum ModelQueryMode {
         STANDARD, IDE, IDE_ADVANCED
     }
 
-    private ModelQueryMode modelQueryMode;
+    @NonNull
+    private final Project project;
 
-    private ErrorFormatMode errorFormatMode;
+    private final ModelQueryMode modelQueryMode;
+    private final ErrorFormatMode errorFormatMode;
 
     private final Map<SyncIssueKey, SyncIssue> syncIssues = Maps.newHashMap();
 
     private final Map<String, ArtifactMetaData> extraArtifactMap = Maps.newHashMap();
-
     private final ListMultimap<String, AndroidArtifact> extraAndroidArtifacts = ArrayListMultimap.create();
-
     private final ListMultimap<String, JavaArtifact> extraJavaArtifacts = ArrayListMultimap.create();
 
     private final ListMultimap<String, SourceProviderContainer> extraVariantSourceProviders = ArrayListMultimap.create();
-
     private final ListMultimap<String, SourceProviderContainer> extraBuildTypeSourceProviders = ArrayListMultimap.create();
-
     private final ListMultimap<String, SourceProviderContainer> extraProductFlavorSourceProviders = ArrayListMultimap.create();
-
     private final ListMultimap<String, SourceProviderContainer> extraMultiFlavorSourceProviders = ArrayListMultimap.create();
 
-    public ExtraModelInfo(Project project) {
+    public ExtraModelInfo(@NonNull Project project) {
+        this.project = project;
         modelQueryMode = computeModelQueryMode(project);
         errorFormatMode = computeErrorFormatMode(project);
     }
@@ -95,9 +93,16 @@ public class ExtraModelInfo {
         return errorFormatMode;
     }
 
-    public void handleSyncError(String data, int type, String msg) {
+    public SyncIssue handleSyncError(@NonNull String data, int type, @NonNull String msg) {
         switch (modelQueryMode) {
             case STANDARD:
+                if (isDependencyIssue(type)) {
+                    // if it's a dependency issue we don't throw right away. we'll
+                    // throw during build instead.
+                    // but we do log.
+                    project.getLogger().warn("WARNING: " + msg);
+                    return new SyncIssueImpl(type, SyncIssue.SEVERITY_ERROR, data, msg);
+                }
                 throw new GradleException(msg);
             case IDE:
                 // compat mode for the only issue supported before the addition of SyncIssue
@@ -111,6 +116,25 @@ public class ExtraModelInfo {
                 SyncIssue syncIssue = new SyncIssueImpl(type, SyncIssue.SEVERITY_ERROR, data, msg);
                 syncIssues.put(SyncIssueKey.from(syncIssue), syncIssue);
         }
+
+        return null;
+    }
+
+    private static boolean isDependencyIssue(int type) {
+        switch (type) {
+            case SyncIssue.TYPE_UNRESOLVED_DEPENDENCY:
+            case SyncIssue.TYPE_DEPENDENCY_IS_APK:
+            case SyncIssue.TYPE_DEPENDENCY_IS_APKLIB:
+            case SyncIssue.TYPE_NON_JAR_LOCAL_DEP:
+            case SyncIssue.TYPE_NON_JAR_PACKAGE_DEP:
+            case SyncIssue.TYPE_NON_JAR_PROVIDED_DEP:
+            case SyncIssue.TYPE_JAR_DEPEND_ON_AAR:
+            case SyncIssue.TYPE_MISMATCH_DEP:
+                return true;
+        }
+
+        return false;
+
     }
 
     public Collection<ArtifactMetaData> getExtraArtifacts() {

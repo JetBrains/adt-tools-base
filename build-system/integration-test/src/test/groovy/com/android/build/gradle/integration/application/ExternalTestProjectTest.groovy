@@ -28,6 +28,7 @@ import org.junit.Test
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertNotNull
+import static org.junit.Assert.assertTrue
 import static org.junit.Assert.fail
 /**
  * Check that a project can depend on a jar dependency published by another app project.
@@ -36,7 +37,7 @@ import static org.junit.Assert.fail
 class ExternalTestProjectTest {
 
     @Rule
-    public GradleTestProject project = GradleTestProject.builder().create()
+    public GradleTestProject project = GradleTestProject.builder().captureStdErr(true).create()
 
     private File app2BuildFile
 
@@ -113,19 +114,24 @@ dependencies {
             project.execute('clean', 'app2:assembleDebug')
             fail('Broken build file did not throw exception')
         } catch (BuildException e) {
-            Throwable cause = e
-            while (cause.getCause() != null) {
-                cause = cause.getCause()
-            }
-            String expectedMsg = "Dependency project:app1:unspecified on project app2 resolves to an APK archive which is not supported as a compilation dependency. File:"
-            String actual = cause.getMessage()
-            if (actual.length() < expectedMsg.length()) {
-                fail("Wrong error message: " + actual)
+            Throwable t = e
+            while (t.getCause() != null) {
+                t = t.getCause()
             }
 
-            String actualTruncated = actual.substring(0, expectedMsg.length())
-            assertEquals(expectedMsg, actualTruncated)
+            // looks like we can't actually test the instance t against GradleException
+            // due to it coming through the tooling API from a different class loader.
+            assertEquals("org.gradle.api.GradleException", t.getClass().canonicalName)
+            assertEquals("Dependency Error. See console for details", t.getMessage())
         }
+
+        // check there is a version of the error, after the task name:
+        ByteArrayOutputStream stderr = project.stderr
+        String log = stderr.toString()
+
+        assertTrue("stderr contains error", log.contains(
+                "Dependency project:app1:unspecified on project app2 resolves to an APK archive which is not supported as a compilation dependency. File:"))
+
     }
 
     @Test
