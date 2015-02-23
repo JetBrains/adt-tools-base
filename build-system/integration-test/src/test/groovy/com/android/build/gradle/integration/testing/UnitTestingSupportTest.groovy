@@ -41,6 +41,7 @@ class UnitTestingSupportTest {
                     ["thisIsIgnored"],
                     [ "referenceProductionCode",
                       "exceptions",
+                      "enums",
                       "mockFinalClass",
                       "mockInnerClass",
                       "mockFinalMethod" ])
