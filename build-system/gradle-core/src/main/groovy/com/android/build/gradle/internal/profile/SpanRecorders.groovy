@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.internal.profile
 
+import com.android.annotations.NonNull
 import com.android.builder.profile.ExecutionType
 import com.android.builder.profile.Recorder
 import com.android.builder.profile.ThreadRecorder
@@ -24,9 +25,25 @@ import org.gradle.api.Project
 /**
  * Groovy language helper to record execution spans.
  */
-class GroovyRecorder {
+class SpanRecorders {
 
-    static <T> T record(Project project,ExecutionType executionType, Closure<T> closure) {
+    public final static String PROJECT = "project";
+    public final static String VARIANT = "variant";
+
+    static <T> T record(@NonNull ExecutionType executionType, @NonNull Closure<T> closure) {
+        // have to explicitly cast as groovy does not support inner classes with generics...
+        return (T) ThreadRecorder.get().record(executionType, new Recorder.Block() {
+
+            @Override
+            Object call() throws Exception {
+                return closure.call()
+            }
+        })
+    }
+
+    static <T> T record(@NonNull Project project,
+            @NonNull ExecutionType executionType,
+            @NonNull Closure<T> closure) {
         // have to explicitly cast as groovy does not support inner classes with generics...
        return (T) ThreadRecorder.get().record(executionType, new Recorder.Block() {
 
@@ -34,6 +51,17 @@ class GroovyRecorder {
             Object call() throws Exception {
                 return closure.call()
             }
-        }, new Recorder.Property("project", project.name))
+        }, new Recorder.Property(PROJECT, project.getName()))
+    }
+
+    /**
+     * Records an execution span, using a Java {@link Recorder.Block}
+     */
+    static <T> T record(@NonNull Project project,
+            @NonNull ExecutionType executionType,
+            @NonNull Recorder.Block<T> block,
+            Recorder.Property... properties) {
+        return (T) ThreadRecorder.get().record(
+                executionType, block, new Recorder.Property(PROJECT, project.getName()))
     }
 }
