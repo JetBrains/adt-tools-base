@@ -34,7 +34,7 @@ public class Handle {
 
   public Handle(@NotNull byte[] value) {
     assert value.length == SIZE;
-    System.arraycopy(mValue, 0, value, 0, SIZE);
+    System.arraycopy(value, 0, mValue, 0, SIZE);
     mHashCode = ByteBuffer.wrap(mValue).getInt();
   }
 
@@ -60,7 +60,7 @@ public class Handle {
 
   @Override
   public String toString() {
-    return String.format("%0" + SIZE + "x", new BigInteger(mValue));
+    return String.format("%0" + SIZE*2 + "x", new BigInteger(mValue));
   }
 
   @Override
