@@ -18,16 +18,20 @@ package com.android.build.gradle.internal.tasks
 import com.android.build.gradle.internal.dependency.DependencyChecker
 import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.builder.model.ApiVersion
+import com.android.builder.model.SyncIssue
 import com.android.sdklib.SdkVersionInfo
 import com.android.utils.Pair
+import groovy.transform.CompileStatic
+import org.gradle.api.GradleException
 import org.gradle.api.tasks.TaskAction
 
+@CompileStatic
 public class PrepareDependenciesTask extends BaseTask {
     BaseVariantData variant
     final List<DependencyChecker> checkers = []
     final Set<Pair<Integer, String>> androidDependencies = []
 
-    void addDependency(Pair<Integer, String> api) {
+    public void addDependency(Pair<Integer, String> api) {
         androidDependencies.add(api)
     }
 
@@ -43,15 +47,28 @@ public class PrepareDependenciesTask extends BaseTask {
             }
         }
 
+        boolean foundError = false;
+
         for (DependencyChecker checker : checkers) {
             for (Integer api : checker.foundAndroidApis) {
                 if (api > minSdk) {
-                    throw new RuntimeException(String.format(
-                            "ERROR: %s has an indirect dependency on Android API level %d, but minSdkVersion for variant '%s' is API level %d",
+                    foundError = true;
+                    logger.error(String.format(
+                            "%s has an indirect dependency on Android API level %d, but minSdkVersion for variant '%s' is API level %d",
                             checker.configurationDependencies.name.capitalize(), api, variant.name, minSdk))
                 }
             }
+
+            for (SyncIssue syncIssue : checker.getSyncIssues()) {
+                foundError = true
+                logger.error(syncIssue.message);
+            }
         }
+
+        if (foundError) {
+            throw new GradleException("Dependency Error. See console for details");
+        }
+
     }
 
     def addChecker(DependencyChecker checker) {
