@@ -95,12 +95,13 @@ public class GradleTestProject implements TestRule {
         private AndroidTestApp testApp = null;
 
         boolean captureStdOut = false;
+        boolean captureStdErr = false;
 
         /**
          * Create a GradleTestProject.
          */
         public GradleTestProject create()  {
-            return new GradleTestProject(name, testApp, captureStdOut);
+            return new GradleTestProject(name, testApp, captureStdOut, captureStdErr);
         }
 
         /**
@@ -115,6 +116,11 @@ public class GradleTestProject implements TestRule {
 
         public Builder captureStdOut(boolean captureStdOut) {
             this.captureStdOut = captureStdOut;
+            return this;
+        }
+
+        public Builder captureStdErr(boolean captureStdErr) {
+            this.captureStdErr = captureStdErr;
             return this;
         }
 
@@ -167,28 +173,29 @@ public class GradleTestProject implements TestRule {
 
     private File sdkDir;
 
-    private ByteArrayOutputStream stdout;
+    private final ByteArrayOutputStream stdout;
+    private final ByteArrayOutputStream stderr;
 
     @Nullable
     private AndroidTestApp testApp;
 
     private GradleTestProject() {
-        this(null, null, false);
+        this(null, null, false, false);
     }
 
     private GradleTestProject(
             @Nullable String name,
             @Nullable AndroidTestApp testApp,
-            boolean captureStdOut) {
+            boolean captureStdOut,
+            boolean captureStdErr) {
         sdkDir = SdkHelper.findSdkDir();
         ndkDir = findNdkDir();
         String buildDir = System.getenv("PROJECT_BUILD_DIR");
         outDir = (buildDir == null) ? new File("build/tests") : new File(buildDir, "tests");
         this.name = (name == null) ? DEFAULT_TEST_PROJECT_NAME : name;
         this.testApp = testApp;
-        if (captureStdOut) {
-            stdout = new ByteArrayOutputStream();
-        }
+        stdout = captureStdOut ? new ByteArrayOutputStream() : null;
+        stderr = captureStdErr ? new ByteArrayOutputStream() : null;
     }
 
     /**
@@ -210,6 +217,7 @@ public class GradleTestProject implements TestRule {
         ndkDir = rootProject.ndkDir;
         sdkDir = rootProject.sdkDir;
         stdout = rootProject.stdout;
+        stderr = rootProject.stdout;
         testApp = null;
     }
 
@@ -613,6 +621,9 @@ public class GradleTestProject implements TestRule {
         if (stdout != null) {
             launcher.setStandardOutput(stdout);
         }
+        if (stderr != null) {
+            launcher.setStandardError(stderr);
+        }
         launcher.run();
     }
 
@@ -656,6 +667,13 @@ public class GradleTestProject implements TestRule {
      */
     public ByteArrayOutputStream getStdout() {
         return stdout;
+    }
+
+    /**
+     * Return the stderr from all execute command.
+     */
+    public ByteArrayOutputStream getStderr() {
+        return stderr;
     }
 
     /**
