@@ -74,7 +74,17 @@ public abstract class GraphicGenerator {
         /** Circular background */
         CIRCLE("circle"),
         /** Square background */
-        SQUARE("square");
+        SQUARE("square"),
+        /** Vertical rectangular background */
+        VRECT("vrect"),
+        /** Horizontal rectangular background */
+        HRECT("hrect"),
+        /** Square background with Dog-ear effect */
+        SQUARE_DOG("square_dogear"),
+        /** Vertical rectangular background with Dog-ear effect */
+        VRECT_DOG("vrect_dogear"),
+        /** Horizontal rectangular background with Dog-ear effect */
+        HRECT_DOG("hrect_dogear");
 
         /** Id, used in filenames to identify associated stencils */
         public final String id;
