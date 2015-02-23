@@ -39,13 +39,13 @@ dependencies {
     androidTestCompile 'com.google.guava:guava:17.0'
 }
 """
-        // no need to do a full build. Let's just run the manifest task.
+        // Query the model to get the mismatch dep sync error.
         AndroidProject model = project.getSingleModel()
 
         assertThat(model).issues().hasSingleIssue(
                 SyncIssue.SEVERITY_ERROR,
                 SyncIssue.TYPE_MISMATCH_DEP,
                 'com.google.guava:guava',
-                'Conflict with dependency \'com.google.guava:guava\'. Resolved versions for app and test app differ.')
+                'Conflict with dependency \'com.google.guava:guava\'. Resolved versions for app (18.0) and test app (17.0) differ.')
     }
 }
