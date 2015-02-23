@@ -42,6 +42,7 @@ class UnitTestingSupportTest {
                     [ "referenceProductionCode",
                       "exceptions",
                       "enums",
+                      "instanceFields",
                       "mockFinalClass",
                       "mockInnerClass",
                       "mockFinalMethod" ])
