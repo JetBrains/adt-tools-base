@@ -250,4 +250,14 @@ public class Warning implements Comparable<Warning> {
         Collections.sort(sorted);
         return sorted;
     }
+
+    @Override
+    public String toString() {
+        return "Warning{" +
+                "issue=" + issue +
+                ", message='" + message + '\'' +
+                ", file=" + file +
+                ", line=" + line +
+                '}';
+    }
 }
