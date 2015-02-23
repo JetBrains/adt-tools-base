@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.performance
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.integration.common.fixture.app.JavaGradleModule
 import com.android.build.gradle.integration.common.fixture.app.LargeTestProject
 import groovy.transform.CompileStatic
 import org.junit.AfterClass
@@ -30,7 +31,7 @@ class SmallJavaEvaluationTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
             .fromTestApp(LargeTestProject.builder()
-                .withType(LargeTestProject.ProjectType.JAVA)
+                .withModule(JavaGradleModule)
                 .withDepth(LargeTestProject.SMALL_DEPTH)
                 .withBreadth(LargeTestProject.SMALL_BREADTH)
                 .create())

@@ -30,7 +30,7 @@ import java.util.List;
 /**
  * An Android module, empty (just an empty manifest)
  */
-class AndroidGradleModule extends GradleModule {
+public class AndroidGradleModule extends GradleModule {
 
     public AndroidGradleModule(
             @NonNull File moduleDir,

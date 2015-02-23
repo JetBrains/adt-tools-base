@@ -24,7 +24,7 @@ import java.util.List;
 /**
  * a Java Module with no files.
  */
-class JavaGradleModule extends GradleModule {
+public class JavaGradleModule extends GradleModule {
 
     public JavaGradleModule(
             @NonNull File moduleDir,
