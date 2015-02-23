@@ -47,15 +47,21 @@ public class AaptCruncher implements PngCruncher {
         mProcessOutputHandler = processOutputHandler;
     }
 
+    @Override
+    public int start() {
+        return 0;
+    }
+
     /**
      * Runs the aapt crunch command on a single file
      *
+     * @param key the request key.
      * @param from the file to crunch
      * @param to the output file
      * @throws PngException
      */
     @Override
-    public void crunchPng(@NonNull File from, @NonNull File to) throws PngException {
+    public void crunchPng(int key, @NonNull File from, @NonNull File to) throws PngException {
 
         try {
             ProcessInfo processInfo = new ProcessInfoBuilder()
@@ -75,7 +81,7 @@ public class AaptCruncher implements PngCruncher {
     }
 
     @Override
-    public void end() throws InterruptedException {
+    public void end(int key) throws InterruptedException {
         // nothing to do, it's all synchronous.
     }
 }

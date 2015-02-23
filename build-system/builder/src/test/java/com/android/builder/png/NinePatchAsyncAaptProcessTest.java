@@ -36,6 +36,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.zip.DataFormatException;
 
@@ -48,7 +49,9 @@ public class NinePatchAsyncAaptProcessTest {
 
     private static Map<File, File> mSourceAndCrunchedFiles;
 
-    private static final AtomicLong classStartTime = new AtomicLong();
+    private static final AtomicLong sClassStartTime = new AtomicLong();
+    private static final AtomicInteger sCruncherKey = new AtomicInteger();
+    private static final PngCruncher sCruncher = getCruncher();
 
     private final File mFile;
 
@@ -63,28 +66,32 @@ public class NinePatchAsyncAaptProcessTest {
 
     @Test
     public void run() throws PngException, IOException {
-        File outFile = NinePatchAaptProcessorTestUtils.crunchFile(mFile, getCruncher());
+        File outFile = NinePatchAaptProcessorTestUtils.crunchFile(
+                sCruncherKey.get(), mFile, sCruncher);
         mSourceAndCrunchedFiles.put(mFile, outFile);
     }
 
     @AfterClass
-    public static void tearDownAndCheck() throws IOException, DataFormatException {
-        NinePatchAaptProcessorTestUtils
-                .tearDownAndCheck(mSourceAndCrunchedFiles, getCruncher(), classStartTime);
+    public static void tearDownAndCheck()
+            throws IOException, DataFormatException, InterruptedException {
+
+        NinePatchAaptProcessorTestUtils.tearDownAndCheck(
+                sCruncherKey.get(), mSourceAndCrunchedFiles, sCruncher, sClassStartTime);
         mSourceAndCrunchedFiles = null;
     }
 
     @NonNull
     private static PngCruncher getCruncher() {
         ILogger logger = new StdLogger(StdLogger.Level.VERBOSE);
-        File aapt = NinePatchAaptProcessorTestUtils.getAapt(FullRevision.parseRevision("22"));
+        File aapt = NinePatchAaptProcessorTestUtils.getAapt(FullRevision.parseRevision("22.1.3"));
         return QueuedCruncher.Builder.INSTANCE.newCruncher(aapt.getAbsolutePath(), logger);
     }
 
     @Parameters(name = "{1}")
     public static Collection<Object[]> getNinePatches() {
         Collection<Object[]> params = NinePatchAaptProcessorTestUtils.getNinePatches();
-        classStartTime.set(System.currentTimeMillis());
+        sClassStartTime.set(System.currentTimeMillis());
+        sCruncherKey.set(sCruncher.start());
         return params;
     }
 }
