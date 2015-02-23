@@ -21,6 +21,7 @@ import com.android.build.FilterData;
 import com.android.build.OutputFile;
 import com.android.build.gradle.api.ApkOutputFile;
 import com.android.build.gradle.internal.TaskManager;
+import com.android.build.gradle.internal.tasks.FileSupplierTask;
 import com.android.build.gradle.tasks.PackageApplication;
 import com.android.build.gradle.tasks.SplitZipAlign;
 import com.android.build.gradle.tasks.ZipAlign;
@@ -148,8 +149,8 @@ public class ApkVariantOutputData extends BaseVariantOutputData {
      * than one file when dealing with pure splits.
      * @return the complete list of tasks producing an APK for this variant.
      */
-    public List<Supplier<File>> getOutputFileSuppliers() {
-        ImmutableList.Builder<Supplier<File>> tasks = ImmutableList.builder();
+    public List<FileSupplierTask> getOutputFileSuppliers() {
+        ImmutableList.Builder<FileSupplierTask> tasks = ImmutableList.builder();
         tasks.add(zipAlignTask == null ? packageApplicationTask : zipAlignTask);
         if (splitZipAlign != null || packageSplitResourcesTask != null) {
             tasks.addAll(splitZipAlign == null ? packageSplitResourcesTask.getOutputFileSuppliers()

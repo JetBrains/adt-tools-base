@@ -18,65 +18,23 @@ package com.android.build.gradle.internal.publishing;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.gradle.internal.tasks.FileSupplierTask;
 import com.google.common.base.Supplier;
 
 import org.gradle.api.Task;
-import org.gradle.api.artifacts.PublishArtifact;
-import org.gradle.api.tasks.TaskDependency;
 
 import java.io.File;
-import java.util.Collections;
-import java.util.Date;
-import java.util.Set;
 
 /**
  * custom implementation of PublishArtifact for published APKs.
  */
-public class ApkPublishArtifact implements PublishArtifact {
-
-    @NonNull
-    private final String name;
-
-    @Nullable
-    private final String classifier;
-
-    @NonNull
-    private final Supplier<File> outputFileSupplier;
-
-    @NonNull
-    private final TaskDependency taskDependency;
-
-    private static final class DefaultTaskDependency implements TaskDependency {
-
-        @NonNull
-        private final Set<Task> tasks;
-
-        DefaultTaskDependency(@NonNull Task task) {
-            this.tasks = Collections.singleton(task);
-        }
-
-        @Override
-        public Set<? extends Task> getDependencies(Task task) {
-            return tasks;
-        }
-    }
+public class ApkPublishArtifact extends BasePublishArtifact {
 
     public ApkPublishArtifact(
             @NonNull String name,
             @Nullable String classifier,
-            @NonNull Supplier<File> outputFileSupplier,
-            @NonNull Task task) {
-        this.name = name;
-        this.classifier = classifier;
-        this.outputFileSupplier = outputFileSupplier;
-        this.taskDependency = new DefaultTaskDependency(task);
-    }
-
-
-    @Override
-    @NonNull
-    public String getName() {
-        return name;
+            @NonNull FileSupplierTask outputFileSupplier) {
+        super(name, classifier, outputFileSupplier);
     }
 
     @Override
@@ -87,25 +45,5 @@ public class ApkPublishArtifact implements PublishArtifact {
     @Override
     public String getType() {
         return "apk";
-    }
-
-    @Override
-    public String getClassifier() {
-        return classifier;
-    }
-
-    @Override
-    public File getFile() {
-        return outputFileSupplier.get();
-    }
-
-    @Override
-    public Date getDate() {
-        return null;
-    }
-
-    @Override
-    public TaskDependency getBuildDependencies() {
-        return taskDependency;
     }
 }

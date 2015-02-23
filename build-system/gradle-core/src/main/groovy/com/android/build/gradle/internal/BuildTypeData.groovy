@@ -35,10 +35,10 @@ class BuildTypeData implements ConfigurationProvider {
     final Task assembleTask
 
     BuildTypeData(
-            @NonNull BuildType buildType,
-            @NonNull Project project,
-            @NonNull DefaultAndroidSourceSet sourceSet,
-            @NonNull DefaultAndroidSourceSet unitTestSourceSet) {
+            @NonNull  BuildType buildType,
+            @NonNull  Project project,
+            @NonNull  DefaultAndroidSourceSet sourceSet,
+            @Nullable DefaultAndroidSourceSet unitTestSourceSet) {
         this.buildType = buildType
         this.sourceSet = sourceSet
         this.project = project

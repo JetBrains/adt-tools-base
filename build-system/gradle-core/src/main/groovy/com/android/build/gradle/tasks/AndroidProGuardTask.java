@@ -16,7 +16,11 @@
 
 package com.android.build.gradle.tasks;
 
+import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.gradle.internal.tasks.FileSupplierTask;
+
+import org.gradle.api.Task;
 
 import java.io.File;
 
@@ -27,7 +31,7 @@ import proguard.gradle.ProGuardTask;
  * Decoration for the {@link ProGuardTask} so it implements shared interfaces with our custom
  * tasks.
  */
-public class AndroidProGuardTask extends ProGuardTask implements MappingFileProviderTask {
+public class AndroidProGuardTask extends ProGuardTask implements FileSupplierTask {
 
     @Nullable
     File mappingFile;
@@ -37,9 +41,14 @@ public class AndroidProGuardTask extends ProGuardTask implements MappingFileProv
         super.printmapping(printMapping);
     }
 
-    @Nullable
     @Override
-    public File getMappingFile() {
+    public File get() {
         return mappingFile;
+    }
+
+    @NonNull
+    @Override
+    public Task getTask() {
+        return this;
     }
 }

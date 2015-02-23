@@ -123,15 +123,11 @@ public abstract class BaseExtension {
     String resourcePrefix
 
     List<String> flavorDimensionList
-    String testBuildType = "debug"
 
     private String defaultPublishConfig = "release"
     private boolean publishNonDefault = false
 
     private Closure<Void> variantFilter
-
-    private final DefaultDomainObjectSet<TestVariant> testVariantList =
-        new DefaultDomainObjectSet<TestVariant>(TestVariant.class)
 
     private final List<DeviceProvider> deviceProviderList = Lists.newArrayList();
     private final List<TestServer> testServerList = Lists.newArrayList();
@@ -158,7 +154,8 @@ public abstract class BaseExtension {
             @NonNull NamedDomainObjectContainer<GroupableProductFlavor> productFlavors,
             @NonNull NamedDomainObjectContainer<SigningConfig> signingConfigs,
             @NonNull ExtraModelInfo extraModelInfo,
-            boolean isLibrary) {
+            boolean isLibrary,
+            boolean hasTestScope) {
         this.androidBuilder = androidBuilder
         this.sdkHandler = sdkHandler
         this.buildTypes = buildTypes
@@ -218,8 +215,10 @@ public abstract class BaseExtension {
         }
 
         sourceSetsContainer.create(defaultConfig.name)
-        sourceSetsContainer.create(ANDROID_TEST.prefix)
-        sourceSetsContainer.create(UNIT_TEST.prefix)
+        if (hasTestScope) {
+            sourceSetsContainer.create(ANDROID_TEST.prefix)
+            sourceSetsContainer.create(UNIT_TEST.prefix)
+        }
     }
 
     /**
@@ -229,7 +228,7 @@ public abstract class BaseExtension {
         isWritable = false
     }
 
-    private checkWritability() {
+    protected checkWritability() {
         if (!isWritable) {
             throw new GradleException(
                     "Android tasks have already been created.\n" +
@@ -504,20 +503,8 @@ public abstract class BaseExtension {
         resourcePrefix = prefix
     }
 
-    /**
-     * Returns the list of test variants. Since the collections is built after evaluation,
-     * it should be used with Groovy's <code>all</code> iterator to process future items.
-     */
-    @NonNull
-    public DefaultDomainObjectSet<TestVariant> getTestVariants() {
-        return testVariantList
-    }
 
     abstract void addVariant(BaseVariant variant)
-
-    void addTestVariant(TestVariant testVariant) {
-        testVariantList.add(testVariant)
-    }
 
     public void registerArtifactType(@NonNull String name,
                                      boolean isTest,

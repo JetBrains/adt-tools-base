@@ -16,6 +16,8 @@
 
 package com.android.build.gradle.internal.core;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.dsl.BuildType;
@@ -25,6 +27,7 @@ import com.android.builder.core.VariantConfiguration;
 import com.android.builder.core.VariantType;
 import com.android.builder.model.SigningConfig;
 import com.android.builder.model.SourceProvider;
+import com.google.common.base.Preconditions;
 
 import java.util.List;
 import java.util.Set;
@@ -47,7 +50,8 @@ public class GradleVariantConfiguration extends VariantConfiguration<BuildType, 
             @NonNull SourceProvider defaultSourceProvider,
             @NonNull BuildType buildType,
             @Nullable SourceProvider buildTypeSourceProvider,
-            @NonNull VariantType type, @Nullable SigningConfig signingConfigOverride) {
+            @NonNull VariantType type,
+            @Nullable SigningConfig signingConfigOverride) {
         super(defaultConfig, defaultSourceProvider, buildType, buildTypeSourceProvider, type,
                 signingConfigOverride);
         computeNdkConfig();
@@ -57,7 +61,8 @@ public class GradleVariantConfiguration extends VariantConfiguration<BuildType, 
      * Creates a {@link GradleVariantConfiguration} for a testing variant.
      */
     public GradleVariantConfiguration(
-            @Nullable VariantConfiguration testedConfig, @NonNull ProductFlavor defaultConfig,
+            @Nullable VariantConfiguration testedConfig,
+            @NonNull ProductFlavor defaultConfig,
             @NonNull SourceProvider defaultSourceProvider,
             @NonNull BuildType buildType,
             @Nullable SourceProvider buildTypeSourceProvider,
@@ -74,6 +79,9 @@ public class GradleVariantConfiguration extends VariantConfiguration<BuildType, 
             @NonNull GroupableProductFlavor productFlavor,
             @NonNull SourceProvider sourceProvider,
             @NonNull String dimensionName) {
+        checkNotNull(productFlavor);
+        checkNotNull(sourceProvider);
+        checkNotNull(dimensionName);
         super.addProductFlavor(productFlavor, sourceProvider, dimensionName);
         computeNdkConfig();
         return this;

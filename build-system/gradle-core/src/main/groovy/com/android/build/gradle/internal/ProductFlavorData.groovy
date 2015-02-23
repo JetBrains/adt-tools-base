@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal
 
 import com.android.annotations.NonNull
+import com.android.annotations.Nullable
 import com.android.build.gradle.internal.api.DefaultAndroidSourceSet
 import com.android.builder.core.BuilderConstants
 import com.android.builder.core.DefaultProductFlavor
@@ -76,16 +77,20 @@ public class ProductFlavorData<T extends DefaultProductFlavor> {
     ProductFlavorData(
             @NonNull T productFlavor,
             @NonNull DefaultAndroidSourceSet sourceSet,
-            @NonNull DefaultAndroidSourceSet androidTestSourceSet,
-            @NonNull DefaultAndroidSourceSet unitTestSourceSet,
+            @Nullable DefaultAndroidSourceSet androidTestSourceSet,
+            @Nullable DefaultAndroidSourceSet unitTestSourceSet,
             @NonNull Project project) {
         this.productFlavor = productFlavor
         this.sourceSet = sourceSet
         this.androidTestSourceSet = androidTestSourceSet
         this.unitTestSourceSet = unitTestSourceSet
+
         mainProvider = new ConfigurationProviderImpl(project, sourceSet)
-        androidTestProvider = new ConfigurationProviderImpl(project, androidTestSourceSet)
-        unitTestProvider = new ConfigurationProviderImpl(project, unitTestSourceSet)
+
+        androidTestProvider = androidTestSourceSet != null ?
+                new ConfigurationProviderImpl(project, androidTestSourceSet) : null
+        unitTestProvider = unitTestSourceSet != null ?
+                new ConfigurationProviderImpl(project, unitTestSourceSet) : null
 
         if (!BuilderConstants.MAIN.equals(sourceSet.name)) {
             assembleTask = project.tasks.create("assemble${sourceSet.name.capitalize()}")
@@ -96,7 +101,7 @@ public class ProductFlavorData<T extends DefaultProductFlavor> {
         }
     }
 
-    @NonNull
+    @Nullable
     DefaultAndroidSourceSet getTestSourceSet(@NonNull VariantType type) {
         switch (type) {
             case VariantType.ANDROID_TEST:
@@ -108,6 +113,7 @@ public class ProductFlavorData<T extends DefaultProductFlavor> {
         }
     }
 
+    @Nullable
     ConfigurationProvider getTestConfigurationProvider(@NonNull VariantType type) {
         switch (type) {
             case VariantType.ANDROID_TEST:

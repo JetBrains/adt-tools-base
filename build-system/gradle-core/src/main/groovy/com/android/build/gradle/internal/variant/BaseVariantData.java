@@ -17,7 +17,6 @@ package com.android.build.gradle.internal.variant;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.annotations.VisibleForTesting;
 import com.android.build.FilterData;
 import com.android.build.OutputFile;
 import com.android.build.gradle.BaseExtension;
@@ -35,8 +34,7 @@ import com.android.build.gradle.tasks.AidlCompile;
 import com.android.build.gradle.tasks.BinaryFileProviderTask;
 import com.android.build.gradle.tasks.GenerateBuildConfig;
 import com.android.build.gradle.tasks.GenerateResValues;
-import com.android.build.gradle.tasks.JackTask;
-import com.android.build.gradle.tasks.MappingFileProviderTask;
+import com.android.build.gradle.internal.tasks.FileSupplierTask;
 import com.android.build.gradle.tasks.MergeAssets;
 import com.android.build.gradle.tasks.MergeResources;
 import com.android.build.gradle.tasks.NdkCompile;
@@ -49,8 +47,8 @@ import com.google.common.collect.Lists;
 
 import org.gradle.api.Task;
 import org.gradle.api.tasks.Copy;
+import org.gradle.api.tasks.bundling.Jar;
 import org.gradle.api.tasks.compile.AbstractCompile;
-import org.gradle.api.tasks.compile.JavaCompile;
 
 import java.io.File;
 import java.util.Collection;
@@ -109,11 +107,12 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
 
     // can be JavaCompile or JackTask depending on user's settings.
     public AbstractCompile javaCompileTask;
+    public Jar classesJarTask;
     // empty anchor compile task to set all compilations tasks as dependents.
     public Task compileTask;
     public JacocoInstrumentTask jacocoInstrumentTask;
 
-    public MappingFileProviderTask mappingFileProviderTask;
+    public FileSupplierTask mappingFileProviderTask;
     public BinaryFileProviderTask binayFileProviderTask;
 
     // TODO : why is Jack not registered as the obfuscationTask ???
@@ -408,12 +407,12 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
     }
 
     @Nullable
-    public MappingFileProviderTask getMappingFileProvider() {
+    public FileSupplierTask getMappingFileProvider() {
         return mappingFileProviderTask;
     }
 
     @Nullable
     public File getMappingFile() {
-        return mappingFileProviderTask != null ? mappingFileProviderTask.getMappingFile() : null;
+        return mappingFileProviderTask != null ? mappingFileProviderTask.get() : null;
     }
 }
