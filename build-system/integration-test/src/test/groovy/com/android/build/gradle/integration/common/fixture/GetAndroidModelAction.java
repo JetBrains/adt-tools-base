@@ -43,7 +43,11 @@ public class GetAndroidModelAction implements BuildAction<Map<String, AndroidPro
             AndroidProject model = buildController.findModel(project, AndroidProject.class);
             if (model != null) {
                 modelMap.put(project.getPath(), model);
+            } else {
+
+
             }
+
         }
 
         return modelMap;
