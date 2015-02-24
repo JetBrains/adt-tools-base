@@ -23,7 +23,6 @@ import com.android.build.gradle.internal.SdkHandler
 import com.android.build.gradle.internal.dsl.BuildType
 import com.android.build.gradle.internal.dsl.GroupableProductFlavor
 import com.android.build.gradle.internal.dsl.SigningConfig
-import com.android.build.gradle.tasks.TestedExtension
 import com.android.builder.core.AndroidBuilder
 import groovy.transform.CompileStatic
 import org.gradle.api.NamedDomainObjectContainer
@@ -57,7 +56,6 @@ public class AppExtension extends TestedExtension {
     /**
      * Returns the list of Application variants. Since the collections is built after evaluation,
      * it should be used with Gradle's <code>all</code> iterator to process future items.
-     *
      */
     public DefaultDomainObjectSet<ApplicationVariant> getApplicationVariants() {
         return applicationVariantList

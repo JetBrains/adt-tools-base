@@ -21,7 +21,7 @@ import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.internal.dsl.BuildType
 import com.android.build.gradle.internal.dsl.GroupableProductFlavor
 import com.android.build.gradle.internal.dsl.SigningConfig
-import com.android.build.gradle.tasks.TestExtension
+import com.android.build.gradle.TestExtension
 import com.android.builder.core.AndroidBuilder
 import org.gradle.api.GradleException
 import org.gradle.api.NamedDomainObjectContainer
