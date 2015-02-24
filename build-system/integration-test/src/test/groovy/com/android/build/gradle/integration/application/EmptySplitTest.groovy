@@ -28,7 +28,7 @@ import org.junit.Test
 class EmptySplitTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("emptySplit")
+            .fromTestProject("emptySplit")
             .create()
 
     @BeforeClass

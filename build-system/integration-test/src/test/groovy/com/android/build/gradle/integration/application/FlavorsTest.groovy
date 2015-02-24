@@ -45,7 +45,7 @@ import static org.junit.Assert.assertNotNull
 class FlavorsTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("flavors")
+            .fromTestProject("flavors")
             .create()
     static AndroidProject model
 

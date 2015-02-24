@@ -1,0 +1,44 @@
+apply from: "../commonHeader.gradle"
+buildscript { apply from: "../commonBuildScript.gradle", to: buildscript }
+
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 21
+    buildToolsVersion = rootProject.ext.buildToolsVersion
+
+    defaultConfig {
+        minSdkVersion 8
+        ndk {
+            moduleName "sanangeles"
+            cFlags "-DANDROID_NDK -DDISABLE_IMPORTGL"
+            ldLibs "GLESv1_CM", "dl", "log"
+            stl "stlport_static"
+        }
+
+        // This actual the app version code. Giving ourselves 1,000,000 values
+        versionCode = 123
+
+    }
+
+    buildTypes.debug.jniDebuggable true
+
+    splits {
+        abi {
+            enable true
+            reset()
+            include 'x86', 'armeabi-v7a', 'mips'
+        }
+    }
+}
+
+// map for the version code. x86/mips must be higher than arm due to binary
+// code conversion libraries
+ext.versionCodes = ['armeabi-v7a':1, mips:2, x86:3]
+
+android.applicationVariants.all { variant ->
+    // assign different version code for each output
+    variant.outputs.each { output ->
+        output.versionCodeOverride = project.ext.versionCodes.get(output.getFilter(com.android.build.OutputFile.ABI)) * 1000000 + android.defaultConfig.versionCode
+    }
+}

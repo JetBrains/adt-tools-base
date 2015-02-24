@@ -28,7 +28,7 @@ import org.junit.Test
 class DependencyCheckerTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("dependencyChecker")
+            .fromTestProject("dependencyChecker")
             .create()
 
     @BeforeClass

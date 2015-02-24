@@ -26,7 +26,7 @@ import static org.junit.Assert.assertFalse
 class GenerateAnnotationsClassPathTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("extractAnnotations")
+            .fromTestProject("extractAnnotations")
             .captureStdOut(true)
             .create()
 

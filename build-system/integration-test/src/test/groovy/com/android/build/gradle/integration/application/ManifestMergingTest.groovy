@@ -39,13 +39,13 @@ class ManifestMergingTest {
     @ClassRule
     static public GradleTestProject libsTest = GradleTestProject.builder()
             .withName("libsTest")
-            .fromSample("libsTest")
+            .fromTestProject("libsTest")
             .create()
 
     @ClassRule
     static public GradleTestProject flavors = GradleTestProject.builder()
             .withName("flavors")
-            .fromSample("flavors")
+            .fromTestProject("flavors")
             .create()
 
 

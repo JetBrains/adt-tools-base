@@ -1,0 +1,26 @@
+apply from: "../commonHeader.gradle"
+buildscript { apply from: "../commonBuildScriptExperimental.gradle", to: buildscript }
+
+
+apply plugin: 'com.android.model.application'
+
+model {
+    android.config {
+        compileSdkVersion 19
+        buildToolsVersion = rootProject.ext.buildToolsVersion
+
+    }
+
+    android.ndk {
+        moduleName "simple-jni"
+
+        // TODO: Include a way to set include directories the DSL.
+        cppFlags "-I$rootDir/src/include"
+        stl "stlport_static"
+    }
+
+    android.productFlavors {
+        free
+        premium
+    }
+}

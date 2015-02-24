@@ -39,7 +39,7 @@ import static org.junit.Assert.assertTrue
 class FlavoredlibTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("flavoredlib")
+            .fromTestProject("flavoredlib")
             .create()
     static Map<String, AndroidProject> models
 

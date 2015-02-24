@@ -33,7 +33,7 @@ import static junit.framework.Assert.fail
 class WearWithCustomApplicationIdTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("embedded")
+            .fromTestProject("embedded")
             .create()
 
     @BeforeClass

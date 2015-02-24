@@ -30,7 +30,7 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
 class RsEnabledAnnotationTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("extractRsEnabledAnnotations")
+            .fromTestProject("extractRsEnabledAnnotations")
             .create()
 
     @BeforeClass

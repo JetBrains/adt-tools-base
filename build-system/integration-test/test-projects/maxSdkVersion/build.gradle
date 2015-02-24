@@ -1,0 +1,54 @@
+apply from: "../commonHeader.gradle"
+buildscript { apply from: "../commonBuildScript.gradle", to: buildscript }
+
+apply plugin: 'com.android.application'
+
+repositories {
+  mavenCentral()
+}
+
+dependencies {
+    compile 'com.android.support:support-v4:13.0.0'
+    debugCompile 'com.android.support:support-v13:13.0.0'
+}
+
+android {
+    compileSdkVersion 21
+    buildToolsVersion = rootProject.ext.buildToolsVersion
+
+    testBuildType "debug"
+
+    signingConfigs {
+        myConfig {
+            storeFile file("debug.keystore")
+            storePassword "android"
+            keyAlias "androiddebugkey"
+            keyPassword "android"
+        }
+    }
+
+    defaultConfig {
+        versionCode 12
+        versionName "2.0"
+        minSdkVersion 16
+        targetSdkVersion 16
+        maxSdkVersion 19
+    }
+
+    productFlavors {
+        f1 {
+            maxSdkVersion 21
+            applicationId = "com.android.tests.maxsdkversion.f1"
+        }
+        f2 {
+            applicationId = "com.android.tests.maxsdkversion.f2"
+        }
+    }
+
+    buildTypes {
+        debug {
+            applicationIdSuffix ".debug"
+            signingConfig signingConfigs.myConfig
+        }
+    }
+}

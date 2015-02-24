@@ -38,7 +38,7 @@ import static org.junit.Assert.assertNotNull
 class TestWithDepTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("testWithDep")
+            .fromTestProject("testWithDep")
             .create()
 
     static public AndroidProject model

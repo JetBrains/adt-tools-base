@@ -33,7 +33,7 @@ import static org.junit.Assert.fail
 class AndroidManifestInTestTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("androidManifestInTest")
+            .fromTestProject("androidManifestInTest")
             .create()
 
     @BeforeClass

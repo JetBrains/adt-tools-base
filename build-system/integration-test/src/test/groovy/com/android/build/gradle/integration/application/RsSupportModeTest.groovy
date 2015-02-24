@@ -39,7 +39,7 @@ import static org.junit.Assert.assertTrue
 class RsSupportModeTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("rsSupportMode")
+            .fromTestProject("rsSupportMode")
             .create()
     static AndroidProject model
 

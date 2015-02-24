@@ -46,12 +46,10 @@ android.applicationVariants.all { variant ->
             getProvider("provider:$variant.name"))       // source provider specific to this variant for the artifact.
 }
 
-
 // after the artifact is created, add a dependency
 dependencies {
    foo files('libs/util-1.0.jar')
 }
-
 
 android {
     compileSdkVersion 19

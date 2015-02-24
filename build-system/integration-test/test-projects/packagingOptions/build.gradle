@@ -1,0 +1,19 @@
+apply from: "../commonHeader.gradle"
+buildscript { apply from: "../commonBuildScript.gradle", to: buildscript }
+
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 21
+    buildToolsVersion = rootProject.ext.buildToolsVersion
+
+    packagingOptions {
+        exclude 'excluded.txt'
+        pickFirst 'first_pick.txt'
+    }
+}
+
+dependencies {
+    compile files('jar1.jar')
+    compile files('jar2.jar')
+}

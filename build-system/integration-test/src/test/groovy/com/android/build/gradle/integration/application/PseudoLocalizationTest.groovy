@@ -30,7 +30,7 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
 class PseudoLocalizationTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("pseudolocalized")
+            .fromTestProject("pseudolocalized")
             .create()
 
     @BeforeClass

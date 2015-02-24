@@ -1,0 +1,29 @@
+apply from: "../commonHeader.gradle"
+buildscript { apply from: "../commonBuildScript.gradle", to: buildscript }
+
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 21
+    buildToolsVersion = rootProject.ext.buildToolsVersion
+    generatePureSplits true
+
+    defaultConfig {
+        minSdkVersion 21
+        ndk {
+            moduleName "hello-jni"
+        }
+
+        // This actual the app version code. Giving ourselves 1,000,000 values
+        versionCode = 123
+
+    }
+
+    splits {
+        abi {
+            enable true
+            reset()
+            include 'x86', 'armeabi-v7a', 'mips'
+        }
+    }
+}
