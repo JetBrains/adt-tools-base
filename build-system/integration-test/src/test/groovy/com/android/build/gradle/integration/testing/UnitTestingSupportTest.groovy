@@ -44,11 +44,13 @@ class UnitTestingSupportTest {
                         "enums",
                         "exceptions",
                         "instanceFields",
+                        "javaResourcesOnClasspath",
                         "mockFinalClass",
                         "mockFinalMethod",
                         "mockInnerClass",
+                        "prodJavaResourcesOnClasspath",
+                        "prodRClass",
                         "referenceProductionCode",
-                        "resourcesOnClasspath",
                         "taskConfiguration",
                     ])
 

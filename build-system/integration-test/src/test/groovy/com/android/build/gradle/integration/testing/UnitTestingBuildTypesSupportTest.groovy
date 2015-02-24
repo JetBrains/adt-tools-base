@@ -42,10 +42,11 @@ class UnitTestingBuildTypesSupportTest {
         assert results.outcome("referenceProductionCode") == PASSED
         assert results.outcome("resourcesOnClasspath") == PASSED
 
-        flavorsProject.execute("clean",  "testBuildTypeWithResource")
+        flavorsProject.execute("clean", "testBuildTypeWithResource")
         results = new JUnitResults(
                 flavorsProject.file("build/test-results/buildTypeWithResource/TEST-com.android.tests.UnitTest.xml"))
-        assert results.outcome("resourcesOnClasspath") == PASSED
+        assert results.outcome("javaResourcesOnClasspath") == PASSED
+        assert results.outcome("prodJavaResourcesOnClasspath") == PASSED
 
         try {
             // Tests for release try to compile against a debug-only class.
