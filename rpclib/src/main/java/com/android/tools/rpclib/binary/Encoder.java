@@ -29,7 +29,7 @@ import java.io.UnsupportedEncodingException;
 public class Encoder {
   @NotNull private final OutputStream mOutputStream;
   @NotNull private final TObjectIntHashMap<BinaryObject> mEncodedMap;
-  @NotNull private final byte mBuffer[];
+  @NotNull private final byte[] mBuffer;
 
   public Encoder(@NotNull OutputStream out) {
     mEncodedMap = new TObjectIntHashMap<BinaryObject>();
@@ -102,8 +102,13 @@ public class Encoder {
     int64(Double.doubleToLongBits(v));
   }
 
-  public void string(String v) throws IOException {
+  public void string(@Nullable String v) throws IOException {
     try {
+      if (v == null) {
+        int32(0);
+        return;
+      }
+
       byte[] bytes = v.getBytes("UTF-8");
       int32((short)(bytes.length));
       for (byte b : bytes) {
