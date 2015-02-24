@@ -24,7 +24,6 @@
             <tr><td>jacoco</td></tr>
             <tr><td>splits</td></tr>
             <tr><td>resourcePrefix</td></tr>
-            <tr><td>testVariants</td></tr>
             <tr><td>variantFilter</td></tr>
         </table>
     </section>
