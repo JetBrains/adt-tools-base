@@ -17,8 +17,8 @@ package com.android.tools.rpclib.binary;
 
 import org.jetbrains.annotations.NotNull;
 
+import javax.xml.bind.DatatypeConverter;
 import java.io.IOException;
-import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
@@ -60,7 +60,7 @@ public class Handle {
 
   @Override
   public String toString() {
-    return String.format("%0" + SIZE*2 + "x", new BigInteger(mValue));
+    return DatatypeConverter.printHexBinary(mValue).toLowerCase();
   }
 
   @Override
