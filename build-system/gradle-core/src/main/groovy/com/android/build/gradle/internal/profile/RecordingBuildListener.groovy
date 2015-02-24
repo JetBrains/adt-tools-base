@@ -19,27 +19,43 @@ package com.android.build.gradle.internal.profile
 import com.android.builder.profile.ExecutionRecord
 import com.android.builder.profile.ExecutionType
 import com.android.builder.profile.Recorder
-import com.android.builder.profile.ThreadRecorder
 import com.google.common.base.CaseFormat
 import org.gradle.api.Task
 import org.gradle.api.execution.TaskExecutionListener
 import org.gradle.api.tasks.TaskState
 
-import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Implementation of the {@link TaskExecutionListener} that records the execution span of
- * tasks execution and records such spans using the {@link ThreadRecorder} facilities.
+ * tasks execution and records such spans using the {@link Recorder} facilities.
  */
 class RecordingBuildListener implements TaskExecutionListener {
 
-    final AtomicLong currentRecordID = new AtomicLong();
-    final AtomicLong startTime = new AtomicLong();
+    private final class TaskRecord {
+
+        private final long recordId;
+        private final long startTime;
+
+        TaskRecord(long recordId, long startTime) {
+            this.startTime = startTime
+            this.recordId = recordId
+        }
+    }
+
+    private final Recorder mRecorder;
+
+    RecordingBuildListener(Recorder recorder) {
+        mRecorder = recorder
+    }
+
+    // map of outstanding tasks executing, keyed by their name.
+    final Map<String, TaskRecord> taskRecords = new ConcurrentHashMap<>();
 
     @Override
     void beforeExecute(Task task) {
-        currentRecordID.set(ThreadRecorder.get().allocationRecordId());
-        startTime.set(System.currentTimeMillis());
+        taskRecords.put(task.getName(), new TaskRecord(
+                mRecorder.allocationRecordId(), System.currentTimeMillis()))
     }
 
     @Override
@@ -53,22 +69,23 @@ class RecordingBuildListener implements TaskExecutionListener {
         String potentialExecutionTypeName = "TASK_" +
                 CaseFormat.LOWER_CAMEL.converterTo(CaseFormat.UPPER_UNDERSCORE).
                         convert(taskImpl);
-        ExecutionType executiontype;
+        ExecutionType executionType;
         try {
-            executiontype = ExecutionType.valueOf(potentialExecutionTypeName)
-        } catch (IllegalArgumentException e) {
-            executiontype = ExecutionType.GENERIC_TASK_EXECUTION
+            executionType = ExecutionType.valueOf(potentialExecutionTypeName)
+        } catch (IllegalArgumentException ignored) {
+            executionType = ExecutionType.GENERIC_TASK_EXECUTION
         }
 
         List< Recorder.Property> properties = new ArrayList<>();
         properties.add(new Recorder.Property("project", task.getProject().getName()));
         properties.add(new Recorder.Property("task", task.getName()));
-        ThreadRecorder.get().closeRecord(new ExecutionRecord(
-                currentRecordID.get(),
+        TaskRecord taskRecord = taskRecords.get(task.getName());
+        mRecorder.closeRecord(new ExecutionRecord(
+                taskRecord.recordId,
                 0 /* parentId */,
-                startTime.get(),
-                System.currentTimeMillis() - startTime.get(),
-                executiontype,
+                taskRecord.startTime,
+                System.currentTimeMillis() - taskRecord.startTime,
+                executionType,
                 properties))
     }
 }

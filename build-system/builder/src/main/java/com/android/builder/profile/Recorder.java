@@ -60,14 +60,24 @@ public interface Recorder {
     final class Property {
 
         @NonNull
-        String name;
+        final String name;
 
         @NonNull
-        String value;
+        final String value;
 
         public Property(@NonNull String name, @NonNull String value) {
             this.name = name;
             this.value = value;
+        }
+
+        @NonNull
+        public String getName() {
+            return name;
+        }
+
+        @NonNull
+        public String getValue() {
+            return value;
         }
     }
 
