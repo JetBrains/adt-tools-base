@@ -8,6 +8,7 @@ import android.app.Application;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.util.ArrayMap;
+import android.os.AsyncTask;
 import android.os.Debug;
 import android.os.PowerManager;
 import org.junit.Test;
@@ -75,6 +76,24 @@ public class UnitTest {
             assertTrue(e.getMessage().contains("tech-docs/unit-testing-support"));
         }
 
+    }
+
+    @Test
+    public void enums() throws Exception {
+        assertNotNull(AsyncTask.Status.RUNNING);
+        assertNotEquals(AsyncTask.Status.RUNNING, AsyncTask.Status.FINISHED);
+
+        assertEquals(AsyncTask.Status.FINISHED, AsyncTask.Status.valueOf("FINISHED"));
+        assertEquals(1, AsyncTask.Status.PENDING.ordinal());
+        assertEquals("RUNNING", AsyncTask.Status.RUNNING.name());
+
+        assertEquals(AsyncTask.Status.RUNNING, Enum.valueOf(AsyncTask.Status.class, "RUNNING"));
+
+        AsyncTask.Status[] values = AsyncTask.Status.values();
+        assertEquals(3, values.length);
+        assertEquals(AsyncTask.Status.FINISHED, values[0]);
+        assertEquals(AsyncTask.Status.PENDING, values[1]);
+        assertEquals(AsyncTask.Status.RUNNING, values[2]);
     }
 
     @Test
