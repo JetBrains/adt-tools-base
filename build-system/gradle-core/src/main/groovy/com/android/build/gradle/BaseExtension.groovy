@@ -154,8 +154,7 @@ public abstract class BaseExtension {
             @NonNull NamedDomainObjectContainer<GroupableProductFlavor> productFlavors,
             @NonNull NamedDomainObjectContainer<SigningConfig> signingConfigs,
             @NonNull ExtraModelInfo extraModelInfo,
-            boolean isLibrary,
-            boolean hasTestScope) {
+            boolean isLibrary) {
         this.androidBuilder = androidBuilder
         this.sdkHandler = sdkHandler
         this.buildTypes = buildTypes
@@ -215,10 +214,6 @@ public abstract class BaseExtension {
         }
 
         sourceSetsContainer.create(defaultConfig.name)
-        if (hasTestScope) {
-            sourceSetsContainer.create(ANDROID_TEST.prefix)
-            sourceSetsContainer.create(UNIT_TEST.prefix)
-        }
     }
 
     /**
@@ -502,7 +497,6 @@ public abstract class BaseExtension {
     void resourcePrefix(String prefix) {
         resourcePrefix = prefix
     }
-
 
     abstract void addVariant(BaseVariant variant)
 

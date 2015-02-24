@@ -17,7 +17,7 @@
 package com.android.build.gradle.tasks
 
 import com.android.annotations.NonNull
-import com.android.build.gradle.internal.tasks.FileSupplierTask
+import com.android.build.gradle.internal.tasks.FileSupplier
 import com.android.builder.core.AndroidBuilder
 import com.android.sdklib.BuildToolInfo
 import com.android.sdklib.repository.FullRevision
@@ -37,7 +37,7 @@ import org.gradle.api.tasks.compile.AbstractCompile
  */
 @ParallelizableTask
 public class JackTask extends AbstractCompile
-        implements FileSupplierTask, BinaryFileProviderTask {
+        implements FileSupplier, BinaryFileProviderTask {
 
     final static FullRevision JACK_MIN_REV = new FullRevision(21, 1, 0)
 

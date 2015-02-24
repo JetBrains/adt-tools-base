@@ -31,8 +31,6 @@ import com.android.build.gradle.internal.dependency.ManifestDependencyImpl
 import com.android.build.gradle.internal.dependency.SymbolFileProviderImpl
 import com.android.build.gradle.internal.dependency.VariantDependencies
 import com.android.build.gradle.internal.dsl.AbiSplitOptions
-import com.android.build.gradle.internal.dsl.BuildType
-import com.android.build.gradle.internal.dsl.GroupableProductFlavor
 import com.android.build.gradle.internal.dsl.SigningConfig
 import com.android.build.gradle.internal.publishing.ApkPublishArtifact
 import com.android.build.gradle.internal.publishing.MappingPublishArtifact
@@ -41,7 +39,7 @@ import com.android.build.gradle.internal.tasks.CheckManifest
 import com.android.build.gradle.internal.tasks.DependencyReportTask
 import com.android.build.gradle.internal.tasks.DeviceProviderInstrumentTestLibraryTask
 import com.android.build.gradle.internal.tasks.DeviceProviderInstrumentTestTask
-import com.android.build.gradle.internal.tasks.FileSupplierTask
+import com.android.build.gradle.internal.tasks.FileSupplier
 import com.android.build.gradle.internal.tasks.GenerateApkDataTask
 import com.android.build.gradle.internal.tasks.InstallVariantTask
 import com.android.build.gradle.internal.tasks.MockableAndroidJarTask
@@ -105,7 +103,6 @@ import com.android.sdklib.AndroidTargetHash
 import com.android.sdklib.BuildToolInfo
 import com.android.sdklib.IAndroidTarget
 import com.android.sdklib.SdkVersionInfo
-import com.google.common.base.Supplier
 import com.google.common.collect.ImmutableSet
 import com.google.common.collect.Lists
 import com.google.common.collect.Sets
@@ -113,7 +110,6 @@ import groovy.transform.CompileDynamic
 import groovy.transform.CompileStatic
 import org.gradle.api.GradleException
 import org.gradle.api.JavaVersion
-import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.artifacts.Configuration
@@ -2559,7 +2555,7 @@ abstract class TaskManager {
                 // defaults, proceed with declaring our artifacts.
                 if (getExtension().defaultPublishConfig.equals(outputName)) {
 
-                    for (FileSupplierTask outputFileProvider :
+                    for (FileSupplier outputFileProvider :
                             variantOutputData.getOutputFileSuppliers()) {
                         project.artifacts.add("default", new ApkPublishArtifact(
                                 projectBaseName,
@@ -2576,7 +2572,7 @@ abstract class TaskManager {
                 }
 
                 if (getExtension().publishNonDefault) {
-                    for (FileSupplierTask outputFileProvider :
+                    for (FileSupplier outputFileProvider :
                             variantOutputData.getOutputFileSuppliers()) {
                         project.artifacts.add(
                                 variantData.variantDependency.publishConfiguration.name,

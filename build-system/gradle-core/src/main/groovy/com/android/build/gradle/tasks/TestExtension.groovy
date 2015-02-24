@@ -33,7 +33,6 @@ import org.gradle.internal.reflect.Instantiator
 
 /**
  * 'android' extension for 'com.android.test' project.
- * This extends {@link BaseExtension}
  */
 @CompileStatic
 public class TestExtension extends BaseExtension {
@@ -55,12 +54,12 @@ public class TestExtension extends BaseExtension {
             @NonNull ExtraModelInfo extraModelInfo,
             boolean isLibrary) {
         super(project, instantiator, androidBuilder, sdkHandler, buildTypes, productFlavors,
-                signingConfigs, extraModelInfo, isLibrary, false /*hasTestScope*/)
+                signingConfigs, extraModelInfo, isLibrary)
     }
 
     /**
      * Returns the list of Application variants. Since the collections is built after evaluation,
-     * it should be used with Groovy's <code>all</code> iterator to process future items.
+     * it should be used with Gradle's <code>all</code> iterator to process future items.
      *
      */
     public DefaultDomainObjectSet<ApplicationVariant> getApplicationVariants() {
