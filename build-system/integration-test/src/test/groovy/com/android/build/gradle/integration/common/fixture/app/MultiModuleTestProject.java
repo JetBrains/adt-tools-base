@@ -42,8 +42,12 @@ public class MultiModuleTestProject implements TestProject {
         for (Map.Entry<String, ? extends TestProject> entry : subprojects.entrySet()) {
             String subprojectPath = entry.getKey();
             TestProject subproject = entry.getValue();
-            subproject.write(new File(projectDir, convertGradlePathToDirectory(subprojectPath)),
-                    buildScriptContent);
+            File subprojectDir = new File(projectDir, convertGradlePathToDirectory(subprojectPath));
+            if (!subprojectDir.exists()) {
+                subprojectDir.mkdirs();
+                assert subprojectDir.isDirectory();
+            }
+            subproject.write(subprojectDir, null);
         }
 
         StringBuilder builder = new StringBuilder();
@@ -53,6 +57,15 @@ public class MultiModuleTestProject implements TestProject {
         Files.write(builder.toString(),
                 new File(projectDir, "settings.gradle"),
                 Charset.defaultCharset());
+
+        Files.write(buildScriptContent,
+                new File(projectDir, "build.gradle"),
+                Charset.defaultCharset());
+    }
+
+    @Override
+    public boolean containsFullBuildScript() {
+        return false;
     }
 
     private static String convertGradlePathToDirectory(String gradlePath) {

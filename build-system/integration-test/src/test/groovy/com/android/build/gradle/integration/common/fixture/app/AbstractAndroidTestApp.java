@@ -23,9 +23,11 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimap;
+import com.google.common.io.Files;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.NoSuchElementException;
 
@@ -33,6 +35,7 @@ import java.util.NoSuchElementException;
  * Abstract class implementing AndroidTestApp.
  */
 public abstract class AbstractAndroidTestApp implements AndroidTestApp {
+
     private Multimap<String, TestSourceFile> sourceFiles = ArrayListMultimap.create();
 
     protected void addFiles(TestSourceFile... files) {
@@ -84,9 +87,21 @@ public abstract class AbstractAndroidTestApp implements AndroidTestApp {
     @Override
     public void write(@NonNull File projectDir, @Nullable String buildScriptContent)
             throws IOException {
+        // Create build.gradle.
+        if (buildScriptContent != null) {
+            Files.write(
+                    buildScriptContent,
+                    new File(projectDir, "build.gradle"),
+                    Charset.defaultCharset());
+        }
+
         for (TestSourceFile srcFile : getAllSourceFiles()) {
             srcFile.writeToDir(projectDir);
         }
     }
 
+    @Override
+    public boolean containsFullBuildScript() {
+        return false;
+    }
 }

@@ -25,6 +25,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.integration.common.fixture.app.AbstractAndroidTestApp;
 import com.android.build.gradle.integration.common.fixture.app.AndroidTestApp;
+import com.android.build.gradle.integration.common.fixture.app.EmptyAndroidTestApp;
 import com.android.build.gradle.integration.common.fixture.app.TestSourceFile;
 import com.android.build.gradle.integration.common.utils.FileHelper;
 import com.android.build.gradle.integration.common.utils.JacocoAgent;
@@ -161,7 +162,11 @@ public class GradleTestProject implements TestRule {
             return fromTestApp(app);
         }
 
-        static class EmptyTestApp extends AbstractAndroidTestApp {
+        private static class EmptyTestApp extends AbstractAndroidTestApp {
+            @Override
+            public boolean containsFullBuildScript() {
+                return true;
+            }
         }
     }
 
@@ -309,7 +314,9 @@ public class GradleTestProject implements TestRule {
                         new File(testDir.getParent(), COMMON_BUILD_SCRIPT_EXP));
 
                 if (testProject != null) {
-                    testProject.write(testDir, getGradleBuildscript());
+                    testProject.write(
+                            testDir,
+                            testProject.containsFullBuildScript() ? "" :getGradleBuildscript());
                 } else {
                     Files.write(
                             getGradleBuildscript(),

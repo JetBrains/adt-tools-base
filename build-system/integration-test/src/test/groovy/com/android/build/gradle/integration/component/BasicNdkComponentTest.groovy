@@ -36,12 +36,12 @@ class BasicNdkComponentTest {
 
     @ClassRule
     public static GradleTestProject project = GradleTestProject.builder()
+            .fromTestApp(new HelloWorldJniApp(jniDir: "cpp", useCppSource: true))
             .forExpermimentalPlugin(true)
             .create();
 
     @BeforeClass
     public static void setUp() {
-        new HelloWorldJniApp(jniDir: "cpp", useCppSource: true).write(project.testDir, null)
         project.getBuildFile() << """
 apply plugin: 'com.android.model.application'
 

@@ -33,12 +33,12 @@ class NdkComponentPluginTest {
 
     @ClassRule
     public static GradleTestProject project = GradleTestProject.builder()
+            .fromTestApp(new HelloWorldJniApp())
             .forExpermimentalPlugin(true)
-            .create();
+            .create()
 
     @BeforeClass
     public static void setUp() {
-        new HelloWorldJniApp().write(project.testDir, null)
         project.getBuildFile() << """
 import com.android.build.gradle.model.NdkComponentModelPlugin
 apply plugin: NdkComponentModelPlugin
