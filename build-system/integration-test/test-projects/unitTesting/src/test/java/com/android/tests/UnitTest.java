@@ -57,6 +57,15 @@ public class UnitTest {
     }
 
     @Test
+    public void aarDependencies() throws Exception {
+        org.jdeferred.Deferred<Integer, Integer, Integer> deferred =
+                new org.jdeferred.impl.DeferredObject<Integer, Integer, Integer>();
+        org.jdeferred.Promise promise = deferred.promise();
+        deferred.resolve(42);
+        assertTrue(promise.isResolved());
+    }
+
+    @Test
     public void exceptions() {
         try {
             ArrayMap map = new ArrayMap();

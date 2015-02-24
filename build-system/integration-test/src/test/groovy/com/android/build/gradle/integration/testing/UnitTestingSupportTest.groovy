@@ -39,13 +39,16 @@ class UnitTestingSupportTest {
             checkResults(
                     "build/test-results/${variant}/TEST-com.android.tests.UnitTest.xml",
                     ["thisIsIgnored"],
-                    [ "referenceProductionCode",
-                      "exceptions",
-                      "enums",
-                      "instanceFields",
-                      "mockFinalClass",
-                      "mockInnerClass",
-                      "mockFinalMethod" ])
+                    [
+                        "aarDependencies",
+                        "enums",
+                        "exceptions",
+                        "instanceFields",
+                        "mockFinalClass",
+                        "mockFinalMethod",
+                        "mockInnerClass",
+                        "referenceProductionCode",
+                    ])
 
             checkResults(
                     "build/test-results/${variant}/TEST-com.android.tests.NonStandardName.xml",
