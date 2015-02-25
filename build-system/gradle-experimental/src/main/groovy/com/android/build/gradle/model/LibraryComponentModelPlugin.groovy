@@ -41,6 +41,7 @@ public class LibraryComponentModelPlugin implements Plugin<Project> {
     void apply(Project project) {
         project.plugins.apply(BaseComponentModelPlugin)
         project.tasks.create("assembleDefault")
+        project.plugins.apply(AndroidComponentModelTestPlugin)
     }
 
     static class Rules extends RuleSource{

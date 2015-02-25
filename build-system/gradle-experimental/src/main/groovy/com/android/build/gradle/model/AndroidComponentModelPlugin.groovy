@@ -42,9 +42,11 @@ import org.gradle.model.internal.core.ModelCreators
 import org.gradle.model.internal.core.ModelPath
 import org.gradle.model.internal.core.ModelReference
 import org.gradle.model.internal.registry.ModelRegistry
+import org.gradle.platform.base.Binary
 import org.gradle.platform.base.BinaryContainer
 import org.gradle.platform.base.BinaryType
 import org.gradle.platform.base.BinaryTypeBuilder
+import org.gradle.platform.base.ComponentBinaries
 import org.gradle.platform.base.ComponentSpecContainer
 import org.gradle.platform.base.ComponentType
 import org.gradle.platform.base.ComponentTypeBuilder
@@ -234,10 +236,9 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
             builder.defaultImplementation(DefaultAndroidBinary)
         }
 
-        @Mutate
-        // TODO: Migrate to @ComponentBinaries when we can create test binary from AndroidBinary.
+        @ComponentBinaries
         void createBinaries(
-                BinaryContainer binaries,
+                CollectionBuilder<AndroidBinary> binaries,
                 @Path("android.buildTypes") NamedDomainObjectContainer<BuildType> buildTypes,
                 List<ProductFlavorCombo> flavorCombos,
                 AndroidComponentSpec spec) {
@@ -247,11 +248,10 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
 
             buildTypes.each { BuildType buildType ->
                 flavorCombos.each { ProductFlavorCombo flavorCombo ->
-                    binaries.create(getBinaryName(buildType, flavorCombo), AndroidBinary) {
+                    binaries.create(getBinaryName(buildType, flavorCombo)) {
                         def binary = it as DefaultAndroidBinary
                         binary.buildType = buildType
                         binary.productFlavors = flavorCombo.flavorList
-                        spec.binaries.add(binary)
                     }
                 }
             }
