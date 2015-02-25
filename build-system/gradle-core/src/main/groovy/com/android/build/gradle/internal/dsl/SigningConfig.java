@@ -34,7 +34,8 @@ import java.io.Serializable;
 /**
  * DSL object for configuring signing configs.
  */
-public class SigningConfig extends DefaultSigningConfig implements Serializable, Named {
+public class SigningConfig extends DefaultSigningConfig implements Serializable, Named,
+        CoreSigningConfig {
     private static final long serialVersionUID = 1L;
 
     /**

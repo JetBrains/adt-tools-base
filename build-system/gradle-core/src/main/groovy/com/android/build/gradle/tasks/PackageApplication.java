@@ -6,8 +6,8 @@ import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.annotations.ApkFile;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.dsl.AbiSplitOptions;
+import com.android.build.gradle.internal.dsl.CoreSigningConfig;
 import com.android.build.gradle.internal.dsl.PackagingOptions;
-import com.android.build.gradle.internal.dsl.SigningConfig;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantOutputScope;
@@ -132,7 +132,7 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
 
     private boolean jniDebugBuild;
 
-    private SigningConfig signingConfig;
+    private CoreSigningConfig signingConfig;
 
     private PackagingOptions packagingOptions;
 
@@ -160,11 +160,11 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
 
     @Nested
     @Optional
-    public SigningConfig getSigningConfig() {
+    public CoreSigningConfig getSigningConfig() {
         return signingConfig;
     }
 
-    public void setSigningConfig(SigningConfig signingConfig) {
+    public void setSigningConfig(CoreSigningConfig signingConfig) {
         this.signingConfig = signingConfig;
     }
 
@@ -351,7 +351,7 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
                 }
             });
 
-            SigningConfig sc = (SigningConfig) config.getSigningConfig();
+            CoreSigningConfig sc = (CoreSigningConfig) config.getSigningConfig();
             packageApp.setSigningConfig(sc);
             if (sc != null) {
                 String validateSigningTaskName = "validate" + StringHelper.capitalize(sc.getName()) + "Signing";

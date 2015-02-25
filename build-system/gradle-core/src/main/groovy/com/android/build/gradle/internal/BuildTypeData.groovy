@@ -17,18 +17,18 @@ package com.android.build.gradle.internal
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
 import com.android.build.gradle.internal.api.DefaultAndroidSourceSet
-import com.android.build.gradle.internal.dsl.BuildType
+import com.android.build.gradle.internal.dsl.CoreBuildType
 import org.gradle.api.Project
 import org.gradle.api.Task
 /**
  * Class containing a BuildType and associated data (Sourceset for instance).
  */
 class BuildTypeData extends VariantDimensionData {
-    final BuildType buildType
+    final CoreBuildType buildType
     final Task assembleTask
 
     BuildTypeData(
-            @NonNull  BuildType buildType,
+            @NonNull  CoreBuildType buildType,
             @NonNull  Project project,
             @NonNull  DefaultAndroidSourceSet sourceSet,
             @Nullable DefaultAndroidSourceSet unitTestSourceSet) {

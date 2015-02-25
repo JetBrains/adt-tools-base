@@ -33,8 +33,7 @@ import org.junit.Test
 class MultiProjectsAndroidComponentTest {
     public static AndroidTestApp app = new HelloWorldApp()
     static {
-        app.addFile(new TestSourceFile("", "build.gradle",
-                new VariantBuildScriptGenerator(
+        VariantBuildScriptGenerator generator = new VariantBuildScriptGenerator(
                 buildTypes: VariantBuildScriptGenerator.MEDIUM_NUMBER,
                 productFlavors: VariantBuildScriptGenerator.MEDIUM_NUMBER,
                 """
@@ -54,8 +53,10 @@ class MultiProjectsAndroidComponentTest {
                         \${productFlavors}
                     }
                 }
-                """.stripIndent()).createBuildScript())
-        )
+                """.stripIndent())
+        generator.addPostProcessor("buildTypes") { return (String) "create { name = \"$it\" }" }
+
+        app.addFile(new TestSourceFile("", "build.gradle", generator.createBuildScript()))
     }
 
     public static TestProject baseProject = new MultiModuleTestProject("app", app, 10)

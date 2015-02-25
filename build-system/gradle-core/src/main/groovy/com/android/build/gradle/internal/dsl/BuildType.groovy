@@ -15,6 +15,7 @@
  */
 
 package com.android.build.gradle.internal.dsl
+
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
 import com.android.annotations.VisibleForTesting
@@ -28,10 +29,11 @@ import org.gradle.api.Action
 import org.gradle.api.Project
 import org.gradle.api.logging.Logger
 import org.gradle.internal.reflect.Instantiator
+
 /**
  * DSL object to configure build types.
  */
-public class BuildType extends DefaultBuildType implements Serializable {
+public class BuildType extends DefaultBuildType implements CoreBuildType, Serializable {
     private static final long serialVersionUID = 1L
 
     @NonNull
@@ -44,9 +46,9 @@ public class BuildType extends DefaultBuildType implements Serializable {
     private Boolean useJack
 
     public BuildType(@NonNull String name,
-                        @NonNull Project project,
-                        @NonNull Instantiator instantiator,
-                        @NonNull Logger logger) {
+                     @NonNull Project project,
+                     @NonNull Instantiator instantiator,
+                     @NonNull Logger logger) {
         super(name)
         this.project = project
         this.logger = logger
@@ -55,8 +57,8 @@ public class BuildType extends DefaultBuildType implements Serializable {
 
     @VisibleForTesting
     BuildType(@NonNull String name,
-                 @NonNull Project project,
-                 @NonNull Logger logger) {
+              @NonNull Project project,
+              @NonNull Logger logger) {
         super(name)
         this.project = project
         this.logger = logger
@@ -92,7 +94,7 @@ public class BuildType extends DefaultBuildType implements Serializable {
     @Override
     protected void _initWith(@NonNull BaseConfig that) {
         super._initWith(that)
-        shrinkResources = that.shrinkResources
+        shrinkResources = that.isShrinkResources()
         useJack = that.useJack
     }
 
@@ -109,7 +111,7 @@ public class BuildType extends DefaultBuildType implements Serializable {
         if (getClass() != o.class) return false
         if (!super.equals(o)) return false
         if (useJack != o.useJack) return false
-        if (shrinkResources != o.shrinkResources) return false
+        if (shrinkResources != o.isShrinkResources()) return false
 
         return true
     }

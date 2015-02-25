@@ -20,14 +20,13 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.gradle.internal.dsl.BuildType;
+import com.android.build.gradle.internal.dsl.CoreBuildType;
 import com.android.build.gradle.internal.dsl.GroupableProductFlavor;
 import com.android.build.gradle.internal.dsl.ProductFlavor;
 import com.android.builder.core.VariantConfiguration;
 import com.android.builder.core.VariantType;
 import com.android.builder.model.SigningConfig;
 import com.android.builder.model.SourceProvider;
-import com.google.common.base.Preconditions;
 
 import java.util.List;
 import java.util.Set;
@@ -38,7 +37,7 @@ import java.util.Set;
  *
  * It also adds support for Ndk support that is not ready to go in the builder library.
  */
-public class GradleVariantConfiguration extends VariantConfiguration<BuildType, ProductFlavor, GroupableProductFlavor> {
+public class GradleVariantConfiguration extends VariantConfiguration<CoreBuildType, ProductFlavor, GroupableProductFlavor> {
 
     private final MergedNdkConfig mMergedNdkConfig = new MergedNdkConfig();
 
@@ -48,7 +47,7 @@ public class GradleVariantConfiguration extends VariantConfiguration<BuildType, 
     public GradleVariantConfiguration(
             @NonNull ProductFlavor defaultConfig,
             @NonNull SourceProvider defaultSourceProvider,
-            @NonNull BuildType buildType,
+            @NonNull CoreBuildType buildType,
             @Nullable SourceProvider buildTypeSourceProvider,
             @NonNull VariantType type,
             @Nullable SigningConfig signingConfigOverride) {
@@ -64,7 +63,7 @@ public class GradleVariantConfiguration extends VariantConfiguration<BuildType, 
             @Nullable VariantConfiguration testedConfig,
             @NonNull ProductFlavor defaultConfig,
             @NonNull SourceProvider defaultSourceProvider,
-            @NonNull BuildType buildType,
+            @NonNull CoreBuildType buildType,
             @Nullable SourceProvider buildTypeSourceProvider,
             @NonNull VariantType type,
             @Nullable SigningConfig signingConfigOverride) {

@@ -17,19 +17,12 @@
 package com.android.build.gradle.internal.variant
 
 import com.android.annotations.NonNull
-import com.android.annotations.Nullable
 import com.android.build.gradle.BaseExtension
-import com.android.build.gradle.internal.BuildTypeData
-import com.android.build.gradle.internal.ProductFlavorData
-import com.android.build.gradle.internal.core.GradleVariantConfiguration
+import com.android.build.gradle.TestExtension
 import com.android.build.gradle.internal.dsl.BuildType
 import com.android.build.gradle.internal.dsl.GroupableProductFlavor
-import com.android.build.gradle.internal.dsl.ProductFlavor
 import com.android.build.gradle.internal.dsl.SigningConfig
-import com.android.build.gradle.TestExtension
 import com.android.builder.core.AndroidBuilder
-import com.android.builder.core.VariantType
-import com.android.builder.model.SourceProvider
 import org.gradle.api.GradleException
 import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.Project
