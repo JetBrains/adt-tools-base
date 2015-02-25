@@ -18,7 +18,7 @@ package com.android.build.gradle.internal.publishing;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.gradle.internal.tasks.FileSupplierTask;
+import com.android.build.gradle.internal.tasks.FileSupplier;
 import com.google.common.base.Supplier;
 
 import org.gradle.api.Task;
@@ -65,7 +65,7 @@ public abstract class BasePublishArtifact implements PublishArtifact {
     public BasePublishArtifact(
             @NonNull String name,
             @Nullable String classifier,
-            @NonNull FileSupplierTask outputFileSupplier) {
+            @NonNull FileSupplier outputFileSupplier) {
         this.name = name;
         this.classifier = classifier;
         this.outputFileSupplier = outputFileSupplier;
@@ -91,6 +91,7 @@ public abstract class BasePublishArtifact implements PublishArtifact {
 
     @Override
     public Date getDate() {
+        // return null to let gradle use the current date during publication.
         return null;
     }
 

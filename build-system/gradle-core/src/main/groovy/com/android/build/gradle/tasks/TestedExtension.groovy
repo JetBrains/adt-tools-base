@@ -32,9 +32,11 @@ import org.gradle.api.internal.DefaultDomainObjectSet
 import org.gradle.api.internal.project.ProjectInternal
 import org.gradle.internal.reflect.Instantiator
 
+import static com.android.builder.core.VariantType.ANDROID_TEST
+import static com.android.builder.core.VariantType.UNIT_TEST
+
 /**
  * base 'android' extension for plugins that have a test component.
- * This extends {@link BaseExtension}
  */
 @CompileStatic
 public abstract class TestedExtension extends BaseExtension {
@@ -53,10 +55,12 @@ public abstract class TestedExtension extends BaseExtension {
             @NonNull NamedDomainObjectContainer<GroupableProductFlavor> productFlavors,
             @NonNull NamedDomainObjectContainer<SigningConfig> signingConfigs,
             @NonNull ExtraModelInfo extraModelInfo,
-            boolean isLibrary,
-            boolean hasTestScope) {
+            boolean isLibrary) {
         super(project, instantiator, androidBuilder, sdkHandler, buildTypes, productFlavors,
-                signingConfigs, extraModelInfo, isLibrary, hasTestScope)
+                signingConfigs, extraModelInfo, isLibrary)
+
+        sourceSetsContainer.create(ANDROID_TEST.prefix)
+        sourceSetsContainer.create(UNIT_TEST.prefix)
     }
 
     /**

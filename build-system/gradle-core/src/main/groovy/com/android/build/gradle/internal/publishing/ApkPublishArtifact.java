@@ -18,12 +18,7 @@ package com.android.build.gradle.internal.publishing;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.gradle.internal.tasks.FileSupplierTask;
-import com.google.common.base.Supplier;
-
-import org.gradle.api.Task;
-
-import java.io.File;
+import com.android.build.gradle.internal.tasks.FileSupplier;
 
 /**
  * custom implementation of PublishArtifact for published APKs.
@@ -33,7 +28,7 @@ public class ApkPublishArtifact extends BasePublishArtifact {
     public ApkPublishArtifact(
             @NonNull String name,
             @Nullable String classifier,
-            @NonNull FileSupplierTask outputFileSupplier) {
+            @NonNull FileSupplier outputFileSupplier) {
         super(name, classifier, outputFileSupplier);
     }
 

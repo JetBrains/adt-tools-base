@@ -50,6 +50,10 @@ import java.util.List;
 import java.util.Set;
 
 /**
+ * An implementation of VariantFactory for a project that generates APKs.
+ *
+ * This can be an app project, or a test-only project, though the default
+ * behavior is app.
  */
 public class ApplicationVariantFactory implements VariantFactory {
 
