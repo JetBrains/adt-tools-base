@@ -177,8 +177,6 @@ abstract class TaskManager {
 
     protected Project project
 
-    private TaskContainer tasks
-
     protected AndroidBuilder androidBuilder
 
     private DependencyManager dependencyManager
@@ -193,16 +191,17 @@ abstract class TaskManager {
 
     protected boolean isNdkTaskNeeded = true
 
+    // Task names
+    private static final String MAIN_PREBUILD = "preBuild"
+
+    private static final String UNINSTALL_ALL = "uninstallAll"
+
+    private static final String DEVICE_CHECK = "deviceCheck"
+
+    private static final String CONNECTED_CHECK = "connectedCheck"
+
     // Tasks
-    private Task mainPreBuild
-
-    private Task uninstallAll
-
     private Task assembleAndroidTest
-
-    private Task deviceCheck
-
-    private Task connectedCheck
 
     private Copy jacocoAgentTask
 
@@ -214,14 +213,12 @@ abstract class TaskManager {
 
     public TaskManager(
             Project project,
-            TaskContainer tasks,
             AndroidBuilder androidBuilder,
             BaseExtension extension,
             SdkHandler sdkHandler,
             DependencyManager dependencyManager,
             ToolingModelBuilderRegistry toolingRegistry) {
         this.project = project
-        this.tasks = tasks
         this.androidBuilder = androidBuilder
         this.sdkHandler = sdkHandler
         this.extension = extension
@@ -244,6 +241,7 @@ abstract class TaskManager {
      * @param assembleTask an optional assembleTask to be used. If null, a new one is created.
      */
     abstract public void createTasksForVariantData(
+            @NonNull TaskFactory tasks,
             @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData)
 
     /**
@@ -277,20 +275,23 @@ abstract class TaskManager {
      * Create tasks before the evaluation (on plugin apply). This is useful for tasks that
      * could be referenced by custom build logic.
      */
-    public void createTasksBeforeEvaluate() {
-        uninstallAll = project.tasks.create("uninstallAll")
-        uninstallAll.description = "Uninstall all applications."
-        uninstallAll.group = INSTALL_GROUP
+    public void createTasksBeforeEvaluate(TaskFactory tasks) {
+        tasks.create(UNINSTALL_ALL) {
+            it.description = "Uninstall all applications."
+            it.group = INSTALL_GROUP
+        }
 
-        deviceCheck = project.tasks.create("deviceCheck")
-        deviceCheck.description = "Runs all device checks using Device Providers and Test Servers."
-        deviceCheck.group = JavaBasePlugin.VERIFICATION_GROUP
+        tasks.create(DEVICE_CHECK) {
+            it.description = "Runs all device checks using Device Providers and Test Servers."
+            it.group = JavaBasePlugin.VERIFICATION_GROUP
+        }
 
-        connectedCheck = project.tasks.create("connectedCheck")
-        connectedCheck.description = "Runs all device checks on currently connected devices."
-        connectedCheck.group = JavaBasePlugin.VERIFICATION_GROUP
+        tasks.create(CONNECTED_CHECK) {
+            it.description = "Runs all device checks on currently connected devices."
+            it.group = JavaBasePlugin.VERIFICATION_GROUP
+        }
 
-        mainPreBuild = project.tasks.create("preBuild")
+        tasks.create(MAIN_PREBUILD)
     }
 
     public void createAssembleAndroidTestTask() {
@@ -1341,7 +1342,9 @@ abstract class TaskManager {
      *
      * @param variantData the test variant
      */
-    public void createAndroidTestVariantTasks(@NonNull TestVariantData variantData) {
+    public void createAndroidTestVariantTasks(
+            @NonNull TaskFactory tasks,
+            @NonNull TestVariantData variantData) {
 
         BaseVariantData<? extends BaseVariantOutputData> testedVariantData =
                 variantData.
@@ -1400,7 +1403,7 @@ abstract class TaskManager {
             createPostCompilationTasks(variantData);
         }
 
-        createPackagingTask(variantData, false /*publishApk*/)
+        createPackagingTask(tasks, variantData, false /*publishApk*/)
 
         assembleAndroidTest.dependsOn variantOutputData.assembleTask
     }
@@ -1568,72 +1571,81 @@ abstract class TaskManager {
     }
 
     public void createConnectedCheckTasks(
+            TaskFactory tasks,
             List<BaseVariantData<? extends BaseVariantOutputData>> variantDataList,
             boolean hasFlavors,
             boolean isLibraryTest) {
-        List<AndroidReportTask> reportTasks = Lists.newArrayListWithExpectedSize(2)
+        List<String> reportTasks = Lists.newArrayListWithExpectedSize(2)
 
         List<DeviceProvider> providers = getExtension().deviceProviders
         List<TestServer> servers = getExtension().testServers
 
-        Task mainConnectedTask = connectedCheck
+        String mainConnectedTaskName = CONNECTED_CHECK
         String connectedRootName = "${CONNECTED}${ANDROID_TEST.suffix}"
         // if more than one flavor, create a report aggregator task and make this the parent
         // task for all new connected tasks.
         if (hasFlavors) {
-            mainConnectedTask = project.tasks.create(connectedRootName, AndroidReportTask)
-            mainConnectedTask.group = JavaBasePlugin.VERIFICATION_GROUP
-            mainConnectedTask.description =
-                    "Installs and runs instrumentation tests for all flavors on connected devices."
-            mainConnectedTask.reportType = ReportType.MULTI_FLAVOR
-            connectedCheck.dependsOn mainConnectedTask
+            mainConnectedTaskName = connectedRootName
+            tasks.create(connectedRootName, AndroidReportTask) { AndroidReportTask mainConnectedTask ->
+                mainConnectedTask.group = JavaBasePlugin.VERIFICATION_GROUP
+                mainConnectedTask.description =
+                        "Installs and runs instrumentation tests for all flavors on connected devices."
+                mainConnectedTask.reportType = ReportType.MULTI_FLAVOR
+                conventionMapping(mainConnectedTask).map("resultsDir") {
+                    String rootLocation = getExtension().testOptions.resultsDir != null ?
+                            getExtension().testOptions.resultsDir :
+                            "$project.buildDir/${FD_OUTPUTS}/$FD_ANDROID_RESULTS"
 
-            conventionMapping(mainConnectedTask).map("resultsDir") {
-                String rootLocation = getExtension().testOptions.resultsDir != null ?
-                        getExtension().testOptions.resultsDir :
-                        "$project.buildDir/${FD_OUTPUTS}/$FD_ANDROID_RESULTS"
+                    project.file("$rootLocation/connected/$FD_FLAVORS_ALL")
+                }
+                conventionMapping(mainConnectedTask).map("reportsDir") {
+                    String rootLocation = getExtension().testOptions.reportDir != null ?
+                            getExtension().testOptions.reportDir :
+                            "$project.buildDir/${FD_OUTPUTS}/$FD_REPORTS/$FD_ANDROID_TESTS"
 
-                project.file("$rootLocation/connected/$FD_FLAVORS_ALL")
+                    project.file("$rootLocation/connected/$FD_FLAVORS_ALL")
+                }
+
             }
-            conventionMapping(mainConnectedTask).map("reportsDir") {
-                String rootLocation = getExtension().testOptions.reportDir != null ?
-                        getExtension().testOptions.reportDir :
-                        "$project.buildDir/${FD_OUTPUTS}/$FD_REPORTS/$FD_ANDROID_TESTS"
+            reportTasks.add(mainConnectedTaskName)
 
-                project.file("$rootLocation/connected/$FD_FLAVORS_ALL")
+            tasks.named(CONNECTED_CHECK) {
+                it.dependsOn mainConnectedTaskName
             }
-
-            reportTasks.add(mainConnectedTask)
         }
 
-        Task mainProviderTask = deviceCheck
+        String mainProviderTaskName = DEVICE_CHECK
         // if more than one provider tasks, either because of several flavors, or because of
         // more than one providers, then create an aggregate report tasks for all of them.
         if (providers.size() > 1 || hasFlavors) {
-            mainProviderTask = project.tasks.create("${DEVICE}${ANDROID_TEST.suffix}",
-                    AndroidReportTask)
-            mainProviderTask.group = JavaBasePlugin.VERIFICATION_GROUP
-            mainProviderTask.description =
-                    "Installs and runs instrumentation tests using all Device Providers."
-            mainProviderTask.reportType = ReportType.MULTI_FLAVOR
-            deviceCheck.dependsOn mainProviderTask
+            mainProviderTaskName = "${DEVICE}${ANDROID_TEST.suffix}"
+            tasks.create(mainProviderTaskName, AndroidReportTask) { AndroidReportTask mainProviderTask ->
+                mainProviderTask.group = JavaBasePlugin.VERIFICATION_GROUP
+                mainProviderTask.description =
+                        "Installs and runs instrumentation tests using all Device Providers."
+                mainProviderTask.reportType = ReportType.MULTI_FLAVOR
 
-            conventionMapping(mainProviderTask).map("resultsDir") {
-                String rootLocation = getExtension().testOptions.resultsDir != null ?
-                        getExtension().testOptions.resultsDir :
-                        "$project.buildDir/${FD_OUTPUTS}/$FD_ANDROID_RESULTS"
+                conventionMapping(mainProviderTask).map("resultsDir") {
+                    String rootLocation = getExtension().testOptions.resultsDir != null ?
+                            getExtension().testOptions.resultsDir :
+                            "$project.buildDir/${FD_OUTPUTS}/$FD_ANDROID_RESULTS"
 
-                project.file("$rootLocation/devices/$FD_FLAVORS_ALL")
+                    project.file("$rootLocation/devices/$FD_FLAVORS_ALL")
+                }
+                conventionMapping(mainProviderTask).map("reportsDir") {
+                    String rootLocation = getExtension().testOptions.reportDir != null ?
+                            getExtension().testOptions.reportDir :
+                            "$project.buildDir/${FD_OUTPUTS}/$FD_REPORTS/$FD_ANDROID_TESTS"
+
+                    project.file("$rootLocation/devices/$FD_FLAVORS_ALL")
+                }
             }
-            conventionMapping(mainProviderTask).map("reportsDir") {
-                String rootLocation = getExtension().testOptions.reportDir != null ?
-                        getExtension().testOptions.reportDir :
-                        "$project.buildDir/${FD_OUTPUTS}/$FD_REPORTS/$FD_ANDROID_TESTS"
 
-                project.file("$rootLocation/devices/$FD_FLAVORS_ALL")
+            tasks.named(DEVICE_CHECK) {
+                it.dependsOn mainProviderTaskName
             }
 
-            reportTasks.add(mainProviderTask)
+            reportTasks.add(mainProviderTaskName)
         }
 
         // Now look for the tested variant and create the check tasks for them.
@@ -1674,7 +1686,9 @@ abstract class TaskManager {
                                 CONNECTED
                         )
 
-                mainConnectedTask.dependsOn connectedTask
+                tasks.named(mainConnectedTaskName) {
+                    it.dependsOn connectedTask
+                }
                 testVariantData.connectedTestTask = connectedTask
 
                 if (baseVariantData.variantConfiguration.buildType.isTestCoverageEnabled()) {
@@ -1701,7 +1715,9 @@ abstract class TaskManager {
                     }
 
                     reportTask.dependsOn connectedTask
-                    mainConnectedTask.dependsOn reportTask
+                    tasks.named(mainConnectedTaskName) {
+                        it.dependsOn reportTask
+                    }
                 }
 
                 // now the providers.
@@ -1719,7 +1735,9 @@ abstract class TaskManager {
                                     "$DEVICE/$deviceProvider.name"
                             )
 
-                    mainProviderTask.dependsOn providerTask
+                    tasks.named(mainProviderTaskName) {
+                        it.dependsOn providerTask
+                    }
                     testVariantData.providerTestTaskList.add(providerTask)
 
                     if (!deviceProvider.isConfigured()) {
@@ -1754,7 +1772,9 @@ abstract class TaskManager {
                     conventionMapping(serverTask).
                             map("variantName") { baseVariantData.variantConfiguration.fullName }
 
-                    deviceCheck.dependsOn serverTask
+                    tasks.named(DEVICE_CHECK) {
+                        it.dependsOn serverTask
+                    }
 
                     if (!testServer.isConfigured()) {
                         serverTask.enabled = false;
@@ -1773,9 +1793,11 @@ abstract class TaskManager {
         // stop the build).
         if (!reportTasks.isEmpty() && project.gradle.startParameter.continueOnFailure) {
             project.gradle.taskGraph.whenReady { TaskExecutionGraph taskGraph ->
-                for (AndroidReportTask reportTask : reportTasks) {
+                for (String reportTask : reportTasks) {
                     if (taskGraph.hasTask(reportTask)) {
-                        reportTask.setWillRun()
+                        tasks.named(reportTask) { AndroidReportTask task ->
+                            task.setWillRun()
+                        }
                     }
                 }
             }
@@ -2360,7 +2382,10 @@ abstract class TaskManager {
      *                assembleTask is always set in the Variant.
      * @param publishApk if true the generated APK gets published.
      */
-    public void createPackagingTask(@NonNull ApkVariantData variantData, boolean publishApk) {
+    public void createPackagingTask(
+            @NonNull TaskFactory tasks,
+            @NonNull ApkVariantData variantData,
+            boolean publishApk) {
         GradleVariantConfiguration config = variantData.variantConfiguration
 
         boolean signedApk = variantData.isSigned()
@@ -2652,7 +2677,9 @@ abstract class TaskManager {
         conventionMapping(uninstallTask).map("adbExe") { sdkHandler.getSdkInfo()?.adb }
 
         variantData.uninstallTask = uninstallTask
-        uninstallAll.dependsOn uninstallTask
+        tasks.named(UNINSTALL_ALL) {
+            it.dependsOn uninstallTask
+        }
     }
 
     public Task createAssembleTask(
@@ -2952,7 +2979,7 @@ abstract class TaskManager {
     private void createPreBuildTasks(BaseVariantData<? extends BaseVariantOutputData> variantData) {
         variantData.preBuildTask = project.tasks.create(
                 "pre${variantData.variantConfiguration.fullName.capitalize()}Build")
-        variantData.preBuildTask.dependsOn mainPreBuild
+        variantData.preBuildTask.dependsOn MAIN_PREBUILD
 
         def prepareDependenciesTask = project.tasks.create(
                 "prepare${variantData.variantConfiguration.fullName.capitalize()}Dependencies",

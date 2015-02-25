@@ -18,6 +18,7 @@ package com.android.build.gradle.model
 
 import com.android.build.gradle.TestedExtension
 import com.android.build.gradle.internal.TaskContainerAdaptor
+import com.android.build.gradle.internal.TaskManager
 import com.android.build.gradle.internal.VariantManager
 import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.build.gradle.internal.variant.TestVariantData
@@ -72,6 +73,7 @@ class AndroidComponentModelTestPlugin extends RuleSource {
             CollectionBuilder<Task> tasks,
             AndroidBinary androidBinary,
             VariantManager variantManager,
+            TaskManager taskManager,
             AndroidComponentSpec spec) {
         TestedExtension extension
         if (spec.extension instanceof TestedExtension) {
@@ -95,6 +97,8 @@ class AndroidComponentModelTestPlugin extends RuleSource {
         TestVariantData testVariantData =
                 variantManager.createTestVariantData(testedVariantData, ANDROID_TEST)
         variantManager.getVariantDataList().add(testVariantData);
-        variantManager.createTasksForVariantData(new TaskCollectionBuilderAdaptor(tasks), testVariantData)
+        variantManager.createTasksForVariantData(
+                new TaskCollectionBuilderAdaptor(tasks),
+                testVariantData)
     }
 }

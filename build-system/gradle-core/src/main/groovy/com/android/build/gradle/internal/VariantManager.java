@@ -273,13 +273,13 @@ public class VariantManager implements VariantModel {
             populateVariantDataList();
         }
 
+        final TaskFactory tasks = new TaskContainerAdaptor(project.getTasks());
         for (final BaseVariantData<? extends BaseVariantOutputData> variantData : variantDataList) {
             SpanRecorders.record(project, ExecutionType.VARIANT_MANAGER_CREATE_TASKS_FOR_VARIANT,
                     new Recorder.Block<Void>() {
                         @Override
                         public Void call() throws Exception {
-                            createTasksForVariantData(
-                                    new TaskContainerAdaptor(project.getTasks()), variantData);
+                            createTasksForVariantData(tasks, variantData);
                             return null;
                         }
                     },
@@ -302,7 +302,10 @@ public class VariantManager implements VariantModel {
                     @Override
                     public Void call() throws Exception {
                         taskManager.createConnectedCheckTasks(
-                                variantDataList, !productFlavors.isEmpty(), false /*isLibrary*/);
+                                tasks,
+                                variantDataList,
+                                !productFlavors.isEmpty(),
+                                false /*isLibrary*/);
                         taskManager.createUnitTestTasks(variantDataList);
 
                         return null;
@@ -374,7 +377,8 @@ public class VariantManager implements VariantModel {
     /**
      * Create tasks for the specified variantData.
      */
-    public void createTasksForVariantData(TaskFactory tasks,
+    public void createTasksForVariantData(
+            TaskFactory tasks,
             BaseVariantData<? extends BaseVariantOutputData> variantData) {
         VariantType variantType = variantData.getType();
 
@@ -423,7 +427,7 @@ public class VariantManager implements VariantModel {
             testVariantConfig.setDependencies(variantDep);
             switch (variantType) {
                 case ANDROID_TEST:
-                    taskManager.createAndroidTestVariantTasks((TestVariantData) variantData);
+                    taskManager.createAndroidTestVariantTasks(tasks, (TestVariantData) variantData);
                     break;
                 case UNIT_TEST:
                     taskManager.createUnitTestVariantTasks((TestVariantData) variantData);
@@ -432,7 +436,7 @@ public class VariantManager implements VariantModel {
                     throw new IllegalArgumentException("Unknown test type " + variantType);
             }
         } else {
-            taskManager.createTasksForVariantData(variantData);
+            taskManager.createTasksForVariantData(tasks, variantData);
         }
     }
 
