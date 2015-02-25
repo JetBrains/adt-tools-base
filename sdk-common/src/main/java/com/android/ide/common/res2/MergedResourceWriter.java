@@ -71,6 +71,8 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
 
     private final boolean mProcess9Patch;
 
+    private final int mCruncherKey;
+
     /**
      * map of XML values files to write after parsing all the files. the key is the qualifier.
      */
@@ -89,6 +91,7 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
             boolean process9Patch) {
         super(rootFolder);
         mCruncher = pngRunner;
+        mCruncherKey = mCruncher.start();
         mCrunchPng = crunchPng;
         mProcess9Patch = process9Patch;
 
@@ -124,9 +127,7 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
     public void end() throws ConsumerException {
         super.end();
         try {
-            if (mCruncher != null) {
-                mCruncher.end();
-            }
+            mCruncher.end(mCruncherKey);
         } catch (InterruptedException e) {
             throw new ConsumerException(e);
         }
@@ -199,12 +200,12 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
                                 Files.copy(file, outFile);
                             } else if (filename.endsWith(DOT_PNG)) {
                                 if (mCrunchPng && mProcess9Patch) {
-                                    mCruncher.crunchPng(file, outFile);
+                                    mCruncher.crunchPng(mCruncherKey, file, outFile);
                                 } else {
                                     // we should not crunch the png files, but we should still
                                     // process the nine patch.
                                     if (mProcess9Patch && filename.endsWith(DOT_9PNG)) {
-                                        mCruncher.crunchPng(file, outFile);
+                                        mCruncher.crunchPng(mCruncherKey, file, outFile);
                                     } else {
                                         Files.copy(file, outFile);
                                     }

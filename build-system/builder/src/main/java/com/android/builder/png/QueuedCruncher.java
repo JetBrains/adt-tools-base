@@ -25,6 +25,7 @@ import com.android.builder.tasks.WorkQueue;
 import com.android.ide.common.internal.PngCruncher;
 import com.android.ide.common.internal.PngException;
 import com.android.utils.ILogger;
+import com.google.common.base.Objects;
 
 import java.io.File;
 import java.io.IOException;
@@ -32,6 +33,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * implementation of {@link com.android.ide.common.internal.PngCruncher} that queues request and
@@ -74,8 +76,14 @@ public class QueuedCruncher implements PngCruncher {
     // Queue responsible for handling all passed jobs with a pool of worker threads.
     @NonNull private final WorkQueue<AaptProcess> mCrunchingRequests;
     // list of outstanding jobs.
-    @NonNull private final ConcurrentLinkedQueue<Job<AaptProcess>> mOutstandingJobs =
-            new ConcurrentLinkedQueue<Job<AaptProcess>>();
+    @NonNull private final Map<Integer, ConcurrentLinkedQueue<Job<AaptProcess>>> mOutstandingJobs =
+            new ConcurrentHashMap<Integer, ConcurrentLinkedQueue<Job<AaptProcess>>>();
+    // ref count of active users, if it drops to zero, that means there are no more active users
+    // and the queue should be shutdown.
+    @NonNull private final AtomicInteger refCount = new AtomicInteger(0);
+
+    // per process unique key provider to remember which users enlisted which requests.
+    @NonNull private final AtomicInteger keyProvider = new AtomicInteger(0);
 
 
     private QueuedCruncher(
@@ -85,8 +93,9 @@ public class QueuedCruncher implements PngCruncher {
         mLogger = iLogger;
         QueueThreadContext<AaptProcess> queueThreadContext = new QueueThreadContext<AaptProcess>() {
 
-            // move this to a TLS.
-            @NonNull private final Map<String, AaptProcess> mAaptProcesses = new HashMap<String, AaptProcess>();
+            // move this to a TLS, but do not store instances of AaptProcess in it.
+            @NonNull private final Map<String, AaptProcess> mAaptProcesses =
+                    new ConcurrentHashMap<String, AaptProcess>();
 
             @Override
             public void creation(@NonNull Thread t) throws IOException {
@@ -106,7 +115,9 @@ public class QueuedCruncher implements PngCruncher {
             @Override
             public void runTask(@NonNull Job<AaptProcess> job) throws Exception {
                 job.runTask(
-                        new JobContext<AaptProcess>(mAaptProcesses.get(Thread.currentThread().getName())));
+                        new JobContext<AaptProcess>(
+                                mAaptProcesses.get(Thread.currentThread().getName())));
+                mOutstandingJobs.get(((QueuedJob) job).key).remove(job);
             }
 
             @Override
@@ -144,10 +155,22 @@ public class QueuedCruncher implements PngCruncher {
                 mLogger, queueThreadContext, "png-cruncher", 5, 2f);
     }
 
+    private static final class QueuedJob extends Job<AaptProcess> {
+
+        private final int key;
+        public QueuedJob(int key, String jobTile, Task<AaptProcess> task) {
+            super(jobTile, task);
+            this.key = key;
+        }
+    }
+
     @Override
-    public void crunchPng(@NonNull final File from, @NonNull final File to) throws PngException {
+    public void crunchPng(int key, @NonNull final File from, @NonNull final File to)
+            throws PngException {
+
         try {
-            final Job<AaptProcess> aaptProcessJob = new Job<AaptProcess>(
+            final Job<AaptProcess> aaptProcessJob = new QueuedJob(
+                    key,
                     "Cruncher " + from.getName(),
                     new Task<AaptProcess>() {
                         @Override
@@ -159,8 +182,16 @@ public class QueuedCruncher implements PngCruncher {
                             mLogger.verbose("Thread(%1$s): done executing job %2$s",
                                     Thread.currentThread().getName(), job.getJobTitle());
                         }
+
+                        @Override
+                        public String toString() {
+                            return Objects.toStringHelper(this)
+                                    .add("from", from.getAbsolutePath())
+                                    .add("to", to.getAbsolutePath())
+                                    .toString();
+                        }
                     });
-            mOutstandingJobs.add(aaptProcessJob);
+            mOutstandingJobs.get(key).add(aaptProcessJob);
             mCrunchingRequests.push(aaptProcessJob);
         } catch (InterruptedException e) {
             // Restore the interrupted status
@@ -169,9 +200,10 @@ public class QueuedCruncher implements PngCruncher {
         }
     }
 
-    public void waitForAll() throws InterruptedException {
+    private void waitForAll(int key) throws InterruptedException {
         mLogger.verbose("Thread(%1$s): begin waitForAll", Thread.currentThread().getName());
-        Job<AaptProcess> aaptProcessJob = mOutstandingJobs.poll();
+        ConcurrentLinkedQueue<Job<AaptProcess>> jobs = mOutstandingJobs.get(key);
+        Job<AaptProcess> aaptProcessJob = jobs.poll();
         while (aaptProcessJob != null) {
             mLogger.verbose("Thread(%1$s) : wait for {%2$s)", Thread.currentThread().getName(),
                     aaptProcessJob.toString());
@@ -179,22 +211,35 @@ public class QueuedCruncher implements PngCruncher {
                 throw new RuntimeException(
                         "Crunching " + aaptProcessJob.getJobTitle() + " failed, see logs");
             }
-            aaptProcessJob = mOutstandingJobs.poll();
+            aaptProcessJob = jobs.poll();
         }
         mLogger.verbose("Thread(%1$s): end waitForAll", Thread.currentThread().getName());
     }
 
     @Override
-    public void end() throws InterruptedException {
+    public synchronized int start() {
+        // increment our reference count.
+        refCount.incrementAndGet();
+        // get a unique key for the lifetime of this process.
+        int key = keyProvider.incrementAndGet();
+        mOutstandingJobs.put(key, new ConcurrentLinkedQueue<Job<AaptProcess>>());
+        return key;
+    }
+
+    @Override
+    public synchronized void end(int key) throws InterruptedException {
         long startTime = System.currentTimeMillis();
         try {
-            waitForAll();
-            mOutstandingJobs.clear();
+            waitForAll(key);
+            mOutstandingJobs.get(key).clear();
             mLogger.verbose("Job finished in %1$d", System.currentTimeMillis() - startTime);
         } finally {
             // even if we have failures, we need to shutdown property the sub processes.
-            mCrunchingRequests.shutdown();
-            mLogger.verbose("Shutdown finished in %1$d", System.currentTimeMillis() - startTime);
+            if (refCount.decrementAndGet() == 0) {
+                mCrunchingRequests.shutdown();
+                mLogger.verbose("Shutdown finished in %1$d",
+                        System.currentTimeMillis() - startTime);
+            }
         }
     }
 }

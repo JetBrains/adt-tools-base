@@ -66,6 +66,7 @@ public class Job<T> {
     public String toString() {
         return Objects.toStringHelper(this)
                 .add("title", mJobTitle)
+                .add("task", mTask)
                 .add("latch", mBooleanLatch)
                 .add("result", mResult.get())
                 .toString();
