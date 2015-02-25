@@ -30,19 +30,15 @@ import java.net.URL;
 
 public class UnitTest {
     @Test
-    public void referenceProductionCode() {
-        // Reference code for the tested build type.
-        DebugOnlyClass foo = new DebugOnlyClass();
-        assertEquals("debug", foo.foo());
-    }
-
-    @Test
     public void resourcesOnClasspath() throws Exception {
-        // resource_file.txt is only for buildTypeWithResource.
         URL url = UnitTest.class.getClassLoader().getResource("resource_file.txt");
-        assertNull(url);
+        assertNotNull("expected resource_file.txt to be in the ClassLoader's resources", url);
 
         InputStream stream = UnitTest.class.getClassLoader().getResourceAsStream("resource_file.txt");
-        assertNull(stream);
+        assertNotNull("expected resource_file.txt to be opened as a stream", stream);
+        byte[] line = new byte[1024];
+        assertTrue("Expected >0 bytes read from input stream", stream.read(line) > 0);
+        String s = new String(line, "UTF-8").trim();
+        assertEquals("Expected success from resource file", "success", s);
     }
 }

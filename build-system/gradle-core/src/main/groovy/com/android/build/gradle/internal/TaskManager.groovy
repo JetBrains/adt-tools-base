@@ -1095,7 +1095,7 @@ abstract class TaskManager {
         processResources.from(((AndroidSourceSet) variantConfiguration.defaultSourceSet).resources.
                 getSourceFiles())
 
-        if (!variantConfiguration.type.isForTesting()) {
+        if (variantConfiguration.type != ANDROID_TEST) {
             processResources.from(
                     ((AndroidSourceSet) variantConfiguration.buildTypeSourceSet).resources.
                             getSourceFiles())
@@ -1185,6 +1185,7 @@ abstract class TaskManager {
         }
 
         javaCompileTask.dependsOn variantData.prepareDependenciesTask
+        javaCompileTask.dependsOn variantData.processJavaResourcesTask
 
         // TODO - dependency information for the compile classpath is being lost.
         // Add a temporary approximation
@@ -1326,6 +1327,7 @@ abstract class TaskManager {
     void createUnitTestVariantTasks(@NonNull TestVariantData variantData) {
         BaseVariantData testedVariantData = variantData.getTestedVariantData() as BaseVariantData
         createPreBuildTasks(variantData)
+        createProcessJavaResTask(variantData)
         createCompileAnchorTask(variantData)
         createJavaCompileTask(variantData, testedVariantData)
         createJackAndUnitTestVerificationTask(variantData, testedVariantData)
@@ -1531,6 +1533,7 @@ abstract class TaskManager {
                 project.files(
                         testCompileTask.classpath,
                         testCompileTask.outputs.files,
+                        variantData.processJavaResourcesTask.outputs.files,
                         androidBuilder.bootClasspath.findAll {
                             it.name != SdkConstants.FN_FRAMEWORK_LIBRARY
                         },
