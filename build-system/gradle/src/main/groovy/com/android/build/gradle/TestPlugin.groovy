@@ -20,10 +20,8 @@ import com.android.build.gradle.internal.ApplicationTaskManager
 import com.android.build.gradle.internal.DependencyManager
 import com.android.build.gradle.internal.SdkHandler
 import com.android.build.gradle.internal.TaskManager
-import com.android.build.gradle.internal.variant.ApplicationVariantFactory
 import com.android.build.gradle.internal.variant.TestVariantFactory
 import com.android.build.gradle.internal.variant.VariantFactory
-import com.android.build.gradle.tasks.TestExtension
 import com.android.builder.core.AndroidBuilder
 import org.gradle.api.Plugin
 import org.gradle.api.Project
