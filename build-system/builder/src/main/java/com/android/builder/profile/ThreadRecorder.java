@@ -51,6 +51,15 @@ public class ThreadRecorder implements Recorder {
             }
             return null;
         }
+
+        @Override
+        public long allocationRecordId() {
+            return 0;
+        }
+
+        @Override
+        public void closeRecord(ExecutionRecord record) {
+        }
     };
 
     private static final Recorder recorder = new ThreadRecorder();
@@ -93,14 +102,29 @@ public class ThreadRecorder implements Recorder {
         }
     };
 
-    private static final AtomicLong lastRecordId = new AtomicLong(0);
+
+    @Override
+    public long allocationRecordId() {
+        long recordId = ProcessRecorder.allocateRecordId();
+        recordStacks.get().push(recordId);
+        return recordId;
+    }
+
+    @Override
+    public void closeRecord(ExecutionRecord executionRecord) {
+        if (recordStacks.get().pop() != executionRecord.id) {
+            logger.severe("Internal Error : mixed records in profiling stack");
+        }
+        ProcessRecorder.get().writeRecord(executionRecord);
+    }
+
 
     @Nullable
     @Override
     public <T> T record(@NonNull ExecutionType executionType, @NonNull Block<T> block,
             Property... properties) {
 
-        long thisRecordId = lastRecordId.incrementAndGet();
+        long thisRecordId = ProcessRecorder.allocateRecordId();
 
         // am I a child ?
         Long parentId = recordStacks.get().peek();
