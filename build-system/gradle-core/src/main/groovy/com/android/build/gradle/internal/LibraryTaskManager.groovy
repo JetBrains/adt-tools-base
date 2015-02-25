@@ -158,7 +158,7 @@ class LibraryTaskManager extends TaskManager {
 
         // Add a compile task
         SpanRecorders.record(ExecutionType.LIB_TASK_MANAGER_CREATE_COMPILE_TASK) {
-            createCompileTask(variantData, null /*testedVariant*/)
+            createJavaCompileTask(variantData, null /*testedVariant*/)
         }
 
         // package the prebuilt native libs into the bundle folder
