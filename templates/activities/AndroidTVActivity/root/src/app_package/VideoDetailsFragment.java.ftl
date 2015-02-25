@@ -36,7 +36,7 @@ import com.squareup.picasso.Picasso;
 import com.squareup.picasso.Target;
 
 public class ${detailsFragment} extends DetailsFragment {
-    private static final String TAG = "${detailsFragment}";
+    private static final String TAG = "${truncate(detailsFragment,23)}";
 
     private static final int ACTION_WATCH_TRAILER = 1;
     private static final int ACTION_RENT = 2;
