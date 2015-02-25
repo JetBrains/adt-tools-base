@@ -100,7 +100,7 @@ public class GradleTestProject implements TestRule {
         private TestProject testProject = null;
 
         boolean captureStdOut = false;
-
+        boolean captureStdErr = false;
         boolean experimentalMode = false;
 
         /**
@@ -112,7 +112,8 @@ public class GradleTestProject implements TestRule {
                     testProject,
                     experimentalMode,
                     experimentalMode ? GRADLE_EXP_TEST_VERSION : GRADLE_TEST_VERSION,
-                    captureStdOut);
+                    captureStdOut,
+                    captureStdErr);
         }
 
         /**
@@ -127,6 +128,11 @@ public class GradleTestProject implements TestRule {
 
         public Builder captureStdOut(boolean captureStdOut) {
             this.captureStdOut = captureStdOut;
+            return this;
+        }
+
+        public Builder captureStdErr(boolean captureStdErr) {
+            this.captureStdErr = captureStdErr;
             return this;
         }
 
@@ -184,7 +190,8 @@ public class GradleTestProject implements TestRule {
 
     private File sdkDir;
 
-    private ByteArrayOutputStream stdout;
+    private final ByteArrayOutputStream stdout;
+    private final ByteArrayOutputStream stderr;
 
     @Nullable
     private TestProject testProject;
@@ -193,7 +200,7 @@ public class GradleTestProject implements TestRule {
     private String targetGradleVersion;
 
     private GradleTestProject() {
-        this(null, null, false, GRADLE_TEST_VERSION, false);
+        this(null, null, false, GRADLE_TEST_VERSION, false, false);
     }
 
     private GradleTestProject(
@@ -201,7 +208,8 @@ public class GradleTestProject implements TestRule {
             @Nullable TestProject testProject,
             boolean experimentalMode,
             String targetGradleVersion,
-            boolean captureStdOut) {
+            boolean captureStdOut,
+            boolean captureStdErr) {
         sdkDir = SdkHelper.findSdkDir();
         ndkDir = findNdkDir();
         String buildDir = System.getenv("PROJECT_BUILD_DIR");
@@ -210,9 +218,8 @@ public class GradleTestProject implements TestRule {
         this.experimentalMode = experimentalMode;
         this.targetGradleVersion = targetGradleVersion;
         this.testProject = testProject;
-        if (captureStdOut) {
-            stdout = new ByteArrayOutputStream();
-        }
+        stdout = captureStdOut ? new ByteArrayOutputStream() : null;
+        stderr = captureStdErr ? new ByteArrayOutputStream() : null;
     }
 
     /**
@@ -234,6 +241,7 @@ public class GradleTestProject implements TestRule {
         ndkDir = rootProject.ndkDir;
         sdkDir = rootProject.sdkDir;
         stdout = rootProject.stdout;
+        stderr = rootProject.stdout;
         testProject = null;
     }
 
@@ -684,6 +692,9 @@ public class GradleTestProject implements TestRule {
         if (stdout != null) {
             launcher.setStandardOutput(stdout);
         }
+        if (stderr != null) {
+            launcher.setStandardError(stderr);
+        }
         launcher.run();
     }
 
@@ -728,6 +739,13 @@ public class GradleTestProject implements TestRule {
      */
     public ByteArrayOutputStream getStdout() {
         return stdout;
+    }
+
+    /**
+     * Return the stderr from all execute command.
+     */
+    public ByteArrayOutputStream getStderr() {
+        return stderr;
     }
 
     /**
