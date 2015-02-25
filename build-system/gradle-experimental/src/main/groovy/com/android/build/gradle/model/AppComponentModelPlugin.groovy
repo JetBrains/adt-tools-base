@@ -62,7 +62,6 @@ public class AppComponentModelPlugin implements Plugin<Project> {
 
             return new ApplicationComponentTaskManager(
                     project,
-                    project.tasks,
                     androidBuilder,
                     androidExtension,
                     sdkHandler,

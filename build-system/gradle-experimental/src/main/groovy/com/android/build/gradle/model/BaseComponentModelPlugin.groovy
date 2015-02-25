@@ -351,13 +351,9 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
             }
         }
 
-        // TODO: The dependencies on VariantManager ensure this rule is run before
-        // createVariantTasks, but breaks the assumption by Gradle as it is actually modifying the
-        // the TaskContainer.  This must be fixed when the tasks for variants is changed to depend
-        // on the name of the task instead of the task itself.
         @Mutate
         void createAndroidTasks(
-                VariantManager variantManager,
+                CollectionBuilder<Task> tasks,
                 AndroidComponentSpec androidSpec,
                 TaskManager taskManager,
                 SdkHandler sdkHandler,
@@ -368,7 +364,7 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
             applyProjectSourceSet(spec, androidSources, spec.extension)
 
             // Create lifecycle tasks.
-            taskManager.createTasksBeforeEvaluate()
+            taskManager.createTasksBeforeEvaluate(new TaskCollectionBuilderAdaptor(tasks))
 
             // setup SDK repositories.
             for (File file : sdkHandler.sdkLoader.repositories) {
@@ -389,7 +385,7 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
                 CollectionBuilder<Task> tasks,
                 AndroidBinary androidBinary,
                 VariantManager variantManager,
-                AndroidComponentSpec androidSpec) {
+                TaskManager taskManager) {
             DefaultAndroidBinary binary = androidBinary as DefaultAndroidBinary
             variantManager.createTasksForVariantData(
                     new TaskCollectionBuilderAdaptor(tasks),
@@ -401,7 +397,7 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
          */
         @Mutate
         void createRemainingTasks(
-                TaskContainer tasks,
+                CollectionBuilder<Task> tasks,
                 @Path("tasks.assemble") Task assembleTask,
                 TaskManager taskManager,
                 VariantManager variantManager) {
@@ -410,15 +406,14 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
 
             // create the test tasks.
             taskManager.createConnectedCheckTasks (
+                    new TaskCollectionBuilderAdaptor(tasks),
                     variantManager.variantDataList,
                     !variantManager.productFlavors.isEmpty() /*hasFlavors*/,
                     false /*isLibrary*/ );
         }
 
         @Mutate
-        void createReportTasks(
-                CollectionBuilder<Task> tasks,
-                VariantManager variantManager) {
+        void createReportTasks(CollectionBuilder<Task> tasks, VariantManager variantManager) {
             tasks.create("androidDependencies", DependencyReportTask) { DependencyReportTask dependencyReportTask ->
                 dependencyReportTask.setDescription("Displays the Android dependencies of the project")
                 dependencyReportTask.setVariants(variantManager.variantDataList)
@@ -431,7 +426,6 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
                 signingReportTask.setGroup("Android")
             }
         }
-
 
         private static void applyProjectSourceSet(
                 AndroidComponentSpec androidSpec,
@@ -491,7 +485,6 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
             }
             return null;
         }
-
     }
 
     /**

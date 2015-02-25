@@ -48,15 +48,13 @@ class AppPlugin extends BasePlugin implements Plugin<Project> {
     @Override
     protected TaskManager createTaskManager(
             Project project,
-            TaskContainer tasks,
             AndroidBuilder androidBuilder,
             BaseExtension extension,
             SdkHandler sdkHandler,
             DependencyManager dependencyManager,
             ToolingModelBuilderRegistry toolingRegistry) {
-        return new ApplicationTaskManager (
+        return new ApplicationTaskManager(
                 project,
-                tasks,
                 androidBuilder,
                 extension,
                 sdkHandler,

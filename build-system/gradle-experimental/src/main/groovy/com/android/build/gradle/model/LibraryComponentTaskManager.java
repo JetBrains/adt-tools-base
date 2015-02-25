@@ -38,13 +38,12 @@ public class LibraryComponentTaskManager extends LibraryTaskManager {
 
     public LibraryComponentTaskManager(
             Project project,
-            TaskContainer tasks,
             AndroidBuilder androidBuilder,
             BaseExtension extension,
             SdkHandler sdkHandler,
             DependencyManager dependencyManager,
             ToolingModelBuilderRegistry toolingRegistry) {
-        super(project, tasks, androidBuilder, extension, sdkHandler, dependencyManager, toolingRegistry);
+        super(project, androidBuilder, extension, sdkHandler, dependencyManager, toolingRegistry);
         isNdkTaskNeeded = false;
     }
 

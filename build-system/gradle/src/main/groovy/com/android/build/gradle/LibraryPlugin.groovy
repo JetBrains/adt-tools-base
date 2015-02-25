@@ -69,7 +69,6 @@ public class LibraryPlugin extends BasePlugin implements Plugin<Project> {
     @Override
     protected TaskManager createTaskManager(
             Project project,
-            TaskContainer tasks,
             AndroidBuilder androidBuilder,
             BaseExtension extension,
             SdkHandler sdkHandler,
@@ -77,7 +76,6 @@ public class LibraryPlugin extends BasePlugin implements Plugin<Project> {
             ToolingModelBuilderRegistry toolingRegistry) {
         return new LibraryTaskManager(
                 project,
-                tasks,
                 androidBuilder,
                 extension,
                 sdkHandler,
