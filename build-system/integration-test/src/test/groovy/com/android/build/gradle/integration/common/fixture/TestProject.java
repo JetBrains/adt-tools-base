@@ -33,4 +33,9 @@ public interface TestProject {
      * @param buildScriptContent the buildScript content to add to the build.gradle if applicable.
      */
     void write(@NonNull File projectDir, @Nullable String buildScriptContent) throws IOException;
+
+    /**
+     * Returns whether the project contains a complete build.gradle.
+     */
+    boolean containsFullBuildScript();
 }

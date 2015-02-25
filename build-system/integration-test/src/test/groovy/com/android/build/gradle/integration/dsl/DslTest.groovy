@@ -33,7 +33,9 @@ import static org.junit.Assert.assertNotNull
 class DslTest {
 
     @Rule
-    public GradleTestProject project = GradleTestProject.builder().create()
+    public GradleTestProject project = GradleTestProject.builder()
+            .fromTestApp(new HelloWorldApp())
+            .create()
 
     @Before
     public void setUp() {

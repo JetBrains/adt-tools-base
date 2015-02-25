@@ -29,15 +29,9 @@ import org.junit.Test
  * Basic integration test for LibraryComponentModelPlugin.
  */
 class LibraryComponentPluginTest {
-    @ClassRule
-    public static GradleTestProject project = GradleTestProject.builder()
-            .forExpermimentalPlugin(true)
-            .create();
-
     private static testApp = new HelloWorldLibraryApp()
 
-    @BeforeClass
-    public static void setUp() {
+    static {
         AndroidTestApp app = (AndroidTestApp) testApp.getSubproject(":app")
         app.addFile(new TestSourceFile("", "build.gradle",
 """
@@ -71,9 +65,13 @@ model {
     }
 }
 """))
-
-        testApp.write(project.testDir, null)
     }
+
+    @ClassRule
+    public static GradleTestProject project = GradleTestProject.builder()
+            .fromTestApp(testApp)
+            .forExpermimentalPlugin(true)
+            .create();
 
     @AfterClass
     static void cleanUp() {

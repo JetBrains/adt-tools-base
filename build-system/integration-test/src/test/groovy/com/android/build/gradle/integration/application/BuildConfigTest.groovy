@@ -43,13 +43,14 @@ import static org.junit.Assert.assertNotNull
  */
 class BuildConfigTest {
     @ClassRule
-    public static GradleTestProject project = GradleTestProject.builder().create()
+    public static GradleTestProject project = GradleTestProject.builder()
+            .fromTestApp(new HelloWorldApp())
+            .create()
 
     private static AndroidProject model
 
     @BeforeClass
     static void setUp() {
-        new HelloWorldApp().write(project.testDir, null)
         project.getBuildFile() << """
             apply plugin: 'com.android.application'
 

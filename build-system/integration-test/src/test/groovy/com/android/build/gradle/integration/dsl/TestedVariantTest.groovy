@@ -28,11 +28,12 @@ import org.junit.Test
 class TestedVariantTest {
 
     @Rule
-    public GradleTestProject project = GradleTestProject.builder().create()
+    public GradleTestProject project = GradleTestProject.builder()
+            .fromTestApp(new HelloWorldApp())
+            .create()
 
     @Before
     public void setUp() {
-        new HelloWorldApp().write(project.testDir, null)
         project.getBuildFile() << """
 apply plugin: 'com.android.application'
 
