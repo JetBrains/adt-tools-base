@@ -55,6 +55,10 @@ public class MockableJarGenerator {
     private static final int EMPTY_FLAGS = 0;
     private static final String CONSTRUCTOR = "<init>";
     private static final String CLASS_CONSTRUCTOR = "<clinit>";
+
+    private static final ImmutableSet<String> ENUM_METHODS =  ImmutableSet.of(
+            CLASS_CONSTRUCTOR, "valueOf", "values");
+
     private static final ImmutableSet<Type> INTEGER_LIKE_TYPES = ImmutableSet.of(
             Type.INT_TYPE, Type.BYTE_TYPE, Type.BOOLEAN_TYPE, Type.CHAR_TYPE, Type.SHORT_TYPE);
 
@@ -159,6 +163,11 @@ public class MockableJarGenerator {
         if ((methodNode.access & Opcodes.ACC_NATIVE) != 0
                 || (methodNode.access & Opcodes.ACC_ABSTRACT) != 0) {
             // Abstract and native method don't have bodies to rewrite.
+            return;
+        }
+
+        if ((classNode.access & Opcodes.ACC_ENUM) != 0 && ENUM_METHODS.contains(methodNode.name)) {
+            // Don't break enum classes.
             return;
         }
 
