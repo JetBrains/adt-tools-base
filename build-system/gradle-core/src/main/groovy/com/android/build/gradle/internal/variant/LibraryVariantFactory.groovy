@@ -28,11 +28,20 @@ import com.android.build.gradle.internal.api.LibraryVariantImpl
 import com.android.build.gradle.internal.api.LibraryVariantOutputImpl
 import com.android.build.gradle.internal.api.ReadOnlyObjectProvider
 import com.android.build.gradle.internal.core.GradleVariantConfiguration
+import com.android.build.gradle.internal.dsl.BuildType
+import com.android.build.gradle.internal.dsl.GroupableProductFlavor
+import com.android.build.gradle.internal.dsl.SigningConfig
 import com.android.builder.core.AndroidBuilder
 import com.android.builder.core.VariantType
 import com.google.common.collect.Lists
 import org.gradle.api.GradleException
+import org.gradle.api.NamedDomainObjectContainer
+import org.gradle.api.Project
 import org.gradle.internal.reflect.Instantiator
+
+import static com.android.builder.core.BuilderConstants.DEBUG
+import static com.android.builder.core.BuilderConstants.DEBUG
+import static com.android.builder.core.BuilderConstants.RELEASE
 
 /**
  */
@@ -102,6 +111,11 @@ public class LibraryVariantFactory implements VariantFactory {
         return true
     }
 
+    @Override
+    boolean hasTestScope() {
+        return true
+    }
+
     /***
      * Prevent customization of applicationId or applicationIdSuffix.
      */
@@ -131,5 +145,22 @@ public class LibraryVariantFactory implements VariantFactory {
             }
         }
 
+    }
+
+    @Override
+    void preVariantWork(Project project) {
+        // nothing to be done here.
+    }
+
+    @Override
+    public void createDefaultComponents(
+            @NonNull NamedDomainObjectContainer<BuildType> buildTypes,
+            @NonNull NamedDomainObjectContainer<GroupableProductFlavor> productFlavors,
+            @NonNull NamedDomainObjectContainer<SigningConfig> signingConfigs) {
+        // must create signing config first so that build type 'debug' can be initialized
+        // with the debug signing config.
+        signingConfigs.create(DEBUG);
+        buildTypes.create(DEBUG);
+        buildTypes.create(RELEASE);
     }
 }
