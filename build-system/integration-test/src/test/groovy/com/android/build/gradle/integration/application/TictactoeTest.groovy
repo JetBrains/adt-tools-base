@@ -36,7 +36,7 @@ import static org.junit.Assert.assertTrue
 class TictactoeTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("tictactoe")
+            .fromTestProject("tictactoe")
             .create()
     static Map<String, AndroidProject> models
 

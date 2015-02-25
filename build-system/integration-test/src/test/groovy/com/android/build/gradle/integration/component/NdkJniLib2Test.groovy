@@ -33,7 +33,7 @@ class NdkJniLib2Test {
 
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("ndkJniLib2")
+            .fromTestProject("ndkJniLib2")
             .create()
 
     @BeforeClass

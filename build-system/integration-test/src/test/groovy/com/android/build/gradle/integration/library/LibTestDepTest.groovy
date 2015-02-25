@@ -42,7 +42,7 @@ import static org.junit.Assert.assertTrue
 class LibTestDepTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("libTestDep")
+            .fromTestProject("libTestDep")
             .create()
     static AndroidProject model
 

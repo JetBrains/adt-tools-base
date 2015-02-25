@@ -46,7 +46,7 @@ class CombinedAbiDensityPureSplits {
 
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("combinedAbiDensityPureSplits")
+            .fromTestProject("combinedAbiDensityPureSplits")
             .create()
 
     @BeforeClass

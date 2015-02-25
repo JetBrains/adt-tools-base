@@ -31,7 +31,7 @@ class NdkJniPureSplitLibTest {
 
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("ndkJniPureSplitLib")
+            .fromTestProject("ndkJniPureSplitLib")
             .create()
 
     @BeforeClass

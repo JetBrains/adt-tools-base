@@ -33,7 +33,7 @@ class NdkStandaloneSoTest {
 
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("ndkStandaloneSo")
+            .fromTestProject("ndkStandaloneSo")
             .create()
 
     @BeforeClass

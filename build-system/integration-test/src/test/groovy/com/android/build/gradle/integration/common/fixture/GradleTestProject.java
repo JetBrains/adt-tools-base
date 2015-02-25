@@ -87,6 +87,7 @@ public class GradleTestProject implements TestRule {
     private static final String ANDROID_GRADLE_VERSION = "1.2.0-alpha1";
     private static final String COMMON_HEADER = "commonHeader.gradle";
     private static final String COMMON_BUILD_SCRIPT = "commonBuildScript.gradle";
+    private static final String COMMON_BUILD_SCRIPT_EXP = "commonBuildScriptExperimental.gradle";
     private static final String DEFAULT_TEST_PROJECT_NAME = "project";
 
     public static class Builder {
@@ -147,18 +148,6 @@ public class GradleTestProject implements TestRule {
         public Builder fromTestApp(@NonNull TestProject testProject) {
             this.testProject = testProject;
             return this;
-        }
-
-        /**
-         * Create GradleTestProjectBase from an existing sample project.
-         */
-        public Builder fromSample(@NonNull String project) {
-            // Create a new AndroidTestApp with all files in the project.
-            AndroidTestApp app = new EmptyTestApp();
-            name = project;
-            File projectDir = new File(SAMPLE_PROJECT_DIR, project);
-            addAllFiles(app, projectDir);
-            return fromTestApp(app);
         }
 
         /**
@@ -315,6 +304,9 @@ public class GradleTestProject implements TestRule {
                 Files.copy(
                         new File(Builder.TEST_PROJECT_DIR, COMMON_BUILD_SCRIPT),
                         new File(testDir.getParent(), COMMON_BUILD_SCRIPT));
+                Files.copy(
+                        new File(Builder.TEST_PROJECT_DIR, COMMON_BUILD_SCRIPT_EXP),
+                        new File(testDir.getParent(), COMMON_BUILD_SCRIPT_EXP));
 
                 if (testProject != null) {
                     testProject.write(testDir, getGradleBuildscript());

@@ -46,7 +46,7 @@ import static org.junit.Assert.assertTrue
 class BasicTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("basic")
+            .fromTestProject("basic")
             .create()
 
     static public AndroidProject model

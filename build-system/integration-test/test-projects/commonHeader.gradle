@@ -15,7 +15,7 @@
  */
 
 ext {
-    buildToolsVersion = [System.env.CUSTOM_BUILDTOOLS, project.properties["CUSTOM_BUILDTOOLS"], '21.0.1'].find()
+    buildToolsVersion = [System.env.CUSTOM_BUILDTOOLS, project.properties["CUSTOM_BUILDTOOLS"], '21.1.2'].find()
     latestCompileSdk = 21
 
     useJack = System.env.CUSTOM_JACK || project.properties["CUSTOM_JACK"]

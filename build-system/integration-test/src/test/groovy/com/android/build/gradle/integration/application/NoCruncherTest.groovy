@@ -33,7 +33,7 @@ class NoCruncherTest {
     @ClassRule
     static public GradleTestProject noPngCrunch = GradleTestProject.builder()
             .withName("noPngCrunch")
-            .fromSample("noPngCrunch")
+            .fromTestProject("noPngCrunch")
             .create()
 
     @Test

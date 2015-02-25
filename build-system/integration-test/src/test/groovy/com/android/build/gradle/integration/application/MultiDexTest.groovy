@@ -34,7 +34,7 @@ import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
 class MultiDexTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("multiDex")
+            .fromTestProject("multiDex")
             .create()
 
     @BeforeClass
