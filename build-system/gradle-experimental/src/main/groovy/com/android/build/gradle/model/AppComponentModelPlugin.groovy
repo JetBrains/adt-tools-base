@@ -40,6 +40,7 @@ public class AppComponentModelPlugin implements Plugin<Project> {
     @Override
     void apply(Project project) {
         project.plugins.apply(BaseComponentModelPlugin)
+        project.plugins.apply(AndroidComponentModelTestPlugin)
     }
 
     static class Rules extends RuleSource {
