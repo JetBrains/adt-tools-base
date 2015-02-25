@@ -634,6 +634,7 @@ public class AndroidBuilder {
             @NonNull Boolean functionalTest,
             @Nullable File testManifestFile,
             @NonNull List<? extends ManifestDependency> libraries,
+            @NonNull Map<String, Object> manifestPlaceholders,
             @NonNull File outManifest,
             @NonNull File tmpDir) {
         checkNotNull(testApplicationId, "testApplicationId cannot be null.");
@@ -667,6 +668,7 @@ public class AndroidBuilder {
                 Invoker invoker = ManifestMerger2.newMerger(
                         testManifestFile, mLogger, ManifestMerger2.MergeType.APPLICATION)
                         .setOverride(SystemProperty.PACKAGE, testApplicationId)
+                        .setPlaceHolderValues(manifestPlaceholders)
                         .setPlaceHolderValue(PlaceholderHandler.INSTRUMENTATION_RUNNER,
                                 instrumentationRunner)
                         .addLibraryManifests(generatedTestManifest);
@@ -691,6 +693,7 @@ public class AndroidBuilder {
                         .withFeatures(Invoker.Feature.REMOVE_TOOLS_DECLARATIONS)
                         .setOverride(SystemProperty.PACKAGE, testApplicationId)
                         .addLibraryManifests(collectLibraries(libraries))
+                        .setPlaceHolderValues(manifestPlaceholders)
                         .merge();
 
                 handleMergingResult(mergingReport, outManifest);

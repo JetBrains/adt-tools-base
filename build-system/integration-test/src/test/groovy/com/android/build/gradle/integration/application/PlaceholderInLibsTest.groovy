@@ -45,7 +45,8 @@ class PlaceholderInLibsTest {
 
     @BeforeClass
     static void setup() {
-        models = project.executeAndReturnMultiModel("clean", "app:assembleDebug")
+        models = project.executeAndReturnMultiModel("clean",
+                ":examplelibrary:generateDebugAndroidTestSources", "app:assembleDebug")
     }
 
     @AfterClass
