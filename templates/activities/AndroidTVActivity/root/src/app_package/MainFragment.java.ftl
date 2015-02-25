@@ -51,7 +51,7 @@ import com.squareup.picasso.Target;
 
 
 public class ${mainFragment} extends BrowseFragment {
-    private static final String TAG = "${mainFragment}";
+    private static final String TAG = "${truncate(mainFragment,23)}";
 
     private static final int BACKGROUND_UPDATE_DELAY = 300;
     private static final int GRID_ITEM_WIDTH = 200;
