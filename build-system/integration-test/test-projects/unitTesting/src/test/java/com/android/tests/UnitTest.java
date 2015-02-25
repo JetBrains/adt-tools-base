@@ -3,17 +3,20 @@ package com.android.tests;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
-import org.junit.Ignore;
 import android.app.Application;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
+import android.content.SyncResult;
+import android.content.SyncStats;
 import android.util.ArrayMap;
 import android.os.AsyncTask;
 import android.os.Debug;
 import android.os.PowerManager;
+
+import org.junit.Ignore;
 import org.junit.Test;
 
-import java.lang.RuntimeException;
+import java.lang.reflect.Field;
 
 public class UnitTest {
     @Test
@@ -94,6 +97,17 @@ public class UnitTest {
         assertEquals(AsyncTask.Status.FINISHED, values[0]);
         assertEquals(AsyncTask.Status.PENDING, values[1]);
         assertEquals(AsyncTask.Status.RUNNING, values[2]);
+    }
+
+    @Test
+    public void instanceFields() throws Exception {
+        SyncResult result = mock(SyncResult.class);
+        Field statsField = result.getClass().getField("stats");
+        SyncStats syncStats = mock(SyncStats.class);
+        statsField.set(result, syncStats);
+
+        syncStats.numDeletes = 42;
+        assertEquals(42, result.stats.numDeletes);
     }
 
     @Test
