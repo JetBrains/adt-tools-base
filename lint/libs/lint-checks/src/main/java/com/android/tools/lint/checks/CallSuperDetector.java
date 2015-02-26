@@ -45,7 +45,9 @@ import lombok.ast.Node;
 import lombok.ast.Super;
 
 /**
- * Makes sure that methods call super when overriding methods
+ * Makes sure that methods call super when overriding methods.
+ * <p>
+ * TODO: We should drive this off of annotation metadata!
  */
 public class CallSuperDetector extends Detector implements Detector.JavaScanner {
 
@@ -67,6 +69,7 @@ public class CallSuperDetector extends Detector implements Detector.JavaScanner 
             IMPLEMENTATION);
 
     static final String ON_DETACHED_FROM_WINDOW = "onDetachedFromWindow";   //$NON-NLS-1$
+    static final String ON_VISIBILITY_CHANGED = "onVisibilityChanged";      //$NON-NLS-1$
 
     /** Constructs a new {@link CallSuperDetector} check */
     public CallSuperDetector() {
@@ -105,7 +108,8 @@ public class CallSuperDetector extends Detector implements Detector.JavaScanner 
         @Override
         public boolean visitMethodDeclaration(MethodDeclaration node) {
             // TODO: Check methods in Activity that require super as well
-            if (node.astMethodName().astValue().equals(ON_DETACHED_FROM_WINDOW) &&
+            String methodName = node.astMethodName().astValue();
+            if (methodName.equals(ON_DETACHED_FROM_WINDOW) &&
                     node.astParameters() != null && node.astParameters().isEmpty()) {
                 if (!callsSuper(node, ON_DETACHED_FROM_WINDOW)) {
                     // Make sure the current class extends View, if type information is
@@ -116,17 +120,40 @@ public class CallSuperDetector extends Detector implements Detector.JavaScanner 
                         ResolvedMethod method = (ResolvedMethod) resolved;
                         isView = method.getContainingClass().isSubclassOf(CLASS_VIEW, false);
                     }
-
                     if (isView) {
-                        String message = "Overriding method should call `super."
-                                + ON_DETACHED_FROM_WINDOW + "`";
-                        Location location = mContext.getLocation(node.astMethodName());
-                        mContext.report(ISSUE, node, location, message);
+                        report(node, ON_DETACHED_FROM_WINDOW);
+                    }
+                }
+            }
+
+            // Implementations of WatchFaceServices must call super.onVisibilityChanged
+            // if overriding that method!
+            if (methodName.equals(ON_VISIBILITY_CHANGED) &&
+                    node.astParameters() != null && node.astParameters().size() == 1 &&
+                    node.astParameters().first().astTypeReference() != null &&
+                    node.astParameters().first().astTypeReference().isBoolean()) {
+                if (!callsSuper(node, ON_VISIBILITY_CHANGED)) {
+                    ResolvedNode resolved = mContext.resolve(node);
+                    if (resolved instanceof ResolvedMethod) {
+                        ResolvedMethod method = (ResolvedMethod) resolved;
+                        //noinspection SpellCheckingInspection
+                        if (method.getContainingClass().isSubclassOf(
+                                "android.support.wearable.watchface.WatchFaceService.Engine",
+                                false)) {
+                            report(node, ON_VISIBILITY_CHANGED);
+                        }
                     }
                 }
             }
 
             return super.visitMethodDeclaration(node);
+        }
+
+        private void report(MethodDeclaration node, String methodName) {
+            String message = "Overriding method should call `super."
+                    + methodName + "`";
+            Location location = mContext.getLocation(node.astMethodName());
+            mContext.report(ISSUE, node, location, message);
         }
 
         private boolean callsSuper(MethodDeclaration node, final String methodName) {

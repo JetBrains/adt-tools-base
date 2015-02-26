@@ -16,20 +16,6 @@
 
 package com.android.tools.lint.detector.api;
 
-import static com.android.SdkConstants.ANDROID_MANIFEST_XML;
-import static com.android.SdkConstants.ANDROID_PREFIX;
-import static com.android.SdkConstants.ANDROID_URI;
-import static com.android.SdkConstants.BIN_FOLDER;
-import static com.android.SdkConstants.DOT_GIF;
-import static com.android.SdkConstants.DOT_JPEG;
-import static com.android.SdkConstants.DOT_JPG;
-import static com.android.SdkConstants.DOT_PNG;
-import static com.android.SdkConstants.DOT_WEBP;
-import static com.android.SdkConstants.DOT_XML;
-import static com.android.SdkConstants.ID_PREFIX;
-import static com.android.SdkConstants.NEW_ID_PREFIX;
-import static com.android.SdkConstants.UTF_8;
-
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.model.AndroidProject;
@@ -40,6 +26,7 @@ import com.android.ide.common.rendering.api.StyleResourceValue;
 import com.android.ide.common.res2.AbstractResourceRepository;
 import com.android.ide.common.res2.ResourceItem;
 import com.android.ide.common.resources.ResourceUrl;
+import com.android.ide.common.resources.configuration.LocaleQualifier;
 import com.android.resources.FolderTypeRelationship;
 import com.android.resources.ResourceFolderType;
 import com.android.resources.ResourceType;
@@ -55,7 +42,7 @@ import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-
+import lombok.ast.ImportDeclaration;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
@@ -66,18 +53,14 @@ import org.w3c.dom.NodeList;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Queue;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
-import lombok.ast.ImportDeclaration;
+import static com.android.SdkConstants.*;
 
 
 /**
@@ -283,12 +266,15 @@ public class LintUtils {
      * @param id2 the second id to compare
      * @return true if the two id references refer to the same id
      */
-    public static boolean idReferencesMatch(String id1, String id2) {
+    public static boolean idReferencesMatch(@Nullable String id1, @Nullable String id2) {
+        if (id1 == null || id2 == null || id1.isEmpty() || id2.isEmpty()) {
+            return false;
+        }
         if (id1.startsWith(NEW_ID_PREFIX)) {
             if (id2.startsWith(NEW_ID_PREFIX)) {
                 return id1.equals(id2);
             } else {
-                assert id2.startsWith(ID_PREFIX);
+                assert id2.startsWith(ID_PREFIX) : id2;
                 return ((id1.length() - id2.length())
                             == (NEW_ID_PREFIX.length() - ID_PREFIX.length()))
                         && id1.regionMatches(NEW_ID_PREFIX.length(), id2,
@@ -296,7 +282,7 @@ public class LintUtils {
                                 id2.length() - ID_PREFIX.length());
             }
         } else {
-            assert id1.startsWith(ID_PREFIX);
+            assert id1.startsWith(ID_PREFIX) : id1;
             if (id2.startsWith(ID_PREFIX)) {
                 return id1.equals(id2);
             } else {
@@ -740,7 +726,7 @@ public class LintUtils {
 
     /**
      * Look up the locale and region from the given parent folder name and
-     * return it as a combined string, such as "en", "en-rUS", etc, or null if
+     * return it as a combined string, such as "en", "en-rUS", b+eng-US, etc, or null if
      * no language is specified.
      *
      * @param folderName the folder name
@@ -748,18 +734,18 @@ public class LintUtils {
      */
     @Nullable
     public static String getLocaleAndRegion(@NonNull String folderName) {
-         if (folderName.equals("values")) { //$NON-NLS-1$
+        if (folderName.indexOf('-') == -1) {
             return null;
-         }
+        }
 
-         String locale = null;
+        String locale = null;
 
-         for (String qualifier : Splitter.on('-').split(folderName)) {
+        for (String qualifier : Splitter.on('-').split(folderName)) {
             int qualifierLength = qualifier.length();
             if (qualifierLength == 2) {
-                 char first = qualifier.charAt(0);
+                char first = qualifier.charAt(0);
                 char second = qualifier.charAt(1);
-                 if (first >= 'a' && first <= 'z' && second >= 'a' && second <= 'z') {
+                if (first >= 'a' && first <= 'z' && second >= 'a' && second <= 'z') {
                     locale = qualifier;
                 }
             } else if (qualifierLength == 3 && qualifier.charAt(0) == 'r' && locale != null) {
@@ -769,11 +755,13 @@ public class LintUtils {
                     return locale + '-' + qualifier;
                 }
                 break;
-             }
-         }
+            } else if (qualifier.startsWith(LocaleQualifier.PREFIX)) {
+                return qualifier;
+            }
+        }
 
-         return locale;
-     }
+        return locale;
+    }
 
     /**
      * Returns true if the given class (specified by a fully qualified class
@@ -1164,5 +1152,39 @@ public class LintUtils {
             // as a failure to return the formatted parameters.
         }
         return Collections.emptyList();
+    }
+
+    /**
+     * Escapes the given property file value (right hand side of property assignment)
+     * as required by the property file format (e.g. escapes colons and backslashes)
+     *
+     * @param value the value to be escaped
+     * @return the escaped value
+     */
+    @NonNull
+    public static String escapePropertyValue(@NonNull String value) {
+        // Slow, stupid implementation, but is 100% compatible with Java's property file
+        // implementation
+        Properties properties = new Properties();
+        properties.setProperty("k", value); // key doesn't matter
+        StringWriter writer = new StringWriter();
+        try {
+            properties.store(writer, null);
+            String s = writer.toString();
+            int end = s.length();
+
+            // Writer inserts trailing newline
+            String lineSeparator = SdkUtils.getLineSeparator();
+            if (s.endsWith(lineSeparator)) {
+                end -= lineSeparator.length();
+            }
+
+            int start = s.indexOf('=');
+            assert start != -1 : s;
+            return s.substring(start + 1, end);
+        }
+        catch (IOException e) {
+            return value; // shouldn't happen; we're not going to disk
+        }
     }
 }

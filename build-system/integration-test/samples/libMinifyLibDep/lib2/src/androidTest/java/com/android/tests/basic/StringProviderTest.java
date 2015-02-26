@@ -1,9 +1,5 @@
 package com.android.tests.basic;
 
-import android.test.ActivityInstrumentationTestCase2;
-import android.test.suitebuilder.annotation.MediumTest;
-import android.widget.TextView;
-
 import junit.framework.TestCase;
 
 import java.lang.reflect.Method;

@@ -19,6 +19,7 @@ import com.android.utils.NullLogger;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Table;
 import com.google.common.io.Files;
+
 import junit.framework.TestCase;
 
 import java.io.File;

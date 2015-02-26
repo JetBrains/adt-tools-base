@@ -21,6 +21,7 @@ package com.android.build.gradle.integration.application
 import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.google.common.collect.ImmutableList
+import org.gradle.tooling.BuildException
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
@@ -54,7 +55,7 @@ class JackTest {
             .create()
 
     @BeforeClass
-    static void setup() {
+    static void setUp() {
         basic.execute(JACK_OPTIONS, "clean", "assembleDebug")
         minify.execute(JACK_OPTIONS, "clean", "assembleDebug")
         multiDex.execute(JACK_OPTIONS, "clean", "assembleDebug")
@@ -75,18 +76,28 @@ class JackTest {
     @Test
     @Category(DeviceTests.class)
     void "basic connectedCheck"() {
-        basic.execute(JACK_OPTIONS, "connectedCheck");
+        basic.execute(JACK_OPTIONS, "connectedCheck")
     }
 
     @Test
     @Category(DeviceTests.class)
     void "minify connectedCheck"() {
-        minify.execute(JACK_OPTIONS, "connectedCheck");
+        minify.execute(JACK_OPTIONS, "connectedCheck")
     }
 
     @Test
     @Category(DeviceTests.class)
     void "multiDex connectedCheck"() {
-        multiDex.execute(JACK_OPTIONS, "connectedCheck");
+        multiDex.execute(JACK_OPTIONS, "connectedCheck")
+    }
+
+    @Test
+    void "minify unitTests with Javac"() {
+        minify.execute("testMinified")
+    }
+
+    @Test(expected = BuildException.class)
+    void "minify unitTests with Jack"() {
+        minify.execute(JACK_OPTIONS, "testMinified")
     }
 }

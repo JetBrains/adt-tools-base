@@ -22,13 +22,19 @@ import com.android.build.gradle.integration.common.utils.ModelHelper
 import com.android.build.gradle.integration.common.utils.ProductFlavorHelper
 import com.android.build.gradle.integration.common.utils.SourceProviderHelper
 import com.android.build.gradle.integration.common.utils.VariantHelper
-import com.android.builder.model.*
-import org.junit.*
+import com.android.builder.model.AndroidProject
+import com.android.builder.model.BuildTypeContainer
+import com.android.builder.model.ProductFlavorContainer
+import com.android.builder.model.SourceProviderContainer
+import com.android.builder.model.Variant
+import org.junit.AfterClass
+import org.junit.BeforeClass
+import org.junit.ClassRule
+import org.junit.Test
 import org.junit.experimental.categories.Category
 
-import static com.android.builder.core.BuilderConstants.ANDROID_TEST
+import static com.android.builder.core.VariantType.ANDROID_TEST
 import static com.android.builder.model.AndroidProject.ARTIFACT_ANDROID_TEST
-
 import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertFalse
 import static org.junit.Assert.assertNotNull
@@ -44,8 +50,8 @@ class FlavorsTest {
     static AndroidProject model
 
     @BeforeClass
-    static void setup() {
-        model = project.executeAndReturnModel("clean", "assembleDebug");
+    static void setUp() {
+        model = project.executeAndReturnModel("clean", "assembleDebug")
     }
 
     @AfterClass
@@ -76,7 +82,7 @@ class FlavorsTest {
         assertNotNull("InstrumentTest source Providers null-check", testSourceProviderContainer)
 
         new SourceProviderHelper(model.getName(), projectDir,
-                ANDROID_TEST, testSourceProviderContainer.getSourceProvider())
+                ANDROID_TEST.prefix, testSourceProviderContainer.getSourceProvider())
                 .test()
 
         Collection<BuildTypeContainer> buildTypes = model.getBuildTypes()
@@ -89,7 +95,7 @@ class FlavorsTest {
         assertNotNull("f1faDebug Variant null-check", f1faDebugVariant)
         new ProductFlavorHelper(f1faDebugVariant.getMergedFlavor(), "F1faDebug Merged Flavor")
                 .test()
-        new VariantHelper(f1faDebugVariant, projectDir, "project-f1-fa-debug.apk").test()
+        new VariantHelper(f1faDebugVariant, projectDir, "flavors-f1-fa-debug.apk").test()
     }
 
     @Test

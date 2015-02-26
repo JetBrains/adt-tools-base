@@ -20,11 +20,9 @@ import static com.android.manifmerger.ManifestMerger2.SystemProperty;
 import static com.android.manifmerger.MergingReport.Record;
 
 import com.android.annotations.Nullable;
-import com.android.annotations.concurrency.Immutable;
 import com.android.utils.StdLogger;
 import com.google.common.base.Optional;
 import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableMap;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;

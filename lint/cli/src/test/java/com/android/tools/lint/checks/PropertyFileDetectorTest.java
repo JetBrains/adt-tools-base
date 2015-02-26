@@ -16,6 +16,7 @@
 
 package com.android.tools.lint.checks;
 
+import static com.android.tools.lint.checks.PropertyFileDetector.suggestEscapes;
 import static com.android.tools.lint.detector.api.TextFormat.TEXT;
 import static org.easymock.EasyMock.createNiceMock;
 import static org.easymock.EasyMock.expect;
@@ -41,16 +42,22 @@ public class PropertyFileDetectorTest extends AbstractCheckTest {
 
     public void test() throws Exception {
         assertEquals(""
-                + "local.properties:11: Error: Windows file separators (\\) must be escaped (\\\\); use C:\\\\my\\\\path\\\\to\\\\sdk [PropertyEscape]\n"
+                + "local.properties:11: Error: Windows file separators (\\) and drive letter separators (':') must be escaped (\\\\) in property files; use C\\:\\\\my\\\\path\\\\to\\\\sdk [PropertyEscape]\n"
                 + "windows.dir=C:\\my\\path\\to\\sdk\n"
-                + "            ~~~~~~~~~~~~~~~~~\n"
-                + "1 errors, 0 warnings\n",
+                + "             ~~~~~~~~~~~~~~\n"
+                + "local.properties:14: Error: Windows file separators (\\) and drive letter separators (':') must be escaped (\\\\) in property files; use C\\:\\\\Documents and Settings\\\\UserName\\\\Local Settings\\\\Application Data\\\\Android\\\\android-studio\\\\sdk [PropertyEscape]\n"
+                + "ok.sdk.dir=C:\\\\Documents and Settings\\\\UserName\\\\Local Settings\\\\Application Data\\\\Android\\\\android-studio\\\\sdk\n"
+                + "            ~\n"
+                + "2 errors, 0 warnings\n",
                 lintProject("local.properties=>local.properties"));
     }
 
     public void testGetSuggestedEscape() {
         assertEquals("C:\\\\my\\\\path\\\\to\\\\sdk", PropertyFileDetector.getSuggestedEscape(
                 "Windows file separators (\\) must be escaped (\\\\); use C:\\\\my\\\\path\\\\to\\\\sdk",
+                TEXT));
+        assertEquals("C\\:\\\\my\\\\path\\\\to\\\\sdk", PropertyFileDetector.getSuggestedEscape(
+                "local.properties:11: Error: Windows file separators (\\) and drive letter separators (':') must be escaped (\\\\) in property files; use C\\:\\\\my\\\\path\\\\to\\\\sdk",
                 TEXT));
     }
 
@@ -63,10 +70,28 @@ public class PropertyFileDetectorTest extends AbstractCheckTest {
                 lintProject("gradle_http.properties=>gradle/wrapper/gradle-wrapper.properties"));
     }
 
+    public void testIssue92789() throws Exception {
+        // Regression test for https://code.google.com/p/android/issues/detail?id=92789
+        assertEquals(""
+                + "local.properties:1: Error: Windows file separators (\\) and drive letter separators (':') must be escaped (\\\\) in property files; use D\\:\\\\development\\\\android-sdks [PropertyEscape]\n"
+                + "sdk.dir=D:\\\\development\\\\android-sdks\n"
+                + "         ~\n"
+                + "1 errors, 0 warnings\n",
+                lintProject("local2.properties=>local.properties"));
+    }
+
     @Override
     protected void checkReportedError(@NonNull Context context, @NonNull Issue issue,
             @NonNull Severity severity, @Nullable Location location, @NonNull String message) {
         assertNotNull(message, PropertyFileDetector.getSuggestedEscape(message, TEXT));
+    }
+
+    public void testSuggestEscapes() {
+        assertEquals("", suggestEscapes(""));
+        assertEquals("foo", suggestEscapes("foo"));
+        assertEquals("foo/bar", suggestEscapes("foo/bar"));
+        assertEquals("c\\:\\\\foo\\\\bar", suggestEscapes("c\\:\\\\foo\\\\bar"));
+        assertEquals("c\\:\\\\foo\\\\bar", suggestEscapes("c:\\\\foo\\bar"));
     }
 
     @Override

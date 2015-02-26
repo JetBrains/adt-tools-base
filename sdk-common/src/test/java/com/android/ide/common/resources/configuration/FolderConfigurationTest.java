@@ -16,7 +16,10 @@
 
 package com.android.ide.common.resources.configuration;
 
+import com.android.ide.common.res2.ResourceFile;
+import com.android.ide.common.res2.ResourceItem;
 import com.android.resources.ResourceFolderType;
+import com.android.resources.ResourceType;
 import com.android.resources.ScreenOrientation;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
@@ -25,6 +28,7 @@ import com.google.common.collect.Lists;
 
 import junit.framework.TestCase;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -64,6 +68,15 @@ public class FolderConfigurationTest extends TestCase {
     public void testVersionResMatch() {
         runConfigMatchTest(
                 "en-rUS-w600dp-h1024dp-large-port-mdpi-finger-nokeys-v12",
+                2,
+                "",
+                "large",
+                "w540dp");
+    }
+
+    public void testVersionResMatchWithBcp47() {
+        runConfigMatchTest(
+                "b+kok+Knda+419+VARIANT-w600dp",
                 2,
                 "",
                 "large",
@@ -302,5 +315,88 @@ public class FolderConfigurationTest extends TestCase {
         assertNotNull(versionQualifier);
         assertEquals(expectedVersion, versionQualifier.getVersion());
 
+    }
+
+    public void testIsMatchForBcp47() {
+        FolderConfiguration blankFolder = FolderConfiguration.getConfigForFolder("values");
+        FolderConfiguration enFolder = FolderConfiguration.getConfigForFolder("values-en");
+        FolderConfiguration deFolder = FolderConfiguration.getConfigForFolder("values-de");
+        FolderConfiguration deBcp47Folder = FolderConfiguration.getConfigForFolder("values-b+de");
+        assertNotNull(enFolder);
+        assertNotNull(deFolder);
+        assertNotNull(deBcp47Folder);
+        assertFalse(enFolder.isMatchFor(deFolder));
+        assertFalse(deFolder.isMatchFor(enFolder));
+        assertFalse(enFolder.isMatchFor(deBcp47Folder));
+        assertFalse(deBcp47Folder.isMatchFor(enFolder));
+
+        assertTrue(enFolder.isMatchFor(blankFolder));
+        assertTrue(deFolder.isMatchFor(blankFolder));
+        assertTrue(deBcp47Folder.isMatchFor(blankFolder));
+    }
+
+    public void testFindMatchingConfigurables() {
+        ResourceItem itemBlank = new ResourceItem("foo", ResourceType.STRING, null) {
+            @Override
+            public String toString() {
+                return "itemBlank";
+            }
+        };
+        ResourceFile sourceBlank = new ResourceFile(new File("sourceBlank"), itemBlank, "");
+        itemBlank.setSource(sourceBlank);
+        FolderConfiguration configBlank = itemBlank.getConfiguration();
+
+        ResourceItem itemEn = new ResourceItem("foo", ResourceType.STRING, null) {
+            @Override
+            public String toString() {
+                return "itemEn";
+            }
+        };
+        ResourceFile sourceEn = new ResourceFile(new File("sourceEn"), itemBlank, "en");
+        itemEn.setSource(sourceEn);
+        FolderConfiguration configEn = itemEn.getConfiguration();
+
+        ResourceItem itemBcpEn = new ResourceItem("foo", ResourceType.STRING, null) {
+            @Override
+            public String toString() {
+                return "itemBcpEn";
+            }
+        };
+        ResourceFile sourceBcpEn = new ResourceFile(new File("sourceBcpEn"), itemBlank, "b+en");
+        itemBcpEn.setSource(sourceBcpEn);
+        FolderConfiguration configBcpEn = itemBcpEn.getConfiguration();
+
+        ResourceItem itemDe = new ResourceItem("foo", ResourceType.STRING, null) {
+            @Override
+            public String toString() {
+                return "itemDe";
+            }
+        };
+
+        ResourceFile sourceDe = new ResourceFile(new File("sourceDe"), itemBlank, "de");
+        itemDe.setSource(sourceDe);
+        FolderConfiguration configDe = itemDe.getConfiguration();
+
+        // "" matches everything
+        assertEquals(Arrays.<Configurable>asList(itemBlank, itemBcpEn, itemEn, itemDe),
+                configBlank.findMatchingConfigurables(
+                        Arrays.asList(itemBlank, itemBcpEn, itemEn, itemDe)));
+
+        // "de" matches only "" and "de"
+        assertEquals(Arrays.<Configurable>asList(itemBlank, itemDe),
+                configDe.findMatchingConfigurables(
+                        Arrays.asList(itemBlank, itemBcpEn, itemEn, itemDe)));
+
+        // "en" matches "en" and "b+en"
+        assertTrue(configEn.isMatchFor(configBcpEn));
+        assertTrue(configBcpEn.isMatchFor(configEn));
+        assertEquals(Arrays.<Configurable>asList(itemBcpEn, itemEn),
+                configEn.findMatchingConfigurables(
+                        Arrays.asList(itemBlank, itemBcpEn, itemEn, itemDe)));
+
+        // "b+en" matches "en and "b+en"
+        assertEquals(Arrays.<Configurable>asList(itemBcpEn, itemEn),
+                configBcpEn.findMatchingConfigurables(
+                        Arrays.asList(itemBlank, itemBcpEn, itemEn, itemDe)));
     }
 }

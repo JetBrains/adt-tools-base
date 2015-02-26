@@ -34,6 +34,7 @@ import static com.android.SdkConstants.TAG_PATH_PERMISSION;
 import static com.android.SdkConstants.TAG_PROVIDER;
 import static com.android.SdkConstants.TAG_RECEIVER;
 import static com.android.SdkConstants.TAG_SERVICE;
+import static com.android.xml.AndroidManifest.NODE_ACTION;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -49,6 +50,7 @@ import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.Speed;
 import com.android.tools.lint.detector.api.XmlContext;
+import com.android.xml.AndroidManifest;
 
 import org.w3c.dom.Attr;
 import org.w3c.dom.Element;
@@ -236,6 +238,24 @@ public class SecurityDetector extends Detector implements Detector.XmlScanner,
         return false;
     }
 
+    private static boolean isWearableBindListener(@NonNull Element element) {
+        // Checks whether a service has an Android Wear bind listener
+        for (Element child : LintUtils.getChildren(element)) {
+            if (child.getTagName().equals(TAG_INTENT_FILTER)) {
+                for (Element innerChild : LintUtils.getChildren(child)) {
+                    if (innerChild.getTagName().equals(NODE_ACTION)) {
+                        String name = innerChild.getAttributeNS(ANDROID_URI, ATTR_NAME);
+                        if ("com.google.android.gms.wearable.BIND_LISTENER".equals(name)) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
     private static boolean isStandardReceiver(Element element) {
         // Play Services also the following receiver which we'll consider standard
         // in the sense that it doesn't require a separate permission
@@ -248,7 +268,7 @@ public class SecurityDetector extends Detector implements Detector.XmlScanner,
         for (Element child : LintUtils.getChildren(element)) {
             if (child.getTagName().equals(TAG_INTENT_FILTER)) {
                 for (Element innerChild : LintUtils.getChildren(child)) {
-                    if (innerChild.getTagName().equals("action")) { //$NON-NLS-1$
+                    if (innerChild.getTagName().equals(NODE_ACTION)) {
                         String categoryString = innerChild.getAttributeNS(ANDROID_URI, ATTR_NAME);
                         return categoryString.startsWith("android."); //$NON-NLS-1$
                     }
@@ -269,7 +289,8 @@ public class SecurityDetector extends Detector implements Detector.XmlScanner,
     }
 
     private static void checkService(XmlContext context, Element element) {
-        if (getExported(element) && isUnprotectedByPermission(element)) {
+        if (getExported(element) && isUnprotectedByPermission(element)
+                && !isWearableBindListener(element)) {
             // No declared permission for this exported service: complain
             context.report(EXPORTED_SERVICE, element, context.getLocation(element),
                            "Exported service does not require permission");

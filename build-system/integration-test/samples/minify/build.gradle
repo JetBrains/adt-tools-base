@@ -4,7 +4,7 @@ ext {
 }
 
 buildscript {
-    def gradleVersion = System.env.CUSTOM_GRADLE != null ? System.env.CUSTOM_GRADLE : '1.0.1'
+    def gradleVersion = System.env.CUSTOM_GRADLE != null ? System.env.CUSTOM_GRADLE : '1.1.1'
 
     repositories {
         if (System.env.CUSTOM_REPO != null) {
@@ -41,7 +41,7 @@ android {
         minified {
             minifyEnabled true
             useJack rootProject.ext.useJack
-            proguardFile getDefaultProguardFile('proguard-android.txt')
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), "proguard-rules.pro"
             testCoverageEnabled true
         }
     }
@@ -53,4 +53,8 @@ android {
     lintOptions {
         abortOnError !rootProject.ext.useJack
     }
+}
+
+dependencies {
+    testCompile 'junit:junit:4.11'
 }

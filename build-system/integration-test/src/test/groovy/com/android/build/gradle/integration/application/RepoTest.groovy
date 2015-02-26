@@ -1,7 +1,7 @@
 /*
- * Copyright (C) 2014 The Android Open Source Project;
+ * Copyright (C) 2014 The Android Open Source Project
  *
- * Licensed under the Apache License, Version 2.0 (the "License")
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -15,11 +15,10 @@
  */
 
 package com.android.build.gradle.integration.application
-
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import org.junit.AfterClass
 import org.junit.ClassRule
 import org.junit.Test
-
 /**
  * Integration test for uploadAchives with multiple projects.
  */
@@ -49,13 +48,21 @@ class RepoTest {
             .fromTestProject("repo/util")
             .create()
 
+    @AfterClass
+    static void cleanUp() {
+        app = null
+        baseLibrary = null
+        library = null
+        util = null
+    }
+
     @Test
     void repo() {
         try {
             util.execute("clean", "uploadArchives")
             baseLibrary.execute("clean", "uploadArchives")
             library.execute("clean", "uploadArchives")
-            app.execute("clean", "uploadArchives")
+            app.execute("clean", "assembleDebug")
         } finally {
             // clean up the test repository.
             File testRepo = new File(app.testDir, "../testrepo")

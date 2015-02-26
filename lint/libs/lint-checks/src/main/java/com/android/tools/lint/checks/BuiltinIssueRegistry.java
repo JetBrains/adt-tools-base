@@ -30,7 +30,7 @@ import java.util.List;
 /** Registry which provides a list of checks to be performed on an Android project */
 public class BuiltinIssueRegistry extends IssueRegistry {
     private static final List<Issue> sIssues;
-    static final int INITIAL_CAPACITY = 200;
+    static final int INITIAL_CAPACITY = 208;
 
     static {
         List<Issue> issues = new ArrayList<Issue>(INITIAL_CAPACITY);
@@ -65,6 +65,7 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(CommentDetector.STOP_SHIP);
         issues.add(CustomViewDetector.ISSUE);
         issues.add(CutPasteDetector.ISSUE);
+        issues.add(DateFormatDetector.DATE_FORMAT);
         issues.add(DeprecationDetector.ISSUE);
         issues.add(DetectMissingPrefix.MISSING_NAMESPACE);
         issues.add(DosLineEndingDetector.ISSUE);
@@ -118,9 +119,14 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(LabelForDetector.ISSUE);
         issues.add(LayoutConsistencyDetector.INCONSISTENT_IDS);
         issues.add(LayoutInflationDetector.ISSUE);
-        issues.add(LocaleDetector.DATE_FORMAT);
         issues.add(LocaleDetector.STRING_LOCALE);
-        issues.add(LocaleFolderDetector.ISSUE);
+        issues.add(LocaleFolderDetector.DEPRECATED_CODE);
+        issues.add(LocaleFolderDetector.INVALID_FOLDER);
+        issues.add(LocaleFolderDetector.WRONG_REGION);
+        issues.add(LocaleFolderDetector.USE_ALPHA_2);
+        issues.add(LogDetector.CONDITIONAL);
+        issues.add(LogDetector.LONG_TAG);
+        issues.add(LogDetector.WRONG_TAG);
         issues.add(ManifestDetector.ALLOW_BACKUP);
         issues.add(ManifestDetector.APPLICATION_ICON);
         issues.add(ManifestDetector.DEVICE_ADMIN);
@@ -128,6 +134,7 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(ManifestDetector.DUPLICATE_USES_FEATURE);
         issues.add(ManifestDetector.GRADLE_OVERRIDES);
         issues.add(ManifestDetector.ILLEGAL_REFERENCE);
+        issues.add(ManifestDetector.MIPMAP);
         issues.add(ManifestDetector.MOCK_LOCATION);
         issues.add(ManifestDetector.MULTIPLE_USES_SDK);
         issues.add(ManifestDetector.ORDER);
@@ -199,6 +206,7 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(StringFormatDetector.ARG_COUNT);
         issues.add(StringFormatDetector.ARG_TYPES);
         issues.add(StringFormatDetector.INVALID);
+        issues.add(StringFormatDetector.POTENTIAL_PLURAL);
         issues.add(SystemPermissionsDetector.ISSUE);
         issues.add(TextFieldDetector.ISSUE);
         issues.add(TextViewDetector.ISSUE);
@@ -264,7 +272,7 @@ public class BuiltinIssueRegistry extends IssueRegistry {
             }
 
             if (scope.contains(Scope.JAVA_FILE)) {
-                initialSize += 35;
+                initialSize += 45;
             } else if (scope.contains(Scope.CLASS_FILE)) {
                 initialSize += 15;
             } else if (scope.contains(Scope.MANIFEST)) {

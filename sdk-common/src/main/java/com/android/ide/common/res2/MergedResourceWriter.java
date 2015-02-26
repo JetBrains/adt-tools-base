@@ -16,6 +16,7 @@
 
 package com.android.ide.common.res2;
 
+import static com.android.SdkConstants.DOT_9PNG;
 import static com.android.SdkConstants.DOT_PNG;
 import static com.android.SdkConstants.DOT_XML;
 import static com.android.SdkConstants.RES_QUALIFIER_SEP;
@@ -26,6 +27,7 @@ import static com.android.utils.SdkUtils.createPathComment;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ide.common.internal.PngCruncher;
+import com.android.ide.common.internal.PngException;
 import com.android.resources.ResourceFolderType;
 import com.android.resources.ResourceType;
 import com.android.utils.SdkUtils;
@@ -58,12 +60,16 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
     /** Prefix in comments which mark the source locations for merge results */
     public static final String FILENAME_PREFIX = "From: ";
 
-    @Nullable
+    @NonNull
     private final PngCruncher mCruncher;
 
     private DocumentBuilderFactory mFactory;
 
     private boolean mInsertSourceMarkers = true;
+
+    private final boolean mCrunchPng;
+
+    private final boolean mProcess9Patch;
 
     /**
      * map of XML values files to write after parsing all the files. the key is the qualifier.
@@ -77,9 +83,15 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
      */
     private Set<String> mQualifierWithDeletedValues;
 
-    public MergedResourceWriter(@NonNull File rootFolder, @Nullable PngCruncher pngRunner) {
+    public MergedResourceWriter(@NonNull File rootFolder,
+            @NonNull PngCruncher pngRunner,
+            boolean crunchPng,
+            boolean process9Patch) {
         super(rootFolder);
         mCruncher = pngRunner;
+        mCrunchPng = crunchPng;
+        mProcess9Patch = process9Patch;
+
     }
 
     /**
@@ -185,14 +197,25 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
                             if (item.getType() == ResourceType.RAW) {
                                 // Don't crunch, don't insert source comments, etc - leave alone.
                                 Files.copy(file, outFile);
-                            } else if (mCruncher != null && filename.endsWith(DOT_PNG)) {
-                                // Crunch the the PNG file.
-                                mCruncher.crunchPng(file, outFile);
+                            } else if (filename.endsWith(DOT_PNG)) {
+                                if (mCrunchPng && mProcess9Patch) {
+                                    mCruncher.crunchPng(file, outFile);
+                                } else {
+                                    // we should not crunch the png files, but we should still
+                                    // process the nine patch.
+                                    if (mProcess9Patch && filename.endsWith(DOT_9PNG)) {
+                                        mCruncher.crunchPng(file, outFile);
+                                    } else {
+                                        Files.copy(file, outFile);
+                                    }
+                                }
                             } else if (mInsertSourceMarkers && filename.endsWith(DOT_XML)) {
                                 SdkUtils.copyXmlWithSourceReference(file, outFile);
                             } else {
                                 Files.copy(file, outFile);
                             }
+                        } catch (PngException e) {
+                            throw new MergingException(e).setFile(file);
                         } catch (IOException ioe) {
                             throw new MergingException(ioe).setFile(file);
                         }

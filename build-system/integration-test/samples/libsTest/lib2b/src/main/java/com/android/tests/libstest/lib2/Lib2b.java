@@ -1,5 +1,7 @@
 package com.android.tests.libstest.lib2;
 
+import com.android.tests.libstest.lib2b.R;
+
 import android.app.Activity;
 import android.widget.TextView;
 
@@ -7,8 +9,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-
-import com.android.tests.libstest.lib2b.R;
 
 public class Lib2b {
     

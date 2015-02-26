@@ -18,7 +18,10 @@ import org.junit.Test
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 
-import static org.junit.Assert.*
+import static org.junit.Assert.assertFalse
+import static org.junit.Assert.assertNotNull
+import static org.junit.Assert.assertNull
+import static org.junit.Assert.assertTrue
 
 /**
   * Integration test to check that libraries included directly as jar files are correctly handled
@@ -27,15 +30,15 @@ import static org.junit.Assert.*
 class ProguardAarPackagingTest {
     @ClassRule
     static public GradleTestProject androidProject =
-            GradleTestProject.builder().withName("mainProject").create();
+            GradleTestProject.builder().withName("mainProject").create()
     @ClassRule
     static public GradleTestProject libraryInJarProject =
-            GradleTestProject.builder().withName("libInJar").create();
+            GradleTestProject.builder().withName("libInJar").create()
 
     @BeforeClass
-    static public void setup() {
+    static public void setUp() {
         // Create android test application
-        AndroidTestApp testApp = new HelloWorldApp();
+        AndroidTestApp testApp = new HelloWorldApp()
 
         TestSourceFile oldHelloWorld = testApp.getFile("HelloWorld.java")
         testApp.removeFile(oldHelloWorld)

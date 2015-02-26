@@ -21,7 +21,6 @@ import com.android.annotations.NonNull;
 import com.android.manifmerger.IMergerLog.FileAndLine;
 import com.android.sdklib.mock.MockLog;
 
-import junit.framework.ComparisonFailure;
 import junit.framework.TestCase;
 
 import org.w3c.dom.Document;

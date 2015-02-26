@@ -16,6 +16,7 @@
 
 package com.android.builder.core;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
@@ -25,9 +26,8 @@ import com.android.annotations.VisibleForTesting;
 import com.android.builder.dependency.DependencyContainer;
 import com.android.builder.dependency.JarDependency;
 import com.android.builder.dependency.LibraryDependency;
-import com.android.builder.internal.StringHelper;
+import com.android.utils.StringHelper;
 import com.android.builder.model.ApiVersion;
-import com.android.builder.model.BaseConfig;
 import com.android.builder.model.BuildType;
 import com.android.builder.model.ClassField;
 import com.android.builder.model.ProductFlavor;
@@ -115,9 +115,15 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
     private SourceProvider mMultiFlavorSourceProvider;
 
     @NonNull
-    private final Type mType;
-    /** Optional tested config in case type is Type#TEST */
+    private final VariantType mType;
+
+    /**
+     * Optional tested config in case this variant is used for testing another variant.
+     *
+     * @see VariantType#isForTesting()
+     */
     private final VariantConfiguration mTestedConfig;
+
     /** An optional output that is only valid if the type is Type#LIBRARY so that the test
      * for the library can use the library as if it was a normal dependency. */
     private LibraryDependency mOutput;
@@ -125,7 +131,15 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
     @NonNull
     private ProductFlavor mMergedFlavor;
 
-    private final Set<JarDependency> mJars = Sets.newHashSet();
+    /**
+     * External/Jar dependencies
+     */
+    private final Set<JarDependency> mExternalJars = Sets.newHashSet();
+
+    /**
+     * Local Jar dependencies
+     */
+    private final Set<JarDependency> mLocalJars = Sets.newHashSet();
 
     /** List of direct library dependencies. Each object defines its own dependencies. */
     private final List<LibraryDependency> mDirectLibraries = Lists.newArrayList();
@@ -150,9 +164,6 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
      */
     private final SigningConfig mSigningConfigOverride;
 
-    public static enum Type {
-        DEFAULT, LIBRARY, TEST
-    }
 
     /**
      * Parses the manifest file and return the package name.
@@ -165,29 +176,8 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
     }
 
     /**
-     * Creates the configuration with the base source sets.
-     *
-     * This creates a config with a {@link Type#DEFAULT} type.
-     *
-     * @param defaultConfig the default configuration. Required.
-     * @param defaultSourceProvider the default source provider. Required
-     * @param buildType the build type for this variant. Required.
-     * @param buildTypeSourceProvider the source provider for the build type. Required.
-     */
-    public VariantConfiguration(
-            @NonNull D defaultConfig,
-            @NonNull SourceProvider defaultSourceProvider,
-            @NonNull T buildType,
-            @Nullable SourceProvider buildTypeSourceProvider,
-            @Nullable SigningConfig signingConfigOverride) {
-        this(
-                defaultConfig, defaultSourceProvider,
-                buildType, buildTypeSourceProvider,
-                Type.DEFAULT, null /*testedConfig*/, signingConfigOverride);
-    }
-
-    /**
-     * Creates the configuration with the base source sets for a given {@link Type}.
+     * Creates the configuration with the base source sets for a given {@link VariantType}. Meant
+     * for non-testing variants.
      *
      * @param defaultConfig the default configuration. Required.
      * @param defaultSourceProvider the default source provider. Required
@@ -201,7 +191,7 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
             @NonNull SourceProvider defaultSourceProvider,
             @NonNull T buildType,
             @Nullable SourceProvider buildTypeSourceProvider,
-            @NonNull Type type,
+            @NonNull VariantType type,
             @Nullable SigningConfig signingConfigOverride) {
         this(
                 defaultConfig, defaultSourceProvider,
@@ -217,7 +207,7 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
      * @param buildType the build type for this variant. Required.
      * @param buildTypeSourceProvider the source provider for the build type.
      * @param type the type of the project.
-     * @param testedConfig the reference to the tested project. Required if type is Type.TEST
+     * @param testedConfig the reference to the tested project. Required if type is Type.ANDROID_TEST
      * @param signingConfigOverride an optional Signing override to be used for signing.
      */
     public VariantConfiguration(
@@ -225,9 +215,16 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
             @NonNull SourceProvider defaultSourceProvider,
             @NonNull T buildType,
             @Nullable SourceProvider buildTypeSourceProvider,
-            @NonNull Type type,
+            @NonNull VariantType type,
             @Nullable VariantConfiguration testedConfig,
             @Nullable SigningConfig signingConfigOverride) {
+        checkArgument(
+                !type.isForTesting() || testedConfig != null,
+                "You have to specify the tested variant for this variant type.");
+        checkArgument(
+                type.isForTesting() || testedConfig == null,
+                "This variant type doesn't need a tested variant.");
+
         mDefaultConfig = checkNotNull(defaultConfig);
         mDefaultSourceProvider = checkNotNull(defaultSourceProvider);
         mBuildType = checkNotNull(buildType);
@@ -235,8 +232,6 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
         mType = checkNotNull(type);
         mTestedConfig = testedConfig;
         mSigningConfigOverride = signingConfigOverride;
-        checkState(mType != Type.TEST || mTestedConfig != null);
-
         mMergedFlavor = DefaultProductFlavor.clone(mDefaultConfig);
     }
 
@@ -258,8 +253,8 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
                 sb.append(mBuildType.getName());
             }
 
-            if (mType == Type.TEST) {
-                sb.append("Test");
+            if (mType.isForTesting()) {
+                sb.append(mType.getSuffix());
             }
 
             mFullName = sb.toString();
@@ -286,8 +281,8 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
 
         sb.append(StringHelper.capitalize(mBuildType.getName()));
 
-        if (mType == Type.TEST) {
-            sb.append("Test");
+        if (mType.isForTesting()) {
+            sb.append(mType.getSuffix());
         }
 
         return sb.toString();
@@ -338,8 +333,8 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
 
             sb.append(mBuildType.getName());
 
-            if (mType == Type.TEST) {
-                sb.append('-').append("test");
+            if (mType.isForTesting()) {
+                sb.append('-').append(mType.getPrefix());
             }
 
             mBaseName = sb.toString();
@@ -366,8 +361,8 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
         sb.append(splitName).append('-');
         sb.append(mBuildType.getName());
 
-        if (mType == Type.TEST) {
-            sb.append('-').append("test");
+        if (mType.isForTesting()) {
+            sb.append('-').append(mType.getPrefix());
         }
 
         return sb.toString();
@@ -376,7 +371,8 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
     /**
      * Returns a unique directory name (can include multiple folders) for the variant,
      * based on build type, flavor and test.
-     * This always uses forward slashes ('/') as separator on all platform.
+     *
+     * <p>This always uses forward slashes ('/') as separator on all platform.
      *
      * @return the directory name for the variant
      */
@@ -385,8 +381,8 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
         if (mDirName == null) {
             StringBuilder sb = new StringBuilder();
 
-            if (mType == Type.TEST) {
-                sb.append("test/");
+            if (mType.isForTesting()) {
+                sb.append(mType.getPrefix()).append("/");
             }
 
             if (!mFlavors.isEmpty()) {
@@ -410,7 +406,8 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
     /**
      * Returns a unique directory name (can include multiple folders) for the variant,
      * based on build type, flavor and test, and splits.
-     * This always uses forward slashes ('/') as separator on all platform.
+     *
+     * <p>This always uses forward slashes ('/') as separator on all platform.
      *
      * @return the directory name for the variant
      */
@@ -418,8 +415,8 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
     public String computeDirNameWithSplits(@NonNull String... splitNames) {
         StringBuilder sb = new StringBuilder();
 
-        if (mType == Type.TEST) {
-            sb.append("test/");
+        if (mType.isForTesting()) {
+            sb.append(mType.getPrefix()).append("/");
         }
 
         if (!mFlavors.isEmpty()) {
@@ -657,31 +654,40 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
         // created.  If library output has never been added to mDirectLibraries, checked the output
         // of the mTestedConfig to see if the tasks are now created.
         if (mTestedConfig != null &&
-                mTestedConfig.mType == Type.LIBRARY &&
+                mTestedConfig.mType == VariantType.LIBRARY &&
                 mTestedConfig.mOutput != null &&
                 !mDirectLibraries.contains(mTestedConfig.mOutput)) {
             mDirectLibraries.add(mTestedConfig.mOutput);
         }
 
         mDirectLibraries.addAll(container.getAndroidDependencies());
-        mJars.addAll(container.getJarDependencies());
-        mJars.addAll(container.getLocalDependencies());
+        mExternalJars.addAll(container.getJarDependencies());
+        mLocalJars.addAll(container.getLocalDependencies());
 
         resolveIndirectLibraryDependencies(mDirectLibraries, mFlatLibraries);
 
         for (LibraryDependency libraryDependency : mFlatLibraries) {
-            mJars.addAll(libraryDependency.getLocalDependencies());
+            mLocalJars.addAll(libraryDependency.getLocalDependencies());
         }
         return this;
     }
 
     /**
-     * Returns the list of jar dependencies
+     * Returns the list of external/module jar dependencies
      * @return a non null collection of Jar dependencies.
      */
     @NonNull
-    public Collection<JarDependency> getJars() {
-        return mJars;
+    public Collection<JarDependency> getExternalJarDependencies() {
+        return mExternalJars;
+    }
+
+    /**
+     * Returns the list of local jar dependencies
+     * @return a non null collection of Jar dependencies.
+     */
+    @NonNull
+    public Collection<JarDependency> getLocalJarDependencies() {
+        return mLocalJars;
     }
 
     /**
@@ -751,10 +757,6 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
         return mFlavorSourceProviders;
     }
 
-    public boolean hasLibraries() {
-        return !mDirectLibraries.isEmpty();
-    }
-
     /**
      * Returns the direct library dependencies
      */
@@ -772,7 +774,7 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
     }
 
     @NonNull
-    public Type getType() {
+    public VariantType getType() {
         return mType;
     }
 
@@ -789,7 +791,7 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
      * @param outFlatDependencies where to store all the libraries.
      */
     @VisibleForTesting
-    void resolveIndirectLibraryDependencies(List<LibraryDependency> directDependencies,
+    static void resolveIndirectLibraryDependencies(List<LibraryDependency> directDependencies,
                                             List<LibraryDependency> outFlatDependencies) {
         if (directDependencies == null) {
             return;
@@ -821,7 +823,7 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
      */
     @Nullable
     public String getOriginalApplicationId() {
-        if (mType == VariantConfiguration.Type.TEST) {
+        if (mType.isForTesting()) {
             return getApplicationId();
         }
 
@@ -837,8 +839,8 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
     public String getApplicationId() {
         String id;
 
-        if (mType == Type.TEST) {
-            assert mTestedConfig != null;
+        if (mType.isForTesting()) {
+            checkState(mTestedConfig != null);
 
             id = mMergedFlavor.getTestApplicationId();
             if (id == null) {
@@ -864,9 +866,9 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
 
     @Nullable
     public String getTestedApplicationId() {
-        if (mType == Type.TEST) {
-            assert mTestedConfig != null;
-            if (mTestedConfig.mType == Type.LIBRARY) {
+        if (mType.isForTesting()) {
+            checkState(mTestedConfig != null);
+            if (mTestedConfig.mType == VariantType.LIBRARY) {
                 return getApplicationId();
             } else {
                 return mTestedConfig.getApplicationId();
@@ -916,7 +918,7 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
 
         if (versionSuffix != null && !versionSuffix.isEmpty()) {
             if (versionName == null) {
-                if (mType != Type.TEST) {
+                if (!mType.isForTesting()) {
                     versionName = getVersionNameFromManifest();
                 } else {
                     versionName = "";
@@ -940,8 +942,7 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
         int versionCode = mMergedFlavor.getVersionCode() != null ?
                 mMergedFlavor.getVersionCode() : -1;
 
-        if (versionCode == -1 && mType != Type.TEST) {
-
+        if (versionCode == -1 && !mType.isForTesting()) {
             versionCode = getVersionCodeFromManifest();
         }
 
@@ -960,8 +961,9 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
     @NonNull
     public String getInstrumentationRunner() {
         VariantConfiguration config = this;
-        if (mType == Type.TEST) {
+        if (mType.isForTesting()) {
             config = getTestedConfig();
+            checkState(config != null);
         }
         String runner = config.mMergedFlavor.getTestInstrumentationRunner();
         return runner != null ? runner : DEFAULT_TEST_RUNNER;
@@ -975,8 +977,9 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
     @NonNull
     public Boolean getHandleProfiling() {
         VariantConfiguration config = this;
-        if (mType == Type.TEST) {
+        if (mType.isForTesting()) {
             config = getTestedConfig();
+            checkState(config != null);
         }
         Boolean handleProfiling = config.mMergedFlavor.getTestHandleProfiling();
         return handleProfiling != null ? handleProfiling : DEFAULT_HANDLE_PROFILING;
@@ -990,8 +993,9 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
     @NonNull
     public Boolean getFunctionalTest() {
         VariantConfiguration config = this;
-        if (mType == Type.TEST) {
+        if (mType.isForTesting()) {
             config = getTestedConfig();
+            checkState(config != null);
         }
         Boolean functionalTest = config.mMergedFlavor.getTestFunctionalTest();
         return functionalTest != null ? functionalTest : DEFAULT_FUNCTIONAL_TEST;
@@ -1002,7 +1006,8 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
      */
     @Nullable
     public String getPackageFromManifest() {
-        assert mType != Type.TEST;
+        checkState(!mType.isForTesting());
+
         File manifestLocation = mDefaultSourceProvider.getManifestFile();
         String packageName = sManifestParser.getPackage(manifestLocation);
         if (packageName == null) {
@@ -1112,7 +1117,7 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
         }
 
         // build type overrides flavors
-        if (mType != Type.TEST && mBuildTypeSourceProvider != null) {
+        if (mBuildTypeSourceProvider != null) {
             providers.add(mBuildTypeSourceProvider);
         }
 
@@ -1122,25 +1127,6 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
         }
 
         return providers;
-    }
-
-    @NonNull
-    public List<BaseConfig> getSortedBaseConfigs() {
-        List<BaseConfig> configs = Lists.newArrayList();
-
-        configs.add(mDefaultConfig);
-
-        // the list of flavor must be reversed to use the right overlay order.
-        for (int n = mFlavors.size() - 1; n >= 0 ; n--) {
-            configs.add(mFlavors.get(n));
-        }
-
-        // build type overrides flavors
-        if (mType != Type.TEST) {
-            configs.add(mBuildType);
-        }
-
-        return configs;
     }
 
     @NonNull
@@ -1455,7 +1441,8 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
      */
     @NonNull
     public Set<File> getCompileClasspath() {
-        Set<File> classpath = Sets.newHashSetWithExpectedSize(mJars.size() + mFlatLibraries.size());
+        Set<File> classpath = Sets.newHashSetWithExpectedSize(
+                mExternalJars.size() + mLocalJars.size() + mFlatLibraries.size());
 
         for (LibraryDependency lib : mFlatLibraries) {
             classpath.add(lib.getJarFile());
@@ -1464,7 +1451,13 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
             }
         }
 
-        for (JarDependency jar : mJars) {
+        for (JarDependency jar : mExternalJars) {
+            if (jar.isCompiled()) {
+                classpath.add(jar.getJarFile());
+            }
+        }
+
+        for (JarDependency jar : mLocalJars) {
             if (jar.isCompiled()) {
                 classpath.add(jar.getJarFile());
             }
@@ -1481,9 +1474,17 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
      */
     @NonNull
     public Set<File> getPackagedJars() {
-        Set<File> jars = Sets.newHashSetWithExpectedSize(mJars.size() + mFlatLibraries.size());
+        Set<File> jars = Sets.newHashSetWithExpectedSize(
+                mExternalJars.size() + mLocalJars.size() + mFlatLibraries.size());
 
-        for (JarDependency jar : mJars) {
+        for (JarDependency jar : mExternalJars) {
+            File jarFile = jar.getJarFile();
+            if (jar.isPackaged() && jarFile.exists()) {
+                jars.add(jarFile);
+            }
+        }
+
+        for (JarDependency jar : mLocalJars) {
             File jarFile = jar.getJarFile();
             if (jar.isPackaged() && jarFile.exists()) {
                 jars.add(jarFile);
@@ -1512,9 +1513,16 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
      */
     @NonNull
     public List<File> getProvidedOnlyJars() {
-        Set<File> jars = Sets.newHashSetWithExpectedSize(mJars.size());
+        Set<File> jars = Sets.newHashSetWithExpectedSize(mExternalJars.size() + mLocalJars.size());
 
-        for (JarDependency jar : mJars) {
+        for (JarDependency jar : mExternalJars) {
+            File jarFile = jar.getJarFile();
+            if (jar.isCompiled() && !jar.isPackaged() && jarFile.exists()) {
+                jars.add(jarFile);
+            }
+        }
+
+        for (JarDependency jar : mLocalJars) {
             File jarFile = jar.getJarFile();
             if (jar.isCompiled() && !jar.isPackaged() && jarFile.exists()) {
                 jars.add(jarFile);

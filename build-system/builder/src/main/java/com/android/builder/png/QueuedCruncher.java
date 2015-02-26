@@ -22,10 +22,9 @@ import com.android.builder.tasks.JobContext;
 import com.android.builder.tasks.QueueThreadContext;
 import com.android.builder.tasks.Task;
 import com.android.builder.tasks.WorkQueue;
-import com.android.ide.common.internal.LoggedErrorException;
 import com.android.ide.common.internal.PngCruncher;
+import com.android.ide.common.internal.PngException;
 import com.android.utils.ILogger;
-import com.google.common.collect.ImmutableList;
 
 import java.io.File;
 import java.io.IOException;
@@ -59,6 +58,7 @@ public class QueuedCruncher implements PngCruncher {
                 @NonNull String aaptLocation,
                 @NonNull ILogger logger) {
             synchronized (sLock) {
+                logger.info("QueuedCruncher is using %1$s", aaptLocation);
                 if (!sInstances.containsKey(aaptLocation)) {
                     QueuedCruncher queuedCruncher = new QueuedCruncher(aaptLocation, logger);
                     sInstances.put(aaptLocation, queuedCruncher);
@@ -95,8 +95,10 @@ public class QueuedCruncher implements PngCruncher {
                             Thread.currentThread().getName());
                     AaptProcess aaptProcess = new AaptProcess.Builder(mAaptLocation, mLogger).start();
                     assert aaptProcess != null;
+                    aaptProcess.waitForReady();
                     mAaptProcesses.put(t.getName(), aaptProcess);
                 } catch (InterruptedException e) {
+                    mLogger.error(e, "Cannot start slave process");
                     e.printStackTrace();
                 }
             }
@@ -142,22 +144,28 @@ public class QueuedCruncher implements PngCruncher {
     }
 
     @Override
-    public void crunchPng(@NonNull final File from, @NonNull final File to)
-            throws InterruptedException, LoggedErrorException, IOException {
-        final Job<AaptProcess> aaptProcessJob = new Job<AaptProcess>(
-                "Cruncher " + from.getName(),
-                new Task<AaptProcess>() {
-            @Override
-            public void run(Job<AaptProcess> job, JobContext<AaptProcess> context) throws IOException {
-                mLogger.verbose("Thread(%1$s): begin executing job %2$s",
-                        Thread.currentThread().getName(), job.getJobTitle());
-                context.getPayload().crunch(from, to, job);
-                mLogger.verbose("Thread(%1$s): done executing job %2$s",
-                        Thread.currentThread().getName(), job.getJobTitle());
-            }
-        });
-        mOutstandingJobs.add(aaptProcessJob);
-        mCrunchingRequests.push(aaptProcessJob);
+    public void crunchPng(@NonNull final File from, @NonNull final File to) throws PngException {
+        try {
+            final Job<AaptProcess> aaptProcessJob = new Job<AaptProcess>(
+                    "Cruncher " + from.getName(),
+                    new Task<AaptProcess>() {
+                        @Override
+                        public void run(Job<AaptProcess> job, JobContext<AaptProcess> context)
+                                throws IOException {
+                            mLogger.verbose("Thread(%1$s): begin executing job %2$s",
+                                    Thread.currentThread().getName(), job.getJobTitle());
+                            context.getPayload().crunch(from, to, job);
+                            mLogger.verbose("Thread(%1$s): done executing job %2$s",
+                                    Thread.currentThread().getName(), job.getJobTitle());
+                        }
+                    });
+            mOutstandingJobs.add(aaptProcessJob);
+            mCrunchingRequests.push(aaptProcessJob);
+        } catch (InterruptedException e) {
+            // Restore the interrupted status
+            Thread.currentThread().interrupt();
+            throw new PngException(e);
+        }
     }
 
     public void waitForAll() throws InterruptedException {

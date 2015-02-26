@@ -15,6 +15,7 @@
  */
 
 package com.android.build.gradle.integration.application
+
 import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.utils.ModelHelper
@@ -28,10 +29,11 @@ import org.junit.ClassRule
 import org.junit.Test
 import org.junit.experimental.categories.Category
 
-import static com.android.builder.core.BuilderConstants.ANDROID_TEST
+import static com.android.builder.core.VariantType.ANDROID_TEST
 import static com.android.builder.model.AndroidProject.ARTIFACT_ANDROID_TEST
 import static org.junit.Assert.assertFalse
 import static org.junit.Assert.assertNotNull
+
 /**
  * Assemble tests for migrated.
  */
@@ -44,7 +46,7 @@ class MigratedTest {
     static AndroidProject model
 
     @BeforeClass
-    static void setup() {
+    static void setUp() {
         model = project.executeAndReturnModel("clean", "assembleDebug")
     }
 
@@ -83,7 +85,7 @@ class MigratedTest {
         assertNotNull("InstrumentTest source Providers null-check", testSourceProviderContainer)
 
         new SourceProviderHelper(model.getName(), projectDir,
-                ANDROID_TEST, testSourceProviderContainer.getSourceProvider())
+                ANDROID_TEST.prefix, testSourceProviderContainer.getSourceProvider())
                 .setJavaDir("tests/java")
                 .setResourcesDir("tests/resources")
                 .setAidlDir("tests/aidl")

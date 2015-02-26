@@ -19,16 +19,18 @@ package com.android.builder.png;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.ide.common.internal.AaptCruncher;
-import com.android.ide.common.internal.CommandLineRunner;
-import com.android.ide.common.internal.LoggedErrorException;
 import com.android.ide.common.internal.PngCruncher;
+import com.android.ide.common.internal.PngException;
+import com.android.ide.common.process.DefaultProcessExecutor;
+import com.android.ide.common.process.LoggedProcessOutputHandler;
+import com.android.ide.common.process.ProcessExecutor;
+import com.android.ide.common.process.ProcessOutputHandler;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.SdkManager;
 import com.android.sdklib.repository.FullRevision;
 import com.android.utils.ILogger;
 import com.android.utils.StdLogger;
 
-import junit.framework.AssertionFailedError;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 
@@ -101,7 +103,7 @@ public class NinePatchAaptProcessorTest extends BasePngTest {
         assert sdkManager != null;
         BuildToolInfo buildToolInfo = sdkManager.getBuildTool(fullRevision);
         if (buildToolInfo == null) {
-            throw new RuntimeException("Test requires build-tools 20");
+            throw new RuntimeException("Test requires build-tools " + fullRevision.toShortString());
         }
         return new File(buildToolInfo.getPath(BuildToolInfo.PathId.AAPT));
     }
@@ -109,9 +111,10 @@ public class NinePatchAaptProcessorTest extends BasePngTest {
     @NonNull
     protected PngCruncher getCruncher() {
         ILogger logger = new StdLogger(StdLogger.Level.VERBOSE);
-        CommandLineRunner commandLineRunner = new CommandLineRunner(logger);
+        ProcessExecutor processExecutor = new DefaultProcessExecutor(logger);
+        ProcessOutputHandler processOutputHandler = new LoggedProcessOutputHandler(logger);
         File aapt = getAapt();
-        return new AaptCruncher(aapt.getAbsolutePath(), commandLineRunner);
+        return new AaptCruncher(aapt.getAbsolutePath(), processExecutor, processOutputHandler);
     }
 
     private static Map<File, File> sourceAndCrunchedFiles = new HashMap<File, File>();
@@ -164,17 +167,13 @@ public class NinePatchAaptProcessorTest extends BasePngTest {
 
     @NonNull
     protected File crunchFile(@NonNull File file)
-            throws IOException, DataFormatException, InterruptedException,
-            LoggedErrorException {
+            throws PngException, IOException {
         File outFile = File.createTempFile("pngWriterTest", ".png");
         outFile.deleteOnExit();
         PngCruncher aaptCruncher = getCruncher();
         try {
             aaptCruncher.crunchPng(file, outFile);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-            throw e;
-        } catch (LoggedErrorException e) {
+        } catch (PngException e) {
             e.printStackTrace();
             throw e;
         }

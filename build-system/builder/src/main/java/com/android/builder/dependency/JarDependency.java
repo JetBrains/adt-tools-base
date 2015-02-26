@@ -24,6 +24,9 @@ import java.io.File;
 
 /**
  * Represents a Jar dependency. This could be the output of a Java project.
+ *
+ * This is not meant to include transitive dependencies, as there's no need to record this
+ * information when building.
  */
 public class JarDependency {
 
@@ -31,8 +34,12 @@ public class JarDependency {
     private final File mJarFile;
 
     private final boolean mCompiled;
-    private boolean mPackaged;
+    private final boolean mPackaged;
     private final boolean mProguarded;
+
+    /** if the dependency is a sub-project, then the project path */
+    @Nullable
+    private final String mProjectPath;
 
     @Nullable
     private final MavenCoordinates mResolvedCoordinates;
@@ -42,21 +49,23 @@ public class JarDependency {
             boolean compiled,
             boolean packaged,
             boolean proguarded,
-            @Nullable MavenCoordinates resolvedCoordinates) {
+            @Nullable MavenCoordinates resolvedCoordinates,
+            @Nullable String projectPath) {
         mJarFile = jarFile;
         mCompiled = compiled;
         mPackaged = packaged;
         mProguarded = proguarded;
         mResolvedCoordinates = resolvedCoordinates;
+        mProjectPath = projectPath;
     }
-
 
     public JarDependency(
             @NonNull File jarFile,
             boolean compiled,
             boolean packaged,
-            @Nullable MavenCoordinates resolvedCoordinates) {
-        this(jarFile, compiled, packaged, true, resolvedCoordinates);
+            @Nullable MavenCoordinates resolvedCoordinates,
+            @Nullable String projectPath) {
+        this(jarFile, compiled, packaged, true, resolvedCoordinates, projectPath);
     }
 
     @NonNull
@@ -72,10 +81,6 @@ public class JarDependency {
         return mPackaged;
     }
 
-    public void setPackaged(boolean packaged) {
-        mPackaged = packaged;
-    }
-
     public boolean isProguarded() {
         return mProguarded;
     }
@@ -83,6 +88,11 @@ public class JarDependency {
     @Nullable
     public MavenCoordinates getResolvedCoordinates() {
         return mResolvedCoordinates;
+    }
+
+    @Nullable
+    public String getProjectPath() {
+        return mProjectPath;
     }
 
     @Override

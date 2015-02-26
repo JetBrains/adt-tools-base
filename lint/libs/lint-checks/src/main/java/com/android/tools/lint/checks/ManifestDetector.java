@@ -26,6 +26,7 @@ import static com.android.SdkConstants.ATTR_PACKAGE;
 import static com.android.SdkConstants.ATTR_TARGET_SDK_VERSION;
 import static com.android.SdkConstants.ATTR_VERSION_CODE;
 import static com.android.SdkConstants.ATTR_VERSION_NAME;
+import static com.android.SdkConstants.DRAWABLE_PREFIX;
 import static com.android.SdkConstants.PREFIX_RESOURCE_REF;
 import static com.android.SdkConstants.TAG_ACTIVITY;
 import static com.android.SdkConstants.TAG_APPLICATION;
@@ -48,6 +49,8 @@ import com.android.builder.model.AndroidProject;
 import com.android.builder.model.ApiVersion;
 import com.android.builder.model.BuildTypeContainer;
 import com.android.builder.model.ProductFlavor;
+import com.android.builder.model.ProductFlavorContainer;
+import com.android.builder.model.SourceProviderContainer;
 import com.android.builder.model.Variant;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
@@ -326,8 +329,8 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
 
             "Using a mock location provider (by requiring the permission " +
             "`android.permission.ACCESS_MOCK_LOCATION`) should *only* be done " +
-            "in debug builds. In Gradle projects, that means you should only " +
-            "request this permission in a debug source set specific manifest file.\n" +
+            "in debug builds (or from tests). In Gradle projects, that means you should only " +
+            "request this permission in a test or debug source set specific manifest file.\n" +
             "\n" +
             "To fix this, create a new manifest file in the debug folder and move " +
             "the `<uses-permission>` element there. A typical path to a debug manifest " +
@@ -350,6 +353,29 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
 
             Category.CORRECTNESS,
             4,
+            Severity.WARNING,
+            IMPLEMENTATION);
+
+    /** Using drawable rather than mipmap launcher icons */
+    public static final Issue MIPMAP = Issue.create(
+            "MipmapIcons", //$NON-NLS-1$
+            "Use Mipmap Launcher Icons",
+
+            "Launcher icons should be provided in the `mipmap` resource directory. " +
+            "This is the same as the `drawable` resource directory, except resources in " +
+            "the `mipmap` directory will not get stripped out when creating density-specific " +
+            "APKs.\n" +
+            "\n" +
+            "In certain cases, the Launcher app may use a higher resolution asset (than " +
+            "would normally be computed for the device) to display large app shortcuts. " +
+            "If drawables for densities other than the device's resolution have been " +
+            "stripped out, then the app shortcut could appear blurry.\n" +
+            "\n" +
+            "To fix this, move your launcher icons from `drawable-`dpi to `mipmap-`dpi " +
+            "and change references from @drawable/ and R.drawable to @mipmap/ and R.mipmap.\n" +
+            "In Android Studio this lint warning has a quickfix to perform this automatically.",
+            Category.ICONS,
+            5,
             Severity.WARNING,
             IMPLEMENTATION);
 
@@ -611,6 +637,8 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
                         }
                     }
                 }
+
+                checkMipmapIcon(context, element);
             }
 
             return;
@@ -757,9 +785,10 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
             Attr name = element.getAttributeNodeNS(ANDROID_URI, ATTR_NAME);
             if (name != null && name.getValue().equals(MOCK_LOCATION_PERMISSION)
                     && context.getMainProject().isGradleProject()
-                    && !isDebugManifest(context, context.file)) {
-                String message = "Mock locations should only be requested in a debug-specific "
-                        + "manifest file (typically `src/debug/AndroidManifest.xml`)";
+                    && !isDebugOrTestManifest(context, context.file)
+                    && context.isEnabled(MOCK_LOCATION)) {
+                String message = "Mock locations should only be requested in a test or " +
+                        "debug-specific manifest file (typically `src/debug/AndroidManifest.xml`)";
                 Location location = context.getLocation(name);
                 context.report(MOCK_LOCATION, element, location, message);
             }
@@ -776,6 +805,7 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
             }
             if (element.hasAttributeNS(ANDROID_URI, ATTR_ICON)
                     || context.getDriver().isSuppressed(context, APPLICATION_ICON, element)) {
+                checkMipmapIcon(context, element);
                 mSeenAppIcon = true;
             } else {
                 recordLocation = true;
@@ -812,6 +842,46 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
         }
     }
 
+    private static void checkMipmapIcon(@NonNull XmlContext context, @NonNull Element element) {
+        Attr attribute = element.getAttributeNodeNS(ANDROID_URI, ATTR_ICON);
+        if (attribute == null) {
+            return;
+        }
+        String icon = attribute.getValue();
+        if (icon.startsWith(DRAWABLE_PREFIX)) {
+            if (TAG_ACTIVITY.equals(element.getTagName()) && !isLaunchableActivity(element)) {
+                return;
+            }
+
+            if (context.isEnabled(MIPMAP)
+                    // Only complain if this app is skipping some densities
+                    && context.getProject().getApplicableDensities() != null) {
+                context.report(MIPMAP, element, context.getLocation(attribute),
+                        "Should use `@mipmap` instead of `@drawable` for launcher icons");
+            }
+        }
+    }
+
+    @SuppressWarnings("SpellCheckingInspection")
+    private static boolean isLaunchableActivity(@NonNull Element element) {
+        if (!TAG_ACTIVITY.equals(element.getTagName())) {
+            return false;
+        }
+
+        for (Element child : LintUtils.getChildren(element)) {
+            if (child.getTagName().equals(TAG_INTENT_FILTER)) {
+                for (Element innerChild : LintUtils.getChildren(child)) {
+                    if (innerChild.getTagName().equals("category")) { //$NON-NLS-1$
+                        String categoryString = innerChild.getAttributeNS(ANDROID_URI, ATTR_NAME);
+                        return "android.intent.category.LAUNCHER".equals(categoryString);
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
     /** Returns true iff the given manifest file is the main manifest file */
     private static boolean isMainManifest(XmlContext context, File manifestFile) {
         if (!context.getProject().isGradleProject()) {
@@ -824,13 +894,35 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
                 .equals(model.getDefaultConfig().getSourceProvider().getManifestFile());
     }
 
-    /** Returns true iff the given manifest file is in a debug-specific source set */
-    private static boolean isDebugManifest(XmlContext context, File manifestFile) {
+    /**
+     * Returns true iff the given manifest file is in a debug-specific source set,
+     * or a test source set
+     */
+    private static boolean isDebugOrTestManifest(
+            @NonNull XmlContext context,
+            @NonNull File manifestFile) {
         AndroidProject model = context.getProject().getGradleProjectModel();
         if (model != null) {
+            // Quickly check if it's the main manifest first; that's the most likely scenario
+            if (manifestFile.equals(model.getDefaultConfig().getSourceProvider().getManifestFile())) {
+                return false;
+            }
+
+            // Debug build type?
             for (BuildTypeContainer container : model.getBuildTypes()) {
                 if (container.getBuildType().isDebuggable()) {
                     if (manifestFile.equals(container.getSourceProvider().getManifestFile())) {
+                        return true;
+                    }
+                }
+            }
+
+            // Test source set?
+            for (ProductFlavorContainer container : model.getProductFlavors()) {
+                for (SourceProviderContainer extra : container.getExtraSourceProviders()) {
+                    String artifactName = extra.getArtifactName();
+                    if (AndroidProject.ARTIFACT_ANDROID_TEST.equals(artifactName)
+                            && manifestFile.equals(extra.getSourceProvider().getManifestFile())) {
                         return true;
                     }
                 }

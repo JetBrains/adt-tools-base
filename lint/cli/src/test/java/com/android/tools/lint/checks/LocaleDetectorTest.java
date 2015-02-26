@@ -54,16 +54,7 @@ public class LocaleDetectorTest extends AbstractCheckTest {
             "src/test/pkg/LocaleTest.java:26: Warning: Implicitly using the default locale is a common source of bugs: Use String.format(Locale, ...) instead [DefaultLocale]\n" +
             "        String.format(\"WRONG: %1$tm %1$te,%1$tY\",\n" +
             "               ~~~~~~\n" +
-            "src/test/pkg/LocaleTest.java:32: Warning: To get local formatting use getDateInstance(), getDateTimeInstance(), or getTimeInstance(), or use new SimpleDateFormat(String template, Locale locale) with for example Locale.US for ASCII dates. [SimpleDateFormat]\n" +
-            "        new SimpleDateFormat(); // WRONG\n" +
-            "            ~~~~~~~~~~~~~~~~\n" +
-            "src/test/pkg/LocaleTest.java:33: Warning: To get local formatting use getDateInstance(), getDateTimeInstance(), or getTimeInstance(), or use new SimpleDateFormat(String template, Locale locale) with for example Locale.US for ASCII dates. [SimpleDateFormat]\n" +
-            "        new SimpleDateFormat(\"yyyy-MM-dd\"); // WRONG\n" +
-            "            ~~~~~~~~~~~~~~~~\n" +
-            "src/test/pkg/LocaleTest.java:34: Warning: To get local formatting use getDateInstance(), getDateTimeInstance(), or getTimeInstance(), or use new SimpleDateFormat(String template, Locale locale) with for example Locale.US for ASCII dates. [SimpleDateFormat]\n" +
-            "        new SimpleDateFormat(\"yyyy-MM-dd\", DateFormatSymbols.getInstance()); // WRONG\n" +
-            "            ~~~~~~~~~~~~~~~~\n" +
-            "0 errors, 12 warnings\n",
+            "0 errors, 9 warnings\n",
 
             lintProject(
                     "bytecode/.classpath=>.classpath",

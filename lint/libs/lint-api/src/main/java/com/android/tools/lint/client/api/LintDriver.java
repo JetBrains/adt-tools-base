@@ -31,11 +31,9 @@ import static com.android.SdkConstants.SUPPRESS_LINT;
 import static com.android.SdkConstants.TOOLS_URI;
 import static com.android.tools.lint.detector.api.LintUtils.isAnonymousClass;
 import static java.io.File.separator;
-import static org.objectweb.asm.Opcodes.ASM4;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.annotations.VisibleForTesting;
 import com.android.ide.common.res2.AbstractResourceRepository;
 import com.android.ide.common.res2.ResourceItem;
 import com.android.resources.ResourceFolderType;
@@ -64,11 +62,8 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
-import com.google.common.io.ByteStreams;
-import com.google.common.io.Closeables;
 
 import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.AnnotationNode;
@@ -82,7 +77,6 @@ import org.w3c.dom.Attr;
 import org.w3c.dom.Element;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLConnection;
@@ -104,8 +98,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 
 import lombok.ast.Annotation;
 import lombok.ast.AnnotationElement;
@@ -428,6 +420,8 @@ public class LintDriver {
         for (Project project : projects) {
             mPhase = 1;
 
+            Project main = mRequest.getMainProject(project);
+
             // The set of available detectors varies between projects
             computeDetectors(project);
 
@@ -436,12 +430,12 @@ public class LintDriver {
                 continue;
             }
 
-            checkProject(project);
+            checkProject(project, main);
             if (mCanceled) {
                 break;
             }
 
-            runExtraPhases(project);
+            runExtraPhases(project, main);
         }
 
         fireEvent(mCanceled ? EventType.CANCELED : EventType.COMPLETED, null);
@@ -475,7 +469,7 @@ public class LintDriver {
         }
     }
 
-    private void runExtraPhases(Project project) {
+    private void runExtraPhases(@NonNull Project project, @NonNull Project main) {
         // Did any detectors request another phase?
         if (mRepeatingDetectors != null) {
             // Yes. Iterate up to MAX_PHASES times.
@@ -514,7 +508,7 @@ public class LintDriver {
                     continue;
                 }
 
-                checkProject(project);
+                checkProject(project, main);
                 if (mCanceled) {
                     break;
                 }
@@ -863,7 +857,7 @@ public class LintDriver {
         }
     }
 
-    private void checkProject(@NonNull Project project) {
+    private void checkProject(@NonNull Project project, @NonNull Project main) {
         File projectDir = project.getDir();
 
         Context projectContext = new Context(this, project, null, projectDir);
@@ -885,7 +879,7 @@ public class LintDriver {
         }
 
         assert mCurrentProject == project;
-        runFileDetectors(project, project);
+        runFileDetectors(project, main);
 
         if (!Scope.checkSingleFile(mScope)) {
             List<Project> libraries = project.getAllLibraries();
@@ -902,7 +896,7 @@ public class LintDriver {
                 }
                 assert mCurrentProject == library;
 
-                runFileDetectors(library, project);
+                runFileDetectors(library, main);
                 if (mCanceled) {
                     return;
                 }
@@ -1148,12 +1142,6 @@ public class LintDriver {
     }
 
     /**
-     * Map from VM class name to corresponding super class VM name, if available.
-     * This map is typically null except <b>during</b> class processing.
-     */
-    private Map<String, String> mSuperClassMap;
-
-    /**
      * Returns the super class for the given class name,
      * which should be in VM format (e.g. java/lang/Integer, not java.lang.Integer).
      * If the super class is not known, returns null. This can happen if
@@ -1166,23 +1154,7 @@ public class LintDriver {
      */
     @Nullable
     public String getSuperClass(@NonNull String name) {
-        if (mSuperClassMap == null) {
-            throw new IllegalStateException("Only callable during ClassScanner#checkClass");
-        }
-        assert name.indexOf('.') == -1 : "Use VM signatures, e.g. java/lang/Integer";
-
-        String superClass = mSuperClassMap.get(name);
-        if (superClass == null && mCurrentProject != null) {
-            if ("java/lang/Object".equals(name)) {  //$NON-NLS-1$
-                return null;
-            }
-            superClass = mClient.getSuperClass(mCurrentProject, name);
-            if (superClass != null) {
-                mSuperClassMap.put(name, superClass);
-            }
-        }
-
-        return superClass;
+        return mClient.getSuperClass(mCurrentProject, name);
     }
 
     /**
@@ -1249,14 +1221,7 @@ public class LintDriver {
         // also check the super classes).
 
         List<File> libraries = project.getJavaLibraries();
-        List<ClassEntry> libraryEntries;
-        if (!libraries.isEmpty()) {
-            libraryEntries = new ArrayList<ClassEntry>(64);
-            findClasses(libraryEntries, libraries);
-            Collections.sort(libraryEntries);
-        } else {
-            libraryEntries = Collections.emptyList();
-        }
+        List<ClassEntry> libraryEntries = ClassEntry.fromClassPath(mClient, libraries, true);
 
         List<File> classFolders = project.getJavaClassFolders();
         List<ClassEntry> classEntries;
@@ -1271,13 +1236,7 @@ public class LintDriver {
                     location, message, TextFormat.RAW);
             classEntries = Collections.emptyList();
         } else {
-            classEntries = new ArrayList<ClassEntry>(64);
-            findClasses(classEntries, classFolders);
-            Collections.sort(classEntries);
-        }
-
-        if (getPhase() == 1) {
-            mSuperClassMap = getSuperMap(libraryEntries, classEntries);
+            classEntries = ClassEntry.fromClassPath(mClient, classFolders, true);
         }
 
         // Actually run the detectors. Libraries should be called before the
@@ -1296,40 +1255,22 @@ public class LintDriver {
             @NonNull Project project,
             @Nullable Project main,
             @NonNull List<File> files) {
-        List<ClassEntry> entries = new ArrayList<ClassEntry>(files.size());
-
+        List<File> classFiles = Lists.newArrayListWithExpectedSize(files.size());
         List<File> classFolders = project.getJavaClassFolders();
         if (!classFolders.isEmpty()) {
             for (File file : files) {
                 String path = file.getPath();
                 if (file.isFile() && path.endsWith(DOT_CLASS)) {
-                    try {
-                        byte[] bytes = mClient.readBytes(file);
-                        for (File dir : classFolders) {
-                            if (path.startsWith(dir.getPath())) {
-                                entries.add(new ClassEntry(file, null /* jarFile*/, dir,
-                                        bytes));
-                                break;
-                            }
-                        }
-                    } catch (IOException e) {
-                        mClient.log(e, null);
-                        continue;
-                    }
-
-                    if (mCanceled) {
-                        return;
-                    }
+                    classFiles.add(file);
                 }
             }
+        }
 
-            if (!entries.isEmpty()) {
-                Collections.sort(entries);
-                // No superclass info available on individual lint runs, unless
-                // the client can provide it
-                mSuperClassMap = Maps.newHashMap();
-                runClassDetectors(Scope.CLASS_FILE, entries, project, main);
-            }
+        List<ClassEntry> entries = ClassEntry.fromClassFiles(mClient, classFiles, classFolders,
+                true);
+        if (!entries.isEmpty()) {
+            Collections.sort(entries);
+            runClassDetectors(Scope.CLASS_FILE, entries, project, main);
         }
     }
 
@@ -1451,31 +1392,6 @@ public class LintDriver {
         return null;
     }
 
-    private Map<String, String> getSuperMap(List<ClassEntry> libraryEntries,
-            List<ClassEntry> classEntries) {
-        int size = libraryEntries.size() + classEntries.size();
-        Map<String, String> map = new HashMap<String, String>(size);
-
-        SuperclassVisitor visitor = new SuperclassVisitor(map);
-        addSuperClasses(visitor, libraryEntries);
-        addSuperClasses(visitor, classEntries);
-
-        return map;
-    }
-
-    private void addSuperClasses(SuperclassVisitor visitor, List<ClassEntry> entries) {
-        for (ClassEntry entry : entries) {
-            try {
-                ClassReader reader = new ClassReader(entry.bytes);
-                int flags = ClassReader.SKIP_CODE | ClassReader.SKIP_DEBUG
-                        | ClassReader.SKIP_FRAMES;
-                reader.accept(visitor, flags);
-            } catch (Throwable t) {
-                mClient.log(null, "Error processing %1$s: broken class file?", entry.path());
-            }
-        }
-    }
-
     /**
      * Returns the {@link ClassNode} corresponding to the given type, if possible, or null
      *
@@ -1543,109 +1459,6 @@ public class LintDriver {
         return null;
     }
 
-    /** Visitor skimming classes and initializing a map of super classes */
-    private static class SuperclassVisitor extends ClassVisitor {
-        private final Map<String, String> mMap;
-
-        public SuperclassVisitor(Map<String, String> map) {
-            super(ASM4);
-            mMap = map;
-        }
-
-        @Override
-        public void visit(int version, int access, String name, String signature, String superName,
-                String[] interfaces) {
-            if (superName != null) {
-                mMap.put(name, superName);
-            }
-        }
-    }
-
-    private void findClasses(
-            @NonNull List<ClassEntry> entries,
-            @NonNull List<File> classPath) {
-        for (File classPathEntry : classPath) {
-            if (classPathEntry.getName().endsWith(DOT_JAR)) {
-                //noinspection UnnecessaryLocalVariable
-                File jarFile = classPathEntry;
-                if (!jarFile.exists()) {
-                    continue;
-                }
-                ZipInputStream zis = null;
-                try {
-                    FileInputStream fis = new FileInputStream(jarFile);
-                    zis = new ZipInputStream(fis);
-                    ZipEntry entry = zis.getNextEntry();
-                    while (entry != null) {
-                        String name = entry.getName();
-                        if (name.endsWith(DOT_CLASS)) {
-                            try {
-                                byte[] bytes = ByteStreams.toByteArray(zis);
-                                if (bytes != null) {
-                                    File file = new File(entry.getName());
-                                    entries.add(new ClassEntry(file, jarFile, jarFile, bytes));
-                                }
-                            } catch (Exception e) {
-                                mClient.log(e, null);
-                                continue;
-                            }
-                        }
-
-                        if (mCanceled) {
-                            return;
-                        }
-
-                        entry = zis.getNextEntry();
-                    }
-                } catch (IOException e) {
-                    mClient.log(e, "Could not read jar file contents from %1$s", jarFile);
-                } finally {
-                    try {
-                        Closeables.close(zis, true /* swallowIOException */);
-                    } catch (IOException e) {
-                        // cannot happen
-                    }
-                }
-            } else if (classPathEntry.isDirectory()) {
-                //noinspection UnnecessaryLocalVariable
-                File binDir = classPathEntry;
-                List<File> classFiles = new ArrayList<File>();
-                addClassFiles(binDir, classFiles);
-
-                for (File file : classFiles) {
-                    try {
-                        byte[] bytes = mClient.readBytes(file);
-                        entries.add(new ClassEntry(file, null /* jarFile*/, binDir, bytes));
-                    } catch (IOException e) {
-                        mClient.log(e, null);
-                        continue;
-                    }
-
-                    if (mCanceled) {
-                        return;
-                    }
-                }
-            } else {
-                mClient.log(null, "Ignoring class path entry %1$s", classPathEntry);
-            }
-        }
-    }
-
-    private static void addClassFiles(@NonNull File dir, @NonNull List<File> classFiles) {
-        // Process the resource folder
-        File[] files = dir.listFiles();
-        if (files != null && files.length > 0) {
-            for (File file : files) {
-                if (file.isFile() && file.getName().endsWith(DOT_CLASS)) {
-                    classFiles.add(file);
-                } else if (file.isDirectory()) {
-                    // Recurse
-                    addClassFiles(file, classFiles);
-                }
-            }
-        }
-    }
-
     private void checkJava(
             @NonNull Project project,
             @Nullable Project main,
@@ -1680,6 +1493,7 @@ public class LintDriver {
                     return;
                 }
             }
+            visitor.dispose();
         }
     }
 
@@ -1721,6 +1535,8 @@ public class LintDriver {
                 return;
             }
         }
+
+        visitor.dispose();
     }
 
     private static void gatherJavaFiles(@NonNull File dir, @NonNull List<File> result) {
@@ -2704,62 +2520,4 @@ public class LintDriver {
         return mCachedFolderVersion;
     }
 
-    /** A pending class to be analyzed by {@link #checkClasses} */
-    @VisibleForTesting
-    static class ClassEntry implements Comparable<ClassEntry> {
-        public final File file;
-        public final File jarFile;
-        public final File binDir;
-        public final byte[] bytes;
-
-        public ClassEntry(File file, File jarFile, File binDir, byte[] bytes) {
-            super();
-            this.file = file;
-            this.jarFile = jarFile;
-            this.binDir = binDir;
-            this.bytes = bytes;
-        }
-
-        public String path() {
-            if (jarFile != null) {
-                return jarFile.getPath() + ':' + file.getPath();
-            } else {
-                return file.getPath();
-            }
-        }
-
-        @Override
-        public int compareTo(@NonNull ClassEntry other) {
-            String p1 = file.getPath();
-            String p2 = other.file.getPath();
-            int m1 = p1.length();
-            int m2 = p2.length();
-            if (m1 == m2 && p1.equals(p2)) {
-                return 0;
-            }
-            int m = Math.min(m1, m2);
-
-            for (int i = 0; i < m; i++) {
-                char c1 = p1.charAt(i);
-                char c2 = p2.charAt(i);
-                if (c1 != c2) {
-                    // Sort Foo$Bar.class *after* Foo.class, even though $ < .
-                    if (c1 == '.' && c2 == '$') {
-                        return -1;
-                    }
-                    if (c1 == '$' && c2 == '.') {
-                        return 1;
-                    }
-                    return c1 - c2;
-                }
-            }
-
-            return (m == m1) ? -1 : 1;
-        }
-
-        @Override
-        public String toString() {
-            return file.getPath();
-        }
-    }
 }

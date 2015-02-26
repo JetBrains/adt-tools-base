@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2012 The Android Open Source Project
  *
- * Licensed under the Apache License, Version 2.0 (the "License")
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -18,8 +18,8 @@ package com.android.build.gradle.internal.dsl
 
 import com.android.build.gradle.AppPlugin
 import com.android.build.gradle.internal.test.BaseTest
-import com.android.builder.core.DefaultBuildType
 import com.android.builder.core.BuilderConstants
+import com.android.builder.core.DefaultBuildType
 import org.gradle.api.Project
 import org.gradle.testfixtures.ProjectBuilder
 

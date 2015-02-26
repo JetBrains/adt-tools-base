@@ -20,6 +20,7 @@ import static com.android.SdkConstants.ANDROID_PREFIX;
 import static com.android.SdkConstants.ATTR_LOCALE;
 import static com.android.SdkConstants.ATTR_NAME;
 import static com.android.SdkConstants.ATTR_TRANSLATABLE;
+import static com.android.SdkConstants.FD_RES_VALUES;
 import static com.android.SdkConstants.STRING_PREFIX;
 import static com.android.SdkConstants.TAG_ITEM;
 import static com.android.SdkConstants.TAG_STRING;
@@ -34,6 +35,9 @@ import com.android.builder.model.ProductFlavor;
 import com.android.builder.model.ProductFlavorContainer;
 import com.android.builder.model.Variant;
 import com.android.ide.common.resources.LocaleManager;
+import com.android.ide.common.resources.configuration.FolderConfiguration;
+import com.android.ide.common.resources.configuration.LanguageQualifier;
+import com.android.ide.common.resources.configuration.RegionQualifier;
 import com.android.resources.ResourceFolderType;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
@@ -253,15 +257,12 @@ public class TranslationDetector extends ResourceXmlDetector {
     private void checkTranslations(Context context) {
         // Only one file defining strings? If so, no problems.
         Set<File> files = mFileToNames.keySet();
-        if (files.size() == 1) {
-            return;
-        }
-
         Set<File> parentFolders = new HashSet<File>();
         for (File file : files) {
             parentFolders.add(file.getParentFile());
         }
-        if (parentFolders.size() == 1) {
+        if (parentFolders.size() == 1
+                && FD_RES_VALUES.equals(parentFolders.iterator().next().getName())) {
             // Only one language - no problems.
             return;
         }
@@ -286,7 +287,8 @@ public class TranslationDetector extends ResourceXmlDetector {
         }
 
         int languageCount = parentFolderToLanguage.values().size();
-        if (languageCount <= 1) {
+        if (languageCount == 0 || languageCount == 1 && defaultLanguage.equals(
+                parentFolderToLanguage.values().iterator().next())) {
             // At most one language -- no problems.
             return;
         }
@@ -463,7 +465,9 @@ public class TranslationDetector extends ResourceXmlDetector {
                         }
                     }
                 }
+            }
 
+            if (stringCount != defaultStrings.size()) {
                 if (reportExtra) {
                     Set<String> difference = Sets.difference(strings, defaultStrings);
                     if (!difference.isEmpty()) {
@@ -478,6 +482,10 @@ public class TranslationDetector extends ResourceXmlDetector {
                             if (mTranslatedArrays != null && mTranslatedArrays.contains(s)) {
                                 continue;
                             }
+                            if (mNonTranslatable != null && mNonTranslatable.contains(s)) {
+                                continue;
+                            }
+
                             mExtraLocations.put(s, null);
                             String message = String.format(
                                 "\"`%1$s`\" is translated here but not found in default locale", s);
@@ -494,7 +502,7 @@ public class TranslationDetector extends ResourceXmlDetector {
         String regionCode = null;
         String languageCode = locale;
         if (index != -1) {
-            regionCode = locale.substring(index + 2).toUpperCase(Locale.US); // +2: Skip "r"
+            regionCode = locale.substring(index + 1).toUpperCase(Locale.US);
             languageCode = locale.substring(0, index).toLowerCase(Locale.US);
         }
 
@@ -516,33 +524,24 @@ public class TranslationDetector extends ResourceXmlDetector {
 
     /** Look up the language for the given folder name */
     private static String getLanguage(String name) {
-        String[] segments = name.split("-"); //$NON-NLS-1$
-
-        // TODO: To get an accurate answer, this should later do a
-        //   FolderConfiguration.getConfig(String[] folderSegments)
-        // to obtain a FolderConfiguration, then call
-        // getLanguageQualifier() on it, and if not null, call getValue() to get the
-        // actual language value.
-        // However, we don't have sdk-common on the build path for lint, so for now
-        // use a simple guess about what constitutes a language qualifier here:
-
-        String language = null;
-        for (String segment : segments) {
-            // Language
-            if (language == null && segment.length() == 2
-                    && LANGUAGE_PATTERN.matcher(segment).matches()) {
-                language = segment;
-            }
-
-            // Add in region
-            if (language != null && segment.length() == 3
-                    && REGION_PATTERN.matcher(segment).matches()) {
-                language = language + '-' + segment;
-                break;
-            }
+        if (FD_RES_VALUES.equals(name)) {
+            return null;
         }
 
-        return language;
+        FolderConfiguration configuration = FolderConfiguration.getConfigForFolder(name);
+        if (configuration != null) {
+          LanguageQualifier language = configuration.getEffectiveLanguage();
+          if (language != null && !language.hasFakeValue()) {
+              RegionQualifier region = configuration.getRegionQualifier();
+              if (region != null && !region.hasFakeValue()) {
+                  return language.getValue() + '-' + region.getValue();
+              } else {
+                  return language.getValue();
+              }
+          }
+        }
+
+        return null;
     }
 
     @Override
@@ -574,15 +573,18 @@ public class TranslationDetector extends ResourceXmlDetector {
                 }
             }
             if (mExtraLocations != null && mExtraLocations.containsKey(name)) {
-                if (context.getDriver().isSuppressed(context, EXTRA, element)) {
-                    mExtraLocations.remove(name);
-                    return;
+                String language = getLanguage(context.file.getParentFile().getName());
+                if (language != null) {
+                    if (context.getDriver().isSuppressed(context, EXTRA, element)) {
+                        mExtraLocations.remove(name);
+                        return;
+                    }
+                    Location location = context.getLocation(attribute);
+                    location.setClientData(element);
+                    location.setMessage("Also translated here");
+                    location.setSecondary(mExtraLocations.get(name));
+                    mExtraLocations.put(name, location);
                 }
-                Location location = context.getLocation(attribute);
-                location.setClientData(element);
-                location.setMessage("Also translated here");
-                location.setSecondary(mExtraLocations.get(name));
-                mExtraLocations.put(name, location);
             }
             return;
         }
@@ -597,6 +599,7 @@ public class TranslationDetector extends ResourceXmlDetector {
             Attr translatable = element.getAttributeNode(ATTR_TRANSLATABLE);
             if (translatable != null && !Boolean.valueOf(translatable.getValue())) {
                 String l = LintUtils.getLocaleAndRegion(context.file.getParentFile().getName());
+                //noinspection VariableNotUsedInsideIf
                 if (l != null) {
                     context.report(EXTRA, translatable, context.getLocation(translatable),
                         "Non-translatable resources should only be defined in the base " +
@@ -607,6 +610,15 @@ public class TranslationDetector extends ResourceXmlDetector {
                     }
                     mNonTranslatable.add(name);
                 }
+                return;
+            } else if (name.equals("google_maps_key")                  //$NON-NLS-1$
+                    || name.equals("google_maps_key_instructions")) {  //$NON-NLS-1$
+                // Older versions of the templates shipped with these not marked as
+                // non-translatable; don't flag them
+                if (mNonTranslatable == null) {
+                    mNonTranslatable = new HashSet<String>();
+                }
+                mNonTranslatable.add(name);
                 return;
             }
 
@@ -717,5 +729,4 @@ public class TranslationDetector extends ResourceXmlDetector {
             }
         }
     }
-
 }

@@ -15,16 +15,19 @@
  */
 
 package com.android.build.gradle.integration.application
-
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.builder.model.AndroidArtifact
 import com.android.builder.model.AndroidProject
 import com.android.builder.model.Variant
-import org.junit.*
+import org.junit.AfterClass
+import org.junit.BeforeClass
+import org.junit.ClassRule
+import org.junit.Test
 
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatZip
 import static org.junit.Assert.assertNotNull
 import static org.junit.Assert.assertTrue
-
 /**
  * Assemble tests for genFolderApi.
  */
@@ -36,7 +39,7 @@ class GenFolderApiTest {
     static AndroidProject model
 
     @BeforeClass
-    static void setup() {
+    static void setUp() {
         model = project.executeAndReturnModel("clean", "assembleDebug")
     }
 
@@ -52,7 +55,17 @@ class GenFolderApiTest {
     }
 
     @Test
-    void "check the custom gen folder is present in model"() throws Exception {
+    void "check the custom java generation task ran"() throws Exception {
+        assertThatApk(project.getApk("debug")).containsClass("Lcom/custom/Foo;")
+    }
+
+    @Test
+    void "check the custom res generation task ran"() throws Exception {
+        assertThatZip(project.getApk("debug")).contains("res/xml/generated.xml")
+    }
+
+    @Test
+    void "check Java folder in Model"() throws Exception {
         File projectDir = project.getTestDir()
 
         File buildDir = new File(projectDir, "build")
@@ -65,13 +78,13 @@ class GenFolderApiTest {
                     mainInfo)
 
             // get the generated source folders.
-            Collection<File> genFolder = mainInfo.getGeneratedSourceFolders()
+            Collection<File> genSourceFolder = mainInfo.getGeneratedSourceFolders()
 
             // We're looking for a custom folder
-            String folderStart = new File(buildDir, "customCode").getAbsolutePath() + File.separatorChar
+            String sourceFolderStart = new File(buildDir, "customCode").getAbsolutePath() + File.separatorChar
             boolean found = false
-            for (File f : genFolder) {
-                if (f.getAbsolutePath().startsWith(folderStart)) {
+            for (File f : genSourceFolder) {
+                if (f.getAbsolutePath().startsWith(sourceFolderStart)) {
                     found = true
                     break
                 }
@@ -81,4 +94,31 @@ class GenFolderApiTest {
         }
     }
 
+    @Test
+    void "check Res Folder in Model"() throws Exception {
+        File projectDir = project.getTestDir()
+
+        File buildDir = new File(projectDir, "build")
+
+        for (Variant variant : model.getVariants()) {
+
+            AndroidArtifact mainInfo = variant.getMainArtifact()
+            assertNotNull(
+                    "Null-check on mainArtifactInfo for " + variant.getDisplayName(),
+                    mainInfo)
+
+            // get the generated res folders.
+            Collection<File> genResFolder = mainInfo.getGeneratedResourceFolders()
+            String resFolderStart = new File(buildDir, "customRes").getAbsolutePath() + File.separatorChar
+            boolean found = false
+            for (File f : genResFolder) {
+                if (f.getAbsolutePath().startsWith(resFolderStart)) {
+                    found = true
+                    break
+                }
+            }
+
+            assertTrue("custom generated res folder check", found)
+        }
+    }
 }

@@ -1,10 +1,8 @@
 package com.example.android.multiproject.library.base.test;
 
-import android.test.ActivityInstrumentationTestCase2;
-import android.test.suitebuilder.annotation.MediumTest;
-import android.widget.Button;
-
 import com.sample.android.multiproject.library.PersonView;
+
+import android.test.ActivityInstrumentationTestCase2;
 
 public class TestActivityTest extends ActivityInstrumentationTestCase2<TestActivity> {
 

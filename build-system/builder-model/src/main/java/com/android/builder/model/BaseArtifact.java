@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 
 import java.io.File;
+import java.util.Set;
 
 /**
  * The base information for all generated artifacts
@@ -84,4 +85,12 @@ public interface BaseArtifact {
      */
     @Nullable
     SourceProvider getMultiFlavorSourceProvider();
+
+    /**
+     * Returns names of tasks that need to be run when setting up the IDE project. After these
+     * tasks have run, all the generated source files etc. that the IDE needs to know about should
+     * be in place.
+     */
+    @NonNull
+    Set<String> getIdeSetupTaskNames();
 }

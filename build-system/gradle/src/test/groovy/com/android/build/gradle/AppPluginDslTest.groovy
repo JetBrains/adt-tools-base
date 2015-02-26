@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.android.build.gradle
 import com.android.annotations.NonNull
 import com.android.build.gradle.api.ApkVariant
@@ -20,11 +21,17 @@ import com.android.build.gradle.api.ApkVariantOutput
 import com.android.build.gradle.api.ApplicationVariant
 import com.android.build.gradle.api.BaseVariantOutput
 import com.android.build.gradle.api.TestVariant
+import com.android.build.gradle.internal.SdkHandler
+import com.android.build.gradle.internal.VariantManager
 import com.android.build.gradle.internal.core.GradleVariantConfiguration
 import com.android.build.gradle.internal.test.BaseTest
 import org.gradle.api.JavaVersion
 import org.gradle.api.Project
 import org.gradle.testfixtures.ProjectBuilder
+
+import static com.android.build.gradle.DslTestUtil.DEFAULT_VARIANTS
+import static com.android.build.gradle.DslTestUtil.countVariants
+
 /**
  * Tests for the public DSL of the App plugin ("android")
  */
@@ -32,7 +39,7 @@ public class AppPluginDslTest extends BaseTest {
 
     @Override
     protected void setUp() throws Exception {
-        BasePlugin.TEST_SDK_DIR = new File("foo")
+        SdkHandler.testSdkFolder = new File("foo")
     }
 
     public void testBasic() {
@@ -48,7 +55,7 @@ public class AppPluginDslTest extends BaseTest {
         AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
 
         plugin.createAndroidTasks(false)
-        assertEquals(3, plugin.variantDataList.size())
+        assertEquals(DEFAULT_VARIANTS.size(), plugin.variantManager.variantDataList.size())
 
         // we can now call this since the variants/tasks have been created
         Set<ApplicationVariant> variants = project.android.applicationVariants
@@ -57,7 +64,7 @@ public class AppPluginDslTest extends BaseTest {
         Set<TestVariant> testVariants = project.android.testVariants
         assertEquals(1, testVariants.size())
 
-        checkTestedVariant("debug", "debugTest", variants, testVariants)
+        checkTestedVariant("debug", "debugAndroidTest", variants, testVariants)
         checkNonTestedVariant("release", variants)
     }
 
@@ -77,7 +84,7 @@ public class AppPluginDslTest extends BaseTest {
         AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
 
         plugin.createAndroidTasks(false)
-        assertEquals(3, plugin.variantDataList.size())
+        assertEquals(DEFAULT_VARIANTS.size(), plugin.variantManager.variantDataList.size())
 
         // we can now call this since the variants/tasks have been created
         Set<ApplicationVariant> variants = project.android.applicationVariants
@@ -86,7 +93,7 @@ public class AppPluginDslTest extends BaseTest {
         Set<TestVariant> testVariants = project.android.testVariants
         assertEquals(1, testVariants.size())
 
-        checkTestedVariant("debug", "debugTest", variants, testVariants)
+        checkTestedVariant("debug", "debugAndroidTest", variants, testVariants)
         checkNonTestedVariant("release", variants)
     }
 
@@ -103,7 +110,7 @@ public class AppPluginDslTest extends BaseTest {
         AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
 
         plugin.createAndroidTasks(false)
-        assertEquals(3, plugin.variantDataList.size())
+        assertEquals(DEFAULT_VARIANTS.size(), plugin.variantManager.variantDataList.size())
 
         // we can now call this since the variants/tasks have been created
         Set<ApplicationVariant> variants = project.android.applicationVariants
@@ -112,7 +119,7 @@ public class AppPluginDslTest extends BaseTest {
         Set<TestVariant> testVariants = project.android.testVariants
         assertEquals(1, testVariants.size())
 
-        checkTestedVariant("debug", "debugTest", variants, testVariants)
+        checkTestedVariant("debug", "debugAndroidTest", variants, testVariants)
         checkNonTestedVariant("release", variants)
     }
 
@@ -157,7 +164,9 @@ public class AppPluginDslTest extends BaseTest {
         AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
 
         plugin.createAndroidTasks(false)
-        assertEquals(4, plugin.variantDataList.size())
+        assertEquals(
+                countVariants(appVariants: 3, unitTest: 3, androidTests: 1),
+                plugin.variantManager.variantDataList.size())
 
         // we can now call this since the variants/tasks have been created
 
@@ -168,7 +177,7 @@ public class AppPluginDslTest extends BaseTest {
         Set<TestVariant> testVariants = project.android.testVariants
         assertEquals(1, testVariants.size())
 
-        checkTestedVariant("staging", "stagingTest", variants, testVariants)
+        checkTestedVariant("staging", "stagingAndroidTest", variants, testVariants)
 
         checkNonTestedVariant("debug", variants)
         checkNonTestedVariant("release", variants)
@@ -196,7 +205,9 @@ public class AppPluginDslTest extends BaseTest {
         AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
 
         plugin.createAndroidTasks(false)
-        assertEquals(6, plugin.variantDataList.size())
+        assertEquals(
+                countVariants(appVariants: 4, unitTest: 4, androidTests: 2),
+                plugin.variantManager.variantDataList.size())
 
         // we can now call this since the variants/tasks have been created
 
@@ -207,8 +218,8 @@ public class AppPluginDslTest extends BaseTest {
         Set<TestVariant> testVariants = project.android.testVariants
         assertEquals(2, testVariants.size())
 
-        checkTestedVariant("flavor1Debug", "flavor1DebugTest", variants, testVariants)
-        checkTestedVariant("flavor2Debug", "flavor2DebugTest", variants, testVariants)
+        checkTestedVariant("flavor1Debug", "flavor1DebugAndroidTest", variants, testVariants)
+        checkTestedVariant("flavor2Debug", "flavor2DebugAndroidTest", variants, testVariants)
 
         checkNonTestedVariant("flavor1Release", variants)
         checkNonTestedVariant("flavor2Release", variants)
@@ -248,7 +259,9 @@ public class AppPluginDslTest extends BaseTest {
         AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
 
         plugin.createAndroidTasks(false)
-        assertEquals(18, plugin.variantDataList.size())
+        assertEquals(
+                countVariants(appVariants: 12, unitTest: 12, androidTests: 6),
+                plugin.variantManager.variantDataList.size())
 
         // we can now call this since the variants/tasks have been created
 
@@ -259,12 +272,12 @@ public class AppPluginDslTest extends BaseTest {
         Set<TestVariant> testVariants = project.android.testVariants
         assertEquals(6, testVariants.size())
 
-        checkTestedVariant("f1FaDebug", "f1FaDebugTest", variants, testVariants)
-        checkTestedVariant("f1FbDebug", "f1FbDebugTest", variants, testVariants)
-        checkTestedVariant("f1FcDebug", "f1FcDebugTest", variants, testVariants)
-        checkTestedVariant("f2FaDebug", "f2FaDebugTest", variants, testVariants)
-        checkTestedVariant("f2FbDebug", "f2FbDebugTest", variants, testVariants)
-        checkTestedVariant("f2FcDebug", "f2FcDebugTest", variants, testVariants)
+        checkTestedVariant("f1FaDebug", "f1FaDebugAndroidTest", variants, testVariants)
+        checkTestedVariant("f1FbDebug", "f1FbDebugAndroidTest", variants, testVariants)
+        checkTestedVariant("f1FcDebug", "f1FcDebugAndroidTest", variants, testVariants)
+        checkTestedVariant("f2FaDebug", "f2FaDebugAndroidTest", variants, testVariants)
+        checkTestedVariant("f2FbDebug", "f2FbDebugAndroidTest", variants, testVariants)
+        checkTestedVariant("f2FcDebug", "f2FcDebugAndroidTest", variants, testVariants)
 
         checkNonTestedVariant("f1FaRelease", variants)
         checkNonTestedVariant("f1FbRelease", variants)
@@ -312,7 +325,7 @@ public class AppPluginDslTest extends BaseTest {
         AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
 
         plugin.createAndroidTasks(false)
-        assertEquals(3, plugin.variantDataList.size())
+        assertEquals(DEFAULT_VARIANTS.size(), plugin.variantManager.variantDataList.size())
 
         // we can now call this since the variants/tasks have been created
 

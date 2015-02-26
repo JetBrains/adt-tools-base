@@ -18,7 +18,6 @@ package com.android.build.gradle.integration.application
 
 import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.utils.ZipHelper
 import com.google.common.io.Files
 import org.junit.AfterClass
 import org.junit.BeforeClass
@@ -26,6 +25,7 @@ import org.junit.ClassRule
 import org.junit.Test
 import org.junit.experimental.categories.Category
 
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatZip
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
 
 /**
@@ -38,8 +38,8 @@ class MultiDexTest {
             .create()
 
     @BeforeClass
-    static void setup() {
-        project.execute("clean", "assembleDebug");
+    static void setUp() {
+        project.execute("clean", "assembleDebug")
     }
 
     @AfterClass
@@ -57,10 +57,10 @@ class MultiDexTest {
         // manually inspcet the apk to ensure that the classes.dex that was created is the same
         // one in the apk. This tests that the packaging didn't rename the multiple dex files
         // around when we packaged them.
-        File classesDex = project.file("build/" + FD_INTERMEDIATES + "/dex/ics/debug/classes.dex");
+        File classesDex = project.file("build/" + FD_INTERMEDIATES + "/dex/ics/debug/classes.dex")
         File apk = project.getApk("ics", "debug")
 
-        ZipHelper.checkContent(apk, "classes.dex", Files.toByteArray(classesDex));
+        assertThatZip(apk).containsFileWithContent("classes.dex", Files.toByteArray(classesDex))
     }
 
     @Test
@@ -71,6 +71,6 @@ class MultiDexTest {
     @Test
     @Category(DeviceTests.class)
     void connectedCheck() {
-        project.execute("connectedCheck");
+        project.execute("connectedCheck")
     }
 }

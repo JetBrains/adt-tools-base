@@ -48,6 +48,7 @@ import com.android.utils.NullLogger;
 import com.android.utils.Pair;
 import com.google.common.base.Charsets;
 import com.google.common.io.Closeables;
+import com.google.common.io.Files;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -330,6 +331,8 @@ public class AvdManager {
     private AvdInfo[] mValidAvdList;
     private AvdInfo[] mBrokenAvdList;
     private final LocalSdk myLocalSdk;
+    private final Map<ILogger, DeviceManager> myDeviceManagers =
+            new HashMap<ILogger, DeviceManager>();
 
     /**
      * Creates an AVD Manager for a given SDK represented by a {@link LocalSdk}.
@@ -555,6 +558,77 @@ public class AvdManager {
 
         return null;
     }
+
+    /**
+     * Returns whether an emulator is currently running the AVD.
+     */
+    public boolean isAvdRunning(@NonNull AvdInfo info) {
+        try {
+            String pid = getAvdPid(info);
+            if (pid != null) {
+                String command;
+                if (SdkConstants.currentPlatform() == SdkConstants.PLATFORM_WINDOWS) {
+                    command = "cmd /c \"tasklist /FI \"PID eq " + pid + "\" | findstr " + pid
+                            + "\"";
+                } else {
+                    command = "kill -0 " + pid;
+                }
+                try {
+                    Process p = Runtime.getRuntime().exec(command);
+                    // If the process ends with non-0 it means the process doesn't exist
+                    return p.waitFor() == 0;
+                } catch (IOException e) {
+                    // To be safe return true
+                    return true;
+                } catch (InterruptedException e) {
+                    // To be safe return true
+                    return true;
+                }
+            }
+        }
+        catch (IOException e) {
+            // To be safe return true
+            return true;
+        }
+        return false;
+    }
+
+    public void stopAvd(@NonNull AvdInfo info) {
+        try {
+            String pid = getAvdPid(info);
+            if (pid != null) {
+                String command;
+                if (SdkConstants.currentPlatform() == SdkConstants.PLATFORM_WINDOWS) {
+                    command = "cmd /c \"taskkill /PID " + pid + "\"";
+                } else {
+                    command = "kill " + pid;
+                }
+                try {
+                    Process p = Runtime.getRuntime().exec(command);
+                    // If the process ends with non-0 it means the process doesn't exist
+                    p.waitFor();
+                } catch (IOException e) {
+                } catch (InterruptedException e) {
+                }
+            }
+        }
+        catch (IOException e) {
+        }
+    }
+
+    private String getAvdPid(@NonNull AvdInfo info) throws IOException {
+        // this is a file on Unix, and a directory on Windows.
+        File f = new File(info.getDataFolderPath(), "userdata-qemu.img.lock");   //$NON-NLS-1$
+        if (SdkConstants.currentPlatform() == SdkConstants.PLATFORM_WINDOWS) {
+            f = new File(f, "pid");
+        }
+        if (f.exists()) {
+            return Files.toString(f, Charsets.UTF_8);
+        }
+        return null;
+    }
+
+
 
     /**
      * Returns whether this AVD name would generate a conflict.
@@ -1508,6 +1582,21 @@ public class AvdManager {
         }
     }
 
+    private DeviceManager getDeviceManager(ILogger logger) {
+        DeviceManager manager = myDeviceManagers.get(logger);
+        if (manager == null) {
+            manager = DeviceManager.createInstance(myLocalSdk.getLocation(), logger);
+            manager.registerListener(new DeviceManager.DevicesChangedListener() {
+                @Override
+                public void onDevicesChanged() {
+                    myDeviceManagers.clear();
+                }
+            });
+            myDeviceManagers.put(logger, manager);
+        }
+        return manager;
+    }
+
     /**
      * Parses an AVD .ini file to create an {@link AvdInfo}.
      *
@@ -1605,6 +1694,9 @@ public class AvdManager {
             }
         }
 
+        // Check the system image from the target
+        ISystemImage sysImage = target != null ? target.getSystemImage(tag, abiType) : null;
+
         // Get the device status if this AVD is associated with a device
         DeviceStatus deviceStatus = null;
         boolean updateHashV2 = false;
@@ -1615,7 +1707,7 @@ public class AvdManager {
             Device d = null;
 
             if (deviceName != null && deviceMfctr != null) {
-                DeviceManager devMan = DeviceManager.createInstance(myLocalSdk.getLocation(), log);
+                DeviceManager devMan = getDeviceManager(log);
                 d = devMan.getDevice(deviceName, deviceMfctr);
                 deviceStatus = d == null ? DeviceStatus.MISSING : DeviceStatus.EXISTS;
 
@@ -1661,6 +1753,8 @@ public class AvdManager {
             status = AvdStatus.ERROR_DEVICE_CHANGED;
         } else if (deviceStatus == DeviceStatus.MISSING) {
             status = AvdStatus.ERROR_DEVICE_MISSING;
+        } else if (sysImage == null) {
+            status = AvdStatus.ERROR_IMAGE_MISSING;
         } else {
             status = AvdStatus.OK;
         }
@@ -2012,7 +2106,7 @@ public class AvdManager {
         // Overwrite the properties derived from the device and nothing else
         Map<String, String> properties = new HashMap<String, String>(avd.getProperties());
 
-        DeviceManager devMan = DeviceManager.createInstance(myLocalSdk.getLocation(), log);
+        DeviceManager devMan = getDeviceManager(log);
         Collection<Device> devices = devMan.getDevices(DeviceManager.ALL_DEVICES);
         String name = properties.get(AvdManager.AVD_INI_DEVICE_NAME);
         String manufacturer = properties.get(AvdManager.AVD_INI_DEVICE_MANUFACTURER);

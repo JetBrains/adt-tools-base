@@ -15,7 +15,6 @@
  */
 
 package com.android.build.gradle.integration.application
-
 import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import org.junit.AfterClass
@@ -24,10 +23,7 @@ import org.junit.ClassRule
 import org.junit.Test
 import org.junit.experimental.categories.Category
 
-import java.util.zip.ZipFile
-
-import static org.junit.Assert.assertNotNull
-
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatZip
 /**
  * Assemble tests for packagingOptions.
  */
@@ -38,7 +34,7 @@ class PackagingOptionsTest {
             .create()
 
     @BeforeClass
-    static void setup() {
+    static void setUp() {
         project.execute("clean", "assembleDebug")
     }
 
@@ -53,9 +49,8 @@ class PackagingOptionsTest {
     }
 
     @Test
-    void "check packaging"() {
-        ZipFile apk = new ZipFile(project.getApk("debug"))
-        assertNotNull(apk.getEntry("first_pick.txt"))
+    void "check packinging"() {
+        assertThatZip(project.getApk("debug")).contains("first_pick.txt")
     }
 
     @Test

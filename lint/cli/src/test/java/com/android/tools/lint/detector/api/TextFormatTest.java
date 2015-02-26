@@ -176,14 +176,14 @@ public class TextFormatTest extends TestCase {
         // From ManifestDetector#MULTIPLE_USES_SDK
         String explanation =
             "The `<uses-sdk>` element should appear just once; the tools will *not* merge the " +
-            "contents of all the elements so if you split up the atttributes across multiple " +
+            "contents of all the elements so if you split up the attributes across multiple " +
             "elements, only one of them will take effect. To fix this, just merge all the " +
             "attributes from the various elements into a single <uses-sdk> element.";
 
         assertEquals(
             "The <code>&lt;uses-sdk></code> element should appear just once; the tools " +
             "will <b>not</b> merge the " +
-            "contents of all the elements so if you split up the atttributes across multiple " +
+            "contents of all the elements so if you split up the attributes across multiple " +
             "elements, only one of them will take effect. To fix this, just merge all the " +
             "attributes from the various elements into a single &lt;uses-sdk> element.",
             convertMarkup(explanation, HTML));
@@ -272,5 +272,9 @@ public class TextFormatTest extends TestCase {
                         "<code>MenuItem.SHOW_AS_ACTION_ALWAYS</code> and no references to " +
                         "<code>MenuItem.SHOW_AS_ACTION_IF_ROOM</code>.",
                 TEXT));
+    }
+
+    public void testNbsp() throws Exception {
+        assertEquals("&nbsp;&nbsp;text", RAW.convertTo("\u00a0\u00A0text", HTML));
     }
 }

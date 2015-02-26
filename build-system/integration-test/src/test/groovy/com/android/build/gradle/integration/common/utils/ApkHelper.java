@@ -16,19 +16,19 @@
 
 package com.android.build.gradle.integration.common.utils;
 
-import static org.junit.Assert.assertEquals;
-
 import com.android.annotations.NonNull;
-import com.android.builder.core.ApkInfoParser;
-import com.android.ide.common.internal.CommandLineRunner;
-import com.android.ide.common.internal.LoggedErrorException;
+import com.android.annotations.Nullable;
+import com.android.ide.common.process.CachedProcessOutputHandler;
+import com.android.ide.common.process.DefaultProcessExecutor;
+import com.android.ide.common.process.ProcessException;
+import com.android.ide.common.process.ProcessExecutor;
+import com.android.ide.common.process.ProcessInfo;
+import com.android.ide.common.process.ProcessInfoBuilder;
 import com.android.utils.StdLogger;
+import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
 
-import org.gradle.api.Nullable;
-
 import java.io.File;
-import java.io.IOException;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -37,116 +37,83 @@ import java.util.regex.Pattern;
  * Helper to help read/test the content of generated apk file.
  */
 public class ApkHelper {
-    private static final Pattern PATTERN = Pattern.compile(
-            "^Class descriptor\\W*:\\W*'(L.+;)'$");
 
-    public static void checkVersion(
-            @NonNull File apk,
-            @Nullable Integer code)
-            throws IOException, InterruptedException, LoggedErrorException {
-        checkVersion(apk, code, null /* versionName */);
-    }
-
-    public static void checkVersionName(
-        @NonNull File apk,
-        @Nullable String name)
-        throws IOException, InterruptedException, LoggedErrorException {
-        checkVersion(apk, null, name);
-    }
-
-    public static void checkVersion(
-            @NonNull File apk,
-            @Nullable Integer code,
-            @Nullable String versionName)
-            throws IOException, InterruptedException, LoggedErrorException {
-        CommandLineRunner commandLineRunner = new CommandLineRunner(
-                new StdLogger(StdLogger.Level.ERROR));
-        ApkInfoParser parser = new ApkInfoParser(SdkHelper.getAapt(), commandLineRunner);
-
-        ApkInfoParser.ApkInfo apkInfo = parser.parseApk(apk);
-
-        if (code != null) {
-            assertEquals("Unexpected version code for split: " + apk.getName(),
-                    code, apkInfo.getVersionCode());
-        }
-
-        if (versionName != null) {
-            assertEquals("Unexpected version code for split: " + apk.getName(),
-                    versionName, apkInfo.getVersionName());
-        }
-    }
+    private static final Pattern PATTERN_LOCALES = Pattern.compile(
+            "^locales\\W*:\\W*(.+)$");
 
     /**
-     * Returns true if the provided class is present in the file.
-     * @param apkFile the apk file
-     * @param expectedClassName the class name
-     */
-    public static boolean checkForClass(
-            @NonNull File apkFile,
-            @NonNull String expectedClassName)
-            throws IOException, LoggedErrorException, InterruptedException {
-        // extract the classes.jar from the apk
-        File classesDex = File.createTempFile("ApkHelper", "");
-        classesDex.deleteOnExit();
-        ZipHelper.extractFile(apkFile, "classes.dex", classesDex);
-
-        // get the dexdump exec
-        File dexDump = SdkHelper.getDexDump();
-
-        CommandLineRunner commandLineRunner = new CommandLineRunner(
-                new StdLogger(StdLogger.Level.ERROR));
-        List<String> command = Lists.newArrayList();
-
-        command.add(dexDump.getAbsolutePath());
-        command.add(classesDex.getAbsolutePath());
-
-        List<String> output = runAndGetOutput(commandLineRunner, command);
-
-        for (String line : output) {
-            Matcher m = PATTERN.matcher(line.trim());
-            if (m.matches()) {
-                String className = m.group(1);
-                if (expectedClassName.equals(className)) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Runs a command, and returns the output.
+     * Runs a process, and returns the output.
      *
-     * @param commandLineRunner the commandline runner
-     * @param command the command line args
+     * @param processInfo the process info to run
      *
      * @return the output as a list of files.
-     * @throws IOException
-     * @throws InterruptedException
-     * @throws LoggedErrorException
+     * @throws ProcessException
+     */
+    @NonNull
+    public static List<String> runAndGetOutput(@NonNull ProcessInfo processInfo)
+            throws ProcessException {
+
+        ProcessExecutor executor = new DefaultProcessExecutor(
+                new StdLogger(StdLogger.Level.ERROR));
+        return runAndGetOutput(processInfo, executor);
+    }
+
+    /**
+     * Runs a process, and returns the output.
+     *
+     * @param processInfo the process info to run
+     * @param processExecutor the process executor
+     *
+     * @return the output as a list of files.
+     * @throws ProcessException
      */
     @NonNull
     public static List<String> runAndGetOutput(
-            @NonNull CommandLineRunner commandLineRunner,
-            @NonNull List<String> command)
-            throws IOException, InterruptedException, LoggedErrorException {
+            @NonNull ProcessInfo processInfo,
+            @NonNull ProcessExecutor processExecutor)
+            throws ProcessException {
+        CachedProcessOutputHandler handler = new CachedProcessOutputHandler();
+        processExecutor.execute(processInfo, handler).rethrowFailure().assertNormalExitValue();
+        return Splitter.on('\n').splitToList(handler.getProcessOutput().getStandardOutputAsString());
+    }
 
-        final List<String> output = Lists.newArrayList();
+    @NonNull
+    public static List<String> getApkBadging(@NonNull File apk) throws ProcessException {
+        File aapt = SdkHelper.getAapt();
 
-        commandLineRunner.runCmdLine(command, new CommandLineRunner.CommandLineOutput() {
-            @Override
-            public void out(@com.android.annotations.Nullable String line) {
-                if (line != null) {
-                    output.add(line);
+        ProcessInfoBuilder builder = new ProcessInfoBuilder();
+        builder.setExecutable(aapt);
+        builder.addArgs("dump", "badging", apk.getPath());
+
+        return ApkHelper.runAndGetOutput(builder.createProcess());
+    }
+
+    /**
+     * Returns the locales of an apk as found in the badging information
+     * @param apk the apk
+     * @return the list of locales or null.
+     * @throws ProcessException
+     *
+     * @see #getApkBadging(File)
+     */
+    @Nullable
+    public static List<String> getLocales(@NonNull File apk) throws ProcessException {
+        List<String> output = getApkBadging(apk);
+
+        for (String line : output) {
+            Matcher m = PATTERN_LOCALES.matcher(line.trim());
+            if (m.matches()) {
+                List<String> list = Splitter.on(' ').splitToList(m.group(1).trim());
+                List<String> result = Lists.newArrayListWithCapacity(list.size());
+                for (String local: list) {
+                    // remove the '' on each side.
+                    result.add(local.substring(1, local.length() - 1));
                 }
-            }
-            @Override
-            public void err(@com.android.annotations.Nullable String line) {
-                super.err(line);
 
+                return result;
             }
-        }, null /*env vars*/);
+        }
 
-        return output;
+        return null;
     }
 }

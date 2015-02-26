@@ -10,46 +10,13 @@ buildscript {
 apply plugin: 'groovy'
 apply plugin: 'clone-artifacts'
 apply plugin: 'idea'
-
-sourceSets {
-    main {
-        groovy.srcDirs = ['src/main/groovy', 'src/fromGradle/groovy']
-        resources.srcDirs = ['src/main/resources', 'src/fromGradle/resources']
-    }
-}
-
-ext.proguardVersion = "5.1"
+apply plugin: 'jacoco'
 
 dependencies {
-    compile gradleApi()
-    compile localGroovy()
-    compile project(':base:builder')
-    compile project(':base:lint')
-    compile "net.sf.proguard:proguard-gradle:${project.ext.proguardVersion}"
+    compile project(':base:gradle-core')
 
     testCompile 'junit:junit:3.8.1'
     testCompile project(':base:project-test-lib')
-}
-
-// configuration for dependencies provided by the runtime,
-// in this case proguard.
-configurations{
-    provided
-}
-
-dependencies{
-    provided "net.sf.proguard:proguard-gradle:${project.ext.proguardVersion}"
-}
-
-//Include provided for compilation
-sourceSets.main.compileClasspath += configurations.provided
-
-idea {
-    module {
-        testSourceDirs += files('src/build-test/groovy', 'src/device-test/groovy').files
-
-        scopes.COMPILE.plus += configurations.provided
-    }
 }
 
 group = 'com.android.tools.build'
@@ -63,6 +30,8 @@ apply from: "$rootDir/buildSrc/base/publish.gradle"
 apply from: "$rootDir/buildSrc/base/bintray.gradle"
 
 jar.manifest.attributes("Plugin-Version": version)
+jar.manifest.attributes("Inception-Date":"${Calendar.getInstance().get(Calendar.YEAR)}:" +
+        "${Calendar.getInstance().get(Calendar.MONTH)}:${Calendar.getInstance().get(Calendar.DATE)}")
 
 test {
     environment("CUSTOM_REPO", rootProject.file("../out/repo"))
@@ -70,6 +39,8 @@ test {
     testLogging {
         events "failed"
     }
+
+    maxParallelForks = Runtime.runtime.availableProcessors() / 2
 }
 
 groovydoc {
@@ -87,7 +58,9 @@ task javadocJar(type: Jar, dependsOn:groovydoc) {
     from        groovydoc.destinationDir
 }
 
-// add javadoc jar tasks as artifacts
-artifacts {
+// Only package JavaDoc if using --init-script=buildSrc/base/release.gradle
+if (project.has("release")) {
+  artifacts {
     archives javadocJar
+  }
 }

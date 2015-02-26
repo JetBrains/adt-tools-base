@@ -26,8 +26,11 @@ import com.android.sdklib.SystemImage;
 import com.android.sdklib.devices.Abi;
 import com.android.sdklib.devices.Device;
 import com.android.sdklib.repository.descriptors.IdDisplay;
+import com.google.common.base.Charsets;
+import com.google.common.io.Files;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
 
@@ -57,7 +60,9 @@ public final class AvdInfo implements Comparable<AvdInfo> {
         /** The {@link Device} this AVD is based on has changed from its original configuration*/
         ERROR_DEVICE_CHANGED,
         /** The {@link Device} this AVD is based on is no longer available */
-        ERROR_DEVICE_MISSING
+        ERROR_DEVICE_MISSING,
+        /** the {@link SystemImage} this AVD is based on is no longer available */
+        ERROR_IMAGE_MISSING
     }
 
     private final String mName;
@@ -370,15 +375,6 @@ public final class AvdInfo implements Comparable<AvdInfo> {
         }
 
         return null;
-    }
-
-    /**
-     * Returns whether an emulator is currently running the AVD.
-     */
-    public boolean isRunning() {
-        // this is a file on Unix, and a directory on Windows.
-        File f = new File(mFolderPath, "userdata-qemu.img.lock");   //$NON-NLS-1$
-        return f.exists();
     }
 
     /**

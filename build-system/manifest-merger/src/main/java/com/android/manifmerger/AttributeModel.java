@@ -19,7 +19,6 @@ package com.android.manifmerger;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.google.common.base.Joiner;
-import com.google.common.base.Optional;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;

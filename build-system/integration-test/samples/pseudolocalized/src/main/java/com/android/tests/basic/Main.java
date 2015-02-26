@@ -3,7 +3,6 @@ package com.android.tests.basic;
 import android.app.Activity;
 import android.content.res.Configuration;
 import android.os.Bundle;
-import android.widget.TextView;
 
 import java.util.Locale;
 

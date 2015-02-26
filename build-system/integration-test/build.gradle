@@ -1,13 +1,22 @@
 apply plugin: 'groovy'
+apply plugin: 'jacoco'
+
+repositories {
+    maven { url = uri(rootProject.cloneArtifacts.repository) }
+}
 
 dependencies {
     compile gradleApi()
     compile localGroovy()
     compile project(':base:gradle')
+    compile "com.google.truth:truth:0.24"
+    testCompile "org.jacoco:org.jacoco.agent:0.7.1.201405082137"
 }
 
 test {
     environment("PROJECT_BUILD_DIR", project.buildDir)
+
+    exclude "com/android/build/gradle/integration/device/**"
 
     description =
             "Runs the project integration tests. This requires an SDK either from the Android " +
@@ -28,6 +37,7 @@ task connectedIntegrationTest(type: Test) {
 
     testClassesDir = sourceSets.test.output.classesDir
     classpath = sourceSets.test.runtimeClasspath
+    include "com/android/build/gradle/integration/device/DeviceTestSuite.class"
     description =
             "Runs the project integration tests with device tests. This requires an SDK either " +
                     "from the Android source tree, under out/..., or an env var ANDROID_HOME " +
@@ -39,3 +49,17 @@ task connectedIntegrationTest(type: Test) {
 
 test.dependsOn ':publishLocal'
 connectedIntegrationTest.dependsOn ':publishLocal'
+
+jacocoTestReport {
+    sourceSets project(':base:gradle').sourceSets.main
+    sourceSets project(':base:builder').sourceSets.main
+    sourceSets project(':base:builder-model').sourceSets.main
+}
+
+// Due to memory constraints, apply jacoco only when jacocoTestReport is invoked.  Make sure to
+// rerun tests when generating report jacoco.
+gradle.taskGraph.whenReady { TaskExecutionGraph taskGraph ->
+    if (taskGraph.hasTask(jacocoTestReport)) {
+        test.environment("ATTACH_JACOCO_AGENT", "yes")
+    }
+}

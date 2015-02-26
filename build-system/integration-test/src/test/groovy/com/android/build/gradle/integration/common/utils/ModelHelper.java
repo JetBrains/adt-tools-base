@@ -16,8 +16,8 @@
 
 package com.android.build.gradle.integration.common.utils;
 
-import static com.android.builder.core.BuilderConstants.ANDROID_TEST;
 import static com.android.builder.core.BuilderConstants.DEBUG;
+import static com.android.builder.core.VariantType.ANDROID_TEST;
 import static com.android.builder.model.AndroidProject.ARTIFACT_ANDROID_TEST;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -136,7 +136,7 @@ public class ModelHelper {
         assertNotNull("InstrumentTest source Providers null-check", testSourceProviders);
 
         new SourceProviderHelper(model.getName(), projectDir,
-                ANDROID_TEST, testSourceProviders.getSourceProvider())
+                ANDROID_TEST.getPrefix(), testSourceProviders.getSourceProvider())
                 .test();
 
         // test the source provider for the build types
@@ -151,7 +151,8 @@ public class ModelHelper {
                     btContainer.getSourceProvider())
                     .test();
 
-            assertEquals(0, btContainer.getExtraSourceProviders().size());
+            // For every build type there's the unit test source provider.
+            assertEquals(1, btContainer.getExtraSourceProviders().size());
         }
     }
 
@@ -271,5 +272,19 @@ public class ModelHelper {
         return null;
     }
 
+    @Nullable
+    public static ProductFlavorContainer getProductFlavor(
+            @NonNull Collection<ProductFlavorContainer> items,
+            @NonNull String name) {
+        for (ProductFlavorContainer item : items) {
+            assertNotNull("ProductFlavorContainer list item null-check:" + name, item);
+            assertNotNull("ProductFlavorContainer.getProductFlavor() list item null-check: " + name, item.getProductFlavor());
+            assertNotNull("ProductFlavorContainer.getProductFlavor().getName() list item null-check: " + name, item.getProductFlavor().getName());
+            if (name.equals(item.getProductFlavor().getName())) {
+                return item;
+            }
+        }
 
+        return null;
+    }
 }

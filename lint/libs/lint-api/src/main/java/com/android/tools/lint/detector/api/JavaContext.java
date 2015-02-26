@@ -16,15 +16,18 @@
 
 package com.android.tools.lint.detector.api;
 
+import static com.android.SdkConstants.CLASS_CONTEXT;
 import static com.android.tools.lint.client.api.JavaParser.ResolvedNode;
 import static com.android.tools.lint.client.api.JavaParser.TypeDescriptor;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.tools.lint.client.api.JavaParser;
+import com.android.tools.lint.client.api.JavaParser.ResolvedClass;
 import com.android.tools.lint.client.api.LintDriver;
 
 import java.io.File;
+import java.util.Iterator;
 
 import lombok.ast.ClassDeclaration;
 import lombok.ast.ConstructorDeclaration;
@@ -215,6 +218,11 @@ public class JavaContext extends Context {
     }
 
     @Nullable
+    public ResolvedClass findClass(@NonNull String fullyQualifiedName) {
+        return mParser.findClass(this, fullyQualifiedName);
+    }
+
+    @Nullable
     public TypeDescriptor getType(@NonNull Node node) {
         return mParser.getType(this, node);
     }
@@ -233,11 +241,132 @@ public class JavaContext extends Context {
         ResolvedNode resolved = resolve(node);
         if (resolved instanceof JavaParser.ResolvedMethod) {
             JavaParser.ResolvedMethod method = (JavaParser.ResolvedMethod) resolved;
-            JavaParser.ResolvedClass containingClass = method.getContainingClass();
-            if (containingClass.isSubclassOf("android.content.Context", false)) {
+            ResolvedClass containingClass = method.getContainingClass();
+            if (containingClass.isSubclassOf(CLASS_CONTEXT, false)) {
                 return true;
             }
         }
         return false;
+    }
+
+    /**
+     * Returns the first ancestor node of the given type
+     *
+     * @param element the element to search from
+     * @param clz     the target node type
+     * @param <T>     the target node type
+     * @return the nearest ancestor node in the parent chain, or null if not found
+     */
+    @Nullable
+    public static <T extends Node> T getParentOfType(
+            @Nullable Node element,
+            @NonNull Class<T> clz) {
+        return getParentOfType(element, clz, true);
+    }
+
+    /**
+     * Returns the first ancestor node of the given type
+     *
+     * @param element the element to search from
+     * @param clz     the target node type
+     * @param strict  if true, do not consider the element itself, only its parents
+     * @param <T>     the target node type
+     * @return the nearest ancestor node in the parent chain, or null if not found
+     */
+    @Nullable
+    public static <T extends Node> T getParentOfType(
+            @Nullable Node element,
+            @NonNull Class<T> clz,
+            boolean strict) {
+        if (element == null) {
+            return null;
+        }
+
+        if (strict) {
+            element = element.getParent();
+        }
+
+        while (element != null) {
+            if (clz.isInstance(element)) {
+                //noinspection unchecked
+                return (T) element;
+            }
+            element = element.getParent();
+        }
+
+        return null;
+    }
+
+    /**
+     * Returns the first ancestor node of the given type, stopping at the given type
+     *
+     * @param element     the element to search from
+     * @param clz         the target node type
+     * @param strict      if true, do not consider the element itself, only its parents
+     * @param terminators optional node types to terminate the search at
+     * @param <T>         the target node type
+     * @return the nearest ancestor node in the parent chain, or null if not found
+     */
+    @Nullable
+    public static <T extends Node> T getParentOfType(@Nullable Node element,
+            @NonNull Class<T> clz,
+            boolean strict,
+            @NonNull Class<? extends Node>... terminators) {
+        if (element == null) {
+            return null;
+        }
+        if (strict) {
+            element = element.getParent();
+        }
+
+        while (element != null && !clz.isInstance(element)) {
+            for (Class<?> terminator : terminators) {
+                if (terminator.isInstance(element)) {
+                    return null;
+                }
+            }
+            element = element.getParent();
+        }
+
+        //noinspection unchecked
+        return (T) element;
+    }
+
+    /**
+     * Returns the first sibling of the given node that is of the given class
+     *
+     * @param sibling the sibling to search from
+     * @param clz     the type to look for
+     * @param <T>     the type
+     * @return the first sibling of the given type, or null
+     */
+    @Nullable
+    public static <T extends Node> T getNextSiblingOfType(@Nullable Node sibling,
+            @NonNull Class<T> clz) {
+        if (sibling == null) {
+            return null;
+        }
+        Node parent = sibling.getParent();
+        if (parent == null) {
+            return null;
+        }
+
+        Iterator<Node> iterator = parent.getChildren().iterator();
+        while (iterator.hasNext()) {
+            if (iterator.next() == sibling) {
+                break;
+            }
+        }
+
+        while (iterator.hasNext()) {
+            Node child = iterator.next();
+            if (clz.isInstance(child)) {
+                //noinspection unchecked
+                return (T) child;
+            }
+
+        }
+
+        return null;
     }
 }

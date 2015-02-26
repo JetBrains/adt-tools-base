@@ -33,7 +33,7 @@ public class LauncherIconGeneratorTest extends GeneratorTest {
         options.isWebGraphic = isWebGraphic;
 
         LauncherIconGenerator generator = new LauncherIconGenerator();
-        checkGraphic(4 + (isWebGraphic ? 1 : 0), "launcher", baseName, generator, options);
+        checkGraphic(5 + (isWebGraphic ? 1 : 0), "launcher", baseName, generator, options);
     }
 
     public void testLauncher_simpleCircle() throws Exception {

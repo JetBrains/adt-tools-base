@@ -22,11 +22,13 @@ import com.android.builder.model.AndroidArtifact
 import com.android.builder.model.AndroidProject
 import com.android.builder.model.Dependencies
 import com.android.builder.model.Variant
-import org.junit.*
+import org.junit.AfterClass
+import org.junit.BeforeClass
+import org.junit.ClassRule
+import org.junit.Test
 
 import static com.android.builder.core.BuilderConstants.DEBUG
 import static com.android.builder.model.AndroidProject.ARTIFACT_ANDROID_TEST
-
 import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertNotNull
 
@@ -42,8 +44,8 @@ class TestWithDepTest {
     static public AndroidProject model
 
     @BeforeClass
-    static void setup() {
-        model = project.getModel()
+    static void setUp() {
+        model = project.getSingleModel()
     }
 
     @AfterClass
@@ -54,16 +56,16 @@ class TestWithDepTest {
 
     @Test
     void "check there is a dep on the test variant"() throws Exception {
-        Collection<Variant> variants = model.getVariants();
-        Variant debugVariant = ModelHelper.getVariant(variants, DEBUG);
-        assertNotNull(debugVariant);
+        Collection<Variant> variants = model.getVariants()
+        Variant debugVariant = ModelHelper.getVariant(variants, DEBUG)
+        assertNotNull(debugVariant)
 
-        Collection<AndroidArtifact> extraAndroidArtifact = debugVariant.getExtraAndroidArtifacts();
+        Collection<AndroidArtifact> extraAndroidArtifact = debugVariant.getExtraAndroidArtifacts()
         AndroidArtifact testArtifact = ModelHelper.getAndroidArtifact(extraAndroidArtifact,
-                ARTIFACT_ANDROID_TEST);
-        assertNotNull(testArtifact);
+                ARTIFACT_ANDROID_TEST)
+        assertNotNull(testArtifact)
 
-        Dependencies testDependencies = testArtifact.getDependencies();
-        assertEquals(1, testDependencies.getJavaLibraries().size());
+        Dependencies testDependencies = testArtifact.getDependencies()
+        assertEquals(1, testDependencies.getJavaLibraries().size())
     }
 }

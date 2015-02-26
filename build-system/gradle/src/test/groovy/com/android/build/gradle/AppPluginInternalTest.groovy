@@ -17,7 +17,7 @@
 package com.android.build.gradle
 
 import com.android.build.gradle.internal.BadPluginException
-import com.android.build.gradle.internal.LoggerWrapper
+import com.android.build.gradle.internal.SdkHandler
 import com.android.build.gradle.internal.test.BaseTest
 import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.builder.core.BuilderConstants
@@ -31,7 +31,8 @@ import org.gradle.api.artifacts.ModuleVersionIdentifier
 import org.gradle.api.internal.artifacts.DefaultModuleVersionIdentifier
 import org.gradle.testfixtures.ProjectBuilder
 
-import java.util.logging.Logger
+import static com.android.build.gradle.DslTestUtil.DEFAULT_VARIANTS
+import static com.android.build.gradle.DslTestUtil.countVariants
 
 /**
  * Tests for the internal workings of the app plugin ("android")
@@ -40,7 +41,7 @@ public class AppPluginInternalTest extends BaseTest {
 
     @Override
     protected void setUp() throws Exception {
-        BasePlugin.TEST_SDK_DIR = new File("foo")
+        SdkHandler.testSdkFolder = new File("foo")
     }
 
     public void testBasic() {
@@ -63,12 +64,12 @@ public class AppPluginInternalTest extends BaseTest {
         assertEquals(0, plugin.variantManager.productFlavors.size())
 
 
-        List<BaseVariantData> variants = plugin.variantDataList
-        assertEquals(3, variants.size()) // includes the test variant(s)
+        List<BaseVariantData> variants = plugin.variantManager.variantDataList
+        assertEquals(DEFAULT_VARIANTS.size(), variants.size()) // includes the test variant(s)
 
         findNamedItem(variants, "debug", "variantData")
         findNamedItem(variants, "release", "variantData")
-        findNamedItem(variants, "debugTest", "variantData")
+        findNamedItem(variants, "debugAndroidTest", "variantData")
     }
 
     public void testDefaultConfig() {
@@ -140,8 +141,8 @@ public class AppPluginInternalTest extends BaseTest {
 
         assertEquals(3, plugin.variantManager.buildTypes.size())
 
-        List<BaseVariantData> variants = plugin.variantDataList
-        assertEquals(4, variants.size()) // includes the test variant(s)
+        List<BaseVariantData> variants = plugin.variantManager.variantDataList
+        assertEquals(countVariants(appVariants: 3, unitTests: 3, androidTests: 1), variants.size())
 
         String[] variantNames = [
                 "debug", "release", "staging"]
@@ -150,7 +151,7 @@ public class AppPluginInternalTest extends BaseTest {
             findNamedItem(variants, variantName, "variantData")
         }
 
-        BaseVariantData testVariant = findNamedItem(variants, "stagingTest", "variantData")
+        BaseVariantData testVariant = findNamedItem(variants, "stagingAndroidTest", "variantData")
         assertEquals("staging", testVariant.variantConfiguration.buildType.name)
     }
 
@@ -179,12 +180,12 @@ public class AppPluginInternalTest extends BaseTest {
 
         assertEquals(2, plugin.variantManager.productFlavors.size())
 
-        List<BaseVariantData> variants = plugin.variantDataList
-        assertEquals(6, variants.size()) // includes the test variant(s)
+        List<BaseVariantData> variants = plugin.variantManager.variantDataList
+        assertEquals(countVariants(appVariants: 4, unitTests: 4, androidTests: 2), variants.size())
 
         String[] variantNames = [
-                "flavor1Debug", "flavor1Release", "flavor1DebugTest",
-                "flavor2Debug", "flavor2Release", "flavor2DebugTest"]
+                "flavor1Debug", "flavor1Release", "flavor1DebugAndroidTest",
+                "flavor2Debug", "flavor2Release", "flavor2DebugAndroidTest"]
 
         for (String variantName : variantNames) {
             findNamedItem(variants, variantName, "variantData")
@@ -228,8 +229,8 @@ public class AppPluginInternalTest extends BaseTest {
 
         assertEquals(5, plugin.variantManager.productFlavors.size())
 
-        List<BaseVariantData> variants = plugin.variantDataList
-        assertEquals(18, variants.size())   // includes the test variant(s)
+        List<BaseVariantData> variants = plugin.variantManager.variantDataList
+        assertEquals(countVariants(appVariants: 12, unitTests: 12, androidTests: 6), variants.size())
 
         String[] variantNames = [
                 "f1FaDebug",
@@ -244,12 +245,12 @@ public class AppPluginInternalTest extends BaseTest {
                 "f2FaRelease",
                 "f2FbRelease",
                 "f2FcRelease",
-                "f1FaDebugTest",
-                "f1FbDebugTest",
-                "f1FcDebugTest",
-                "f2FaDebugTest",
-                "f2FbDebugTest",
-                "f2FcDebugTest"];
+                "f1FaDebugAndroidTest",
+                "f1FbDebugAndroidTest",
+                "f1FcDebugAndroidTest",
+                "f2FaDebugAndroidTest",
+                "f2FbDebugAndroidTest",
+                "f2FcDebugAndroidTest"];
 
         for (String variantName : variantNames) {
             findNamedItem(variants, variantName, "variantData");
@@ -317,8 +318,8 @@ public class AppPluginInternalTest extends BaseTest {
         AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
         plugin.createAndroidTasks(true /*force*/)
 
-        List<BaseVariantData> variants = plugin.variantDataList
-        assertEquals(8, variants.size())   // includes the test variant(s)
+        List<BaseVariantData> variants = plugin.variantManager.variantDataList
+        assertEquals(countVariants(appVariants: 6, unitTests: 6, androidTests: 2), variants.size())
 
         BaseVariantData variant
         SigningConfig signingConfig
@@ -432,33 +433,5 @@ public class AppPluginInternalTest extends BaseTest {
 
         assertNotNull(recordedException)
         assertEquals(BadPluginException.class, recordedException.getClass())
-    }
-
-    public void testPathNormalization() {
-        ModuleVersionIdentifier moduleVersionIdentifier = new DefaultModuleVersionIdentifier(
-                "group", "name", "1.2");
-        ILogger logger = new StdLogger(StdLogger.Level.VERBOSE);
-        assertEquals("app", BasePlugin.normalize(logger, moduleVersionIdentifier, "app"));
-        assertEquals(".app", BasePlugin.normalize(logger, moduleVersionIdentifier, ".app"))
-        assertEquals("app@", BasePlugin.normalize(logger, moduleVersionIdentifier, "app."))
-        assertEquals("app@", BasePlugin.normalize(logger, moduleVersionIdentifier, "app "))
-        assertEquals("app@@@", BasePlugin.normalize(logger, moduleVersionIdentifier, "app..."))
-        assertEquals("app@@@", BasePlugin.normalize(logger, moduleVersionIdentifier, "app. ."))
-        assertEquals("app@@@@", BasePlugin.normalize(logger, moduleVersionIdentifier, "app. . "))
-        assertEquals("a@", BasePlugin.normalize(logger, moduleVersionIdentifier, "a."))
-        assertEquals("a@", BasePlugin.normalize(logger, moduleVersionIdentifier, "a "))
-        assertEquals("a@@@", BasePlugin.normalize(logger, moduleVersionIdentifier, "a..."))
-        assertEquals(".app@@", BasePlugin.normalize(logger, moduleVersionIdentifier, ".app%%"))
-        assertEquals("app.txt", BasePlugin.normalize(logger, moduleVersionIdentifier, "app.txt"))
-        assertEquals("app@@@txt", BasePlugin.normalize(logger, moduleVersionIdentifier, "app%*?txt"))
-        assertEquals("", BasePlugin.normalize(logger, moduleVersionIdentifier, ""));
-        assertEquals("a", BasePlugin.normalize(logger, moduleVersionIdentifier, "a"));
-        assertEquals("1", BasePlugin.normalize(logger, moduleVersionIdentifier, "1"));
-        assertNull(BasePlugin.normalize(logger, moduleVersionIdentifier, null));
-
-        // those will generate an exception and return the original value
-        assertEquals(".", BasePlugin.normalize(logger, moduleVersionIdentifier, "."));
-        assertEquals("..", BasePlugin.normalize(logger, moduleVersionIdentifier, ".."))
-        assertEquals("...", BasePlugin.normalize(logger, moduleVersionIdentifier, "..."))
     }
 }

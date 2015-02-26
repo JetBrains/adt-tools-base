@@ -22,13 +22,13 @@ public class ApiCallTest10 extends View {
 
     @Override
     public void onPopulateAccessibilityEvent(AccessibilityEvent event) {
-        super.onPopulateAccessibilityEvent(event); // Valid lint warning
+        super.onPopulateAccessibilityEvent(event); // Not flagged: calling same mehod
         // Additional override code here:
     }
 
     @Override
     protected boolean dispatchGenericFocusedEvent(MotionEvent event) {
-        return super.dispatchGenericFocusedEvent(event); // Should flag this
+        return super.dispatchGenericFocusedEvent(event); // Not flagged: calling same mehod
     }
 
     protected boolean dispatchHoverEvent(int event) {

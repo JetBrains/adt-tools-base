@@ -56,7 +56,7 @@ public class SecureRandomDetector extends Detector implements ClassScanner {
             "Specifying a fixed seed will cause the instance to return a predictable sequence " +
             "of numbers. This may be useful for testing but it is not appropriate for secure use.",
 
-            Category.PERFORMANCE,
+            Category.SECURITY,
             9,
             Severity.WARNING,
             new Implementation(

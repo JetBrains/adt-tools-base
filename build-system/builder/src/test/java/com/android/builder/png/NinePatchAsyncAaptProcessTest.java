@@ -17,27 +17,21 @@
 package com.android.builder.png;
 
 import com.android.annotations.NonNull;
-import com.android.ide.common.internal.CommandLineRunner;
 import com.android.ide.common.internal.PngCruncher;
-import com.android.sdklib.BuildToolInfo;
-import com.android.sdklib.mock.MockLog;
 import com.android.sdklib.repository.FullRevision;
-import com.android.utils.ILogger;
 import com.android.utils.StdLogger;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
 
 import java.io.File;
-import java.io.IOException;
-import java.util.zip.DataFormatException;
 
 /**
  * Asynchronous version of the aapt cruncher test.
  */
 public class NinePatchAsyncAaptProcessTest extends NinePatchAaptProcessorTest {
 
-    private MockLog mLogger = new MockLog();
+    private static StdLogger sLogger = new StdLogger(StdLogger.Level.VERBOSE);
 
     public static Test suite() {
         TestSuite suite = new TestSuite();
@@ -61,23 +55,31 @@ public class NinePatchAsyncAaptProcessTest extends NinePatchAaptProcessorTest {
     }
 
     @Override
-    public void tearSuiteDown() throws IOException, DataFormatException {
-
-        super.tearSuiteDown();
-        for (String message : mLogger.getMessages()) {
-            System.out.println(message);
-        }
+    protected File getAapt() {
+        return super.getAapt(FullRevision.parseRevision("22"));
     }
 
+    /* TODO: Remove this override once build tools 22 is released.
+             Then the tests will fail if build tools 22 is not available, rather than just logging
+             a warning */
     @Override
-    protected File getAapt() {
-        return super.getAapt(FullRevision.parseRevision("21"));
+    protected void runTest() throws Throwable {
+        try {
+            super.runTest();
+        } catch (RuntimeException e) {
+            if (e.getMessage().startsWith("Test requires build-tools 22")) {
+                sLogger.warning("Skipped " + this.getName() + " as it requires build tools 22.");
+
+            } else {
+                throw e;
+            }
+        }
     }
 
     @NonNull
     @Override
     protected PngCruncher getCruncher() {
         File aapt = getAapt();
-        return QueuedCruncher.Builder.INSTANCE.newCruncher(aapt.getAbsolutePath(), mLogger);
+        return QueuedCruncher.Builder.INSTANCE.newCruncher(aapt.getAbsolutePath(), sLogger);
     }
 }

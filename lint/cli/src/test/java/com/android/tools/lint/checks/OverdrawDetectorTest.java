@@ -151,4 +151,20 @@ public class OverdrawDetectorTest extends AbstractCheckTest {
                         "overdraw/res/values/styles.xml=>res/values/styles.xml"
                 ));
     }
-}
+
+    public void testToolsBackground() throws Exception {
+        // Regression test for https://code.google.com/p/android/issues/detail?id=80679
+        // tools:background instead of android:background should not trigger a warning
+        assertEquals(
+                "No warnings.",
+
+                lintProject(
+                        "overdraw/.classpath=>.classpath",
+                        "overdraw/.project=>.project",
+                        "overdraw/AndroidManifest.xml=>AndroidManifest.xml",
+                        "overdraw/project.properties=>project.properties",
+                        "overdraw/res/layout/tools_background.xml=>res/layout/tools_background.xml",
+                        "overdraw/res/values/strings.xml=>res/values/strings.xml",
+                        "overdraw/res/values/styles.xml=>res/values/styles.xml"
+                ));
+    }}

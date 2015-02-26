@@ -1,9 +1,5 @@
 package com.android.tests.basic;
 
-import java.lang.RuntimeException;
-import java.lang.String;
-import java.lang.reflect.Method;
-
 public class StringGetter{
 
     /**

@@ -16,10 +16,8 @@
 package com.example.simplejni;
 
 import android.app.Activity;
-import android.widget.TextView;
 import android.os.Bundle;
-
-import java.lang.StringBuilder;
+import android.widget.TextView;
 
 public class SimpleJni extends Activity {
     /** Called when the activity is first created. */

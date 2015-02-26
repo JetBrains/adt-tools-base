@@ -28,7 +28,11 @@ import java.util.Collection;
  */
 public interface AndroidProject {
     //  Injectable properties to use with -P
+    // Sent by Studio 1.0 ONLY
     String PROPERTY_BUILD_MODEL_ONLY =  "android.injected.build.model.only";
+    // Sent by Studio 1.1+
+    String PROPERTY_BUILD_MODEL_ONLY_ADVANCED =  "android.injected.build.model.only.advanced";
+
     String PROPERTY_INVOKED_FROM_IDE = "android.injected.invoked.from.ide";
 
     String PROPERTY_SIGNING_STORE_FILE = "android.injected.signing.store.file";
@@ -41,6 +45,7 @@ public interface AndroidProject {
 
     String ARTIFACT_MAIN = "_main_";
     String ARTIFACT_ANDROID_TEST = "_android_test_";
+    String ARTIFACT_UNIT_TEST = "_unit_test_";
 
     String FD_INTERMEDIATES = "intermediates";
     String FD_OUTPUTS = "outputs";
@@ -132,31 +137,24 @@ public interface AndroidProject {
 
     /**
      * Returns a list of folders or jar files that contains the framework source code.
-     * @return a list of folders or jar files that contains the framework source code.
      */
     @NonNull
     Collection<File> getFrameworkSources();
 
     /**
      * Returns a list of {@link SigningConfig}.
-     *
-     * @return a map of signing config
      */
     @NonNull
     Collection<SigningConfig> getSigningConfigs();
 
     /**
      * Returns the aapt options.
-     *
-     * @return the aapt options.
      */
     @NonNull
     AaptOptions getAaptOptions();
 
     /**
      * Returns the lint options.
-     *
-     * @return the lint options.
      */
     @NonNull
     LintOptions getLintOptions();
@@ -170,18 +168,28 @@ public interface AndroidProject {
      * com.google.guava:guava:15.0.2
      *
      * @return the dependencies that were not successfully resolved.
+     * @deprecated use {@link #getSyncIssues()}
      */
+    @Deprecated
     @NonNull
     Collection<String> getUnresolvedDependencies();
 
     /**
-     * @return the compile options for Java code.
+     * Returns issues found during sync.  The returned list gets
+     * populated only if the system property {@link #PROPERTY_BUILD_MODEL_ONLY} has been
+     * set to {@code true}.
+     */
+    @NonNull
+    Collection<SyncIssue> getSyncIssues();
+
+    /**
+     * Returns the compile options for Java code.
      */
     @NonNull
     JavaCompileOptions getJavaCompileOptions();
 
     /**
-     * @return the build folder of this project.
+     * Returns the build folder of this project.
      */
     @NonNull
     File getBuildFolder();

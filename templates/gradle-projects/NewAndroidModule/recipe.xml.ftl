@@ -17,16 +17,16 @@
     <instantiate from="AndroidManifest.xml.ftl"
                    to="${escapeXmlAttribute(manifestOut)}/AndroidManifest.xml" />
 
-<#if copyIcons>
-    <mkdir  at="${escapeXmlAttribute(resOut)}/drawable" />
-    <copy from="res/drawable-hdpi"
-            to="${escapeXmlAttribute(resOut)}/drawable-hdpi" />
-    <copy from="res/drawable-mdpi"
-            to="${escapeXmlAttribute(resOut)}/drawable-mdpi" />
-    <copy from="res/drawable-xhdpi"
-            to="${escapeXmlAttribute(resOut)}/drawable-xhdpi" />
-    <copy from="res/drawable-xxhdpi"
-            to="${escapeXmlAttribute(resOut)}/drawable-xxhdpi" />
+<mkdir at="${escapeXmlAttribute(resOut)}/drawable" />
+<#if copyIcons && !isLibraryProject>
+    <copy from="res/mipmap-hdpi"
+            to="${escapeXmlAttribute(resOut)}/mipmap-hdpi" />
+    <copy from="res/mipmap-mdpi"
+            to="${escapeXmlAttribute(resOut)}/mipmap-mdpi" />
+    <copy from="res/mipmap-xhdpi"
+            to="${escapeXmlAttribute(resOut)}/mipmap-xhdpi" />
+    <copy from="res/mipmap-xxhdpi"
+            to="${escapeXmlAttribute(resOut)}/mipmap-xxhdpi" />
 </#if>
 <#if makeIgnore>
     <copy from="module_ignore"

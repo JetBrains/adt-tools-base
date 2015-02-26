@@ -37,9 +37,17 @@ import static com.android.sdklib.SdkVersionInfo.HIGHEST_KNOWN_API;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.FilterData;
+import com.android.build.OutputFile;
+import com.android.builder.model.AndroidArtifact;
+import com.android.builder.model.AndroidArtifactOutput;
 import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.AndroidProject;
+import com.android.builder.model.ProductFlavor;
+import com.android.builder.model.ProductFlavorContainer;
 import com.android.builder.model.Variant;
+import com.android.resources.Density;
+import com.android.resources.ResourceFolderType;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.SdkVersionInfo;
@@ -68,6 +76,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -119,6 +128,7 @@ public class Project {
     protected Boolean mGradleProject;
     protected Boolean mSupportLib;
     protected Boolean mAppCompat;
+    private Map<String, String> mSuperClassMap;
 
     /**
      * Creates a new {@link Project} for the given directory.
@@ -178,6 +188,7 @@ public class Project {
      *
      * @return the project model, or null
      */
+    @SuppressWarnings("UnusedDeclaration")
     @Nullable
     public AndroidLibrary getGradleLibraryModel() {
         return null;
@@ -904,15 +915,6 @@ public class Project {
     }
 
     /**
-     * Sets whether manifest merging is in effect.
-     *
-     * @param merging whether manifest merging is in effect
-     */
-    public void setMergingManifests(boolean merging) {
-        mMergeManifests = merging;
-    }
-
-    /**
      * Returns whether manifest merging is in effect
      *
      * @return true if manifests in library projects should be merged into main projects
@@ -954,6 +956,7 @@ public class Project {
         }
 
         parent = parent.getParentFile();
+        //noinspection RedundantIfStatement
         if (parent == null || !parent.getName().equals("frameworks")) { //$NON-NLS-1$
             return false;
         }
@@ -1195,5 +1198,109 @@ public class Project {
         }
 
         return null;
+    }
+
+    private List<String> mCachedApplicableDensities;
+
+    /**
+     * Returns the set of applicable densities for this project. If null, there are no density
+     * restrictions and all densities apply.
+     *
+     * @return the list of specific densities that apply in this project, or null if all densities
+     * apply
+     */
+    @Nullable
+    public List<String> getApplicableDensities() {
+        if (mCachedApplicableDensities == null) {
+            // Use the gradle API to set up relevant densities. For example, if the
+            // build.gradle file contains this:
+            // android {
+            //     defaultConfig {
+            //         resConfigs "nodpi", "hdpi"
+            //     }
+            // }
+            // ...then we should only enforce hdpi densities, not all these others!
+            if (isGradleProject() && getGradleProjectModel() != null &&
+                    getCurrentVariant() != null) {
+                Set<String> relevantDensities = Sets.newHashSet();
+                Variant variant = getCurrentVariant();
+                List<String> variantFlavors = variant.getProductFlavors();
+                AndroidProject gradleProjectModel = getGradleProjectModel();
+
+                addResConfigsFromFlavor(relevantDensities, null,
+                        getGradleProjectModel().getDefaultConfig());
+                for (ProductFlavorContainer container : gradleProjectModel.getProductFlavors()) {
+                    addResConfigsFromFlavor(relevantDensities, variantFlavors, container);
+                }
+
+                // Are there any splits that specify densities?
+                if (relevantDensities.isEmpty()) {
+                    AndroidArtifact mainArtifact = variant.getMainArtifact();
+                    Collection<AndroidArtifactOutput> outputs = mainArtifact.getOutputs();
+                    for (AndroidArtifactOutput output : outputs) {
+                        for (OutputFile file : output.getOutputs()) {
+                            final String DENSITY_NAME = OutputFile.FilterType.DENSITY.name();
+                            if (file.getFilterTypes().contains(DENSITY_NAME)) {
+                                for (FilterData data : file.getFilters()) {
+                                    if (DENSITY_NAME.equals(data.getFilterType())) {
+                                        relevantDensities.add(data.getIdentifier());
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (!relevantDensities.isEmpty()) {
+                    mCachedApplicableDensities = Lists.newArrayListWithExpectedSize(10);
+                    for (String density : relevantDensities) {
+                        String folder = ResourceFolderType.DRAWABLE.getName() + '-' + density;
+                        mCachedApplicableDensities.add(folder);
+                    }
+                    Collections.sort(mCachedApplicableDensities);
+                } else {
+                    mCachedApplicableDensities = Collections.emptyList();
+                }
+            } else {
+                mCachedApplicableDensities = Collections.emptyList();
+            }
+        }
+
+        return mCachedApplicableDensities.isEmpty() ? null : mCachedApplicableDensities;
+    }
+
+    /**
+     * Returns a super class map for this project. The keys and values are internal
+     * class names (e.g. java/lang/Integer, not java.lang.Integer).
+     * @return a map, possibly empty but never null
+     */
+    @NonNull
+    public Map<String, String> getSuperClassMap() {
+        if (mSuperClassMap == null) {
+            mSuperClassMap = mClient.createSuperClassMap(this);
+        }
+
+        return mSuperClassMap;
+    }
+
+    /**
+     * Adds in the resConfig values specified by the given flavor container, assuming
+     * it's in one of the relevant variantFlavors, into the given set
+     */
+    private static void addResConfigsFromFlavor(@NonNull Set<String> relevantDensities,
+            @Nullable List<String> variantFlavors,
+            @NonNull ProductFlavorContainer container) {
+        ProductFlavor flavor = container.getProductFlavor();
+        if (variantFlavors == null || variantFlavors.contains(flavor.getName())) {
+            if (!flavor.getResourceConfigurations().isEmpty()) {
+                for (String densityName : flavor.getResourceConfigurations()) {
+                    Density density = Density.getEnum(densityName);
+                    if (density != null && density.isRecommended()
+                            && density != Density.NODPI && density != Density.ANYDPI) {
+                        relevantDensities.add(densityName);
+                    }
+                }
+            }
+        }
     }
 }

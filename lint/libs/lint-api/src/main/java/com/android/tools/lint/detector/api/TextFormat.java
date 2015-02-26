@@ -283,6 +283,8 @@ public enum TextFormat {
                         sb.append("&#");                                 //$NON-NLS-1$
                         sb.append(Integer.toString(c));
                         sb.append(';');
+                    } else if (c == '\u00a0') {
+                        sb.append("&nbsp;");                             //$NON-NLS-1$
                     } else {
                         sb.append(c);
                     }

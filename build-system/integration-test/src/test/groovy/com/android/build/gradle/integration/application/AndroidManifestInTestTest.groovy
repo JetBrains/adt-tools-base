@@ -14,26 +14,18 @@
  * limitations under the License.
  */
 
-
-
 package com.android.build.gradle.integration.application
-
-import com.android.annotations.Nullable
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.integration.common.utils.ApkHelper
 import com.android.build.gradle.integration.common.utils.SdkHelper
-import com.android.ide.common.internal.CommandLineRunner
-import com.android.sdklib.repository.FullRevision
-import com.android.utils.StdLogger
-import com.google.common.collect.Lists
+import com.android.ide.common.process.ProcessInfoBuilder
 import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
 
-import static org.junit.Assert.assertTrue
 import static org.junit.Assert.fail
-
 /**
  * Assemble tests for androidManifestInTest.
  */
@@ -45,8 +37,8 @@ class AndroidManifestInTestTest {
             .create()
 
     @BeforeClass
-    static void setup() {
-        project.execute("clean", "assembleDebugTest");
+    static void setUp() {
+        project.execute("clean", "assembleDebugAndroidTest")
     }
 
     @AfterClass
@@ -58,53 +50,34 @@ class AndroidManifestInTestTest {
     void lint() {
         project.execute("lint")
     }
+
+    @Test
     public void testUserProvidedTestAndroidManifest() throws Exception {
-        File testApk = project.getApk("debug", "test", "unaligned")
+        File testApk = project.getApk("debug", "androidTest", "unaligned")
 
-        File aapt = SdkHelper.getAapt(FullRevision.parseRevision("19.1.0"));
+        ProcessInfoBuilder builder = new ProcessInfoBuilder()
+        builder.setExecutable(SdkHelper.getAapt())
 
-        assertTrue("Test requires build-tools 19.1.0", aapt.isFile());
+        builder.addArgs("l", "-a", testApk.getPath())
 
-        String[] command = new String[4];
-        command[0] = aapt.getPath();
-        command[1] = "l";
-        command[2] = "-a";
-        command[3] = testApk.getPath();
-
-        CommandLineRunner commandLineRunner = new CommandLineRunner(new StdLogger(StdLogger.Level.ERROR));
-
-        final List<String> aaptOutput = Lists.newArrayList();
-
-        commandLineRunner.runCmdLine(command, new CommandLineRunner.CommandLineOutput() {
-            @Override
-            public void out(@Nullable String line) {
-                if (line != null) {
-                    aaptOutput.add(line);
-                }
-            }
-            @Override
-            public void err(@Nullable String line) {
-                super.err(line);
-
-            }
-        }, null /*env vars*/);
+        List<String> output = ApkHelper.runAndGetOutput(builder.createProcess())
 
         System.out.println("Beginning dump");
         boolean foundPermission = false;
         boolean foundMetadata = false;
-        for (String line : aaptOutput) {
+        for (String line : output) {
             if (line.contains("foo.permission-group.COST_MONEY")) {
-                foundPermission = true;
+                foundPermission = true
             }
             if (line.contains("meta-data")) {
-                foundMetadata = true;
+                foundMetadata = true
             }
         }
         if (!foundPermission) {
-            fail("Could not find user-specified permission group.");
+            fail("Could not find user-specified permission group.")
         }
         if (!foundMetadata) {
-            fail("Could not find meta-data under instrumentation ");
+            fail("Could not find meta-data under instrumentation ")
         }
     }
 }

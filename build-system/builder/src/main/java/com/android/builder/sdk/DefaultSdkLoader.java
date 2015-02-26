@@ -62,11 +62,13 @@ public class DefaultSdkLoader implements SdkLoader {
 
     public static synchronized SdkLoader getLoader(
             @NonNull File sdkLocation) {
-        if (sLoader != null && !sdkLocation.equals(sLoader.mSdkLocation)) {
+        if (sLoader == null) {
+            sLoader = new DefaultSdkLoader(sdkLocation);
+        } else if (!sdkLocation.equals(sLoader.mSdkLocation)) {
             throw new IllegalStateException("Already created an SDK Loader with different SDK Path");
         }
 
-        return sLoader = new DefaultSdkLoader(sdkLocation);
+        return sLoader;
     }
 
     public static synchronized void unload() {

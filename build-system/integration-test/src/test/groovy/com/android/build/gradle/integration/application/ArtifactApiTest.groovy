@@ -19,18 +19,32 @@
 package com.android.build.gradle.integration.application
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.utils.ModelHelper
-import com.android.builder.model.*
+import com.android.builder.model.AndroidProject
+import com.android.builder.model.ArtifactMetaData
+import com.android.builder.model.BuildTypeContainer
+import com.android.builder.model.Dependencies
+import com.android.builder.model.JavaArtifact
+import com.android.builder.model.ProductFlavorContainer
+import com.android.builder.model.SourceProvider
+import com.android.builder.model.SourceProviderContainer
+import com.android.builder.model.Variant
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
 
 import static com.android.builder.model.AndroidProject.ARTIFACT_ANDROID_TEST
-import static org.junit.Assert.*
+import static com.google.common.truth.Truth.assertThat
+import static org.junit.Assert.assertEquals
+import static org.junit.Assert.assertFalse
+import static org.junit.Assert.assertNotNull
 /**
  * Assemble tests for artifactApi.
  */
 class ArtifactApiTest {
+    // Unit test variants produce an extra Java artifact.
+    private static final DEFAULT_EXTRA_JAVA_ARTIFACTS = 1
+
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
             .fromTestProject("artifactApi")
@@ -38,8 +52,8 @@ class ArtifactApiTest {
     static AndroidProject model
 
     @BeforeClass
-    static void setup() {
-        model = project.getModel()
+    static void setUp() {
+        model = project.getSingleModel()
     }
 
     @AfterClass
@@ -51,50 +65,50 @@ class ArtifactApiTest {
     @Test
     void "check metadata info in model"() {
         // check the Artifact Meta Data
-        Collection<ArtifactMetaData> extraArtifacts = model.getExtraArtifacts();
-        assertNotNull("Extra artifact collection null-check", extraArtifacts);
-        assertEquals("Extra artifact size check", 2, extraArtifacts.size());
+        Collection<ArtifactMetaData> extraArtifacts = model.getExtraArtifacts()
+        assertNotNull("Extra artifact collection null-check", extraArtifacts)
+        assertThat(extraArtifacts).hasSize(DEFAULT_EXTRA_JAVA_ARTIFACTS + 2)
 
         assertNotNull("instrument test metadata null-check",
-                ModelHelper.getArtifactMetaData(extraArtifacts, ARTIFACT_ANDROID_TEST));
+                ModelHelper.getArtifactMetaData(extraArtifacts, ARTIFACT_ANDROID_TEST))
 
         // get the custom one.
         ArtifactMetaData extraArtifactMetaData = ModelHelper.getArtifactMetaData(
-                extraArtifacts, "__test__");
-        assertNotNull("custom extra metadata null-check", extraArtifactMetaData);
-        assertFalse("custom extra meta data is Test check", extraArtifactMetaData.isTest());
+                extraArtifacts, "__test__")
+        assertNotNull("custom extra metadata null-check", extraArtifactMetaData)
+        assertFalse("custom extra meta data is Test check", extraArtifactMetaData.isTest())
         assertEquals("custom extra meta data type check", ArtifactMetaData.TYPE_JAVA,
-                extraArtifactMetaData.getType());
+                extraArtifactMetaData.getType())
     }
 
     @Test
     void "check build types contain extra source provider artifact is in model"() {
         // check the extra source provider on the build Types.
         for (BuildTypeContainer btContainer : model.getBuildTypes()) {
-            String name = btContainer.getBuildType().getName();
-            Collection<SourceProviderContainer> extraSourceProviderContainers = btContainer.getExtraSourceProviders();
+            String name = btContainer.getBuildType().getName()
+            Collection<SourceProviderContainer> extraSourceProviderContainers = btContainer.getExtraSourceProviders()
             assertNotNull(
                     "Extra source provider containers for build type '" + name + "' null-check",
-                    extraSourceProviderContainers);
+                    extraSourceProviderContainers)
             assertEquals(
                     "Extra source provider containers for build type size '" + name + "' check",
-                    1,
-                    extraSourceProviderContainers.size());
+                    DEFAULT_EXTRA_JAVA_ARTIFACTS + 1,
+                    extraSourceProviderContainers.size())
 
-            SourceProviderContainer sourceProviderContainer = extraSourceProviderContainers.iterator().next();
+            SourceProviderContainer sourceProviderContainer = extraSourceProviderContainers.iterator().next()
             assertNotNull(
                     "Extra artifact source provider for " + name + " null check",
-                    sourceProviderContainer);
+                    sourceProviderContainer)
 
             assertEquals(
                     "Extra artifact source provider for " + name + " name check",
                     "__test__",
-                    sourceProviderContainer.getArtifactName());
+                    sourceProviderContainer.getArtifactName())
 
             assertEquals(
                     "Extra artifact source provider for " + name + " value check",
                     "buildType:" + name,
-                    sourceProviderContainer.getSourceProvider().getManifestFile().getPath());
+                    sourceProviderContainer.getSourceProvider().getManifestFile().getPath())
         }
     }
 
@@ -102,63 +116,62 @@ class ArtifactApiTest {
     void "check product flavors contain extra source provider artifact is in model"() {
         // check the extra source provider on the product flavors.
         for (ProductFlavorContainer pfContainer : model.getProductFlavors()) {
-            String name = pfContainer.getProductFlavor().getName();
+            String name = pfContainer.getProductFlavor().getName()
             Collection<SourceProviderContainer> extraSourceProviderContainers = pfContainer.
-                    getExtraSourceProviders();
+                    getExtraSourceProviders()
             assertNotNull(
                     "Extra source provider container for product flavor '" + name + "' null-check",
-                    extraSourceProviderContainers);
+                    extraSourceProviderContainers)
             assertEquals(
                     "Extra artifact source provider container for product flavor size '" + name +
                             "' check",
-                    2,
-                    extraSourceProviderContainers.size());
+                    3, // unit test, android test, extra provider from the API
+                    extraSourceProviderContainers.size())
 
             assertNotNull(
                     "Extra source provider container for product flavor '" + name +
                             "': instTest check",
                     ModelHelper.getSourceProviderContainer(extraSourceProviderContainers,
-                            ARTIFACT_ANDROID_TEST));
+                            ARTIFACT_ANDROID_TEST))
 
 
             SourceProviderContainer sourceProviderContainer = ModelHelper.
                     getSourceProviderContainer(
-                            extraSourceProviderContainers, "__test__");
+                            extraSourceProviderContainers, "__test__")
             assertNotNull(
                     "Custom source provider container for " + name + " null check",
-                    sourceProviderContainer);
+                    sourceProviderContainer)
 
             assertEquals(
                     "Custom artifact source provider for " + name + " name check",
                     "__test__",
-                    sourceProviderContainer.getArtifactName());
+                    sourceProviderContainer.getArtifactName())
 
             assertEquals(
                     "Extra artifact source provider for " + name + " value check",
                     "productFlavor:" + name,
-                    sourceProviderContainer.getSourceProvider().getManifestFile().getPath());
+                    sourceProviderContainer.getSourceProvider().getManifestFile().getPath())
         }
     }
 
     @Test
     void "check extra artifact is in variants"() {
         for (Variant variant : model.getVariants()) {
-            String name = variant.getName();
-            Collection<JavaArtifact> javaArtifacts = variant.getExtraJavaArtifacts();
-            assertEquals(1, javaArtifacts.size());
-            JavaArtifact javaArtifact = javaArtifacts.iterator().next();
-            assertEquals("__test__", javaArtifact.getName());
-            assertEquals("assemble:" + name, javaArtifact.getAssembleTaskName());
-            assertEquals("compile:" + name, javaArtifact.getCompileTaskName());
-            assertEquals(new File("classesFolder:" + name), javaArtifact.getClassesFolder());
+            String name = variant.getName()
+            Collection<JavaArtifact> javaArtifacts = variant.getExtraJavaArtifacts()
+            assertThat(javaArtifacts).hasSize(DEFAULT_EXTRA_JAVA_ARTIFACTS + 1)
+            JavaArtifact javaArtifact = javaArtifacts.find {it.name == "__test__"}
+            assertEquals("assemble:" + name, javaArtifact.getAssembleTaskName())
+            assertEquals("compile:" + name, javaArtifact.getCompileTaskName())
+            assertEquals(new File("classesFolder:" + name), javaArtifact.getClassesFolder())
 
-            SourceProvider variantSourceProvider = javaArtifact.getVariantSourceProvider();
-            assertNotNull(variantSourceProvider);
-            assertEquals("provider:" + name, variantSourceProvider.getManifestFile().getPath());
+            SourceProvider variantSourceProvider = javaArtifact.getVariantSourceProvider()
+            assertNotNull(variantSourceProvider)
+            assertEquals("provider:" + name, variantSourceProvider.getManifestFile().getPath())
 
-            Dependencies deps = javaArtifact.getDependencies();
-            assertNotNull("java artifact deps null-check", deps);
-            assertFalse(deps.getJavaLibraries().isEmpty());
+            Dependencies deps = javaArtifact.getDependencies()
+            assertNotNull("java artifact deps null-check", deps)
+            assertFalse(deps.getJavaLibraries().isEmpty())
         }
     }
 }

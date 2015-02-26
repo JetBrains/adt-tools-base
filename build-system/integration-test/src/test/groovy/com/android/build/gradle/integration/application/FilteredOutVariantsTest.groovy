@@ -15,6 +15,7 @@
  */
 
 package com.android.build.gradle.integration.application
+
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.builder.model.AndroidProject
 import com.android.builder.model.Variant
@@ -23,8 +24,8 @@ import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
 
-import static org.junit.Assert.assertFalse
 import static org.junit.Assert.assertEquals
+import static org.junit.Assert.assertFalse
 
 /**
  * Assemble tests for filteredOutVariants.
@@ -37,7 +38,7 @@ class FilteredOutVariantsTest {
     static AndroidProject model
 
     @BeforeClass
-    static void setup() {
+    static void setUp() {
         model = project.executeAndReturnModel("clean", "assembleDebug")
     }
 
@@ -49,7 +50,7 @@ class FilteredOutVariantsTest {
 
     @Test
     void "check filtered out variant isn't in model"() {
-        Collection<Variant> variants = model.getVariants();
+        Collection<Variant> variants = model.getVariants()
         // check we have the right number of variants:
         // arm/cupcake, arm/gingerbread, x86/gingerbread, mips/gingerbread
         // all 4 in release and debug

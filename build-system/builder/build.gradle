@@ -26,11 +26,17 @@ dependencies {
     compile 'com.squareup:javawriter:2.5.0'
     compile 'org.bouncycastle:bcpkix-jdk15on:1.48'
     compile 'org.bouncycastle:bcprov-jdk15on:1.48'
+    compile 'org.ow2.asm:asm:5.0.3'
+    compile 'org.ow2.asm:asm-tree:5.0.3'
 
     testCompile 'junit:junit:3.8.1'
     testCompile 'org.mockito:mockito-all:1.9.5'
     testCompile project(':base:testutils')
     testCompile project(':base:sdklib').sourceSets.test.output
+}
+
+test {
+    maxParallelForks = Runtime.runtime.availableProcessors() / 2
 }
 
 group = 'com.android.tools.build'

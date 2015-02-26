@@ -261,7 +261,7 @@ public class ApiDetector extends ResourceXmlDetector
             "Attribute unused on older versions",
 
             "This check finds attributes set in XML files that were introduced in a version " +
-            "newer than the oldest version targeted by your application (with the the " +
+            "newer than the oldest version targeted by your application (with the " +
             "`minSdkVersion` attribute).\n" +
             "\n" +
             "This is not an error; the application will simply ignore the attribute. However, " +
@@ -861,6 +861,22 @@ public class ApiDetector extends ResourceXmlDetector
                                     "Enum for switch requires API level %1$d " +
                                     "(current min is %2$d): `%3$s`",
                                     api, minSdk, ClassContext.getFqcn(owner));
+                            }
+
+                            // If you're simply calling super.X from method X, even if method X
+                            // is in a higher API level than the minSdk, we're generally safe;
+                            // that method should only be called by the framework on the right
+                            // API levels. (There is a danger of somebody calling that method
+                            // locally in other contexts, but this is hopefully unlikely.)
+                            if (instruction.getOpcode() == Opcodes.INVOKESPECIAL &&
+                                    name.equals(method.name) && desc.equals(method.desc) &&
+                                    // We specifically exclude constructors from this check,
+                                    // because we do want to flag constructors requiring the
+                                    // new API level; it's highly likely that the constructor
+                                    // is called by local code so you should specifically
+                                    // investigate this as a developer
+                                    !name.equals(CONSTRUCTOR_NAME)) {
+                                break;
                             }
 
                             report(context, message, node, method, name, null,

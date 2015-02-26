@@ -17,11 +17,11 @@
 package com.example.android.rs.hellocompute;
 
 import android.app.Activity;
-import android.os.Bundle;
-import android.graphics.BitmapFactory;
 import android.graphics.Bitmap;
-import android.renderscript.RenderScript;
+import android.graphics.BitmapFactory;
+import android.os.Bundle;
 import android.renderscript.Allocation;
+import android.renderscript.RenderScript;
 import android.widget.ImageView;
 
 public class HelloCompute extends Activity {

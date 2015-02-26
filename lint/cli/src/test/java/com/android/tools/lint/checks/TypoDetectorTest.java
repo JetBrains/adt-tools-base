@@ -97,6 +97,34 @@ public class TypoDetectorTest extends AbstractCheckTest {
             lintProject("res/values/typos.xml=>res/values-en-rUS/strings-en.xml"));
     }
 
+    public void testEnLanguageBcp47() throws Exception {
+        // Check BCP-47 locale declaration for English
+        assertEquals(
+                "res/values-b+en+USA/strings-en.xml:6: Warning: \"Andriod\" is a common misspelling; did you mean \"Android\" ? [Typos]\n" +
+                "    <string name=\"s2\">Andriod activites!</string>\n" +
+                "                      ^\n" +
+                "res/values-b+en+USA/strings-en.xml:6: Warning: \"activites\" is a common misspelling; did you mean \"activities\" ? [Typos]\n" +
+                "    <string name=\"s2\">Andriod activites!</string>\n" +
+                "                              ^\n" +
+                "res/values-b+en+USA/strings-en.xml:8: Warning: \"Cmoputer\" is a common misspelling; did you mean \"Computer\" ? [Typos]\n" +
+                "    <string name=\"s3\"> (Cmoputer </string>\n" +
+                "                        ^\n" +
+                "res/values-b+en+USA/strings-en.xml:10: Warning: \"throught\" is a common misspelling; did you mean \"thought\" or \"through\" or \"throughout\" ? [Typos]\n" +
+                "    <string name=\"s4\"><b>throught</b></string>\n" +
+                "                         ^\n" +
+                "res/values-b+en+USA/strings-en.xml:12: Warning: \"Seach\" is a common misspelling; did you mean \"Search\" ? [Typos]\n" +
+                "    <string name=\"s5\">Seach</string>\n" +
+                "                      ^\n" +
+                "res/values-b+en+USA/strings-en.xml:16: Warning: \"Tuscon\" is a common misspelling; did you mean \"Tucson\" ? [Typos]\n" +
+                "    <string name=\"s7\">Tuscon tuscon</string>\n" +
+                "                      ^\n" +
+                "res/values-b+en+USA/strings-en.xml:20: Warning: \"Ok\" is usually capitalized as \"OK\" [Typos]\n" +
+                "    <string name=\"dlg_button_ok\">Ok</string>\n" +
+                "                                 ^\n" +
+                "0 errors, 7 warnings\n",
+                lintProject("res/values/typos.xml=>res/values-b+en+USA/strings-en.xml"));
+    }
+
     public void testNorwegian() throws Exception {
         // UTF-8 handling
         assertEquals(
@@ -165,5 +193,20 @@ public class TypoDetectorTest extends AbstractCheckTest {
             "0 errors, 2 warnings\n",
 
             lintProject("res/values-nb/typos_locale.xml=>res/values/typos.xml"));
+    }
+
+
+    public void testPluralsAndStringArrays() throws Exception {
+        // Regression test for https://code.google.com/p/android/issues/detail?id=82588
+        assertEquals(""
+                + "res/values/plurals_typography.xml:8: Warning: \"Andriod\" is a common misspelling; did you mean \"Android\" ? [Typos]\n"
+                + "        <item quantity=\"other\">Andriod</item>\n"
+                + "                               ^\n"
+                + "res/values/plurals_typography.xml:13: Warning: \"Seach\" is a common misspelling; did you mean \"Search\" ? [Typos]\n"
+                + "        <item>Seach</item>\n"
+                + "              ^\n"
+                + "0 errors, 2 warnings\n",
+
+                lintProject("res/values/plurals_typography.xml"));
     }
 }

@@ -16,12 +16,12 @@
 
 package com.android.tests.flavorlib.lib;
 
+import com.android.tests.flavorlib.lib.R;
+
 import android.test.ActivityInstrumentationTestCase2;
 import android.test.suitebuilder.annotation.MediumTest;
 import android.test.suitebuilder.annotation.SmallTest;
 import android.widget.TextView;
-
-import com.android.tests.flavorlib.lib.R;
 
 /**
  * An example of an {@link ActivityInstrumentationTestCase2} of a specific activity {@link Focus2}.

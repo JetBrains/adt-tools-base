@@ -82,6 +82,7 @@ final class Device implements IDevice {
     private static final char SEPARATOR = '-';
     private static final String UNKNOWN_PACKAGE = "";   //$NON-NLS-1$
 
+    private static final long GET_PROP_TIMEOUT_MS = 100;
     private static final long INSTALL_TIMEOUT_MINUTES;
 
     static {
@@ -214,10 +215,8 @@ final class Device implements IDevice {
             String model = null;
 
             try {
-                manufacturer = cleanupStringForDisplay(
-                    getSystemProperty(PROP_DEVICE_MANUFACTURER).get());
-                model = cleanupStringForDisplay(
-                        getSystemProperty(PROP_DEVICE_MODEL).get());
+                manufacturer = cleanupStringForDisplay(getProperty(PROP_DEVICE_MANUFACTURER));
+                model = cleanupStringForDisplay(getProperty(PROP_DEVICE_MODEL));
             } catch (Exception e) {
                 // If there are exceptions thrown while attempting to get these properties,
                 // we can just use the serial number, so ignore these exceptions.
@@ -302,7 +301,7 @@ final class Device implements IDevice {
     public String getProperty(String name) {
         Future<String> future = mPropFetcher.getProperty(name);
         try {
-            return future.get(1, TimeUnit.MILLISECONDS);
+            return future.get(GET_PROP_TIMEOUT_MS, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
             // ignore
         } catch (ExecutionException e) {
@@ -377,7 +376,11 @@ final class Device implements IDevice {
     public boolean supportsFeature(@NonNull HardwareFeature feature) {
         if (mHardwareCharacteristics == null) {
             try {
-                String characteristics = getSystemProperty(PROP_BUILD_CHARACTERISTICS).get();
+                String characteristics = getProperty(PROP_BUILD_CHARACTERISTICS);
+                if (characteristics == null) {
+                    return false;
+                }
+
                 mHardwareCharacteristics = Sets.newHashSet(Splitter.on(',').split(characteristics));
             } catch (Exception e) {
                 mHardwareCharacteristics = Collections.emptySet();
@@ -393,7 +396,8 @@ final class Device implements IDevice {
         }
 
         try {
-            mApiLevel = Integer.parseInt(getSystemProperty(PROP_BUILD_API_LEVEL).get());
+            String buildApi = getProperty(PROP_BUILD_API_LEVEL);
+            mApiLevel = buildApi == null ? -1 : Integer.parseInt(buildApi);
             return mApiLevel;
         } catch (Exception e) {
             return -1;
@@ -493,7 +497,13 @@ final class Device implements IDevice {
     @Override
     public RawImage getScreenshot()
             throws TimeoutException, AdbCommandRejectedException, IOException {
-        return AdbHelper.getFrameBuffer(AndroidDebugBridge.getSocketAddress(), this);
+        return getScreenshot(0, TimeUnit.MILLISECONDS);
+    }
+
+    @Override
+    public RawImage getScreenshot(long timeout, TimeUnit unit)
+            throws TimeoutException, AdbCommandRejectedException, IOException {
+        return AdbHelper.getFrameBuffer(AndroidDebugBridge.getSocketAddress(), this, timeout, unit);
     }
 
     @Override
@@ -849,8 +859,18 @@ final class Device implements IDevice {
 
         assert(!apkFilePaths.isEmpty());
         if (getApiLevel() < 21) {
+            Log.w("Internal error : installPackages invoked with device < 21 for %s",
+                    Joiner.on(",").join(apkFilePaths));
+
+            if (apkFilePaths.size() == 1) {
+                installPackage(apkFilePaths.get(0), reinstall, extraArgs);
+                return;
+            }
+            Log.e("Internal error : installPackages invoked with device < 21 for multiple APK : %s",
+                    Joiner.on(",").join(apkFilePaths));
             throw new InstallException(
-                    "This multi-apk application requires a device with API level 21+");
+                    "Internal error : installPackages invoked with device < 21 for multiple APK : "
+                            + Joiner.on(",").join(apkFilePaths));
         }
         String mainPackageFilePath = apkFilePaths.get(0);
         Log.d(mainPackageFilePath,
@@ -1201,5 +1221,15 @@ final class Device implements IDevice {
         }
 
         return 0;
+    }
+
+    @Override
+    public String getLanguage() {
+        return getProperty(IDevice.PROP_DEVICE_LANGUAGE);
+    }
+
+    @Override
+    public String getRegion() {
+        return getProperty(IDevice.PROP_DEVICE_REGION);
     }
 }

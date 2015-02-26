@@ -24,10 +24,12 @@ import com.android.annotations.Nullable;
 import com.android.sdklib.IAndroidTarget;
 import com.android.tools.lint.client.api.JavaParser;
 import com.android.tools.lint.client.api.LintClient;
+import com.android.tools.lint.detector.api.ClassContext;
 import com.android.tools.lint.detector.api.JavaContext;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Project;
 import com.android.tools.lint.detector.api.Scope;
+import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -41,6 +43,7 @@ import org.eclipse.jdt.internal.compiler.ICompilerRequestor;
 import org.eclipse.jdt.internal.compiler.IErrorHandlingPolicy;
 import org.eclipse.jdt.internal.compiler.IProblemFactory;
 import org.eclipse.jdt.internal.compiler.ast.AbstractMethodDeclaration;
+import org.eclipse.jdt.internal.compiler.ast.AbstractVariableDeclaration;
 import org.eclipse.jdt.internal.compiler.ast.AllocationExpression;
 import org.eclipse.jdt.internal.compiler.ast.Annotation;
 import org.eclipse.jdt.internal.compiler.ast.CharLiteral;
@@ -49,9 +52,11 @@ import org.eclipse.jdt.internal.compiler.ast.DoubleLiteral;
 import org.eclipse.jdt.internal.compiler.ast.ExplicitConstructorCall;
 import org.eclipse.jdt.internal.compiler.ast.Expression;
 import org.eclipse.jdt.internal.compiler.ast.FalseLiteral;
+import org.eclipse.jdt.internal.compiler.ast.FieldDeclaration;
 import org.eclipse.jdt.internal.compiler.ast.FloatLiteral;
 import org.eclipse.jdt.internal.compiler.ast.IntLiteral;
 import org.eclipse.jdt.internal.compiler.ast.Literal;
+import org.eclipse.jdt.internal.compiler.ast.LocalDeclaration;
 import org.eclipse.jdt.internal.compiler.ast.LongLiteral;
 import org.eclipse.jdt.internal.compiler.ast.MagicLiteral;
 import org.eclipse.jdt.internal.compiler.ast.MessageSend;
@@ -67,6 +72,7 @@ import org.eclipse.jdt.internal.compiler.batch.FileSystem;
 import org.eclipse.jdt.internal.compiler.classfmt.ClassFileConstants;
 import org.eclipse.jdt.internal.compiler.env.ICompilationUnit;
 import org.eclipse.jdt.internal.compiler.env.INameEnvironment;
+import org.eclipse.jdt.internal.compiler.env.NameEnvironmentAnswer;
 import org.eclipse.jdt.internal.compiler.impl.BooleanConstant;
 import org.eclipse.jdt.internal.compiler.impl.ByteConstant;
 import org.eclipse.jdt.internal.compiler.impl.CharConstant;
@@ -78,14 +84,18 @@ import org.eclipse.jdt.internal.compiler.impl.IntConstant;
 import org.eclipse.jdt.internal.compiler.impl.LongConstant;
 import org.eclipse.jdt.internal.compiler.impl.ShortConstant;
 import org.eclipse.jdt.internal.compiler.impl.StringConstant;
+import org.eclipse.jdt.internal.compiler.lookup.AnnotationBinding;
 import org.eclipse.jdt.internal.compiler.lookup.Binding;
+import org.eclipse.jdt.internal.compiler.lookup.ElementValuePair;
 import org.eclipse.jdt.internal.compiler.lookup.FieldBinding;
 import org.eclipse.jdt.internal.compiler.lookup.LocalVariableBinding;
+import org.eclipse.jdt.internal.compiler.lookup.LookupEnvironment;
 import org.eclipse.jdt.internal.compiler.lookup.MethodBinding;
 import org.eclipse.jdt.internal.compiler.lookup.NestedTypeBinding;
 import org.eclipse.jdt.internal.compiler.lookup.ProblemBinding;
 import org.eclipse.jdt.internal.compiler.lookup.ProblemFieldBinding;
 import org.eclipse.jdt.internal.compiler.lookup.ProblemMethodBinding;
+import org.eclipse.jdt.internal.compiler.lookup.ProblemReferenceBinding;
 import org.eclipse.jdt.internal.compiler.lookup.ReferenceBinding;
 import org.eclipse.jdt.internal.compiler.lookup.TypeBinding;
 import org.eclipse.jdt.internal.compiler.lookup.TypeConstants;
@@ -105,6 +115,7 @@ import java.util.Set;
 import lombok.ast.Node;
 import lombok.ast.VariableDeclaration;
 import lombok.ast.VariableDefinition;
+import lombok.ast.VariableDefinitionEntry;
 import lombok.ast.ecj.EcjTreeConverter;
 
 /**
@@ -118,6 +129,7 @@ public class EcjParser extends JavaParser {
     private Map<File, ICompilationUnit> mSourceUnits;
     private Map<ICompilationUnit, CompilationUnitDeclaration> mCompiled;
     private Parser mParser;
+    private INameEnvironment mEnvironment;
 
     public EcjParser(@NonNull LintCliClient client, @Nullable Project project) {
         mClient = client;
@@ -158,6 +170,7 @@ public class EcjParser extends JavaParser {
         options.reportUnusedParameterWhenOverridingConcrete = false;
         options.suppressWarnings = true;
         options.processAnnotations = true;
+        options.storeAnnotations = true;
         options.verbose = false;
         return options;
     }
@@ -209,7 +222,7 @@ public class EcjParser extends JavaParser {
         List<String> classPath = computeClassPath(contexts);
         mCompiled = Maps.newHashMapWithExpectedSize(mSourceUnits.size());
         try {
-            parse(createCompilerOptions(), sources, classPath, mCompiled, mClient);
+            mEnvironment = parse(createCompilerOptions(), sources, classPath, mCompiled, mClient);
         } catch (Throwable t) {
             mClient.log(t, "ECJ compiler crashed");
         }
@@ -235,7 +248,7 @@ public class EcjParser extends JavaParser {
     }
 
     /** Parse the given source units and class path and store it into the given output map */
-    public static void parse(
+    public static INameEnvironment parse(
             CompilerOptions options,
             @NonNull List<ICompilationUnit> sourceUnits,
             @NonNull List<String> classPath,
@@ -260,6 +273,8 @@ public class EcjParser extends JavaParser {
         try {
             compiler.compile(sourceUnits.toArray(new ICompilationUnit[sourceUnits.size()]));
         } catch (OutOfMemoryError e) {
+            environment.cleanup();
+
             // Since we're running out of memory, if it's all still held we could potentially
             // fail attempting to log the failure. Actively get rid of the large ECJ data
             // structure references first so minimize the chance of that
@@ -296,7 +311,14 @@ public class EcjParser extends JavaParser {
             } else {
                 t.printStackTrace();
             }
+
+            if (environment != null) {
+                environment.cleanup();
+                environment = null;
+            }
         }
+
+        return environment;
     }
 
     @NonNull
@@ -460,6 +482,14 @@ public class EcjParser extends JavaParser {
         }
     }
 
+    @Override
+    public void dispose() {
+        if (mEnvironment != null) {
+            mEnvironment.cleanup();
+            mEnvironment = null;
+        }
+    }
+
     @Nullable
     private static Object getNativeNode(@NonNull Node node) {
         Object nativeNode = node.getNativeNode();
@@ -478,6 +508,9 @@ public class EcjParser extends JavaParser {
             }
         }
 
+        if (node instanceof VariableDefinitionEntry) {
+            node = node.getParent().getParent();
+        }
         if (node instanceof VariableDeclaration) {
             VariableDeclaration declaration = (VariableDeclaration) node;
             VariableDefinition definition = declaration.astDefinition();
@@ -516,6 +549,12 @@ public class EcjParser extends JavaParser {
             return resolve(((Annotation) nativeNode).resolvedType);
         } else if (nativeNode instanceof AbstractMethodDeclaration) {
             return resolve(((AbstractMethodDeclaration) nativeNode).binding);
+        } else if (nativeNode instanceof AbstractVariableDeclaration) {
+            if (nativeNode instanceof LocalDeclaration) {
+                return resolve(((LocalDeclaration) nativeNode).binding);
+            } else if (nativeNode instanceof FieldDeclaration) {
+                return resolve(((FieldDeclaration) nativeNode).binding);
+            }
         }
 
         // TODO: Handle org.eclipse.jdt.internal.compiler.ast.SuperReference. It
@@ -633,11 +672,44 @@ public class EcjParser extends JavaParser {
     }
 
     @Nullable
+    @Override
+    public ResolvedClass findClass(@NonNull JavaContext context,
+            @NonNull String fullyQualifiedName) {
+        Node compilationUnit = context.getCompilationUnit();
+        if (compilationUnit == null) {
+            return null;
+        }
+        Object nativeObj = getNativeNode(compilationUnit);
+        if (!(nativeObj instanceof CompilationUnitDeclaration)) {
+            return null;
+        }
+        CompilationUnitDeclaration ecjUnit = (CompilationUnitDeclaration) nativeObj;
+
+        // Convert "foo.bar.Baz" into char[][] 'foo','bar','Baz' as required for
+        // ECJ name lookup
+        List<char[]> arrays = Lists.newArrayList();
+        for (String segment : Splitter.on('.').split(fullyQualifiedName)) {
+            arrays.add(segment.toCharArray());
+        }
+        char[][] compoundName = new char[arrays.size()][];
+        for (int i = 0, n = arrays.size(); i < n; i++) {
+            compoundName[i] = arrays.get(i);
+        }
+
+        Binding typeOrPackage = ecjUnit.scope.getTypeOrPackage(compoundName);
+        if (typeOrPackage instanceof TypeBinding && !(typeOrPackage instanceof ProblemReferenceBinding)) {
+            return new EcjResolvedClass((TypeBinding)typeOrPackage);
+        }
+
+        return null;
+    }
+
+    @Nullable
     private static TypeDescriptor getTypeDescriptor(@Nullable TypeBinding resolvedType) {
         if (resolvedType == null) {
             return null;
         }
-        return new EcjTypeDescriptor(resolvedType.readableName());
+        return new EcjTypeDescriptor(resolvedType);
     }
 
     private static TypeDescriptor getTypeDescriptor(String fqn) {
@@ -729,20 +801,26 @@ public class EcjParser extends JavaParser {
     }
 
     private static class EcjTypeDescriptor extends TypeDescriptor {
-        private String mName;
-        private char[] mChars;
+        private final TypeBinding mBinding;
 
-        private EcjTypeDescriptor(char[] chars) {
-            mChars = chars;
+        private EcjTypeDescriptor(@NonNull TypeBinding binding) {
+            mBinding = binding;
         }
 
         @NonNull
         @Override
         public String getName() {
-            if (mName == null) {
-                mName = new String(mChars);
-            }
-            return mName;
+            return new String(mBinding.readableName());
+        }
+
+        @Override
+        public boolean matchesName(@NonNull String name) {
+            return sameChars(name, mBinding.readableName());
+        }
+
+        @Override
+        public boolean matchesSignature(@NonNull String signature) {
+            return sameChars(signature, mBinding.readableName());
         }
 
         @NonNull
@@ -752,18 +830,35 @@ public class EcjParser extends JavaParser {
         }
 
         @Override
-        public boolean matchesName(@NonNull String name) {
-            return sameChars(name, mChars);
+        @Nullable
+        public ResolvedClass getTypeClass() {
+            if (!mBinding.isPrimitiveType()) {
+                return new EcjResolvedClass(mBinding);
+            }
+            return null;
         }
 
         @Override
-        public boolean matchesSignature(@NonNull String signature) {
-            return matchesName(signature);
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            EcjTypeDescriptor that = (EcjTypeDescriptor) o;
+
+            if (!mBinding.equals(that.mBinding)) {
+                return false;
+            }
+
+            return true;
         }
 
         @Override
-        public String toString() {
-            return getSignature();
+        public int hashCode() {
+            return mBinding.hashCode();
         }
     }
 
@@ -819,6 +914,22 @@ public class EcjParser extends JavaParser {
             return mBinding.isConstructor();
         }
 
+        @NonNull
+        @Override
+        public Iterable<ResolvedAnnotation> getAnnotations() {
+            AnnotationBinding[] annotations = mBinding.getAnnotations();
+            int count = annotations.length;
+            if (count > 0) {
+                List<ResolvedAnnotation> result = Lists.newArrayListWithExpectedSize(count);
+                for (AnnotationBinding annotation : annotations) {
+                    result.add(new EcjResolvedAnnotation(annotation));
+                }
+                return result;
+            }
+
+            return Collections.emptyList();
+        }
+
         @Override
         public int getModifiers() {
             return mBinding.getAccessFlags();
@@ -828,10 +939,33 @@ public class EcjParser extends JavaParser {
         public String getSignature() {
             return mBinding.toString();
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            EcjResolvedMethod that = (EcjResolvedMethod) o;
+
+            if (mBinding != null ? !mBinding.equals(that.mBinding) : that.mBinding != null) {
+                return false;
+            }
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            return mBinding != null ? mBinding.hashCode() : 0;
+        }
     }
 
     private static class EcjResolvedClass extends ResolvedClass {
-        private TypeBinding mBinding;
+        private final TypeBinding mBinding;
 
         private EcjResolvedClass(TypeBinding binding) {
             mBinding = binding;
@@ -841,6 +975,12 @@ public class EcjParser extends JavaParser {
         @Override
         public String getName() {
             return new String(mBinding.readableName());
+        }
+
+        @NonNull
+        @Override
+        public String getSimpleName() {
+            return new String(mBinding.shortReadableName());
         }
 
         @Override
@@ -917,12 +1057,25 @@ public class EcjParser extends JavaParser {
         @NonNull
         public Iterable<ResolvedMethod> getMethods(@NonNull String name,
                 boolean includeInherited) {
+            return findMethods(name, includeInherited);
+        }
+
+        @Override
+        @NonNull
+        public Iterable<ResolvedMethod> getMethods(boolean includeInherited) {
+            return findMethods(null, includeInherited);
+        }
+
+        @NonNull
+        private Iterable<ResolvedMethod> findMethods(@Nullable String name,
+                boolean includeInherited) {
             if (mBinding instanceof ReferenceBinding) {
                 ReferenceBinding cls = (ReferenceBinding) mBinding;
                 if (includeInherited) {
                     List<ResolvedMethod> result = null;
                     while (cls != null) {
-                        MethodBinding[] methods = cls.getMethods(name.toCharArray());
+                        MethodBinding[] methods =
+                                name != null ? cls.getMethods(name.toCharArray()) : cls.methods();
                         if (methods != null) {
                             int count = methods.length;
                             if (count > 0) {
@@ -954,7 +1107,8 @@ public class EcjParser extends JavaParser {
 
                     return result != null ? result : Collections.<ResolvedMethod>emptyList();
                 } else {
-                    MethodBinding[] methods = cls.getMethods(name.toCharArray());
+                    MethodBinding[] methods =
+                            name != null ? cls.getMethods(name.toCharArray()) : cls.methods();
                     if (methods != null) {
                         int count = methods.length;
                         List<ResolvedMethod> result = Lists.newArrayListWithExpectedSize(count);
@@ -965,6 +1119,25 @@ public class EcjParser extends JavaParser {
                         }
                         return result;
                     }
+                }
+            }
+
+            return Collections.emptyList();
+        }
+
+        @NonNull
+        @Override
+        public Iterable<ResolvedAnnotation> getAnnotations() {
+            if (mBinding instanceof ReferenceBinding) {
+                ReferenceBinding cls = (ReferenceBinding) mBinding;
+                AnnotationBinding[] annotations = cls.getAnnotations();
+                int count = annotations.length;
+                if (count > 0) {
+                    List<ResolvedAnnotation> result = Lists.newArrayListWithExpectedSize(count);
+                    for (AnnotationBinding annotation : annotations) {
+                        result.add(new EcjResolvedAnnotation(annotation));
+                    }
+                    return result;
                 }
             }
 
@@ -1010,6 +1183,29 @@ public class EcjParser extends JavaParser {
         @Override
         public String getSignature() {
             return getName();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            EcjResolvedClass that = (EcjResolvedClass) o;
+
+            if (mBinding != null ? !mBinding.equals(that.mBinding) : that.mBinding != null) {
+                return false;
+            }
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            return mBinding != null ? mBinding.hashCode() : 0;
         }
     }
 
@@ -1073,6 +1269,22 @@ public class EcjParser extends JavaParser {
             return null;
         }
 
+        @NonNull
+        @Override
+        public Iterable<ResolvedAnnotation> getAnnotations() {
+            AnnotationBinding[] annotations = mBinding.getAnnotations();
+            int count = annotations.length;
+            if (count > 0) {
+                List<ResolvedAnnotation> result = Lists.newArrayListWithExpectedSize(count);
+                for (AnnotationBinding annotation : annotations) {
+                    result.add(new EcjResolvedAnnotation(annotation));
+                }
+                return result;
+            }
+
+            return Collections.emptyList();
+        }
+
         @Override
         public int getModifiers() {
             return mBinding.getAccessFlags();
@@ -1081,6 +1293,29 @@ public class EcjParser extends JavaParser {
         @Override
         public String getSignature() {
             return mBinding.toString();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            EcjResolvedField that = (EcjResolvedField) o;
+
+            if (mBinding != null ? !mBinding.equals(that.mBinding) : that.mBinding != null) {
+                return false;
+            }
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            return mBinding != null ? mBinding.hashCode() : 0;
         }
     }
 
@@ -1118,6 +1353,119 @@ public class EcjParser extends JavaParser {
         @Override
         public String getSignature() {
             return mBinding.toString();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            EcjResolvedVariable that = (EcjResolvedVariable) o;
+
+            if (mBinding != null ? !mBinding.equals(that.mBinding) : that.mBinding != null) {
+                return false;
+            }
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            return mBinding != null ? mBinding.hashCode() : 0;
+        }
+    }
+
+    private static class EcjResolvedAnnotation extends ResolvedAnnotation {
+        private AnnotationBinding mBinding;
+
+        private EcjResolvedAnnotation(final AnnotationBinding binding) {
+            mBinding = binding;
+        }
+
+        @NonNull
+        @Override
+        public String getName() {
+            return new String(mBinding.getAnnotationType().readableName());
+        }
+
+        @Override
+        public boolean matches(@NonNull String name) {
+            return sameChars(name, mBinding.getAnnotationType().readableName());
+        }
+
+        @NonNull
+        @Override
+        public TypeDescriptor getType() {
+            TypeDescriptor typeDescriptor = getTypeDescriptor(mBinding.getAnnotationType());
+            assert typeDescriptor != null; // because mBinding.type is known not to be null
+            return typeDescriptor;
+        }
+
+        @NonNull
+        @Override
+        public List<Value> getValues() {
+            ElementValuePair[] pairs = mBinding.getElementValuePairs();
+            if (pairs != null && pairs.length > 0) {
+                List<Value> values = Lists.newArrayListWithExpectedSize(pairs.length);
+                for (ElementValuePair pair : pairs) {
+                    values.add(new Value(new String(pair.getName()), pair.getValue()));
+                }
+            }
+
+            return Collections.emptyList();
+        }
+
+        @Nullable
+        @Override
+        public Object getValue(@NonNull String name) {
+            ElementValuePair[] pairs = mBinding.getElementValuePairs();
+            if (pairs != null) {
+                for (ElementValuePair pair : pairs) {
+                    if (sameChars(name, pair.getName())) {
+                        return pair.getValue();
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        @Override
+        public String getSignature() {
+            return mBinding.toString();
+        }
+
+        @Override
+        public int getModifiers() {
+            // Not applicable; move from ResolvedNode into ones that matter?
+            return 0;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            EcjResolvedAnnotation that = (EcjResolvedAnnotation) o;
+
+            if (mBinding != null ? !mBinding.equals(that.mBinding) : that.mBinding != null) {
+                return false;
+            }
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            return mBinding != null ? mBinding.hashCode() : 0;
         }
     }
 

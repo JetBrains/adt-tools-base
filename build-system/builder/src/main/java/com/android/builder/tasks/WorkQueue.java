@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -97,6 +98,7 @@ public class WorkQueue<T> implements Runnable {
 
     public void push(Job<T> job) throws InterruptedException {
         _push(new QueueTask<T>(QueueTask.ActionType.Normal, job));
+        checkWorkforce();
     }
 
     private void _push(QueueTask<T> task) throws InterruptedException {
@@ -104,7 +106,6 @@ public class WorkQueue<T> implements Runnable {
         // eventually we would want to put some limit to the size of the pending jobs
         // queue so it does not grow out of control.
         mPendingJobs.put(task);
-        checkWorkforce();
     }
 
     private synchronized void checkWorkforce() {
@@ -112,7 +113,7 @@ public class WorkQueue<T> implements Runnable {
                 || (mPendingJobs.size() / mWorkThreads.size() > mGrowthTriggerRation)) {
             mLogger.verbose("Request to incrementing workforce from %1$d", mWorkThreads.size());
             if (mWorkThreads.size() >= MAX_WORKFORCE_SIZE) {
-                mLogger.verbose("Refused to allocate more threads.");
+                mLogger.verbose("Already at max workforce %1$d, denied.", MAX_WORKFORCE_SIZE);
                 return;
             }
             for (int i = 0; i < mMWorkforceIncrement; i++) {
@@ -125,7 +126,7 @@ public class WorkQueue<T> implements Runnable {
         }
     }
 
-    private void reduceWorkforce() throws InterruptedException {
+    private synchronized void reduceWorkforce() throws InterruptedException {
         mLogger.verbose("Decrementing workforce from " + mWorkThreads.size());
         // push a the right number of kiss of death tasks to shutdown threads.
         for (int i = 0; i < mMWorkforceIncrement; i++) {
@@ -139,9 +140,9 @@ public class WorkQueue<T> implements Runnable {
      * to the queue once the shutdown process has started....
      * @throws InterruptedException if the shutdown sequence is interrupted
      */
-    public void shutdown() throws InterruptedException {
+    public synchronized void shutdown() throws InterruptedException {
 
-        // push as many death pill as necessary
+        // push as many death pills as necessary
         for (Thread t : mWorkThreads) {
             _push(new QueueTask<T>(QueueTask.ActionType.Death, null));
         }
@@ -208,6 +209,8 @@ public class WorkQueue<T> implements Runnable {
                     mQueueThreadContext.runTask(job);
                 } catch (Exception e) {
                     Logger.getAnonymousLogger().log(Level.WARNING, "Exception while processing task ", e);
+                    job.error();
+                    return;
                 }
                 // wait for the job completion.
                 job.await();

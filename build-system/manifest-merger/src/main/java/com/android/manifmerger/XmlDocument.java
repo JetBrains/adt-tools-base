@@ -16,31 +16,29 @@
 
 package com.android.manifmerger;
 
-import static com.android.manifmerger.ManifestMerger2.SystemProperty;
-import static com.android.manifmerger.ManifestModel.NodeTypes.USES_PERMISSION;
-import static com.android.manifmerger.ManifestModel.NodeTypes.USES_SDK;
-import static com.android.manifmerger.PlaceholderHandler.KeyBasedValueResolver;
-
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.sdklib.SdkVersionInfo;
 import com.android.ide.common.xml.XmlFormatPreferences;
 import com.android.ide.common.xml.XmlFormatStyle;
 import com.android.ide.common.xml.XmlPrettyPrinter;
+import com.android.sdklib.SdkVersionInfo;
 import com.android.utils.Pair;
 import com.android.utils.PositionXmlParser;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
-
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
-import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
+
+import static com.android.manifmerger.ManifestMerger2.SystemProperty;
+import static com.android.manifmerger.ManifestModel.NodeTypes.USES_PERMISSION;
+import static com.android.manifmerger.ManifestModel.NodeTypes.USES_SDK;
+import static com.android.manifmerger.PlaceholderHandler.KeyBasedValueResolver;
 
 /**
  * Represents a loaded xml document.
@@ -477,26 +475,25 @@ public class XmlDocument {
                         USES_PERMISSION, permission("WRITE_EXTERNAL_STORAGE")).isPresent();
 
         if (libraryTargetSdk < 4) {
-            Optional<Element> permission = addIfAbsent(mergingReport.getActionRecorder(),
+            addIfAbsent(mergingReport.getActionRecorder(),
                     USES_PERMISSION,
                     permission("WRITE_EXTERNAL_STORAGE"),
                     lowerPriorityDocument.getPackageName() + " has a targetSdkVersion < 4",
                     Pair.of("maxSdkVersion", "18") // permission became implied at 19.
             );
-            hasWriteToExternalStoragePermission = permission.isPresent();
+            hasWriteToExternalStoragePermission = true;
 
             addIfAbsent(mergingReport.getActionRecorder(),
                     USES_PERMISSION,
                     permission("READ_PHONE_STATE"),
                     lowerPriorityDocument.getPackageName() + " has a targetSdkVersion < 4");
         }
+
         // If the application has requested WRITE_EXTERNAL_STORAGE, we will
         // force them to always take READ_EXTERNAL_STORAGE as well.  We always
         // do this (regardless of target API version) because we can't have
         // an app with write permission but not read permission.
-        if (hasWriteToExternalStoragePermission
-                && !lowerPriorityDocument.getByTypeAndKey(
-                            USES_PERMISSION, permission("READ_EXTERNAL_STORAGE")).isPresent()) {
+        if (hasWriteToExternalStoragePermission) {
 
             addIfAbsent(mergingReport.getActionRecorder(),
                     USES_PERMISSION,
@@ -508,7 +505,7 @@ public class XmlDocument {
         }
 
         // Pre-JellyBean call log permission compatibility.
-        if (libraryTargetSdk < 16) {
+        if (thisTargetSdk >= 16 && libraryTargetSdk < 16) {
             if (lowerPriorityDocument.getByTypeAndKey(
                     USES_PERMISSION, permission("READ_CONTACTS")).isPresent()) {
                 addIfAbsent(mergingReport.getActionRecorder(),

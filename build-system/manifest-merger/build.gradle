@@ -21,6 +21,7 @@ dependencies {
     compile project(':base:sdklib')
     compile project(':base:sdk-common')
     compile 'net.sf.kxml:kxml2:2.3.0'
+    compile 'com.google.code.gson:gson:2.2.4'
 
     testCompile project(':base:sdklib').sourceSets.test.output
     testCompile 'junit:junit:3.8.1'
@@ -30,6 +31,10 @@ dependencies {
 sourceSets {
     main.resources.srcDir 'src/main/java'
     test.resources.srcDir 'src/test/java'
+}
+
+test {
+    maxParallelForks = Runtime.runtime.availableProcessors() / 2
 }
 
 project.ext.pomName = 'Android Tools Manifest Merger library'

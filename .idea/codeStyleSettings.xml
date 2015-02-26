@@ -8,6 +8,9 @@
         <option name="STATIC_FIELD_NAME_PREFIX" value="m" />
         <option name="CLASS_COUNT_TO_USE_IMPORT_ON_DEMAND" value="99" />
         <option name="NAMES_COUNT_TO_USE_IMPORT_ON_DEMAND" value="99" />
+        <option name="PACKAGES_TO_USE_IMPORT_ON_DEMAND">
+          <value />
+        </option>
         <option name="IMPORT_LAYOUT_TABLE">
           <value>
             <package name="" withSubpackages="true" static="true" />
@@ -61,10 +64,33 @@
         <option name="DOWHILE_BRACE_FORCE" value="3" />
         <option name="WHILE_BRACE_FORCE" value="3" />
         <option name="FOR_BRACE_FORCE" value="3" />
+        <GroovyCodeStyleSettings>
+          <option name="USE_FQ_CLASS_NAMES_IN_JAVADOC" value="false" />
+          <option name="CLASS_COUNT_TO_USE_IMPORT_ON_DEMAND" value="99" />
+          <option name="NAMES_COUNT_TO_USE_IMPORT_ON_DEMAND" value="99" />
+          <option name="PACKAGES_TO_USE_IMPORT_ON_DEMAND">
+            <value />
+          </option>
+          <option name="IMPORT_LAYOUT_TABLE">
+            <value>
+              <package name="" withSubpackages="true" static="false" />
+              <emptyLine />
+              <package name="javax" withSubpackages="true" static="false" />
+              <package name="java" withSubpackages="true" static="false" />
+              <emptyLine />
+              <package name="" withSubpackages="true" static="true" />
+              <emptyLine />
+            </value>
+          </option>
+        </GroovyCodeStyleSettings>
+        <JavaCodeStyleSettings>
+          <option name="CLASS_NAMES_IN_JAVADOC" value="3" />
+        </JavaCodeStyleSettings>
         <XML>
           <option name="XML_LEGACY_SETTINGS_IMPORTED" value="true" />
         </XML>
         <codeStyleSettings language="Groovy">
+          <option name="KEEP_FIRST_COLUMN_COMMENT" value="false" />
           <option name="KEEP_CONTROL_STATEMENT_IN_ONE_LINE" value="false" />
           <option name="KEEP_BLANK_LINES_IN_CODE" value="1" />
           <option name="BLANK_LINES_AROUND_FIELD" value="1" />
@@ -88,6 +114,8 @@
           <option name="PARENT_SETTINGS_INSTALLED" value="true" />
         </codeStyleSettings>
         <codeStyleSettings language="JAVA">
+          <option name="LINE_COMMENT_AT_FIRST_COLUMN" value="false" />
+          <option name="BLOCK_COMMENT_AT_FIRST_COLUMN" value="false" />
           <option name="KEEP_CONTROL_STATEMENT_IN_ONE_LINE" value="false" />
           <option name="KEEP_BLANK_LINES_IN_CODE" value="1" />
           <option name="BLANK_LINES_AROUND_FIELD" value="1" />

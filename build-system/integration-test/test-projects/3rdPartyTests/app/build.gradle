@@ -9,10 +9,10 @@ repositories {
 
 android {
     compileSdkVersion 19
-    buildToolsVersion = rootProject.ext.buildToolsVersion
+    buildToolsVersion = rootProject.buildToolsVersion
 
-    deviceProvider project.ext.fakeProvider
-    testServer project.ext.fakeServer
+    deviceProvider project.fakeProvider
+    testServer project.fakeServer
 
     buildTypes {
         debug {
@@ -24,7 +24,7 @@ android {
 project.afterEvaluate {
     configure(fakeAndroidTest) {
         doLast {
-            String error = project.ext.fakeProvider.isValid()
+            String error = project.fakeProvider.isValid()
             if (error != null) {
                 throw new GradleException("Failed DeviceProvider usage: " + error)
             }
@@ -33,7 +33,7 @@ project.afterEvaluate {
 
     configure(fake2Upload) {
         doLast {
-            String error = project.ext.fakeServer.isValid()
+            String error = project.fakeServer.isValid()
             if (error != null) {
                 throw new GradleException("Failed TestServer usage: " + error)
             }

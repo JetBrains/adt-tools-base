@@ -23,8 +23,14 @@ import static org.easymock.EasyMock.replay;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.builder.model.AndroidProject;
 import com.android.builder.model.ApiVersion;
+import com.android.builder.model.BuildType;
+import com.android.builder.model.BuildTypeContainer;
 import com.android.builder.model.ProductFlavor;
+import com.android.builder.model.ProductFlavorContainer;
+import com.android.builder.model.SourceProvider;
+import com.android.builder.model.SourceProviderContainer;
 import com.android.builder.model.Variant;
 import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.detector.api.Detector;
@@ -444,12 +450,14 @@ public class ManifestDetectorTest extends AbstractCheckTest {
     public void testMockLocations() throws Exception {
         mEnabled = Collections.singleton(ManifestDetector.MOCK_LOCATION);
         assertEquals(""
-                + "AndroidManifest.xml:9: Error: Mock locations should only be requested in a debug-specific manifest file (typically src/debug/AndroidManifest.xml) [MockLocation]\n"
+                + "AndroidManifest.xml:9: Error: Mock locations should only be requested in a test or debug-specific manifest file (typically src/debug/AndroidManifest.xml) [MockLocation]\n"
                 + "    <uses-permission android:name=\"android.permission.ACCESS_MOCK_LOCATION\" /> \n"
                 + "                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                 + "1 errors, 0 warnings\n",
                 lintProject(
                         "mock_location.xml=>AndroidManifest.xml",
+                        "mock_location.xml=>debug/AndroidManifest.xml",
+                        "mock_location.xml=>test/AndroidManifest.xml",
                         "multiproject/library.properties=>build.gradle")); // dummy; only name counts
         // TODO: When we have an instantiatable gradle model, test with real model and verify
         // that a manifest file in a debug build type does not get flagged.
@@ -509,47 +517,232 @@ public class ManifestDetectorTest extends AbstractCheckTest {
                         "multiproject/library.properties=>build.gradle")); // dummy; only name counts
     }
 
+    public void testMipMap() throws Exception {
+        mEnabled = Collections.singleton(ManifestDetector.MIPMAP);
+        assertEquals("No warnings.",
+
+                lintProject(
+                        "mipmap.xml=>AndroidManifest.xml"));
+    }
+
+    public void testMipMapWithDensityFiltering() throws Exception {
+        mEnabled = Collections.singleton(ManifestDetector.MIPMAP);
+        assertEquals(""
+                        + "AndroidManifest.xml:9: Warning: Should use @mipmap instead of @drawable for launcher icons [MipmapIcons]\n"
+                        + "        android:icon=\"@drawable/ic_launcher\"\n"
+                        + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                        + "AndroidManifest.xml:14: Warning: Should use @mipmap instead of @drawable for launcher icons [MipmapIcons]\n"
+                        + "            android:icon=\"@drawable/activity1\"\n"
+                        + "            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                        + "0 errors, 2 warnings\n",
+
+                lintProject(
+                        "mipmap.xml=>AndroidManifest.xml"));
+    }
+
     // Custom project which locates all manifest files in the project rather than just
     // being hardcoded to the root level
-    private static class MyProject extends Project {
-        protected MyProject(@NonNull LintClient client, @NonNull File dir,
-                @NonNull File referenceDir) {
-            super(client, dir, referenceDir);
-        }
-
-        @NonNull
-        @Override
-        public List<File> getManifestFiles() {
-            if (mManifestFiles == null) {
-                mManifestFiles = Lists.newArrayList();
-                addManifestFiles(mDir);
-            }
-
-            return mManifestFiles;
-        }
-
-        private void addManifestFiles(File dir) {
-            if (dir.getName().equals(ANDROID_MANIFEST_XML)) {
-                mManifestFiles.add(dir);
-            } else if (dir.isDirectory()) {
-                File[] files = dir.listFiles();
-                if (files != null) {
-                    for (File file : files) {
-                        addManifestFiles(file);
-                    }
-                }
-            }
-        }
-    }
 
     @Override
     protected TestLintClient createClient() {
+        if ("testMipMapWithDensityFiltering".equals(getName())) {
+            // Set up a mock project model for the resource configuration test(s)
+            // where we provide a subset of densities to be included
+            return new TestLintClient() {
+                @NonNull
+                @Override
+                protected Project createProject(@NonNull File dir, @NonNull File referenceDir) {
+                    return new Project(this, dir, referenceDir) {
+                        @Override
+                        public boolean isGradleProject() {
+                            return true;
+                        }
+
+                        @Nullable
+                        @Override
+                        public AndroidProject getGradleProjectModel() {
+                            /*
+                            Simulate variant freeBetaDebug in this setup:
+                                defaultConfig {
+                                    ...
+                                    resConfigs "cs"
+                                }
+                                flavorDimensions  "pricing", "releaseType"
+                                productFlavors {
+                                    beta {
+                                        flavorDimension "releaseType"
+                                        resConfig "en", "de"
+                                        resConfigs "nodpi", "hdpi"
+                                    }
+                                    normal { flavorDimension "releaseType" }
+                                    free { flavorDimension "pricing" }
+                                    paid { flavorDimension "pricing" }
+                                }
+                             */
+                            ProductFlavor flavorFree = createNiceMock(ProductFlavor.class);
+                            expect(flavorFree.getName()).andReturn("free").anyTimes();
+                            expect(flavorFree.getResourceConfigurations())
+                                    .andReturn(Collections.<String>emptyList()).anyTimes();
+                            replay(flavorFree);
+
+                            ProductFlavor flavorNormal = createNiceMock(ProductFlavor.class);
+                            expect(flavorNormal.getName()).andReturn("normal").anyTimes();
+                            expect(flavorNormal.getResourceConfigurations())
+                                    .andReturn(Collections.<String>emptyList()).anyTimes();
+                            replay(flavorNormal);
+
+                            ProductFlavor flavorPaid = createNiceMock(ProductFlavor.class);
+                            expect(flavorPaid.getName()).andReturn("paid").anyTimes();
+                            expect(flavorPaid.getResourceConfigurations())
+                                    .andReturn(Collections.<String>emptyList()).anyTimes();
+                            replay(flavorPaid);
+
+                            ProductFlavor flavorBeta = createNiceMock(ProductFlavor.class);
+                            expect(flavorBeta.getName()).andReturn("beta").anyTimes();
+                            List<String> resConfigs = Arrays.asList("hdpi", "en", "de", "nodpi");
+                            expect(flavorBeta.getResourceConfigurations()).andReturn(resConfigs).anyTimes();
+                            replay(flavorBeta);
+
+                            ProductFlavor defaultFlavor = createNiceMock(ProductFlavor.class);
+                            expect(defaultFlavor.getName()).andReturn("main").anyTimes();
+                            expect(defaultFlavor.getResourceConfigurations()).andReturn(
+                                    Collections.singleton("cs")).anyTimes();
+                            replay(defaultFlavor);
+
+                            ProductFlavorContainer containerBeta =
+                                    createNiceMock(ProductFlavorContainer.class);
+                            expect(containerBeta.getProductFlavor()).andReturn(flavorBeta).anyTimes();
+                            replay(containerBeta);
+
+                            ProductFlavorContainer containerFree =
+                                    createNiceMock(ProductFlavorContainer.class);
+                            expect(containerFree.getProductFlavor()).andReturn(flavorFree).anyTimes();
+                            replay(containerFree);
+
+                            ProductFlavorContainer containerPaid =
+                                    createNiceMock(ProductFlavorContainer.class);
+                            expect(containerPaid.getProductFlavor()).andReturn(flavorPaid).anyTimes();
+                            replay(containerPaid);
+
+                            ProductFlavorContainer containerNormal =
+                                    createNiceMock(ProductFlavorContainer.class);
+                            expect(containerNormal.getProductFlavor()).andReturn(flavorNormal).anyTimes();
+                            replay(containerNormal);
+
+                            ProductFlavorContainer defaultContainer =
+                                    createNiceMock(ProductFlavorContainer.class);
+                            expect(defaultContainer.getProductFlavor()).andReturn(defaultFlavor).anyTimes();
+                            replay(defaultContainer);
+
+                            List<ProductFlavorContainer> containers = Arrays.asList(
+                                    containerPaid, containerFree, containerNormal, containerBeta
+                            );
+
+                            AndroidProject project = createNiceMock(AndroidProject.class);
+                            expect(project.getProductFlavors()).andReturn(containers).anyTimes();
+                            expect(project.getDefaultConfig()).andReturn(defaultContainer).anyTimes();
+                            replay(project);
+                            return project;
+                        }
+
+                        @Nullable
+                        @Override
+                        public Variant getCurrentVariant() {
+                            List<String> productFlavorNames = Arrays.asList("free", "beta");
+                            Variant mock = createNiceMock(Variant.class);
+                            expect(mock.getProductFlavors()).andReturn(productFlavorNames).anyTimes();
+                            replay(mock);
+                            return mock;
+                        }
+                    };
+                }
+            };
+        }
         if (mEnabled.contains(ManifestDetector.MOCK_LOCATION)) {
             return new TestLintClient() {
                 @NonNull
                 @Override
                 protected Project createProject(@NonNull File dir, @NonNull File referenceDir) {
-                    return new MyProject(this, dir, referenceDir);
+                    return new Project(this, dir, referenceDir) {
+                        @NonNull
+                        @Override
+                        public List<File> getManifestFiles() {
+                            if (mManifestFiles == null) {
+                                mManifestFiles = Lists.newArrayList();
+                                addManifestFiles(mDir);
+                            }
+
+                            return mManifestFiles;
+                        }
+
+                        private void addManifestFiles(File dir) {
+                            if (dir.getName().equals(ANDROID_MANIFEST_XML)) {
+                                mManifestFiles.add(dir);
+                            } else if (dir.isDirectory()) {
+                                File[] files = dir.listFiles();
+                                if (files != null) {
+                                    for (File file : files) {
+                                        addManifestFiles(file);
+                                    }
+                                }
+                            }
+                        }
+
+                        @NonNull SourceProvider createSourceProvider(File manifest) {
+                            SourceProvider provider = createNiceMock(SourceProvider.class);
+                            expect(provider.getManifestFile()).andReturn(manifest).anyTimes();
+                            replay(provider);
+                            return provider;
+                        }
+
+                        @Nullable
+                        @Override
+                        public AndroidProject getGradleProjectModel() {
+                            if (!isGradleProject()) {
+                                return null;
+                            }
+
+                            File main = new File(mDir, ANDROID_MANIFEST_XML);
+                            File debug = new File(mDir, "debug" + File.separator + ANDROID_MANIFEST_XML);
+                            File test = new File(mDir, "test" + File.separator + ANDROID_MANIFEST_XML);
+
+                            SourceProvider defaultSourceProvider = createSourceProvider(main);
+                            SourceProvider debugSourceProvider = createSourceProvider(debug);
+                            SourceProvider testSourceProvider = createSourceProvider(test);
+
+                            ProductFlavorContainer defaultConfig = createNiceMock(ProductFlavorContainer.class);
+                            expect(defaultConfig.getSourceProvider()).andReturn(defaultSourceProvider).anyTimes();
+                            replay(defaultConfig);
+
+                            BuildType buildType = createNiceMock(BuildType.class);
+                            expect(buildType.isDebuggable()).andReturn(true).anyTimes();
+                            replay(buildType);
+
+                            BuildTypeContainer buildTypeContainer = createNiceMock(BuildTypeContainer.class);
+                            expect(buildTypeContainer.getBuildType()).andReturn(buildType).anyTimes();
+                            expect(buildTypeContainer.getSourceProvider()).andReturn(debugSourceProvider).anyTimes();
+                            List<BuildTypeContainer> buildTypes = Lists.newArrayList(buildTypeContainer);
+                            replay(buildTypeContainer);
+
+                            SourceProviderContainer extraProvider = createNiceMock(SourceProviderContainer.class);
+                            expect(extraProvider.getArtifactName()).andReturn(AndroidProject.ARTIFACT_ANDROID_TEST).anyTimes();
+                            expect(extraProvider.getSourceProvider()).andReturn(testSourceProvider).anyTimes();
+                            List<SourceProviderContainer> extraProviders = Lists.newArrayList(extraProvider);
+                            replay(extraProvider);
+
+                            ProductFlavorContainer productFlavorContainer = createNiceMock(ProductFlavorContainer.class);
+                            expect(productFlavorContainer.getExtraSourceProviders()).andReturn(extraProviders).anyTimes();
+                            List<ProductFlavorContainer> productFlavors = Lists.newArrayList(productFlavorContainer);
+                            replay(productFlavorContainer);
+
+                            AndroidProject project = createNiceMock(AndroidProject.class);
+                            expect(project.getDefaultConfig()).andReturn(defaultConfig).anyTimes();
+                            expect(project.getBuildTypes()).andReturn(buildTypes).anyTimes();
+                            expect(project.getProductFlavors()).andReturn(productFlavors).anyTimes();
+                            replay(project);
+                            return project;
+                        }
+                    };
                 }
             };
         } else if (mEnabled.contains(ManifestDetector.GRADLE_OVERRIDES)) {

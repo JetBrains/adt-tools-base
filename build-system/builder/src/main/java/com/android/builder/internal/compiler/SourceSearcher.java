@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ide.common.internal.LoggedErrorException;
 import com.android.ide.common.internal.WaitableExecutor;
+import com.android.ide.common.process.ProcessException;
 
 import java.io.File;
 import java.io.IOException;
@@ -39,7 +40,7 @@ public class SourceSearcher {
 
     public interface SourceFileProcessor {
         void processFile(@NonNull File sourceFolder, @NonNull File sourceFile)
-                throws IOException, InterruptedException, LoggedErrorException;
+                throws ProcessException, IOException;
     }
 
     public SourceSearcher(@NonNull List<File> sourceFolders, String... extensions) {
@@ -56,7 +57,7 @@ public class SourceSearcher {
     }
 
     public void search(@NonNull SourceFileProcessor processor)
-            throws IOException, InterruptedException, LoggedErrorException {
+            throws ProcessException, LoggedErrorException, InterruptedException, IOException {
         for (File file : mSourceFolders) {
             // pass both the root folder (the source folder) and the file/folder to process,
             // in this case the source folder as well.
@@ -72,7 +73,7 @@ public class SourceSearcher {
             @NonNull final File rootFolder,
             @NonNull final File file,
             @NonNull final SourceFileProcessor processor)
-            throws IOException, InterruptedException, LoggedErrorException {
+            throws ProcessException, IOException {
         if (file.isFile()) {
             // get the extension of the file.
             if (checkExtension(file)) {

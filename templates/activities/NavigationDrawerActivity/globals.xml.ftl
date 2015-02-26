@@ -4,7 +4,6 @@
     <global id="appCompat" type="boolean" value="${(hasDependency('com.android.support:appcompat-v7'))?string}" />
     <!-- e.g. getSupportActionBar vs. getActionBar -->
     <global id="Support" value="${(hasDependency('com.android.support:appcompat-v7'))?string('Support','')}" />
-    <global id="ActionNamespace" value="${(minApiLevel lt 14)?string('app','android')}" />
     <global id="srcOut" value="${srcDir}/${slashedPackageName(packageName)}" />
     <global id="resOut" value="${resDir}" />
     <global id="menuName" value="${classToResource(activityClass)}" />

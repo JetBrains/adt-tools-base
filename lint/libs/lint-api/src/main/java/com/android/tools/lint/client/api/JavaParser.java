@@ -24,6 +24,7 @@ import com.android.tools.lint.detector.api.Location;
 import com.google.common.annotations.Beta;
 import com.google.common.base.Splitter;
 
+import java.util.Collections;
 import java.util.List;
 
 import lombok.ast.Identifier;
@@ -111,6 +112,14 @@ public abstract class JavaParser {
     }
 
     /**
+     * Dispose any remaining data structures held for all contexts.
+     * Typically frees up any resources allocated by
+     * {@link #prepareJavaParse(List)}
+     */
+    public void dispose() {
+    }
+
+    /**
      * Resolves the given expression node: computes the declaration for the given symbol
      *
      * @param context information about the file being parsed
@@ -120,6 +129,21 @@ public abstract class JavaParser {
      */
     @Nullable
     public abstract ResolvedNode resolve(@NonNull JavaContext context, @NonNull Node node);
+
+    /**
+     * Finds the given type, if possible (which should be reachable from the compilation
+     * patch of the given node.
+     *
+     * @param context information about the file being parsed
+     * @param fullyQualifiedName the fully qualified name of the class to look up
+     * @return the class, or null if not found
+     */
+    @Nullable
+    public ResolvedClass findClass(
+            @NonNull JavaContext context,
+            @NonNull String fullyQualifiedName) {
+        return null;
+    }
 
     /**
      * Gets the type of the given node
@@ -160,6 +184,10 @@ public abstract class JavaParser {
 
             return typeReference;
         }
+
+        /** If the type is not primitive, returns the class of the type if known */
+        @Nullable
+        public abstract ResolvedClass getTypeClass();
     }
 
     /** Convenience implementation of {@link TypeDescriptor} */
@@ -196,6 +224,12 @@ public abstract class JavaParser {
         public String toString() {
             return getSignature();
         }
+
+        @Override
+        @Nullable
+        public ResolvedClass getTypeClass() {
+            return null;
+        }
     }
 
     /** A resolved declaration from an AST Node reference */
@@ -220,6 +254,10 @@ public abstract class JavaParser {
         @Override
         @NonNull
         public abstract String getName();
+
+        /** Returns the simple of this class */
+        @NonNull
+        public abstract String getSimpleName();
 
         /** Returns whether this class' fully qualified name matches the given name */
         public abstract boolean matches(@NonNull String name);
@@ -249,11 +287,19 @@ public abstract class JavaParser {
 
         /** Returns the methods defined in this class, and optionally any methods inherited from any superclasses as well */
         @NonNull
+        public abstract Iterable<ResolvedMethod> getMethods(boolean includeInherited);
+
+        /** Returns the methods of a given name defined in this class, and optionally any methods inherited from any superclasses as well */
+        @NonNull
         public abstract Iterable<ResolvedMethod> getMethods(@NonNull String name, boolean includeInherited);
 
         /** Returns the named field defined in this class, or optionally inherited from a superclass */
         @Nullable
         public abstract ResolvedField getField(@NonNull String name, boolean includeInherited);
+
+        /** Returns any annotations defined on this class */
+        @NonNull
+        public abstract Iterable<ResolvedAnnotation> getAnnotations();
     }
 
     /** A method or constructor declaration */
@@ -279,6 +325,10 @@ public abstract class JavaParser {
         public boolean isConstructor() {
             return getReturnType() == null;
         }
+
+        /** Returns any annotations defined on this method */
+        @NonNull
+        public abstract Iterable<ResolvedAnnotation> getAnnotations();
     }
 
     /** A field declaration */
@@ -298,6 +348,39 @@ public abstract class JavaParser {
 
         @Nullable
         public abstract Object getValue();
+
+        /** Returns any annotations defined on this field */
+        @NonNull
+        public abstract Iterable<ResolvedAnnotation> getAnnotations();
+    }
+
+    /** An annotation reference */
+    public abstract static class ResolvedAnnotation extends ResolvedNode {
+        @Override
+        @NonNull
+        public abstract String getName();
+
+        /** Returns whether this field name matches the given name */
+        public abstract boolean matches(@NonNull String name);
+
+        @NonNull
+        public abstract TypeDescriptor getType();
+
+        public static class Value {
+            @NonNull public final String name;
+            @Nullable public final Object value;
+
+            public Value(@NonNull String name, @Nullable Object value) {
+                this.name = name;
+                this.value = value;
+            }
+        }
+
+        @NonNull
+        public abstract List<Value> getValues();
+
+        @Nullable
+        public abstract Object getValue(@NonNull String name);
     }
 
     /** A local variable or parameter declaration */

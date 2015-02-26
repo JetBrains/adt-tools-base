@@ -756,69 +756,87 @@ public class Main {
     }
 
     private static void printHelpTopicSuppress() {
-        System.out.println(wrap(getSuppressHelp()));
+        System.out.println(wrap(TextFormat.RAW.convertTo(getSuppressHelp(), TextFormat.TEXT)));
     }
 
     static String getSuppressHelp() {
+        // \\u00a0 is a non-breaking space
+        final String NBSP = "\u00a0\u00a0\u00a0\u00a0";
+
         return
             "Lint errors can be suppressed in a variety of ways:\n" +
             "\n" +
-            "1. With a @SuppressLint annotation in the Java code\n" +
-            "2. With a tools:ignore attribute in the XML file\n" +
-            "3. With a lint.xml configuration file in the project\n" +
-            "4. With a lint.xml configuration file passed to lint " +
+            "1. With a `@SuppressLint` annotation in the Java code\n" +
+            "2. With a `tools:ignore` attribute in the XML file\n" +
+            "3. With ignore flags specified in the `build.gradle` file, " +
+                "as explained below\n" +
+            "4. With a `lint.xml` configuration file in the project\n" +
+            "5. With a `lint.xml` configuration file passed to lint " +
                 "via the " + ARG_CONFIG + " flag\n" +
-            "5. With the " + ARG_IGNORE + " flag passed to lint.\n" +
+            "6. With the " + ARG_IGNORE + " flag passed to lint.\n" +
             "\n" +
             "To suppress a lint warning with an annotation, add " +
-            "a @SuppressLint(\"id\") annotation on the class, method " +
+            "a `@SuppressLint(\"id\")` annotation on the class, method " +
             "or variable declaration closest to the warning instance " +
             "you want to disable. The id can be one or more issue " +
-            "id's, such as \"UnusedResources\" or {\"UnusedResources\"," +
-            "\"UnusedIds\"}, or it can be \"all\" to suppress all lint " +
+            "id's, such as `\"UnusedResources\"` or `{\"UnusedResources\"," +
+            "\"UnusedIds\"}`, or it can be `\"all\"` to suppress all lint " +
             "warnings in the given scope.\n" +
             "\n" +
             "To suppress a lint warning in an XML file, add a " +
-            "tools:ignore=\"id\" attribute on the element containing " +
+            "`tools:ignore=\"id\"` attribute on the element containing " +
             "the error, or one of its surrounding elements. You also " +
             "need to define the namespace for the tools prefix on the " +
-            "root element in your document, next to the xmlns:android " +
+            "root element in your document, next to the `xmlns:android` " +
             "declaration:\n" +
-            "* xmlns:tools=\"http://schemas.android.com/tools\"\n" +
+            "`xmlns:tools=\"http://schemas.android.com/tools\"`\n" +
+            "\n" +
+            "To suppress a lint warning in a `build.gradle` file, add a " +
+            "section like this:\n" +
+            "\n" +
+            "android {\n" +
+            NBSP + "lintOptions {\n" +
+            NBSP + NBSP + "disable 'TypographyFractions','TypographyQuotes'\n" +
+            NBSP + "}\n" +
+            "}\n" +
+            "\n" +
+            "Here we specify a comma separated list of issue id's after the " +
+            "disable command. You can also use `warning` or `error` instead " +
+            "of `disable` to change the severity of issues.\n" +
             "\n" +
             "To suppress lint warnings with a configuration XML file, " +
-            "create a file named lint.xml and place it at the root " +
-            "directory of the project in which it applies. (If you " +
-            "use the Eclipse plugin's Lint view, you can suppress " +
-            "errors there via the toolbar and Eclipse will create the " +
-            "lint.xml file for you.).\n" +
+            "create a file named `lint.xml` and place it at the root " +
+            "directory of the project in which it applies.\n" +
             "\n" +
-            "The format of the lint.xml file is something like the " +
+            "The format of the `lint.xml` file is something like the " +
             "following:\n" +
             "\n" +
             "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
             "<lint>\n" +
-            "    <!-- Disable this given check in this project -->\n" +
-            "    <issue id=\"IconMissingDensityFolder\" severity=\"ignore\" />\n" +
+            NBSP + "<!-- Disable this given check in this project -->\n" +
+            NBSP + "<issue id=\"IconMissingDensityFolder\" severity=\"ignore\" />\n" +
             "\n" +
-            "    <!-- Ignore the ObsoleteLayoutParam issue in the given files -->\n" +
-            "    <issue id=\"ObsoleteLayoutParam\">\n" +
-            "        <ignore path=\"res/layout/activation.xml\" />\n" +
-            "        <ignore path=\"res/layout-xlarge/activation.xml\" />\n" +
-            "    </issue>\n" +
+            NBSP + "<!-- Ignore the ObsoleteLayoutParam issue in the given files -->\n" +
+            NBSP + "<issue id=\"ObsoleteLayoutParam\">\n" +
+            NBSP + NBSP + "<ignore path=\"res/layout/activation.xml\" />\n" +
+            NBSP + NBSP + "<ignore path=\"res/layout-xlarge/activation.xml\" />\n" +
+            NBSP + "</issue>\n" +
             "\n" +
-            "    <!-- Ignore the UselessLeaf issue in the given file -->\n" +
-            "    <issue id=\"UselessLeaf\">\n" +
-            "        <ignore path=\"res/layout/main.xml\" />\n" +
-            "    </issue>\n" +
+            NBSP + "<!-- Ignore the UselessLeaf issue in the given file -->\n" +
+            NBSP + "<issue id=\"UselessLeaf\">\n" +
+            NBSP + NBSP + "<ignore path=\"res/layout/main.xml\" />\n" +
+            NBSP + "</issue>\n" +
             "\n" +
-            "    <!-- Change the severity of hardcoded strings to \"error\" -->\n" +
-            "    <issue id=\"HardcodedText\" severity=\"error\" />\n" +
+            NBSP + "<!-- Change the severity of hardcoded strings to \"error\" -->\n" +
+            NBSP + "<issue id=\"HardcodedText\" severity=\"error\" />\n" +
             "</lint>\n" +
             "\n" +
             "To suppress lint checks from the command line, pass the " + ARG_IGNORE +  " " +
             "flag with a comma separated list of ids to be suppressed, such as:\n" +
-            "\"lint --ignore UnusedResources,UselessLeaf /my/project/path\"\n";
+            "`$ lint --ignore UnusedResources,UselessLeaf /my/project/path`\n" +
+            "\n" +
+            "For more information, see " +
+            "http://tools.android.com/tips/lint/suppressing-lint-warnings\n";
     }
 
     private static void printVersion(LintCliClient client) {

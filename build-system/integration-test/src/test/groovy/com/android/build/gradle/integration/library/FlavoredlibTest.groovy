@@ -15,15 +15,24 @@
  */
 
 package com.android.build.gradle.integration.library
-
 import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.integration.common.utils.ModelHelper
+import com.android.builder.model.AndroidLibrary
+import com.android.builder.model.AndroidProject
+import com.android.builder.model.Dependencies
+import com.android.builder.model.ProductFlavorContainer
+import com.android.builder.model.Variant
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
 import org.junit.experimental.categories.Category
 
+import static org.junit.Assert.assertEquals
+import static org.junit.Assert.assertFalse
+import static org.junit.Assert.assertNotNull
+import static org.junit.Assert.assertTrue
 /**
  * Assemble tests for flavoredlib.
  */
@@ -32,15 +41,17 @@ class FlavoredlibTest {
     static public GradleTestProject project = GradleTestProject.builder()
             .fromSample("flavoredlib")
             .create()
+    static Map<String, AndroidProject> models
 
     @BeforeClass
-    static void setup() {
-        project.execute("clean", "assembleDebug");
+    static void setUp() {
+        models = project.executeAndReturnMultiModel("clean", "assembleDebug")
     }
 
     @AfterClass
     static void cleanUp() {
         project = null
+        models = null
     }
 
     @Test
@@ -49,8 +60,57 @@ class FlavoredlibTest {
     }
 
     @Test
+    void testModel() {
+        AndroidProject appModel = models.get(":app")
+        assertNotNull("Module app null-check", appModel)
+
+        assertFalse("Library Project", appModel.isLibrary())
+
+        Collection<Variant> variants = appModel.getVariants()
+        Collection<ProductFlavorContainer> productFlavors = appModel.getProductFlavors()
+
+        ProductFlavorContainer flavor1 = ModelHelper.getProductFlavor(productFlavors, "flavor1")
+        assertNotNull(flavor1)
+
+        Variant flavor1Debug = ModelHelper.getVariant(variants, "flavor1Debug")
+        assertNotNull(flavor1Debug)
+
+        Dependencies dependencies = flavor1Debug.getMainArtifact().getDependencies()
+        assertNotNull(dependencies)
+        Collection<AndroidLibrary> libs = dependencies.getLibraries()
+        assertNotNull(libs)
+        assertEquals(1, libs.size())
+        AndroidLibrary androidLibrary = libs.iterator().next()
+        assertNotNull(androidLibrary)
+        assertEquals(":lib", androidLibrary.getProject())
+        assertEquals("flavor1Release", androidLibrary.getProjectVariant())
+        // TODO: right now we can only test the folder name efficiently
+        String path = androidLibrary.getFolder().getPath()
+        assertTrue(path, path.endsWith("/flavoredlib/lib/unspecified/flavor1Release"))
+
+        ProductFlavorContainer flavor2 = ModelHelper.getProductFlavor(productFlavors, "flavor2")
+        assertNotNull(flavor2)
+
+        Variant flavor2Debug = ModelHelper.getVariant(variants, "flavor2Debug")
+        assertNotNull(flavor2Debug)
+
+        dependencies = flavor2Debug.getMainArtifact().getDependencies()
+        assertNotNull(dependencies)
+        libs = dependencies.getLibraries()
+        assertNotNull(libs)
+        assertEquals(1, libs.size())
+        androidLibrary = libs.iterator().next()
+        assertNotNull(androidLibrary)
+        assertEquals(":lib", androidLibrary.getProject())
+        assertEquals("flavor2Release", androidLibrary.getProjectVariant())
+        // TODO: right now we can only test the folder name efficiently
+        path = androidLibrary.getFolder().getPath()
+        assertTrue(path, path.endsWith("/flavoredlib/lib/unspecified/flavor2Release"))
+    }
+
+    @Test
     @Category(DeviceTests.class)
     void connectedCheck() {
-        project.execute("connectedCheck");
+        project.execute("connectedCheck")
     }
 }

@@ -16,22 +16,14 @@
 
 package com.android.build.gradle.integration.application
 
-import com.android.annotations.Nullable
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.utils.SdkHelper
-import com.android.ide.common.internal.CommandLineRunner
-import com.android.ide.common.internal.LoggedErrorException
-import com.android.sdklib.repository.FullRevision
-import com.android.utils.StdLogger
-import com.google.common.collect.Lists
 import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
 
-import static org.junit.Assert.fail
-
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
 /**
  * Assemble tests for maxSdkVersion.
  */
@@ -43,8 +35,8 @@ class MaxSdkVersionTest {
             .create()
 
     @BeforeClass
-    static void setup() {
-        project.execute("clean", "assembleDebug");
+    static void setUp() {
+        project.execute("clean", "assembleDebug")
     }
 
     @AfterClass
@@ -54,45 +46,7 @@ class MaxSdkVersionTest {
 
     @Test
     void maxSdkVersion() {
-        checkMaxSdkVersion(project.getApk("f1", "debug"), "21")
-        checkMaxSdkVersion(project.getApk("f2", "debug"), "19")
-    }
-
-    private void checkMaxSdkVersion(File testApk, String version)
-            throws InterruptedException, LoggedErrorException, IOException {
-
-        File aapt = SdkHelper.getAapt(FullRevision.parseRevision("19.1.0"));
-
-        String[] command = new String[4];
-        command[0] = aapt.getPath();
-        command[1] = "dump";
-        command[2] = "badging";
-        command[3] = testApk.getPath();
-
-        CommandLineRunner commandLineRunner = new CommandLineRunner(new StdLogger(StdLogger.Level.ERROR));
-
-        final List<String> aaptOutput = Lists.newArrayList();
-
-        commandLineRunner.runCmdLine(command, new CommandLineRunner.CommandLineOutput() {
-            @Override
-            public void out(@Nullable String line) {
-                if (line != null) {
-                    aaptOutput.add(line);
-                }
-            }
-            @Override
-            public void err(@Nullable String line) {
-                super.err(line);
-
-            }
-        }, null /*env vars*/);
-
-        System.out.println("Beginning dump");
-        for (String line : aaptOutput) {
-            if (line.equals("maxSdkVersion:'" + version + "'")) {
-                return;
-            }
-        }
-        fail("Could not find uses-sdk:maxSdkVersion set to " + version + " in apk dump");
+        assertThatApk(project.getApk("f1", "debug")).hasMaxSdkVersion(21)
+        assertThatApk(project.getApk("f2", "debug")).hasMaxSdkVersion(19)
     }
 }

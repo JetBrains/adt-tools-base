@@ -16,35 +16,14 @@
 
 package com.example.android.rs.balls;
 
-import android.renderscript.RSSurfaceView;
-import android.renderscript.RenderScript;
-
 import android.app.Activity;
-import android.content.res.Configuration;
-import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
-import android.os.Message;
-import android.provider.Settings.System;
-import android.util.Config;
-import android.util.Log;
-import android.view.Menu;
-import android.view.MenuItem;
-import android.view.View;
-import android.view.Window;
-import android.widget.Button;
-import android.widget.ListView;
-
-import java.lang.Runtime;
-
-import android.app.Activity;
-import android.content.Context;
-import android.os.Bundle;
-import android.view.View;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.os.Bundle;
+import android.util.Config;
+import android.util.Log;
 
 public class Balls extends Activity implements SensorEventListener {
     //EventListener mListener = new EventListener();

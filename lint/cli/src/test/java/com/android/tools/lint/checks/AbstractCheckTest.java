@@ -170,6 +170,12 @@ public abstract class AbstractCheckTest extends SdkTestCase {
     }
 
     protected String checkLint(TestLintClient lintClient, List<File> files) throws Exception {
+        if (System.getenv("ANDROID_BUILD_TOP") != null) {
+            fail("Don't run the lint tests with $ANDROID_BUILD_TOP set; that enables lint's "
+                    + "special support for detecting AOSP projects (looking for .class "
+                    + "files in $ANDROID_HOST_OUT etc), and this confuses lint.");
+        }
+
         mOutput = new StringBuilder();
         String result = lintClient.analyze(files);
 

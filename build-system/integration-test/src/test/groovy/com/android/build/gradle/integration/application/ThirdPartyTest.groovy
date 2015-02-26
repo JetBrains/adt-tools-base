@@ -40,6 +40,6 @@ class ThirdPartyTest {
         // Run deviceCheck even without devices, since we use a fake DeviceProvider that doesn't
         // use a device, but only record the calls made to the DeviceProvider and the
         // DeviceConnector.
-        project.execute("clean", "deviceCheck");
+        project.execute("clean", "deviceCheck")
     }
 }

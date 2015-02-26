@@ -1,0 +1,87 @@
+buildscript {
+    repositories {
+        maven { url = uri(rootProject.cloneArtifacts.repository) }
+    }
+    dependencies {
+        classpath "com.jfrog.bintray.gradle:gradle-bintray-plugin:1.0"
+    }
+}
+
+apply plugin: 'groovy'
+apply plugin: 'clone-artifacts'
+
+sourceSets {
+    main {
+        groovy.srcDirs = ['src/main/groovy', 'src/fromGradle/groovy']
+        resources.srcDirs = ['src/main/resources', 'src/fromGradle/resources']
+    }
+}
+
+ext.proguardVersion = "5.1"
+
+dependencies {
+    compile gradleApi()
+    compile localGroovy()
+    compile project(':base:builder')
+    compile project(':base:lint')
+    compile "net.sf.proguard:proguard-gradle:${project.ext.proguardVersion}"
+
+    testCompile 'junit:junit:3.8.1'
+    testCompile project(':base:project-test-lib')
+}
+
+// configuration for dependencies provided by the runtime,
+// in this case proguard.
+configurations{
+    provided
+}
+
+dependencies{
+    provided "net.sf.proguard:proguard-gradle:${project.ext.proguardVersion}"
+}
+
+//Include provided for compilation
+sourceSets.main.compileClasspath += configurations.provided
+
+
+group = 'com.android.tools.build'
+archivesBaseName = 'gradle-core'
+version = rootProject.ext.buildVersion
+
+project.ext.pomName = 'Core Library for Android Gradle Plug-in'
+project.ext.pomDesc = 'Core library to build Android Gradle plugin.'
+
+apply from: "$rootDir/buildSrc/base/publish.gradle"
+apply from: "$rootDir/buildSrc/base/bintray.gradle"
+
+test {
+    environment("CUSTOM_REPO", rootProject.file("../out/repo"))
+
+    testLogging {
+        events "failed"
+    }
+
+    maxParallelForks = Runtime.runtime.availableProcessors() / 2
+}
+
+groovydoc {
+    exclude     "**/internal/**"
+    includePrivate false
+
+    docTitle "Gradle Plugin for Android"
+    header ""
+    footer "Copyright (C) 2012 The Android Open Source Project"
+    overview ""
+}
+
+task javadocJar(type: Jar, dependsOn:groovydoc) {
+    classifier  'javadoc'
+    from        groovydoc.destinationDir
+}
+
+// Only package JavaDoc if using --init-script=buildSrc/base/release.gradle
+if (project.has("release")) {
+  artifacts {
+    archives javadocJar
+  }
+}

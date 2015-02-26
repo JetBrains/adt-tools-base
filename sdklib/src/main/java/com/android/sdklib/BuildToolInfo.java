@@ -16,6 +16,40 @@
 
 package com.android.sdklib;
 
+import static com.android.SdkConstants.FD_LIB;
+import static com.android.SdkConstants.FN_AAPT;
+import static com.android.SdkConstants.FN_AIDL;
+import static com.android.SdkConstants.FN_BCC_COMPAT;
+import static com.android.SdkConstants.FN_DEXDUMP;
+import static com.android.SdkConstants.FN_DX;
+import static com.android.SdkConstants.FN_DX_JAR;
+import static com.android.SdkConstants.FN_JACK;
+import static com.android.SdkConstants.FN_JILL;
+import static com.android.SdkConstants.FN_LD_ARM;
+import static com.android.SdkConstants.FN_LD_MIPS;
+import static com.android.SdkConstants.FN_LD_X86;
+import static com.android.SdkConstants.FN_RENDERSCRIPT;
+import static com.android.SdkConstants.FN_SPLIT_SELECT;
+import static com.android.SdkConstants.FN_ZIPALIGN;
+import static com.android.SdkConstants.OS_FRAMEWORK_RS;
+import static com.android.SdkConstants.OS_FRAMEWORK_RS_CLANG;
+import static com.android.sdklib.BuildToolInfo.PathId.AAPT;
+import static com.android.sdklib.BuildToolInfo.PathId.AIDL;
+import static com.android.sdklib.BuildToolInfo.PathId.ANDROID_RS;
+import static com.android.sdklib.BuildToolInfo.PathId.ANDROID_RS_CLANG;
+import static com.android.sdklib.BuildToolInfo.PathId.BCC_COMPAT;
+import static com.android.sdklib.BuildToolInfo.PathId.DEXDUMP;
+import static com.android.sdklib.BuildToolInfo.PathId.DX;
+import static com.android.sdklib.BuildToolInfo.PathId.DX_JAR;
+import static com.android.sdklib.BuildToolInfo.PathId.JACK;
+import static com.android.sdklib.BuildToolInfo.PathId.JILL;
+import static com.android.sdklib.BuildToolInfo.PathId.LD_ARM;
+import static com.android.sdklib.BuildToolInfo.PathId.LD_MIPS;
+import static com.android.sdklib.BuildToolInfo.PathId.LD_X86;
+import static com.android.sdklib.BuildToolInfo.PathId.LLVM_RS_CC;
+import static com.android.sdklib.BuildToolInfo.PathId.SPLIT_SELECT;
+import static com.android.sdklib.BuildToolInfo.PathId.ZIP_ALIGN;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
@@ -31,9 +65,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import static com.android.SdkConstants.*;
-import static com.android.sdklib.BuildToolInfo.PathId.*;
 
 /**
  * Information on a specific build-tool folder.
@@ -89,7 +120,9 @@ public class BuildToolInfo {
 
         // --- NEW IN 21.x.y ---
         JACK("21.1.0"),
-        JILL("21.1.0");
+        JILL("21.1.0"),
+
+        SPLIT_SELECT("22.0.0");
 
         /**
          * min revision this element was introduced.
@@ -147,6 +180,7 @@ public class BuildToolInfo {
         add(ZIP_ALIGN, FN_ZIPALIGN);
         add(JACK, FN_JACK);
         add(JILL, FN_JILL);
+        add(SPLIT_SELECT, FN_SPLIT_SELECT);
     }
 
     public BuildToolInfo(

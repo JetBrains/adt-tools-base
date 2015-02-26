@@ -17,25 +17,32 @@
 package com.android.build.gradle.integration.application
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
+import com.android.builder.model.AndroidProject
+import com.android.builder.model.SyncIssue
+import groovy.transform.CompileStatic
 import org.gradle.tooling.BuildException
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
+import static org.junit.Assert.assertEquals
+import static org.junit.Assert.assertNotNull
 import static org.junit.Assert.assertTrue
 import static org.junit.Assert.fail
 /**
  * Check that a project can depend on a jar dependency published by another app project.
  */
+@CompileStatic
 class ExternalTestProjectTest {
 
     @Rule
-    public GradleTestProject project = GradleTestProject.builder().create()
+    public GradleTestProject project = GradleTestProject.builder().captureStdErr(true).create()
 
     private File app2BuildFile
 
     @Before
-    public void setup() {
+    public void setUp() {
         File rootFile = project.getTestDir()
         new File(rootFile, "settings.gradle") << """
 include ':app1'
@@ -90,7 +97,7 @@ dependencies {
     }
 
     @Test
-    void testApkDependency() {
+    void testApkDependencyInBuild() {
         app2BuildFile << """
 apply plugin: 'com.android.application'
 
@@ -107,12 +114,52 @@ dependencies {
             project.execute('clean', 'app2:assembleDebug')
             fail('Broken build file did not throw exception')
         } catch (BuildException e) {
-            Throwable cause = e;
-            while (cause.getCause() != null) {
-                cause = cause.getCause();
+            Throwable t = e
+            while (t.getCause() != null) {
+                t = t.getCause()
             }
-            String expectedMsg = "Dependency project:app1:unspecified on project app2 resolves to an APK archive which is not supported as a compilation dependency. File:"
-            assertTrue(cause.getMessage().startsWith(expectedMsg))
+
+            // looks like we can't actually test the instance t against GradleException
+            // due to it coming through the tooling API from a different class loader.
+            assertEquals("org.gradle.api.GradleException", t.getClass().canonicalName)
+            assertEquals("Dependency Error. See console for details", t.getMessage())
         }
+
+        // check there is a version of the error, after the task name:
+        ByteArrayOutputStream stderr = project.stderr
+        String log = stderr.toString()
+
+        assertTrue("stderr contains error", log.contains(
+                "Dependency project:app1:unspecified on project app2 resolves to an APK archive which is not supported as a compilation dependency. File:"))
+
+    }
+
+    @Test
+    void testApkDependencyInModel() {
+        app2BuildFile << """
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
+    buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
+}
+
+dependencies {
+    compile project(path: ':app1')
+}
+"""
+
+        Map<String, AndroidProject> modelMap = project.getAllModels()
+
+        AndroidProject model = modelMap.get(':app2')
+        assertNotNull(model)
+
+        SyncIssue issue = assertThat(model).issues().hasSingleIssue(
+                SyncIssue.SEVERITY_ERROR,
+                SyncIssue.TYPE_DEPENDENCY_IS_APK,
+                'project:app1:unspecified')
+
+        String expectedMsg = "Dependency project:app1:unspecified on project app2 resolves to an APK archive which is not supported as a compilation dependency. File:"
+        assertThat(issue.getMessage()).startsWith(expectedMsg)
     }
 }

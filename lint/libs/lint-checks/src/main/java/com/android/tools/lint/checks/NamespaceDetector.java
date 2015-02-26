@@ -100,7 +100,7 @@ public class NamespaceDetector extends LayoutDetector {
             "ResAuto", //$NON-NLS-1$
             "Hardcoded Package in Namespace",
 
-            "In Gradle projects, the actual package used in the final APK can vary; for " +
+            "In Gradle projects, the actual package used in the final APK can vary; for example," +
             "you can add a `.debug` package suffix in one version and not the other. " +
             "Therefore, you should *not* hardcode the application package in the resource; " +
             "instead, use the special namespace `http://schemas.android.com/apk/res-auto` " +

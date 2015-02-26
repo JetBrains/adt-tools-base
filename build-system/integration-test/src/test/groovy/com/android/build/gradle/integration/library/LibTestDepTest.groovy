@@ -19,8 +19,15 @@ package com.android.build.gradle.integration.library
 import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.utils.ModelHelper
-import com.android.builder.model.*
-import org.junit.*
+import com.android.builder.model.AndroidArtifact
+import com.android.builder.model.AndroidProject
+import com.android.builder.model.Dependencies
+import com.android.builder.model.JavaLibrary
+import com.android.builder.model.Variant
+import org.junit.AfterClass
+import org.junit.BeforeClass
+import org.junit.ClassRule
+import org.junit.Test
 import org.junit.experimental.categories.Category
 
 import static com.android.builder.core.BuilderConstants.DEBUG
@@ -40,8 +47,8 @@ class LibTestDepTest {
     static AndroidProject model
 
     @BeforeClass
-    static void setup() {
-        model = project.executeAndReturnModel("clean", "assembleDebug");
+    static void setUp() {
+        model = project.executeAndReturnModel("clean", "assembleDebug")
     }
 
     @AfterClass
@@ -57,21 +64,21 @@ class LibTestDepTest {
 
     @Test
     public void "check test variant inherits deps from main variant"() {
-        Collection<Variant> variants = model.getVariants();
-        Variant debugVariant = ModelHelper.getVariant(variants, DEBUG);
-        assertNotNull(debugVariant);
+        Collection<Variant> variants = model.getVariants()
+        Variant debugVariant = ModelHelper.getVariant(variants, DEBUG)
+        assertNotNull(debugVariant)
 
-        Collection<AndroidArtifact> extraAndroidArtifact = debugVariant.getExtraAndroidArtifacts();
+        Collection<AndroidArtifact> extraAndroidArtifact = debugVariant.getExtraAndroidArtifacts()
         AndroidArtifact testArtifact = ModelHelper.getAndroidArtifact(extraAndroidArtifact,
-                ARTIFACT_ANDROID_TEST);
-        assertNotNull(testArtifact);
+                ARTIFACT_ANDROID_TEST)
+        assertNotNull(testArtifact)
 
-        Dependencies testDependencies = testArtifact.getDependencies();
-        Collection<JavaLibrary> javaLibraries = testDependencies.getJavaLibraries();
-        assertEquals(2, javaLibraries.size());
+        Dependencies testDependencies = testArtifact.getDependencies()
+        Collection<JavaLibrary> javaLibraries = testDependencies.getJavaLibraries()
+        assertEquals(2, javaLibraries.size())
         for (JavaLibrary lib : javaLibraries) {
-            File f = lib.getJarFile();
-            assertTrue(f.getName().equals("guava-11.0.2.jar") || f.getName().equals("jsr305-1.3.9.jar"));
+            File f = lib.getJarFile()
+            assertTrue(f.getName().equals("guava-11.0.2.jar") || f.getName().equals("jsr305-1.3.9.jar"))
         }
     }
 
@@ -83,6 +90,6 @@ class LibTestDepTest {
     @Test
     @Category(DeviceTests.class)
     void connectedCheck() {
-        project.execute("connectedCheck");
+        project.execute("connectedCheck")
     }
 }

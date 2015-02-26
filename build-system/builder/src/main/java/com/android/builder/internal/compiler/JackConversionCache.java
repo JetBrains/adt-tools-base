@@ -19,8 +19,9 @@ package com.android.builder.internal.compiler;
 import com.android.annotations.NonNull;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.DexOptions;
-import com.android.ide.common.internal.CommandLineRunner;
-import com.android.ide.common.internal.LoggedErrorException;
+import com.android.ide.common.process.JavaProcessExecutor;
+import com.android.ide.common.process.ProcessException;
+import com.android.ide.common.process.ProcessOutputHandler;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.repository.FullRevision;
 import com.android.utils.Pair;
@@ -42,7 +43,7 @@ import java.util.List;
  * Because different project could use different build-tools, both the library to be converted
  * and the version of the build tools are used as keys in the cache.
  *
- * The API is fairly simple, just call {@link #convertLibrary(java.io.File, java.io.File, com.android.builder.core.DexOptions, com.android.sdklib.BuildToolInfo, boolean, com.android.ide.common.internal.CommandLineRunner)}
+ * The API is fairly simple, just call {@link #convertLibrary(File, File, DexOptions, BuildToolInfo, boolean, JavaProcessExecutor, ProcessOutputHandler)}
  *
  * The call will be blocking until the conversion happened, either through actually running Jill or
  * through copying the output of a previous Jill run.
@@ -79,10 +80,8 @@ public class JackConversionCache extends PreProcessCache<PreProcessCache.Key> {
      * @param dexOptions the dex options to run pre-dex
      * @param buildToolInfo the build tools info
      * @param verbose verbose flag
-     * @param commandLineRunner the command line runner.
-     * @throws java.io.IOException
-     * @throws com.android.ide.common.internal.LoggedErrorException
-     * @throws InterruptedException
+     * @param processExecutor the java process executor.
+     * @throws ProcessException
      */
     public void convertLibrary(
             @NonNull File inputFile,
@@ -90,8 +89,9 @@ public class JackConversionCache extends PreProcessCache<PreProcessCache.Key> {
             @NonNull DexOptions dexOptions,
             @NonNull BuildToolInfo buildToolInfo,
             boolean verbose,
-            @NonNull CommandLineRunner commandLineRunner)
-            throws IOException, LoggedErrorException, InterruptedException {
+            @NonNull JavaProcessExecutor processExecutor,
+            @NonNull ProcessOutputHandler processOutputHandler)
+            throws ProcessException, InterruptedException, IOException {
 
         Key itemKey = Key.of(inputFile, buildToolInfo.getRevision());
 
@@ -108,21 +108,12 @@ public class JackConversionCache extends PreProcessCache<PreProcessCache.Key> {
                         dexOptions,
                         buildToolInfo,
                         verbose,
-                        commandLineRunner);
+                        processExecutor,
+                        processOutputHandler);
                 item.getOutputFiles().addAll(files);
 
                 incrementMisses();
-            } catch (IOException exception) {
-                // in case of error, delete (now obsolete) output file
-                outFile.delete();
-                // and rethrow the error
-                throw exception;
-            } catch (LoggedErrorException exception) {
-                // in case of error, delete (now obsolete) output file
-                outFile.delete();
-                // and rethrow the error
-                throw exception;
-            } catch (InterruptedException exception) {
+            } catch (ProcessException exception) {
                 // in case of error, delete (now obsolete) output file
                 outFile.delete();
                 // and rethrow the error

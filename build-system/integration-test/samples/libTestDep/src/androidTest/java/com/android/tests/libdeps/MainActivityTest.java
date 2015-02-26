@@ -16,11 +16,11 @@
 
 package com.android.tests.libdeps;
 
+import com.android.tests.libdeps.MainActivity;
+
 import android.test.ActivityInstrumentationTestCase2;
 import android.test.suitebuilder.annotation.MediumTest;
 import android.widget.TextView;
-import com.android.tests.libdeps.MainActivity;
-import com.google.common.base.Splitter;
 
 /**
  *
@@ -55,7 +55,7 @@ public class MainActivityTest extends ActivityInstrumentationTestCase2<MainActiv
 
         // use some of Guava's class as they should be accessible through the
         // classpath from the library
-        Iterable<String> segments = Splitter.on("-").split(mLib1TextView1.getText());
+        Iterable<String> segments = MainActivity.split("-", mLib1TextView1.getText());
         assertEquals("SUCCESS", segments.iterator().next());
     }
 }

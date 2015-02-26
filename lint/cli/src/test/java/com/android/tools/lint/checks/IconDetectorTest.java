@@ -22,8 +22,11 @@ import static org.easymock.EasyMock.replay;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.FilterData;
+import com.android.build.OutputFile;
+import com.android.builder.model.AndroidArtifact;
+import com.android.builder.model.AndroidArtifactOutput;
 import com.android.builder.model.AndroidProject;
-import com.android.builder.model.ApiVersion;
 import com.android.builder.model.ProductFlavor;
 import com.android.builder.model.ProductFlavorContainer;
 import com.android.builder.model.Variant;
@@ -35,8 +38,11 @@ import com.android.tools.lint.detector.api.Project;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
+import org.easymock.IExpectationSetters;
+
 import java.io.File;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -543,11 +549,34 @@ public class IconDetectorTest extends AbstractCheckTest {
                         "res/drawable-hdpi/ic_launcher.png"));
     }
 
+    public void testSplits1() throws Exception {
+        // splits in the Gradle model sets up the specific set of resource configs
+        // that are included in the packaging: we use this to limit the set of required
+        // densities
+        mEnabled = Sets.newHashSet(IconDetector.ICON_DENSITIES, IconDetector.ICON_MISSING_FOLDER);
+        assertEquals(""
+                        + "res: Warning: Missing density variation folders in res: drawable-hdpi [IconMissingDensityFolder]\n"
+                        + "0 errors, 1 warnings\n",
+
+                lintProject(
+                        "res/drawable-mdpi/frame.png",
+                        "res/drawable-nodpi/frame.png",
+                        "res/drawable-xlarge-nodpi-v11/frame.png"));
+    }
+
     @Override
     protected TestLintClient createClient() {
-        if (!getName().startsWith("testResConfigs")) {
+        String testName = getName();
+        if (testName.startsWith("testResConfigs")) {
+            return createClientForTestResConfigs();
+        } else if (testName.startsWith("testSplits")) {
+            return createClientForTestSplits();
+        } else {
             return super.createClient();
         }
+    }
+
+    private TestLintClient createClientForTestResConfigs() {
 
         // Set up a mock project model for the resource configuration test(s)
         // where we provide a subset of densities to be included
@@ -657,6 +686,116 @@ public class IconDetectorTest extends AbstractCheckTest {
                         expect(mock.getProductFlavors()).andReturn(productFlavorNames).anyTimes();
                         replay(mock);
                         return mock;
+                    }
+                };
+            }
+        };
+    }
+
+    private TestLintClient createClientForTestSplits() {
+
+        // Set up a mock project model for the resource configuration test(s)
+        // where we provide a subset of densities to be included
+
+        return new TestLintClient() {
+            @NonNull
+            @Override
+            protected Project createProject(@NonNull File dir, @NonNull File referenceDir) {
+                return new Project(this, dir, referenceDir) {
+                    @Override
+                    public boolean isGradleProject() {
+                        return true;
+                    }
+
+                    @Nullable
+                    @Override
+                    public AndroidProject getGradleProjectModel() {
+                        /*
+                            Simulate variant debug in this setup:
+                            splits {
+                                density {
+                                    enable true
+                                    reset()
+                                    include "mdpi", "hdpi"
+                                }
+                            }
+                         */
+
+                        ProductFlavor defaultFlavor = createNiceMock(ProductFlavor.class);
+                        expect(defaultFlavor.getName()).andReturn("main").anyTimes();
+                        expect(defaultFlavor.getResourceConfigurations()).andReturn(
+                                Collections.<String>emptyList()).anyTimes();
+                        replay(defaultFlavor);
+
+                        ProductFlavorContainer defaultContainer =
+                                createNiceMock(ProductFlavorContainer.class);
+                        expect(defaultContainer.getProductFlavor()).andReturn(defaultFlavor).anyTimes();
+                        replay(defaultContainer);
+
+                        AndroidProject project = createNiceMock(AndroidProject.class);
+                        expect(project.getProductFlavors()).andReturn(
+                                Collections.<ProductFlavorContainer>emptyList()).anyTimes();
+                        expect(project.getDefaultConfig()).andReturn(defaultContainer).anyTimes();
+                        replay(project);
+                        return project;
+                    }
+
+                    @Nullable
+                    @Override
+                    public Variant getCurrentVariant() {
+                        Collection<AndroidArtifactOutput> outputs = Lists.newArrayList();
+
+                        outputs.add(createAndroidArtifactOutput("", ""));
+                        outputs.add(createAndroidArtifactOutput("DENSITY", "mdpi"));
+                        outputs.add(createAndroidArtifactOutput("DENSITY", "hdpi"));
+
+                        AndroidArtifact mainArtifact = createNiceMock(AndroidArtifact.class);
+                        expect(mainArtifact.getOutputs()).andReturn(outputs).anyTimes();
+                        replay(mainArtifact);
+
+                        List<String> productFlavorNames = Collections.emptyList();
+                        Variant mock = createNiceMock(Variant.class);
+                        expect(mock.getProductFlavors()).andReturn(productFlavorNames).anyTimes();
+                        expect(mock.getMainArtifact()).andReturn(mainArtifact).anyTimes();
+                        replay(mock);
+                        return mock;
+                    }
+
+                    private AndroidArtifactOutput createAndroidArtifactOutput(
+                            @NonNull String filterType,
+                            @NonNull String identifier) {
+                        AndroidArtifactOutput artifactOutput = createNiceMock(
+                                AndroidArtifactOutput.class);
+
+                        OutputFile outputFile = createNiceMock(OutputFile.class);
+                        if (filterType.isEmpty()) {
+                            expect(outputFile.getFilterTypes())
+                                    .andReturn(Collections.<String>emptyList()).anyTimes();
+                            expect(outputFile.getFilters())
+                                    .andReturn(Collections.<FilterData>emptyList()).anyTimes();
+                        } else {
+                            expect(outputFile.getFilterTypes())
+                                    .andReturn(Collections.singletonList(filterType)).anyTimes();
+                            List<FilterData> filters = Lists.newArrayList();
+                            FilterData filter = createNiceMock(FilterData.class);
+                            expect(filter.getFilterType()).andReturn(filterType).anyTimes();
+                            expect(filter.getIdentifier()).andReturn(identifier).anyTimes();
+                            replay(filter);
+                            filters.add(filter);
+                            expect(outputFile.getFilters()).andReturn(filters).anyTimes();
+                        }
+                        replay(outputFile);
+
+                        // Work around wildcard capture
+                        //expect(artifactOutput.getOutputs()).andReturn(outputFiles).anyTimes();
+                        IExpectationSetters setter = expect(artifactOutput.getOutputs());
+                        List<OutputFile> outputFiles = Collections.singletonList(outputFile);
+                        //noinspection unchecked
+                        setter.andReturn(outputFiles);
+                        setter.anyTimes();
+                        replay(artifactOutput);
+
+                        return artifactOutput;
                     }
                 };
             }

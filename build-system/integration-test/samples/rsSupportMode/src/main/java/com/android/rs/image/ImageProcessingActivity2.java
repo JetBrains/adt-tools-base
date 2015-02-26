@@ -17,28 +17,21 @@
 package com.android.rs.image2;
 
 import android.app.Activity;
-import android.os.Bundle;
-import android.graphics.BitmapFactory;
 import android.graphics.Bitmap;
-import android.graphics.Canvas;
+import android.graphics.BitmapFactory;
+import android.os.Bundle;
+import android.os.Environment;
 import android.support.v8.renderscript.*;
+import android.util.Log;
 import android.view.SurfaceView;
-import android.view.SurfaceHolder;
+import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.Spinner;
 import android.widget.TextView;
-import android.view.View;
-import android.util.Log;
-import java.lang.Math;
 
-import android.os.Environment;
-import android.app.Instrumentation;
-import android.content.Context;
-import android.content.Intent;
-import android.net.Uri;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;

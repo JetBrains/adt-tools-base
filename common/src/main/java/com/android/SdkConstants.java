@@ -226,6 +226,9 @@ public final class SdkConstants {
     /** jill.jar */
     public static final String FN_JILL = "jill.jar";                                  //$NON-NLS-1$
 
+    /** split-select */
+    public static final String FN_SPLIT_SELECT = "split-select" + ext(".exe", "");
+
 
     /** properties file for SDK Updater packages */
     public static final String FN_SOURCE_PROP = "source.properties";                  //$NON-NLS-1$
@@ -1128,6 +1131,7 @@ public final class SdkConstants {
     public static final String DRAWABLE_PREFIX = "@drawable/";          //$NON-NLS-1$
     public static final String STRING_PREFIX = "@string/";              //$NON-NLS-1$
     public static final String DIMEN_PREFIX = "@dimen/";                //$NON-NLS-1$
+    public static final String MIPMAP_PREFIX = "@mipmap/";              //$NON-NLS-1$
 
     public static final String ANDROID_LAYOUT_RESOURCE_PREFIX = "@android:layout/"; //$NON-NLS-1$
     public static final String ANDROID_STYLE_RESOURCE_PREFIX = "@android:style/";   //$NON-NLS-1$
@@ -1358,7 +1362,7 @@ public final class SdkConstants {
     public static final String GRADLE_MINIMUM_VERSION = "2.2.1";
     public static final String GRADLE_LATEST_VERSION = "2.2.1";
     public static final String GRADLE_PLUGIN_MINIMUM_VERSION = "1.0.0";
-    public static final String GRADLE_PLUGIN_RECOMMENDED_VERSION = "1.0.0";
+    public static final String GRADLE_PLUGIN_RECOMMENDED_VERSION = "1.1.1";
     public static final String GRADLE_PLUGIN_LATEST_VERSION = GRADLE_PLUGIN_RECOMMENDED_VERSION;
     public static final String MIN_BUILD_TOOLS_VERSION = "19.1.0";
     public static final String SUPPORT_LIB_ARTIFACT = "com.android.support:support-v4";

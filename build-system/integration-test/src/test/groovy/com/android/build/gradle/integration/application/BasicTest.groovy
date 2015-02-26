@@ -15,6 +15,7 @@
  */
 
 package com.android.build.gradle.integration.application
+
 import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.utils.ModelHelper
@@ -32,7 +33,12 @@ import org.junit.Test
 import org.junit.experimental.categories.Category
 
 import static com.android.builder.core.BuilderConstants.DEBUG
-import static org.junit.Assert.*
+import static org.junit.Assert.assertEquals
+import static org.junit.Assert.assertFalse
+import static org.junit.Assert.assertNotNull
+import static org.junit.Assert.assertNull
+import static org.junit.Assert.assertTrue
+
 /**
  * Assemble tests for basic.
  */
@@ -46,7 +52,7 @@ class BasicTest {
     static public AndroidProject model
 
     @BeforeClass
-    static void setup() {
+    static void setUp() {
         model = project.executeAndReturnModel("clean", "assembleDebug")
     }
 
@@ -114,18 +120,18 @@ class BasicTest {
 
     @Test
     void "check custom signing"() throws Exception {
-        Collection<Variant> variants = model.getVariants();
+        Collection<Variant> variants = model.getVariants()
 
         for (Variant variant : variants) {
             // Release variant doesn't specify the signing config, so it should not be considered
             // signed.
             if (variant.getName().equals("release")) {
-                assertFalse(variant.getMainArtifact().isSigned());
+                assertFalse(variant.getMainArtifact().isSigned())
             }
 
             // customSigning is identical to release, but overrides the signing check.
             if (variant.getName().equals("customSigning")) {
-                assertTrue(variant.getMainArtifact().isSigned());
+                assertTrue(variant.getMainArtifact().isSigned())
             }
         }
     }
