@@ -173,9 +173,13 @@ public class SimpleTestCallable implements Callable<Boolean> {
 
                 // create a fake test output
                 Map<String, String> emptyMetrics = Collections.emptyMap();
-                TestIdentifier fakeTest = new TestIdentifier(device.getClass().getName(), "hasTests");
+                TestIdentifier fakeTest = new TestIdentifier(device.getClass().getName(), "No tests found.");
                 fakeRunListener.testStarted(fakeTest);
-                fakeRunListener.testFailed(fakeTest , "No tests found.");
+                fakeRunListener.testFailed(
+                        fakeTest,
+                        "No tests found. This usually means that your test classes are"
+                                + " not in the form that your test runner expects (e.g. don't inherit from"
+                                + " TestCase or lack @Test annotations).");
                 fakeRunListener.testEnded(fakeTest, emptyMetrics);
 
                 // end the run to generate the XML file.
