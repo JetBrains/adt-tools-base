@@ -61,7 +61,11 @@ class SpanRecorders {
             @NonNull ExecutionType executionType,
             @NonNull Recorder.Block<T> block,
             Recorder.Property... properties) {
+        List<Recorder.Property> mergedProperties = new ArrayList<>(properties.length + 1);
+        mergedProperties.addAll(properties);
+        mergedProperties.add(new Recorder.Property(PROJECT, project.getName()))
         return (T) ThreadRecorder.get().record(
-                executionType, block, new Recorder.Property(PROJECT, project.getName()))
+                executionType, block,
+                mergedProperties.toArray(new Recorder.Property[mergedProperties.size()]))
     }
 }
