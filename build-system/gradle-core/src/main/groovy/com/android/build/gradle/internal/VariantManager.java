@@ -384,8 +384,8 @@ public class VariantManager implements VariantModel {
 
         createAssembleTaskForVariantData(tasks, variantData);
         if (variantType.isForTesting()) {
-            GradleVariantConfiguration testVariantConfig = variantData.getVariantConfiguration();
-            BaseVariantData testedVariantData = (BaseVariantData) ((TestVariantData) variantData)
+            final GradleVariantConfiguration testVariantConfig = variantData.getVariantConfiguration();
+            final BaseVariantData testedVariantData = (BaseVariantData) ((TestVariantData) variantData)
                     .getTestedVariantData();
 
             /// add the container of dependencies
@@ -412,7 +412,7 @@ public class VariantManager implements VariantModel {
             // If the variant being tested is a library variant, VariantDependencies must be
             // computed after the tasks for the tested variant is created.  Therefore, the
             // VariantDependencies is computed here instead of when the VariantData was created.
-            VariantDependencies variantDep = VariantDependencies.compute(
+            final VariantDependencies variantDep = VariantDependencies.compute(
                     project, testVariantConfig.getFullName(),
                     false /*publishVariant*/,
                     variantFactory.isLibrary(),
@@ -420,10 +420,18 @@ public class VariantManager implements VariantModel {
                             new ConfigurationProvider[testVariantProviders.size()]));
             variantData.setVariantDependency(variantDep);
 
-            taskManager.resolveDependencies(variantDep,
-                    testVariantConfig.getTestedConfig().getType() == VariantType.LIBRARY
-                        ? null
-                        : testedVariantData.getVariantDependency());
+            SpanRecorders.record(project, ExecutionType.RESOLVE_DEPENDENCIES,
+                    new Recorder.Block<Void>() {
+                        @Override
+                        public Void call() {
+                            taskManager.resolveDependencies(variantDep,
+                                    testVariantConfig.getTestedConfig().getType() == VariantType.LIBRARY
+                                            ? null
+                                            : testedVariantData.getVariantDependency());
+                            return null;
+                        }
+                    },
+                    new Recorder.Property(SpanRecorders.VARIANT, testVariantConfig.getFullName()));
             testVariantConfig.setDependencies(variantDep);
             switch (variantType) {
                 case ANDROID_TEST:
@@ -569,7 +577,7 @@ public class VariantManager implements VariantModel {
         BaseVariantData<?> variantData = variantFactory.createVariantData(variantConfig,
                 densities, abis, compatibleScreens, taskManager);
 
-        VariantDependencies variantDep = VariantDependencies.compute(
+        final VariantDependencies variantDep = VariantDependencies.compute(
                 project, variantConfig.getFullName(),
                 isVariantPublished(),
                 variantFactory.isLibrary(),
@@ -583,7 +591,15 @@ public class VariantManager implements VariantModel {
                     variantDep.getPackageConfiguration().getName(), COM_ANDROID_SUPPORT_MULTIDEX);
         }
 
-        taskManager.resolveDependencies(variantDep, null);
+        SpanRecorders.record(project, ExecutionType.RESOLVE_DEPENDENCIES,
+                new Recorder.Block<Void>() {
+                    @Override
+                    public Void call() {
+                        taskManager.resolveDependencies(variantDep, null);
+                        return null;
+                    }
+                }, new Recorder.Property(SpanRecorders.VARIANT, variantConfig.getFullName()));
+
         variantConfig.setDependencies(variantDep);
 
         return variantData;
