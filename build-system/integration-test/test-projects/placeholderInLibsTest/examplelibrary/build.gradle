@@ -12,3 +12,7 @@ android {
     }
 }
 
+android.testVariants.all {
+    it.mergedFlavor.manifestPlaceholders = [ localApplicationId:"com.example.manifest_merger_example.flavor"]
+}
+

@@ -58,6 +58,9 @@ public class ProcessTestManifest extends ManifestProcessorTask {
     @Input
     Boolean functionalTest;
 
+    @Input
+    Map<String, Object> placeholdersValues;
+
     List<ManifestDependencyImpl> libraries
 
     /*
@@ -91,6 +94,7 @@ public class ProcessTestManifest extends ManifestProcessorTask {
                 getFunctionalTest(),
                 getTestManifestFile(),
                 getLibraries(),
+                getPlaceholdersValues(),
                 getManifestOutputFile(),
                 getTmpDir())
     }
