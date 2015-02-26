@@ -130,7 +130,7 @@ public class Decoder {
 
   @Nullable
   public BinaryObject object() throws IOException {
-    int key = uint16();
+    int key = uint16() & 0xffff;
 
     if (key == BinaryObject.NULL_ID) {
       return null;
