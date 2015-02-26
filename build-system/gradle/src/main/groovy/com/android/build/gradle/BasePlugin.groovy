@@ -48,6 +48,7 @@ import com.android.builder.internal.compiler.JackConversionCache
 import com.android.builder.internal.compiler.PreDexCache
 import com.android.builder.profile.ExecutionType
 import com.android.builder.profile.ProcessRecorderFactory
+import com.android.builder.profile.ThreadRecorder
 import com.android.builder.sdk.TargetInfo
 import com.android.ide.common.blame.output.BlameAwareLoggedProcessOutputHandler
 import com.android.ide.common.internal.ExecutorSingleton
@@ -231,7 +232,7 @@ public abstract class BasePlugin {
         this.project = project
         ProcessRecorderFactory.initialize(logger, project.rootProject.
                 file("profiler" + System.currentTimeMillis() + ".json"))
-        project.gradle.addListener(new RecordingBuildListener());
+        project.gradle.addListener(new RecordingBuildListener(ThreadRecorder.get()));
 
         SpanRecorders.record(project, ExecutionType.BASE_PLUGIN_PROJECT_CONFIGURE) {
             configureProject()
