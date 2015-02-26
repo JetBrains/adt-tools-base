@@ -64,7 +64,12 @@ public class PreciseRevision extends FullRevision {
 
     PreciseRevision(int major, int minor, int micro, int preview, int precision,
             String separator) {
-        super(major, minor, micro, preview, separator);
+        this(major, minor, micro, preview, precision, separator, PreviewType.RC);
+    }
+
+    PreciseRevision(int major, int minor, int micro, int preview, int precision,
+            String separator, FullRevision.PreviewType previewType) {
+        super(major, minor, micro, previewType, preview, separator);
         mPrecision = precision;
     }
 
