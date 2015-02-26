@@ -266,13 +266,10 @@ public class VariantManager implements VariantModel {
         variantFactory.validateModel(this);
         variantFactory.preVariantWork(project);
 
-        taskManager.createAssembleAndroidTestTask();
-
+        final TaskFactory tasks = new TaskContainerAdaptor(project.getTasks());
         if (variantDataList.isEmpty()) {
             populateVariantDataList();
         }
-
-        final TaskFactory tasks = new TaskContainerAdaptor(project.getTasks());
 
         // Create top level test tasks.
         ThreadRecorder.get().record(ExecutionType.VARIANT_MANAGER_CREATE_TESTS_TASKS,
@@ -301,7 +298,7 @@ public class VariantManager implements VariantModel {
                 new Recorder.Block<Void>() {
                     @Override
                     public Void call() throws Exception {
-                        taskManager.createLintTasks(variantDataList);
+                        taskManager.createLintTasks(tasks, variantDataList);
                         return null;
                     }
                 });

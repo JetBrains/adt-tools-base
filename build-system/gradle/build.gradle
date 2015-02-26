@@ -14,6 +14,7 @@ apply plugin: 'jacoco'
 
 dependencies {
     compile project(':base:gradle-core')
+    compile gradleApi()
 
     testCompile 'junit:junit:4.12'
     testCompile project(':base:project-test-lib')
