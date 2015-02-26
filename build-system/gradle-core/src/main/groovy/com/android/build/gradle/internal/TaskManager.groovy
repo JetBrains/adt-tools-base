@@ -563,6 +563,9 @@ abstract class TaskManager {
             project.file(
                     "$project.buildDir/${FD_INTERMEDIATES}/${manifestOurDir}/${variantData.variantConfiguration.dirName}/AndroidManifest.xml")
         }
+        conventionMapping(processTestManifestTask).map("placeholdersValues") {
+            variantData.getVariantConfiguration().getManifestPlaceholders()
+        }
     }
 
     public void createRenderscriptTask(
