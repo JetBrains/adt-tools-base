@@ -104,6 +104,7 @@ import com.android.sdklib.AndroidTargetHash
 import com.android.sdklib.BuildToolInfo
 import com.android.sdklib.IAndroidTarget
 import com.android.sdklib.SdkVersionInfo
+import com.google.common.base.CharMatcher
 import com.google.common.collect.ImmutableSet
 import com.google.common.collect.Lists
 import com.google.common.collect.Sets
@@ -309,9 +310,12 @@ abstract class TaskManager {
             new File(androidBuilder.target.getPath(IAndroidTarget.ANDROID_JAR))
         }
 
+        CharMatcher safeCharacters = CharMatcher.JAVA_LETTER_OR_DIGIT.or(CharMatcher.anyOf('-.'))
+        String sdkName = safeCharacters.negate().replaceFrom(extension.compileSdkVersion, '-')
+
         conventionMapping(createMockableJar).map("outputFile") {
             project.file(
-                    "$project.buildDir/${FD_INTERMEDIATES}/mockable-${extension.compileSdkVersion}.jar")
+                    "$project.buildDir/${FD_INTERMEDIATES}/mockable-${sdkName}.jar")
         }
 
         conventionMapping(createMockableJar).map("returnDefaultValues") {
