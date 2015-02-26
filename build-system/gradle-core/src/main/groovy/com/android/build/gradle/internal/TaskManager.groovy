@@ -448,6 +448,15 @@ abstract class TaskManager {
         task.conventionMapping
     }
 
+    /**
+     * Using the BaseConventionPlugin does not work for archivesBaseName dynamic attribute,
+     * revert to a dynamic property invocation.
+     */
+    @CompileDynamic
+    private static String getArchivesBaseName(Project project){
+        project.archivesBaseName
+    }
+
     public void createMergeLibManifestsTask(
             @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData,
             @NonNull String manifestOutDir) {
@@ -2396,8 +2405,8 @@ abstract class TaskManager {
         GradleVariantConfiguration config = variantData.variantConfiguration
 
         boolean signedApk = variantData.isSigned()
-        BasePluginConvention convention = project.convention.findPlugin(BasePluginConvention)
-        String projectBaseName = convention.archivesBaseName
+        // use a dynamic property invocation due to gradle issue.
+        String projectBaseName = getArchivesBaseName(project)
         String defaultLocation = "$project.buildDir/${FD_OUTPUTS}/apk"
         String apkLocation = defaultLocation
         if (project.hasProperty(PROPERTY_APK_LOCATION)) {
