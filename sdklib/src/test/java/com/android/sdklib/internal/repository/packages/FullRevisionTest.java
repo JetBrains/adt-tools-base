@@ -18,9 +18,9 @@ package com.android.sdklib.internal.repository.packages;
 
 import com.android.sdklib.repository.FullRevision;
 
-import java.util.Arrays;
-
 import junit.framework.TestCase;
+
+import java.util.Arrays;
 
 public class FullRevisionTest extends TestCase {
 
@@ -50,6 +50,49 @@ public class FullRevisionTest extends TestCase {
         assertEquals(p, FullRevision.parseRevision("5.0.0 rc6"));
         assertEquals("[5, 0, 0]",    Arrays.toString(p.toIntArray(false /*includePreview*/)));
         assertEquals("[5, 0, 0, 6]", Arrays.toString(p.toIntArray(true  /*includePreview*/)));
+
+        p = new FullRevision(1, 2, 0, FullRevision.PreviewType.ALPHA, 1, "-");
+        assertEquals(1, p.getMajor());
+        assertEquals(2, p.getMinor());
+        assertEquals(FullRevision.IMPLICIT_MICRO_REV, p.getMicro());
+        assertEquals(1, p.getPreview());
+        assertTrue(p.isPreview());
+        assertEquals("1.2-alpha1", p.toShortString());
+        assertEquals(p, FullRevision.parseRevision("1.2-alpha1"));
+        assertEquals("1.2.0-alpha1", p.toString());
+        assertEquals(p, FullRevision.parseRevision("1.2.0-alpha1"));
+        assertFalse(p.equals(FullRevision.parseRevision("1.2.0-rc1")));
+        assertTrue(p.compareTo(FullRevision.parseRevision("1.2.0-rc1")) < 0);
+        assertEquals("[1, 2, 0]",    Arrays.toString(p.toIntArray(false /*includePreview*/)));
+        assertEquals("[1, 2, 0, 1]", Arrays.toString(p.toIntArray(true  /*includePreview*/)));
+
+        p = new FullRevision(1, 1, 0, FullRevision.PreviewType.BETA, 4, "-");
+        assertEquals(1, p.getMajor());
+        assertEquals(1, p.getMinor());
+        assertEquals(FullRevision.IMPLICIT_MICRO_REV, p.getMicro());
+        assertEquals(4, p.getPreview());
+        assertTrue(p.isPreview());
+        assertEquals("1.1-beta4", p.toShortString());
+        assertEquals(p, FullRevision.parseRevision("1.1-beta4"));
+        assertEquals("1.1.0-beta4", p.toString());
+        assertEquals(p, FullRevision.parseRevision("1.1.0-beta4"));
+        assertEquals("[1, 1, 0]",    Arrays.toString(p.toIntArray(false /*includePreview*/)));
+        assertEquals("[1, 1, 0, 4]", Arrays.toString(p.toIntArray(true  /*includePreview*/)));
+
+        assertTrue(FullRevision.parseRevision("1.1.0-beta4").compareTo(FullRevision.parseRevision("1.1.0-alpha5")) > 0);
+        assertTrue(FullRevision.parseRevision("1.1.0-beta4").compareTo(FullRevision.parseRevision("1.1.0-beta3")) > 0);
+        assertTrue(FullRevision.parseRevision("1.1.0-beta4").compareTo(FullRevision.parseRevision("1.1.0-beta5")) < 0);
+        assertTrue(FullRevision.parseRevision("1.1.0-beta4").compareTo(FullRevision.parseRevision("1.1.0-rc1")) < 0);
+        assertTrue(FullRevision.parseRevision("1.1.0-alpha5").compareTo(FullRevision.parseRevision("1.1.0-beta4")) < 0);
+        assertTrue(FullRevision.parseRevision("1.1.0-beta3").compareTo(FullRevision.parseRevision("1.1.0-beta4")) < 0);
+        assertTrue(FullRevision.parseRevision("1.1.0-beta5").compareTo(FullRevision.parseRevision("1.1.0-beta4")) > 0);
+        assertTrue(FullRevision.parseRevision("1.1.0-rc1").compareTo(FullRevision.parseRevision("1.1.0-beta4")) > 0);
+        assertTrue(FullRevision.parseRevision("1.1.0").compareTo(FullRevision.parseRevision("1.1.0-alpha1")) > 0);
+        assertTrue(FullRevision.parseRevision("1.1.0").compareTo(FullRevision.parseRevision("1.1.0-beta4")) > 0);
+        assertTrue(FullRevision.parseRevision("1.1.0").compareTo(FullRevision.parseRevision("1.1.0-rc1")) > 0);
+        assertTrue(FullRevision.parseRevision("1.1.0-alpha1").compareTo(FullRevision.parseRevision("1.1.0")) < 0);
+        assertTrue(FullRevision.parseRevision("1.1.0-beta4").compareTo(FullRevision.parseRevision("1.1.0")) < 0);
+        assertTrue(FullRevision.parseRevision("1.1.0-rc1").compareTo(FullRevision.parseRevision("1.1.0")) < 0);
 
         p = new FullRevision(6, 7, 0);
         assertEquals(6, p.getMajor());
