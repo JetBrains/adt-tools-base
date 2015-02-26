@@ -63,7 +63,7 @@ public class SimpleTestRunner implements TestRunner {
         WaitableExecutor<Boolean> executor = new WaitableExecutor<Boolean>(maxThreads);
 
         int totalDevices = deviceList.size();
-        int unAuthorizedDevices = 0;
+        int unauthorizedDevices = 0;
         int compatibleDevices = 0;
 
         for (DeviceConnector device : deviceList) {
@@ -92,7 +92,7 @@ public class SimpleTestRunner implements TestRunner {
                             resultsDir, coverageDir, timeoutInMs, installOptions, logger));
                 }
             } else {
-                unAuthorizedDevices++;
+                unauthorizedDevices++;
             }
         }
 
@@ -104,9 +104,11 @@ public class SimpleTestRunner implements TestRunner {
             // create a fake test output
             Map<String, String> emptyMetrics = Collections.emptyMap();
             TestIdentifier fakeTest = new TestIdentifier(variantName,
-                    totalDevices == 0 ? "_FoundConnectedDevices" : "_FoundCompatibleDevices");
+                    totalDevices == 0 ? ": No devices connected." : ": No compatible devices connected.");
             fakeRunListener.testStarted(fakeTest);
-            fakeRunListener.testFailed(fakeTest , "No tests found.");
+            fakeRunListener.testFailed(
+                    fakeTest,
+                    String.format("Found %d connected device(s), %d of which were compatible.", totalDevices, compatibleDevices));
             fakeRunListener.testEnded(fakeTest, emptyMetrics);
 
             // end the run to generate the XML file.
@@ -115,16 +117,16 @@ public class SimpleTestRunner implements TestRunner {
             return false;
         } else {
 
-            if (unAuthorizedDevices > 0) {
+            if (unauthorizedDevices > 0) {
                 CustomTestRunListener fakeRunListener = new CustomTestRunListener(
                         "TestRunner", projectName, variantName, logger);
                 fakeRunListener.setReportDir(resultsDir);
 
                 // create a fake test output
                 Map<String, String> emptyMetrics = Collections.emptyMap();
-                TestIdentifier fakeTest = new TestIdentifier(variantName, "_FoundUnauthorizedDevices");
+                TestIdentifier fakeTest = new TestIdentifier(variantName, ": found unauthorized devices.");
                 fakeRunListener.testStarted(fakeTest);
-                fakeRunListener.testFailed(fakeTest , "No tests found.");
+                fakeRunListener.testFailed(fakeTest , String.format("Found %d unauthorized device(s).", unauthorizedDevices));
                 fakeRunListener.testEnded(fakeTest, emptyMetrics);
 
                 // end the run to generate the XML file.
@@ -133,7 +135,7 @@ public class SimpleTestRunner implements TestRunner {
 
             List<WaitableExecutor.TaskResult<Boolean>> results = executor.waitForAllTasks();
 
-            boolean success = unAuthorizedDevices == 0;
+            boolean success = unauthorizedDevices == 0;
 
             // check if one test failed or if there was an exception.
             for (WaitableExecutor.TaskResult<Boolean> result : results) {
