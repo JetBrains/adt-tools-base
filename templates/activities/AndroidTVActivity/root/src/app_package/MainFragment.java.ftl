@@ -49,7 +49,6 @@ import android.widget.Toast;
 import com.squareup.picasso.Picasso;
 import com.squareup.picasso.Target;
 
-
 public class ${mainFragment} extends BrowseFragment {
     private static final String TAG = "${truncate(mainFragment,23)}";
 
@@ -191,7 +190,6 @@ public class ${mainFragment} extends BrowseFragment {
             }
         }
     }
-
 
     private final class ItemViewSelectedListener implements OnItemViewSelectedListener {
         @Override
