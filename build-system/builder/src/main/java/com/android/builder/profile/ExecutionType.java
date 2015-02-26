@@ -23,6 +23,7 @@ package com.android.builder.profile;
  * 0-1000       initial setup
  * 1000-2000    application related task creation
  * 2000-3000    library related task creation
+ * 3000-4000    Tasks related events.
  */
 public enum ExecutionType {
 
@@ -72,7 +73,30 @@ public enum ExecutionType {
 
     // TASK_EXECUTION
     GENERIC_TASK_EXECUTION(3000),
-    TASK_AIDL_COMPILE(3001);
+    TASK_AIDL_COMPILE(3001),
+    TASK_DELETE(3002),
+    TASK_CHECK_MANIFEST(3003),
+    TASK_PREPARE_DEPENDENCIES_TASK(3004),
+    TASK_RENDERSCRIPT_COMPILE(3005),
+    TASK_GENERATE_BUILD_CONFIG(3006),
+    TASK_MERGE_ASSETS(3007),
+    TASK_GENERATE_RES_VALUES(3008),
+    TASK_MERGE_RESOURCES(3009),
+    TASK_MERGE_MANIFESTS(3010),
+    TASK_PROCESS_ANDROID_RESOURCES(3011),
+    TASK_JAVA_COMPILE(3012),
+    TASK_NDK_COMPILE(3013),
+    TASK_PRE_DEX(3014),
+    TASK_DEX(3015),
+    TASK_PACKAGE_SPLIT_RES(3016),
+    TASK_PROCESS_RESOURCES(3017),
+    TASK_VALIDATE_SIGNING_TASK(3018),
+    TASK_PACKAGE_APPLICATION(3019),
+    TASK_SPLIT_ZIP_ALIGN(3020),
+    TASK_ZIP_ALIGN(3021),
+    TASK_COPY(3022),
+    TASK_LINT(3023);
+
 
     int getId() {
         return id;
