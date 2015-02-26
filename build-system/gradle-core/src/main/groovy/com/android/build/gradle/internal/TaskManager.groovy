@@ -1551,6 +1551,8 @@ abstract class TaskManager {
             }
 
             topLevelTest.dependsOn runTestsTask
+
+            extension.testOptions.unitTests.applyConfiguration(runTestsTask)
         }
 
         Task check = project.tasks.getByName(JavaBasePlugin.CHECK_TASK_NAME)
