@@ -79,7 +79,6 @@ public class ${detailsFragment} extends DetailsFragment {
         mDorPresenter.setSharedElementEnterTransition(getActivity(),
                 ${detailsActivity}.SHARED_ELEMENT_NAME);
 
-
         updateBackground(mSelectedMovie.getBackgroundImageURI());
         setOnItemViewClickedListener(new ItemViewClickedListener());
 

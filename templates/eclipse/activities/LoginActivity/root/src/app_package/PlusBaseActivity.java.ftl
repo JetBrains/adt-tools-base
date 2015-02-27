@@ -39,7 +39,6 @@ public abstract class PlusBaseActivity extends <#if minApiLevel lt 14>ActionBar<
     // If this IS null, then the connect method is still running.
     private ConnectionResult mConnectionResult;
 
-
     /**
      * Called when the {@link PlusClient} revokes access to this app.
      */
