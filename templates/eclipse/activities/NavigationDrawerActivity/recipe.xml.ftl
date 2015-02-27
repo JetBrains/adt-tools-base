@@ -31,7 +31,6 @@
     <instantiate from="res/menu/global.xml.ftl"
                    to="${escapeXmlAttribute(resOut)}/menu/global.xml" />
 
-
     <instantiate from="res/layout/activity_drawer.xml.ftl"
                    to="${escapeXmlAttribute(resOut)}/layout/${layoutName}.xml" />
     <instantiate from="res/layout/fragment_navigation_drawer.xml.ftl"

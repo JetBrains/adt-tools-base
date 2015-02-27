@@ -18,7 +18,6 @@
     <instantiate from="res/layout/activity_fragment_container.xml.ftl"
                    to="${escapeXmlAttribute(resOut)}/layout/${layoutName}.xml" />
 
-
     <instantiate from="res/layout/fragment_simple.xml.ftl"
                    to="${escapeXmlAttribute(resOut)}/layout/${fragmentLayoutName}.xml" />
 
