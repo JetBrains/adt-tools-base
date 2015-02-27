@@ -67,7 +67,6 @@ import org.gradle.api.file.SourceDirectorySet
 import org.gradle.api.internal.project.ProjectInternal
 import org.gradle.api.logging.LogLevel
 import org.gradle.api.plugins.JavaBasePlugin
-import org.gradle.api.tasks.TaskContainer
 import org.gradle.internal.reflect.Instantiator
 import org.gradle.internal.service.ServiceRegistry
 import org.gradle.language.base.FunctionalSourceSet
@@ -405,11 +404,9 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
             taskManager.createLintTasks(variantManager.variantDataList);
 
             // create the test tasks.
-            taskManager.createConnectedCheckTasks (
+            taskManager.createTopLevelTestTasks (
                     new TaskCollectionBuilderAdaptor(tasks),
-                    variantManager.variantDataList,
-                    !variantManager.productFlavors.isEmpty() /*hasFlavors*/,
-                    false /*isLibrary*/ );
+                    !variantManager.productFlavors.isEmpty() /*hasFlavors*/);
         }
 
         @Mutate
