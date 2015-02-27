@@ -46,7 +46,7 @@ public class AppPluginInternalTest extends BaseTest {
 
     public void testBasic() {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "${FOLDER_TEST_SAMPLES}/basic")).build()
+                new File(testDir, "${FOLDER_TEST_PROJECTS}/basic")).build()
 
         project.apply plugin: 'com.android.application'
 
@@ -74,7 +74,7 @@ public class AppPluginInternalTest extends BaseTest {
 
     public void testDefaultConfig() {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "${FOLDER_TEST_SAMPLES}/basic")).build()
+                new File(testDir, "${FOLDER_TEST_PROJECTS}/basic")).build()
 
         project.apply plugin: 'com.android.application'
 
@@ -120,7 +120,7 @@ public class AppPluginInternalTest extends BaseTest {
 
     public void testBuildTypes() {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "${FOLDER_TEST_SAMPLES}/basic")).build()
+                new File(testDir, "${FOLDER_TEST_PROJECTS}/basic")).build()
 
         project.apply plugin: 'com.android.application'
 
@@ -157,7 +157,7 @@ public class AppPluginInternalTest extends BaseTest {
 
     public void testFlavors() {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "${FOLDER_TEST_SAMPLES}/basic")).build()
+                new File(testDir, "${FOLDER_TEST_PROJECTS}/basic")).build()
 
         project.apply plugin: 'com.android.application'
 
@@ -194,7 +194,7 @@ public class AppPluginInternalTest extends BaseTest {
 
     public void testMultiFlavors() {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "${FOLDER_TEST_SAMPLES}/basic")).build()
+                new File(testDir, "${FOLDER_TEST_PROJECTS}/basic")).build()
 
         project.apply plugin: 'com.android.application'
 
@@ -259,7 +259,7 @@ public class AppPluginInternalTest extends BaseTest {
 
     public void testSigningConfigs() {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "${FOLDER_TEST_SAMPLES}/basic")).build()
+                new File(testDir, "${FOLDER_TEST_PROJECTS}/basic")).build()
 
         project.apply plugin: 'com.android.application'
 
@@ -360,7 +360,7 @@ public class AppPluginInternalTest extends BaseTest {
      */
     public void testDebugSigningConfig() throws Exception {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "${FOLDER_TEST_SAMPLES}/basic")).build()
+                new File(testDir, "${FOLDER_TEST_PROJECTS}/basic")).build()
 
         project.apply plugin: 'com.android.application'
 
@@ -386,7 +386,7 @@ public class AppPluginInternalTest extends BaseTest {
 
     public void testSigningConfigInitWith() throws Exception {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "${FOLDER_TEST_SAMPLES}/basic")).build()
+                new File(testDir, "${FOLDER_TEST_PROJECTS}/basic")).build()
 
         project.apply plugin: 'com.android.application'
 
@@ -413,7 +413,7 @@ public class AppPluginInternalTest extends BaseTest {
 
     public void testPluginDetection() {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "${FOLDER_TEST_SAMPLES}/basic")).build()
+                new File(testDir, "${FOLDER_TEST_PROJECTS}/basic")).build()
 
         project.apply plugin: 'com.android.application'
         project.apply plugin: 'java'

@@ -26,7 +26,6 @@ import java.security.CodeSource
  */
 public abstract class BaseTest extends TestCase {
 
-    public static final String FOLDER_TEST_SAMPLES = "samples";
     public static final String FOLDER_TEST_PROJECTS = "test-projects";
 
     protected File sdkDir;
