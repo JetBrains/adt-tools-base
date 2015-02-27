@@ -323,6 +323,9 @@ class DependencyManager {
         // be in both compiled and packaged scope.
         gatherJarDependenciesFromLibraries(jarInfoSet, compiledAndroidLibraries, true, true)
 
+        // the final list of JarDependency, created from the list of JarInfo.
+        List<JarDependency> jars = Lists.newArrayListWithCapacity(jarInfoSet.size())
+
         // if this is a test dependencies (ie tested dependencies is non null), override
         // packaged attributes for jars that are already in the tested dependencies in order to
         // not package them twice (since the VM loads the classes of both APKs in the same
@@ -339,12 +342,17 @@ class DependencyManager {
             }
 
             // now go through all the test dependencies and check we don't have the same thing.
+            // Skip the ones that are already in the tested variant, and convert the rest
+            // to the final immutable instance
             for (JarInfo jar : jarInfoSet) {
                 if (jar.isPackaged()) {
                     MavenCoordinates coord = jar.getResolvedCoordinates()
 
                     String testedVersion = testedDeps.get(coord.getGroupId(), coord.getArtifactId())
                     if (testedVersion != null) {
+                        // same artifact, skip packaging of the dependency in the test app,
+                        // whether the version is a match or not.
+
                         // if the dependency is present in both tested and test artifact,
                         // verify that they are the same version
                         if (!testedVersion.equals(coord.getVersion())) {
@@ -356,19 +364,19 @@ class DependencyManager {
                                             "Resolved versions for app ($testedVersion) and test app (${coord.getVersion()}) differ."))
 
                         } else {
-                            // same version, skip packaging of the dependency in the test app.
-                            jar.setPackaged(false)
                             logger.info("Removed '${coord} from packaging of ${variantDeps.name}: Already in tested package.")
                         }
+                    } else {
+                        // new artifact, convert it.
+                        jars.add(jar.createJarDependency())
                     }
                 }
             }
-        }
-
-        // and convert them to the right class.
-        List<JarDependency> jars = Lists.newArrayListWithCapacity(jarInfoSet.size())
-        for (JarInfo jarInfo : jarInfoSet) {
-            jars.add(jarInfo.createJarDependency())
+        } else {
+            // just convert all of them to JarDependency
+            for (JarInfo jarInfo : jarInfoSet) {
+                jars.add(jarInfo.createJarDependency())
+            }
         }
 
         // --- Handle the local jar dependencies ---
