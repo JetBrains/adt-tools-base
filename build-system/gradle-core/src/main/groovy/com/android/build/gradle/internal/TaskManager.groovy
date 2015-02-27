@@ -61,7 +61,6 @@ import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.build.gradle.internal.variant.BaseVariantOutputData
 import com.android.build.gradle.internal.variant.LibraryVariantData
 import com.android.build.gradle.internal.variant.TestVariantData
-import com.android.build.gradle.internal.variant.TestedVariantData
 import com.android.build.gradle.tasks.AidlCompile
 import com.android.build.gradle.tasks.AndroidJarTask
 import com.android.build.gradle.tasks.AndroidProGuardTask
@@ -121,12 +120,10 @@ import org.gradle.api.logging.LogLevel
 import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
 import org.gradle.api.plugins.BasePlugin
-import org.gradle.api.plugins.BasePluginConvention
 import org.gradle.api.plugins.JavaBasePlugin
 import org.gradle.api.plugins.JavaPlugin
 import org.gradle.api.reporting.ConfigurableReport
 import org.gradle.api.tasks.Copy
-import org.gradle.api.tasks.TaskContainer
 import org.gradle.api.tasks.bundling.Jar
 import org.gradle.api.tasks.compile.AbstractCompile
 import org.gradle.api.tasks.compile.JavaCompile
@@ -1341,13 +1338,16 @@ abstract class TaskManager {
      *
      * @param variantData the test variant
      */
-    void createUnitTestVariantTasks(@NonNull TestVariantData variantData) {
+    void createUnitTestVariantTasks(
+            @NonNull TaskFactory tasks,
+            @NonNull TestVariantData variantData) {
         BaseVariantData testedVariantData = variantData.getTestedVariantData() as BaseVariantData
         createPreBuildTasks(variantData)
         createProcessJavaResTask(variantData)
         createCompileAnchorTask(variantData)
         createJavaCompileTask(variantData, testedVariantData)
         createJackAndUnitTestVerificationTask(variantData, testedVariantData)
+        createUnitTestTask(tasks, variantData)
 
         // This hides the assemble unit test task from the task list.
         variantData.assembleVariantTask.group = null
@@ -1422,6 +1422,8 @@ abstract class TaskManager {
         createPackagingTask(tasks, variantData, false /*publishApk*/)
 
         assembleAndroidTest.dependsOn variantOutputData.assembleTask
+
+        createConnectedTestForVariantData(tasks, variantData, false)
     }
 
     // TODO - should compile src/lint/java from src/lint/java and jar it into build/lint/lint.jar
@@ -1522,57 +1524,48 @@ abstract class TaskManager {
         }
     }
 
-    void createUnitTestTasks(
-            List<BaseVariantData<? extends BaseVariantOutputData>> variantDataList) {
-        Task topLevelTest = project.tasks.create(JavaPlugin.TEST_TASK_NAME)
-        topLevelTest.group = JavaBasePlugin.VERIFICATION_GROUP
-        topLevelTest.description = "Run unit tests for all variants."
+    private void createUnitTestTask(@NonNull TaskFactory tasks, @NonNull TestVariantData variantData) {
+        BaseVariantData testedVariantData = variantData.testedVariantData as BaseVariantData
 
-        variantDataList.findAll { it.variantConfiguration.type == UNIT_TEST }.each {
-            TestVariantData variantData = it as TestVariantData
-            BaseVariantData testedVariantData = variantData.testedVariantData as BaseVariantData
+        Test runTestsTask = project.tasks.create(
+                UNIT_TEST.prefix +
+                        testedVariantData.variantConfiguration.fullName.capitalize(),
+                Test)
+        runTestsTask.group = JavaBasePlugin.VERIFICATION_GROUP
+        runTestsTask.description = "Run unit tests for the " +
+                "$testedVariantData.variantConfiguration.fullName build."
 
-            Test runTestsTask = project.tasks.create(
-                    UNIT_TEST.prefix +
-                            testedVariantData.variantConfiguration.fullName.capitalize(),
-                    Test)
-            runTestsTask.group = JavaBasePlugin.VERIFICATION_GROUP
-            runTestsTask.description = "Run unit tests for the " +
-                    "$testedVariantData.variantConfiguration.fullName build."
+        fixTestTaskSources(runTestsTask)
 
-            fixTestTaskSources(runTestsTask)
+        variantData.assembleVariantTask.dependsOn createMockableJar
+        runTestsTask.dependsOn variantData.assembleVariantTask
 
-            variantData.assembleVariantTask.dependsOn createMockableJar
-            runTestsTask.dependsOn variantData.assembleVariantTask
+        AbstractCompile testCompileTask = variantData.javaCompileTask
+        runTestsTask.testClassesDir = testCompileTask.destinationDir
 
-            AbstractCompile testCompileTask = variantData.javaCompileTask
-            runTestsTask.testClassesDir = testCompileTask.destinationDir
-
-            conventionMapping(runTestsTask).map("classpath") {
-                project.files(
-                        testCompileTask.classpath,
-                        testCompileTask.outputs.files,
-                        variantData.processJavaResourcesTask.outputs.files,
-                        androidBuilder.bootClasspath.findAll {
-                            it.name != SdkConstants.FN_FRAMEWORK_LIBRARY
-                        },
-                        createMockableJar.outputFile)
-            }
-
-            // Put the variant name in the report path, so that different testing tasks don't
-            // overwrite each other's reports.
-            TestTaskReports testTaskReports = runTestsTask.reports
-            for (ConfigurableReport report in [testTaskReports.junitXml, testTaskReports.html]) {
-                report.destination = new File(report.destination, testedVariantData.name)
-            }
-
-            topLevelTest.dependsOn runTestsTask
-
-            extension.testOptions.unitTests.applyConfiguration(runTestsTask)
+        conventionMapping(runTestsTask).map("classpath") {
+            project.files(
+                    testCompileTask.classpath,
+                    testCompileTask.outputs.files,
+                    variantData.processJavaResourcesTask.outputs.files,
+                    androidBuilder.bootClasspath.findAll {
+                        it.name != SdkConstants.FN_FRAMEWORK_LIBRARY
+                    },
+                    createMockableJar.outputFile)
         }
 
-        Task check = project.tasks.getByName(JavaBasePlugin.CHECK_TASK_NAME)
-        check.dependsOn topLevelTest
+        // Put the variant name in the report path, so that different testing tasks don't
+        // overwrite each other's reports.
+        TestTaskReports testTaskReports = runTestsTask.reports
+        for (ConfigurableReport report in [testTaskReports.junitXml, testTaskReports.html]) {
+            report.destination = new File(report.destination, testedVariantData.name)
+        }
+
+        tasks.named(JavaPlugin.TEST_TASK_NAME) { Task test ->
+            test.dependsOn runTestsTask
+        }
+
+        extension.testOptions.unitTests.applyConfiguration(runTestsTask)
     }
 
     @CompileDynamic
@@ -1588,22 +1581,16 @@ abstract class TaskManager {
         testTask.inputs.sourceFiles.from.clear()
     }
 
-    public void createConnectedCheckTasks(
-            TaskFactory tasks,
-            List<BaseVariantData<? extends BaseVariantOutputData>> variantDataList,
-            boolean hasFlavors,
-            boolean isLibraryTest) {
+    public void createTopLevelTestTasks(TaskFactory tasks, boolean hasFlavors) {
         List<String> reportTasks = Lists.newArrayListWithExpectedSize(2)
 
         List<DeviceProvider> providers = getExtension().deviceProviders
-        List<TestServer> servers = getExtension().testServers
 
-        String mainConnectedTaskName = CONNECTED_CHECK
         String connectedRootName = "${CONNECTED}${ANDROID_TEST.suffix}"
-        // if more than one flavor, create a report aggregator task and make this the parent
-        // task for all new connected tasks.
+        // If more than one flavor, create a report aggregator task and make this the parent
+        // task for all new connected tasks.  Otherwise, create a top level connectedAndroidTest
+        // DefaultTask.
         if (hasFlavors) {
-            mainConnectedTaskName = connectedRootName
             tasks.create(connectedRootName, AndroidReportTask) { AndroidReportTask mainConnectedTask ->
                 mainConnectedTask.group = JavaBasePlugin.VERIFICATION_GROUP
                 mainConnectedTask.description =
@@ -1625,18 +1612,22 @@ abstract class TaskManager {
                 }
 
             }
-            reportTasks.add(mainConnectedTaskName)
-
-            tasks.named(CONNECTED_CHECK) {
-                it.dependsOn mainConnectedTaskName
+            reportTasks.add(connectedRootName)
+        } else {
+            tasks.create(connectedRootName) { Task connectedTask ->
+                connectedTask.group = JavaBasePlugin.VERIFICATION_GROUP
+                connectedTask.description =
+                        "Installs and runs instrumentation tests for all flavors on connected devices."
             }
         }
+        tasks.named(CONNECTED_CHECK) {
+            it.dependsOn connectedRootName
+        }
 
-        String mainProviderTaskName = DEVICE_CHECK
+        String mainProviderTaskName =  "${DEVICE}${ANDROID_TEST.suffix}"
         // if more than one provider tasks, either because of several flavors, or because of
         // more than one providers, then create an aggregate report tasks for all of them.
         if (providers.size() > 1 || hasFlavors) {
-            mainProviderTaskName = "${DEVICE}${ANDROID_TEST.suffix}"
             tasks.create(mainProviderTaskName, AndroidReportTask) { AndroidReportTask mainProviderTask ->
                 mainProviderTask.group = JavaBasePlugin.VERIFICATION_GROUP
                 mainProviderTask.description =
@@ -1658,147 +1649,26 @@ abstract class TaskManager {
                     project.file("$rootLocation/devices/$FD_FLAVORS_ALL")
                 }
             }
-
-            tasks.named(DEVICE_CHECK) {
-                it.dependsOn mainProviderTaskName
-            }
-
             reportTasks.add(mainProviderTaskName)
+        } else {
+            tasks.create(mainProviderTaskName) { Task providerTask ->
+                providerTask.group = JavaBasePlugin.VERIFICATION_GROUP
+                providerTask.description =
+                        "Installs and runs instrumentation tests using all Device Providers."
+            }
         }
 
-        // Now look for the tested variant and create the check tasks for them.
-        // don't use an auto loop as we can't reuse baseVariantData or the closure lower
-        // gets broken.
-        int count = variantDataList.size();
-        for (int i = 0; i < count; i++) {
-            final BaseVariantData<? extends BaseVariantOutputData> baseVariantData = variantDataList.get(i);
-            if (baseVariantData instanceof TestedVariantData) {
-                final TestVariantData testVariantData = ((TestedVariantData) baseVariantData).
-                        getTestVariantData(ANDROID_TEST)
-                if (testVariantData == null) {
-                    continue
-                }
+        tasks.named(DEVICE_CHECK) {
+            it.dependsOn mainProviderTaskName
+        }
 
-                // get single output for now
-                BaseVariantOutputData variantOutputData = baseVariantData.outputs.get(0)
-                BaseVariantOutputData testVariantOutputData = testVariantData.outputs.get(0)
-
-                Class<? extends DeviceProviderInstrumentTestTask> taskClass = isLibraryTest ?
-                        DeviceProviderInstrumentTestLibraryTask :
-                        DeviceProviderInstrumentTestTask
-
-                String connectedTaskName = hasFlavors ?
-                        "${connectedRootName}${baseVariantData.variantConfiguration.fullName.capitalize()}" :
-                        connectedRootName
-
-                // create the check tasks for this test
-                // first the connected one.
-                DeviceProviderInstrumentTestTask connectedTask =
-                        createDeviceProviderInstrumentTestTask(
-                                connectedTaskName,
-                                "Installs and runs the tests for ${baseVariantData.description} on connected devices.",
-                                taskClass,
-                                testVariantData,
-                                baseVariantData as BaseVariantData,
-                                new ConnectedDeviceProvider(sdkHandler.getSdkInfo().adb),
-                                CONNECTED
-                        )
-
-                tasks.named(mainConnectedTaskName) {
-                    it.dependsOn connectedTask
-                }
-                testVariantData.connectedTestTask = connectedTask
-
-                if (baseVariantData.variantConfiguration.buildType.isTestCoverageEnabled()) {
-                    def reportTask = project.tasks.create(
-                            "create${baseVariantData.variantConfiguration.fullName.capitalize()}CoverageReport",
-                            JacocoReportTask)
-                    reportTask.reportName = baseVariantData.variantConfiguration.fullName
-                    conventionMapping(reportTask).map("jacocoClasspath") {
-                        project.configurations[JacocoPlugin.ANT_CONFIGURATION_NAME]
-                    }
-                    conventionMapping(reportTask).map("coverageFile") {
-                        new File(connectedTask.getCoverageDir(),
-                                SimpleTestCallable.FILE_COVERAGE_EC)
-                    }
-                    conventionMapping(reportTask).map("classDir") {
-                        return baseVariantData.javaCompileTask.destinationDir
-                    }
-                    conventionMapping(reportTask).
-                            map("sourceDir") { baseVariantData.getJavaSourceFoldersForCoverage() }
-
-                    conventionMapping(reportTask).map("reportDir") {
-                        project.file(
-                                "$project.buildDir/${FD_OUTPUTS}/$FD_REPORTS/coverage/${baseVariantData.variantConfiguration.dirName}")
-                    }
-
-                    reportTask.dependsOn connectedTask
-                    tasks.named(mainConnectedTaskName) {
-                        it.dependsOn reportTask
-                    }
-                }
-
-                // now the providers.
-                for (DeviceProvider deviceProvider : providers) {
-                    DeviceProviderInstrumentTestTask providerTask =
-                            createDeviceProviderInstrumentTestTask(
-                                    hasFlavors ?
-                                            "${deviceProvider.name}${ANDROID_TEST.suffix}${baseVariantData.variantConfiguration.fullName.capitalize()}" :
-                                            "${deviceProvider.name}${ANDROID_TEST.suffix}",
-                                    "Installs and runs the tests for Build '${baseVariantData.variantConfiguration.fullName}' using Provider '${deviceProvider.name.capitalize()}'.",
-                                    taskClass,
-                                    testVariantData,
-                                    baseVariantData as BaseVariantData,
-                                    deviceProvider,
-                                    "$DEVICE/$deviceProvider.name"
-                            )
-
-                    tasks.named(mainProviderTaskName) {
-                        it.dependsOn providerTask
-                    }
-                    testVariantData.providerTestTaskList.add(providerTask)
-
-                    if (!deviceProvider.isConfigured()) {
-                        providerTask.enabled = false;
-                    }
-                }
-
-                // now the test servers
-                // don't use an auto loop as it'll break the closure inside.
-                for (TestServer testServer : servers) {
-                    def serverTask = project.tasks.create(
-                            hasFlavors ?
-                                    "${testServer.name}${"upload".capitalize()}${baseVariantData.variantConfiguration.fullName}" :
-                                    "${testServer.name}${"upload".capitalize()}",
-                            TestServerTask)
-
-                    serverTask.description =
-                            "Uploads APKs for Build '${baseVariantData.variantConfiguration.fullName}' to Test Server '${testServer.name.capitalize()}'."
-                    serverTask.group = JavaBasePlugin.VERIFICATION_GROUP
-                    serverTask.dependsOn testVariantOutputData.assembleTask,
-                            variantOutputData.assembleTask
-
-                    serverTask.testServer = testServer
-
-                    conventionMapping(serverTask).
-                            map("testApk") { testVariantOutputData.outputFile }
-                    if (!(baseVariantData instanceof LibraryVariantData)) {
-                        conventionMapping(serverTask).
-                                map("testedApk") { variantOutputData.outputFile }
-                    }
-
-                    conventionMapping(serverTask).
-                            map("variantName") { baseVariantData.variantConfiguration.fullName }
-
-                    tasks.named(DEVICE_CHECK) {
-                        it.dependsOn serverTask
-                    }
-
-                    if (!testServer.isConfigured()) {
-                        serverTask.enabled = false;
-                    }
-                }
-            }
+        // Create top level unit test tasks.
+        tasks.create(JavaPlugin.TEST_TASK_NAME) { Task unitTestTask ->
+            unitTestTask.group = JavaBasePlugin.VERIFICATION_GROUP
+            unitTestTask.description = "Run unit tests for all variants."
+        }
+        tasks.named(JavaBasePlugin.CHECK_TASK_NAME) { Task check ->
+            check.dependsOn JavaPlugin.TEST_TASK_NAME
         }
 
         // If gradle is launched with --continue, we want to run all tests and generate an
@@ -1822,6 +1692,142 @@ abstract class TaskManager {
         }
     }
 
+    private void createConnectedTestForVariantData(
+            TaskFactory tasks,
+            final TestVariantData testVariantData,
+            boolean isLibraryTest) {
+        BaseVariantData<? extends BaseVariantOutputData> baseVariantData =
+                testVariantData.testedVariantData as BaseVariantData
+
+        // get single output for now
+        BaseVariantOutputData variantOutputData = baseVariantData.outputs.get(0)
+        BaseVariantOutputData testVariantOutputData = testVariantData.outputs.get(0)
+
+        Class<? extends DeviceProviderInstrumentTestTask> taskClass = isLibraryTest ?
+                DeviceProviderInstrumentTestLibraryTask :
+                DeviceProviderInstrumentTestTask
+
+        String connectedRootName = "${CONNECTED}${ANDROID_TEST.suffix}"
+
+        String connectedTaskName =
+                "${connectedRootName}${baseVariantData.variantConfiguration.fullName.capitalize()}"
+
+        // create the check tasks for this test
+        // first the connected one.
+        DeviceProviderInstrumentTestTask connectedTask =
+                createDeviceProviderInstrumentTestTask(
+                        connectedTaskName,
+                        "Installs and runs the tests for ${baseVariantData.description} on connected devices.",
+                        taskClass,
+                        testVariantData,
+                        baseVariantData as BaseVariantData,
+                        new ConnectedDeviceProvider(sdkHandler.getSdkInfo().adb),
+                        CONNECTED
+                )
+
+        tasks.named(connectedRootName) {
+            it.dependsOn connectedTask
+        }
+        testVariantData.connectedTestTask = connectedTask
+
+        if (baseVariantData.variantConfiguration.buildType.isTestCoverageEnabled()) {
+            def reportTask = project.tasks.create(
+                    "create${baseVariantData.variantConfiguration.fullName.capitalize()}CoverageReport",
+                    JacocoReportTask)
+            reportTask.reportName = baseVariantData.variantConfiguration.fullName
+            conventionMapping(reportTask).map("jacocoClasspath") {
+                project.configurations[JacocoPlugin.ANT_CONFIGURATION_NAME]
+            }
+            conventionMapping(reportTask).map("coverageFile") {
+                new File(connectedTask.getCoverageDir(),
+                        SimpleTestCallable.FILE_COVERAGE_EC)
+            }
+            conventionMapping(reportTask).map("classDir") {
+                return baseVariantData.javaCompileTask.destinationDir
+            }
+            conventionMapping(reportTask).
+                    map("sourceDir") { baseVariantData.getJavaSourceFoldersForCoverage() }
+
+            conventionMapping(reportTask).map("reportDir") {
+                project.file(
+                        "$project.buildDir/${FD_OUTPUTS}/$FD_REPORTS/coverage/${baseVariantData.variantConfiguration.dirName}")
+            }
+
+            reportTask.dependsOn connectedTask
+            tasks.named(connectedRootName) {
+                it.dependsOn reportTask
+            }
+        }
+
+        String mainProviderTaskName = "${DEVICE}${ANDROID_TEST.suffix}"
+
+        List<DeviceProvider> providers = getExtension().deviceProviders
+
+        boolean hasFlavors = baseVariantData.variantConfiguration.hasFlavors()
+
+        // now the providers.
+        for (DeviceProvider deviceProvider : providers) {
+            DeviceProviderInstrumentTestTask providerTask =
+                    createDeviceProviderInstrumentTestTask(
+                            hasFlavors ?
+                                    "${deviceProvider.name}${ANDROID_TEST.suffix}${baseVariantData.variantConfiguration.fullName.capitalize()}" :
+                                    "${deviceProvider.name}${ANDROID_TEST.suffix}",
+                            "Installs and runs the tests for Build '${baseVariantData.variantConfiguration.fullName}' using Provider '${deviceProvider.name.capitalize()}'.",
+                            taskClass,
+                            testVariantData,
+                            baseVariantData as BaseVariantData,
+                            deviceProvider,
+                            "$DEVICE/$deviceProvider.name"
+                    )
+
+            tasks.named(mainProviderTaskName) {
+                it.dependsOn providerTask
+            }
+            testVariantData.providerTestTaskList.add(providerTask)
+
+            if (!deviceProvider.isConfigured()) {
+                providerTask.enabled = false;
+            }
+        }
+
+        // now the test servers
+        // don't use an auto loop as it'll break the closure inside.
+        List<TestServer> servers = getExtension().testServers
+        for (TestServer testServer : servers) {
+            def serverTask = project.tasks.create(
+                    hasFlavors ?
+                            "${testServer.name}${"upload".capitalize()}${baseVariantData.variantConfiguration.fullName}" :
+                            "${testServer.name}${"upload".capitalize()}",
+                    TestServerTask)
+
+            serverTask.description =
+                    "Uploads APKs for Build '${baseVariantData.variantConfiguration.fullName}' to Test Server '${testServer.name.capitalize()}'."
+            serverTask.group = JavaBasePlugin.VERIFICATION_GROUP
+            serverTask.dependsOn testVariantOutputData.assembleTask,
+                    variantOutputData.assembleTask
+
+            serverTask.testServer = testServer
+
+            conventionMapping(serverTask).
+                    map("testApk") { testVariantOutputData.outputFile }
+            if (!(baseVariantData instanceof LibraryVariantData)) {
+                conventionMapping(serverTask).
+                        map("testedApk") { variantOutputData.outputFile }
+            }
+
+            conventionMapping(serverTask).
+                    map("variantName") { baseVariantData.variantConfiguration.fullName }
+
+            tasks.named(DEVICE_CHECK) {
+                it.dependsOn serverTask
+            }
+
+            if (!testServer.isConfigured()) {
+                serverTask.enabled = false;
+            }
+        }
+    }
+
     private DeviceProviderInstrumentTestTask createDeviceProviderInstrumentTestTask(
             @NonNull String taskName,
             @NonNull String description,
@@ -1830,7 +1836,6 @@ abstract class TaskManager {
             @NonNull BaseVariantData<? extends BaseVariantOutputData> testedVariantData,
             @NonNull DeviceProvider deviceProvider,
             @NonNull String subFolder) {
-
         // get single output for now for the test.
         BaseVariantOutputData testVariantOutputData = testVariantData.outputs.get(0)
 
