@@ -721,13 +721,13 @@ public class GradleTestProject implements TestRule {
 
         BuildActionExecuter<Map<K, V>> executer = connection.action(action);
 
-        executer.withArguments(
-                "-P" + AndroidProject.PROPERTY_BUILD_MODEL_ONLY + "=true",
-                "-P" + AndroidProject.PROPERTY_INVOKED_FROM_IDE + "=true");
+        List<String> arguments = Lists.newArrayListWithCapacity(emulateStudio_1_0 ? 2 : 3);
+        arguments.add("-P" + AndroidProject.PROPERTY_BUILD_MODEL_ONLY + "=true");
+        arguments.add("-P" + AndroidProject.PROPERTY_INVOKED_FROM_IDE + "=true");
         if (!emulateStudio_1_0) {
-            executer.withArguments(
-                    "-P" + AndroidProject.PROPERTY_BUILD_MODEL_ONLY_ADVANCED + "=true");
+            arguments.add("-P" + AndroidProject.PROPERTY_BUILD_MODEL_ONLY_ADVANCED + "=true");
         }
+        executer.withArguments(Iterables.toArray(arguments, String.class));
 
         executer.setJvmArguments(Iterables.toArray(getDebugJvmArguments(), String.class));
         return executer.run();
