@@ -49,6 +49,7 @@ class UnitTestingSupportTest {
                         "mockInnerClass",
                         "referenceProductionCode",
                         "resourcesOnClasspath",
+                        "taskConfiguration",
                     ])
 
             checkResults(
