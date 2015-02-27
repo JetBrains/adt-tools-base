@@ -213,8 +213,6 @@ class DependencyManager {
         ensureConfigured(compileClasspath)
         ensureConfigured(packageClasspath)
 
-        variantDeps.checker = new DependencyChecker(variantDeps, logger)
-
         Set<String> currentUnresolvedDependencies = Sets.newHashSet()
 
         // TODO - defer downloading until required -- This is hard to do as we need the info to build the variant config.

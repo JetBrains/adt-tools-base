@@ -48,4 +48,12 @@ class JUnitResults {
             Outcome.FAILED
         }
     }
+
+    String getStdErr() {
+        return testSuite.'system-err'.text()
+    }
+
+    String getStdOut() {
+        return testSuite.'system-out'.text()
+    }
 }
