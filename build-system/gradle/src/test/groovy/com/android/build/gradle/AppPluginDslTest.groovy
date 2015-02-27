@@ -42,7 +42,7 @@ public class AppPluginDslTest extends BaseTest {
 
     public void testBasic() {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "${FOLDER_TEST_SAMPLES}/basic")).build()
+                new File(testDir, "${FOLDER_TEST_PROJECTS}/basic")).build()
 
         project.apply plugin: 'com.android.application'
 
@@ -71,7 +71,7 @@ public class AppPluginDslTest extends BaseTest {
      */
     public void testBasic2() {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "${FOLDER_TEST_SAMPLES}/basic")).build()
+                new File(testDir, "${FOLDER_TEST_PROJECTS}/basic")).build()
 
         project.apply plugin: 'com.android.application'
 
@@ -97,7 +97,7 @@ public class AppPluginDslTest extends BaseTest {
 
     public void testBasicWithStringTarget() {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "${FOLDER_TEST_SAMPLES}/basic")).build()
+                new File(testDir, "${FOLDER_TEST_PROJECTS}/basic")).build()
 
         project.apply plugin: 'com.android.application'
 
@@ -123,7 +123,7 @@ public class AppPluginDslTest extends BaseTest {
 
     public void testMultiRes() {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "${FOLDER_TEST_SAMPLES}/multires")).build()
+                new File(testDir, "${FOLDER_TEST_PROJECTS}/multires")).build()
 
         project.apply plugin: 'com.android.application'
 
@@ -144,7 +144,7 @@ public class AppPluginDslTest extends BaseTest {
 
     public void testBuildTypes() {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "${FOLDER_TEST_SAMPLES}/basic")).build()
+                new File(testDir, "${FOLDER_TEST_PROJECTS}/basic")).build()
 
         project.apply plugin: 'com.android.application'
 
@@ -183,7 +183,7 @@ public class AppPluginDslTest extends BaseTest {
 
     public void testFlavors() {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "${FOLDER_TEST_SAMPLES}/basic")).build()
+                new File(testDir, "${FOLDER_TEST_PROJECTS}/basic")).build()
 
         project.apply plugin: 'com.android.application'
 
@@ -225,7 +225,7 @@ public class AppPluginDslTest extends BaseTest {
 
     public void testMultiFlavors() {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "${FOLDER_TEST_SAMPLES}/basic")).build()
+                new File(testDir, "${FOLDER_TEST_PROJECTS}/basic")).build()
 
         project.apply plugin: 'com.android.application'
 
@@ -287,7 +287,7 @@ public class AppPluginDslTest extends BaseTest {
 
     public void testSourceSetsApi() {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "${FOLDER_TEST_SAMPLES}/basic")).build()
+                new File(testDir, "${FOLDER_TEST_PROJECTS}/basic")).build()
 
         project.apply plugin: 'com.android.application'
 
@@ -305,7 +305,7 @@ public class AppPluginDslTest extends BaseTest {
 
     public void testObfuscationMappingFile() {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "${FOLDER_TEST_SAMPLES}/basic")).build()
+                new File(testDir, "${FOLDER_TEST_PROJECTS}/basic")).build()
 
         project.apply plugin: 'com.android.application'
 
@@ -342,7 +342,7 @@ public class AppPluginDslTest extends BaseTest {
 
     public void testProguardDsl() throws Exception {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "${FOLDER_TEST_SAMPLES}/basic")).build()
+                new File(testDir, "${FOLDER_TEST_PROJECTS}/basic")).build()
 
         project.apply plugin: 'com.android.application'
 
@@ -405,7 +405,7 @@ public class AppPluginDslTest extends BaseTest {
     public void testSettingLanguageLevelFromCompileSdk() {
         def testLanguageLevel = { version, expectedLanguageLevel, useJack ->
             Project project = ProjectBuilder.builder().withProjectDir(
-                    new File(testDir, "${FOLDER_TEST_SAMPLES}/basic")).build()
+                    new File(testDir, "${FOLDER_TEST_PROJECTS}/basic")).build()
 
             project.apply plugin: 'com.android.application'
             project.android {
@@ -448,7 +448,7 @@ public class AppPluginDslTest extends BaseTest {
 
     public void testSettingLanguageLevelFromCompileSdk_dontOverride() {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "${FOLDER_TEST_SAMPLES}/basic")).build()
+                new File(testDir, "${FOLDER_TEST_PROJECTS}/basic")).build()
 
         project.apply plugin: 'com.android.application'
         project.android {
@@ -471,7 +471,7 @@ public class AppPluginDslTest extends BaseTest {
 
     public void testSettingLanguageLevelFromCompileSdk_unknownVersion() {
         Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "${FOLDER_TEST_SAMPLES}/basic")).build()
+                new File(testDir, "${FOLDER_TEST_PROJECTS}/basic")).build()
 
         project.apply plugin: 'com.android.application'
         project.android {
