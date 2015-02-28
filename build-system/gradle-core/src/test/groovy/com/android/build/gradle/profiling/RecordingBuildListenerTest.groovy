@@ -82,11 +82,15 @@ class RecordingBuildListenerTest {
 
     private static final class TestExecutionRecordWriter implements ProcessRecorder.ExecutionRecordWriter {
 
-        final List<ExecutionRecord> records = new CopyOnWriteArrayList<>();
+        final List<ExecutionRecord> records = new CopyOnWriteArrayList<>()
 
         @Override
         void write(@NonNull ExecutionRecord executionRecord) throws IOException {
             records.add(executionRecord)
+        }
+
+        List<ExecutionRecord> getRecords() {
+            return records
         }
 
         @Override
@@ -134,16 +138,17 @@ class RecordingBuildListenerTest {
             Logger.getAnonymousLogger().finest("useless block")
         }
         listener.afterExecute(mTask, mTaskState)
+        ProcessRecorderFactory.shutdown()
 
-        assertEquals(2, recordWriter.records.size())
-        ExecutionRecord record = getRecordForId(recordWriter.records, 1)
+        assertEquals(2, recordWriter.getRecords().size())
+        ExecutionRecord record = getRecordForId(recordWriter.getRecords(), 1)
         assertEquals(1, record.id)
         assertEquals(0, record.parentId)
         assertEquals(2, record.attributes.size())
         ensurePropertyValue(record.attributes, "task", "taskName")
         ensurePropertyValue(record.attributes, "project", "projectName")
 
-        record = getRecordForId(recordWriter.records, 2)
+        record = getRecordForId(recordWriter.getRecords(), 2)
         assertNotNull(record);
         assertEquals(2, record.id)
         assertEquals(1, record.parentId)
