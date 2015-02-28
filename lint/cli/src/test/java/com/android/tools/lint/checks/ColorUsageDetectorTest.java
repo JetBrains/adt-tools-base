@@ -46,4 +46,13 @@ public class ColorUsageDetectorTest extends AbstractCheckTest {
 
             lintProject("src/test/pkg/WrongColor.java.txt=>src/test/pkg/WrongColor.java"));
     }
+
+    public void testSetProgressBackgroundColor() throws Exception {
+        // Regression test for https://code.google.com/p/android/issues/detail?id=80223
+        // Don't flag setProgressBackgroundColor when it's passed a color id.
+        assertEquals(
+                "No warnings.",
+
+                lintProject("src/test/pkg/ColorUsage.java.txt=>src/test/pkg/ColorUsage.java"));
+    }
 }
