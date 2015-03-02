@@ -117,13 +117,13 @@ class ResValueTest {
     <!-- Automatically generated file. DO NOT MODIFY -->
 
     <!-- Values from the variant -->
-    <item name="VALUE_VARIANT" type="string">1000</item>
+    <string name="VALUE_VARIANT">1000</string>
     <!-- Values from build type: debug -->
-    <item name="VALUE_DEBUG" type="string">100</item>
+    <string name="VALUE_DEBUG">100</string>
     <!-- Values from product flavor: flavor1 -->
-    <item name="VALUE_FLAVOR" type="string">10</item>
+    <string name="VALUE_FLAVOR">10</string>
     <!-- Values from default config. -->
-    <item name="VALUE_DEFAULT" type="string">1</item>
+    <string name="VALUE_DEFAULT">1</string>
 
 </resources>
 """
@@ -149,13 +149,13 @@ class ResValueTest {
     <!-- Automatically generated file. DO NOT MODIFY -->
 
     <!-- Values from the variant -->
-    <item name="VALUE_VARIANT" type="string">1000</item>
+    <string name="VALUE_VARIANT">1000</string>
     <!-- Values from build type: debug -->
-    <item name="VALUE_DEBUG" type="string">100</item>
+    <string name="VALUE_DEBUG">100</string>
     <!-- Values from product flavor: flavor2 -->
-    <item name="VALUE_FLAVOR" type="string">20</item>
+    <string name="VALUE_FLAVOR">20</string>
     <!-- Values from default config. -->
-    <item name="VALUE_DEFAULT" type="string">1</item>
+    <string name="VALUE_DEFAULT">1</string>
 
 </resources>
 """
@@ -181,11 +181,11 @@ class ResValueTest {
     <!-- Automatically generated file. DO NOT MODIFY -->
 
     <!-- Values from product flavor: flavor1 -->
-    <item name="VALUE_DEBUG" type="string">10</item>
-    <item name="VALUE_FLAVOR" type="string">10</item>
-    <item name="VALUE_VARIANT" type="string">10</item>
+    <string name="VALUE_DEBUG">10</string>
+    <string name="VALUE_FLAVOR">10</string>
+    <string name="VALUE_VARIANT">10</string>
     <!-- Values from default config. -->
-    <item name="VALUE_DEFAULT" type="string">1</item>
+    <string name="VALUE_DEFAULT">1</string>
 
 </resources>
 """
@@ -211,11 +211,11 @@ class ResValueTest {
     <!-- Automatically generated file. DO NOT MODIFY -->
 
     <!-- Values from product flavor: flavor2 -->
-    <item name="VALUE_DEBUG" type="string">20</item>
-    <item name="VALUE_FLAVOR" type="string">20</item>
-    <item name="VALUE_VARIANT" type="string">20</item>
+    <string name="VALUE_DEBUG">20</string>
+    <string name="VALUE_FLAVOR">20</string>
+    <string name="VALUE_VARIANT">20</string>
     <!-- Values from default config. -->
-    <item name="VALUE_DEFAULT" type="string">1</item>
+    <string name="VALUE_DEFAULT">1</string>
 
 </resources>
 """
