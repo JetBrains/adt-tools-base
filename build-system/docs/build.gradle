@@ -232,6 +232,13 @@ task dslHtml(type: Docbook2Xhtml) {
     }
 }
 
+task dslHtmlZip(type: Zip) {
+  dependsOn dslHtml
+  from dslHtml.destDir
+  destinationDir docsDir
+  baseName 'gradle-dsl'
+}
+
 def javaApiUrl = "http://docs.oracle.com/javase/1.6.0/docs/api/"
 def groovyApiUrl = "http://groovy.codehaus.org/gapi/"
 def publicGroovyProjects = [
