@@ -10,7 +10,7 @@ import android.view.View;
  * techniques described in <a href=
  * "http://developer.android.com/training/backward-compatible-ui/index.html">
  * Creating Backward-Compatible UIs</a> to ensure that devices running any
- * version of ndroid OS are supported. More specifically, there are separate
+ * version of Android OS are supported. More specifically, there are separate
  * implementations of this abstract class: for newer devices,
  * {@link #getInstance} will return a {@link SystemUiHiderHoneycomb} instance,
  * while on older devices {@link #getInstance} will return a
