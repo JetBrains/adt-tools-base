@@ -1,8 +1,6 @@
 apply plugin: 'com.android.application'
 
-repositories {
-    mavenCentral()
-}
+apply from: "../../commonLocalRepo.gradle"
 
 dependencies {
     compile project(':lib')

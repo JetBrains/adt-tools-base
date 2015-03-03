@@ -1,13 +1,7 @@
 apply plugin: 'java'
 apply plugin: 'idea'
 
-repositories {
-    if (System.env.CUSTOM_REPO != null) {
-        maven { url System.env.CUSTOM_REPO }
-    } else {
-        mavenCentral()
-    }
-}
+apply from: "../../commonLocalRepo.gradle"
 
 dependencies {
     compile 'com.android.tools.build:builder-test-api:1.2.0-alpha1'

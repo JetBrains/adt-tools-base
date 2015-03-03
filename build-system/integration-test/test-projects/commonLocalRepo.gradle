@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 The Android Open Source Project
+ * Copyright (C) 2015 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,10 +14,12 @@
  * limitations under the License.
  */
 
-def gradleVersion = System.env.CUSTOM_GRADLE ?: '1.2.0-alpha1'
-
-apply from: "commonLocalRepo.gradle"
-
-dependencies {
-    classpath "com.android.tools.build:gradle:$gradleVersion"
+repositories {
+    if (System.env.CUSTOM_REPO != null) {
+        maven { url System.env.CUSTOM_REPO }
+    } else if (System.env.USE_EXTERNAL_REPO) {
+        jcenter()
+    } else {
+        throw new RuntimeException("Neither CUSTOM_REPO nor USE_EXTERNAL_REPO set.")
+    }
 }
