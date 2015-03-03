@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.api.LibraryVariant;
 import com.android.build.gradle.api.TestVariant;
+import com.android.build.gradle.api.UnitTestVariant;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.LibraryVariantData;
 import com.android.builder.core.AndroidBuilder;
@@ -37,6 +38,8 @@ public class LibraryVariantImpl extends BaseVariantImpl implements LibraryVarian
     private final LibraryVariantData variantData;
     @Nullable
     private TestVariant testVariant = null;
+    @Nullable
+    private UnitTestVariant unitTestVariant = null;
 
     public LibraryVariantImpl(
             @NonNull LibraryVariantData variantData,
@@ -61,5 +64,16 @@ public class LibraryVariantImpl extends BaseVariantImpl implements LibraryVarian
     @Nullable
     public TestVariant getTestVariant() {
         return testVariant;
+    }
+
+    @Override
+    @Nullable
+    public UnitTestVariant getUnitTestVariant() {
+        return unitTestVariant;
+    }
+
+    @Override
+    public void setUnitTestVariant(@Nullable UnitTestVariant unitTestVariant) {
+        this.unitTestVariant = unitTestVariant;
     }
 }

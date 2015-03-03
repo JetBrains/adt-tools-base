@@ -16,16 +16,9 @@
 
 package com.android.build.gradle.api;
 
-import com.android.annotations.Nullable;
+import com.android.build.gradle.internal.api.TestedVariant;
 
 /**
  * A Build variant and all its public data.
  */
-public interface ApplicationVariant extends ApkVariant {
-
-    /**
-     * Returns the build variant that will test this build variant.
-     */
-    @Nullable
-    TestVariant getTestVariant();
-}
+public interface ApplicationVariant extends ApkVariant, TestedVariant {}

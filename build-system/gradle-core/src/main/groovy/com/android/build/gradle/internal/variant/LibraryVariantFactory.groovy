@@ -15,11 +15,10 @@
  */
 
 package com.android.build.gradle.internal.variant
-
 import com.android.annotations.NonNull
 import com.android.build.gradle.LibraryExtension
-import com.android.build.gradle.api.BaseVariant
 import com.android.build.gradle.api.BaseVariantOutput
+import com.android.build.gradle.api.LibraryVariant
 import com.android.build.gradle.internal.BuildTypeData
 import com.android.build.gradle.internal.ProductFlavorData
 import com.android.build.gradle.internal.TaskManager
@@ -40,11 +39,8 @@ import org.gradle.api.Project
 import org.gradle.internal.reflect.Instantiator
 
 import static com.android.builder.core.BuilderConstants.DEBUG
-import static com.android.builder.core.BuilderConstants.DEBUG
 import static com.android.builder.core.BuilderConstants.RELEASE
 
-/**
- */
 public class LibraryVariantFactory implements VariantFactory {
 
     @NonNull
@@ -76,7 +72,7 @@ public class LibraryVariantFactory implements VariantFactory {
 
     @Override
     @NonNull
-    public BaseVariant createVariantApi(
+    public LibraryVariant createVariantApi(
             @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData,
             @NonNull ReadOnlyObjectProvider readOnlyObjectProvider) {
         LibraryVariantImpl variant = instantiator.newInstance(
