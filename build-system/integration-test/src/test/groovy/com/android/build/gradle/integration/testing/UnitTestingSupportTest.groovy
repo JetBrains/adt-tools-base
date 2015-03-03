@@ -36,22 +36,28 @@ class UnitTestingSupportTest {
         simpleProject.execute("test")
 
         for (variant in ["debug", "release"]) {
+            def unitTestXml = "build/test-results/${variant}/TEST-com.android.tests.UnitTest.xml"
+            def unitTextResults = new JUnitResults(simpleProject.file(unitTestXml))
+
+            assertThat(unitTextResults.stdErr).contains("INFO: I can use commons-logging")
+
             checkResults(
-                    "build/test-results/${variant}/TEST-com.android.tests.UnitTest.xml",
+                    unitTestXml,
                     ["thisIsIgnored"],
                     [
-                        "aarDependencies",
-                        "enums",
-                        "exceptions",
-                        "instanceFields",
-                        "javaResourcesOnClasspath",
-                        "mockFinalClass",
-                        "mockFinalMethod",
-                        "mockInnerClass",
-                        "prodJavaResourcesOnClasspath",
-                        "prodRClass",
-                        "referenceProductionCode",
-                        "taskConfiguration",
+                            "aarDependencies",
+                            "commonsLogging",
+                            "enums",
+                            "exceptions",
+                            "instanceFields",
+                            "javaResourcesOnClasspath",
+                            "mockFinalClass",
+                            "mockFinalMethod",
+                            "mockInnerClass",
+                            "prodJavaResourcesOnClasspath",
+                            "prodRClass",
+                            "referenceProductionCode",
+                            "taskConfiguration",
                     ])
 
             checkResults(

@@ -16,11 +16,13 @@
 package com.android.build.gradle.internal.dependency;
 
 import com.android.annotations.NonNull;
+import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.builder.model.SyncIssue;
 import com.android.utils.ILogger;
 import com.google.common.collect.Lists;
 
 import org.gradle.api.artifacts.ModuleVersionIdentifier;
+import org.gradle.api.logging.Logging;
 
 import java.util.List;
 
@@ -28,23 +30,25 @@ import java.util.List;
  * Checks for dependencies to ensure Android compatibility
  */
 public class DependencyChecker {
+    @NonNull
+    private static final ILogger logger =
+            new LoggerWrapper(Logging.getLogger(DependencyChecker.class));
 
     @NonNull
     private final VariantDependencies configurationDependencies;
-    @NonNull
-    private final ILogger logger;
+
+    private final boolean skipLibrariesInThePlatform;
+
     @NonNull
     private final List<Integer> foundAndroidApis = Lists.newArrayList();
-    @NonNull
-    private final List<String> foundBouncyCastle = Lists.newArrayList();
     @NonNull
     private final List<SyncIssue> syncIssues = Lists.newArrayList();
 
     public DependencyChecker(
             @NonNull VariantDependencies configurationDependencies,
-            @NonNull ILogger logger) {
+            boolean skipLibrariesInThePlatform) {
         this.configurationDependencies = configurationDependencies;
-        this.logger = logger;
+        this.skipLibrariesInThePlatform = skipLibrariesInThePlatform;
     }
 
     @NonNull
@@ -82,6 +86,10 @@ public class DependencyChecker {
             return true;
         }
 
+        if (!skipLibrariesInThePlatform) {
+            return false;
+        }
+
         if (("org.apache.httpcomponents".equals(group) && "httpclient".equals(name)) ||
                 ("xpp3".equals(group) && name.equals("xpp3")) ||
                 ("commons-logging".equals(group) && "commons-logging".equals(name)) ||
@@ -108,10 +116,6 @@ public class DependencyChecker {
                             "         In case of problem, please repackage with jarjar to change the class packages",
                     id, configurationDependencies.getName());
             return true;
-        }
-
-        if ("org.bouncycastle".equals(group) && name.startsWith("bcprov")) {
-            foundBouncyCastle.add(version);
         }
 
         return false;
