@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.testing
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import org.junit.AfterClass
 import org.junit.ClassRule
 import org.junit.Test
 
@@ -27,17 +28,37 @@ import static com.google.common.truth.Truth.assertThat
  */
 class UnitTestingSupportTest {
     @ClassRule
-    static public GradleTestProject simpleProject = GradleTestProject.builder()
+    public static GradleTestProject appProject = GradleTestProject.builder()
             .fromTestProject("unitTesting")
             .create()
 
+    @ClassRule
+    public static GradleTestProject libProject = GradleTestProject.builder()
+            .fromTestProject("unitTestingLibraryModules")
+            .create()
+
+    @AfterClass
+    public static void freeResources() throws Exception {
+        appProject = null
+        libProject = null
+    }
+
     @Test
-    void testSimpleScenario() {
-        simpleProject.execute("test")
+    public void appProject() throws Exception {
+        doTestProject(appProject)
+    }
+
+    @Test
+    public void libProject() throws Exception {
+        doTestProject(libProject)
+    }
+
+    private static void doTestProject(GradleTestProject project) {
+        project.execute("clean", "test")
 
         for (variant in ["debug", "release"]) {
             def unitTestXml = "build/test-results/${variant}/TEST-com.android.tests.UnitTest.xml"
-            def unitTextResults = new JUnitResults(simpleProject.file(unitTestXml))
+            def unitTextResults = new JUnitResults(project.file(unitTestXml))
 
             assertThat(unitTextResults.stdErr).contains("INFO: I can use commons-logging")
 
@@ -58,17 +79,21 @@ class UnitTestingSupportTest {
                             "prodRClass",
                             "referenceProductionCode",
                             "taskConfiguration",
-                    ])
+                    ], project)
 
             checkResults(
                     "build/test-results/${variant}/TEST-com.android.tests.NonStandardName.xml",
                     [],
-                    ["passingTest"])
+                    ["passingTest"], project)
         }
     }
 
-    private static void checkResults(String xmlPath, ArrayList<String> ignored, ArrayList<String> passed) {
-        def results = new JUnitResults(simpleProject.file(xmlPath))
+    private static void checkResults(
+            String xmlPath,
+            ArrayList<String> ignored,
+            ArrayList<String> passed,
+            GradleTestProject project) {
+        def results = new JUnitResults(project.file(xmlPath))
         assertThat(results.allTestCases).containsExactlyElementsIn(ignored + passed)
         passed.each { assert results.outcome(it) == PASSED }
         ignored.each { assert results.outcome(it) == SKIPPED }
