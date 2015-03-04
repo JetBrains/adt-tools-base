@@ -38,6 +38,7 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
     private final Map<String, ClassField> mResValues = Maps.newTreeMap();
     private final List<File> mProguardFiles = Lists.newArrayList();
     private final List<File> mConsumerProguardFiles = Lists.newArrayList();
+    private final List<File> mTestProguardFiles = Lists.newArrayList();
     private final Map<String, Object> mManifestPlaceholders = Maps.newHashMap();
     @Nullable
     private Boolean mMultiDexEnabled;
@@ -88,6 +89,11 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
         return mConsumerProguardFiles;
     }
 
+    @NonNull
+    @Override
+    public List<File> getTestProguardFiles() {
+        return mTestProguardFiles;
+    }
 
     @NonNull
     @Override

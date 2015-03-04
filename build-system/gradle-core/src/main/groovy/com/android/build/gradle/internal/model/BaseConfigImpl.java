@@ -24,6 +24,7 @@ import com.google.common.collect.ImmutableMap;
 
 import java.io.File;
 import java.io.Serializable;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -78,6 +79,12 @@ abstract class BaseConfigImpl implements BaseConfig, Serializable {
     @NonNull
     @Override
     public List<File> getConsumerProguardFiles() {
+        return Collections.emptyList();
+    }
+
+    @NonNull
+    @Override
+    public Collection<File> getTestProguardFiles() {
         return Collections.emptyList();
     }
 
