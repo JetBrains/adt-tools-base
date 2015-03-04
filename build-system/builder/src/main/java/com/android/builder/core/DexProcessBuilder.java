@@ -223,11 +223,10 @@ public class DexProcessBuilder extends ProcessEnvBuilder<DexProcessBuilder> {
                     return -1;
                 } else if (file2.isDirectory()) {
                     return 1;
-                } else if (file.length() > file2.length()) {
-                    return 1;
                 }
 
-                return -1;
+                long diff = file.length() - file2.length();
+                return diff > 0 ? 1 : (diff < 0 ? -1 : 0);
             }
         });
 
