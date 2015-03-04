@@ -178,6 +178,21 @@ public class BuildType extends DefaultBuildType implements Serializable {
     }
 
     @NonNull
+    public BuildType testProguardFile(Object proguardFile) {
+        testProguardFiles.add(project.file(proguardFile));
+        return this;
+    }
+
+    /**
+     * Adds new ProGuard configuration files.
+     */
+    @NonNull
+    public BuildType testProguardFiles(Object... proguardFileArray) {
+        testProguardFiles.addAll(project.files(proguardFileArray).files);
+        return this;
+    }
+
+    @NonNull
     public BuildType consumerProguardFiles(Object... proguardFileArray) {
         consumerProguardFiles.addAll(project.files(proguardFileArray).files);
         return this;
