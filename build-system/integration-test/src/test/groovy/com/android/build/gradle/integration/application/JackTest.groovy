@@ -81,12 +81,6 @@ class JackTest {
 
     @Test
     @Category(DeviceTests.class)
-    void "minify connectedCheck"() {
-        minify.execute(JACK_OPTIONS, "connectedCheck")
-    }
-
-    @Test
-    @Category(DeviceTests.class)
     void "multiDex connectedCheck"() {
         multiDex.execute(JACK_OPTIONS, "connectedCheck")
     }
