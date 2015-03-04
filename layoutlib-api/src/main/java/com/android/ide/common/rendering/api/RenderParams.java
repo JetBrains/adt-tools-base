@@ -16,8 +16,12 @@
 
 package com.android.ide.common.rendering.api;
 
+import com.android.ide.common.rendering.api.SessionParams.Key;
 import com.android.resources.Density;
 import com.android.resources.ScreenSize;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Base class for rendering parameters. This include the generic parameters but not what needs
@@ -48,6 +52,12 @@ public abstract class RenderParams {
     private String mActivityName;
     private boolean mForceNoDecor;
     private boolean mSupportsRtl;
+
+    /**
+     * A flexible map to pass additional flags to LayoutLib. LayoutLib will ignore flags that it
+     * doesn't recognize.
+     */
+    private Map<Key, Object> mFlags;
 
     /**
      * @param projectKey An Object identifying the project. This is used for the cache mechanism.
@@ -99,6 +109,9 @@ public abstract class RenderParams {
         mActivityName = params.mActivityName;
         mForceNoDecor = params.mForceNoDecor;
         mSupportsRtl = params.mSupportsRtl;
+        if (params.mFlags != null) {
+            mFlags = new HashMap<Key, Object>(params.mFlags);
+        }
     }
 
     public void setOverrideBgColor(int color) {
@@ -260,5 +273,20 @@ public abstract class RenderParams {
 
     public boolean isRtlSupported() {
         return mSupportsRtl;
+    }
+
+    public <T> void setFlag(Key<T> key, T value) {
+        if (mFlags == null) {
+            mFlags = new HashMap<Key, Object>();
+        }
+        mFlags.put(key, value);
+    }
+
+    public <T> T getFlag(Key<T> key) {
+
+        // noinspection since the values in the map can be added only by setFlag which ensures that
+        // the types match.
+        //noinspection unchecked
+        return mFlags == null ? null : (T) mFlags.get(key);
     }
 }
