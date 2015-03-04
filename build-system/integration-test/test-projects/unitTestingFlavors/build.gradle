@@ -14,31 +14,12 @@
  * limitations under the License.
  */
 
-ext {
-    buildToolsVersion = System.env.CUSTOM_BUILDTOOLS != null ? System.env.CUSTOM_BUILDTOOLS : (project.hasProperty("CUSTOM_BUILDTOOLS") ? project.CUSTOM_BUILDTOOLS : '20.0.0')
-    useJack = System.env.CUSTOM_JACK != null ? true : (project.hasProperty("CUSTOM_JACK") ? true : false)
-}
-
-buildscript {
-    def gradleVersion = System.env.CUSTOM_GRADLE != null ? System.env.CUSTOM_GRADLE : '1.2.0-alpha1'
-
-    repositories {
-        if (System.env.CUSTOM_REPO != null) {
-            maven { url System.env.CUSTOM_REPO }
-        } else {
-            mavenCentral()
-        }
-    }
-    dependencies {
-        classpath "com.android.tools.build:gradle:$gradleVersion"
-    }
-}
+apply from: "../commonHeader.gradle"
+buildscript { apply from: "../commonBuildScript.gradle", to: buildscript }
 
 apply plugin: 'com.android.application'
 
-repositories {
-    mavenCentral()
-}
+apply from: "../commonLocalRepo.gradle"
 
 android {
     compileSdkVersion 19
@@ -66,7 +47,7 @@ android {
 }
 
 dependencies {
-    testCompile 'junit:junit:4.11'
+    testCompile 'junit:junit:4.12'
     testCompile "org.mockito:mockito-core:1.9.5"
 }
 

@@ -70,9 +70,8 @@ class LocalJarsTest {
         Collection<JavaLibrary> javaLibraries = dependencies.getJavaLibraries()
         assertNotNull(javaLibraries)
 
-        //  com.google.guava:guava:11.0.2
-        //  \--- com.google.code.findbugs:jsr305:1.3.9
+        //  com.google.guava:guava:15.0
         //  + the local jar
-        assertEquals(3, javaLibraries.size())
+        assertEquals(2, javaLibraries.size())
     }
 }

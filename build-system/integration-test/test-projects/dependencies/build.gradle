@@ -5,9 +5,7 @@ apply plugin: 'com.android.application'
 
 version='1.0'
 
-repositories {
-    mavenCentral()
-}
+apply from: "../commonLocalRepo.gradle"
 
 dependencies {
     apk project(':jarProject')

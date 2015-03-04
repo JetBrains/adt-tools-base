@@ -3,9 +3,7 @@ apply plugin: 'com.android.library'
 project.ext.fakeProvider = new com.android.tests.basic.buildscript.FakeProvider()
 project.ext.fakeServer = new com.android.tests.basic.buildscript.FakeServer()
 
-repositories {
-    mavenCentral()
-}
+apply from: "../../commonLocalRepo.gradle"
 
 android {
     compileSdkVersion 19

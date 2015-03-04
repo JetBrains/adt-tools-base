@@ -3,12 +3,10 @@ buildscript { apply from: "../commonBuildScript.gradle", to: buildscript }
 
 apply plugin: 'com.android.application'
 
-repositories {
-  mavenCentral()
-}
+apply from: "../commonLocalRepo.gradle"
 
 dependencies {
-    compile 'org.apache.httpcomponents:httpclient:4.2.5'
+    compile 'org.apache.httpcomponents:httpclient:4.1.1'
 }
 
 android {

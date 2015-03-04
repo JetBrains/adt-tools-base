@@ -34,6 +34,7 @@ import static com.android.builder.core.BuilderConstants.DEBUG
 import static com.android.builder.model.AndroidProject.ARTIFACT_ANDROID_TEST
 import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertNotNull
+import static org.junit.Assert.assertThat
 import static org.junit.Assert.assertTrue
 
 /**
@@ -78,7 +79,7 @@ class LibTestDepTest {
         assertEquals(2, javaLibraries.size())
         for (JavaLibrary lib : javaLibraries) {
             File f = lib.getJarFile()
-            assertTrue(f.getName().equals("guava-11.0.2.jar") || f.getName().equals("jsr305-1.3.9.jar"))
+            assertTrue(f.getName().equals("guava-15.0.jar") || f.getName().equals("jsr305-1.3.9.jar"))
         }
     }
 
