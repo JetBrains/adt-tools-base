@@ -219,9 +219,10 @@ public class DexProcessBuilder extends ProcessEnvBuilder<DexProcessBuilder> {
         Collections.sort(sortedList, new Comparator<File>() {
             @Override
             public int compare(File file, File file2) {
+                boolean file2IsDir = file2.isDirectory();
                 if (file.isDirectory()) {
-                    return -1;
-                } else if (file2.isDirectory()) {
+                    return file2IsDir ? 0 : -1;
+                } else if (file2IsDir) {
                     return 1;
                 }
 
