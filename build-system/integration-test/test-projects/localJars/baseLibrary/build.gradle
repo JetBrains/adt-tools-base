@@ -11,5 +11,5 @@ android {
 
 dependencies {
     compile fileTree(dir: 'libs', include: '*.jar')
-    compile 'com.google.guava:guava:11.0.2'
+    compile 'com.google.guava:guava:15.0'
 }

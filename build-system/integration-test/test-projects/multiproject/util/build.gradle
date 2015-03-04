@@ -1,7 +1,7 @@
 apply plugin: 'java'
 
 dependencies {
-    compile 'com.google.guava:guava:11.0.2'
+    compile 'com.google.guava:guava:15.0'
 }
 
 sourceCompatibility = "1.6"

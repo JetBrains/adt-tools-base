@@ -6,8 +6,8 @@ apply plugin: 'maven'
 
 repositories {
     maven { url '../testrepo' }
-    mavenCentral()
 }
+apply from: "../commonLocalRepo.gradle"
 
 dependencies {
     compile 'com.example.android.multiproject:baseLib:1.0'

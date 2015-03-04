@@ -4,9 +4,7 @@ buildscript { apply from: "../commonBuildScript.gradle", to: buildscript }
 
 apply plugin: 'com.android.library'
 
-repositories {
-    mavenCentral()
-}
+apply from: "../commonLocalRepo.gradle"
 
 dependencies {
     compile 'com.android.support:support-annotations:+'

@@ -87,6 +87,7 @@ public class GradleTestProject implements TestRule {
 
     private static final String ANDROID_GRADLE_VERSION = "1.2.0-alpha1";
     private static final String COMMON_HEADER = "commonHeader.gradle";
+    private static final String COMMON_LOCAL_REPO = "commonLocalRepo.gradle";
     private static final String COMMON_BUILD_SCRIPT = "commonBuildScript.gradle";
     private static final String COMMON_BUILD_SCRIPT_EXP = "commonBuildScriptExperimental.gradle";
     private static final String DEFAULT_TEST_PROJECT_NAME = "project";
@@ -306,6 +307,9 @@ public class GradleTestProject implements TestRule {
                 Files.copy(
                         new File(Builder.TEST_PROJECT_DIR, COMMON_HEADER),
                         new File(testDir.getParent(), COMMON_HEADER));
+                Files.copy(
+                        new File(Builder.TEST_PROJECT_DIR, COMMON_LOCAL_REPO),
+                        new File(testDir.getParent(), COMMON_LOCAL_REPO));
                 Files.copy(
                         new File(Builder.TEST_PROJECT_DIR, COMMON_BUILD_SCRIPT),
                         new File(testDir.getParent(), COMMON_BUILD_SCRIPT));

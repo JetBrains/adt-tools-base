@@ -4,12 +4,11 @@ buildscript { apply from: "../commonBuildScript.gradle", to: buildscript }
 
 apply plugin: 'com.android.library'
 
-repositories {
-    mavenCentral()
-}
+apply from: "../commonLocalRepo.gradle"
 
 dependencies {
-    compile 'com.google.guava:guava:11.0.2'
+    compile 'com.google.code.findbugs:jsr305:1.3.9'
+    compile 'com.google.guava:guava:15.0'
 }
 
 android {

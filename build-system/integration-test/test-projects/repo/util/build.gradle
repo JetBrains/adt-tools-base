@@ -1,9 +1,7 @@
 apply plugin: 'java'
 apply plugin: 'maven'
 
-repositories {
-    mavenCentral()
-}
+apply from: "../commonLocalRepo.gradle"
 
 group = 'com.example.android.multiproject'
 archivesBaseName = 'util'

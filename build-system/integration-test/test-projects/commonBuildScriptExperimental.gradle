@@ -16,13 +16,7 @@
 
 def gradleVersion = System.env.CUSTOM_GRADLE ?: '1.2.0-alpha1'
 
-repositories {
-    if (System.env.CUSTOM_REPO != null) {
-        maven { url System.env.CUSTOM_REPO }
-    } else {
-        mavenCentral()
-    }
-}
+apply from: "commonLocalRepo.gradle"
 
 dependencies {
     classpath "com.android.tools.build:gradle-experimental:$gradleVersion"
