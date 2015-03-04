@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.api.ApplicationVariant;
 import com.android.build.gradle.api.TestVariant;
+import com.android.build.gradle.api.UnitTestVariant;
 import com.android.build.gradle.internal.variant.ApkVariantData;
 import com.android.build.gradle.internal.variant.ApplicationVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantData;
@@ -32,13 +33,16 @@ import com.android.builder.core.AndroidBuilder;
  * This is a wrapper around the internal data model, in order to control what is accessible
  * through the external API.
  */
-public class ApplicationVariantImpl extends ApkVariantImpl implements ApplicationVariant, TestedVariant {
+public class ApplicationVariantImpl extends ApkVariantImpl implements ApplicationVariant {
 
     @NonNull
     private final ApplicationVariantData variantData;
 
     @Nullable
     private TestVariant testVariant = null;
+
+    @Nullable
+    private UnitTestVariant unitTestVariant = null;
 
     public ApplicationVariantImpl(
             @NonNull ApplicationVariantData variantData,
@@ -69,5 +73,16 @@ public class ApplicationVariantImpl extends ApkVariantImpl implements Applicatio
     @Nullable
     public TestVariant getTestVariant() {
         return testVariant;
+    }
+
+    @Override
+    @Nullable
+    public UnitTestVariant getUnitTestVariant() {
+        return unitTestVariant;
+    }
+
+    @Override
+    public void setUnitTestVariant(@Nullable UnitTestVariant unitTestVariant) {
+        this.unitTestVariant = unitTestVariant;
     }
 }

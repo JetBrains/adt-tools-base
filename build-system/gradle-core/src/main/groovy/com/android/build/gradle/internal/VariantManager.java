@@ -38,6 +38,7 @@ import com.android.build.gradle.internal.api.DefaultAndroidSourceSet;
 import com.android.build.gradle.internal.api.ReadOnlyObjectProvider;
 import com.android.build.gradle.internal.api.TestVariantImpl;
 import com.android.build.gradle.internal.api.TestedVariant;
+import com.android.build.gradle.internal.api.UnitTestVariantImpl;
 import com.android.build.gradle.internal.api.VariantFilter;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.dependency.VariantDependencies;
@@ -728,10 +729,8 @@ public class VariantManager implements VariantModel {
 
             BaseVariant variantApi =
                     variantFactory.createVariantApi(variantData, readOnlyObjectProvider);
-            extension.addVariant(variantApi);
 
             if (variantFactory.hasTestScope()) {
-                // TODO: Handle UNIT_TEST variants as well.
                 TestVariantData androidTestVariantData =
                         ((TestedVariantData) variantData).getTestVariantData(ANDROID_TEST);
 
@@ -752,7 +751,25 @@ public class VariantManager implements VariantModel {
                     ((TestedExtension) extension).addTestVariant(androidTestVariant);
                     ((TestedVariant) variantApi).setTestVariant(androidTestVariant);
                 }
+
+                TestVariantData unitTestVariantData =
+                        ((TestedVariantData) variantData).getTestVariantData(UNIT_TEST);
+                if (unitTestVariantData != null) {
+                    UnitTestVariantImpl unitTestVariant = instantiator.newInstance(
+                            UnitTestVariantImpl.class,
+                            unitTestVariantData,
+                            variantApi,
+                            androidBuilder,
+                            readOnlyObjectProvider);
+
+                    ((TestedExtension) extension).addUnitTestVariant(unitTestVariant);
+                    ((TestedVariant) variantApi).setUnitTestVariant(unitTestVariant);
+                }
             }
+
+            // Only add the variant API object to the domain object set once it's been fully
+            // initialized.
+            extension.addVariant(variantApi);
         }
     }
 

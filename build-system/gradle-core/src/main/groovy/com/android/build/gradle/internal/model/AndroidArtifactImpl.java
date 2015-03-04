@@ -47,8 +47,7 @@ public class AndroidArtifactImpl extends BaseArtifactImpl implements AndroidArti
     private final String applicationId;
     @NonNull
     private final String sourceGenTaskName;
-    @NonNull
-    private final List<File> generatedSourceFolders;
+
     @NonNull
     private final List<File> generatedResourceFolders;
     @Nullable
@@ -77,14 +76,13 @@ public class AndroidArtifactImpl extends BaseArtifactImpl implements AndroidArti
             @NonNull Map<String,ClassField> buildConfigFields,
             @NonNull Map<String,ClassField> resValues) {
         super(name, assembleTaskName, compileTaskName, classesFolder, dependencies,
-                variantSourceProvider, multiFlavorSourceProviders);
+                variantSourceProvider, multiFlavorSourceProviders, generatedSourceFolders);
 
         this.outputs = outputs;
         this.isSigned = isSigned;
         this.signingConfigName = signingConfigName;
         this.applicationId = applicationId;
         this.sourceGenTaskName = sourceGenTaskName;
-        this.generatedSourceFolders = generatedSourceFolders;
         this.generatedResourceFolders = generatedResourceFolders;
         this.abiFilters = abiFilters;
         this.buildConfigFields = buildConfigFields;
@@ -124,12 +122,6 @@ public class AndroidArtifactImpl extends BaseArtifactImpl implements AndroidArti
     @Override
     public Set<String> getIdeSetupTaskNames() {
         return Sets.newHashSet(getSourceGenTaskName());
-    }
-
-    @NonNull
-    @Override
-    public List<File> getGeneratedSourceFolders() {
-        return generatedSourceFolders;
     }
 
     @NonNull

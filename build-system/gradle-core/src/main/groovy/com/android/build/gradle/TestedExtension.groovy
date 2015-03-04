@@ -14,12 +14,9 @@
  * limitations under the License.
  */
 package com.android.build.gradle
-
 import com.android.annotations.NonNull
-import com.android.build.gradle.BaseExtension
-import com.android.build.gradle.api.ApplicationVariant
-import com.android.build.gradle.api.BaseVariant
 import com.android.build.gradle.api.TestVariant
+import com.android.build.gradle.api.UnitTestVariant
 import com.android.build.gradle.internal.ExtraModelInfo
 import com.android.build.gradle.internal.SdkHandler
 import com.android.build.gradle.internal.dsl.BuildType
@@ -27,6 +24,7 @@ import com.android.build.gradle.internal.dsl.GroupableProductFlavor
 import com.android.build.gradle.internal.dsl.SigningConfig
 import com.android.builder.core.AndroidBuilder
 import groovy.transform.CompileStatic
+import org.gradle.api.DomainObjectSet
 import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.internal.DefaultDomainObjectSet
 import org.gradle.api.internal.project.ProjectInternal
@@ -34,15 +32,17 @@ import org.gradle.internal.reflect.Instantiator
 
 import static com.android.builder.core.VariantType.ANDROID_TEST
 import static com.android.builder.core.VariantType.UNIT_TEST
-
 /**
  * base 'android' extension for plugins that have a test component.
  */
 @CompileStatic
 public abstract class TestedExtension extends BaseExtension {
 
-    private final DefaultDomainObjectSet<TestVariant> testVariantList =
+    private final DomainObjectSet<TestVariant> testVariantList =
             new DefaultDomainObjectSet<TestVariant>(TestVariant.class)
+
+    private final DomainObjectSet<UnitTestVariant> unitTestVariantList =
+            new DefaultDomainObjectSet<UnitTestVariant>(UnitTestVariant.class)
 
     String testBuildType = "debug"
 
@@ -64,15 +64,28 @@ public abstract class TestedExtension extends BaseExtension {
     }
 
     /**
-     * Returns the list of test variants. Since the collections is built after evaluation,
-     * it should be used with Groovy's <code>all</code> iterator to process future items.
+     * Returns the list of (Android) test variants. Since the collections is built after evaluation,
+     * it should be used with Gradle's <code>all</code> iterator to process future items.
      */
     @NonNull
-    public DefaultDomainObjectSet<TestVariant> getTestVariants() {
+    public DomainObjectSet<TestVariant> getTestVariants() {
         return testVariantList
     }
 
     void addTestVariant(TestVariant testVariant) {
         testVariantList.add(testVariant)
+    }
+
+    /**
+     * Returns the list of (Android) test variants. Since the collections is built after evaluation,
+     * it should be used with Gradle's <code>all</code> iterator to process future items.
+     */
+    @NonNull
+    public DomainObjectSet<UnitTestVariant> getUnitTestVariants() {
+        return unitTestVariantList
+    }
+
+    void addUnitTestVariant(UnitTestVariant testVariant) {
+        unitTestVariantList.add(testVariant)
     }
 }
