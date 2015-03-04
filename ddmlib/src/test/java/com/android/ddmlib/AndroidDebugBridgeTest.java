@@ -20,9 +20,11 @@ import junit.framework.TestCase;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 
 public class AndroidDebugBridgeTest extends TestCase {
     private String mAndroidHome;
+    private File mAdbPath;
 
     @Override
     protected void setUp() throws Exception {
@@ -31,19 +33,26 @@ public class AndroidDebugBridgeTest extends TestCase {
                 "This test requires ANDROID_HOME environment variable to point to a valid SDK",
                 mAndroidHome);
 
-        AndroidDebugBridge.init(false);
+        mAdbPath = new File(mAndroidHome, "platform-tools" + File.separator + "adb");
+
+        AndroidDebugBridge.initIfNeeded(false);
     }
 
     // https://code.google.com/p/android/issues/detail?id=63170
     public void testCanRecreateAdb() throws IOException {
-        File adbPath = new File(mAndroidHome, "platform-tools" + File.separator + "adb");
-
-        AndroidDebugBridge adb = AndroidDebugBridge.createBridge(adbPath.getCanonicalPath(), true);
+        AndroidDebugBridge adb = AndroidDebugBridge.createBridge(mAdbPath.getCanonicalPath(), true);
         assertNotNull(adb);
         AndroidDebugBridge.terminate();
 
-        adb = AndroidDebugBridge.createBridge(adbPath.getCanonicalPath(), true);
+        adb = AndroidDebugBridge.createBridge(mAdbPath.getCanonicalPath(), true);
         assertNotNull(adb);
         AndroidDebugBridge.terminate();
+    }
+
+    public void testAdbVersion() throws Exception {
+        AdbVersion version = AndroidDebugBridge
+                .getAdbVersion(mAdbPath).get(5, TimeUnit.SECONDS);
+        assertNotSame(version, AdbVersion.UNKNOWN);
+        assertTrue(version.compareTo(AdbVersion.parseFrom("1.0.20")) > 0);
     }
 }
