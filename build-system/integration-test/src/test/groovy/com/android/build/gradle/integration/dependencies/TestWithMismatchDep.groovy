@@ -43,12 +43,12 @@ class TestWithMismatchDep {
     public void setUp() {
         project.getBuildFile() << """
 dependencies {
-    androidTestCompile 'com.google.guava:guava:17.0'
+    androidTestCompile 'com.google.guava:guava:15.0'
 }
 """
     }
 
-    private final static String ERROR_MSG = 'Conflict with dependency \'com.google.guava:guava\'. Resolved versions for app (18.0) and test app (17.0) differ.'
+    private final static String ERROR_MSG = 'Conflict with dependency \'com.google.guava:guava\'. Resolved versions for app (17.0) and test app (15.0) differ.'
 
     @Test
     public void "Test mismatch dependency error is in model"() {
@@ -88,7 +88,7 @@ dependencies {
         assertTrue("stderr contains error", log.contains(ERROR_MSG))
     }
 
-    public void "Test mismatch dependency doesn't  break debug build"() {
+    public void "Test mismatch dependency doesn't break debug build"() {
         project.execute("assembleDebug")
 
         // check there is a log output
