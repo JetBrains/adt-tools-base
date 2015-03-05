@@ -4,9 +4,11 @@ buildscript { apply from: "../commonBuildScript.gradle", to: buildscript }
 apply plugin: 'com.android.application'
 
 apply from: "../commonLocalRepo.gradle"
-
+repositories {
+    jcenter()
+}
 dependencies {
-    androidTestCompile 'com.google.guava:guava:17.0'
+    androidTestCompile 'com.jayway.android.robotium:robotium-solo:4.3.1'
 }
 
 android {

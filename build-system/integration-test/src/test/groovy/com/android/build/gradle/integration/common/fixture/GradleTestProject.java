@@ -455,18 +455,13 @@ public class GradleTestProject implements TestRule {
      * Returns a string that contains the gradle buildscript content
      */
     public String getGradleBuildscript() {
-        String mavenRepoUrl = getRepoDir().getAbsolutePath();
         return "buildscript {\n" +
                 "    repositories {\n" +
-                "        maven { url '" + mavenRepoUrl + "' }\n" +
+                "        maven { url '" + getRepoDir().toString() + "' }\n" +
                 "    }\n" +
                 "    dependencies {\n" +
                 "        classpath \"com.android.tools.build:gradle" + (experimentalMode ? "-experimental" : "") + ":" + ANDROID_GRADLE_VERSION + "\"\n" +
                 "    }\n" +
-                "}\n" +
-                "\n" +
-                "repositories {\n" +
-                "    maven { url '" + mavenRepoUrl + "' }\n" +
                 "}\n";
     }
 
