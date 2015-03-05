@@ -38,7 +38,7 @@ class TestWithSameDepAsApp {
     public static void setUp() {
         project.getBuildFile() << """
 dependencies {
-    androidTestCompile 'com.google.guava:guava:18.0'
+    androidTestCompile 'com.google.guava:guava:17.0'
 }
 """
 
