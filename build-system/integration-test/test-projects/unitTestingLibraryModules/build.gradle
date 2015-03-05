@@ -19,7 +19,9 @@ buildscript { apply from: "../commonBuildScript.gradle", to: buildscript }
 
 apply plugin: 'com.android.library'
 
-apply from: "../commonLocalRepo.gradle"
+repositories {
+    jcenter()
+}
 
 android {
     // We need an android.jar that contains Java 6 bytecode, since Jenkins runs on Java 6.
@@ -34,7 +36,7 @@ android {
 }
 
 dependencies {
-    testCompile 'junit:junit:4.12'
+    testCompile 'junit:junit:4.11'
     testCompile 'org.mockito:mockito-core:1.9.5'
     testCompile 'org.jdeferred:jdeferred-android-aar:1.2.3'
     testCompile 'commons-logging:commons-logging:1.1.1'

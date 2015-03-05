@@ -4,6 +4,9 @@ buildscript { apply from: "../commonBuildScript.gradle", to: buildscript }
 apply plugin: 'com.android.application'
 
 apply from: "../commonLocalRepo.gradle"
+repositories {
+    jcenter()
+}
 
 android {
     compileSdkVersion 21
@@ -18,7 +21,7 @@ android {
 }
 
 dependencies {
-    compile 'com.google.guava:guava:17.0'
+    compile 'com.google.guava:guava:18.0'
 
     // this is added by the test to control the version.
     //androidTestCompile 'com.google.guava:guava:x.y'
