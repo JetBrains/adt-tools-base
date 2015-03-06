@@ -46,13 +46,20 @@ public interface IProjectCallback {
     }
 
     /**
-     * Loads a custom view with the given constructor signature and arguments.
+     * Loads a custom class with the given constructor signature and arguments.
+     * <p/>
+     * Despite the name, the method is used not just for views (android.view.View),
+     * but potentially any class in the project's namespace. However, when the
+     * method is used for loading non-view classes the error messages reported may
+     * not be ideal, since the the IDE may assume those classes to be a view and try
+     * to use a different constructor or replace it with a MockView.
+     * <p/>
+     * This is done so that LayoutLib can continue to work on older versions of the IDE.
+     *
      * @param name The fully qualified name of the class.
      * @param constructorSignature The signature of the class to use
      * @param constructorArgs The arguments to use on the constructor
-     * @return A newly instantiated android.view.View object.
-     * @throws ClassNotFoundException
-     * @throws Exception
+     * @return A newly instantiated object.
      */
     @SuppressWarnings("unchecked")
     Object loadView(String name, Class[] constructorSignature, Object[] constructorArgs)
