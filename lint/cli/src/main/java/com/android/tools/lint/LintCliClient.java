@@ -110,7 +110,6 @@ public class LintCliClient extends LintClient {
         mRegistry = registry;
         mDriver = new LintDriver(registry, this);
 
-
         mDriver.setAbbreviating(!mFlags.isShowEverything());
         addProgressPrinter();
         mDriver.addLintListener(new LintListener() {
