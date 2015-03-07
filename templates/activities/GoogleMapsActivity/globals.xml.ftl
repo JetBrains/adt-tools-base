@@ -6,7 +6,6 @@
     <global id="debugResOut" value="${projectOut}/src/debug/res" />
     <global id="releaseResOut" value="${projectOut}/src/release/res" />
     <global id="resOut" value="${resDir}" />
-    <global id="menuName" value="${classToResource(activityClass)}" />
     <global id="simpleName" value="${activityToLayout(activityClass)}" />
     <global id="relativePackage" value="<#if relativePackage?has_content>${relativePackage}<#else>${packageName}</#if>" />
 </globals>
