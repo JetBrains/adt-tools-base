@@ -146,7 +146,7 @@ class NdkComponentModelPlugin implements Plugin<Project> {
         @Mutate
         void createNativeLibrary(
                 ComponentSpecContainer specs,
-                NdkExtension extension,
+                @Path("android.ndk") NdkExtension extension,
                 NdkHandler ndkHandler,
                 @Path("android.sources") AndroidComponentModelSourceSet sources,
                 @Path("buildDir") File buildDir) {
@@ -181,7 +181,7 @@ class NdkComponentModelPlugin implements Plugin<Project> {
                 BinaryContainer binaries,
                 ComponentSpecContainer specs,
                 AndroidComponentSpec androidSpec,
-                NdkExtension extension) {
+                @Path("android.ndk") NdkExtension extension) {
             if (!extension.moduleName.isEmpty()) {
                 NativeLibrarySpec library =
                         specs.withType(NativeLibrarySpec).getByName(extension.moduleName);

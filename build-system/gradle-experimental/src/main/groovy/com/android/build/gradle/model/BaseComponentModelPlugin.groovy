@@ -79,12 +79,10 @@ import org.gradle.model.Path
 import org.gradle.model.RuleSource
 import org.gradle.model.collection.CollectionBuilder
 import org.gradle.model.internal.core.ModelCreators
-import org.gradle.model.internal.core.ModelPath
 import org.gradle.model.internal.core.ModelReference
 import org.gradle.model.internal.registry.ModelRegistry
 import org.gradle.platform.base.BinaryContainer
 import org.gradle.platform.base.BinarySpec
-import org.gradle.platform.base.BinaryTasks
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry
 
 import javax.inject.Inject
@@ -132,9 +130,8 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
         modelRegistry.create(
                 ModelCreators.bridgedInstance(
                         ModelReference.of("toolingRegistry", ToolingModelBuilderRegistry), toolingRegistry)
-                        .simpleDescriptor("Tooling model builder model registry.")
-                        .build(),
-                ModelPath.ROOT)
+                        .descriptor("Tooling model builder model registry.")
+                        .build())
     }
 
     @SuppressWarnings("GrMethodMayBeStatic")
@@ -277,7 +274,7 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
         void createAndroidComponents(
                 AndroidComponentSpec androidSpec,
                 ServiceRegistry serviceRegistry,
-                BaseExtension androidExtension,
+                @Path("android.config") BaseExtension androidExtension,
                 @Path("android.buildTypes") NamedDomainObjectContainer<BuildType> buildTypeContainer,
                 @Path("android.productFlavors") NamedDomainObjectContainer<GroupableProductFlavor> productFlavorContainer,
                 @Path("android.signingConfigs") NamedDomainObjectContainer<SigningConfig> signingConfigContainer,
@@ -329,25 +326,24 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
             spec.variantManager = variantManager
         }
 
-        // TODO: Need a way to hide the variant manager from user.
-        @Model
-        VariantManager variantManager(AndroidComponentSpec spec) {
-            return (spec as DefaultAndroidComponentSpec).variantManager
-        }
-
         @Mutate
-        void createVariants(
-                VariantManager variantManager,
-                BinaryContainer binaries) {
-
-            binaries.withType(AndroidBinary) {
+        void createVariantData(
+                CollectionBuilder<AndroidBinary> binaries,
+                AndroidComponentSpec spec) {
+            VariantManager variantManager = (spec as DefaultAndroidComponentSpec).variantManager
+            binaries.all {
                 DefaultAndroidBinary binary = it as DefaultAndroidBinary
-
-                // Create tasks for each binaries.
                 binary.variantData =
                         variantManager.createVariantData(binary.buildType, binary.productFlavors)
                 variantManager.getVariantDataList().add(binary.variantData);
             }
+        }
+
+        @Mutate
+        void createLifeCycleTasks(
+                CollectionBuilder<Task> tasks,
+                TaskManager taskManager) {
+            taskManager.createTasksBeforeEvaluate(new TaskCollectionBuilderAdaptor(tasks))
         }
 
         @Mutate
@@ -362,9 +358,6 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
 
             applyProjectSourceSet(spec, androidSources, spec.extension)
 
-            // Create lifecycle tasks.
-            taskManager.createTasksBeforeEvaluate(new TaskCollectionBuilderAdaptor(tasks))
-
             // setup SDK repositories.
             for (File file : sdkHandler.sdkLoader.repositories) {
                 project.repositories.maven { MavenArtifactRepository repo ->
@@ -374,21 +367,23 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
 
             taskManager.createLintCompileTask();
 
-            taskManager.createAssembleAndroidTestTask()
-
             // TODO: determine how to provide functionalities of variant API objects.
         }
 
-        @BinaryTasks
-        void createVariantTasks(
+        // TODO: Use @BinaryTasks after figuring how to configure non-binary specific tasks.
+        @Mutate
+        void createBinaryTasks(
                 CollectionBuilder<Task> tasks,
-                AndroidBinary androidBinary,
-                VariantManager variantManager,
+                BinaryContainer binaries,
+                AndroidComponentSpec spec,
                 TaskManager taskManager) {
-            DefaultAndroidBinary binary = androidBinary as DefaultAndroidBinary
-            variantManager.createTasksForVariantData(
-                    new TaskCollectionBuilderAdaptor(tasks),
-                    binary.variantData)
+            VariantManager variantManager = (spec as DefaultAndroidComponentSpec).variantManager
+            binaries.withType(AndroidBinary) { androidBinary ->
+                DefaultAndroidBinary binary = androidBinary as DefaultAndroidBinary
+                variantManager.createTasksForVariantData(
+                        new TaskCollectionBuilderAdaptor(tasks),
+                        binary.variantData)
+            }
         }
 
         /**
@@ -397,11 +392,14 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
         @Mutate
         void createRemainingTasks(
                 CollectionBuilder<Task> tasks,
-                @Path("tasks.assemble") Task assembleTask,
                 TaskManager taskManager,
-                VariantManager variantManager) {
+                AndroidComponentSpec spec) {
+            VariantManager variantManager = (spec as DefaultAndroidComponentSpec).variantManager
+
             // create the lint tasks.
-            taskManager.createLintTasks(variantManager.variantDataList);
+            taskManager.createLintTasks(
+                    new TaskCollectionBuilderAdaptor(tasks),
+                    variantManager.variantDataList);
 
             // create the test tasks.
             taskManager.createTopLevelTestTasks (
@@ -410,7 +408,9 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
         }
 
         @Mutate
-        void createReportTasks(CollectionBuilder<Task> tasks, VariantManager variantManager) {
+        void createReportTasks(CollectionBuilder<Task> tasks, AndroidComponentSpec spec) {
+            VariantManager variantManager = (spec as DefaultAndroidComponentSpec).variantManager
+
             tasks.create("androidDependencies", DependencyReportTask) { DependencyReportTask dependencyReportTask ->
                 dependencyReportTask.setDescription("Displays the Android dependencies of the project")
                 dependencyReportTask.setVariants(variantManager.variantDataList)
