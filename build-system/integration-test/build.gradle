@@ -12,7 +12,7 @@ dependencies {
     compile project(':base:builder')
     compile project(':base:sdk-common')
     compile "com.google.truth:truth:0.24"
-    testCompile "org.jacoco:org.jacoco.agent:0.7.1.201405082137"
+    testCompile "org.jacoco:org.jacoco.agent:0.7.4.201502262128"
 }
 
 // These tasks will not depend on publishLocal, so they will run integration
