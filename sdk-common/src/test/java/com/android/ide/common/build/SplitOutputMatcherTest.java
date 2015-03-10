@@ -533,8 +533,8 @@ public class SplitOutputMatcherTest extends TestCase {
                         new FakePureSplitOutput(Density.getEnum(240).getResourceValue(),
                                 OutputFile.FilterType.DENSITY),
                         new FakePureSplitOutput("fr", OutputFile.FilterType.LANGUAGE),
-                        new FakePureSplitOutput("fr_CA", OutputFile.FilterType.LANGUAGE),
-                        new FakePureSplitOutput("fr_FR", OutputFile.FilterType.LANGUAGE),
+                        new FakePureSplitOutput("fr-CA", OutputFile.FilterType.LANGUAGE),
+                        new FakePureSplitOutput("fr-FR", OutputFile.FilterType.LANGUAGE),
                         new FakePureSplitOutput("es", OutputFile.FilterType.LANGUAGE),
                         new FakePureSplitOutput("it", OutputFile.FilterType.LANGUAGE)),
                 1);
@@ -562,17 +562,18 @@ public class SplitOutputMatcherTest extends TestCase {
                         new FakePureSplitOutput(Density.getEnum(240).getResourceValue(),
                                 OutputFile.FilterType.DENSITY),
                         new FakePureSplitOutput("fr", OutputFile.FilterType.LANGUAGE),
-                        new FakePureSplitOutput("fr_CA", OutputFile.FilterType.LANGUAGE),
-                        new FakePureSplitOutput("fr_FR", OutputFile.FilterType.LANGUAGE),
+                        new FakePureSplitOutput("fr-CA", OutputFile.FilterType.LANGUAGE),
+                        new FakePureSplitOutput("fr-FR", OutputFile.FilterType.LANGUAGE),
                         new FakePureSplitOutput("es", OutputFile.FilterType.LANGUAGE),
                         new FakePureSplitOutput("it", OutputFile.FilterType.LANGUAGE)),
                 1);
         list.add(match);
         List<OutputFile> results = computeBestOutput(
                 list, ImmutableSet.<String>of(), "fr", "CA", 320,  "foo");
-        assertEquals(3, results.size());
+        assertEquals(4, results.size());
         assertMainOutputFilePresence(results);
-        assertPureSplitOutputFilePresence(results, OutputFile.FilterType.LANGUAGE, "fr_CA");
+        assertPureSplitOutputFilePresence(results, OutputFile.FilterType.LANGUAGE, "fr");
+        assertPureSplitOutputFilePresence(results, OutputFile.FilterType.LANGUAGE, "fr-CA");
         assertPureSplitOutputFilePresence(results, OutputFile.FilterType.DENSITY,
                 Density.getEnum(320).getResourceValue());
     }
@@ -591,8 +592,8 @@ public class SplitOutputMatcherTest extends TestCase {
                         new FakePureSplitOutput(Density.getEnum(240).getResourceValue(),
                                 OutputFile.FilterType.DENSITY),
                         new FakePureSplitOutput("fr", OutputFile.FilterType.LANGUAGE),
-                        new FakePureSplitOutput("fr_CA", OutputFile.FilterType.LANGUAGE),
-                        new FakePureSplitOutput("fr_FR", OutputFile.FilterType.LANGUAGE),
+                        new FakePureSplitOutput("fr-CA", OutputFile.FilterType.LANGUAGE),
+                        new FakePureSplitOutput("fr-FR", OutputFile.FilterType.LANGUAGE),
                         new FakePureSplitOutput("es", OutputFile.FilterType.LANGUAGE),
                         new FakePureSplitOutput("it", OutputFile.FilterType.LANGUAGE)),
                 1);
@@ -620,9 +621,9 @@ public class SplitOutputMatcherTest extends TestCase {
                                 OutputFile.FilterType.DENSITY),
                         new FakePureSplitOutput(Density.getEnum(240).getResourceValue(),
                                 OutputFile.FilterType.DENSITY),
-                        new FakePureSplitOutput("fr_CH", OutputFile.FilterType.LANGUAGE),
-                        new FakePureSplitOutput("fr_CA", OutputFile.FilterType.LANGUAGE),
-                        new FakePureSplitOutput("fr_FR", OutputFile.FilterType.LANGUAGE),
+                        new FakePureSplitOutput("fr-CH", OutputFile.FilterType.LANGUAGE),
+                        new FakePureSplitOutput("fr-CA", OutputFile.FilterType.LANGUAGE),
+                        new FakePureSplitOutput("fr-FR", OutputFile.FilterType.LANGUAGE),
                         new FakePureSplitOutput("es", OutputFile.FilterType.LANGUAGE),
                         new FakePureSplitOutput("it", OutputFile.FilterType.LANGUAGE)),
                 1);
