@@ -582,7 +582,6 @@ public abstract class BaseExtension {
 
     // ---------------
     // TEMP for compatibility
-    // STOPSHIP Remove in 1.0
 
     // by default, we do not generate pure splits
     boolean generatePureSplits = false;
@@ -598,7 +597,7 @@ public abstract class BaseExtension {
 
     public void enforceUniquePackageName(boolean value) {
         if (!value) {
-            LoggingUtil.displayDeprecationWarning(logger, project, "Support for libraries with same package name is deprecated and will be removed in 1.0")
+            LoggingUtil.displayDeprecationWarning(logger, project, "Support for libraries with same package name is deprecated and will be removed in a future release.")
         }
         enforceUniquePackageName = value
     }
