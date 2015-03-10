@@ -16,6 +16,8 @@
 
 package com.android.build.gradle.model;
 
+import com.android.builder.model.ProductFlavor;
+
 import org.gradle.api.Action;
 import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.file.SourceDirectorySet;
@@ -39,11 +41,8 @@ public class AndroidComponentModelSourceSet
         implements NamedDomainObjectContainer<FunctionalSourceSet> {
     ProjectSourceSet projectSourceSet;
 
-    public AndroidComponentModelSourceSet (
-            Instantiator instantiator,
-            ProjectSourceSet projectSourceSet) {
+    public AndroidComponentModelSourceSet (Instantiator instantiator) {
         super(FunctionalSourceSet.class, instantiator);
-        this.projectSourceSet = projectSourceSet;
     }
 
     public <T extends LanguageSourceSet> void registerLanguage(final LanguageRegistration<T> languageRegistration) {
@@ -56,7 +55,15 @@ public class AndroidComponentModelSourceSet
                         languageRegistration.getSourceSetFactory(functionalSourceSet.getName()));
             }
         });
+    }
 
+    /**
+     * Setter for projectSourceSet.
+     * Having a setter avoid the need for ProjectSourceSet to be part of the constructor, which can cause 
+     * cyclic rule dependenecy issues.
+     */
+    public void setProjectSourceSet(ProjectSourceSet projectSourceSet) {
+        this.projectSourceSet = projectSourceSet;
     }
 
     @Override

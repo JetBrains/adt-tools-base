@@ -34,7 +34,7 @@ class NativeToolSpecificationFactory {
             NdkHandler ndkHandler,
             BuildType buildType,
             NativePlatform platform) {
-        String toolchain = ndkHandler.getNdkExtension().getToolchain()
+        String toolchain = ndkHandler.getNdkConfig().getToolchain()
         return (toolchain == null || toolchain.equals("gcc")
                 ? new GccNativeToolSpecification(buildType, platform)
                 : new ClangNativeToolSpecification(ndkHandler, buildType, platform))
