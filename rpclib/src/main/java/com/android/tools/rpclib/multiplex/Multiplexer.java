@@ -152,7 +152,7 @@ public class Multiplexer {
               break;
             }
             case Message.DATA: {
-              int count = mDecoder.int32();
+              int count = mDecoder.uint32();
               byte[] buf = new byte[count];
               for (int offset = 0; offset < count;) {
                 offset += mDecoder.stream().read(buf, offset, count-offset);

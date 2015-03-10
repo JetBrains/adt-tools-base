@@ -62,10 +62,10 @@ public class DecoderTest extends TestCase {
 
   public void testDecodeInt16() throws IOException {
     final ByteArrayInputStream input = new ByteArrayInputStream(new byte[]{
-      (byte)0x00, (byte)0x00,
-      (byte)0xff, (byte)0x7f,
-      (byte)0x00, (byte)0x80,
-      (byte)0xff, (byte)0xff
+      (byte)0x00,
+      (byte)0xc0, (byte)0xff, (byte)0xfe,
+      (byte)0xc0, (byte)0xff, (byte)0xff,
+      (byte)0x01,
     });
     final short[] expected = new short[]{0, 32767, -32768, -1};
 
@@ -77,9 +77,9 @@ public class DecoderTest extends TestCase {
 
   public void testDecodeUint16() throws IOException {
     final ByteArrayInputStream input = new ByteArrayInputStream(new byte[]{
-      (byte)0x00, (byte)0x00,
-      (byte)0xef, (byte)0xbe,
-      (byte)0xde, (byte)0xc0
+      (byte)0x00,
+      (byte)0xc0, (byte)0xbe, (byte)0xef,
+      (byte)0xc0, (byte)0xc0, (byte)0xde
     });
     final int[] expected = new int[]{0, 0xbeef, 0xc0de};
 
@@ -91,10 +91,10 @@ public class DecoderTest extends TestCase {
 
   public void testDecodeInt32() throws IOException {
     final ByteArrayInputStream input = new ByteArrayInputStream(new byte[]{
-      (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00,
-      (byte)0xff, (byte)0xff, (byte)0xff, (byte)0x7f,
-      (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x80,
-      (byte)0xff, (byte)0xff, (byte)0xff, (byte)0xff
+      (byte)0x00,
+      (byte)0xf0, (byte)0xff, (byte)0xff, (byte)0xff, (byte)0xfe,
+      (byte)0xf0, (byte)0xff, (byte)0xff, (byte)0xff, (byte)0xff,
+      (byte)0x01
     });
     final int[] expected = new int[]{0, 2147483647, -2147483648, -1};
 
@@ -106,9 +106,9 @@ public class DecoderTest extends TestCase {
 
   public void testDecodeUint32() throws IOException {
     final ByteArrayInputStream input = new ByteArrayInputStream(new byte[]{
-      (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00,
-      (byte)0x67, (byte)0x45, (byte)0x23, (byte)0x01,
-      (byte)0xef, (byte)0xcd, (byte)0xab, (byte)0x10
+      (byte)0x00,
+      (byte)0xe1, (byte)0x23, (byte)0x45, (byte)0x67,
+      (byte)0xf0, (byte)0x10, (byte)0xab, (byte)0xcd, (byte)0xef
     });
     final long[] expected = new long[]{0, 0x01234567, 0x10abcdef};
 
@@ -120,17 +120,10 @@ public class DecoderTest extends TestCase {
 
   public void testDecodeInt64() throws IOException {
     final ByteArrayInputStream input = new ByteArrayInputStream(new byte[]{
-      (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00,
-      (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00,
-
-      (byte)0xff, (byte)0xff, (byte)0xff, (byte)0xff,
-      (byte)0xff, (byte)0xff, (byte)0xff, (byte)0x7f,
-
-      (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00,
-      (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x80,
-
-      (byte)0xff, (byte)0xff, (byte)0xff, (byte)0xff,
-      (byte)0xff, (byte)0xff, (byte)0xff, (byte)0xff
+      (byte)0x00,
+      (byte)0xff, (byte)0xff, (byte)0xff, (byte)0xff, (byte)0xff, (byte)0xff, (byte)0xff, (byte)0xff, (byte)0xfe,
+      (byte)0xff, (byte)0xff, (byte)0xff, (byte)0xff, (byte)0xff, (byte)0xff, (byte)0xff, (byte)0xff,(byte) 0xff,
+      (byte)0x01
     });
     final long[] expected = new long[]{0L, 9223372036854775807L, -9223372036854775808L, -1L};
 
@@ -142,14 +135,9 @@ public class DecoderTest extends TestCase {
 
   public void testDecodeUint64() throws IOException {
     final ByteArrayInputStream input = new ByteArrayInputStream(new byte[]{
-      (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00,
-      (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00,
-
-      (byte)0xef, (byte)0xcd, (byte)0xab, (byte)0x89,
-      (byte)0x67, (byte)0x45, (byte)0x23, (byte)0x01,
-
-      (byte)0x10, (byte)0x32, (byte)0x54, (byte)0x76,
-      (byte)0x98, (byte)0xba, (byte)0xdc, (byte)0xfe
+      (byte)0x00,
+      (byte)0xff, (byte)0x01, (byte)0x23, (byte)0x45, (byte)0x67, (byte)0x89, (byte)0xab, (byte)0xcd, (byte)0xef,
+      (byte)0xff, (byte)0xfe, (byte)0xdc, (byte)0xba, (byte)0x98, (byte)0x76, (byte)0x54, (byte)0x32, (byte)0x10
     });
     final long[] expected = new long[]{0L, 0x0123456789abcdefL, 0xfedcba9876543210L};
 
@@ -161,9 +149,9 @@ public class DecoderTest extends TestCase {
 
   public void testDecodeFloat32() throws IOException {
     final ByteArrayInputStream input = new ByteArrayInputStream(new byte[]{
-      (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00,
-      (byte)0x00, (byte)0x00, (byte)0x80, (byte)0x3f,
-      (byte)0x00, (byte)0x00, (byte)0x81, (byte)0x42,
+      (byte)0x00,
+      (byte)0xc0, (byte)0x80, (byte)0x3f,
+      (byte)0xc0,(byte) 0x81, (byte)0x42,
     });
     final float[] expected = new float[]{0.F, 1.F, 64.5F};
 
@@ -175,14 +163,9 @@ public class DecoderTest extends TestCase {
 
   public void testDecodeFloat64() throws IOException {
     final ByteArrayInputStream input = new ByteArrayInputStream(new byte[]{
-      (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00,
-      (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00,
-
-      (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00,
-      (byte)0x00, (byte)0x00, (byte)0xf0, (byte)0x3f,
-
-      (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00,
-      (byte)0x00, (byte)0x20, (byte)0x50, (byte)0x40
+      (byte)0x00,
+      (byte)0xc0, (byte)0xf0, (byte)0x3f,
+      (byte)0xe0, (byte)0x20, (byte)0x50, (byte)0x40,
     });
     final double[] expected = new double[]{0.D, 1.D, 64.5D};
 
@@ -194,11 +177,11 @@ public class DecoderTest extends TestCase {
 
   public void testDecodeString() throws IOException {
     final ByteArrayInputStream input = new ByteArrayInputStream(new byte[]{
-      0x05, 0x00, 0x00, 0x00, 'H', 'e', 'l', 'l', 'o',
-      0x00, 0x00, 0x00, 0x00, // empty string
-      0x05, 0x00, 0x00, 0x00, 'W', 'o', 'r', 'l', 'd',
+      0x05, 'H', 'e', 'l', 'l', 'o',
+      0x00, // empty string
+      0x05, 'W', 'o', 'r', 'l', 'd',
 
-      0x15, 0x00, 0x00, 0x00,
+      0x15,
       (byte)0xe3, (byte)0x81, (byte)0x93, (byte)0xe3, (byte)0x82, (byte)0x93, (byte)0xe3,
       (byte)0x81, (byte)0xab, (byte)0xe3, (byte)0x81, (byte)0xa1, (byte)0xe3, (byte)0x81,
       (byte)0xaf, (byte)0xe4, (byte)0xb8, (byte)0x96, (byte)0xe7, (byte)0x95, (byte)0x8c
@@ -245,15 +228,15 @@ public class DecoderTest extends TestCase {
     ByteArrayOutputStream inputBytes = new ByteArrayOutputStream();
 
     // null BinaryObject:
-    inputBytes.write(new byte[]{(byte)0xff, (byte)0xff}); // BinaryObject.NULL_ID
+    inputBytes.write(new byte[]{(byte)0x00}); // BinaryObject.NULL_ID
 
     // stubObject:
-    inputBytes.write(new byte[]{0x00, 0x00}); // stubObject reference
+    inputBytes.write(new byte[]{0x01}); // stubObject reference
     inputBytes.write(stubObjectTypeIDBytes); // stubObject.type()
-    inputBytes.write(new byte[]{0x05, 0x00, 0x00, 0x00, 'd', 'u', 'm', 'm', 'y'});
+    inputBytes.write(new byte[]{0x05, 'd', 'u', 'm', 'm', 'y'});
 
     // stubObject again, only by reference this time:
-    inputBytes.write(new byte[]{0x00, 0x00}); // stubObject reference
+    inputBytes.write(new byte[]{0x01}); // stubObject reference
 
     final ByteArrayInputStream input = new ByteArrayInputStream(inputBytes.toByteArray());
     final BinaryObject[] expected = new BinaryObject[]{null, dummyObject, dummyObject};
