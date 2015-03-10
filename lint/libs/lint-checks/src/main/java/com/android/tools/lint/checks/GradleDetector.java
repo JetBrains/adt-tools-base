@@ -785,9 +785,7 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
             @NonNull Context context,
             @NonNull GradleCoordinate dependency,
             @NonNull Object cookie) {
-        if ("com.android.support".equals(dependency.getGroupId()) &&
-                ("support-v4".equals(dependency.getArtifactId()) ||
-                        "appcompat-v7".equals(dependency.getArtifactId()))) {
+        if ("com.android.support".equals(dependency.getGroupId())) {
             checkSupportLibraries(context, dependency, cookie);
             if (mMinSdkVersion >= 14 && "appcompat-v7".equals(dependency.getArtifactId())
                   && mCompileSdkVersion >= 1 && mCompileSdkVersion < 21) {
