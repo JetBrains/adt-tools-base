@@ -34,6 +34,13 @@ public final class RenderParamsFlags {
         new Key<Boolean>("disableBitmapCaching", Boolean.class);
     public static final Key<Boolean> FLAG_KEY_RENDER_ALL_DRAWABLE_STATES =
         new Key<Boolean>("renderAllDrawableStates", Boolean.class);
+    /**
+     * To tell LayoutLib that the IDE supports RecyclerView.
+     * <p/>
+     * Default is false.
+     */
+    public static final Key<Boolean> FLAG_KEY_RECYCLER_VIEW_SUPPORT =
+        new Key<Boolean>("recyclerViewSupport", Boolean.class);
 
     // Disallow instances.
     private RenderParamsFlags() {}
