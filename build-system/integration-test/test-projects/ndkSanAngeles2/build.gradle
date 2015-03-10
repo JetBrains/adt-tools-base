@@ -32,7 +32,6 @@ model {
     }
 
     android.ndk {
-        compileSdkVersion = 19
         moduleName = "sanangeles"
         CFlags = "-DDISABLE_IMPORTGL"
         ldLibs.create { value = "GLESv1_CM" }
@@ -43,29 +42,26 @@ model {
     }
 
     android.productFlavors {
-        x86 {
-            ndk {
-                abiFilter "x86"
-            }
-
+        create {
+            name = "x86"
+            ndkConfig.abiFilters.create { value = "x86" }
             // this is the flavor part of the version code.
             // It must be higher than the arm one for devices supporting
             // both, as x86 is preferred.
             versionCode = 3
         }
-        arm {
-            ndk {
-                abiFilter "armeabi-v7a"
-            }
+        create {
+            name = "arm"
+            ndkConfig.abiFilters.create { value = "armeabi-v7a" }
             versionCode = 2
         }
-        mips {
-            ndk {
-                abiFilter "mips"
-            }
+        create {
+            name = "mips"
+            ndkConfig.abiFilters.create { value = "mips" }
             versionCode = 1
         }
-        fat {
+        create {
+            name = "fat"
             // fat binary, lowest version code to be
             // the last option
             versionCode = 0

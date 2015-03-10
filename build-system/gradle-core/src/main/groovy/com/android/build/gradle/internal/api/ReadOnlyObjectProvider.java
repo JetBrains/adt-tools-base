@@ -18,7 +18,6 @@ package com.android.build.gradle.internal.api;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.gradle.api.GroupableProductFlavor;
 import com.android.builder.model.BuildType;
 import com.android.builder.model.ProductFlavor;
 import com.android.builder.model.SigningConfig;
@@ -47,7 +46,7 @@ public class ReadOnlyObjectProvider {
      * Map of read-only ProductFlavor. This maps the normal flavor to the read-only version.
      */
     @NonNull
-    private final Map<GroupableProductFlavor, GroupableProductFlavor> readOnlyFlavors = Maps.newIdentityHashMap();
+    private final Map<ProductFlavor, ProductFlavor> readOnlyFlavors = Maps.newIdentityHashMap();
 
     /**
      * Map of read-only SigningConfig. This maps the normal config to the read-only version.
@@ -94,11 +93,11 @@ public class ReadOnlyObjectProvider {
      * @return an read-only version.
      */
     @NonNull
-    public GroupableProductFlavor getProductFlavor(@NonNull GroupableProductFlavor productFlavor) {
-        GroupableProductFlavor readOnlyProductFlavor = readOnlyFlavors.get(productFlavor);
+    public ProductFlavor getProductFlavor(@NonNull ProductFlavor productFlavor) {
+        ProductFlavor readOnlyProductFlavor = readOnlyFlavors.get(productFlavor);
         if (readOnlyProductFlavor == null) {
             readOnlyFlavors.put(productFlavor,
-                    readOnlyProductFlavor = new ReadOnlyGroupableProductFlavor(
+                    readOnlyProductFlavor = new ReadOnlyProductFlavor(
                             productFlavor, this));
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 The Android Open Source Project
+ * Copyright (C) 2015 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,17 +14,21 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.api;
+package com.android.build.gradle.internal.dsl;
 
 import com.android.annotations.Nullable;
+import com.android.build.gradle.internal.core.NdkConfig;
 import com.android.builder.model.ProductFlavor;
 
 /**
- * A product flavor that is associated with a flavor dimension.
+ * A product flavor with addition properties for building with Gradle plugin.
  */
-@Deprecated
-public interface GroupableProductFlavor extends ProductFlavor {
+public interface CoreProductFlavor extends ProductFlavor {
 
-    // TODO: Remove interface now ProductFlavor has dimension.
+    @Nullable
+    NdkConfig getNdkConfig();
+
+    @Nullable
+    Boolean getUseJack();
 
 }

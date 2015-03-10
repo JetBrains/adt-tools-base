@@ -148,4 +148,10 @@ public class ReadOnlyProductFlavor extends ReadOnlyBaseConfig implements Product
     public String getDimension() {
         return productFlavor.getDimension();
     }
+
+    @Nullable
+    @Deprecated
+    public String getFlavorDimension() {
+        return productFlavor.getDimension();
+    }
 }

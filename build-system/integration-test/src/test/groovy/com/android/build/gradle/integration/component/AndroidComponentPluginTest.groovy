@@ -43,8 +43,8 @@ model {
         create { name = "custom" }
     }
     android.productFlavors {
-        flavor1
-        flavor2
+        create { name = "flavor1" }
+        create { name = "flavor2" }
     }
 }
 """
