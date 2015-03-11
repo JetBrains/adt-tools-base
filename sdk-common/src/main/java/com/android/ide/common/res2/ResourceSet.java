@@ -123,6 +123,7 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
                 return null;
             }
 
+            FileResourceNameValidator.validate(file, type);
             ResourceItem item = new ResourceItem(nameAttr.getValue(), type, null);
             return new ResourceFile(file, item, qualifier);
         }
@@ -265,9 +266,9 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
     private static ResourceFile createResourceFile(@NonNull File file,
             @NonNull FolderData folderData, @NonNull ILogger logger) throws MergingException {
         if (folderData.type != null) {
-            int pos;// get the resource name based on the filename
+            FileResourceNameValidator.validate(file, folderData.type);
             String name = file.getName();
-            pos = name.indexOf('.');
+            int pos = name.indexOf('.'); // get the resource name based on the filename
             if (pos >= 0) {
                 name = name.substring(0, pos);
             }

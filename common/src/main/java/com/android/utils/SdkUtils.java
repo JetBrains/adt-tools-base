@@ -16,14 +16,12 @@
 
 package com.android.utils;
 
-import static com.android.SdkConstants.DOT_XML;
-
-import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.google.common.base.CaseFormat;
 import com.google.common.base.Charsets;
+import com.google.common.collect.Lists;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Closeables;
 
@@ -37,6 +35,15 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.text.NumberFormat;
 import java.text.ParseException;
+import java.util.List;
+
+import static com.android.SdkConstants.DOT_XML;
+import static com.android.SdkConstants.DOT_PNG;
+import static com.android.SdkConstants.DOT_GIF;
+import static com.android.SdkConstants.DOT_9PNG;
+import static com.android.SdkConstants.DOT_JPEG;
+import static com.android.SdkConstants.DOT_JPG;
+import static com.android.SdkConstants.DOT_BMP;
 
 /** Miscellaneous utilities used by the Android SDK tools */
 public class SdkUtils {
@@ -480,5 +487,25 @@ public class SdkUtils {
         }
 
         return resourceName;
+    }
+
+    public static final List<String> IMAGE_EXTENSIONS = Lists.newArrayList(
+            DOT_PNG, DOT_9PNG, DOT_GIF, DOT_JPEG, DOT_JPG, DOT_BMP);
+
+    /**
+     * Returns true if the given file path points to an image file recognized by
+     * Android. See http://developer.android.com/guide/appendix/media-formats.html
+     * for details.
+     *
+     * @param path the filename to be tested
+     * @return true if the file represents an image file
+     */
+    public static boolean hasImageExtension(String path) {
+        for (String ext: IMAGE_EXTENSIONS) {
+            if (endsWithIgnoreCase(path, ext)) {
+                return true;
+            }
+        }
+        return false;
     }
 }
