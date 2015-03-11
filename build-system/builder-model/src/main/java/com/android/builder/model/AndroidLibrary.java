@@ -139,4 +139,12 @@ public interface AndroidLibrary extends Library {
      */
     @NonNull
     File getLintJar();
+
+    /**
+     * Returns the location of the external annotations zip file (which may not exist)
+     *
+     * @return a File for the zip file. The file may not point to an existing file.
+     */
+    @NonNull
+    File getExternalAnnotations();
 }
