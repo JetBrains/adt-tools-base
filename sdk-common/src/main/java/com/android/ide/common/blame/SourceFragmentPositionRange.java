@@ -27,18 +27,20 @@ import com.google.gson.JsonSerializer;
 
 import java.lang.reflect.Type;
 
+/**
+ * An immutable position in a text file, used in errors to point the user to an issue.
+ *
+ * Positions that are unknown are represented as -1.
+ */
 public class SourceFragmentPositionRange {
 
+    public static final SourceFragmentPositionRange UNKNOWN = new SourceFragmentPositionRange();
+
     private final int mStartLine;
-
     private final int mStartColumn;
-
     private final int mStartOffset;
-
     private final int mEndLine;
-
     private final int mEndColumn;
-
     private final int mEndOffset;
 
     public SourceFragmentPositionRange(int startLine, int startColumn, int startOffset, int endLine,
@@ -58,8 +60,17 @@ public class SourceFragmentPositionRange {
         mStartOffset = mEndOffset = offset;
     }
 
-    public SourceFragmentPositionRange() {
+    private SourceFragmentPositionRange() {
         mStartLine = mStartColumn = mStartOffset = mEndLine = mEndColumn = mEndOffset = -1;
+    }
+
+    protected SourceFragmentPositionRange(SourceFragmentPositionRange copy) {
+        mStartLine = copy.getStartLine();
+        mStartColumn = copy.getStartColumn();
+        mStartOffset = copy.getStartOffset();
+        mEndLine = copy.getEndLine();
+        mEndColumn = copy.getEndColumn();
+        mEndOffset = copy.getEndOffset();
     }
 
     /**

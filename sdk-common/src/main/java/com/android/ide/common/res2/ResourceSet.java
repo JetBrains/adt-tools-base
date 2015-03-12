@@ -69,7 +69,8 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
     }
 
     @Override
-    protected ResourceFile createFileAndItems(@NonNull File file, @NonNull Node fileNode) {
+    protected ResourceFile createFileAndItems(@NonNull File file, @NonNull Node fileNode)
+            throws MergingException {
         Attr qualifierAttr = (Attr) fileNode.getAttributes().getNamedItem(ATTR_QUALIFIER);
         String qualifier = qualifierAttr != null ? qualifierAttr.getValue() : "";
 
@@ -167,7 +168,7 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
                             + "This is an internal error in the incremental builds code; "
                             + "to work around it, try doing a full clean build.",
                     getConfigName(), changedFile.getAbsolutePath());
-            throw new MergingException(message).setFile(changedFile);
+            throw new MergingException(message).addFile(changedFile);
         }
 
         //noinspection VariableNotUsedInsideIf
@@ -255,8 +256,8 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
         }
     }
 
-    private static ResourceFile createResourceFile(File file, FolderData folderData, ILogger logger)
-            throws MergingException {
+    private static ResourceFile createResourceFile(@NonNull File file,
+            @NonNull FolderData folderData, @NonNull ILogger logger) throws MergingException {
         if (folderData.type != null) {
             int pos;// get the resource name based on the filename
             String name = file.getName();
@@ -311,7 +312,7 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
 
             FolderConfiguration folderConfiguration = FolderConfiguration.getConfigForFolder(folderName);
             if (folderConfiguration == null) {
-                throw new MergingException("Invalid resource directory name").setFile(folder);
+                throw new MergingException("Invalid resource directory name").addFile(folder);
             }
 
             // normalize it
