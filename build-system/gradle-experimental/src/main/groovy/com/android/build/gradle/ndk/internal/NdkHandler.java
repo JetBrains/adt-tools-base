@@ -20,7 +20,7 @@ import static com.android.SdkConstants.FN_LOCAL_PROPERTIES;
 
 import com.android.SdkConstants;
 import com.android.annotations.Nullable;
-import com.android.build.gradle.ndk.managed.NdkConfig;
+import com.android.build.gradle.managed.NdkConfig;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -74,6 +74,7 @@ public class NdkHandler {
     private static final String DEFAULT_LLVM_GCC64_VERSION="4.9";
 
     private NdkConfig ndkConfig;
+    private final String compileSdkVersion;
 
     private File ndkDirectory;
 
@@ -105,7 +106,8 @@ public class NdkHandler {
                 .build();
     }
 
-    public NdkHandler(File projectDir, NdkConfig ndkConfig) {
+    public NdkHandler(File projectDir, String compileSdkVersion, NdkConfig ndkConfig) {
+        this.compileSdkVersion = compileSdkVersion;
         this.ndkConfig = ndkConfig;
         ndkDirectory = findNdkDirectory(projectDir);
     }
@@ -255,7 +257,7 @@ public class NdkHandler {
      * Returns the sysroot directory for the toolchain.
      */
     public String getSysroot(NativePlatform platform) {
-        return ndkDirectory + "/platforms/" + ndkConfig.getCompileSdkVersion()
+        return ndkDirectory + "/platforms/" + compileSdkVersion
                 + "/arch-" + ARCHITECTURE_STRING.get(platform.getName());
     }
 
@@ -271,7 +273,7 @@ public class NdkHandler {
      * Return true if compiledSdkVersion supports 64 bits ABI.
      */
     public boolean supports64Bits() {
-        String targetString = getNdkConfig().getCompileSdkVersion().replace("android-", "");
+        String targetString = compileSdkVersion.replace("android-", "");
         try {
             return Integer.parseInt(targetString) >= 20;
         } catch (NumberFormatException ignored) {

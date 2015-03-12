@@ -48,7 +48,7 @@ class TestPlugin extends BasePlugin implements Plugin<Project> {
     protected TaskManager createTaskManager(
             Project project,
             AndroidBuilder androidBuilder,
-            BaseExtension extension,
+            AndroidConfig extension,
             SdkHandler sdkHandler,
             DependencyManager dependencyManager,
             ToolingModelBuilderRegistry toolingRegistry) {
@@ -67,7 +67,7 @@ class TestPlugin extends BasePlugin implements Plugin<Project> {
     }
 
     @Override
-    protected VariantFactory getVariantFactory() {
+    protected VariantFactory createVariantFactory() {
         return new TestVariantFactory(instantiator, androidBuilder, extension)
     }
 }

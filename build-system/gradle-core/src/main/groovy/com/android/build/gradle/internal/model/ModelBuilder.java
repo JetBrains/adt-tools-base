@@ -21,7 +21,7 @@ import static com.android.builder.model.AndroidProject.ARTIFACT_MAIN;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.OutputFile;
-import com.android.build.gradle.BaseExtension;
+import com.android.build.gradle.AndroidConfig;
 import com.android.build.gradle.api.ApkOutputFile;
 import com.android.build.gradle.internal.BuildTypeData;
 import com.android.build.gradle.internal.ExtraModelInfo;
@@ -112,7 +112,7 @@ public class ModelBuilder implements ToolingModelBuilder {
 
     @Override
     public Object buildAll(String modelName, Project project) {
-        BaseExtension extension = config.getExtension();
+        Collection<? extends SigningConfig> signingConfigs = config.getSigningConfigs();
 
         // Get the boot classpath. This will ensure the target is configured.
         List<String> bootClasspath = androidBuilder.getBootClasspathAsStrings();
@@ -131,14 +131,14 @@ public class ModelBuilder implements ToolingModelBuilder {
         }
 
         LintOptions lintOptions = com.android.build.gradle.internal.dsl.LintOptions.create(
-                extension.getLintOptions());
+                config.getLintOptions());
 
-        AaptOptions aaptOptions = AaptOptionsImpl.create(extension.getAaptOptions());
+        AaptOptions aaptOptions = AaptOptionsImpl.create(config.getAaptOptions());
 
         List<SyncIssue> syncIssues = Lists.newArrayList(extraModelInfo.getSyncIssues().values());
 
-        List<String> flavorDimensionList = (extension.getFlavorDimensionList() != null ?
-                extension.getFlavorDimensionList() : Lists.<String>newArrayList());
+        List<String> flavorDimensionList = (config.getFlavorDimensionList() != null ?
+                config.getFlavorDimensionList() : Lists.<String>newArrayList());
 
         DefaultAndroidProject androidProject = new DefaultAndroidProject(
                 Version.ANDROID_GRADLE_PLUGIN_VERSION,
@@ -152,10 +152,10 @@ public class ModelBuilder implements ToolingModelBuilder {
                 artifactMetaDataList,
                 findUnresolvedDependencies(syncIssues),
                 syncIssues,
-                extension.getCompileOptions(),
+                config.getCompileOptions(),
                 lintOptions,
                 project.getBuildDir(),
-                extension.getResourcePrefix(),
+                config.getResourcePrefix(),
                 isLibrary,
                 Version.BUILDER_MODEL_API_VERSION);
 

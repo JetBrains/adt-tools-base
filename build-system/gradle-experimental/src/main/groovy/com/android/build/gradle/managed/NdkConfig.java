@@ -1,4 +1,4 @@
-package com.android.build.gradle.ndk.managed;
+package com.android.build.gradle.managed;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.managed.FilePattern;
@@ -15,9 +15,6 @@ public interface NdkConfig {
 
     String getModuleName();
     void setModuleName(@NonNull String moduleName);
-
-    String getCompileSdkVersion();
-    void setCompileSdkVersion(@NonNull String target);
 
     String getToolchain();
     void setToolchain(@NonNull String toolchain);

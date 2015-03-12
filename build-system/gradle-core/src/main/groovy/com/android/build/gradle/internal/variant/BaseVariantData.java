@@ -19,7 +19,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.FilterData;
 import com.android.build.OutputFile;
-import com.android.build.gradle.BaseExtension;
+import com.android.build.gradle.AndroidConfig;
 import com.android.build.gradle.api.AndroidSourceSet;
 import com.android.build.gradle.internal.TaskManager;
 import com.android.build.gradle.internal.api.DefaultAndroidSourceSet;
@@ -84,7 +84,7 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
 
 
     @NonNull
-    protected final BaseExtension baseExtension;
+    protected final AndroidConfig androidConfig;
     @NonNull
     protected final TaskManager taskManager;
     @NonNull
@@ -157,22 +157,22 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
 
 
     public BaseVariantData(
-            @NonNull BaseExtension baseExtension,
+            @NonNull AndroidConfig androidConfig,
             @NonNull TaskManager taskManager,
             @NonNull GradleVariantConfiguration variantConfiguration) {
-        this.baseExtension = baseExtension;
+        this.androidConfig = androidConfig;
         this.variantConfiguration = variantConfiguration;
         this.taskManager = taskManager;
 
         // eventually, this will require a more open ended comparison.
         mSplitHandlingPolicy =
-                baseExtension.getGeneratePureSplits()
+                androidConfig.getGeneratePureSplits()
                     && variantConfiguration.getMinSdkVersion().getApiLevel() >= 21
                     ? SplitHandlingPolicy.RELEASE_21_AND_AFTER_POLICY
                     : SplitHandlingPolicy.PRE_21_POLICY;
 
         // warn the user in case we are forced to ignore the generatePureSplits flag.
-        if (baseExtension.getGeneratePureSplits()
+        if (androidConfig.getGeneratePureSplits()
                 && mSplitHandlingPolicy != SplitHandlingPolicy.RELEASE_21_AND_AFTER_POLICY) {
             Logging.getLogger(BaseVariantData.class).warn(
                     String.format("Variant %s, MinSdkVersion %s is too low (<21) "

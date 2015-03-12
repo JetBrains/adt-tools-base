@@ -17,7 +17,7 @@
 package com.android.build.gradle.internal.api;
 
 import com.android.annotations.Nullable;
-import com.android.build.gradle.TestedExtension;
+import com.android.build.gradle.TestedAndroidConfig;
 import com.android.build.gradle.api.TestVariant;
 import com.android.build.gradle.api.UnitTestVariant;
 
@@ -32,7 +32,7 @@ public interface TestedVariant {
      * Returns the build variant that will test this build variant.
      *
      * <p>The android test variant exists only for one build type, by default "debug". This is
-     * controlled by {@link TestedExtension#testBuildType}.
+     * controlled by {@link TestedAndroidConfig#getTestBuildType}.
      */
     @Nullable
     TestVariant getTestVariant();

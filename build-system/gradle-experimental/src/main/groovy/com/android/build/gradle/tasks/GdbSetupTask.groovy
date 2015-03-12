@@ -17,7 +17,7 @@
 package com.android.build.gradle.tasks
 
 import com.android.build.gradle.internal.tasks.DefaultAndroidTask
-import com.android.build.gradle.ndk.managed.NdkConfig
+import com.android.build.gradle.managed.NdkConfig
 import com.android.build.gradle.ndk.internal.NdkHandler
 import com.android.build.gradle.ndk.internal.StlConfiguration
 import com.google.common.base.Charsets

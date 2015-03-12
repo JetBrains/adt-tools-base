@@ -40,7 +40,7 @@ class MultiProjectsAndroidComponentTest {
                 apply plugin: "com.android.model.application"
 
                 model {
-                    android.config {
+                    android {
                         compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
                         buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
                     }
@@ -55,6 +55,7 @@ class MultiProjectsAndroidComponentTest {
                 }
                 """.stripIndent())
         generator.addPostProcessor("buildTypes") { return (String) "create { name = \"$it\" }" }
+        generator.addPostProcessor("productFlavors") { return (String) "create { name = \"$it\" }" }
 
         app.addFile(new TestSourceFile("", "build.gradle", generator.createBuildScript()))
     }

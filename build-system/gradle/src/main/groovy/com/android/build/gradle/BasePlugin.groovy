@@ -18,6 +18,7 @@ package com.android.build.gradle
 
 import com.android.annotations.Nullable
 import com.android.annotations.VisibleForTesting
+import com.android.build.gradle.internal.ApiObjectFactory
 import com.android.build.gradle.internal.BadPluginException
 import com.android.build.gradle.internal.DependencyManager
 import com.android.build.gradle.internal.ExtraModelInfo
@@ -34,12 +35,12 @@ import com.android.build.gradle.internal.dsl.ProductFlavor
 import com.android.build.gradle.internal.dsl.ProductFlavorFactory
 import com.android.build.gradle.internal.dsl.SigningConfig
 import com.android.build.gradle.internal.dsl.SigningConfigFactory
-import com.android.build.gradle.internal.model.DefaultAndroidConfig
 import com.android.build.gradle.internal.model.ModelBuilder
 import com.android.build.gradle.internal.process.GradleJavaProcessExecutor
 import com.android.build.gradle.internal.process.GradleProcessExecutor
 import com.android.build.gradle.internal.profile.RecordingBuildListener
 import com.android.build.gradle.internal.profile.SpanRecorders
+import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.build.gradle.internal.variant.VariantFactory
 import com.android.build.gradle.tasks.JillTask
 import com.android.build.gradle.tasks.PreDex
@@ -104,6 +105,8 @@ public abstract class BasePlugin {
     protected AndroidBuilder androidBuilder
 
     protected Instantiator instantiator
+
+    protected VariantFactory variantFactory
 
     private ToolingModelBuilderRegistry registry
 
@@ -195,11 +198,11 @@ public abstract class BasePlugin {
     }
 
     protected abstract Class<? extends BaseExtension> getExtensionClass()
-    protected abstract VariantFactory getVariantFactory()
+    protected abstract VariantFactory createVariantFactory()
     protected abstract TaskManager createTaskManager(
             Project project,
             AndroidBuilder androidBuilder,
-            BaseExtension extension,
+            AndroidConfig extension,
             SdkHandler sdkHandler,
             DependencyManager dependencyManager,
             ToolingModelBuilderRegistry toolingRegistry)
@@ -331,7 +334,7 @@ public abstract class BasePlugin {
                 dependencyManager,
                 registry)
 
-        VariantFactory variantFactory = getVariantFactory()
+        variantFactory = createVariantFactory()
         variantManager = new VariantManager(
                 project,
                 androidBuilder,
@@ -345,7 +348,7 @@ public abstract class BasePlugin {
                 androidBuilder,
                 variantManager,
                 taskManager,
-                new DefaultAndroidConfig(extension, signingConfigContainer),
+                extension,
                 extraModelInfo,
                 isLibrary())
         registry.register(modelBuilder);
@@ -454,6 +457,11 @@ public abstract class BasePlugin {
         taskManager.createMockableJarTask()
         SpanRecorders.record(project, ExecutionType.VARIANT_MANAGER_CREATE_ANDROID_TASKS) {
             variantManager.createAndroidTasks()
+            ApiObjectFactory apiObjectFactory =
+                    new ApiObjectFactory(androidBuilder, extension, variantFactory, instantiator)
+            for (BaseVariantData variantData : variantManager.getVariantDataList())  {
+                apiObjectFactory.create(variantData)
+            }
         }
     }
 

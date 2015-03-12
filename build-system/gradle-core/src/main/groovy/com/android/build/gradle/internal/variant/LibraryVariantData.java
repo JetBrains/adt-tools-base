@@ -19,7 +19,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.FilterData;
 import com.android.build.OutputFile;
-import com.android.build.gradle.BaseExtension;
+import com.android.build.gradle.AndroidConfig;
 import com.android.build.gradle.internal.TaskManager;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.tasks.ExtractAnnotations;
@@ -44,10 +44,10 @@ public class LibraryVariantData extends BaseVariantData<LibVariantOutputData> im
     public ExtractAnnotations generateAnnotationsTask = null;
 
     public LibraryVariantData(
-            @NonNull BaseExtension baseExtension,
+            @NonNull AndroidConfig androidConfig,
             @NonNull TaskManager taskManager,
             @NonNull GradleVariantConfiguration config) {
-        super(baseExtension, taskManager, config);
+        super(androidConfig, taskManager, config);
         testVariants = Maps.newEnumMap(VariantType.class);
 
         // create default output

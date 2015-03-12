@@ -26,7 +26,7 @@ import com.google.common.collect.Maps;
 import java.util.Map;
 
 /**
- * Provides read-only versions of BuildType, (Groupable)ProductFlavor and SigningConfig instances
+ * Provides read-only versions of BuildType, ProductFlavor and SigningConfig instances
  * so that they can safely be exposed through the variant API.
  *
  * The class creates them on the fly so that they are only created when a

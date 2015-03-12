@@ -17,22 +17,14 @@
 package com.android.build.gradle.model
 
 import com.android.annotations.NonNull
-import com.android.annotations.Nullable
-import com.android.build.gradle.AppExtension
-import com.android.build.gradle.BaseExtension
-import com.android.build.gradle.LibraryExtension
-import com.android.build.gradle.api.AndroidSourceDirectorySet
-import com.android.build.gradle.api.AndroidSourceSet
-import com.android.build.gradle.internal.BuildTypeData
+import com.android.build.gradle.internal.AndroidConfigHelper
 import com.android.build.gradle.internal.ExtraModelInfo
 import com.android.build.gradle.internal.LibraryCache
 import com.android.build.gradle.internal.LoggerWrapper
-import com.android.build.gradle.internal.ProductFlavorData
 import com.android.build.gradle.internal.SdkHandler
 import com.android.build.gradle.internal.TaskManager
 import com.android.build.gradle.internal.VariantManager
 import com.android.build.gradle.internal.coverage.JacocoPlugin
-import com.android.build.gradle.internal.model.DefaultAndroidConfig
 import com.android.build.gradle.internal.model.ModelBuilder
 import com.android.build.gradle.internal.process.GradleJavaProcessExecutor
 import com.android.build.gradle.internal.process.GradleProcessExecutor
@@ -40,17 +32,16 @@ import com.android.build.gradle.internal.profile.RecordingBuildListener
 import com.android.build.gradle.internal.tasks.DependencyReportTask
 import com.android.build.gradle.internal.tasks.SigningReportTask
 import com.android.build.gradle.internal.variant.VariantFactory
-import com.android.build.gradle.managed.BuildTypeAdaptor
+import com.android.build.gradle.managed.AndroidConfig
+import com.android.build.gradle.managed.adaptor.BuildTypeAdaptor
 import com.android.build.gradle.managed.BuildType
 import com.android.build.gradle.managed.SigningConfig
 import com.android.build.gradle.managed.ProductFlavor
-import com.android.build.gradle.managed.ProductFlavorAdaptor
-import com.android.build.gradle.managed.SigningConfigAdaptor
-import com.android.build.gradle.ndk.managed.NdkConfig
+import com.android.build.gradle.managed.adaptor.ProductFlavorAdaptor
+import com.android.build.gradle.managed.adaptor.AndroidConfigAdaptor
 import com.android.build.gradle.tasks.JillTask
 import com.android.build.gradle.tasks.PreDex
 import com.android.builder.core.AndroidBuilder
-import com.android.builder.core.BuilderConstants
 import com.android.builder.internal.compiler.JackConversionCache
 import com.android.builder.internal.compiler.PreDexCache
 import com.android.builder.profile.ExecutionType
@@ -72,13 +63,10 @@ import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.ConfigurationContainer
 import org.gradle.api.artifacts.repositories.MavenArtifactRepository
 import org.gradle.api.execution.TaskExecutionGraph
-import org.gradle.api.file.SourceDirectorySet
-import org.gradle.api.internal.project.ProjectInternal
 import org.gradle.api.logging.LogLevel
 import org.gradle.api.plugins.JavaBasePlugin
 import org.gradle.internal.reflect.Instantiator
 import org.gradle.internal.service.ServiceRegistry
-import org.gradle.language.base.FunctionalSourceSet
 import org.gradle.language.base.LanguageSourceSet
 import org.gradle.language.base.internal.SourceTransformTaskConfig
 import org.gradle.language.base.internal.registry.LanguageTransform
@@ -99,7 +87,6 @@ import javax.inject.Inject
 import java.security.KeyStore
 
 import static com.android.builder.core.BuilderConstants.DEBUG
-import static com.android.builder.core.VariantType.ANDROID_TEST
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
 
 @CompileStatic
@@ -170,9 +157,10 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
 
         @Mutate
         void configureAndroidModel(
-                AndroidModel androidModel,
-                @Path("androidConfig") BaseExtension config) {
-            androidModel.config = config
+                AndroidConfig androidModel,
+                ServiceRegistry serviceRegistry) {
+            Instantiator instantiator = serviceRegistry.get(Instantiator.class);
+            AndroidConfigHelper.configure(androidModel, instantiator)
 
             androidModel.signingConfigs.create {
                 it.name = DEBUG
@@ -248,25 +236,6 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
 
         }
 
-        @Model("androidConfig")
-        BaseExtension androidConfig(
-                ServiceRegistry serviceRegistry,
-                @Path("isApplication") Boolean isApplication,
-                AndroidBuilder androidBuilder,
-                SdkHandler sdkHandler,
-                ExtraModelInfo extraModelInfo,
-                Project project) {
-            Instantiator instantiator = serviceRegistry.get(Instantiator.class);
-
-            Class extensionClass = isApplication ? AppExtension : LibraryExtension
-
-            BaseExtension extension = (BaseExtension) instantiator.newInstance(extensionClass,
-                    (ProjectInternal) project, instantiator, androidBuilder,
-                    sdkHandler, null, null, null, extraModelInfo, !isApplication)
-
-            return extension
-        }
-
         @Mutate
         void initDebugBuildTypes(
                 @Path("android.buildTypes") ManagedSet<BuildType> buildTypes,
@@ -312,20 +281,25 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
             sources.addDefaultSourceSet("jniLibs", AndroidLanguageSourceSet.class);
         }
 
-        @Mutate
-        void forwardCompileSdkVersion(
-                @Path("android.ndk") NdkConfig ndkConfig,
-                @Path("android.config") BaseExtension baseExtension) {
-            if (ndkConfig.compileSdkVersion.isEmpty() && baseExtension.compileSdkVersion != null) {
-                ndkConfig.compileSdkVersion = baseExtension.compileSdkVersion
-            }
+        @Model
+        com.android.build.gradle.AndroidConfig createModelAdaptor(
+                ServiceRegistry serviceRegistry,
+                AndroidConfig androidExtension,
+                Project project,
+                @Path("isApplication") Boolean isApplication) {
+                Instantiator instantiator = serviceRegistry.get(Instantiator.class);
+            return new AndroidConfigAdaptor(
+                    androidExtension,
+                    AndroidConfigHelper.createSourceSetsContainer(
+                            project, instantiator, !isApplication /* isLibrary */));
         }
 
         @Mutate
         void createAndroidComponents(
                 AndroidComponentSpec androidSpec,
                 ServiceRegistry serviceRegistry,
-                BaseExtension androidExtension,
+                AndroidConfig androidExtension,
+                com.android.build.gradle.AndroidConfig adaptedModel,
                 @Path("android.buildTypes") ManagedSet<BuildType> buildTypes,
                 @Path("android.productFlavors") ManagedSet<ProductFlavor> productFlavors,
                 @Path("android.signingConfigs") ManagedSet<SigningConfig> signingConfigs,
@@ -352,7 +326,7 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
             VariantManager variantManager = new VariantManager(
                     project,
                     androidBuilder,
-                    androidExtension,
+                    adaptedModel,
                     variantFactory,
                     taskManager,
                     instantiator)
@@ -368,15 +342,13 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
                     androidBuilder,
                     variantManager,
                     taskManager,
-                    new DefaultAndroidConfig(
-                            androidExtension,
-                            signingConfigs.collect { new SigningConfigAdaptor(it) }),
+                    adaptedModel,
                     extraModelInfo,
                     !isApplication);
             toolingRegistry.register(modelBuilder);
 
 
-            def spec = androidSpec as DefaultAndroidComponentSpec
+            DefaultAndroidComponentSpec spec = (DefaultAndroidComponentSpec) androidSpec
             spec.extension = androidExtension
             spec.variantManager = variantManager
         }
@@ -410,8 +382,6 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
                 Project project,
                 AndroidComponentModelSourceSet androidSources) {
             DefaultAndroidComponentSpec spec = (DefaultAndroidComponentSpec) androidSpec
-
-            applyProjectSourceSet(spec, androidSources, spec.extension)
 
             // setup SDK repositories.
             for (File file : sdkHandler.sdkLoader.repositories) {
@@ -478,65 +448,6 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
                 signingReportTask.setVariants(variantManager.variantDataList)
                 signingReportTask.setGroup("Android")
             }
-        }
-
-        private static void applyProjectSourceSet(
-                AndroidComponentSpec androidSpec,
-                AndroidComponentModelSourceSet sources,
-                BaseExtension baseExtension) {
-            DefaultAndroidComponentSpec spec = (DefaultAndroidComponentSpec)androidSpec
-            VariantManager variantManager = spec.variantManager
-            for (FunctionalSourceSet source : sources) {
-                String name = source.getName();
-                AndroidSourceSet androidSource = (
-                        name.equals(BuilderConstants.MAIN)
-                                ? baseExtension.sourceSets.getByName(baseExtension.getDefaultConfig().getName())
-                                : (name.equals(ANDROID_TEST.prefix)
-                                        ? baseExtension.sourceSets.getByName(ANDROID_TEST.getPrefix())
-                                        : findAndroidSourceSet(variantManager, name)))
-
-                if (androidSource == null) {
-                    continue;
-                }
-
-                convertSourceSet(androidSource.getResources(), source.findByName("resource")?.getSource())
-                convertSourceSet(androidSource.getJava(), source.findByName("java")?.getSource())
-                convertSourceSet(androidSource.getRes(), source.findByName("res")?.getSource())
-                convertSourceSet(androidSource.getAssets(), source.findByName("assets")?.getSource())
-                convertSourceSet(androidSource.getAidl(), source.findByName("aidl")?.getSource())
-                convertSourceSet(androidSource.getRenderscript(), source.findByName("renderscript")?.getSource())
-                convertSourceSet(androidSource.getJni(), source.findByName("jni")?.getSource())
-                convertSourceSet(androidSource.getJniLibs(), source.findByName("jniLibs")?.getSource())
-            }
-        }
-
-        private static convertSourceSet(
-                AndroidSourceDirectorySet androidDir,
-                @Nullable SourceDirectorySet dir) {
-            if (dir == null) {
-                return
-            }
-            androidDir.setSrcDirs(dir.getSrcDirs())
-            androidDir.include(dir.getIncludes())
-            androidDir.exclude(dir.getExcludes())
-        }
-
-        @Nullable
-        private static AndroidSourceSet findAndroidSourceSet(
-                VariantManager variantManager,
-                String name) {
-            BuildTypeData buildTypeData = variantManager.getBuildTypes().get(name)
-            if (buildTypeData != null) {
-                return buildTypeData.getSourceSet();
-            }
-
-            boolean isTest = name.startsWith(ANDROID_TEST.prefix)
-            name = name.replaceFirst(ANDROID_TEST.prefix, "")
-            ProductFlavorData productFlavorData = variantManager.getProductFlavors().get(name)
-            if (productFlavorData != null) {
-                return isTest ? productFlavorData.getTestSourceSet(ANDROID_TEST) : productFlavorData.getSourceSet();
-            }
-            return null;
         }
     }
 

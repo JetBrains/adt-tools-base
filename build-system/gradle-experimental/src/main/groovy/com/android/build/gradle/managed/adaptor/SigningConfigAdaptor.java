@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.managed;
+package com.android.build.gradle.managed.adaptor;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.dsl.CoreSigningConfig;
+import com.android.build.gradle.managed.SigningConfig;
 
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFile;
@@ -27,7 +28,7 @@ import org.gradle.api.tasks.Optional;
 import java.io.File;
 
 /**
- * An adaptor to convert a ManagedSigningConfig to a SigningConfig.
+ * An adaptor to convert a managed.SigningConfig to a model.SigningConfig.
  */
 public class SigningConfigAdaptor implements CoreSigningConfig {
 

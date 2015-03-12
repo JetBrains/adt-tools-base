@@ -46,9 +46,9 @@ dependencies {
 }
 
 model {
-    android.config {
-        compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
-        buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
+    android {
+        compileSdkVersion = $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
+        buildToolsVersion = "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
     }
 }
 """))
@@ -59,9 +59,9 @@ model {
 apply plugin: "com.android.model.library"
 
 model {
-    android.config {
-        compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
-        buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
+    android {
+        compileSdkVersion = $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
+        buildToolsVersion = "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
     }
 }
 """))

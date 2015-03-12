@@ -17,7 +17,7 @@
 package com.android.build.gradle.internal.variant
 
 import com.android.annotations.NonNull
-import com.android.build.gradle.LibraryExtension
+import com.android.build.gradle.AndroidConfig
 import com.android.build.gradle.api.BaseVariantOutput
 import com.android.build.gradle.api.LibraryVariant
 import com.android.build.gradle.internal.BuildTypeData
@@ -47,14 +47,14 @@ public class LibraryVariantFactory implements VariantFactory {
     @NonNull
     Instantiator instantiator
     @NonNull
-    private final LibraryExtension extension
+    private final AndroidConfig extension
     @NonNull
     private final AndroidBuilder androidBuilder;
 
     public LibraryVariantFactory(
             @NonNull Instantiator instantiator,
             @NonNull AndroidBuilder androidBuilder,
-            @NonNull LibraryExtension extension) {
+            @NonNull AndroidConfig extension) {
         this.instantiator = instantiator;
         this.androidBuilder = androidBuilder;
         this.extension = extension;
