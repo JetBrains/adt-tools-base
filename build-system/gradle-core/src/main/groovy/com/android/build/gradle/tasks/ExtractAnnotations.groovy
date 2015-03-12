@@ -91,6 +91,10 @@ class ExtractAnnotations extends AbstractCompile {
     @InputFile
     public File classDir
 
+    /** Whether we allow extraction even in the presence of symbol resolution errors */
+    @InputFile
+    public boolean allowErrors = true
+
     @Override
     @TaskAction
     protected void compile() {
@@ -107,16 +111,18 @@ class ExtractAnnotations extends AbstractCompile {
         def environment = result.second
 
         try {
-            for (CompilationUnitDeclaration unit : parsedUnits) {
-                // so maybe I don't need my map!!
-                def problems = unit.compilationResult().allProblems
-                for (IProblem problem : problems) {
-                    if (problem.error) {
-                        println "Not extracting annotations (compilation problems encountered)";
-                        println "Error: " + problem.getOriginatingFileName() + ":" +
-                                problem.getSourceLineNumber() + ": " + problem.getMessage()
-                        // TODO: Consider whether we abort the build at this point!
-                        return
+            if (!allowErrors) {
+                for (CompilationUnitDeclaration unit : parsedUnits) {
+                    // so maybe I don't need my map!!
+                    def problems = unit.compilationResult().allProblems
+                    for (IProblem problem : problems) {
+                        if (problem.error) {
+                            println "Not extracting annotations (compilation problems encountered)";
+                            println "Error: " + problem.getOriginatingFileName() + ":" +
+                                    problem.getSourceLineNumber() + ": " + problem.getMessage()
+                            // TODO: Consider whether we abort the build at this point!
+                            return
+                        }
                     }
                 }
             }

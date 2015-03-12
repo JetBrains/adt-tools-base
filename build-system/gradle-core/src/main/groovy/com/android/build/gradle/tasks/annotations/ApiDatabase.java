@@ -17,6 +17,7 @@
 package com.android.build.gradle.tasks.annotations;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.VisibleForTesting;
 import com.google.common.base.Charsets;
 import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
@@ -44,6 +45,8 @@ public class ApiDatabase {
             Maps.newHashMapWithExpectedSize(1000);
     @NonNull private final Map<String, List<String>> inheritsFrom =
             Maps.newHashMapWithExpectedSize(1000);
+    @NonNull private final  Map<String,Set<String>> intFieldMap =
+            Maps.newHashMapWithExpectedSize(1000);
 
     public ApiDatabase(@NonNull List<String> lines) {
         this.lines = lines;
@@ -55,6 +58,11 @@ public class ApiDatabase {
     }
 
     public boolean hasMethod(String className, String methodName, String arguments) {
+        // Perform raw lookup
+        className = getRawClass(className);
+        methodName = getRawMethod(methodName);
+        arguments = getRawParameterList(arguments);
+
         Map<String, List<String>> methods = methodMap.get(className);
         if (methods != null) {
             List<String> strings = methods.get(methodName);
@@ -93,12 +101,21 @@ public class ApiDatabase {
         return false;
     }
 
+    public boolean hasClass(String className) {
+        return methodMap.get(className) != null || fieldMap.get(className) != null;
+    }
+
+    public Set<String> getDeclaredIntFields(String className) {
+        return intFieldMap.get(className);
+    }
+
     private void readApi() {
         String MODIFIERS =
                 "((deprecated|public|static|private|protected|final|abstract|\\s*)\\s+)*";
         Pattern PACKAGE = Pattern.compile("package (\\S+) \\{");
         Pattern CLASS =
-                Pattern.compile(MODIFIERS + "(class|interface|enum)\\s+(\\S+)\\s+(extends (.+))?(implements (.+))?(.*)\\{");
+                Pattern.compile(MODIFIERS
+                        + "(class|interface|enum)\\s+(\\S+)\\s+(extends (.+))?(implements (.+))?(.*)\\{");
         Pattern METHOD = Pattern.compile("(method|ctor)\\s+" +
                 MODIFIERS + "(.+)??\\s+(\\S+)\\s*\\((.*)\\)(.*);");
         Pattern CTOR = Pattern.compile("(method|ctor)\\s+.*\\((.*)\\)(.*);");
@@ -123,16 +140,28 @@ public class ApiDatabase {
                     if (memberMap == null) {
                         memberMap = Maps.newHashMap();
                         methodMap.put(currentClass, memberMap);
+                        methodMap.put(getRawClass(currentClass), memberMap);
                     }
                     String methodName = matcher.group(5);
                     List<String> signatures = memberMap.get(methodName);
                     if (signatures == null) {
                         signatures = Lists.newArrayList();
                         memberMap.put(methodName, signatures);
+                        memberMap.put(getRawMethod(methodName), signatures);
                     }
                     String signature = matcher.group(6);
                     signature = signature.trim().replace(" ", "").replace(" ", "");
+                    // normalize varargs: allow lookup with both formats
                     signatures.add(signature);
+                    if (signature.endsWith("...")) {
+                        signatures.add(signature.substring(0, signature.length() - 3) + "[]");
+                    } else if (signature.endsWith("[]") && !signature.endsWith("[][]")) {
+                        signatures.add(signature.substring(0, signature.length() - 2) + "...");
+                    }
+                    String raw = getRawParameterList(signature);
+                    if (!signatures.contains(raw)) {
+                        signatures.add(raw);
+                    }
                 }
             } else if (line.startsWith("ctor ")) {
                 Matcher matcher = CTOR.matcher(line);
@@ -144,6 +173,7 @@ public class ApiDatabase {
                     if (memberMap == null) {
                         memberMap = Maps.newHashMap();
                         methodMap.put(currentClass, memberMap);
+                        methodMap.put(getRawClass(currentClass), memberMap);
                     }
                     @SuppressWarnings("UnnecessaryLocalVariable")
                     String methodName = currentClass;
@@ -151,12 +181,23 @@ public class ApiDatabase {
                     if (signatures == null) {
                         signatures = Lists.newArrayList();
                         memberMap.put(methodName, signatures);
-                        memberMap.put(methodName.substring(methodName.lastIndexOf('.') + 1),
-                                signatures);
+                        String constructor = methodName.substring(methodName.lastIndexOf('.') + 1);
+                        memberMap.put(constructor, signatures);
+                        memberMap.put(getRawMethod(methodName), signatures);
+                        memberMap.put(getRawMethod(constructor), signatures);
                     }
                     String signature = matcher.group(2);
                     signature = signature.trim().replace(" ", "").replace(" ", "");
+                    if (signature.endsWith("...")) {
+                        signatures.add(signature.substring(0, signature.length() - 3) + "[]");
+                    } else if (signature.endsWith("[]") && !signature.endsWith("[][]")) {
+                        signatures.add(signature.substring(0, signature.length() - 2) + "...");
+                    }
                     signatures.add(signature);
+                    String raw = getRawMethod(signature);
+                    if (!signatures.contains(raw)) {
+                        signatures.add(raw);
+                    }
                 }
             } else if (line.startsWith("enum_constant ") || line.startsWith("field ")) {
                 int equals = line.indexOf('=');
@@ -184,6 +225,15 @@ public class ApiDatabase {
                         fieldMap.put(currentClass, fieldSet);
                     }
                     fieldSet.add(fieldName);
+                    String type = matcher.group(4);
+                    if (type.equals("int")) {
+                        fieldSet = intFieldMap.get(currentClass);
+                        if (fieldSet == null) {
+                            fieldSet = Sets.newHashSet();
+                            intFieldMap.put(currentClass, fieldSet);
+                        }
+                        fieldSet.add(fieldName);
+                    }
                 }
             } else if (line.startsWith("package ")) {
                 Matcher matcher = PACKAGE.matcher(line);
@@ -229,5 +279,69 @@ public class ApiDatabase {
             this.inheritsFrom.put(cls, list);
         }
         list.add(inheritsFrom);
+    }
+
+    /** Drop generic type variables from a class name */
+    @VisibleForTesting
+    static String getRawClass(@NonNull String name) {
+        int index = name.indexOf('<');
+        if (index != -1) {
+            return name.substring(0, index);
+        }
+        return name;
+    }
+
+    /** Drop generic type variables from a method or constructor name */
+    @VisibleForTesting
+    static String getRawMethod(@NonNull String name) {
+        int index = name.indexOf('<');
+        if (index != -1) {
+            return name.substring(0, index);
+        }
+        return name;
+    }
+
+    /** Drop generic type variables and varargs to produce a raw signature */
+    @VisibleForTesting
+    static String getRawParameterList(String signature) {
+        if (signature.indexOf('<') == -1 && !signature.endsWith("...")) {
+            return signature;
+        }
+
+        int n = signature.length();
+        StringBuilder sb = new StringBuilder(n);
+        int start = 0;
+        while (true) {
+            int index = signature.indexOf('<', start);
+            if (index == -1) {
+                sb.append(signature.substring(start));
+                break;
+            }
+            sb.append(signature.substring(start, index));
+            int balance = 1;
+            for (int i = index + 1; i < n; i++) {
+                char c = signature.charAt(i);
+                if (c == '<') {
+                    balance++;
+                } else if (c == '>') {
+                    balance--;
+                    if (balance == 0) {
+                        start = i + 1;
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Normalize varargs... to []
+        if (sb.length() > 3
+                && sb.charAt(sb.length() - 1) == '.'
+                && sb.charAt(sb.length() - 2) == '.'
+                && sb.charAt(sb.length() - 3) == '.') {
+            sb.setLength(sb.length() - 3);
+            sb.append('[').append(']');
+        }
+
+        return sb.toString();
     }
 }
