@@ -20,12 +20,13 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.OutputFile;
 import com.android.build.gradle.api.ApkOutputFile;
+import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.TestVariantData;
 import com.android.build.gradle.internal.variant.TestedVariantData;
 import com.android.builder.core.VariantConfiguration;
 import com.android.builder.core.VariantType;
-import com.android.builder.model.ApiVersion;
+import com.android.builder.model.SourceProvider;
 import com.android.builder.testing.TestData;
 import com.android.ide.common.build.SplitOutputMatcher;
 import com.google.common.collect.ImmutableList;
@@ -36,7 +37,7 @@ import java.util.List;
 /**
  * Implementation of {@link TestData} on top of a {@link TestVariantData}
  */
-public class TestDataImpl implements TestData {
+public class TestDataImpl extends AbstractTestDataImpl {
 
     @NonNull
     private final TestVariantData testVariantData;
@@ -46,8 +47,12 @@ public class TestDataImpl implements TestData {
 
     public TestDataImpl(
             @NonNull TestVariantData testVariantData) {
+        super(testVariantData.getVariantConfiguration());
         this.testVariantData = testVariantData;
         this.testVariantConfig = testVariantData.getVariantConfiguration();
+        if (testVariantData.getOutputs().size() > 1) {
+            throw new RuntimeException("Multi-output in test variant not yet supported");
+        }
     }
 
     @NonNull
@@ -60,35 +65,6 @@ public class TestDataImpl implements TestData {
     @Override
     public String getTestedApplicationId() {
         return testVariantConfig.getTestedApplicationId();
-    }
-
-    @NonNull
-    @Override
-    public String getInstrumentationRunner() {
-        return testVariantConfig.getInstrumentationRunner();
-    }
-
-    @NonNull
-    @Override
-    public Boolean getHandleProfiling() {
-        return testVariantConfig.getHandleProfiling();
-    }
-
-    @NonNull
-    @Override
-    public Boolean getFunctionalTest() {
-        return testVariantConfig.getFunctionalTest();
-    }
-
-    @Override
-    public boolean isTestCoverageEnabled() {
-        return testVariantConfig.isTestCoverageEnabled();
-    }
-
-    @NonNull
-    @Override
-    public ApiVersion getMinSdkVersion() {
-        return testVariantConfig.getMinSdkVersion();
     }
 
     @Override
@@ -105,12 +81,12 @@ public class TestDataImpl implements TestData {
             @Nullable String language,
             @Nullable String region,
             @NonNull List<String> abis) {
-        TestedVariantData testedVariantData = testVariantData.getTestedVariantData();
-        BaseVariantData<?> testedVariantData2 = (BaseVariantData) testedVariantData;
+        BaseVariantData<?> testedVariantData =
+                (BaseVariantData) testVariantData.getTestedVariantData();
 
         List<OutputFile> outputFiles = SplitOutputMatcher.computeBestOutput(
-                testedVariantData2.getOutputs(),
-                testedVariantData2.getVariantConfiguration().getSupportedAbis(),
+                testedVariantData.getOutputs(),
+                testedVariantData.getVariantConfiguration().getSupportedAbis(),
                 density,
                 language,
                 region,
@@ -120,5 +96,25 @@ public class TestDataImpl implements TestData {
             apks.add(((ApkOutputFile) outputFile).getOutputFile());
         }
         return apks.build();
+    }
+
+    @NonNull
+    @Override
+    public File getTestApk() {
+        return testVariantData.getOutputs().get(0).getOutputFile();
+    }
+
+    @NonNull
+    @Override
+    public List<File> getTestDirectories() {
+        // For now we check if there are any test sources. We could inspect the test classes and
+        // apply JUnit logic to see if there's something to run, but that would not catch the case
+        // where user makes a typo in a test name or forgets to inherit from a JUnit class
+        GradleVariantConfiguration variantConfiguration = testVariantData.getVariantConfiguration();
+        ImmutableList.Builder<File> javaDirectories = ImmutableList.builder();
+        for (SourceProvider sourceProvider : variantConfiguration.getSortedSourceProviders()) {
+            javaDirectories.addAll(sourceProvider.getJavaDirectories());
+        }
+        return javaDirectories.build();
     }
 }
