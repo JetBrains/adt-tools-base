@@ -16,6 +16,8 @@
 
 package com.android.build.gradle.internal;
 
+import com.android.annotations.Nullable;
+
 import org.gradle.api.Action;
 import org.gradle.api.Task;
 import org.gradle.api.tasks.TaskContainer;
@@ -60,5 +62,11 @@ public class TaskContainerAdaptor implements TaskFactory {
     @Override
     public void named(String name, Action<? super Task> configAction) {
         configAction.execute(tasks.findByName(name));
+    }
+
+    @Nullable
+    @Override
+    public Task named(String name) {
+        return tasks.getByName(name);
     }
 }
