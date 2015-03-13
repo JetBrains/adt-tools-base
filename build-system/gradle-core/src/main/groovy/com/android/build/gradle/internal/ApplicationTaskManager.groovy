@@ -86,6 +86,10 @@ class ApplicationTaskManager extends TaskManager {
             createBuildConfigTask(variantData);
         }
 
+        SpanRecorders.record(ExecutionType.APP_TASK_MANAGER_CREATE_BACKPORT_RESOURCES_TASK) {
+            createBackportResourcesTask(variantData)
+        }
+
         SpanRecorders.record(ExecutionType.APP_TASK_MANAGER_CREATE_PROCESS_RES_TASK) {
             // Add a task to process the Android Resources and generate source files
             createProcessResTask(variantData, true /*generateResourcePackage*/);

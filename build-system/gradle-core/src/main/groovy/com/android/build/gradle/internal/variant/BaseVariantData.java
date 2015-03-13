@@ -34,6 +34,7 @@ import com.android.build.gradle.internal.tasks.PrepareDependenciesTask;
 import com.android.build.gradle.tasks.AidlCompile;
 import com.android.build.gradle.tasks.BinaryFileProviderTask;
 import com.android.build.gradle.tasks.GenerateBuildConfig;
+import com.android.build.gradle.tasks.GeneratePngsFromVectorDrawablesTask;
 import com.android.build.gradle.tasks.GenerateResValues;
 import com.android.build.gradle.tasks.MergeAssets;
 import com.android.build.gradle.tasks.MergeResources;
@@ -102,6 +103,13 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
     public GenerateResValues generateResValuesTask;
     public Copy copyApkTask;
     public GenerateApkDataTask generateApkDataTask;
+
+    /**
+     * Anchor task for post-processing the merged resources to backport some features to earlier
+     * API versions, e.g. generate PNGs from vector drawables (vector drawables were added in 21).
+     */
+    public Task backportResourcesTask;
+    public GeneratePngsFromVectorDrawablesTask generatePngsFromVectorDrawablesTask;
 
     public Copy processJavaResourcesTask;
     public NdkCompile ndkCompileTask;
