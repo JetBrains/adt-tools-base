@@ -36,7 +36,7 @@ public class JsonEncodedGradleMessageParser implements PatternAwareOutputParser 
 
     /**
      * The errors are of the form:
-     * <pre>Android Gradle Plugin - Build Issue: {"kind":"ERROR","text":"Nothing"...}</pre>
+     * <pre>AGPBI: {"kind":"ERROR","text":"Nothing"...}</pre>
      */
     private static final Pattern MSG_PATTERN = Pattern.compile("^" + Pattern.quote(
             GradleMessageRewriter.STDOUT_ERROR_TAG) + "(.*)$");
