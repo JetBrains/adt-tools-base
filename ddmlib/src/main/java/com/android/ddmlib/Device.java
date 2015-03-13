@@ -1241,7 +1241,7 @@ final class Device implements IDevice {
 
     @Override
     public String getLanguage() {
-        return getProperty(IDevice.PROP_DEVICE_LANGUAGE);
+        return getProperties().get(IDevice.PROP_DEVICE_LANGUAGE);
     }
 
     @Override

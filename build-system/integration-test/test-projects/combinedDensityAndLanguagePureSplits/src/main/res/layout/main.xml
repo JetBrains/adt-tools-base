@@ -10,5 +10,11 @@
     android:text="@string/some_text"
     android:id="@+id/text"
     />
+<TextView
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/regional_text"
+        android:id="@+id/regional_text"
+        />
 </LinearLayout>
 

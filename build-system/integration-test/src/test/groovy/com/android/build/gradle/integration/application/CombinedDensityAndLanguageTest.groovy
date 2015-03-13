@@ -81,11 +81,12 @@ class CombinedDensityAndLanguageTest {
         expected.add("xhdpi")
         expected.add("xxhdpi")
         expected.add("en")
-        expected.add("fr")
+        expected.add("fr_fr-BE")
+        expected.add("fr-CA")
 
         assertEquals(1, debugOutputs.size())
         AndroidArtifactOutput output = debugOutputs.iterator().next()
-        assertEquals(7, output.getOutputs().size())
+        assertEquals(8, output.getOutputs().size())
         for (OutputFile outputFile : output.getOutputs()) {
             String filter = ModelHelper.getFilter(outputFile, OutputFile.DENSITY)
             if (filter == null) {
