@@ -85,7 +85,8 @@ class SplitZipAlign extends SplitRelatedTask {
     }
 
     FilterType getFilterType(String filter) {
-        if (languageFilters.contains(filter)) {
+        String languageName = PackageSplitRes.unMangleSplitName(filter);
+        if (languageFilters.contains(languageName)) {
             return FilterType.LANGUAGE
         }
         if (abiFilters.contains(filter)) {
@@ -116,10 +117,11 @@ class SplitZipAlign extends SplitRelatedTask {
                 return true
             }
         }
-        if (languageFilters.contains(potentialFilterWithSuffix)) {
+        if (abiFilters.contains(potentialFilterWithSuffix)) {
             return true
         }
-        if (abiFilters.contains(potentialFilterWithSuffix)) {
+        if (languageFilters.contains(
+                PackageSplitRes.unMangleSplitName(potentialFilterWithSuffix))) {
             return true
         }
         return false
