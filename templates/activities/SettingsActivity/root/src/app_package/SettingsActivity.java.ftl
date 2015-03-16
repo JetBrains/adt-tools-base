@@ -24,6 +24,8 @@ import android.support.v4.app.NavUtils;
 
 import java.util.List;
 
+<#assign includeSimple=(minApiLevel?? && minApiLevel lt 10)>
+
 /**
  * A {@link PreferenceActivity} that presents a set of application settings. On
  * handset devices, settings are presented as a single list. On tablets,
@@ -36,6 +38,7 @@ import java.util.List;
  * API Guide</a> for more information on developing a Settings UI.
  */
 public class ${activityClass} extends PreferenceActivity {
+    <#if includeSimple>
     /**
      * Determines whether to always show the simplified settings UI, where
      * settings are presented in a single list. When false, settings are shown
@@ -43,6 +46,7 @@ public class ${activityClass} extends PreferenceActivity {
      * shown on tablets.
      */
     private static final boolean ALWAYS_SIMPLE_PREFS = false;
+    </#if>
 
     <#if parentActivityClass != "">
     @Override
@@ -82,6 +86,8 @@ public class ${activityClass} extends PreferenceActivity {
     }
     </#if>
 
+
+    <#if includeSimple>
     @Override
     protected void onPostCreate(Bundle savedInstanceState) {
         super.onPostCreate(savedInstanceState);
@@ -125,11 +131,12 @@ public class ${activityClass} extends PreferenceActivity {
         bindPreferenceSummaryToValue(findPreference("notifications_new_message_ringtone"));
         bindPreferenceSummaryToValue(findPreference("sync_frequency"));
     }
+    </#if>
 
     /** {@inheritDoc} */
     @Override
     public boolean onIsMultiPane() {
-        return isXLargeTablet(this) && !isSimplePreferences(this);
+        return isXLargeTablet(this)<#if includeSimple> && !isSimplePreferences(this)</#if>;
     }
 
     /**
@@ -141,6 +148,7 @@ public class ${activityClass} extends PreferenceActivity {
         & Configuration.SCREENLAYOUT_SIZE_MASK) >= Configuration.SCREENLAYOUT_SIZE_XLARGE;
     }
 
+    <#if includeSimple>
     /**
      * Determines whether the simplified settings UI should be shown. This is
      * true if this is forced via {@link #ALWAYS_SIMPLE_PREFS}, or the device
@@ -153,14 +161,19 @@ public class ${activityClass} extends PreferenceActivity {
                 || Build.VERSION.SDK_INT < Build.VERSION_CODES.HONEYCOMB
                 || !isXLargeTablet(context);
     }
+    </#if>
 
     /** {@inheritDoc} */
     @Override
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
     public void onBuildHeaders(List<Header> target) {
+        <#if includeSimple>
         if (!isSimplePreferences(this)) {
             loadHeadersFromResource(R.xml.pref_headers, target);
         }
+        <#else>
+        loadHeadersFromResource(R.xml.pref_headers, target);
+        </#if>
     }
 
     /**
