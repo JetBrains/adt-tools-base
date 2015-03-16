@@ -21,7 +21,6 @@ import com.google.common.collect.Sets;
 
 import org.gradle.api.tasks.Input;
 
-import java.util.Collections;
 import java.util.Set;
 
 /**
@@ -29,20 +28,24 @@ import java.util.Set;
  */
 public class PackagingOptions implements com.android.builder.model.PackagingOptions {
 
-    private Set<String> excludes;
-    private Set<String> pickFirsts;
+    private Set<String> excludes = Sets.newHashSet("LICENSE.txt", "LICENSE");
+    private Set<String> pickFirsts = Sets.newHashSet();
 
     /**
      * Returns the list of excluded paths.
+     *
+     * <p>Contains "LICENSE.txt" and "LICENSE" by default, since they often cause
+     * packaging conflicts.
      */
     @Override
     @NonNull
     @Input
     public Set<String> getExcludes() {
-        if (excludes == null) {
-            return Collections.emptySet();
-        }
-        return excludes;
+        return Sets.newHashSet(excludes);
+    }
+
+    public void setExcludes(Set<String> excludes) {
+        this.excludes = Sets.newHashSet(excludes);
     }
 
     /**
@@ -50,10 +53,6 @@ public class PackagingOptions implements com.android.builder.model.PackagingOpti
      * @param path the path, as packaged in the APK
      */
     public void exclude(String path) {
-        if (excludes == null) {
-            excludes = Sets.newHashSet();
-        }
-
         excludes.add(path);
     }
 
@@ -64,10 +63,7 @@ public class PackagingOptions implements com.android.builder.model.PackagingOpti
     @NonNull
     @Input
     public Set<String> getPickFirsts() {
-        if (pickFirsts == null) {
-            return Collections.emptySet();
-        }
-        return pickFirsts;
+        return Sets.newHashSet(pickFirsts);
     }
 
     /**
@@ -76,10 +72,10 @@ public class PackagingOptions implements com.android.builder.model.PackagingOpti
      * @param path the path to add.
      */
     public void pickFirst(String path) {
-        if (pickFirsts == null) {
-            pickFirsts = Sets.newHashSet();
-        }
-
         pickFirsts.add(path);
+    }
+
+    public void setPickFirsts(Set<String> pickFirsts) {
+        this.pickFirsts = Sets.newHashSet(pickFirsts);
     }
 }

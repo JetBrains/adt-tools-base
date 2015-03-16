@@ -142,6 +142,11 @@ class BasicTest {
     }
 
     @Test
+    void "we don't fail on LICENSE.txt when packaging dependencies"() {
+        project.execute("assembleAndroidTest")
+    }
+
+    @Test
     @Category(DeviceTests.class)
     void install() {
         project.execute("installDebug", "uninstallAll")
