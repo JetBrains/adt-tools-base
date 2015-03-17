@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.internal.dsl;
 
+import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 
 import org.gradle.api.tasks.Input;
@@ -43,6 +44,9 @@ public class AaptOptions implements com.android.builder.model.AaptOptions {
 
     private boolean failOnMissingConfigEntry = false;
 
+    @Nullable
+    private List<String> additionalParameters;
+
     public void setIgnoreAssetsPattern(@Nullable String ignoreAssetsPattern) {
         this.ignoreAssetsPattern = ignoreAssetsPattern;
     }
@@ -53,7 +57,8 @@ public class AaptOptions implements com.android.builder.model.AaptOptions {
      * <p>See <code>aapt --help</code>
      */
     @Override
-    @Optional @Input
+    @Optional
+    @Input
     public String getIgnoreAssets() {
         return ignoreAssetsPattern;
     }
@@ -70,7 +75,8 @@ public class AaptOptions implements com.android.builder.model.AaptOptions {
      * Extensions of files that will not be stored compressed in the APK.
      */
     @Override
-    @Optional @Input
+    @Optional
+    @Input
     public Collection<String> getNoCompress() {
         return noCompressList;
     }
@@ -131,5 +137,25 @@ public class AaptOptions implements com.android.builder.model.AaptOptions {
 
     public void noCompress(String... noCompress) {
         noCompressList = Arrays.asList(noCompress);
+    }
+
+    public void additionalParameters(@NonNull String param) {
+        additionalParameters = Collections.singletonList(param);
+    }
+
+    public void additionalParameters(String... params) {
+        additionalParameters = Arrays.asList(params);
+    }
+
+    public void setAdditionalParameters(@Nullable List<String> parameters) {
+        additionalParameters = parameters;
+    }
+
+    @Nullable
+    @Override
+    @Optional
+    @Input
+    public List<String> getAdditionalParameters() {
+        return additionalParameters;
     }
 }

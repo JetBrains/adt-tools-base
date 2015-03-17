@@ -366,6 +366,10 @@ public class AaptPackageProcessBuilder extends ProcessEnvBuilder<AaptPackageProc
                 builder.addArgs("-0", noCompress);
             }
         }
+        List<String> additionalParameters = mOptions.getAdditionalParameters();
+        if (!isNullOrEmpty(additionalParameters)) {
+            builder.addArgs(additionalParameters);
+        }
 
         List<String> resourceConfigs = new ArrayList<String>();
         if (!isNullOrEmpty(mResourceConfigs)) {
