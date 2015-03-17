@@ -1,3 +1,29 @@
+1.2.0
+- Unit testing improvements
+  * Fixed task dependencies for library projects, so test classes should now
+    be up-to-date when running tests.
+  * Java-style resources are now put on the class path when running unit tests
+    through Gradle.
+  * Unit test configurations (e.g. testCompile) can now depend on AAR
+    artifacts.
+  * Fixes to mockable-android.jar: correct handling of enums, stripping the
+    final modifier of public instance fields.
+  * DSL: new code block for configuring the test tasks:
+    android {
+      testOptions {
+        unitTest.all {
+          jvmArgs '-XX:MaxPermSize=256m' // Or any other gradle option.
+        }
+      }
+    }
+
+  * Variants API: unit-testing variants are now exposed in the API and can be
+    manipulated (e.g. by calling addJavaSourceFoldersToModel).
+    android {
+      unitTestVariants.all { ... }
+      applicationVariants.all { v -> v.unitTestVariant }
+    }
+
 1.1.0
 - Unit testing support. Unit testing code is run on the local JVM, against a
   special version of android.jar that is compatible with popular mocking
