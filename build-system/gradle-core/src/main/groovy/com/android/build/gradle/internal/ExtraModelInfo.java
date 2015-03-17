@@ -222,6 +222,7 @@ public class ExtraModelInfo {
             @NonNull Iterable<String> ideSetupTaskNames,
             @NonNull Configuration configuration,
             @NonNull File classesFolder,
+            @NonNull File javaResourcesFolder,
             @Nullable SourceProvider sourceProvider) {
         ArtifactMetaData artifactMetaData = extraArtifactMap.get(name);
         if (artifactMetaData == null) {
@@ -235,7 +236,7 @@ public class ExtraModelInfo {
 
         JavaArtifact artifact = new JavaArtifactImpl(
                 name, assembleTaskName, javaCompileTaskName, ideSetupTaskNames,
-                generatedSourceFolders, classesFolder,
+                generatedSourceFolders, classesFolder, javaResourcesFolder,
                 new ConfigurationDependencies(configuration), sourceProvider, null);
 
         extraJavaArtifacts.put(variant.getName(), artifact);

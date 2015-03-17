@@ -47,6 +47,7 @@ public class JavaArtifactImpl extends BaseArtifactImpl implements JavaArtifact, 
                 javaArtifact.getIdeSetupTaskNames(),
                 javaArtifact.getGeneratedSourceFolders(),
                 javaArtifact.getClassesFolder(),
+                javaArtifact.getJavaResourcesFolder(),
                 DependenciesImpl.cloneDependenciesForJavaArtifacts(javaArtifact.getDependencies()),
                 variantSP != null ? SourceProviderImpl.cloneProvider(variantSP) : null,
                 flavorsSP != null ? SourceProviderImpl.cloneProvider(flavorsSP) : null);
@@ -58,10 +59,12 @@ public class JavaArtifactImpl extends BaseArtifactImpl implements JavaArtifact, 
                             @NonNull Iterable<String> ideSetupTaskNames,
                             @NonNull Collection<File> generatedSourceFolders,
                             @NonNull File classesFolder,
+                            @NonNull File javaResourcesFolder,
                             @NonNull Dependencies dependencies,
                             @Nullable SourceProvider variantSourceProvider,
                             @Nullable SourceProvider multiFlavorSourceProviders) {
-        super(name, assembleTaskName, compileTaskName, classesFolder, dependencies,
+        super(name, assembleTaskName, compileTaskName, classesFolder, javaResourcesFolder,
+                dependencies,
                 variantSourceProvider, multiFlavorSourceProviders, generatedSourceFolders);
         this.ideSetupTaskNames = Sets.newHashSet(ideSetupTaskNames);
     }
