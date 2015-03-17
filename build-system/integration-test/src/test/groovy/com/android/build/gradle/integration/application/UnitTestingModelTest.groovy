@@ -77,6 +77,11 @@ android {
             // No per-variant source code.
             assertThat(unitTestArtifact.variantSourceProvider).isNull()
             assertThat(unitTestArtifact.multiFlavorSourceProvider).isNull()
+
+            assertThat(variant.mainArtifact.javaResourcesFolder.path)
+                    .endsWith("intermediates/javaResources/" + variant.name)
+            assertThat(unitTestArtifact.javaResourcesFolder.path)
+                    .endsWith("intermediates/javaResources/test/" + variant.name)
         }
 
         def sourceProvider = model.defaultConfig
