@@ -322,6 +322,7 @@ public abstract class BasePlugin {
 
         // create the default mapping configuration.
         project.configurations.create("default-mapping").description = "Configuration for default mapping artifacts."
+        project.configurations.create("default-metadata").description = "Metadata for the produced APKs."
 
         DependencyManager dependencyManager = new DependencyManager(project, extraModelInfo)
         taskManager = createTaskManager(

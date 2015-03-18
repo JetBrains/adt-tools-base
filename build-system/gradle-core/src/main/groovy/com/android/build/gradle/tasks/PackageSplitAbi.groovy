@@ -17,6 +17,7 @@
 package com.android.build.gradle.tasks
 
 import com.android.annotations.NonNull
+import com.android.annotations.Nullable
 import com.android.build.FilterData
 import com.android.build.OutputFile
 import com.android.build.gradle.api.ApkOutputFile
@@ -72,6 +73,12 @@ class PackageSplitAbi extends SplitRelatedTask {
     @OutputFiles
     public List<File> getOutputFiles() {
         return getOutputSplitFiles()*.getOutputFile();
+    }
+
+    @Override
+    @Nullable
+    File getApkMetadataFile() {
+        return null;
     }
 
     @NonNull

@@ -17,6 +17,7 @@
 package com.android.build.gradle.tasks
 
 import com.android.annotations.NonNull
+import com.android.annotations.Nullable
 import com.android.build.FilterData
 import com.android.build.OutputFile
 import com.android.build.OutputFile.FilterType
@@ -65,6 +66,10 @@ class SplitZipAlign extends SplitRelatedTask {
         getOutputSplitFiles()*.getOutputFile()
     }
 
+    @org.gradle.api.tasks.OutputFile
+    @Nullable
+    File apkMetadataFile
+
     @NonNull
     public synchronized  ImmutableList<ApkOutputFile> getOutputSplitFiles() {
 
@@ -103,6 +108,9 @@ class SplitZipAlign extends SplitRelatedTask {
                     return density
                 }
             }
+        }
+        if (type == FilterType.LANGUAGE) {
+            return filterWithPossibleSuffix.replaceAll('_', ',').replaceAll("-", "-r")
         }
         return filterWithPossibleSuffix
     }
@@ -166,6 +174,7 @@ class SplitZipAlign extends SplitRelatedTask {
         }
         forEachUnalignedInput(zipAlignIt)
         forEachUnsignedInput(zipAlignIt)
+        saveApkMetadataFile()
     }
 
     @Override

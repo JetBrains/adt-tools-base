@@ -25,6 +25,7 @@ import com.android.builder.dependency.LibraryDependency
 import com.google.common.collect.Sets
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
+
 /**
  * Object that represents the dependencies of a "config", in the sense of defaultConfigs, build
  * type and flavors.
@@ -49,6 +50,8 @@ public class VariantDependencies implements DependencyContainer, ConfigurationPr
     private final Configuration mappingConfiguration
     @Nullable
     private final Configuration classesConfiguration
+    @Nullable
+    private final Configuration metadataConfiguration
 
     @NonNull
     private final List<LibraryDependencyImpl> libraries = []
@@ -98,7 +101,7 @@ public class VariantDependencies implements DependencyContainer, ConfigurationPr
         apk.description = "## Internal use, do not manually configure ##"
         apk.setExtendsFrom(apkConfigs)
 
-        Configuration publish = null, mapping = null, classes = null;
+        Configuration publish = null, mapping = null, classes = null, metadata = null;
         if (publishVariant) {
             publish = project.configurations.create(name)
             publish.description = "Published Configuration for Variant ${name}"
@@ -108,6 +111,10 @@ public class VariantDependencies implements DependencyContainer, ConfigurationPr
             if (variantType == VariantType.LIBRARY) {
                 publish.setExtendsFrom(apkConfigs)
             }
+
+            // create configuration for -metadata.
+            metadata = project.configurations.create("$name-metadata")
+            metadata.description = "Published APKs metadata for Variant $name"
 
             // create configuration for -mapping and -classes.
             mapping = project.configurations.create("$name-mapping")
@@ -126,6 +133,7 @@ public class VariantDependencies implements DependencyContainer, ConfigurationPr
                 publish,
                 mapping,
                 classes,
+                metadata,
                 variantType != VariantType.UNIT_TEST);
     }
 
@@ -135,6 +143,7 @@ public class VariantDependencies implements DependencyContainer, ConfigurationPr
                                 @Nullable Configuration publishConfiguration,
                                 @Nullable Configuration mappingConfiguration,
                                 @Nullable Configuration classesConfiguration,
+                                @Nullable Configuration metadataConfiguration,
                                 boolean skipClassesInAndroid) {
         this.name = name
         this.compileConfiguration = compileConfiguration
@@ -142,6 +151,7 @@ public class VariantDependencies implements DependencyContainer, ConfigurationPr
         this.publishConfiguration = publishConfiguration
         this.mappingConfiguration = mappingConfiguration
         this.classesConfiguration = classesConfiguration
+        this.metadataConfiguration = metadataConfiguration
         this.checker = new DependencyChecker(this, skipClassesInAndroid)
     }
 
@@ -180,6 +190,11 @@ public class VariantDependencies implements DependencyContainer, ConfigurationPr
     @Nullable
     Configuration getClassesConfiguration() {
         return classesConfiguration
+    }
+
+    @Nullable
+    Configuration getMetadataConfiguration() {
+        return metadataConfiguration
     }
 
     void addLibraries(@NonNull List<LibraryDependencyImpl> list) {

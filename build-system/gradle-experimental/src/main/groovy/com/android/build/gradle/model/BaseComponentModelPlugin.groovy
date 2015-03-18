@@ -122,6 +122,17 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
                 "compile",
                 "Classpath for default sources.")
 
+        createConfiguration(
+                configurations,
+                "default-metadata",
+                "Metadata for published APKs")
+
+        createConfiguration(
+                configurations,
+                "default-mapping",
+                "Metadata for published APKs")
+
+
         project.tasks.getByName("assemble").description =
                 "Assembles all variants of all applications and secondary packages."
 

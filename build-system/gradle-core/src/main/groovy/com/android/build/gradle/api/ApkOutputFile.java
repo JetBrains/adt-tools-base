@@ -73,7 +73,6 @@ public class ApkOutputFile implements OutputFile, Serializable {
         }
     }
 
-
     /**
      * String identifying the splits within all the filters dimension. For instance, for a {@link
      * com.android.build.OutputFile.FilterType#DENSITY}, a split identifier can be "xxhdpi". Each

@@ -67,6 +67,10 @@ class PackageSplitRes extends SplitRelatedTask {
         getOutputSplitFiles()*.getOutputFile()
     }
 
+    File getApkMetadataFile() {
+        return null
+    }
+
     /**
      * This directories are not officially input/output to the task as
      * they are shared among tasks. To be parallelizable, we must only
@@ -92,7 +96,7 @@ class PackageSplitRes extends SplitRelatedTask {
             }
             if (languageSplits.contains(unMangleSplitName(split))) {
                 filterData = FilterDataImpl.build(
-                        OutputFile.FilterType.LANGUAGE.toString(), split);
+                        OutputFile.FilterType.LANGUAGE.toString(), unMangleSplitName(split));
             }
             if (filterData != null) {
                 builder.add(new ApkOutputFile(OutputFile.OutputType.SPLIT,
