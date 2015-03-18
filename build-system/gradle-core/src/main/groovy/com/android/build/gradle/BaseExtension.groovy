@@ -564,6 +564,10 @@ public abstract class BaseExtension {
         return sdkHandler.getSdkFolder()
     }
 
+    public File getNdkDirectory() {
+        return sdkHandler.getNdkFolder()
+    }
+
     public List<File> getBootClasspath() {
         return androidBuilder.getBootClasspath()
     }
