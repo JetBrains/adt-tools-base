@@ -1798,6 +1798,24 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
         return fullList;
     }
 
+    /**
+     * Returns the proguard config files to be used for the test APK.
+     */
+    @NonNull
+    public List<File> getTestProguardFiles() {
+        List<File> fullList = Lists.newArrayList();
+
+        // add the config files from the build type, main config and flavors
+        fullList.addAll(mDefaultConfig.getTestProguardFiles());
+        fullList.addAll(mBuildType.getTestProguardFiles());
+
+        for (F flavor : mFlavors) {
+            fullList.addAll(flavor.getTestProguardFiles());
+        }
+
+        return fullList;
+    }
+
     @NonNull
     public List<Object> getConsumerProguardFiles() {
         List<Object> fullList = Lists.newArrayList();

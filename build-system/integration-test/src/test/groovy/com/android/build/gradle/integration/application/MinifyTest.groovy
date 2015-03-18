@@ -91,9 +91,13 @@ class MinifyTest {
         JarFile minifiedJar = new JarFile(project.file(
                 "build/$AndroidProject.FD_INTERMEDIATES/classes-proguard/androidTest/minified/classes.jar"))
 
-        def testClassFiles = minifiedJar.entries().toSet().collect { it.name }
+        def testClassFiles = minifiedJar.entries()
+                .toSet()
+                .collect { it.name }
+                .findAll { !it.startsWith("org/hamcrest") }
 
         assertThat(testClassFiles).containsExactly(
+                "LICENSE.txt", // Comes from hamcrest, is not packaged.
                 "com/android/tests/basic/MainTest.class",
                 "com/android/tests/basic/UnusedTestClass.class",
                 "com/android/tests/basic/UsedTestClass.class",
