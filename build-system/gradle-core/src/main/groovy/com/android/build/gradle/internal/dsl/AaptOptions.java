@@ -14,31 +14,37 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.dsl
+package com.android.build.gradle.internal.dsl;
 
-import org.gradle.api.tasks.Input
+import com.android.annotations.Nullable;
+
+import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.Optional;
+
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+
 /**
  * DSL object for configuring aapt options.
  */
 public class AaptOptions implements com.android.builder.model.AaptOptions {
 
-    @Input
-    private String ignoreAssetsPattern
+    @Nullable
+    private String ignoreAssetsPattern;
 
-    @Input
-    private List<String> noCompressList
+    @Nullable
+    private List<String> noCompressList;
 
-    @Input
-    private boolean useNewCruncher = true
+    private boolean useNewCruncher = true;
 
-    @Input
-    private boolean cruncherEnabled = true
+    private boolean cruncherEnabled = true;
 
-    @Input
-    private boolean failOnMissingConfigEntry = false
+    private boolean failOnMissingConfigEntry = false;
 
-    public void setIgnoreAssetsPattern(String ignoreAssetsPattern) {
-        this.ignoreAssetsPattern = ignoreAssetsPattern
+    public void setIgnoreAssetsPattern(@Nullable String ignoreAssetsPattern) {
+        this.ignoreAssetsPattern = ignoreAssetsPattern;
     }
 
     /**
@@ -47,32 +53,34 @@ public class AaptOptions implements com.android.builder.model.AaptOptions {
      * <p>See <code>aapt --help</code>
      */
     @Override
-    String getIgnoreAssets() {
-        return ignoreAssetsPattern
+    @Optional @Input
+    public String getIgnoreAssets() {
+        return ignoreAssetsPattern;
     }
 
     public void setNoCompress(String noCompress) {
-        noCompressList = Collections.singletonList(noCompress)
+        noCompressList = Collections.singletonList(noCompress);
     }
 
     public void setNoCompress(String... noCompress) {
-        noCompressList = Arrays.asList(noCompress)
+        noCompressList = Arrays.asList(noCompress);
     }
 
     /**
      * Extensions of files that will not be stored compressed in the APK.
      */
     @Override
-    Collection<String> getNoCompress() {
-        return noCompressList
+    @Optional @Input
+    public Collection<String> getNoCompress() {
+        return noCompressList;
     }
 
     public void useNewCruncher(boolean value) {
-        useNewCruncher = value
+        useNewCruncher = value;
     }
 
     public void setUseNewCruncher(boolean value) {
-        useNewCruncher = value
+        useNewCruncher = value;
     }
 
     /**
@@ -80,47 +88,48 @@ public class AaptOptions implements com.android.builder.model.AaptOptions {
      * @param value true to enable, false to disable.
      */
     public void setCruncherEnabled(boolean value) {
-        cruncherEnabled = value
+        cruncherEnabled = value;
     }
 
     /**
      * Returns true if the PNGs should be crunched, false otherwise.
      */
+    @Input
     public boolean getCruncherEnabled() {
-        return cruncherEnabled
+        return cruncherEnabled;
     }
     /**
      * Whether to use the new cruncher.
      *
      * <p>TODO: Document.
      */
+    @Input
     public boolean getUseNewCruncher() {
-        return useNewCruncher
+        return useNewCruncher;
     }
 
     public void failOnMissingConfigEntry(boolean value) {
-        failOnMissingConfigEntry = value
+        failOnMissingConfigEntry = value;
     }
 
     public void setFailOnMissingConfigEntry(boolean value) {
-        failOnMissingConfigEntry = value
+        failOnMissingConfigEntry = value;
     }
 
     /**
      * Forces aapt to return an error if it fails to find an entry for a configuration.
      */
     @Override
+    @Input
     public boolean getFailOnMissingConfigEntry() {
         return failOnMissingConfigEntry;
     }
 
-    // -- DSL Methods. TODO remove once the instantiator does what I expect it to do.
-
     public void noCompress(String noCompress) {
-        noCompressList = Collections.singletonList(noCompress)
+        noCompressList = Collections.singletonList(noCompress);
     }
 
     public void noCompress(String... noCompress) {
-        noCompressList = Arrays.asList(noCompress)
+        noCompressList = Arrays.asList(noCompress);
     }
 }

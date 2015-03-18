@@ -14,32 +14,27 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.dsl
+package com.android.build.gradle.internal.dsl;
 
-import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.Optional
+import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.Optional;
 /**
  * DSL object for configuring dx options.
  */
 public class DexOptions implements com.android.builder.core.DexOptions {
 
-    @Input
-    private boolean isIncrementalFlag = false
+    private boolean isIncrementalFlag = false;
 
-    @Input
-    private boolean isPreDexLibrariesFlag = true
+    private boolean isPreDexLibrariesFlag = true;
 
-    @Input
-    private boolean isJumboModeFlag = false
+    private boolean isJumboModeFlag = false;
 
-    private int threadCount = 4
+    private int threadCount = 4;
 
-    @Input
-    @Optional
-    private String javaMaxHeapSize
+    private String javaMaxHeapSize;
 
     public void setIncremental(boolean isIncremental) {
-        isIncrementalFlag = isIncremental
+        isIncrementalFlag = isIncremental;
     }
 
     /**
@@ -47,8 +42,9 @@ public class DexOptions implements com.android.builder.core.DexOptions {
      * work. Use carefully.
      */
     @Override
-    boolean getIncremental() {
-        return isIncrementalFlag
+    @Input
+    public boolean getIncremental() {
+        return isIncrementalFlag;
     }
 
     /**
@@ -56,32 +52,34 @@ public class DexOptions implements com.android.builder.core.DexOptions {
      * be slower.
      */
     @Override
-    boolean getPreDexLibraries() {
-        return isPreDexLibrariesFlag
+    @Input
+    public boolean getPreDexLibraries() {
+        return isPreDexLibrariesFlag;
     }
 
     void setPreDexLibraries(boolean flag) {
-        isPreDexLibrariesFlag = flag
+        isPreDexLibrariesFlag = flag;
     }
 
     public void setJumboMode(boolean flag) {
-        isJumboModeFlag = flag
+        isJumboModeFlag = flag;
     }
 
     /**
      * Enable jumbo mode in dx (--force-jumbo).
      */
     @Override
-    boolean getJumboMode() {
-        return isJumboModeFlag
+    @Input
+    public boolean getJumboMode() {
+        return isJumboModeFlag;
     }
 
     public void setJavaMaxHeapSize(String theJavaMaxHeapSize) {
         if (theJavaMaxHeapSize.matches("\\d+[kKmMgGtT]?")) {
-            javaMaxHeapSize = theJavaMaxHeapSize
+            javaMaxHeapSize = theJavaMaxHeapSize;
         } else {
             throw new IllegalArgumentException(
-                    "Invalid max heap size DexOption. See `man java` for valid -Xmx arguments.")
+                    "Invalid max heap size DexOption. See `man java` for valid -Xmx arguments.");
         }
     }
 
@@ -89,20 +87,21 @@ public class DexOptions implements com.android.builder.core.DexOptions {
      * Sets the -JXmx* value when calling dx. Format should follow the 1024M pattern.
      */
     @Override
+    @Optional @Input
     public String getJavaMaxHeapSize() {
-        return javaMaxHeapSize
+        return javaMaxHeapSize;
     }
 
     public void setThreadCount(int threadCount) {
-        this.threadCount = threadCount
+        this.threadCount = threadCount;
     }
 
     /**
      * TODO: Document.
      */
     @Override
-    int getThreadCount() {
-        return threadCount
+    public int getThreadCount() {
+        return threadCount;
     }
 
 }
