@@ -260,7 +260,7 @@ public class HtmlReporterTest extends AbstractCheckTest {
                     + "To suppress lint checks from the command line, pass the --ignore flag with a comma separated list of ids to be suppressed, such as:<br/>\n"
                     + "<code>$ lint --ignore UnusedResources,UselessLeaf /my/project/path</code><br/>\n"
                     + "<br/>\n"
-                    + "For more information, see <a href=\"http://tools.android.com/tips/lint/suppressing-lint-warnings\">http://tools.android.com/tips/lint/suppressing-lint-warnings</a><br/>\n"
+                    + "For more information, see <a href=\"http://g.co/androidstudio/suppressing-lint-warnings\">http://g.co/androidstudio/suppressing-lint-warnings</a><br/>\n"
                     + "\n"
                     + "\n"
                     + "</body>\n"
