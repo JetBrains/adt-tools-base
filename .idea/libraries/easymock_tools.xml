@@ -2,10 +2,15 @@
   <library name="easymock-tools">
     <CLASSES>
       <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/org/easymock/easymock/3.1/easymock-3.1.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/org/objenesis/objenesis/2.1/objenesis-2.1.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/cglib/cglib-nodep/3.1/cglib-nodep-3.1.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES>
       <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/org/easymock/easymock/3.1/easymock-3.1-sources.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/org/objenesis/objenesis/2.1/objenesis-2.1-sources.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/cglib/cglib-nodep/3.1/cglib-nodep-3.1-sources.jar!/src/proxy" />
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/cglib/cglib-nodep/3.1/cglib-nodep-3.1-sources.jar!/src/test" />
     </SOURCES>
   </library>
 </component>

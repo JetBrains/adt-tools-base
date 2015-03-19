@@ -31,6 +31,7 @@ import java.util.Iterator;
 
 import lombok.ast.ClassDeclaration;
 import lombok.ast.ConstructorDeclaration;
+import lombok.ast.Expression;
 import lombok.ast.MethodDeclaration;
 import lombok.ast.MethodInvocation;
 import lombok.ast.Node;
@@ -368,5 +369,26 @@ public class JavaContext extends Context {
         }
 
         return null;
+    }
+
+
+    /**
+     * Returns the given argument of the given call
+     *
+     * @param call the call containing arguments
+     * @param index the index of the target argument
+     * @return the argument at the given index
+     * @throws IllegalArgumentException if index is outside the valid range
+     */
+    @NonNull
+    public static Node getArgumentNode(@NonNull MethodInvocation call, int index) {
+        int i = 0;
+        for (Expression parameter : call.astArguments()) {
+            if (i == index) {
+                return parameter;
+            }
+            i++;
+        }
+        throw new IllegalArgumentException(Integer.toString(index));
     }
 }

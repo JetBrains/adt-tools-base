@@ -59,6 +59,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -597,6 +598,16 @@ public abstract class LintClient {
         project = createProject(dir, referenceDir);
         mDirToProject.put(canonicalDir, project);
         return project;
+    }
+
+    /**
+     * Returns the list of known projects (projects registered via
+     * {@link #getProject(File, File)}
+     *
+     * @return a collection of projects in any order
+     */
+    public Collection<Project> getKnownProjects() {
+        return mDirToProject != null ? mDirToProject.values() : Collections.<Project>emptyList();
     }
 
     /**

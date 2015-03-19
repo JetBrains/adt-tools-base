@@ -362,7 +362,13 @@ public class LintUtilsTest extends TestCase {
         return getCompilationUnit(javaSource, new File("test"));
     }
 
+
     public static Node getCompilationUnit(final String javaSource, final File relativePath) {
+        JavaContext context = parse(javaSource, relativePath);
+        return context.getCompilationUnit();
+    }
+
+    public static JavaContext parse(final String javaSource, final File relativePath) {
         File dir = new File("projectDir");
         final File fullPath = new File(dir, relativePath.getPath());
         LintCliClient client = new LintCliClient() {
@@ -399,7 +405,8 @@ public class LintUtilsTest extends TestCase {
         parser.prepareJavaParse(Collections.<JavaContext>singletonList(context));
         Node compilationUnit = parser.parseJava(context);
         assertNotNull(javaSource, compilationUnit);
-        return compilationUnit;
+        context.setCompilationUnit(compilationUnit);
+        return context;
     }
 
     public void testConvertVersion() {
