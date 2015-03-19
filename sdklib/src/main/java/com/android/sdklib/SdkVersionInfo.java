@@ -55,8 +55,14 @@ public class SdkVersionInfo {
     public static String getAndroidName(int api) {
         // See http://source.android.com/source/build-numbers.html
         String codeName = getCodeName(api);
-        return codeName == null ? String.format("API %1$d: Android %2$s", api, getVersionString(api))
-                                : String.format("API %1$d: Android %2$s (%3$s)", api, getVersionString(api), codeName);
+        String name = getVersionString(api);
+        if (name == null) {
+            return String.format("API %1$d", api);
+        } else if (codeName == null) {
+            return String.format("API %1$d: Android %2$s", api, name);
+        } else {
+            return String.format("API %1$d: Android %2$s (%3$s)", api, name, codeName);
+        }
     }
 
     @Nullable
