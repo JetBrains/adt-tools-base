@@ -14,22 +14,25 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.dsl
+package com.android.build.gradle.internal.dsl;
 
-import com.google.common.collect.ImmutableList
+import com.google.common.collect.ImmutableList;
+
+import java.util.Collection;
+import java.util.List;
 
 /**
  * Options for the adb tool.
  */
 public class AdbOptions implements com.android.builder.model.AdbOptions {
 
-    int timeOutInMs
+    int timeOutInMs;
 
     List<String> installOptions;
 
     @Override
     public int getTimeOutInMs() {
-        return timeOutInMs
+        return timeOutInMs;
     }
 
     public void setTimeOutInMs(int timeOutInMs) {
@@ -41,23 +44,23 @@ public class AdbOptions implements com.android.builder.model.AdbOptions {
     }
 
     @Override
-    Collection<String> getInstallOptions() {
+    public Collection<String> getInstallOptions() {
         return installOptions;
     }
 
-    void setInstallOptions(String option) {
+    public void setInstallOptions(String option) {
         installOptions = ImmutableList.of(option);
     }
 
-    void setInstallOptions(String...options) {
+    public void setInstallOptions(String... options) {
         installOptions = ImmutableList.copyOf(options);
     }
 
-    void installOptions(String option) {
+    public void installOptions(String option) {
         installOptions = ImmutableList.of(option);
     }
 
-    void installOptions(String...options) {
+    public void installOptions(String... options) {
         installOptions = ImmutableList.copyOf(options);
     }
 }
