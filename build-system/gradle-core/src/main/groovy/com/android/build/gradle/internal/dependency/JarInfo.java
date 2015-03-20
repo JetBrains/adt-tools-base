@@ -104,6 +104,7 @@ public class JarInfo {
     public String toString() {
         return "JarInfo{" +
                 "jarFile=" + jarFile +
+                ", gradlePath='" + gradlePath + '\'' +
                 ", compiled=" + compiled +
                 ", packaged=" + packaged +
                 ", dependencies=" + dependencies +
