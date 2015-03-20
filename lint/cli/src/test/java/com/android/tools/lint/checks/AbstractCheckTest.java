@@ -544,7 +544,8 @@ public abstract class AbstractCheckTest extends SdkTestCase {
                 // Look in an SDK install, if found
                 File home = getSdkHome();
                 if (home != null) {
-                    return new File(home, relativePath);
+                    File file = new File(home, relativePath);
+                    return file.exists() ? file : null;
                 }
             } else if (relativePath.startsWith("tools/support/")) {
                 // Look in the current Git repository and try to find it there
