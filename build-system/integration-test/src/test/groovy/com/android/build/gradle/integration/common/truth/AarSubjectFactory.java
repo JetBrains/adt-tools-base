@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 The Android Open Source Project
+ * Copyright (C) 2015 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,15 +17,22 @@
 package com.android.build.gradle.integration.common.truth;
 
 import com.google.common.truth.FailureStrategy;
+import com.google.common.truth.SubjectFactory;
 
 import java.io.File;
 
 /**
- * Truth support for zip files.
+ * Factory to add truth support for aar files.
  */
-public class ZipFileSubject extends AbstractZipSubject<ZipFileSubject> {
+class AarSubjectFactory extends SubjectFactory<AarSubject, File> {
+    public static AarSubjectFactory factory() {
+        return new AarSubjectFactory();
+    }
 
-    public ZipFileSubject(FailureStrategy failureStrategy, File subject) {
-        super(failureStrategy, subject);
+    private AarSubjectFactory() {}
+
+    @Override
+    public AarSubject getSubject(FailureStrategy failureStrategy, File subject) {
+        return new AarSubject(failureStrategy, subject);
     }
 }
