@@ -131,6 +131,9 @@ class ValueResourceParser2 {
             if (type != null) {
                 return new ResourceItem(name, type, node);
             }
+        } else if (type == ResourceType.PUBLIC) {
+            // Allow a <public /> node with no name: this means all resources are private
+            return new ResourceItem("", type, node);
         }
 
         return null;
