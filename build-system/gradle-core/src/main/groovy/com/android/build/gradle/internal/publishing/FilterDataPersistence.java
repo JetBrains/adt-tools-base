@@ -34,10 +34,10 @@ import java.util.List;
  */
 public class FilterDataPersistence {
 
-    static class Record {
-        final String filterType;
-        final String filterIdentifier;
-        final String splitFileName;
+    public static class Record {
+        public final String filterType;
+        public final String filterIdentifier;
+        public final String splitFileName;
 
         private Record(String filterType, String filterIdentifier, String splitFileName) {
             this.filterType = filterType;
