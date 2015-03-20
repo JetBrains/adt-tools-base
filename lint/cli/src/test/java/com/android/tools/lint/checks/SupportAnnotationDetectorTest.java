@@ -16,9 +16,15 @@
 
 package com.android.tools.lint.checks;
 
+import com.android.tools.lint.ExternalAnnotationRepository;
+import com.android.tools.lint.LintCliClient;
 import com.android.tools.lint.detector.api.Detector;
 
 public class SupportAnnotationDetectorTest extends AbstractCheckTest {
+    private static final boolean SDK_ANNOTATIONS_AVAILABLE =
+            new SupportAnnotationDetectorTest().createClient().findResource(
+            ExternalAnnotationRepository.SDK_ANNOTATIONS_PATH) != null;
+
     @Override
     protected Detector getDetector() {
         return new SupportAnnotationDetector();
@@ -187,7 +193,8 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                 + "src/test/pkg/IntDefTest.java:80: Error: Must be one of: IntDefTest.TYPE_1, IntDefTest.TYPE_2 [WrongConstant]\n"
                 + "        setTitle(\"\", \"type2\"); // ERROR\n"
                 + "                     ~~~~~~~\n"
-                + "src/test/pkg/IntDefTest.java:99: Error: Must be one of: View.LAYOUT_DIRECTION_LTR, View.LAYOUT_DIRECTION_RTL, View.LAYOUT_DIRECTION_INHERIT, View.LAYOUT_DIRECTION_LOCAL [WrongConstant]\n"
+                + (SDK_ANNOTATIONS_AVAILABLE ?
+                "src/test/pkg/IntDefTest.java:99: Error: Must be one of: View.LAYOUT_DIRECTION_LTR, View.LAYOUT_DIRECTION_RTL, View.LAYOUT_DIRECTION_INHERIT, View.LAYOUT_DIRECTION_LOCAL [WrongConstant]\n"
                 + "        view.setLayoutDirection(View.TEXT_DIRECTION_LTR); // ERROR\n"
                 + "                                ~~~~~~~~~~~~~~~~~~~~~~~\n"
                 + "src/test/pkg/IntDefTest.java:100: Error: Must be one of: View.LAYOUT_DIRECTION_LTR, View.LAYOUT_DIRECTION_RTL, View.LAYOUT_DIRECTION_INHERIT, View.LAYOUT_DIRECTION_LOCAL [WrongConstant]\n"
@@ -199,7 +206,8 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                 + "src/test/pkg/IntDefTest.java:102: Error: Must be one of: Context.POWER_SERVICE, Context.WINDOW_SERVICE, Context.LAYOUT_INFLATER_SERVICE, Context.ACCOUNT_SERVICE, Context.ACTIVITY_SERVICE, Context.ALARM_SERVICE, Context.NOTIFICATION_SERVICE, Context.ACCESSIBILITY_SERVICE, Context.CAPTIONING_SERVICE, Context.KEYGUARD_SERVICE, Context.LOCATION_SERVICE, Context.SEARCH_SERVICE, Context.SENSOR_SERVICE, Context.STORAGE_SERVICE, Context.WALLPAPER_SERVICE, Context.VIBRATOR_SERVICE, Context.CONNECTIVITY_SERVICE, Context.WIFI_SERVICE, Context.WIFI_P2P_SERVICE, Context.NSD_SERVICE, Context.AUDIO_SERVICE, Context.MEDIA_ROUTER_SERVICE, Context.TELEPHONY_SERVICE, Context.TELECOM_SERVICE, Context.CLIPBOARD_SERVICE, Context.INPUT_METHOD_SERVICE, Context.TEXT_SERVICES_MANAGER_SERVICE, Context.APPWIDGET_SERVICE, Context.DROPBOX_SERVICE, Context.DEVICE_POLICY_SERVICE, Context.UI_MODE_SERVICE, Context.DOWNLOAD_SERVICE, Context.NFC_SERVICE, Context.BLUETOOTH_SERVICE, Context.USB_SERVICE, Context.LAUNCHER_APPS_SERVICE, Context.INPUT_SERVICE, Context.DISPLAY_SERVICE, Context.USER_SERVICE, Context.RESTRICTIONS_SERVICE, Context.APP_OPS_SERVICE, Context.CAMERA_SERVICE, Context.PRINT_SERVICE, Context.CONSUMER_IR_SERVICE, Context.TV_INPUT_SERVICE, Context.MEDIA_SESSION_SERVICE, Context.BATTERY_SERVICE, Context.JOB_SCHEDULER_SERVICE, Context.MEDIA_PROJECTION_SERVIC [WrongConstant]\n"
                 + "        context.getSystemService(TYPE_1); // ERROR\n"
                 + "                                 ~~~~~~\n"
-                + "18 errors, 0 warnings\n",
+                + "18 errors, 0 warnings\n" :
+                "14 errors, 0 warnings\n"),
 
                 lintProject("src/test/pkg/IntDefTest.java.txt=>src/test/pkg/IntDefTest.java",
                         "src/android/support/annotation/IntDef.java.txt=>src/android/support/annotation/IntDef.java",
@@ -209,7 +217,7 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
 
     public void testColorInt() throws Exception {
         // Needs updated annotations!
-        assertEquals(""
+        assertEquals((SDK_ANNOTATIONS_AVAILABLE ? ""
                 + "src/test/pkg/WrongColor.java:9: Error: Should pass resolved color instead of resource id here: getResources().getColor(R.color.blue) [ResourceAsColor]\n"
                 + "        paint2.setColor(R.color.blue);\n"
                 + "                        ~~~~~~~~~~~~\n"
@@ -224,11 +232,14 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                 + "                                                        ~~~~~~~~~~~~\n"
                 + "src/test/pkg/WrongColor.java:13: Error: Should pass resolved color instead of resource id here: getResources().getColor(R.color.green) [ResourceAsColor]\n"
                 + "        textView.setTextColor(foo > 0 ? R.color.green : R.color.blue);\n"
-                + "                                        ~~~~~~~~~~~~~\n"
+                + "                                        ~~~~~~~~~~~~~\n" : "")
                 + "src/test/pkg/WrongColor.java:21: Error: Should pass resolved color instead of resource id here: getResources().getColor(R.color.blue) [ResourceAsColor]\n"
                 + "        foo2(R.color.blue);\n"
                 + "             ~~~~~~~~~~~~\n"
-                + "6 errors, 0 warnings\n",
+                + "src/test/pkg/WrongColor.java:20: Error: Expected resource of type color [ResourceType]\n"
+                + "        foo1(0xffff0000);\n"
+                + "             ~~~~~~~~~~\n"
+                + (SDK_ANNOTATIONS_AVAILABLE ? "7 errors, 0 warnings\n" : "2 errors, 0 warnings\n"),
 
                 lintProject(
                         "src/test/pkg/WrongColor.java.txt=>src/test/pkg/WrongColor.java",
@@ -237,20 +248,20 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
     }
 
     public void testResourceType() throws Exception {
-        assertEquals(""
+        assertEquals((SDK_ANNOTATIONS_AVAILABLE ? ""
                 + "src/p1/p2/Flow.java:13: Error: Expected resource of type drawable [ResourceType]\n"
                 + "        resources.getDrawable(10); // ERROR\n"
                 + "                              ~~\n"
                 + "src/p1/p2/Flow.java:18: Error: Expected resource of type drawable [ResourceType]\n"
                 + "        resources.getDrawable(R.string.my_string); // ERROR\n"
-                + "                              ~~~~~~~~~~~~~~~~~~\n"
+                + "                              ~~~~~~~~~~~~~~~~~~\n" : "")
                 + "src/p1/p2/Flow.java:22: Error: Expected resource of type drawable [ResourceType]\n"
                 + "        myMethod(R.string.my_string); // ERROR\n"
                 + "                 ~~~~~~~~~~~~~~~~~~\n"
                 + "src/p1/p2/Flow.java:32: Error: Expected resource identifier (R.type.name) [ResourceType]\n"
                 + "        myAnyResMethod(50); // ERROR\n"
                 + "                       ~~\n"
-                + "4 errors, 0 warnings\n",
+                + (SDK_ANNOTATIONS_AVAILABLE ? "4 errors, 0 warnings\n" : "2 errors, 0 warnings\n"),
 
                 lintProject("src/p1/p2/Flow.java.txt=>src/p1/p2/Flow.java",
                         "src/android/support/annotation/DrawableRes.java.txt=>src/android/support/annotation/DrawableRes.java"));
@@ -264,6 +275,10 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
     }
 
     public void testCheckResult() throws Exception {
+        if (!SDK_ANNOTATIONS_AVAILABLE) {
+            // Currently only tests @CheckResult on SDK annotations
+            return;
+        }
         assertEquals(""
                 + "src/test/pkg/CheckPermissions.java:22: Warning: The result of extractAlpha is not used [CheckResult]\n"
                 + "        bitmap.extractAlpha(); // WARNING\n"
