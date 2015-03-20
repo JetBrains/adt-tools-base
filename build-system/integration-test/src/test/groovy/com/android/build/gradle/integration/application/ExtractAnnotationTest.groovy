@@ -58,11 +58,12 @@ class ExtractAnnotationTest {
                 + "  <item name=\"com.android.tests.extractannotations.ExtractTest ExtractTest(int, java.lang.String) 0\">\n"
                 + "    <annotation name=\"android.support.annotation.IdRes\" />\n"
                 + "  </item>\n"
-                // This item should be removed when I start supporting @hide
+                + "  <item name=\"com.android.tests.extractannotations.ExtractTest ExtractTest(int, java.lang.String) 1\">\n"
+                + "    <annotation name=\"android.support.annotation.StringRes\" />\n"
+                + "  </item>\n"
                 + "  <item name=\"com.android.tests.extractannotations.ExtractTest int getHiddenMethod()\">\n"
                 + "    <annotation name=\"android.support.annotation.IdRes\" />\n"
                 + "  </item>\n"
-                // This item should be removed when I start supporting @hide
                 + "  <item name=\"com.android.tests.extractannotations.ExtractTest int getPrivate()\">\n"
                 + "    <annotation name=\"android.support.annotation.IdRes\" />\n"
                 + "  </item>\n"
@@ -123,11 +124,16 @@ class ExtractAnnotationTest {
                 + "      <val name=\"value\" val=\"{0, com.android.tests.extractannotations.Constants.CONSTANT_1, com.android.tests.extractannotations.Constants.CONSTANT_3}\" />\n"
                 + "    </annotation>\n"
                 + "  </item>\n"
-                // This should be hidden when we start filtering out hidden classes on @hide!
                 + "  <item name=\"com.android.tests.extractannotations.ExtractTest.HiddenClass int getHiddenMember()\">\n"
                 + "    <annotation name=\"android.support.annotation.IdRes\" />\n"
                 + "  </item>\n"
-                + "</root>")
+                + "  <item name=\"com.android.tests.extractannotations.TopLevelTypeDef\">\n"
+                + "    <annotation name=\"android.support.annotation.IntDef\">\n"
+                + "      <val name=\"flag\" val=\"true\" />\n"
+                + "      <val name=\"value\" val=\"{com.android.tests.extractannotations.Constants.CONSTANT_1, com.android.tests.extractannotations.Constants.CONSTANT_2}\" />\n"
+                + "    </annotation>\n"
+                + "  </item>\n"
+                + "</root>\n")
 
 
         assertThatZip(file).containsFileWithContent(
