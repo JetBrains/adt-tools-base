@@ -15,6 +15,8 @@
  */
 package com.android.build.gradle.tasks
 
+import com.android.annotations.NonNull
+import com.android.build.FilterData
 import com.android.build.gradle.internal.dsl.PackagingOptions
 import com.android.build.gradle.internal.dsl.SigningConfig
 import com.android.build.gradle.internal.tasks.FileSupplier
@@ -121,6 +123,7 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
         return getOutputFile()
     }
 
+    @NonNull
     @Override
     Task getTask() {
         return this

@@ -16,12 +16,16 @@
 
 package com.android.build.gradle.tasks
 
+import com.android.annotations.NonNull
+import com.android.annotations.Nullable
 import com.android.build.FilterData
 import com.android.build.OutputFile
 import com.android.build.gradle.api.ApkOutputFile
 import com.android.build.gradle.internal.model.FilterDataImpl
+import com.android.build.gradle.internal.publishing.FilterDataPersistence
 import com.android.build.gradle.internal.tasks.BaseTask
 import com.android.build.gradle.internal.tasks.FileSupplier
+import com.android.build.gradle.internal.tasks.SplitFileSupplier
 import com.google.common.base.Supplier
 import com.google.common.collect.ImmutableList
 import org.gradle.api.Task
@@ -30,6 +34,9 @@ import org.gradle.api.Task
  * Common code for all split related tasks
  */
 abstract class SplitRelatedTask extends BaseTask {
+
+    @Nullable
+    public abstract File getApkMetadataFile();
 
     /**
      * Calculates the list of output files, coming from the list of input files, mangling the
@@ -46,25 +53,63 @@ abstract class SplitRelatedTask extends BaseTask {
     /**
      * Returns a list of {@link Supplier<File>} for each split APK file
      */
-    List<FileSupplier> getOutputFileSuppliers() {
-        ImmutableList.Builder<FileSupplier> suppliers = ImmutableList.builder();
+    List<SplitFileSupplier> getOutputFileSuppliers() {
+        ImmutableList.Builder<SplitFileSupplier> suppliers = ImmutableList.builder();
         for (FilterData filterData : getSplitsData()) {
-            suppliers.add(new FileSupplier() {
 
-                @Override
-                File get() {
-                    return getOutputSplitFiles().find({
-                        filterData.identifier.equals(it.getFilter(filterData.filterType))
-                    }).getOutputFile()
-                }
+            ApkOutputFile outputFile = getOutputSplitFiles().find {
+                filterData.identifier.equals(it.getFilter(filterData.filterType))
+            }
+            if (outputFile != null) {
+                // make final references to not confused the groovy runtime...
+                final File file = outputFile.getOutputFile();
+                final data = filterData;
 
-                @Override
-                Task getTask() {
-                    return SplitRelatedTask.this
-                }
-            })
+                suppliers.add(new SplitFileSupplier() {
+
+                    @Override
+                    File get() {
+                        return file;
+                    }
+
+                    @NonNull
+                    @Override
+                    Task getTask() {
+                        return SplitRelatedTask.this
+                    }
+
+                    @NonNull
+                    @Override
+                    FilterData getFilterData() {
+                        return data;
+                    }
+                })
+            }
         }
         return suppliers.build()
+    }
+
+    /**
+     * Saves the APK metadata to the configured file.
+     */
+    protected void saveApkMetadataFile() throws IOException {
+
+        File metadataFile = getApkMetadataFile();
+        if (metadataFile == null) {
+            return;
+        }
+        FileWriter fileWriter = null;
+        try {
+            metadataFile.getParentFile().mkdirs();
+            fileWriter = new FileWriter(metadataFile);
+            FilterDataPersistence persistence = new FilterDataPersistence();
+            persistence.persist(outputFileSuppliers, fileWriter);
+
+        } finally {
+            if (fileWriter != null) {
+                fileWriter.close();
+            }
+        }
     }
 
     /**
