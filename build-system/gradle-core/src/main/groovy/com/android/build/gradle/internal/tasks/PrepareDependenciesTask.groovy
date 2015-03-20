@@ -50,12 +50,16 @@ public class PrepareDependenciesTask extends BaseTask {
         boolean foundError = false;
 
         for (DependencyChecker checker : checkers) {
-            for (Integer api : checker.foundAndroidApis) {
+            checker.legacyApiLevels.each { mavenVersion, api ->
                 if (api > minSdk) {
                     foundError = true;
-                    logger.error(String.format(
-                            "%s has an indirect dependency on Android API level %d, but minSdkVersion for variant '%s' is API level %d",
-                            checker.configurationDependencies.name.capitalize(), api, variant.name, minSdk))
+                    def configurationName = checker.configurationDependencies.name.capitalize()
+                    logger.error(
+                            "Variant ${configurationName} has a dependency on version ${mavenVersion.version} " +
+                                    "of the legacy ${mavenVersion.group} Maven artifact, which corresponds to " +
+                                    "API level ${api}. This is not compatible with min SDK of this module, " +
+                                    "which is ${minSdk}. Please use the 'gradle dependencies' task to debug your " +
+                                    "dependencies graph.")
                 }
             }
 
@@ -66,7 +70,7 @@ public class PrepareDependenciesTask extends BaseTask {
         }
 
         if (foundError) {
-            throw new GradleException("Dependency Error. See console for details");
+            throw new GradleException("Dependency Error. See console for details.");
         }
 
     }
