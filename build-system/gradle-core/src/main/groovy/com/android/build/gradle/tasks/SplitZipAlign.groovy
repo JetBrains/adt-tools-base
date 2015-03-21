@@ -19,7 +19,6 @@ package com.android.build.gradle.tasks
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
 import com.android.build.FilterData
-import com.android.build.OutputFile
 import com.android.build.OutputFile.FilterType
 import com.android.build.gradle.api.ApkOutputFile
 import com.android.build.gradle.internal.model.FilterDataImpl
@@ -28,6 +27,7 @@ import com.google.common.util.concurrent.Callables
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.OutputFiles
 import org.gradle.api.tasks.ParallelizableTask
 import org.gradle.api.tasks.TaskAction
@@ -66,7 +66,7 @@ class SplitZipAlign extends SplitRelatedTask {
         getOutputSplitFiles()*.getOutputFile()
     }
 
-    @org.gradle.api.tasks.OutputFile
+    @OutputFile
     @Nullable
     File apkMetadataFile
 
@@ -75,7 +75,7 @@ class SplitZipAlign extends SplitRelatedTask {
 
         ImmutableList.Builder<ApkOutputFile> outputFiles = ImmutableList.builder();
         Closure addingLogic = { String split, File file ->
-            outputFiles.add(new ApkOutputFile(OutputFile.OutputType.SPLIT,
+            outputFiles.add(new ApkOutputFile(com.android.build.OutputFile.OutputType.SPLIT,
                     ImmutableList.<FilterData>of(
                             FilterDataImpl.build(
                                     getFilterType(split).toString(), getFilter(split))),
