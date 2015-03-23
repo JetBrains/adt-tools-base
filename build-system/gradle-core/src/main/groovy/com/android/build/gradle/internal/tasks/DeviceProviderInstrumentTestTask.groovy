@@ -22,6 +22,7 @@ import com.android.builder.testing.SimpleTestRunner
 import com.android.builder.testing.TestData
 import com.android.builder.testing.TestRunner
 import com.android.builder.testing.api.DeviceProvider
+import com.android.ide.common.process.ProcessExecutor
 import com.google.common.collect.ImmutableList
 import org.gradle.api.GradleException
 import org.gradle.api.Nullable
@@ -45,6 +46,9 @@ public class DeviceProviderInstrumentTestTask extends BaseTask implements Androi
     TestData testData;
 
     File adbExec;
+    @Nullable
+    File splitSelectExec;
+    ProcessExecutor processExecutor;
 
     boolean ignoreFailures
     boolean testFailed
@@ -70,7 +74,8 @@ public class DeviceProviderInstrumentTestTask extends BaseTask implements Androi
         } else {
             File testApk = testData.getTestApk();
             String flavor = getFlavorName()
-            TestRunner testRunner = new SimpleTestRunner(getAdbExec());
+            TestRunner testRunner = new SimpleTestRunner(getAdbExec(), getSplitSelectExec(),
+                    getProcessExecutor());
             deviceProvider.init();
 
             Collection<String> extraArgs = installOptions == null || installOptions.isEmpty() ?
