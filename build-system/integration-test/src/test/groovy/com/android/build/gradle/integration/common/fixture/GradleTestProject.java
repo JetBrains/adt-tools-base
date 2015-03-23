@@ -700,6 +700,7 @@ public class GradleTestProject implements TestRule {
 
     private static List<String> getDebugJvmArguments() {
         List<String> jvmArguments = new ArrayList<String>();
+        jvmArguments.add("-XX:MaxPermSize=1024m");
         String debugIntegrationTest = System.getenv("DEBUG_INNER_TEST");
         if (!Strings.isNullOrEmpty(debugIntegrationTest)) {
             jvmArguments.add("-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005");
