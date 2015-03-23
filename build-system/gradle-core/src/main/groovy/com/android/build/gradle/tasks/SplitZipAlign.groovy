@@ -20,6 +20,7 @@ import com.android.annotations.NonNull
 import com.android.annotations.Nullable
 import com.android.build.FilterData
 import com.android.build.OutputFile.FilterType
+import com.android.build.OutputFile.OutputType
 import com.android.build.gradle.api.ApkOutputFile
 import com.android.build.gradle.internal.model.FilterDataImpl
 import com.google.common.collect.ImmutableList
@@ -42,7 +43,10 @@ import java.util.regex.Pattern
 class SplitZipAlign extends SplitRelatedTask {
 
     @InputFiles
-    List<File> inputFiles = new ArrayList<>();
+    List<File> densityOrLanguageInputFiles = new ArrayList<>();
+
+    @InputFiles
+    List<File> abiInputFiles = new ArrayList<>()
 
     @Input
     String outputBaseName;
@@ -71,11 +75,16 @@ class SplitZipAlign extends SplitRelatedTask {
     File apkMetadataFile
 
     @NonNull
+    List<File> getInputFiles() {
+        return getDensityOrLanguageInputFiles() + getAbiInputFiles();
+    }
+
+    @NonNull
     public synchronized  ImmutableList<ApkOutputFile> getOutputSplitFiles() {
 
         ImmutableList.Builder<ApkOutputFile> outputFiles = ImmutableList.builder();
         Closure addingLogic = { String split, File file ->
-            outputFiles.add(new ApkOutputFile(com.android.build.OutputFile.OutputType.SPLIT,
+            outputFiles.add(new ApkOutputFile(OutputType.SPLIT,
                     ImmutableList.<FilterData>of(
                             FilterDataImpl.build(
                                     getFilterType(split).toString(), getFilter(split))),
@@ -110,7 +119,7 @@ class SplitZipAlign extends SplitRelatedTask {
             }
         }
         if (type == FilterType.LANGUAGE) {
-            return filterWithPossibleSuffix.replaceAll('_', ',').replaceAll("-", "-r")
+            return PackageSplitRes.unMangleSplitName(filterWithPossibleSuffix)
         }
         return filterWithPossibleSuffix
     }

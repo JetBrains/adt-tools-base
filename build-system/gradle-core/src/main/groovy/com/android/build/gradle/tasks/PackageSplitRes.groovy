@@ -126,12 +126,29 @@ class PackageSplitRes extends SplitRelatedTask {
         Pattern resourcePattern = Pattern.compile(
                 "resources-${outputBaseName}.ap__(.*)")
 
+        // make a copy of the expected densities and languages filters.
+        List<String> densitiesCopy = new ArrayList<>(densitySplits)
+        List<String> languagesCopy = new ArrayList<>(languageSplits)
+
         // resources- and .ap_ should be shared in a setting somewhere. see BasePlugin:1206
         for (File file : inputDirectory.listFiles()) {
-            Matcher match = resourcePattern.matcher(file.getName());
-            if (match.matches() && !match.group(1).isEmpty() && isValidSplit(match.group(1))) {
+            Matcher match = resourcePattern.matcher(file.getName())
+            // each time we match, we remove the associated filter from our copies.
+            if (match.matches() && !match.group(1).isEmpty()
+                    && isValidSplit(densitiesCopy, languagesCopy, match.group(1))) {
                 closure(match.group(1), file)
             }
+        }
+        // manually invoke the closure for filters we did not find associated files, apply best
+        // guess on the actual file names.
+        for (String density : densitiesCopy) {
+            closure(density,
+                    new File(inputDirectory, "resources-${outputBaseName}.ap__${density}"));
+        }
+        for (String language : languagesCopy) {
+            closure(language,
+                    new File(inputDirectory, "resources-${outputBaseName}.ap__${language}"));
+
         }
     }
 
@@ -140,14 +157,22 @@ class PackageSplitRes extends SplitRelatedTask {
      * requested split for this task). A density split identifier can be suffixed with characters
      * added by aapt.
      */
-    private boolean isValidSplit(@NonNull String splitWithOptionalSuffix) {
-        for (String density : densitySplits) {
+    private static boolean isValidSplit(
+            List<String> densities,
+            List<String> languages,
+            @NonNull String splitWithOptionalSuffix) {
+        for (String density : densities) {
             if (splitWithOptionalSuffix.startsWith(density)) {
+                densities.remove(density);
                 return true;
             }
         }
         String mangledName = unMangleSplitName(splitWithOptionalSuffix);
-        return languageSplits.contains(mangledName);
+        if (languages.contains(mangledName)) {
+            languages.remove(mangledName);
+            return true;
+        }
+        return false;
     }
 
     String getOutputFileNameForSplit(String split) {
@@ -178,6 +203,6 @@ class PackageSplitRes extends SplitRelatedTask {
      */
     static String unMangleSplitName(String splitWithOptionalSuffix) {
         String mangledName = splitWithOptionalSuffix.replaceAll('_', ',');
-        return mangledName.replace("-", "-r");
+        return mangledName.contains("-r") ? mangledName : mangledName.replace("-", "-r");
     }
 }
