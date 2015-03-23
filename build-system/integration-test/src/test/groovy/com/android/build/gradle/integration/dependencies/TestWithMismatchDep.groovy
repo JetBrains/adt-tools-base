@@ -78,7 +78,7 @@ dependencies {
             // looks like we can't actually test the instance t against GradleException
             // due to it coming through the tooling API from a different class loader.
             assertEquals("org.gradle.api.GradleException", t.getClass().canonicalName)
-            assertEquals("Dependency Error. See console for details", t.getMessage())
+            assertEquals("Dependency Error. See console for details.", t.getMessage())
         }
 
         // check there is a version of the error, after the task name:
