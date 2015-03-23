@@ -20,11 +20,13 @@ import com.android.build.gradle.internal.LoggerWrapper;
 import com.android.builder.model.SyncIssue;
 import com.android.utils.ILogger;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
 import org.gradle.api.artifacts.ModuleVersionIdentifier;
 import org.gradle.api.logging.Logging;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Checks for dependencies to ensure Android compatibility
@@ -39,9 +41,14 @@ public class DependencyChecker {
 
     private final boolean skipLibrariesInThePlatform;
 
+    /**
+     * Contains API levels obtained from dependencies on the legacy com.google.android:android
+     * artifact. Keys are specific versions of the artifact, values are the corresponding API
+     * levels.
+     */
     @NonNull
-    private final List<Integer> foundAndroidApis = Lists.newArrayList();
-    @NonNull
+    private final Map<ModuleVersionIdentifier, Integer> legacyApiLevels = Maps.newHashMap();
+
     private final List<SyncIssue> syncIssues = Lists.newArrayList();
 
     public DependencyChecker(
@@ -52,8 +59,8 @@ public class DependencyChecker {
     }
 
     @NonNull
-    public List<Integer> getFoundAndroidApis() {
-        return foundAndroidApis;
+    public Map<ModuleVersionIdentifier, Integer> getLegacyApiLevels() {
+        return legacyApiLevels;
     }
 
     @NonNull
@@ -79,7 +86,7 @@ public class DependencyChecker {
 
         if ("com.google.android".equals(group) && "android".equals(name)) {
             int moduleLevel = getApiLevelFromMavenArtifact(version);
-            foundAndroidApis.add(moduleLevel);
+            legacyApiLevels.put(id, moduleLevel);
 
             logger.info("Ignoring Android API artifact %s for %s", id,
                     configurationDependencies.getName());
