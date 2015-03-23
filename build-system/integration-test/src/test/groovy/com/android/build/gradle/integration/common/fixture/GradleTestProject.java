@@ -85,7 +85,7 @@ public class GradleTestProject implements TestRule {
     public static final String GRADLE_TEST_VERSION = "2.2.1";
     public static final String GRADLE_EXP_TEST_VERSION = "2.4-20150224230024+0000";
 
-    private static final String ANDROID_GRADLE_VERSION = "1.2.0-alpha1";
+    private static final String ANDROID_GRADLE_VERSION = "1.2.0-beta1";
     private static final String COMMON_HEADER = "commonHeader.gradle";
     private static final String COMMON_LOCAL_REPO = "commonLocalRepo.gradle";
     private static final String COMMON_BUILD_SCRIPT = "commonBuildScript.gradle";
