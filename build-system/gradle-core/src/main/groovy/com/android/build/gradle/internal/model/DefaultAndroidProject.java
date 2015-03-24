@@ -70,6 +70,7 @@ class DefaultAndroidProject implements AndroidProject, Serializable {
     @Nullable
     private final String resourcePrefix;
     private final boolean isLibrary;
+    private final int apiVersion;
 
     private final Collection<BuildTypeContainer> buildTypes = Lists.newArrayList();
     private final Collection<ProductFlavorContainer> productFlavors = Lists.newArrayList();
@@ -92,7 +93,8 @@ class DefaultAndroidProject implements AndroidProject, Serializable {
             @NonNull LintOptions lintOptions,
             @NonNull File buildFolder,
             @Nullable String resourcePrefix,
-            boolean isLibrary) {
+            boolean isLibrary,
+            int apiVersion) {
         this.modelVersion = modelVersion;
         this.name = name;
         this.compileTarget = compileTarget;
@@ -108,6 +110,7 @@ class DefaultAndroidProject implements AndroidProject, Serializable {
         this.buildFolder = buildFolder;
         this.resourcePrefix = resourcePrefix;
         this.isLibrary = isLibrary;
+        this.apiVersion = apiVersion;
     }
 
     @NonNull
@@ -139,6 +142,11 @@ class DefaultAndroidProject implements AndroidProject, Serializable {
     @NonNull
     public String getModelVersion() {
         return modelVersion;
+    }
+
+    @Override
+    public int getApiVersion() {
+        return apiVersion;
     }
 
     @Override
