@@ -30,7 +30,7 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
 class PackagingOptionsTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("packagingOptions")
+            .fromTestProject("packagingOptions")
             .create()
 
     @BeforeClass

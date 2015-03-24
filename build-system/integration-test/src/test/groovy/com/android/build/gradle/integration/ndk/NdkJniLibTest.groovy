@@ -32,7 +32,7 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
 class NdkJniLibTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("ndkJniLib")
+            .fromTestProject("ndkJniLib")
             .create()
 
     @BeforeClass

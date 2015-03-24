@@ -30,7 +30,7 @@ import org.junit.experimental.categories.Category
 class MultiDexWithLibTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("multiDexWithLib")
+            .fromTestProject("multiDexWithLib")
             .create()
 
     @BeforeClass

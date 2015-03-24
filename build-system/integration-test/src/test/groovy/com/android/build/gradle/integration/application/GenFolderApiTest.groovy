@@ -34,7 +34,7 @@ import static org.junit.Assert.assertTrue
 class GenFolderApiTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("genFolderApi")
+            .fromTestProject("genFolderApi")
             .create()
     static AndroidProject model
 

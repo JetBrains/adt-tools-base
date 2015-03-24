@@ -47,7 +47,7 @@ class DensitySplitTest {
 
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("densitySplit")
+            .fromTestProject("densitySplit")
             .create()
 
     @BeforeClass

@@ -34,7 +34,7 @@ import static org.junit.Assert.assertNotNull
 class LocalJarsTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("localJars")
+            .fromTestProject("localJars")
             .create()
     static Map<String, AndroidProject> models
 

@@ -43,7 +43,7 @@ import static com.google.common.truth.Truth.assertThat
 class MinifyTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("minify")
+            .fromTestProject("minify")
             .create()
 
     @BeforeClass

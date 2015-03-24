@@ -33,7 +33,7 @@ class Overlay3Test {
 
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("overlay3")
+            .fromTestProject("overlay3")
             .create()
 
     @BeforeClass

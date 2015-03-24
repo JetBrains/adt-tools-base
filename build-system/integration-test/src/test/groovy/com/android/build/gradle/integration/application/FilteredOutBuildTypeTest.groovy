@@ -32,7 +32,7 @@ import static org.junit.Assert.assertEquals
 class FilteredOutBuildTypeTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("filteredOutBuildType")
+            .fromTestProject("filteredOutBuildType")
             .create()
     static AndroidProject model
 

@@ -43,7 +43,7 @@ import static org.junit.Assert.assertTrue
 class NdkSanAngelesTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("ndkSanAngeles")
+            .fromTestProject("ndkSanAngeles")
             .create()
 
     static AndroidProject model

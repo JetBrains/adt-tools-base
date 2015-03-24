@@ -35,7 +35,7 @@ import static org.junit.Assert.assertNotNull
 class MultiProjectTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("multiproject")
+            .fromTestProject("multiproject")
             .create()
     static Map<String, AndroidProject> models
 

@@ -39,19 +39,19 @@ class JackTest {
     @ClassRule
     static public GradleTestProject basic = GradleTestProject.builder()
             .withName("basic")
-            .fromSample("basic")
+            .fromTestProject("basic")
             .create()
 
     @ClassRule
     static public GradleTestProject minify = GradleTestProject.builder()
             .withName("minify")
-            .fromSample("minify")
+            .fromTestProject("minify")
             .create()
 
     @ClassRule
     static public GradleTestProject multiDex = GradleTestProject.builder()
             .withName("multiDex")
-            .fromSample("multiDex")
+            .fromTestProject("multiDex")
             .create()
 
     @BeforeClass

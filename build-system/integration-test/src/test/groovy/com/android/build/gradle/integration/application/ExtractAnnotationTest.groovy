@@ -33,7 +33,7 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
 class ExtractAnnotationTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("extractAnnotations")
+            .fromTestProject("extractAnnotations")
             .create()
 
     @BeforeClass

@@ -30,7 +30,7 @@ import org.junit.experimental.categories.Category
 class MultiresTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("multires")
+            .fromTestProject("multires")
             .create()
 
     @BeforeClass

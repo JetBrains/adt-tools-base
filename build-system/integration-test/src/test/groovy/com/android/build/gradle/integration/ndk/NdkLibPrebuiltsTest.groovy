@@ -30,7 +30,7 @@ import org.junit.experimental.categories.Category
 class NdkLibPrebuiltsTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
-            .fromSample("ndkLibPrebuilts")
+            .fromTestProject("ndkLibPrebuilts")
             .create()
 
     @BeforeClass
