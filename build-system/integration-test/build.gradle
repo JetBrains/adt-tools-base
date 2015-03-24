@@ -25,8 +25,6 @@ task connectedIntegrationTestPrebuilts(type: Test)
 configure([test, testPrebuilts]) {
     environment("PROJECT_BUILD_DIR", project.buildDir)
 
-    exclude "com/android/build/gradle/integration/device/**"
-
     description =
             "Runs the project integration tests. This requires an SDK either from the Android " +
                     "source tree, under out/..., or an env var ANDROID_HOME."
@@ -48,7 +46,7 @@ configure([connectedIntegrationTest, connectedIntegrationTestPrebuilts]) {
 
     testClassesDir = sourceSets.test.output.classesDir
     classpath = sourceSets.test.runtimeClasspath
-    include "com/android/build/gradle/integration/device/DeviceTestSuite.class"
+
     description =
             "Runs the project integration tests with device tests. This requires an SDK either " +
                     "from the Android source tree, under out/..., or an env var ANDROID_HOME " +
@@ -56,6 +54,9 @@ configure([connectedIntegrationTest, connectedIntegrationTestPrebuilts]) {
     group = "verification"
     systemProperties['jar.path'] = jar.archivePath
     environment("CUSTOM_REPO", rootProject.file("../out/repo"))
+    useJUnit {
+        includeCategories "com.android.build.gradle.integration.common.category.DeviceTests"
+    }
 }
 
 task performanceTest(type: Test) {
