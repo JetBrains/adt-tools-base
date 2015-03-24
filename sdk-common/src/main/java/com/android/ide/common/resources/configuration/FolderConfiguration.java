@@ -712,7 +712,7 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
 
         if (sizeQ != null && densityQ != null && orientQ != null) {
             Density density = ((DensityQualifier) densityQ).getValue();
-            if (density == Density.NODPI) {
+            if (density == Density.NODPI || density == Density.ANYDPI) {
                 return;
             }
 
