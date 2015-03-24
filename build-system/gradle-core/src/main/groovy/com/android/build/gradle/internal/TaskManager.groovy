@@ -114,6 +114,7 @@ import org.gradle.api.internal.ConventionMapping
 import org.gradle.api.logging.LogLevel
 import org.gradle.api.logging.Logger
 import org.gradle.api.logging.Logging
+import org.gradle.api.plugins.BasePlugin
 import org.gradle.api.plugins.BasePluginConvention
 import org.gradle.api.plugins.JavaBasePlugin
 import org.gradle.api.plugins.JavaPlugin
@@ -160,7 +161,7 @@ abstract class TaskManager {
     // These need to be public for gradle-dev.
     public static final String INSTALL_GROUP = "Install"
 
-    public static final String BUILD_GROUP = org.gradle.api.plugins.BasePlugin.BUILD_GROUP
+    public static final String BUILD_GROUP = BasePlugin.BUILD_GROUP
 
     public static final String ANDROID_GROUP = "Android"
 
@@ -264,7 +265,7 @@ abstract class TaskManager {
 
     public void createAssembleAndroidTestTask() {
         assembleAndroidTest = project.getTasks().create("assembleAndroidTest");
-        assembleAndroidTest.setGroup(org.gradle.api.plugins.BasePlugin.BUILD_GROUP);
+        assembleAndroidTest.setGroup(BasePlugin.BUILD_GROUP);
         assembleAndroidTest.setDescription("Assembles all the Test applications");
     }
 
@@ -1444,6 +1445,7 @@ abstract class TaskManager {
             List<BaseVariantData<? extends BaseVariantOutputData>> variantDataList) {
         Task topLevelTest = project.tasks.create(JavaPlugin.TEST_TASK_NAME)
         topLevelTest.group = JavaBasePlugin.VERIFICATION_GROUP
+        topLevelTest.description = "Run unit tests for all variants."
 
         variantDataList.findAll { it.variantConfiguration.type == UNIT_TEST }.each {
             TestVariantData variantData = it as TestVariantData
@@ -1461,6 +1463,8 @@ abstract class TaskManager {
                             testedVariantData.variantConfiguration.fullName.capitalize(),
                     Test)
             runTestsTask.group = JavaBasePlugin.VERIFICATION_GROUP
+            runTestsTask.description = "Run unit tests for the " +
+                    "$testedVariantData.variantConfiguration.fullName build."
 
             fixTestTaskSources(runTestsTask)
 
