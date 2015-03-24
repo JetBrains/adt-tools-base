@@ -17,6 +17,7 @@
 package com.android.tests.libdeps;
 
 import com.android.tests.libdeps.MainActivity;
+import com.google.common.base.Splitter;
 
 import android.test.ActivityInstrumentationTestCase2;
 import android.test.suitebuilder.annotation.MediumTest;
@@ -39,7 +40,6 @@ public class MainActivityTest extends ActivityInstrumentationTestCase2<MainActiv
         final MainActivity a = getActivity();
         // ensure a valid handle to the activity has been returned
         assertNotNull(a);
-        
         mLib1TextView1 = (TextView) a.findViewById(R.id.lib1_text1);
     }
 
@@ -55,7 +55,7 @@ public class MainActivityTest extends ActivityInstrumentationTestCase2<MainActiv
 
         // use some of Guava's class as they should be accessible through the
         // classpath from the library
-        Iterable<String> segments = MainActivity.split("-", mLib1TextView1.getText());
+        Iterable<String> segments = Splitter.on("-").split(mLib1TextView1.getText());
         assertEquals("SUCCESS", segments.iterator().next());
     }
 }
