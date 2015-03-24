@@ -32,6 +32,8 @@ public class SdkVersionInfoTest extends TestCase {
 
     public void testGetAndroidName() {
         assertEquals("API 16: Android 4.1 (Jelly Bean)", SdkVersionInfo.getAndroidName(16));
+        // Future: if we don't have a name, don't include "null" as a name
+        assertEquals("API 500", SdkVersionInfo.getAndroidName(500));
     }
 
     public void testGetBuildCode() {
