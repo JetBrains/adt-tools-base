@@ -480,7 +480,7 @@ public abstract class AbstractCheckTest extends SdkTestCase {
             Warning prev = null;
             for (Warning warning : mWarnings) {
                 assertNotSame(warning, prev);
-                assert prev == null || !warning.equals(prev);
+                assert prev == null || !warning.equals(prev) : warning;
                 prev = warning;
             }
         }
