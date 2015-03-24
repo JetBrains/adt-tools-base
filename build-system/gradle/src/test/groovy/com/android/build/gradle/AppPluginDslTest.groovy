@@ -22,7 +22,6 @@ import com.android.build.gradle.api.ApplicationVariant
 import com.android.build.gradle.api.BaseVariantOutput
 import com.android.build.gradle.api.TestVariant
 import com.android.build.gradle.internal.SdkHandler
-import com.android.build.gradle.internal.VariantManager
 import com.android.build.gradle.internal.core.GradleVariantConfiguration
 import com.android.build.gradle.internal.test.BaseTest
 import org.gradle.api.JavaVersion
@@ -31,7 +30,6 @@ import org.gradle.testfixtures.ProjectBuilder
 
 import static com.android.build.gradle.DslTestUtil.DEFAULT_VARIANTS
 import static com.android.build.gradle.DslTestUtil.countVariants
-
 /**
  * Tests for the public DSL of the App plugin ("android")
  */
@@ -488,6 +486,24 @@ public class AppPluginDslTest extends BaseTest {
         assertEquals(
                 JavaVersion.VERSION_1_6.toString(),
                 project.compileReleaseJava.sourceCompatibility)
+    }
+
+    public void testMockableJarName() {
+        Project project = ProjectBuilder.builder().withProjectDir(
+                new File(testDir, "${FOLDER_TEST_SAMPLES}/basic")).build()
+
+        project.apply plugin: 'com.android.application'
+
+        project.android {
+            compileSdkVersion "Google Inc.:Google APIs:21"
+        }
+
+        AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
+        plugin.createAndroidTasks(false)
+
+        def mockableJarFile = plugin.taskManager.createMockableJar.outputFile
+        assertFalse(mockableJarFile.absolutePath.contains(":"))
+        assertEquals("mockable-Google-Inc.-Google-APIs-21.jar", mockableJarFile.name)
     }
 
     private static void checkTestedVariant(@NonNull String variantName,
