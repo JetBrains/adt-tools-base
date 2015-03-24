@@ -76,6 +76,6 @@ class MultiProjectTest {
         Collection<JavaLibrary> javaLibraries = dependencies.getJavaLibraries()
         assertNotNull("jar dep list null-check", javaLibraries)
         // TODO these are jars coming from ':util' They shouldn't be there.
-        assertEquals("jar dep count", 2, javaLibraries.size())
+        assertEquals("jar dep count", 1, javaLibraries.size())
     }
 }

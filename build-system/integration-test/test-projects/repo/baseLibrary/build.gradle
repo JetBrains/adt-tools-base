@@ -6,12 +6,12 @@ apply plugin: 'maven'
 
 repositories {
     maven { url '../testrepo' }
-    mavenCentral()
 }
+apply from: "../commonLocalRepo.gradle"
 
 dependencies {
     compile 'com.example.android.multiproject:util:1.0'
-    releaseCompile 'com.google.guava:guava:11.0.2'
+    releaseCompile 'com.google.guava:guava:17.0'
 }
 
 android {

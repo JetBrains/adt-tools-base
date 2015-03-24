@@ -3,9 +3,7 @@ buildscript { apply from: "../commonBuildScript.gradle", to: buildscript }
 
 apply plugin: 'com.android.application'
 
-repositories {
-  mavenCentral()
-}
+apply from: "../commonLocalRepo.gradle"
 
 dependencies {
     compile 'com.android.support:support-v4:13.0.0'

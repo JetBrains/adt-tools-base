@@ -1,8 +1,6 @@
 apply plugin: 'java'
 
-repositories {
-    mavenCentral()
-}
+apply from: "../commonLocalRepo.gradle"
 
 dependencies {
     compile 'com.google.guava:guava:11.0.2'

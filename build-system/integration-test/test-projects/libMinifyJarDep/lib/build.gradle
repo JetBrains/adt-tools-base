@@ -1,11 +1,9 @@
 apply plugin: 'com.android.library'
 
-repositories {
-    mavenCentral()
-}
+apply from: "../../commonLocalRepo.gradle"
 
 dependencies {
-    compile 'com.google.guava:guava:11.0.2'
+    compile 'com.google.guava:guava:15.0'
     compile fileTree(dir: 'libs', include: '*.jar')
 }
 
