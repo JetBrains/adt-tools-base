@@ -200,9 +200,9 @@ abstract class TaskManager {
 
     private static final String CONNECTED_CHECK = "connectedCheck"
 
-    // Tasks
-    private Task assembleAndroidTest
+    private static final String ASSEMBLE_ANDROID_TEST = "assembleAndroidTest"
 
+    // Tasks
     private Copy jacocoAgentTask
 
     public Task lintCompile
@@ -292,12 +292,11 @@ abstract class TaskManager {
         }
 
         tasks.create(MAIN_PREBUILD)
-    }
 
-    public void createAssembleAndroidTestTask() {
-        assembleAndroidTest = project.getTasks().create("assembleAndroidTest");
-        assembleAndroidTest.setGroup(BasePlugin.BUILD_GROUP);
-        assembleAndroidTest.setDescription("Assembles all the Test applications.");
+        tasks.create(ASSEMBLE_ANDROID_TEST) {
+            it.setGroup(BasePlugin.BUILD_GROUP);
+            it.setDescription("Assembles all the Test applications.");
+        }
     }
 
     public void createMockableJarTask() {
@@ -1432,7 +1431,9 @@ abstract class TaskManager {
 
         createPackagingTask(tasks, variantData, false /*publishApk*/)
 
-        assembleAndroidTest.dependsOn variantOutputData.assembleTask
+        tasks.named(ASSEMBLE_ANDROID_TEST) {
+            it.dependsOn variantOutputData.assembleTask
+        }
 
         createConnectedTestForVariantData(tasks, variantData, false)
     }
@@ -1465,14 +1466,17 @@ abstract class TaskManager {
     // Add tasks for running lint on individual variants. We've already added a
     // lint task earlier which runs on all variants.
     public void createLintTasks(
+            TaskFactory tasks,
             List<BaseVariantData<? extends BaseVariantOutputData>> variantDataList) {
-        Lint lint = project.tasks.create("lint", Lint)
+        final Lint lint = project.tasks.create("lint", Lint)
         lint.description = "Runs lint on all variants."
         lint.group = JavaBasePlugin.VERIFICATION_GROUP
         lint.setLintOptions(getExtension().lintOptions)
         lint.setSdkHome(sdkHandler.getSdkFolder())
         lint.setToolingRegistry(toolingRegistry)
-        project.tasks.getByName(JavaBasePlugin.CHECK_TASK_NAME).dependsOn lint
+        tasks.named(JavaBasePlugin.CHECK_TASK_NAME) {
+            it.dependsOn lint
+        }
         lintAll = lint
 
         int count = variantDataList.size()
