@@ -49,4 +49,7 @@
 
     <instantiate from="test/app_package/ApplicationTest.java.ftl"
                    to="${testOut}/ApplicationTest.java" />
+
+    <instantiate from="test/app_package/ExampleUnitTest.java.ftl"
+                   to="${unitTestOut}/ExampleUnitTest.java" />
 </recipe>
