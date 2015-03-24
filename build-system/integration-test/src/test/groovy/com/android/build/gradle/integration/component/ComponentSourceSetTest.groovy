@@ -33,7 +33,9 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
 class ComponentSourceSetTest {
 
     @ClassRule
-    public static GradleTestProject project = GradleTestProject.builder().create();
+    public static GradleTestProject project = GradleTestProject.builder()
+            .forExpermimentalPlugin(true)
+            .create();
 
     @BeforeClass
     public static void setUp() {

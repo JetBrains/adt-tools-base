@@ -80,7 +80,9 @@ public class GradleTestProject implements TestRule {
 
     public static final int DEFAULT_COMPILE_SDK_VERSION = 21;
     public static final String DEFAULT_BUILD_TOOL_VERSION = "21.0.1";
-    public static final String GRADLE_TEST_VERSION = "2.4-20150121230028+0000";
+
+    public static final String GRADLE_TEST_VERSION = "2.2.1";
+    public static final String GRADLE_EXP_TEST_VERSION = "2.4-20150121230028+0000";
 
     private static final String ANDROID_GRADLE_VERSION = "1.1.0-rc4";
     private static final String COMMON_HEADER = "commonHeader.gradle";
@@ -99,11 +101,18 @@ public class GradleTestProject implements TestRule {
 
         boolean captureStdOut = false;
 
+        boolean experimentalMode = false;
+
         /**
          * Create a GradleTestProject.
          */
         public GradleTestProject create()  {
-            return new GradleTestProject(name, testProject, captureStdOut);
+            return new GradleTestProject(
+                    name,
+                    testProject,
+                    experimentalMode,
+                    experimentalMode ? GRADLE_EXP_TEST_VERSION : GRADLE_TEST_VERSION,
+                    captureStdOut);
         }
 
         /**
@@ -118,6 +127,11 @@ public class GradleTestProject implements TestRule {
 
         public Builder captureStdOut(boolean captureStdOut) {
             this.captureStdOut = captureStdOut;
+            return this;
+        }
+
+        public Builder forExpermimentalPlugin(boolean mode) {
+            this.experimentalMode = mode;
             return this;
         }
 
@@ -175,19 +189,26 @@ public class GradleTestProject implements TestRule {
     @Nullable
     private TestProject testProject;
 
+    private boolean experimentalMode;
+    private String targetGradleVersion;
+
     private GradleTestProject() {
-        this(null, null, false);
+        this(null, null, false, GRADLE_TEST_VERSION, false);
     }
 
     private GradleTestProject(
             @Nullable String name,
             @Nullable TestProject testProject,
+            boolean experimentalMode,
+            String targetGradleVersion,
             boolean captureStdOut) {
         sdkDir = SdkHelper.findSdkDir();
         ndkDir = findNdkDir();
         String buildDir = System.getenv("PROJECT_BUILD_DIR");
         outDir = (buildDir == null) ? new File("build/tests") : new File(buildDir, "tests");
         this.name = (name == null) ? DEFAULT_TEST_PROJECT_NAME : name;
+        this.experimentalMode = experimentalMode;
+        this.targetGradleVersion = targetGradleVersion;
         this.testProject = testProject;
         if (captureStdOut) {
             stdout = new ByteArrayOutputStream();
@@ -428,8 +449,7 @@ public class GradleTestProject implements TestRule {
                 "        maven { url '" + getRepoDir().toString() + "' }\n" +
                 "    }\n" +
                 "    dependencies {\n" +
-                "        classpath \"com.android.tools.build:gradle:" + ANDROID_GRADLE_VERSION + "\"\n" +
-                "        classpath \"com.android.tools.build:gradle-experimental:" + ANDROID_GRADLE_VERSION + "\"\n" +
+                "        classpath \"com.android.tools.build:gradle" + (experimentalMode ? "-experimental" : "") + ":" + ANDROID_GRADLE_VERSION + "\"\n" +
                 "    }\n" +
                 "}\n";
     }
@@ -748,7 +768,7 @@ public class GradleTestProject implements TestRule {
         ((DefaultGradleConnector) connector).daemonMaxIdleTime(10, TimeUnit.SECONDS);
 
         return connector
-                .useGradleVersion(GRADLE_TEST_VERSION)
+                .useGradleVersion(targetGradleVersion)
                 .forProjectDirectory(testDir)
                 .connect();
     }

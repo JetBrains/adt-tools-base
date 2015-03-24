@@ -29,6 +29,7 @@ class NdkVariantsTest {
 
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
+            .forExpermimentalPlugin(true)
             .fromSample("ndkVariants")
             .create()
 
