@@ -352,7 +352,8 @@ class DependencyManager {
                             extraModelInfo.handleSyncError(
                                     artifactInfo,
                                     SyncIssue.TYPE_MISMATCH_DEP,
-                                    "Conflict with dependency '${artifactInfo}'. Resolved versions for app and test app differ.")
+                                    "Conflict with dependency '${artifactInfo}'. " +
+                                            "Resolved versions for app ($testedVersion) and test app (${coord.getVersion()}) differ.")
                         } else {
                             // same version, skip packaging of the dependency in the test app.
                             jar.setPackaged(false)
@@ -379,7 +380,9 @@ class DependencyManager {
                     !(dep instanceof ProjectDependency)) {
                 Set<File> files = ((SelfResolvingDependency) dep).resolve()
                 for (File f : files) {
-                    if (DEBUG_DEPENDENCY) println "LOCAL compile: " + f.getName()
+                    if (DEBUG_DEPENDENCY) {
+                        println "LOCAL compile: " + f.getName()
+                    }
                     // only accept local jar, no other types.
                     if (!f.getName().toLowerCase().endsWith(DOT_JAR)) {
                         extraModelInfo.handleSyncError(
@@ -400,7 +403,9 @@ class DependencyManager {
                     !(dep instanceof ProjectDependency)) {
                 Set<File> files = ((SelfResolvingDependency) dep).resolve()
                 for (File f : files) {
-                    if (DEBUG_DEPENDENCY) println "LOCAL package: " + f.getName()
+                    if (DEBUG_DEPENDENCY) {
+                        println "LOCAL package: " + f.getName()
+                    }
                     // only accept local jar, no other types.
                     if (!f.getName().toLowerCase().endsWith(DOT_JAR)) {
                         extraModelInfo.handleSyncError(
