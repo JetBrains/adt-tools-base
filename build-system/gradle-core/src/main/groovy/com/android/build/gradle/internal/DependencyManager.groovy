@@ -290,22 +290,22 @@ class DependencyManager {
 
         for (LibraryDependencyImpl lib : compiledAndroidLibraries) {
             if (!copyOfPackagedLibs.contains(lib)) {
-                extraModelInfo.handleSyncError(
+                variantDeps.checker.addSyncIssue(extraModelInfo.handleSyncError(
                         lib.resolvedCoordinates.toString(),
                         SyncIssue.TYPE_NON_JAR_PROVIDED_DEP,
                         "Project ${project.name}: provided dependencies can only be jars. " +
-                                "${lib.resolvedCoordinates} is an Android Library.")
+                                "${lib.resolvedCoordinates} is an Android Library."))
             } else {
                 copyOfPackagedLibs.remove(lib)
             }
         }
         // at this stage copyOfPackagedLibs should be empty, if not, error.
         for (LibraryDependencyImpl lib : copyOfPackagedLibs) {
-            extraModelInfo.handleSyncError(
+            variantDeps.checker.addSyncIssue(extraModelInfo.handleSyncError(
                     lib.resolvedCoordinates.toString(),
                     SyncIssue.TYPE_NON_JAR_PACKAGE_DEP,
                     "Project ${project.name}: apk dependencies can only be jars. " +
-                            "${lib.resolvedCoordinates} is an Android Library.")
+                            "${lib.resolvedCoordinates} is an Android Library."))
         }
 
         // 2. merge jar dependencies with a single list where items have packaged/compiled properties.
@@ -349,11 +349,12 @@ class DependencyManager {
                         // verify that they are the same version
                         if (!testedVersion.equals(coord.getVersion())) {
                             String artifactInfo = "${coord.getGroupId()}:${coord.artifactId}"
-                            extraModelInfo.handleSyncError(
+                            variantDeps.checker.addSyncIssue(extraModelInfo.handleSyncError(
                                     artifactInfo,
                                     SyncIssue.TYPE_MISMATCH_DEP,
                                     "Conflict with dependency '${artifactInfo}'. " +
-                                            "Resolved versions for app ($testedVersion) and test app (${coord.getVersion()}) differ.")
+                                            "Resolved versions for app ($testedVersion) and test app (${coord.getVersion()}) differ."))
+
                         } else {
                             // same version, skip packaging of the dependency in the test app.
                             jar.setPackaged(false)
@@ -385,11 +386,11 @@ class DependencyManager {
                     }
                     // only accept local jar, no other types.
                     if (!f.getName().toLowerCase().endsWith(DOT_JAR)) {
-                        extraModelInfo.handleSyncError(
+                        variantDeps.checker.addSyncIssue(extraModelInfo.handleSyncError(
                                 f.absolutePath,
                                 SyncIssue.TYPE_NON_JAR_LOCAL_DEP,
                                 "Project ${project.name}: Only Jar-type local " +
-                                        "dependencies are supported. Cannot handle: ${f.absolutePath}")
+                                        "dependencies are supported. Cannot handle: ${f.absolutePath}"))
                     } else {
                         localCompiledJars.add(f)
                     }
@@ -408,11 +409,11 @@ class DependencyManager {
                     }
                     // only accept local jar, no other types.
                     if (!f.getName().toLowerCase().endsWith(DOT_JAR)) {
-                        extraModelInfo.handleSyncError(
+                        variantDeps.checker.addSyncIssue(extraModelInfo.handleSyncError(
                                 f.absolutePath,
                                 SyncIssue.TYPE_NON_JAR_LOCAL_DEP,
                                 "Project ${project.name}: Only Jar-type local " +
-                                        "dependencies are supported. Cannot handle: ${f.absolutePath}")
+                                        "dependencies are supported. Cannot handle: ${f.absolutePath}"))
                     } else {
                         localPackagedJars.add(f)
                     }
@@ -732,10 +733,10 @@ class DependencyManager {
                     }
                     // check this jar does not have a dependency on an library, as this would not work.
                     if (!nestedLibraries.isEmpty()) {
-                        extraModelInfo.handleSyncError(
+                        configDependencies.checker.addSyncIssue(extraModelInfo.handleSyncError(
                                 new MavenCoordinatesImpl(artifact).toString(),
                                 SyncIssue.TYPE_JAR_DEPEND_ON_AAR,
-                                "Module version $moduleVersion depends on libraries but is a jar")
+                                "Module version $moduleVersion depends on libraries but is a jar"))
                     }
 
                     if (jarsForThisModule == null) {
@@ -758,23 +759,23 @@ class DependencyManager {
                         name += ":$artifact.classifier"
                     }
 
-                    extraModelInfo.handleSyncError(
+                    configDependencies.checker.addSyncIssue(extraModelInfo.handleSyncError(
                             name,
                             SyncIssue.TYPE_DEPENDENCY_IS_APK,
                             "Dependency ${name} on project ${project.name} resolves to an APK" +
                                     " archive which is not supported" +
-                                    " as a compilation dependency. File: ${artifact.file}")
+                                    " as a compilation dependency. File: ${artifact.file}"))
                 } else if (artifact.type == "apklib") {
                     String name = "$moduleVersion.group:$moduleVersion.name:$moduleVersion.version"
                     if (artifact.classifier != null) {
                         name += ":$artifact.classifier"
                     }
 
-                    extraModelInfo.handleSyncError(
+                    configDependencies.checker.addSyncIssue(extraModelInfo.handleSyncError(
                             name,
                             SyncIssue.TYPE_DEPENDENCY_IS_APKLIB,
                             "Packaging for dependency ${name} is 'apklib' and is not supported. " +
-                                    "Only 'aar' libraries are supported.")
+                                    "Only 'aar' libraries are supported."))
                 }
             }
 
