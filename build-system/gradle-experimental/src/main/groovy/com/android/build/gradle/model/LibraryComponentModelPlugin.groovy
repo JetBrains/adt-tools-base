@@ -18,8 +18,8 @@ package com.android.build.gradle.model
 
 import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.LibraryExtension
-import com.android.build.gradle.internal.ExtraModelInfo
 import com.android.build.gradle.internal.DependencyManager
+import com.android.build.gradle.internal.ExtraModelInfo
 import com.android.build.gradle.internal.SdkHandler
 import com.android.build.gradle.internal.TaskManager
 import com.android.build.gradle.internal.variant.LibraryVariantFactory
@@ -27,7 +27,6 @@ import com.android.build.gradle.internal.variant.VariantFactory
 import com.android.builder.core.AndroidBuilder
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.gradle.api.Task
 import org.gradle.internal.reflect.Instantiator
 import org.gradle.internal.service.ServiceRegistry
 import org.gradle.model.Model
@@ -38,63 +37,49 @@ import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry
  * Gradle component model plugin class for 'application' projects.
  */
 public class LibraryComponentModelPlugin implements Plugin<Project> {
-    /**
-     * Default assemble task for the default-published artifact. this is needed for
-     * the prepare task on the consuming project.
-     */
-    Task assembleDefault
-
     @Override
     void apply(Project project) {
-        project.plugins.apply(InitializationPlugin)
         project.plugins.apply(BaseComponentModelPlugin)
-
-        assembleDefault = project.tasks.create("assembleDefault")
+        project.tasks.create("assembleDefault")
     }
 
-    private static class InitializationPlugin implements Plugin<Project> {
-        @Override
-        void apply(Project project) {
+    static class Rules extends RuleSource{
+
+        @Model
+        Boolean isApplication() {
+            return false
         }
 
-        static class Rules extends RuleSource{
+        @Model
+        TaskManager createTaskManager(
+                BaseExtension androidExtension,
+                Project project,
+                AndroidBuilder androidBuilder,
+                SdkHandler sdkHandler,
+                ExtraModelInfo extraModelInfo,
+                ToolingModelBuilderRegistry toolingRegistry) {
+            DependencyManager dependencyManager = new DependencyManager(project, extraModelInfo)
 
-            @Model
-            Boolean isApplication() {
-                return false
-            }
+            return new LibraryComponentTaskManager(
+                    project,
+                    project.tasks,
+                    androidBuilder,
+                    androidExtension,
+                    sdkHandler,
+                    dependencyManager,
+                    toolingRegistry)
+        }
 
-            @Model
-            TaskManager createTaskManager(
-                    BaseExtension androidExtension,
-                    Project project,
-                    AndroidBuilder androidBuilder,
-                    SdkHandler sdkHandler,
-                    ExtraModelInfo extraModelInfo,
-                    ToolingModelBuilderRegistry toolingRegistry) {
-                DependencyManager dependencyManager = new DependencyManager(project, extraModelInfo)
-
-                return new LibraryComponentTaskManager(
-                        project,
-                        project.tasks,
-                        androidBuilder,
-                        androidExtension,
-                        sdkHandler,
-                        dependencyManager,
-                        toolingRegistry);
-            }
-
-            @Model
-            VariantFactory createVariantFactory(
-                    ServiceRegistry serviceRegistry,
-                    AndroidBuilder androidBuilder,
-                    BaseExtension extension) {
-                Instantiator instantiator = serviceRegistry.get(Instantiator.class);
-                return new LibraryVariantFactory(
-                        instantiator,
-                        androidBuilder,
-                        (LibraryExtension) extension);
-            }
+        @Model
+        VariantFactory createVariantFactory(
+                ServiceRegistry serviceRegistry,
+                AndroidBuilder androidBuilder,
+                BaseExtension extension) {
+            Instantiator instantiator = serviceRegistry.get(Instantiator.class)
+            return new LibraryVariantFactory(
+                    instantiator,
+                    androidBuilder,
+                    (LibraryExtension) extension)
         }
     }
 }
