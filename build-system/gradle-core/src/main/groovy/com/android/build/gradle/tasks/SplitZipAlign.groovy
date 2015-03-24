@@ -19,6 +19,7 @@ package com.android.build.gradle.tasks
 import com.android.annotations.NonNull
 import com.android.build.FilterData
 import com.android.build.OutputFile
+import com.android.build.OutputFile.FilterType
 import com.android.build.gradle.api.ApkOutputFile
 import com.android.build.gradle.internal.model.FilterDataImpl
 import com.google.common.base.Optional
@@ -28,12 +29,15 @@ import com.google.common.collect.ImmutableSet
 import com.google.common.util.concurrent.Callables
 import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.OutputFiles
 import org.gradle.api.tasks.ParallelizableTask
 import org.gradle.api.tasks.TaskAction
 
+import java.util.logging.Filter
 import java.util.regex.Matcher
 import java.util.regex.Pattern
 
@@ -65,139 +69,107 @@ class SplitZipAlign extends DefaultTask {
 
     @OutputFiles
     public List<File> getOutputFiles() {
-        return getOutputSplitFiles()*.getOutputFile()
+        getOutputSplitFiles()*.getOutputFile()
     }
-
-    ImmutableList<ApkOutputFile> mOutputFiles;
 
     @NonNull
     public synchronized  ImmutableList<ApkOutputFile> getOutputSplitFiles() {
 
-        if (mOutputFiles == null) {
-            ImmutableList.Builder<ApkOutputFile> builder = ImmutableList.builder();
-            processDensityFilters(densityFilters, builder);
-            processFilters(abiFilters, OutputFile.FilterType.ABI, builder);
-            processFilters(languageFilters, OutputFile.FilterType.LANGUAGE, builder);
-            mOutputFiles = builder.build();
+        ImmutableList.Builder<ApkOutputFile> outputFiles = ImmutableList.builder();
+        Closure addingLogic = { String split, File file ->
+            outputFiles.add(new ApkOutputFile(OutputFile.OutputType.SPLIT,
+                    ImmutableList.<FilterData>of(
+                            FilterDataImpl.Builder.build(
+                                    getFilterType(split).toString(), getFilter(split))),
+                    Callables.<File>returning(
+                            new File(outputDirectory,
+                                    "${project.archivesBaseName}-${outputBaseName}_${split}.apk"))))
         }
-        return mOutputFiles;
+
+        forEachUnalignedInput(addingLogic)
+        forEachUnsignedInput(addingLogic)
+        return outputFiles.build()
     }
 
-    /**
-     * Process density filters which can have some suffix appended after the filter identifier.
-     */
-    private void processDensityFilters(Set<String> filters,
-            ImmutableList.Builder<ApkOutputFile> builder) {
-        if (filters != null) {
-            for (String filter : filters) {
-                String fileName = "${project.archivesBaseName}-${outputBaseName}_${filter}"
-                Optional<File> outputFile = findFileStartingWithName(outputDirectory, fileName);
-                if (outputFile.isPresent()) {
-                    List<FilterData> filtersData = ImmutableList.of(
-                            FilterDataImpl.Builder.build(OutputFile.FilterType.DENSITY.name(), filter))
-                    builder.add(new ApkOutputFile(
-                            OutputFile.OutputType.SPLIT,
-                            filtersData,
-                            Callables.returning(outputFile.get())));
+    FilterType getFilterType(String filter) {
+        if (languageFilters.contains(filter)) {
+            return FilterType.LANGUAGE
+        }
+        if (abiFilters.contains(filter)) {
+            return FilterType.ABI
+        }
+        return FilterType.DENSITY
+    }
+
+    String getFilter(String filterWithPossibleSuffix) {
+        FilterType type = getFilterType(filterWithPossibleSuffix)
+        if (type == FilterType.DENSITY) {
+            for (String density : densityFilters) {
+                if (filterWithPossibleSuffix.startsWith(density)) {
+                    return density
                 }
             }
         }
-    }
-
-    /**
-     * Returns a file starting with the provided file name prefix.
-     * @param directory a directory where the file could be located.
-     * @param name the file prefix.
-     * @return the file if found of {@link Optional#absent()} if not.
-     */
-    private static Optional<File> findFileStartingWithName(File directory, String name) {
-        for (File file : directory.listFiles()) {
-            if (file.getName().startsWith(name)) {
-                return Optional.of(file);
-            }
-        }
-        return Optional.absent();
-    }
-
-
-
-    private void processFilters(Set<String> filters, OutputFile.FilterType filterType,
-            ImmutableList.Builder<ApkOutputFile> builder) {
-        if (filters != null) {
-            for (String filter : filters) {
-                String fileName = "${project.archivesBaseName}-${outputBaseName}_${filter}.apk"
-                File outputFile = new File(outputDirectory, fileName);
-                List<FilterData> filtersData = ImmutableList.of(
-                        FilterDataImpl.Builder.build(filterType.name(), filter))
-                builder.add(new ApkOutputFile(
-                        OutputFile.OutputType.SPLIT,
-                        filtersData,
-                        Callables.returning(outputFile)));
-            }
-        }
+        return filterWithPossibleSuffix
     }
 
     /**
      * Returns true if the passed string is one of the filter we must process potentially followed
      * by a prefix (some density filters get V4, V16, etc... appended).
      */
-    private boolean isFilter(String potentialFilterWithSuffix) {
+    boolean isFilter(String potentialFilterWithSuffix) {
         for (String density : densityFilters) {
             if (potentialFilterWithSuffix.startsWith(density)) {
-                return true;
+                return true
             }
         }
         if (languageFilters.contains(potentialFilterWithSuffix)) {
-            return true;
+            return true
         }
         if (abiFilters.contains(potentialFilterWithSuffix)) {
-            return true;
+            return true
+        }
+        return false
+    }
+
+    private void forEachUnalignedInput(Closure closure) {
+        Pattern unalignedPattern = Pattern.compile(
+                "${project.archivesBaseName}-${outputBaseName}_(.*)-unaligned.apk")
+
+        for (File file : getInputFiles()) {
+            Matcher unaligned = unalignedPattern.matcher(file.getName())
+            if (unaligned.matches() && isFilter(unaligned.group(1))) {
+                closure(unaligned.group(1), file);
+            }
         }
     }
 
-    private Set<File> collectDirectories(List<File> files) {
-        ImmutableSet.Builder<File> directories = ImmutableSet.builder();
-        for (File file : files) {
-            directories.add(file.getParentFile())
+    private void forEachUnsignedInput(Closure closure) {
+        Pattern unsignedPattern = Pattern.compile(
+                "${project.archivesBaseName}-${outputBaseName}_(.*)-unsigned.apk")
+
+        for (File file : getInputFiles()) {
+            Matcher unsigned = unsignedPattern.matcher(file.getName())
+            if (unsigned.matches() && isFilter(unsigned.group(1))) {
+                closure(unsigned.group(1), file)
+            }
         }
-        return directories.build();
     }
 
     @TaskAction
     void splitZipAlign() {
 
-        Pattern unalignedPattern = Pattern.compile(
-                "${project.archivesBaseName}-${outputBaseName}_(.*)-unaligned.apk")
-        Pattern unsignedPattern = Pattern.compile(
-                "${project.archivesBaseName}-${outputBaseName}_(.*)-unsigned.apk")
-
-        def directories = collectDirectories(inputFiles);
-        for (File directory : directories) {
-            for (File file : directory.listFiles()) {
-                Matcher unaligned = unalignedPattern.matcher(file.getName())
-                if (unaligned.matches() && isFilter(unaligned.group(1))) {
-                    File out = new File(getOutputDirectory(),
-                            "${project.archivesBaseName}-${outputBaseName}_${unaligned.group(1)}.apk")
-                    project.exec {
-                        executable = getZipAlignExe()
-                        args '-f', '4'
-                        args file.absolutePath
-                        args out
-                    }
-                } else {
-                    Matcher unsigned = unsignedPattern.matcher(file.getName())
-                    if (unsigned.matches() && isFilter(unsigned.group(1))) {
-                        File out = new File(getOutputDirectory(),
-                                "${project.archivesBaseName}-${outputBaseName}_${unsigned.group(1)}.apk")
-                        project.exec {
-                            executable = getZipAlignExe()
-                            args '-f', '4'
-                            args file.absolutePath
-                            args out
-                        }
-                    }
-                }
+        Closure zipAlignIt = { String split, File file ->
+            File out = new File(getOutputDirectory(),
+                    "${project.archivesBaseName}-${outputBaseName}_${split}.apk")
+            project.exec {
+                executable = getZipAlignExe()
+                args '-f', '4'
+                args file.absolutePath
+                args out
             }
         }
+        forEachUnalignedInput(zipAlignIt)
+        forEachUnsignedInput(zipAlignIt)
     }
 }
