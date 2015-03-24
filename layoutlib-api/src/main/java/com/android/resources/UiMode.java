@@ -25,7 +25,8 @@ public enum UiMode implements ResourceEnum {
     CAR("car", "Car Dock", 8),
     DESK("desk", "Desk Dock", 8),
     TELEVISION("television", "Television", 13),
-    APPLIANCE("appliance", "Appliance", 16);
+    APPLIANCE("appliance", "Appliance", 16),
+    WATCH("watch", "Watch", 20);
 
     private final String mValue;
     private final String mDisplayValue;
