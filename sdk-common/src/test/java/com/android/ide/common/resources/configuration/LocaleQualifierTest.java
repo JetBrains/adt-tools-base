@@ -89,6 +89,9 @@ public class LocaleQualifierTest extends TestCase {
         assertEquals("eng", getQualifier("ENG").getLanguage());
         assertEquals("eng", getQualifier("ENG").getFull());
 
+        assertEquals("foo", getQualifier("foo").getLanguage());
+        assertNull(getQualifier("car")); // car mode: not recognized as language
+
         assertEquals("eng", getQualifier("eng-rUS").getLanguage());
         assertEquals("US", getQualifier("eng-rUS").getRegion());
         assertNull(getQualifier("eng-rUS").getScript());
