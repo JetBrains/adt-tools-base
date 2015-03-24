@@ -47,6 +47,8 @@ public class ApiDatabase {
             Maps.newHashMapWithExpectedSize(1000);
     @NonNull private final  Map<String,Set<String>> intFieldMap =
             Maps.newHashMapWithExpectedSize(1000);
+    @NonNull private final  Set<String> classSet =
+            Sets.newHashSetWithExpectedSize(1000);
 
     public ApiDatabase(@NonNull List<String> lines) {
         this.lines = lines;
@@ -102,7 +104,7 @@ public class ApiDatabase {
     }
 
     public boolean hasClass(String className) {
-        return methodMap.get(className) != null || fieldMap.get(className) != null;
+        return classSet.contains(className);
     }
 
     public Set<String> getDeclaredIntFields(String className) {
@@ -248,6 +250,7 @@ public class ApiDatabase {
                     Extractor.warning("Warning: Did not match as a class/interface: " + line);
                 } else {
                     currentClass = currentPackage + '.' + matcher.group(4);
+                    classSet.add(currentClass);
 
                     String superClass = matcher.group(6);
                     if (superClass != null) {
@@ -286,7 +289,13 @@ public class ApiDatabase {
     static String getRawClass(@NonNull String name) {
         int index = name.indexOf('<');
         if (index != -1) {
-            return name.substring(0, index);
+            int end = name.indexOf('>', index + 1);
+            if (end == -1 || end == name.length() - 1) {
+                return name.substring(0, index);
+            } else {
+                // e.g. test.pkg.ArrayAdapter<T>.Inner
+                return name.substring(0, index) + name.substring(end + 1);
+            }
         }
         return name;
     }

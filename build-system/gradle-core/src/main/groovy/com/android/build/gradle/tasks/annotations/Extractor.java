@@ -65,14 +65,19 @@ import org.eclipse.jdt.internal.compiler.ast.StringLiteral;
 import org.eclipse.jdt.internal.compiler.ast.TrueLiteral;
 import org.eclipse.jdt.internal.compiler.ast.TypeDeclaration;
 import org.eclipse.jdt.internal.compiler.impl.ReferenceContext;
+import org.eclipse.jdt.internal.compiler.lookup.AnnotationBinding;
 import org.eclipse.jdt.internal.compiler.lookup.Binding;
 import org.eclipse.jdt.internal.compiler.lookup.BlockScope;
 import org.eclipse.jdt.internal.compiler.lookup.ClassScope;
+import org.eclipse.jdt.internal.compiler.lookup.CompilationUnitScope;
+import org.eclipse.jdt.internal.compiler.lookup.ElementValuePair;
 import org.eclipse.jdt.internal.compiler.lookup.FieldBinding;
 import org.eclipse.jdt.internal.compiler.lookup.LocalVariableBinding;
+import org.eclipse.jdt.internal.compiler.lookup.MemberTypeBinding;
 import org.eclipse.jdt.internal.compiler.lookup.MethodBinding;
 import org.eclipse.jdt.internal.compiler.lookup.MethodScope;
 import org.eclipse.jdt.internal.compiler.lookup.Scope;
+import org.eclipse.jdt.internal.compiler.lookup.SourceTypeBinding;
 import org.eclipse.jdt.internal.compiler.lookup.TypeBinding;
 import org.eclipse.jdt.internal.compiler.lookup.TypeIds;
 import org.w3c.dom.Document;
@@ -141,7 +146,7 @@ public class Extractor {
      * file since it has class retention and will appear in the compiled .jar version of
      * the library
      */
-    private boolean includeClassRetentionAnnotations = false;
+    private final boolean includeClassRetentionAnnotations;
 
     /**
      * Whether we should skip nullable annotations in merged in annotations zip files
@@ -190,12 +195,15 @@ public class Extractor {
     private boolean listIgnored;
     private Map<String,Annotation> typedefs;
     private List<File> classFiles;
+    private Map<String,Boolean> sourceRetention;
 
-    public Extractor(@Nullable ApiDatabase apiFilter, @Nullable File classDir, boolean displayInfo) {
+    public Extractor(@Nullable ApiDatabase apiFilter, @Nullable File classDir, boolean displayInfo,
+            boolean includeClassRetentionAnnotations) {
         this.apiFilter = apiFilter;
         this.listIgnored = apiFilter != null;
         this.classDir = classDir;
         this.displayInfo = displayInfo;
+        this.includeClassRetentionAnnotations = includeClassRetentionAnnotations;
     }
 
     public void extractFromProjectSource(Collection<CompilationUnitDeclaration> units) {
@@ -374,6 +382,75 @@ public class Extractor {
         return null;
     }
 
+    boolean hasSourceRetention(@NonNull String fqn, @Nullable Annotation annotation) {
+        if (sourceRetention == null) {
+            sourceRetention = Maps.newHashMapWithExpectedSize(20);
+            // The @IntDef and @String annotations have always had source retention,
+            // and always must (because we can't express fully qualified field references
+            // in a .class file.)
+            sourceRetention.put(INT_DEF_ANNOTATION, true);
+            sourceRetention.put(STRING_DEF_ANNOTATION, true);
+            // The @Nullable and @NonNull annotations have always had class retention
+            sourceRetention.put(SUPPORT_NOTNULL, false);
+            sourceRetention.put(SUPPORT_NULLABLE, false);
+
+            // TODO: Look at support library statistics and put the other most
+            // frequently referenced annotations in here statically
+
+            // The resource annotations vary: up until 22.0.1 they had source
+            // retention but then switched to class retention.
+        }
+
+        Boolean source = sourceRetention.get(fqn);
+
+        if (source != null) {
+            return source;
+        }
+
+        if (annotation == null || annotation.type == null
+                || annotation.type.resolvedType == null) {
+            // Assume it's class retention: that's what nearly all annotations
+            // currently are. (We do dynamic lookup of unknown ones to allow for
+            // this version of the Gradle plugin to be able to work on future
+            // versions of the support library with new annotations, where it's
+            // possible some annotations need to use source retention.
+            sourceRetention.put(fqn, false);
+            return false;
+        } else if (annotation.type.resolvedType.getAnnotations() != null) {
+            for (AnnotationBinding binding : annotation.type.resolvedType.getAnnotations()) {
+                if (hasSourceRetention(binding)) {
+                    sourceRetention.put(fqn, true);
+                    return true;
+                }
+            }
+        }
+
+        sourceRetention.put(fqn, false);
+        return false;
+    }
+
+    @SuppressWarnings("unused")
+    static boolean hasSourceRetention(@NonNull AnnotationBinding a) {
+        if (new String(a.getAnnotationType().readableName()).equals("java.lang.annotation.Retention")) {
+            ElementValuePair[] pairs = a.getElementValuePairs();
+            if (pairs == null || pairs.length != 1) {
+                warning("Expected exactly one parameter passed to @Retention");
+                return false;
+            }
+            ElementValuePair pair = pairs[0];
+            Object value = pair.getValue();
+            if (value instanceof FieldBinding) {
+                FieldBinding field = (FieldBinding) value;
+                if ("SOURCE".equals(new String(field.readableName()))) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    @SuppressWarnings("unused")
     static boolean hasSourceRetention(@NonNull Annotation[] annotations) {
         for (Annotation annotation : annotations) {
             String typeName = Extractor.getFqn(annotation);
@@ -396,7 +473,6 @@ public class Extractor {
                                             new String(fb.declaringClass.readableName()))) {
                                 return true;
                             }
-
                         }
                     }
                 }
@@ -409,9 +485,11 @@ public class Extractor {
     private void addAnnotations(@Nullable Annotation[] annotations, @NonNull Item item) {
         if (annotations != null) {
             for (Annotation annotation : annotations) {
-                AnnotationData annotationData = createAnnotation(annotation);
-                if (annotationData != null) {
-                    item.annotations.add(annotationData);
+                if (isRelevantAnnotation(annotation)) {
+                    AnnotationData annotationData = createAnnotation(annotation);
+                    if (annotationData != null) {
+                        item.annotations.add(annotationData);
+                    }
                 }
             }
         }
@@ -444,6 +522,10 @@ public class Extractor {
                 //    android.support.annotation.DrawableRes
                 String resAnnotation = SUPPORT_ANNOTATIONS_PREFIX +
                         fqn.substring(ANDROID_ANNOTATIONS_PREFIX.length());
+                if (!includeClassRetentionAnnotations
+                        && !hasSourceRetention(resAnnotation, null)) {
+                    return null;
+                }
                 recordStats(resAnnotation);
                 return new AnnotationData(resAnnotation);
             } else if (isRelevantFrameworkAnnotation(fqn)) {
@@ -451,6 +533,10 @@ public class Extractor {
                 // support annotations
                 String supportAnnotation = SUPPORT_ANNOTATIONS_PREFIX +
                         fqn.substring(ANDROID_ANNOTATIONS_PREFIX.length());
+                if (!includeClassRetentionAnnotations
+                        && !hasSourceRetention(supportAnnotation, null)) {
+                    return null;
+                }
                 recordStats(supportAnnotation);
                 return createData(supportAnnotation, annotation);
             }
@@ -482,30 +568,40 @@ public class Extractor {
         }
 
         for (Annotation annotation : annotations) {
-            String fqn = getFqn(annotation);
-            if (fqn == null) {
-                continue;
+            if (isRelevantAnnotation(annotation)) {
+                return true;
             }
-            if (fqn.startsWith(SUPPORT_ANNOTATIONS_PREFIX)) {
-                //noinspection PointlessBooleanExpression,ConstantConditions,RedundantIfStatement
-                if (!includeClassRetentionAnnotations &&
-                        (SUPPORT_NULLABLE.equals(fqn) ||
-                                SUPPORT_NOTNULL.equals(fqn))) {
-                    // @Nullable and @NonNull in the support package have class
-                    // retention; don't include them in the side-door file!
-                    return false;
-                }
+        }
 
-                return true;
-            } else if (fqn.startsWith(ANDROID_ANNOTATIONS_PREFIX)) {
-                return isRelevantFrameworkAnnotation(fqn);
+        return false;
+    }
+
+    private boolean isRelevantAnnotation(@NonNull Annotation annotation) {
+        String fqn = getFqn(annotation);
+        if (fqn == null || fqn.startsWith("java.lang.")) {
+            return false;
+        }
+        if (fqn.startsWith(SUPPORT_ANNOTATIONS_PREFIX)) {
+            //noinspection PointlessBooleanExpression,ConstantConditions,RedundantIfStatement
+            if (!includeClassRetentionAnnotations && !hasSourceRetention(fqn, annotation)) {
+                return false;
             }
-            if (fqn.equals(ANDROID_NULLABLE) || fqn.equals(ANDROID_NOTNULL)
-                    || isMagicConstant(fqn)) {
-                return true;
-            } else if (fqn.equals(IDEA_CONTRACT)) {
-                return true;
+
+            //noinspection RedundantIfStatement
+            if (fqn.endsWith(".Keep")) {
+                // TODO: Extract into a proguard file
+                return false;
             }
+
+            return true;
+        } else if (fqn.startsWith(ANDROID_ANNOTATIONS_PREFIX)) {
+            return isRelevantFrameworkAnnotation(fqn);
+        }
+        if (fqn.equals(ANDROID_NULLABLE) || fqn.equals(ANDROID_NOTNULL)
+                || isMagicConstant(fqn)) {
+            return true;
+        } else if (fqn.equals(IDEA_CONTRACT)) {
+            return true;
         }
 
         return false;
@@ -913,7 +1009,6 @@ public class Extractor {
         return false;
     }
 
-
     private boolean isRelevantAnnotation(Element annotationElement) {
         AnnotationData annotation = createAnnotation(annotationElement);
         if (annotation == null) {
@@ -978,6 +1073,9 @@ public class Extractor {
                 continue;
             }
             AnnotationData annotation = createAnnotation(annotationElement);
+            if (annotation == null) {
+                continue;
+            }
             boolean haveNullable = false;
             boolean haveNotNull = false;
             for (AnnotationData existing : item.annotations) {
@@ -1243,11 +1341,6 @@ public class Extractor {
         return listIgnored;
     }
 
-    @SuppressWarnings("UnusedDeclaration") // Used from separate driver
-    public void setIncludeClassRetentionAnnotations(boolean include) {
-        this.includeClassRetentionAnnotations = include;
-    }
-
     public AnnotationData createData(@NonNull String name, @NonNull Annotation annotation) {
         MemberValuePair[] pairs = annotation.memberValuePairs();
         if (pairs == null || pairs.length == 0) {
@@ -1504,7 +1597,7 @@ public class Extractor {
         public final List<AnnotationData> annotations = Lists.newArrayList();
 
         void write(PrintWriter writer) {
-            if (!isValid()) {
+            if (!isValid() || annotations.isEmpty()) {
                 return;
             }
             writer.print("  <item name=\"");
@@ -1537,6 +1630,61 @@ public class Extractor {
             signature2 = signature2.replace('&', '.');
 
             return signature1.compareTo(signature2);
+        }
+    }
+
+    private static class ClassItem extends Item {
+
+        @NonNull
+        public final String className;
+
+        private ClassItem(@NonNull String containingClass) {
+            this.className = containingClass;
+        }
+
+        @NonNull
+        static ClassItem create(@NonNull String classFqn) {
+            classFqn = ApiDatabase.getRawClass(classFqn);
+            return new ClassItem(classFqn);
+        }
+
+        @Override
+        boolean isValid() {
+            return true;
+        }
+
+        @Override
+        boolean isFiltered(@NonNull ApiDatabase database) {
+            return !database.hasClass(className);
+        }
+
+        @Override
+        String getSignature() {
+            return escapeXml(className);
+        }
+
+        @Override
+        public String toString() {
+            return "Class " + className;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            ClassItem that = (ClassItem) o;
+
+            return className.equals(that.className);
+        }
+
+        @Override
+        public int hashCode() {
+            return className.hashCode();
         }
     }
 
@@ -1645,7 +1793,7 @@ public class Extractor {
             boolean isVarargs = arguments != null && arguments.length > 0 &&
                     arguments[arguments.length - 1].isVarArgs();
             String parameterList = getParameterList(binding, isVarargs);
-            if (returnType == null || methodName == null || parameterList == null) {
+            if (returnType == null || methodName == null) {
                 return null;
             }
             //noinspection PointlessBooleanExpression,ConstantConditions
@@ -1777,7 +1925,7 @@ public class Extractor {
         return null;
     }
 
-    @Nullable
+    @NonNull
     private static String getParameterList(@NonNull MethodBinding binding, boolean isVarargs) {
         // Create compact type signature (no spaces around commas or generics arguments)
         StringBuilder sb = new StringBuilder();
@@ -1823,7 +1971,7 @@ public class Extractor {
                     arguments[arguments.length - 1].isVarArgs();
             String parameterList = getParameterList(methodBinding, isVarargs);
             String returnType = getReturnType(methodBinding);
-            if (methodName == null || parameterList == null || returnType == null) {
+            if (methodName == null || returnType == null) {
                 return null;
             }
 
@@ -1948,11 +2096,9 @@ public class Extractor {
                 String fqn = getFqn(scope);
                 Item item = FieldItem.create(fqn, fieldBinding);
                 if (item != null) {
-                    assert fqn != null;
                     addItem(fqn, item);
                     addAnnotations(annotations, item);
                 }
-
             }
             return false;
         }
@@ -2000,6 +2146,64 @@ public class Extractor {
                 }
             }
             return false;
+        }
+
+        @Override
+        public boolean visit(TypeDeclaration localTypeDeclaration, BlockScope scope) {
+            Annotation[] annotations = localTypeDeclaration.annotations;
+            if (hasRelevantAnnotations(annotations)) {
+                SourceTypeBinding binding = localTypeDeclaration.binding;
+                if (binding == null) {
+                    return true;
+                }
+
+                String fqn = getFqn(scope);
+                if (fqn == null) {
+                    fqn = new String(localTypeDeclaration.binding.readableName());
+                }
+                Item item = ClassItem.create(fqn);
+                addItem(fqn, item);
+                addAnnotations(annotations, item);
+
+            }
+            return true;
+        }
+
+        @Override
+        public boolean visit(TypeDeclaration memberTypeDeclaration, ClassScope scope) {
+            Annotation[] annotations = memberTypeDeclaration.annotations;
+            if (hasRelevantAnnotations(annotations)) {
+                SourceTypeBinding binding = memberTypeDeclaration.binding;
+                if (binding == null || !(binding instanceof MemberTypeBinding)) {
+                    return true;
+                }
+                if (binding.isAnnotationType() || binding.isAnonymousType()) {
+                    return false;
+                }
+
+                String fqn = new String(memberTypeDeclaration.binding.readableName());
+                Item item = ClassItem.create(fqn);
+                addItem(fqn, item);
+                addAnnotations(annotations, item);
+            }
+            return true;
+        }
+
+        @Override
+        public boolean visit(TypeDeclaration typeDeclaration, CompilationUnitScope scope) {
+            Annotation[] annotations = typeDeclaration.annotations;
+            if (hasRelevantAnnotations(annotations)) {
+                SourceTypeBinding binding = typeDeclaration.binding;
+                if (binding == null) {
+                    return true;
+                }
+                String fqn = new String(typeDeclaration.binding.readableName());
+                Item item = ClassItem.create(fqn);
+                addItem(fqn, item);
+                addAnnotations(annotations, item);
+
+            }
+            return true;
         }
     }
 }
