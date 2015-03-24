@@ -297,6 +297,9 @@ public final class SdkConstants {
     /** rs Libs output folder for support mode */
     public static final String FD_RS_OBJ = "rsObj";                     //$NON-NLS-1$
 
+    /** jars folder */
+    public static final String FD_JARS = "jars";                        //$NON-NLS-1$
+
     /* Folder Names for the Android SDK */
 
     /** Name of the SDK platforms folder. */
