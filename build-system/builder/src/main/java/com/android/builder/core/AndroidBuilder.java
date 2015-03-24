@@ -803,9 +803,7 @@ public class AndroidBuilder {
                 if (appPackageName.equals(packageName)) {
                     if (enforceUniquePackageName) {
                         String msg = String.format(
-                                "Error: A library uses the same package as this project: %s\n" +
-                                        "You can temporarily disable this error with android.enforceUniquePackageName=false\n" +
-                                        "However, this is temporary and will be enforced in 1.0",
+                                "Error: A library uses the same package as this project: %s",
                                 packageName);
                         throw new RuntimeException(msg);
                     }
