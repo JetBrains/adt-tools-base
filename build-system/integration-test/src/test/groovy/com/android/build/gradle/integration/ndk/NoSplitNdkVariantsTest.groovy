@@ -36,12 +36,12 @@ import static org.junit.Assert.assertNull
 class NoSplitNdkVariantsTest {
 
     @ClassRule
-    static public GradleTestProject project = GradleTestProject.builder().create()
+    static public GradleTestProject project = GradleTestProject.builder()
+            .fromTestApp(new HelloWorldJniApp())
+            .create()
 
     @BeforeClass
     static public void setUp() {
-        new HelloWorldJniApp().write(project.testDir, null)
-
         project.getBuildFile() << """
 apply plugin: 'com.android.application'
 

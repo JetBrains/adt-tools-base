@@ -33,12 +33,12 @@ class AppComponentPluginTest {
 
     @Rule
     public GradleTestProject project = GradleTestProject.builder()
+            .fromTestApp(new HelloWorldApp())
             .forExpermimentalPlugin(true)
             .create();
 
     @Before
     public void setUp() {
-        new HelloWorldApp().write(project.testDir, null)
         project.buildFile << """
 apply plugin: "com.android.model.application"
 

@@ -43,11 +43,13 @@ class BuildToolsTest {
     ]
 
     @Rule
-    public GradleTestProject project = GradleTestProject.builder().captureStdOut(true).create()
+    public GradleTestProject project = GradleTestProject.builder()
+            .fromTestApp(new HelloWorldApp())
+            .captureStdOut(true)
+            .create()
 
     @Before
     public void setUp() {
-        new HelloWorldApp().write(project.testDir, null)
         project.getBuildFile() << """
 apply plugin: 'com.android.application'
 

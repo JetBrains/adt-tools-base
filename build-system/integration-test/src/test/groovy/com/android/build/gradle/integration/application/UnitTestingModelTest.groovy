@@ -32,11 +32,12 @@ import static com.google.common.truth.Truth.assertThat
 class UnitTestingModelTest {
 
     @Rule
-    public GradleTestProject project = GradleTestProject.builder().create();
+    public GradleTestProject project = GradleTestProject.builder()
+            .fromTestApp(new HelloWorldApp())
+            .create();
 
     @Before
     public void setUp() {
-        new HelloWorldApp().write(project.testDir, null)
         project.buildFile << """
 apply plugin: 'com.android.application'
 

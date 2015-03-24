@@ -38,13 +38,12 @@ class NdkComponentSplitTest {
 
     @ClassRule
     public static GradleTestProject project = GradleTestProject.builder()
+            .fromTestApp(new HelloWorldJniApp(jniDir: "c"))
             .forExpermimentalPlugin(true)
-            .create();
+            .create()
 
     @BeforeClass
     public static void setUp() {
-        new HelloWorldJniApp(jniDir: "c").write(project.testDir, null)
-
         project.getBuildFile() << """
 apply plugin: 'com.android.model.application'
 

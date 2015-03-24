@@ -61,11 +61,13 @@ public class NdkStlTest {
     }
 
     @Rule
-    public GradleTestProject project = GradleTestProject.builder().forExpermimentalPlugin(true).create();
+    public GradleTestProject project = GradleTestProject.builder()
+            .fromTestApp(new HelloWorldJniApp(jniDir: "cpp", useCppSource: true))
+            .forExpermimentalPlugin(true)
+            .create()
 
     @Before
     public void setUp() {
-        new HelloWorldJniApp(jniDir: "cpp", useCppSource: true).write(project.testDir, null)
         project.getBuildFile() << """
 apply plugin: 'com.android.model.application'
 

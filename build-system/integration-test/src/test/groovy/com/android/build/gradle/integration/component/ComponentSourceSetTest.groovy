@@ -32,15 +32,9 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
  */
 class ComponentSourceSetTest {
 
-    @ClassRule
-    public static GradleTestProject project = GradleTestProject.builder()
-            .forExpermimentalPlugin(true)
-            .create();
+    public static AndroidTestApp app = new HelloWorldJniApp()
 
-    @BeforeClass
-    public static void setUp() {
-        AndroidTestApp app = new HelloWorldJniApp()
-
+    static {
         // Remove the main hello-jni.c and place it in different directories for different flavors.
         // Note that *not* all variant can be built.
         TestSourceFile cSource = app.getFile("hello-jni.c");
@@ -51,7 +45,16 @@ class ComponentSourceSetTest {
                 new TestSourceFile("src/flavor1/c/hello-jni.c", cSource.name, cSource.content))
         app.addFile(new TestSourceFile("src/flavor2Debug/c/hello-jni.c", cSource.name,
                 cSource.content))
-        app.write(project.testDir, null)
+    }
+
+    @ClassRule
+    public static GradleTestProject project = GradleTestProject.builder()
+            .fromTestApp(app)
+            .forExpermimentalPlugin(true)
+            .create();
+
+    @BeforeClass
+    public static void setUp() {
 
         project.buildFile << """
 apply plugin: "com.android.model.application"
