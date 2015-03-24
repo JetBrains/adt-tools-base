@@ -326,9 +326,24 @@ public class CleanupDetector extends Detector implements JavaScanner {
                                 //noinspection SuspiciousMethodCalls
                                 if (resolved != null && mVariables.contains(resolved)) {
                                     return true;
+                                } else if (resolved instanceof ResolvedMethod
+                                        && operand instanceof MethodInvocation
+                                        && isCommittedInChainedCalls(mContext,(MethodInvocation) operand)) {
+                                    // Check that the target of the committed chains is the
+                                    // right variable!
+                                    while (operand instanceof MethodInvocation) {
+                                        operand = ((MethodInvocation)operand).astOperand();
+                                    }
+                                    if (operand instanceof VariableReference) {
+                                        resolved = mContext.resolve(operand);
+                                        //noinspection SuspiciousMethodCalls
+                                        if (resolved != null && mVariables.contains(resolved)) {
+                                            return true;
+                                        }
+                                    }
                                 }
                             }
-                        } else if (isShowTransactionMethodCall(mContext, call)) {
+                        } else if (isShowFragmentMethodCall(mContext, call)) {
                             StrictListAccessor<Expression, MethodInvocation> arguments =
                                     call.astArguments();
                             if (arguments.size() == 2) {
@@ -368,7 +383,7 @@ public class CleanupDetector extends Detector implements JavaScanner {
         while (parent instanceof MethodInvocation) {
             MethodInvocation methodInvocation = (MethodInvocation) parent;
             if (isTransactionCommitMethodCall(context, methodInvocation)
-                    || isShowTransactionMethodCall(context, methodInvocation)) {
+                    || isShowFragmentMethodCall(context, methodInvocation)) {
                 return true;
             }
 
@@ -388,7 +403,7 @@ public class CleanupDetector extends Detector implements JavaScanner {
                         FRAGMENT_TRANSACTION_V4_CLS);
     }
 
-    private static boolean isShowTransactionMethodCall(@NonNull JavaContext context,
+    private static boolean isShowFragmentMethodCall(@NonNull JavaContext context,
             @NonNull MethodInvocation call) {
         String methodName = call.astName().astValue();
         return SHOW.equals(methodName)
