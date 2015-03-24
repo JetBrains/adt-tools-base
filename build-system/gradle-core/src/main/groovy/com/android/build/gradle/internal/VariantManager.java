@@ -30,6 +30,7 @@ import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_STORE_TY
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.BaseExtension;
+import com.android.build.gradle.TestedExtension;
 import com.android.build.gradle.api.AndroidSourceSet;
 import com.android.build.gradle.api.BaseVariant;
 import com.android.build.gradle.internal.ProductFlavorData.ConfigurationProviderImpl;
@@ -52,7 +53,6 @@ import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.internal.variant.TestVariantData;
 import com.android.build.gradle.internal.variant.TestedVariantData;
 import com.android.build.gradle.internal.variant.VariantFactory;
-import com.android.build.gradle.TestedExtension;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.VariantType;
 import com.android.builder.profile.ExecutionType;
@@ -408,7 +408,7 @@ public class VariantManager implements VariantModel {
             final VariantDependencies variantDep = VariantDependencies.compute(
                     project, testVariantConfig.getFullName(),
                     false /*publishVariant*/,
-                    variantFactory.isLibrary(),
+                    variantType,
                     testVariantProviders.toArray(
                             new ConfigurationProvider[testVariantProviders.size()]));
             variantData.setVariantDependency(variantDep);
@@ -573,7 +573,7 @@ public class VariantManager implements VariantModel {
         final VariantDependencies variantDep = VariantDependencies.compute(
                 project, variantConfig.getFullName(),
                 isVariantPublished(),
-                variantFactory.isLibrary(),
+                variantData.getType(),
                 variantProviders.toArray(new ConfigurationProvider[variantProviders.size()]));
         variantData.setVariantDependency(variantDep);
 

@@ -13,6 +13,8 @@ import android.os.AsyncTask;
 import android.os.Debug;
 import android.os.PowerManager;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -163,5 +165,11 @@ public class UnitTest {
     public void taskConfiguration() {
         // This property is set in build.gradle:
         assertEquals("bar", System.getProperty("foo"));
+    }
+
+    @Test
+    public void commonsLogging() {
+        Log log = LogFactory.getLog(getClass());
+        log.info("I can use commons-logging!");
     }
 }

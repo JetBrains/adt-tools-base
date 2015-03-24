@@ -18,6 +18,7 @@ package com.android.build.gradle.internal.dependency
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
 import com.android.build.gradle.internal.ConfigurationProvider
+import com.android.builder.core.VariantType
 import com.android.builder.dependency.DependencyContainer
 import com.android.builder.dependency.JarDependency
 import com.android.builder.dependency.LibraryDependency
@@ -67,7 +68,7 @@ public class VariantDependencies implements DependencyContainer, ConfigurationPr
     static VariantDependencies compute(@NonNull Project project,
                                        @NonNull String name,
                                                 boolean publishVariant,
-                                                boolean isLibrary,
+                                                VariantType variantType,
                                        @NonNull ConfigurationProvider... providers) {
         Set<Configuration> compileConfigs = Sets.newHashSetWithExpectedSize(providers.length * 2)
         Set<Configuration> apkConfigs = Sets.newHashSetWithExpectedSize(providers.length)
@@ -89,7 +90,10 @@ public class VariantDependencies implements DependencyContainer, ConfigurationPr
         compile.description = "## Internal use, do not manually configure ##"
         compile.setExtendsFrom(compileConfigs)
 
-        Configuration apk = project.configurations.create(isLibrary? "_${name}Publish" : "_${name}Apk")
+        Configuration apk = project.configurations.create(variantType == VariantType.LIBRARY
+                ? "_${name}Publish"
+                : "_${name}Apk")
+
         apk.visible = false
         apk.description = "## Internal use, do not manually configure ##"
         apk.setExtendsFrom(apkConfigs)
@@ -101,7 +105,7 @@ public class VariantDependencies implements DependencyContainer, ConfigurationPr
             // if the variant is not a library, then the publishing configuration should
             // not extend from the apkConfigs. It's mostly there to access the artifact from
             // another project but it shouldn't bring any dependencies with it.
-            if (isLibrary) {
+            if (variantType == VariantType.LIBRARY) {
                 publish.setExtendsFrom(apkConfigs)
             }
 
@@ -115,7 +119,14 @@ public class VariantDependencies implements DependencyContainer, ConfigurationPr
             classes.setExtendsFrom(compileConfigs)
         }
 
-        return new VariantDependencies(name, compile, apk, publish, mapping, classes);
+        return new VariantDependencies(
+                name,
+                compile,
+                apk,
+                publish,
+                mapping,
+                classes,
+                variantType != VariantType.UNIT_TEST);
     }
 
     private VariantDependencies(@NonNull  String name,
@@ -123,13 +134,15 @@ public class VariantDependencies implements DependencyContainer, ConfigurationPr
                                 @NonNull  Configuration packageConfiguration,
                                 @Nullable Configuration publishConfiguration,
                                 @Nullable Configuration mappingConfiguration,
-                                @Nullable Configuration classesConfiguration) {
+                                @Nullable Configuration classesConfiguration,
+                                boolean skipClassesInAndroid) {
         this.name = name
         this.compileConfiguration = compileConfiguration
         this.packageConfiguration = packageConfiguration
         this.publishConfiguration = publishConfiguration
         this.mappingConfiguration = mappingConfiguration
         this.classesConfiguration = classesConfiguration
+        this.checker = new DependencyChecker(this, skipClassesInAndroid)
     }
 
     public String getName() {

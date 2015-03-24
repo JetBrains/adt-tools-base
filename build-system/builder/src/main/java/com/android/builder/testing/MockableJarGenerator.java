@@ -65,7 +65,7 @@ public class MockableJarGenerator {
 
     private final boolean returnDefaultValues;
     private final ImmutableSet<String> prefixesToSkip = ImmutableSet.of(
-            "java.", "javax.", "org.xml.", "org.w3c.", "junit.");
+            "java.", "javax.", "org.xml.", "org.w3c.", "junit.", "org.apache.commons.logging");
 
     public MockableJarGenerator(boolean returnDefaultValues) {
         this.returnDefaultValues = returnDefaultValues;
