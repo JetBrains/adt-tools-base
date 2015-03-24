@@ -1216,5 +1216,6 @@
     <orderEntry type="module" module-name="lint-api-base" />
     <orderEntry type="module" module-name="lint-checks-base" />
     <orderEntry type="library" exported="" name="jacoco" level="project" />
+    <orderEntry type="library" name="mockito" level="project" />
   </component>
 </module>
