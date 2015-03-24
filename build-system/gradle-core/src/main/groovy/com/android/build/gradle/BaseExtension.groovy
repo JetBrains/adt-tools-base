@@ -588,6 +588,12 @@ public abstract class BaseExtension {
     // TEMP for compatibility
     // STOPSHIP Remove in 1.0
 
+    /**
+     * Whether to generate PNGs from vector drawables. This doesn't work yet, so it's disabled by
+     * default.
+     */
+    boolean generatePngs = false;
+
     // by default, we do not generate pure splits
     boolean generatePureSplits = false;
 
