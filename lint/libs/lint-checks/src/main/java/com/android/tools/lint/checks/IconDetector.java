@@ -87,10 +87,12 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.imageio.ImageIO;
@@ -131,6 +133,9 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
     private static final Pattern DENSITY_PATTERN = Pattern.compile(
             "^drawable-(nodpi|xxxhdpi|xxhdpi|xhdpi|hdpi|mdpi"     //$NON-NLS-1$
                 + (INCLUDE_LDPI ? "|ldpi" : "") + ")$");  //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+
+    /** Pattern for icon names that include their dp size as part of the name */
+    private static final Pattern DP_NAME_PATTERN = Pattern.compile(".+_(\\d+)dp\\.png"); //$NON-NLS-1$
 
     /** Cache for {@link #getRequiredDensityFolders(Context)} */
     private List<String> mCachedRequiredDensities;
@@ -651,6 +656,30 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
                         }
                     });
 
+                    // Allow one specific scenario of duplicated icon contents:
+                    // Checking in different size icons (within a single density
+                    // folder). For now the only pattern we recognize is the
+                    // one advocated by the material design icons:
+                    //   https://github.com/google/material-design-icons
+                    // where the pattern is foo_<N>dp.png. (See issue 74584 for more.)
+                    ListIterator<List<File>> iterator = lists.listIterator();
+                    while (iterator.hasNext()) {
+                        List<File> list = iterator.next();
+                        boolean remove = true;
+                        for (File file : list) {
+                            String name = file.getName();
+                            if (!DP_NAME_PATTERN.matcher(name).matches()) {
+                                // One or more pattern in this list does not
+                                // conform to the dp naming pattern, so
+                                remove = false;
+                                break;
+                            }
+                        }
+                        if (remove) {
+                            iterator.remove();
+                        }
+                    }
+
                     for (List<File> sameFiles : lists) {
                         Location location = null;
                         boolean sameNames = true;
@@ -789,7 +818,8 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
                 int count = 0;
                 for (File file : files) {
                     //noinspection ConstantConditions
-                    float factor = getMdpiScalingFactor(file.getParentFile().getName());
+                    String folderName = file.getParentFile().getName();
+                    float factor = getMdpiScalingFactor(folderName);
                     if (factor > 0) {
                         Dimension size = pixelSizes.get(file);
                         if (size == null) {
@@ -802,6 +832,29 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
                         dipHeightSum += dip.height;
                         dipSizes.put(file, dip);
                         count++;
+
+                        String fileName = file.getName();
+                        Matcher matcher = DP_NAME_PATTERN.matcher(fileName);
+                        if (matcher.matches()) {
+                            String dpString = matcher.group(1);
+                            int dp = Integer.parseInt(dpString);
+                            // We're not sure whether the dp size refers to the width
+                            // or the height, so check both. Allow a little bit of rounding
+                            // slop.
+                            if (Math.abs(dip.width - dp) > 2 || Math.abs(dip.height - dp) > 2) {
+                                // Unicode 00D7 is the multiplication sign
+                                String message = String.format(""
+                                        + "Suspicious file name `%1$s`: The implied %2$s `dp` "
+                                        + "size does not match the actual `dp` size "
+                                        + "(pixel size %3$d\u00D7%4$d in a `%5$s` folder "
+                                        + "computes to %6$d\u00D7%7$d `dp`)",
+                                        fileName, dpString,
+                                        size.width, size.height,
+                                        folderName,
+                                        dip.width, dip.height);
+                                context.report(ICON_DIP_SIZE, Location.create(file), message);
+                            }
+                        }
                     }
                 }
                 if (count == 0) {
