@@ -115,6 +115,7 @@ import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.execution.TaskExecutionGraph
+import org.gradle.api.file.FileCollection
 import org.gradle.api.internal.ConventionMapping
 import org.gradle.api.logging.LogLevel
 import org.gradle.api.logging.Logger
@@ -144,6 +145,7 @@ import static com.android.builder.core.BuilderConstants.FD_FLAVORS_ALL
 import static com.android.builder.core.BuilderConstants.FD_REPORTS
 import static com.android.builder.core.VariantType.ANDROID_TEST
 import static com.android.builder.core.VariantType.DEFAULT
+import static com.android.builder.core.VariantType.LIBRARY
 import static com.android.builder.core.VariantType.UNIT_TEST
 import static com.android.builder.model.AndroidProject.FD_GENERATED
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
@@ -1181,21 +1183,28 @@ abstract class TaskManager {
 
         javaCompileTask.source = variantData.getJavaSources()
 
-        VariantConfiguration config = variantData.variantConfiguration
+        conventionMapping(javaCompileTask).map("classpath") {
+            FileCollection classpath = project.files(
+                    androidBuilder.getCompileClasspath(variantData.variantConfiguration))
 
-        // If the tested variant is an app, add its classpath. For the libraries,
-        // it's done automatically since the classpath includes the library output as a normal
-        // dependency.
-        if (testedVariantData instanceof ApplicationVariantData) {
-            conventionMapping(javaCompileTask).map("classpath") {
-                project.files(androidBuilder.getCompileClasspath(config)) +
-                        testedVariantData.javaCompileTask.classpath +
-                        testedVariantData.javaCompileTask.outputs.files
+            if (testedVariantData) {
+                // For libraries, the classpath from androidBuilder includes the library output
+                // (bundle/classes.jar) as a normal dependency. In unit tests we don't want to package
+                // the jar at every run, so we use the *.class files instead.
+                if (testedVariantData.type != LIBRARY || variantData.type == UNIT_TEST) {
+                    classpath = classpath +
+                            testedVariantData.javaCompileTask.classpath +
+                            testedVariantData.javaCompileTask.outputs.files
+                }
+
+                if (variantData.type == UNIT_TEST && testedVariantData.type == LIBRARY) {
+                    // The bundled classes.jar may exist, but it's probably old. Don't use it, we
+                    // already have the *.class files in the classpath.
+                    classpath -= project.files(testedVariantData.variantConfiguration.output.jarFile)
+                }
             }
-        } else {
-            conventionMapping(javaCompileTask).map("classpath") {
-                project.files(androidBuilder.getCompileClasspath(config))
-            }
+
+            return classpath
         }
 
         javaCompileTask.dependsOn variantData.prepareDependenciesTask
@@ -1342,6 +1351,8 @@ abstract class TaskManager {
             @NonNull TaskFactory tasks,
             @NonNull TestVariantData variantData) {
         BaseVariantData testedVariantData = variantData.getTestedVariantData() as BaseVariantData
+        variantData.assembleVariantTask.dependsOn createMockableJar
+
         createPreBuildTasks(variantData)
         createProcessJavaResTask(variantData)
         createCompileAnchorTask(variantData)
@@ -1537,7 +1548,6 @@ abstract class TaskManager {
 
         fixTestTaskSources(runTestsTask)
 
-        variantData.assembleVariantTask.dependsOn createMockableJar
         runTestsTask.dependsOn variantData.assembleVariantTask
 
         AbstractCompile testCompileTask = variantData.javaCompileTask
