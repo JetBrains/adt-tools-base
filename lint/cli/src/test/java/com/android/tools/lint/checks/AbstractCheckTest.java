@@ -34,6 +34,7 @@ import com.android.resources.ResourceFolderType;
 import com.android.resources.ResourceType;
 import com.android.sdklib.IAndroidTarget;
 import com.android.testutils.SdkTestCase;
+import com.android.tools.lint.ExternalAnnotationRepository;
 import com.android.tools.lint.LintCliClient;
 import com.android.tools.lint.LintCliFlags;
 import com.android.tools.lint.Reporter;
@@ -518,7 +519,26 @@ public abstract class AbstractCheckTest extends SdkTestCase {
                     File file = new File(rootDir, "development" + File.separator + "sdk"
                             + File.separator + "api-versions.xml");
                     if (file.exists()) {
-                       return file;
+                        return file;
+                    }
+                }
+                // Look in an SDK install, if found
+                File home = getSdkHome();
+                if (home != null) {
+                    return new File(home, relativePath);
+                }
+            } else if (relativePath.equals(ExternalAnnotationRepository.SDK_ANNOTATIONS_PATH)) {
+                // Look in the current Git repository and try to find it there
+                File rootDir = getRootDir();
+                if (rootDir != null) {
+                    File file = new File(rootDir,
+                            "tools" + File.separator
+                            + "adt" + File.separator
+                            + "idea" + File.separator
+                            + "android" + File.separator
+                            + "annotations");
+                    if (file.exists()) {
+                        return file;
                     }
                 }
                 // Look in an SDK install, if found
