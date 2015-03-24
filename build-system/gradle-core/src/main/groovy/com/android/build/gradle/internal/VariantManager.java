@@ -21,6 +21,11 @@ import static com.android.builder.core.BuilderConstants.DEBUG;
 import static com.android.builder.core.BuilderConstants.LINT;
 import static com.android.builder.core.VariantType.ANDROID_TEST;
 import static com.android.builder.core.VariantType.UNIT_TEST;
+import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_KEY_ALIAS;
+import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_KEY_PASSWORD;
+import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_STORE_FILE;
+import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_STORE_PASSWORD;
+import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_STORE_TYPE;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -59,6 +64,7 @@ import org.gradle.api.Task;
 import org.gradle.api.tasks.TaskContainer;
 import org.gradle.internal.reflect.Instantiator;
 
+import java.io.File;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -102,6 +108,8 @@ public class VariantManager implements VariantModel {
 
     @NonNull
     private final List<BaseVariantData<? extends BaseVariantOutputData>> variantDataList = Lists.newArrayList();
+    @Nullable
+    private SigningConfig signingOverride;
 
     public VariantManager(
             @NonNull Project project,
@@ -127,6 +135,7 @@ public class VariantManager implements VariantModel {
         defaultConfigData = new ProductFlavorData<ProductFlavor>(
                 extension.getDefaultConfig(), mainSourceSet,
                 androidTestSourceSet, unitTestSourceSet, project);
+        signingOverride = createSigningOverride();
     }
 
     @NonNull
@@ -222,13 +231,13 @@ public class VariantManager implements VariantModel {
     /**
      * Task creation entry point.
      */
-    public void createAndroidTasks(@Nullable com.android.builder.model.SigningConfig signingOverride) {
+    public void createAndroidTasks() {
         variantFactory.validateModel(this);
 
         taskManager.createAssembleAndroidTestTask();
 
         if (variantDataList.isEmpty()) {
-            populateVariantDataList(signingOverride);
+            populateVariantDataList();
         }
 
         for (BaseVariantData<? extends BaseVariantOutputData> variantData : variantDataList) {
@@ -359,15 +368,13 @@ public class VariantManager implements VariantModel {
 
     /**
      * Create all variants.
-     *
-     * @param signingOverride a signing override. Generally driven through the IDE.
      */
-    public void populateVariantDataList(@Nullable com.android.builder.model.SigningConfig signingOverride) {
+    public void populateVariantDataList() {
         // Add a compile lint task
         taskManager.createLintCompileTask();
 
         if (productFlavors.isEmpty()) {
-            createVariantDataForProductFlavors(signingOverride,
+            createVariantDataForProductFlavors(
                     Collections.<com.android.build.gradle.api.GroupableProductFlavor>emptyList());
         } else {
             List<String> flavorDimensionList = extension.getFlavorDimensionList();
@@ -390,7 +397,7 @@ public class VariantManager implements VariantModel {
                     flavorDsl);
 
             for (ProductFlavorCombo flavorCombo : flavorComboList) {
-                createVariantDataForProductFlavors(signingOverride, flavorCombo.getFlavorList());
+                createVariantDataForProductFlavors(flavorCombo.getFlavorList());
             }
         }
     }
@@ -400,8 +407,7 @@ public class VariantManager implements VariantModel {
      */
     public BaseVariantData<? extends BaseVariantOutputData> createVariantData(
             @NonNull com.android.builder.model.BuildType buildType,
-            @NonNull List<com.android.build.gradle.api.GroupableProductFlavor> productFlavorList,
-            @Nullable com.android.builder.model.SigningConfig signingOverride) {
+            @NonNull List<? extends com.android.build.gradle.api.GroupableProductFlavor> productFlavorList) {
         Splits splits = extension.getSplits();
         Set<String> densities = splits.getDensityFilters();
         Set<String> abis = splits.getAbiFilters();
@@ -514,7 +520,6 @@ public class VariantManager implements VariantModel {
      */
     public TestVariantData createTestVariantData(
             BaseVariantData testedVariantData,
-            com.android.builder.model.SigningConfig signingOverride,
             VariantType type) {
         ProductFlavor defaultConfig = defaultConfigData.getProductFlavor();
         BuildType buildType = testedVariantData.getVariantConfiguration().getBuildType();
@@ -561,11 +566,9 @@ public class VariantManager implements VariantModel {
      *
      * This will create VariantData for all build types of the given flavors.
      *
-     * @param signingOverride a signing override. Generally driven through the IDE.
      * @param productFlavorList the flavor(s) to build.
      */
     private void createVariantDataForProductFlavors(
-            @Nullable com.android.builder.model.SigningConfig signingOverride,
             @NonNull List<com.android.build.gradle.api.GroupableProductFlavor> productFlavorList) {
         BuildTypeData testBuildTypeData = buildTypes.get(extension.getTestBuildType());
         if (testBuildTypeData == null) {
@@ -590,13 +593,11 @@ public class VariantManager implements VariantModel {
             if (!ignore) {
                 BaseVariantData<?> variantData = createVariantData(
                         buildTypeData.getBuildType(),
-                        productFlavorList,
-                        signingOverride);
+                        productFlavorList);
                 variantDataList.add(variantData);
 
                 TestVariantData unitTestVariantData = createTestVariantData(
                         variantData,
-                        signingOverride,
                         UNIT_TEST);
                 variantDataList.add(unitTestVariantData);
 
@@ -613,13 +614,12 @@ public class VariantManager implements VariantModel {
         if (variantForAndroidTest != null) {
             TestVariantData androidTestVariantData = createTestVariantData(
                     variantForAndroidTest,
-                    signingOverride,
                     ANDROID_TEST);
             variantDataList.add(androidTestVariantData);
         }
     }
 
-    private void createApiObjects() {
+    public void createApiObjects() {
         for (BaseVariantData<?> variantData : variantDataList) {
             if (variantData.getType().isForTesting()) {
                 // Testing variants are handled together with their "owners".
@@ -675,4 +675,28 @@ public class VariantManager implements VariantModel {
                     "%1$s names cannot start with '%2$s'", displayName, prefix));
         }
     }
+
+    private SigningConfig createSigningOverride() {
+        if (project.hasProperty(PROPERTY_SIGNING_STORE_FILE) &&
+                project.hasProperty(PROPERTY_SIGNING_STORE_PASSWORD) &&
+                project.hasProperty(PROPERTY_SIGNING_KEY_ALIAS) &&
+                project.hasProperty(PROPERTY_SIGNING_KEY_PASSWORD)) {
+
+            SigningConfig signingConfigDsl = new SigningConfig("externalOverride");
+            Map<String, ?> props = project.getProperties();
+
+            signingConfigDsl.setStoreFile(new File((String) props.get(PROPERTY_SIGNING_STORE_FILE)));
+            signingConfigDsl.setStorePassword((String) props.get(PROPERTY_SIGNING_STORE_PASSWORD));
+            signingConfigDsl.setKeyAlias((String) props.get(PROPERTY_SIGNING_KEY_ALIAS));
+            signingConfigDsl.setKeyPassword((String) props.get(PROPERTY_SIGNING_KEY_PASSWORD));
+
+            if (project.hasProperty(PROPERTY_SIGNING_STORE_TYPE)) {
+                signingConfigDsl.setStoreType((String) props.get(PROPERTY_SIGNING_STORE_TYPE));
+            }
+
+            return signingConfigDsl;
+        }
+        return null;
+    }
+
 }

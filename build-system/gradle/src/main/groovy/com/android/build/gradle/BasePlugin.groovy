@@ -62,7 +62,6 @@ import org.gradle.tooling.BuildException
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry
 
 import java.security.MessageDigest
-import java.util.Calendar
 import java.util.jar.Attributes
 import java.util.jar.Manifest
 import java.util.regex.Pattern
@@ -70,11 +69,6 @@ import java.util.regex.Pattern
 import static com.android.builder.core.BuilderConstants.DEBUG
 import static com.android.builder.core.BuilderConstants.RELEASE
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
-import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_KEY_ALIAS
-import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_KEY_PASSWORD
-import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_STORE_FILE
-import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_STORE_PASSWORD
-import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_STORE_TYPE
 import static java.io.File.separator
 
 /**
@@ -428,30 +422,7 @@ public abstract class BasePlugin {
         }
 
         taskManager.createMockableJarTask()
-        variantManager.createAndroidTasks(getSigningOverride())
-    }
-
-    private SigningConfig getSigningOverride() {
-        if (project.hasProperty(PROPERTY_SIGNING_STORE_FILE) &&
-                project.hasProperty(PROPERTY_SIGNING_STORE_PASSWORD) &&
-                project.hasProperty(PROPERTY_SIGNING_KEY_ALIAS) &&
-                project.hasProperty(PROPERTY_SIGNING_KEY_PASSWORD)) {
-
-            SigningConfig signingConfigDsl = new SigningConfig("externalOverride")
-            Map<String, ?> props = project.getProperties();
-
-            signingConfigDsl.setStoreFile(new File((String) props.get(PROPERTY_SIGNING_STORE_FILE)))
-            signingConfigDsl.setStorePassword((String) props.get(PROPERTY_SIGNING_STORE_PASSWORD));
-            signingConfigDsl.setKeyAlias((String) props.get(PROPERTY_SIGNING_KEY_ALIAS));
-            signingConfigDsl.setKeyPassword((String) props.get(PROPERTY_SIGNING_KEY_PASSWORD));
-
-            if (project.hasProperty(PROPERTY_SIGNING_STORE_TYPE)) {
-                signingConfigDsl.setStoreType((String) props.get(PROPERTY_SIGNING_STORE_TYPE))
-            }
-
-            return signingConfigDsl
-        }
-        return null
+        variantManager.createAndroidTasks()
     }
 
     private boolean isVerbose() {

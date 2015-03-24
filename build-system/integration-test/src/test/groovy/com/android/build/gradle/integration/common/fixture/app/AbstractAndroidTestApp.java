@@ -33,7 +33,7 @@ import java.util.NoSuchElementException;
 public abstract class AbstractAndroidTestApp implements AndroidTestApp {
     private Multimap<String, TestSourceFile> sourceFiles = ArrayListMultimap.create();
 
-    protected void addFiles(TestSourceFile ... files) {
+    protected void addFiles(TestSourceFile... files) {
         for (TestSourceFile file : files) {
             sourceFiles.put(file.getName(), file);
         }

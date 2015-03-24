@@ -35,10 +35,10 @@ import java.util.Set;
  * While VariantManager is the general variant management, implementation of this interface
  * provides variant type (app, lib) specific implementation.
  */
-public interface VariantFactory<T extends BaseVariantData<? extends BaseVariantOutputData>> {
+public interface VariantFactory {
 
     @NonNull
-    T createVariantData(
+    BaseVariantData createVariantData(
             @NonNull GradleVariantConfiguration variantConfiguration,
             @NonNull Set<String> densities,
             @NonNull Set<String> abi,

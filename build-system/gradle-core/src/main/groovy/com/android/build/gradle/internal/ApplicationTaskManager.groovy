@@ -91,7 +91,7 @@ class ApplicationTaskManager extends TaskManager {
         }
 
         // Add NDK tasks
-        if (!extension.getUseNewNativePlugin()) {
+        if (isNdkTaskNeeded) {
             createNdkTasks(variantData);
         }
 
