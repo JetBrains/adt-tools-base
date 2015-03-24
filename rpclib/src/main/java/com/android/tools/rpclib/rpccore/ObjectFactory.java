@@ -22,7 +22,6 @@ import com.android.tools.rpclib.binary.BinaryObjectCreator;
 import com.android.tools.rpclib.binary.Decoder;
 import com.android.tools.rpclib.binary.Encoder;
 import com.android.tools.rpclib.binary.ObjectTypeID;
-
 import java.io.IOException;
 
 class ObjectFactory {
@@ -34,7 +33,7 @@ class ObjectFactory {
         },
     }
 
-    public static byte[] RpcErrorIDBytes = { 71, 28, 125, -19, 107, -92, 51, -36, 4, 63, 55, -2, -74, 94, 104, -95, 66, 106, -69, 7, };
+    public static byte[] RpcErrorIDBytes = { -2, 118, -32, 58, 68, -93, -64, 56, -37, 98, 46, -29, -13, -28, -7, -121, -7, 25, -66, -3, };
 
     public static ObjectTypeID RpcErrorID = new ObjectTypeID(RpcErrorIDBytes);
 
