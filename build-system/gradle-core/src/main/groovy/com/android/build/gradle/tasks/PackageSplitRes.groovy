@@ -90,7 +90,7 @@ class PackageSplitRes extends SplitRelatedTask {
                             OutputFile.FilterType.DENSITY.toString(), density)
                 }
             }
-            if (languageSplits.contains(split)) {
+            if (languageSplits.contains(unMangleSplitName(split))) {
                 filterData = FilterDataImpl.build(
                         OutputFile.FilterType.LANGUAGE.toString(), split);
             }
@@ -142,7 +142,8 @@ class PackageSplitRes extends SplitRelatedTask {
                 return true;
             }
         }
-        return languageSplits.contains(splitWithOptionalSuffix);
+        String mangledName = unMangleSplitName(splitWithOptionalSuffix);
+        return languageSplits.contains(mangledName);
     }
 
     String getOutputFileNameForSplit(String split) {
@@ -156,5 +157,23 @@ class PackageSplitRes extends SplitRelatedTask {
         addAllFilterData(filterDataBuilder, densitySplits, OutputFile.FilterType.DENSITY);
         addAllFilterData(filterDataBuilder, languageSplits, OutputFile.FilterType.LANGUAGE);
         return filterDataBuilder.build();
+    }
+
+    /**
+     * Un-mangle a split name as created by the aapt tool to retrieve a split name as configured
+     * in the project's build.gradle.
+     *
+     * when dealing with several split language in a single split, each language (+ optional region)
+     * will be seperated by an underscore.
+     *
+     * note that there is currently an aapt bug, remove the 'r' in the region so for instance,
+     * fr-rCA becomes fr-CA, temporarily put it back until it is fixed.
+     *
+     * @param splitWithOptionalSuffix the mangled split name.
+     * @return
+     */
+    static String unMangleSplitName(String splitWithOptionalSuffix) {
+        String mangledName = splitWithOptionalSuffix.replaceAll('_', ',');
+        return mangledName.replace("-", "-r");
     }
 }
