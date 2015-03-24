@@ -25,6 +25,9 @@
     <instantiate from="src/app_package/SimpleActivity.java.ftl"
                    to="${escapeXmlAttribute(srcOut)}/${activityClass}.java" />
 
-    <open file="${escapeXmlAttribute(srcOut)}/${activityClass}.java" />
+    <instantiate from="src/app_package/SimpleActivityFragment.ftl"
+                   to="${escapeXmlAttribute(srcOut)}/${fragmentClass}.java" />
+
+    <open file="${escapeXmlAttribute(srcOut)}/${activityClass}Fragment.java" />
     <open file="${escapeXmlAttribute(resOut)}/layout/${fragmentLayoutName}.xml" />
 </recipe>
