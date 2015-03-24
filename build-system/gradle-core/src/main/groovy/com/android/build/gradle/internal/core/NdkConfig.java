@@ -55,4 +55,10 @@ public interface NdkConfig {
      */
     @Nullable
     public String getStl();
+
+    /**
+     * Number of parallel threads to spawn.
+     */
+    @Nullable
+    public Integer getJobs();
 }

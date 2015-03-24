@@ -42,6 +42,7 @@ public class NdkOptions implements NdkConfig, Serializable {
     private List<String> ldLibs;
     private Set<String> abiFilters;
     private String stl;
+    private Integer jobs;
 
     public NdkOptions() {
     }
@@ -164,5 +165,15 @@ public class NdkOptions implements NdkConfig, Serializable {
 
     public void setStl(String stl) {
         this.stl = stl;
+    }
+
+    @Nullable
+    @Override
+    public Integer getJobs() {
+        return jobs;
+    }
+
+    public void setJobs(Integer jobs) {
+        this.jobs = jobs;
     }
 }

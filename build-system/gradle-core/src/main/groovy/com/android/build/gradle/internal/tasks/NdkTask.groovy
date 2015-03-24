@@ -49,6 +49,6 @@ class NdkTask extends BaseTask {
 
     @Input @Optional
     String getStl() {
-        return getNdkConfig().stl
+        return getNdkConfig()?.stl
     }
 }
