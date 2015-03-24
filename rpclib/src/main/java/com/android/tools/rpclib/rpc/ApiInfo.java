@@ -43,13 +43,13 @@ public class ApiInfo implements BinaryObject {
     return Name;
   }
 
-  public SchemaId getSchema() {
-    return Schema;
-  }
-
   // Setters
   public void setName(String v) {
     Name = v;
+  }
+
+  public SchemaId getSchema() {
+    return Schema;
   }
 
   public void setSchema(SchemaId v) {

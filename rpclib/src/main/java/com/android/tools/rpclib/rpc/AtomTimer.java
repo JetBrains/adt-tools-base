@@ -25,44 +25,35 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 
-public class RenderSettings implements BinaryObject {
-  long MaxWidth;
-  long MaxHeight;
-  boolean Wireframe;
+public class AtomTimer implements BinaryObject {
+  long AtomId;
+  long Nanoseconds;
 
-  // Constructs a default-initialized {@link RenderSettings}.
-  public RenderSettings() {
+  // Constructs a default-initialized {@link AtomTimer}.
+  public AtomTimer() {
   }
 
-  // Constructs and decodes a {@link RenderSettings} from the {@link Decoder} d.
-  public RenderSettings(Decoder d) throws IOException {
+  // Constructs and decodes a {@link AtomTimer} from the {@link Decoder} d.
+  public AtomTimer(Decoder d) throws IOException {
     decode(d);
   }
 
   // Getters
-  public long getMaxWidth() {
-    return MaxWidth;
+  public long getAtomId() {
+    return AtomId;
   }
 
   // Setters
-  public void setMaxWidth(long v) {
-    MaxWidth = v;
+  public void setAtomId(long v) {
+    AtomId = v;
   }
 
-  public long getMaxHeight() {
-    return MaxHeight;
+  public long getNanoseconds() {
+    return Nanoseconds;
   }
 
-  public void setMaxHeight(long v) {
-    MaxHeight = v;
-  }
-
-  public boolean getWireframe() {
-    return Wireframe;
-  }
-
-  public void setWireframe(boolean v) {
-    Wireframe = v;
+  public void setNanoseconds(long v) {
+    Nanoseconds = v;
   }
 
   @Override
@@ -77,6 +68,6 @@ public class RenderSettings implements BinaryObject {
 
   @Override
   public ObjectTypeID type() {
-    return ObjectFactory.RenderSettingsID;
+    return ObjectFactory.AtomTimerID;
   }
 }

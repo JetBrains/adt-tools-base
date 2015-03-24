@@ -43,13 +43,13 @@ public class EnumEntry implements BinaryObject {
     return Name;
   }
 
-  public long getValue() {
-    return Value;
-  }
-
   // Setters
   public void setName(String v) {
     Name = v;
+  }
+
+  public long getValue() {
+    return Value;
   }
 
   public void setValue(long v) {

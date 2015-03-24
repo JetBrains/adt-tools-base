@@ -43,15 +43,15 @@ public class SimpleInfo implements TypeInfo {
     return Name;
   }
 
-  @Override
-  public TypeKind getKind() {
-    return Kind;
-  }
-
   // Setters
   @Override
   public void setName(String v) {
     Name = v;
+  }
+
+  @Override
+  public TypeKind getKind() {
+    return Kind;
   }
 
   @Override

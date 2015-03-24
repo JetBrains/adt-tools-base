@@ -45,29 +45,29 @@ public class MemoryInfo implements BinaryObject {
     return Data;
   }
 
-  public MemoryRange[] getStale() {
-    return Stale;
-  }
-
-  public MemoryRange[] getCurrent() {
-    return Current;
-  }
-
-  public MemoryRange[] getUnknown() {
-    return Unknown;
-  }
-
   // Setters
   public void setData(short[] v) {
     Data = v;
+  }
+
+  public MemoryRange[] getStale() {
+    return Stale;
   }
 
   public void setStale(MemoryRange[] v) {
     Stale = v;
   }
 
+  public MemoryRange[] getCurrent() {
+    return Current;
+  }
+
   public void setCurrent(MemoryRange[] v) {
     Current = v;
+  }
+
+  public MemoryRange[] getUnknown() {
+    return Unknown;
   }
 
   public void setUnknown(MemoryRange[] v) {

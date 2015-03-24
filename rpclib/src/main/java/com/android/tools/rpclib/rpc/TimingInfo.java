@@ -26,9 +26,9 @@ import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
 
 public class TimingInfo implements BinaryObject {
-  long[] FromAtomIds;
-  long[] ToAtomIds;
-  long[] Timers;
+  AtomTimer[] PerCommand;
+  AtomRangeTimer[] PerDrawCall;
+  AtomRangeTimer[] PerFrame;
 
   // Constructs a default-initialized {@link TimingInfo}.
   public TimingInfo() {
@@ -40,29 +40,29 @@ public class TimingInfo implements BinaryObject {
   }
 
   // Getters
-  public long[] getFromAtomIds() {
-    return FromAtomIds;
-  }
-
-  public long[] getToAtomIds() {
-    return ToAtomIds;
-  }
-
-  public long[] getTimers() {
-    return Timers;
+  public AtomTimer[] getPerCommand() {
+    return PerCommand;
   }
 
   // Setters
-  public void setFromAtomIds(long[] v) {
-    FromAtomIds = v;
+  public void setPerCommand(AtomTimer[] v) {
+    PerCommand = v;
   }
 
-  public void setToAtomIds(long[] v) {
-    ToAtomIds = v;
+  public AtomRangeTimer[] getPerDrawCall() {
+    return PerDrawCall;
   }
 
-  public void setTimers(long[] v) {
-    Timers = v;
+  public void setPerDrawCall(AtomRangeTimer[] v) {
+    PerDrawCall = v;
+  }
+
+  public AtomRangeTimer[] getPerFrame() {
+    return PerFrame;
+  }
+
+  public void setPerFrame(AtomRangeTimer[] v) {
+    PerFrame = v;
   }
 
   @Override

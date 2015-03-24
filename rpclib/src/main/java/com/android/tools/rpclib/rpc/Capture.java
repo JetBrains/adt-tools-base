@@ -45,29 +45,29 @@ public class Capture implements BinaryObject {
     return Name;
   }
 
-  public String getAPI() {
-    return API;
-  }
-
-  public AtomStreamId getAtoms() {
-    return Atoms;
-  }
-
-  public long[] getContextIds() {
-    return ContextIds;
-  }
-
   // Setters
   public void setName(String v) {
     Name = v;
+  }
+
+  public String getAPI() {
+    return API;
   }
 
   public void setAPI(String v) {
     API = v;
   }
 
+  public AtomStreamId getAtoms() {
+    return Atoms;
+  }
+
   public void setAtoms(AtomStreamId v) {
     Atoms = v;
+  }
+
+  public long[] getContextIds() {
+    return ContextIds;
   }
 
   public void setContextIds(long[] v) {

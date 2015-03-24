@@ -45,29 +45,29 @@ public class ImageInfo implements BinaryObject {
     return Format;
   }
 
-  public long getWidth() {
-    return Width;
-  }
-
-  public long getHeight() {
-    return Height;
-  }
-
-  public BinaryId getData() {
-    return Data;
-  }
-
   // Setters
   public void setFormat(ImageFormat v) {
     Format = v;
+  }
+
+  public long getWidth() {
+    return Width;
   }
 
   public void setWidth(long v) {
     Width = v;
   }
 
+  public long getHeight() {
+    return Height;
+  }
+
   public void setHeight(long v) {
     Height = v;
+  }
+
+  public BinaryId getData() {
+    return Data;
   }
 
   public void setData(BinaryId v) {

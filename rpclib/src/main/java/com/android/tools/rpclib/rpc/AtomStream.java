@@ -43,13 +43,13 @@ public class AtomStream implements BinaryObject {
     return Data;
   }
 
-  public SchemaId getSchema() {
-    return Schema;
-  }
-
   // Setters
   public void setData(short[] v) {
     Data = v;
+  }
+
+  public SchemaId getSchema() {
+    return Schema;
   }
 
   public void setSchema(SchemaId v) {
