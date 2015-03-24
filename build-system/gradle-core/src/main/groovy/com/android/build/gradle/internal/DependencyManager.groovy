@@ -204,14 +204,14 @@ class DependencyManager {
         Configuration compileClasspath = variantDeps.compileConfiguration
         Configuration packageClasspath = variantDeps.packageConfiguration
 
+        // TODO - shouldn't need to do this - fix this in Gradle
+        ensureConfigured(compileClasspath)
+        ensureConfigured(packageClasspath)
+
         if (DEBUG_DEPENDENCY) {
             println ">>>>>>>>>>"
             println "${project.name}:${compileClasspath.name}/${packageClasspath.name}"
         }
-
-        // TODO - shouldn't need to do this - fix this in Gradle
-        ensureConfigured(compileClasspath)
-        ensureConfigured(packageClasspath)
 
         Set<String> currentUnresolvedDependencies = Sets.newHashSet()
 
@@ -464,6 +464,18 @@ class DependencyManager {
         // with the converted keys
         List<LibraryDependencyImpl> libList = convertLibraryInfoIntoDependency(
                 compiledAndroidLibraries, reverseMap)
+
+        if (DEBUG_DEPENDENCY) {
+            for (LibraryDependency lib : libList) {
+                println "LIB: " + lib
+            }
+            for (JarDependency jar : jars) {
+                println "JAR: " + jar
+            }
+            for (JarDependency jar : localJars.values()) {
+                println "LOCAL-JAR: " + jar
+            }
+        }
 
         variantDeps.addLibraries(libList)
         variantDeps.addJars(jars)
@@ -755,6 +767,9 @@ class DependencyManager {
                             new MavenCoordinatesImpl(artifact),
                             gradlePath,
                             nestedJars)
+                    if (DEBUG_DEPENDENCY) {
+                        printIndent indent, "JAR-INFO: " + jarInfo.toString()
+                    }
 
                     jarsForThisModule.add(jarInfo)
                     outJars.add(jarInfo)

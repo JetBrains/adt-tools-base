@@ -60,6 +60,11 @@ public class TruthHelper {
     }
 
     @NonNull
+    public static AarSubject assertThatAar(@NonNull File aar) {
+        return assert_().about(AarSubjectFactory.factory()).that(aar);
+    }
+
+    @NonNull
     public static ZipFileSubject assertThatZip(@NonNull File file) {
         return assert_().about(ZipFileSubjectFactory.factory()).that(file);
     }
