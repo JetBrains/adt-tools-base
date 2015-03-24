@@ -122,6 +122,11 @@ class LibraryTaskManager extends TaskManager {
                 // the dependencies.
                 createMergeResourcesTask(variantData, false /*process9Patch*/)
             }
+
+            variantData.mergeResourcesTask.conventionMapping.publicFile = { project.file(
+                    "$project.buildDir/${FD_INTERMEDIATES}/$DIR_BUNDLES/${dirName}/${SdkConstants.FN_PUBLIC_TXT}")
+            }
+
             return packageRes;
         }
 
