@@ -30,6 +30,7 @@ import com.android.builder.model.SourceProvider;
 
 import org.gradle.api.Task;
 import org.gradle.api.tasks.Copy;
+import org.gradle.api.tasks.compile.AbstractCompile;
 import org.gradle.api.tasks.compile.JavaCompile;
 
 import java.io.File;
@@ -167,10 +168,20 @@ public interface BaseVariant {
     GenerateBuildConfig getGenerateBuildConfig();
 
     /**
-     * Returns the Java Compilation task.
+     * Returns the Java Compilation task if javac was configured to compile the source files.
+     * @deprecated prefer {@link #getJavaCompiler} which always return the java compiler task
+     * irrespective of which tool chain (javac or jack) used.
+     */
+    @Nullable
+    @Deprecated
+    JavaCompile getJavaCompile() throws IllegalStateException;
+
+    /**
+     * Returns the Java Compiler task which can be either javac or jack depending on the project
+     * configuration.
      */
     @NonNull
-    JavaCompile getJavaCompile();
+    AbstractCompile getJavaCompiler();
 
     /**
      * Returns the NDK Compilation task.
