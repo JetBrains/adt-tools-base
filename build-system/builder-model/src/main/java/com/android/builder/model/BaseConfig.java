@@ -50,7 +50,10 @@ public interface BaseConfig {
     /**
      * Returns the list of proguard rule files.
      *
+     * <p>These files are only applied to the production code.
+     *
      * @return a non-null list of files.
+     * @see #getTestProguardFiles()
      */
     @NonNull
     Collection<File> getProguardFiles();
@@ -62,6 +65,14 @@ public interface BaseConfig {
      */
     @NonNull
     Collection<File> getConsumerProguardFiles();
+
+    /**
+     * Returns the list of proguard rule files to use for the test APK.
+     *
+     * @return a non-null list of files.
+     */
+    @NonNull
+    Collection<File> getTestProguardFiles();
 
     /**
      * Returns the map of key value pairs for placeholder substitution in the android manifest file.

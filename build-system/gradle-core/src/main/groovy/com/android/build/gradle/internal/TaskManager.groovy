@@ -2822,7 +2822,11 @@ abstract class TaskManager {
             proguardTask.keep("enum * {*;}")
 
             // Input the mapping from the tested app so that we can deal with obfuscated code.
-            proguardTask.applymapping("${project.buildDir}/${FD_OUTPUTS}/mapping/${testedVariantData.variantConfiguration.dirName}/mapping.txt")
+            proguardTask.applymapping(testedVariantData.mappingFile)
+
+            // All -dontwarn rules for test dependencies should go in here:
+            proguardTask.configuration(
+                    testedVariantData.variantConfiguration.testProguardFiles)
         } else {
             if (variantConfig.isTestCoverageEnabled()) {
                 // when collecting coverage, don't remove the JaCoCo runtime
