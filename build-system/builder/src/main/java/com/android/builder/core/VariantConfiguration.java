@@ -26,7 +26,7 @@ import com.android.annotations.VisibleForTesting;
 import com.android.builder.dependency.DependencyContainer;
 import com.android.builder.dependency.JarDependency;
 import com.android.builder.dependency.LibraryDependency;
-import com.android.builder.internal.StringHelper;
+import com.android.utils.StringHelper;
 import com.android.builder.model.ApiVersion;
 import com.android.builder.model.BuildType;
 import com.android.builder.model.ClassField;
