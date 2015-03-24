@@ -23,7 +23,7 @@ import com.android.annotations.NonNull;
 import com.android.build.FilterData;
 import com.android.build.OutputFile;
 import com.android.build.gradle.BaseExtension;
-import com.android.build.gradle.api.BaseVariant;
+import com.android.build.gradle.api.ApplicationVariant;
 import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.TaskManager;
 import com.android.build.gradle.internal.VariantModel;
@@ -115,7 +115,7 @@ public class ApplicationVariantFactory implements VariantFactory {
 
     @Override
     @NonNull
-    public BaseVariant createVariantApi(
+    public ApplicationVariant createVariantApi(
             @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData,
             @NonNull ReadOnlyObjectProvider readOnlyObjectProvider) {
         // create the base variant object.

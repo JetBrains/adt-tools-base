@@ -72,15 +72,6 @@ public interface AndroidArtifact extends BaseArtifact {
     String getSourceGenTaskName();
 
     /**
-     * Returns all the source folders that are generated. This is typically folders for the R,
-     * the aidl classes, and the renderscript classes.
-     *
-     * @return a list of folders.
-     */
-    @NonNull
-    Collection<File> getGeneratedSourceFolders();
-
-    /**
      * Returns all the resource folders that are generated. This is typically the renderscript
      * output and the merged resources.
      *

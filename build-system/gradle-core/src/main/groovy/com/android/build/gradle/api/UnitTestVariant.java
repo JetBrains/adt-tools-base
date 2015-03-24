@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 The Android Open Source Project
+ * Copyright (C) 2015 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,16 @@
 
 package com.android.build.gradle.api;
 
+import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.api.TestedVariant;
 
 /**
- * A Build variant and all its public data.
+ * A variant that contains all unit test code.
  */
-public interface LibraryVariant extends BaseVariant, TestedVariant {}
+public interface UnitTestVariant extends BaseVariant {
+    /**
+     * Returns the build variant that is tested by this variant.
+     */
+    @NonNull
+    TestedVariant getTestedVariant();
+}
