@@ -18,7 +18,6 @@ package com.android.build.gradle.integration.application
 
 import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.utils.ZipHelper
 import com.google.common.io.Files
 import org.junit.AfterClass
 import org.junit.BeforeClass
@@ -26,6 +25,7 @@ import org.junit.ClassRule
 import org.junit.Test
 import org.junit.experimental.categories.Category
 
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatZip
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
 
 /**
@@ -60,7 +60,7 @@ class MultiDexTest {
         File classesDex = project.file("build/" + FD_INTERMEDIATES + "/dex/ics/debug/classes.dex")
         File apk = project.getApk("ics", "debug")
 
-        ZipHelper.checkContent(apk, "classes.dex", Files.toByteArray(classesDex))
+        assertThatZip(apk).containsFileWithContent("classes.dex", Files.toByteArray(classesDex))
     }
 
     @Test
