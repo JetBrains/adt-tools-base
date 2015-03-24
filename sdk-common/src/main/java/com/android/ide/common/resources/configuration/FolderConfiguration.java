@@ -38,6 +38,7 @@ import java.util.Locale;
  */
 public final class FolderConfiguration implements Comparable<FolderConfiguration> {
 
+    @SuppressWarnings("NullableProblems") // done in static-block below
     @NonNull
     private static final ResourceQualifier[] DEFAULT_QUALIFIERS;
 
@@ -48,32 +49,33 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
         DEFAULT_QUALIFIERS = defaultConfig.getQualifiers();
     }
 
+    /** Splitter which can be used to split qualifiers */
+    public static final Splitter QUALIFIER_SPLITTER = Splitter.on('-');
+
 
     private final ResourceQualifier[] mQualifiers = new ResourceQualifier[INDEX_COUNT];
 
     private static final int INDEX_COUNTRY_CODE          = 0;
     private static final int INDEX_NETWORK_CODE          = 1;
-    private static final int INDEX_LANGUAGE              = 2;
-    private static final int INDEX_REGION                = 3;
-    private static final int INDEX_LOCALE                = 4;
-    private static final int INDEX_LAYOUT_DIR            = 5;
-    private static final int INDEX_SMALLEST_SCREEN_WIDTH = 6;
-    private static final int INDEX_SCREEN_WIDTH          = 7;
-    private static final int INDEX_SCREEN_HEIGHT         = 8;
-    private static final int INDEX_SCREEN_LAYOUT_SIZE    = 9;
-    private static final int INDEX_SCREEN_RATIO          = 10;
-    private static final int INDEX_SCREEN_ORIENTATION    = 11;
-    private static final int INDEX_UI_MODE               = 12;
-    private static final int INDEX_NIGHT_MODE            = 13;
-    private static final int INDEX_PIXEL_DENSITY         = 14;
-    private static final int INDEX_TOUCH_TYPE            = 15;
-    private static final int INDEX_KEYBOARD_STATE        = 16;
-    private static final int INDEX_TEXT_INPUT_METHOD     = 17;
-    private static final int INDEX_NAVIGATION_STATE      = 18;
-    private static final int INDEX_NAVIGATION_METHOD     = 19;
-    private static final int INDEX_SCREEN_DIMENSION      = 20;
-    private static final int INDEX_VERSION               = 21;
-    private static final int INDEX_COUNT                 = 22;
+    private static final int INDEX_LOCALE                = 2;
+    private static final int INDEX_LAYOUT_DIR            = 3;
+    private static final int INDEX_SMALLEST_SCREEN_WIDTH = 4;
+    private static final int INDEX_SCREEN_WIDTH          = 5;
+    private static final int INDEX_SCREEN_HEIGHT         = 6;
+    private static final int INDEX_SCREEN_LAYOUT_SIZE    = 7;
+    private static final int INDEX_SCREEN_RATIO          = 8;
+    private static final int INDEX_SCREEN_ORIENTATION    = 9;
+    private static final int INDEX_UI_MODE               = 10;
+    private static final int INDEX_NIGHT_MODE            = 11;
+    private static final int INDEX_PIXEL_DENSITY         = 12;
+    private static final int INDEX_TOUCH_TYPE            = 13;
+    private static final int INDEX_KEYBOARD_STATE        = 14;
+    private static final int INDEX_TEXT_INPUT_METHOD     = 15;
+    private static final int INDEX_NAVIGATION_STATE      = 16;
+    private static final int INDEX_NAVIGATION_METHOD     = 17;
+    private static final int INDEX_SCREEN_DIMENSION      = 18;
+    private static final int INDEX_VERSION               = 19;
+    private static final int INDEX_COUNT                 = 20;
 
     /**
      * Creates a {@link FolderConfiguration} matching the folder segments.
@@ -146,24 +148,142 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
         int qualifierIndex = 0;
         int qualifierCount = DEFAULT_QUALIFIERS.length;
 
+        /*
+            Process a series of qualifiers and parse them into a set of ResourceQualifiers
+            in the new folder configuration.
+
+            The basic loop is as follows:
+
+                while (qualifiers.hasNext()) {
+                    String seg = qualifiers.next();
+
+                    while (qualifierIndex < qualifierCount &&
+                            !DEFAULT_QUALIFIERS[qualifierIndex].checkAndSet(seg, config)) {
+                        qualifierIndex++;
+                    }
+
+                    // if we reached the end of the qualifier we didn't find a matching qualifier.
+                    if (qualifierIndex == qualifierCount) {
+                        return null;
+                    } else {
+                        qualifierIndex++; // already processed this one
+                    }
+                }
+
+             In other words, we process through the iterable, one segment at a time, and
+             for that segment, we iterate up through the qualifiers and ask each one if
+             they can handle it (via checkAndSet); if they can, we are done with that segment
+             *and* that qualifier, so next time through the segment loop we won't keep retrying
+             the same qualifiers. So, we are basically iterating through two lists (segments
+             and qualifiers) at the same time).
+
+             However, locales are a special exception to this: we want to combine *two* segments
+             into a single qualifier when you specify both a language and a region.
+             E.g. for "en-rUS-ldltr" we want a single LocaleQualifier holding both "en" and "rUS"
+             and then a LayoutDirectionQualifier for ldltr.
+
+             Therefore, we've unrolled the above loop: we process all identifiers up to
+             the locale qualifier index.
+
+             Then, at the locale qualifier index, IF we get a match, we don't increment
+             the qualifierIndex: instead, we fetch the next segment, and if it matches
+             as a region, we augment the locale qualifier and continue -- otherwise, we
+             bail and process the next segment as usual.
+
+             And then we finally iterate through the remaining qualifiers and segments; this
+             is basically the first loop again, iterating from the post-locale qualifier
+             up to the end.
+         */
+
+        if (!qualifiers.hasNext()) {
+            return config;
+        }
+
         while (qualifiers.hasNext()) {
             String seg = qualifiers.next();
-            if (!seg.isEmpty()) {
-                seg = seg.toLowerCase(Locale.US); // no-op if string is already in lower case
-                while (qualifierIndex < qualifierCount &&
-                        !DEFAULT_QUALIFIERS[qualifierIndex].checkAndSet(seg, config)) {
+            if (seg.isEmpty()) {
+                return null; // Not a valid folder configuration
+            }
+
+            // TODO: Perform case normalization later (on a per qualifier basis)
+            seg = seg.toLowerCase(Locale.US); // no-op if string is already in lower case
+
+            while (qualifierIndex < INDEX_LOCALE &&
+                    !DEFAULT_QUALIFIERS[qualifierIndex].checkAndSet(seg, config)) {
+                qualifierIndex++;
+            }
+
+            // if we reached the end of the qualifier we didn't find a matching qualifier.
+            if (qualifierIndex == INDEX_LOCALE) {
+                // Ready for locale matching now; that requires some special
+                // casing described below
+
+                boolean handle = true;
+                // Don't need to lowercase; qualifier will normalize case on its own
+                if (DEFAULT_QUALIFIERS[qualifierIndex].checkAndSet(seg, config)) {
                     qualifierIndex++;
+                    if (qualifiers.hasNext()) {
+                        seg = qualifiers.next();
+                        if (seg.isEmpty()) {
+                            return null; // Not a valid folder configuration
+                        }
+                        // Is the next qualifier a region? If so, amend the existing
+                        // LocaleQualifier
+                        if (LocaleQualifier.isRegionSegment(seg)) {
+                            LocaleQualifier localeQualifier = config.getLocaleQualifier();
+                            assert localeQualifier != null; // because checkAndSet returned true above
+                            localeQualifier.setRegionSegment(seg);
+                            handle = false;
+                        } else {
+                            // No, not a region, so perform normal processing
+                            seg = seg.toLowerCase(Locale.US); // no-op if string is already in lower case
+                        }
+                    } else {
+                        return config;
+                    }
                 }
 
-                // if we reached the end of the qualifier we didn't find a matching qualifier.
-                if (qualifierIndex == qualifierCount) {
-                    return null;
-                } else {
-                    qualifierIndex++; // already processed this one
+                if (handle) {
+                    while (qualifierIndex < qualifierCount &&
+                            !DEFAULT_QUALIFIERS[qualifierIndex].checkAndSet(seg, config)) {
+                        qualifierIndex++;
+                    }
+
+                    // if we reached the end of the qualifier we didn't find a matching qualifier.
+                    if (qualifierIndex == qualifierCount) {
+                        // Ready for locale matching now; that requires some special
+                        // casing described below
+                        return null;
+                    } else {
+                        qualifierIndex++; // already processed this one
+                    }
                 }
 
+                break;
             } else {
+                qualifierIndex++; // already processed this one
+            }
+        }
+
+        // Same loop as above, but we continue from after the locales
+        while (qualifiers.hasNext()) {
+            String seg = qualifiers.next();
+            if (seg.isEmpty()) {
+                return null; // Not a valid folder configuration
+            }
+
+            seg = seg.toLowerCase(Locale.US); // no-op if string is already in lower case
+
+            while (qualifierIndex < qualifierCount &&
+                    !DEFAULT_QUALIFIERS[qualifierIndex].checkAndSet(seg, config)) {
+                qualifierIndex++;
+            }
+
+            // if we reached the end of the qualifier we didn't find a matching qualifier.
+            if (qualifierIndex == qualifierCount) {
                 return null;
+            } else {
+                qualifierIndex++; // already processed this one
             }
         }
 
@@ -178,7 +298,19 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
      */
     @Nullable
     public static FolderConfiguration getConfigForFolder(@NonNull String folderName) {
-        return getConfig(Splitter.on('-').split(folderName));
+        return getConfig(QUALIFIER_SPLITTER.split(folderName));
+    }
+
+    /**
+     * Creates a {@link FolderConfiguration} matching the given qualifier string
+     * (just the qualifiers; e.g. for a folder like "values-en-rUS" this would be "en-rUS").
+     *
+     * @param qualifierString the qualifier string
+     * @return a FolderConfiguration object, or null if the qualifier string isn't valid..
+     */
+    @Nullable
+    public static FolderConfiguration getConfigForQualifierString(@NonNull String qualifierString) {
+        return getConfigFromQualifiers(QUALIFIER_SPLITTER.split(qualifierString));
     }
 
     /**
@@ -269,19 +401,6 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
     }
 
     /**
-     * Returns whether the Region qualifier is valid. Region qualifier can only be present if a
-     * Language qualifier is present as well.
-     * @return true if the Region qualifier is valid.
-     */
-    public boolean checkRegion() {
-        if (mQualifiers[INDEX_LANGUAGE] == null && mQualifiers[INDEX_REGION] != null) {
-            return false;
-        }
-
-        return true;
-    }
-
-    /**
      * Adds a qualifier to the {@link FolderConfiguration}
      * @param qualifier the {@link ResourceQualifier} to add.
      */
@@ -292,11 +411,8 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
         } else if (qualifier instanceof NetworkCodeQualifier) {
             mQualifiers[INDEX_NETWORK_CODE] = qualifier;
 
-        } else if (qualifier instanceof LanguageQualifier) {
-            mQualifiers[INDEX_LANGUAGE] = qualifier;
-
-        } else if (qualifier instanceof RegionQualifier) {
-            mQualifiers[INDEX_REGION] = qualifier;
+        } else if (qualifier instanceof LocaleQualifier) {
+            mQualifiers[INDEX_LOCALE] = qualifier;
 
         } else if (qualifier instanceof LayoutDirectionQualifier) {
             mQualifiers[INDEX_LAYOUT_DIR] = qualifier;
@@ -349,9 +465,6 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
         } else if (qualifier instanceof VersionQualifier) {
             mQualifiers[INDEX_VERSION] = qualifier;
 
-        } else if (qualifier instanceof LocaleQualifier) {
-            mQualifiers[INDEX_LOCALE] = qualifier;
-
         }
     }
 
@@ -395,24 +508,6 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
     @Nullable
     public NetworkCodeQualifier getNetworkCodeQualifier() {
         return (NetworkCodeQualifier)mQualifiers[INDEX_NETWORK_CODE];
-    }
-
-    public void setLanguageQualifier(LanguageQualifier qualifier) {
-        mQualifiers[INDEX_LANGUAGE] = qualifier;
-    }
-
-    @Nullable
-    public LanguageQualifier getLanguageQualifier() {
-        return (LanguageQualifier)mQualifiers[INDEX_LANGUAGE];
-    }
-
-    public void setRegionQualifier(RegionQualifier qualifier) {
-        mQualifiers[INDEX_REGION] = qualifier;
-    }
-
-    @Nullable
-    public RegionQualifier getRegionQualifier() {
-        return (RegionQualifier)mQualifiers[INDEX_REGION];
     }
 
     public void setLocaleQualifier(LocaleQualifier qualifier) {
@@ -765,36 +860,6 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
         int index = 0;
         ResourceQualifier qualifier;
 
-        // pre- language/region qualifiers
-        while (index < INDEX_LANGUAGE) {
-            qualifier = mQualifiers[index++];
-            if (qualifier != null) {
-                if (result == null) {
-                    result = new StringBuilder();
-                } else {
-                    result.append(", "); //$NON-NLS-1$
-                }
-                result.append(qualifier.getLongDisplayValue());
-
-            }
-        }
-
-        // process the language/region qualifier in a custom way, if there are both non null.
-        if (mQualifiers[INDEX_LANGUAGE] != null && mQualifiers[INDEX_REGION] != null) {
-            String language = mQualifiers[INDEX_LANGUAGE].getLongDisplayValue();
-            String region = mQualifiers[INDEX_REGION].getLongDisplayValue();
-
-            if (result == null) {
-                result = new StringBuilder();
-            } else {
-                result.append(", "); //$NON-NLS-1$
-            }
-            result.append(String.format("Locale %s_%s", language, region)); //$NON-NLS-1$
-
-            index += 2;
-        }
-
-        // post language/region qualifiers.
         while (index < INDEX_COUNT) {
             qualifier = mQualifiers[index++];
             if (qualifier != null) {
@@ -823,7 +888,6 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
         StringBuilder result = new StringBuilder(100);
         int index = 0;
 
-        // pre- language/region qualifiers
         while (index < INDEX_COUNT) {
             ResourceQualifier qualifier = mQualifiers[index++];
             if (qualifier != null) {
@@ -975,31 +1039,6 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
                     ResourceQualifier qualifier = configuration.getQualifier(q);
 
                     if (qualifier == null) {
-                        if (q == INDEX_LANGUAGE && configuration.getLocaleQualifier() != null) {
-                            LanguageQualifier language = configuration.getEffectiveLanguage();
-                            if (bestMatch != null && !bestMatch.equals(language)) {
-                                // there's a reference qualifier and there is a better match for
-                                // it than this resource, so we reject it.
-                                matchingConfigurables.remove(configurable);
-                                continue;
-                            }
-                            // looks like we keep this resource, move on to the next one.
-                            //noinspection AssignmentToForLoopParameter
-                            i++;
-                            continue;
-                        } else if (q == INDEX_LOCALE
-                                && configuration.getLanguageQualifier() != null) {
-                            LocaleQualifier locale = (LocaleQualifier)referenceQualifier;
-                            if (!configuration.getLanguageQualifier().equals(
-                                    locale.getLanguageQualifier())) {
-                                matchingConfigurables.remove(configurable);
-                                continue;
-                            }
-                            // looks like we keep this resource, move on to the next one.
-                            //noinspection AssignmentToForLoopParameter
-                            i++;
-                            continue;
-                        }
                         // this resources has no qualifier of this type: rejected.
                         matchingConfigurables.remove(configurable);
                     } else if (bestMatch != null && !bestMatch.equals(qualifier)) {
@@ -1048,39 +1087,6 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
             // it's only a non match if both qualifiers are non-null, and they don't match.
             if (testQualifier != null && referenceQualifier != null &&
                     !testQualifier.isMatchFor(referenceQualifier)) {
-
-                if (i >= INDEX_LANGUAGE && i <= INDEX_LOCALE) {
-                    // In aapt, locales are all normalized into a single BCP-47 format,
-                    // such that "en-rUS" and "-b+en+US" are considered a match. However,
-                    // here in the FolderConfiguration we are modelling the actual folder
-                    // names (to preserve the actual directory name semantics) so we need
-                    // to special case comparisons where these different incompatible
-                    // qualifiers are compared as a special case
-                }
-
-                return false;
-            }
-        }
-
-        // Also make sure that the locale matches if they differ in whether they
-        // specify locales as old 2-letter ISO codes or via BCP-47.
-        // In aapt, locales are all normalized into a single BCP-47 format,
-        // such that "en-rUS" and "-b+en+US" are considered a match. However,
-        // here in the FolderConfiguration we are modelling the actual folder
-        // names (to preserve the actual directory name semantics) so we need
-        // to special case comparisons.
-        if (mQualifiers[INDEX_LOCALE] != null
-                || referenceConfig.mQualifiers[INDEX_LOCALE] != null) {
-            ResourceQualifier testQualifier = getEffectiveLanguage();
-            ResourceQualifier referenceQualifier = referenceConfig.getEffectiveLanguage();
-            if (testQualifier != null && referenceQualifier != null &&
-                    !testQualifier.isMatchFor(referenceQualifier)) {
-                return false;
-            }
-            testQualifier = getEffectiveRegion();
-            referenceQualifier = referenceConfig.getEffectiveRegion();
-            if (testQualifier != null && referenceQualifier != null &&
-                    !testQualifier.isMatchFor(referenceQualifier)) {
                 return false;
             }
         }
@@ -1111,8 +1117,6 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
     public void createDefault() {
         mQualifiers[INDEX_COUNTRY_CODE] = new CountryCodeQualifier();
         mQualifiers[INDEX_NETWORK_CODE] = new NetworkCodeQualifier();
-        mQualifiers[INDEX_LANGUAGE] = new LanguageQualifier();
-        mQualifiers[INDEX_REGION] = new RegionQualifier();
         mQualifiers[INDEX_LOCALE] = new LocaleQualifier();
         mQualifiers[INDEX_LAYOUT_DIR] = new LayoutDirectionQualifier();
         mQualifiers[INDEX_SMALLEST_SCREEN_WIDTH] = new SmallestScreenWidthQualifier();
@@ -1154,45 +1158,5 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
         }
 
         return array;
-    }
-
-    /**
-     * Returns the effective language for this folder configuration.
-     * This will return the language code from either the normal language string,
-     * or a BCP-47 qualifier.
-     *
-     * @return a language qualifier for this folder configuration, if any
-     */
-    @Nullable
-    public LanguageQualifier getEffectiveLanguage() {
-        LanguageQualifier qualifier = getLanguageQualifier();
-        if (qualifier != null) {
-            return qualifier;
-        }
-        LocaleQualifier locale = getLocaleQualifier();
-        if (locale != null) {
-            return locale.getLanguageQualifier();
-        }
-        return null;
-    }
-
-    /**
-     * Returns the effective region for this folder configuration.
-     * This will return the region  code from either the normal region string,
-     * or a BCP-47 qualifier.
-     *
-     * @return a region qualifier for this folder configuration, if any
-     */
-    @Nullable
-    public RegionQualifier getEffectiveRegion() {
-        RegionQualifier qualifier = getRegionQualifier();
-        if (qualifier != null) {
-            return qualifier;
-        }
-        LocaleQualifier locale = getLocaleQualifier();
-        if (locale != null) {
-            return locale.getRegionQualifier();
-        }
-        return null;
     }
 }

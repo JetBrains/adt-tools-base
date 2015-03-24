@@ -21,7 +21,7 @@ import static com.android.SdkConstants.FD_RES_LAYOUT;
 
 import com.android.ide.common.rendering.api.ResourceValue;
 import com.android.ide.common.resources.configuration.FolderConfiguration;
-import com.android.ide.common.resources.configuration.LanguageQualifier;
+import com.android.ide.common.resources.configuration.LocaleQualifier;
 import com.android.ide.common.resources.configuration.ScreenOrientationQualifier;
 import com.android.io.FileWrapper;
 import com.android.io.IAbstractFile;
@@ -117,7 +117,7 @@ public class ResourceRepositoryTest extends TestCase {
         assertTrue(item.hasDefault());
         assertTrue(item.hasAlternates());
         FolderConfiguration folderConfig = new FolderConfiguration();
-        folderConfig.setLanguageQualifier(new LanguageQualifier("en"));
+        folderConfig.setLocaleQualifier(LocaleQualifier.getQualifier("en"));
         ResourceValue value =
                 item.getResourceValue(ResourceType.STRING, folderConfig, false);
         assertNotNull(value);
@@ -125,7 +125,7 @@ public class ResourceRepositoryTest extends TestCase {
         assertSame(ResourceType.STRING, value.getResourceType());
 
         folderConfig = new FolderConfiguration();
-        folderConfig.setLanguageQualifier(new LanguageQualifier("es"));
+        folderConfig.setLocaleQualifier(LocaleQualifier.getQualifier("es"));
         value = item.getResourceValue(ResourceType.STRING, folderConfig, false);
         assertNotNull(value);
         assertEquals("Todo", value.getValue());
@@ -165,7 +165,7 @@ public class ResourceRepositoryTest extends TestCase {
 
     public void testGetConfiguredResources() throws Exception {
         FolderConfiguration folderConfig = new FolderConfiguration();
-        folderConfig.setLanguageQualifier(new LanguageQualifier("es"));
+        folderConfig.setLocaleQualifier(LocaleQualifier.getQualifier("es"));
         folderConfig.setScreenOrientationQualifier(
                 new ScreenOrientationQualifier(ScreenOrientation.LANDSCAPE));
 

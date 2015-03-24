@@ -16,32 +16,42 @@
 
 package com.android.tools.lint.checks;
 
+import static com.android.ide.common.resources.configuration.FolderConfiguration.QUALIFIER_SPLITTER;
+import static com.android.ide.common.resources.configuration.LocaleQualifier.BCP_47_PREFIX;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.ide.common.resources.LocaleManager;
 import com.android.ide.common.resources.configuration.FolderConfiguration;
 import com.android.ide.common.resources.configuration.LocaleQualifier;
+import com.android.ide.common.resources.configuration.ResourceQualifier;
 import com.android.resources.ResourceFolderType;
 import com.android.tools.lint.detector.api.Category;
+import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
+import com.android.tools.lint.detector.api.LintUtils;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.ResourceContext;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.Speed;
-import com.android.utils.Pair;
 import com.google.common.base.Joiner;
-import com.google.common.base.Splitter;
+import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
 
+import java.io.File;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 /**
  * Checks for errors related to locale handling
@@ -136,6 +146,8 @@ public class LocaleFolderDetector extends Detector implements Detector.ResourceF
             .addMoreInfo("http://developer.android.com/guide/topics/resources/providing-resources.html")
             .addMoreInfo("https://tools.ietf.org/html/bcp47");
 
+    private Map<String,File> mBcp47Folders;
+
     /**
      * Constructs a new {@link LocaleFolderDetector}
      */
@@ -157,75 +169,73 @@ public class LocaleFolderDetector extends Detector implements Detector.ResourceF
 
     @Override
     public void checkFolder(@NonNull ResourceContext context, @NonNull String folderName) {
-        Pair<String, String> locale = TypoDetector.getLocale(folderName);
-        if (locale != null) {
-            final String language = locale.getFirst();
-            if (language != null) {
-                String replace = null;
-                if (language.equals("he")) {
-                    replace = "iw";
-                } else if (language.equals("id")) {
-                    replace = "in";
-                } else if (language.equals("yi")) {
-                    replace = "ji";
-                }
-                // Note: there is also fil=>tl
+        LocaleQualifier locale = LintUtils.getLocale(folderName);
+        if (locale != null && locale.hasLanguage()) {
+            final String language = locale.getLanguage();
+            String replace = null;
+            if (language.equals("he")) {
+                replace = "iw";
+            } else if (language.equals("id")) {
+                replace = "in";
+            } else if (language.equals("yi")) {
+                replace = "ji";
+            }
+            // Note: there is also fil=>tl
 
-                if (replace != null) {
-                    // TODO: Check for suppress somewhere other than lint.xml?
-                    String message = String.format("The locale folder \"`%1$s`\" should be "
-                                    + "called \"`%2$s`\" instead; see the "
-                                    + "`java.util.Locale` documentation",
-                            language, replace);
-                    context.report(DEPRECATED_CODE, Location.create(context.file), message);
-                }
+            if (replace != null) {
+                // TODO: Check for suppress somewhere other than lint.xml?
+                String message = String.format("The locale folder \"`%1$s`\" should be "
+                                + "called \"`%2$s`\" instead; see the "
+                                + "`java.util.Locale` documentation",
+                        language, replace);
+                context.report(DEPRECATED_CODE, Location.create(context.file), message);
+            }
 
-                if (language.length() == 3) {
-                    String languageAlpha2 = LocaleManager.getLanguageAlpha2(language.toLowerCase(Locale.US));
-                    if (languageAlpha2 != null) {
-                        String message = String.format("For compatibility, should use 2-letter "
-                                       + "language codes when available; use `%1$s` instead of `%2$s`",
-                                languageAlpha2, language);
-                        context.report(USE_ALPHA_2, Location.create(context.file), message);
+            if (language.length() == 3) {
+                String languageAlpha2 = LocaleManager.getLanguageAlpha2(language.toLowerCase(Locale.US));
+                if (languageAlpha2 != null) {
+                    String message = String.format("For compatibility, should use 2-letter "
+                                   + "language codes when available; use `%1$s` instead of `%2$s`",
+                            languageAlpha2, language);
+                    context.report(USE_ALPHA_2, Location.create(context.file), message);
+                }
+            }
+
+            String region = locale.getRegion();
+            if (region != null && locale.hasRegion() && region.length() == 3) {
+                String regionAlpha2 = LocaleManager.getRegionAlpha2(region.toUpperCase(Locale.UK));
+                if (regionAlpha2 != null) {
+                    String message = String.format("For compatibility, should use 2-letter "
+                                    + "region codes when available; use `%1$s` instead of `%2$s`",
+                            regionAlpha2 , region);
+                    context.report(USE_ALPHA_2, Location.create(context.file), message);
+
+                }
+            }
+
+            if (region != null && region.length() == 2) {
+                List<String> relevantRegions = LocaleManager.getRelevantRegions(language);
+                if (!relevantRegions.isEmpty() && !relevantRegions.contains(region)) {
+                    List<String> sortedRegions = sortRegions(language, relevantRegions);
+                    List<String> suggestions = Lists.newArrayList();
+                    for (String code : sortedRegions) {
+                        suggestions.add(code + " (" + LocaleManager.getRegionName(code) + ")");
                     }
-                }
 
-                String region = locale.getSecond();
-                if (region != null && region.length() == 3) {
-                    String regionAlpha2 = LocaleManager.getRegionAlpha2(region.toUpperCase(Locale.UK));
-                    if (regionAlpha2 != null) {
-                        String message = String.format("For compatibility, should use 2-letter "
-                                        + "region codes when available; use `%1$s` instead of `%2$s`",
-                                regionAlpha2 , region);
-                        context.report(USE_ALPHA_2, Location.create(context.file), message);
-
-                    }
-                }
-
-                if (region != null && region.length() == 2) {
-                    List<String> relevantRegions = LocaleManager.getRelevantRegions(language);
-                    if (!relevantRegions.isEmpty() && !relevantRegions.contains(region)) {
-                        List<String> sortedRegions = sortRegions(language, relevantRegions);
-                        List<String> suggestions = Lists.newArrayList();
-                        for (String code : sortedRegions) {
-                            suggestions.add(code + " (" + LocaleManager.getRegionName(code) + ")");
-                        }
-
-                        String message = String.format(
-                                "Suspicious language and region combination %1$s (%2$s) "
-                                        + "with %3$s (%4$s): language %5$s is usually "
-                                        + "paired with: %6$s",
-                                language, LocaleManager.getLanguageName(language), region,
-                                LocaleManager.getRegionName(region), language,
-                                Joiner.on(", ").join(suggestions));
-                        context.report(WRONG_REGION, Location.create(context.file), message);
-                    }
+                    String message = String.format(
+                            "Suspicious language and region combination %1$s (%2$s) "
+                                    + "with %3$s (%4$s): language %5$s is usually "
+                                    + "paired with: %6$s",
+                            language, LocaleManager.getLanguageName(language), region,
+                            LocaleManager.getRegionName(region), language,
+                            Joiner.on(", ").join(suggestions));
+                    context.report(WRONG_REGION, Location.create(context.file), message);
                 }
             }
         }
 
-        if (ResourceFolderType.getFolderType(folderName) != null &&
-                FolderConfiguration.getConfigForFolder(folderName) == null) {
+        FolderConfiguration config = FolderConfiguration.getConfigForFolder(folderName);
+        if (ResourceFolderType.getFolderType(folderName) != null && config == null) {
             String message = "Invalid resource folder: make sure qualifiers appear in the "
                     + "correct order, are spelled correctly, etc.";
             String bcpSuggestion = suggestBcp47Correction(folderName);
@@ -234,6 +244,14 @@ public class LocaleFolderDetector extends Detector implements Detector.ResourceF
                         bcpSuggestion);
             }
             context.report(INVALID_FOLDER, Location.create(context.file), message);
+        } else if (locale != null && folderName.contains(BCP_47_PREFIX)
+                && config != null && config.getLocaleQualifier() != null) {
+            if (mBcp47Folders == null) {
+                mBcp47Folders = Maps.newHashMap();
+            }
+            if (!mBcp47Folders.containsKey(folderName)) {
+                mBcp47Folders.put(folderName, context.file);
+            }
         }
     }
 
@@ -249,8 +267,7 @@ public class LocaleFolderDetector extends Detector implements Detector.ResourceF
     static String suggestBcp47Correction(String folderName) {
         String language = null;
         String region = null;
-        Iterator<String> iterator =
-                Splitter.on('-').omitEmptyStrings().split(folderName).iterator();
+        Iterator<String> iterator = QUALIFIER_SPLITTER.split(folderName).iterator();
         // Skip folder type
         if (!iterator.hasNext()) {
             return null;
@@ -306,12 +323,87 @@ public class LocaleFolderDetector extends Detector implements Detector.ResourceF
                         region = better;
                     }
                 }
-                return LocaleQualifier.PREFIX + language + '+' + region;
+                return BCP_47_PREFIX + language + '+' + region;
             }
-            return LocaleQualifier.PREFIX + language;
+            return BCP_47_PREFIX + language;
         }
 
         return null;
+    }
+
+    @Override
+    public void afterCheckProject(@NonNull Context context) {
+        // Ensure that if a language has multiple scripts, either minSdkVersion >= 21 or
+        // at most one folder does not have -v21 among the script options
+        if (mBcp47Folders != null &&
+                !context.getMainProject().getMinSdkVersion().isGreaterOrEqualThan(21)) {
+            Map<String,FolderConfiguration> folderToConfig = Maps.newHashMap();
+            Map<FolderConfiguration,File> configToFile = Maps.newHashMap();
+            Multimap<String,FolderConfiguration> languageToConfigs = ArrayListMultimap.create();
+            for (String folderName : mBcp47Folders.keySet()) {
+                FolderConfiguration config = FolderConfiguration.getConfigForFolder(folderName);
+                assert config != null : folderName; // we checked before adding to mBcp47Folders
+                LocaleQualifier locale = config.getLocaleQualifier();
+                assert locale != null : folderName;
+                folderToConfig.put(folderName, config);
+                configToFile.put(config, mBcp47Folders.get(folderName));
+                String key = locale.getLanguage();
+                if (locale.hasRegion()) {
+                    key = key + '_' + locale.getRegion();
+                }
+                languageToConfigs.put(key, config);
+            }
+
+            for (String language : languageToConfigs.keySet()) {
+                Collection<FolderConfiguration> configs = languageToConfigs.get(language);
+                if (configs.size() <= 1) {
+                    // No conflict
+                    // TODO: Warn if you specify a script and don't provide a fallback?
+                    continue;
+                }
+                // Count folders that do not specify -v21 and that don't vary in anything other
+                // than script
+                List<FolderConfiguration> candidates =
+                        Lists.newArrayListWithExpectedSize(configs.size());
+                for (FolderConfiguration config : configs) {
+                    if (config.getVersionQualifier() != null
+                            && config.getVersionQualifier().getVersion() >= 21) {
+                        continue;
+                    }
+                    // See if sets anything *other* than the locale qualifier
+                    boolean localeOnly = true;
+                    for (int i = 0, n = FolderConfiguration.getQualifierCount(); i < n; i++) {
+                        ResourceQualifier qualifier = config.getQualifier(i);
+                        if (qualifier != null && !(qualifier instanceof LocaleQualifier)) {
+                            localeOnly = false;
+                            break;
+                        }
+                    }
+                    if (!localeOnly) {
+                        continue;
+                    }
+                    candidates.add(config);
+                }
+
+                if (candidates.size() > 1) {
+                    Location location = null;
+                    List<String> folderNames = Lists.newArrayList();
+                    for (int i = candidates.size() - 1; i >= 0; i--) {
+                        FolderConfiguration config = candidates.get(i);
+                        File dir = configToFile.get(config);
+                        assert dir != null : config;
+                        Location secondary = location;
+                        location = Location.create(dir);
+                        location.setSecondary(secondary);
+                        folderNames.add(dir.getName());
+                    }
+                    String message = String.format(
+                            "Multiple locale folders for language `%1$s` map to a single folder in versions < API 21: %2$s",
+                            language, Joiner.on(", ").join(folderNames));
+                    context.report(INVALID_FOLDER, location, message);
+                }
+            }
+        }
     }
 
     /**

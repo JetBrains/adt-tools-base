@@ -65,6 +65,17 @@ public class FolderConfigurationTest extends TestCase {
                 "port-notouch-12key");
     }
 
+    public void testIsMatchFor() {
+        FolderConfiguration en = FolderConfiguration.getConfigForFolder("values-en");
+        FolderConfiguration enUs = FolderConfiguration.getConfigForFolder("values-en-rUS");
+        assertNotNull(en);
+        assertNotNull(enUs);
+        assertTrue(enUs.isMatchFor(enUs));
+        assertTrue(en.isMatchFor(en));
+        assertTrue(enUs.isMatchFor(en));
+        assertTrue(en.isMatchFor(enUs));
+    }
+
     public void testVersionResMatch() {
         runConfigMatchTest(
                 "en-rUS-w600dp-h1024dp-large-port-mdpi-finger-nokeys-v12",
@@ -107,8 +118,8 @@ public class FolderConfigurationTest extends TestCase {
         FolderConfiguration configForFolder =
                 FolderConfiguration.getConfig(new String[] { "values", "en", "rUS" });
         assertNotNull(configForFolder);
-        assertEquals("en", configForFolder.getLanguageQualifier().getValue());
-        assertEquals("US", configForFolder.getRegionQualifier().getValue());
+        assertEquals("en", configForFolder.getLocaleQualifier().getLanguage());
+        assertEquals("US", configForFolder.getLocaleQualifier().getRegion());
         assertNull(configForFolder.getScreenDimensionQualifier());
         assertNull(configForFolder.getLayoutDirectionQualifier());
     }
@@ -123,8 +134,8 @@ public class FolderConfigurationTest extends TestCase {
         FolderConfiguration configForFolder =
                 FolderConfiguration.getConfigForFolder("values-en-rUS");
         assertNotNull(configForFolder);
-        assertEquals("en", configForFolder.getLanguageQualifier().getValue());
-        assertEquals("US", configForFolder.getRegionQualifier().getValue());
+        assertEquals("en", configForFolder.getLocaleQualifier().getLanguage());
+        assertEquals("US", configForFolder.getLocaleQualifier().getRegion());
         assertNull(configForFolder.getScreenDimensionQualifier());
         assertNull(configForFolder.getLayoutDirectionQualifier());
     }
@@ -134,8 +145,8 @@ public class FolderConfigurationTest extends TestCase {
         FolderConfiguration configForFolder =
                 FolderConfiguration.getConfigForFolder("values-EN-rus");
         assertNotNull(configForFolder);
-        assertEquals("en", configForFolder.getLanguageQualifier().getValue());
-        assertEquals("US", configForFolder.getRegionQualifier().getValue());
+        assertEquals("en", configForFolder.getLocaleQualifier().getLanguage());
+        assertEquals("US", configForFolder.getLocaleQualifier().getRegion());
         assertNull(configForFolder.getScreenDimensionQualifier());
         assertNull(configForFolder.getLayoutDirectionQualifier());
         assertEquals("layout-en-rUS", configForFolder.getFolderName(ResourceFolderType.LAYOUT));
@@ -155,7 +166,7 @@ public class FolderConfigurationTest extends TestCase {
     public void testToStrings() {
         FolderConfiguration configForFolder = FolderConfiguration.getConfigForFolder("values-en-rUS");
         assertNotNull(configForFolder);
-        assertEquals("Locale Language en_Region US", configForFolder.toDisplayString());
+        assertEquals("Locale en_US", configForFolder.toDisplayString());
         assertEquals("en,US", configForFolder.toShortDisplayString());
         assertEquals("layout-en-rUS", configForFolder.getFolderName(ResourceFolderType.LAYOUT));
         assertEquals("-en-rUS", configForFolder.getUniqueKey());

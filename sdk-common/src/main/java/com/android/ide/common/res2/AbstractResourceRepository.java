@@ -30,8 +30,6 @@ import com.android.ide.common.resources.configuration.Configurable;
 import com.android.ide.common.resources.configuration.FolderConfiguration;
 import com.android.ide.common.resources.configuration.LocaleQualifier;
 import com.android.resources.ResourceType;
-import com.android.utils.Pair;
-import com.google.common.base.Splitter;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -464,17 +462,45 @@ public abstract class AbstractResourceRepository {
             }
         }
 
-        Splitter splitter = Splitter.on('-');
         for (String s : qualifiers) {
-            for (String qualifier : splitter.split(s)) {
-                if (qualifier.length() == 2 && Character.isLetter(qualifier.charAt(0))
-                        && Character.isLetter(qualifier.charAt(1))) {
-                    set.add(qualifier);
-                } else if (qualifier.startsWith(LocaleQualifier.PREFIX)) {
-                    Pair<String, String> pair = LocaleQualifier.parseBcp47(qualifier);
-                    if (pair != null) {
-                        set.add(pair.getFirst());
-                    }
+            FolderConfiguration configuration = FolderConfiguration.getConfigForQualifierString(s);
+            if (configuration != null) {
+                LocaleQualifier locale = configuration.getLocaleQualifier();
+                if (locale != null) {
+                    set.add(locale.getLanguage());
+                }
+            }
+        }
+
+        return set;
+    }
+
+    /**
+     * Returns the sorted list of languages used in the resources.
+     */
+    @NonNull
+    public SortedSet<LocaleQualifier> getLocales() {
+        SortedSet<LocaleQualifier> set = new TreeSet<LocaleQualifier>();
+
+        // As an optimization we could just look for values since that's typically where
+        // the languages are defined -- not on layouts, menus, etc -- especially if there
+        // are no translations for it
+        Set<String> qualifiers = Sets.newHashSet();
+
+        synchronized (ITEM_MAP_LOCK) {
+            for (ListMultimap<String, ResourceItem> map : getMap().values()) {
+                for (ResourceItem item : map.values()) {
+                    qualifiers.add(item.getQualifiers());
+                }
+            }
+        }
+
+        for (String s : qualifiers) {
+            FolderConfiguration configuration = FolderConfiguration.getConfigForQualifierString(s);
+            if (configuration != null) {
+                LocaleQualifier locale = configuration.getLocaleQualifier();
+                if (locale != null) {
+                    set.add(locale);
                 }
             }
         }
@@ -502,24 +528,13 @@ public abstract class AbstractResourceRepository {
             }
         }
 
-        Splitter splitter = Splitter.on('-');
         for (String s : qualifiers) {
-            boolean rightLanguage = false;
-            for (String qualifier : splitter.split(s)) {
-                if (currentLanguage.equals(qualifier)) {
-                    rightLanguage = true;
-                } else if (rightLanguage
-                        && qualifier.length() == 3
-                        && qualifier.charAt(0) == 'r'
-                        && Character.isUpperCase(qualifier.charAt(1))
-                        && Character.isUpperCase(qualifier.charAt(2))) {
-                    set.add(qualifier.substring(1));
-                } else if (qualifier.startsWith(LocaleQualifier.PREFIX)) {
-                    Pair<String, String> pair = LocaleQualifier.parseBcp47(qualifier);
-                    if (pair != null && pair.getSecond() != null
-                            && pair.getFirst().equals(currentLanguage)) {
-                        set.add(pair.getSecond());
-                    }
+            FolderConfiguration configuration = FolderConfiguration.getConfigForQualifierString(s);
+            if (configuration != null) {
+                LocaleQualifier locale = configuration.getLocaleQualifier();
+                if (locale != null && locale.getRegion() != null
+                        && locale.getLanguage().equals(currentLanguage)) {
+                    set.add(locale.getRegion());
                 }
             }
         }

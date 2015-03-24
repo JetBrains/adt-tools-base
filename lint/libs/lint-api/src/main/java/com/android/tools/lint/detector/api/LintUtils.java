@@ -19,6 +19,7 @@ package com.android.tools.lint.detector.api;
 import static com.android.SdkConstants.ANDROID_MANIFEST_XML;
 import static com.android.SdkConstants.ANDROID_PREFIX;
 import static com.android.SdkConstants.ANDROID_URI;
+import static com.android.SdkConstants.ATTR_LOCALE;
 import static com.android.SdkConstants.BIN_FOLDER;
 import static com.android.SdkConstants.DOT_GIF;
 import static com.android.SdkConstants.DOT_JPEG;
@@ -26,10 +27,12 @@ import static com.android.SdkConstants.DOT_JPG;
 import static com.android.SdkConstants.DOT_PNG;
 import static com.android.SdkConstants.DOT_WEBP;
 import static com.android.SdkConstants.DOT_XML;
-import static com.android.SdkConstants.FD_RES_VALUES;
 import static com.android.SdkConstants.ID_PREFIX;
 import static com.android.SdkConstants.NEW_ID_PREFIX;
+import static com.android.SdkConstants.TOOLS_URI;
 import static com.android.SdkConstants.UTF_8;
+import static com.android.ide.common.resources.configuration.FolderConfiguration.QUALIFIER_SPLITTER;
+import static com.android.ide.common.resources.configuration.LocaleQualifier.BCP_47_PREFIX;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -41,6 +44,7 @@ import com.android.ide.common.rendering.api.StyleResourceValue;
 import com.android.ide.common.res2.AbstractResourceRepository;
 import com.android.ide.common.res2.ResourceItem;
 import com.android.ide.common.resources.ResourceUrl;
+import com.android.ide.common.resources.configuration.FolderConfiguration;
 import com.android.ide.common.resources.configuration.LocaleQualifier;
 import com.android.resources.FolderTypeRelationship;
 import com.android.resources.ResourceFolderType;
@@ -50,7 +54,6 @@ import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.SdkVersionInfo;
 import com.android.sdklib.repository.FullRevision;
 import com.android.tools.lint.client.api.LintClient;
-import com.android.utils.Pair;
 import com.android.utils.PositionXmlParser;
 import com.android.utils.SdkUtils;
 import com.google.common.annotations.Beta;
@@ -762,7 +765,7 @@ public class LintUtils {
 
         String locale = null;
 
-        for (String qualifier : Splitter.on('-').split(folderName)) {
+        for (String qualifier : QUALIFIER_SPLITTER.split(folderName)) {
             int qualifierLength = qualifier.length();
             if (qualifierLength == 2) {
                 char first = qualifier.charAt(0);
@@ -777,7 +780,7 @@ public class LintUtils {
                     return locale + '-' + qualifier;
                 }
                 break;
-            } else if (qualifier.startsWith(LocaleQualifier.PREFIX)) {
+            } else if (qualifier.startsWith(BCP_47_PREFIX)) {
                 return qualifier;
             }
         }
@@ -1207,6 +1210,59 @@ public class LintUtils {
         }
         catch (IOException e) {
             return value; // shouldn't happen; we're not going to disk
+        }
+    }
+
+    /**
+     * Returns the locale for the given parent folder.
+     *
+     * @param parent the name of the parent folder
+     * @return null if the locale is not known, or a locale qualifier providing the language
+     *    and possibly region
+     */
+    @Nullable
+    public static LocaleQualifier getLocale(@NonNull String parent) {
+        if (parent.indexOf('-') != -1) {
+            FolderConfiguration config = FolderConfiguration.getConfigForFolder(parent);
+            if (config != null) {
+                return config.getLocaleQualifier();
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Returns the locale for the given context.
+     *
+     * @param context the context to look up the locale for
+     * @return null if the locale is not known, or a locale qualifier providing the language
+     *    and possibly region
+     */
+    @Nullable
+    public static LocaleQualifier getLocale(@NonNull XmlContext context) {
+        Element root = context.document.getDocumentElement();
+        if (root != null) {
+            String locale = root.getAttributeNS(TOOLS_URI, ATTR_LOCALE);
+            if (locale != null && !locale.isEmpty()) {
+                return getLocale(locale);
+            }
+        }
+
+        return getLocale(context.file.getParentFile().getName());
+    }
+
+    /**
+     * Check whether the given resource file is in an English locale
+     * @param context the XML context for the resource file
+     * @param assumeForBase whether the base folder (e.g. no locale specified) should be
+     *                      treated as English
+     */
+    public static boolean isEnglishResource(@NonNull XmlContext context, boolean assumeForBase) {
+        LocaleQualifier locale = LintUtils.getLocale(context);
+        if (locale == null) {
+            return assumeForBase;
+        } else {
+            return "en".equals(locale.getLanguage());  //$NON-NLS-1$
         }
     }
 }
