@@ -26,6 +26,7 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.FieldNode;
 import org.objectweb.asm.tree.InnerClassNode;
 import org.objectweb.asm.tree.InsnList;
 import org.objectweb.asm.tree.InsnNode;
@@ -148,6 +149,15 @@ public class MockableJarGenerator {
         for (MethodNode methodNode : methodNodes) {
             methodNode.access &= ~Opcodes.ACC_FINAL;
             fixMethodBody(methodNode, classNode);
+        }
+
+        List<FieldNode> fieldNodes = classNode.fields;
+        for (FieldNode fieldNode : fieldNodes) {
+            // Make public instance fields non-final. This is needed e.g. to "mock" SyncResult.stats.
+            if ((fieldNode.access & Opcodes.ACC_PUBLIC) != 0 &&
+                    (fieldNode.access & Opcodes.ACC_STATIC) == 0) {
+                fieldNode.access &= ~Opcodes.ACC_FINAL;
+            }
         }
 
         List<InnerClassNode> innerClasses = classNode.innerClasses;
