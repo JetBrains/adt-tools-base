@@ -976,8 +976,7 @@ abstract class TaskManager {
         zipAlign.dependsOn(variantOutputData.packageSplitResourcesTask)
     }
 
-    public void createSplitAbiTasks(
-            @NonNull ApplicationVariantData variantData) {
+    public void createSplitAbiTasks(@NonNull ApplicationVariantData variantData) {
 
         assert variantData.getSplitHandlingPolicy() ==
                 BaseVariantData.SplitHandlingPolicy.RELEASE_21_AND_AFTER_POLICY;
@@ -1029,6 +1028,7 @@ abstract class TaskManager {
                 new File("$project.buildDir/${FD_INTERMEDIATES}/splits/${config.dirName}")
         variantOutputData.packageSplitAbiTask.androidBuilder = androidBuilder
         variantOutputData.packageSplitAbiTask.dependsOn generateSplitAbiRes
+        variantOutputData.packageSplitAbiTask.dependsOn getNdkBuildable(variantData)
 
         conventionMapping(variantOutputData.packageSplitAbiTask).map("jniFolders") {
             getJniFolders(variantData);
