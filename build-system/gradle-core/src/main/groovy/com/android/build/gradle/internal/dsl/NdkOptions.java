@@ -19,6 +19,7 @@ package com.android.build.gradle.internal.dsl;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.core.NdkConfig;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
 import org.gradle.api.tasks.Input;
@@ -27,6 +28,7 @@ import org.gradle.api.tasks.Optional;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -37,7 +39,7 @@ public class NdkOptions implements NdkConfig, Serializable {
 
     private String moduleName;
     private String cFlags;
-    private Set<String> ldLibs;
+    private List<String> ldLibs;
     private Set<String> abiFilters;
     private String stl;
 
@@ -73,14 +75,14 @@ public class NdkOptions implements NdkConfig, Serializable {
 
     @Override
     @Input @Optional
-    public Set<String> getLdLibs() {
+    public List<String> getLdLibs() {
         return ldLibs;
     }
 
     @NonNull
     public NdkOptions ldLibs(String lib) {
         if (ldLibs == null) {
-            ldLibs = Sets.newHashSet();
+            ldLibs = Lists.newArrayList();
         }
         ldLibs.add(lib);
         return this;
@@ -89,7 +91,7 @@ public class NdkOptions implements NdkConfig, Serializable {
     @NonNull
     public NdkOptions ldLibs(String... libs) {
         if (ldLibs == null) {
-            ldLibs = Sets.newHashSetWithExpectedSize(libs.length);
+            ldLibs = Lists.newArrayListWithCapacity(libs.length);
         }
         Collections.addAll(ldLibs, libs);
         return this;
@@ -98,16 +100,16 @@ public class NdkOptions implements NdkConfig, Serializable {
     @NonNull
     public NdkOptions setLdLibs(Collection<String> libs) {
         if (libs != null) {
-            if (abiFilters == null) {
-                abiFilters = Sets.newHashSetWithExpectedSize(libs.size());
+            if (ldLibs == null) {
+                ldLibs = Lists.newArrayListWithCapacity(libs.size());
             } else {
-                abiFilters.clear();
+                ldLibs.clear();
             }
             for (String filter : libs) {
-                abiFilters.add(filter);
+                ldLibs.add(filter);
             }
         } else {
-            abiFilters = null;
+            ldLibs = null;
         }
         return this;
     }

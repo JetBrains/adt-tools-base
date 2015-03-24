@@ -18,8 +18,10 @@ package com.android.build.gradle.internal.core;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -29,7 +31,7 @@ public class MergedNdkConfig implements NdkConfig {
 
     private String moduleName;
     private String cFlags;
-    private Set<String> ldLibs;
+    private List<String> ldLibs;
     private Set<String> abiFilters;
     private String stl;
 
@@ -54,7 +56,7 @@ public class MergedNdkConfig implements NdkConfig {
 
     @Override
     @Nullable
-    public Set<String> getLdLibs() {
+    public List<String> getLdLibs() {
         return ldLibs;
     }
 
@@ -98,7 +100,7 @@ public class MergedNdkConfig implements NdkConfig {
 
         if (ndkConfig.getLdLibs() != null) {
             if (ldLibs == null) {
-                ldLibs = Sets.newHashSetWithExpectedSize(ndkConfig.getLdLibs().size());
+                ldLibs = Lists.newArrayListWithCapacity(ndkConfig.getLdLibs().size());
             } else {
                 ldLibs.clear();
             }
