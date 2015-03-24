@@ -36,7 +36,7 @@ import static org.junit.Assert.assertNull
  * Assemble tests for embedded.
  */
 @CompileStatic
-class EmbedTest {
+class WearVariantTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
             .fromSample("embedded")
