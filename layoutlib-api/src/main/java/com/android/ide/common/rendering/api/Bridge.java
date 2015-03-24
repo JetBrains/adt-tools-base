@@ -35,7 +35,7 @@ import java.util.Map;
 @SuppressWarnings({"MethodMayBeStatic", "UnusedDeclaration"})
 public abstract class Bridge {
 
-    public static final int API_CURRENT = 14;
+    public static final int API_CURRENT = 15;
 
     /**
      * Returns the API level of the layout library.
@@ -118,6 +118,17 @@ public abstract class Bridge {
      * @return the result of the action.
      */
     public Result renderDrawable(DrawableParams params) {
+        return Status.NOT_IMPLEMENTED.createResult();
+    }
+
+    /**
+     * Renders a Drawable. If passed Drawable is a StateListDrawable, it would be rendered in all
+     * available states. If the rendering is successful, the result images is accessible through
+     * {@link Result#getData()}. It will contain a {@link List} of {@link BufferedImage} instances
+     * @param params the rendering parameters.
+     * @return the result of the action.
+     */
+    public Result renderDrawableInAllStates(DrawableParams params) {
         return Status.NOT_IMPLEMENTED.createResult();
     }
 
