@@ -15,19 +15,15 @@
  */
 
 package com.android.build.gradle.integration.application
-
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.AndroidTestApp
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
 import com.android.build.gradle.integration.common.fixture.app.TestSourceFile
-import com.android.ide.common.res2.MergingException
 import com.google.common.base.Throwables
 import groovy.transform.CompileStatic
 import org.gradle.tooling.BuildException
-import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.ClassRule
-import org.junit.Rule
 import org.junit.Test
 
 @CompileStatic
@@ -65,7 +61,7 @@ android {
     buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
 }
 """
-        app.writeSources(project.testDir)
+        app.write(project.testDir, null)
     }
 
     @Test

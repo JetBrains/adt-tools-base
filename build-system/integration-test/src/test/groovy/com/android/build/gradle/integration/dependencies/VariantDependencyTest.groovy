@@ -53,7 +53,7 @@ class VariantDependencyTest {
 
     @BeforeClass
     public static void setUp() {
-        new HelloWorldApp().writeSources(project.testDir)
+        new HelloWorldApp().write(project.testDir, null)
         project.getBuildFile() << """
             apply plugin: 'com.android.application'
 
