@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.build.gradle.tasks
+package com.android.build.gradle
 
 import com.android.annotations.NonNull
 import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.api.ApplicationVariant
 import com.android.build.gradle.api.BaseVariant
+import com.android.build.gradle.api.TestVariant
 import com.android.build.gradle.internal.ExtraModelInfo
 import com.android.build.gradle.internal.SdkHandler
 import com.android.build.gradle.internal.dsl.BuildType
@@ -31,19 +32,21 @@ import org.gradle.api.internal.DefaultDomainObjectSet
 import org.gradle.api.internal.project.ProjectInternal
 import org.gradle.internal.reflect.Instantiator
 
+import static com.android.builder.core.VariantType.ANDROID_TEST
+import static com.android.builder.core.VariantType.UNIT_TEST
+
 /**
- * 'android' extension for 'com.android.test' project.
+ * base 'android' extension for plugins that have a test component.
  */
 @CompileStatic
-public class TestExtension extends BaseExtension {
+public abstract class TestedExtension extends BaseExtension {
 
-    private final DefaultDomainObjectSet<ApplicationVariant> applicationVariantList =
-        new DefaultDomainObjectSet<ApplicationVariant>(ApplicationVariant.class)
+    private final DefaultDomainObjectSet<TestVariant> testVariantList =
+            new DefaultDomainObjectSet<TestVariant>(TestVariant.class)
 
-    private String targetProjectPath = null
-    private String targetVariant = "debug"
+    String testBuildType = "debug"
 
-    TestExtension(
+    TestedExtension(
             @NonNull ProjectInternal project,
             @NonNull Instantiator instantiator,
             @NonNull AndroidBuilder androidBuilder,
@@ -55,45 +58,21 @@ public class TestExtension extends BaseExtension {
             boolean isLibrary) {
         super(project, instantiator, androidBuilder, sdkHandler, buildTypes, productFlavors,
                 signingConfigs, extraModelInfo, isLibrary)
+
+        sourceSetsContainer.create(ANDROID_TEST.prefix)
+        sourceSetsContainer.create(UNIT_TEST.prefix)
     }
 
     /**
-     * Returns the list of Application variants. Since the collections is built after evaluation,
-     * it should be used with Gradle's <code>all</code> iterator to process future items.
-     *
+     * Returns the list of test variants. Since the collections is built after evaluation,
+     * it should be used with Groovy's <code>all</code> iterator to process future items.
      */
-    public DefaultDomainObjectSet<ApplicationVariant> getApplicationVariants() {
-        return applicationVariantList
+    @NonNull
+    public DefaultDomainObjectSet<TestVariant> getTestVariants() {
+        return testVariantList
     }
 
-    @Override
-    void addVariant(BaseVariant variant) {
-        applicationVariantList.add((ApplicationVariant) variant)
-    }
-
-    String getTargetProjectPath() {
-        return targetProjectPath
-    }
-
-    void setTargetProjectPath(String targetProjectPath) {
-        checkWritability()
-        this.targetProjectPath = targetProjectPath
-    }
-
-    void targetProjectPath(String targetProjectPath) {
-        setTargetProjectPath(targetProjectPath)
-    }
-
-    String getTargetVariant() {
-        return targetVariant
-    }
-
-    void setTargetVariant(String targetVariant) {
-        checkWritability()
-        this.targetVariant = targetVariant
-    }
-
-    void targetVariant(String targetVariant) {
-        setTargetVariant(targetVariant)
+    void addTestVariant(TestVariant testVariant) {
+        testVariantList.add(testVariant)
     }
 }
