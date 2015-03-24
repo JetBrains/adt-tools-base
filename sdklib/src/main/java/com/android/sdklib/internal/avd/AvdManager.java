@@ -1695,7 +1695,7 @@ public class AvdManager {
         }
 
         // Check the system image from the target
-        ISystemImage sysImage = target.getSystemImage(tag, abiType);
+        ISystemImage sysImage = target != null ? target.getSystemImage(tag, abiType) : null;
 
         // Get the device status if this AVD is associated with a device
         DeviceStatus deviceStatus = null;
