@@ -249,12 +249,57 @@ public class VariantManager implements VariantModel {
     }
 
     /**
+     * Create assemble task for VariantData.
+     */
+    private void createAssembleTaskForVariantData(TaskContainer tasks, BaseVariantData<?> variantData) {
+        if (variantData.getType().isForTesting()) {
+            variantData.assembleVariantTask = taskManager.createAssembleTask(variantData);
+        } else {
+            BuildTypeData buildTypeData =
+                    buildTypes.get(variantData.getVariantConfiguration().getBuildType().getName());
+
+            if (productFlavors.isEmpty()) {
+                // Reuse assemble task for build type if there is no product flavor.
+                variantData.assembleVariantTask = buildTypeData.getAssembleTask();
+            } else {
+                variantData.assembleVariantTask = taskManager.createAssembleTask(variantData);
+
+                // setup the task dependencies
+                // build type
+                buildTypeData.getAssembleTask().dependsOn(variantData.assembleVariantTask);
+
+                // each flavor
+                GradleVariantConfiguration variantConfig = variantData.getVariantConfiguration();
+                for (GroupableProductFlavor flavor : variantConfig.getProductFlavors()) {
+                    productFlavors.get(flavor.getName()).getAssembleTask()
+                            .dependsOn(variantData.assembleVariantTask);
+                }
+
+                // assembleTask for this flavor(dimension), created on demand if needed.
+                if (variantConfig.getProductFlavors().size() > 1) {
+                    String name = StringHelper.capitalize(variantConfig.getFlavorName());
+                    Task assembleTask = tasks.findByName("assemble" + name);
+                    if (assembleTask == null) {
+                        assembleTask = tasks.create("assemble" + name);
+                        assembleTask.setDescription(
+                                "Assembles all builds for flavor combination: " + name);
+                        assembleTask.setGroup("Build");
+                    }
+                    assembleTask.dependsOn(variantData.assembleVariantTask);
+                    tasks.getByName("assemble").dependsOn(assembleTask);
+                }
+            }
+        }
+    }
+
+    /**
      * Create tasks for the specified variantData.
      */
     public void createTasksForVariantData(TaskContainer tasks,
             BaseVariantData<? extends BaseVariantOutputData> variantData) {
         VariantType variantType = variantData.getType();
 
+        createAssembleTaskForVariantData(tasks, variantData);
         if (variantType.isForTesting()) {
             GradleVariantConfiguration testVariantConfig = variantData.getVariantConfiguration();
             BaseVariantData testedVariantData = (BaseVariantData) ((TestVariantData) variantData)
@@ -308,46 +353,7 @@ public class VariantManager implements VariantModel {
                     throw new IllegalArgumentException("Unknown test type " + variantType);
             }
         } else {
-            if (productFlavors.isEmpty()) {
-                taskManager.createTasksForVariantData(
-                        variantData,
-                        buildTypes.get(
-                                variantData.getVariantConfiguration().getBuildType().getName())
-                                .getAssembleTask());
-            } else {
-                taskManager.createTasksForVariantData(variantData, null);
-
-                // setup the task dependencies
-                // build type
-                buildTypes.get(variantData.getVariantConfiguration().getBuildType().getName())
-                        .getAssembleTask().dependsOn(variantData.assembleVariantTask);
-
-                // each flavor
-                GradleVariantConfiguration variantConfig = variantData.getVariantConfiguration();
-                for (GroupableProductFlavor flavor : variantConfig.getProductFlavors()) {
-                    productFlavors.get(flavor.getName()).getAssembleTask()
-                            .dependsOn(variantData.assembleVariantTask);
-                }
-
-                Task assembleTask = null;
-                // assembleTask for this flavor(dimension), created on demand if needed.
-                if (variantConfig.getProductFlavors().size() > 1) {
-                    String name = StringHelper.capitalize(variantConfig.getFlavorName());
-                    assembleTask = tasks.findByName("assemble" + name);
-                    if (assembleTask == null) {
-                        assembleTask = tasks.create("assemble" + name);
-                        assembleTask.setDescription(
-                                "Assembles all builds for flavor combination: " + name);
-                        assembleTask.setGroup("Build");
-
-                        tasks.getByName("assemble").dependsOn(assembleTask);
-                    }
-                }
-                // flavor combo
-                if (assembleTask != null) {
-                    assembleTask.dependsOn(variantData.assembleVariantTask);
-                }
-            }
+            taskManager.createTasksForVariantData(variantData);
         }
     }
 
