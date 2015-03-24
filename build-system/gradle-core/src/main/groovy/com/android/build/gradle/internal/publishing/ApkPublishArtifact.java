@@ -41,7 +41,8 @@ public class ApkPublishArtifact implements PublishArtifact {
     private final String classifier;
 
     @NonNull
-    private final OutputFileTask task;
+    private final OutputFileTask outputFileTask;
+
     @NonNull
     private final TaskDependency taskDependency;
 
@@ -63,11 +64,12 @@ public class ApkPublishArtifact implements PublishArtifact {
     public ApkPublishArtifact(
             @NonNull String name,
             @Nullable String classifier,
-            @NonNull OutputFileTask task) {
+            @NonNull OutputFileTask outputFileTask,
+            @NonNull Task task) {
         this.name = name;
         this.classifier = classifier;
-        this.task = task;
-        this.taskDependency = new DefaultTaskDependency((Task) task);
+        this.outputFileTask = outputFileTask;
+        this.taskDependency = new DefaultTaskDependency(task);
     }
 
 
@@ -94,7 +96,7 @@ public class ApkPublishArtifact implements PublishArtifact {
 
     @Override
     public File getFile() {
-        return task.getOutputFile();
+        return outputFileTask.getOutputFile();
     }
 
     @Override

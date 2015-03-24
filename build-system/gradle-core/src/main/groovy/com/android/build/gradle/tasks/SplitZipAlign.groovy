@@ -22,22 +22,15 @@ import com.android.build.OutputFile
 import com.android.build.OutputFile.FilterType
 import com.android.build.gradle.api.ApkOutputFile
 import com.android.build.gradle.internal.model.FilterDataImpl
-import com.google.common.base.Optional
-import com.google.common.collect.ImmutableCollection
 import com.google.common.collect.ImmutableList
-import com.google.common.collect.ImmutableSet
 import com.google.common.util.concurrent.Callables
-import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
-import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.OutputFiles
 import org.gradle.api.tasks.ParallelizableTask
 import org.gradle.api.tasks.TaskAction
 
-import java.util.logging.Filter
 import java.util.regex.Matcher
 import java.util.regex.Pattern
 
@@ -45,7 +38,7 @@ import java.util.regex.Pattern
  * Task to zip align all the splits
  */
 @ParallelizableTask
-class SplitZipAlign extends DefaultTask {
+class SplitZipAlign extends SplitRelatedTask {
 
     @InputFiles
     List<File> inputFiles = new ArrayList<>();
@@ -79,7 +72,7 @@ class SplitZipAlign extends DefaultTask {
         Closure addingLogic = { String split, File file ->
             outputFiles.add(new ApkOutputFile(OutputFile.OutputType.SPLIT,
                     ImmutableList.<FilterData>of(
-                            FilterDataImpl.Builder.build(
+                            FilterDataImpl.build(
                                     getFilterType(split).toString(), getFilter(split))),
                     Callables.<File>returning(
                             new File(outputDirectory,
@@ -171,5 +164,14 @@ class SplitZipAlign extends DefaultTask {
         }
         forEachUnalignedInput(zipAlignIt)
         forEachUnsignedInput(zipAlignIt)
+    }
+
+    @Override
+    List<FilterData> getSplitsData() {
+        ImmutableList.Builder<FilterData> filterDataBuilder = ImmutableList.builder();
+        addAllFilterData(filterDataBuilder, densityFilters, FilterType.DENSITY);
+        addAllFilterData(filterDataBuilder, languageFilters, FilterType.LANGUAGE);
+        addAllFilterData(filterDataBuilder, abiFilters, FilterType.ABI);
+        return filterDataBuilder.build();
     }
 }

@@ -23,7 +23,6 @@ import com.android.build.gradle.api.ApkOutputFile
 import com.android.build.gradle.internal.dsl.PackagingOptions
 import com.android.build.gradle.internal.dsl.SigningConfig
 import com.android.build.gradle.internal.model.FilterDataImpl
-import com.android.build.gradle.internal.tasks.BaseTask
 import com.google.common.base.Joiner
 import com.google.common.collect.ImmutableList
 import com.google.common.collect.ImmutableSet
@@ -43,7 +42,7 @@ import java.util.regex.Pattern
  * Package a abi dimension specific split APK
  */
 @ParallelizableTask
-class PackageSplitAbi extends BaseTask {
+class PackageSplitAbi extends SplitRelatedTask {
 
     ImmutableList<ApkOutputFile> outputFiles;
 
@@ -85,7 +84,7 @@ class PackageSplitAbi extends BaseTask {
                 ApkOutputFile apkOutput = new ApkOutputFile(
                         OutputFile.OutputType.SPLIT,
                         ImmutableList.<FilterData> of(
-                                FilterDataImpl.Builder.build(OutputFile.ABI, apkName)),
+                                FilterDataImpl.build(OutputFile.ABI, apkName)),
                         Callables.returning(new File(outputDirectory, apkName)))
                 builder.add(apkOutput)
             }
@@ -137,6 +136,13 @@ class PackageSplitAbi extends BaseTask {
             logger.error(message);
             throw new IllegalStateException(message);
         }
+    }
+
+    @Override
+    List<FilterData> getSplitsData() {
+        ImmutableList.Builder<FilterData> filterDataBuilder = ImmutableList.builder()
+        addAllFilterData(filterDataBuilder, splits, OutputFile.FilterType.ABI);
+        return filterDataBuilder.build()
     }
 
     private String getApkName(String split) {
