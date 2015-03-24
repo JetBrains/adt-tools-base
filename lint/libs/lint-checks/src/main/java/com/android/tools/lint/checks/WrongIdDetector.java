@@ -122,7 +122,7 @@ public class WrongIdDetector extends LayoutDetector {
             "NotSibling", //$NON-NLS-1$
             "RelativeLayout Invalid Constraints",
             "Layout constraints in a given `RelativeLayout` should reference other views " +
-            "within the same relative layout.",
+            "within the same relative layout (but not itself!)",
             Category.CORRECTNESS,
             6,
             Severity.FATAL,
@@ -213,7 +213,10 @@ public class WrongIdDetector extends LayoutDetector {
                         ids.add(id);
                     }
                 }
+
                 for (Element element : children) {
+                    String selfId = stripIdPrefix(element.getAttributeNS(ANDROID_URI, ATTR_ID));
+
                     NamedNodeMap attributes = element.getAttributes();
                     for (int i = 0, n = attributes.getLength(); i < n; i++) {
                         Attr attr = (Attr) attributes.item(i);
@@ -236,8 +239,21 @@ public class WrongIdDetector extends LayoutDetector {
                                 }
                                 mHandles.add(Pair.of(value, handle));
                             } else {
-                                // Check siblings
+                                // Check siblings. TODO: Look for cycles!
                                 if (ids.contains(value)) {
+                                    // Make sure it's not pointing to self
+                                    if (!ATTR_ID.equals(attr.getLocalName())
+                                            && !selfId.isEmpty()
+                                            && value.endsWith(selfId)
+                                            && stripIdPrefix(value).equals(selfId)) {
+                                        XmlContext xmlContext = (XmlContext) context;
+                                        String message = String.format(
+                                                "Cannot be relative to self: id=%1$s, %2$s=%3$s",
+                                                selfId, attr.getLocalName(), selfId);
+                                        Location location = xmlContext.getLocation(attr);
+                                        xmlContext.report(NOT_SIBLING, attr, location, message);
+                                    }
+
                                     continue;
                                 }
                                 if (value.startsWith(NEW_ID_PREFIX)) {
