@@ -138,7 +138,7 @@ class ExtractAnnotations extends AbstractCompile {
             }
 
             Extractor extractor = new Extractor(database, classDir,
-                    project.logger.isEnabled(LogLevel.INFO));
+                    project.logger.isEnabled(LogLevel.INFO), false);
             extractor.extractFromProjectSource(parsedUnits)
             if (mergeJars != null) {
                 for (File jar : mergeJars) {
