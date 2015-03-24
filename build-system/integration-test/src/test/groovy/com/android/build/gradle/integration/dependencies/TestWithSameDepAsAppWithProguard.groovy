@@ -40,6 +40,10 @@ class TestWithSameDepAsAppWithProguard {
         project.getBuildFile() << """
 apply plugin: 'com.android.application'
 
+repositories {
+  jcenter()
+}
+
 android {
   compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
   buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
