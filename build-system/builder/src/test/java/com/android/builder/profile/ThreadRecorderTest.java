@@ -35,8 +35,8 @@ public class ThreadRecorderTest {
     public void setUp() {
 
         // reset for each test.
-        ProcessRecorderFactory.INSTANCE = new ProcessRecorderFactory();
-        ProcessRecorderFactory.INSTANCE.setRecordWriter(
+        ProcessRecorderFactory.sINSTANCE = new ProcessRecorderFactory();
+        ProcessRecorderFactory.sINSTANCE.setRecordWriter(
                 Mockito.mock(ProcessRecorder.ExecutionRecordWriter.class));
     }
 

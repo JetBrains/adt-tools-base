@@ -73,6 +73,22 @@ public class WorkQueue<T> implements Runnable {
     }
 
     /**
+     * Creates a non expanding queue, with a number of dedicated threads to process
+     * the queue's jobs.
+     *
+     * @param logger to log messages
+     * @param queueName a meaningful descriptive name.
+     * @param workforce the number of dedicated threads for this queue.
+     */
+    public WorkQueue(
+            @NonNull ILogger logger,
+            @NonNull QueueThreadContext<T> queueThreadContext,
+            @NonNull String queueName,
+            int workforce) {
+        this(logger, queueThreadContext, queueName, workforce, Float.MAX_VALUE);
+    }
+
+    /**
      * Creates a new queue, with a number of dedicated threads to process
      * the queue's jobs.
      *
@@ -87,7 +103,7 @@ public class WorkQueue<T> implements Runnable {
             @NonNull QueueThreadContext<T> queueThreadContext,
             @NonNull String queueName,
             int workforce,
-            int growthTriggerRatio) {
+            float growthTriggerRatio) {
 
         this.mLogger = logger;
         this.mName = queueName;

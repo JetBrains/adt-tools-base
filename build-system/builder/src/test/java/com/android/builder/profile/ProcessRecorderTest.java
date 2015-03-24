@@ -24,8 +24,10 @@ import com.android.annotations.NonNull;
 
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -40,7 +42,8 @@ public class ProcessRecorderTest {
     @Before
     public void setUp() {
         // reset for each test.
-        ProcessRecorderFactory.INSTANCE = new ProcessRecorderFactory();
+        ProcessRecorderFactory.setEnabled(true);
+        ProcessRecorderFactory.sINSTANCE = new ProcessRecorderFactory();
     }
 
     @Test
@@ -48,7 +51,7 @@ public class ProcessRecorderTest {
         StringWriter stringWriter = new StringWriter();
         ProcessRecorder.JsonRecordWriter jsonRecordWriter =
                 new ProcessRecorder.JsonRecordWriter(stringWriter);
-        ProcessRecorderFactory.INSTANCE.setRecordWriter(jsonRecordWriter);
+        ProcessRecorderFactory.sINSTANCE.setRecordWriter(jsonRecordWriter);
         ThreadRecorder.get().record(ExecutionType.SOME_RANDOM_PROCESSING,
                 new Recorder.Block<Integer>() {
                     @Override
@@ -71,7 +74,7 @@ public class ProcessRecorderTest {
         StringWriter stringWriter = new StringWriter();
         ProcessRecorder.JsonRecordWriter jsonRecordWriter =
                 new ProcessRecorder.JsonRecordWriter(stringWriter);
-        ProcessRecorderFactory.INSTANCE.setRecordWriter(jsonRecordWriter);
+        ProcessRecorderFactory.sINSTANCE.setRecordWriter(jsonRecordWriter);
         ThreadRecorder.get().record(ExecutionType.SOME_RANDOM_PROCESSING,
                 new Recorder.Block<Integer>() {
                     @Override
@@ -95,9 +98,14 @@ public class ProcessRecorderTest {
             public void write(@NonNull ExecutionRecord executionRecord) {
                 records.add(executionRecord);
             }
+
+            @Override
+            public void close() throws IOException {
+
+            }
         };
 
-        ProcessRecorderFactory.INSTANCE.setRecordWriter(recorderWriter);
+        ProcessRecorderFactory.sINSTANCE.setRecordWriter(recorderWriter);
         ThreadRecorder.get().record(ExecutionType.SOME_RANDOM_PROCESSING,
                 new Recorder.Block<Integer>() {
                     @Override
@@ -128,8 +136,13 @@ public class ProcessRecorderTest {
             public void write(@NonNull ExecutionRecord executionRecord) {
                 records.add(executionRecord);
             }
+
+            @Override
+            public void close() throws IOException {
+
+            }
         };
-        ProcessRecorderFactory.INSTANCE.setRecordWriter(recorderWriter);
+        ProcessRecorderFactory.sINSTANCE.setRecordWriter(recorderWriter);
         Integer value = ThreadRecorder.get().record(ExecutionType.SOME_RANDOM_PROCESSING,
                 new Recorder.Block<Integer>() {
                     @Override
