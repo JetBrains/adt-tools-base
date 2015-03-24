@@ -1,9 +1,11 @@
 package com.android.ide.common.resources;
 
+import com.android.ide.common.rendering.api.DensityBasedResourceValue;
 import com.android.ide.common.rendering.api.LayoutLog;
 import com.android.ide.common.rendering.api.ResourceValue;
 import com.android.ide.common.rendering.api.StyleResourceValue;
 import com.android.ide.common.resources.configuration.FolderConfiguration;
+import com.android.resources.Density;
 import com.android.resources.ResourceType;
 import com.google.common.collect.Lists;
 
@@ -65,6 +67,8 @@ public class ResourceResolverTest extends TestCase {
                         "layout-land/onlyLand.xml", "<!--contents doesn't matter-->",
 
                         "drawable/graphic.9.png", new byte[0],
+
+                        "mipmap-xhdpi/ic_launcher.png", new byte[0],
 
                         "values/styles.xml", ""
                         + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
@@ -158,6 +162,9 @@ public class ResourceResolverTest extends TestCase {
         assertEquals("#ffffffff",
                 resolver.findResValue("@android:color/background_light", true).getValue());
         assertNull(resolver.findResValue("?attr/non_existent_style", false)); // shouldn't log an error.
+        assertEquals(Density.XHIGH,
+                ((DensityBasedResourceValue) resolver.findResValue("@mipmap/ic_launcher", false))
+                        .getResourceDensity());  // also ensures that returned value is instance of DensityBasedResourceValue
 
         // getTheme
         StyleResourceValue myTheme = resolver.getTheme("MyTheme", false);
