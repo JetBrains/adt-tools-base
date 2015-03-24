@@ -70,6 +70,7 @@ import com.android.build.gradle.tasks.AndroidProGuardTask
 import com.android.build.gradle.tasks.CompatibleScreensManifest
 import com.android.build.gradle.tasks.Dex
 import com.android.build.gradle.tasks.GenerateBuildConfig
+import com.android.build.gradle.tasks.GeneratePngsFromVectorDrawablesTask
 import com.android.build.gradle.tasks.GenerateResValues
 import com.android.build.gradle.tasks.GenerateSplitAbiRes
 import com.android.build.gradle.tasks.JackTask
@@ -99,10 +100,12 @@ import com.android.builder.internal.testing.SimpleTestCallable
 import com.android.builder.model.ApiVersion
 import com.android.builder.model.ProductFlavor
 import com.android.builder.model.SourceProvider
+import com.android.builder.png.VectorDrawableRenderer
 import com.android.builder.testing.ConnectedDeviceProvider
 import com.android.builder.testing.TestData
 import com.android.builder.testing.api.DeviceProvider
 import com.android.builder.testing.api.TestServer
+import com.android.resources.Density
 import com.android.sdklib.AndroidTargetHash
 import com.android.sdklib.BuildToolInfo
 import com.android.sdklib.IAndroidTarget
@@ -834,6 +837,36 @@ abstract class TaskManager {
         }
     }
 
+    public void createBackportResourcesTask(
+            @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData) {
+        String variantName = variantData.variantConfiguration.fullName.capitalize()
+
+        variantData.backportResourcesTask = project.tasks.create("backport${variantName}Resources")
+
+        int minSdk = variantData.variantConfiguration.minSdkVersion.getApiLevel()
+        if (extension.generatePngs  && minSdk < VectorDrawableRenderer.MIN_SDK_WITH_VECTOR_SUPPORT) {
+            GeneratePngsFromVectorDrawablesTask generatePngs = project.tasks.create(
+                    "generate${variantName}Pngs",
+                    GeneratePngsFromVectorDrawablesTask)
+            variantData.generatePngsFromVectorDrawablesTask = generatePngs
+
+            generatePngs.dependsOn variantData.mergeResourcesTask
+
+            File resDirectory = variantData.mergeResourcesTask.outputDir
+
+            generatePngs.xmlFiles =  project.fileTree(
+                    dir: resDirectory,
+                    includes: ["drawable*/*.xml"])
+            generatePngs.outputResDirectory = resDirectory
+            // TODO: configure this in the extension.
+            generatePngs.densitiesToGenerate = [Density.HIGH, Density.XHIGH]
+
+            variantData.backportResourcesTask.dependsOn variantData.generatePngsFromVectorDrawablesTask
+        }
+
+    }
+
+
     public void createProcessResTask(
             @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData,
             boolean generateResourcePackage) {
@@ -865,7 +898,8 @@ abstract class TaskManager {
             variantOutputData.processResourcesTask = processResources
 
             processResources.dependsOn variantOutputData.manifestProcessorTask,
-                    variantData.mergeResourcesTask, variantData.mergeAssetsTask
+                    variantData.mergeResourcesTask, variantData.mergeAssetsTask,
+                    variantData.backportResourcesTask
             processResources.androidBuilder = androidBuilder
 
             if (variantData.getSplitHandlingPolicy() ==
@@ -1424,6 +1458,8 @@ abstract class TaskManager {
 
         // Add a task to create the BuildConfig class
         createBuildConfigTask(variantData)
+
+        createBackportResourcesTask(variantData)
 
         // Add a task to generate resource source files
         createProcessResTask(variantData, true /*generateResourcePackage*/)
