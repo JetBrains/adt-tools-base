@@ -95,7 +95,7 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
         return mManifestPlaceholders;
     }
 
-    public void addManifestPlaceHolders(@NonNull Map<String, Object> manifestPlaceholders) {
+    public void addManifestPlaceholders(@NonNull Map<String, Object> manifestPlaceholders) {
         mManifestPlaceholders.putAll(manifestPlaceholders);
     }
 

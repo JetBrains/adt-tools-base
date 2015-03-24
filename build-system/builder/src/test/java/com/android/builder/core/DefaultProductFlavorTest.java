@@ -50,7 +50,7 @@ public class DefaultProductFlavorTest extends TestCase {
         mCustom.setTestHandleProfiling(true);
         mCustom.setTestFunctionalTest(true);
         mCustom.addResourceConfiguration("hdpi");
-        mCustom.addManifestPlaceHolders(
+        mCustom.addManifestPlaceholders(
                 ImmutableMap.<String, Object>of("one", "oneValue", "two", "twoValue"));
 
         mCustom.addResValue(new ClassFieldImpl("foo", "one", "oneValue"));
@@ -61,8 +61,8 @@ public class DefaultProductFlavorTest extends TestCase {
 
         mCustom2 = new DefaultProductFlavor("custom2");
         mCustom2.addResourceConfigurations("ldpi", "hdpi");
-        mCustom2.addManifestPlaceHolders(
-                ImmutableMap.<String, Object>of("two","twoValueBis", "three", "threeValue"));
+        mCustom2.addManifestPlaceholders(
+                ImmutableMap.<String, Object>of("two", "twoValueBis", "three", "threeValue"));
         mCustom2.addResValue(new ClassFieldImpl("foo", "two", "twoValueBis"));
         mCustom2.addResValue(new ClassFieldImpl("foo", "three", "threeValue"));
         mCustom2.addBuildConfigField(new ClassFieldImpl("foo", "two", "twoValueBis"));
