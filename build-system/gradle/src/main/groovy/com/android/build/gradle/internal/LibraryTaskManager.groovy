@@ -20,7 +20,6 @@ import com.android.SdkConstants
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
 import com.android.build.gradle.BaseExtension
-import com.android.build.gradle.BasePlugin
 import com.android.build.gradle.LibraryExtension
 import com.android.build.gradle.internal.core.GradleVariantConfiguration
 import com.android.build.gradle.internal.tasks.MergeFileTask
@@ -39,9 +38,6 @@ import com.android.builder.dependency.LibraryDependency
 import com.android.builder.dependency.ManifestDependency
 import com.android.builder.model.AndroidLibrary
 import com.android.builder.model.MavenCoordinates
-import groovy.transform.CompileStatic
-import groovy.transform.CompileDynamic
-import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.internal.ConventionMapping
@@ -55,7 +51,6 @@ import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry
 
 import static com.android.SdkConstants.FN_ANNOTATIONS_ZIP
 import static com.android.SdkConstants.LIBS_FOLDER
-import static com.android.build.gradle.internal.TaskManager.DIR_BUNDLES
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
 import static com.android.builder.model.AndroidProject.FD_OUTPUTS
 
@@ -236,7 +231,9 @@ class LibraryTaskManager extends TaskManager {
             Sync packageLocalJar = project.tasks.create(
                     "package${fullName.capitalize()}LocalJar",
                     Sync)
-            packageLocalJar.from(BasePlugin.getPackagedLocalJarFileList(variantData.variantDependency))
+            packageLocalJar.from(
+                    DependencyManager.getPackagedLocalJarFileList(
+                            variantData.variantDependency).toArray())
             packageLocalJar.into(project.file(
                     "$project.buildDir/${FD_INTERMEDIATES}/$DIR_BUNDLES/${dirName}/$LIBS_FOLDER"))
 
