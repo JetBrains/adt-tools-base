@@ -295,6 +295,7 @@ public class TranslationDetectorTest extends AbstractCheckTest {
     }
 
     public void testEnglishRegionAndValuesAsEnglish1() throws Exception {
+        TranslationDetector.sCompleteRegions = false;
         // tools:locale=en in base folder
         // Regression test for https://code.google.com/p/android/issues/detail?id=75879
         assertEquals("No warnings.",
@@ -306,6 +307,7 @@ public class TranslationDetectorTest extends AbstractCheckTest {
     }
 
     public void testEnglishRegionAndValuesAsEnglish2() throws Exception {
+        TranslationDetector.sCompleteRegions = false;
         // No tools:locale specified in the base folder: *assume* English
         // Regression test for https://code.google.com/p/android/issues/detail?id=75879
         assertEquals(""
@@ -324,6 +326,7 @@ public class TranslationDetectorTest extends AbstractCheckTest {
     }
 
     public void testEnglishRegionAndValuesAsEnglish3() throws Exception {
+        TranslationDetector.sCompleteRegions = false;
         // tools:locale=de in base folder
         // Regression test for https://code.google.com/p/android/issues/detail?id=75879
         assertEquals("No warnings.",
