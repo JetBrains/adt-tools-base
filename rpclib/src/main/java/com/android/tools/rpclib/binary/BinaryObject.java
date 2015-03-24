@@ -20,7 +20,7 @@ package com.android.tools.rpclib.binary;
  * {@link Decoder#object}, respectively.
  */
 public interface BinaryObject extends Decodable, Encodable {
-  int NULL_ID = 0xffff;
+  int NULL_ID = 0;
 
   /**
    * @return the object's unique type identifier.
