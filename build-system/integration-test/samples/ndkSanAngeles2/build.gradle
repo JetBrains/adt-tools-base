@@ -13,25 +13,39 @@ buildscript {
         }
     }
     dependencies {
-        classpath "com.android.tools.build:gradle:$gradleVersion"
+        classpath "com.android.tools.build:gradle-experimental:$gradleVersion"
     }
 }
 
-apply plugin: 'com.android.application'
+apply plugin: 'com.android.model.application'
 
-android {
-    compileSdkVersion 19
-    buildToolsVersion = rootProject.ext.buildToolsVersion
+model {
+    android.config {
+        compileSdkVersion 19
+        buildToolsVersion = rootProject.ext.buildToolsVersion
 
-    defaultConfig {
-        // This actual the app version code. Giving ourselves 1,000,000 values
-        versionCode = 123
+        defaultConfig {
+            // This actual the app version code. Giving ourselves 1,000,000 values
+            versionCode = 123
+        }
+
+        // make per-variant version code
+        applicationVariants.all { variant ->
+            // get the single flavor
+            def flavorVersion = variant.productFlavors.get(0).versionCode
+
+            // set the composite code
+            variant.mergedFlavor.versionCode = flavorVersion * 1000000 + defaultConfig.versionCode
+        }
+    }
+    android.buildTypes {
+        debug {
+            debuggable true
+        }
     }
 
-    buildTypes.debug.jniDebuggable true
-
-    useNewNativePlugin = true
-    ndk {
+    android.ndk {
+        compileSdkVersion 19
         moduleName "sanangeles"
         cFlags "-DDISABLE_IMPORTGL"
         ldLibs "GLESv1_CM", "dl", "log"
@@ -39,7 +53,7 @@ android {
         toolchain "clang"
     }
 
-    productFlavors {
+    android.productFlavors {
         x86 {
             ndk {
                 abiFilter "x86"
@@ -69,12 +83,4 @@ android {
         }
     }
 
-    // make per-variant version code
-    applicationVariants.all { variant ->
-        // get the single flavor
-        def flavorVersion = variant.productFlavors.get(0).versionCode
-
-        // set the composite code
-        variant.mergedFlavor.versionCode = flavorVersion * 1000000 + defaultConfig.versionCode
-    }
 }

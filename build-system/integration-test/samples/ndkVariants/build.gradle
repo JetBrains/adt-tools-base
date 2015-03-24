@@ -13,18 +13,20 @@ buildscript {
         }
     }
     dependencies {
-        classpath "com.android.tools.build:gradle:$gradleVersion"
+        classpath "com.android.tools.build:gradle-experimental:$gradleVersion"
     }
 }
 
-apply plugin: 'com.android.application'
+apply plugin: 'com.android.model.application'
 
-android {
-    compileSdkVersion 19
-    buildToolsVersion = rootProject.ext.buildToolsVersion
+model {
+    android.config {
+        compileSdkVersion 19
+        buildToolsVersion = rootProject.ext.buildToolsVersion
 
-    useNewNativePlugin true
-    ndk {
+    }
+
+    android.ndk {
         moduleName "simple-jni"
 
         // TODO: Include a way to set include directories the DSL.
@@ -32,7 +34,7 @@ android {
         stl "stlport_static"
     }
 
-    productFlavors {
+    android.productFlavors {
         free
         premium
     }
