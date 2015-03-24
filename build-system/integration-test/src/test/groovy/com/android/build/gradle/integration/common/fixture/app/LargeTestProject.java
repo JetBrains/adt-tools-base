@@ -30,7 +30,7 @@ import java.util.List;
 /**
  * Implementation of TestProject that can create large scale projects with lots of modules.
  */
-public class LargeTestProject implements TestProject {
+public class LargeTestProject<T extends GradleModule> implements TestProject {
 
     public static final int SMALL_DEPTH = 4;
     public static final int SMALL_BREADTH = 2;
@@ -42,22 +42,18 @@ public class LargeTestProject implements TestProject {
     public static final int VERY_LARGE_BREADTH = 5;
 
     @NonNull
-    private final ProjectType type;
+    private final GradleModuleFactory factory;
     private final int maxDepth;
     private final int maxBreadth;
 
-    public enum ProjectType {
-        ANDROID, JAVA
-    }
-
     public static final class Builder {
 
-        private ProjectType type;
+        private Class<? extends GradleModule> moduleClass;
         private int maxDepth = 1;
         private int maxBreadth = 1;
 
-        public Builder withType(@NonNull ProjectType type) {
-            this.type = type;
+        public Builder withModule(@NonNull Class<? extends GradleModule> moduleClass) {
+            this.moduleClass = moduleClass;
             return this;
         }
 
@@ -72,37 +68,7 @@ public class LargeTestProject implements TestProject {
         }
 
         public LargeTestProject create() throws IOException {
-            return new LargeTestProject(type, maxDepth, maxBreadth);
-        }
-    }
-
-    /**
-     * A factory to create GradleModule
-     */
-    interface ModuleFactory {
-        GradleModule createModule(
-                @NonNull File location,
-                @NonNull String path,
-                @NonNull List<? extends GradleModule> projectDeps);
-    }
-
-    static class AndroidModuleFactory implements ModuleFactory {
-        @Override
-        public GradleModule createModule(
-                @NonNull File location,
-                @NonNull String path,
-                @NonNull List<? extends GradleModule> projectDeps) {
-            return new AndroidGradleModule(location, path, projectDeps);
-        }
-    }
-
-    static class JavaModuleFactory implements ModuleFactory {
-        @Override
-        public GradleModule createModule(
-                @NonNull File location,
-                @NonNull String path,
-                @NonNull List<? extends GradleModule> projectDeps) {
-            return new JavaGradleModule(location, path, projectDeps);
+            return new LargeTestProject(new GradleModuleFactory(moduleClass), maxDepth, maxBreadth);
         }
     }
 
@@ -112,8 +78,8 @@ public class LargeTestProject implements TestProject {
     }
 
     public LargeTestProject(
-            @NonNull ProjectType type, int maxDepth, int maxBreadth) {
-        this.type = type;
+            @NonNull GradleModuleFactory factory, int maxDepth, int maxBreadth) {
+        this.factory = factory;
         this.maxDepth = maxDepth;
         this.maxBreadth = maxBreadth;
     }
@@ -121,15 +87,6 @@ public class LargeTestProject implements TestProject {
     @Override
     public void write(@NonNull File projectDir, @Nullable String buildScriptContent)
             throws IOException {
-
-        ModuleFactory factory;
-        if (type == ProjectType.ANDROID) {
-            factory = new AndroidModuleFactory();
-        } else if (type == ProjectType.JAVA) {
-            factory = new JavaModuleFactory();
-        } else {
-            throw new RuntimeException("No ProjectType provided");
-        }
 
         GradleModule gradleModule = createProject(factory, 0, ":", projectDir, "0");
 
@@ -143,7 +100,7 @@ public class LargeTestProject implements TestProject {
     }
 
     private GradleModule createProject(
-            @NonNull ModuleFactory factory,
+            @NonNull GradleModuleFactory factory,
             int depth,
             @NonNull String path,
             @NonNull File location,
