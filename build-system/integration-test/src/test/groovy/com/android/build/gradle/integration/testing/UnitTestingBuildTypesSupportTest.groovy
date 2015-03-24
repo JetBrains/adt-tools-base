@@ -41,6 +41,7 @@ class UnitTestingBuildTypesSupportTest {
 
         assert results.outcome("referenceProductionCode") == PASSED
         assert results.outcome("resourcesOnClasspath") == PASSED
+        assert results.outcome("useDebugOnlyDependency") == PASSED
 
         flavorsProject.execute("clean", "testBuildTypeWithResource")
         results = new JUnitResults(

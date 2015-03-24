@@ -19,14 +19,15 @@ package com.android.tests;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
-import org.junit.Ignore;
-import android.app.Application;
 import android.app.Activity;
+import android.app.Application;
 import android.bluetooth.BluetoothAdapter;
-import org.junit.Test;
-
+import com.google.common.collect.Lists;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.List;
+import org.junit.Ignore;
+import org.junit.Test;
 
 public class UnitTest {
     @Test
@@ -44,5 +45,10 @@ public class UnitTest {
 
         InputStream stream = UnitTest.class.getClassLoader().getResourceAsStream("resource_file.txt");
         assertNull(stream);
+    }
+
+    @Test
+    public void useDebugOnlyDependency() {
+        List<String> strings = Lists.newArrayList();
     }
 }

@@ -15,63 +15,20 @@
  */
 
 package com.android.build.gradle.internal
-
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
 import com.android.build.gradle.internal.api.DefaultAndroidSourceSet
 import com.android.builder.core.BuilderConstants
 import com.android.builder.core.DefaultProductFlavor
-import com.android.builder.core.VariantType
 import groovy.transform.CompileStatic
 import org.gradle.api.Project
 import org.gradle.api.Task
-import org.gradle.api.artifacts.Configuration
-
 /**
  * Class containing a ProductFlavor and associated data (sourcesets)
  */
 @CompileStatic
-public class ProductFlavorData<T extends DefaultProductFlavor> {
-
-    public static class ConfigurationProviderImpl implements ConfigurationProvider {
-
-        private final Project project
-        private final DefaultAndroidSourceSet sourceSet
-
-        ConfigurationProviderImpl(Project project, DefaultAndroidSourceSet sourceSet) {
-            this.project = project
-            this.sourceSet = sourceSet
-        }
-
-        @Override
-        @NonNull
-        public Configuration getCompileConfiguration() {
-            return project.configurations.getByName(sourceSet.compileConfigurationName)
-        }
-
-        @Override
-        @NonNull
-        public Configuration getPackageConfiguration() {
-            return project.configurations.getByName(sourceSet.packageConfigurationName)
-        }
-
-        @Override
-        @NonNull
-        Configuration getProvidedConfiguration() {
-            return project.configurations.getByName(sourceSet.providedConfigurationName)
-        }
-    }
-
+public class ProductFlavorData<T extends DefaultProductFlavor> extends VariantDimensionData {
     final T productFlavor
-
-    final DefaultAndroidSourceSet sourceSet
-    private final DefaultAndroidSourceSet androidTestSourceSet
-    private final DefaultAndroidSourceSet unitTestSourceSet
-
-    final ConfigurationProvider mainProvider
-    private final ConfigurationProvider androidTestProvider
-    private final ConfigurationProvider unitTestProvider
-
     final Task assembleTask
 
     ProductFlavorData(
@@ -80,17 +37,9 @@ public class ProductFlavorData<T extends DefaultProductFlavor> {
             @Nullable DefaultAndroidSourceSet androidTestSourceSet,
             @Nullable DefaultAndroidSourceSet unitTestSourceSet,
             @NonNull Project project) {
+        super(sourceSet, androidTestSourceSet, unitTestSourceSet, project)
+
         this.productFlavor = productFlavor
-        this.sourceSet = sourceSet
-        this.androidTestSourceSet = androidTestSourceSet
-        this.unitTestSourceSet = unitTestSourceSet
-
-        mainProvider = new ConfigurationProviderImpl(project, sourceSet)
-
-        androidTestProvider = androidTestSourceSet != null ?
-                new ConfigurationProviderImpl(project, androidTestSourceSet) : null
-        unitTestProvider = unitTestSourceSet != null ?
-                new ConfigurationProviderImpl(project, unitTestSourceSet) : null
 
         if (!BuilderConstants.MAIN.equals(sourceSet.name)) {
             assembleTask = project.tasks.create("assemble${sourceSet.name.capitalize()}")
@@ -99,34 +48,5 @@ public class ProductFlavorData<T extends DefaultProductFlavor> {
         } else {
             assembleTask = null
         }
-    }
-
-    @Nullable
-    DefaultAndroidSourceSet getTestSourceSet(@NonNull VariantType type) {
-        switch (type) {
-            case VariantType.ANDROID_TEST:
-                return androidTestSourceSet;
-            case VariantType.UNIT_TEST:
-                return unitTestSourceSet;
-            default:
-                throw unknownTestType(type)
-        }
-    }
-
-    @Nullable
-    ConfigurationProvider getTestConfigurationProvider(@NonNull VariantType type) {
-        switch (type) {
-            case VariantType.ANDROID_TEST:
-                return androidTestProvider;
-            case VariantType.UNIT_TEST:
-                return unitTestProvider;
-            default:
-                throw unknownTestType(type)
-        }
-    }
-
-    private static Throwable unknownTestType(VariantType type) {
-        throw new IllegalArgumentException(
-                String.format("Unknown test variant type %s", type));
     }
 }
