@@ -17,7 +17,11 @@
 package com.android.tools.lint.checks;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+import com.android.annotations.VisibleForTesting;
 import com.android.ide.common.resources.LocaleManager;
+import com.android.ide.common.resources.configuration.FolderConfiguration;
+import com.android.ide.common.resources.configuration.LocaleQualifier;
 import com.android.resources.ResourceFolderType;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Detector;
@@ -30,11 +34,14 @@ import com.android.tools.lint.detector.api.Severity;
 import com.android.tools.lint.detector.api.Speed;
 import com.android.utils.Pair;
 import com.google.common.base.Joiner;
+import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
 
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Checks for errors related to locale handling
@@ -97,6 +104,38 @@ public class LocaleFolderDetector extends Detector implements Detector.ResourceF
             Severity.WARNING,
             IMPLEMENTATION);
 
+    public static final Issue USE_ALPHA_2 = Issue.create(
+            "UseAlpha2", //$NON-NLS-1$
+            "Using 3-letter Codes",
+            "For compatibility with earlier devices, you should only use 3-letter language " +
+            "and region codes when there is no corresponding 2 letter code.",
+
+            Category.CORRECTNESS,
+            6,
+            Severity.WARNING,
+            IMPLEMENTATION).addMoreInfo("https://tools.ietf.org/html/bcp47");
+
+    public static final Issue INVALID_FOLDER = Issue.create(
+            "InvalidResourceFolder", //$NON-NLS-1$
+            "Invalid Resource Folder",
+            "This lint check looks for a folder name that is not a valid resource folder " +
+            "name; these will be ignored and not packaged by the Android Gradle build plugin.\n" +
+            "\n" +
+            "Note that the order of resources is very important; for example, you can't specify " +
+            "a language before a network code.\n" +
+            "\n" +
+            "Similarly, note that to use 3 letter language or region codes, you have to use " +
+            "a special BCP 47 syntax: the prefix b+ followed by the BCP 47 language tag but " +
+            "with `+` as the individual separators instead of `-`. Therefore, for the BCP 47 " +
+            "language tag `es-419` you have to use `b+es+419`.",
+
+            Category.CORRECTNESS,
+            6,
+            Severity.ERROR,
+            IMPLEMENTATION)
+            .addMoreInfo("http://developer.android.com/guide/topics/resources/providing-resources.html")
+            .addMoreInfo("https://tools.ietf.org/html/bcp47");
+
     /**
      * Constructs a new {@link LocaleFolderDetector}
      */
@@ -141,8 +180,29 @@ public class LocaleFolderDetector extends Detector implements Detector.ResourceF
                     context.report(DEPRECATED_CODE, Location.create(context.file), message);
                 }
 
+                if (language.length() == 3) {
+                    String languageAlpha2 = LocaleManager.getLanguageAlpha2(language.toLowerCase(Locale.US));
+                    if (languageAlpha2 != null) {
+                        String message = String.format("For compatibility, should use 2-letter "
+                                       + "language codes when available; use `%1$s` instead of `%2$s`",
+                                language, languageAlpha2);
+                        context.report(USE_ALPHA_2, Location.create(context.file), message);
+                    }
+                }
+
                 String region = locale.getSecond();
-                if (region != null) {
+                if (region != null && region.length() == 3) {
+                    String regionAlpha2 = LocaleManager.getRegionAlpha2(region.toUpperCase(Locale.UK));
+                    if (regionAlpha2 != null) {
+                        String message = String.format("For compatibility, should use 2-letter "
+                                        + "region codes when available; use `%1$s` instead of `%2$s`",
+                                region, regionAlpha2);
+                        context.report(USE_ALPHA_2, Location.create(context.file), message);
+
+                    }
+                }
+
+                if (region != null && region.length() == 2) {
                     List<String> relevantRegions = LocaleManager.getRelevantRegions(language);
                     if (!relevantRegions.isEmpty() && !relevantRegions.contains(region)) {
                         List<String> sortedRegions = sortRegions(language, relevantRegions);
@@ -163,6 +223,95 @@ public class LocaleFolderDetector extends Detector implements Detector.ResourceF
                 }
             }
         }
+
+        if (ResourceFolderType.getFolderType(folderName) != null &&
+                FolderConfiguration.getConfigForFolder(folderName) == null) {
+            String message = "Invalid resource folder: make sure qualifiers appear in the "
+                    + "correct order, are spelled correctly, etc.";
+            String bcpSuggestion = suggestBcp47Correction(folderName);
+            if (bcpSuggestion != null) {
+                message = String.format("Invalid resource folder; did you mean `%1$s` ?",
+                        bcpSuggestion);
+            }
+            context.report(INVALID_FOLDER, Location.create(context.file), message);
+        }
+    }
+
+    /**
+     * Look at the given folder name and see if it looks like an unintentional attempt to use
+     * 3-letter language codes or region codes, and if so, suggest a replacement.
+     *
+     * @param folderName a folder name
+     * @return a suggestion, or null
+     */
+    @Nullable
+    @VisibleForTesting
+    static String suggestBcp47Correction(String folderName) {
+        String language = null;
+        String region = null;
+        Iterator<String> iterator =
+                Splitter.on('-').omitEmptyStrings().split(folderName).iterator();
+        // Skip folder type
+        if (!iterator.hasNext()) {
+            return null;
+        }
+        iterator.next();
+
+        while (iterator.hasNext()) {
+            String segment = iterator.next();
+            String original = segment;
+            int length = segment.length();
+            if (language != null) {
+                // Only look for region
+                segment = segment.toUpperCase(Locale.US);
+                if (length == 3) {
+                    if (original.charAt(0) == 'r' && Character.isUpperCase(original.charAt(1)) &&
+                            LocaleManager.isValidRegionCode(segment.substring(1))) {
+                        region = segment.substring(1);
+                        break;
+                    } else if (Character.isDigit(original.charAt(0))) {
+                        region = segment;
+                    } else if (LocaleManager.isValidRegionCode(segment)) {
+                        region = segment;
+                    }
+                } else if (length == 4 && original.charAt(0) == 'r'
+                        && Character.isUpperCase(original.charAt(1))) {
+                    if (LocaleManager.isValidRegionCode(segment.substring(1))) {
+                        region = segment.substring(1);
+                        break;
+                    }
+                }
+            } else {
+                segment = segment.toLowerCase(Locale.US);
+                if ("car".equals(segment)) { // "car" is a valid value for UI mode
+                    return null;
+                }
+                if (LocaleManager.isValidLanguageCode(segment)) {
+                    language = segment;
+                }
+            }
+        }
+
+        if (language != null) {
+            if (language.length() == 3) {
+                String better = LocaleManager.getLanguageAlpha2(language);
+                if (better != null) {
+                    language = better;
+                }
+            }
+            if (region != null) {
+                if (region.length() == 3 && !Character.isDigit(region.charAt(0))) {
+                    String better = LocaleManager.getRegionAlpha2(region);
+                    if (better != null) {
+                        region = better;
+                    }
+                }
+                return LocaleQualifier.PREFIX + language + '+' + region;
+            }
+            return LocaleQualifier.PREFIX + language;
+        }
+
+        return null;
     }
 
     /**
