@@ -63,6 +63,7 @@ import org.gradle.util.GUtil
 import static com.android.SdkConstants.DOT_JAR
 import static com.android.SdkConstants.EXT_ANDROID_PACKAGE
 import static com.android.SdkConstants.EXT_JAR
+import static com.android.build.gradle.internal.ExtraModelInfo.ModelQueryMode.STANDARD
 import static com.android.builder.core.BuilderConstants.EXT_LIB_ARCHIVE
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
 
@@ -421,7 +422,8 @@ class DependencyManager {
             }
         }
 
-        if (extraModelInfo.isBuildModelForIde() && compileClasspath.resolvedConfiguration.hasError()) {
+        if (extraModelInfo.getModelQueryMode() != STANDARD &&
+                compileClasspath.resolvedConfiguration.hasError()) {
             for (String dependency : currentUnresolvedDependencies) {
                 extraModelInfo.handleSyncError(
                         dependency,
@@ -558,7 +560,7 @@ class DependencyManager {
                     List<ResolvedArtifact>> artifacts) {
 
         Set<ResolvedArtifact> allArtifacts
-        if (extraModelInfo.isBuildModelForIde()) {
+        if (extraModelInfo.getModelQueryMode() != STANDARD) {
             allArtifacts = configuration.resolvedConfiguration.lenientConfiguration.getArtifacts(Specs.satisfyAll())
         } else {
             allArtifacts = configuration.resolvedConfiguration.resolvedArtifacts

@@ -429,11 +429,11 @@ public class GradleTestProject implements TestRule {
      * @param tasks Variadic list of tasks to execute.
      */
     public void execute(String ... tasks) {
-        execute(Collections.<String>emptyList(), false, tasks);
+        execute(Collections.<String>emptyList(), false, false, tasks);
     }
 
     public void execute(@NonNull List<String> arguments, String ... tasks) {
-        execute(arguments, false, tasks);
+        execute(arguments, false, false, tasks);
     }
 
     /**
@@ -445,8 +445,21 @@ public class GradleTestProject implements TestRule {
      */
     @NonNull
     public AndroidProject executeAndReturnModel(String ... tasks) {
+        return executeAndReturnModel(false, tasks);
+    }
+
+    /**
+     * Runs gradle on the project, and returns the project model.  Throws exception on failure.
+     *
+     * @param emulateStudio_1_0 whether to emulate an older IDE (studio 1.0) querying the model.
+     * @param tasks Variadic list of tasks to execute.
+     *
+     * @return the AndroidProject model for the project.
+     */
+    @NonNull
+    public AndroidProject executeAndReturnModel(boolean emulateStudio_1_0, String ... tasks) {
         //noinspection ConstantConditions
-        return execute(Collections.<String>emptyList(), true, tasks);
+        return execute(Collections.<String>emptyList(), true, emulateStudio_1_0, tasks);
     }
 
     /**
@@ -459,16 +472,31 @@ public class GradleTestProject implements TestRule {
      */
     @NonNull
     public Map<String, AndroidProject> executeAndReturnMultiModel(String ... tasks) {
+        return executeAndReturnMultiModel(false, tasks);
+    }
+
+    /**
+     * Runs gradle on the project, and returns a project model for each sub-project.
+     * Throws exception on failure.
+     *
+     * @param emulateStudio_1_0 whether to emulate an older IDE (studio 1.0) querying the model.
+     * @param tasks Variadic list of tasks to execute.
+     *
+     * @return the AndroidProject model for the project.
+     */
+    @NonNull
+    public Map<String, AndroidProject> executeAndReturnMultiModel(boolean emulateStudio_1_0, String ... tasks) {
         ProjectConnection connection = getProjectConnection();
         try {
             executeBuild(Collections.<String>emptyList(), connection, tasks);
 
-            return buildModel(connection);
+            return buildModel(connection, emulateStudio_1_0);
 
         } finally {
             connection.close();
         }
     }
+
 
     /**
      * Returns the project model without building.
@@ -477,9 +505,21 @@ public class GradleTestProject implements TestRule {
      */
     @NonNull
     public AndroidProject getSingleModel() {
+        return getSingleModel(false);
+    }
+
+    /**
+     * Returns the project model without building.
+     *
+     * This will fail if the project is a multi-project setup.
+     *
+     * @param emulateStudio_1_0 whether to emulate an older IDE (studio 1.0) querying the model.
+     */
+    @NonNull
+    public AndroidProject getSingleModel(boolean emulateStudio_1_0) {
         ProjectConnection connection = getProjectConnection();
         try {
-            Map<String, AndroidProject> modelMap = buildModel(connection);
+            Map<String, AndroidProject> modelMap = buildModel(connection, emulateStudio_1_0);
 
             // ensure there was only one project
             assertEquals("Quering GradleTestProject.getModel() with multi-project settings",
@@ -496,9 +536,19 @@ public class GradleTestProject implements TestRule {
      */
     @NonNull
     public Map<String, AndroidProject> getAllModels() {
+        return getAllModels(false);
+    }
+
+    /**
+     * Returns a project model for each sub-project without building.
+     *
+     * @param emulateStudio_1_0 whether to emulate an older IDE (studio 1.0) querying the model.
+     */
+    @NonNull
+    public Map<String, AndroidProject> getAllModels(boolean emulateStudio_1_0) {
         ProjectConnection connection = getProjectConnection();
         try {
-            return buildModel(connection);
+            return buildModel(connection, emulateStudio_1_0);
 
         } finally {
             connection.close();
@@ -510,6 +560,7 @@ public class GradleTestProject implements TestRule {
      *
      * @param arguments List of arguments for the gradle command.
      * @param returnModel whether the model should be queried and returned.
+     * @param emulateStudio_1_0 whether to emulate an older IDE (studio 1.0) querying the model.
      * @param tasks Variadic list of tasks to execute.
      *
      * @return the model, if <var>returnModel</var> was true, null otherwise
@@ -518,13 +569,14 @@ public class GradleTestProject implements TestRule {
     private AndroidProject execute(
             @NonNull List<String> arguments,
             boolean returnModel,
+            boolean emulateStudio_1_0,
             @NonNull String ... tasks) {
         ProjectConnection connection = getProjectConnection();
         try {
             executeBuild(arguments, connection, tasks);
 
             if (returnModel) {
-                Map<String, AndroidProject> modelMap = buildModel(connection);
+                Map<String, AndroidProject> modelMap = buildModel(connection, emulateStudio_1_0);
 
                 // ensure there was only one project
                 assertEquals("Quering GradleTestProject.getModel() with multi-project settings",
@@ -575,9 +627,14 @@ public class GradleTestProject implements TestRule {
 
     /**
      * Returns a project model for each sub-project without building.
+     *
+     * @param connection the opened ProjectConnection
+     * @param emulateStudio_1_0 whether to emulate an older IDE (studio 1.0) querying the model.
      */
     @NonNull
-    private static Map<String, AndroidProject> buildModel(@NonNull ProjectConnection connection) {
+    private static Map<String, AndroidProject> buildModel(
+            @NonNull ProjectConnection connection,
+            boolean emulateStudio_1_0) {
         GetModelAction getModelAction = new GetModelAction();
         BuildActionExecuter<Map<String, AndroidProject>> executer
                 = connection.action(getModelAction);
@@ -585,6 +642,10 @@ public class GradleTestProject implements TestRule {
         executer.withArguments(
                 "-P" + AndroidProject.PROPERTY_BUILD_MODEL_ONLY + "=true",
                 "-P" + AndroidProject.PROPERTY_INVOKED_FROM_IDE + "=true");
+        if (!emulateStudio_1_0) {
+            executer.withArguments(
+                    "-P" + AndroidProject.PROPERTY_BUILD_MODEL_ONLY_ADVANCED + "=true");
+        }
 
         executer.setJvmArguments(Iterables.toArray(getDebugJvmArguments(), String.class));
         return executer.run();
