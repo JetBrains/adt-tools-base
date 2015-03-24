@@ -104,7 +104,7 @@ class ApplicationTaskManager extends TaskManager {
             if (variantData.getVariantConfiguration().getUseJack()) {
                 createJackTask(appVariantData, null /*testedVariant*/);
             } else {
-                createCompileTask(variantData, null /*testedVariant*/);
+                createJavaCompileTask(variantData, null /*testedVariant*/);
                 createJarTask(variantData);
                 createPostCompilationTasks(appVariantData);
             }
