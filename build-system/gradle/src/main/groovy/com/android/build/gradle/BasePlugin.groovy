@@ -16,27 +16,22 @@
 
 package com.android.build.gradle
 
-import com.android.annotations.NonNull
 import com.android.build.gradle.internal.BadPluginException
 import com.android.build.gradle.internal.DependencyManager
 import com.android.build.gradle.internal.ExtraModelInfo
 import com.android.build.gradle.internal.LibraryCache
 import com.android.build.gradle.internal.LoggerWrapper
-import com.android.build.gradle.internal.ProductFlavorData
 import com.android.build.gradle.internal.SdkHandler
 import com.android.build.gradle.internal.TaskManager
 import com.android.build.gradle.internal.VariantManager
-import com.android.build.gradle.internal.api.DefaultAndroidSourceSet
 import com.android.build.gradle.internal.coverage.JacocoPlugin
 import com.android.build.gradle.internal.dsl.BuildType
 import com.android.build.gradle.internal.dsl.BuildTypeFactory
 import com.android.build.gradle.internal.dsl.GroupableProductFlavor
 import com.android.build.gradle.internal.dsl.GroupableProductFlavorFactory
-import com.android.build.gradle.internal.dsl.ProductFlavor
 import com.android.build.gradle.internal.dsl.SigningConfig
 import com.android.build.gradle.internal.dsl.SigningConfigFactory
 import com.android.build.gradle.internal.model.ModelBuilder
-import com.android.build.gradle.internal.model.SyncIssueKey
 import com.android.build.gradle.internal.process.GradleJavaProcessExecutor
 import com.android.build.gradle.internal.process.GradleProcessExecutor
 import com.android.build.gradle.internal.variant.BaseVariantData
@@ -50,7 +45,6 @@ import com.android.builder.dependency.DependencyContainer
 import com.android.builder.dependency.JarDependency
 import com.android.builder.internal.compiler.JackConversionCache
 import com.android.builder.internal.compiler.PreDexCache
-import com.android.builder.model.SyncIssue
 import com.android.builder.sdk.SdkInfo
 import com.android.builder.sdk.TargetInfo
 import com.android.ide.common.internal.ExecutorSingleton
@@ -78,8 +72,6 @@ import java.util.regex.Pattern
 
 import static com.android.builder.core.BuilderConstants.DEBUG
 import static com.android.builder.core.BuilderConstants.RELEASE
-import static com.android.builder.core.VariantType.ANDROID_TEST
-import static com.android.builder.core.VariantType.UNIT_TEST
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
 import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_KEY_ALIAS
 import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_KEY_PASSWORD
@@ -122,12 +114,6 @@ public abstract class BasePlugin {
 
     private boolean hasCreatedTasks = false
 
-    private ProductFlavorData<ProductFlavor> defaultConfigData
-
-    protected DefaultAndroidSourceSet mainSourceSet
-    protected DefaultAndroidSourceSet androidTestSourceSet
-    protected DefaultAndroidSourceSet unitTestSourceSet
-
     protected BasePlugin(Instantiator instantiator, ToolingModelBuilderRegistry registry) {
         this.instantiator = instantiator
         this.registry = registry
@@ -141,6 +127,13 @@ public abstract class BasePlugin {
 
     protected abstract Class<? extends BaseExtension> getExtensionClass()
     protected abstract VariantFactory getVariantFactory()
+
+    /**
+     * Return whether this plugin creates Android library.  Should be overridden if true.
+     */
+    protected boolean isLibrary() {
+        return false;
+    }
 
     public Instantiator getInstantiator() {
         return instantiator
@@ -182,9 +175,6 @@ public abstract class BasePlugin {
 
         project.apply plugin: JacocoPlugin
         jacocoPlugin = project.plugins.getPlugin(JacocoPlugin)
-
-        // Register a builder for the custom tooling model
-        registry.register(new ModelBuilder());
 
         project.tasks.getByName("assemble").description =
                 "Assembles all variants of all applications and secondary packages."
@@ -234,14 +224,24 @@ public abstract class BasePlugin {
 
         extension = project.extensions.create('android', getExtensionClass(),
                 this, (ProjectInternal) project, instantiator,
-                buildTypeContainer, productFlavorContainer, signingConfigContainer,
-                this instanceof LibraryPlugin)
-        setBaseExtension(extension)
+                buildTypeContainer, productFlavorContainer, signingConfigContainer, isLibrary())
 
         DependencyManager dependencyManager = new DependencyManager(project, extraModelInfo)
-        taskManager = new TaskManager(project, project.tasks, androidBuilder, extension, sdkHandler, dependencyManager)
+        taskManager = new TaskManager(
+                project,
+                project.tasks,
+                androidBuilder,
+                extension,
+                sdkHandler,
+                dependencyManager,
+                registry)
 
         variantManager = new VariantManager(project, this, extension, getVariantFactory(), taskManager)
+
+        // Register a builder for the custom tooling model
+        ModelBuilder modelBuilder = new ModelBuilder(
+                androidBuilder, variantManager, extension, extraModelInfo, isLibrary());
+        registry.register(modelBuilder);
 
         // map the whenObjectAdded callbacks on the containers.
         signingConfigContainer.whenObjectAdded { SigningConfig signingConfig ->
@@ -280,16 +280,6 @@ public abstract class BasePlugin {
             ensureTargetSetup()
             createAndroidTasks(false)
         }
-    }
-
-    private void setBaseExtension(@NonNull BaseExtension extension) {
-        mainSourceSet = (DefaultAndroidSourceSet) extension.sourceSets.create(extension.defaultConfig.name)
-        androidTestSourceSet = (DefaultAndroidSourceSet) extension.sourceSets.create(ANDROID_TEST.prefix)
-        unitTestSourceSet = (DefaultAndroidSourceSet) extension.sourceSets.create(UNIT_TEST.prefix)
-
-        defaultConfigData = new ProductFlavorData<ProductFlavor>(
-                extension.defaultConfig, mainSourceSet,
-                androidTestSourceSet, unitTestSourceSet, project)
     }
 
     private void checkGradleVersion() {
@@ -376,10 +366,6 @@ public abstract class BasePlugin {
                     "Once these methods are called, it is not possible to\n" +
                     "continue configuring the model.")
         }
-    }
-
-    ProductFlavorData<ProductFlavor> getDefaultConfigData() {
-        return defaultConfigData
     }
 
     ILogger getLogger() {
