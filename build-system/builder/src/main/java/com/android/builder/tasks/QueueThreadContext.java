@@ -46,7 +46,9 @@ public interface QueueThreadContext<T> {
     public void destruction(Thread t) throws IOException, InterruptedException;
 
     /**
-     * Notification of the queue shutdown. All native resources must be released.
+     * Notification of the queue temporary shutdown. All native resources must be released.
+     * Once shutdown is called, at least one {@link #creation} must be made before any call to
+     * {@link #runTask}.
      */
     public void shutdown();
 }
