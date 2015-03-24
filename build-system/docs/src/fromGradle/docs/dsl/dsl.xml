@@ -54,7 +54,7 @@
             <tr><td>com.android.build.gradle.internal.dsl.GroupableProductFlavor</td></tr>
             <tr><td>com.android.build.gradle.internal.dsl.BuildType</td></tr>
             <tr><td>com.android.build.gradle.internal.dsl.SigningConfig</td></tr>
-            <tr><td>com.android.build.gradle.internal.test.TestOptions</td></tr>
+            <tr><td>com.android.build.gradle.internal.dsl.TestOptions</td></tr>
             <tr><td>com.android.build.gradle.internal.dsl.AaptOptions</td></tr>
             <tr><td>com.android.build.gradle.internal.dsl.LintOptions</td></tr>
             <tr><td>com.android.build.gradle.internal.dsl.DexOptions</td></tr>

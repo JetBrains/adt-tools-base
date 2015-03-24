@@ -17,7 +17,7 @@
 package com.android.build.gradle
 import com.android.build.gradle.internal.tasks.AndroidReportTask
 import com.android.build.gradle.internal.tasks.DeviceProviderInstrumentTestTask
-import com.android.build.gradle.internal.test.TestOptions
+import com.android.build.gradle.internal.dsl.TestOptions
 import com.android.build.gradle.internal.test.report.ReportType
 import org.gradle.api.Project
 import org.gradle.api.plugins.JavaBasePlugin

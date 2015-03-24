@@ -139,4 +139,10 @@ public class UnitTest {
     public void thisIsIgnored() {
         // Just excercise more JUnit features.
     }
+
+    @Test
+    public void taskConfiguration() {
+        // This property is set in build.gradle:
+        assertEquals("bar", System.getProperty("foo"));
+    }
 }
