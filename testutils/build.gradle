@@ -6,7 +6,7 @@ version = rootProject.ext.baseVersion
 
 dependencies {
     compile project(':base:common')
-    compile 'junit:junit:3.8.1'
+    compile 'junit:junit:4.12'
 }
 
 sourceSets {

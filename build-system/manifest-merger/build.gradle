@@ -24,7 +24,7 @@ dependencies {
     compile 'com.google.code.gson:gson:2.2.4'
 
     testCompile project(':base:sdklib').sourceSets.test.output
-    testCompile 'junit:junit:3.8.1'
+    testCompile 'junit:junit:4.12'
     testCompile 'org.mockito:mockito-all:1.9.5'
 }
 
