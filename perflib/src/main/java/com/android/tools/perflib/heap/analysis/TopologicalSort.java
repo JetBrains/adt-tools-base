@@ -18,8 +18,9 @@ package com.android.tools.perflib.heap.analysis;
 
 import com.android.annotations.NonNull;
 import com.android.tools.perflib.heap.Instance;
+import com.android.tools.perflib.heap.NonRecursiveVisitor;
+import com.android.tools.perflib.heap.RootObj;
 import com.android.tools.perflib.heap.Snapshot;
-import com.android.tools.perflib.heap.Visitor;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
@@ -30,11 +31,9 @@ import gnu.trove.TLongHashSet;
 public class TopologicalSort {
 
     @NonNull
-    public static ImmutableList<Instance> compute(@NonNull Iterable<? extends Instance> roots) {
+    public static ImmutableList<Instance> compute(@NonNull Iterable<RootObj> roots) {
         TopologicalSortVisitor visitor = new TopologicalSortVisitor();
-        for (Instance root : roots) {
-            root.accept(visitor);
-        }
+        visitor.doVisit(roots);
         ImmutableList<Instance> instances = visitor.getOrderedInstances();
 
         // We add the special sentinel node as the single root of the object graph, to ensure the
@@ -52,20 +51,36 @@ public class TopologicalSort {
     }
 
 
-    private static class TopologicalSortVisitor implements Visitor {
+    /**
+     * Topological sort visitor computing a post-order traversal of the graph.
+     *
+     * We use the classic iterative three-color marking algorithm in order to correctly compute the
+     * finishing time for each node. Nodes in decreasing order of their finishing time satisfy the
+     * topological order property, i.e. any node appears before its successors.
+     */
+    private static class TopologicalSortVisitor extends NonRecursiveVisitor {
 
+        // Marks nodes that have been fully visited and popped off the stack.
         private final TLongHashSet mVisited = new TLongHashSet();
 
         private final List<Instance> mPostorder = Lists.newArrayList();
 
         @Override
-        public boolean visitEnter(Instance instance) {
-            return mVisited.add(instance.getId());
-        }
-
-        @Override
-        public void visitLeave(Instance instance) {
-            mPostorder.add(instance);
+        public void doVisit(Iterable<? extends Instance> startNodes) {
+            for (Instance node : startNodes) {
+                node.accept(this);
+            }
+            while (!mStack.isEmpty()) {
+                Instance node = mStack.peek();
+                if (mSeen.add(node.getId())) {
+                    node.accept(this);
+                } else {
+                    mStack.pop();
+                    if (mVisited.add(node.getId())) {
+                        mPostorder.add(node);
+                    }
+                }
+            }
         }
 
         ImmutableList<Instance> getOrderedInstances() {

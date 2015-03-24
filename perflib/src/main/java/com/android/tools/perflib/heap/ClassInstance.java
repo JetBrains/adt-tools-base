@@ -53,13 +53,11 @@ public class ClassInstance extends Instance {
 
     @Override
     public final void accept(@NonNull Visitor visitor) {
-        if (visitor.visitEnter(this)) {
-            for (Object value : getValues().values()) {
-                if (value instanceof Instance) {
-                    ((Instance) value).accept(visitor);
-                }
+        visitor.visitClassInstance(this);
+        for (Object value : getValues().values()) {
+            if (value instanceof Instance) {
+                visitor.visitLater((Instance) value);
             }
-            visitor.visitLeave(this);
         }
     }
 
