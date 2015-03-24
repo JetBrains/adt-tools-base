@@ -40,6 +40,7 @@ android.applicationVariants.all { variant ->
             variant,                                     // associate it with a variant
             "assemble:$variant.name",                    // name of the assemble task for this artifact
             "compile:$variant.name",                     // name of the java compile task for this artifact
+            [],                                          // tasks to generate sources etc. in the IDE.
             configurations.foo,
             new File("classesFolder:$variant.name"),     // location of the classes folder (compile output)
             getProvider("provider:$variant.name"))       // source provider specific to this variant for the artifact.
