@@ -15,7 +15,6 @@
  */
 package com.android.build.gradle.internal.tasks
 
-import com.android.build.gradle.internal.LoggerWrapper
 import com.android.build.gradle.internal.core.GradleVariantConfiguration
 import com.android.build.gradle.internal.test.TestDataImpl
 import com.android.build.gradle.internal.test.report.ReportType
@@ -81,7 +80,7 @@ public class DeviceProviderInstrumentTestTask extends BaseTask implements Androi
                         testApk, new TestDataImpl(testVariantData),
                         deviceProvider.devices,
                         deviceProvider.getMaxThreads(),
-                        deviceProvider.getTimeout(),
+                        deviceProvider.getTimeoutInMs(),
                         resultsOutDir, coverageOutDir, getILogger());
             } finally {
                 deviceProvider.terminate();
