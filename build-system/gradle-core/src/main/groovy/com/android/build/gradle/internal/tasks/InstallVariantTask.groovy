@@ -21,6 +21,7 @@ import com.android.build.VariantOutput
 import com.android.build.gradle.api.ApkOutputFile
 import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.build.gradle.internal.variant.BaseVariantOutputData
+import com.android.builder.core.SplitSelectTool
 import com.android.builder.core.VariantConfiguration
 import com.android.builder.internal.InstallUtils
 import com.android.builder.testing.ConnectedDeviceProvider
@@ -30,10 +31,8 @@ import com.android.builder.testing.api.DeviceProvider
 import com.android.ddmlib.IDevice
 import com.android.ide.common.build.SplitOutputMatcher
 import com.android.ide.common.process.BaseProcessOutputHandler
-import com.android.ide.common.process.BaseProcessOutputHandler.BaseProcessOutput
 import com.android.ide.common.process.ProcessException
 import com.android.ide.common.process.ProcessExecutor
-import com.android.ide.common.process.ProcessInfoBuilder
 import com.android.ide.common.process.ProcessOutput
 import com.google.common.base.Joiner
 import com.google.common.collect.ImmutableList
@@ -112,39 +111,25 @@ public class InstallVariantTask extends BaseTask {
                     }
 
                     List<File> apkFiles = new ArrayList<>();
-                    // starting in API 22, we can delegate to split-select the APK selection.
-                    if (getSplitSelectExe() != null && splitApksPath.size() > 0
-                            && mainApk != null && device.getApiLevel() >= 22) {
-
+                    if (getSplitSelectExe() == null && splitApksPath.size() > 0) {
+                        throw new GradleException(
+                                "Pure splits installation requires build tools 22 or above");
+                    }
+                    if (mainApk == null) {
+                        throw new GradleException(
+                                "Cannot retrieve the main APK from variant outputs");
+                    }
+                    if (splitApksPath.size() > 0) {
                         DeviceConfig deviceConfig = device.getDeviceConfig();
-
                         Set<String> resultApksPath = new HashSet<String>();
                         for (String abi : device.getAbis()) {
-                            ProcessInfoBuilder processBuilder = new ProcessInfoBuilder();
-                            processBuilder.setExecutable(getSplitSelectExe());
-
-                            processBuilder.addArgs("--target", deviceConfig.getConfigFor(abi));
-
-                            // specify the main APK parameter
-                            processBuilder.addArgs("--base",
-                                    mainApk.getOutputFile().getAbsolutePath())
-
-                            // and the splits...
-                            for (String apkPath : splitApksPath) {
-                                processBuilder.addArgs("--split", apkPath);
-                            }
-                            SplitSelectOutputHandler outputHandler =
-                                    new SplitSelectOutputHandler(getLogger());
-
-                            processExecutor.execute(processBuilder.createProcess(), outputHandler)
-                                    .rethrowFailure()
-                                    .assertNormalExitValue();
-
-                            for (String apkPath : outputHandler.getResultApks()) {
-                                resultApksPath.add(apkPath);
-                            }
+                            resultApksPath.addAll(SplitSelectTool.splitSelect(
+                                    processExecutor,
+                                    getSplitSelectExe(),
+                                    deviceConfig.getConfigFor(abi),
+                                    mainApk.getOutputFile().getAbsolutePath(),
+                                    splitApksPath));
                         }
-                        // add all split APKs returned by the split-select tool
                         for (String resultApkPath : resultApksPath) {
                             apkFiles.add(new File(resultApkPath));
                         }
@@ -199,43 +184,6 @@ public class InstallVariantTask extends BaseTask {
             }
         } else {
             logger.quiet("Installed on ${successfulInstallCount} ${successfulInstallCount==1?'device':'devices'}.");
-        }
-    }
-
-    private static class SplitSelectOutputHandler extends BaseProcessOutputHandler {
-
-        private final List<String> resultApks = new ArrayList<>();
-
-        @NonNull
-        private final Logger mLogger;
-
-        public SplitSelectOutputHandler(@NonNull Logger logger) {
-            mLogger = logger;
-        }
-
-        @NonNull
-        public List<String> getResultApks() {
-            return resultApks;
-        }
-
-        @Override
-        public void handleOutput(@NonNull ProcessOutput processOutput) throws ProcessException {
-            if (processOutput instanceof BaseProcessOutput) {
-                BaseProcessOutput impl = (BaseProcessOutput) processOutput;
-                String stdout = impl.getStandardOutputAsString();
-                if (!stdout.isEmpty()) {
-                    mLogger.info(stdout);
-                    resultApks.addAll(stdout.readLines());
-                }
-                String stderr = impl.getErrorOutputAsString();
-                if (!stderr.isEmpty()) {
-                    mLogger.error(stderr);
-                    resultApks.addAll(stderr.readLines());
-                }
-            } else {
-                throw new IllegalArgumentException(
-                        "processOutput was not created by this handler.");
-            }
         }
     }
 }
