@@ -184,7 +184,8 @@ public abstract class BasePlugin {
     }
 
     private static int getRetirementAge(@Nullable String version) {
-        if (version == null || version.contains("rc") || version.contains("beta")) {
+        if (version == null || version.contains("rc") || version.contains("beta")
+                || version.contains("alpha")) {
             return DEFAULT_RETIREMENT_AGE_FOR_NON_RELEASE
         }
         return -1;
