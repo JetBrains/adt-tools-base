@@ -23,8 +23,13 @@ import com.android.build.gradle.internal.TaskManager;
 import com.android.build.gradle.internal.VariantModel;
 import com.android.build.gradle.internal.api.ReadOnlyObjectProvider;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
+import com.android.build.gradle.internal.dsl.BuildType;
+import com.android.build.gradle.internal.dsl.GroupableProductFlavor;
+import com.android.build.gradle.internal.dsl.SigningConfig;
 import com.android.builder.core.VariantType;
 
+import org.gradle.api.NamedDomainObjectContainer;
+import org.gradle.api.Project;
 import org.gradle.api.Task;
 
 import java.util.Set;
@@ -55,10 +60,19 @@ public interface VariantFactory {
 
     boolean isLibrary();
 
+    boolean hasTestScope();
+
     /**
      * Fail if the model is configured incorrectly.
      * @param model the non-null model to validate, as implemented by the VariantManager.
      * @throws org.gradle.api.GradleException when the model does not validate.
      */
     void validateModel(@NonNull VariantModel model);
+
+    void preVariantWork(Project project);
+
+    void createDefaultComponents(
+            @NonNull NamedDomainObjectContainer<BuildType> buildTypes,
+            @NonNull NamedDomainObjectContainer<GroupableProductFlavor> productFlavors,
+            @NonNull NamedDomainObjectContainer<SigningConfig> signingConfigs);
 }

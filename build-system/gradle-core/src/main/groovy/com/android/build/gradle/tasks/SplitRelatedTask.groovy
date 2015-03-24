@@ -21,8 +21,10 @@ import com.android.build.OutputFile
 import com.android.build.gradle.api.ApkOutputFile
 import com.android.build.gradle.internal.model.FilterDataImpl
 import com.android.build.gradle.internal.tasks.BaseTask
+import com.android.build.gradle.internal.tasks.FileSupplierTask
 import com.google.common.base.Supplier
 import com.google.common.collect.ImmutableList
+import org.gradle.api.Task
 
 /**
  * Common code for all split related tasks
@@ -44,16 +46,21 @@ abstract class SplitRelatedTask extends BaseTask {
     /**
      * Returns a list of {@link Supplier<File>} for each split APK file
      */
-    List<Supplier<File>> getOutputFileSuppliers() {
-        ImmutableList.Builder<Supplier<File>> suppliers = ImmutableList.builder();
+    List<FileSupplierTask> getOutputFileSuppliers() {
+        ImmutableList.Builder<FileSupplierTask> suppliers = ImmutableList.builder();
         for (FilterData filterData : getSplitsData()) {
-            suppliers.add(new Supplier<File>() {
+            suppliers.add(new FileSupplierTask() {
 
                 @Override
                 File get() {
                     return getOutputSplitFiles().find({
                         filterData.identifier.equals(it.getFilter(filterData.filterType))
                     }).getOutputFile()
+                }
+
+                @Override
+                Task getTask() {
+                    return SplitRelatedTask.this
                 }
             })
         }

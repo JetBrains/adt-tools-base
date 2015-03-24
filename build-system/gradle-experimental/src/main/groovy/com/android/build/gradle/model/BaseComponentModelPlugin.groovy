@@ -369,7 +369,7 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
             applyProjectSourceSet(spec, androidSources, spec.extension)
 
             // Create lifecycle tasks.
-            taskManager.createTasks()
+            taskManager.createTasksBeforeEvaluate()
 
             // setup SDK repositories.
             for (File file : sdkHandler.sdkLoader.repositories) {

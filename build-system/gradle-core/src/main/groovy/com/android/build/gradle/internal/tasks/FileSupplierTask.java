@@ -14,23 +14,23 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.tasks;
+package com.android.build.gradle.internal.tasks;
 
-import com.android.annotations.Nullable;
+import com.android.annotations.NonNull;
+import com.google.common.base.Supplier;
 
 import org.gradle.api.Task;
 
 import java.io.File;
 
 /**
- * Denotes a {@link Task} capable of producing the obfuscation mapping file for the APK.
+ * Denotes a supplier of a file. The supplier also provides a link to the task generating the file.
  */
-public interface MappingFileProviderTask extends Task {
+public interface FileSupplierTask extends Supplier<File> {
 
     /**
-     * Returns the application's obfuscation mapping file or null if the application was not
-     * obfuscated.
+     * Returns the task generating the file.
      */
-    @Nullable
-    File getMappingFile();
+    @NonNull
+    Task getTask();
 }

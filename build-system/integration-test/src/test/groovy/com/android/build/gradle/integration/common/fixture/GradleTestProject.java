@@ -619,6 +619,10 @@ public class GradleTestProject implements TestRule {
         }
     }
 
+    public void evaluate() {
+        getAllModels(new GetEmptyModelAction(), false);
+    }
+
     /**
      * Runs gradle on the project.  Throws exception on failure.
      *
