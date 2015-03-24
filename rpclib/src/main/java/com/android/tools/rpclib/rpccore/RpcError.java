@@ -27,7 +27,7 @@ import java.io.IOException;
  * The base RPC error object.
  */
 public class RpcError implements BinaryObject {
-  public String msg;
+  String mMessage;
 
   @Override
   public void encode(@NotNull Encoder e) throws IOException {

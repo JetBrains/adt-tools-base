@@ -15,125 +15,132 @@
  */
 package com.android.tools.rpclib.multiplex;
 
+import com.android.annotations.concurrency.GuardedBy;
 import com.android.tools.rpclib.binary.Decoder;
 import com.android.tools.rpclib.binary.Encoder;
+import com.intellij.openapi.diagnostic.Logger;
+import gnu.trove.TLongObjectHashMap;
+import gnu.trove.TLongObjectIterator;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class Multiplexer {
-  private final Decoder in;
-  private final Encoder out;
-  private final int mtu;
-  private final NewChannelListener newChannelListener;
-  private final Channel.EventHandler channelEventHandler;
-  private final Sender sender;
-  private final Map<Long, Channel> channels;
-  private final AtomicLong nextChannelId;
+  @NotNull private static final Logger LOG = Logger.getInstance(Multiplexer.class);
+  private final Decoder mDecoder;
+  private final Encoder mEncoder;
+  private final NewChannelListener mNewChannelListener;
+  private final Channel.EventHandler mChannelEventHandler;
+  private final Sender mSender;
+  private final AtomicLong mNextChannelId;
+  @GuardedBy("mChannelMap") private final TLongObjectHashMap<Channel> mChannelMap;
 
-  public Multiplexer(@NotNull InputStream in, @NotNull OutputStream out, int mtu, @Nullable NewChannelListener newChannelListener) {
-    this.in = new Decoder(in);
-    this.out = new Encoder(out);
-    this.mtu = mtu;
-    this.newChannelListener = newChannelListener;
-    this.channelEventHandler = new ChannelEventHandler();
-    this.sender = new Sender(mtu);
-    this.channels = new HashMap<Long, Channel>();
-    this.nextChannelId = new AtomicLong(0);
-    new Receiver().start();
+  public Multiplexer(@NotNull InputStream in, @NotNull OutputStream out, int mtu,
+                     @NotNull ExecutorService executorService,
+                     @Nullable NewChannelListener newChannelListener) {
+    mDecoder = new Decoder(in);
+    mEncoder = new Encoder(out);
+    mNewChannelListener = newChannelListener;
+    mChannelEventHandler = new ChannelEventHandler();
+    mSender = new Sender(mtu, executorService);
+    mChannelMap = new TLongObjectHashMap<Channel>();
+    mNextChannelId = new AtomicLong(0);
+    executorService.execute(new Receiver());
   }
 
   public Channel openChannel() throws IOException {
-    final long id = nextChannelId.getAndIncrement();
+    final long id = mNextChannelId.getAndIncrement();
     Channel channel = newChannel(id);
-    sender.sendOpenChannel(id);
+    mSender.sendOpenChannel(id);
     return channel;
   }
 
   private Channel newChannel(final long id) throws IOException {
-    Channel channel = new Channel(id, channelEventHandler);
+    Channel channel = new Channel(id, mChannelEventHandler);
 
-    synchronized (channels) {
-      if (channels.size() == 0) {
-        sender.begin(out);
+    synchronized (mChannelMap) {
+      if (mChannelMap.isEmpty()) {
+        mSender.begin(mEncoder);
       }
-      channels.put(id, channel);
+      mChannelMap.put(id, channel);
     }
 
     return channel;
   }
 
   private void deleteChannel(long id) {
-    synchronized (channels) {
-      if (channels.containsKey(id)) {
+    synchronized (mChannelMap) {
+      if (mChannelMap.containsKey(id)) {
         // TODO: Mark channel closed.
-        channels.remove(id);
-        if (channels.size() == 0) {
-          sender.end();
+        mChannelMap.remove(id);
+        if (mChannelMap.isEmpty()) {
+          mSender.end();
         }
       }
       else {
-        // Attempting to close an unknown channel.
         // This can happen when both ends close simultaneously.
+        LOG.info("Attempting to close unknown channel " + id);
       }
     }
   }
 
   private Channel getChannel(long id) {
     Channel channel;
-    synchronized (channels) {
-      channel = channels.get(id);
+    synchronized (mChannelMap) {
+      channel = mChannelMap.get(id);
     }
     return channel;
   }
 
   private void closeAllChannels() {
-    synchronized (channels) {
-      for (Channel c : channels.values()) {
+    synchronized (mChannelMap) {
+      for (TLongObjectIterator<Channel> it = mChannelMap.iterator(); it.hasNext(); it.advance()) {
+        Channel c = it.value();
         try {
           c.close();
         }
         catch (IOException e) {
         }
+        it.remove();
       }
-      channels.clear();
     }
   }
 
   private class ChannelEventHandler implements Channel.EventHandler {
     @Override
     public void closeChannel(long id) throws IOException {
-      sender.sendCloseChannel(id);
+      mSender.sendCloseChannel(id);
       deleteChannel(id);
     }
 
     @Override
     public void writeChannel(long id, byte[] b, int off, int len) throws IOException {
-      sender.sendData(id, b, off, len);
+      mSender.sendData(id, b, off, len);
     }
   }
 
   private class Receiver extends Thread {
     Receiver() {
-      super("Multiplex receiver");
+      super("rpclib.multiplex Receiver");
     }
 
     @Override
     public void run() {
       try {
         while (true) {
-          short msgType = in.uint8();
-          long id = in.uint32() ^ 0xffffffffL;
+          short msgType = mDecoder.uint8();
+          long id = ~(mDecoder.uint32() & 0xffffffff);
           switch (msgType) {
             case Message.OPEN_CHANNEL: {
               Channel channel = newChannel(id);
-              newChannelListener.onNewChannel(channel);
+              if (mNewChannelListener != null) {
+                mNewChannelListener.onNewChannel(channel);
+              }
               break;
             }
             case Message.CLOSE_CHANNEL: {
@@ -145,9 +152,11 @@ public class Multiplexer {
               break;
             }
             case Message.DATA: {
-              int count = (int)in.uint32();
+              int count = mDecoder.int32();
               byte[] buf = new byte[count];
-              in.stream().read(buf);
+              for (int offset = 0; offset < count;) {
+                offset += mDecoder.stream().read(buf, offset, count-offset);
+              }
               Channel channel = getChannel(id);
               if (channel != null) {
                 channel.receive(buf);
@@ -155,16 +164,20 @@ public class Multiplexer {
               else {
                 // Likely this channel was closed this side, and we're receiving data
                 // that should be dropped on the floor.
+                LOG.info("Received data on unknown channel " + id);
               }
               break;
             }
             default:
-              return; // Throw exception?
+              throw new UnsupportedOperationException("Unknown msgType: " + msgType);
           }
         }
       }
       catch (IOException e) {
-        // Maybe log?
+        LOG.info(e);
+      }
+      catch (UnsupportedOperationException e) {
+        LOG.error(e);
       }
       finally {
         closeAllChannels();

@@ -15,75 +15,77 @@
  */
 package com.android.tools.rpclib.multiplex;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
 public class Channel implements Closeable {
-  public final OutputStream out;
-  public final InputStream in;
-  private final PipeInputStream inPipe;
-  private final long id;
-  private final EventHandler events;
-  private boolean isClosed;
+  private final OutputStream mOutputStream;
+  private final InputStream mInputStream;
+  private final PipeInputStream mPipeInputStream;
+  private final long mId;
+  private final EventHandler mEventHandler;
+  private boolean mIsClosed;
 
-  public Channel(long id, EventHandler events) throws IOException {
+  public Channel(long id, @NotNull EventHandler events) throws IOException {
     PipeInputStream in = new PipeInputStream();
 
-    this.id = id;
-    this.events = events;
-    this.in = in;
-    this.out = new Output();
-    this.inPipe = in;
+    mId = id;
+    mEventHandler = events;
+    mInputStream = in;
+    mOutputStream = new Output();
+    mPipeInputStream = in;
+  }
+
+  public InputStream getInputStream() {
+    return mInputStream;
+  }
+
+  public OutputStream getOutputStream() {
+    return mOutputStream;
   }
 
   @Override
   public synchronized void close() throws IOException {
-    if (!isClosed) {
-      isClosed = true;
-      events.closeChannel(id);
-      in.close();
-      out.close();
+    if (!mIsClosed) {
+      mIsClosed = true;
+      mEventHandler.closeChannel(mId);
+      mInputStream.close();
+      mOutputStream.close();
     }
   }
 
   void receive(byte[] data) throws IOException {
-    inPipe.source.write(data);
+    mPipeInputStream.getSource().write(data);
   }
 
   synchronized void closeNoEvent() throws IOException {
-    if (!isClosed) {
-      isClosed = true;
-      in.close();
-      out.close();
+    if (!mIsClosed) {
+      mIsClosed = true;
+      mInputStream.close();
+      mOutputStream.close();
     }
   }
 
   interface EventHandler {
     void closeChannel(long id) throws IOException;
-
     void writeChannel(long id, byte b[], int off, int len) throws IOException;
-  }
-
-  private class Input extends PipeInputStream {
-    @Override
-    public void close() throws IOException {
-      Channel.this.close();
-    }
   }
 
   private class Output extends OutputStream {
     @Override
-    public void write(int b) throws IOException {
+    public void write(int b) throws IOException, UnsupportedOperationException {
       write(new byte[]{(byte)b}, 0, 1);
       // We really, really should not be writing out single bytes. For now, throw an exception.
-      throw new RuntimeException("Use write(byte[], int, int) instead of writing single bytes!");
+      throw new UnsupportedOperationException("Use write(byte[], int, int) instead of writing single bytes!");
     }
 
     @Override
     public void write(byte b[], int off, int len) throws IOException {
-      events.writeChannel(id, b, off, len);
+      mEventHandler.writeChannel(mId, b, off, len);
     }
 
     @Override
