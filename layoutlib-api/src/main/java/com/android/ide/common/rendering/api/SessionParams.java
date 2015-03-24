@@ -204,5 +204,10 @@ public class SessionParams extends RenderParams {
             }
             return false;
         }
+
+        @Override
+        public String toString() {
+            return mName;
+        }
     }
 }
