@@ -31,11 +31,13 @@ import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Nested
 import org.gradle.api.tasks.OutputDirectory
+import org.gradle.api.tasks.ParallelizableTask
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.incremental.IncrementalTaskInputs
 
 import java.util.concurrent.Callable
 
+@ParallelizableTask
 public class PreDex extends BaseTask {
 
     // ----- PUBLIC TASK API -----
