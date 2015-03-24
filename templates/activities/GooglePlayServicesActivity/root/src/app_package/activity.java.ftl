@@ -32,7 +32,7 @@ public class ${activityClass} extends Activity implements
         GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener {
 
-    private static final String TAG = "${activityClass}";
+    private static final String TAG = "${truncate(activityClass,23)}";
 
     private static final String KEY_IN_RESOLUTION = "is_in_resolution";
 
