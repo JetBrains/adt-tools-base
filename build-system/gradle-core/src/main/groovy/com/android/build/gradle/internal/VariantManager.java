@@ -584,6 +584,10 @@ public class VariantManager implements VariantModel {
         List<? extends com.android.build.gradle.api.GroupableProductFlavor> productFlavorList = testedConfig.getProductFlavors();
 
         // handle test variant
+        // need a suppress warning because ProductFlavor.getTestSourceSet(type) is annotated
+        // to return @Nullable and the constructor is @NonNull on this parameter,
+        // but it's never the case on defaultConfigData
+        // The constructor does a runtime check on the instances so we should be safe.
         @SuppressWarnings("ConstantConditions")
         GradleVariantConfiguration testVariantConfig = new GradleVariantConfiguration(
                 testedVariantData.getVariantConfiguration(),
@@ -602,6 +606,7 @@ public class VariantManager implements VariantModel {
             if (dimensionName == null) {
                 dimensionName = "";
             }
+            // same supress warning here.
             //noinspection ConstantConditions
             testVariantConfig.addProductFlavor(
                     data.getProductFlavor(),

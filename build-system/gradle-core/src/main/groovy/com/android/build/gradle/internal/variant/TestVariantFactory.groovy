@@ -32,6 +32,7 @@ import org.gradle.internal.reflect.Instantiator
 import static com.android.builder.core.BuilderConstants.DEBUG
 
 /**
+ * Customization of ApplcationVariantFactory for test-only projects.
  */
 public class TestVariantFactory extends ApplicationVariantFactory {
 

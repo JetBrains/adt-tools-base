@@ -26,7 +26,7 @@ import java.io.File;
 /**
  * Denotes a supplier of a file. The supplier also provides a link to the task generating the file.
  */
-public interface FileSupplierTask extends Supplier<File> {
+public interface FileSupplier extends Supplier<File> {
 
     /**
      * Returns the task generating the file.

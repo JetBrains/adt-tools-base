@@ -17,10 +17,9 @@ package com.android.build.gradle.tasks
 
 import com.android.build.gradle.internal.dsl.PackagingOptions
 import com.android.build.gradle.internal.dsl.SigningConfig
-import com.android.build.gradle.internal.tasks.FileSupplierTask
+import com.android.build.gradle.internal.tasks.FileSupplier
 import com.android.build.gradle.internal.tasks.IncrementalTask
 import com.android.builder.packaging.DuplicateFileException
-import com.google.common.base.Supplier
 import org.gradle.api.Task
 import org.gradle.api.file.FileTree
 import org.gradle.api.tasks.Input
@@ -34,7 +33,7 @@ import org.gradle.api.tasks.ParallelizableTask
 import org.gradle.tooling.BuildException
 
 @ParallelizableTask
-public class PackageApplication extends IncrementalTask implements FileSupplierTask {
+public class PackageApplication extends IncrementalTask implements FileSupplier {
 
     // ----- PUBLIC TASK API -----
 
