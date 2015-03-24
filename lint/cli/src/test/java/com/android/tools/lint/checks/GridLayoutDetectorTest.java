@@ -67,6 +67,27 @@ public class GridLayoutDetectorTest extends AbstractCheckTest {
                 lintFiles("res/layout/gridlayout3.xml=>res/layout/layout.xml"));
     }
 
+    public void testGridLayout4() throws Exception {
+        assertEquals(""
+                + "res/layout/layout.xml:6: Error: Wrong namespace; with v7 GridLayout you should use app:orientation (and add xmlns:app=\"http://schemas.android.com/apk/res-auto\" to your root element.) [GridLayout]\n"
+                + "        android:orientation=\"horizontal\">\n"
+                + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "res/layout/layout.xml:12: Error: Wrong namespace; with v7 GridLayout you should use app:layout_columnWeight (and add xmlns:app=\"http://schemas.android.com/apk/res-auto\" to your root element.) [GridLayout]\n"
+                + "            android:layout_columnWeight=\"2\"\n"
+                + "            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "res/layout/layout.xml:13: Error: Wrong namespace; with v7 GridLayout you should use app:layout_gravity (and add xmlns:app=\"http://schemas.android.com/apk/res-auto\" to your root element.) [GridLayout]\n"
+                + "            android:layout_gravity=\"fill\"\n"
+                + "            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "res/layout/layout.xml:20: Error: Wrong namespace; with v7 GridLayout you should use app:layout_gravity (and add xmlns:app=\"http://schemas.android.com/apk/res-auto\" to your root element.) [GridLayout]\n"
+                + "            android:layout_gravity=\"fill\"\n"
+                + "            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "res/layout/layout.xml:22: Error: Wrong namespace; with v7 GridLayout you should use app:layout_columnWeight (and add xmlns:app=\"http://schemas.android.com/apk/res-auto\" to your root element.) [GridLayout]\n"
+                + "            android:layout_columnWeight=\"1\"\n"
+                + "            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "5 errors, 0 warnings\n",
+                lintFiles("res/layout/gridlayout4.xml=>res/layout/layout.xml"));
+    }
+
     public void testGetOldValue() {
         assertEquals("android:layout_row",
                 getOldValue("Wrong namespace; with v7 GridLayout you should use app:layout_row",
