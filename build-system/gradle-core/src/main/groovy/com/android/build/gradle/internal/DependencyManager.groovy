@@ -51,6 +51,8 @@ import org.gradle.api.artifacts.ModuleVersionIdentifier
 import org.gradle.api.artifacts.ProjectDependency
 import org.gradle.api.artifacts.ResolvedArtifact
 import org.gradle.api.artifacts.SelfResolvingDependency
+import org.gradle.api.artifacts.component.ComponentIdentifier
+import org.gradle.api.artifacts.component.ProjectComponentIdentifier
 import org.gradle.api.artifacts.result.DependencyResult
 import org.gradle.api.artifacts.result.ResolvedComponentResult
 import org.gradle.api.artifacts.result.ResolvedDependencyResult
@@ -421,7 +423,8 @@ class DependencyManager {
                     file,
                     true /*compiled*/,
                     localPackagedJars.contains(file) /*packaged*/,
-                    null /*resolvedCoordinates*/))
+                    null /*resolvedCoordinates*/,
+                    null /*projectPath*/))
         }
 
         for (File file : localPackagedJars) {
@@ -430,7 +433,8 @@ class DependencyManager {
                         file,
                         false /*compiled*/,
                         true /*packaged*/,
-                        null /*resolvedCoordinates*/))
+                        null /*resolvedCoordinates*/,
+                        null /*projectPath*/))
             }
         }
 
@@ -500,6 +504,7 @@ class DependencyManager {
                     convertedChildren,
                     libInfo.getName(),
                     libInfo.getProjectVariant(),
+                    libInfo.getProject(),
                     libInfo.getRequestedCoordinates(),
                     libInfo.getResolvedCoordinates())
 
@@ -602,7 +607,7 @@ class DependencyManager {
     }
 
     private void addDependency(
-            ResolvedComponentResult moduleVersion,
+            ResolvedComponentResult resolvedComponentResult,
             VariantDependencies configDependencies,
             Collection<LibInfo> outLibraries,
             List<JarInfo> outJars,
@@ -612,21 +617,22 @@ class DependencyManager {
             Multimap<LibraryDependency, VariantDependencies> reverseMap,
             int indent) {
 
-        ModuleVersionIdentifier id = moduleVersion.moduleVersion
-        if (configDependencies.checker.excluded(id)) {
+        ModuleVersionIdentifier moduleVersion = resolvedComponentResult.moduleVersion
+        if (configDependencies.checker.excluded(moduleVersion)) {
             return
         }
 
-        if (id.name.equals("support-annotations") && id.group.equals("com.android.support")) {
+        if (moduleVersion.name.equals("support-annotations") &&
+                moduleVersion.group.equals("com.android.support")) {
             configDependencies.annotationsPresent = true
         }
 
-        List<LibInfo> libsForThisModule = alreadyFoundLibraries.get(id)
-        List<JarInfo> jarsForThisModule = alreadyFoundJars.get(id)
+        List<LibInfo> libsForThisModule = alreadyFoundLibraries.get(moduleVersion)
+        List<JarInfo> jarsForThisModule = alreadyFoundJars.get(moduleVersion)
 
         if (libsForThisModule != null) {
             if (DEBUG_DEPENDENCY) {
-                printIndent indent, "FOUND LIB: " + id.name
+                printIndent indent, "FOUND LIB: " + moduleVersion.name
             }
             outLibraries.addAll(libsForThisModule)
 
@@ -636,13 +642,13 @@ class DependencyManager {
 
         } else if (jarsForThisModule != null) {
             if (DEBUG_DEPENDENCY) {
-                printIndent indent, "FOUND JAR: " + id.name
+                printIndent indent, "FOUND JAR: " + moduleVersion.name
             }
             outJars.addAll(jarsForThisModule)
         }
         else {
             if (DEBUG_DEPENDENCY) {
-                printIndent indent, "NOT FOUND: " + id.name
+                printIndent indent, "NOT FOUND: " + moduleVersion.name
             }
             // new module! Might be a jar or a library
 
@@ -650,7 +656,7 @@ class DependencyManager {
             List<LibInfo> nestedLibraries = Lists.newArrayList()
             List<JarInfo> nestedJars = Lists.newArrayList()
 
-            Set<? extends DependencyResult> dependencies = moduleVersion.dependencies
+            Set<? extends DependencyResult> dependencies = resolvedComponentResult.dependencies
             dependencies.each { dep ->
                 if (dep instanceof ResolvedDependencyResult) {
                     addDependency(
@@ -667,13 +673,17 @@ class DependencyManager {
             }
 
             if (DEBUG_DEPENDENCY) {
-                printIndent indent, "BACK2: " + id.name
+                printIndent indent, "BACK2: " + moduleVersion.name
                 printIndent indent, "NESTED LIBS: " + nestedLibraries.size()
                 printIndent indent, "NESTED JARS: " + nestedJars.size()
             }
 
             // now loop on all the artifact for this modules.
-            List<ResolvedArtifact> moduleArtifacts = artifacts.get(id)
+            List<ResolvedArtifact> moduleArtifacts = artifacts.get(moduleVersion)
+
+            ComponentIdentifier id = resolvedComponentResult.getId()
+            String gradlePath = (id instanceof ProjectComponentIdentifier) ?
+                    ((ProjectComponentIdentifier) id).getProjectPath() : null;
 
             moduleArtifacts?.each { artifact ->
                 if (artifact.type == EXT_LIB_ARCHIVE) {
@@ -682,15 +692,15 @@ class DependencyManager {
                     }
                     if (libsForThisModule == null) {
                         libsForThisModule = Lists.newArrayList()
-                        alreadyFoundLibraries.put(id, libsForThisModule)
+                        alreadyFoundLibraries.put(moduleVersion, libsForThisModule)
                     }
 
-                    String path = "${normalize(logger, id, id.group)}" +
-                            "/${normalize(logger, id, id.name)}" +
-                            "/${normalize(logger, id, id.version)}"
-                    String name = "$id.group:$id.name:$id.version"
+                    String path = "${normalize(logger, moduleVersion, moduleVersion.group)}" +
+                            "/${normalize(logger, moduleVersion, moduleVersion.name)}" +
+                            "/${normalize(logger, moduleVersion, moduleVersion.version)}"
+                    String name = "$moduleVersion.group:$moduleVersion.name:$moduleVersion.version"
                     if (artifact.classifier != null && !artifact.classifier.isEmpty()) {
-                        path += "/${normalize(logger, id, artifact.classifier)}"
+                        path += "/${normalize(logger, moduleVersion, artifact.classifier)}"
                         name += ":$artifact.classifier"
                     }
                     //def explodedDir = project.file("$project.rootProject.buildDir/${FD_INTERMEDIATES}/exploded-aar/$path")
@@ -703,6 +713,7 @@ class DependencyManager {
                             nestedJars,
                             name,
                             artifact.classifier,
+                            gradlePath,
                             null /*requestedCoordinates*/,
                             new MavenCoordinatesImpl(artifact))
 
@@ -719,24 +730,25 @@ class DependencyManager {
                         extraModelInfo.handleSyncError(
                                 new MavenCoordinatesImpl(artifact).toString(),
                                 SyncIssue.TYPE_JAR_DEPEND_ON_AAR,
-                                "Module version $id depends on libraries but is a jar")
+                                "Module version $moduleVersion depends on libraries but is a jar")
                     }
 
                     if (jarsForThisModule == null) {
                         jarsForThisModule = Lists.newArrayList()
-                        alreadyFoundJars.put(id, jarsForThisModule)
+                        alreadyFoundJars.put(moduleVersion, jarsForThisModule)
                     }
 
                     JarInfo jarInfo = new JarInfo(
                             artifact.file,
                             new MavenCoordinatesImpl(artifact),
+                            gradlePath,
                             nestedJars)
 
                     jarsForThisModule.add(jarInfo)
                     outJars.add(jarInfo)
 
                 } else if (artifact.type == EXT_ANDROID_PACKAGE) {
-                    String name = "$id.group:$id.name:$id.version"
+                    String name = "$moduleVersion.group:$moduleVersion.name:$moduleVersion.version"
                     if (artifact.classifier != null) {
                         name += ":$artifact.classifier"
                     }
@@ -748,7 +760,7 @@ class DependencyManager {
                                     " archive which is not supported" +
                                     " as a compilation dependency. File: ${artifact.file}")
                 } else if (artifact.type == "apklib") {
-                    String name = "$id.group:$id.name:$id.version"
+                    String name = "$moduleVersion.group:$moduleVersion.name:$moduleVersion.version"
                     if (artifact.classifier != null) {
                         name += ":$artifact.classifier"
                     }
@@ -762,9 +774,8 @@ class DependencyManager {
             }
 
             if (DEBUG_DEPENDENCY) {
-                printIndent indent, "DONE: " + id.name
+                printIndent indent, "DONE: " + moduleVersion.name
             }
-
         }
     }
 

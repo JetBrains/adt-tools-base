@@ -223,9 +223,8 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
         return variantConfiguration.getType();
     }
 
-    @VisibleForTesting
     @NonNull
-    String getName() {
+    public String getName() {
         return variantConfiguration.getFullName();
     }
 
