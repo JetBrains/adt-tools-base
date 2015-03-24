@@ -1,6 +1,6 @@
 package com.android.tests.basic;
 
-import com.jayway.android.robotium.solo.Solo;
+import com.google.common.collect.ImmutableList;
 
 import android.test.ActivityInstrumentationTestCase2;
 import android.test.suitebuilder.annotation.MediumTest;
@@ -8,9 +8,7 @@ import android.widget.TextView;
 
 public class MainTest extends ActivityInstrumentationTestCase2<Main> {
 
-    private Solo solo;
-
-    private TextView mTextView;
+    private ImmutableList<TextView> mTextView;
 
     /**
      * Creates an {@link ActivityInstrumentationTestCase2} that tests the {@link Main} activity.
@@ -25,13 +23,12 @@ public class MainTest extends ActivityInstrumentationTestCase2<Main> {
         final Main a = getActivity();
         // ensure a valid handle to the activity has been returned
         assertNotNull(a);
-        mTextView = (TextView) a.findViewById(R.id.text);
-        solo = new Solo(getInstrumentation(), getActivity());
+        // Wrapped in an immutable list from guava, to check the dependency worked.
+        mTextView = ImmutableList.of((TextView) a.findViewById(R.id.text))
     }
 
     @Override
     public void tearDown() throws Exception {
-        solo.finishOpenedActivities();
     }
 
     /**
@@ -43,6 +40,8 @@ public class MainTest extends ActivityInstrumentationTestCase2<Main> {
     @MediumTest
     public void testPreconditions() {
         assertNotNull(mTextView);
+        assertEquals(1, mTextView.size());
+        assertNotNull(mTextView.get(0));
     }
 }
 
