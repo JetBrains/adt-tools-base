@@ -96,6 +96,14 @@ public class ColorUsageDetector extends Detector implements Detector.JavaScanner
                     String methodName = call.astName().astValue();
                     if (methodName.endsWith("Color")              //$NON-NLS-1$
                             && methodName.startsWith("set")) {    //$NON-NLS-1$
+                        if ("setProgressBackgroundColor".equals(methodName)) {
+                            // Special exception: SwipeRefreshLayout does not follow the normal
+                            // naming convention: its setProgressBackgroundColor does *not* take
+                            // an ARGB color integer, it takes a resource id.
+                            // This method name is unique across the framework and support
+                            // libraries.
+                            return;
+                        }
                         context.report(
                                 ISSUE, select, context.getLocation(select), String.format(
                                     "Should pass resolved color instead of resource id here: " +
