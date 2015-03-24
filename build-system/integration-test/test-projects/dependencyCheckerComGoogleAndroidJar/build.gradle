@@ -1,0 +1,21 @@
+apply from: "../commonHeader.gradle"
+buildscript { apply from: "../commonBuildScript.gradle", to: buildscript }
+
+apply plugin: 'com.android.application'
+
+repositories {
+    // com.google.android:android is only on maven central.
+    mavenCentral()
+}
+
+android {
+    compileSdkVersion 21
+    buildToolsVersion = rootProject.ext.buildToolsVersion
+
+    // Lower than com.google.android:android:4.1.1.4
+    defaultConfig.minSdkVersion 14
+}
+
+dependencies {
+    compile 'com.google.android:android:4.1.1.4'
+}
