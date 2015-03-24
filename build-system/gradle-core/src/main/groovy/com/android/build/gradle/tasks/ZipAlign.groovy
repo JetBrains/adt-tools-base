@@ -15,6 +15,8 @@
  */
 package com.android.build.gradle.tasks
 
+import com.android.annotations.NonNull
+import com.android.build.FilterData
 import com.android.build.gradle.internal.tasks.FileSupplier
 import org.gradle.api.DefaultTask
 import org.gradle.api.Task
@@ -56,6 +58,7 @@ public class ZipAlign extends DefaultTask implements FileSupplier {
         return getOutputFile()
     }
 
+    @NonNull
     @Override
     Task getTask() {
         return this

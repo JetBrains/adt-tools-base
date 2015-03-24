@@ -35,6 +35,7 @@ import com.android.build.gradle.internal.dsl.AbiSplitOptions
 import com.android.build.gradle.internal.dsl.SigningConfig
 import com.android.build.gradle.internal.publishing.ApkPublishArtifact
 import com.android.build.gradle.internal.publishing.MappingPublishArtifact
+import com.android.build.gradle.internal.publishing.MetadataPublishArtifact
 import com.android.build.gradle.internal.tasks.AndroidReportTask
 import com.android.build.gradle.internal.tasks.CheckManifest
 import com.android.build.gradle.internal.tasks.DependencyReportTask
@@ -1004,12 +1005,15 @@ abstract class TaskManager {
 
             return null
         }
+
         zipAlign.outputDirectory = new File("$project.buildDir/outputs/apk")
         zipAlign.inputFiles.addAll(variantOutputData.packageSplitResourcesTask.getOutputFiles())
         zipAlign.outputBaseName = config.baseName
         zipAlign.abiFilters = abiFilters
         zipAlign.languageFilters = languageFilters
         zipAlign.densityFilters = densityFilters
+        File metadataDirectory = new File(zipAlign.outputDirectory.getParentFile(), "metadata")
+        zipAlign.apkMetadataFile = new File(metadataDirectory, "${config.fullName}.mtd")
         ((ApkVariantOutputData) variantOutputData).splitZipAlign = zipAlign
         zipAlign.dependsOn(variantOutputData.packageSplitResourcesTask)
     }
@@ -2655,6 +2659,12 @@ abstract class TaskManager {
                                 outputFileProvider))
                     }
 
+                    if (variantOutputData.getMetadataFile() != null) {
+                        project.artifacts.add("default-metadata",
+                                new MetadataPublishArtifact(projectBaseName, null,
+                                        variantOutputData.getMetadataFile()));
+                    }
+
                     if (variantData.getMappingFileProvider() != null) {
                         project.artifacts.add("default-mapping",
                                 new MappingPublishArtifact(projectBaseName,
@@ -2672,6 +2682,13 @@ abstract class TaskManager {
                                     projectBaseName,
                                     null,
                                     outputFileProvider))
+                    }
+
+                    if (variantOutputData.getMetadataFile() != null) {
+                        project.artifacts.add(
+                                variantData.variantDependency.metadataConfiguration.name,
+                                new MetadataPublishArtifact(projectBaseName, null,
+                                        variantOutputData.getMetadataFile()));
                     }
 
                     if (variantData.getMappingFileProvider() != null) {

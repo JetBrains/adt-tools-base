@@ -30,36 +30,36 @@ public interface OutputFile {
     /**
      * An object representing the lack of filter.
      */
-    public static final String NO_FILTER = null;
+    String NO_FILTER = null;
 
     /**
      * Type of package file, either the main APK or a pure split APK file containing resources for
      * a particular split dimension.
      */
-    public enum OutputType {
+    enum OutputType {
         MAIN, FULL_SPLIT, SPLIT
     }
 
     /**
      * String representation of the OutputType enum which can be used for remote-able interfaces.
      */
-    public static final String MAIN = OutputType.MAIN.name();
-    public static final String FULL_SPLIT = OutputType.FULL_SPLIT.name();
-    public static final String SPLIT = OutputType.SPLIT.name();
+    String MAIN = OutputType.MAIN.name();
+    String FULL_SPLIT = OutputType.FULL_SPLIT.name();
+    String SPLIT = OutputType.SPLIT.name();
 
     /**
      * Split dimension type
      */
-    public enum FilterType {
+    enum FilterType {
         DENSITY, ABI, LANGUAGE
     }
 
     /**
      * String representations of the FilterType enum which can be used for remote-able interfaces.
      */
-    public static final String DENSITY = FilterType.DENSITY.name();
-    public static final String ABI = FilterType.ABI.name();
-    public static final String LANGUAGE = FilterType.LANGUAGE.name();
+    String DENSITY = FilterType.DENSITY.name();
+    String ABI = FilterType.ABI.name();
+    String LANGUAGE = FilterType.LANGUAGE.name();
 
     /**
      * Returns the output type of the referenced APK.

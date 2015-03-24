@@ -140,6 +140,7 @@ public class JackTask extends AbstractCompile
     }
 
     // ----- FileSupplierTask ----
+    @NonNull
     @Override
     Task getTask() {
         return this

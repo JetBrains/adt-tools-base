@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal.variant;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.build.FilterData;
 import com.android.build.OutputFile;
 import com.android.build.gradle.api.ApkOutputFile;
@@ -28,7 +29,10 @@ import com.android.build.gradle.tasks.ZipAlign;
 import com.google.common.base.Supplier;
 import com.google.common.collect.ImmutableList;
 
+import org.gradle.api.Task;
+
 import java.io.File;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 
@@ -162,5 +166,25 @@ public class ApkVariantOutputData extends BaseVariantOutputData {
             tasks.addAll(packageSplitAbiTask.getOutputFileSuppliers());
         }
         return tasks.build();
+    }
+
+    @Nullable
+    public FileSupplier getMetadataFile() throws IOException {
+
+        if (splitZipAlign == null) {
+            return null;
+        }
+        return new FileSupplier() {
+            @NonNull
+            @Override
+            public Task getTask() {
+                return splitZipAlign;
+            }
+
+            @Override
+            public File get() {
+                return splitZipAlign.getApkMetadataFile();
+            }
+        };
     }
 }
