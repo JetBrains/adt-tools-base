@@ -1587,6 +1587,9 @@ abstract class TaskManager {
         List<DeviceProvider> providers = getExtension().deviceProviders
 
         String connectedRootName = "${CONNECTED}${ANDROID_TEST.suffix}"
+        String defaultReportsDir = "$project.buildDir/$FD_REPORTS/$FD_ANDROID_TESTS"
+        String defaultResultsDir = "$project.buildDir/${FD_OUTPUTS}/$FD_ANDROID_RESULTS"
+
         // If more than one flavor, create a report aggregator task and make this the parent
         // task for all new connected tasks.  Otherwise, create a top level connectedAndroidTest
         // DefaultTask.
@@ -1597,17 +1600,11 @@ abstract class TaskManager {
                         "Installs and runs instrumentation tests for all flavors on connected devices."
                 mainConnectedTask.reportType = ReportType.MULTI_FLAVOR
                 conventionMapping(mainConnectedTask).map("resultsDir") {
-                    String rootLocation = getExtension().testOptions.resultsDir != null ?
-                            getExtension().testOptions.resultsDir :
-                            "$project.buildDir/${FD_OUTPUTS}/$FD_ANDROID_RESULTS"
-
+                    String rootLocation = extension.testOptions.resultsDir ?: defaultResultsDir
                     project.file("$rootLocation/connected/$FD_FLAVORS_ALL")
                 }
                 conventionMapping(mainConnectedTask).map("reportsDir") {
-                    String rootLocation = getExtension().testOptions.reportDir != null ?
-                            getExtension().testOptions.reportDir :
-                            "$project.buildDir/${FD_OUTPUTS}/$FD_REPORTS/$FD_ANDROID_TESTS"
-
+                    String rootLocation = extension.testOptions.reportDir ?: defaultReportsDir
                     project.file("$rootLocation/connected/$FD_FLAVORS_ALL")
                 }
 
@@ -1635,17 +1632,12 @@ abstract class TaskManager {
                 mainProviderTask.reportType = ReportType.MULTI_FLAVOR
 
                 conventionMapping(mainProviderTask).map("resultsDir") {
-                    String rootLocation = getExtension().testOptions.resultsDir != null ?
-                            getExtension().testOptions.resultsDir :
-                            "$project.buildDir/${FD_OUTPUTS}/$FD_ANDROID_RESULTS"
+                    String rootLocation = extension.testOptions.resultsDir ?: defaultResultsDir
 
                     project.file("$rootLocation/devices/$FD_FLAVORS_ALL")
                 }
                 conventionMapping(mainProviderTask).map("reportsDir") {
-                    String rootLocation = getExtension().testOptions.reportDir != null ?
-                            getExtension().testOptions.reportDir :
-                            "$project.buildDir/${FD_OUTPUTS}/$FD_REPORTS/$FD_ANDROID_TESTS"
-
+                    String rootLocation = extension.testOptions.reportDir ?: defaultReportsDir
                     project.file("$rootLocation/devices/$FD_FLAVORS_ALL")
                 }
             }
@@ -1750,7 +1742,7 @@ abstract class TaskManager {
 
             conventionMapping(reportTask).map("reportDir") {
                 project.file(
-                        "$project.buildDir/${FD_OUTPUTS}/$FD_REPORTS/coverage/${baseVariantData.variantConfiguration.dirName}")
+                        "$project.buildDir/$FD_REPORTS/coverage/${baseVariantData.variantConfiguration.dirName}")
             }
 
             reportTask.dependsOn connectedTask
@@ -1873,7 +1865,7 @@ abstract class TaskManager {
         conventionMapping(testTask).map("reportsDir") {
             String rootLocation = getExtension().testOptions.reportDir != null ?
                     getExtension().testOptions.reportDir :
-                    "$project.buildDir/${FD_OUTPUTS}/$FD_REPORTS/$FD_ANDROID_TESTS"
+                    "$project.buildDir/$FD_REPORTS/$FD_ANDROID_TESTS"
 
             String flavorFolder = testVariantData.variantConfiguration.flavorName
             if (!flavorFolder.isEmpty()) {
