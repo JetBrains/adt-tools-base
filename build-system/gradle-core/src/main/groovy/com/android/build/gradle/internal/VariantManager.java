@@ -63,11 +63,13 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
+import org.gradle.api.Action;
 import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
 import org.gradle.api.tasks.TaskContainer;
 import org.gradle.internal.reflect.Instantiator;
+import org.gradle.platform.base.ComponentBinaries;
 
 import java.io.File;
 import java.util.Collections;
@@ -276,7 +278,8 @@ public class VariantManager implements VariantModel {
                     new Recorder.Block<Void>() {
                         @Override
                         public Void call() throws Exception {
-                            createTasksForVariantData(project.getTasks(), variantData);
+                            createTasksForVariantData(
+                                    new TaskContainerAdaptor(project.getTasks()), variantData);
                             return null;
                         }
                     },
@@ -315,7 +318,9 @@ public class VariantManager implements VariantModel {
     /**
      * Create assemble task for VariantData.
      */
-    private void createAssembleTaskForVariantData(TaskContainer tasks, BaseVariantData<?> variantData) {
+    private void createAssembleTaskForVariantData(
+            TaskFactory tasks,
+            final BaseVariantData<?> variantData) {
         if (variantData.getType().isForTesting()) {
             variantData.assembleVariantTask = taskManager.createAssembleTask(variantData);
         } else {
@@ -341,16 +346,26 @@ public class VariantManager implements VariantModel {
 
                 // assembleTask for this flavor(dimension), created on demand if needed.
                 if (variantConfig.getProductFlavors().size() > 1) {
-                    String name = StringHelper.capitalize(variantConfig.getFlavorName());
-                    Task assembleTask = tasks.findByName("assemble" + name);
-                    if (assembleTask == null) {
-                        assembleTask = tasks.create("assemble" + name);
-                        assembleTask.setDescription(
-                                "Assembles all builds for flavor combination: " + name);
-                        assembleTask.setGroup("Build");
+                    final String name = StringHelper.capitalize(variantConfig.getFlavorName());
+                    final String variantAssembleTaskName = "assemble" + name;
+                    if (!tasks.containsKey(variantAssembleTaskName)) {
+                        tasks.create(variantAssembleTaskName, new Action<Task>() {
+                            @Override
+                            public void execute(Task task) {
+                                task.setDescription(
+                                        "Assembles all builds for flavor combination: " + name);
+                                task.setGroup("Build");
+                                task.dependsOn(variantData.assembleVariantTask);
+
+                            }
+                        });
                     }
-                    assembleTask.dependsOn(variantData.assembleVariantTask);
-                    tasks.getByName("assemble").dependsOn(assembleTask);
+                    tasks.named("assemble", new Action<Task>() {
+                        @Override
+                        public void execute(Task task) {
+                            task.dependsOn(variantAssembleTaskName);
+                        }
+                    });
                 }
             }
         }
@@ -359,7 +374,7 @@ public class VariantManager implements VariantModel {
     /**
      * Create tasks for the specified variantData.
      */
-    public void createTasksForVariantData(TaskContainer tasks,
+    public void createTasksForVariantData(TaskFactory tasks,
             BaseVariantData<? extends BaseVariantOutputData> variantData) {
         VariantType variantType = variantData.getType();
 
