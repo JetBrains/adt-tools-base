@@ -48,6 +48,7 @@ class UnitTestingSupportTest {
                         "mockFinalMethod",
                         "mockInnerClass",
                         "referenceProductionCode",
+                        "resourcesOnClasspath",
                     ])
 
             checkResults(

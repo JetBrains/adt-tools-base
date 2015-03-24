@@ -11,6 +11,10 @@ android {
     // We need an android.jar that contains Java 6 bytecode, since Jenkins runs on Java 6.
     compileSdkVersion 19
     buildToolsVersion = rootProject.buildToolsVersion
+
+    buildTypes {
+        buildTypeWithResource
+    }
 }
 
 dependencies {
