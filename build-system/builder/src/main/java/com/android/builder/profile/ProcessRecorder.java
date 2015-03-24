@@ -30,13 +30,20 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Records all the {@link ExecutionRecord} for a process, in order it was received and sends then
  * synchronously to a {@link JsonRecordWriter}.
  */
-class ProcessRecorder {
+public class ProcessRecorder {
+
+    private static final AtomicLong lastRecordId = new AtomicLong(0);
+
+    static long allocateRecordId() {
+        return lastRecordId.incrementAndGet();
+    }
 
     @NonNull
     static ProcessRecorder get() {

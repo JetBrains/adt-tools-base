@@ -29,10 +29,10 @@ import java.util.concurrent.Callable;
 public interface Recorder {
 
     /**
-     * Abstraction of a block of code that produces a result of type T and may throw exceptions.
-     * Any exception thrown by {@link Callable#call()} will be passed to the
-     * {@link #handleException(Exception)} method. Default implementation of this method is to
-     * repackage the exception as {@link RuntimeException} unless it already is one.
+     * Abstraction of a block of code that produces a result of type T and may throw exceptions. Any
+     * exception thrown by {@link Callable#call()} will be passed to the {@link
+     * #handleException(Exception)} method. Default implementation of this method is to repackage
+     * the exception as {@link RuntimeException} unless it already is one.
      *
      * @param <T> the type of result produced by executing this block of code.
      */
@@ -58,8 +58,12 @@ public interface Recorder {
      * particular block.
      */
     final class Property {
-        @NonNull String name;
-        @NonNull String value;
+
+        @NonNull
+        String name;
+
+        @NonNull
+        String value;
 
         public Property(@NonNull String name, @NonNull String value) {
             this.name = name;
@@ -68,18 +72,36 @@ public interface Recorder {
     }
 
     /**
-     * Records the time elapsed while executing a {@link Block} and saves the resulting
-     * {@link ExecutionRecord} to {@link ProcessRecorder}.
+     * Records the time elapsed while executing a {@link Block} and saves the resulting {@link
+     * ExecutionRecord} to {@link ProcessRecorder}.
      *
      * @param executionType the task type, so aggregation can be performed.
-     * @param block the block of code to execution and measure.
-     * @param properties optional list of free formed properties to save in the
-     * {@link ExecutionRecord}
-     * @param <T> the type of the returned value from the block.
+     * @param block         the block of code to execution and measure.
+     * @param properties    optional list of free formed properties to save in the {@link
+     *                      ExecutionRecord}
+     * @param <T>           the type of the returned value from the block.
      * @return the value returned from the block (including null) or null if the block execution
-     * raised an exception which was subsequently swallowed by
-     * {@link Block#handleException(Exception)}
+     * raised an exception which was subsequently swallowed by {@link Block#handleException(Exception)}
      */
     @Nullable
-    <T> T record(@NonNull ExecutionType executionType, @NonNull Block<T> block, Property... properties);
+    <T> T record(@NonNull ExecutionType executionType, @NonNull Block<T> block,
+            Property... properties);
+
+    /**
+     * Allocate a new recordId that can be used to create a {@link ExecutionRecord} and record
+     * an execution span. This method is useful when the code span to measure cannot be expressed
+     * as a {@link Block} and therefore cannot directly use the
+     * {@link #record(ExecutionType, Block, Property...)} method.
+     *
+     * @return the unique record id for this process.
+     */
+    long allocationRecordId();
+
+    /**
+     * Closes an execution span measurement using the allocated record id obtained from
+     * {@link #allocationRecordId()} method.
+     *
+     * @param record the span execution record, fully populated.
+     */
+    void closeRecord(ExecutionRecord record);
 }
