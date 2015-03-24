@@ -33,7 +33,6 @@ import com.android.build.gradle.BaseExtension;
 import com.android.build.gradle.TestedExtension;
 import com.android.build.gradle.api.AndroidSourceSet;
 import com.android.build.gradle.api.BaseVariant;
-import com.android.build.gradle.internal.ProductFlavorData.ConfigurationProviderImpl;
 import com.android.build.gradle.internal.api.DefaultAndroidSourceSet;
 import com.android.build.gradle.internal.api.ReadOnlyObjectProvider;
 import com.android.build.gradle.internal.api.TestVariantImpl;
@@ -379,11 +378,17 @@ public class VariantManager implements VariantModel {
             final BaseVariantData testedVariantData = (BaseVariantData) ((TestVariantData) variantData)
                     .getTestedVariantData();
 
-            /// add the container of dependencies
-            // the order of the libraries is important. In descending order:
-            // flavors, defaultConfig. No build type for tests
+            // Add the container of dependencies, the order of the libraries is important.
+            // In descending order: build type (only for unit test), flavors, defaultConfig.
             List<ConfigurationProvider> testVariantProviders = Lists.newArrayListWithExpectedSize(
                     2 + testVariantConfig.getProductFlavors().size());
+
+            ConfigurationProvider buildTypeConfigurationProvider =
+                    buildTypes.get(testVariantConfig.getBuildType().getName())
+                            .getTestConfigurationProvider(variantType);
+            if (buildTypeConfigurationProvider != null) {
+                testVariantProviders.add(buildTypeConfigurationProvider);
+            }
 
             for (com.android.build.gradle.api.GroupableProductFlavor productFlavor :
                     testVariantConfig.getProductFlavors()) {
@@ -545,7 +550,7 @@ public class VariantManager implements VariantModel {
         }
 
         // 2. the build type.
-        variantProviders.add(buildTypeData);
+        variantProviders.add(buildTypeData.getMainProvider());
 
         // 3. the multi-flavor combination
         if (productFlavorList.size() > 1) {
