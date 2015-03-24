@@ -129,39 +129,50 @@ public class ServiceCastDetector extends Detector implements Detector.JavaScanne
     @NonNull
     private static Map<String, String> getServiceMap() {
         if (sServiceMap == null) {
-            final int EXPECTED_SIZE = 34;
+            final int EXPECTED_SIZE = 49;
             sServiceMap = Maps.newHashMapWithExpectedSize(EXPECTED_SIZE);
 
-            sServiceMap.put("ACCESSIBILITY_SERVICE",
-                    "android.view.accessibility.AccessibilityManager");
+            sServiceMap.put("ACCESSIBILITY_SERVICE", "android.view.accessibility.AccessibilityManager");
             sServiceMap.put("ACCOUNT_SERVICE", "android.accounts.AccountManager");
             sServiceMap.put("ACTIVITY_SERVICE", "android.app.ActivityManager");
             sServiceMap.put("ALARM_SERVICE", "android.app.AlarmManager");
+            sServiceMap.put("APPWIDGET_SERVICE", "android.appwidget.AppWidgetManager");
+            sServiceMap.put("APP_OPS_SERVICE", "android.app.AppOpsManager");
             sServiceMap.put("AUDIO_SERVICE", "android.media.AudioManager");
+            sServiceMap.put("BATTERY_SERVICE", "android.os.BatteryManager");
+            sServiceMap.put("BLUETOOTH_SERVICE", "android.bluetooth.BluetoothAdapter");
+            sServiceMap.put("CAMERA_SERVICE", "android.hardware.camera2.CameraManager");
+            sServiceMap.put("CAPTIONING_SERVICE", "android.view.accessibility.CaptioningManager");
             sServiceMap.put("CLIPBOARD_SERVICE", "android.text.ClipboardManager");
             sServiceMap.put("CONNECTIVITY_SERVICE", "android.net.ConnectivityManager");
-            sServiceMap.put("CONNECTIVITY_SERVICE", "android.net.ConnectivityManager");
+            sServiceMap.put("CONSUMER_IR_SERVICE", "android.hardware.ConsumerIrManager");
             sServiceMap.put("DEVICE_POLICY_SERVICE", "android.app.admin.DevicePolicyManager");
             sServiceMap.put("DISPLAY_SERVICE", "android.hardware.display.DisplayManager");
             sServiceMap.put("DOWNLOAD_SERVICE", "android.app.DownloadManager");
             sServiceMap.put("DROPBOX_SERVICE", "android.os.DropBoxManager");
             sServiceMap.put("INPUT_METHOD_SERVICE", "android.view.inputmethod.InputMethodManager");
             sServiceMap.put("INPUT_SERVICE", "android.hardware.input.InputManager");
+            sServiceMap.put("JOB_SCHEDULER_SERVICE", "android.app.job.JobScheduler");
             sServiceMap.put("KEYGUARD_SERVICE", "android.app.KeyguardManager");
+            sServiceMap.put("LAUNCHER_APPS_SERVICE", "android.content.pm.LauncherApps");
             sServiceMap.put("LAYOUT_INFLATER_SERVICE", "android.view.LayoutInflater");
             sServiceMap.put("LOCATION_SERVICE", "android.location.LocationManager");
+            sServiceMap.put("MEDIA_PROJECTION_SERVICE", "android.media.projection.MediaProjectionManager");
             sServiceMap.put("MEDIA_ROUTER_SERVICE", "android.media.MediaRouter");
+            sServiceMap.put("MEDIA_SESSION_SERVICE", "android.media.session.MediaSessionManager");
             sServiceMap.put("NFC_SERVICE", "android.nfc.NfcManager");
             sServiceMap.put("NOTIFICATION_SERVICE", "android.app.NotificationManager");
             sServiceMap.put("NSD_SERVICE", "android.net.nsd.NsdManager");
             sServiceMap.put("POWER_SERVICE", "android.os.PowerManager");
+            sServiceMap.put("PRINT_SERVICE", "android.print.PrintManager");
+            sServiceMap.put("RESTRICTIONS_SERVICE", "android.content.RestrictionsManager");
             sServiceMap.put("SEARCH_SERVICE", "android.app.SearchManager");
             sServiceMap.put("SENSOR_SERVICE", "android.hardware.SensorManager");
             sServiceMap.put("STORAGE_SERVICE", "android.os.storage.StorageManager");
+            sServiceMap.put("TELECOM_SERVICE", "android.telecom.TelecomManager");
             sServiceMap.put("TELEPHONY_SERVICE", "android.telephony.TelephonyManager");
-            sServiceMap.put("TEXT_SERVICES_MANAGER_SERVICE",
-                    "android.view.textservice.TextServicesManager");
-            sServiceMap.put("UI_MODE_SERVICE", "android.app.UiModeManager");
+            sServiceMap.put("TEXT_SERVICES_MANAGER_SERVICE", "android.view.textservice.TextServicesManager");
+            sServiceMap.put("TV_INPUT_SERVICE", "android.media.tv.TvInputManager");
             sServiceMap.put("UI_MODE_SERVICE", "android.app.UiModeManager");
             sServiceMap.put("USB_SERVICE", "android.hardware.usb.UsbManager");
             sServiceMap.put("USER_SERVICE", "android.os.UserManager");
