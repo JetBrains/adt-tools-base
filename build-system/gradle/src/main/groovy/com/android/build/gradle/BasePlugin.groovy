@@ -70,7 +70,6 @@ import static com.android.builder.core.BuilderConstants.DEBUG
 import static com.android.builder.core.BuilderConstants.RELEASE
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
 import static java.io.File.separator
-
 /**
  * Base class for all Android plugins
  */
@@ -78,7 +77,6 @@ import static java.io.File.separator
 public abstract class BasePlugin {
 
     private static final String GRADLE_MIN_VERSION = "2.2"
-    public static final String GRADLE_TEST_VERSION = "2.2"
     public static final Pattern GRADLE_ACCEPTABLE_VERSIONS = Pattern.compile("2\\.[2-9].*")
     private static final String GRADLE_VERSION_CHECK_OVERRIDE_PROPERTY =
             "com.android.build.gradle.overrideVersionCheck"
