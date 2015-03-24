@@ -23,61 +23,46 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 public class EncoderTest extends TestCase {
-  public void testEncodeBool() {
+  public void testEncodeBool() throws IOException {
     final boolean[] input = new boolean[]{true, false};
     final byte[] expected = new byte[]{(byte)0x01, (byte)0x00};
 
     ByteArrayOutputStream output = new ByteArrayOutputStream(expected.length);
     Encoder e = new Encoder(output);
 
-    try {
-      for (boolean bool : input) {
-        e.bool(bool);
-      }
-    }
-    catch (IOException ex) {
-      assertNull(ex);
+    for (boolean bool : input) {
+      e.bool(bool);
     }
     Assert.assertArrayEquals(expected, output.toByteArray());
   }
 
-  public void testEncodeInt8() {
+  public void testEncodeInt8() throws IOException {
     final byte[] input = new byte[]{0, 127, -128, -1};
     final byte[] expected = new byte[]{(byte)0x00, (byte)0x7f, (byte)0x80, (byte)0xff};
 
     ByteArrayOutputStream output = new ByteArrayOutputStream(expected.length);
     Encoder e = new Encoder(output);
 
-    try {
-      for (byte s8 : input) {
-        e.int8(s8);
-      }
-    }
-    catch (IOException ex) {
-      assertNull(ex);
+    for (byte s8 : input) {
+      e.int8(s8);
     }
     Assert.assertArrayEquals(expected, output.toByteArray());
   }
 
-  public void testEncodeUint8() {
+  public void testEncodeUint8() throws IOException {
     final short[] input = new short[]{0x00, 0x7f, 0x80, 0xff};
     final byte[] expected = new byte[]{(byte)0x00, (byte)0x7f, (byte)0x80, (byte)0xff};
 
     ByteArrayOutputStream output = new ByteArrayOutputStream(expected.length);
     Encoder e = new Encoder(output);
 
-    try {
-      for (short u8 : input) {
-        e.uint8(u8);
-      }
-    }
-    catch (IOException ex) {
-      assertNull(ex);
+    for (short u8 : input) {
+      e.uint8(u8);
     }
     Assert.assertArrayEquals(expected, output.toByteArray());
   }
 
-  public void testEncodeInt16() {
+  public void testEncodeInt16() throws IOException {
     final short[] input = new short[]{0, 32767, -32768, -1};
     final byte[] expected = new byte[]{
       (byte)0x00, (byte)0x00,
@@ -89,18 +74,13 @@ public class EncoderTest extends TestCase {
     ByteArrayOutputStream output = new ByteArrayOutputStream(expected.length);
     Encoder e = new Encoder(output);
 
-    try {
-      for (short s16 : input) {
-        e.int16(s16);
-      }
-    }
-    catch (IOException ex) {
-      assertNull(ex);
+    for (short s16 : input) {
+      e.int16(s16);
     }
     Assert.assertArrayEquals(expected, output.toByteArray());
   }
 
-  public void testEncodeUint16() {
+  public void testEncodeUint16() throws IOException {
     final int[] input = new int[]{0, 0xbeef, 0xc0de};
     final byte[] expected = new byte[]{
       (byte)0x00, (byte)0x00,
@@ -111,18 +91,13 @@ public class EncoderTest extends TestCase {
     ByteArrayOutputStream output = new ByteArrayOutputStream(expected.length);
     Encoder e = new Encoder(output);
 
-    try {
-      for (int u16 : input) {
-        e.uint16(u16);
-      }
-    }
-    catch (IOException ex) {
-      assertNull(ex);
+    for (int u16 : input) {
+      e.uint16(u16);
     }
     Assert.assertArrayEquals(expected, output.toByteArray());
   }
 
-  public void testEncodeInt32() {
+  public void testEncodeInt32() throws IOException {
     final int[] input = new int[]{0, 2147483647, -2147483648, -1};
     final byte[] expected = new byte[]{
       (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00,
@@ -134,18 +109,13 @@ public class EncoderTest extends TestCase {
     ByteArrayOutputStream output = new ByteArrayOutputStream(expected.length);
     Encoder e = new Encoder(output);
 
-    try {
-      for (int s32 : input) {
-        e.int32(s32);
-      }
-    }
-    catch (IOException ex) {
-      assertNull(ex);
+    for (int s32 : input) {
+      e.int32(s32);
     }
     Assert.assertArrayEquals(expected, output.toByteArray());
   }
 
-  public void testEncodeUint32() {
+  public void testEncodeUint32() throws IOException {
     final long[] input = new long[]{0, 0x01234567, 0x10abcdef};
     final byte[] expected = new byte[]{
       (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00,
@@ -156,18 +126,13 @@ public class EncoderTest extends TestCase {
     ByteArrayOutputStream output = new ByteArrayOutputStream(expected.length);
     Encoder e = new Encoder(output);
 
-    try {
-      for (long u32 : input) {
-        e.uint32(u32);
-      }
-    }
-    catch (IOException ex) {
-      assertNull(ex);
+    for (long u32 : input) {
+      e.uint32(u32);
     }
     Assert.assertArrayEquals(expected, output.toByteArray());
   }
 
-  public void testEncodeInt64() {
+  public void testEncodeInt64() throws IOException {
     final long[] input = new long[]{0L, 9223372036854775807L, -9223372036854775808L, -1L};
     final byte[] expected = new byte[]{
       (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00,
@@ -186,18 +151,13 @@ public class EncoderTest extends TestCase {
     ByteArrayOutputStream output = new ByteArrayOutputStream(expected.length);
     Encoder e = new Encoder(output);
 
-    try {
-      for (long s64 : input) {
-        e.int64(s64);
-      }
-    }
-    catch (IOException ex) {
-      assertNull(ex);
+    for (long s64 : input) {
+      e.int64(s64);
     }
     Assert.assertArrayEquals(expected, output.toByteArray());
   }
 
-  public void testEncodeUint64() {
+  public void testEncodeUint64() throws IOException {
     final long[] input = new long[]{0L, 0x0123456789abcdefL, 0xfedcba9876543210L};
     final byte[] expected = new byte[]{
       (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00,
@@ -213,18 +173,13 @@ public class EncoderTest extends TestCase {
     ByteArrayOutputStream output = new ByteArrayOutputStream(expected.length);
     Encoder e = new Encoder(output);
 
-    try {
-      for (long u64 : input) {
-        e.uint64(u64);
-      }
-    }
-    catch (IOException ex) {
-      assertNull(ex);
+    for (long u64 : input) {
+      e.uint64(u64);
     }
     Assert.assertArrayEquals(expected, output.toByteArray());
   }
 
-  public void testEncodeFloat32() {
+  public void testEncodeFloat32() throws IOException {
     final float[] input = new float[]{0.F, 1.F, 64.5F};
     final byte[] expected = new byte[]{
       (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00,
@@ -235,18 +190,13 @@ public class EncoderTest extends TestCase {
     ByteArrayOutputStream output = new ByteArrayOutputStream(expected.length);
     Encoder e = new Encoder(output);
 
-    try {
-      for (float f32 : input) {
-        e.float32(f32);
-      }
-    }
-    catch (IOException ex) {
-      assertNull(ex);
+    for (float f32 : input) {
+      e.float32(f32);
     }
     Assert.assertArrayEquals(expected, output.toByteArray());
   }
 
-  public void testEncodeFloat64() {
+  public void testEncodeFloat64() throws IOException {
     final double[] input = new double[]{0.D, 1.D, 64.5D};
     final byte[] expected = new byte[]{
       (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00,
@@ -262,18 +212,13 @@ public class EncoderTest extends TestCase {
     ByteArrayOutputStream output = new ByteArrayOutputStream(expected.length);
     Encoder e = new Encoder(output);
 
-    try {
-      for (double f64 : input) {
-        e.float64(f64);
-      }
-    }
-    catch (IOException ex) {
-      assertNull(ex);
+    for (double f64 : input) {
+      e.float64(f64);
     }
     Assert.assertArrayEquals(expected, output.toByteArray());
   }
 
-  public void testEncodeString() {
+  public void testEncodeString() throws IOException {
     final String[] input = new String[]{null, "Hello", "", "World", "こんにちは世界"};
     final byte[] expected = new byte[]{
       0x00, 0x00, 0x00, 0x00, // null string
@@ -290,33 +235,30 @@ public class EncoderTest extends TestCase {
     ByteArrayOutputStream output = new ByteArrayOutputStream(expected.length);
     Encoder e = new Encoder(output);
 
-    try {
-      for (String str : input) {
-        e.string(str);
-      }
-    }
-    catch (IOException ex) {
-      assertNull(ex);
+    for (String str : input) {
+      e.string(str);
     }
     Assert.assertArrayEquals(expected, output.toByteArray());
   }
 
-  public void testEncodeObject() {
+  public void testEncodeObject() throws IOException {
     final byte[] dummyObjectTypeIDBytes = new byte[]{
       0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09,
       0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09
     };
     class DummyObject implements BinaryObject {
+      final String dummy = "dummy";
       @Override
       public ObjectTypeID type() {
         return new ObjectTypeID(dummyObjectTypeIDBytes);
       }
       @Override
-      public void decode(@NotNull Decoder e) throws IOException {
+      public void decode(@NotNull Decoder d) throws IOException {
+        assert d.string().equals(dummy);
       }
       @Override
       public void encode(@NotNull Encoder e) throws IOException {
-        e.string("dummy");
+        e.string(dummy);
       }
     }
 
@@ -325,33 +267,24 @@ public class EncoderTest extends TestCase {
     byte[] expected = null;
 
     ByteArrayOutputStream expectedStream = new ByteArrayOutputStream();
-    try {
-      // null BinaryObject:
-      expectedStream.write(new byte[]{(byte)0xff, (byte)0xff}); // BinaryObject.NULL_ID
 
-      // dummyObject:
-      expectedStream.write(new byte[]{0x00, 0x00}); // dummyObject reference
-      expectedStream.write(dummyObjectTypeIDBytes); // dummyObject.type()
-      expectedStream.write(new byte[]{0x05, 0x00, 0x00, 0x00, 'd', 'u', 'm', 'm', 'y'});
+    // null BinaryObject:
+    expectedStream.write(new byte[]{(byte)0xff, (byte)0xff}); // BinaryObject.NULL_ID
 
-      // dummyObject again, only by reference this time:
-      expectedStream.write(new byte[]{0x00, 0x00}); // dummyObject reference
-      expected = expectedStream.toByteArray();
-    }
-    catch (IOException ex) {
-      assertNull(ex);
-    }
+    // dummyObject:
+    expectedStream.write(new byte[]{0x00, 0x00}); // dummyObject reference
+    expectedStream.write(dummyObjectTypeIDBytes); // dummyObject.type()
+    expectedStream.write(new byte[]{0x05, 0x00, 0x00, 0x00, 'd', 'u', 'm', 'm', 'y'});
+
+    // dummyObject again, only by reference this time:
+    expectedStream.write(new byte[]{0x00, 0x00}); // dummyObject reference
+    expected = expectedStream.toByteArray();
 
     ByteArrayOutputStream output = new ByteArrayOutputStream(expected.length);
     Encoder e = new Encoder(output);
 
-    try {
-      for (BinaryObject obj : input) {
-        e.object(obj);
-      }
-    }
-    catch (IOException ex) {
-      assertNull(ex);
+    for (BinaryObject obj : input) {
+      e.object(obj);
     }
     Assert.assertArrayEquals(expected, output.toByteArray());
   }

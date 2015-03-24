@@ -17,6 +17,8 @@ package com.android.tools.rpclib.binary;
 
 import junit.framework.TestCase;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -84,5 +86,14 @@ public class HandleTest extends TestCase {
     set.add(zeroHandle);
     assertTrue(set.contains(zeroHandle));
     assertEquals(2, set.size());
+  }
+
+  public void testDecodeHandle() throws IOException {
+    ByteArrayInputStream input = new ByteArrayInputStream(handleBytes);
+    Decoder d = new Decoder(input);
+
+    Handle handle = new Handle(handleBytes);
+    Handle handleFromDecoder = new Handle(d);
+    assertEquals(handle, handleFromDecoder);
   }
 }
