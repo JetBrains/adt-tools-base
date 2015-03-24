@@ -134,10 +134,10 @@ public class LocaleFolderDetector extends Detector implements Detector.ResourceF
             "Note that the order of resources is very important; for example, you can't specify " +
             "a language before a network code.\n" +
             "\n" +
-            "Similarly, note that to use 3 letter language or region codes, you have to use " +
+            "Similarly, note that to use 3 letter region codes, you have to use " +
             "a special BCP 47 syntax: the prefix b+ followed by the BCP 47 language tag but " +
             "with `+` as the individual separators instead of `-`. Therefore, for the BCP 47 " +
-            "language tag `es-419` you have to use `b+es+419`.",
+            "language tag `nl-ABW` you have to use `b+nl+ABW`.",
 
             Category.CORRECTNESS,
             6,
