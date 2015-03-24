@@ -31,7 +31,6 @@ import com.android.tools.lint.checks.AlwaysShowActionDetector;
 import com.android.tools.lint.checks.ApiDetector;
 import com.android.tools.lint.checks.AppCompatCallDetector;
 import com.android.tools.lint.checks.ByteOrderMarkDetector;
-import com.android.tools.lint.checks.CheckPermissionDetector;
 import com.android.tools.lint.checks.CommentDetector;
 import com.android.tools.lint.checks.DetectMissingPrefix;
 import com.android.tools.lint.checks.DosLineEndingDetector;
@@ -53,6 +52,7 @@ import com.android.tools.lint.checks.ScrollViewChildDetector;
 import com.android.tools.lint.checks.SecurityDetector;
 import com.android.tools.lint.checks.SharedPrefsDetector;
 import com.android.tools.lint.checks.SignatureOrSystemDetector;
+import com.android.tools.lint.checks.SupportAnnotationDetector;
 import com.android.tools.lint.checks.TextFieldDetector;
 import com.android.tools.lint.checks.TextViewDetector;
 import com.android.tools.lint.checks.TitleDetector;
@@ -459,7 +459,6 @@ public abstract class Reporter {
                         ApiDetector.UNSUPPORTED,
                         AppCompatCallDetector.ISSUE,
                         ByteOrderMarkDetector.BOM,
-                        CheckPermissionDetector.ISSUE,
                         CommentDetector.STOP_SHIP,
                         DetectMissingPrefix.MISSING_NAMESPACE,
                         DuplicateResourceDetector.TYPE_MISMATCH,
@@ -492,6 +491,8 @@ public abstract class Reporter {
                         SecurityDetector.EXPORTED_SERVICE,
                         SharedPrefsDetector.ISSUE,
                         SignatureOrSystemDetector.ISSUE,
+                        SupportAnnotationDetector.CHECK_PERMISSION,
+                        SupportAnnotationDetector.CHECK_RESULT,
                         TextFieldDetector.ISSUE,
                         TextViewDetector.SELECTABLE,
                         TitleDetector.ISSUE,

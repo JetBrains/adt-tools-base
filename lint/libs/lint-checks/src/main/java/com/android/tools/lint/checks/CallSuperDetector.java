@@ -17,8 +17,11 @@
 package com.android.tools.lint.checks;
 
 import static com.android.SdkConstants.CLASS_VIEW;
+import static com.android.SdkConstants.SUPPORT_ANNOTATIONS_PREFIX;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+import com.android.tools.lint.client.api.JavaParser;
 import com.android.tools.lint.client.api.JavaParser.ResolvedMethod;
 import com.android.tools.lint.client.api.JavaParser.ResolvedNode;
 import com.android.tools.lint.detector.api.Category;
@@ -35,7 +38,6 @@ import com.android.tools.lint.detector.api.Speed;
 import java.io.File;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import lombok.ast.AstVisitor;
 import lombok.ast.ForwardingAstVisitor;
@@ -46,10 +48,11 @@ import lombok.ast.Super;
 
 /**
  * Makes sure that methods call super when overriding methods.
- * <p>
- * TODO: We should drive this off of annotation metadata!
  */
 public class CallSuperDetector extends Detector implements Detector.JavaScanner {
+    private static final String CALL_SUPER_ANNOTATION = SUPPORT_ANNOTATIONS_PREFIX + "CallSuper"; //$NON-NLS-1$
+    private static final String ON_DETACHED_FROM_WINDOW = "onDetachedFromWindow";   //$NON-NLS-1$
+    private static final String ON_VISIBILITY_CHANGED = "onVisibilityChanged";      //$NON-NLS-1$
 
     private static final Implementation IMPLEMENTATION = new Implementation(
             CallSuperDetector.class,
@@ -67,9 +70,6 @@ public class CallSuperDetector extends Detector implements Detector.JavaScanner 
             9,
             Severity.WARNING,
             IMPLEMENTATION);
-
-    static final String ON_DETACHED_FROM_WINDOW = "onDetachedFromWindow";   //$NON-NLS-1$
-    static final String ON_VISIBILITY_CHANGED = "onVisibilityChanged";      //$NON-NLS-1$
 
     /** Constructs a new {@link CallSuperDetector} check */
     public CallSuperDetector() {
@@ -94,82 +94,131 @@ public class CallSuperDetector extends Detector implements Detector.JavaScanner 
     }
 
     @Override
-    public AstVisitor createJavaVisitor(@NonNull JavaContext context) {
-        return new PerformanceVisitor(context);
+    public AstVisitor createJavaVisitor(@NonNull final JavaContext context) {
+        return new ForwardingAstVisitor() {
+            @Override
+            public boolean visitMethodDeclaration(MethodDeclaration node) {
+                ResolvedNode resolved = context.resolve(node);
+                if (resolved instanceof ResolvedMethod) {
+                    ResolvedMethod method = (ResolvedMethod) resolved;
+                    checkCallSuper(context, node, method);
+                }
+
+                return false;
+            }
+        };
     }
 
-    private static class PerformanceVisitor extends ForwardingAstVisitor {
-        private final JavaContext mContext;
+    private static void checkCallSuper(@NonNull JavaContext context,
+            @NonNull MethodDeclaration declaration,
+            @NonNull ResolvedMethod method) {
 
-        public PerformanceVisitor(JavaContext context) {
+        ResolvedMethod superMethod = getRequiredSuperMethod(method);
+        if (superMethod != null) {
+            if (!SuperCallVisitor.callsSuper(context, declaration, superMethod)) {
+                String methodName = method.getName();
+                String message = "Overriding method should call `super."
+                        + methodName + "`";
+                Location location = context.getLocation(declaration.astMethodName());
+                context.report(ISSUE, declaration, location, message);
+            }
+        }
+    }
+
+    /**
+     * Checks whether the given method overrides a method which requires the super method
+     * to be invoked, and if so, returns it (otherwise returns null)
+     */
+    @Nullable
+    private static ResolvedMethod getRequiredSuperMethod(
+            @NonNull ResolvedMethod method) {
+
+        String name = method.getName();
+        if (ON_DETACHED_FROM_WINDOW.equals(name)) {
+            // No longer annotated on the framework method since it's
+            // now handled via onDetachedFromWindowInternal, but overriding
+            // is still dangerous if supporting older versions so flag
+            // this for now (should make annotation carry metadata like
+            // compileSdkVersion >= N).
+            if (!method.getContainingClass().isSubclassOf(CLASS_VIEW, false)) {
+                return null;
+            }
+            return method.getSuperMethod();
+        } else if (ON_VISIBILITY_CHANGED.equals(name)) {
+            // From Android Wear API; doesn't yet have an annotation
+            // but we want to enforce this right away until the AAR
+            // is updated to supply it once @CallSuper is available in
+            // the support library
+            if (!method.getContainingClass().isSubclassOf(
+                    "android.support.wearable.watchface.WatchFaceService.Engine", false)) {
+                return null;
+            }
+            return method.getSuperMethod();
+        }
+
+        // Look up annotations metadata
+        while (true) {
+            ResolvedMethod superMethod = method.getSuperMethod();
+            if (superMethod == null) {
+                return null;
+            }
+
+            Iterable<JavaParser.ResolvedAnnotation> annotations = superMethod.getAnnotations();
+            for (JavaParser.ResolvedAnnotation annotation : annotations) {
+                annotation = SupportAnnotationDetector.getRelevantAnnotation(annotation);
+                if (annotation != null) {
+                    String signature = annotation.getSignature();
+                    if (CALL_SUPER_ANNOTATION.equals(signature)) {
+                        return superMethod;
+                    } else if (signature.endsWith(".OverrideMustInvoke")) {
+                        // Handle findbugs annotation on the fly too
+                        return superMethod;
+                    }
+                }
+            }
+            method = superMethod;
+        }
+    }
+
+    /** Visits a method and determines whether the method calls its super method */
+    private static class SuperCallVisitor extends ForwardingAstVisitor {
+        private final JavaContext mContext;
+        private final ResolvedMethod mMethod;
+        private boolean mCallsSuper;
+
+        public static boolean callsSuper(
+                @NonNull JavaContext context,
+                @NonNull MethodDeclaration methodDeclaration,
+                @NonNull ResolvedMethod method) {
+            SuperCallVisitor visitor = new SuperCallVisitor(context, method);
+            methodDeclaration.accept(visitor);
+            return visitor.mCallsSuper;
+        }
+
+        private SuperCallVisitor(@NonNull JavaContext context, @NonNull ResolvedMethod method) {
             mContext = context;
+            mMethod = method;
         }
 
         @Override
-        public boolean visitMethodDeclaration(MethodDeclaration node) {
-            // TODO: Check methods in Activity that require super as well
-            String methodName = node.astMethodName().astValue();
-            if (methodName.equals(ON_DETACHED_FROM_WINDOW) &&
-                    node.astParameters() != null && node.astParameters().isEmpty()) {
-                if (!callsSuper(node, ON_DETACHED_FROM_WINDOW)) {
-                    // Make sure the current class extends View, if type information is
-                    // available
-                    boolean isView = true; // Don't know without type information
-                    ResolvedNode resolved = mContext.resolve(node);
-                    if (resolved instanceof ResolvedMethod) {
-                        ResolvedMethod method = (ResolvedMethod) resolved;
-                        isView = method.getContainingClass().isSubclassOf(CLASS_VIEW, false);
-                    }
-                    if (isView) {
-                        report(node, ON_DETACHED_FROM_WINDOW);
-                    }
-                }
+        public boolean visitSuper(Super node) {
+            ResolvedNode resolved = null;
+            if (node.getParent() instanceof MethodInvocation) {
+                resolved = mContext.resolve(node.getParent());
             }
-
-            // Implementations of WatchFaceServices must call super.onVisibilityChanged
-            // if overriding that method!
-            if (methodName.equals(ON_VISIBILITY_CHANGED) &&
-                    node.astParameters() != null && node.astParameters().size() == 1 &&
-                    node.astParameters().first().astTypeReference() != null &&
-                    node.astParameters().first().astTypeReference().isBoolean()) {
-                if (!callsSuper(node, ON_VISIBILITY_CHANGED)) {
-                    ResolvedNode resolved = mContext.resolve(node);
-                    if (resolved instanceof ResolvedMethod) {
-                        ResolvedMethod method = (ResolvedMethod) resolved;
-                        //noinspection SpellCheckingInspection
-                        if (method.getContainingClass().isSubclassOf(
-                                "android.support.wearable.watchface.WatchFaceService.Engine",
-                                false)) {
-                            report(node, ON_VISIBILITY_CHANGED);
-                        }
-                    }
-                }
+            if (resolved == null) {
+                resolved = mContext.resolve(node);
             }
-
-            return super.visitMethodDeclaration(node);
+            if (mMethod.equals(resolved)) {
+                mCallsSuper = true;
+                return true;
+            }
+            return false;
         }
 
-        private void report(MethodDeclaration node, String methodName) {
-            String message = "Overriding method should call `super."
-                    + methodName + "`";
-            Location location = mContext.getLocation(node.astMethodName());
-            mContext.report(ISSUE, node, location, message);
-        }
-
-        private boolean callsSuper(MethodDeclaration node, final String methodName) {
-            final AtomicBoolean result = new AtomicBoolean();
-            node.accept(new ForwardingAstVisitor() {
-                @Override
-                public boolean visitMethodInvocation(MethodInvocation node) {
-                    if (node.astName().astValue().equals(methodName) &&
-                            node.astOperand() instanceof Super) {
-                        result.set(true);
-                    }
-                    return super.visitMethodInvocation(node);
-                }
-            });
-
-            return result.get();
+        @Override
+        public boolean visitNode(Node node) {
+            return mCallsSuper || super.visitNode(node);
         }
     }
 }
