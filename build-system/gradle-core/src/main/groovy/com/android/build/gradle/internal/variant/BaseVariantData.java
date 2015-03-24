@@ -46,6 +46,7 @@ import com.google.common.base.Objects;
 import com.google.common.collect.Lists;
 
 import org.gradle.api.Task;
+import org.gradle.api.logging.Logging;
 import org.gradle.api.tasks.Copy;
 import org.gradle.api.tasks.bundling.Jar;
 import org.gradle.api.tasks.compile.AbstractCompile;
@@ -153,6 +154,15 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
                     ? SplitHandlingPolicy.RELEASE_21_AND_AFTER_POLICY
                     : SplitHandlingPolicy.PRE_21_POLICY;
 
+        // warn the user in case we are forced to ignore the generatePureSplits flag.
+        if (baseExtension.getGeneratePureSplits()
+                && mSplitHandlingPolicy != SplitHandlingPolicy.RELEASE_21_AND_AFTER_POLICY) {
+            Logging.getLogger(BaseVariantData.class).warn(
+                    String.format("Variant %s, MinSdkVersion %s is too low (<21) "
+                                    + "to support pure splits, reverting to full APKs",
+                            variantConfiguration.getFullName(),
+                            variantConfiguration.getMinSdkVersion().getApiLevel()));
+        }
         variantConfiguration.checkSourceProviders();
     }
 
