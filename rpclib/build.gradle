@@ -1,0 +1,14 @@
+apply plugin: 'java'
+
+group = 'com.android.tools.rpclib'
+archivesBaseName = 'rpclib'
+version = rootProject.ext.baseVersion
+
+dependencies {
+    compile project(':base:common')
+}
+
+project.ext.pomName = 'Android Tools rpclib'
+project.ext.pomDesc = 'Library to handle Gaze RPC'
+
+apply from: "$rootDir/buildSrc/base/javadoc.gradle"
