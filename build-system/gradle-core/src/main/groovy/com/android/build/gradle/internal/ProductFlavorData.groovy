@@ -89,7 +89,7 @@ public class ProductFlavorData<T extends DefaultProductFlavor> {
 
         if (!BuilderConstants.MAIN.equals(sourceSet.name)) {
             assembleTask = project.tasks.create("assemble${sourceSet.name.capitalize()}")
-            assembleTask.description = "Assembles all ${sourceSet.name.capitalize()} builds"
+            assembleTask.description = "Assembles all ${sourceSet.name.capitalize()} builds."
             assembleTask.setGroup("Build")
         } else {
             assembleTask = null
