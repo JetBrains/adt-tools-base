@@ -164,7 +164,11 @@ public class CleanupDetectorTest extends AbstractCheckTest {
 
     public void testCommitChainedCalls() throws Exception {
         // Regression test for https://code.google.com/p/android/issues/detail?id=135204
-        assertEquals("No warnings.",
+        assertEquals(""
+                + "src/test/pkg/TransactionTest.java:8: Warning: This transaction should be completed with a commit() call [CommitTransaction]\n"
+                + "        android.app.FragmentTransaction transaction2 = getFragmentManager().beginTransaction();\n"
+                + "                                                                            ~~~~~~~~~~~~~~~~\n"
+                + "0 errors, 1 warnings\n",
 
                 lintProject(
                         "apicheck/classpath=>.classpath",
