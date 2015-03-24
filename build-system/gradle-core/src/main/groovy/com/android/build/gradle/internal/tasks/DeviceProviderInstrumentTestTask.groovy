@@ -15,13 +15,11 @@
  */
 package com.android.build.gradle.internal.tasks
 
-import com.android.build.gradle.internal.core.GradleVariantConfiguration
-import com.android.build.gradle.internal.test.TestDataImpl
 import com.android.build.gradle.internal.test.report.ReportType
 import com.android.build.gradle.internal.test.report.TestReport
-import com.android.build.gradle.internal.variant.TestVariantData
 import com.android.builder.internal.testing.SimpleTestCallable
 import com.android.builder.testing.SimpleTestRunner
+import com.android.builder.testing.TestData
 import com.android.builder.testing.TestRunner
 import com.android.builder.testing.api.DeviceProvider
 import com.google.common.collect.ImmutableList
@@ -44,9 +42,8 @@ public class DeviceProviderInstrumentTestTask extends BaseTask implements Androi
     Collection<String> installOptions;
 
     DeviceProvider deviceProvider
-    TestVariantData testVariantData
+    TestData testData;
 
-    File[] splitApks;
     File adbExec;
 
     boolean ignoreFailures
@@ -61,10 +58,6 @@ public class DeviceProviderInstrumentTestTask extends BaseTask implements Androi
         File coverageOutDir = getCoverageDir()
         emptyFolder(coverageOutDir)
 
-        if (testVariantData.outputs.size() > 1) {
-            throw new RuntimeException("Multi-output in test variant not yet supported")
-        }
-
         boolean success = false;
         // If there are tests to run, and the test runner returns with no results, we fail (since
         // this is most likely a problem with the device setup). If no, the task will succeed.
@@ -75,7 +68,7 @@ public class DeviceProviderInstrumentTestTask extends BaseTask implements Androi
             emptyCoverageFile.createNewFile()
             success = true;
         } else {
-            File testApk = testVariantData.outputs.get(0).getOutputFile()
+            File testApk = testData.getTestApk();
             String flavor = getFlavorName()
             TestRunner testRunner = new SimpleTestRunner(getAdbExec());
             deviceProvider.init();
@@ -84,7 +77,7 @@ public class DeviceProviderInstrumentTestTask extends BaseTask implements Androi
                     ImmutableList.of() : installOptions;
             try {
                 success = testRunner.runTests(project.name, flavor,
-                        testApk, new TestDataImpl(testVariantData),
+                        testApk, testData,
                         deviceProvider.devices,
                         deviceProvider.getMaxThreads(),
                         deviceProvider.getTimeoutInMs(),
@@ -128,8 +121,6 @@ public class DeviceProviderInstrumentTestTask extends BaseTask implements Androi
         // For now we check if there are any test sources. We could inspect the test classes and
         // apply JUnit logic to see if there's something to run, but that would not catch the case
         // where user makes a typo in a test name or forgets to inherit from a JUnit class
-        GradleVariantConfiguration variantConfiguration = testVariantData.variantConfiguration
-        def javaDirectories = variantConfiguration.sortedSourceProviders*.javaDirectories
-        !project.files(javaDirectories).asFileTree.empty
+        !project.files(testData.getTestDirectories()).asFileTree.empty
     }
 }

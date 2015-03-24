@@ -54,6 +54,7 @@ import com.android.build.gradle.internal.tasks.multidex.CreateMainDexList
 import com.android.build.gradle.internal.tasks.multidex.CreateManifestKeepList
 import com.android.build.gradle.internal.tasks.multidex.JarMergingTask
 import com.android.build.gradle.internal.tasks.multidex.RetraceMainDexList
+import com.android.build.gradle.internal.test.TestDataImpl
 import com.android.build.gradle.internal.test.report.ReportType
 import com.android.build.gradle.internal.variant.ApkVariantData
 import com.android.build.gradle.internal.variant.ApkVariantOutputData
@@ -98,6 +99,7 @@ import com.android.builder.model.ApiVersion
 import com.android.builder.model.ProductFlavor
 import com.android.builder.model.SourceProvider
 import com.android.builder.testing.ConnectedDeviceProvider
+import com.android.builder.testing.TestData
 import com.android.builder.testing.api.DeviceProvider
 import com.android.builder.testing.api.TestServer
 import com.android.sdklib.AndroidTargetHash
@@ -105,6 +107,7 @@ import com.android.sdklib.BuildToolInfo
 import com.android.sdklib.IAndroidTarget
 import com.android.sdklib.SdkVersionInfo
 import com.google.common.base.CharMatcher
+import com.google.common.collect.ImmutableList
 import com.google.common.collect.ImmutableSet
 import com.google.common.collect.Lists
 import com.google.common.collect.Sets
@@ -199,7 +202,7 @@ abstract class TaskManager {
 
     private static final String DEVICE_CHECK = "deviceCheck"
 
-    private static final String CONNECTED_CHECK = "connectedCheck"
+    protected static final String CONNECTED_CHECK = "connectedCheck"
 
     private static final String ASSEMBLE_ANDROID_TEST = "assembleAndroidTest"
 
@@ -1443,7 +1446,7 @@ abstract class TaskManager {
             it.dependsOn variantOutputData.assembleTask
         }
 
-        createConnectedTestForVariantData(tasks, variantData, false)
+        createConnectedTestForVariantData(tasks, variantData, TestType.APPLICATION)
     }
 
     // TODO - should compile src/lint/java from src/lint/java and jar it into build/lint/lint.jar
@@ -1709,10 +1712,22 @@ abstract class TaskManager {
         }
     }
 
-    private void createConnectedTestForVariantData(
+    public enum TestType {
+
+        APPLICATION(DeviceProviderInstrumentTestTask.class),
+        LIBRARY(DeviceProviderInstrumentTestLibraryTask.class),
+
+        final private Class<? extends DeviceProviderInstrumentTestTask> taskType;
+
+        TestType(Class<? extends DeviceProviderInstrumentTestTask> provider) {
+            taskType = provider;
+        }
+    }
+
+    protected void createConnectedTestForVariantData(
             TaskFactory tasks,
             final TestVariantData testVariantData,
-            boolean isLibraryTest) {
+            TestType testType) {
         BaseVariantData<? extends BaseVariantOutputData> baseVariantData =
                 testVariantData.testedVariantData as BaseVariantData
 
@@ -1720,24 +1735,27 @@ abstract class TaskManager {
         BaseVariantOutputData variantOutputData = baseVariantData.outputs.get(0)
         BaseVariantOutputData testVariantOutputData = testVariantData.outputs.get(0)
 
-        Class<? extends DeviceProviderInstrumentTestTask> taskClass = isLibraryTest ?
-                DeviceProviderInstrumentTestLibraryTask :
-                DeviceProviderInstrumentTestTask
-
         String connectedRootName = "${CONNECTED}${ANDROID_TEST.suffix}"
 
         String connectedTaskName =
                 "${connectedRootName}${baseVariantData.variantConfiguration.fullName.capitalize()}"
 
+        TestData testData = new TestDataImpl(testVariantData)
+        BaseVariantData<? extends BaseVariantOutputData> testedVariantData =
+                baseVariantData as BaseVariantData
         // create the check tasks for this test
         // first the connected one.
+        ImmutableList<Task> artifactsTasks = ImmutableList.of(
+                testVariantData.outputs.get(0).assembleTask,
+                testedVariantData.assembleVariantTask)
+
         DeviceProviderInstrumentTestTask connectedTask =
                 createDeviceProviderInstrumentTestTask(
                         connectedTaskName,
                         "Installs and runs the tests for ${baseVariantData.description} on connected devices.",
-                        taskClass,
-                        testVariantData,
-                        baseVariantData as BaseVariantData,
+                        testType.taskType,
+                        testData,
+                        artifactsTasks,
                         new ConnectedDeviceProvider(sdkHandler.getSdkInfo().adb),
                         CONNECTED
                 )
@@ -1790,9 +1808,9 @@ abstract class TaskManager {
                                     "${deviceProvider.name}${ANDROID_TEST.suffix}${baseVariantData.variantConfiguration.fullName.capitalize()}" :
                                     "${deviceProvider.name}${ANDROID_TEST.suffix}",
                             "Installs and runs the tests for Build '${baseVariantData.variantConfiguration.fullName}' using Provider '${deviceProvider.name.capitalize()}'.",
-                            taskClass,
-                            testVariantData,
-                            baseVariantData as BaseVariantData,
+                            testType.taskType,
+                            testData,
+                            artifactsTasks,
                             deviceProvider,
                             "$DEVICE/$deviceProvider.name"
                     )
@@ -1845,28 +1863,28 @@ abstract class TaskManager {
         }
     }
 
-    private DeviceProviderInstrumentTestTask createDeviceProviderInstrumentTestTask(
+    protected DeviceProviderInstrumentTestTask createDeviceProviderInstrumentTestTask(
             @NonNull String taskName,
             @NonNull String description,
             @NonNull Class<? extends DeviceProviderInstrumentTestTask> taskClass,
-            @NonNull TestVariantData testVariantData,
-            @NonNull BaseVariantData<? extends BaseVariantOutputData> testedVariantData,
+            @NonNull TestData testData,
+            @NonNull List<Task> artifactsTasks,
             @NonNull DeviceProvider deviceProvider,
             @NonNull String subFolder) {
-        // get single output for now for the test.
-        BaseVariantOutputData testVariantOutputData = testVariantData.outputs.get(0)
-
         DeviceProviderInstrumentTestTask testTask = project.tasks.create(
                 taskName,
                 taskClass as Class<DeviceProviderInstrumentTestTask>)
 
         testTask.description = description
         testTask.group = JavaBasePlugin.VERIFICATION_GROUP
-        testTask.dependsOn testVariantOutputData.assembleTask, testedVariantData.assembleVariantTask
+
+        for (Task task : artifactsTasks) {
+            testTask.dependsOn task
+        }
 
         testTask.androidBuilder = androidBuilder
-        testTask.testVariantData = testVariantData
-        testTask.flavorName = testVariantData.variantConfiguration.flavorName.capitalize()
+        testTask.testData = testData
+        testTask.flavorName = testData.getFlavorName()
         testTask.deviceProvider = deviceProvider
         testTask.installOptions = getExtension().getAdbOptions().getInstallOptions();
 
@@ -1875,7 +1893,7 @@ abstract class TaskManager {
                     getExtension().testOptions.resultsDir :
                     "$project.buildDir/${FD_OUTPUTS}/$FD_ANDROID_RESULTS"
 
-            String flavorFolder = testVariantData.variantConfiguration.flavorName
+            String flavorFolder = testData.getFlavorName()
             if (!flavorFolder.isEmpty()) {
                 flavorFolder = "$FD_FLAVORS/" + flavorFolder
             }
@@ -1892,7 +1910,7 @@ abstract class TaskManager {
                     getExtension().testOptions.reportDir :
                     "$project.buildDir/$FD_REPORTS/$FD_ANDROID_TESTS"
 
-            String flavorFolder = testVariantData.variantConfiguration.flavorName
+            String flavorFolder = testData.getFlavorName()
             if (!flavorFolder.isEmpty()) {
                 flavorFolder = "$FD_FLAVORS/" + flavorFolder
             }
@@ -1902,7 +1920,7 @@ abstract class TaskManager {
         conventionMapping(testTask).map("coverageDir") {
             String rootLocation = "$project.buildDir/${FD_OUTPUTS}/code-coverage"
 
-            String flavorFolder = testVariantData.variantConfiguration.flavorName
+            String flavorFolder = testData.getFlavorName()
             if (!flavorFolder.isEmpty()) {
                 flavorFolder = "$FD_FLAVORS/" + flavorFolder
             }

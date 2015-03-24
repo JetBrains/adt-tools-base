@@ -16,11 +16,10 @@
 
 package com.android.build.gradle.internal;
 
+import com.android.annotations.Nullable;
+
 import org.gradle.api.Action;
 import org.gradle.api.Task;
-import org.gradle.model.RuleSource;
-
-import groovy.lang.Closure;
 
 /**
  * Interface for a container that can create Task.
@@ -56,4 +55,12 @@ public interface TaskFactory {
      * Applies the given configAction to the task with given name.
      */
     void named(String name, Action<? super Task> configAction);
+
+    /**
+     * Returns the {@link Task} named name from the current set of defined tasks.
+     * @param name the name of the requested {@link Task}
+     * @return the {@link Task} instance or null if not found.
+     */
+    @Nullable
+    Task named(String name);
 }

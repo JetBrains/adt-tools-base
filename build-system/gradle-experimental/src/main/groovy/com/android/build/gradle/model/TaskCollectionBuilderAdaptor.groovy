@@ -16,10 +16,10 @@
 
 package com.android.build.gradle.model
 
+import com.android.annotations.Nullable
 import com.android.build.gradle.internal.TaskFactory
 import org.gradle.api.Action
 import org.gradle.api.Task
-import org.gradle.api.internal.ClosureBackedAction
 import org.gradle.model.collection.CollectionBuilder
 
 /**
@@ -61,5 +61,11 @@ class TaskCollectionBuilderAdaptor implements TaskFactory {
     @Override
     void named(String name, Action<? super Task> configAction) {
         tasks.named(name, configAction)
+    }
+
+    @Nullable
+    @Override
+    Task named(String name) {
+        return tasks.get(name);
     }
 }

@@ -16,16 +16,15 @@
 
 package com.android.build.gradle
 
-import com.android.build.gradle.internal.ApplicationTaskManager
 import com.android.build.gradle.internal.DependencyManager
 import com.android.build.gradle.internal.SdkHandler
 import com.android.build.gradle.internal.TaskManager
+import com.android.build.gradle.internal.TestApplicationTaskManager
 import com.android.build.gradle.internal.variant.TestVariantFactory
 import com.android.build.gradle.internal.variant.VariantFactory
 import com.android.builder.core.AndroidBuilder
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.gradle.api.tasks.TaskContainer
 import org.gradle.internal.reflect.Instantiator
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry
 
@@ -53,7 +52,7 @@ class TestPlugin extends BasePlugin implements Plugin<Project> {
             SdkHandler sdkHandler,
             DependencyManager dependencyManager,
             ToolingModelBuilderRegistry toolingRegistry) {
-        return new ApplicationTaskManager (
+        return new TestApplicationTaskManager (
                 project,
                 androidBuilder,
                 extension,

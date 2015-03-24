@@ -48,12 +48,6 @@ public interface TestData {
     @NonNull
     String getInstrumentationRunner();
 
-    @NonNull
-    Boolean getHandleProfiling();
-
-    @NonNull
-    Boolean getFunctionalTest();
-
     /**
      * Returns whether the tested app is enabled for code coverage
      */
@@ -81,4 +75,26 @@ public interface TestData {
             @Nullable String language,
             @Nullable String region,
             @NonNull List<String> abis);
+
+    /**
+     * Returns the flavor name being test.
+     * @return the tested flavor name.
+     */
+    @NonNull
+    String getFlavorName();
+
+    /**
+     * Returns the APK containing the test classes for the application.
+     * @return the APK file.
+     */
+    @NonNull
+    File getTestApk();
+
+    /**
+     * Returns the list of directories containing test so the build system can check the presence
+     * of tests before deploying anything.
+     * @return list of folders containing test source files.
+     */
+    @NonNull
+    List<File> getTestDirectories();
 }
