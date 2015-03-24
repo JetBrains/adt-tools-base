@@ -292,7 +292,10 @@ public class RemoteAndroidTestRunner implements IRemoteAndroidTestRunner  {
         }
     }
 
-    @NonNull private String getRunOptions() {
+    /**
+     * Returns options for the am instrument command.
+     */
+    @NonNull public String getRunOptions() {
         return mRunOptions;
     }
 
