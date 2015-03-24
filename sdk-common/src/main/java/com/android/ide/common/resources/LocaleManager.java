@@ -139,6 +139,15 @@ public class LocaleManager {
     }
 
     /**
+     * Like {@link #getLanguageRegion(String)}, but does not take user preferences
+     * and locations into consideration.
+     */
+    @Nullable
+    public static String getDefaultLanguageRegion(@NonNull String languageCode) {
+        return sLanguageToCountry.get(languageCode);
+    }
+
+    /**
      * Returns the region code for the given language. <b>Note that there can be
      * many regions that speak a given language; this just picks one</b> based
      * on a set of heuristics.
@@ -2048,16 +2057,19 @@ public class LocaleManager {
     }
 
     @VisibleForTesting
+    @NonNull
     public static Map<String, String> getLanguageToCountryMap() {
         return sLanguageToCountry;
     }
 
     @VisibleForTesting
+    @NonNull
     public static Map<String, String> getLanguageNamesMap() {
         return sLanguageNames;
     }
 
     @VisibleForTesting
+    @NonNull
     public static Map<String, String> getRegionNamesMap() {
         return sRegionNames;
     }
