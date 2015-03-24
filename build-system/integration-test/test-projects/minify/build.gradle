@@ -23,6 +23,7 @@ android {
             minifyEnabled true
             useJack rootProject.ext.useJack
             proguardFiles getDefaultProguardFile('proguard-android.txt'), "proguard-rules.pro"
+            testProguardFile "test-proguard-rules.pro"
             testCoverageEnabled true
         }
     }
@@ -34,8 +35,16 @@ android {
     lintOptions {
         abortOnError !rootProject.ext.useJack
     }
+
+    // Included in both hamcrest-core and hamcrest-library.
+    packagingOptions.exclude 'LICENSE.txt'
 }
 
 dependencies {
     testCompile 'junit:junit:4.12'
+
+    // This library references java.beans classes that are not part of Android,
+    // so ProGuard can't find references and fails without the rule from
+    // test-proguard-rules.pro.
+    androidTestCompile 'org.hamcrest:hamcrest-library:1.3'
 }

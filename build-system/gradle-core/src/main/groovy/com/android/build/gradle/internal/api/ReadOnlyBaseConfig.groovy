@@ -76,6 +76,12 @@ abstract class ReadOnlyBaseConfig implements BaseConfig {
 
     @NonNull
     @Override
+    Collection<File> getTestProguardFiles() {
+        return ImmutableList.copyOf(baseConfig.getTestProguardFiles())
+    }
+
+    @NonNull
+    @Override
     public Map<String, Object> getManifestPlaceholders() {
         return ImmutableMap.copyOf(baseConfig.getManifestPlaceholders())
     }
