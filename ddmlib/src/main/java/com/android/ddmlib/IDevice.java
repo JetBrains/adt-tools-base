@@ -21,6 +21,7 @@ import com.android.annotations.Nullable;
 import com.android.ddmlib.log.LogReceiver;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -468,6 +469,20 @@ public interface IDevice extends IShellEnabledDevice {
     public void pullFile(String remote, String local)
             throws IOException, AdbCommandRejectedException, TimeoutException, SyncException;
 
+
+    /**
+     * Installs an Android application on device. This is a helper method that combines the
+     * syncPackageToDevice, installRemotePackage, and removePackage steps
+     *
+     * @param packageFilePath the absolute file system path to file on local host to install
+     * @param reinstall set to <code>true</code> if re-install of app should be performed
+     * @return a {@link String} with an error code, or <code>null</code> if success.
+     * @throws InstallException if the installation fails.
+     */
+    public String installPackage(String packageFilePath,
+            boolean reinstall)
+            throws InstallException;
+
     /**
      * Installs an Android application on device. This is a helper method that combines the
      * syncPackageToDevice, installRemotePackage, and removePackage steps
@@ -479,7 +494,9 @@ public interface IDevice extends IShellEnabledDevice {
      * @return a {@link String} with an error code, or <code>null</code> if success.
      * @throws InstallException if the installation fails.
      */
-    public String installPackage(String packageFilePath, boolean reinstall, String... extraArgs)
+    public String installPackage(String packageFilePath,
+            boolean reinstall,
+            @NonNull Collection<String> extraArgs)
             throws InstallException;
 
     /**
@@ -494,7 +511,8 @@ public interface IDevice extends IShellEnabledDevice {
      */
 
     public void installPackages(List<String> apkFilePaths, int timeOutInMs,
-            boolean reinstall, String... extraArgs) throws InstallException;
+            boolean reinstall,
+            @NonNull Collection<String> extraArgs) throws InstallException;
     /**
      * Pushes a file to device
      *
@@ -518,7 +536,7 @@ public interface IDevice extends IShellEnabledDevice {
      * @throws InstallException if the installation fails.
      */
     public String installRemotePackage(String remoteFilePath, boolean reinstall,
-            String... extraArgs) throws InstallException;
+            Collection<String> extraArgs) throws InstallException;
 
     /**
      * Removes a file from device.

@@ -23,6 +23,7 @@ import com.android.utils.ILogger;
 import com.google.common.annotations.Beta;
 
 import java.io.File;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -41,6 +42,7 @@ public interface TestRunner {
      * @param deviceList
      * @param maxThreads the max number of threads to run in parallel. 0 means unlimited.
      * @param timeoutInMs time out in milliseconds
+     * @param installOptions parameters passed to the pm install command.
      * @param resultsDir
      * @param coverageDir
      * @param logger
@@ -57,6 +59,7 @@ public interface TestRunner {
             @NonNull  List<? extends DeviceConnector> deviceList,
                       int maxThreads,
                       int timeoutInMs,
+            @NonNull  Collection<String> installOptions,
             @NonNull  File resultsDir,
             @NonNull  File coverageDir,
             @NonNull  ILogger logger)
