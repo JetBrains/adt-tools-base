@@ -5,7 +5,9 @@ archivesBaseName = 'rpclib'
 version = rootProject.ext.baseVersion
 
 dependencies {
-    compile project(':base:common')
+  compile project(':base:common')
+
+  testCompile 'junit:junit:4.12'
 }
 
 project.ext.pomName = 'Android Tools rpclib'
