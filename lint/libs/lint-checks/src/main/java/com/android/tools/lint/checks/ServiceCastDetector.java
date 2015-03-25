@@ -140,7 +140,7 @@ public class ServiceCastDetector extends Detector implements Detector.JavaScanne
             sServiceMap.put("APP_OPS_SERVICE", "android.app.AppOpsManager");
             sServiceMap.put("AUDIO_SERVICE", "android.media.AudioManager");
             sServiceMap.put("BATTERY_SERVICE", "android.os.BatteryManager");
-            sServiceMap.put("BLUETOOTH_SERVICE", "android.bluetooth.BluetoothAdapter");
+            sServiceMap.put("BLUETOOTH_SERVICE", "android.bluetooth.BluetoothManager");
             sServiceMap.put("CAMERA_SERVICE", "android.hardware.camera2.CameraManager");
             sServiceMap.put("CAPTIONING_SERVICE", "android.view.accessibility.CaptioningManager");
             sServiceMap.put("CLIPBOARD_SERVICE", "android.text.ClipboardManager");
