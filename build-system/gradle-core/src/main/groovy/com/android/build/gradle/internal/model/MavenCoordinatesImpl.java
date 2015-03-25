@@ -22,6 +22,7 @@ import com.android.annotations.Nullable;
 import com.android.annotations.concurrency.Immutable;
 import com.android.builder.model.MavenCoordinates;
 import com.google.common.base.Joiner;
+import com.google.common.base.Objects;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 
@@ -91,6 +92,27 @@ public class MavenCoordinatesImpl implements MavenCoordinates, Serializable {
     @Override
     public String getClassifier() {
         return classifier;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        MavenCoordinatesImpl that = (MavenCoordinatesImpl) o;
+        return Objects.equal(groupId, that.groupId) &&
+                Objects.equal(artifactId, that.artifactId) &&
+                Objects.equal(version, that.version) &&
+                Objects.equal(packaging, that.packaging) &&
+                Objects.equal(classifier, that.classifier);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(groupId, artifactId, version, packaging, classifier);
     }
 
     @Override

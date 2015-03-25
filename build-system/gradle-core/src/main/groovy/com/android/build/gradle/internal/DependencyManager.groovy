@@ -30,6 +30,7 @@ import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.build.gradle.internal.variant.BaseVariantOutputData
 import com.android.builder.dependency.DependencyContainer
 import com.android.builder.dependency.JarDependency
+import com.android.builder.dependency.LibraryBundle
 import com.android.builder.dependency.LibraryDependency
 import com.android.builder.model.MavenCoordinates
 import com.android.builder.model.SyncIssue
@@ -106,7 +107,7 @@ class DependencyManager {
             @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData,
             @NonNull PrepareDependenciesTask prepareDependenciesTask,
             @NonNull LibraryDependencyImpl lib) {
-        PrepareLibraryTask prepareLibTask = prepareTaskMap.get(lib)
+        PrepareLibraryTask prepareLibTask = prepareTaskMap.get(lib.getNoDependencyRepresentation())
         if (prepareLibTask != null) {
             prepareDependenciesTask.dependsOn prepareLibTask
             prepareLibTask.dependsOn variantData.preBuildTask
@@ -180,7 +181,17 @@ class DependencyManager {
         String bundleName = GUtil
                 .toCamelCase(library.getName().replaceAll("\\:", " "))
 
-        PrepareLibraryTask prepareLibraryTask = prepareTaskMap.get(library)
+        // create proper key for the map. library here contains all the dependencies which
+        // are not relevant for the task (since the task only extract the aar which does not
+        // include the dependencies.
+        // However there is a possible case of a rewritten dependencies (with resolution strategy)
+        // where the aar here could have different dependencies, in which case we would still
+        // need the same task.
+        // So we extract a LibraryBundle (no dependencies) from the LibraryDependencyImpl to
+        // make the map key that doesn't take into account the dependencies.
+        LibraryDependencyImpl key = library.getNoDependencyRepresentation()
+
+        PrepareLibraryTask prepareLibraryTask = prepareTaskMap.get(key)
 
         if (prepareLibraryTask == null) {
             prepareLibraryTask = project.tasks.create(
@@ -190,7 +201,7 @@ class DependencyManager {
             conventionMapping(prepareLibraryTask).map("bundle")  { library.getBundle() }
             conventionMapping(prepareLibraryTask).map("explodedDir") { library.getBundleFolder() }
 
-            prepareTaskMap.put(library, prepareLibraryTask)
+            prepareTaskMap.put(key, prepareLibraryTask)
         }
 
         return prepareLibraryTask
@@ -727,6 +738,12 @@ class DependencyManager {
                         path += "/${normalize(logger, moduleVersion, artifact.classifier)}"
                         name += ":$artifact.classifier"
                     }
+
+                    if (DEBUG_DEPENDENCY) {
+                        printIndent indent, "NAME: " + name
+                        printIndent indent, "PATH: " + path
+                    }
+
                     //def explodedDir = project.file("$project.rootProject.buildDir/${FD_INTERMEDIATES}/exploded-aar/$path")
                     File explodedDir = project.file(
                             "$project.buildDir/${FD_INTERMEDIATES}/exploded-aar/$path")
