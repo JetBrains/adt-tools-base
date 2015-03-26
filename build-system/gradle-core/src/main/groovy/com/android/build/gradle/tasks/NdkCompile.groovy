@@ -237,6 +237,10 @@ class NdkCompile extends NdkTask {
             builder.addArgs("APP_ABI=all")
         }
 
+        if (ndk.getJobs() != null) {
+            builder.addArgs("-j" + ndk.getJobs());
+        }
+
         getBuilder().executeProcess(builder.createProcess()).rethrowFailure().assertNormalExitValue()
     }
 }
