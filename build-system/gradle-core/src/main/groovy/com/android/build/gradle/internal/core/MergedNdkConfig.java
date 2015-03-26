@@ -34,6 +34,7 @@ public class MergedNdkConfig implements NdkConfig {
     private List<String> ldLibs;
     private Set<String> abiFilters;
     private String stl;
+    private Integer jobs;
 
     public void reset() {
         moduleName = null;
@@ -72,6 +73,12 @@ public class MergedNdkConfig implements NdkConfig {
         return stl;
     }
 
+    @Override
+    @Nullable
+    public Integer getJobs() {
+        return jobs;
+    }
+
     public void append(@NonNull NdkConfig ndkConfig) {
         // override
         if (ndkConfig.getModuleName() != null) {
@@ -80,6 +87,10 @@ public class MergedNdkConfig implements NdkConfig {
 
         if (ndkConfig.getStl() != null) {
             stl = ndkConfig.getStl();
+        }
+
+        if (ndkConfig.getJobs() != null) {
+            jobs = ndkConfig.getJobs();
         }
 
         // append

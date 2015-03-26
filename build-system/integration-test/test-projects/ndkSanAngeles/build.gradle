@@ -14,6 +14,7 @@ android {
             cFlags "-DANDROID_NDK -DDISABLE_IMPORTGL"
             ldLibs "GLESv1_CM", "dl", "log"
             stl "stlport_static"
+            jobs 4
         }
 
         // This actual the app version code. Giving ourselves 1,000,000 values
