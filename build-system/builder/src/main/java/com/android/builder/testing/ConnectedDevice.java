@@ -233,7 +233,7 @@ public class ConnectedDevice extends DeviceConnector {
 
     @Override
     @NonNull
-    public String getProperty(String propertyName) {
+    public String getProperty(@NonNull String propertyName) {
         return iDevice.getProperty(propertyName);
     }
 

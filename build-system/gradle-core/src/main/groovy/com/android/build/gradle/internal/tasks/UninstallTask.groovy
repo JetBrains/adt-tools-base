@@ -13,26 +13,100 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.build.gradle.internal.tasks
+package com.android.build.gradle.internal.tasks;
 
-import com.android.build.gradle.internal.variant.BaseVariantData
-import org.gradle.api.tasks.InputFile
-import org.gradle.api.tasks.TaskAction
+import com.android.build.gradle.internal.LoggerWrapper;
+import com.android.build.gradle.internal.variant.BaseVariantData;
+import com.android.builder.internal.InstallUtils;
+import com.android.builder.sdk.SdkInfo;
+import com.android.builder.testing.ConnectedDeviceProvider;
+import com.android.builder.testing.api.DeviceConnector;
+import com.android.builder.testing.api.DeviceException;
+import com.android.builder.testing.api.DeviceProvider;
+import com.android.ddmlib.IDevice;
+import com.android.utils.ILogger;
+
+import org.gradle.api.Task;
+import org.gradle.api.logging.LogLevel;
+import org.gradle.api.logging.Logger;
+import org.gradle.api.specs.Spec;
+import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.InputFile;
+import org.gradle.api.tasks.Optional;
+import org.gradle.api.tasks.TaskAction;
+
+import java.io.File;
+import java.util.List;
 
 public class UninstallTask extends BaseTask {
-    @InputFile
-    File adbExe
 
-    BaseVariantData variant
+    private BaseVariantData variant;
+
+    private int mTimeOutInMs = 0;
+
+    public UninstallTask() {
+        this.getOutputs().upToDateWhen(new Spec<Task>() {
+            @Override
+            public boolean isSatisfiedBy(Task task) {
+                getLogger().debug("Uninstall task is always run.");
+                return false;
+            }
+        });
+    }
 
     @TaskAction
-    public void uninstall() {
-        String applicationId = variant.getApplicationId()
-        logger.info("Uninstalling app: " + applicationId)
-        project.exec {
-            executable = getAdbExe()
-            args "uninstall"
-            args applicationId
+    public void uninstall() throws DeviceException {
+        final Logger logger = getLogger();
+        final String applicationId = variant.getApplicationId();
+
+        logger.info("Uninstalling app: {}", applicationId);
+
+        final ILogger lifecycleLogger = new LoggerWrapper(getLogger(), LogLevel.LIFECYCLE);
+        final DeviceProvider deviceProvider =
+                new ConnectedDeviceProvider(getAdbExe(), lifecycleLogger);
+
+        deviceProvider.init();
+        final List<? extends DeviceConnector> devices = deviceProvider.getDevices();
+
+        for (DeviceConnector device : devices) {
+            device.uninstallPackage(applicationId, getTimeOutInMs(), getILogger());
+            logger.lifecycle(
+                    "Uninstalling {} (from {}:{}) from device '{}' ({}).",
+                    applicationId, getProject().getName(),
+                    variant.getVariantConfiguration().getFullName(),
+                    device.getName(), device.getSerialNumber());
         }
+
+        int n = devices.size();
+        logger.quiet("Uninstalled {} from {} device{}.",
+                applicationId, n, n == 1 ? "" : "s");
+
+    }
+
+
+    @InputFile
+    public File getAdbExe() {
+        SdkInfo sdkInfo = getBuilder().getSdkInfo();
+        if (sdkInfo == null) {
+            return null;
+        }
+        return sdkInfo.getAdb();
+    }
+
+    public BaseVariantData getVariant() {
+        return variant;
+    }
+
+    public void setVariant(BaseVariantData variant) {
+        this.variant = variant;
+    }
+
+    @Input
+    public int getTimeOutInMs() {
+        return mTimeOutInMs;
+    }
+
+    public void setTimeOutInMs(int timeoutInMs) {
+        mTimeOutInMs = timeoutInMs;
     }
 }
