@@ -849,15 +849,6 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../../../out/gradle-dist-link/lib/plugins/core-3.1.1.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
           <root url="jar://$MODULE_DIR$/../../../../out/gradle-dist-link/lib/plugins/jsp-api-2.1-6.1.14.jar!/" />
         </CLASSES>
         <JAVADOC />
@@ -1217,5 +1208,6 @@
     <orderEntry type="module" module-name="lint-checks-base" />
     <orderEntry type="library" exported="" name="jacoco" level="project" />
     <orderEntry type="library" name="mockito" level="project" />
+    <orderEntry type="library" name="ecj" level="project" />
   </component>
 </module>

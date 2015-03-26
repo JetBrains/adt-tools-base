@@ -25,6 +25,7 @@ import com.android.builder.profile.ProcessRecorder
 import com.android.builder.profile.ProcessRecorderFactory
 import com.android.builder.profile.Recorder
 import com.android.builder.profile.ThreadRecorder
+import com.android.utils.ILogger
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.tasks.TaskState
@@ -57,6 +58,9 @@ class RecordingBuildListenerTest {
 
     @Mock
     Project mProject
+
+    @Mock
+    ILogger logger;
 
     private static final class TestRecorder implements Recorder {
 
@@ -126,10 +130,7 @@ class RecordingBuildListenerTest {
     public void "single thread with multiple spans invocation"() {
 
         TestExecutionRecordWriter recordWriter = new TestExecutionRecordWriter()
-        ProcessRecorderFactory.sINSTANCE = new ProcessRecorderFactory();
-        ProcessRecorderFactory.setEnabled(true)
-        ProcessRecorderFactory.sINSTANCE.setRecordWriter(
-                recordWriter);
+        ProcessRecorderFactory.initializeForTests(recordWriter)
 
         RecordingBuildListener listener = new RecordingBuildListener(ThreadRecorder.get());
 
@@ -140,20 +141,47 @@ class RecordingBuildListenerTest {
         listener.afterExecute(mTask, mTaskState)
         ProcessRecorderFactory.shutdown()
 
-        assertEquals(2, recordWriter.getRecords().size())
-        ExecutionRecord record = getRecordForId(recordWriter.getRecords(), 1)
-        assertEquals(1, record.id)
+        assertEquals(4, recordWriter.getRecords().size())
+        ExecutionRecord record = getRecordForId(recordWriter.getRecords(), 2)
+        assertEquals(2, record.id)
         assertEquals(0, record.parentId)
         assertEquals(2, record.attributes.size())
         ensurePropertyValue(record.attributes, "task", "taskName")
         ensurePropertyValue(record.attributes, "project", "projectName")
 
+        record = getRecordForId(recordWriter.getRecords(), 3)
+        assertNotNull(record);
+        assertEquals(3, record.id)
+        assertEquals(2, record.parentId)
+        assertEquals(0, record.attributes.size())
+        assertEquals(ExecutionType.SOME_RANDOM_PROCESSING, record.type)
+    }
+
+    @Test
+    public void "test initial and final records."() {
+
+        TestExecutionRecordWriter recordWriter = new TestExecutionRecordWriter()
+        ProcessRecorderFactory.initializeForTests(recordWriter)
+
+        ProcessRecorderFactory.shutdown()
+
+        assertEquals(2, recordWriter.getRecords().size())
+        for (ExecutionRecord record : recordWriter.getRecords()) {
+            System.out.println(record);
+        }
+        ExecutionRecord record = getRecordForId(recordWriter.getRecords(), 1)
+        assertEquals(1, record.id)
+        assertEquals(0, record.parentId)
+        assertEquals(6, record.attributes.size())
+        assertEquals(ExecutionType.INITIAL_METADATA, record.type)
+        ensurePropertyValue(record.attributes, "os_name", System.getProperty("os.name"))
+
         record = getRecordForId(recordWriter.getRecords(), 2)
         assertNotNull(record);
         assertEquals(2, record.id)
-        assertEquals(1, record.parentId)
-        assertEquals(0, record.attributes.size())
-        assertEquals(ExecutionType.SOME_RANDOM_PROCESSING, record.type)
+        assertEquals(0, record.parentId)
+        assertEquals(3, record.attributes.size())
+        assertEquals(ExecutionType.FINAL_METADATA, record.type)
     }
 
     @Test

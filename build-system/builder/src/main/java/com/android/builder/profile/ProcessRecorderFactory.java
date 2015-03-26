@@ -22,10 +22,23 @@ import com.android.annotations.VisibleForTesting;
 import com.android.utils.ILogger;
 import com.android.utils.StdLogger;
 import com.google.common.base.Strings;
+import com.google.common.io.ByteStreams;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.lang.management.GarbageCollectorMXBean;
+import java.lang.management.ManagementFactory;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.List;
+import java.util.UUID;
 
 /**
  * Configures and creates instances of {@link ProcessRecorder}.
@@ -40,8 +53,20 @@ public class ProcessRecorderFactory {
 
     public static void shutdown() throws InterruptedException {
         synchronized (LOCK) {
+            List<GarbageCollectorMXBean> garbageCollectorMXBeans = ManagementFactory
+                    .getGarbageCollectorMXBeans();
+            ThreadRecorder.get().record(ExecutionType.FINAL_METADATA, Recorder.EmptyBlock,
+                    new Recorder.Property("build_time",
+                            Long.toString(System.currentTimeMillis() - sINSTANCE.startTime)),
+                    new Recorder.Property("gc_count",
+                            Long.toString(garbageCollectorMXBeans.get(0).getCollectionCount()
+                                    - sINSTANCE.gcCountAtStart)),
+                    new Recorder.Property("gc_time",
+                            Long.toString(garbageCollectorMXBeans.get(0).getCollectionTime()
+                                    - sINSTANCE.gcTimeAtStart)));
             if (sINSTANCE.isInitialized()) {
                 sINSTANCE.get().finish();
+                sINSTANCE.uploadData();
             }
             sINSTANCE.processRecorder = null;
         }
@@ -54,11 +79,44 @@ public class ProcessRecorderFactory {
                 return;
             }
             sINSTANCE.setLogger(logger);
+            sINSTANCE.setOutputFile(out);
             sINSTANCE.setRecordWriter(new ProcessRecorder.JsonRecordWriter(new FileWriter(out)));
+            publishInitialRecords();
         }
     }
 
+    public static void publishInitialRecords() {
+        ThreadRecorder.get().record(ExecutionType.INITIAL_METADATA, Recorder.EmptyBlock,
+                new Recorder.Property("build_id", UUID.randomUUID().toString()),
+                new Recorder.Property("os_name", System.getProperty("os.name")),
+                new Recorder.Property("os_version", System.getProperty("os.version")),
+                new Recorder.Property("java_version", System.getProperty("java.version")),
+                new Recorder.Property("java_vm_version", System.getProperty("java.vm.version")),
+                new Recorder.Property("max_memory",
+                        Long.toString(Runtime.getRuntime().maxMemory())));
+    }
+
     private static boolean sENABLED = !Strings.isNullOrEmpty(System.getenv("RECORD_SPANS"));
+
+    private final long startTime;
+    private final long gcCountAtStart;
+    private final long gcTimeAtStart;
+
+    ProcessRecorderFactory() {
+        startTime = System.currentTimeMillis();
+        List<GarbageCollectorMXBean> garbageCollectorMXBeans = ManagementFactory
+                .getGarbageCollectorMXBeans();
+        gcCountAtStart = garbageCollectorMXBeans.get(0).getCollectionCount();
+        gcTimeAtStart = garbageCollectorMXBeans.get(0).getCollectionTime();
+    }
+
+    public static void initializeForTests(ProcessRecorder.ExecutionRecordWriter recordWriter) {
+        sINSTANCE = new ProcessRecorderFactory();
+        ProcessRecorder.resetForTests();
+        setEnabled(true);
+        sINSTANCE.setRecordWriter(recordWriter);
+        publishInitialRecords();
+    }
 
     static boolean isEnabled() {
         return sENABLED;
@@ -109,6 +167,12 @@ public class ProcessRecorderFactory {
     @Nullable
     private ILogger iLogger = null;
 
+    private File outputFile = null;
+
+    private void setOutputFile(File outputFile) {
+        this.outputFile = outputFile;
+    }
+
     synchronized ProcessRecorder get() {
         if (processRecorder == null) {
             if (recordWriter == null) {
@@ -120,5 +184,48 @@ public class ProcessRecorderFactory {
             processRecorder = new ProcessRecorder(recordWriter, iLogger);
         }
         return processRecorder;
+    }
+
+    private void uploadData() {
+
+        if (outputFile == null) {
+            return;
+        }
+        try {
+            URL u = new URL("http://android-devtools-logging.appspot.com/log/");
+            HttpURLConnection conn = null;
+            conn = (HttpURLConnection) u.openConnection();
+            conn.setDoOutput(true);
+            conn.setRequestMethod("POST");
+
+            conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+            conn.setRequestProperty("Content-Length", String.valueOf(outputFile.length()));
+            InputStream is = null;
+            try {
+                is = new BufferedInputStream(new FileInputStream(outputFile));
+                OutputStream os = conn.getOutputStream();
+                ByteStreams.copy(is, os);
+                os.close();
+            } finally {
+                if (is != null) {
+                    is.close();
+                }
+            }
+
+            String line;
+            BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+
+            while ((line = reader.readLine()) != null) {
+                if (iLogger != null) {
+                    iLogger.info("From POST : " + line);
+                }
+            }
+            reader.close();
+        } catch(Exception e) {
+            if (iLogger != null) {
+                iLogger.warning("An exception while generated while uploading the profiler data");
+                iLogger.error(e, "Exception while uploading the profiler data");
+            }
+        }
     }
 }
