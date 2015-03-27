@@ -45,6 +45,10 @@ public class ProcessRecorder {
         return lastRecordId.incrementAndGet();
     }
 
+    static void resetForTests() {
+        lastRecordId.set(0);
+    }
+
     @NonNull
     static ProcessRecorder get() {
         return ProcessRecorderFactory.sINSTANCE.get();

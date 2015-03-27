@@ -18,6 +18,7 @@ package com.android.builder.profile;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
 
 import java.util.List;
@@ -44,5 +45,15 @@ public class ExecutionRecord {
         this.type = type;
         this.attributes = attributes == null || attributes.isEmpty()
                 ? ImmutableList.<Recorder.Property>of() : ImmutableList.copyOf(attributes);
+    }
+
+    @Override
+    public String toString() {
+        return Objects.toStringHelper(this)
+                .add("id", id)
+                .add("parentId", parentId)
+                .add("type", type)
+                .add("attributes", attributes)
+                .toString();
     }
 }

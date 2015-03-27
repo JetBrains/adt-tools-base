@@ -18,6 +18,7 @@ package com.android.builder.profile;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.google.common.base.Objects;
 
 import java.util.concurrent.Callable;
 
@@ -53,6 +54,13 @@ public interface Recorder {
         }
     }
 
+    Block<Void> EmptyBlock = new Block<Void>() {
+        @Override
+        public Void call() throws Exception {
+            return null;
+        }
+    };
+
     /**
      * Free formed name/value property pair that will be saved along the execution record for a
      * particular block.
@@ -78,6 +86,14 @@ public interface Recorder {
         @NonNull
         public String getValue() {
             return value;
+        }
+
+        @Override
+        public String toString() {
+            return Objects.toStringHelper(this)
+                    .add("name", name)
+                    .add("value", value)
+                    .toString();
         }
     }
 
