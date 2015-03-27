@@ -41,6 +41,12 @@ public final class RenderParamsFlags {
      */
     public static final Key<Boolean> FLAG_KEY_RECYCLER_VIEW_SUPPORT =
         new Key<Boolean>("recyclerViewSupport", Boolean.class);
+    /**
+     * The application package name. Used via
+     * {@link com.android.ide.common.rendering.api.LayoutlibCallback#getFlag(Key)}
+     */
+    public static final Key<String> FLAG_KEY_APPLICATION_PACKAGE =
+        new Key<String>("applicationPackage", String.class);
 
     // Disallow instances.
     private RenderParamsFlags() {}
