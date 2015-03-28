@@ -867,10 +867,17 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
             checkState(mTestedConfig != null);
 
             id = mMergedFlavor.getTestApplicationId();
+            String testedPackage = mTestedConfig.getApplicationId();
             if (id == null) {
-                String testedPackage = mTestedConfig.getApplicationId();
                 id = testedPackage + ".test";
+            } else {
+                if (id.equals(testedPackage)) {
+                    throw new RuntimeException(String.format("Application and test application id "
+                                    + "cannot be the same: both are '%s' for %s",
+                            id, getFullName()));
+                }
             }
+
         } else {
             // first get package override.
             id = getIdOverride();
