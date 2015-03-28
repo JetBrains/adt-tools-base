@@ -207,12 +207,12 @@ public class ProcessRecorderTest {
         assertEquals(records.get(4).id, records.get(5).parentId);
 
         assertTrue(
-                records.get(1).durationinMs >=
-                        records.get(2).durationinMs
-                                + records.get(3).durationinMs
-                                + records.get(4).durationinMs);
+                records.get(1).durationInMs >=
+                        records.get(2).durationInMs
+                                + records.get(3).durationInMs
+                                + records.get(4).durationInMs);
 
-        assertTrue(records.get(4).durationinMs >= records.get(5).durationinMs);
+        assertTrue(records.get(4).durationInMs >= records.get(5).durationInMs);
     }
 
     private static void setExecutionRecords(List<ExecutionRecord> records) {
