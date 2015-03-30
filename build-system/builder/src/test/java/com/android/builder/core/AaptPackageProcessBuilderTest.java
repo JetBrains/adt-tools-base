@@ -480,6 +480,58 @@ public class AaptPackageProcessBuilderTest extends TestCase {
 
         SdkManager sdkManager = SdkManager.createManager(getSdkDir().getAbsolutePath(), mLogger);
         assert sdkManager != null;
+        BuildToolInfo buildToolInfo = sdkManager.getBuildTool(FullRevision.parseRevision("20"));
+        if (buildToolInfo == null) {
+            throw new RuntimeException("Test requires build-tools 20");
+        }
+        IAndroidTarget androidTarget = null;
+        for (IAndroidTarget iAndroidTarget : sdkManager.getTargets()) {
+            if (iAndroidTarget.getVersion().getApiLevel() >= 20) {
+                androidTarget = iAndroidTarget;
+                break;
+            }
+        }
+        if (androidTarget == null) {
+            throw new RuntimeException("Test requires pre android 20");
+        }
+
+        ProcessInfo processInfo = aaptPackageProcessBuilder
+                .build(buildToolInfo, androidTarget, mLogger);
+
+        List<String> command = processInfo.getArgs();
+
+        assertEquals("en,fr,es,de,it,mdpi,hdpi,xhdpi,xxhdpi",
+                command.get(command.indexOf("-c") + 1));
+        assertTrue("--split".equals(command.get(command.indexOf("mdpi") - 1)));
+        assertTrue("--split".equals(command.get(command.indexOf("hdpi") - 1)));
+        assertTrue("--split".equals(command.get(command.indexOf("xhdpi") - 1)));
+        assertTrue("--split".equals(command.get(command.indexOf("xxhdpi") - 1)));
+        assertEquals(-1, command.indexOf("xxxhdpi"));
+    }
+
+    public void testResConfigWithPreferredDensityFlags() {
+        File virtualAndroidManifestFile = new File("/path/to/non/existent/file");
+        File assetsFolder = Mockito.mock(File.class);
+        Mockito.when(assetsFolder.isDirectory()).thenReturn(true);
+        Mockito.when(assetsFolder.getAbsolutePath()).thenReturn("/path/to/assets/folder");
+        File resFolder = Mockito.mock(File.class);
+        Mockito.when(resFolder.isDirectory()).thenReturn(true);
+        Mockito.when(resFolder.getAbsolutePath()).thenReturn("/path/to/res/folder");
+
+        AaptPackageProcessBuilder aaptPackageProcessBuilder =
+                new AaptPackageProcessBuilder(virtualAndroidManifestFile, mAaptOptions);
+        aaptPackageProcessBuilder.setResPackageOutput("/path/to/non/existent/dir")
+                .setAssetsFolder(assetsFolder)
+                .setResFolder(resFolder)
+                .setPackageForR("com.example.package.forR")
+                .setSourceOutputDir("path/to/source/output/dir")
+                .setLibraries(ImmutableList.of(Mockito.mock(SymbolFileProvider.class)))
+                .setType(VariantType.DEFAULT)
+                .setResourceConfigs(ImmutableList
+                        .of("en", "fr", "es", "de", "it", "mdpi", "hdpi", "xhdpi", "xxhdpi"));
+
+        SdkManager sdkManager = SdkManager.createManager(getSdkDir().getAbsolutePath(), mLogger);
+        assert sdkManager != null;
         BuildToolInfo buildToolInfo = sdkManager.getBuildTool(FullRevision.parseRevision("21"));
         if (buildToolInfo == null) {
             throw new RuntimeException("Test requires build-tools 21");
@@ -500,14 +552,15 @@ public class AaptPackageProcessBuilderTest extends TestCase {
 
         List<String> command = processInfo.getArgs();
 
-        assertEquals("en,fr,es,de,it,mdpi,hdpi,xhdpi,xxhdpi",
+        assertEquals("en,fr,es,de,it",
                 command.get(command.indexOf("-c") + 1));
-        assertTrue("--split".equals(command.get(command.indexOf("mdpi") - 1)));
-        assertTrue("--split".equals(command.get(command.indexOf("hdpi") - 1)));
-        assertTrue("--split".equals(command.get(command.indexOf("xhdpi") - 1)));
-        assertTrue("--split".equals(command.get(command.indexOf("xxhdpi") - 1)));
+        assertTrue("--preferred-density".equals(command.get(command.indexOf("mdpi") - 1)));
+        assertTrue("--preferred-density".equals(command.get(command.indexOf("hdpi") -1 )));
+        assertTrue("--preferred-density".equals(command.get(command.indexOf("xhdpi") -1 )));
+        assertTrue("--preferred-density".equals(command.get(command.indexOf("xxhdpi") -1 )));
         assertEquals(-1, command.indexOf("xxxhdpi"));
     }
+
 
     public void testResConfigAndPreferredDensityConflict() {
         File virtualAndroidManifestFile = new File("/path/to/non/existent/file");
