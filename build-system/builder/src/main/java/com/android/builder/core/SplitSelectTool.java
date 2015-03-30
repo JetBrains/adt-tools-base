@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.ide.common.build;
+package com.android.builder.core;
 
 import com.android.annotations.NonNull;
 import com.android.ide.common.process.BaseProcessOutputHandler;

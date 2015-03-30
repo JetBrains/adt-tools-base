@@ -18,6 +18,8 @@ package com.android.build.gradle.internal.test;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.OutputFile;
+import com.android.build.gradle.api.ApkOutputFile;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.TestVariantData;
@@ -26,10 +28,7 @@ import com.android.builder.core.VariantConfiguration;
 import com.android.builder.core.VariantType;
 import com.android.builder.model.SourceProvider;
 import com.android.builder.testing.TestData;
-import com.android.builder.testing.api.DeviceConfigProvider;
 import com.android.ide.common.build.SplitOutputMatcher;
-import com.android.ide.common.process.ProcessException;
-import com.android.ide.common.process.ProcessExecutor;
 import com.google.common.collect.ImmutableList;
 
 import java.io.File;
@@ -78,19 +77,24 @@ public class TestDataImpl extends AbstractTestDataImpl {
     @NonNull
     @Override
     public ImmutableList<File> getTestedApks(
-            @NonNull ProcessExecutor processExecutor,
-            @Nullable File splitSelectExe,
-            @NonNull DeviceConfigProvider deviceConfigProvider) throws ProcessException {
+            int density,
+            @Nullable String language,
+            @Nullable String region,
+            @NonNull List<String> abis) {
         BaseVariantData<?> testedVariantData =
                 (BaseVariantData) testVariantData.getTestedVariantData();
 
-        ImmutableList.Builder<File> apks = ImmutableList.builder();
-        apks.addAll(SplitOutputMatcher.computeBestOutput(
-                processExecutor,
-                splitSelectExe,
-                deviceConfigProvider,
+        List<OutputFile> outputFiles = SplitOutputMatcher.computeBestOutput(
                 testedVariantData.getOutputs(),
-                testedVariantData.getVariantConfiguration().getSupportedAbis()));
+                testedVariantData.getVariantConfiguration().getSupportedAbis(),
+                density,
+                language,
+                region,
+                abis);
+        ImmutableList.Builder<File> apks = ImmutableList.builder();
+        for (OutputFile outputFile : outputFiles) {
+            apks.add(((ApkOutputFile) outputFile).getOutputFile());
+        }
         return apks.build();
     }
 

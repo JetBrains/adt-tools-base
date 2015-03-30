@@ -32,23 +32,23 @@ import java.util.StringTokenizer;
  */
 public interface DeviceConfig {
 
-    enum Catetory {
+    public enum Catetory {
         CONFIG, ABI
     }
 
     @NonNull
-    Optional<String> getValue(Catetory catetory);
+    public Optional<String> getValue(Catetory catetory);
 
     @NonNull
-    List<String> getAbis();
+    public List<String> getAbis();
 
     @NonNull
-    String getConfigForAllAbis();
+    public String getConfigForAllAbis();
 
     @NonNull
-    String getConfigFor(@Nullable String abi);
+    public String getConfigFor(@Nullable String abi);
 
-    class Builder {
+    public static class Builder {
 
         private static class Values {
 
