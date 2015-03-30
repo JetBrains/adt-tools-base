@@ -75,11 +75,6 @@ public abstract class LibraryBundle implements LibraryDependency {
         return mName;
     }
 
-    @Override
-    public String toString() {
-        return mName;
-    }
-
     @Nullable
     @Override
     public String getProject() {
@@ -209,23 +204,36 @@ public abstract class LibraryBundle implements LibraryDependency {
         return mBundleFolder;
     }
 
+    @NonNull
+    protected File getJarsRootFolder() {
+        return new File(mBundleFolder, FD_JARS);
+    }
+
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         LibraryBundle that = (LibraryBundle) o;
-
-        return Objects.equal(mName, that.mName);
+        return Objects.equal(mName, that.mName) &&
+                Objects.equal(mProjectPath, that.mProjectPath);
     }
 
     @Override
     public int hashCode() {
-        return mName != null ? mName.hashCode() : 0;
+        return Objects.hashCode(mName, mProjectPath);
     }
 
-    @NonNull
-    protected File getJarsRootFolder() {
-        return new File(mBundleFolder, FD_JARS);
+    @Override
+    public String toString() {
+        return Objects.toStringHelper(this)
+                .add("mBundle", mBundle)
+                .add("mBundleFolder", mBundleFolder)
+                .add("mName", mName)
+                .add("mProjectPath", mProjectPath)
+                .toString();
     }
 }

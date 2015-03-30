@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.common.fixture;
 
 import com.android.builder.model.AndroidProject;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 import org.gradle.tooling.BuildAction;
@@ -25,6 +26,7 @@ import org.gradle.tooling.model.DomainObjectSet;
 import org.gradle.tooling.model.gradle.BasicGradleProject;
 import org.gradle.tooling.model.gradle.GradleBuild;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -32,24 +34,87 @@ import java.util.Map;
  */
 public class GetAndroidModelAction implements BuildAction<Map<String, AndroidProject>> {
 
+    private static final int CPU_COUNT = Runtime.getRuntime().availableProcessors();
+
     @Override
     public Map<String, AndroidProject> execute(BuildController buildController) {
+
+        long t1 = System.currentTimeMillis();
         GradleBuild gradleBuild = buildController.getBuildModel();
         DomainObjectSet<? extends BasicGradleProject> projects = gradleBuild.getProjects();
 
-        Map<String, AndroidProject> modelMap = Maps.newHashMapWithExpectedSize(projects.size());
+        final int projectCount = projects.size();
+        Map<String, AndroidProject> modelMap = Maps.newHashMapWithExpectedSize(projectCount);
 
-        for (BasicGradleProject project : projects) {
-            AndroidProject model = buildController.findModel(project, AndroidProject.class);
-            if (model != null) {
-                modelMap.put(project.getPath(), model);
-            } else {
+        List<BasicGradleProject> projectList = Lists.newArrayList(projects);
+        List<Thread> threads = Lists.newArrayListWithCapacity(CPU_COUNT);
+        List<ModelQuery> queries = Lists.newArrayListWithCapacity(CPU_COUNT);
 
-
-            }
-
+        for (int i = 0 ; i < CPU_COUNT ; i++) {
+            ModelQuery modelQuery = new ModelQuery(
+                    projectList,
+                    buildController);
+            queries.add(modelQuery);
+            Thread t = new Thread(modelQuery);
+            threads.add(t);
+            t.start();
         }
 
+        for (int i = 0 ; i < CPU_COUNT ; i++) {
+            try {
+                threads.get(i).join();
+                ModelQuery modelQuery = queries.get(i);
+                modelMap.putAll(modelQuery.getModels());
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+
+        long t2 = System.currentTimeMillis();
+        System.out.println("GetAndroidModelAction: " + (t2-t1) + "ms");
+
         return modelMap;
+    }
+
+    // index used by threads to get the new project to query.
+    private volatile int currentIndex = 0;
+
+    protected synchronized int getNextIndex() {
+        return currentIndex++;
+    }
+
+    class ModelQuery implements Runnable {
+
+        private final Map<String, AndroidProject> models;
+        private final List<BasicGradleProject> projects;
+        private final BuildController buildController;
+
+        public ModelQuery(
+                List<BasicGradleProject> projects,
+                BuildController buildController) {
+            this.projects = projects;
+            this.buildController = buildController;
+
+            models = Maps.newHashMapWithExpectedSize(projects.size() / CPU_COUNT);
+        }
+
+        public Map<String, AndroidProject> getModels() {
+            return models;
+        }
+
+        @Override
+        public void run() {
+            final int count = projects.size();
+
+            int index;
+            while ((index = getNextIndex()) < count) {
+                BasicGradleProject project = projects.get(index);
+
+                AndroidProject model = buildController.findModel(project, AndroidProject.class);
+                if (model != null) {
+                    models.put(project.getPath(), model);
+                }
+            }
+        }
     }
 }

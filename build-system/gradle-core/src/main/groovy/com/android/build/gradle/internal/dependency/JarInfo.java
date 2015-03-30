@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.dependency.JarDependency;
 import com.android.builder.model.MavenCoordinates;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 
 import java.io.File;
@@ -32,25 +33,24 @@ public class JarInfo {
 
     @NonNull
     private final File jarFile;
-
     /** if the dependency is a sub-project, then the gradle project path */
     @Nullable
     private final String gradlePath;
-
+    @NonNull
+    final List<JarInfo> dependencies = Lists.newArrayList();
+    @NonNull
+    private final MavenCoordinates resolvedCoordinates;
     private boolean compiled = false;
     private boolean packaged = false;
 
-    @NonNull
-    final List<JarInfo> dependencies = Lists.newArrayList();
-
-    @Nullable
-    private final MavenCoordinates resolvedCoordinates;
-
     public JarInfo(
             @NonNull File jarFile,
-            @Nullable MavenCoordinates resolvedCoordinates,
+            @NonNull MavenCoordinates resolvedCoordinates,
             @Nullable String gradlePath,
             @NonNull List<JarInfo> dependencies) {
+        Preconditions.checkNotNull(jarFile);
+        Preconditions.checkNotNull(resolvedCoordinates);
+        Preconditions.checkNotNull(dependencies);
         this.jarFile = jarFile;
         this.resolvedCoordinates = resolvedCoordinates;
         this.gradlePath = gradlePath;
@@ -74,7 +74,7 @@ public class JarInfo {
         return jarFile;
     }
 
-    @Nullable
+    @NonNull
     public MavenCoordinates getResolvedCoordinates() {
         return resolvedCoordinates;
     }

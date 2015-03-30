@@ -691,9 +691,13 @@ public class GradleTestProject implements TestRule {
 
         if (stdout != null) {
             launcher.setStandardOutput(stdout);
+        } else {
+            launcher.setStandardOutput(System.out);
         }
         if (stderr != null) {
             launcher.setStandardError(stderr);
+        } else {
+            launcher.setStandardError(System.err);
         }
         launcher.run();
     }
@@ -732,6 +736,10 @@ public class GradleTestProject implements TestRule {
         executer.withArguments(Iterables.toArray(arguments, String.class));
 
         executer.setJvmArguments(Iterables.toArray(getDebugJvmArguments(), String.class));
+
+        executer.setStandardOutput(System.out);
+        executer.setStandardError(System.err);
+
         return executer.run();
     }
 

@@ -88,12 +88,12 @@ public class VariantDependencies implements DependencyContainer, ConfigurationPr
             }
         }
 
-        Configuration compile = project.configurations.create("_${name}Compile")
+        Configuration compile = project.configurations.maybeCreate("_${name}Compile")
         compile.visible = false
         compile.description = "## Internal use, do not manually configure ##"
         compile.setExtendsFrom(compileConfigs)
 
-        Configuration apk = project.configurations.create(variantType == VariantType.LIBRARY
+        Configuration apk = project.configurations.maybeCreate(variantType == VariantType.LIBRARY
                 ? "_${name}Publish"
                 : "_${name}Apk")
 
@@ -103,7 +103,7 @@ public class VariantDependencies implements DependencyContainer, ConfigurationPr
 
         Configuration publish = null, mapping = null, classes = null, metadata = null;
         if (publishVariant) {
-            publish = project.configurations.create(name)
+            publish = project.configurations.maybeCreate(name)
             publish.description = "Published Configuration for Variant ${name}"
             // if the variant is not a library, then the publishing configuration should
             // not extend from the apkConfigs. It's mostly there to access the artifact from
@@ -117,10 +117,10 @@ public class VariantDependencies implements DependencyContainer, ConfigurationPr
             metadata.description = "Published APKs metadata for Variant $name"
 
             // create configuration for -mapping and -classes.
-            mapping = project.configurations.create("$name-mapping")
+            mapping = project.configurations.maybeCreate("$name-mapping")
             mapping.description = "Published mapping configuration for Variant $name"
 
-            classes = project.configurations.create("$name-classes")
+            classes = project.configurations.maybeCreate("$name-classes")
             classes.description = "Published classes configuration for Variant $name"
             // because we need the transitive dependencies for the classes, extend the compile config.
             classes.setExtendsFrom(compileConfigs)
