@@ -222,11 +222,11 @@ public abstract class LibraryBundle implements LibraryDependency {
 
     @Override
     public String toString() {
-        return "LibraryBundle{" +
-                "mBundle=" + mBundle +
-                ", mBundleFolder=" + mBundleFolder +
-                ", mName='" + mName + '\'' +
-                ", mProjectPath='" + mProjectPath + '\'' +
-                '}';
+        return Objects.toStringHelper(this)
+                .add("mBundle", mBundle)
+                .add("mBundleFolder", mBundleFolder)
+                .add("mName", mName)
+                .add("mProjectPath", mProjectPath)
+                .toString();
     }
 }

@@ -20,7 +20,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+
 import org.junit.Test;
+
+import java.util.concurrent.CountDownLatch;
 
 /**
  */
@@ -36,13 +40,19 @@ public class CreatingCacheTest {
 
     private static class DelayedFactory implements CreatingCache.ValueFactory<String, String> {
 
+        @NonNull
+        private final CountDownLatch mLatch;
+
+        public DelayedFactory(@NonNull CountDownLatch latch) {
+            mLatch = latch;
+        }
+
         @Override
         @NonNull
         public String create(@NonNull String key) {
             try {
-                Thread.sleep(3000);
+                mLatch.await();
             } catch (InterruptedException ignored) {
-
             }
             return key;
         }
@@ -62,26 +72,42 @@ public class CreatingCacheTest {
 
     private static class CacheRunnable implements Runnable {
 
+        @NonNull
         private final CreatingCache<String, String> mCache;
-        private final long mSleep;
+        @Nullable
+        private final CountDownLatch mLatch;
 
         private String mResult;
         private InterruptedException mException;
 
-        public CacheRunnable(
-                CreatingCache<String, String> cache,
-                long sleep) {
+        CacheRunnable(@NonNull CreatingCache<String, String> cache) {
+            this(cache, null);
+        }
+
+        /**
+         * Creates a runnable, that will notify when it's pending on a query.
+         *
+         * @param cache the cache to query
+         * @param latch the latch to countdown when the query is being processed.
+         */
+        CacheRunnable(
+                @NonNull CreatingCache<String, String> cache,
+                @Nullable CountDownLatch latch) {
             mCache = cache;
-            mSleep = sleep;
+            mLatch = latch;
         }
 
         @Override
         public void run() {
-            try {
-                Thread.sleep(mSleep);
+            if (mLatch != null) {
+                mResult = mCache.get("foo", new CreatingCache.QueryListener() {
+                    @Override
+                    public void onQueryState(@NonNull CreatingCache.State state) {
+                        mLatch.countDown();
+                    }
+                });
+            } else {
                 mResult = mCache.get("foo");
-            } catch (InterruptedException e) {
-                mException = e;
             }
         }
 
@@ -96,17 +122,35 @@ public class CreatingCacheTest {
 
     @Test
     public void testMultiThread() throws Exception {
-        final CreatingCache<String, String>
-                cache = new CreatingCache<String, String>(new DelayedFactory());
+        // the latch that controls whether the factory will "create" an item.
+        CountDownLatch factoryLatch = new CountDownLatch(1);
 
-        CacheRunnable runnable1 = new CacheRunnable(cache, 0);
+        CreatingCache<String, String>
+                cache = new CreatingCache<String, String>(new DelayedFactory(factoryLatch));
+
+        // the latch that will be released when the runnable1 is pending its query.
+        CountDownLatch latch1 = new CountDownLatch(1);
+
+        CacheRunnable runnable1 = new CacheRunnable(cache, latch1);
         Thread t1 = new Thread(runnable1);
         t1.start();
 
-        CacheRunnable runnable2 = new CacheRunnable(cache, 1000);
+        // wait on thread1 being waiting on the query, before creating thread2
+        latch1.await();
+
+        // the latch that will be released when the runnable1 is pending its query.
+        CountDownLatch latch2 = new CountDownLatch(1);
+
+        CacheRunnable runnable2 = new CacheRunnable(cache,latch2);
         Thread t2 = new Thread(runnable2);
         t2.start();
 
+        // wait on thread2 being waiting on the query, before releasing the factory
+        latch2.await();
+
+        factoryLatch.countDown();
+
+        // wait on threads being done.
         t1.join();
         t2.join();
 
@@ -118,17 +162,21 @@ public class CreatingCacheTest {
 
     @Test(expected = IllegalStateException.class)
     public void testClear() throws Exception {
+        // the latch that controls whether the factory will "create" an item.
+        // this is never released in this test since we want to try clearing the cache while an
+        // item is pending creation.
+        CountDownLatch factoryLatch = new CountDownLatch(1);
+
         final CreatingCache<String, String>
-                cache = new CreatingCache<String, String>(new DelayedFactory());
+                cache = new CreatingCache<String, String>(new DelayedFactory(factoryLatch));
 
-        new Thread() {
-            @Override
-            public void run() {
-                cache.get("foo");
-            }
-        }.start();
+        // the latch that will be released when the thread is pending its query.
+        CountDownLatch latch = new CountDownLatch(1);
 
-        Thread.sleep(1000);
+        new Thread(new CacheRunnable(cache, latch)).start();
+
+        // wait on thread to be waiting, before trying to clear the cache.
+        latch.await();
 
         cache.clear();
     }

@@ -100,7 +100,7 @@ public class LibraryDependencyImpl extends LibraryBundle {
      * Returns a version of the library dependency with the dependencies removed.
      */
     @NonNull
-    public LibraryDependencyImpl getNoDependencyRepresentation() {
+    public LibraryDependencyImpl getNonTransitiveRepresentation() {
         return new LibraryDependencyImpl(
                 getBundle(),
                 getBundleFolder(),
@@ -136,12 +136,12 @@ public class LibraryDependencyImpl extends LibraryBundle {
 
     @Override
     public String toString() {
-        return "LibraryDependencyImpl{" +
-                "dependencies=" + dependencies +
-                ", variantName='" + variantName + '\'' +
-                ", requestedCoordinates=" + requestedCoordinates +
-                ", resolvedCoordinates=" + resolvedCoordinates +
-                ", bundle= " + super.toString() +
-                '}';
+        return Objects.toStringHelper(this)
+                .add("dependencies", dependencies)
+                .add("variantName", variantName)
+                .add("requestedCoordinates", requestedCoordinates)
+                .add("resolvedCoordinates", resolvedCoordinates)
+                .add("super", super.toString())
+                .toString();
     }
 }

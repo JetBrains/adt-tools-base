@@ -16,9 +16,13 @@
 
 package com.android.ide.common.caching;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.annotations.VisibleForTesting;
 import com.android.annotations.concurrency.GuardedBy;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 
 import java.util.Map;
@@ -36,6 +40,8 @@ import java.util.concurrent.CountDownLatch;
  * or time.
  * This is extracted from the PreDexCache of the Gradle plugin which has different requirements
  * (reloading cached info from disk)
+ *
+ * This class is thread-safe.
  *
  * TODO Move PreDexCache to be based on this.
  *
@@ -81,7 +87,39 @@ public class CreatingCache<K, V> {
      */
     @Nullable
     public V get(@NonNull K key) {
+        return get(key, null);
+    }
+
+    /**
+     * A Query Listener used for testing.
+     *
+     * @see #get(Object, QueryListener)
+     */
+    @VisibleForTesting
+    interface QueryListener {
+        void onQueryState(@NonNull State state);
+    }
+
+    /**
+     * Queries the cache for a given key. If the value is not present, this blocks until it is.
+     *
+     * This version allows for a listener that is notified when the state of the query is known.
+     * This allows knowing the state while the method is blocked waiting for creation of the value
+     * in this thread or another. This is used for testing.
+     *
+     * @param key the given key.
+     * @param queryListener the listener.
+     * @return the value, or null if the thread was interrupted while waiting for the value to be created.
+     *
+     * @see #get(Object)
+     */
+    @VisibleForTesting
+    V get(@NonNull K key, @Nullable QueryListener queryListener) {
         ValueState<V> state = findValueState(key);
+
+        if (queryListener != null) {
+            queryListener.onQueryState(state.getState());
+        }
 
         switch (state.getState()) {
             case EXISTING_VALUE:
@@ -127,7 +165,8 @@ public class CreatingCache<K, V> {
     /**
      * State of values.
      */
-    private enum State { EXISTING_VALUE, NEW_VALUE, PROCESSED_VALUE; }
+    @VisibleForTesting
+    enum State { EXISTING_VALUE, NEW_VALUE, PROCESSED_VALUE; }
 
     /**
      * A Value State. This contains the Type as {@link State}, and a optional value {@link V}
@@ -141,7 +180,16 @@ public class CreatingCache<K, V> {
         private final V mValue;
         private final CountDownLatch mLatch;
 
-        public ValueState(@NonNull State type, V value, CountDownLatch latch) {
+        ValueState(V value) {
+            this(State.EXISTING_VALUE, value, null);
+        }
+
+        ValueState(@NonNull State type, CountDownLatch latch) {
+            this(type, null, latch);
+            checkArgument(type != State.EXISTING_VALUE);
+        }
+
+        private ValueState(@NonNull State type, V value, CountDownLatch latch) {
             mType = type;
             mValue = value;
             mLatch = latch;
@@ -175,22 +223,22 @@ public class CreatingCache<K, V> {
     private synchronized ValueState<V> findValueState(@NonNull K key) {
         V value = mCache.get(key);
 
-        // value existe, just return the state.
+        // value exists, just return the state.
         if (value != null) {
-            return new ValueState<V>(State.EXISTING_VALUE, value, null);
+            return new ValueState<V>(value);
         }
 
         // check if the value is currently being created
         CountDownLatch latch = mProcessedValues.get(key);
         if (latch != null) {
             // return the latch allowing to wait for end of creation.
-            return new ValueState<V>(State.PROCESSED_VALUE, null, latch);
+            return new ValueState<V>(State.PROCESSED_VALUE, latch);
         }
 
         // new value: create a latch to allow others to wait until creation is done.
         latch = new CountDownLatch(1);
         mProcessedValues.put(key, latch);
-        return new ValueState<V>(State.NEW_VALUE, null, latch);
+        return new ValueState<V>(State.NEW_VALUE, latch);
     }
 
     /**

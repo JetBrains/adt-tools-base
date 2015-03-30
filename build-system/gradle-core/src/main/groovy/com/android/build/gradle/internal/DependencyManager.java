@@ -42,7 +42,6 @@ import com.google.common.collect.Sets;
 import com.google.common.collect.Table;
 
 import org.gradle.api.Project;
-import org.gradle.api.Project;
 import org.gradle.api.Task;
 import org.gradle.api.UnknownProjectException;
 import org.gradle.api.artifacts.Configuration;
@@ -72,7 +71,6 @@ import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
 
 import java.io.File;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -115,7 +113,7 @@ public class DependencyManager {
             @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData,
             @NonNull PrepareDependenciesTask prepareDependenciesTask,
             @NonNull LibraryDependencyImpl lib) {
-        PrepareLibraryTask prepareLibTask = prepareTaskMap.get(lib.getNoDependencyRepresentation());
+        PrepareLibraryTask prepareLibTask = prepareTaskMap.get(lib.getNonTransitiveRepresentation());
         if (prepareLibTask != null) {
             prepareDependenciesTask.dependsOn(prepareLibTask);
             prepareLibTask.dependsOn(variantData.preBuildTask);
@@ -204,7 +202,7 @@ public class DependencyManager {
         // need the same task.
         // So we extract a LibraryBundle (no dependencies) from the LibraryDependencyImpl to
         // make the map key that doesn't take into account the dependencies.
-        LibraryDependencyImpl key = library.getNoDependencyRepresentation();
+        LibraryDependencyImpl key = library.getNonTransitiveRepresentation();
 
         PrepareLibraryTask prepareLibraryTask = prepareTaskMap.get(key);
 
