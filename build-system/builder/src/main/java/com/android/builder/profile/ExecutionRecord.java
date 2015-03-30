@@ -31,17 +31,17 @@ public class ExecutionRecord {
     public final long id;
     public final long parentId;
     public final long startTimeInMs;
-    public final long durationinMs;
+    public final long durationInMs;
 
     @NonNull public final ExecutionType type;
     @NonNull public final ImmutableList<Recorder.Property> attributes;
 
-    public ExecutionRecord(long id, long parentId, long startTimeInMs, long durationinMs,
+    public ExecutionRecord(long id, long parentId, long startTimeInMs, long durationInMs,
            @NonNull ExecutionType type, @Nullable List<Recorder.Property> attributes) {
         this.id = id;
         this.parentId = parentId;
         this.startTimeInMs = startTimeInMs;
-        this.durationinMs = durationinMs;
+        this.durationInMs = durationInMs;
         this.type = type;
         this.attributes = attributes == null || attributes.isEmpty()
                 ? ImmutableList.<Recorder.Property>of() : ImmutableList.copyOf(attributes);
