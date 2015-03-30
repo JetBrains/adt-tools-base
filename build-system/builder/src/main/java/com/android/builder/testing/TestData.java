@@ -22,6 +22,7 @@ import com.android.builder.model.ApiVersion;
 import com.android.builder.testing.api.DeviceConfigProvider;
 import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.process.ProcessExecutor;
+import com.android.utils.ILogger;
 import com.google.common.collect.ImmutableList;
 
 import java.io.File;
@@ -75,7 +76,8 @@ public interface TestData {
     ImmutableList<File> getTestedApks(
             @NonNull ProcessExecutor processExecutor,
             @Nullable File splitSelectExe,
-            @NonNull DeviceConfigProvider deviceConfigProvider) throws ProcessException;
+            @NonNull DeviceConfigProvider deviceConfigProvider,
+            ILogger logger) throws ProcessException;
     /**
      * Returns the flavor name being test.
      * @return the tested flavor name.

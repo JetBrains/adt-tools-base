@@ -22,7 +22,6 @@ public class MainTest extends ActivityInstrumentationTestCase2<Main> {
         // ensure a valid handle to the activity has been returned
         assertNotNull(a);
         mTextView = (TextView) a.findViewById(R.id.text);
-
     }
 
     /**

@@ -28,19 +28,28 @@ import com.android.builder.core.ApkInfoParser;
 import com.android.builder.model.SourceProvider;
 import com.android.builder.testing.TestData;
 import com.android.builder.testing.api.DeviceConfigProvider;
+import com.android.ide.common.build.SplitOutputMatcher;
+import com.android.ide.common.build.SplitSelectTool;
 import com.android.ide.common.process.ProcessException;
 import com.android.ide.common.process.ProcessExecutor;
 import com.android.sdklib.BuildToolInfo;
+import com.android.utils.ILogger;
+import com.google.common.base.Function;
 import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 
 import org.gradle.api.artifacts.Configuration;
 
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -90,22 +99,38 @@ public class TestApplicationTestData extends  AbstractTestDataImpl {
     public ImmutableList<File> getTestedApks(
             @NonNull ProcessExecutor processExecutor,
             @Nullable File splitSelectExe,
-            @NonNull DeviceConfigProvider deviceConfigProvider) throws ProcessException {
+            @NonNull DeviceConfigProvider deviceConfigProvider,
+            @NonNull ILogger logger) throws ProcessException {
 
-        // retrieve the apk from the dependency handler ?
-
+        // use a Set to remove duplicate entries.
         ImmutableList.Builder<File> testedApks = ImmutableList.builder();
-        testedApks.addAll(testedConfiguration.getFiles());
+        // retrieve all the published files.
+        Set<File> testedApkFiles = testedConfiguration.getFiles();
+        // if we have more than one, that means pure splits are in the equation.
+        if (testedApkFiles.size() > 1 && splitSelectExe != null) {
 
-        // TODO: handle split packages.
-/**        List<OutputFile> outputFiles = SplitOutputMatcher.computeBestOutput(
-                testedVariantData.getOutputs(),
-                testedVariantData.getVariantConfiguration().getSupportedAbis(),
-                density,
-                language,
-                region,
-                abis);
-        return*/
+            List<File> testedSplitApkFiles = getSplitApks();
+            List<String> testedSplitApksPath = Lists.transform(testedSplitApkFiles,
+                    new Function<File, String>() {
+                        @Override
+                        public String apply(@Nullable File file) {
+                            return file != null ? file.getAbsolutePath() : null;
+                        }
+                    });
+            testedApks.addAll(
+                    SplitOutputMatcher.computeBestOutput(processExecutor,
+                            splitSelectExe,
+                            deviceConfigProvider,
+                            getMainApk(),
+                            testedSplitApksPath));
+        } else {
+            // if we have only one or no split-select tool available, just install them all
+            // it's not efficient but it's correct.
+            if (testedApkFiles.size() > 1) {
+                logger.warning("split-select tool unavailable, all split APKs will be installed");
+            }
+            testedApks.addAll(testedApkFiles);
+        }
         return testedApks.build();
     }
 
@@ -143,6 +168,17 @@ public class TestApplicationTestData extends  AbstractTestDataImpl {
         }
     }
 
+    @NonNull
+    public List<File> getSplitApks() {
+        List<File> testedApkFiles = new ArrayList<File>(testedConfiguration.getFiles());
+        if (testedApkFiles.size() > 1) {
+            testedApkFiles.remove(getMainApk());
+            return testedApkFiles;
+        } else {
+            return Collections.emptyList();
+        }
+    }
+
     /**
      * Retrieve the main APK from the list of APKs published by the tested configuration. There can
      * be multiple split APKs along the main APK returned by the configuration.
@@ -154,14 +190,7 @@ public class TestApplicationTestData extends  AbstractTestDataImpl {
         Set<File> testedApkFiles = new HashSet<File>(testedConfiguration.getFiles());
         if (testedApkFiles.size() > 1) {
             // we have splits in the mix, find the right APK.
-            File metadataFile = testedMetadata.getSingleFile();
-            FilterDataPersistence persistence = new FilterDataPersistence();
-            List<FilterDataPersistence.Record> filterDatas;
-            try {
-                filterDatas = persistence.load(new FileReader(metadataFile));
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+            List<FilterDataPersistence.Record> filterDatas = loadMetadata();
             for (FilterDataPersistence.Record filterData : filterDatas) {
                 File splitFile = findSplitFile(testedApkFiles, filterData.splitFileName);
                 if (splitFile != null) {
@@ -185,6 +214,17 @@ public class TestApplicationTestData extends  AbstractTestDataImpl {
             throw new RuntimeException("Cannot retrieve tested APKs");
         }
         return Iterables.getOnlyElement(testedApkFiles);
+    }
+
+    private List<FilterDataPersistence.Record> loadMetadata() {
+        File metadataFile = testedMetadata.getSingleFile();
+        FilterDataPersistence persistence = new FilterDataPersistence();
+        List<FilterDataPersistence.Record> filterDatas;
+        try {
+            return persistence.load(new FileReader(metadataFile));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Nullable

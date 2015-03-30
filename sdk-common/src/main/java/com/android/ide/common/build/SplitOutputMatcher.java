@@ -50,8 +50,11 @@ public class SplitOutputMatcher {
      * @param processExecutor an executor to execute native processes.
      * @param splitSelectExe the split select tool optionally.
      * @param deviceConfigProvider the device configuration.
-     * @param outputs the list of variant outputs for find the best matching one.
-     * @param variantAbiFilters the supported ABIs.
+     * @param outputs the tested variant outpts.
+     * @param variantAbiFilters a list of abi filters applied to the variant. This is used in place
+     *                          of the outputs, if there is a single output with no abi filters.
+     *                          If the list is null, then the variant does not restrict ABI
+     *                          packaging.
      * @return the list of APK files to install.
      * @throws ProcessException
      */
@@ -62,6 +65,7 @@ public class SplitOutputMatcher {
             @NonNull DeviceConfigProvider deviceConfigProvider,
             @NonNull List<? extends VariantOutput> outputs,
             @Nullable Collection<String> variantAbiFilters) throws ProcessException {
+
 
         // build the list of APKs.
         List<String> splitApksPath = new ArrayList<String>();
@@ -76,33 +80,13 @@ public class SplitOutputMatcher {
             }
             mainApk = output.getMainOutputFile();
         }
-
-        List<File> apkFiles = new ArrayList<File>();
-        if (splitSelectExe == null && !splitApksPath.isEmpty()) {
-            throw new RuntimeException(
-                    "Pure splits installation requires build tools 22 or above");
-        }
         if (mainApk == null) {
             throw new RuntimeException(
                     "Cannot retrieve the main APK from variant outputs");
         }
-        if (!splitApksPath.isEmpty()) {
+        if (splitApksPath.isEmpty()) {
+            List<File> apkFiles = new ArrayList<File>();
 
-            Set<String> resultApksPath = new HashSet<String>();
-            for (String abi : deviceConfigProvider.getAbis()) {
-                resultApksPath.addAll(SplitSelectTool.splitSelect(
-                        processExecutor,
-                        splitSelectExe,
-                        deviceConfigProvider.getConfigFor(abi),
-                        mainApk.getOutputFile().getAbsolutePath(),
-                        splitApksPath));
-            }
-            for (String resultApkPath : resultApksPath) {
-                apkFiles.add(new File(resultApkPath));
-            }
-            // and add back the main APK.
-            apkFiles.add(mainApk.getOutputFile());
-        } else {
             // now look for a matching output file
             List<OutputFile> outputFiles = SplitOutputMatcher.computeBestOutput(
                     outputs,
@@ -112,8 +96,60 @@ public class SplitOutputMatcher {
             for (OutputFile outputFile : outputFiles) {
                 apkFiles.add(outputFile.getOutputFile());
             }
+            return apkFiles;
+        } else {
+            if (splitSelectExe == null) {
+                throw new RuntimeException(
+                        "Pure splits installation requires build tools 22 or above");
+            }
+            return computeBestOutput(processExecutor, splitSelectExe, deviceConfigProvider,
+                    mainApk.getOutputFile(), splitApksPath);
         }
-        return apkFiles;
+    }
+
+    /**
+     * Determines and return the list of APKs to use based on given device density and abis.
+     *
+     * if there are pure splits, use the split-select tool otherwise revert to store logic.
+     *
+     * @param processExecutor an executor to execute native processes.
+     * @param splitSelectExe the split select tool optionally.
+     * @param deviceConfigProvider the device configuration.
+     * @param mainApk the main apk file.
+     * @param splitApksPath the list of split apks path.
+     * @return the list of APK files to install.
+     * @throws ProcessException
+     */
+    @NonNull
+    public static List<File> computeBestOutput(
+            @NonNull ProcessExecutor processExecutor,
+            @NonNull File splitSelectExe,
+            @NonNull DeviceConfigProvider deviceConfigProvider,
+            @NonNull File mainApk,
+            @NonNull Collection<String> splitApksPath) throws ProcessException {
+
+        // build the list of APKs.
+        if (splitApksPath.isEmpty()) {
+            return ImmutableList.of(mainApk);
+        } else {
+            List<File> apkFiles = new ArrayList<File>();
+
+            Set<String> resultApksPath = new HashSet<String>();
+            for (String abi : deviceConfigProvider.getAbis()) {
+                resultApksPath.addAll(SplitSelectTool.splitSelect(
+                        processExecutor,
+                        splitSelectExe,
+                        deviceConfigProvider.getConfigFor(abi),
+                        mainApk.getAbsolutePath(),
+                        splitApksPath));
+            }
+            for (String resultApkPath : resultApksPath) {
+                apkFiles.add(new File(resultApkPath));
+            }
+            // and add back the main APK.
+            apkFiles.add(mainApk);
+            return apkFiles;
+        }
     }
 
     /**
