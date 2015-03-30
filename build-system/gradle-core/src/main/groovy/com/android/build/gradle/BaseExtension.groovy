@@ -586,7 +586,6 @@ public abstract class BaseExtension {
 
     // ---------------
     // TEMP for compatibility
-    // STOPSHIP Remove in 1.0
 
     /**
      * Whether to generate PNGs from vector drawables. This doesn't work yet, so it's disabled by
@@ -608,7 +607,7 @@ public abstract class BaseExtension {
 
     public void enforceUniquePackageName(boolean value) {
         if (!value) {
-            LoggingUtil.displayDeprecationWarning(logger, project, "Support for libraries with same package name is deprecated and will be removed in 1.0")
+            LoggingUtil.displayDeprecationWarning(logger, project, "Support for libraries with same package name is deprecated and will be removed in a future release.")
         }
         enforceUniquePackageName = value
     }
