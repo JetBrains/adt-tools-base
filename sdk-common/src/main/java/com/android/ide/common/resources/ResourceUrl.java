@@ -20,7 +20,9 @@ import static com.android.SdkConstants.ATTR_REF_PREFIX;
 import static com.android.SdkConstants.PREFIX_RESOURCE_REF;
 import static com.android.SdkConstants.PREFIX_THEME_REF;
 import static com.android.SdkConstants.RESOURCE_CLZ_ATTR;
+import static com.android.ide.common.rendering.api.RenderResources.REFERENCE_EMPTY;
 import static com.android.ide.common.rendering.api.RenderResources.REFERENCE_NULL;
+import static com.android.ide.common.rendering.api.RenderResources.REFERENCE_UNDEFINED;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -105,7 +107,8 @@ public class ResourceUrl {
             }
         }
 
-        if (!url.startsWith(PREFIX_RESOURCE_REF) || url.equals(REFERENCE_NULL)) {
+        if (!url.startsWith(PREFIX_RESOURCE_REF) || url.equals(REFERENCE_NULL)
+                || url.equals(REFERENCE_EMPTY) || url.equals(REFERENCE_UNDEFINED)) {
             return null;
         }
 
