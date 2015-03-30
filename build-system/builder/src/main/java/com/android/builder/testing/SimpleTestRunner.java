@@ -17,21 +17,14 @@
 package com.android.builder.testing;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.android.builder.internal.InstallUtils;
 import com.android.builder.internal.testing.CustomTestRunListener;
 import com.android.builder.internal.testing.SimpleTestCallable;
-import com.android.builder.testing.api.DeviceConfig;
-import com.android.builder.testing.api.DeviceConfigProviderImpl;
 import com.android.builder.testing.api.DeviceConnector;
-import com.android.builder.testing.api.DeviceException;
 import com.android.builder.testing.api.TestException;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.testrunner.TestIdentifier;
-import com.android.builder.testing.api.DeviceConfigProvider;
 import com.android.ide.common.internal.WaitableExecutor;
-import com.android.ide.common.process.ProcessException;
-import com.android.ide.common.process.ProcessExecutor;
 import com.android.utils.ILogger;
 import com.google.common.collect.ImmutableList;
 
@@ -46,20 +39,12 @@ import java.util.Map;
  */
 public class SimpleTestRunner implements TestRunner {
 
-    @NonNull
-    private final File mAdbExec;
-    @Nullable
-    private final File mSplitSelectExec;
-    @NonNull
-    private final ProcessExecutor mProcessExecutor;
+    File mAdbExec;
 
-    public SimpleTestRunner(@NonNull File adbExec,
-            @Nullable File splitSelectExec,
-            @NonNull ProcessExecutor processExecutor) {
+    public SimpleTestRunner(File adbExec) {
         mAdbExec = adbExec;
-        mSplitSelectExec = splitSelectExec;
-        mProcessExecutor = processExecutor;
     }
+
 
     @Override
     public boolean runTests(
@@ -81,29 +66,18 @@ public class SimpleTestRunner implements TestRunner {
         int unauthorizedDevices = 0;
         int compatibleDevices = 0;
 
-        for (final DeviceConnector device : deviceList) {
+        for (DeviceConnector device : deviceList) {
             if (device.getState() != IDevice.DeviceState.UNAUTHORIZED) {
                 if (InstallUtils.checkDeviceApiLevel(
                         device, testData.getMinSdkVersion(), logger, projectName, variantName)) {
 
-                    final DeviceConfigProvider deviceConfigProvider;
-                    try {
-                        deviceConfigProvider = new DeviceConfigProviderImpl(device);
-                    } catch (DeviceException e) {
-                        throw new TestException(e);
-                    }
-
                     // now look for a matching output file
                     ImmutableList<File> testedApks = ImmutableList.of();
                     if (!testData.isLibrary()) {
-                        try {
-                            testedApks = testData.getTestedApks(
-                                    mProcessExecutor,
-                                    mSplitSelectExec,
-                                    deviceConfigProvider);
-                        } catch (ProcessException e) {
-                            throw new TestException(e);
-                        }
+                        testedApks = testData.getTestedApks(device.getDensity(),
+                                device.getLanguage(),
+                                device.getRegion(),
+                                device.getAbis());
 
                         if (testedApks.isEmpty()) {
                             logger.info("Skipping device '%1$s' for '%2$s:%3$s': No matching output file",

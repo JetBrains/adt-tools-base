@@ -1947,19 +1947,6 @@ abstract class TaskManager {
             return sdkHandler.getSdkInfo().getAdb()
         }
 
-        conventionMapping(testTask).map("splitSelectExec") {
-            String path = androidBuilder.targetInfo?.buildTools?.getPath(
-                    BuildToolInfo.PathId.SPLIT_SELECT)
-            if (path != null) {
-                File splitSelectExe = new File(path)
-                return splitSelectExe.exists() ? splitSelectExe : null;
-            } else {
-                return null;
-            }
-        }
-        testTask.processExecutor = androidBuilder.getProcessExecutor()
-
-
         conventionMapping(testTask).map("reportsDir") {
             String rootLocation = getExtension().testOptions.reportDir != null ?
                     getExtension().testOptions.reportDir :

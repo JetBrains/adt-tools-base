@@ -15,21 +15,30 @@
  */
 package com.android.build.gradle.internal.tasks
 
+import com.android.annotations.NonNull
+import com.android.build.OutputFile
+import com.android.build.VariantOutput
+import com.android.build.gradle.api.ApkOutputFile
 import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.build.gradle.internal.variant.BaseVariantOutputData
-import com.android.builder.testing.api.DeviceConfigProviderImpl
+import com.android.builder.core.SplitSelectTool
 import com.android.builder.core.VariantConfiguration
 import com.android.builder.internal.InstallUtils
 import com.android.builder.testing.ConnectedDeviceProvider
+import com.android.builder.testing.api.DeviceConfig
 import com.android.builder.testing.api.DeviceConnector
 import com.android.builder.testing.api.DeviceProvider
 import com.android.ddmlib.IDevice
 import com.android.ide.common.build.SplitOutputMatcher
+import com.android.ide.common.process.BaseProcessOutputHandler
+import com.android.ide.common.process.ProcessException
 import com.android.ide.common.process.ProcessExecutor
+import com.android.ide.common.process.ProcessOutput
 import com.google.common.base.Joiner
 import com.google.common.collect.ImmutableList
 import org.gradle.api.GradleException
 import org.gradle.api.tasks.Input
+import org.gradle.api.logging.Logger
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.TaskAction
@@ -87,11 +96,57 @@ public class InstallVariantTask extends BaseTask {
                         device, variantConfig.minSdkVersion, getILogger(), projectName,
                         variantName)) {
 
-                    List<File> apkFiles = SplitOutputMatcher.computeBestOutput(processExecutor,
-                            getSplitSelectExe(),
-                            new DeviceConfigProviderImpl(device),
-                            variantData.outputs,
-                            variantData.variantConfiguration.getSupportedAbis())
+                    // build the list of APKs.
+                    List<String> splitApksPath = new ArrayList<>();
+                    OutputFile mainApk;
+                    for (VariantOutput output : variantData.outputs) {
+                        for (OutputFile outputFile : output.getOutputs()) {
+                            if (outputFile.getOutputFile().getAbsolutePath() !=
+                                output.getMainOutputFile().getOutputFile().getAbsolutePath()) {
+
+                                splitApksPath.add(outputFile.outputFile.getAbsolutePath())
+                            }
+                        }
+                        mainApk = output.getMainOutputFile()
+                    }
+
+                    List<File> apkFiles = new ArrayList<>();
+                    if (getSplitSelectExe() == null && splitApksPath.size() > 0) {
+                        throw new GradleException(
+                                "Pure splits installation requires build tools 22 or above");
+                    }
+                    if (mainApk == null) {
+                        throw new GradleException(
+                                "Cannot retrieve the main APK from variant outputs");
+                    }
+                    if (splitApksPath.size() > 0) {
+                        DeviceConfig deviceConfig = device.getDeviceConfig();
+                        Set<String> resultApksPath = new HashSet<String>();
+                        for (String abi : device.getAbis()) {
+                            resultApksPath.addAll(SplitSelectTool.splitSelect(
+                                    processExecutor,
+                                    getSplitSelectExe(),
+                                    deviceConfig.getConfigFor(abi),
+                                    mainApk.getOutputFile().getAbsolutePath(),
+                                    splitApksPath));
+                        }
+                        for (String resultApkPath : resultApksPath) {
+                            apkFiles.add(new File(resultApkPath));
+                        }
+                        // and add back the main APK.
+                        apkFiles.add(mainApk.getOutputFile())
+                    } else {
+                        // now look for a matching output file
+                        List<OutputFile> outputFiles = SplitOutputMatcher.computeBestOutput(
+                                variantData.outputs,
+                                variantData.variantConfiguration.getSupportedAbis(),
+                                device.getDensity(),
+                                device.getLanguage(),
+                                device.getRegion(),
+                                device.getAbis())
+
+                        apkFiles = ((List<ApkOutputFile>) outputFiles)*.getOutputFile()
+                    }
 
                     if (apkFiles.isEmpty()) {
                         logger.lifecycle(

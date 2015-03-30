@@ -492,6 +492,294 @@ public class SplitOutputMatcherTest extends TestCase {
         assertEquals(1, result.size());
     }
 
+    public void testCombinedDensitySplitAndLanguageSplit() {
+        VariantOutput match;
+        List<VariantOutput> list = new ArrayList<VariantOutput>();
+
+        match = new FakePureSplitsVariantOutput(
+                new FakeMainOutputFile(),
+                ImmutableList.of(
+                        new FakePureSplitOutput(Density.getEnum(320).getResourceValue(),
+                                OutputFile.FilterType.DENSITY),
+                        new FakePureSplitOutput(Density.getEnum(480).getResourceValue(),
+                                OutputFile.FilterType.DENSITY),
+                        new FakePureSplitOutput(Density.getEnum(240).getResourceValue(),
+                                OutputFile.FilterType.DENSITY),
+                        new FakePureSplitOutput("fr", OutputFile.FilterType.LANGUAGE),
+                        new FakePureSplitOutput("es", OutputFile.FilterType.LANGUAGE),
+                        new FakePureSplitOutput("it", OutputFile.FilterType.LANGUAGE)),
+                1);
+        list.add(match);
+        List<OutputFile> results = computeBestOutput(
+                list, ImmutableSet.<String>of(), "fr", null /*region */, 320,  "foo");
+        assertEquals(3, results.size());
+        assertMainOutputFilePresence(results);
+        assertPureSplitOutputFilePresence(results, OutputFile.FilterType.LANGUAGE, "fr");
+        assertPureSplitOutputFilePresence(results, OutputFile.FilterType.DENSITY,
+                Density.getEnum(320).getResourceValue());
+    }
+
+    public void testCombinedDensitySplitAndRegionalLanguageSplit() {
+        VariantOutput match;
+        List<VariantOutput> list = new ArrayList<VariantOutput>();
+
+        match = new FakePureSplitsVariantOutput(
+                new FakeMainOutputFile(),
+                ImmutableList.of(
+                        new FakePureSplitOutput(Density.getEnum(320).getResourceValue(),
+                                OutputFile.FilterType.DENSITY),
+                        new FakePureSplitOutput(Density.getEnum(480).getResourceValue(),
+                                OutputFile.FilterType.DENSITY),
+                        new FakePureSplitOutput(Density.getEnum(240).getResourceValue(),
+                                OutputFile.FilterType.DENSITY),
+                        new FakePureSplitOutput("fr", OutputFile.FilterType.LANGUAGE),
+                        new FakePureSplitOutput("fr-CA", OutputFile.FilterType.LANGUAGE),
+                        new FakePureSplitOutput("fr-FR", OutputFile.FilterType.LANGUAGE),
+                        new FakePureSplitOutput("es", OutputFile.FilterType.LANGUAGE),
+                        new FakePureSplitOutput("it", OutputFile.FilterType.LANGUAGE)),
+                1);
+        list.add(match);
+        List<OutputFile> results = computeBestOutput(
+                list, ImmutableSet.<String>of(), "fr", null /*region */, 320,  "foo");
+        assertEquals(3, results.size());
+        assertMainOutputFilePresence(results);
+        assertPureSplitOutputFilePresence(results, OutputFile.FilterType.LANGUAGE, "fr");
+        assertPureSplitOutputFilePresence(results, OutputFile.FilterType.DENSITY,
+                Density.getEnum(320).getResourceValue());
+    }
+
+    public void testCombinedDensitySplitAndRegionalLanguageSplit2() {
+        VariantOutput match;
+        List<VariantOutput> list = new ArrayList<VariantOutput>();
+
+        match = new FakePureSplitsVariantOutput(
+                new FakeMainOutputFile(),
+                ImmutableList.of(
+                        new FakePureSplitOutput(Density.getEnum(320).getResourceValue(),
+                                OutputFile.FilterType.DENSITY),
+                        new FakePureSplitOutput(Density.getEnum(480).getResourceValue(),
+                                OutputFile.FilterType.DENSITY),
+                        new FakePureSplitOutput(Density.getEnum(240).getResourceValue(),
+                                OutputFile.FilterType.DENSITY),
+                        new FakePureSplitOutput("fr", OutputFile.FilterType.LANGUAGE),
+                        new FakePureSplitOutput("fr-CA", OutputFile.FilterType.LANGUAGE),
+                        new FakePureSplitOutput("fr-FR", OutputFile.FilterType.LANGUAGE),
+                        new FakePureSplitOutput("es", OutputFile.FilterType.LANGUAGE),
+                        new FakePureSplitOutput("it", OutputFile.FilterType.LANGUAGE)),
+                1);
+        list.add(match);
+        List<OutputFile> results = computeBestOutput(
+                list, ImmutableSet.<String>of(), "fr", "CA", 320,  "foo");
+        assertEquals(4, results.size());
+        assertMainOutputFilePresence(results);
+        assertPureSplitOutputFilePresence(results, OutputFile.FilterType.LANGUAGE, "fr");
+        assertPureSplitOutputFilePresence(results, OutputFile.FilterType.LANGUAGE, "fr-CA");
+        assertPureSplitOutputFilePresence(results, OutputFile.FilterType.DENSITY,
+                Density.getEnum(320).getResourceValue());
+    }
+
+    public void testCombinedDensitySplitAndMissingRegionalLanguageSplit() {
+        VariantOutput match;
+        List<VariantOutput> list = new ArrayList<VariantOutput>();
+
+        match = new FakePureSplitsVariantOutput(
+                new FakeMainOutputFile(),
+                ImmutableList.of(
+                        new FakePureSplitOutput(Density.getEnum(320).getResourceValue(),
+                                OutputFile.FilterType.DENSITY),
+                        new FakePureSplitOutput(Density.getEnum(480).getResourceValue(),
+                                OutputFile.FilterType.DENSITY),
+                        new FakePureSplitOutput(Density.getEnum(240).getResourceValue(),
+                                OutputFile.FilterType.DENSITY),
+                        new FakePureSplitOutput("fr", OutputFile.FilterType.LANGUAGE),
+                        new FakePureSplitOutput("fr-CA", OutputFile.FilterType.LANGUAGE),
+                        new FakePureSplitOutput("fr-FR", OutputFile.FilterType.LANGUAGE),
+                        new FakePureSplitOutput("es", OutputFile.FilterType.LANGUAGE),
+                        new FakePureSplitOutput("it", OutputFile.FilterType.LANGUAGE)),
+                1);
+        list.add(match);
+        List<OutputFile> results = computeBestOutput(
+                list, ImmutableSet.<String>of(), "fr", "BE", 320,  "foo");
+        assertEquals(3, results.size());
+        assertMainOutputFilePresence(results);
+        // no belgium specific resources, we should revert to french...
+        assertPureSplitOutputFilePresence(results, OutputFile.FilterType.LANGUAGE, "fr");
+        assertPureSplitOutputFilePresence(results, OutputFile.FilterType.DENSITY,
+                Density.getEnum(320).getResourceValue());
+    }
+
+    public void testCombinedDensitySplitAndMissingRegionalLanguageSplit2() {
+        VariantOutput match;
+        List<VariantOutput> list = new ArrayList<VariantOutput>();
+
+        match = new FakePureSplitsVariantOutput(
+                new FakeMainOutputFile(),
+                ImmutableList.of(
+                        new FakePureSplitOutput(Density.getEnum(320).getResourceValue(),
+                                OutputFile.FilterType.DENSITY),
+                        new FakePureSplitOutput(Density.getEnum(480).getResourceValue(),
+                                OutputFile.FilterType.DENSITY),
+                        new FakePureSplitOutput(Density.getEnum(240).getResourceValue(),
+                                OutputFile.FilterType.DENSITY),
+                        new FakePureSplitOutput("fr-CH", OutputFile.FilterType.LANGUAGE),
+                        new FakePureSplitOutput("fr-CA", OutputFile.FilterType.LANGUAGE),
+                        new FakePureSplitOutput("fr-FR", OutputFile.FilterType.LANGUAGE),
+                        new FakePureSplitOutput("es", OutputFile.FilterType.LANGUAGE),
+                        new FakePureSplitOutput("it", OutputFile.FilterType.LANGUAGE)),
+                1);
+        list.add(match);
+        List<OutputFile> results = computeBestOutput(
+                list, ImmutableSet.<String>of(), "fr", "BE", 320,  "foo");
+        assertEquals(2, results.size());
+        assertMainOutputFilePresence(results);
+        // no belgium specific resources, and no generic french either.. so no french resources
+        assertPureSplitOutputFilePresence(results, OutputFile.FilterType.DENSITY,
+                Density.getEnum(320).getResourceValue());
+    }
+
+    public void testCombinedDensitySplitAndMissingLanguageSplit() {
+        VariantOutput match;
+        List<VariantOutput> list = new ArrayList<VariantOutput>();
+
+        match = new FakePureSplitsVariantOutput(
+                new FakeMainOutputFile(),
+                ImmutableList.of(
+                        new FakePureSplitOutput(Density.getEnum(320).getResourceValue(),
+                                OutputFile.FilterType.DENSITY),
+                        new FakePureSplitOutput(Density.getEnum(480).getResourceValue(),
+                                OutputFile.FilterType.DENSITY),
+                        new FakePureSplitOutput(Density.getEnum(240).getResourceValue(),
+                                OutputFile.FilterType.DENSITY),
+                        new FakePureSplitOutput("de", OutputFile.FilterType.LANGUAGE),
+                        new FakePureSplitOutput("es", OutputFile.FilterType.LANGUAGE),
+                        new FakePureSplitOutput("it", OutputFile.FilterType.LANGUAGE)),
+                1);
+        list.add(match);
+        List<OutputFile> results = computeBestOutput(
+                list, ImmutableSet.<String>of(), "fr", null /*region */, 320,  "foo");
+        // no french resources found.
+        assertEquals(2, results.size());
+        assertMainOutputFilePresence(results);
+        assertPureSplitOutputFilePresence(results, OutputFile.FilterType.DENSITY,
+                Density.getEnum(320).getResourceValue());
+    }
+
+    public void testAllCombinedPureSplits() {
+        VariantOutput match;
+        List<VariantOutput> list = new ArrayList<VariantOutput>();
+
+        match = new FakePureSplitsVariantOutput(
+                new FakeMainOutputFile(),
+                ImmutableList.of(
+                        new FakePureSplitOutput(Density.getEnum(320).getResourceValue(),
+                                OutputFile.FilterType.DENSITY),
+                        new FakePureSplitOutput(Density.getEnum(480).getResourceValue(),
+                                OutputFile.FilterType.DENSITY),
+                        new FakePureSplitOutput(Density.getEnum(240).getResourceValue(),
+                                OutputFile.FilterType.DENSITY),
+                        new FakePureSplitOutput("foo", OutputFile.FilterType.ABI),
+                        new FakePureSplitOutput("bar", OutputFile.FilterType.ABI),
+                        new FakePureSplitOutput("fr", OutputFile.FilterType.LANGUAGE),
+                        new FakePureSplitOutput("es", OutputFile.FilterType.LANGUAGE),
+                        new FakePureSplitOutput("it", OutputFile.FilterType.LANGUAGE)),
+                1);
+        list.add(match);
+        List<OutputFile> results = computeBestOutput(
+                list, ImmutableSet.<String>of(), "fr", null /*region */, 320,  "foo");
+        assertEquals(4, results.size());
+        assertMainOutputFilePresence(results);
+        assertPureSplitOutputFilePresence(results, OutputFile.FilterType.ABI, "foo");
+        assertPureSplitOutputFilePresence(results, OutputFile.FilterType.DENSITY,
+                Density.getEnum(320).getResourceValue());
+        assertPureSplitOutputFilePresence(results, OutputFile.FilterType.LANGUAGE, "fr");
+    }
+
+    public void testMissingABIPureSplits() {
+        VariantOutput match;
+        List<VariantOutput> list = new ArrayList<VariantOutput>();
+
+        match = new FakePureSplitsVariantOutput(
+                new FakeMainOutputFile(),
+                ImmutableList.of(
+                        new FakePureSplitOutput(Density.getEnum(320).getResourceValue(),
+                                OutputFile.FilterType.DENSITY),
+                        new FakePureSplitOutput(Density.getEnum(480).getResourceValue(),
+                                OutputFile.FilterType.DENSITY),
+                        new FakePureSplitOutput(Density.getEnum(240).getResourceValue(),
+                                OutputFile.FilterType.DENSITY),
+                        new FakePureSplitOutput("foo", OutputFile.FilterType.ABI),
+                        new FakePureSplitOutput("bar", OutputFile.FilterType.ABI),
+                        new FakePureSplitOutput("fr", OutputFile.FilterType.LANGUAGE),
+                        new FakePureSplitOutput("es", OutputFile.FilterType.LANGUAGE),
+                        new FakePureSplitOutput("it", OutputFile.FilterType.LANGUAGE)),
+                1);
+        list.add(match);
+        List<OutputFile> results = computeBestOutput(
+                list, ImmutableSet.<String>of(), "fr", null /*region */, 320,  "baz");
+        // no "baz" ABI split found
+        assertEquals(3, results.size());
+        assertMainOutputFilePresence(results);
+        assertPureSplitOutputFilePresence(results, OutputFile.FilterType.DENSITY,
+                Density.getEnum(320).getResourceValue());
+        assertPureSplitOutputFilePresence(results, OutputFile.FilterType.LANGUAGE, "fr");
+    }
+
+    public void testMissingDensityPureSplit() {
+        VariantOutput match;
+        List<VariantOutput> list = new ArrayList<VariantOutput>();
+
+        match = new FakePureSplitsVariantOutput(
+                new FakeMainOutputFile(),
+                ImmutableList.of(
+                        new FakePureSplitOutput(Density.getEnum(320).getResourceValue(),
+                                OutputFile.FilterType.DENSITY),
+                        new FakePureSplitOutput(Density.getEnum(480).getResourceValue(),
+                                OutputFile.FilterType.DENSITY),
+                        new FakePureSplitOutput(Density.getEnum(240).getResourceValue(),
+                                OutputFile.FilterType.DENSITY),
+                        new FakePureSplitOutput("foo", OutputFile.FilterType.ABI),
+                        new FakePureSplitOutput("bar", OutputFile.FilterType.ABI),
+                        new FakePureSplitOutput("fr", OutputFile.FilterType.LANGUAGE),
+                        new FakePureSplitOutput("es", OutputFile.FilterType.LANGUAGE),
+                        new FakePureSplitOutput("it", OutputFile.FilterType.LANGUAGE)),
+                1);
+        list.add(match);
+        List<OutputFile> results = computeBestOutput(
+                list, ImmutableSet.<String>of(), "fr", null /*region */, 640,  "foo");
+
+        // missing density ABI.
+        assertEquals(3, results.size());
+        assertMainOutputFilePresence(results);
+        assertPureSplitOutputFilePresence(results, OutputFile.FilterType.ABI, "foo");
+        assertPureSplitOutputFilePresence(results, OutputFile.FilterType.LANGUAGE, "fr");
+    }
+
+    private void assertMainOutputFilePresence(List<OutputFile> outputFiles) {
+        for (OutputFile outputFile : outputFiles) {
+            if (outputFile.getOutputType().equals(OutputFile.OutputType.MAIN.name())) {
+                return;
+            }
+        }
+        fail("Cannot find main OutputFile");
+    }
+
+    private void assertPureSplitOutputFilePresence(List<OutputFile> outputFiles,
+            @NonNull OutputFile.FilterType filterType,
+            @NonNull String filter) {
+        for (OutputFile outputFile : outputFiles) {
+            if (outputFile.getOutputType().equals(OutputFile.OutputType.SPLIT.name())
+                    && outputFile.getFilterTypes().size() == 1
+                    && outputFile.getFilterTypes().contains(filterType.name())
+                    && outputFile.getFilters().size() == 1
+                    && outputFile.getFilters().iterator().next().getIdentifier().equals(filter)) {
+                return;
+
+            }
+        }
+        fail("Cannot find pure split " + filterType + " : " + filter);
+    }
+
+
     private static VariantOutput getUniversalOutput(int versionCode) {
         return new FakeVariantOutput(new FakeSplitOutput(null, null), versionCode);
     }
