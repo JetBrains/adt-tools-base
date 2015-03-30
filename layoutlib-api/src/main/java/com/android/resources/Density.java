@@ -28,6 +28,7 @@ public enum Density implements ResourceEnum {
     XXHIGH( "xxhdpi",  "XX-High Density",  480, 16), //$NON-NLS-1$
     DPI_400("400dpi",  "400 DPI Density",  400,  1), //$NON-NLS-1$
     XHIGH(  "xhdpi",   "X-High Density",   320,  8), //$NON-NLS-1$
+    DPI_280("280dpi",  "280 DPI Density",  280, 22), //$NON-NLS-1$
     HIGH(   "hdpi",    "High Density",     240,  4), //$NON-NLS-1$
     TV(     "tvdpi",   "TV Density",       213, 13), //$NON-NLS-1$
     MEDIUM( "mdpi",    "Medium Density",   160,  4), //$NON-NLS-1$
@@ -136,7 +137,15 @@ public enum Density implements ResourceEnum {
      * a density you should consider providing resources for)
      */
     public boolean isRecommended() {
-        return this != TV && this != DPI_400 && this != DPI_560;
+        switch (this) {
+            case TV:
+            case DPI_280:
+            case DPI_400:
+            case DPI_560:
+                return false;
+            default:
+                return true;
+        }
     }
 
     @Override
