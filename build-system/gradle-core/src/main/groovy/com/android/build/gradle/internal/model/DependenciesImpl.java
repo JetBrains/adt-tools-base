@@ -19,7 +19,6 @@ package com.android.build.gradle.internal.model;
 import static com.android.SdkConstants.DOT_JAR;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.dependency.LibraryDependencyImpl;
 import com.android.build.gradle.internal.dependency.VariantDependencies;
@@ -30,9 +29,8 @@ import com.android.builder.dependency.LibraryDependency;
 import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.Dependencies;
 import com.android.builder.model.JavaLibrary;
+import com.android.ide.common.caching.CreatingCache;
 import com.google.common.collect.Lists;
-
-import org.gradle.api.Project;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -51,12 +49,26 @@ import java.util.zip.ZipFile;
 public class DependenciesImpl implements Dependencies, Serializable {
     private static final long serialVersionUID = 1L;
 
+    private static final CreatingCache<LibraryDependency, AndroidLibrary> sCache
+            = new CreatingCache<LibraryDependency, AndroidLibrary>(
+            new CreatingCache.ValueFactory<LibraryDependency, AndroidLibrary>() {
+                @Override
+                @NonNull
+                public AndroidLibrary create(@NonNull LibraryDependency key) {
+                    return convertAndroidLibrary(key);
+                }
+            });
+
     @NonNull
     private final List<AndroidLibrary> libraries;
     @NonNull
     private final List<JavaLibrary> javaLibraries;
     @NonNull
     private final List<String> projects;
+
+    public static void clearCaches() {
+        sCache.clear();
+    }
 
     @NonNull
     static DependenciesImpl cloneDependenciesForJavaArtifacts(@NonNull Dependencies dependencies) {
@@ -80,8 +92,10 @@ public class DependenciesImpl implements Dependencies, Serializable {
         List<LibraryDependencyImpl> libs = variantDependencies.getLibraries();
         libraries = Lists.newArrayListWithCapacity(libs.size());
         for (LibraryDependencyImpl libImpl : libs) {
-            AndroidLibrary clonedLib = getAndroidLibrary(libImpl);
-            libraries.add(clonedLib);
+            AndroidLibrary clonedLib = sCache.get(libImpl);
+            if (clonedLib != null) {
+                libraries.add(clonedLib);
+            }
         }
 
         List<JarDependency> jarDeps = variantDependencies.getJarDependencies();
@@ -162,12 +176,15 @@ public class DependenciesImpl implements Dependencies, Serializable {
     }
 
     @NonNull
-    private static AndroidLibrary getAndroidLibrary(@NonNull LibraryDependency libraryDependency) {
+    private static AndroidLibrary convertAndroidLibrary(
+            @NonNull LibraryDependency libraryDependency) {
         List<LibraryDependency> deps = libraryDependency.getDependencies();
         List<AndroidLibrary> clonedDeps = Lists.newArrayListWithCapacity(deps.size());
         for (LibraryDependency child : deps) {
-            AndroidLibrary clonedLib = getAndroidLibrary(child);
-            clonedDeps.add(clonedLib);
+            AndroidLibrary clonedLib = sCache.get(child);
+            if (clonedLib != null) {
+                clonedDeps.add(clonedLib);
+            }
         }
 
         // compute local jar even if the bundle isn't exploded.

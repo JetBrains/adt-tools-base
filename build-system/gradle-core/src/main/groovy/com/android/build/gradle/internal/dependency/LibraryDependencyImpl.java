@@ -23,8 +23,10 @@ import com.android.builder.dependency.LibraryDependency;
 import com.android.builder.dependency.ManifestDependency;
 import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.MavenCoordinates;
+import com.google.common.base.Objects;
 
 import java.io.File;
+import java.util.Collections;
 import java.util.List;
 
 @Immutable
@@ -92,5 +94,54 @@ public class LibraryDependencyImpl extends LibraryBundle {
     @Override
     public MavenCoordinates getResolvedCoordinates() {
         return resolvedCoordinates;
+    }
+
+    /**
+     * Returns a version of the library dependency with the dependencies removed.
+     */
+    @NonNull
+    public LibraryDependencyImpl getNonTransitiveRepresentation() {
+        return new LibraryDependencyImpl(
+                getBundle(),
+                getBundleFolder(),
+                Collections.<LibraryDependency>emptyList(),
+                getName(),
+                variantName,
+                getProject(),
+                requestedCoordinates,
+                resolvedCoordinates);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
+        LibraryDependencyImpl that = (LibraryDependencyImpl) o;
+        return Objects.equal(dependencies, that.dependencies) &&
+                Objects.equal(variantName, that.variantName) &&
+                Objects.equal(resolvedCoordinates, that.resolvedCoordinates);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(super.hashCode(), dependencies, variantName, resolvedCoordinates);
+    }
+
+    @Override
+    public String toString() {
+        return Objects.toStringHelper(this)
+                .add("dependencies", dependencies)
+                .add("variantName", variantName)
+                .add("requestedCoordinates", requestedCoordinates)
+                .add("resolvedCoordinates", resolvedCoordinates)
+                .add("super", super.toString())
+                .toString();
     }
 }
