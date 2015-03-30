@@ -17,14 +17,21 @@
 package com.android.build.gradle.internal
 
 import com.android.annotations.NonNull
+import groovy.transform.CompileStatic
+import org.gradle.util.GUtil
 
 /**
  * Helper to give access to Groovy string methods from Java classes.
  */
+@CompileStatic
 class StringHelper {
 
     @NonNull
     public static String capitalize(@NonNull String string) {
         return string.capitalize()
+    }
+
+    public static String toCamelCase(@NonNull String string) {
+        return GUtil.toCamelCase(string);
     }
 }

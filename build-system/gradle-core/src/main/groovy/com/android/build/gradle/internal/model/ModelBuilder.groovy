@@ -93,6 +93,10 @@ public class ModelBuilder implements ToolingModelBuilder {
         this.isLibrary = isLibrary
     }
 
+    public static void clearCaches() {
+        DependenciesImpl.clearCaches();
+    }
+
     @Override
     public boolean canBuild(String modelName) {
         // The default name for a model is the name of the Java interface.

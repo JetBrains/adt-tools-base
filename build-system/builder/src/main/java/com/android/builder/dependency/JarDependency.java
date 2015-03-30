@@ -19,6 +19,7 @@ package com.android.builder.dependency;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.model.MavenCoordinates;
+import com.google.common.base.Preconditions;
 
 import java.io.File;
 
@@ -51,6 +52,7 @@ public class JarDependency {
             boolean proguarded,
             @Nullable MavenCoordinates resolvedCoordinates,
             @Nullable String projectPath) {
+        Preconditions.checkNotNull(jarFile);
         mJarFile = jarFile;
         mCompiled = compiled;
         mPackaged = packaged;

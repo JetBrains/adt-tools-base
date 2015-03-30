@@ -34,6 +34,7 @@ import com.android.build.gradle.internal.dsl.GroupableProductFlavor
 import com.android.build.gradle.internal.dsl.GroupableProductFlavorFactory
 import com.android.build.gradle.internal.dsl.SigningConfig
 import com.android.build.gradle.internal.dsl.SigningConfigFactory
+import com.android.build.gradle.internal.model.DependenciesImpl
 import com.android.build.gradle.internal.model.ModelBuilder
 import com.android.build.gradle.internal.process.GradleJavaProcessExecutor
 import com.android.build.gradle.internal.process.GradleProcessExecutor
@@ -127,6 +128,8 @@ public abstract class BasePlugin {
             creator = "Android Gradle"
         }
         verifyRetirementAge()
+
+        ModelBuilder.clearCaches();
     }
 
     /**
