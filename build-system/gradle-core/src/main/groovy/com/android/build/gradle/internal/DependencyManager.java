@@ -140,7 +140,7 @@ public class DependencyManager {
             @NonNull Collection<LibraryDependencyImpl> libraries,
             @NonNull Multimap<LibraryDependency, VariantDependencies> reverseMap) {
         for (LibraryDependencyImpl lib : libraries) {
-            handleLibrary2(lib, reverseMap);
+            setupPrepareLibraryTask(lib, reverseMap);
             //noinspection unchecked
             processLibraries(
                     (Collection<LibraryDependencyImpl>) (List<?>) lib.getDependencies(),
@@ -148,10 +148,10 @@ public class DependencyManager {
         }
     }
 
-    private void handleLibrary2(
+    private void setupPrepareLibraryTask(
             @NonNull LibraryDependencyImpl libDependency,
             @NonNull Multimap<LibraryDependency, VariantDependencies> reverseMap) {
-        Task task = handleLibrary(libDependency, project);
+        Task task = maybeCreatePrepareLibraryTask(libDependency, project);
 
         // Use the reverse map to find all the configurations that included this android
         // library so that we can make sure they are built.
@@ -190,7 +190,7 @@ public class DependencyManager {
      * @param project the project
      * @return the prepare task.
      */
-    private PrepareLibraryTask handleLibrary(
+    private PrepareLibraryTask maybeCreatePrepareLibraryTask(
             @NonNull LibraryDependencyImpl library,
             @NonNull Project project) {
 
