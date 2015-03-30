@@ -23,6 +23,7 @@ import com.google.common.collect.ImmutableList;
 
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.List;
 
 /**
  * Implementation of AaptOptions that is Serializable.
@@ -32,24 +33,28 @@ public class AaptOptionsImpl implements AaptOptions, Serializable {
     private static final long serialVersionUID = 1L;
 
     @Nullable
-    private String ignoreAssets;
+    private final String ignoreAssets;
 
     @Nullable
-    private Collection<String> noCompress;
+    private final Collection<String> noCompress;
 
-    private boolean failOnMissingConfigEntry;
+    private final boolean failOnMissingConfigEntry;
+
+    @NonNull
+    private final List<String> additionalParameters;
 
 
     static AaptOptions create(@NonNull AaptOptions aaptOptions) {
         return new AaptOptionsImpl(
                 aaptOptions.getIgnoreAssets(),
                 aaptOptions.getNoCompress(),
-                aaptOptions.getFailOnMissingConfigEntry()
+                aaptOptions.getFailOnMissingConfigEntry(),
+                aaptOptions.getAdditionalParameters()
         );
     }
 
     private AaptOptionsImpl(String ignoreAssets, Collection<String> noCompress,
-            boolean failOnMissingConfigEntry) {
+            boolean failOnMissingConfigEntry, List<String> additionalParameters) {
         this.ignoreAssets = ignoreAssets;
         if (noCompress == null) {
             this.noCompress = null;
@@ -57,6 +62,7 @@ public class AaptOptionsImpl implements AaptOptions, Serializable {
             this.noCompress = ImmutableList.copyOf(noCompress);
         }
         this.failOnMissingConfigEntry = failOnMissingConfigEntry;
+        this.additionalParameters = additionalParameters;
     }
 
     @Override
@@ -75,12 +81,18 @@ public class AaptOptionsImpl implements AaptOptions, Serializable {
         return failOnMissingConfigEntry;
     }
 
+    @Override
+    public List<String> getAdditionalParameters() {
+        return additionalParameters;
+    }
+
 
     public String toString() {
         return "AaptOptions{" +
                 ", ignoreAssets=" + ignoreAssets +
                 ", noCompress=" + noCompress +
                 ", failOnMissingConfigEntry=" + failOnMissingConfigEntry +
+                ", additionalParameters=" + additionalParameters +
                 "}";
     }
 }

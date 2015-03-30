@@ -17,6 +17,7 @@
 package com.android.builder.model;
 
 import java.util.Collection;
+import java.util.List;
 
 /**
  * Options for aapt.
@@ -36,4 +37,10 @@ public interface AaptOptions {
      * passes the --error-on-missing-config-entry parameter to the aapt command, by default false.
      */
     boolean getFailOnMissingConfigEntry();
+
+    /**
+     * Returns the list of additional parameters to pass.
+     * @return
+     */
+    List<String> getAdditionalParameters();
 }
