@@ -56,6 +56,9 @@ public class LogDetectorTest  extends AbstractCheckTest {
             "src/test/pkg/LogTest.java:60: Error: The logging tag can be at most 23 characters, was 39 (MyReallyReallyReallyReallyReallyLongTag) [LongLogTag]\n" +
             "            Log.d(LONG_TAG, \"message\"); // error: way too long\n" +
             "            ~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
+            "src/test/pkg/LogTest.java:64: Error: The logging tag can be at most 23 characters, was 39 (MyReallyReallyReallyReallyReallyLongTag) [LongLogTag]\n" +
+            "            Log.d(LOCAL_TAG, \"message\"); // error: too long\n" +
+            "            ~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
             "src/test/pkg/LogTest.java:67: Error: The logging tag can be at most 23 characters, was 28 (1234567890123456789012MyTag1) [LongLogTag]\n" +
             "            Log.d(TAG22 + TAG1, \"message\"); // error: too long\n" +
             "            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
@@ -68,7 +71,7 @@ public class LogDetectorTest  extends AbstractCheckTest {
             "src/test/pkg/LogTest.java:22: Warning: The log call Log.i(...) should be conditional: surround with if (Log.isLoggable(...)) or if (BuildConfig.DEBUG) { ... } [LogConditional]\n" +
             "        Log.i(TAG1, toString()); // error: unconditional w/ computation\n" +
             "        ~~~~~~~~~~~~~~~~~~~~~~~\n" +
-            "10 errors, 2 warnings\n",
+            "11 errors, 2 warnings\n",
 
             lintProject(
                 "src/test/pkg/LogTest.java.txt=>src/test/pkg/LogTest.java",

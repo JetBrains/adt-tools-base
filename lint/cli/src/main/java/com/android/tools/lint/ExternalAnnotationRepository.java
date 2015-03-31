@@ -113,6 +113,17 @@ public class ExternalAnnotationRepository {
             }
 
             File sdkAnnotations = client.findResource(SDK_ANNOTATIONS_PATH);
+            if (sdkAnnotations == null) {
+                // Until the SDK annotations are bundled in platform tools, provide
+                // a fallback for Gradle builds to point to a locally installed version
+                String path = System.getenv("SDK_ANNOTATIONS");
+                if (path != null) {
+                    sdkAnnotations = new File(path);
+                    if (!sdkAnnotations.exists()) {
+                        sdkAnnotations = null;
+                    }
+                }
+            }
             if (sdkAnnotations != null) {
                 files.add(sdkAnnotations);
             }

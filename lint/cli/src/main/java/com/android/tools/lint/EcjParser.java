@@ -1348,29 +1348,7 @@ public class EcjParser extends JavaParser {
         @Nullable
         @Override
         public Object getValue() {
-            Constant constant = mBinding.constant();
-            if (constant != null) {
-                if (constant instanceof StringConstant) {
-                    return constant.stringValue();
-                } else if (constant instanceof IntConstant) {
-                    return constant.intValue();
-                } else if (constant instanceof BooleanConstant) {
-                    return constant.booleanValue();
-                } else if (constant instanceof LongConstant) {
-                    return constant.longValue();
-                } else if (constant instanceof DoubleConstant) {
-                    return constant.doubleValue();
-                } else if (constant instanceof CharConstant) {
-                    return constant.charValue();
-                } else if (constant instanceof FloatConstant) {
-                    return constant.floatValue();
-                } else if (constant instanceof ShortConstant) {
-                    return constant.shortValue();
-                } else if (constant instanceof ByteConstant) {
-                    return constant.byteValue();
-                }
-            }
-            return null;
+            return getConstantValue(mBinding.constant());
         }
 
         @NonNull
@@ -1624,25 +1602,7 @@ public class EcjParser extends JavaParser {
         }
 
         private Object getPairValue(ElementValuePair pair) {
-            Object value = pair.getValue();
-            if (value instanceof StringConstant) {
-                return ((StringConstant)value).stringValue();
-            } else if (value instanceof IntConstant) {
-                return ((IntConstant)value).intValue();
-            } else if (value instanceof BooleanConstant) {
-                return ((BooleanConstant)value).booleanValue();
-            } else if (value instanceof FloatConstant) {
-                return ((FloatConstant)value).floatValue();
-            } else if (value instanceof LongConstant) {
-                return ((LongConstant) value).longValue();
-            } else if (value instanceof DoubleConstant) {
-                return ((DoubleConstant)value).doubleValue();
-            } else if (value instanceof ShortConstant) {
-                return ((ShortConstant)value).shortValue();
-            } else if (value instanceof ByteConstant) {
-                return ((ByteConstant)value).byteValue();
-            }
-            return value;
+            return getConstantValue(pair.getValue());
         }
 
         @Override
@@ -1777,6 +1737,33 @@ public class EcjParser extends JavaParser {
         public int hashCode() {
             return mBinding != null ? mBinding.hashCode() : 0;
         }
+    }
+
+    @Nullable
+    private static Object getConstantValue(@Nullable Object value) {
+        if (value instanceof Constant) {
+            if (value instanceof StringConstant) {
+                return ((StringConstant) value).stringValue();
+            } else if (value instanceof IntConstant) {
+                return ((IntConstant) value).intValue();
+            } else if (value instanceof BooleanConstant) {
+                return ((BooleanConstant) value).booleanValue();
+            } else if (value instanceof FloatConstant) {
+                return ((FloatConstant) value).floatValue();
+            } else if (value instanceof LongConstant) {
+                return ((LongConstant) value).longValue();
+            } else if (value instanceof DoubleConstant) {
+                return ((DoubleConstant) value).doubleValue();
+            } else if (value instanceof ShortConstant) {
+                return ((ShortConstant) value).shortValue();
+            } else if (value instanceof CharConstant) {
+                return ((CharConstant) value).charValue();
+            } else if (value instanceof ByteConstant) {
+                return ((ByteConstant) value).byteValue();
+            }
+        }
+
+        return value;
     }
 
     private static boolean sameChars(String str, char[] chars) {

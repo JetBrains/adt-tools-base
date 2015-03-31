@@ -17,7 +17,6 @@
 package com.android.tools.lint.checks;
 
 import com.android.tools.lint.ExternalAnnotationRepository;
-import com.android.tools.lint.LintCliClient;
 import com.android.tools.lint.detector.api.Detector;
 
 public class SupportAnnotationDetectorTest extends AbstractCheckTest {
@@ -193,6 +192,12 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                 + "src/test/pkg/IntDefTest.java:80: Error: Must be one of: IntDefTest.TYPE_1, IntDefTest.TYPE_2 [WrongConstant]\n"
                 + "        setTitle(\"\", \"type2\"); // ERROR\n"
                 + "                     ~~~~~~~\n"
+                + "src/test/pkg/IntDefTest.java:87: Error: Must be one of: IntDefTest.TYPE_1, IntDefTest.TYPE_2 [WrongConstant]\n"
+                + "        setTitle(\"\", type); // ERROR\n"
+                + "                     ~~~~\n"
+                + "src/test/pkg/IntDefTest.java:92: Error: Must be one or more of: IntDefTest.STYLE_NORMAL, IntDefTest.STYLE_NO_TITLE, IntDefTest.STYLE_NO_FRAME, IntDefTest.STYLE_NO_INPUT [WrongConstant]\n"
+                + "        setFlags(\"\", flag); // ERROR\n"
+                + "                     ~~~~\n"
                 + (SDK_ANNOTATIONS_AVAILABLE ?
                 "src/test/pkg/IntDefTest.java:99: Error: Must be one of: View.LAYOUT_DIRECTION_LTR, View.LAYOUT_DIRECTION_RTL, View.LAYOUT_DIRECTION_INHERIT, View.LAYOUT_DIRECTION_LOCAL [WrongConstant]\n"
                 + "        view.setLayoutDirection(View.TEXT_DIRECTION_LTR); // ERROR\n"
@@ -206,8 +211,8 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                 + "src/test/pkg/IntDefTest.java:102: Error: Must be one of: Context.POWER_SERVICE, Context.WINDOW_SERVICE, Context.LAYOUT_INFLATER_SERVICE, Context.ACCOUNT_SERVICE, Context.ACTIVITY_SERVICE, Context.ALARM_SERVICE, Context.NOTIFICATION_SERVICE, Context.ACCESSIBILITY_SERVICE, Context.CAPTIONING_SERVICE, Context.KEYGUARD_SERVICE, Context.LOCATION_SERVICE, Context.SEARCH_SERVICE, Context.SENSOR_SERVICE, Context.STORAGE_SERVICE, Context.WALLPAPER_SERVICE, Context.VIBRATOR_SERVICE, Context.CONNECTIVITY_SERVICE, Context.WIFI_SERVICE, Context.WIFI_P2P_SERVICE, Context.NSD_SERVICE, Context.AUDIO_SERVICE, Context.MEDIA_ROUTER_SERVICE, Context.TELEPHONY_SERVICE, Context.TELECOM_SERVICE, Context.CLIPBOARD_SERVICE, Context.INPUT_METHOD_SERVICE, Context.TEXT_SERVICES_MANAGER_SERVICE, Context.APPWIDGET_SERVICE, Context.DROPBOX_SERVICE, Context.DEVICE_POLICY_SERVICE, Context.UI_MODE_SERVICE, Context.DOWNLOAD_SERVICE, Context.NFC_SERVICE, Context.BLUETOOTH_SERVICE, Context.USB_SERVICE, Context.LAUNCHER_APPS_SERVICE, Context.INPUT_SERVICE, Context.DISPLAY_SERVICE, Context.USER_SERVICE, Context.RESTRICTIONS_SERVICE, Context.APP_OPS_SERVICE, Context.CAMERA_SERVICE, Context.PRINT_SERVICE, Context.CONSUMER_IR_SERVICE, Context.TV_INPUT_SERVICE, Context.MEDIA_SESSION_SERVICE, Context.BATTERY_SERVICE, Context.JOB_SCHEDULER_SERVICE, Context.MEDIA_PROJECTION_SERVIC [WrongConstant]\n"
                 + "        context.getSystemService(TYPE_1); // ERROR\n"
                 + "                                 ~~~~~~\n"
-                + "18 errors, 0 warnings\n" :
-                "14 errors, 0 warnings\n"),
+                + "20 errors, 0 warnings\n" :
+                "16 errors, 0 warnings\n"),
 
                 lintProject("src/test/pkg/IntDefTest.java.txt=>src/test/pkg/IntDefTest.java",
                         "src/android/support/annotation/IntDef.java.txt=>src/android/support/annotation/IntDef.java",
@@ -261,7 +266,10 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                 + "src/p1/p2/Flow.java:32: Error: Expected resource identifier (R.type.name) [ResourceType]\n"
                 + "        myAnyResMethod(50); // ERROR\n"
                 + "                       ~~\n"
-                + (SDK_ANNOTATIONS_AVAILABLE ? "4 errors, 0 warnings\n" : "2 errors, 0 warnings\n"),
+                + "src/p1/p2/Flow.java:68: Error: Expected resource of type drawable [ResourceType]\n"
+                + "        myMethod(z); // ERROR\n"
+                + "                 ~\n"
+                + (SDK_ANNOTATIONS_AVAILABLE ? "5 errors, 0 warnings\n" : "3 errors, 0 warnings\n"),
 
                 lintProject("src/p1/p2/Flow.java.txt=>src/p1/p2/Flow.java",
                         "src/android/support/annotation/DrawableRes.java.txt=>src/android/support/annotation/DrawableRes.java"));

@@ -20,10 +20,10 @@ import static com.android.tools.lint.client.api.JavaParser.TYPE_STRING;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.tools.lint.client.api.JavaParser.ResolvedField;
 import com.android.tools.lint.client.api.JavaParser.ResolvedMethod;
 import com.android.tools.lint.client.api.JavaParser.ResolvedNode;
 import com.android.tools.lint.detector.api.Category;
+import com.android.tools.lint.detector.api.ConstantEvaluator;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
@@ -36,12 +36,9 @@ import java.util.Iterator;
 import java.util.List;
 
 import lombok.ast.AstVisitor;
-import lombok.ast.BinaryExpression;
-import lombok.ast.BinaryOperator;
 import lombok.ast.Expression;
 import lombok.ast.MethodInvocation;
 import lombok.ast.Node;
-import lombok.ast.StringLiteral;
 
 /**
  * Detector which looks for problems related to SQLite usage
@@ -105,7 +102,7 @@ public class SQLiteDetector extends Detector implements Detector.JavaScanner {
                 && node.astArguments().size() == method.getArgumentCount()) {
             Iterator<Expression> iterator = node.astArguments().iterator();
             Node argument = iterator.next();
-            String sql = findLiteralValue(context, argument, true);
+            String sql = ConstantEvaluator.evaluateString(context, argument, true);
             if (sql != null && (sql.startsWith("CREATE TABLE") || sql.startsWith("ALTER TABLE"))
                     && sql.matches(".*\\bSTRING\\b.*")) {
                 String message = "Using column type STRING; did you mean to use TEXT? "
@@ -115,39 +112,5 @@ public class SQLiteDetector extends Detector implements Detector.JavaScanner {
                 context.report(ISSUE, node, context.getLocation(node), message);
             }
         }
-    }
-
-    @Nullable
-    private static String findLiteralValue(@NonNull JavaContext context, @NonNull Node argument,
-            boolean allowUnknowns) {
-        if (argument instanceof StringLiteral) {
-            return ((StringLiteral)argument).astValue();
-        } else if (argument instanceof BinaryExpression) {
-            BinaryExpression expression = (BinaryExpression) argument;
-            if (expression.astOperator() == BinaryOperator.PLUS) {
-                String left = findLiteralValue(context, expression.astLeft(), allowUnknowns);
-                String right = findLiteralValue(context, expression.astRight(), allowUnknowns);
-                if (left != null && right != null) {
-                    return left + right;
-                } else if (allowUnknowns) {
-                    if (left != null) {
-                        return left;
-                    } else if (right != null) {
-                        return right;
-                    }
-                }
-            }
-        } else {
-            ResolvedNode resolved = context.resolve(argument);
-            if (resolved instanceof ResolvedField) {
-                ResolvedField field = (ResolvedField) resolved;
-                Object value = field.getValue();
-                if (value instanceof String) {
-                    return (String)value;
-                }
-            }
-        }
-
-        return null;
     }
 }
