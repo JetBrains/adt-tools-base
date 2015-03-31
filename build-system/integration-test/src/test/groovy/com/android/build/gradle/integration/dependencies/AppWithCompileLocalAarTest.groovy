@@ -52,7 +52,7 @@ dependencies {
 }
 """
 
-        model = project.getSingleModel()
+        model = project.getSingleModelIgnoringSyncIssues()
     }
 
     @AfterClass

@@ -276,6 +276,7 @@ public class DependencyManager {
                         foundJars,
                         artifacts,
                         reverseMap,
+                        currentUnresolvedDependencies,
                         0);
             } else if (dependencyResult instanceof UnresolvedDependencyResult) {
                 ComponentSelector attempted = ((UnresolvedDependencyResult) dependencyResult).getAttempted();
@@ -303,6 +304,7 @@ public class DependencyManager {
                         foundJars,
                         artifacts,
                         reverseMap,
+                        currentUnresolvedDependencies,
                         0);
             } else if (dependencyResult instanceof UnresolvedDependencyResult) {
                 ComponentSelector attempted = ((UnresolvedDependencyResult) dependencyResult)
@@ -694,6 +696,7 @@ public class DependencyManager {
             Map<ModuleVersionIdentifier, List<JarInfo>> alreadyFoundJars,
             Map<ModuleVersionIdentifier, List<ResolvedArtifact>> artifacts,
             Multimap<LibraryDependency, VariantDependencies> reverseMap,
+            Set<String> currentUnresolvedDependencies,
             int indent) {
 
         ModuleVersionIdentifier moduleVersion = resolvedComponentResult.getModuleVersion();
@@ -747,7 +750,13 @@ public class DependencyManager {
                             alreadyFoundJars,
                             artifacts,
                             reverseMap,
+                            currentUnresolvedDependencies,
                             indent+1);
+                } else if (dependencyResult instanceof UnresolvedDependencyResult) {
+                    ComponentSelector attempted = ((UnresolvedDependencyResult) dependencyResult).getAttempted();
+                    if (attempted != null) {
+                        currentUnresolvedDependencies.add(attempted.toString());
+                    }
                 }
             }
 

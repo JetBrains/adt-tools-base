@@ -25,12 +25,12 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.integration.common.fixture.app.AbstractAndroidTestApp;
 import com.android.build.gradle.integration.common.fixture.app.AndroidTestApp;
-import com.android.build.gradle.integration.common.fixture.app.EmptyAndroidTestApp;
 import com.android.build.gradle.integration.common.fixture.app.TestSourceFile;
 import com.android.build.gradle.integration.common.utils.FileHelper;
 import com.android.build.gradle.integration.common.utils.JacocoAgent;
 import com.android.build.gradle.integration.common.utils.SdkHelper;
 import com.android.builder.model.AndroidProject;
+import com.android.builder.model.SyncIssue;
 import com.android.io.StreamException;
 import com.android.sdklib.internal.project.ProjectProperties;
 import com.android.sdklib.internal.project.ProjectPropertiesWorkingCopy;
@@ -557,11 +557,22 @@ public class GradleTestProject implements TestRule {
     /**
      * Returns the project model without building.
      *
-     * This will fail if the project is a multi-project setup.
+     * This will fail if the project is a multi-project setup or if there are any sync issues
+     * while loading the project.
      */
     @NonNull
     public AndroidProject getSingleModel() {
-        return getSingleModel(false);
+        return getSingleModel(false /* emualteStudio_1_0 */, true /*assertNodSyncIssues */);
+    }
+
+    /**
+     * Returns the project model without building.
+     *
+     * This will fail if the project is a multi-project setup.
+     */
+    @NonNull
+    public AndroidProject getSingleModelIgnoringSyncIssues() {
+        return getSingleModel(false /* emualteStudio_1_0 */, false /*assertNodSyncIssues */);
     }
 
     /**
@@ -570,9 +581,11 @@ public class GradleTestProject implements TestRule {
      * This will fail if the project is a multi-project setup.
      *
      * @param emulateStudio_1_0 whether to emulate an older IDE (studio 1.0) querying the model.
+     * @param assertNoSyncIssues true if the presence of sync issues during the model evaluation
+     *                           should raise a {@link AssertionError}s
      */
     @NonNull
-    public AndroidProject getSingleModel(boolean emulateStudio_1_0) {
+    public AndroidProject getSingleModel(boolean emulateStudio_1_0, boolean assertNoSyncIssues) {
         ProjectConnection connection = getProjectConnection();
         try {
             Map<String, AndroidProject> modelMap = buildModel(
@@ -584,17 +597,50 @@ public class GradleTestProject implements TestRule {
             assertEquals("Quering GradleTestProject.getModel() with multi-project settings",
                     1, modelMap.size());
 
-            return modelMap.get(":");
+            AndroidProject androidProject = modelMap.get(":");
+            if (assertNoSyncIssues) {
+                assertNoSyncIssues(androidProject);
+            }
+            return androidProject;
         } finally {
             connection.close();
         }
     }
 
     /**
-     * Returns a project model for each sub-project without building.
+     * Returns a project model for each sub-project without building generating a
+     * {@link AssertionError} if any sync issue is raised during the model loading.
      */
     @NonNull
     public Map<String, AndroidProject> getAllModels() {
+        Map<String, AndroidProject> allModels = getAllModels(new GetAndroidModelAction(), false);
+        for (AndroidProject project : allModels.values()) {
+            assertNoSyncIssues(project);
+        }
+        return allModels;
+    }
+
+    private static void assertNoSyncIssues(AndroidProject project) {
+        if (!project.getSyncIssues().isEmpty()) {
+            StringBuilder msg = new StringBuilder();
+            msg.append("Project ")
+                    .append(project.getName())
+                    .append(" had sync issues :\n");
+            for (SyncIssue syncIssue : project.getSyncIssues()) {
+                msg.append(syncIssue);
+                msg.append("\n");
+            }
+            fail(msg.toString());
+        }
+    }
+
+    /**
+     * Returns a project model for each sub-project without building and ignoring potential sync
+     * issues. Sync issues will still be returned for each {@link AndroidProject} that failed to
+     * sync properly.
+     */
+    @NonNull
+    public Map<String, AndroidProject> getAllModelsIgnoringSyncIssues() {
         return getAllModels(new GetAndroidModelAction(), false);
     }
 
