@@ -21,7 +21,6 @@ import com.android.build.FilterData;
 import com.android.build.OutputFile;
 import com.android.build.gradle.BaseExtension;
 import com.android.build.gradle.api.AndroidSourceSet;
-import com.android.build.gradle.internal.StringHelper;
 import com.android.build.gradle.internal.TaskManager;
 import com.android.build.gradle.internal.api.DefaultAndroidSourceSet;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
@@ -43,6 +42,7 @@ import com.android.build.gradle.tasks.ProcessAndroidResources;
 import com.android.build.gradle.tasks.RenderscriptCompile;
 import com.android.builder.core.VariantType;
 import com.android.builder.model.SourceProvider;
+import com.android.utils.StringHelper;
 import com.google.common.base.Objects;
 import com.google.common.collect.Lists;
 
