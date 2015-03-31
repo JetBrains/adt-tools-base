@@ -107,12 +107,12 @@ dependencies {
         Dependencies artifactDependencies = appArtifact.getDependencies()
 
         Collection<AndroidLibrary> directLibraries = artifactDependencies.getLibraries()
-        Assert.assertEquals(1, directLibraries.size())
+        Assert.assertEquals(variantName, 1, directLibraries.size())
         AndroidLibrary directLibrary = directLibraries.iterator().next()
-        Assert.assertEquals(':library', directLibrary.getProject())
+        Assert.assertEquals(variantName, ':library', directLibrary.getProject())
 
         List<? extends AndroidLibrary> transitiveLibraries = directLibrary.getLibraryDependencies()
-        Assert.assertEquals(1, transitiveLibraries.size())
+        Assert.assertEquals(variantName, 1, transitiveLibraries.size())
         AndroidLibrary transitiveLibrary = transitiveLibraries.get(0)
         Assert.assertEquals(variantName, aarCoodinate, transitiveLibrary.getResolvedCoordinates().toString())
     }
