@@ -23,7 +23,6 @@ import com.android.builder.model.AndroidArtifact
 import com.android.builder.model.AndroidLibrary
 import com.android.builder.model.AndroidProject
 import com.android.builder.model.Dependencies
-import com.android.builder.model.JavaLibrary
 import com.android.builder.model.Variant
 import groovy.transform.CompileStatic
 import org.junit.AfterClass

@@ -53,7 +53,7 @@ dependencies {
     @Test
     public void "Test mismatch dependency error is in model"() {
         // Query the model to get the mismatch dep sync error.
-        AndroidProject model = project.getSingleModel()
+        AndroidProject model = project.getSingleModelIgnoringSyncIssues()
 
         assertThat(model).issues().hasSingleIssue(
                 SyncIssue.SEVERITY_ERROR,

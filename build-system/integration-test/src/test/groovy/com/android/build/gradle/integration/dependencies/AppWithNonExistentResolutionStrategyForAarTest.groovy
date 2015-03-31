@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 The Android Open Source Project
+ * Copyright (C) 2015 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,46 +14,69 @@
  * limitations under the License.
  */
 
-
-
 package com.android.build.gradle.integration.dependencies
+
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.builder.model.AndroidProject
 import com.android.builder.model.SyncIssue
+import com.google.common.collect.Iterables
 import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
 
-import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
+import static org.junit.Assert.assertEquals
+import static org.junit.Assert.assertTrue
+
 /**
- * test for dependency on a jar with a dependency on a library
+ * test for flavored dependency on a different package.
  */
 @CompileStatic
-class AppWithJarDependOnLibTest {
+class AppWithNonExistentResolutionStrategyForAarTest {
 
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
             .fromTestProject("projectWithModules")
             .create()
+
     static Map<String, AndroidProject> models
 
     @BeforeClass
     static void setUp() {
+        project.getBuildFile() << """
+subprojects {
+    apply from: "\$rootDir/../commonLocalRepo.gradle"
+}
+"""
         project.getSubproject('app').getBuildFile() << """
 
 dependencies {
-    compile project(':jar')
+    debugCompile project(':library')
+    releaseCompile project(':library')
 }
+
+configurations { _debugCompile }
+
+configurations._debugCompile {
+  resolutionStrategy {
+    eachDependency { DependencyResolveDetails details ->
+      if (details.requested.name == 'jdeferred-android-aar') {
+        details.useVersion '-1.-1.-1'
+      }
+    }
+  }
+}
+
 """
 
-        project.getSubproject('jar').getBuildFile() << """
+        project.getSubproject('library').getBuildFile() << """
 
 dependencies {
-    compile project(':library')
+    compile 'org.jdeferred:jdeferred-android-aar:1.2.3'
 }
 """
+
         models = project.getAllModelsIgnoringSyncIssues()
     }
 
@@ -64,10 +87,11 @@ dependencies {
     }
 
     @Test
-    void "check model failed to load"() {
-        assertThat(models.get(':app')).issues().hasSingleIssue(
-                SyncIssue.SEVERITY_ERROR,
-                SyncIssue.TYPE_JAR_DEPEND_ON_AAR,
-                'projectWithModules:jar:jar:unspecified')
+    void "check we received a sync issue"() {
+        assertEquals(1, models.get(":app").getSyncIssues().size());
+        SyncIssue syncIssue = Iterables.getOnlyElement(models.get(":app").getSyncIssues());
+        assertEquals(SyncIssue.SEVERITY_ERROR, syncIssue.getSeverity());
+        assertEquals(SyncIssue.TYPE_UNRESOLVED_DEPENDENCY, syncIssue.getType());
+        assertTrue(syncIssue.message.contains("org.jdeferred:jdeferred-android-aar:-1.-1.-1"));
     }
 }
