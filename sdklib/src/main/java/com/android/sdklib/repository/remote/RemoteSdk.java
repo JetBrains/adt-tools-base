@@ -39,6 +39,7 @@ import com.android.sdklib.repository.SdkRepoConstants;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
 import com.android.sdklib.repository.descriptors.PkgType;
 import com.android.utils.ILogger;
+import com.android.utils.NullLogger;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
@@ -55,6 +56,10 @@ public class RemoteSdk {
     private final SdkSources mSdkSources = new SdkSources();
     private long mSdkSourceTS;
     private DownloadCache mDownloadCache;
+
+    public RemoteSdk(ILogger logger) {
+        this(new SettingsController(logger));
+    }
 
     public RemoteSdk(SettingsController settingsController) {
         mSettingsController = settingsController;
