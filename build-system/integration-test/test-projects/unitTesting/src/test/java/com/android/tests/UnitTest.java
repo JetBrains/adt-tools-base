@@ -79,7 +79,7 @@ public class UnitTest {
             assertEquals(RuntimeException.class, e.getClass());
             assertTrue(e.getMessage().contains("isEmpty"));
             assertTrue(e.getMessage().contains("not mocked"));
-            assertTrue(e.getMessage().contains("tech-docs/unit-testing-support"));
+            assertTrue(e.getMessage().contains("androidstudio/not-mocked"));
         }
 
         try {
@@ -89,7 +89,7 @@ public class UnitTest {
             assertEquals(RuntimeException.class, e.getClass());
             assertTrue(e.getMessage().contains("getThreadAllocCount"));
             assertTrue(e.getMessage().contains("not mocked"));
-            assertTrue(e.getMessage().contains("tech-docs/unit-testing-support"));
+            assertTrue(e.getMessage().contains("androidstudio/not-mocked"));
         }
 
     }
