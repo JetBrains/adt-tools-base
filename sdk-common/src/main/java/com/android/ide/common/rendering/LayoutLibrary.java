@@ -281,7 +281,7 @@ public class LayoutLibrary {
                 // Features were introduced in API level 13.
                 return mBridge.supports(capability);
             } else {
-                return capability <= Features.SIMULATE_PLATFORM
+                return capability <= Features.LAST_CAPABILITY
                         && mBridge.getCapabilities().contains(Capability.values()[capability]);
             }
         }
