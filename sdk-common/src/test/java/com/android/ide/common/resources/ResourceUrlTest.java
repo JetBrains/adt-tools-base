@@ -31,6 +31,8 @@ public class ResourceUrlTest extends TestCase {
         assertNull(ResourceUrl.parse(""));
         assertNull(ResourceUrl.parse("not_a_resource"));
         assertNull(ResourceUrl.parse("@null"));
+        assertNull(ResourceUrl.parse("@empty"));
+        assertNull(ResourceUrl.parse("@undefined"));
         assertNull(ResourceUrl.parse("@?"));
         assertNull(ResourceUrl.parse("@android:layout"));
         assertNull(ResourceUrl.parse("@layout"));
