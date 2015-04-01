@@ -15,6 +15,8 @@
  */
 
 package com.android.build.gradle.internal.model;
+import static com.android.builder.model.AndroidProject.ARTIFACT_MAIN;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.OutputFile;
@@ -63,8 +65,6 @@ import java.io.File;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-
-import static com.android.builder.model.AndroidProject.ARTIFACT_MAIN;
 
 /**
  * Builder for the custom Android model.
@@ -190,8 +190,7 @@ public class ModelBuilder implements ToolingModelBuilder {
     @NonNull
     private VariantImpl createVariant(
             @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData) {
-        AndroidArtifact mainArtifact = createAndroidArtifact(
-                ARTIFACT_MAIN, variantData, androidBuilder, extraModelInfo);
+        AndroidArtifact mainArtifact = createAndroidArtifact(ARTIFACT_MAIN, variantData);
 
         GradleVariantConfiguration variantConfiguration = variantData.getVariantConfiguration();
 
@@ -216,9 +215,7 @@ public class ModelBuilder implements ToolingModelBuilder {
                             case ANDROID_TEST:
                                 extraAndroidArtifacts.add(createAndroidArtifact(
                                         variantType.getArtifactName(),
-                                        testVariantData,
-                                        androidBuilder,
-                                        extraModelInfo));
+                                        testVariantData));
                                 break;
                             case UNIT_TEST:
                                 clonedExtraJavaArtifacts.add(createUnitTestsJavaArtifact(
@@ -263,8 +260,7 @@ public class ModelBuilder implements ToolingModelBuilder {
     private JavaArtifactImpl createUnitTestsJavaArtifact(
             @NonNull VariantType variantType,
             @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData) {
-        SourceProviders sourceProviders = determineSourceProviders(variantType.getArtifactName(),
-                variantData, extraModelInfo);
+        SourceProviders sourceProviders = determineSourceProviders(variantData);
         DependenciesImpl dependencies = DependenciesImpl.cloneDependencies(variantData,
                 androidBuilder);
 
@@ -290,11 +286,9 @@ public class ModelBuilder implements ToolingModelBuilder {
                 sourceProviders.multiFlavorSourceProvider);
     }
 
-    private static AndroidArtifact createAndroidArtifact(
+    private AndroidArtifact createAndroidArtifact(
             @NonNull String name,
-            @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData,
-            @NonNull AndroidBuilder androidBuilder,
-            @NonNull ExtraModelInfo extraModelInfo) {
+            @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData) {
         GradleVariantConfiguration variantConfiguration = variantData.getVariantConfiguration();
 
         SigningConfig signingConfig = variantConfiguration.getSigningConfig();
@@ -303,7 +297,7 @@ public class ModelBuilder implements ToolingModelBuilder {
             signingConfigName = signingConfig.getName();
         }
 
-        SourceProviders sourceProviders = determineSourceProviders(name, variantData, extraModelInfo);
+        SourceProviders sourceProviders = determineSourceProviders(variantData);
 
         // get the outputs
         List<? extends BaseVariantOutputData> variantOutputs = variantData.getOutputs();
@@ -363,24 +357,11 @@ public class ModelBuilder implements ToolingModelBuilder {
     }
 
     private static SourceProviders determineSourceProviders(
-            @NonNull String name,
-            @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData,
-            @NonNull ExtraModelInfo extraModelInfo) {
-        SourceProvider variantSourceProvider = null;
-        SourceProvider multiFlavorSourceProvider = null;
-
-        if (ARTIFACT_MAIN.equals(name)) {
-            variantSourceProvider = variantData.getVariantConfiguration().getVariantSourceProvider();
-            multiFlavorSourceProvider = variantData.getVariantConfiguration().getMultiFlavorSourceProvider();
-        } else {
-            SourceProviderContainer container = getSourceProviderContainer(
-                    extraModelInfo.getExtraVariantSourceProviders(
-                            variantData.getVariantConfiguration().getFullName()),
-                    name);
-            if (container != null) {
-                variantSourceProvider = container.getSourceProvider();
-            }
-        }
+            @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData) {
+        SourceProvider variantSourceProvider =
+                variantData.getVariantConfiguration().getVariantSourceProvider();
+        SourceProvider multiFlavorSourceProvider =
+                variantData.getVariantConfiguration().getMultiFlavorSourceProvider();
 
         return new SourceProviders(
                 variantSourceProvider != null ?
