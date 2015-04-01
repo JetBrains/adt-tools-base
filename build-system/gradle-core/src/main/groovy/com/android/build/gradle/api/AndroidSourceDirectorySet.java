@@ -84,6 +84,10 @@ public interface AndroidSourceDirectorySet extends PatternFilterable {
 
     /**
      * Returns the resolved directories.
+     *
+     * <p>Setter can be called with a collection of {@link Object}s, just like
+     * Gradle's {@code project.file(...)}.
+     *
      * @return a non null set of File objects.
      */
     @NonNull
