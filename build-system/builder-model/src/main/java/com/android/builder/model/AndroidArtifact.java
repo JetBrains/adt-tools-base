@@ -75,9 +75,13 @@ public interface AndroidArtifact extends BaseArtifact {
      * Returns all the source folders that are generated. This is typically folders for the R,
      * the aidl classes, and the renderscript classes.
      *
+     * Deprecated, as of 1.2, present in super interface.
+     *
      * @return a list of folders.
      */
     @NonNull
+    @Override
+    @Deprecated
     Collection<File> getGeneratedSourceFolders();
 
     /**

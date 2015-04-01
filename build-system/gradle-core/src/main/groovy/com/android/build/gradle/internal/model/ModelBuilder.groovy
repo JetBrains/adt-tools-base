@@ -282,6 +282,7 @@ public class ModelBuilder implements ToolingModelBuilder {
                 variantData.assembleVariantTask.name,
                 variantData.compileTask.name,
                 [variantData.prepareDependenciesTask.name, taskManager.createMockableJar.name] as Set,
+                variantData.extraGeneratedSourceFolders,
                 variantData.javaCompileTask.destinationDir,
                 dependencies,
                 sourceProviders.variantSourceProvider,

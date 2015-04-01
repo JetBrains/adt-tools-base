@@ -218,6 +218,7 @@ public class ExtraModelInfo {
             @NonNull BaseVariant variant,
             @NonNull String assembleTaskName,
             @NonNull String javaCompileTaskName,
+            @NonNull Collection<File> generatedSourceFolders,
             @NonNull Iterable<String> ideSetupTaskNames,
             @NonNull Configuration configuration,
             @NonNull File classesFolder,
@@ -234,8 +235,9 @@ public class ExtraModelInfo {
 
         JavaArtifact artifact = new JavaArtifactImpl(
                 name, assembleTaskName, javaCompileTaskName, ideSetupTaskNames,
-                classesFolder, new ConfigurationDependencies(configuration),
-                sourceProvider, null);
+                generatedSourceFolders, classesFolder,
+                new ConfigurationDependencies(configuration), sourceProvider, null);
+
         extraJavaArtifacts.put(variant.getName(), artifact);
     }
 
