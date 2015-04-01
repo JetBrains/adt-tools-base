@@ -100,7 +100,8 @@ public class SimpleTestRunner implements TestRunner {
                             testedApks = testData.getTestedApks(
                                     mProcessExecutor,
                                     mSplitSelectExec,
-                                    deviceConfigProvider);
+                                    deviceConfigProvider,
+                                    logger);
                         } catch (ProcessException e) {
                             throw new TestException(e);
                         }

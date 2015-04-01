@@ -1,19 +1,23 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 21
+  compileSdkVersion 21
     buildToolsVersion = rootProject.ext.buildToolsVersion
 
     publishNonDefault true
     generatePureSplits true
 
-    defaultConfig {
-        minSdkVersion 21
-    }
+  defaultConfig {
+    versionCode 12
+    minSdkVersion 21
+    targetSdkVersion 21
+  }
 
-    splits {
-        density {
-            enable true
-        }
+  splits {
+    density {
+      enable true
+      exclude "ldpi", "tvdpi", "xxxhdpi"
     }
+  }
 }
+
