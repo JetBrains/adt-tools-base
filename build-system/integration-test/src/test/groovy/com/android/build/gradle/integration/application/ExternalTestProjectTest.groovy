@@ -149,7 +149,7 @@ dependencies {
 }
 """
 
-        Map<String, AndroidProject> modelMap = project.getAllModels()
+        Map<String, AndroidProject> modelMap = project.getAllModelsIgnoringSyncIssues()
 
         AndroidProject model = modelMap.get(':app2')
         assertNotNull(model)

@@ -55,7 +55,7 @@ dependencies {
     compile 'foo:bar:1.2.3'
 }
 """
-        assertThat(project.getSingleModel()).issues().hasSingleIssue(
+        assertThat(project.getSingleModelIgnoringSyncIssues()).issues().hasSingleIssue(
                 SyncIssue.SEVERITY_ERROR,
                 SyncIssue.TYPE_UNRESOLVED_DEPENDENCY,
                 'foo:bar:1.2.3')
