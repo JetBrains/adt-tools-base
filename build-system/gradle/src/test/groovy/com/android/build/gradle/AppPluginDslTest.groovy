@@ -402,6 +402,48 @@ public class AppPluginDslTest extends BaseTest {
         }
     }
 
+    public void testProguardDsl_initWith() throws Exception {
+        Project project = ProjectBuilder.builder().withProjectDir(
+                new File(testDir, "${FOLDER_TEST_PROJECTS}/basic")).build()
+
+        project.apply plugin: 'com.android.application'
+
+        project.android {
+            compileSdkVersion 15
+
+            buildTypes {
+                common {
+                    testProguardFile 'file1.1'
+                }
+
+                custom1.initWith(buildTypes.common)
+                custom2.initWith(buildTypes.common)
+
+                custom1 {
+                    testProguardFile 'file2.1'
+                }
+            }
+        }
+
+        AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
+        plugin.createAndroidTasks(false)
+
+        def variantsData = plugin.variantManager.variantDataList
+        Map<String, GradleVariantConfiguration> variantMap =
+                variantsData.collectEntries {[it.name, it.variantConfiguration]}
+
+        def expectedFiles = [
+                common: ["file1.1"],
+                custom1: ["file1.1", "file2.1"],
+                custom2: ["file1.1"],
+        ]
+
+        expectedFiles.each { name, expected ->
+            List<File> actual = variantMap[name].testProguardFiles
+            assert (actual*.name as Set) == (expected as Set), name
+        }
+    }
+
     public void testSettingLanguageLevelFromCompileSdk() {
         def testLanguageLevel = { version, expectedLanguageLevel, useJack ->
             Project project = ProjectBuilder.builder().withProjectDir(
