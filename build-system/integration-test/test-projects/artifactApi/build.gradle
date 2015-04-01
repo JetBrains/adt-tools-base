@@ -44,6 +44,7 @@ android.applicationVariants.all { variant ->
             [],                                          // tasks to generate sources etc. in the IDE.
             configurations.foo,
             new File("classesFolder:$variant.name"),     // location of the classes folder (compile output)
+            new File("resources:$variant.name"),         // location of the resources folder
             getProvider("provider:$variant.name"))       // source provider specific to this variant for the artifact.
 }
 
