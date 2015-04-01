@@ -28,6 +28,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 
@@ -55,7 +56,7 @@ public class SplitSelectTool {
             @NonNull File splitSelectExec,
             @NonNull String deviceConfig,
             @NonNull String mainApkPath,
-            @NonNull List<String> splitApksPath) throws ProcessException {
+            @NonNull Collection<String> splitApksPath) throws ProcessException {
 
         ProcessInfoBuilder processBuilder = new ProcessInfoBuilder();
         processBuilder.setExecutable(splitSelectExec);
