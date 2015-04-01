@@ -562,7 +562,18 @@ public class GradleTestProject implements TestRule {
      */
     @NonNull
     public AndroidProject getSingleModel() {
-        return getSingleModel(false /* emualteStudio_1_0 */, true /*assertNodSyncIssues */);
+        return getSingleModel(false /* emulateStudio_1_0 */, true /*assertNodSyncIssues */);
+    }
+
+    /**
+     * Returns the project model without building, querying it the way Studio 1.0 does.
+     *
+     * This will fail if the project is a multi-project setup or if there are any sync issues
+     * while loading the project.
+     */
+    @NonNull
+    public AndroidProject getSingleModelAsStudio1() {
+        return getSingleModel(true /* emulateStudio_1_0 */, true /*assertNodSyncIssues */);
     }
 
     /**
@@ -572,7 +583,17 @@ public class GradleTestProject implements TestRule {
      */
     @NonNull
     public AndroidProject getSingleModelIgnoringSyncIssues() {
-        return getSingleModel(false /* emualteStudio_1_0 */, false /*assertNodSyncIssues */);
+        return getSingleModel(false /* emulateStudio_1_0 */, false /*assertNodSyncIssues */);
+    }
+
+    /**
+     * Returns the project model without building, querying it the way Studio 1.0 does.
+     *
+     * This will fail if the project is a multi-project setup.
+     */
+    @NonNull
+    public AndroidProject getSingleModelIgnoringSyncIssuesAsStudio1() {
+        return getSingleModel(true /* emulateStudio_1_0 */, false /*assertNodSyncIssues */);
     }
 
     /**
@@ -585,7 +606,7 @@ public class GradleTestProject implements TestRule {
      *                           should raise a {@link AssertionError}s
      */
     @NonNull
-    public AndroidProject getSingleModel(boolean emulateStudio_1_0, boolean assertNoSyncIssues) {
+    private AndroidProject getSingleModel(boolean emulateStudio_1_0, boolean assertNoSyncIssues) {
         ProjectConnection connection = getProjectConnection();
         try {
             Map<String, AndroidProject> modelMap = buildModel(

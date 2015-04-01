@@ -59,6 +59,6 @@ dependencies {
 
     @Test(expected=BuildException.class)
     void "check model failed to load"() {
-        project.getSingleModel(true /*emulateStudio_1_0*/, true /* assertNoSyncIssues */)
+        project.getSingleModelAsStudio1()
     }
 }
