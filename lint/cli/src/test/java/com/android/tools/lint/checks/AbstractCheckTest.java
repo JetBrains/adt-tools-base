@@ -67,6 +67,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.io.Files;
 
+import org.intellij.lang.annotations.Language;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -233,6 +234,16 @@ public abstract class AbstractCheckTest extends SdkTestCase {
         return checkLint(client, Collections.singletonList(projectDir));
     }
 
+    /**
+     * Run lint on the given files when constructed as a separate project
+     * @return The output of the lint check. On Windows, this transforms all directory
+     *   separators to the unix-style forward slash.
+     */
+    protected String lintProject(TestFile... files) throws Exception {
+        File projectDir = getProjectDir(null, files);
+        return checkLint(Collections.singletonList(projectDir));
+    }
+
     @Override
     protected File getTargetDir() {
         File targetDir = new File(getTempDir(), getClass().getSimpleName() + "_" + getName());
@@ -240,8 +251,50 @@ public abstract class AbstractCheckTest extends SdkTestCase {
         return targetDir;
     }
 
+    @NonNull
+    public TestFile file() {
+        return new TestFile();
+    }
+
+    @NonNull
+    public TestFile source(@NonNull String to, @NonNull String source) {
+        return file().to(to).withSource(source);
+    }
+
+    @NonNull
+    public TestFile java(@NonNull String to, @NonNull @Language("JAVA") String source) {
+        return file().to(to).withSource(source);
+    }
+
+    @NonNull
+    public TestFile xml(@NonNull String to, @NonNull @Language("XML") String source) {
+        return file().to(to).withSource(source);
+    }
+
+    @NonNull
+    public TestFile copy(@NonNull String from, @NonNull String to) {
+        return file().from(from).to(to);
+    }
+
+    @NonNull
+    public TestFile copy(@NonNull String from) {
+        return file().from(from).to(from);
+    }
+
     /** Creates a project directory structure from the given files */
     protected File getProjectDir(String name, String ...relativePaths) throws Exception {
+        assertFalse("getTargetDir must be overridden to make a unique directory",
+                getTargetDir().equals(getTempDir()));
+
+        List<TestFile> testFiles = Lists.newArrayList();
+        for (String relativePath : relativePaths) {
+            testFiles.add(file().copy(relativePath));
+        }
+        return getProjectDir(name, testFiles.toArray(new TestFile[testFiles.size()]));
+    }
+
+    /** Creates a project directory structure from the given files */
+    protected File getProjectDir(String name, TestFile... testFiles) throws Exception {
         assertFalse("getTargetDir must be overridden to make a unique directory",
                 getTargetDir().equals(getTempDir()));
 
@@ -253,11 +306,9 @@ public abstract class AbstractCheckTest extends SdkTestCase {
             assertTrue(projectDir.getPath(), projectDir.mkdirs());
         }
 
-        List<File> files = new ArrayList<File>();
-        for (String relativePath : relativePaths) {
-            File file = getTestfile(projectDir, relativePath);
+        for (TestFile fp : testFiles) {
+            File file = fp.createFile(projectDir);
             assertNotNull(file);
-            files.add(file);
         }
 
         addManifestFile(projectDir);

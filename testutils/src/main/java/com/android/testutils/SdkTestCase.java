@@ -16,6 +16,8 @@
 package com.android.testutils;
 
 import com.android.SdkConstants;
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Sets;
 import com.google.common.io.ByteStreams;
@@ -23,6 +25,9 @@ import com.google.common.io.Closeables;
 import com.google.common.io.Files;
 import com.google.common.io.InputSupplier;
 
+import junit.framework.TestCase;
+
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -32,8 +37,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
-
-import junit.framework.TestCase;
 
 /**
  * Common test case for SDK unit tests. Contains a number of general utility methods
@@ -326,13 +329,7 @@ public abstract class SdkTestCase extends TestCase {
     }
 
     protected void deleteFile(File dir) {
-        if (dir.isDirectory()) {
-            for (File f : dir.listFiles()) {
-                deleteFile(f);
-            }
-        } else if (dir.isFile()) {
-            assertTrue(dir.getPath(), dir.delete());
-        }
+        TestUtils.deleteFile(dir);
     }
 
     protected File makeTestFile(String name, String relative,
@@ -365,6 +362,71 @@ public abstract class SdkTestCase extends TestCase {
         }, tempFile);
 
         return tempFile;
+    }
+
+    /**
+     * Test file description, which can copy from resource directory or from
+     * a specified hardcoded string literal, and copy into a target directory
+     */
+    public class TestFile {
+        public String sourceRelativePath;
+        public String targetRelativePath;
+        public String contents;
+
+        public TestFile() {
+        }
+
+        public TestFile withSource(@NonNull String source) {
+            contents = source;
+            return this;
+        }
+
+        public TestFile from(@NonNull String from) {
+            sourceRelativePath = from;
+            return this;
+        }
+
+        public TestFile to(@NonNull String to) {
+            targetRelativePath = to;
+            return this;
+        }
+
+        public TestFile copy(@NonNull String relativePath) {
+            // Support replacing filenames and paths with a => syntax, e.g.
+            //   dir/file.txt=>dir2/dir3/file2.java
+            // will read dir/file.txt from the test data and write it into the target
+            // directory as dir2/dir3/file2.java
+            String targetPath = relativePath;
+            int replaceIndex = relativePath.indexOf("=>"); //$NON-NLS-1$
+            if (replaceIndex != -1) {
+                // foo=>bar
+                targetPath = relativePath.substring(replaceIndex + "=>".length());
+                relativePath = relativePath.substring(0, replaceIndex);
+            }
+            sourceRelativePath = relativePath;
+            targetRelativePath = targetPath;
+            return this;
+        }
+
+        @NonNull
+        public File createFile(@NonNull File targetDir) throws IOException {
+            InputStream stream;
+            if (contents != null) {
+                stream = new ByteArrayInputStream(contents.getBytes(Charsets.UTF_8));
+            } else {
+                stream = getTestResource(sourceRelativePath, true);
+            }
+            assertNotNull(sourceRelativePath + " does not exist", stream);
+            int index = targetRelativePath.lastIndexOf('/');
+            String relative = null;
+            String name = targetRelativePath;
+            if (index != -1) {
+                name = targetRelativePath.substring(index + 1);
+                relative = targetRelativePath.substring(0, index);
+            }
+
+            return makeTestFile(targetDir, name, relative, stream);
+        }
     }
 
     protected File getTestfile(File targetDir, String relativePath) throws IOException {

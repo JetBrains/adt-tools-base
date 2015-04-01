@@ -21,5 +21,6 @@
     <orderEntry type="library" name="gson" level="project" />
     <orderEntry type="module" module-name="builder-test-api" />
     <orderEntry type="module" module-name="sdklib-base" exported="" />
+    <orderEntry type="library" scope="TEST" name="easymock-tools" level="project" />
   </component>
 </module>
