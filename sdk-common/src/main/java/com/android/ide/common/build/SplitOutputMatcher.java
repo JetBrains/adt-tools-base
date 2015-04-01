@@ -18,16 +18,18 @@ package com.android.ide.common.build;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.annotations.concurrency.Immutable;
 import com.android.build.FilterData;
 import com.android.build.OutputFile;
 import com.android.build.VariantOutput;
+import com.android.builder.testing.api.DeviceConfigProvider;
+import com.android.ide.common.process.ProcessException;
+import com.android.ide.common.process.ProcessExecutor;
 import com.android.resources.Density;
-import com.google.common.base.Objects;
-import com.google.common.base.Optional;
-import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -38,6 +40,81 @@ import java.util.Set;
  * Helper class to help with installation of multi-output variants.
  */
 public class SplitOutputMatcher {
+
+
+    /**
+     * Determines and return the list of APKs to use based on given device density and abis.
+     *
+     * if there are pure splits, use the split-select tool otherwise revert to store logic.
+     *
+     * @param processExecutor an executor to execute native processes.
+     * @param splitSelectExe the split select tool optionally.
+     * @param deviceConfigProvider the device configuration.
+     * @param outputs the list of variant outputs for find the best matching one.
+     * @param variantAbiFilters the supported ABIs.
+     * @return the list of APK files to install.
+     * @throws ProcessException
+     */
+    @NonNull
+    public static List<File> computeBestOutput(
+            @NonNull ProcessExecutor processExecutor,
+            @Nullable File splitSelectExe,
+            @NonNull DeviceConfigProvider deviceConfigProvider,
+            @NonNull List<? extends VariantOutput> outputs,
+            @Nullable Collection<String> variantAbiFilters) throws ProcessException {
+
+        // build the list of APKs.
+        List<String> splitApksPath = new ArrayList<String>();
+        OutputFile mainApk = null;
+        for (VariantOutput output : outputs) {
+            for (OutputFile outputFile : output.getOutputs()) {
+                if (!outputFile.getOutputFile().getAbsolutePath().equals(
+                        output.getMainOutputFile().getOutputFile().getAbsolutePath())) {
+
+                    splitApksPath.add(outputFile.getOutputFile().getAbsolutePath());
+                }
+            }
+            mainApk = output.getMainOutputFile();
+        }
+
+        List<File> apkFiles = new ArrayList<File>();
+        if (splitSelectExe == null && !splitApksPath.isEmpty()) {
+            throw new RuntimeException(
+                    "Pure splits installation requires build tools 22 or above");
+        }
+        if (mainApk == null) {
+            throw new RuntimeException(
+                    "Cannot retrieve the main APK from variant outputs");
+        }
+        if (!splitApksPath.isEmpty()) {
+
+            Set<String> resultApksPath = new HashSet<String>();
+            for (String abi : deviceConfigProvider.getAbis()) {
+                resultApksPath.addAll(SplitSelectTool.splitSelect(
+                        processExecutor,
+                        splitSelectExe,
+                        deviceConfigProvider.getConfigFor(abi),
+                        mainApk.getOutputFile().getAbsolutePath(),
+                        splitApksPath));
+            }
+            for (String resultApkPath : resultApksPath) {
+                apkFiles.add(new File(resultApkPath));
+            }
+            // and add back the main APK.
+            apkFiles.add(mainApk.getOutputFile());
+        } else {
+            // now look for a matching output file
+            List<OutputFile> outputFiles = SplitOutputMatcher.computeBestOutput(
+                    outputs,
+                    variantAbiFilters,
+                    deviceConfigProvider.getDensity(),
+                    deviceConfigProvider.getAbis());
+            for (OutputFile outputFile : outputFiles) {
+                apkFiles.add(outputFile.getOutputFile());
+            }
+        }
+        return apkFiles;
+    }
 
     /**
      * Determines and return the list of APKs to use based on given device density and abis.
@@ -58,11 +135,9 @@ public class SplitOutputMatcher {
     @NonNull
     public static List<OutputFile> computeBestOutput(
             @NonNull List<? extends VariantOutput> outputs,
-            @Nullable Set<String> variantAbiFilters,
+            @Nullable Collection<String> variantAbiFilters,
             int deviceDensity,
-            @Nullable String language,
-            @Nullable String region,
-            @NonNull List<String> deviceAbis) {
+            @NonNull Collection<String> deviceAbis) {
         Density densityEnum = Density.getEnum(deviceDensity);
 
         String densityValue;
@@ -105,36 +180,15 @@ public class SplitOutputMatcher {
         });
 
         OutputFile mainOutputFile = match.getMainOutputFile();
-        if (match.getOutputs().size() == 1) {
-            return isMainApkCompatibleWithDevice(mainOutputFile, variantAbiFilters, deviceAbis)
-                    ? ImmutableList.<OutputFile>of(mainOutputFile)
-                    : ImmutableList.<OutputFile>of();
-        } else {
-            // we are dealing with pure splits.
-            ImmutableList.Builder<OutputFile> apks = ImmutableList.builder();
-            apks.add(mainOutputFile);
-            addIfPresent(apks, findAbiCompatibleSplitApk(match, deviceAbis));
-            addIfPresent(apks, findDensityCompatibleSplitApk(match, densityValue));
-            if (language != null) {
-                apks.addAll(findLocaleCompatibleSplitApk(match, language, region));
-            }
-            return apks.build();
-        }
-    }
-
-    private static void addIfPresent(
-            ImmutableList.Builder<OutputFile> apks,
-            Optional<OutputFile> optionalOutputFile) {
-
-        if (optionalOutputFile.isPresent()) {
-            apks.add(optionalOutputFile.get());
-        }
+        return isMainApkCompatibleWithDevice(mainOutputFile, variantAbiFilters, deviceAbis)
+                ? ImmutableList.of(mainOutputFile)
+                : ImmutableList.<OutputFile>of();
     }
 
     private static boolean isMainApkCompatibleWithDevice(
             OutputFile mainOutputFile,
-            Set<String> variantAbiFilters,
-            List<String> deviceAbis) {
+            Collection<String> variantAbiFilters,
+            Collection<String> deviceAbis) {
         // so far, we are not dealing with the pure split files...
         if (getFilter(mainOutputFile, OutputFile.ABI) == null && variantAbiFilters != null) {
             // if we have a match that has no abi filter, and we have variant-level filters, then
@@ -147,130 +201,6 @@ public class SplitOutputMatcher {
             return false;
         }
         return true;
-    }
-
-    private static Optional<OutputFile> findAbiCompatibleSplitApk(
-            VariantOutput variantOutput,
-            List<String> deviceAbis) {
-
-        for (String deviceAbi : deviceAbis) {
-            for (OutputFile outputFile : variantOutput.getOutputs()) {
-                if (outputFile.getOutputType().equals(OutputFile.SPLIT)
-                        && deviceAbi.equals(getFilter(outputFile, OutputFile.ABI))) {
-                    return Optional.of(outputFile);
-                }
-            }
-        }
-        return Optional.absent();
-    }
-
-    private static Optional<OutputFile> findDensityCompatibleSplitApk(
-            VariantOutput variantOutput,
-            String densityValue) {
-        for (OutputFile outputFile : variantOutput.getOutputs()) {
-            if (outputFile.getOutputType().equals(OutputFile.SPLIT)
-                    && densityValue.equals(getFilter(outputFile, OutputFile.DENSITY))) {
-                return Optional.of(outputFile);
-            }
-        }
-        return Optional.absent();
-    }
-
-    /**
-     * Find the most compatible pure split for a specific language and region. If a pure split
-     * apk for that language and that region (possibly null) is found in the {@see variantOutput},
-     * it will be returned. If a match is not found for that particular region, the generic
-     * language version will be returned if found or {@link Optional#absent()} if not.
-     *
-     * @param variantOutput the variant output with all the pure split APKs information.
-     * @param deviceLanguage the device language.
-     * @param deviceRegion optional device region.
-     * @return the matching language pure split APK of {@link Optional#absent()}.
-     */
-    private static List<OutputFile> findLocaleCompatibleSplitApk(
-            @NonNull VariantOutput variantOutput,
-            @NonNull String deviceLanguage,
-            @Nullable String deviceRegion) {
-
-        List<LocaleApk> languageCompatibleApks =
-                findLanguageCompatibleSplitApks(variantOutput, deviceLanguage);
-
-        ImmutableList.Builder<OutputFile> regionCompatibleApks =
-                ImmutableList.builder();
-
-        @Nullable LocaleApk genericRegionApk = null;
-        for (LocaleApk localeApk : languageCompatibleApks) {
-            if (Objects.equal(deviceRegion, localeApk.mRegion)) {
-                regionCompatibleApks.add(localeApk.mOutputFile);
-            }
-            if (localeApk.mRegion == null) {
-                genericRegionApk = localeApk;
-            }
-        }
-        // always add the generic language APK in case the region specific one does not define all
-        // the strings.
-        if (genericRegionApk != null && deviceRegion != null) {
-            regionCompatibleApks.add(genericRegionApk.mOutputFile);
-        }
-
-        return regionCompatibleApks.build();
-    }
-
-    /**
-     * Find all passed language compatible pure split APKs irrespective of the APK's region.
-     * @param variantOutput the variant output will all the pure split APKs information/
-     * @param deviceLanguage the device language to find all compatible APKs irrespecitive of the
-     *                       APK regions.
-     * @return the list of language compatible APKs.
-     */
-    private static ImmutableList<LocaleApk> findLanguageCompatibleSplitApks(
-            VariantOutput variantOutput,
-            String deviceLanguage) {
-
-        ImmutableList.Builder<LocaleApk> compatibleApks = ImmutableList.builder();
-        for (OutputFile outputFile : variantOutput.getOutputs()) {
-            if (outputFile.getOutputType().equals(OutputFile.SPLIT)) {
-                String languagesAndOptionalRegions = getFilter(outputFile, OutputFile.LANGUAGE);
-
-                if (languagesAndOptionalRegions != null) {
-                    Splitter splitter = Splitter.on('_');
-                    for(String languageAndOptionRegion :
-                            splitter.splitToList(languagesAndOptionalRegions)) {
-                        // this could be greatly improved when switching to JDK 7
-                        @NonNull String splitLanguage;
-                        @Nullable String splitRegion = null;
-                        if (languageAndOptionRegion.indexOf('-') != -1) {
-                            splitLanguage = languageAndOptionRegion.substring(0,
-                                    languageAndOptionRegion.indexOf('-'));
-                            splitRegion = languageAndOptionRegion.substring(
-                                    languageAndOptionRegion.indexOf('-') + 1);
-                        } else {
-                            splitLanguage = languageAndOptionRegion;
-                        }
-                        if (deviceLanguage.equals(splitLanguage)) {
-                            compatibleApks
-                                    .add(new LocaleApk(outputFile, splitLanguage, splitRegion));
-                        }
-                    }
-                }
-            }
-        }
-        return compatibleApks.build();
-    }
-
-    private static class LocaleApk {
-        @NonNull private final OutputFile mOutputFile;
-        @NonNull private final String mLanguage;
-        @Nullable private final String mRegion;
-
-        private LocaleApk(
-                @NonNull OutputFile outputFile,
-                @NonNull String language,
-                @Nullable String region) {
-            mOutputFile = outputFile;
-            mLanguage = language;
-            mRegion = region;
-        }
     }
 
     @Nullable

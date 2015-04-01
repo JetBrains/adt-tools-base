@@ -20,5 +20,6 @@
     <orderEntry type="module" module-name="builder-model" exported="" />
     <orderEntry type="library" name="mockito" level="project" />
     <orderEntry type="library" name="gson" level="project" />
+    <orderEntry type="module" module-name="builder-test-api" />
   </component>
 </module>

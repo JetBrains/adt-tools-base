@@ -27,8 +27,9 @@ import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.ApkInfoParser;
 import com.android.builder.model.SourceProvider;
 import com.android.builder.testing.TestData;
-import com.android.ide.common.build.SplitOutputMatcher;
+import com.android.builder.testing.api.DeviceConfigProvider;
 import com.android.ide.common.process.ProcessException;
+import com.android.ide.common.process.ProcessExecutor;
 import com.android.sdklib.BuildToolInfo;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
@@ -86,8 +87,11 @@ public class TestApplicationTestData extends  AbstractTestDataImpl {
 
     @NonNull
     @Override
-    public ImmutableList<File> getTestedApks(int density, @Nullable String language,
-            @Nullable String region, @NonNull List<String> abis) {
+    public ImmutableList<File> getTestedApks(
+            @NonNull ProcessExecutor processExecutor,
+            @Nullable File splitSelectExe,
+            @NonNull DeviceConfigProvider deviceConfigProvider) throws ProcessException {
+
         // retrieve the apk from the dependency handler ?
 
         ImmutableList.Builder<File> testedApks = ImmutableList.builder();
