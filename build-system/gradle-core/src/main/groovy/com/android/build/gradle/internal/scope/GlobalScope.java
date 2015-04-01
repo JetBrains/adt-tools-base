@@ -21,6 +21,7 @@ import static com.android.builder.model.AndroidProject.PROPERTY_APK_LOCATION;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.BaseExtension;
+import com.android.build.gradle.internal.SdkHandler;
 import com.android.builder.core.AndroidBuilder;
 
 import org.gradle.api.Project;
@@ -39,16 +40,19 @@ public class GlobalScope {
     private String projectBaseName;
     @NonNull
     private BaseExtension extension;
+    private SdkHandler sdkHandler;
 
     public GlobalScope(
             @NonNull Project project,
             @NonNull AndroidBuilder androidBuilder,
             @NonNull String projectBaseName,
-            @NonNull BaseExtension extension) {
+            @NonNull BaseExtension extension,
+            @NonNull SdkHandler sdkHandler) {
         this.project = project;
         this.androidBuilder = androidBuilder;
         this.projectBaseName = projectBaseName;
         this.extension = extension;
+        this.sdkHandler = sdkHandler;
     }
 
     @NonNull
@@ -69,6 +73,11 @@ public class GlobalScope {
     @NonNull
     public String getProjectBaseName() {
         return projectBaseName;
+    }
+
+    @NonNull
+    public SdkHandler getSdkHandler() {
+        return sdkHandler;
     }
 
     @NonNull

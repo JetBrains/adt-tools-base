@@ -22,6 +22,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.BaseExtension;
 import com.android.build.gradle.TestExtension;
+import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.DeviceProviderInstrumentTestTask;
 import com.android.build.gradle.internal.test.TestApplicationTestData;
 import com.android.build.gradle.internal.variant.BaseVariantData;
@@ -125,9 +126,10 @@ public class TestApplicationTaskManager extends ApplicationTaskManager {
     @Override
     @Nullable
     public File maybeCreateProguardTasks(
-            @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData,
-            @Nullable BaseVariantData<? extends BaseVariantOutputData> testedVariantData,
-            @NonNull PostCompilationData pcData) {
+            TaskFactory tasks,
+            VariantScope scope,
+            @NonNull final PostCompilationData pcData) {
+        BaseVariantData<? extends BaseVariantOutputData> variantData = scope.getVariantData();
 
         final TestModuleProGuardTask proguardTask = project.getTasks().create(
                 "proguard"+ variantData.getVariantConfiguration().getFullName().toUpperCase(

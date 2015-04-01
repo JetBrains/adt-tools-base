@@ -16,23 +16,22 @@
 
 package com.android.build.gradle.internal.scope;
 
+import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
+
 import com.android.annotations.NonNull;
-import com.android.build.gradle.BaseExtension;
+import com.android.annotations.Nullable;
+import com.android.build.gradle.internal.TaskManager;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.variant.ApkVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
-import com.android.build.gradle.tasks.ZipAlign;
-import com.android.builder.core.AndroidBuilder;
+import com.android.build.gradle.internal.variant.LibraryVariantData;
+import com.android.build.gradle.internal.variant.TestVariantData;
 import com.android.builder.core.VariantConfiguration;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
-
-import org.gradle.api.Project;
 
 import java.io.File;
 import java.util.Collection;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -44,20 +43,25 @@ public class VariantScope {
     private GlobalScope globalScope;
     @NonNull
     private BaseVariantData<? extends BaseVariantOutputData> variantData;
-    @NonNull
+
+    @Nullable
     private Collection<Object> ndkBuildable;
-    @NonNull
+    @Nullable
     private Collection<File> ndkOutputDirectories;
+
+    // Tasks
+    @Nullable
+    private AndroidTask dexTask;
+    @Nullable
+    private AndroidTask javaCompileTask;
+    @Nullable
+    private AndroidTask jacocoIntrumentTask;
 
     public VariantScope(
             @NonNull GlobalScope globalScope,
-            @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData,
-            @NonNull Collection<Object> ndkBuildable,
-            @NonNull Collection<File> ndkOutputDirectories) {
+            @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData) {
         this.globalScope = globalScope;
         this.variantData = variantData;
-        this.ndkBuildable = ndkBuildable;
-        this.ndkOutputDirectories = ndkOutputDirectories;
     }
 
     @NonNull
@@ -75,18 +79,28 @@ public class VariantScope {
         return variantData.getVariantConfiguration();
     }
 
-    @NonNull
+    @Nullable
     public Collection<Object> getNdkBuildable() {
         return ndkBuildable;
     }
 
-    @NonNull
+    public void setNdkBuildable(@NonNull Collection<Object> ndkBuildable) {
+        this.ndkBuildable = ndkBuildable;
+    }
+
+    @Nullable
     public Collection<File> getNdkOutputDirectories() {
         return ndkOutputDirectories;
     }
 
+    public void setNdkOutputDirectories(@NonNull Collection<File> ndkOutputDirectories) {
+        this.ndkOutputDirectories = ndkOutputDirectories;
+    }
+
     @NonNull
     public Set<File> getJniFolders() {
+        assert getNdkOutputDirectories() != null;
+
         VariantConfiguration config = getVariantConfiguration();
         ApkVariantData apkVariantData = (ApkVariantData) variantData;
         // for now only the project's compilation output.
@@ -104,5 +118,97 @@ public class VariantScope {
             }
         }
         return set;
+    }
+
+    @Nullable
+    public BaseVariantData getTestedVariantData() {
+        return variantData instanceof TestVariantData ?
+                (BaseVariantData) ((TestVariantData) variantData).getTestedVariantData() :
+                null;
+    }
+
+    @NonNull
+    public File getDexOutputFolder() {
+        return new File(getGlobalScope().getBuildDir() + "/" + FD_INTERMEDIATES +
+                "/dex/" + getVariantConfiguration().getDirName());
+
+    }
+
+    @NonNull
+    public File getJavaOutputDir() {
+        return new File(globalScope.getBuildDir() + "/" + FD_INTERMEDIATES + "/classes/" +
+                variantData.getVariantConfiguration().getDirName());
+    }
+
+    @NonNull
+    public File getPreDexOutputDir() {
+        return new File(globalScope.getBuildDir() + "/" + FD_INTERMEDIATES + "/pre-dexed/" +
+                getVariantConfiguration().getDirName());
+    }
+
+    @NonNull
+    public File getProguardOutputFile() {
+        return (variantData instanceof LibraryVariantData) ?
+                new File(globalScope.getBuildDir() + "/" + FD_INTERMEDIATES + "/"  +
+                        TaskManager.DIR_BUNDLES + "/"  +
+                        getVariantConfiguration().getDirName() + "/classes.jar") :
+                new File(globalScope.getBuildDir() + "/" + FD_INTERMEDIATES + "/"  +
+                        "/classes-proguard/" +
+                        getVariantConfiguration().getDirName() + "/classes.jar");
+    }
+
+    @NonNull
+    public File getProguardComponentsJarFile() {
+        return new File(
+                globalScope.getBuildDir() + "/" + FD_INTERMEDIATES + "/multi-dex/" +
+                        getVariantConfiguration().getDirName() + "/componentClasses.jar");
+    }
+
+    @NonNull
+    public File getJarMergingOutputFile() {
+        return new File(globalScope.getBuildDir() + "/"  + FD_INTERMEDIATES + "/multi-dex/"  +
+                getVariantConfiguration().getDirName() + "/allclasses.jar");
+    }
+
+    @NonNull
+    public File getManifestKeepListFile() {
+        return new File(globalScope.getBuildDir() + "/"  + FD_INTERMEDIATES + "/multi-dex/"  +
+                getVariantConfiguration().getDirName() + "/manifest_keep.txt");
+    }
+
+    @NonNull
+    public File getMainDexListFile() {
+        return new File(globalScope.getBuildDir() + "/"  + FD_INTERMEDIATES  + "/multi-dex/"
+                + getVariantConfiguration().getDirName()  + "/maindexlist.txt");
+    }
+
+    // Tasks getters/setters.
+
+    @Nullable
+    public AndroidTask getDexTask() {
+        return dexTask;
+    }
+
+    public void setDexTask(@NonNull AndroidTask dexTask) {
+        this.dexTask = dexTask;
+    }
+
+    @Nullable
+    public AndroidTask getJavaCompileTask() {
+        return javaCompileTask;
+    }
+
+    public void setJavaCompileTask(@NonNull AndroidTask javaCompileTask) {
+        this.javaCompileTask = javaCompileTask;
+    }
+
+    @Nullable
+    public AndroidTask getJacocoIntrumentTask() {
+        return jacocoIntrumentTask;
+    }
+
+    public void setJacocoIntrumentTask(
+            @NonNull AndroidTask jacocoIntrumentTask) {
+        this.jacocoIntrumentTask = jacocoIntrumentTask;
     }
 }

@@ -16,15 +16,19 @@
 package com.android.build.gradle.internal.tasks;
 
 import com.android.build.gradle.internal.LoggerWrapper;
+import com.android.build.gradle.internal.TaskManager;
+import com.android.build.gradle.internal.scope.ConventionMappingHelper;
+import com.android.build.gradle.internal.scope.TaskConfigAction;
+import com.android.build.gradle.internal.scope.VariantScope;
+import com.android.build.gradle.internal.variant.ApkVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantData;
-import com.android.builder.internal.InstallUtils;
 import com.android.builder.sdk.SdkInfo;
 import com.android.builder.testing.ConnectedDeviceProvider;
 import com.android.builder.testing.api.DeviceConnector;
 import com.android.builder.testing.api.DeviceException;
 import com.android.builder.testing.api.DeviceProvider;
-import com.android.ddmlib.IDevice;
 import com.android.utils.ILogger;
+import com.android.utils.StringHelper;
 
 import org.gradle.api.Task;
 import org.gradle.api.logging.LogLevel;
@@ -32,11 +36,11 @@ import org.gradle.api.logging.Logger;
 import org.gradle.api.specs.Spec;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFile;
-import org.gradle.api.tasks.Optional;
 import org.gradle.api.tasks.TaskAction;
 
 import java.io.File;
 import java.util.List;
+import java.util.concurrent.Callable;
 
 public class UninstallTask extends BaseTask {
 
@@ -108,5 +112,47 @@ public class UninstallTask extends BaseTask {
 
     public void setTimeOutInMs(int timeoutInMs) {
         mTimeOutInMs = timeoutInMs;
+    }
+
+    public static class ConfigAction implements TaskConfigAction<UninstallTask> {
+
+        private final VariantScope scope;
+
+        public ConfigAction(VariantScope scope) {
+            this.scope = scope;
+        }
+
+        @Override
+        public String getName() {
+            return "uninstall"
+                    + StringHelper.capitalize(scope.getVariantConfiguration().getFullName());
+        }
+
+        @Override
+        public Class<UninstallTask> getType() {
+            return UninstallTask.class;
+        }
+
+        @Override
+        public void execute(UninstallTask uninstallTask) {
+
+            uninstallTask.setDescription(
+                    "Uninstalls the " + scope.getVariantData().getDescription() + ".");
+            uninstallTask.setGroup(TaskManager.INSTALL_GROUP);
+            uninstallTask.setVariant(scope.getVariantData());
+            uninstallTask.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
+            uninstallTask.setTimeOutInMs(
+                    scope.getGlobalScope().getExtension().getAdbOptions().getTimeOutInMs());
+
+            ConventionMappingHelper.map(uninstallTask, "adbExe", new Callable<File>() {
+                @Override
+                public File call() throws Exception {
+                    final SdkInfo info = scope.getGlobalScope().getSdkHandler().getSdkInfo();
+                    return (info == null ? null : info.getAdb());
+                }
+            });
+
+            ((ApkVariantData) scope.getVariantData()).uninstallTask = uninstallTask;
+        }
     }
 }

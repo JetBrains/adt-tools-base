@@ -16,12 +16,15 @@
 
 package com.android.build.gradle.internal.scope;
 
+import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
+
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.TaskFactory;
 import com.android.build.gradle.internal.variant.ApkVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.tasks.PackageApplication;
 import com.android.build.gradle.tasks.ZipAlign;
+import com.android.builder.model.AndroidProject;
 import com.android.utils.StringHelper;
 import com.google.common.collect.ImmutableMap;
 
@@ -78,5 +81,11 @@ public class VariantOutputScope {
             // otherwise default one.
             return getGlobalScope().getProject().file(getGlobalScope().getDefaultApkLocation() + "/" + apkName);
         }
+    }
+
+    @NonNull
+    public File getCompressedResourceFile() {
+        return new File(getGlobalScope().getBuildDir() + "/" + FD_INTERMEDIATES + "/resources/" +
+                "resources-" + variantOutputData.getBaseName() + "-stripped.ap_");
     }
 }

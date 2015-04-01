@@ -25,6 +25,8 @@ import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.build.gradle.internal.variant.BaseVariantOutputData
 import com.android.builder.core.AndroidBuilder
 import com.android.builder.profile.ExecutionType
+import com.android.builder.profile.Recorder
+import com.android.builder.profile.ThreadRecorder
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry
@@ -49,6 +51,9 @@ class ApplicationTaskManager extends TaskManager {
             @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData) {
         assert variantData instanceof ApplicationVariantData;
         ApplicationVariantData appVariantData = (ApplicationVariantData) variantData;
+
+        // Create a variant scope containing the data needed for the tasks.
+        VariantScope variantScope = createVariantScope(variantData);
 
         createAnchorTasks(variantData);
         createCheckManifestTask(variantData);
@@ -107,9 +112,9 @@ class ApplicationTaskManager extends TaskManager {
             if (variantData.getVariantConfiguration().getUseJack()) {
                 createJackTask(appVariantData, null /*testedVariant*/);
             } else {
-                createJavaCompileTask(variantData, null /*testedVariant*/);
-                createJarTask(variantData);
-                createPostCompilationTasks(appVariantData);
+                createJavaCompileTask(tasks, variantScope);
+                createJarTask(tasks, variantScope);
+                createPostCompilationTasks(tasks, variantScope);
             }
         }
 
@@ -119,11 +124,8 @@ class ApplicationTaskManager extends TaskManager {
                 createNdkTasks(variantData);
             }
         }
-
-        // Variant scope should be created at the beginning of the function, but there is currently
-        // a dependency on the NdkCompile tasks, and the scope mechanism does not support lazy
-        // evaluation yet.
-        VariantScope variantScope = createVariantScope(variantData);
+        variantScope.setNdkBuildable(getNdkBuildable(variantData))
+        variantScope.setNdkOutputDirectories(getNdkOutputDirectories(variantData))
 
         if (variantData.getSplitHandlingPolicy() ==
                 BaseVariantData.SplitHandlingPolicy.RELEASE_21_AND_AFTER_POLICY) {
@@ -137,6 +139,11 @@ class ApplicationTaskManager extends TaskManager {
         }
         SpanRecorders.record(ExecutionType.APP_TASK_MANAGER_CREATE_PACKAGING_TASK) {
             createPackagingTask(tasks, variantScope, true /*publishApk*/);
+        }
+
+        // create the lint tasks.
+        SpanRecorders.record(ExecutionType.APP_TASK_MANAGER_CREATE_LINT_TASK) {
+            createLintTasks(tasks, variantScope);
         }
     }
 

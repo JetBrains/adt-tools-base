@@ -22,6 +22,7 @@ import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.LibraryExtension
 import com.android.build.gradle.internal.core.GradleVariantConfiguration
 import com.android.build.gradle.internal.profile.SpanRecorders
+import com.android.build.gradle.internal.scope.VariantScope
 import com.android.build.gradle.internal.tasks.MergeFileTask
 import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.build.gradle.internal.variant.BaseVariantOutputData
@@ -80,6 +81,8 @@ class LibraryTaskManager extends TaskManager {
         LibraryVariantData libVariantData = variantData as LibraryVariantData
         GradleVariantConfiguration variantConfig = variantData.variantConfiguration
         DefaultBuildType buildType = variantConfig.buildType
+
+        VariantScope variantScope = createVariantScope(variantData);
 
         String fullName = variantConfig.fullName
         String dirName = variantConfig.dirName
@@ -165,7 +168,7 @@ class LibraryTaskManager extends TaskManager {
 
         // Add a compile task
         SpanRecorders.record(ExecutionType.LIB_TASK_MANAGER_CREATE_COMPILE_TASK) {
-            createJavaCompileTask(variantData, null /*testedVariant*/)
+            createJavaCompileTask(tasks, variantScope);
         }
 
         // package the prebuilt native libs into the bundle folder
@@ -238,14 +241,14 @@ class LibraryTaskManager extends TaskManager {
         // post-compilation steps are inserted between the compilation and dx.
         PostCompilationData pcData = new PostCompilationData()
         SpanRecorders.record(ExecutionType.LIB_TASK_MANAGER_CREATE_POST_COMPILATION_TASK) {
-            pcData.classGeneratingTask = Collections.singletonList(variantData.javaCompileTask)
+            pcData.classGeneratingTask = [variantScope.javaCompileTask.name]
             pcData.libraryGeneratingTask = Collections.singletonList(
                     variantData.variantDependency.packageConfiguration.buildDependencies)
             pcData.inputFiles = {
                 return variantData.javaCompileTask.outputs.files.files
             }
             pcData.inputDir = {
-                return variantData.javaCompileTask.destinationDir
+                return variantScope.javaOutputDir
             }
             pcData.inputLibraries = {
                 return Collections.emptyList()
@@ -253,14 +256,14 @@ class LibraryTaskManager extends TaskManager {
 
             // if needed, instrument the code
             if (instrumented) {
-                pcData = createJacocoTask(variantConfig, variantData, pcData)
+                pcData = createJacocoTask(tasks, variantScope, pcData);
             }
         }
 
         if (buildType.isMinifyEnabled()) {
             // run proguard on output of compile task
             SpanRecorders.record(ExecutionType.LIB_TASK_MANAGER_CREATE_PROGUARD_TASK) {
-                File outFile = maybeCreateProguardTasks(variantData, null, pcData)
+                File outFile = maybeCreateProguardTasks(tasks, variantScope, pcData);
                 pcData.inputFiles = { [outFile] }
                 pcData.inputDir = null
                 pcData.inputLibraries = { [] }
@@ -404,6 +407,10 @@ class LibraryTaskManager extends TaskManager {
                 return getFolder();
             }
         };
+
+        SpanRecorders.record(ExecutionType.LIB_TASK_MANAGER_CREATE_LINT_TASK) {
+            createLintTasks(tasks, variantScope);
+        }
     }
 
     public ExtractAnnotations createExtractAnnotations(

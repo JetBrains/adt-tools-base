@@ -291,16 +291,6 @@ public class VariantManager implements VariantModel {
                     new Recorder.Property(SpanRecorders.VARIANT, variantData.getName()));
         }
 
-        // create the lint tasks.
-        ThreadRecorder.get().record(ExecutionType.VARIANT_MANAGER_CREATE_LINT_TASKS,
-                new Recorder.Block<Void>() {
-                    @Override
-                    public Void call() throws Exception {
-                        taskManager.createLintTasks(tasks, variantDataList);
-                        return null;
-                    }
-                });
-
         // Create the variant API objects after the tasks have been created!
         createApiObjects();
 
