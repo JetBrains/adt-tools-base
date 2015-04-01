@@ -107,7 +107,7 @@ public interface BaseArtifact {
      * the aidl classes, and the renderscript classes.
      *
      * @return a list of folders.
-     * @since 1.2, it was in AndroidArtifact before.
+     * @since 1.2
      */
     @NonNull
     Collection<File> getGeneratedSourceFolders();
