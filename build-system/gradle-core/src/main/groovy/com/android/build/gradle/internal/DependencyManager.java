@@ -775,7 +775,7 @@ public class DependencyManager {
 
             if (moduleArtifacts != null) {
                 for (ResolvedArtifact artifact : moduleArtifacts) {
-                    if (EXT_LIB_ARCHIVE.equals(artifact.getType())) {
+                    if (EXT_LIB_ARCHIVE.equals(artifact.getExtension())) {
                         if (DEBUG_DEPENDENCY) {
                             printIndent(indent, "TYPE: AAR");
                         }
@@ -832,7 +832,7 @@ public class DependencyManager {
                         outLibraries.add(libInfo);
                         reverseMap.put(libInfo, configDependencies);
 
-                    } else if (EXT_JAR.equals(artifact.getType())) {
+                    } else if (EXT_JAR.equals(artifact.getExtension())) {
                         if (DEBUG_DEPENDENCY) {
                             printIndent(indent, "TYPE: JAR");
                         }
@@ -862,7 +862,7 @@ public class DependencyManager {
                         jarsForThisModule.add(jarInfo);
                         outJars.add(jarInfo);
 
-                    } else if (EXT_ANDROID_PACKAGE.equals(artifact.getType())) {
+                    } else if (EXT_ANDROID_PACKAGE.equals(artifact.getExtension())) {
                         StringBuilder nameBuilder = new StringBuilder();
 
                         nameBuilder.append(moduleVersion.getGroup())
@@ -884,7 +884,7 @@ public class DependencyManager {
                                         "Dependency %s on project %s resolves to an APK archive " +
                                         "which is not supported as a compilation dependency. File: %s",
                                         name, project.getName(), artifact.getFile())));
-                    } else if ("apklib".equals(artifact.getType())) {
+                    } else if ("apklib".equals(artifact.getExtension())) {
                         StringBuilder nameBuilder = new StringBuilder();
 
                         nameBuilder.append(moduleVersion.getGroup())
@@ -905,6 +905,24 @@ public class DependencyManager {
                                 String.format(
                                         "Packaging for dependency %s is 'apklib' and is not supported. " +
                                         "Only 'aar' libraries are supported.", name)));
+                    } else {
+                        StringBuilder nameBuilder = new StringBuilder();
+
+                        nameBuilder.append(moduleVersion.getGroup())
+                                .append(':')
+                                .append(moduleVersion.getName())
+                                .append(':')
+                                .append(moduleVersion.getVersion());
+
+                        if (artifact.getClassifier() != null && !artifact.getClassifier().isEmpty()) {
+                            nameBuilder.append(':').append(artifact.getClassifier());
+                        }
+
+                        String name = nameBuilder.toString();
+
+                        logger.warning(String.format(
+                                        "Unrecognized dependency: '%s' (type: '%s', extension: '%s')",
+                                        name, artifact.getType(), artifact.getExtension()));
                     }
                 }
             }
