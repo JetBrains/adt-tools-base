@@ -781,7 +781,10 @@ public class GradleTestProject implements TestRule {
         }
         executer.withArguments(Iterables.toArray(arguments, String.class));
 
-        executer.setJvmArguments(Iterables.toArray(getDebugJvmArguments(), String.class));
+        List<String> debugJvmArguments = getDebugJvmArguments();
+        if (!debugJvmArguments.isEmpty()) {
+            executer.setJvmArguments(Iterables.toArray(debugJvmArguments, String.class));
+        }
 
         executer.setStandardOutput(System.out);
         executer.setStandardError(System.err);
