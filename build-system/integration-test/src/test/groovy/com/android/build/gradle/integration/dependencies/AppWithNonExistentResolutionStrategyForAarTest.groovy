@@ -16,31 +16,30 @@
 
 package com.android.build.gradle.integration.dependencies
 
-import com.android.annotations.NonNull
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.utils.ModelHelper
-import com.android.builder.model.AndroidArtifact
-import com.android.builder.model.AndroidLibrary
 import com.android.builder.model.AndroidProject
-import com.android.builder.model.Dependencies
-import com.android.builder.model.Variant
+import com.android.builder.model.SyncIssue
+import com.google.common.collect.Iterables
 import groovy.transform.CompileStatic
 import org.junit.AfterClass
-import org.junit.Assert
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
+
+import static org.junit.Assert.assertEquals
+import static org.junit.Assert.assertTrue
 
 /**
  * test for flavored dependency on a different package.
  */
 @CompileStatic
-class AppWithResolutionStrategyForAarTest {
+class AppWithNonExistentResolutionStrategyForAarTest {
 
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
             .fromTestProject("projectWithModules")
             .create()
+
     static Map<String, AndroidProject> models
 
     @BeforeClass
@@ -63,7 +62,7 @@ configurations._debugCompile {
   resolutionStrategy {
     eachDependency { DependencyResolveDetails details ->
       if (details.requested.name == 'jdeferred-android-aar') {
-        details.useVersion '1.2.2'
+        details.useVersion '-1.-1.-1'
       }
     }
   }
@@ -78,7 +77,7 @@ dependencies {
 }
 """
 
-        models = project.getAllModels()
+        models = project.getAllModelsIgnoringSyncIssues()
     }
 
     @AfterClass
@@ -88,31 +87,11 @@ dependencies {
     }
 
     @Test
-    void "check model contain correct dependencies"() {
-        AndroidProject appProject = models.get(':app')
-        Collection<Variant> appVariants = appProject.getVariants()
-
-        checkJarDependency(appVariants, 'debug', 'org.jdeferred:jdeferred-android-aar:aar:1.2.2')
-        checkJarDependency(appVariants, 'release', 'org.jdeferred:jdeferred-android-aar:aar:1.2.3')
-    }
-
-    private static void checkJarDependency(
-            @NonNull Collection<Variant> appVariants,
-            @NonNull String variantName,
-            @NonNull String aarCoodinate) {
-        Variant appVariant = ModelHelper.getVariant(appVariants, variantName)
-
-        AndroidArtifact appArtifact = appVariant.getMainArtifact()
-        Dependencies artifactDependencies = appArtifact.getDependencies()
-
-        Collection<AndroidLibrary> directLibraries = artifactDependencies.getLibraries()
-        Assert.assertEquals(variantName, 1, directLibraries.size())
-        AndroidLibrary directLibrary = directLibraries.iterator().next()
-        Assert.assertEquals(variantName, ':library', directLibrary.getProject())
-
-        List<? extends AndroidLibrary> transitiveLibraries = directLibrary.getLibraryDependencies()
-        Assert.assertEquals(variantName, 1, transitiveLibraries.size())
-        AndroidLibrary transitiveLibrary = transitiveLibraries.get(0)
-        Assert.assertEquals(variantName, aarCoodinate, transitiveLibrary.getResolvedCoordinates().toString())
+    void "check we received a sync issue"() {
+        assertEquals(1, models.get(":app").getSyncIssues().size());
+        SyncIssue syncIssue = Iterables.getOnlyElement(models.get(":app").getSyncIssues());
+        assertEquals(SyncIssue.SEVERITY_ERROR, syncIssue.getSeverity());
+        assertEquals(SyncIssue.TYPE_UNRESOLVED_DEPENDENCY, syncIssue.getType());
+        assertTrue(syncIssue.message.contains("org.jdeferred:jdeferred-android-aar:-1.-1.-1"));
     }
 }

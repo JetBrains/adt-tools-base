@@ -45,7 +45,7 @@ dependencies {
     provided project(':library')
 }
 """
-        models = project.getAllModels()
+        models = project.getAllModelsIgnoringSyncIssues()
     }
 
     @AfterClass
