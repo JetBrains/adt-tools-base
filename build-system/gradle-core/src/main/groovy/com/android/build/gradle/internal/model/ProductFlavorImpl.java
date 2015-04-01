@@ -35,6 +35,7 @@ class ProductFlavorImpl extends BaseConfigImpl implements ProductFlavor, Seriali
     private static final long serialVersionUID = 1L;
 
     private String name = null;
+    private String mDimension = null;
     private ApiVersion mMinSdkVersion = null;
     private ApiVersion mTargetSdkVersion = null;
     private Integer mMaxSdkVersion = null;
@@ -50,6 +51,7 @@ class ProductFlavorImpl extends BaseConfigImpl implements ProductFlavor, Seriali
     private Boolean mTestFunctionalTest = null;
     private Set<String> mResourceConfigurations = null;
 
+
     @NonNull
     static ProductFlavorImpl cloneFlavor(
             @NonNull ProductFlavor productFlavor,
@@ -57,7 +59,7 @@ class ProductFlavorImpl extends BaseConfigImpl implements ProductFlavor, Seriali
             @Nullable ApiVersion targetSdkVersionOverride) {
         ProductFlavorImpl clonedFlavor = new ProductFlavorImpl(productFlavor);
         clonedFlavor.name = productFlavor.getName();
-
+        clonedFlavor.mDimension = productFlavor.getDimension();
         clonedFlavor.mMinSdkVersion = minSdkVersionOverride != null
                 ? minSdkVersionOverride
                 : ApiVersionImpl.clone(productFlavor.getMinSdkVersion());
@@ -185,10 +187,17 @@ class ProductFlavorImpl extends BaseConfigImpl implements ProductFlavor, Seriali
         return null;
     }
 
+    @Nullable
+    @Override
+    public String getDimension() {
+        return mDimension;
+    }
+
     @Override
     public String toString() {
         return "ProductFlavorImpl{" +
                 "name='" + name + '\'' +
+                ", mDimension='" + mDimension + '\'' +
                 ", mMinSdkVersion=" + mMinSdkVersion +
                 ", mTargetSdkVersion=" + mTargetSdkVersion +
                 ", mMaxSdkVersion=" + mMaxSdkVersion +

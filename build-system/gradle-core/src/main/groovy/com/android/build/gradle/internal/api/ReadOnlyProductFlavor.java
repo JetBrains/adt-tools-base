@@ -142,4 +142,10 @@ public class ReadOnlyProductFlavor extends ReadOnlyBaseConfig implements Product
     public SigningConfig getSigningConfig() {
         return readOnlyObjectProvider.getSigningConfig(productFlavor.getSigningConfig());
     }
+
+    @Nullable
+    @Override
+    public String getDimension() {
+        return productFlavor.getDimension();
+    }
 }

@@ -54,7 +54,6 @@ import com.google.common.collect.Lists
 import groovy.transform.CompileStatic
 import org.gradle.api.NamedDomainObjectContainer
 import org.gradle.api.Project
-import org.gradle.api.tasks.compile.AbstractCompile
 import org.gradle.tooling.provider.model.ToolingModelBuilder
 
 import java.util.jar.Attributes
@@ -131,9 +130,13 @@ public class ModelBuilder implements ToolingModelBuilder {
 
         def manifestData = parseManifestData()
 
+        List<String> flavorDimensionList = (extension.flavorDimensionList != null ?
+                extension.flavorDimensionList : (List<String>) [])
+
         DefaultAndroidProject androidProject = new DefaultAndroidProject(
                 manifestData.modelVersion as String,
                 project.name,
+                flavorDimensionList,
                 androidBuilder.getTarget().hashString(),
                 bootClasspath,
                 frameworkSource,
