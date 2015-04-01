@@ -57,6 +57,13 @@ public interface BaseArtifact {
     File getClassesFolder();
 
     /**
+     * Returns the folder containing resource files that classes form this artifact expect to find
+     * on the classpath.
+     */
+    @NonNull
+    File getJavaResourcesFolder();
+
+    /**
      * Returns the resolved dependencies for this artifact. This is a composite of all the
      * dependencies for that artifact: default config + build type + flavor(s).s
      *
