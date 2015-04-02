@@ -352,7 +352,7 @@ public class PositionXmlParser {
                 if (start != -1) {
                     startOffset += start;
                     if (end != -1) {
-                        endOffset = start + end;
+                        endOffset = startOffset + (end - start);
                     }
                 }
 

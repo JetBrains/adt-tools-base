@@ -238,7 +238,7 @@ public class IconDetector extends ResourceXmlDetector implements Detector.JavaSc
             "Missing density folder",
             "Icons will look best if a custom version is provided for each of the " +
             "major screen density classes (low, medium, high, extra-high, extra-extra-high). " +
-            "This lint check identifies folders which are missing, such as `drawable-hdpi`." +
+            "This lint check identifies folders which are missing, such as `drawable-hdpi`.\n" +
             "\n" +
             "Low density is not really used much anymore, so this check ignores " +
             "the ldpi density. To force lint to include it, set the environment " +

@@ -172,7 +172,7 @@ public class ApiDetector extends ResourceXmlDetector
             "by this application (according to its minimum SDK attribute in the manifest).\n" +
             "\n" +
             "If you really want to use this API and don't need to support older devices just " +
-            "set the `minSdkVersion` in your `build.gradle` or `AndroidManifest.xml` files." +
+            "set the `minSdkVersion` in your `build.gradle` or `AndroidManifest.xml` files.\n" +
             "\n" +
             "If your code is *deliberately* accessing newer APIs, and you have ensured " +
             "(e.g. with conditional execution) that this code will only ever be called on a " +

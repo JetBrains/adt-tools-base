@@ -46,7 +46,8 @@ public class TooManyViewsDetector extends LayoutDetector {
             "Layout has too many views",
             "Using too many views in a single layout is bad for " +
             "performance. Consider using compound drawables or other tricks for " +
-            "reducing the number of views in this layout.\n\n" +
+            "reducing the number of views in this layout.\n" +
+            "\n" +
             "The maximum view count defaults to 80 but can be configured with the " +
             "environment variable `ANDROID_LINT_MAX_VIEW_COUNT`.",
             Category.PERFORMANCE,
