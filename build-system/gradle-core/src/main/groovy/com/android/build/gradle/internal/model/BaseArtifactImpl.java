@@ -24,6 +24,7 @@ import com.android.builder.model.SourceProvider;
 
 import java.io.File;
 import java.io.Serializable;
+import java.util.Collection;
 
 /**
  * Implementation of BaseArtifact that is serializable
@@ -31,6 +32,8 @@ import java.io.Serializable;
 abstract class BaseArtifactImpl implements BaseArtifact, Serializable {
     private static final long serialVersionUID = 1L;
 
+    @NonNull
+    protected final Collection<File> generatedSourceFolders;
     private final String name;
     @NonNull
     private final String assembleTaskName;
@@ -52,7 +55,8 @@ abstract class BaseArtifactImpl implements BaseArtifact, Serializable {
                      @NonNull File classesFolder,
                      @NonNull Dependencies dependencies,
                      @Nullable SourceProvider variantSourceProvider,
-                     @Nullable SourceProvider multiFlavorSourceProviders) {
+                     @Nullable SourceProvider multiFlavorSourceProviders,
+                     @NonNull Collection<File> generatedSourceFolders) {
         this.name = name;
         this.assembleTaskName = assembleTaskName;
         this.compileTaskName = compileTaskName;
@@ -60,6 +64,7 @@ abstract class BaseArtifactImpl implements BaseArtifact, Serializable {
         this.dependencies = dependencies;
         this.variantSourceProvider = variantSourceProvider;
         this.multiFlavorSourceProviders = multiFlavorSourceProviders;
+        this.generatedSourceFolders = generatedSourceFolders;
     }
 
     @NonNull
@@ -102,5 +107,11 @@ abstract class BaseArtifactImpl implements BaseArtifact, Serializable {
     @Override
     public SourceProvider getMultiFlavorSourceProvider() {
         return multiFlavorSourceProviders;
+    }
+
+    @NonNull
+    @Override
+    public Collection<File> getGeneratedSourceFolders() {
+        return generatedSourceFolders;
     }
 }

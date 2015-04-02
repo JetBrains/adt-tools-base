@@ -25,6 +25,7 @@ import com.google.common.collect.Sets;
 
 import java.io.File;
 import java.io.Serializable;
+import java.util.Collection;
 import java.util.Set;
 
 /**
@@ -44,6 +45,7 @@ public class JavaArtifactImpl extends BaseArtifactImpl implements JavaArtifact, 
                 javaArtifact.getAssembleTaskName(),
                 javaArtifact.getCompileTaskName(),
                 javaArtifact.getIdeSetupTaskNames(),
+                javaArtifact.getGeneratedSourceFolders(),
                 javaArtifact.getClassesFolder(),
                 DependenciesImpl.cloneDependenciesForJavaArtifacts(javaArtifact.getDependencies()),
                 variantSP != null ? SourceProviderImpl.cloneProvider(variantSP) : null,
@@ -54,12 +56,13 @@ public class JavaArtifactImpl extends BaseArtifactImpl implements JavaArtifact, 
                             @NonNull String assembleTaskName,
                             @NonNull String compileTaskName,
                             @NonNull Iterable<String> ideSetupTaskNames,
+                            @NonNull Collection<File> generatedSourceFolders,
                             @NonNull File classesFolder,
                             @NonNull Dependencies dependencies,
                             @Nullable SourceProvider variantSourceProvider,
                             @Nullable SourceProvider multiFlavorSourceProviders) {
         super(name, assembleTaskName, compileTaskName, classesFolder, dependencies,
-                variantSourceProvider, multiFlavorSourceProviders);
+                variantSourceProvider, multiFlavorSourceProviders, generatedSourceFolders);
         this.ideSetupTaskNames = Sets.newHashSet(ideSetupTaskNames);
     }
 

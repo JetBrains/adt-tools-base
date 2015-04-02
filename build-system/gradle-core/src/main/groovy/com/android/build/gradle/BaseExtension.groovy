@@ -45,6 +45,7 @@ import com.android.builder.testing.api.DeviceProvider
 import com.android.builder.testing.api.TestServer
 import com.android.sdklib.repository.FullRevision
 import com.google.common.collect.Lists
+import groovy.transform.CompileStatic
 import org.gradle.api.Action
 import org.gradle.api.GradleException
 import org.gradle.api.NamedDomainObjectContainer
@@ -515,17 +516,19 @@ public abstract class BaseExtension {
         extraModelInfo.registerProductFlavorSourceProvider(name, productFlavor, sourceProvider)
     }
 
+    @CompileStatic
     public void registerJavaArtifact(
             @NonNull String name,
             @NonNull BaseVariant variant,
             @NonNull String assembleTaskName,
             @NonNull String javaCompileTaskName,
+            @NonNull Collection<File> generatedSourceFolders,
             @NonNull Iterable<String> ideSetupTaskNames,
             @NonNull Configuration configuration,
             @NonNull File classesFolder,
             @Nullable SourceProvider sourceProvider) {
         extraModelInfo.registerJavaArtifact(name, variant, assembleTaskName,
-                javaCompileTaskName, ideSetupTaskNames,
+                javaCompileTaskName, generatedSourceFolders, ideSetupTaskNames,
                 configuration, classesFolder, sourceProvider)
     }
 

@@ -20,5 +20,4 @@ package com.android.builder.model;
  * The information for a generated Java artifact.
  */
 public interface JavaArtifact extends BaseArtifact {
-
 }
