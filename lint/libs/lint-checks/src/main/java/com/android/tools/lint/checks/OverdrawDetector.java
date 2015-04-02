@@ -194,11 +194,8 @@ public class OverdrawDetector extends LayoutDetector implements Detector.JavaSca
             }
         }
 
-        if (mBlankThemes != null && mBlankThemes.contains(name)) {
-            return true;
-        }
+        return mBlankThemes != null && mBlankThemes.contains(name);
 
-        return false;
     }
 
     @Override

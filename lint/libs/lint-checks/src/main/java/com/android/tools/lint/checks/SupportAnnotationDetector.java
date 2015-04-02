@@ -25,27 +25,29 @@ import static com.android.SdkConstants.TYPE_DEF_FLAG_ATTRIBUTE;
 import static com.android.resources.ResourceType.COLOR;
 import static com.android.resources.ResourceType.DRAWABLE;
 import static com.android.resources.ResourceType.MIPMAP;
+import static com.android.tools.lint.detector.api.JavaContext.getParentOfType;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.resources.ResourceType;
-import com.android.tools.lint.client.api.JavaParser;
 import com.android.tools.lint.client.api.JavaParser.ResolvedAnnotation;
 import com.android.tools.lint.client.api.JavaParser.ResolvedClass;
+import com.android.tools.lint.client.api.JavaParser.ResolvedField;
 import com.android.tools.lint.client.api.JavaParser.ResolvedMethod;
 import com.android.tools.lint.client.api.JavaParser.ResolvedNode;
 import com.android.tools.lint.detector.api.Category;
+import com.android.tools.lint.detector.api.ConstantEvaluator;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.JavaContext;
-import com.android.tools.lint.detector.api.LintUtils;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Locale;
 
 import lombok.ast.ArrayCreation;
@@ -63,9 +65,13 @@ import lombok.ast.MethodInvocation;
 import lombok.ast.Node;
 import lombok.ast.NullLiteral;
 import lombok.ast.Select;
+import lombok.ast.Statement;
 import lombok.ast.StringLiteral;
 import lombok.ast.UnaryExpression;
 import lombok.ast.UnaryOperator;
+import lombok.ast.VariableDeclaration;
+import lombok.ast.VariableDefinition;
+import lombok.ast.VariableDefinitionEntry;
 import lombok.ast.VariableReference;
 
 /**
@@ -222,9 +228,9 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
             // have to
             if (signature.equals(INT_DEF_ANNOTATION)) {
                 boolean flag = annotation.getValue(TYPE_DEF_FLAG_ATTRIBUTE) == Boolean.TRUE;
-                checkTypeDefConstant(context, annotation, argument, flag);
+                checkTypeDefConstant(context, annotation, argument, null, flag);
             } else if (signature.equals(STRING_DEF_ANNOTATION)) {
-                checkTypeDefConstant(context, annotation, argument, false);
+                checkTypeDefConstant(context, annotation, argument, null, false);
             } else if (signature.endsWith(RES_SUFFIX)) {
                 String typeString = signature.substring(SUPPORT_ANNOTATIONS_PREFIX.length(),
                         signature.length() - RES_SUFFIX.length()).toLowerCase(Locale.US);
@@ -310,7 +316,6 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
             @Nullable ResourceType expectedType) {
         ResourceType actual = getResourceType(argument);
         if (actual == null && (!isNumber(argument) || isZero(argument) || isMinusOne(argument)) ) {
-            // Unknown type: perform flow analysis later
             return;
         } else if (actual != null && (expectedType == null
                 || expectedType == actual
@@ -331,7 +336,7 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
     @Nullable
     private static ResourceType getResourceType(@NonNull Node argument) {
         if (argument instanceof Select) {
-            Select node = (Select)argument;
+            Select node = (Select) argument;
             if (node.astOperand() instanceof Select) {
                 Select select = (Select) node.astOperand();
                 if (select.astOperand() instanceof Select) { // android.R....
@@ -366,6 +371,46 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
                     }
                 }
             }
+        } else if (argument instanceof VariableReference) {
+            Statement statement = getParentOfType(argument, Statement.class, false);
+            if (statement != null) {
+                ListIterator<Node> iterator = statement.getParent().getChildren().listIterator();
+                while (iterator.hasNext()) {
+                    if (iterator.next() == statement) {
+                        if (iterator.hasPrevious()) { // should always be true
+                            iterator.previous();
+                        }
+                        break;
+                    }
+                }
+
+                String targetName = ((VariableReference)argument).astIdentifier().astValue();
+                while (iterator.hasPrevious()) {
+                    Node previous = iterator.previous();
+                    if (previous instanceof VariableDeclaration) {
+                        VariableDeclaration declaration = (VariableDeclaration) previous;
+                        VariableDefinition definition = declaration.astDefinition();
+                        for (VariableDefinitionEntry entry : definition
+                                .astVariables()) {
+                            if (entry.astInitializer() != null
+                                    && entry.astName().astValue().equals(targetName)) {
+                                return getResourceType(entry.astInitializer());
+                            }
+                        }
+                    } else if (previous instanceof ExpressionStatement) {
+                        ExpressionStatement expressionStatement = (ExpressionStatement) previous;
+                        Expression expression = expressionStatement.astExpression();
+                        if (expression instanceof BinaryExpression &&
+                                ((BinaryExpression) expression).astOperator()
+                                        == BinaryOperator.ASSIGN) {
+                            BinaryExpression binaryExpression = (BinaryExpression) expression;
+                            if (targetName.equals(binaryExpression.astLeft().toString())) {
+                                return getResourceType(binaryExpression.astRight());
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         return null;
@@ -375,17 +420,11 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
             @NonNull JavaContext context,
             @NonNull ResolvedAnnotation annotation,
             @NonNull Node argument) {
-        long value;
-        if (argument instanceof IntegralLiteral) {
-            IntegralLiteral literal = (IntegralLiteral) argument;
-            value = literal.astLongValue();
-        } else if (argument instanceof FloatingPointLiteral) {
-            FloatingPointLiteral literal = (FloatingPointLiteral) argument;
-            value = (int)literal.astFloatValue();
-        } else {
-            // No flow analysis for this check yet, only checking literals passed in as parameters
+        Object object = ConstantEvaluator.evaluate(context, argument);
+        if (!(object instanceof Number)) {
             return;
         }
+        long value = ((Number)object).longValue();
         long from = getLongAttribute(annotation, ATTR_FROM, Long.MIN_VALUE);
         long to = getLongAttribute(annotation, ATTR_TO, Long.MAX_VALUE);
 
@@ -421,23 +460,17 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
             @NonNull JavaContext context,
             @NonNull ResolvedAnnotation annotation,
             @NonNull Node argument) {
-        double value;
-        if (argument instanceof IntegralLiteral) {
-            IntegralLiteral literal = (IntegralLiteral) argument;
-            value = literal.astIntValue();
-        } else if (argument instanceof FloatingPointLiteral) {
-            FloatingPointLiteral literal = (FloatingPointLiteral) argument;
-            value = literal.astDoubleValue();
-        } else {
-            // No flow analysis for this check yet, only checking literals passed in as parameters
+        Object object = ConstantEvaluator.evaluate(context, argument);
+        if (!(object instanceof Number)) {
             return;
         }
+        double value = ((Number)object).doubleValue();
         double from = getDoubleAttribute(annotation, ATTR_FROM, Double.NEGATIVE_INFINITY);
         double to = getDoubleAttribute(annotation, ATTR_TO, Double.POSITIVE_INFINITY);
         boolean fromInclusive = getBoolean(annotation, ATTR_FROM_INCLUSIVE, true);
         boolean toInclusive = getBoolean(annotation, ATTR_TO_INCLUSIVE, true);
 
-        String message = getFloatRangeError(value, from, to, fromInclusive, toInclusive);
+        String message = getFloatRangeError(value, from, to, fromInclusive, toInclusive, argument);
         if (message != null) {
             context.report(RANGE, argument, context.getLocation(argument), message);
         }
@@ -449,7 +482,7 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
      */
     @Nullable
     private static String getFloatRangeError(double value, double from, double to,
-            boolean fromInclusive, boolean toInclusive) {
+            boolean fromInclusive, boolean toInclusive, @NonNull Node node) {
         if (!((fromInclusive && value >= from || !fromInclusive && value > from) &&
                 (toInclusive && value <= to || !toInclusive && value < to))) {
             StringBuilder sb = new StringBuilder(20);
@@ -495,7 +528,21 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
                 sb.append(' ');
                 sb.append(Double.toString(to));
             }
-            sb.append(" (was ").append(value).append(')');
+            sb.append(" (was ");
+            if (node instanceof FloatingPointLiteral || node instanceof IntegralLiteral) {
+                // Use source text instead to avoid rounding errors involved in conversion, e.g
+                //    Error: Value must be > 2.5 (was 2.490000009536743) [Range]
+                //    printAtLeastExclusive(2.49f); // ERROR
+                //                          ~~~~~
+                String str = node.toString();
+                if (str.endsWith("f") || str.endsWith("F")) {
+                    str = str.substring(0, str.length() - 1);
+                }
+                sb.append(str);
+            } else {
+                sb.append(value);
+            }
+            sb.append(')');
             return sb.toString();
         }
         return null;
@@ -579,6 +626,7 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
             @NonNull JavaContext context,
             @NonNull ResolvedAnnotation annotation,
             @NonNull Node argument,
+            @Nullable Node errorNode,
             boolean flag) {
         if (argument instanceof NullLiteral) {
             // Accepted for @StringDef
@@ -587,7 +635,7 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
 
         if (argument instanceof StringLiteral) {
             StringLiteral string = (StringLiteral) argument;
-            checkTypeDefConstant(context, annotation, argument, false, string.astValue());
+            checkTypeDefConstant(context, annotation, argument, errorNode, false, string.astValue());
         } else if (argument instanceof IntegralLiteral) {
             IntegralLiteral literal = (IntegralLiteral) argument;
             int value = literal.astIntValue();
@@ -595,25 +643,25 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
                 // Accepted for a flag @IntDef
                 return;
             }
-            checkTypeDefConstant(context, annotation, argument, flag, value);
+            checkTypeDefConstant(context, annotation, argument, errorNode, flag, value);
         } else if (isMinusOne(argument)) {
             // -1 is accepted unconditionally for flags
             if (!flag) {
-                reportTypeDef(context, annotation, argument);
+                reportTypeDef(context, annotation, argument, errorNode);
             }
         } else if (argument instanceof InlineIfExpression) {
             InlineIfExpression expression = (InlineIfExpression) argument;
             if (expression.astIfTrue() != null) {
-                checkTypeDefConstant(context, annotation, expression.astIfTrue(), flag);
+                checkTypeDefConstant(context, annotation, expression.astIfTrue(), errorNode, flag);
             }
             if (expression.astIfFalse() != null) {
-                checkTypeDefConstant(context, annotation, expression.astIfFalse(), flag);
+                checkTypeDefConstant(context, annotation, expression.astIfFalse(), errorNode, flag);
             }
         } else if (argument instanceof UnaryExpression) {
             UnaryExpression expression = (UnaryExpression) argument;
             UnaryOperator operator = expression.astOperator();
             if (flag) {
-                checkTypeDefConstant(context, annotation, expression.astOperand(), true);
+                checkTypeDefConstant(context, annotation, expression.astOperand(), errorNode, true);
             } else if (operator == UnaryOperator.BINARY_NOT) {
                 context.report(TYPE_DEF, expression, context.getLocation(expression),
                         "Flag not allowed here");
@@ -622,8 +670,8 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
             // If it's ?: then check both the if and else clauses
             BinaryExpression expression = (BinaryExpression) argument;
             if (flag) {
-                checkTypeDefConstant(context, annotation, expression.astLeft(), true);
-                checkTypeDefConstant(context, annotation, expression.astRight(), true);
+                checkTypeDefConstant(context, annotation, expression.astLeft(), errorNode, true);
+                checkTypeDefConstant(context, annotation, expression.astRight(), errorNode, true);
             } else {
                 BinaryOperator operator = expression.astOperator();
                 if (operator == BinaryOperator.BITWISE_AND
@@ -635,19 +683,61 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
             }
         } else {
             ResolvedNode resolved = context.resolve(argument);
-            if (resolved instanceof JavaParser.ResolvedField) {
-                checkTypeDefConstant(context, annotation, argument, flag, resolved);
-            } else if (resolved instanceof JavaParser.ResolvedVariable) {
-                // Perform value flow analysis to see what values have flown to this
-                // variable
-                // TODO:
+            if (resolved instanceof ResolvedField) {
+                checkTypeDefConstant(context, annotation, argument, errorNode, flag, resolved);
+            } else if (argument instanceof VariableReference) {
+                Statement statement = getParentOfType(argument, Statement.class, false);
+                if (statement != null) {
+                    ListIterator<Node> iterator = statement.getParent().getChildren().listIterator();
+                    while (iterator.hasNext()) {
+                        if (iterator.next() == statement) {
+                            if (iterator.hasPrevious()) { // should always be true
+                                iterator.previous();
+                            }
+                            break;
+                        }
+                    }
+
+                    String targetName = ((VariableReference)argument).astIdentifier().astValue();
+                    while (iterator.hasPrevious()) {
+                        Node previous = iterator.previous();
+                        if (previous instanceof VariableDeclaration) {
+                            VariableDeclaration declaration = (VariableDeclaration) previous;
+                            VariableDefinition definition = declaration.astDefinition();
+                            for (VariableDefinitionEntry entry : definition
+                                    .astVariables()) {
+                                if (entry.astInitializer() != null
+                                        && entry.astName().astValue().equals(targetName)) {
+                                    checkTypeDefConstant(context, annotation,
+                                            entry.astInitializer(),
+                                            errorNode != null ? errorNode : argument, flag);
+                                    return;
+                                }
+                            }
+                        } else if (previous instanceof ExpressionStatement) {
+                            ExpressionStatement expressionStatement = (ExpressionStatement) previous;
+                            Expression expression = expressionStatement.astExpression();
+                            if (expression instanceof BinaryExpression &&
+                                    ((BinaryExpression) expression).astOperator()
+                                            == BinaryOperator.ASSIGN) {
+                                BinaryExpression binaryExpression = (BinaryExpression) expression;
+                                if (targetName.equals(binaryExpression.astLeft().toString())) {
+                                    checkTypeDefConstant(context, annotation,
+                                            binaryExpression.astRight(),
+                                            errorNode != null ? errorNode : argument, flag);
+                                    return;
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     }
 
     private static void checkTypeDefConstant(@NonNull JavaContext context,
             @NonNull ResolvedAnnotation annotation, @NonNull Node argument,
-            boolean flag, Object value) {
+            @Nullable Node errorNode, boolean flag, Object value) {
         Object allowed = annotation.getValue();
         if (allowed instanceof Object[]) {
             Object[] allowedValues = (Object[]) allowed;
@@ -656,21 +746,22 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
                     return;
                 }
             }
-            reportTypeDef(context, argument, flag, allowedValues);
+            reportTypeDef(context, argument, errorNode, flag, allowedValues);
         }
     }
 
     private static void reportTypeDef(@NonNull JavaContext context,
-            @NonNull ResolvedAnnotation annotation, @NonNull Node argument) {
+            @NonNull ResolvedAnnotation annotation, @NonNull Node argument,
+            @Nullable Node errorNode) {
         Object allowed = annotation.getValue();
         if (allowed instanceof Object[]) {
             Object[] allowedValues = (Object[]) allowed;
-            reportTypeDef(context, argument, false, allowedValues);
+            reportTypeDef(context, argument, errorNode, false, allowedValues);
         }
     }
 
     private static void reportTypeDef(@NonNull JavaContext context, @NonNull Node node,
-            boolean flag, @NonNull Object[] allowedValues) {
+            @Nullable Node errorNode, boolean flag, @NonNull Object[] allowedValues) {
         String values = listAllowedValues(allowedValues);
         String message;
         if (flag) {
@@ -678,7 +769,10 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
         } else {
             message = "Must be one of: " + values;
         }
-        context.report(TYPE_DEF, node, context.getLocation(node), message);
+        if (errorNode == null) {
+            errorNode = node;
+        }
+        context.report(TYPE_DEF, errorNode, context.getLocation(errorNode), message);
     }
 
     private static String listAllowedValues(@NonNull Object[] allowedValues) {
@@ -689,8 +783,8 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
                 s = allowedValue.toString();
             } else if (allowedValue instanceof ResolvedNode) {
                 ResolvedNode node = (ResolvedNode) allowedValue;
-                if (node instanceof JavaParser.ResolvedField) {
-                    JavaParser.ResolvedField field = (JavaParser.ResolvedField) node;
+                if (node instanceof ResolvedField) {
+                    ResolvedField field = (ResolvedField) node;
                     String containingClassName = field.getContainingClassName();
                     containingClassName = containingClassName.substring(containingClassName.lastIndexOf('.') + 1);
                     s = containingClassName + "." + field.getName();

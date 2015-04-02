@@ -59,7 +59,7 @@ public class LogTest {
             Log.d(TAG24, "message"); // error: too long
             Log.d(LONG_TAG, "message"); // error: way too long
 
-            // Locally variable tags
+            // Locally defined variable tags
             final String LOCAL_TAG = "MyReallyReallyReallyReallyReallyLongTag";
             Log.d(LOCAL_TAG, "message"); // error: too long
 

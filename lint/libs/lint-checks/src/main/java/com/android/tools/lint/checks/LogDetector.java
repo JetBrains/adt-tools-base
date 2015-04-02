@@ -20,10 +20,10 @@ import static com.android.tools.lint.client.api.JavaParser.TYPE_STRING;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.tools.lint.client.api.JavaParser.ResolvedField;
 import com.android.tools.lint.client.api.JavaParser.ResolvedMethod;
 import com.android.tools.lint.client.api.JavaParser.ResolvedNode;
 import com.android.tools.lint.detector.api.Category;
+import com.android.tools.lint.detector.api.ConstantEvaluator;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
@@ -38,7 +38,6 @@ import java.util.List;
 
 import lombok.ast.AstVisitor;
 import lombok.ast.BinaryExpression;
-import lombok.ast.BinaryOperator;
 import lombok.ast.ClassDeclaration;
 import lombok.ast.Expression;
 import lombok.ast.If;
@@ -161,7 +160,7 @@ public class LogDetector extends Detector implements Detector.JavaScanner {
                     iterator.next();
                 }
                 Node argument = iterator.next();
-                String tag = findLiteralValue(context, argument);
+                String tag = ConstantEvaluator.evaluateString(context, argument, true);
                 if (tag != null && tag.length() > 23) {
                     String message = String.format(
                         "The logging tag can be at most 23 characters, was %1$d (%2$s)",
@@ -190,13 +189,13 @@ public class LogDetector extends Detector implements Detector.JavaScanner {
                 return false;
             }
             if (argument instanceof BinaryExpression) {
-                String string = findLiteralValue(context, argument);
+                String string = ConstantEvaluator.evaluateString(context, argument, false);
                 //noinspection VariableNotUsedInsideIf
                 if (string != null) { // does it resolve to a constant?
                     return false;
                 }
             } else if (argument instanceof Select) {
-                String string = findLiteralValue(context, argument);
+                String string = ConstantEvaluator.evaluateString(context, argument, false);
                 //noinspection VariableNotUsedInsideIf
                 if (string != null) {
                     return false;
@@ -208,33 +207,6 @@ public class LogDetector extends Detector implements Detector.JavaScanner {
         }
 
         return false;
-    }
-
-    @Nullable
-    private static String findLiteralValue(@NonNull JavaContext context, @NonNull Node argument) {
-        if (argument instanceof StringLiteral) {
-            return ((StringLiteral)argument).astValue();
-        } else if (argument instanceof BinaryExpression) {
-            BinaryExpression expression = (BinaryExpression) argument;
-            if (expression.astOperator() == BinaryOperator.PLUS) {
-                String left = findLiteralValue(context, expression.astLeft());
-                String right = findLiteralValue(context, expression.astRight());
-                if (left != null && right != null) {
-                    return left + right;
-                }
-            }
-        } else {
-            ResolvedNode resolved = context.resolve(argument);
-            if (resolved instanceof ResolvedField) {
-                ResolvedField field = (ResolvedField) resolved;
-                Object value = field.getValue();
-                if (value instanceof String) {
-                    return (String)value;
-                }
-            }
-        }
-
-        return null;
     }
 
     private static boolean checkWithinConditional(

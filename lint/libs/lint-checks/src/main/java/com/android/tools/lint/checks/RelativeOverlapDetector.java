@@ -318,11 +318,8 @@ public class RelativeOverlapDetector extends LayoutDetector {
             }
 
             // Skip all includes and Views
-            if (mNode.getTagName().equals(VIEW_INCLUDE)
-                    || mNode.getTagName().equals(VIEW)) {
-                return true;
-            }
-            return false;
+            return mNode.getTagName().equals(VIEW_INCLUDE)
+                    || mNode.getTagName().equals(VIEW);
         }
 
         public boolean sameBucket(@NonNull LayoutNode node) {
