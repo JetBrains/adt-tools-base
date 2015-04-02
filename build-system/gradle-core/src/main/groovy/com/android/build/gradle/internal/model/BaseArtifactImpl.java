@@ -42,6 +42,8 @@ abstract class BaseArtifactImpl implements BaseArtifact, Serializable {
     @NonNull
     private final File classesFolder;
     @NonNull
+    private final File javaResourcesFolder;
+    @NonNull
     private final Dependencies dependencies;
     @Nullable
     private final SourceProvider variantSourceProvider;
@@ -50,17 +52,19 @@ abstract class BaseArtifactImpl implements BaseArtifact, Serializable {
 
 
     BaseArtifactImpl(@NonNull String name,
-                     @NonNull String assembleTaskName,
-                     @NonNull String compileTaskName,
-                     @NonNull File classesFolder,
-                     @NonNull Dependencies dependencies,
-                     @Nullable SourceProvider variantSourceProvider,
-                     @Nullable SourceProvider multiFlavorSourceProviders,
-                     @NonNull Collection<File> generatedSourceFolders) {
+            @NonNull String assembleTaskName,
+            @NonNull String compileTaskName,
+            @NonNull File classesFolder,
+            @NonNull File javaResourcesFolder,
+            @NonNull Dependencies dependencies,
+            @Nullable SourceProvider variantSourceProvider,
+            @Nullable SourceProvider multiFlavorSourceProviders,
+            @NonNull Collection<File> generatedSourceFolders) {
         this.name = name;
         this.assembleTaskName = assembleTaskName;
         this.compileTaskName = compileTaskName;
         this.classesFolder = classesFolder;
+        this.javaResourcesFolder = javaResourcesFolder;
         this.dependencies = dependencies;
         this.variantSourceProvider = variantSourceProvider;
         this.multiFlavorSourceProviders = multiFlavorSourceProviders;
@@ -89,6 +93,12 @@ abstract class BaseArtifactImpl implements BaseArtifact, Serializable {
     @Override
     public File getClassesFolder() {
         return classesFolder;
+    }
+
+    @NonNull
+    @Override
+    public File getJavaResourcesFolder() {
+        return javaResourcesFolder;
     }
 
     @NonNull

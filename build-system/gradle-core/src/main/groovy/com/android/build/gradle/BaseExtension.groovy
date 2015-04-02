@@ -526,10 +526,11 @@ public abstract class BaseExtension {
             @NonNull Iterable<String> ideSetupTaskNames,
             @NonNull Configuration configuration,
             @NonNull File classesFolder,
+            @NonNull File javaResourceFolder,
             @Nullable SourceProvider sourceProvider) {
         extraModelInfo.registerJavaArtifact(name, variant, assembleTaskName,
                 javaCompileTaskName, generatedSourceFolders, ideSetupTaskNames,
-                configuration, classesFolder, sourceProvider)
+                configuration, classesFolder, javaResourceFolder, sourceProvider)
     }
 
     public void registerMultiFlavorSourceProvider(

@@ -284,6 +284,7 @@ public class ModelBuilder implements ToolingModelBuilder {
                 [variantData.prepareDependenciesTask.name, taskManager.createMockableJar.name] as Set,
                 variantData.extraGeneratedSourceFolders,
                 variantData.javaCompileTask.destinationDir,
+                variantData.processJavaResourcesTask.destinationDir,
                 dependencies,
                 sourceProviders.variantSourceProvider,
                 sourceProviders.multiFlavorSourceProvider)
@@ -350,6 +351,7 @@ public class ModelBuilder implements ToolingModelBuilder {
                 getGeneratedSourceFolders(variantData),
                 getGeneratedResourceFolders(variantData),
                 variantData.javaCompileTask.destinationDir,
+                variantData.processJavaResourcesTask.destinationDir,
                 DependenciesImpl.cloneDependencies(variantData, androidBuilder),
                 sourceProviders.variantSourceProvider,
                 sourceProviders.multiFlavorSourceProvider,
