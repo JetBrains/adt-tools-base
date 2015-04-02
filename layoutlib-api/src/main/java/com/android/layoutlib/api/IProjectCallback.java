@@ -30,12 +30,10 @@ public interface IProjectCallback  {
      * @param constructorSignature The signature of the class to use
      * @param constructorArgs The arguments to use on the constructor
      * @return A newly instantiated android.view.View object.
-     * @throws ClassNotFoundException
      * @throws Exception
      */
-    @SuppressWarnings("unchecked")
     Object loadView(String name, Class[] constructorSignature, Object[] constructorArgs)
-        throws ClassNotFoundException, Exception;
+        throws Exception;
 
     /**
      * Returns the namespace of the application.
