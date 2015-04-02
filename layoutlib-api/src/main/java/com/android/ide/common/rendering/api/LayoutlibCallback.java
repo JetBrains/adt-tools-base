@@ -20,6 +20,8 @@ import com.android.annotations.Nullable;
 import com.android.resources.ResourceType;
 import com.android.util.Pair;
 
+import org.intellij.lang.annotations.MagicConstant;
+
 /**
  * Intermediary class implementing parts of both the old and new ProjectCallback from the
  * LayoutLib API.
@@ -56,6 +58,14 @@ public abstract class LayoutlibCallback implements IProjectCallback,
             throw new ClassNotFoundException(name + " not found.", e);
         }
     }
+
+    /**
+     * Returns if the IDE supports the requested feature.
+     * @see Features
+     * @since API 15
+     */
+    public abstract boolean supports(
+            @MagicConstant(valuesFromClass = Features.class) int ideFeature);
 
     // ------ implementation of the old interface using the new interface.
 
