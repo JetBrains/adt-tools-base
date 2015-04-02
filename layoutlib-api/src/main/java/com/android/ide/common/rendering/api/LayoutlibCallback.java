@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010 The Android Open Source Project
+ * Copyright (C) 2015 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,23 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.android.ide.common.rendering.api;
 
-package com.android.ide.common.rendering.legacy;
-
-import com.android.ide.common.rendering.api.IProjectCallback;
 import com.android.resources.ResourceType;
 import com.android.util.Pair;
 
 /**
- * Intermediary class implementing parts of both the old and new project call back from the
- * layout lib API.
- *
+ * Intermediary class implementing parts of both the old and new ProjectCallback from the
+ * LayoutLib API.
+ * <p/>
+ * Even newer LayoutLibs use this directly instead of the the interface. This allows the flexibility
+ * to add newer methods without having to update {@link Bridge#API_CURRENT LayoutLib API version}.
+ * <p/>
  * Clients should use this instead of {@link IProjectCallback} to target both old and new
  * Layout Libraries.
  */
 @SuppressWarnings("deprecation")
-public abstract class LegacyCallback implements
-        com.android.ide.common.rendering.api.IProjectCallback,
+public abstract class LayoutlibCallback implements IProjectCallback,
         com.android.layoutlib.api.IProjectCallback {
 
     // ------ implementation of the old interface using the new interface.
@@ -53,6 +53,4 @@ public abstract class LegacyCallback implements
     public final String resolveResourceValue(int[] id) {
         return resolveResourceId(id);
     }
-
-    // ------
 }
