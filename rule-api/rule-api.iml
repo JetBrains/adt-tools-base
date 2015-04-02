@@ -9,7 +9,7 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="inheritedJdk" />
     <orderEntry type="module" module-name="common" exported="" />
-    <orderEntry type="module" module-name="layoutlib-api" exported="" />
+    <orderEntry type="module" module-name="layoutlib-api-base" exported="" />
   </component>
 </module>
 
