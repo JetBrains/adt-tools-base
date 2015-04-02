@@ -79,6 +79,11 @@ public class Features {
      */
     public static final int SIMULATE_PLATFORM = 13;
     /**
+     * All features before this map to the ones in {@link Capability}. Any feature greater than this
+     * is guaranteed to be not supported by a LayoutLib using the older api.
+     */
+    public static final int LAST_CAPABILITY = SIMULATE_PLATFORM;
+    /**
      * Ability to render preferences.
      */
     public static final int PREFERENCES_RENDERING = 14;

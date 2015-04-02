@@ -15,6 +15,8 @@
  */
 package com.android.ide.common.rendering.api;
 
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.resources.ResourceType;
 import com.android.util.Pair;
 
@@ -31,6 +33,29 @@ import com.android.util.Pair;
 @SuppressWarnings("deprecation")
 public abstract class LayoutlibCallback implements IProjectCallback,
         com.android.layoutlib.api.IProjectCallback {
+
+    /**
+     * Like {@link #loadView(String, Class[], Object[])}, but intended for loading classes that may
+     * not be custom views.
+     *
+     * @param name className in binary format (see {@link ClassLoader})
+     * @return an new instance created by calling the given constructor.
+     * @throws ClassNotFoundException any exceptions thrown when creating the instance is wrapped in
+     * ClassNotFoundException.
+     * @since API 15
+     */
+    public Object loadClass(@NonNull String name, @Nullable Class[] constructorSignature,
+      @Nullable Object[] constructorArgs) throws ClassNotFoundException {
+        try {
+            return loadView(name, constructorSignature, constructorArgs);
+        }
+        catch (ClassNotFoundException e) {
+            throw e;
+        }
+        catch (Exception e) {
+            throw new ClassNotFoundException(name + " not found.", e);
+        }
+    }
 
     // ------ implementation of the old interface using the new interface.
 
