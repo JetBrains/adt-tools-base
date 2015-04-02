@@ -92,4 +92,15 @@ public class Features {
      * single call.
      */
     public static final int RENDER_ALL_DRAWABLE_STATES = 15;
+    /**
+     * Ability to provide a fake Adapter for RecyclerView. This is an IDE feature.
+     */
+    public static final int RECYCLER_VIEW_ADAPTER = 16;
+    /**
+     * Last known feature.
+     * <p/>
+     * This should be avoided on the LayoutLib since, since using this makes updating the API used
+     * by the LayoutLib without implementing any newly added features.
+     */
+    public static final int LAST_FEATURE = RECYCLER_VIEW_ADAPTER;
 }
