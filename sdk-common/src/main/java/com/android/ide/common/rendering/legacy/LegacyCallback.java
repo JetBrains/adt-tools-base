@@ -26,6 +26,7 @@ import com.android.util.Pair;
  *
  * Clients should use this instead of {@link IProjectCallback} to target both old and new
  * Layout Libraries.
+ *
  */
 @SuppressWarnings("deprecation")
 public abstract class LegacyCallback implements

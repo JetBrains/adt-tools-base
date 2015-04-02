@@ -16,10 +16,10 @@
 
 package com.android.layoutlib.api;
 
-import com.android.ide.common.rendering.api.LayoutlibCallback;
-
 /**
- * @deprecated use {@link LayoutlibCallback}
+ *
+ * @deprecated
+ *
  */
 @Deprecated
 public interface IProjectCallback  {
