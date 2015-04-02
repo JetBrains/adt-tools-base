@@ -40,6 +40,7 @@ class MediumAndroidComponentEvaluationTest {
                 .withBreadth(MEDIUM_BREADTH)
                 .create())
             .forExpermimentalPlugin(true)
+            .withHeap("2048m")
             .create()
 
     @AfterClass

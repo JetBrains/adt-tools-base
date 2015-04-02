@@ -106,6 +106,9 @@ public class GradleTestProject implements TestRule {
         boolean captureStdErr = false;
         boolean experimentalMode = false;
 
+        @Nullable
+        private String heapSize;
+
         /**
          * Create a GradleTestProject.
          */
@@ -116,7 +119,8 @@ public class GradleTestProject implements TestRule {
                     experimentalMode,
                     experimentalMode ? GRADLE_EXP_TEST_VERSION : GRADLE_TEST_VERSION,
                     captureStdOut,
-                    captureStdErr);
+                    captureStdErr,
+                    heapSize);
         }
 
         /**
@@ -163,6 +167,17 @@ public class GradleTestProject implements TestRule {
             return fromTestApp(app);
         }
 
+        /**
+         * Sets the test heap size requirement. Example values : 1024m, 2048m...
+         *
+         * @param heapSize the heap size in a format understood by the -Xmx JVM parameter
+         * @return itself.
+         */
+        public Builder withHeap(String heapSize) {
+            this.heapSize = heapSize;
+            return this;
+        }
+
         private static class EmptyTestApp extends AbstractAndroidTestApp {
             @Override
             public boolean containsFullBuildScript() {
@@ -194,9 +209,8 @@ public class GradleTestProject implements TestRule {
     private boolean experimentalMode;
     private String targetGradleVersion;
 
-    private GradleTestProject() {
-        this(null, null, false, GRADLE_TEST_VERSION, false, false);
-    }
+    @Nullable
+    private String heapSize;
 
     private GradleTestProject(
             @Nullable String name,
@@ -204,7 +218,8 @@ public class GradleTestProject implements TestRule {
             boolean experimentalMode,
             String targetGradleVersion,
             boolean captureStdOut,
-            boolean captureStdErr) {
+            boolean captureStdErr,
+            @Nullable String heapSize) {
         sdkDir = SdkHelper.findSdkDir();
         ndkDir = findNdkDir();
         String buildDir = System.getenv("PROJECT_BUILD_DIR");
@@ -215,6 +230,7 @@ public class GradleTestProject implements TestRule {
         this.testProject = testProject;
         stdout = captureStdOut ? new ByteArrayOutputStream() : null;
         stderr = captureStdErr ? new ByteArrayOutputStream() : null;
+        this.heapSize = heapSize;
     }
 
     /**
@@ -726,7 +742,7 @@ public class GradleTestProject implements TestRule {
         BuildLauncher launcher = connection.newBuild().forTasks(tasks)
                 .withArguments(args.toArray(new String[args.size()]));
 
-        List<String> jvmArguments = getDebugJvmArguments();
+        List<String> jvmArguments = getJvmArguments();
 
         if (JacocoAgent.isJacocoEnabled()) {
             jvmArguments.add(JacocoAgent.getJvmArg());
@@ -748,8 +764,11 @@ public class GradleTestProject implements TestRule {
         launcher.run();
     }
 
-    private static List<String> getDebugJvmArguments() {
+    private List<String> getJvmArguments() {
         List<String> jvmArguments = new ArrayList<String>();
+        if (!Strings.isNullOrEmpty(heapSize)) {
+            jvmArguments.add("-Xmx" + heapSize);
+        }
         jvmArguments.add("-XX:MaxPermSize=1024m");
         String debugIntegrationTest = System.getenv("DEBUG_INNER_TEST");
         if (!Strings.isNullOrEmpty(debugIntegrationTest)) {
@@ -766,7 +785,7 @@ public class GradleTestProject implements TestRule {
      * @param emulateStudio_1_0 whether to emulate an older IDE (studio 1.0) querying the model.
      */
     @NonNull
-    private static <K,V> Map<K, V> buildModel(
+    private <K,V> Map<K, V> buildModel(
             @NonNull ProjectConnection connection,
             @NonNull BuildAction<Map<K, V>> action,
             boolean emulateStudio_1_0) {
@@ -781,7 +800,7 @@ public class GradleTestProject implements TestRule {
         }
         executer.withArguments(Iterables.toArray(arguments, String.class));
 
-        List<String> debugJvmArguments = getDebugJvmArguments();
+        List<String> debugJvmArguments = getJvmArguments();
         if (!debugJvmArguments.isEmpty()) {
             executer.setJvmArguments(Iterables.toArray(debugJvmArguments, String.class));
         }
