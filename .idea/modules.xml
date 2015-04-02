@@ -5,7 +5,7 @@
       <module fileurl="file://$PROJECT_DIR$/adt.iml" filepath="$PROJECT_DIR$/adt.iml" />
       <module fileurl="file://$PROJECT_DIR$/annotations/android-annotations.iml" filepath="$PROJECT_DIR$/annotations/android-annotations.iml" />
       <module fileurl="file://$PROJECT_DIR$/legacy/ant-tasks/ant-tasks.iml" filepath="$PROJECT_DIR$/legacy/ant-tasks/ant-tasks.iml" />
-      <module fileurl="file://$PROJECT_DIR$/asset-studio/assetstudio.iml" filepath="$PROJECT_DIR$/asset-studio/assetstudio.iml" />
+      <module fileurl="file://$PROJECT_DIR$/asset-studio/assetstudio-base.iml" filepath="$PROJECT_DIR$/asset-studio/assetstudio-base.iml" />
       <module fileurl="file://$PROJECT_DIR$/build-system/builder/builder.iml" filepath="$PROJECT_DIR$/build-system/builder/builder.iml" />
       <module fileurl="file://$PROJECT_DIR$/build-system/builder-model/builder-model.iml" filepath="$PROJECT_DIR$/build-system/builder-model/builder-model.iml" />
       <module fileurl="file://$PROJECT_DIR$/build-system/builder-test-api/builder-test-api.iml" filepath="$PROJECT_DIR$/build-system/builder-test-api/builder-test-api.iml" />
@@ -18,7 +18,7 @@
       <module fileurl="file://$PROJECT_DIR$/build-system/gradle-core/gradle-core.iml" filepath="$PROJECT_DIR$/build-system/gradle-core/gradle-core.iml" />
       <module fileurl="file://$PROJECT_DIR$/build-system/gradle-experimental/gradle-experimental.iml" filepath="$PROJECT_DIR$/build-system/gradle-experimental/gradle-experimental.iml" />
       <module fileurl="file://$PROJECT_DIR$/build-system/integration-test/integration-test.iml" filepath="$PROJECT_DIR$/build-system/integration-test/integration-test.iml" />
-      <module fileurl="file://$PROJECT_DIR$/layoutlib-api/layoutlib-api.iml" filepath="$PROJECT_DIR$/layoutlib-api/layoutlib-api.iml" />
+      <module fileurl="file://$PROJECT_DIR$/layoutlib-api/layoutlib-api-base.iml" filepath="$PROJECT_DIR$/layoutlib-api/layoutlib-api-base.iml" />
       <module fileurl="file://$PROJECT_DIR$/lint/libs/lint-api/lint-api-base.iml" filepath="$PROJECT_DIR$/lint/libs/lint-api/lint-api-base.iml" />
       <module fileurl="file://$PROJECT_DIR$/lint/libs/lint-checks/lint-checks-base.iml" filepath="$PROJECT_DIR$/lint/libs/lint-checks/lint-checks-base.iml" />
       <module fileurl="file://$PROJECT_DIR$/lint/cli/lint-cli.iml" filepath="$PROJECT_DIR$/lint/cli/lint-cli.iml" />
@@ -29,7 +29,7 @@
       <module fileurl="file://$PROJECT_DIR$/build-system/project-test-lib/project-test-lib.iml" filepath="$PROJECT_DIR$/build-system/project-test-lib/project-test-lib.iml" />
       <module fileurl="file://$PROJECT_DIR$/rule-api/rule-api.iml" filepath="$PROJECT_DIR$/rule-api/rule-api.iml" />
       <module fileurl="file://$PROJECT_DIR$/sdk-common/sdk-common-base.iml" filepath="$PROJECT_DIR$/sdk-common/sdk-common-base.iml" />
-      <module fileurl="file://$PROJECT_DIR$/sdklib/sdklib.iml" filepath="$PROJECT_DIR$/sdklib/sdklib.iml" />
+      <module fileurl="file://$PROJECT_DIR$/sdklib/sdklib-base.iml" filepath="$PROJECT_DIR$/sdklib/sdklib-base.iml" />
       <module fileurl="file://$PROJECT_DIR$/testutils/testutils.iml" filepath="$PROJECT_DIR$/testutils/testutils.iml" />
     </modules>
   </component>
