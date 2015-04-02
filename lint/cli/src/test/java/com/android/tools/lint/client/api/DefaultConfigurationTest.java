@@ -267,7 +267,7 @@ public class DefaultConfigurationTest extends AbstractCheckTest {
                 + "  <issue id=\"FloatMath\" severity=\"ignore\" />\n"
                 + "  <issue id=\"SdCardPath\" severity=\"ignore\" />"
                 + "</lint>");
-        configuration.startBulkEditing();;
+        configuration.startBulkEditing();
         configuration.setSeverity(TypoDetector.ISSUE, Severity.ERROR);
         configuration.ignore(TypoDetector.ISSUE, new File("foo/bar/Baz.java"));
         configuration.finishBulkEditing();

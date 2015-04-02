@@ -138,10 +138,7 @@ public class LintUtils {
         List<ResourceFolderType> folderTypes = FolderTypeRelationship.getRelatedFolders(type);
         for (ResourceFolderType folderType : folderTypes) {
             if (folderType != ResourceFolderType.VALUES) {
-                if (type == ResourceType.ID) {
-                    return false;
-                }
-                return true;
+                return type != ResourceType.ID;
             }
         }
         return false;

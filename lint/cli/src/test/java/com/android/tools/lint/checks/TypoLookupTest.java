@@ -222,7 +222,7 @@ public class TypoLookupTest extends AbstractCheckTest {
             byte[] prevBytes = prevText.getBytes(Charsets.UTF_8);
 
             for (int i = 1; i < words.size(); i++) {
-                String text = words.get(i) + '\000';;
+                String text = words.get(i) + '\000';
                 byte[] bytes = text.getBytes(Charsets.UTF_8);
 
                 int textCompare = TypoLookup.compare(prevBytes, 0, (byte) 0, text, 0,

@@ -62,6 +62,17 @@ public class Flow {
         resources.getDrawable(MimeTypes.getUnknownType()); // OK (unknown/uncertain)
     }
 
+    public void testFlow() {
+        int x = R.string.my_string;
+        int z = x;
+        myMethod(z); // ERROR
+
+        int w = MY_RESOURCE;
+        myMethod(w); // ERROR
+    }
+
+    private static final int MY_RESOURCE = R.string.my_string;
+
     private static class MimeTypes {
         @android.support.annotation.StyleRes
         @android.support.annotation.DrawableRes
