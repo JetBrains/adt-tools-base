@@ -17,8 +17,6 @@ version = rootProject.ext.baseVersion
 dependencies {
     compile project(':base:common')
     compile 'net.sf.kxml:kxml2:2.3.0'
-    compile project(':base:annotations')
-    compile 'com.intellij:annotations:12.0'
 
     testCompile 'junit:junit:4.12'
 }

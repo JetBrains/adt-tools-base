@@ -25,9 +25,7 @@ import java.net.URL;
  * Callback for project information needed by the Layout Library.
  * Classes implementing this interface provide methods giving access to some project data, like
  * resource resolution, namespace information, and instantiation of custom view.
- * @deprecated use {@link LayoutlibCallback}
  */
-@Deprecated
 public interface IProjectCallback {
 
     public enum ViewAttribute {
