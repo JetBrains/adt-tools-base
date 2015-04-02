@@ -30,7 +30,7 @@ import java.net.URL;
 @Deprecated
 public interface IProjectCallback {
 
-    public enum ViewAttribute {
+    enum ViewAttribute {
         TEXT(String.class),
         IS_CHECKED(Boolean.class),
         SRC(URL.class),
@@ -38,7 +38,7 @@ public interface IProjectCallback {
 
         private final Class<?> mClass;
 
-        private ViewAttribute(Class<?> theClass) {
+        ViewAttribute(Class<?> theClass) {
             mClass = theClass;
         }
 
@@ -63,9 +63,8 @@ public interface IProjectCallback {
      * @param constructorArgs The arguments to use on the constructor
      * @return A newly instantiated object.
      */
-    @SuppressWarnings("unchecked")
     Object loadView(String name, Class[] constructorSignature, Object[] constructorArgs)
-        throws ClassNotFoundException, Exception;
+            throws Exception;
 
     /**
      * Returns the namespace of the application.
