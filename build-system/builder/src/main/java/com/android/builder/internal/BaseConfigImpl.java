@@ -120,6 +120,9 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
         mConsumerProguardFiles.clear();
         mConsumerProguardFiles.addAll(that.getConsumerProguardFiles());
 
+        mTestProguardFiles.clear();
+        mTestProguardFiles.addAll(that.getTestProguardFiles());
+
         mManifestPlaceholders.clear();
         mManifestPlaceholders.putAll(that.getManifestPlaceholders());
 

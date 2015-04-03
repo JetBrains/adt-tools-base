@@ -23,6 +23,21 @@
       unitTestVariants.all { ... }
       applicationVariants.all { v -> v.unitTestVariant }
     }
+- Test-only ProGuard files. When running instrumentation tests (i.e. connectedCheck) against
+  a minified variant, the test APK needs to be processed by ProGuard to rename references to code
+  in the main APK. Flags for this ProGuard run (mostly for silencing warnings) can now be specified
+  like this:
+    android {
+        testBuildType = "minified"
+        buildTypes {
+            minified.initWith(buildTypes.debug)
+            minified {
+                minifyEnabled true
+                proguardFiles getDefaultProguardFile('proguard-android.txt'), "proguard-rules.pro"
+                testProguardFile "test-proguard-rules.pro"
+            }
+        }
+    }
 
 1.1.0
 - Unit testing support. Unit testing code is run on the local JVM, against a
