@@ -63,7 +63,7 @@ public class JillTask extends BaseTask {
 
     @TaskAction
     void taskAction(IncrementalTaskInputs taskInputs) {
-        FullRevision revision = androidBuilder.targetInfo.buildTools.revision
+        FullRevision revision = getBuilder().targetInfo.buildTools.revision
         if (revision.compareTo(JACK_MIN_REV) < 0) {
             throw new RuntimeException("Jack requires Build Tools ${JACK_MIN_REV.toString()} or later")
         }

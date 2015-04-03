@@ -14,29 +14,50 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.tasks
+package com.android.build.gradle.internal.tasks;
 
-import org.gradle.api.DefaultTask
-import org.gradle.api.tasks.InputFile
-import org.gradle.api.tasks.TaskAction
+import com.android.annotations.NonNull;
+
+import org.gradle.api.DefaultTask;
+import org.gradle.api.tasks.InputFile;
+import org.gradle.api.tasks.TaskAction;
+
+import java.io.File;
 
 /**
  * Class that checks the presence of the manifest.
  */
 public class CheckManifest extends DefaultTask {
 
-    @InputFile
-    File manifest
+    private File manifest;
 
-    String variantName
+    private String variantName;
+
+    @InputFile
+    public File getManifest() {
+        return manifest;
+    }
+
+    public void setManifest(@NonNull File manifest) {
+        this.manifest = manifest;
+    }
+
+    public String getVariantName() {
+        return variantName;
+    }
+
+    public void setVariantName(@NonNull String variantName) {
+        this.variantName = variantName;
+    }
 
     @TaskAction
     void check() {
         // use getter to resolve convention mapping
-        File f = getManifest()
+        File f = getManifest();
         if (!f.isFile()) {
-            throw new IllegalArgumentException(
-                    "Main Manifest missing for variant ${getVariantName()}. Expected path: ${f.getAbsolutePath()}");
+            throw new IllegalArgumentException(String.format(
+                    "Main Manifest missing for variant %s. Expected path: ",
+                    getVariantName(), getManifest().getAbsolutePath()));
         }
     }
 }

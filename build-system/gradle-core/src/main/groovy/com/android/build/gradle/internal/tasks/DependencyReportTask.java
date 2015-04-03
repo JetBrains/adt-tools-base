@@ -14,19 +14,29 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.tasks
-import com.android.build.gradle.internal.AndroidAsciiReportRenderer
-import com.android.build.gradle.internal.variant.BaseVariantData
-import org.gradle.api.DefaultTask
-import org.gradle.api.tasks.TaskAction
-import org.gradle.logging.StyledTextOutputFactory
-/**
- */
+package com.android.build.gradle.internal.tasks;
+
+import com.android.annotations.NonNull;
+import com.android.build.gradle.internal.AndroidAsciiReportRenderer;
+import com.android.build.gradle.internal.variant.BaseVariantData;
+
+import org.gradle.api.DefaultTask;
+import org.gradle.api.tasks.TaskAction;
+import org.gradle.logging.StyledTextOutputFactory;
+
+import java.io.IOException;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
+
 public class DependencyReportTask extends DefaultTask {
 
     private AndroidAsciiReportRenderer renderer = new AndroidAsciiReportRenderer();
 
-    private Set<BaseVariantData> variants = [];
+    private Set<BaseVariantData> variants = new HashSet<BaseVariantData>();
 
     @TaskAction
     public void generate() throws IOException {
@@ -34,6 +44,7 @@ public class DependencyReportTask extends DefaultTask {
 
         SortedSet<BaseVariantData> sortedConfigurations = new TreeSet<BaseVariantData>(
                 new Comparator<BaseVariantData>() {
+                    @Override
             public int compare(BaseVariantData conf1, BaseVariantData conf2) {
                 return conf1.getName().compareTo(conf2.getName());
             }
@@ -56,11 +67,22 @@ public class DependencyReportTask extends DefaultTask {
     }
 
     /**
-     * Sets the configurations to generate the report for.
+     * Sets the variants to generate the report for.
      *
-     * @param configurations The configuration. Must not be null.
+     * @param variants the variants. Must not be null.
      */
-    public void setVariants(Collection<BaseVariantData> variants) {
+    public void setVariants(@NonNull Collection<BaseVariantData> variants) {
         this.variants.addAll(variants);
     }
-}
+
+    public void setVariants(Set<BaseVariantData> variants) {
+        this.variants = variants;
+    }
+
+    public AndroidAsciiReportRenderer getRenderer() {
+        return renderer;
+    }
+
+    public void setRenderer(@NonNull AndroidAsciiReportRenderer renderer) {
+        this.renderer = renderer;
+    }}
