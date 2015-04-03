@@ -13,35 +13,38 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.build.gradle.internal.tasks
+package com.android.build.gradle.internal.tasks;
 
-import com.google.common.base.Charsets
-import com.google.common.io.Files
-import org.gradle.api.DefaultTask
-import org.gradle.api.tasks.InputFiles
-import org.gradle.api.tasks.OutputFile
-import org.gradle.api.tasks.TaskAction
+import com.google.common.base.Charsets;
+import com.google.common.io.Files;
+
+import org.gradle.api.DefaultTask;
+import org.gradle.api.tasks.InputFiles;
+import org.gradle.api.tasks.OutputFile;
+import org.gradle.api.tasks.TaskAction;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.Set;
 
 /**
  * Task to merge files. This appends all the files together into an output file.
  */
-class MergeFileTask extends DefaultTask {
+public class MergeFileTask extends DefaultTask {
 
-    @InputFiles
-    Set<File> inputFiles
+    private Set<File> mInputFiles;
 
-    @OutputFile
-    File outputFile
+    private File mOutputFile;
 
     @TaskAction
-    void mergeFiles() {
+    public void mergeFiles() throws IOException {
 
         Set<File> files = getInputFiles();
-        File output = getOutputFile()
+        File output = getOutputFile();
 
         if (files.size() == 1) {
             Files.copy(files.iterator().next(), output);
-            return
+            return;
         }
 
         // first delete the current file
@@ -49,7 +52,7 @@ class MergeFileTask extends DefaultTask {
 
         // no input? done.
         if (files.isEmpty()) {
-            return
+            return;
         }
 
         // otherwise put the all the files together
@@ -59,4 +62,23 @@ class MergeFileTask extends DefaultTask {
             Files.append("\n", output, Charsets.UTF_8);
         }
     }
+
+    @InputFiles
+    public Set<File> getInputFiles() {
+        return mInputFiles;
+    }
+
+    public void setInputFiles(Set<File> inputFiles) {
+        mInputFiles = inputFiles;
+    }
+
+    @OutputFile
+    public File getOutputFile() {
+        return mOutputFile;
+    }
+
+    public void setOutputFile(File outputFile) {
+        mOutputFile = outputFile;
+    }
+
 }

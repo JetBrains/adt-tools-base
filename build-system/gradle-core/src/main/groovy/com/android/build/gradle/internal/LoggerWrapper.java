@@ -13,26 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.build.gradle.internal
+package com.android.build.gradle.internal;
 
-import com.android.ide.common.res2.MergingException
-import com.android.utils.ILogger
-import org.gradle.api.logging.LogLevel
-import org.gradle.api.logging.Logger
+import com.android.ide.common.res2.MergingException;
+import com.android.utils.ILogger;
+import org.gradle.api.logging.LogLevel;
+import org.gradle.api.logging.Logger;
 
 /**
  * Implementation of Android's {@link ILogger} over gradle's {@link Logger}.
  */
-class LoggerWrapper implements ILogger {
+public class LoggerWrapper implements ILogger {
 
-    private final Logger logger
+    private final Logger logger;
 
-    LoggerWrapper(Logger logger) {
+    public LoggerWrapper(Logger logger) {
         this.logger = logger;
     }
 
     @Override
-    void error(Throwable throwable, String s, Object... objects) {
+    public void error(Throwable throwable, String s, Object... objects) {
         if (throwable instanceof MergingException) {
             // MergingExceptions have a known cause: they aren't internal errors, they
             // are errors in the user's code, so a full exception is not helpful (and
@@ -41,59 +41,59 @@ class LoggerWrapper implements ILogger {
             //
             // Furthermore, these exceptions are already caught by the MergeResources
             // and MergeAsset tasks, so don't duplicate the output
-            return
+            return;
         }
 
         if (!logger.isEnabled(LogLevel.ERROR)) {
-            return
+            return;
         }
 
         if (objects != null && objects.length > 0) {
-            s = String.format(s, objects)
+            s = String.format(s, objects);
         }
 
         if (throwable == null) {
-            logger.log(LogLevel.ERROR, s)
+            logger.log(LogLevel.ERROR, s);
 
         } else {
-            logger.log(LogLevel.ERROR, s, throwable)
+            logger.log(LogLevel.ERROR, s, throwable);
         }
     }
 
     @Override
-    void warning(String s, Object... objects) {
+    public void warning(String s, Object... objects) {
         if (!logger.isEnabled(LogLevel.WARN)) {
-            return
+            return;
         }
         if (objects == null || objects.length == 0) {
-            logger.log(LogLevel.WARN, s)
+            logger.log(LogLevel.WARN, s);
         } else {
-            logger.log(LogLevel.WARN, String.format(s, objects))
+            logger.log(LogLevel.WARN, String.format(s, objects));
         }
     }
 
     @Override
-    void info(String s, Object... objects) {
+    public void info(String s, Object... objects) {
         if (!logger.isEnabled(LogLevel.INFO)) {
-            return
+            return;
         }
         if (objects == null || objects.length == 0) {
-            logger.log(LogLevel.INFO, s)
+            logger.log(LogLevel.INFO, s);
         } else {
-            logger.log(LogLevel.INFO, String.format(s, objects))
+            logger.log(LogLevel.INFO, String.format(s, objects));
         }
     }
 
     @Override
-    void verbose(String s, Object... objects) {
+    public void verbose(String s, Object... objects) {
         if (!logger.isEnabled(LogLevel.DEBUG)) {
-            return
+            return;
         }
         if (objects == null || objects.length == 0) {
-            logger.log(LogLevel.DEBUG, s)
+            logger.log(LogLevel.DEBUG, s);
 
         } else {
-            logger.log(LogLevel.DEBUG, String.format(s, objects))
+            logger.log(LogLevel.DEBUG, String.format(s, objects));
         }
     }
 }

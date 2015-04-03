@@ -90,6 +90,6 @@ public class CreateMainDexList extends BaseTask {
     }
 
     private Set<String> callDx(File allClassesJarFile, File jarOfRoots) {
-        return androidBuilder.createMainDexList(allClassesJarFile, jarOfRoots)
+        return getBuilder().createMainDexList(allClassesJarFile, jarOfRoots)
     }
 }
