@@ -92,11 +92,8 @@ public class SamplePackage extends MinToolsPackage
                     SdkRepoConstants.NODE_MIN_API_LEVEL,
                     MIN_API_LEVEL_NOT_SPECIFIED);
 
-        mPkgDesc = PkgDesc.Builder
-                .newSample(mVersion,
-                           (MajorRevision) getRevision(),
-                           getMinToolsRevision())
-                .setDescriptions(this)
+        mPkgDesc = setDescriptions(PkgDesc.Builder
+                .newSample(mVersion, (MajorRevision) getRevision(), getMinToolsRevision()))
                 .create();
     }
 
@@ -130,13 +127,10 @@ public class SamplePackage extends MinToolsPackage
         mVersion = target.getVersion();
 
         mMinApiLevel = getPropertyInt(props, PkgProps.SAMPLE_MIN_API_LEVEL,
-                                             MIN_API_LEVEL_NOT_SPECIFIED);
+                MIN_API_LEVEL_NOT_SPECIFIED);
 
-        mPkgDesc = PkgDesc.Builder
-                .newSample(mVersion,
-                          (MajorRevision) getRevision(),
-                          getMinToolsRevision())
-                .setDescriptions(this)
+        mPkgDesc = setDescriptions(PkgDesc.Builder
+                .newSample(mVersion, (MajorRevision) getRevision(), getMinToolsRevision()))
                 .create();
     }
 
@@ -172,11 +166,8 @@ public class SamplePackage extends MinToolsPackage
         mMinApiLevel = getPropertyInt(props, PkgProps.SAMPLE_MIN_API_LEVEL,
                                              MIN_API_LEVEL_NOT_SPECIFIED);
 
-        mPkgDesc = PkgDesc.Builder
-                .newSample(mVersion,
-                           (MajorRevision) getRevision(),
-                           getMinToolsRevision())
-                .setDescriptions(this)
+        mPkgDesc = setDescriptions(PkgDesc.Builder
+                .newSample(mVersion, (MajorRevision) getRevision(), getMinToolsRevision()))
                 .create();
     }
 

@@ -34,6 +34,7 @@ import com.android.sdklib.io.IFileOp;
 import com.android.sdklib.repository.*;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
 
+import com.android.sdklib.repository.descriptors.PkgDesc;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.w3c.dom.Node;
 
@@ -154,7 +155,7 @@ public abstract class Package implements IDescription, IListDescription, Compara
         mDescUrl     = getProperty(props, PkgProps.PKG_DESC_URL,     descUrl);
         mReleaseNote = getProperty(props, PkgProps.PKG_RELEASE_NOTE, "");       //$NON-NLS-1$
         mReleaseUrl  = getProperty(props, PkgProps.PKG_RELEASE_URL,  "");       //$NON-NLS-1$
-        mObsolete    = getProperty(props, PkgProps.PKG_OBSOLETE,     null);
+        mObsolete    = getProperty(props, PkgProps.PKG_OBSOLETE, null);
 
         // If source is null and we can find a source URL in the properties, generate
         // a dummy source just to store the URL. This allows us to easily remember where
@@ -876,5 +877,16 @@ public abstract class Package implements IDescription, IListDescription, Compara
             return false;
         }
         return true;
+    }
+
+    // TODO(jbakermalone): This is moved here from the more logical location in PkgDesc.Builder since Package will soon be forked into
+    //                     studio and this version deprecated, whereas PkgDesc will not.
+    protected PkgDesc.Builder setDescriptions(PkgDesc.Builder builder) {
+        builder.setDescriptionShort(getShortDescription());
+        builder.setDescriptionUrl(getDescUrl());
+        builder.setListDisplay(getListDisplay());
+        builder.setIsObsolete(isObsolete());
+        builder.setLicense(getLicense());
+        return builder;
     }
 }
