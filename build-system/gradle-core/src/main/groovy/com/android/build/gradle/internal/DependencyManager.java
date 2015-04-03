@@ -34,12 +34,10 @@ import com.android.builder.model.MavenCoordinates;
 import com.android.builder.model.SyncIssue;
 import com.android.utils.ILogger;
 import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
-import com.google.common.collect.Table;
 
 import org.gradle.api.Project;
 import org.gradle.api.Task;
@@ -370,14 +368,16 @@ public class DependencyManager {
         // not package them twice (since the VM loads the classes of both APKs in the same
         // classpath and refuses to load the same class twice)
         if (testedVariantDeps != null) {
-            // gather the tested dependencies
-            Table<String, String, String> testedDeps = HashBasedTable.create();
+            List<JarDependency> jarDependencies = testedVariantDeps.getJarDependencies();
 
-            for (JarDependency jar : testedVariantDeps.getJarDependencies()) {
+            // gather the tested dependencies
+            Map<String, String> testedDeps = Maps.newHashMapWithExpectedSize(jarDependencies.size());
+
+            for (JarDependency jar : jarDependencies) {
                 if (jar.isPackaged()) {
                     MavenCoordinates coord = jar.getResolvedCoordinates();
                     //noinspection ConstantConditions
-                    testedDeps.put(coord.getGroupId(), coord.getArtifactId(), coord.getVersion());
+                    testedDeps.put(computeVersionLessCoordinateKey(coord), coord.getVersion());
                 }
             }
 
@@ -388,7 +388,7 @@ public class DependencyManager {
                 if (jar.isPackaged()) {
                     MavenCoordinates coord = jar.getResolvedCoordinates();
 
-                    String testedVersion = testedDeps.get(coord.getGroupId(), coord.getArtifactId());
+                    String testedVersion = testedDeps.get(computeVersionLessCoordinateKey(coord));
                     if (testedVersion != null) {
                         // same artifact, skip packaging of the dependency in the test app,
                         // whether the version is a match or not.
@@ -784,30 +784,8 @@ public class DependencyManager {
                             alreadyFoundLibraries.put(moduleVersion, libsForThisModule);
                         }
 
-                        StringBuilder pathBuilder = new StringBuilder();
-                        StringBuilder nameBuilder = new StringBuilder();
-
-                        pathBuilder.append(normalize(logger, moduleVersion, moduleVersion.getGroup()))
-                                .append('/')
-                                .append(normalize(logger, moduleVersion, moduleVersion.getName()))
-                                .append('/')
-                                .append(normalize(logger, moduleVersion,
-                                        moduleVersion.getVersion()));
-
-                        nameBuilder.append(moduleVersion.getGroup())
-                                .append(':')
-                                .append(moduleVersion.getName())
-                                .append(':')
-                                .append(moduleVersion.getVersion());
-
-                        if (artifact.getClassifier() != null && !artifact.getClassifier().isEmpty()) {
-                            pathBuilder.append('/').append(normalize(logger, moduleVersion,
-                                    artifact.getClassifier()));
-                            nameBuilder.append(':').append(artifact.getClassifier());
-                        }
-
-                        String path = pathBuilder.toString();
-                        String name = nameBuilder.toString();
+                        String path = computeArtifactPath(moduleVersion, artifact);
+                        String name = computeArtifactName(moduleVersion, artifact);
 
                         if (DEBUG_DEPENDENCY) {
                             printIndent(indent, "NAME: " + name);
@@ -863,19 +841,7 @@ public class DependencyManager {
                         outJars.add(jarInfo);
 
                     } else if (EXT_ANDROID_PACKAGE.equals(artifact.getExtension())) {
-                        StringBuilder nameBuilder = new StringBuilder();
-
-                        nameBuilder.append(moduleVersion.getGroup())
-                                .append(':')
-                                .append(moduleVersion.getName())
-                                .append(':')
-                                .append(moduleVersion.getVersion());
-
-                        if (artifact.getClassifier() != null && !artifact.getClassifier().isEmpty()) {
-                            nameBuilder.append(':').append(artifact.getClassifier());
-                        }
-
-                        String name = nameBuilder.toString();
+                        String name = computeArtifactName(moduleVersion, artifact);
 
                         configDependencies.getChecker().addSyncIssue(extraModelInfo.handleSyncError(
                                 name,
@@ -885,19 +851,7 @@ public class DependencyManager {
                                         "which is not supported as a compilation dependency. File: %s",
                                         name, project.getName(), artifact.getFile())));
                     } else if ("apklib".equals(artifact.getExtension())) {
-                        StringBuilder nameBuilder = new StringBuilder();
-
-                        nameBuilder.append(moduleVersion.getGroup())
-                                .append(':')
-                                .append(moduleVersion.getName())
-                                .append(':')
-                                .append(moduleVersion.getVersion());
-
-                        if (artifact.getClassifier() != null && !artifact.getClassifier().isEmpty()) {
-                            nameBuilder.append(':').append(artifact.getClassifier());
-                        }
-
-                        String name = nameBuilder.toString();
+                        String name = computeArtifactName(moduleVersion, artifact);
 
                         configDependencies.getChecker().addSyncIssue(extraModelInfo.handleSyncError(
                                 name,
@@ -906,19 +860,7 @@ public class DependencyManager {
                                         "Packaging for dependency %s is 'apklib' and is not supported. " +
                                         "Only 'aar' libraries are supported.", name)));
                     } else {
-                        StringBuilder nameBuilder = new StringBuilder();
-
-                        nameBuilder.append(moduleVersion.getGroup())
-                                .append(':')
-                                .append(moduleVersion.getName())
-                                .append(':')
-                                .append(moduleVersion.getVersion());
-
-                        if (artifact.getClassifier() != null && !artifact.getClassifier().isEmpty()) {
-                            nameBuilder.append(':').append(artifact.getClassifier());
-                        }
-
-                        String name = nameBuilder.toString();
+                        String name = computeArtifactName(moduleVersion, artifact);
 
                         logger.warning(String.format(
                                         "Unrecognized dependency: '%s' (type: '%s', extension: '%s')",
@@ -931,6 +873,46 @@ public class DependencyManager {
                 printIndent(indent, "DONE: " + moduleVersion.getName());
             }
         }
+    }
+
+    @NonNull
+    private String computeArtifactPath(
+            @NonNull ModuleVersionIdentifier moduleVersion,
+            @NonNull ResolvedArtifact artifact) {
+        StringBuilder pathBuilder = new StringBuilder();
+
+        pathBuilder.append(normalize(logger, moduleVersion, moduleVersion.getGroup()))
+                .append('/')
+                .append(normalize(logger, moduleVersion, moduleVersion.getName()))
+                .append('/')
+                .append(normalize(logger, moduleVersion,
+                        moduleVersion.getVersion()));
+
+        if (artifact.getClassifier() != null && !artifact.getClassifier().isEmpty()) {
+            pathBuilder.append('/').append(normalize(logger, moduleVersion,
+                    artifact.getClassifier()));
+        }
+
+        return pathBuilder.toString();
+    }
+
+    @NonNull
+    private static String computeArtifactName(
+            @NonNull ModuleVersionIdentifier moduleVersion,
+            @NonNull ResolvedArtifact artifact) {
+        StringBuilder nameBuilder = new StringBuilder();
+
+        nameBuilder.append(moduleVersion.getGroup())
+                .append(':')
+                .append(moduleVersion.getName())
+                .append(':')
+                .append(moduleVersion.getVersion());
+
+        if (artifact.getClassifier() != null && !artifact.getClassifier().isEmpty()) {
+            nameBuilder.append(':').append(artifact.getClassifier());
+        }
+
+        return nameBuilder.toString();
     }
 
     /**
@@ -949,7 +931,7 @@ public class DependencyManager {
             return path;
         }
         // list of illegal characters
-        String normalizedPath = path.replaceAll("[%<>:\"/?*\\\\]","@");
+        String normalizedPath = path.replaceAll("[%<>:\"/?*\\\\]", "@");
         if (normalizedPath == null || normalizedPath.isEmpty()) {
             // if the path normalization failed, return the original path.
             logger.info(String.format(
@@ -1011,5 +993,20 @@ public class DependencyManager {
                 configurationName);
         task.dependsOn(configuration.getTaskDependencyFromProjectDependency(
                 useDependedOn, otherProjectTaskName));
+    }
+
+    /**
+     * Compute a version-less key represening the given coordinate.
+     * @param coord the coordinate
+     * @return the key.
+     */
+    @NonNull
+    private static String computeVersionLessCoordinateKey(@NonNull MavenCoordinates coord) {
+        StringBuilder sb = new StringBuilder(coord.getGroupId());
+        sb.append(':').append(coord.getArtifactId());
+        if (coord.getClassifier() != null) {
+            sb.append(':').append(coord.getClassifier());
+        }
+        return sb.toString();
     }
 }
