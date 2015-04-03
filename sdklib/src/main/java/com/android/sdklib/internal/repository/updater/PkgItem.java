@@ -18,7 +18,7 @@ package com.android.sdklib.internal.repository.updater;
 
 import com.android.annotations.Nullable;
 import com.android.sdklib.AndroidVersion;
-import com.android.sdklib.internal.repository.IDescription;
+import com.android.sdklib.repository.IDescription;
 import com.android.sdklib.internal.repository.archives.Archive;
 import com.android.sdklib.internal.repository.packages.IAndroidVersionProvider;
 import com.android.sdklib.internal.repository.packages.Package;

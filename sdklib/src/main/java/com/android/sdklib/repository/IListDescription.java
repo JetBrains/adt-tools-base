@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.sdklib.internal.repository;
+package com.android.sdklib.repository;
 
 /**
  * Interface for elements that can provide a description of themselves.
@@ -30,5 +30,5 @@ public interface IListDescription {
      * In contrast, {@link IDescription#getShortDescription()} should be used if you
      * want more details such as the package revision number or the API, if applicable.
      */
-    public abstract String getListDescription();
+    String getListDescription();
 }

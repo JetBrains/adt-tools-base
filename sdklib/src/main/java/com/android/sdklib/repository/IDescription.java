@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.sdklib.internal.repository;
+package com.android.sdklib.repository;
 
 /**
  * Interface for elements that can provide a description of themselves.
@@ -27,7 +27,7 @@ public interface IDescription {
      * A description is a multi-line of text, typically much more
      * elaborate than what {@link Object#toString()} would provide.
      */
-    public abstract String getShortDescription();
+    String getShortDescription();
 
     /**
      * Returns a description of the given element. Cannot be null.
@@ -35,6 +35,6 @@ public interface IDescription {
      * A description is a multi-line of text, typically much more
      * elaborate than what {@link Object#toString()} would provide.
      */
-    public abstract String getLongDescription();
+    String getLongDescription();
 
 }
