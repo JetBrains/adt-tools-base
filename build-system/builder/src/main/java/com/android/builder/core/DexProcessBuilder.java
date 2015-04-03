@@ -46,6 +46,7 @@ import java.util.Set;
 public class DexProcessBuilder extends ProcessEnvBuilder<DexProcessBuilder> {
     private static final FullRevision MIN_BUILD_TOOLS_REVISION_FOR_DEX_INPUT_LIST = new FullRevision(21, 0, 0);
     private static final FullRevision MIN_MULTIDEX_BUILD_TOOLS_REV = new FullRevision(21, 0, 0);
+    private static final FullRevision MIN_MULTI_THREADED_DEX_BUILD_TOOLS_REV = new FullRevision(22, 0, 2);
 
     @NonNull
     private final File mOutputFile;
@@ -127,7 +128,8 @@ public class DexProcessBuilder extends ProcessEnvBuilder<DexProcessBuilder> {
             @NonNull DexOptions dexOptions) throws ProcessException {
 
         checkState(
-                !mMultiDex || buildToolInfo.getRevision().compareTo(MIN_MULTIDEX_BUILD_TOOLS_REV) >= 0,
+                !mMultiDex
+                        || buildToolInfo.getRevision().compareTo(MIN_MULTIDEX_BUILD_TOOLS_REV) >= 0,
                 "Multi dex requires Build Tools " +
                         MIN_MULTIDEX_BUILD_TOOLS_REV.toString() +
                         " / Current: " +
@@ -169,12 +171,15 @@ public class DexProcessBuilder extends ProcessEnvBuilder<DexProcessBuilder> {
             builder.addArgs("--no-optimize");
         }
 
-        /**
-         * This seems to trigger some error in dx, so disable for now.
-         if (dexOptions.getThreadCount() > 1) {
-         command.add("--num-threads=" + dexOptions.getThreadCount());
-         }
-         */
+        // only change thread count is build tools is 22.0.2+
+        if (buildToolInfo.getRevision().compareTo(MIN_MULTI_THREADED_DEX_BUILD_TOOLS_REV) >= 0) {
+            Integer threadCount = dexOptions.getThreadCount();
+            if (threadCount == null) {
+                builder.addArgs("--num-threads=4");
+            } else {
+                builder.addArgs("--num-threads=" + threadCount);
+            }
+        }
 
         if (mMultiDex) {
             builder.addArgs("--multi-dex");
