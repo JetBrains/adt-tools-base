@@ -734,13 +734,11 @@ public class GradleTestProject implements TestRule {
 
     private void executeBuild(List<String> arguments, ProjectConnection connection,
             String[] tasks) {
-        List<String> args = Lists.newArrayListWithCapacity(2 + arguments.size());
+        List<String> args = Lists.newArrayListWithCapacity(3 + arguments.size());
         args.add("-i");
         args.add("-u");
         args.addAll(arguments);
 
-        BuildLauncher launcher = connection.newBuild().forTasks(tasks)
-                .withArguments(args.toArray(new String[args.size()]));
 
         List<String> jvmArguments = getJvmArguments();
 
@@ -748,8 +746,11 @@ public class GradleTestProject implements TestRule {
             jvmArguments.add(JacocoAgent.getJvmArg());
         }
         if (!jvmArguments.isEmpty()) {
-            launcher.setJvmArguments(jvmArguments.toArray(new String[jvmArguments.size()]));
+            args.add("-Dorg.gradle.jvmargs=" + Joiner.on(' ').join(jvmArguments));
         }
+
+        BuildLauncher launcher = connection.newBuild().forTasks(tasks)
+                .withArguments(args.toArray(new String[args.size()]));
 
         if (stdout != null) {
             launcher.setStandardOutput(stdout);
@@ -798,12 +799,13 @@ public class GradleTestProject implements TestRule {
         if (!emulateStudio_1_0) {
             arguments.add("-P" + AndroidProject.PROPERTY_BUILD_MODEL_ONLY_ADVANCED + "=true");
         }
-        executer.withArguments(Iterables.toArray(arguments, String.class));
 
         List<String> debugJvmArguments = getJvmArguments();
         if (!debugJvmArguments.isEmpty()) {
-            executer.setJvmArguments(Iterables.toArray(debugJvmArguments, String.class));
+            arguments.add("-Dorg.gradle.jvmargs=" + Joiner.on(' ').join(debugJvmArguments));
         }
+
+        executer.withArguments(Iterables.toArray(arguments, String.class));
 
         executer.setStandardOutput(System.out);
         executer.setStandardError(System.err);
