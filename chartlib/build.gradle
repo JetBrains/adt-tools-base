@@ -1,0 +1,16 @@
+apply plugin: 'java'
+
+group = 'com.android.tools.chartlib'
+archivesBaseName = 'chartlib'
+version = rootProject.ext.baseVersion
+
+dependencies {
+  compile project(':base:common')
+  compile 'net.sf.trove4j:trove4j:1.1'
+  testCompile 'junit:junit:4.12'
+}
+
+project.ext.pomName = 'Android Tools chartlib'
+project.ext.pomDesc = 'Library with swing chart widgets'
+
+apply from: "$rootDir/buildSrc/base/javadoc.gradle"
