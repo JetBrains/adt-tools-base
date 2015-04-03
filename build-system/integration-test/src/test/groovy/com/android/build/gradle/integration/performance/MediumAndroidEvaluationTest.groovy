@@ -40,6 +40,7 @@ class MediumAndroidEvaluationTest {
                 .withDepth(MEDIUM_DEPTH)
                 .withBreadth(MEDIUM_BREADTH)
                 .create())
+            .withHeap("2048m")
             .create()
 
     @AfterClass
