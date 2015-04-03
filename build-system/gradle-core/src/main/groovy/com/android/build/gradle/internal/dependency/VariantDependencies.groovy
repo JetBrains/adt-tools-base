@@ -22,6 +22,7 @@ import com.android.builder.core.VariantType
 import com.android.builder.dependency.DependencyContainer
 import com.android.builder.dependency.JarDependency
 import com.android.builder.dependency.LibraryDependency
+import com.google.common.base.Objects
 import com.google.common.collect.Sets
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
@@ -230,5 +231,12 @@ public class VariantDependencies implements DependencyContainer, ConfigurationPr
     @Override
     List<JarDependency> getLocalDependencies() {
         return localJars
+    }
+
+    @Override
+    public String toString() {
+        return Objects.toStringHelper(this)
+                .add("name", name)
+                .toString();
     }
 }
