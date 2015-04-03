@@ -342,8 +342,13 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
                             SdkConstants.FN_MANIFEST_INI);
                     break;
                 }
-            } catch (FileNotFoundException ignore) {}
-            assert propertyMap != null;
+            } catch (FileNotFoundException e) {
+                // this can happen if the system fails to open the file because of too many
+                // open files.
+                error = String.format("Failed to parse properties from %1$s: %2$s",
+                        SdkConstants.FN_MANIFEST_INI, e.getMessage());
+                break;
+            }
 
             // look for some specific values in the map.
             // we require name, vendor, and api
