@@ -155,7 +155,7 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
         List<ProductFlavorCombo> createProductFlavorCombo (
                 @Path("android.productFlavors") NamedDomainObjectContainer<GroupableProductFlavor> productFlavors) {
             // TODO: Create custom product flavor container to manually configure flavor dimensions.
-            List<String> flavorDimensionList = productFlavors*.flavorDimension.unique().asList()
+            List<String> flavorDimensionList = productFlavors*.dimension.unique().asList()
             flavorDimensionList.removeAll([null])
 
             return ProductFlavorCombo.createCombinations(flavorDimensionList, productFlavors)

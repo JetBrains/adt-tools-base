@@ -20,14 +20,15 @@ import org.gradle.api.Project
 import org.gradle.api.logging.Logger
 import org.gradle.internal.reflect.Instantiator
 
+import static com.android.build.gradle.internal.LoggingUtil.displayDeprecationWarning
+
 /**
  * A version of {@link ProductFlavor} that can receive a dimension name.
  */
+// TODO: Remove interface and implementors now ProductFlavor has dimension.
+@Deprecated
 public class GroupableProductFlavor
         extends ProductFlavor implements com.android.build.gradle.api.GroupableProductFlavor {
-
-    /** Name of the dimension this product flavor belongs to. */
-    String flavorDimension
 
     public GroupableProductFlavor(
             @NonNull String name,
@@ -36,4 +37,25 @@ public class GroupableProductFlavor
             @NonNull Logger logger) {
         super(name, project, instantiator, logger)
     }
+
+    @Deprecated
+    public void setFlavorDimension(String dimension) {
+        displayDeprecationWarning(logger, project,
+                "'flavorDimension' will be removed by Android Gradle Plugin 2.0, " +
+                        "it has been replaced by 'dimension'.")
+        setDimension(dimension);
+    }
+
+    /**
+     * Name of the dimension this product flavor belongs to. Has been replaced by
+     * <code>dimension</code>
+     */
+    @Deprecated
+    public String getFlavorDimension() {
+        displayDeprecationWarning(logger, project,
+                "'flavorDimension' will be removed by Android Gradle Plugin 2.0, " +
+                        "it has been replaced by 'dimension'.")
+        return getDimension();
+    }
+
 }

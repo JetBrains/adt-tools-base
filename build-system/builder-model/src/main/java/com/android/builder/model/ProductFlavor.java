@@ -42,6 +42,12 @@ public interface ProductFlavor extends BaseConfig {
     String getName();
 
     /**
+     * Returns the flavor dimension or null if not applicable.
+     */
+    @Nullable
+    String getDimension();
+
+    /**
      * Returns the name of the product flavor. This is only the value set on this product flavor.
      * To get the final application id name, use {@link AndroidArtifact#getApplicationId()}.
      *

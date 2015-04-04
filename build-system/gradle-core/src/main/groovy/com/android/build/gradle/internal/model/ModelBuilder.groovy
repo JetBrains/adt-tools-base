@@ -130,9 +130,13 @@ public class ModelBuilder implements ToolingModelBuilder {
 
         def manifestData = parseManifestData()
 
+        List<String> flavorDimensionList = (extension.flavorDimensionList != null ?
+                extension.flavorDimensionList : (List<String>) [])
+
         DefaultAndroidProject androidProject = new DefaultAndroidProject(
                 manifestData.modelVersion as String,
                 project.name,
+                flavorDimensionList,
                 androidBuilder.getTarget().hashString(),
                 bootClasspath,
                 frameworkSource,
