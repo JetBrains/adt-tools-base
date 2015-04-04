@@ -517,7 +517,7 @@ public class VariantManager implements VariantModel {
             ProductFlavorData<GroupableProductFlavor> data = productFlavors.get(
                     productFlavor.getName());
 
-            String dimensionName = productFlavor.getFlavorDimension();
+            String dimensionName = productFlavor.getDimension();
             if (dimensionName == null) {
                 dimensionName = "";
             }
@@ -630,7 +630,7 @@ public class VariantManager implements VariantModel {
             ProductFlavorData<GroupableProductFlavor> data = productFlavors
                     .get(productFlavor.getName());
 
-            String dimensionName = productFlavor.getFlavorDimension();
+            String dimensionName = productFlavor.getDimension();
             if (dimensionName == null) {
                 dimensionName = "";
             }

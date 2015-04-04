@@ -5,6 +5,7 @@
             <thead>
                 <tr><td>Name</td></tr>
             </thead>
+            <tr><td>dimension</td></tr>
             <tr><td>versionCode</td></tr>
             <tr><td>versionName</td></tr>
             <tr><td>applicationId</td></tr>

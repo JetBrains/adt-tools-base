@@ -24,6 +24,7 @@ import com.android.build.gradle.integration.common.utils.SourceProviderHelper
 import com.android.build.gradle.integration.common.utils.VariantHelper
 import com.android.builder.model.AndroidProject
 import com.android.builder.model.BuildTypeContainer
+import com.android.builder.model.ProductFlavor
 import com.android.builder.model.ProductFlavorContainer
 import com.android.builder.model.SourceProviderContainer
 import com.android.builder.model.Variant
@@ -38,6 +39,7 @@ import static com.android.builder.model.AndroidProject.ARTIFACT_ANDROID_TEST
 import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertFalse
 import static org.junit.Assert.assertNotNull
+import static com.google.common.truth.Truth.assertThat;
 
 /**
  * Assemble tests for flavors.
@@ -71,6 +73,8 @@ class FlavorsTest {
 
         assertFalse("Library Project", model.isLibrary())
 
+        assertThat(model.getFlavorDimensions()).containsExactly("group1", "group2")
+
         ProductFlavorContainer defaultConfig = model.getDefaultConfig()
 
         new SourceProviderHelper(model.getName(), projectDir,
@@ -91,8 +95,17 @@ class FlavorsTest {
         Collection<Variant> variants = model.getVariants()
         assertEquals("Variant Count", 8, variants.size())
 
+        Collection<ProductFlavorContainer> flavorContainers = model.getProductFlavors();
+        assertThat(flavorContainers).hasSize(4);
+        Map expected = [f1:"group1", f2: "group1", fa: "group2", fb: "group2"]
+        for (ProductFlavorContainer flavorContainer: flavorContainers) {
+            ProductFlavor flavor = flavorContainer.getProductFlavor();
+            assertEquals(expected.get(flavor.name), flavor.dimension)
+        }
+
         Variant f1faDebugVariant = ModelHelper.getVariant(variants, "f1FaDebug")
         assertNotNull("f1faDebug Variant null-check", f1faDebugVariant)
+        assertThat(f1faDebugVariant.getProductFlavors()).containsExactly("f1","fa")
         new ProductFlavorHelper(f1faDebugVariant.getMergedFlavor(), "F1faDebug Merged Flavor")
                 .test()
         new VariantHelper(f1faDebugVariant, projectDir, "flavors-f1-fa-debug.apk").test()

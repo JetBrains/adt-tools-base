@@ -22,11 +22,9 @@ import com.android.builder.model.ProductFlavor;
 /**
  * A product flavor that is associated with a flavor dimension.
  */
+@Deprecated
 public interface GroupableProductFlavor extends ProductFlavor {
 
-    /**
-     * Returns the flavor dimension or null if non are set.
-     */
-    @Nullable
-    String getFlavorDimension();
+    // TODO: Remove interface now ProductFlavor has dimension.
+
 }
