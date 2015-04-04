@@ -125,6 +125,14 @@ public interface AndroidProject {
     Collection<Variant> getVariants();
 
     /**
+     * Returns a list of all the flavor dimensions, may be empty.
+     *
+     * @return a list of the flavor dimensions.
+     */
+    @NonNull
+    Collection<String> getFlavorDimensions();
+
+    /**
      * Returns a list of extra artifacts meta data. This does not include the main artifact.
      *
      * @return a list of extra artifacts

@@ -93,7 +93,7 @@ public class ProductFlavorCombo {
             // First a map of dimension -> list(ProductFlavor)
             ArrayListMultimap<String, GroupableProductFlavor> map = ArrayListMultimap.create();
             for (GroupableProductFlavor flavor : productFlavors) {
-                String flavorDimension = flavor.getFlavorDimension();
+                String flavorDimension = flavor.getDimension();
 
                 if (flavorDimension == null) {
                     throw new RuntimeException(String.format(
@@ -102,7 +102,7 @@ public class ProductFlavorCombo {
                 if (!flavorDimensions.contains(flavorDimension)) {
                     throw new RuntimeException(String.format(
                             "Flavor '%1$s' has unknown dimension '%2$s'.",
-                            flavor.getName(), flavor.getFlavorDimension()));
+                            flavor.getName(), flavor.getDimension()));
                 }
 
                 map.put(flavorDimension, flavor);
