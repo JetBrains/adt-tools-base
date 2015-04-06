@@ -598,7 +598,7 @@ public final class AndroidDebugBridge {
                         "Unexpected exception '%1$s' while attempting to get adb version from '%2$s'",
                         e.getMessage(), mAdbOsLocation);
             } else {
-                msg = "Unable to locate adb.\n" +
+                msg = "Unable to locate adb: '" + mAdbOsLocation + "'.\n" +
                       "Please use SDK Manager and check if Android SDK platform-tools are installed.";
             }
             Log.logAndDisplay(LogLevel.ERROR, ADB, msg);

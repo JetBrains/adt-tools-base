@@ -119,7 +119,7 @@ public class PlatformLoader implements SdkLoader {
             if (SdkConstants.CURRENT_PLATFORM == SdkConstants.PLATFORM_DARWIN) {
                 host = "darwin-x86";
             } else if (SdkConstants.CURRENT_PLATFORM == SdkConstants.PLATFORM_LINUX) {
-                host = "linux";
+                host = "linux-x86";
             } else {
                 throw new IllegalStateException(
                         "Windows is not supported for platform development");
