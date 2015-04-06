@@ -18,8 +18,8 @@ package com.android.sdklib.repository.local;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.sdklib.internal.repository.IDescription;
-import com.android.sdklib.internal.repository.IListDescription;
+import com.android.sdklib.repository.IDescription;
+import com.android.sdklib.repository.IListDescription;
 import com.android.sdklib.internal.repository.packages.Package;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
 import com.android.sdklib.repository.remote.RemotePkgInfo;

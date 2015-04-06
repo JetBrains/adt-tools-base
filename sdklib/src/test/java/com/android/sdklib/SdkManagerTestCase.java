@@ -47,7 +47,6 @@ import com.android.sdklib.devices.Storage;
 import com.android.sdklib.devices.Storage.Unit;
 import com.android.sdklib.internal.avd.AvdManager;
 import com.android.sdklib.internal.repository.archives.ArchFilter;
-import com.android.sdklib.internal.repository.archives.HostOs;
 import com.android.sdklib.io.FileOp;
 import com.android.sdklib.mock.MockLog;
 import com.android.sdklib.repository.FullRevision;
@@ -461,7 +460,7 @@ public abstract class SdkManagerTestCase extends AndroidLocationTestCase {
      * Adds a new fake build tools to the SDK In the given SDK/build-tools folder.
      *
      * @param sdkDir The SDK top folder. Must already exist.
-     * @param os The OS. One of {@link HostOs#toString()} or "ANY".
+     * @param os The OS. One of HostOs#toString() or "ANY".
      * @param revision The "x.y.z rc r" revision number from {@link FullRevision#toShortString()}.
      * @throws IOException
      */

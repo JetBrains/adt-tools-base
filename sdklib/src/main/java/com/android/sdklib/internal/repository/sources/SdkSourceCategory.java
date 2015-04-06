@@ -16,7 +16,7 @@
 
 package com.android.sdklib.internal.repository.sources;
 
-import com.android.sdklib.internal.repository.IDescription;
+import com.android.sdklib.repository.IDescription;
 
 
 /**

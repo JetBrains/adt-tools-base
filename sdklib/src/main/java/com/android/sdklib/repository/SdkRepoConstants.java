@@ -18,7 +18,6 @@ package com.android.sdklib.repository;
 
 
 import com.android.annotations.NonNull;
-import com.android.sdklib.internal.repository.sources.SdkSource;
 
 import java.io.InputStream;
 import java.util.regex.Matcher;
@@ -53,7 +52,7 @@ public class SdkRepoConstants extends RepoConstants {
         "https://dl.google.com/android/repository/";                        //$NON-NLS-1$
 
     /**
-     * The default name looked for by {@link SdkSource} when trying to load an
+     * The default name looked for by SdkSource when trying to load an
      * sdk-repository XML if the URL doesn't match an existing resource.
      */
     public static final String URL_DEFAULT_FILENAME = "repository.xml";         //$NON-NLS-1$
