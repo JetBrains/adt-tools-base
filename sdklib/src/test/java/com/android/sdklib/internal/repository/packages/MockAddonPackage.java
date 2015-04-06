@@ -17,7 +17,7 @@
 package com.android.sdklib.internal.repository.packages;
 
 import com.android.sdklib.IAndroidTarget;
-import com.android.sdklib.internal.repository.MockAddonTarget;
+import com.android.sdklib.internal.androidTarget.MockAddonTarget;
 import com.android.sdklib.internal.repository.sources.SdkSource;
 import com.android.sdklib.repository.PkgProps;
 

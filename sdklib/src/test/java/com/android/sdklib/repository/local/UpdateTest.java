@@ -18,7 +18,7 @@ package com.android.sdklib.repository.local;
 
 import com.android.SdkConstants;
 import com.android.sdklib.AndroidVersion;
-import com.android.sdklib.internal.repository.IDescription;
+import com.android.sdklib.repository.IDescription;
 import com.android.sdklib.io.MockFileOp;
 import com.android.sdklib.repository.FullRevision;
 import com.android.sdklib.repository.MajorRevision;

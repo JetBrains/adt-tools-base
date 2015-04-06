@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.sdklib.internal.repository;
+package com.android.sdklib.internal.androidTarget;
 
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
