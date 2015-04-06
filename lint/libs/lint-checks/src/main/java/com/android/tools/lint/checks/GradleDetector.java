@@ -207,7 +207,7 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
             "NewerVersionAvailable", //$NON-NLS-1$
             "Newer Library Versions Available",
             "This detector checks with a central repository to see if there are newer versions " +
-            "available for the dependencies used by this project.\n" +
+            "available for the dependencies used by this project. " +
             "This is similar to the `GradleDependency` check, which checks for newer versions " +
             "available in the Android SDK tools and libraries, but this works with any " +
             "MavenCentral dependency, and connects to the library every time, which makes " +

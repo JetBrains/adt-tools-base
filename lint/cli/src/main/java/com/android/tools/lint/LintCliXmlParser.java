@@ -22,10 +22,13 @@ import com.android.tools.lint.client.api.IssueRegistry;
 import com.android.tools.lint.client.api.XmlParser;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Location.Handle;
+import com.android.tools.lint.detector.api.Position;
 import com.android.tools.lint.detector.api.XmlContext;
 import com.android.utils.PositionXmlParser;
 
+import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
@@ -111,6 +114,43 @@ public class LintCliXmlParser extends XmlParser {
         }
 
         return Location.create(context.file);
+    }
+
+    @Override
+    @NonNull
+    public Location getNameLocation(@NonNull XmlContext context, @NonNull Node node) {
+        Location location = getLocation(context, node);
+        Position start = location.getStart();
+        Position end = location.getEnd();
+        if (start == null || end == null) {
+            return location;
+        }
+        int delta = node instanceof Element ? 1 : 0; // Elements: skip "<"
+        int length = node.getNodeName().length();
+        int startOffset = start.getOffset() + delta;
+        int startColumn = start.getColumn() + delta;
+        return Location.create(location.getFile(),
+                new OffsetPosition(start.getLine(), startColumn, startOffset),
+                new OffsetPosition(end.getLine(), startColumn + length, startOffset + length));
+    }
+
+    @Override
+    @NonNull
+    public Location getValueLocation(@NonNull XmlContext context, @NonNull Attr node) {
+        Location location = getLocation(context, node);
+        Position start = location.getStart();
+        Position end = location.getEnd();
+        if (start == null || end == null) {
+            return location;
+        }
+        int totalLength = end.getOffset() - start.getOffset();
+        int length = node.getValue().length();
+        int delta = totalLength - 1 - length;
+        int startOffset = start.getOffset() + delta;
+        int startColumn = start.getColumn() + delta;
+        return Location.create(location.getFile(),
+                new OffsetPosition(start.getLine(), startColumn, startOffset),
+                new OffsetPosition(end.getLine(), startColumn + length, startOffset + length));
     }
 
     @NonNull
