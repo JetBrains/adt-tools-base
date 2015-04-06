@@ -69,6 +69,10 @@ import java.util.Map;
  * Helper for custom Truth factories.
  */
 public class TruthHelper {
+    @NonNull
+    public static FileSubject assertThat(@NonNull File file) {
+        return assert_().about(FileSubjectFactory.factory()).that(file);
+    }
 
     @NonNull
     public static ApkSubject assertThatApk(@NonNull File apk) {

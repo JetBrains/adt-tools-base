@@ -121,6 +121,12 @@ class ApplicationTaskManager extends TaskManager {
             SpanRecorders.record(ExecutionType.APP_TASK_MANAGER_CREATE_NDK_TASK) {
                 createNdkTasks(variantData);
             }
+        } else {
+            if (variantData.compileTask != null) {
+                variantData.compileTask.dependsOn(getNdkBuildable(variantData))
+            } else {
+                variantScope.compileTask.dependsOn(tasks, getNdkBuildable(variantData))
+            }
         }
         variantScope.setNdkBuildable(getNdkBuildable(variantData))
         variantScope.setNdkOutputDirectories(getNdkOutputDirectories(variantData))

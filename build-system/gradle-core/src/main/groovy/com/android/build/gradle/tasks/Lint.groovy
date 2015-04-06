@@ -41,6 +41,7 @@ import org.gradle.api.Project
 import org.gradle.api.plugins.JavaBasePlugin
 import org.gradle.api.tasks.ParallelizableTask
 import org.gradle.api.tasks.TaskAction
+import org.gradle.tooling.provider.model.ToolingModelBuilder
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry
 
 @ParallelizableTask
@@ -230,7 +231,7 @@ public class Lint extends DefaultAndroidTask {
 
     private AndroidProject createAndroidProject(@NonNull Project gradleProject) {
         String modelName = AndroidProject.class.getName()
-        ModelBuilder modelBuilder = mToolingRegistry.getBuilder(modelName) as ModelBuilder
+        ToolingModelBuilder modelBuilder = mToolingRegistry.getBuilder(modelName)
         assert modelBuilder != null
         return (AndroidProject) modelBuilder.buildAll(modelName, gradleProject)
     }

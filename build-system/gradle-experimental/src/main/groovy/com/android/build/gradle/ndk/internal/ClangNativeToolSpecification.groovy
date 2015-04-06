@@ -140,40 +140,47 @@ class ClangNativeToolSpecification extends AbstractNativeToolSpecification {
                     "-UNDEBUG",
                     "-marm",
                     "-fno-strict-aliasing",
+                    "-fno-limit-debug-info"
             ],
             (SdkConstants.ABI_ARMEABI_V7A) : [
                     "-O0",
                     "-UNDEBUG",
                     "-marm",
                     "-fno-strict-aliasing",
+                    "-fno-limit-debug-info"
             ],
             (SdkConstants.ABI_ARM64_V8A) : [
                     "-O0",
                     "-UNDEBUG",
                     "-fno-omit-frame-pointer",
                     "-fno-strict-aliasing",
+                    "-fno-limit-debug-info"
             ],
             (SdkConstants.ABI_INTEL_ATOM) : [
                     "-O0",
                     "-UNDEBUG",
                     "-fno-omit-frame-pointer",
                     "-fno-strict-aliasing",
+                    "-fno-limit-debug-info"
             ],
             (SdkConstants.ABI_INTEL_ATOM64) : [
                     "-O0",
                     "-UNDEBUG",
                     "-fno-omit-frame-pointer",
                     "-fno-strict-aliasing",
+                    "-fno-limit-debug-info"
             ],
             (SdkConstants.ABI_MIPS) : [
                     "-O0",
                     "-UNDEBUG",
                     "-fno-omit-frame-pointer",
+                    "-fno-limit-debug-info"
             ],
             (SdkConstants.ABI_MIPS64) : [
                     "-O0",
                     "-UNDEBUG",
                     "-fno-omit-frame-pointer",
+                    "-fno-limit-debug-info"
             ]
     ]
 
@@ -188,7 +195,8 @@ class ClangNativeToolSpecification extends AbstractNativeToolSpecification {
 
     @Override
     public Iterable<String> getCFlags() {
-        getTargetFlags() + RELEASE_CFLAGS[platform.name] + DEBUG_CFLAGS[platform.name]
+        getTargetFlags() + RELEASE_CFLAGS[platform.name] +
+                (isDebugBuild ? DEBUG_CFLAGS[platform.name] : []);
     }
 
     @Override

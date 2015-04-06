@@ -79,6 +79,7 @@ class NdkConfiguration {
             cCompiler.args  "--sysroot=$sysroot"
             cppCompiler.args  "--sysroot=$sysroot"
             linker.args "--sysroot=$sysroot"
+            linker.args "-Wl,--build-id"
 
             if (ndkConfig.getRenderscriptNdkMode()) {
                 cCompiler.args "-I$sysroot/usr/include/rs"
