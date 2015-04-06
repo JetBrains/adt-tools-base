@@ -16,57 +16,77 @@
 
 package com.android.tools.lint.checks;
 
+import static com.android.SdkConstants.ANDROID_URI;
+import static com.android.SdkConstants.ATTR_NAME;
 import static com.android.SdkConstants.ATTR_VALUE;
 import static com.android.SdkConstants.INT_DEF_ANNOTATION;
 import static com.android.SdkConstants.R_CLASS;
 import static com.android.SdkConstants.STRING_DEF_ANNOTATION;
 import static com.android.SdkConstants.SUPPORT_ANNOTATIONS_PREFIX;
+import static com.android.SdkConstants.TAG_USES_PERMISSION;
 import static com.android.SdkConstants.TYPE_DEF_FLAG_ATTRIBUTE;
 import static com.android.resources.ResourceType.COLOR;
 import static com.android.resources.ResourceType.DRAWABLE;
 import static com.android.resources.ResourceType.MIPMAP;
+import static com.android.tools.lint.detector.api.JavaContext.findSurroundingMethod;
 import static com.android.tools.lint.detector.api.JavaContext.getParentOfType;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.resources.ResourceType;
+import com.android.tools.lint.checks.PermissionHolder.SetPermissionLookup;
 import com.android.tools.lint.client.api.JavaParser.ResolvedAnnotation;
 import com.android.tools.lint.client.api.JavaParser.ResolvedClass;
 import com.android.tools.lint.client.api.JavaParser.ResolvedField;
 import com.android.tools.lint.client.api.JavaParser.ResolvedMethod;
 import com.android.tools.lint.client.api.JavaParser.ResolvedNode;
+import com.android.tools.lint.client.api.JavaParser.TypeDescriptor;
+import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.ConstantEvaluator;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.JavaContext;
+import com.android.tools.lint.detector.api.Project;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
+import com.android.utils.XmlUtils;
+import com.google.common.collect.Sets;
 
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+
+import java.io.File;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Locale;
+import java.util.Set;
 
 import lombok.ast.ArrayCreation;
 import lombok.ast.ArrayInitializer;
 import lombok.ast.AstVisitor;
 import lombok.ast.BinaryExpression;
 import lombok.ast.BinaryOperator;
+import lombok.ast.Catch;
 import lombok.ast.Expression;
 import lombok.ast.ExpressionStatement;
 import lombok.ast.FloatingPointLiteral;
 import lombok.ast.ForwardingAstVisitor;
 import lombok.ast.InlineIfExpression;
 import lombok.ast.IntegralLiteral;
+import lombok.ast.MethodDeclaration;
 import lombok.ast.MethodInvocation;
 import lombok.ast.Node;
 import lombok.ast.NullLiteral;
 import lombok.ast.Select;
 import lombok.ast.Statement;
 import lombok.ast.StringLiteral;
+import lombok.ast.Try;
+import lombok.ast.TypeReference;
 import lombok.ast.UnaryExpression;
 import lombok.ast.UnaryOperator;
 import lombok.ast.VariableDeclaration;
@@ -173,14 +193,54 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
         Severity.WARNING,
         IMPLEMENTATION);
 
+    /** Method result should be used */
+    public static final Issue MISSING_PERMISSION = Issue.create(
+            "MissingPermission", //$NON-NLS-1$
+            "Missing Permissions",
+
+            "This check scans through your code and libraries and looks at the APIs being used, " +
+            "and checks this against the set of permissions required to access those APIs. If " +
+            "the code using those APIs is called at runtime, then the program will crash.\n" +
+            "\n" +
+            "Furthermore, for permissions that are revocable (with targetSdkVersion 23), client " +
+            "code must also be prepared to handle the calls throwing an exception if the user " +
+            "rejects the request for permission at runtime.",
+
+            Category.CORRECTNESS,
+            9,
+            Severity.ERROR,
+            IMPLEMENTATION);
+
+    /** Passing the wrong constant to an int or String method */
+    public static final Issue THREAD = Issue.create(
+            "WrongThread", //$NON-NLS-1$
+            "Wrong Thread",
+
+            "Ensures that a method which expects to be called on a specific thread, is actually " +
+            "called from that thread. For example, calls on methods in widgets should always " +
+            "be made on the UI thread.",
+
+            Category.CORRECTNESS,
+            6,
+            Severity.ERROR,
+            IMPLEMENTATION)
+            .addMoreInfo(
+                    "http://developer.android.com/guide/components/processes-and-threads.html#Threads");
+
     public static final String CHECK_RESULT_ANNOTATION = SUPPORT_ANNOTATIONS_PREFIX + "CheckResult"; //$NON-NLS-1$
     public static final String COLOR_INT_ANNOTATION = SUPPORT_ANNOTATIONS_PREFIX + "ColorInt"; //$NON-NLS-1$
     public static final String INT_RANGE_ANNOTATION = SUPPORT_ANNOTATIONS_PREFIX + "IntRange"; //$NON-NLS-1$
     public static final String FLOAT_RANGE_ANNOTATION = SUPPORT_ANNOTATIONS_PREFIX + "FloatRange"; //$NON-NLS-1$
     public static final String SIZE_ANNOTATION = SUPPORT_ANNOTATIONS_PREFIX + "Size"; //$NON-NLS-1$
+    public static final String PERMISSION_ANNOTATION = SUPPORT_ANNOTATIONS_PREFIX + "RequiresPermission"; //$NON-NLS-1$
+    public static final String UI_THREAD_ANNOTATION = SUPPORT_ANNOTATIONS_PREFIX + "UiThread"; //$NON-NLS-1$
+    public static final String MAIN_THREAD_ANNOTATION = SUPPORT_ANNOTATIONS_PREFIX + "MainThread"; //$NON-NLS-1$
+    public static final String WORKER_THREAD_ANNOTATION = SUPPORT_ANNOTATIONS_PREFIX + "WorkerThread"; //$NON-NLS-1$
+    public static final String BINDER_THREAD_ANNOTATION = SUPPORT_ANNOTATIONS_PREFIX + "BinderThread"; //$NON-NLS-1$
 
-    public static final String RES_SUFFIX = "Res";       //$NON-NLS-1$
-    public static final String ATTR_SUGGEST = "suggest"; //$NON-NLS-1$
+    public static final String RES_SUFFIX = "Res";
+    public static final String THREAD_SUFFIX = "Thread";
+    public static final String ATTR_SUGGEST = "suggest";
     public static final String ATTR_TO = "to";
     public static final String ATTR_FROM = "from";
     public static final String ATTR_FROM_INCLUSIVE = "fromInclusive";
@@ -188,6 +248,9 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
     public static final String ATTR_MULTIPLE = "multiple";
     public static final String ATTR_MIN = "min";
     public static final String ATTR_MAX = "max";
+    public static final String ATTR_ALL_OF = "allOf";
+    public static final String ATTR_ANY_OF = "anyOf";
+    public static final String ATTR_CONDITIONAL = "conditional";
 
     /**
      * Constructs a new {@link SupportAnnotationDetector} check
@@ -195,14 +258,20 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
     public SupportAnnotationDetector() {
     }
 
-    private static void checkMethodAnnotation(
+    private void checkMethodAnnotation(
             @NonNull JavaContext context,
+            @NonNull ResolvedMethod method,
             @NonNull MethodInvocation node,
             @NonNull ResolvedAnnotation annotation) {
         String signature = annotation.getSignature();
         if (CHECK_RESULT_ANNOTATION.equals(signature)
                 || signature.endsWith(".CheckReturnValue")) { // support findbugs annotation too
             checkResult(context, node, annotation);
+        } else if (signature.equals(PERMISSION_ANNOTATION)) {
+            checkPermission(context, node, method, annotation);
+        } else if (signature.endsWith(THREAD_SUFFIX)
+                && signature.startsWith(SUPPORT_ANNOTATIONS_PREFIX)) {
+            checkThreading(context, node, method, signature);
         }
     }
 
@@ -262,6 +331,196 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
         }
     }
 
+    private void checkPermission(
+            @NonNull JavaContext context,
+            @NonNull MethodInvocation node,
+            @NonNull ResolvedMethod method,
+            @NonNull ResolvedAnnotation annotation) {
+        PermissionRequirement requirement = PermissionRequirement.create(context, annotation);
+        if (requirement.isConditional()) {
+            return;
+        }
+        PermissionHolder permissions = getPermissions(context);
+        if (!requirement.isSatisfied(permissions)) {
+            String name = method.getContainingClass().getSimpleName() + "." + method.getName();
+            String message = getMissingPermissionMessage(requirement, name, permissions);
+            context.report(MISSING_PERMISSION, node, context.getLocation(node), message);
+        } else if (requirement.isRevocable() && context.getMainProject().getTargetSdk() >= 23) {
+            // Ensure that the caller is handling a security exception
+            // First check to see if we're inside a try/catch which catches a SecurityException
+            // (or some wider exception than that). Check for nested try/catches too.
+            boolean handlesMissingPermission = false;
+            Node parent = node;
+            while (true) {
+                Try tryCatch = getParentOfType(parent, Try.class);
+                if (tryCatch == null) {
+                    break;
+                } else {
+                    for (Catch aCatch : tryCatch.astCatches()) {
+                        TypeReference catchType = aCatch.astExceptionDeclaration().
+                                astTypeReference();
+                        if (isSecurityException(context,
+                                catchType)) {
+                            handlesMissingPermission = true;
+                            break;
+                        }
+                    }
+                    parent = tryCatch;
+                }
+            }
+
+            // If not, check to see if the method itself declares that it throws a
+            // SecurityException or something wider.
+            if (!handlesMissingPermission) {
+                MethodDeclaration declaration = getParentOfType(parent, MethodDeclaration.class);
+                if (declaration != null) {
+                    for (TypeReference typeReference : declaration.astThrownTypeReferences()) {
+                        if (isSecurityException(context, typeReference)) {
+                            handlesMissingPermission = true;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            // If not, check to see if the code is deliberately checking to see if the
+            // given permission is available.
+            if (!handlesMissingPermission) {
+                Node methodNode = JavaContext.findSurroundingMethod(node);
+                if (methodNode != null) {
+                    CheckPermissionVisitor visitor = new CheckPermissionVisitor(node);
+                    methodNode.accept(visitor);
+                    handlesMissingPermission = visitor.checksPermission();
+                }
+            }
+
+            if (!handlesMissingPermission) {
+                String message = getUnhandledPermissionMessage();
+                context.report(MISSING_PERMISSION, node, context.getLocation(node), message);
+            }
+        }
+    }
+
+    /** Returns the error message shown when a given call is missing one or more permissions */
+    public static String getMissingPermissionMessage(@NonNull PermissionRequirement requirement,
+            @NonNull String callName, @NonNull PermissionHolder permissions) {
+        return String.format("Missing permissions required by %1$s: %2$s", callName,
+                requirement.describeMissingPermissions(permissions));
+    }
+
+    /** Returns the error message shown when a revocable permission call is not properly handled */
+    public static String getUnhandledPermissionMessage() {
+        return "Call requires permission which may be rejected by user: code should explicitly "
+                + "check to see if permission is available (with `checkPermission`) or handle "
+                + "a potential `SecurityException`";
+    }
+
+    /**
+     * Visitor which looks through a method, up to a given call (the one requiring a
+     * permission) and checks whether it's preceeded by a call to checkPermission or
+     * checkCallingPermission or enforcePermission etc.
+     * <p>
+     * Currently it only looks for the presence of this check; it does not perform
+     * flow analysis to determine whether the check actually affects program flow
+     * up to the permission call, or whether the check permission is checking for
+     * permissions sufficient to satisfy the permission requirement of the target call,
+     * or whether the check return value (== PERMISSION_GRANTED vs != PERMISSION_GRANTED)
+     * is handled correctly, etc.
+     */
+    private static class CheckPermissionVisitor extends ForwardingAstVisitor {
+        private boolean mChecksPermission;
+        private boolean mDone;
+        private final Node mTarget;
+
+        public CheckPermissionVisitor(@NonNull Node target) {
+            mTarget = target;
+        }
+
+        @Override
+        public boolean visitNode(Node node) {
+            return mDone;
+        }
+
+        @Override
+        public boolean visitMethodInvocation(MethodInvocation node) {
+            if (node == mTarget) {
+                mDone = true;
+            }
+
+            String name = node.astName().astValue();
+            if ((name.startsWith("check") || name.startsWith("enforce"))
+                    && name.endsWith("Permission")) {
+                mChecksPermission = true;
+                mDone = true;
+            }
+            return super.visitMethodInvocation(node);
+        }
+
+        public boolean checksPermission() {
+            return mChecksPermission;
+        }
+    }
+
+    private static boolean isSecurityException(
+            @NonNull JavaContext context,
+            @NonNull TypeReference typeReference) {
+        TypeDescriptor type = context.getType(typeReference);
+        return type != null && (type.matchesSignature("java.lang.SecurityException") ||
+                type.matchesSignature("java.lang.RuntimeException") ||
+                type.matchesSignature("java.lang.Exception") ||
+                type.matchesSignature("java.lang.Throwable"));
+    }
+
+    private PermissionHolder mPermissions;
+
+    private PermissionHolder getPermissions(
+            @NonNull JavaContext context) {
+        if (mPermissions == null) {
+            Set<String> permissions = Sets.newHashSetWithExpectedSize(30);
+            LintClient client = context.getClient();
+            // Gather permissions from all projects that contribute to the
+            // main project.
+            Project mainProject = context.getMainProject();
+            for (File manifest : mainProject.getManifestFiles()) {
+                addPermissions(client, permissions, manifest);
+            }
+            for (Project library : mainProject.getAllLibraries()) {
+                for (File manifest : library.getManifestFiles()) {
+                    addPermissions(client, permissions, manifest);
+                }
+            }
+
+            mPermissions = new SetPermissionLookup(permissions);
+        }
+
+        return mPermissions;
+    }
+
+    private static void addPermissions(@NonNull LintClient client,
+            @NonNull Set<String> permissions,
+            @NonNull File manifest) {
+        Document document = XmlUtils.parseDocumentSilently(client.readFile(manifest), true);
+        if (document == null) {
+            return;
+        }
+        Element root = document.getDocumentElement();
+        if (root == null) {
+            return;
+        }
+        NodeList children = root.getChildNodes();
+        for (int i = 0, n = children.getLength(); i < n; i++) {
+            org.w3c.dom.Node item = children.item(i);
+            if (item.getNodeType() == org.w3c.dom.Node.ELEMENT_NODE
+                    && item.getNodeName().equals(TAG_USES_PERMISSION)) {
+                Element element = (Element)item;
+                String name = element.getAttributeNS(ANDROID_URI, ATTR_NAME);
+                if (!name.isEmpty()) {
+                    permissions.add(name);
+                }
+            }
+        }
+    }
+
     private static void checkResult(@NonNull JavaContext context, @NonNull MethodInvocation node,
             @NonNull ResolvedAnnotation annotation) {
         if (node.getParent() instanceof ExpressionStatement) {
@@ -290,6 +549,101 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
         }
     }
 
+    private static void checkThreading(
+            @NonNull JavaContext context,
+            @NonNull MethodInvocation node,
+            @NonNull ResolvedMethod method,
+            @NonNull String annotation) {
+        String threadContext = getThreadContext(context, node);
+        if (threadContext != null && !isCompatibleThread(threadContext, annotation)) {
+            String message = String.format("Method %1$s must be called from the `%2$s` thread, currently inferred thread is `%3$s` thread",
+                    method.getName(), describeThread(annotation), describeThread(threadContext));
+            context.report(THREAD, node, context.getLocation(node), message);
+        }
+    }
+
+    @NonNull
+    public static String describeThread(@NonNull String annotation) {
+        if (UI_THREAD_ANNOTATION.equals(annotation)) {
+            return "UI";
+        }
+        else if (MAIN_THREAD_ANNOTATION.equals(annotation)) {
+            return "main";
+        }
+        else if (BINDER_THREAD_ANNOTATION.equals(annotation)) {
+            return "binder";
+        }
+        else if (WORKER_THREAD_ANNOTATION.equals(annotation)) {
+            return "worker";
+        } else {
+            return "other";
+        }
+    }
+
+    /** returns true if the two threads are compatible */
+    public static boolean isCompatibleThread(@NonNull String thread1, @NonNull String thread2) {
+        if (thread1.equals(thread2)) {
+            return true;
+        }
+
+        // Allow @UiThread and @MainThread to be combined
+        if (thread1.equals(UI_THREAD_ANNOTATION)) {
+            if (thread2.equals(MAIN_THREAD_ANNOTATION)) {
+                return true;
+            }
+        } else if (thread1.equals(MAIN_THREAD_ANNOTATION)) {
+            if (thread2.equals(UI_THREAD_ANNOTATION)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /** Attempts to infer the current thread context at the site of the given method call */
+    @Nullable
+    private static String getThreadContext(@NonNull JavaContext context,
+            @NonNull MethodInvocation methodCall) {
+        Node node = findSurroundingMethod(methodCall);
+        if (node != null) {
+            ResolvedNode resolved = context.resolve(node);
+            if (resolved instanceof ResolvedMethod) {
+                ResolvedMethod method = (ResolvedMethod) resolved;
+                ResolvedClass cls = method.getContainingClass();
+
+                while (method != null) {
+                    for (ResolvedAnnotation annotation : method.getAnnotations()) {
+                        String name = annotation.getSignature();
+                        if (name.startsWith(SUPPORT_ANNOTATIONS_PREFIX)
+                                && name.endsWith(THREAD_SUFFIX)) {
+                            return name;
+                        }
+                    }
+                    method = method.getSuperMethod();
+                }
+
+                // See if we're extending a class with a known threading context
+                while (cls != null) {
+                    for (ResolvedAnnotation annotation : cls.getAnnotations()) {
+                        String name = annotation.getSignature();
+                        if (name.startsWith(SUPPORT_ANNOTATIONS_PREFIX)
+                                && name.endsWith(THREAD_SUFFIX)) {
+                            return name;
+                        }
+                    }
+                    cls = cls.getSuperClass();
+                }
+            }
+        }
+
+        // In the future, we could also try to infer the threading context using
+        // other heuristics. For example, if we're in a method with unknown threading
+        // context, but we see that the method is called by another method with a known
+        // threading context, we can infer that that threading context is the context for
+        // this thread too (assuming the call is direct).
+
+        return null;
+    }
 
     private static boolean isNumber(@NonNull Node argument) {
         return argument instanceof IntegralLiteral || argument instanceof UnaryExpression
@@ -860,7 +1214,8 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
         if (type != null) {
             for (ResolvedAnnotation inner : type.getAnnotations()) {
                 if (inner.matches(INT_DEF_ANNOTATION)
-                        || inner.matches(STRING_DEF_ANNOTATION)) {
+                        || inner.matches(STRING_DEF_ANNOTATION)
+                        || inner.matches(PERMISSION_ANNOTATION)) {
                     return inner;
                 }
             }
@@ -883,7 +1238,7 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
         return new CallVisitor(context);
     }
 
-    private static class CallVisitor extends ForwardingAstVisitor {
+    private class CallVisitor extends ForwardingAstVisitor {
         private final JavaContext mContext;
 
         public CallVisitor(JavaContext context) {
@@ -899,7 +1254,18 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
                 for (ResolvedAnnotation annotation : annotations) {
                     annotation = getRelevantAnnotation(annotation);
                     if (annotation != null) {
-                        checkMethodAnnotation(mContext, call, annotation);
+                        checkMethodAnnotation(mContext, method, call, annotation);
+                    }
+                }
+
+                // Look for annotations on the class as well: these trickle
+                // down to all the methods in the class
+                ResolvedClass containingClass = method.getContainingClass();
+                annotations = containingClass.getAnnotations();
+                for (ResolvedAnnotation annotation : annotations) {
+                    annotation = getRelevantAnnotation(annotation);
+                    if (annotation != null) {
+                        checkMethodAnnotation(mContext, method, call, annotation);
                     }
                 }
 

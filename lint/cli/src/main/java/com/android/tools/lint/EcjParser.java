@@ -747,17 +747,35 @@ public class EcjParser extends JavaParser {
         return new DefaultTypeDescriptor(fqn);
     }
 
+    /** Computes the super method, if any, given a method binding */
+    private static MethodBinding findSuperMethodBinding(@NonNull MethodBinding binding) {
+        ReferenceBinding superclass = binding.declaringClass.superclass();
+        while (superclass != null) {
+            MethodBinding[] methods = superclass.getMethods(binding.selector,
+                    binding.parameters.length);
+            for (MethodBinding method : methods) {
+                if (method.areParameterErasuresEqual(binding)) {
+                    return method;
+                }
+            }
+
+            superclass = superclass.superclass();
+        }
+
+        return null;
+    }
+
     @NonNull
     private static Collection<ResolvedAnnotation> merge(
             @Nullable Collection<ResolvedAnnotation> first,
             @Nullable Collection<ResolvedAnnotation> second) {
-        if (first == null) {
+        if (first == null || first.isEmpty()) {
             if (second == null) {
                 return Collections.emptyList();
             } else {
                 return second;
             }
-        } else if (second == null) {
+        } else if (second == null || second.isEmpty()) {
             return first;
         } else {
             int size = first.size() + second.size();
@@ -972,26 +990,46 @@ public class EcjParser extends JavaParser {
             return mBinding.isConstructor();
         }
 
+        @Override
+        @Nullable
+        public ResolvedMethod getSuperMethod() {
+            MethodBinding superBinding = findSuperMethodBinding(mBinding);
+            if (superBinding != null) {
+                return new EcjResolvedMethod(superBinding);
+            }
+
+            return null;
+        }
+
         @NonNull
         @Override
         public Iterable<ResolvedAnnotation> getAnnotations() {
-            List<ResolvedAnnotation> compiled = null;
-            AnnotationBinding[] annotations = mBinding.getAnnotations();
-            int count = annotations.length;
-            if (count > 0) {
-                compiled = Lists.newArrayListWithExpectedSize(count);
-                for (AnnotationBinding annotation : annotations) {
-                    if (annotation != null) {
-                        compiled.add(new EcjResolvedAnnotation(annotation));
+            List<ResolvedAnnotation> all = Lists.newArrayListWithExpectedSize(4);
+            ExternalAnnotationRepository manager = ExternalAnnotationRepository.get(mClient);
+
+            MethodBinding binding = this.mBinding;
+            while (binding != null) {
+                AnnotationBinding[] annotations = binding.getAnnotations();
+                int count = annotations.length;
+                if (count > 0) {
+                    for (AnnotationBinding annotation : annotations) {
+                        if (annotation != null) {
+                            all.add(new EcjResolvedAnnotation(annotation));
+                        }
                     }
                 }
+
+                // Look for external annotations
+                Collection<ResolvedAnnotation> external = manager.getAnnotations(
+                        new EcjResolvedMethod(binding));
+                if (external != null) {
+                    all.addAll(external);
+                }
+
+                binding = findSuperMethodBinding(binding);
             }
 
-            // Look for external annotations
-            ExternalAnnotationRepository manager = ExternalAnnotationRepository.get(mClient);
-            Collection<ResolvedAnnotation> external = manager.getAnnotations(this);
-
-            return merge(compiled, external);
+            return all;
         }
 
         @NonNull
@@ -1225,26 +1263,40 @@ public class EcjParser extends JavaParser {
         @NonNull
         @Override
         public Iterable<ResolvedAnnotation> getAnnotations() {
-            List<ResolvedAnnotation> compiled = null;
+            List<ResolvedAnnotation> all = Lists.newArrayListWithExpectedSize(2);
+            ExternalAnnotationRepository manager = ExternalAnnotationRepository.get(mClient);
+
             if (mBinding instanceof ReferenceBinding) {
                 ReferenceBinding cls = (ReferenceBinding) mBinding;
-                AnnotationBinding[] annotations = cls.getAnnotations();
-                int count = annotations.length;
-                if (count > 0) {
-                    compiled = Lists.newArrayListWithExpectedSize(count);
-                    for (AnnotationBinding annotation : annotations) {
-                        if (annotation != null) {
-                            compiled.add(new EcjResolvedAnnotation(annotation));
+                while (cls != null) {
+                    AnnotationBinding[] annotations = cls.getAnnotations();
+                    int count = annotations.length;
+                    if (count > 0) {
+                        all = Lists.newArrayListWithExpectedSize(count);
+                        for (AnnotationBinding annotation : annotations) {
+                            if (annotation != null) {
+                                all.add(new EcjResolvedAnnotation(annotation));
+                            }
                         }
                     }
+
+                    // Look for external annotations
+                    Collection<ResolvedAnnotation> external = manager.getAnnotations(
+                            new EcjResolvedClass(cls));
+                    if (external != null) {
+                        all.addAll(external);
+                    }
+
+                    cls = cls.superclass();
+                }
+            } else {
+                Collection<ResolvedAnnotation> external = manager.getAnnotations(this);
+                if (external != null) {
+                    all.addAll(external);
                 }
             }
 
-            // Look for external annotations
-            ExternalAnnotationRepository manager = ExternalAnnotationRepository.get(mClient);
-            Collection<ResolvedAnnotation> external = manager.getAnnotations(this);
-
-            return merge(compiled, external);
+            return all;
         }
 
         @Override
