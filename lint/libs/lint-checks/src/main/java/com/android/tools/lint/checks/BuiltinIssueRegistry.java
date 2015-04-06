@@ -213,6 +213,7 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(SupportAnnotationDetector.CHECK_PERMISSION);
         issues.add(SupportAnnotationDetector.CHECK_RESULT);
         issues.add(SupportAnnotationDetector.COLOR_USAGE);
+        issues.add(SupportAnnotationDetector.MISSING_PERMISSION);
         issues.add(SupportAnnotationDetector.RANGE);
         issues.add(SupportAnnotationDetector.RESOURCE_TYPE);
         issues.add(SupportAnnotationDetector.THREAD);
