@@ -1761,6 +1761,31 @@ public class EcjParser extends JavaParser {
             } else if (value instanceof ByteConstant) {
                 return ((ByteConstant) value).byteValue();
             }
+        } else if (value instanceof Object[]) {
+            Object[] array = (Object[]) value;
+            if (array.length > 0) {
+                List<Object> list = Lists.newArrayListWithExpectedSize(array.length);
+                for (Object element : array) {
+                    list.add(getConstantValue(element));
+                }
+                // Pick type of array. Annotations are limited to Strings, Classes
+                // and Annotations
+                if (!list.isEmpty()) {
+                    Object first = list.get(0);
+                    if (first instanceof String) {
+                        //noinspection SuspiciousToArrayCall
+                        return list.toArray(new String[list.size()]);
+                    } else if (first instanceof java.lang.annotation.Annotation) {
+                        //noinspection SuspiciousToArrayCall
+                        return list.toArray(new Annotation[list.size()]);
+                    } else if (first instanceof Class) {
+                        //noinspection SuspiciousToArrayCall
+                        return list.toArray(new Class[list.size()]);
+                    }
+                }
+
+                return list.toArray();
+            }
         }
 
         return value;

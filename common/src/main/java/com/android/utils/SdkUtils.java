@@ -460,4 +460,25 @@ public class SdkUtils {
     public static String constantNameToXmlName(String constantName) {
         return CaseFormat.UPPER_UNDERSCORE.to(CaseFormat.LOWER_HYPHEN, constantName);
     }
+
+
+    /**
+     * Get the R field name from a resource name, since
+     * AAPT will flatten the namespace, turning dots, dashes and colons into _
+     *
+     * @param resourceName the name to convert
+     * @return the corresponding R field name
+     */
+    @NonNull
+    public static String getResourceFieldName(@NonNull String resourceName) {
+        // AAPT will flatten the namespace, turning dots, dashes and colons into _
+        for (int i = 0, n = resourceName.length(); i < n; i++) {
+            char c = resourceName.charAt(i);
+            if (c == '.' || c == ':' || c == '-') {
+                return resourceName.replace('.', '_').replace('-', '_').replace(':', '_');
+            }
+        }
+
+        return resourceName;
+    }
 }

@@ -1288,8 +1288,8 @@ public class JavaVisitor {
                             if (typeOperand instanceof Select) {
                                 Select typeSelect = (Select) typeOperand;
                                 String type = typeSelect.astIdentifier().astValue();
-                                boolean isFramework =
-                                        node.astIdentifier().astValue().equals(ANDROID_PKG);
+                                boolean isFramework = node.astOperand().toString().equals(
+                                        ANDROID_PKG);
                                 for (VisitingDetector v : mResourceFieldDetectors) {
                                     JavaScanner detector = v.getJavaScanner();
                                     detector.visitResourceReference(mContext, v.getVisitor(),

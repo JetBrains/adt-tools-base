@@ -16,10 +16,43 @@
 
 package com.android.tools.lint.checks;
 
+import static com.android.SdkConstants.ATTR_NAME;
+import static com.android.SdkConstants.ATTR_REF_PREFIX;
+import static com.android.SdkConstants.ATTR_TYPE;
+import static com.android.SdkConstants.FD_RES_VALUES;
+import static com.android.SdkConstants.RESOURCE_CLR_STYLEABLE;
+import static com.android.SdkConstants.RESOURCE_CLZ_ARRAY;
+import static com.android.SdkConstants.RESOURCE_CLZ_ID;
+import static com.android.SdkConstants.TAG_ARRAY;
+import static com.android.SdkConstants.TAG_INTEGER_ARRAY;
+import static com.android.SdkConstants.TAG_ITEM;
+import static com.android.SdkConstants.TAG_PLURALS;
+import static com.android.SdkConstants.TAG_RESOURCES;
+import static com.android.SdkConstants.TAG_STRING_ARRAY;
+import static com.android.SdkConstants.TAG_STYLE;
+import static com.android.SdkConstants.TOOLS_URI;
+import static com.android.SdkConstants.VALUE_TRUE;
+import static com.android.tools.lint.detector.api.LintUtils.getBaseName;
+import static com.android.utils.SdkUtils.getResourceFieldName;
+
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+import com.android.builder.model.AndroidLibrary;
+import com.android.builder.model.MavenCoordinates;
+import com.android.ide.common.repository.ResourceVisibilityLookup;
+import com.android.ide.common.resources.ResourceUrl;
+import com.android.resources.FolderTypeRelationship;
+import com.android.resources.ResourceFolderType;
+import com.android.resources.ResourceType;
 import com.android.tools.lint.detector.api.Category;
+import com.android.tools.lint.detector.api.Context;
+import com.android.tools.lint.detector.api.Detector.JavaScanner;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
+import com.android.tools.lint.detector.api.JavaContext;
+import com.android.tools.lint.detector.api.LintUtils;
+import com.android.tools.lint.detector.api.Location;
+import com.android.tools.lint.detector.api.Project;
 import com.android.tools.lint.detector.api.ResourceXmlDetector;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
@@ -27,13 +60,31 @@ import com.android.tools.lint.detector.api.Speed;
 import com.android.tools.lint.detector.api.XmlContext;
 
 import org.w3c.dom.Attr;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 
+import java.io.File;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
+
+import lombok.ast.AstVisitor;
+import lombok.ast.Node;
 
 /**
  * Check which looks for access of private resources.
  */
-public class PrivateResourceDetector extends ResourceXmlDetector {
+public class PrivateResourceDetector extends ResourceXmlDetector implements JavaScanner {
+    /** Attribute for overriding a resource */
+    private static final String ATTR_OVERRIDE = "override";
+
+    @SuppressWarnings("unchecked")
+    private static final Implementation IMPLEMENTATION = new Implementation(
+            PrivateResourceDetector.class,
+            Scope.JAVA_AND_RESOURCE_FILES,
+            Scope.JAVA_FILE_SCOPE,
+            Scope.RESOURCE_FILE_SCOPE);
+
     /** The main issue discovered by this detector */
     public static final Issue ISSUE = Issue.create(
             "PrivateResource", //$NON-NLS-1$
@@ -42,14 +93,12 @@ public class PrivateResourceDetector extends ResourceXmlDetector {
             "Private resources should not be referenced; the may not be present everywhere, and " +
             "even where they are they may disappear without notice.\n" +
             "\n" +
-            "To fix this, copy the resource into your own project. You can find the platform " +
-            "resources under `$ANDROID_SK/platforms/android-$VERSION/data/res/.`",
+            "To fix this, copy the resource into your own project instead.",
+
             Category.CORRECTNESS,
             3,
-            Severity.FATAL,
-            new Implementation(
-                    PrivateResourceDetector.class,
-                    Scope.RESOURCE_FILE_SCOPE));
+            Severity.WARNING,
+            IMPLEMENTATION);
 
     /** Constructs a new detector */
     public PrivateResourceDetector() {
@@ -61,18 +110,214 @@ public class PrivateResourceDetector extends ResourceXmlDetector {
         return Speed.FAST;
     }
 
+    // ---- Implements JavaScanner ----
+
+    @Override
+    public boolean appliesToResourceRefs() {
+        return true;
+    }
+
+    @Override
+    public void visitResourceReference(
+            @NonNull JavaContext context,
+            @Nullable AstVisitor visitor,
+            @NonNull Node node,
+            @NonNull String type,
+            @NonNull String name,
+            boolean isFramework) {
+        if (context.getProject().isGradleProject() && !isFramework) {
+            Project project = context.getProject();
+            if (project.getGradleProjectModel() != null && project.getCurrentVariant() != null) {
+                ResourceType resourceType = ResourceType.getEnum(type);
+                if (resourceType != null && isPrivate(context, resourceType, name)) {
+                    String message = createUsageErrorMessage(context, resourceType, name);
+                    context.report(ISSUE, node, context.getLocation(node), message);
+                }
+            }
+        }
+    }
+
+    // ---- Implements XmlScanner ----
+
     @Override
     public Collection<String> getApplicableAttributes() {
         return ALL;
     }
 
+    /** Check resource references: accessing a private resource from an upstream library? */
     @Override
     public void visitAttribute(@NonNull XmlContext context, @NonNull Attr attribute) {
         String value = attribute.getNodeValue();
-        if (value.startsWith("@*android:")) { //$NON-NLS-1$
-            context.report(ISSUE, attribute, context.getLocation(attribute),
-                    "Illegal resource reference: `@*android` resources are private and " +
-                    "not always present");
+        if (context.getProject().isGradleProject()) {
+            ResourceUrl url = ResourceUrl.parse(value);
+            if (isPrivate(context, url)) {
+                String message = createUsageErrorMessage(context, url.type, url.name);
+                context.report(ISSUE, attribute, context.getValueLocation(attribute), message);
+            }
         }
+    }
+
+    /** Check resource definitions: overriding a private resource from an upstream library? */
+    @Override
+    public Collection<String> getApplicableElements() {
+        return Arrays.asList(
+                TAG_STYLE,
+                TAG_RESOURCES,
+                TAG_ARRAY,
+                TAG_STRING_ARRAY,
+                TAG_INTEGER_ARRAY,
+                TAG_PLURALS
+        );
+    }
+
+    @Override
+    public void visitElement(@NonNull XmlContext context, @NonNull Element element) {
+        if (TAG_RESOURCES.equals(element.getTagName())) {
+            for (Element item : LintUtils.getChildren(element)) {
+                Attr nameAttribute = item.getAttributeNode(ATTR_NAME);
+                if (nameAttribute != null) {
+                    String name = getResourceFieldName(nameAttribute.getValue());
+                    String type = item.getTagName();
+                    if (type.equals(TAG_ITEM)) {
+                        type = item.getAttribute(ATTR_TYPE);
+                        if (type == null || type.isEmpty()) {
+                            type = RESOURCE_CLZ_ID;
+                        }
+                    } else if (type.equals("declare-styleable")) {   //$NON-NLS-1$
+                        type = RESOURCE_CLR_STYLEABLE;
+                    } else if (type.contains("array")) {             //$NON-NLS-1$
+                        // <string-array> etc
+                        type = RESOURCE_CLZ_ARRAY;
+                    }
+                    ResourceType t = ResourceType.getEnum(type);
+                    if (t != null && isPrivate(context, t, name) &&
+                            !VALUE_TRUE.equals(item.getAttributeNS(TOOLS_URI, ATTR_OVERRIDE))) {
+                        String message = createOverrideErrorMessage(context, t, name);
+                        Location location = context.getValueLocation(nameAttribute);
+                        context.report(ISSUE, nameAttribute, location, message);
+                    }
+                }
+            }
+        } else {
+            assert TAG_STYLE.equals(element.getTagName())
+                    || TAG_ARRAY.equals(element.getTagName())
+                    || TAG_PLURALS.equals(element.getTagName())
+                    || TAG_INTEGER_ARRAY.equals(element.getTagName())
+                    || TAG_STRING_ARRAY.equals(element.getTagName());
+            for (Element item : LintUtils.getChildren(element)) {
+                checkChildRefs(context, item);
+            }
+        }
+    }
+
+    private static boolean isPrivate(Context context, ResourceType type, String name) {
+        if (context.getProject().isGradleProject()) {
+            ResourceVisibilityLookup lookup = context.getProject().getResourceVisibility();
+            return lookup.isPrivate(type, name);
+        }
+
+        return false;
+    }
+
+    private static boolean isPrivate(@NonNull Context context, @Nullable ResourceUrl url) {
+        return url != null && !url.framework && isPrivate(context, url.type, url.name);
+    }
+
+    private static void checkChildRefs(@NonNull XmlContext context, Element item) {
+        // Look for ?attr/ and @dimen/foo etc references in the item children
+        NodeList childNodes = item.getChildNodes();
+        for (int i = 0, n = childNodes.getLength(); i < n; i++) {
+            org.w3c.dom.Node child = childNodes.item(i);
+            if (child.getNodeType() == org.w3c.dom.Node.TEXT_NODE) {
+                String text = child.getNodeValue();
+
+                int index = text.indexOf(ATTR_REF_PREFIX);
+                if (index != -1) {
+                    String name = text.substring(index + ATTR_REF_PREFIX.length()).trim();
+                    if (isPrivate(context, ResourceType.ATTR, name)) {
+                        String message = createUsageErrorMessage(context, ResourceType.ATTR, name);
+                        context.report(ISSUE, item, context.getLocation(child), message);
+                    }
+                } else {
+                    for (int j = 0, m = text.charAt(j); j < m; j++) {
+                        char c = text.charAt(j);
+                        if (c == '@') {
+                            ResourceUrl url = ResourceUrl.parse(text.trim());
+                            if (isPrivate(context, url)) {
+                                String message = createUsageErrorMessage(context, url.type,
+                                        url.name);
+                                context.report(ISSUE, item, context.getLocation(child), message);
+                            }
+                            break;
+                        } else if (!Character.isWhitespace(c)) {
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @Override
+    public void beforeCheckFile(@NonNull Context context) {
+        File file = context.file;
+        boolean isXmlFile = LintUtils.isXmlFile(file);
+        if (!isXmlFile && !LintUtils.isBitmapFile(file)) {
+            return;
+        }
+        String parentName = file.getParentFile().getName();
+        int dash = parentName.indexOf('-');
+        if (dash != -1 || FD_RES_VALUES.equals(parentName)) {
+            return;
+        }
+        ResourceFolderType folderType = ResourceFolderType.getFolderType(parentName);
+        if (folderType == null) {
+            return;
+        }
+        List<ResourceType> types = FolderTypeRelationship.getRelatedResourceTypes(folderType);
+        if (types.isEmpty()) {
+            return;
+        }
+        ResourceType type = types.get(0);
+        String resourceName = getResourceFieldName(getBaseName(file.getName()));
+        if (isPrivate(context, type, resourceName)) {
+            String message = createOverrideErrorMessage(context, type, resourceName);
+            Location location = Location.create(file);
+            context.report(ISSUE, location, message);
+        }
+    }
+
+    private static String createOverrideErrorMessage(@NonNull Context context,
+            @NonNull ResourceType type, @NonNull String name) {
+        String libraryName = getLibraryName(context, type, name);
+        return String.format("Overriding `@%1$s/%2$s` which is marked as private in %3$s. If "
+                        + "deliberate, use tools:override=\"true\", otherwise pick a "
+                        + "different name.", type, name, libraryName);
+    }
+
+    private static String createUsageErrorMessage(@NonNull Context context,
+            @NonNull ResourceType type, @NonNull String name) {
+        String libraryName = getLibraryName(context, type, name);
+        return String.format("The resource `@%1$s/%2$s` is marked as private in %3$s", type,
+                name, libraryName);
+    }
+
+    /** Pick a suitable name to describe the library defining the private resource */
+    @Nullable
+    private static String getLibraryName(@NonNull Context context, @NonNull ResourceType type,
+            @NonNull String name) {
+        ResourceVisibilityLookup lookup = context.getProject().getResourceVisibility();
+        AndroidLibrary library = lookup.getPrivateIn(type, name);
+        if (library != null) {
+            String libraryName = library.getProject();
+            if (libraryName != null) {
+                return libraryName;
+            }
+            MavenCoordinates coordinates = library.getResolvedCoordinates();
+            if (coordinates != null) {
+                return coordinates.getGroupId() + ':' + coordinates.getArtifactId();
+            }
+        }
+        return "the library";
     }
 }
