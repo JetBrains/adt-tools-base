@@ -84,7 +84,7 @@ public class PluralsDetector extends ResourceXmlDetector {
             "\n" +
             "This lint check looks at the quantity strings defined for each translation and " +
             "flags any quantity strings that are unused (because the language does not make that " +
-            "quantity distinction, and Android will therefore not look it up.)." +
+            "quantity distinction, and Android will therefore not look it up.).\n" +
             "\n" +
             "For example, in Chinese, only the `other` quantity is used, so even if you " +
             "provide translations for `zero` and `one`, these strings will *not* be returned " +
