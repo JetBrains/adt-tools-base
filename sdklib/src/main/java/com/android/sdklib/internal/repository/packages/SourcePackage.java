@@ -80,11 +80,7 @@ public class SourcePackage extends MajorRevisionPackage implements IAndroidVersi
         }
         mVersion = new AndroidVersion(apiLevel, codeName);
 
-        mPkgDesc = PkgDesc.Builder
-                .newSource(mVersion,
-                           (MajorRevision) getRevision())
-                .setDescriptions(this)
-                .create();
+        mPkgDesc = setDescriptions(PkgDesc.Builder.newSource(mVersion, (MajorRevision)getRevision())).create();
     }
 
     @VisibleForTesting(visibility=Visibility.PRIVATE)
@@ -113,11 +109,7 @@ public class SourcePackage extends MajorRevisionPackage implements IAndroidVersi
                 );
         mVersion = platformVersion;
 
-        mPkgDesc = PkgDesc.Builder
-                .newSource(mVersion,
-                           (MajorRevision) getRevision())
-                .setDescriptions(this)
-                .create();
+        mPkgDesc = setDescriptions(PkgDesc.Builder.newSource(mVersion, (MajorRevision) getRevision())).create();
     }
 
     /**

@@ -24,7 +24,6 @@ import com.android.sdklib.AndroidTargetHash;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.SystemImage;
 import com.android.sdklib.repository.License;
-import com.android.sdklib.internal.repository.packages.Package;
 import com.android.sdklib.io.FileOp;
 import com.android.sdklib.repository.FullRevision;
 import com.android.sdklib.repository.FullRevision.PreviewComparison;
@@ -1045,15 +1044,6 @@ public class PkgDesc implements IPkgDesc {
             p.mMajorRevision  = revision;
             p.mMinToolsRev    = minToolsRev;
             return p;
-        }
-
-        public Builder setDescriptions(@NonNull Package pkg) {
-            mDescriptionShort = pkg.getShortDescription();
-            mDescriptionUrl   = pkg.getDescUrl();
-            mListDisplay      = pkg.getListDisplay();
-            mIsObsolete       = pkg.isObsolete();
-            mLicense          = pkg.getLicense();
-            return this;
         }
 
         public Builder setLicense(@Nullable License license) {

@@ -91,10 +91,8 @@ public class ToolPackage extends FullRevisionPackage implements IMinPlatformTool
             }
         }
 
-        mPkgDesc = PkgDesc.Builder
-                .newTool(getRevision(),
-                         mMinPlatformToolsRevision)
-                .setDescriptions(this)
+        mPkgDesc = setDescriptions(PkgDesc.Builder
+                .newTool(getRevision(), mMinPlatformToolsRevision))
                 .create();
     }
 
@@ -146,10 +144,8 @@ public class ToolPackage extends FullRevisionPackage implements IMinPlatformTool
 
         mMinPlatformToolsRevision = rev;
 
-        mPkgDesc = PkgDesc.Builder
-                .newTool(getRevision(),
-                         mMinPlatformToolsRevision)
-                .setDescriptions(this)
+        mPkgDesc = setDescriptions(PkgDesc.Builder
+                .newTool(getRevision(), mMinPlatformToolsRevision))
                 .create();
     }
 
