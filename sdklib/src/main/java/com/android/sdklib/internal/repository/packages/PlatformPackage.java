@@ -90,15 +90,12 @@ public class PlatformPackage extends MinToolsPackage
         mVersion = new AndroidVersion(apiLevel, codeName);
 
         mIncludedAbi = PackageParserUtils.getOptionalXmlString(packageNode,
-                                        SdkRepoConstants.NODE_ABI_INCLUDED);
+                SdkRepoConstants.NODE_ABI_INCLUDED);
 
         mLayoutlibVersion = new LayoutlibVersionMixin(packageNode);
 
-        mPkgDesc = PkgDesc.Builder
-                .newPlatform(mVersion,
-                             (MajorRevision) getRevision(),
-                             getMinToolsRevision())
-                .setDescriptions(this)
+        mPkgDesc = setDescriptions(PkgDesc.Builder
+                .newPlatform(mVersion, (MajorRevision) getRevision(), getMinToolsRevision()))
                 .create();
     }
 
@@ -137,11 +134,8 @@ public class PlatformPackage extends MinToolsPackage
         mLayoutlibVersion = new LayoutlibVersionMixin(props);
         mIncludedAbi = props == null ? null : props.getProperty(PkgProps.PLATFORM_INCLUDED_ABI);
 
-        mPkgDesc = PkgDesc.Builder
-                .newPlatform(mVersion,
-                             (MajorRevision) getRevision(),
-                             getMinToolsRevision())
-                .setDescriptions(this)
+        mPkgDesc = setDescriptions(PkgDesc.Builder
+                .newPlatform(mVersion, (MajorRevision) getRevision(), getMinToolsRevision()))
                 .create();
     }
 

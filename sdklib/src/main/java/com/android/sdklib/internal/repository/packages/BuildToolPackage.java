@@ -21,10 +21,10 @@ import com.android.annotations.NonNull;
 import com.android.annotations.VisibleForTesting;
 import com.android.annotations.VisibleForTesting.Visibility;
 import com.android.sdklib.SdkManager;
-import com.android.sdklib.repository.IDescription;
 import com.android.sdklib.internal.repository.sources.SdkSource;
 import com.android.sdklib.repository.FullRevision;
 import com.android.sdklib.repository.FullRevision.PreviewComparison;
+import com.android.sdklib.repository.IDescription;
 import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
 import com.android.sdklib.repository.descriptors.PkgDesc;
@@ -64,9 +64,9 @@ public class BuildToolPackage extends FullRevisionPackage {
             Map<String,String> licenses) {
         super(source, packageNode, nsUri, licenses);
 
-        mPkgDesc = PkgDesc.Builder
-                .newBuildTool(getRevision())
-                .setDescriptions(this)
+        mPkgDesc = setDescriptions(PkgDesc.Builder
+                        .newBuildTool(getRevision())
+        )
                 .create();
     }
 
@@ -206,10 +206,7 @@ public class BuildToolPackage extends FullRevisionPackage {
                 descUrl,
                 archiveOsPath);
 
-        mPkgDesc = PkgDesc.Builder
-                .newBuildTool(getRevision())
-                .setDescriptions(this)
-                .create();
+        mPkgDesc = setDescriptions(PkgDesc.Builder.newBuildTool(getRevision())).create();
     }
 
     @Override

@@ -46,7 +46,6 @@ import com.android.sdklib.devices.State;
 import com.android.sdklib.devices.Storage;
 import com.android.sdklib.devices.Storage.Unit;
 import com.android.sdklib.internal.avd.AvdManager;
-import com.android.sdklib.internal.repository.archives.ArchFilter;
 import com.android.sdklib.io.FileOp;
 import com.android.sdklib.mock.MockLog;
 import com.android.sdklib.repository.FullRevision;
@@ -471,7 +470,7 @@ public abstract class SdkManagerTestCase extends AndroidLocationTestCase {
         File buildToolsDir = new File(buildToolsTopDir, revision);
         createSourceProps(buildToolsDir,
                 PkgProps.PKG_REVISION, revision,
-                ArchFilter.LEGACY_PROP_OS, os);
+                "Archive.Os", os);
 
         FullRevision fullRevision = FullRevision.parseRevision(revision);
 

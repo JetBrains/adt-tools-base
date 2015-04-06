@@ -24,9 +24,9 @@ import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.IAndroidTarget.IOptionalLibrary;
 import com.android.sdklib.SdkManager;
-import com.android.sdklib.repository.IDescription;
 import com.android.sdklib.internal.repository.sources.SdkSource;
 import com.android.sdklib.repository.AddonManifestIniProps;
+import com.android.sdklib.repository.IDescription;
 import com.android.sdklib.repository.MajorRevision;
 import com.android.sdklib.repository.PkgProps;
 import com.android.sdklib.repository.SdkAddonConstants;
@@ -208,12 +208,10 @@ public class AddonPackage extends MajorRevisionPackage
 
         mLayoutlibVersion = new LayoutlibVersionMixin(packageNode);
 
-        mPkgDesc = PkgDesc.Builder
-                .newAddon(mVersion,
-                          (MajorRevision) getRevision(),
-                          new IdDisplay(mVendorId, mVendorDisplay),
-                          new IdDisplay(mNameId, mDisplayName))
-                .setDescriptions(this)
+        mPkgDesc = setDescriptions(
+                PkgDesc.Builder.newAddon(mVersion, (MajorRevision) getRevision(),
+                        new IdDisplay(mVendorId, mVendorDisplay),
+                        new IdDisplay(mNameId, mDisplayName)))
                 .create();
     }
 
@@ -310,12 +308,10 @@ public class AddonPackage extends MajorRevisionPackage
             }
         }
 
-        mPkgDesc = PkgDesc.Builder
-                .newAddon(mVersion,
-                          (MajorRevision) getRevision(),
-                          new IdDisplay(mVendorId, mVendorDisplay),
-                          new IdDisplay(mNameId, mDisplayName))
-                .setDescriptions(this)
+        mPkgDesc = setDescriptions(
+                PkgDesc.Builder.newAddon(mVersion, (MajorRevision) getRevision(),
+                        new IdDisplay(mVendorId, mVendorDisplay),
+                        new IdDisplay(mNameId, mDisplayName)))
                 .create();
     }
 
