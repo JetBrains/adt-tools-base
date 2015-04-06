@@ -20,5 +20,6 @@
     <orderEntry type="module" module-name="sdk-common-base" />
     <orderEntry type="module" module-name="lint-checks-base" />
     <orderEntry type="module" module-name="lint-api-base" />
+    <orderEntry type="library" scope="TEST" name="intellij-annotations" level="project" />
   </component>
 </module>

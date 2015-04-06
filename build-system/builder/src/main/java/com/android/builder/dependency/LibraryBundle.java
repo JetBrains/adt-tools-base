@@ -24,6 +24,7 @@ import static com.android.SdkConstants.FN_ANDROID_MANIFEST_XML;
 import static com.android.SdkConstants.FN_ANNOTATIONS_ZIP;
 import static com.android.SdkConstants.FN_CLASSES_JAR;
 import static com.android.SdkConstants.FN_PUBLIC_TXT;
+import static com.android.SdkConstants.FN_RESOURCE_TEXT;
 import static com.android.SdkConstants.LIBS_FOLDER;
 
 import com.android.SdkConstants;
@@ -96,7 +97,7 @@ public abstract class LibraryBundle implements LibraryDependency {
     @Override
     @NonNull
     public File getSymbolFile() {
-        return new File(mBundleFolder, "R.txt");
+        return new File(mBundleFolder, FN_RESOURCE_TEXT);
     }
 
     @Override

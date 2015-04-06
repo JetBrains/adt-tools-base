@@ -36,6 +36,7 @@ import static com.android.SdkConstants.TOOLS_URI;
 import static com.android.SdkConstants.TRANSPARENT_COLOR;
 import static com.android.SdkConstants.VALUE_DISABLED;
 import static com.android.tools.lint.detector.api.LintUtils.endsWith;
+import static com.android.utils.SdkUtils.getResourceFieldName;
 
 import com.android.annotations.NonNull;
 import com.android.resources.ResourceFolderType;
@@ -418,7 +419,7 @@ public class OverdrawDetector extends LayoutDetector implements Detector.JavaSca
             if (mActivityToTheme == null) {
                 mActivityToTheme = new HashMap<String, String>();
             }
-            mActivityToTheme.put(name, theme.replace('.', '_'));
+            mActivityToTheme.put(name, getResourceFieldName(theme));
         }
     }
 
@@ -439,7 +440,7 @@ public class OverdrawDetector extends LayoutDetector implements Detector.JavaSca
         }
         parent = parent.replace('.', '_');
 
-        String resource = STYLE_RESOURCE_PREFIX + styleName.replace('.', '_');
+        String resource = STYLE_RESOURCE_PREFIX + getResourceFieldName(styleName);
 
         NodeList items = element.getChildNodes();
         for (int i = 0, n = items.getLength(); i < n; i++) {
