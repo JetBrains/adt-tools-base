@@ -103,7 +103,7 @@ public abstract class LocalPkgInfo
     /**
      * Used by {@link Update} to indicate if there's an update available for this package.
      */
-    void setUpdate(@Nullable RemotePkgInfo update) {
+    public void setUpdate(@Nullable RemotePkgInfo update) {
         mUpdate = update;
     }
 
