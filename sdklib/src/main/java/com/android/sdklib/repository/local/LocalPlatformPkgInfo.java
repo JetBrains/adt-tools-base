@@ -27,8 +27,6 @@ import com.android.sdklib.SdkManager.LayoutlibVersion;
 import com.android.sdklib.SystemImage;
 import com.android.sdklib.internal.androidTarget.PlatformTarget;
 import com.android.sdklib.internal.project.ProjectProperties;
-import com.android.sdklib.internal.repository.packages.Package;
-import com.android.sdklib.internal.repository.packages.PlatformPackage;
 import com.android.sdklib.io.FileOp;
 import com.android.sdklib.io.IFileOp;
 import com.android.sdklib.repository.FullRevision;
@@ -43,15 +41,7 @@ import com.google.common.collect.TreeMultimap;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 
 @SuppressWarnings("ConstantConditions")
 public class LocalPlatformPkgInfo extends LocalPkgInfo {
@@ -102,33 +92,7 @@ public class LocalPlatformPkgInfo extends LocalPkgInfo {
         return mLoaded;
     }
 
-    @Override
-    public Package getPackage() {
-        Package pkg = super.getPackage();
-        if (pkg != null) {
-            return pkg;
-        }
-        pkg = createPackage();
-        setPackage(pkg);
-        return pkg;
-    }
-
     //-----
-
-    /**
-     * Creates a PlatformPackage wrapping the IAndroidTarget if defined.
-     * Invoked by {@link #getPackage()}.
-     *
-     * @return A Package or null if target isn't available.
-     */
-    @Nullable
-    protected Package createPackage() {
-        IAndroidTarget target = getAndroidTarget();
-        if (target != null) {
-            return PlatformPackage.create(target, getSourceProperties());
-        }
-        return null;
-    }
 
     /**
      * Creates the PlatformTarget. Invoked by {@link #getAndroidTarget()}.

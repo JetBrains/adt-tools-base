@@ -37,7 +37,6 @@ import com.android.sdklib.repository.descriptors.IPkgDesc;
 import com.android.sdklib.repository.descriptors.IdDisplay;
 import com.android.sdklib.repository.descriptors.PkgDescExtra;
 import com.android.sdklib.repository.descriptors.PkgType;
-import com.android.sdklib.repository.remote.RemoteSdk;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
@@ -158,7 +157,7 @@ import java.util.Properties;
  * <li> The sdk manager has a set of "Package" classes that cover both local
  *      and remote SDK operations.
  * <li> Goal was to split it in 2 cleanly separated parts: {@link LocalSdk} parses sdk on disk,
- *      and {@link RemoteSdk} wraps the downloaded manifest.
+ *      and a separate class wraps the downloaded manifest (this is now handled within Studio only)
  * <li> The local SDK should be a singleton accessible somewhere, so there will be one in ADT
  *      (via the Sdk instance), one in Studio, and one in the command line tool. <br/>
  *      Right now there's a bit of mess with some classes creating a temp LocalSdkParser,

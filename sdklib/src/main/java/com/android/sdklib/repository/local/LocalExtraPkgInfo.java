@@ -18,8 +18,6 @@ package com.android.sdklib.repository.local;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.sdklib.internal.repository.packages.ExtraPackage;
-import com.android.sdklib.internal.repository.packages.Package;
 import com.android.sdklib.repository.NoPreviewRevision;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
 import com.android.sdklib.repository.descriptors.IPkgDescExtra;
@@ -59,31 +57,6 @@ public class LocalExtraPkgInfo extends LocalPkgInfo {
     @NonNull
     public String[] getOldPaths() {
         return mDesc.getOldPaths();
-    }
-
-    @Nullable
-    @Override
-    public Package getPackage() {
-        Package pkg = super.getPackage();
-        if (pkg == null) {
-            try {
-                pkg = ExtraPackage.create(
-                        null,                       //source
-                        getSourceProperties(),      //properties
-                        mDesc.getVendor().getId(),  //vendor
-                        mDesc.getPath(),            //path
-                        0,                          //revision
-                        null,                       //license
-                        null,                       //description
-                        null,                       //descUrl
-                        getLocalDir().getPath()     //archiveOsPath
-                        );
-                setPackage(pkg);
-            } catch (Exception e) {
-                appendLoadError("Failed to parse package: %1$s", e.toString());
-            }
-        }
-        return pkg;
     }
 
     // --- helpers ---

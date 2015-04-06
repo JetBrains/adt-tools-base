@@ -20,10 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.sdklib.repository.IDescription;
 import com.android.sdklib.repository.IListDescription;
-import com.android.sdklib.internal.repository.packages.Package;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
-import com.android.sdklib.repository.remote.RemotePkgInfo;
-import com.android.sdklib.repository.remote.RemoteSdk;
 
 import java.io.File;
 import java.util.Properties;
@@ -35,8 +32,6 @@ import java.util.Properties;
  * Clients should not need to create instances of {@link LocalPkgInfo} directly.
  * Instead please use the {@link LocalSdk} methods to parse and retrieve packages.
  * <p/>
- * These objects can also contain optional information about updates available
- * from remote servers. These are computed and set by the {@link RemoteSdk} object.
  */
 public abstract class LocalPkgInfo
         implements IDescription, IListDescription, Comparable<LocalPkgInfo> {
@@ -45,9 +40,7 @@ public abstract class LocalPkgInfo
     private final File mLocalDir;
     private final Properties mSourceProperties;
 
-    private Package mPackage;
     private String mLoadError;
-    private RemotePkgInfo mUpdate;
 
     protected LocalPkgInfo(@NonNull LocalSdk   localSdk,
                            @NonNull File       localDir,
@@ -79,34 +72,6 @@ public abstract class LocalPkgInfo
         return mLoadError;
     }
 
-    /**
-     * Indicates whether this local package has an update available.
-     * This is only defined if {@link Update} has been used to decorate the packages.
-     *
-     * @return True if {@link #getUpdate()} would return a non-null {@link RemotePkgInfo}.
-     */
-    public boolean hasUpdate() {
-        return mUpdate != null;
-    }
-
-    /**
-     * Returns a {@link RemotePkgInfo} that can update this package, if available.
-     * This is only defined if {@link Update} has been used to decorate the packages.
-     *
-     * @return A {@link RemotePkgInfo} or null.
-     */
-    @Nullable
-    public RemotePkgInfo getUpdate() {
-        return mUpdate;
-    }
-
-    /**
-     * Used by {@link Update} to indicate if there's an update available for this package.
-     */
-    public void setUpdate(@Nullable RemotePkgInfo update) {
-        mUpdate = update;
-    }
-
     // ----
 
     /** Returns the {@link IPkgDesc} describing this package. */
@@ -119,7 +84,7 @@ public abstract class LocalPkgInfo
     /**
      * Comparison is solely done based on the {@link IPkgDesc}.
      * <p/>
-     * Other local attributes (local directory, source properties, updates available)
+     * Other local attributes (local directory, source properties)
      * are <em>not used</em> in the comparison. Consequently {@link #compareTo(LocalPkgInfo)}
      * does not match {@link #equals(Object)} and the {@link #hashCode()} properties.
      */
@@ -134,10 +99,6 @@ public abstract class LocalPkgInfo
         StringBuilder builder = new StringBuilder();
         builder.append('<').append(this.getClass().getSimpleName()).append(' ');
         builder.append(getDesc().toString());
-        if (mUpdate != null) {
-            builder.append(" Updated by: ");                            //$NON-NLS-1$
-            builder.append(mUpdate.toString());
-        }
         builder.append('>');
         return builder.toString();
     }
@@ -145,7 +106,7 @@ public abstract class LocalPkgInfo
     /**
      * Computes a hash code specific to this instance based on the underlying
      * {@link IPkgDesc} but also specific local properties such a local directory,
-     * update available and actual source properties.
+     * and actual source properties.
      */
     @Override
     public int hashCode() {
@@ -154,7 +115,6 @@ public abstract class LocalPkgInfo
         result = prime * result + ((getDesc() == null)         ? 0 : getDesc().hashCode());
         result = prime * result + ((mLocalDir == null)         ? 0 : mLocalDir.hashCode());
         result = prime * result + ((mSourceProperties == null) ? 0 : mSourceProperties.hashCode());
-        result = prime * result + ((mUpdate == null)           ? 0 : mUpdate.hashCode());
         return result;
     }
 
@@ -195,13 +155,6 @@ public abstract class LocalPkgInfo
         } else if (!mSourceProperties.equals(other.mSourceProperties)) {
             return false;
         }
-        if (mUpdate == null) {
-            if (other.mUpdate != null) {
-                return false;
-            }
-        } else if (!mUpdate.equals(other.mUpdate)) {
-            return false;
-        }
         return true;
     }
 
@@ -227,15 +180,6 @@ public abstract class LocalPkgInfo
         } else {
             mLoadError = mLoadError + '\n' + loadError;
         }
-    }
-
-    void setPackage(@Nullable Package pkg) {
-        mPackage = pkg;
-    }
-
-    @Nullable
-    public Package getPackage() {
-        return mPackage;
     }
 
     @NonNull
