@@ -213,7 +213,7 @@ public class LocalSdk {
      * @param fileOp The alternate {@link FileOp} to use for all file-based interactions.
      */
     @VisibleForTesting(visibility=Visibility.PRIVATE)
-    protected LocalSdk(@NonNull IFileOp fileOp) {
+    public LocalSdk(@NonNull IFileOp fileOp) {
         mFileOp = fileOp;
     }
 
