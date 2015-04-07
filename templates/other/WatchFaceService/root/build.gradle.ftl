@@ -1,13 +1,13 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 21
-    buildToolsVersion '21.1'
+    compileSdkVersion <#if buildApiString?matches("^\\d+$")>${buildApiString}<#else>'${buildApiString}'</#if>
+    buildToolsVersion "${buildToolsVersion}"
 
     defaultConfig {
-        applicationId "com.example.android.wearable.watchface"
-        minSdkVersion 21
-        targetSdkVersion 21
+        applicationId "${packageName}"
+        minSdkVersion <#if minApi?matches("^\\d+$")>${minApi}<#else>'${minApi}'</#if>
+        targetSdkVersion <#if targetApiString?matches("^\\d+$")>${targetApiString}<#else>'${targetApiString}'</#if>
         versionCode 1
         versionName "1.0"
     }
