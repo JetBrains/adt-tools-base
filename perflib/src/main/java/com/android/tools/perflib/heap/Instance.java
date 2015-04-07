@@ -136,6 +136,18 @@ public abstract class Instance {
         return mRetainedSizes[heapIndex];
     }
 
+    public long getTotalRetainedSize() {
+        if (mRetainedSizes == null) {
+          return 0;
+        }
+
+        long totalSize = 0;
+        for (long mRetainedSize : mRetainedSizes) {
+            totalSize += mRetainedSize;
+        }
+        return totalSize;
+    }
+
     //  Add to the list of objects that have a hard reference to this Instance
     public void addReference(Instance reference) {
         mReferences.add(reference);

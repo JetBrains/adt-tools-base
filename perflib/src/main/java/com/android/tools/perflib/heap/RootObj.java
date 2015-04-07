@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 
 public class RootObj extends Instance {
+    public static final String UNDEFINED_CLASS_NAME = "no class defined!!";
 
     RootType mType = RootType.UNKNOWN;
 
@@ -51,7 +52,7 @@ public class RootObj extends Instance {
         }
 
         if (theClass == null) {
-            return "no class defined!!";
+            return UNDEFINED_CLASS_NAME;
         }
 
         return theClass.mClassName;
@@ -77,5 +78,9 @@ public class RootObj extends Instance {
         } else {
             return mHeap.mSnapshot.findReference(mId);
         }
+    }
+
+    public RootType getRootType() {
+        return mType;
     }
 }
