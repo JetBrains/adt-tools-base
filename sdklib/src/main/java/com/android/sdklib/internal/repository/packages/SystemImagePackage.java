@@ -43,7 +43,12 @@ import java.util.regex.Pattern;
 
 /**
  * Represents a system-image XML node in an SDK repository.
+ *
+ * @deprecated
+ * com.android.sdklib.internal.repository has moved into Studio as
+ * com.android.tools.idea.sdk.remote.internal.
  */
+@Deprecated
 public class SystemImagePackage extends MajorRevisionPackage
         implements IAndroidVersionProvider, IPlatformDependency {
 

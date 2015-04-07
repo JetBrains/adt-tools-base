@@ -55,7 +55,12 @@ import java.util.Properties;
  * Packages are contained by a {@link SdkSource} (a download site).
  * <p/>
  * Derived classes must implement the {@link IDescription} methods.
+ *
+ * @deprecated
+ * com.android.sdklib.internal.repository has moved into Studio as
+ * com.android.tools.idea.sdk.remote.internal.
  */
+@Deprecated
 public abstract class Package implements IDescription, IListDescription, Comparable<Package> {
 
     private final String mObsolete;

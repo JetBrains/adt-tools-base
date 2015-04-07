@@ -33,7 +33,12 @@ import java.util.Map.Entry;
 
 /**
  * A list of sdk-repository and sdk-addon sources, sorted by {@link SdkSourceCategory}.
+ *
+ * @deprecated
+ * com.android.sdklib.internal.repository has moved into Studio as
+ * com.android.tools.idea.sdk.remote.internal.
  */
+@Deprecated
 public class SdkSources {
 
     private static final String KEY_COUNT = "count";

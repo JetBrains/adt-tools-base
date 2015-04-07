@@ -19,7 +19,12 @@ package com.android.sdklib.internal.repository;
 
 /**
  * A factory that can start and run new {@link ITask}s.
+ *
+ * @deprecated
+ * com.android.sdklib.internal.repository has moved into Studio as
+ * com.android.tools.idea.sdk.remote.internal.
  */
+@Deprecated
 public interface ITaskFactory {
 
     /**
@@ -34,7 +39,7 @@ public interface ITaskFactory {
      * @param title The title of the task, displayed in the monitor if any.
      * @param task The task to run.
      */
-    public abstract void start(String title, ITask task);
+    void start(String title, ITask task);
 
     /**
      * Starts a new task contributing to an already existing {@link ITaskMonitor}.
@@ -55,5 +60,5 @@ public interface ITaskFactory {
      * @param parentMonitor The parent monitor. Can be null.
      * @param task The task to run and have it display on the monitor.
      */
-    public abstract void start(String title, ITaskMonitor parentMonitor, ITask task);
+    void start(String title, ITaskMonitor parentMonitor, ITask task);
 }

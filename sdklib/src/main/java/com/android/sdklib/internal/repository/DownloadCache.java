@@ -58,7 +58,12 @@ import java.util.concurrent.atomic.AtomicInteger;
  * default and tries to update resources if they are older than 10 minutes by respecting
  * either ETag or Last-Modified, and finally server-cache is a strategy to always serve
  * cached entries if present.)
+ *
+ * @deprecated
+ * com.android.sdklib.internal.repository has moved into Studio as
+ * com.android.tools.idea.sdk.remote.internal.
  */
+@Deprecated
 public class DownloadCache {
 
     /*

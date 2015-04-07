@@ -64,7 +64,11 @@ import java.util.regex.Pattern;
 
 /**
  * Performs the work of installing a given {@link Archive}.
+ * @deprecated
+ * com.android.sdklib.internal.repository has moved into Studio as
+ * com.android.tools.idea.sdk.remote.internal.
  */
+@Deprecated
 public class ArchiveInstaller {
 
     private static final String PROP_STATUS_CODE = "StatusCode";                    //$NON-NLS-1$

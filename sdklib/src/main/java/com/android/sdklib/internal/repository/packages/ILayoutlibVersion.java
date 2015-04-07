@@ -20,11 +20,16 @@ import com.android.utils.Pair;
 
 /**
  * Interface used to decorate a {@link Package} that provides a version for layout lib.
+ *
+ * @deprecated
+ * com.android.sdklib.internal.repository has moved into Studio as
+ * com.android.tools.idea.sdk.remote.internal.
  */
+@Deprecated
 public interface ILayoutlibVersion {
 
-    public static final int LAYOUTLIB_API_NOT_SPECIFIED = 0;
-    public static final int LAYOUTLIB_REV_NOT_SPECIFIED = 0;
+    int LAYOUTLIB_API_NOT_SPECIFIED = 0;
+    int LAYOUTLIB_REV_NOT_SPECIFIED = 0;
 
     /**
      * Returns the layoutlib version. Mandatory starting with repository XSD rev 4.
@@ -38,5 +43,5 @@ public interface ILayoutlibVersion {
      *
      * @since sdk-repository-4.xsd
      */
-    public Pair<Integer, Integer> getLayoutlibVersion();
+    Pair<Integer, Integer> getLayoutlibVersion();
 }

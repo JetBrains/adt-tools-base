@@ -40,7 +40,12 @@ import java.util.Properties;
 
 /**
  * Performs an update using only a non-interactive console output with no GUI.
+ *
+ * @deprecated
+ * com.android.sdklib.internal.repository has moved into Studio as
+ * com.android.tools.idea.sdk.remote.internal.
  */
+@Deprecated
 public class SdkUpdaterNoWindow {
 
     /** The {@link UpdaterData} to use. */
