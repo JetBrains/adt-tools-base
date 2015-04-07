@@ -17,12 +17,12 @@
 package com.android.build.gradle.tasks
 
 import com.android.build.gradle.internal.LoggerWrapper
+import com.android.build.gradle.internal.tasks.DefaultAndroidTask
 import com.android.manifmerger.ManifestMerger2
 import com.android.manifmerger.MergingReport
 import com.android.utils.ILogger
 import com.google.common.base.Supplier
 import org.apache.tools.ant.BuildException
-import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.OutputFile
@@ -34,7 +34,7 @@ import org.gradle.api.tasks.TaskAction
  * or overlay manifests
  */
 @ParallelizableTask
-class InvokeManifestMerger extends DefaultTask implements Supplier<File> {
+class InvokeManifestMerger extends DefaultAndroidTask implements Supplier<File> {
 
     @InputFile
     File mainManifestFile;

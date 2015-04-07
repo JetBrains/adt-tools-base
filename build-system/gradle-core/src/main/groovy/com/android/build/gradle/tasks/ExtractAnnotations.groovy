@@ -17,6 +17,7 @@
 package com.android.build.gradle.tasks
 
 import com.android.annotations.NonNull
+import com.android.build.gradle.internal.tasks.AbstractAndroidCompile
 import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.build.gradle.tasks.annotations.ApiDatabase
 import com.android.build.gradle.tasks.annotations.Extractor
@@ -39,13 +40,12 @@ import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
-import org.gradle.api.tasks.compile.AbstractCompile
 import org.gradle.tooling.BuildException
 
 import static com.android.SdkConstants.DOT_JAVA
 import static com.android.SdkConstants.UTF_8
 
-class ExtractAnnotations extends AbstractCompile {
+class ExtractAnnotations extends AbstractAndroidCompile {
     public BaseVariantData variant
 
     /** Boot classpath: typically android.jar */

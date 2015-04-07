@@ -16,25 +16,13 @@
 package com.android.build.gradle.internal.tasks
 
 import com.android.build.gradle.internal.LibraryCache
-import org.gradle.api.DefaultTask
+import com.android.builder.Version
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
 
-public class PrepareLibraryTask extends DefaultTask {
-    // on 1.2 we changed the content of the exploded-aar. We use a @input with a basic int
-    // to increment whenever the exploded aar is moved around so that incremental builds still work
-
-    /**
-     * If the organization of the aar changed, we need to ensure the task is re-run when we
-     * build with a different version of the plugin. Otherwise the paths will not match what the
-     * plugin expects. (this happens in 1.2 where classes.jar is moved under jars/).
-     * TODO: dynamically populate with the plugin version
-     */
-    @Input
-    String pluginVersion = "1.2"
-
+public class PrepareLibraryTask extends DefaultAndroidTask {
     @InputFile
     File bundle
 

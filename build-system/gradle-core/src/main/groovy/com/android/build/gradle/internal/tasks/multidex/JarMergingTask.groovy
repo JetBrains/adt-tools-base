@@ -18,10 +18,10 @@
 
 package com.android.build.gradle.internal.tasks.multidex
 
+import com.android.build.gradle.internal.tasks.DefaultAndroidTask
 import com.google.common.collect.Sets
 import com.google.common.hash.Hashing
 import com.google.common.io.Files
-import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Optional
@@ -38,7 +38,7 @@ import java.util.zip.ZipInputStream
  * This ignores all non .class files since this is strictly to
  * handle code.
  */
-class JarMergingTask extends DefaultTask {
+class JarMergingTask extends DefaultAndroidTask {
 
     // could be files (jar) or folders of classes.
     @InputFiles
