@@ -19,7 +19,14 @@ package com.android.sdklib.internal.repository.archives;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 
-/** The Architecture that this archive can be downloaded on. */
+/**
+ * The Architecture that this archive can be downloaded on.
+ *
+ * @deprecated
+ * com.android.sdklib.internal.repository has moved into Studio as
+ * com.android.tools.idea.sdk.remote.internal.
+ */
+@Deprecated
 public enum BitSize {
     _32(32),
     _64(64);

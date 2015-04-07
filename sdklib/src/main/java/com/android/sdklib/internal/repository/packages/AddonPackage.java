@@ -48,7 +48,12 @@ import java.util.Properties;
 
 /**
  * Represents an add-on XML node in an SDK repository.
+ *
+ * @deprecated
+ * com.android.sdklib.internal.repository has moved into Studio as
+ * com.android.tools.idea.sdk.remote.internal.
  */
+@Deprecated
 public class AddonPackage extends MajorRevisionPackage
         implements IAndroidVersionProvider, IPlatformDependency,
                    IExactApiLevelDependency, ILayoutlibVersion {

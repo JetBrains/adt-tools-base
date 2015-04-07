@@ -39,7 +39,12 @@ import java.util.Set;
 
 /**
  * Represents a build-tool XML node in an SDK repository.
+ *
+ * @deprecated
+ * com.android.sdklib.internal.repository has moved into Studio as
+ * com.android.tools.idea.sdk.remote.internal.
  */
+@Deprecated
 public class BuildToolPackage extends FullRevisionPackage {
 
     /** The base value returned by {@link BuildToolPackage#installId()}. */

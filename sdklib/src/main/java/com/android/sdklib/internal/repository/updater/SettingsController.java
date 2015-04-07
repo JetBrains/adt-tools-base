@@ -39,7 +39,12 @@ import java.util.Properties;
  * them when modified.
  * <p/>
  * Settings are enumerated by constants in {@link ISettingsPage}.
+ *
+ * @deprecated
+ * com.android.sdklib.internal.repository has moved into Studio as
+ * com.android.tools.idea.sdk.remote.internal.
  */
+@Deprecated
 public class SettingsController {
 
     private static final String SETTINGS_FILENAME = "androidtool.cfg"; //$NON-NLS-1$

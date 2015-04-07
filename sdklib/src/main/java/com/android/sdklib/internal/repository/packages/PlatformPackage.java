@@ -42,7 +42,12 @@ import java.util.Properties;
 
 /**
  * Represents a platform XML node in an SDK repository.
+ *
+ * @deprecated
+ * com.android.sdklib.internal.repository has moved into Studio as
+ * com.android.tools.idea.sdk.remote.internal.
  */
+@Deprecated
 public class PlatformPackage extends MinToolsPackage
         implements IAndroidVersionProvider, ILayoutlibVersion {
 

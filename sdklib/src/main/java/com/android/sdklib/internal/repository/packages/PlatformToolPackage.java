@@ -39,7 +39,12 @@ import java.util.Set;
 
 /**
  * Represents a platform-tool XML node in an SDK repository.
+ *
+ * @deprecated
+ * com.android.sdklib.internal.repository has moved into Studio as
+ * com.android.tools.idea.sdk.remote.internal.
  */
+@Deprecated
 public class PlatformToolPackage extends FullRevisionPackage {
 
     /** The value returned by {@link PlatformToolPackage#installId()}. */

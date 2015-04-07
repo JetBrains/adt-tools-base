@@ -73,7 +73,12 @@ import javax.xml.validation.Validator;
  * An sdk-addon or sdk-repository source, i.e. a download site.
  * It may be a full repository or an add-on only repository.
  * A repository describes one or {@link Package}s available for download.
+ *
+ * @deprecated
+ * com.android.sdklib.internal.repository has moved into Studio as
+ * com.android.tools.idea.sdk.remote.internal.
  */
+@Deprecated
 public abstract class SdkSource implements IDescription, Comparable<SdkSource> {
 
     private String mUrl;

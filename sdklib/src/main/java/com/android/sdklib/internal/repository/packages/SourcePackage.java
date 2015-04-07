@@ -46,7 +46,12 @@ import java.util.Properties;
  * Note that a source package has a version and thus implements {@link IAndroidVersionProvider}.
  * However there is no mandatory dependency that limits installation so this does not
  * implement {@link IPlatformDependency}.
+ *
+ * @deprecated
+ * com.android.sdklib.internal.repository has moved into Studio as
+ * com.android.tools.idea.sdk.remote.internal.
  */
+@Deprecated
 public class SourcePackage extends MajorRevisionPackage implements IAndroidVersionProvider {
 
     /** The package version, for platform, add-on and doc packages. */
