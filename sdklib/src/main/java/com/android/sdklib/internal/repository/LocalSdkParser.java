@@ -55,7 +55,12 @@ import java.util.Properties;
 
 /**
  * Scans a local SDK to find which packages are currently installed.
+ *
+ * @deprecated
+ * com.android.sdklib.internal.repository has moved into Studio as
+ * com.android.tools.idea.sdk.remote.internal.
  */
+@Deprecated
 public class LocalSdkParser {
 
     private Package[] mPackages;

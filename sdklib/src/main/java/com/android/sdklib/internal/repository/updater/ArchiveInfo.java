@@ -42,7 +42,12 @@ import java.util.Collection;
  * have no need for it.
  *
  * @see ArchiveInfo#ArchiveInfo(Archive, Archive, ArchiveInfo[])
+ *
+ * @deprecated
+ * com.android.sdklib.internal.repository has moved into Studio as
+ * com.android.tools.idea.sdk.remote.internal.
  */
+@Deprecated
 public class ArchiveInfo extends ArchiveReplacement implements Comparable<ArchiveInfo> {
 
     private final ArchiveInfo[] mDependsOn;

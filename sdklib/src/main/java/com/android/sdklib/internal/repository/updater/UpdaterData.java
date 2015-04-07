@@ -74,7 +74,12 @@ import java.util.TreeSet;
 
 /**
  * Data shared by the SDK Manager updaters.
+ *
+ * @deprecated
+ * com.android.sdklib.internal.repository has moved into Studio as
+ * com.android.tools.idea.sdk.remote.internal.
  */
+@Deprecated
 public class UpdaterData implements IUpdaterData {
 
     public static final int NO_TOOLS_MSG = 0;

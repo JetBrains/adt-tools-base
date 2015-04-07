@@ -29,14 +29,19 @@ import com.android.sdklib.repository.RepoConstants;
  * <p/>
  * Such package requires the {@code <api-level>} element. It is not an optional
  * property, however it can be invalid.
+ *
+ * @deprecated
+ * com.android.sdklib.internal.repository has moved into Studio as
+ * com.android.tools.idea.sdk.remote.internal.
  */
+@Deprecated
 public interface IExactApiLevelDependency {
 
     /**
      * The value of {@link #getExactApiLevel()} when the {@link RepoConstants#NODE_API_LEVEL}
      * was not specified in the XML source.
      */
-    public static final int API_LEVEL_INVALID = 0;
+    int API_LEVEL_INVALID = 0;
 
     /**
      * Returns the exact API level required by this package, if > 0,
@@ -45,5 +50,5 @@ public interface IExactApiLevelDependency {
      * This attribute is mandatory and should not be normally missing.
      * It can only happen when dealing with an invalid repository XML.
      */
-    public abstract int getExactApiLevel();
+    int getExactApiLevel();
 }

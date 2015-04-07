@@ -31,7 +31,12 @@ import java.util.Properties;
 /**
  * Represents an SDK repository package that is incomplete.
  * It has a distinct icon and a specific error that is supposed to help the user on how to fix it.
+ *
+ * @deprecated
+ * com.android.sdklib.internal.repository has moved into Studio as
+ * com.android.tools.idea.sdk.remote.internal.
  */
+@Deprecated
 public class BrokenPackage extends MajorRevisionPackage
         implements IExactApiLevelDependency, IMinApiLevelDependency {
 

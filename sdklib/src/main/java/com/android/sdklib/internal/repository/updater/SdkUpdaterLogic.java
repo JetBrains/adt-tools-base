@@ -57,7 +57,12 @@ import java.util.Set;
  * <p/>
  * When the user doesn't provide a selection, looks at local package to find
  * those that can be updated and compute dependencies too.
+ *
+ * @deprecated
+ * com.android.sdklib.internal.repository has moved into Studio as
+ * com.android.tools.idea.sdk.remote.internal.
  */
+@Deprecated
 public class SdkUpdaterLogic {
 
     private final IUpdaterData mUpdaterData;
