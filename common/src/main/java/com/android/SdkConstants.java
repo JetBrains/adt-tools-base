@@ -372,6 +372,8 @@ public final class SdkConstants {
     public static final String FD_DATA = "data";                        //$NON-NLS-1$
     /** Name of the SDK renderscript folder, i.e. "rs" */
     public static final String FD_RENDERSCRIPT = "rs";                  //$NON-NLS-1$
+    /** Name of the Java resources folder, i.e. "resources" */
+    public static final String FD_JAVA_RES = "resources";               //$NON-NLS-1$
     /** Name of the SDK resources folder, i.e. "res" */
     public static final String FD_RES = "res";                          //$NON-NLS-1$
     /** Name of the SDK font folder, i.e. "fonts" */
