@@ -19,8 +19,6 @@ package com.android.sdklib.repository.local;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.sdklib.BuildToolInfo;
-import com.android.sdklib.internal.repository.packages.BuildToolPackage;
-import com.android.sdklib.internal.repository.packages.Package;
 import com.android.sdklib.repository.FullRevision;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
 import com.android.sdklib.repository.descriptors.PkgDesc;
@@ -53,20 +51,5 @@ public class LocalBuildToolPkgInfo extends LocalPkgInfo {
     @Nullable
     public BuildToolInfo getBuildToolInfo() {
         return mBuildToolInfo;
-    }
-
-    @Nullable
-    @Override
-    public Package getPackage() {
-        Package pkg = super.getPackage();
-        if (pkg == null) {
-            try {
-                pkg = BuildToolPackage.create(getLocalDir(), getSourceProperties());
-                setPackage(pkg);
-            } catch (Exception e) {
-                appendLoadError("Failed to parse package: %1$s", e.toString());
-            }
-        }
-        return pkg;
     }
 }
