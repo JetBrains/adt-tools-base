@@ -418,7 +418,8 @@ public class ManifestMerger2SmallTest extends TestCase {
         assertEquals("com.foo.example.myBackupAgent",
                 xmlDocument.getXml().getElementsByTagName("application").item(0).getAttributes()
                         .getNamedItemNS("http://schemas.android.com/apk/res/android", "backupAgent")
-                        .getNodeValue());    }
+                        .getNodeValue());
+    }
 
     public void testFqcnsExtraction()
             throws ParserConfigurationException, SAXException, IOException,
@@ -461,6 +462,32 @@ public class ManifestMerger2SmallTest extends TestCase {
                 xmlDocument.getXml().getElementsByTagName("application").item(0).getAttributes()
                         .getNamedItemNS("http://schemas.android.com/apk/res/android", "backupAgent")
                         .getNodeValue());
+    }
+
+    public void testNoPlaceholderReplacement()
+            throws IOException, ManifestMerger2.MergeFailureException {
+        String xml = ""
+                + "<manifest\n"
+                + "    package=\"${applicationId}\""
+                + "    xmlns:t=\"http://schemas.android.com/apk/res/android\">\n"
+                + "    <activity t:name=\"activityOne\"/>\n"
+                + "    <application t:name=\".applicationOne\" "
+                + "         t:backupAgent=\"com.foo.example.myBackupAgent\"/>\n"
+                + "</manifest>";
+
+        File inputFile = inputAsFile("testNoPlaceHolderReplacement", xml);
+
+        MockLog mockLog = new MockLog();
+        MergingReport mergingReport = ManifestMerger2
+                .newMerger(inputFile, mockLog, ManifestMerger2.MergeType.APPLICATION)
+                .withFeatures(ManifestMerger2.Invoker.Feature.NO_PLACEHOLDER_REPLACEMENT)
+                .merge();
+
+        assertTrue(mergingReport.getResult().isSuccess());
+        XmlDocument xmlDocument = mergingReport.getMergedDocument().get();
+        assertEquals("${applicationId}",
+                xmlDocument.getXml().getElementsByTagName("manifest")
+                        .item(0).getAttributes().getNamedItem("package").getNodeValue());
     }
 
     /**
