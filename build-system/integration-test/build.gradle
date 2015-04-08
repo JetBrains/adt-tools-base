@@ -15,6 +15,14 @@ dependencies {
     testCompile "org.jacoco:org.jacoco.agent:0.7.4.201502262128"
 }
 
+def testEnvironment = [
+    PROJECT_BUILD_DIR: project.buildDir,
+    CUSTOM_REPO: rootProject.file("../out/repo"),
+    CUSTOM_GRADLE: System.env.CUSTOM_GRADLE ?: rootProject.ext.buildVersion,
+    ANDROID_HOME: System.env.ANDROID_HOME,
+    ANDROID_NDK_HOME: System.env.ANDROID_NDK_HOME,
+]
+
 // These tasks will not depend on publishLocal, so they will run integration
 // tests against whatever version of the plugin is in ../../../out/repo. This
 // allows us to run integration tests with different versions of Java, without
@@ -23,13 +31,11 @@ task testPrebuilts(type: Test)
 task connectedIntegrationTestPrebuilts(type: Test)
 
 configure([test, testPrebuilts]) {
-    environment("PROJECT_BUILD_DIR", project.buildDir)
-
     description =
             "Runs the project integration tests. This requires an SDK either from the Android " +
                     "source tree, under out/..., or an env var ANDROID_HOME."
     systemProperties['jar.path'] = jar.archivePath
-    environment("CUSTOM_REPO", rootProject.file("../out/repo"))
+    environment = testEnvironment
 
     forkEvery = 1
     maxParallelForks = Runtime.runtime.availableProcessors() / 2
@@ -42,8 +48,6 @@ configure([test, testPrebuilts]) {
 task connectedIntegrationTest(type: Test)
 
 configure([connectedIntegrationTest, connectedIntegrationTestPrebuilts]) {
-    environment("PROJECT_BUILD_DIR", project.buildDir)
-
     testClassesDir = sourceSets.test.output.classesDir
     classpath = sourceSets.test.runtimeClasspath
 
@@ -53,15 +57,13 @@ configure([connectedIntegrationTest, connectedIntegrationTestPrebuilts]) {
                     "and a device."
     group = "verification"
     systemProperties['jar.path'] = jar.archivePath
-    environment("CUSTOM_REPO", rootProject.file("../out/repo"))
+    environment = testEnvironment
     useJUnit {
         includeCategories "com.android.build.gradle.integration.common.category.DeviceTests"
     }
 }
 
 task performanceTest(type: Test) {
-    environment("PROJECT_BUILD_DIR", project.buildDir)
-
     include "com/android/build/gradle/integration/performance/**"
 
     testClassesDir = sourceSets.test.output.classesDir
@@ -72,7 +74,7 @@ task performanceTest(type: Test) {
                     "from the Android source tree, under out/..., or an env var ANDROID_HOME."
     group = "verification"
     systemProperties['jar.path'] = jar.archivePath
-    environment("CUSTOM_REPO", rootProject.file("../out/repo"))
+    environment = testEnvironment
 
     reports {
         junitXml.destination "${project.buildDir}/perf-results"

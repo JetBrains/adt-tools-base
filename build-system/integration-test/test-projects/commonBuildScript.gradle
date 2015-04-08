@@ -14,7 +14,11 @@
  * limitations under the License.
  */
 
-def gradleVersion = System.env.CUSTOM_GRADLE ?: '1.3.0-alpha1'
+def gradleVersion = System.env.CUSTOM_GRADLE
+
+if (gradleVersion == null) {
+    throw new RuntimeException("Android Gradle plugin version for tests 'CUSTOM_GRADLE' not set.")
+}
 
 apply from: "commonLocalRepo.gradle"
 
