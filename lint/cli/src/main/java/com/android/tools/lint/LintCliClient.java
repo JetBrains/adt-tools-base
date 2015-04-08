@@ -384,7 +384,8 @@ public class LintCliClient extends LintClient {
                 libraries = classPath.getLibraries();
             }
 
-            info = new ClassPathInfo(sources, classes, libraries);
+            info = new ClassPathInfo(sources, classes, libraries,
+                    classPath.getTestSourceFolders());
             mProjectInfo.put(project, info);
         }
 

@@ -241,6 +241,17 @@ public abstract class LintClient {
     }
 
     /**
+     * Returns the list of source folders for test source files
+     *
+     * @param project the project to look up test source file locations for
+     * @return a list of source folders to search for .java files
+     */
+    @NonNull
+    public List<File> getTestSourceFolders(@NonNull Project project) {
+        return getClassPath(project).getTestSourceFolders();
+    }
+
+    /**
      * Returns the resource folders.
      *
      * @param project the project to look up the resource folder for
@@ -403,14 +414,17 @@ public abstract class LintClient {
         private final List<File> mClassFolders;
         private final List<File> mSourceFolders;
         private final List<File> mLibraries;
+        private final List<File> mTestFolders;
 
         public ClassPathInfo(
                 @NonNull List<File> sourceFolders,
                 @NonNull List<File> classFolders,
-                @NonNull List<File> libraries) {
+                @NonNull List<File> libraries,
+                @NonNull List<File> testFolders) {
             mSourceFolders = sourceFolders;
             mClassFolders = classFolders;
             mLibraries = libraries;
+            mTestFolders = testFolders;
         }
 
         @NonNull
@@ -426,6 +440,10 @@ public abstract class LintClient {
         @NonNull
         public List<File> getLibraries() {
             return mLibraries;
+        }
+
+        public List<File> getTestSourceFolders() {
+            return mTestFolders;
         }
     }
 
@@ -454,6 +472,9 @@ public abstract class LintClient {
             List<File> sources = new ArrayList<File>(2);
             List<File> classes = new ArrayList<File>(1);
             List<File> libraries = new ArrayList<File>();
+            // No test folders in Eclipse:
+            // https://bugs.eclipse.org/bugs/show_bug.cgi?id=224708
+            List<File> tests = Collections.emptyList();
 
             File projectDir = project.getDir();
             File classpathFile = new File(projectDir, ".classpath"); //$NON-NLS-1$
@@ -551,7 +572,7 @@ public abstract class LintClient {
                 }
             }
 
-            info = new ClassPathInfo(sources, classes, libraries);
+            info = new ClassPathInfo(sources, classes, libraries, tests);
             mProjectInfo.put(project, info);
         }
 

@@ -1023,7 +1023,19 @@ public class LintDriver {
                     checkIndividualJavaFiles(project, main, checks, files);
                 } else {
                     List<File> sourceFolders = project.getJavaSourceFolders();
+                    if (mScope.contains(Scope.TEST_SOURCES)) {
+                        List<File> testFolders = project.getTestSourceFolders();
+                        if (!testFolders.isEmpty()) {
+                            List<File> combined = Lists.newArrayListWithExpectedSize(
+                                    sourceFolders.size() + testFolders.size());
+                            combined.addAll(sourceFolders);
+                            combined.addAll(testFolders);
+                            sourceFolders = combined;
+                        }
+                    }
+
                     checkJava(project, main, sourceFolders, checks);
+
                 }
             }
         }
