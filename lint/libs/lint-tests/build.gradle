@@ -1,0 +1,37 @@
+buildscript {
+    repositories {
+        maven { url = uri(rootProject.cloneArtifacts.repository) }
+    }
+    dependencies {
+        classpath "com.jfrog.bintray.gradle:gradle-bintray-plugin:1.0"
+    }
+}
+
+apply plugin: 'java'
+apply plugin: 'sdk-java-lib'
+
+group = 'com.android.tools.lint'
+archivesBaseName = 'lint-tests'
+version = rootProject.ext.baseVersion
+
+dependencies {
+    compile project(':base:lint')
+
+    compile 'org.easymock:easymock:3.3'
+    compile 'junit:junit:4.12'
+    compile project(':base:testutils')
+    compile 'org.codehaus.groovy:groovy-all:2.2.1'
+}
+
+sourceSets {
+    main.resources.srcDir 'src/main/java'
+    test.resources.srcDir 'src/test/java'
+}
+
+project.ext.pomName = 'Android Tools Lint Test API'
+project.ext.pomDesc = 'API to build lint check tests'
+
+apply from: "$rootDir/buildSrc/base/publish.gradle"
+apply from: "$rootDir/buildSrc/base/bintray.gradle"
+apply from: "$rootDir/buildSrc/base/javadoc.gradle"
+
