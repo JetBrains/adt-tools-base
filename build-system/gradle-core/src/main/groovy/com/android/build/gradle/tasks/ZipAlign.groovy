@@ -17,8 +17,8 @@ package com.android.build.gradle.tasks
 
 import com.android.annotations.NonNull
 import com.android.build.FilterData
+import com.android.build.gradle.internal.tasks.DefaultAndroidTask
 import com.android.build.gradle.internal.tasks.FileSupplier
-import org.gradle.api.DefaultTask
 import org.gradle.api.Task
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.OutputFile
@@ -26,7 +26,7 @@ import org.gradle.api.tasks.ParallelizableTask
 import org.gradle.api.tasks.TaskAction
 
 @ParallelizableTask
-public class ZipAlign extends DefaultTask implements FileSupplier {
+public class ZipAlign extends DefaultAndroidTask implements FileSupplier {
 
     // ----- PUBLIC TASK API -----
 

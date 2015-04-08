@@ -18,9 +18,9 @@
 
 package com.android.build.gradle.internal.tasks.multidex
 
+import com.android.build.gradle.internal.tasks.DefaultAndroidTask
 import com.google.common.base.Charsets
 import com.google.common.io.Files
-import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputFile
@@ -31,7 +31,7 @@ import org.xml.sax.helpers.DefaultHandler
 import javax.xml.parsers.SAXParser
 import javax.xml.parsers.SAXParserFactory
 
-class CreateManifestKeepList extends DefaultTask {
+class CreateManifestKeepList extends DefaultAndroidTask {
 
     @InputFile
     File manifest

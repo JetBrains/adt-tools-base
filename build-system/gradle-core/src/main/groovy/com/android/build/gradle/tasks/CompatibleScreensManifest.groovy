@@ -17,10 +17,10 @@
 package com.android.build.gradle.tasks
 
 import com.android.annotations.NonNull
+import com.android.build.gradle.internal.tasks.DefaultAndroidTask
 import com.android.resources.Density
 import com.google.common.base.Charsets
 import com.google.common.io.Files
-import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
@@ -30,7 +30,7 @@ import org.gradle.api.tasks.TaskAction
  * node with the given density and the given list of screen sizes.
 
  */
-class CompatibleScreensManifest extends DefaultTask {
+class CompatibleScreensManifest extends DefaultAndroidTask {
 
     @Input
     String screenDensity

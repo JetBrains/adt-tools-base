@@ -21,6 +21,7 @@ import com.android.annotations.Nullable
 import com.android.build.gradle.internal.LintGradleClient
 import com.android.build.gradle.internal.dsl.LintOptions
 import com.android.build.gradle.internal.model.ModelBuilder
+import com.android.build.gradle.internal.tasks.DefaultAndroidTask
 import com.android.builder.model.AndroidProject
 import com.android.builder.model.Variant
 import com.android.tools.lint.LintCliFlags
@@ -32,7 +33,6 @@ import com.android.tools.lint.client.api.IssueRegistry
 import com.android.tools.lint.detector.api.Issue
 import com.android.tools.lint.detector.api.Severity
 import com.google.common.collect.Maps
-import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.tasks.ParallelizableTask
@@ -40,7 +40,7 @@ import org.gradle.api.tasks.TaskAction
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry
 
 @ParallelizableTask
-public class Lint extends DefaultTask {
+public class Lint extends DefaultAndroidTask {
     @NonNull private LintOptions mLintOptions
     @Nullable private String mVariantName
     @Nullable private File mSdkHome

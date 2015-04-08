@@ -17,7 +17,6 @@
 package com.android.build.gradle.internal.tasks
 
 import com.android.builder.testing.api.TestServer
-import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.Optional
@@ -26,7 +25,7 @@ import org.gradle.api.tasks.TaskAction
 /**
  * Task sending APKs out to a {@link TestServer}
  */
-public class TestServerTask extends DefaultTask {
+public class TestServerTask extends DefaultAndroidTask {
 
     @InputFile
     File testApk

@@ -20,7 +20,6 @@ import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.AndroidAsciiReportRenderer;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 
-import org.gradle.api.DefaultTask;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.logging.StyledTextOutputFactory;
 
@@ -32,7 +31,7 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-public class DependencyReportTask extends DefaultTask {
+public class DependencyReportTask extends DefaultAndroidTask {
 
     private AndroidAsciiReportRenderer renderer = new AndroidAsciiReportRenderer();
 

@@ -16,13 +16,13 @@
 
 package com.android.build.gradle.tasks
 
+import com.android.build.gradle.internal.tasks.DefaultAndroidTask
 import com.android.build.gradle.ndk.NdkExtension
 import com.android.build.gradle.ndk.internal.NdkHandler
 import com.android.build.gradle.ndk.internal.StlConfiguration
 import com.google.common.base.Charsets
 import com.google.common.collect.Sets
 import com.google.common.io.Files
-import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.TaskAction
 import org.gradle.language.c.CSourceSet
@@ -32,7 +32,7 @@ import org.gradle.nativeplatform.NativeBinarySpec
 /**
  * Task to create gdb.setup for native code debugging.
  */
-class GdbSetupTask extends DefaultTask {
+class GdbSetupTask extends DefaultAndroidTask {
     @Input
     NdkHandler ndkHandler
 
