@@ -21,5 +21,6 @@
     <orderEntry type="module" module-name="lint-checks-base" />
     <orderEntry type="module" module-name="lint-api-base" />
     <orderEntry type="library" scope="TEST" name="intellij-annotations" level="project" />
+    <orderEntry type="module" module-name="lint-tests" scope="TEST" />
   </component>
 </module>

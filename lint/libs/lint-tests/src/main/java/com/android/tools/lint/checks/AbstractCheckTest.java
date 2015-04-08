@@ -59,6 +59,7 @@ import com.android.utils.ILogger;
 import com.android.utils.SdkUtils;
 import com.android.utils.StdLogger;
 import com.android.utils.XmlUtils;
+import com.google.common.annotations.Beta;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ListMultimap;
@@ -94,7 +95,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/** Common utility methods for the various lint check tests */
+/**
+ * Test case for lint detectors.
+ * <p>
+ * <b>NOTE: This is not a public or final API; if you rely on this be prepared
+ * to adjust your code for the next tools release.</b>
+ */
+@Beta
 @SuppressWarnings("javadoc")
 public abstract class AbstractCheckTest extends SdkTestCase {
     @Override

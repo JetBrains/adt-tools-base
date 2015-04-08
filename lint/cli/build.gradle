@@ -18,6 +18,7 @@ dependencies {
     compile project(':base:lint-checks')
     compile 'org.eclipse.jdt.core.compiler:ecj:4.4'
 
+    testCompile project(':base:lint-tests')
     testCompile 'org.easymock:easymock:3.3'
     testCompile 'junit:junit:4.12'
     testCompile project(':base:testutils')
