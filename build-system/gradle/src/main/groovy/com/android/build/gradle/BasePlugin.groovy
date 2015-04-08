@@ -43,6 +43,7 @@ import com.android.build.gradle.internal.profile.RecordingBuildListener
 import com.android.build.gradle.internal.variant.VariantFactory
 import com.android.build.gradle.tasks.JillTask
 import com.android.build.gradle.tasks.PreDex
+import com.android.builder.Version
 import com.android.builder.core.AndroidBuilder
 import com.android.builder.core.DefaultBuildType
 import com.android.builder.internal.compiler.JackConversionCache
@@ -121,12 +122,7 @@ public abstract class BasePlugin {
     protected BasePlugin(Instantiator instantiator, ToolingModelBuilderRegistry registry) {
         this.instantiator = instantiator
         this.registry = registry
-        String pluginVersion = getLocalVersion()
-        if (pluginVersion != null) {
-            creator = "Android Gradle " + pluginVersion
-        } else  {
-            creator = "Android Gradle"
-        }
+        creator = "Android Gradle " + Version.ANDROID_GRADLE_PLUGIN_VERSION
         verifyRetirementAge()
 
         ModelBuilder.clearCaches();
@@ -462,29 +458,6 @@ public abstract class BasePlugin {
                     extension.getCompileSdkVersion(),
                     extension.buildToolsRevision,
                     androidBuilder)
-        }
-    }
-
-    private static String getLocalVersion() {
-        try {
-            Class clazz = BasePlugin.class
-            String className = clazz.getSimpleName() + ".class"
-            String classPath = clazz.getResource(className).toString()
-            if (!classPath.startsWith("jar")) {
-                // Class not from JAR, unlikely
-                return null
-            }
-            String manifestPath = classPath.substring(0, classPath.lastIndexOf("!") + 1) +
-                    "/META-INF/MANIFEST.MF";
-
-            URLConnection jarConnection = new URL(manifestPath).openConnection();
-            jarConnection.setUseCaches(false);
-            InputStream jarInputStream = jarConnection.getInputStream();
-            Attributes attr = new Manifest(jarInputStream).getMainAttributes();
-            jarInputStream.close();
-            return attr.getValue("Plugin-Version");
-        } catch (Throwable t) {
-            return null;
         }
     }
 }

@@ -31,6 +31,7 @@ import com.android.build.gradle.integration.common.utils.JacocoAgent;
 import com.android.build.gradle.integration.common.utils.SdkHelper;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.SyncIssue;
+import com.android.builder.Version;
 import com.android.io.StreamException;
 import com.android.sdklib.internal.project.ProjectProperties;
 import com.android.sdklib.internal.project.ProjectPropertiesWorkingCopy;
@@ -85,7 +86,14 @@ public class GradleTestProject implements TestRule {
     public static final String GRADLE_TEST_VERSION = "2.2.1";
     public static final String GRADLE_EXP_TEST_VERSION = "2.4-20150322230018+0000";
 
-    private static final String ANDROID_GRADLE_VERSION = "1.3.0-alpha1";
+    public static final String ANDROID_GRADLE_PLUGIN_VERSION;
+
+    static {
+        String envVersion = System.getenv().get("CUSTOM_GRADLE");
+        ANDROID_GRADLE_PLUGIN_VERSION = !Strings.isNullOrEmpty(envVersion) ? envVersion
+                : Version.ANDROID_GRADLE_PLUGIN_VERSION;
+    }
+
     private static final String COMMON_HEADER = "commonHeader.gradle";
     private static final String COMMON_LOCAL_REPO = "commonLocalRepo.gradle";
     private static final String COMMON_BUILD_SCRIPT = "commonBuildScript.gradle";
