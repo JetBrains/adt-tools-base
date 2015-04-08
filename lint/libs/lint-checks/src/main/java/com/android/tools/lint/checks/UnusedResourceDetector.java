@@ -93,7 +93,8 @@ public class UnusedResourceDetector extends ResourceXmlDetector implements Detec
 
     private static final Implementation IMPLEMENTATION = new Implementation(
             UnusedResourceDetector.class,
-            EnumSet.of(Scope.MANIFEST, Scope.ALL_RESOURCE_FILES, Scope.ALL_JAVA_FILES));
+            EnumSet.of(Scope.MANIFEST, Scope.ALL_RESOURCE_FILES, Scope.ALL_JAVA_FILES,
+                    Scope.TEST_SOURCES));
 
     /** Unused resources (other than ids). */
     public static final Issue ISSUE = Issue.create(

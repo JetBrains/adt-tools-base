@@ -122,6 +122,7 @@ public class Project {
     protected List<File> mJavaSourceFolders;
     protected List<File> mJavaClassFolders;
     protected List<File> mJavaLibraries;
+    protected List<File> mTestSourceFolders;
     protected List<File> mResourceFolders;
     protected List<Project> mDirectLibraries;
     protected List<Project> mAllLibraries;
@@ -447,6 +448,20 @@ public class Project {
         }
 
         return mJavaLibraries;
+    }
+
+    /**
+     * Returns the list of source folders for Java test source files
+     *
+     * @return a list of source folders to search for .java files
+     */
+    @NonNull
+    public List<File> getTestSourceFolders() {
+        if (mTestSourceFolders == null) {
+            mTestSourceFolders = mClient.getTestSourceFolders(this);
+        }
+
+        return mTestSourceFolders;
     }
 
     /**

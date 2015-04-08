@@ -164,7 +164,7 @@ public class UnusedResourceDetectorTest extends AbstractCheckTest {
            "            ~~~~~~~~~~~~~~\n" +
            "0 errors, 1 warnings\n",
 
-           checkLint(Arrays.asList(master, library)).replace("/TESTROOT/",""));
+           checkLint(Arrays.asList(master, library)).replace("/TESTROOT/", ""));
     }
 
     public void testFqcnReference() throws Exception {
@@ -225,7 +225,7 @@ public class UnusedResourceDetectorTest extends AbstractCheckTest {
            "            ~~~~~~~~~~~~~~\n" +
            "0 errors, 1 warnings\n",
 
-           checkLint(Arrays.asList(master, library)).replace("/TESTROOT/",""));
+           checkLint(Arrays.asList(master, library)).replace("/TESTROOT/", ""));
     }
 
     public void testLibraryMerging() throws Exception {
@@ -291,5 +291,37 @@ public class UnusedResourceDetectorTest extends AbstractCheckTest {
         assertEquals(
                 "No warnings.",
                 lintProject("res/values/integer_arrays.xml=>res/values/integer_arrays.xml"));
+    }
+
+    public void testUnitTestReferences() throws Exception {
+        // Make sure that we pick up references in unit tests as well
+        // Regression test for
+        // https://code.google.com/p/android/issues/detail?id=79066
+        mEnableIds = false;
+        assertEquals("No warnings.",
+
+                lintProject(
+                        copy("res/values/strings2.xml"),
+                        copy("res/layout/layout1.xml", "res/layout/main.xml"),
+                        copy("res/layout/layout1.xml", "res/layout/other.xml"),
+
+                        copy("src/my/pkg/Test.java.txt", "src/my/pkg/Test.java"),
+                        copy("gen/my/pkg/R.java.txt", "gen/my/pkg/R.java"),
+                        copy("AndroidManifest.xml"),
+                        copy("res/layout/accessibility.xml"),
+
+                        // Add unit test source which references resources which would otherwise
+                        // be marked as unused
+                        java("test/my/pkg/MyTest.java", ""
+                                + "package my.pkg;\n"
+                                + "class MyTest {\n"
+                                + "    public void test() {\n"
+                                + "        System.out.println(R.layout.accessibility);\n"
+                                + "        System.out.println(R.layout.main);\n"
+                                + "        System.out.println(R.layout.other);\n"
+                                + "        System.out.println(R.string.hello);\n"
+                                + "    }\n"
+                                + "}\n")
+                        ));
     }
 }
