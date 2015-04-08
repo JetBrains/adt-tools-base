@@ -25,6 +25,7 @@ import com.android.ide.common.rendering.api.DrawableParams;
 import com.android.ide.common.rendering.api.Features;
 import com.android.ide.common.rendering.api.ILayoutPullParser;
 import com.android.ide.common.rendering.api.LayoutLog;
+import com.android.ide.common.rendering.api.LayoutlibCallback;
 import com.android.ide.common.rendering.api.RenderSession;
 import com.android.ide.common.rendering.api.ResourceValue;
 import com.android.ide.common.rendering.api.Result;
@@ -33,7 +34,6 @@ import com.android.ide.common.rendering.api.SessionParams;
 import com.android.ide.common.rendering.api.SessionParams.RenderingMode;
 import com.android.ide.common.rendering.api.ViewInfo;
 import com.android.ide.common.rendering.legacy.ILegacyPullParser;
-import com.android.ide.common.rendering.legacy.LegacyCallback;
 import com.android.ide.common.resources.ResourceResolver;
 import com.android.ide.common.sdk.LoadStatus;
 import com.android.layoutlib.api.ILayoutBridge;
@@ -68,12 +68,12 @@ import java.util.Map.Entry;
  * Use the layout library with:
  * {@link #init}, {@link #supports(int)}, {@link #createSession(SessionParams)},
  * {@link #dispose()}, {@link #clearCaches(Object)}.
- *
  * <p/>
- * For client wanting to access both new and old (pre API level 5) layout libraries, it is
- * important that the following interfaces be used:<br>
- * {@link ILegacyPullParser} instead of {@link ILayoutPullParser}<br>
- * {@link LegacyCallback} instead of {@link com.android.ide.common.rendering.api.IProjectCallback}.
+ * Layout libraries before API level 5 used {@link IProjectCallback}. Layout libraries from
+ * API level 5 to 14 used {@link com.android.ide.common.rendering.api.IProjectCallback}.
+ * Layout libraries since API 15 use {@link LayoutlibCallback}. To target all Layout libraries,
+ * use {@code LayoutlibCallback}, which implements the other interfaces. Also, use
+ * {@link ILegacyPullParser} instead of {@link ILayoutPullParser}.
  * <p/>
  * These interfaces will ensure that both new and older Layout libraries can be accessed.
  */
