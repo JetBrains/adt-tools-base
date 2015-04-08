@@ -81,7 +81,6 @@ public interface AndroidArtifact extends BaseArtifact {
      */
     @NonNull
     @Override
-    @Deprecated
     Collection<File> getGeneratedSourceFolders();
 
     /**
