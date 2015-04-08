@@ -22,7 +22,7 @@ sourceSets {
     }
 }
 
-ext.proguardVersion = "5.1"
+ext.proguardVersion = "5.2.1"
 
 dependencies {
     compile project(':base:builder')
