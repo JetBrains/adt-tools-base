@@ -801,6 +801,22 @@ public abstract class AbstractCheckTest extends SdkTestCase {
 
             return compileTarget;
         }
+
+        @NonNull
+        @Override
+        public List<File> getTestSourceFolders(@NonNull Project project) {
+            List<File> testSourceFolders = super.getTestSourceFolders(project);
+
+            //List<File> tests = new ArrayList<File>();
+            File tests = new File(project.getDir(), "test");
+            if (tests.exists()) {
+                List<File> all = Lists.newArrayList(testSourceFolders);
+                all.add(tests);
+                testSourceFolders = all;
+            }
+
+            return testSourceFolders;
+        }
     }
 
     /**
