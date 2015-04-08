@@ -17,12 +17,13 @@
 
 
 package com.android.build.gradle.internal.tasks.multidex
+
+import com.android.build.gradle.internal.tasks.DefaultAndroidTask
 import com.google.common.base.Charsets
 import com.google.common.base.Joiner
 import com.google.common.collect.Maps
 import com.google.common.collect.Sets
 import com.google.common.io.Files
-import org.gradle.api.DefaultTask
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputFile
@@ -32,7 +33,7 @@ import org.gradle.api.tasks.TaskAction
  * a proguard-generated mapping file and create a new list of classes with the new
  * obfuscated names.
  */
-class RetraceMainDexList extends DefaultTask {
+class RetraceMainDexList extends DefaultAndroidTask {
 
     @InputFile
     File mainDexListFile

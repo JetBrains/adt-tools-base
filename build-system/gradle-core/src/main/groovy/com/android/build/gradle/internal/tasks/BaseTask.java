@@ -22,11 +22,9 @@ import com.android.sdklib.BuildToolInfo;
 import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
 
-import org.gradle.api.DefaultTask;
-
 import java.io.File;
 
-public abstract class BaseTask extends DefaultTask {
+public abstract class BaseTask extends DefaultAndroidTask {
 
     @Nullable
     private AndroidBuilder androidBuilder;

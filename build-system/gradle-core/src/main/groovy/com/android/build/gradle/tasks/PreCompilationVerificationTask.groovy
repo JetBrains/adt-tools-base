@@ -16,14 +16,14 @@
 
 package com.android.build.gradle.tasks
 
-import org.gradle.api.DefaultTask
+import com.android.build.gradle.internal.tasks.DefaultAndroidTask
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.TaskAction
 
 /**
  * Runs some sanity checks that our tool chain configuration is correct.
  */
-class PreCompilationVerificationTask extends DefaultTask {
+class PreCompilationVerificationTask extends DefaultAndroidTask {
 
     @Input
     boolean useJack
