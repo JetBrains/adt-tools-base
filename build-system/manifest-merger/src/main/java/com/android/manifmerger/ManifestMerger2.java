@@ -247,20 +247,22 @@ public class ManifestMerger2 {
             return mergingReportBuilder.build();
         }
 
-        // do one last placeholder substitution, this is useful as we don't stop the build
-        // when a library failed a placeholder substitution, but the element might have
-        // been overridden so the problem was transient. However, with the final document
-        // ready, all placeholders values must have been provided.
-        KeyBasedValueResolver<String> placeHolderValueResolver =
-                new MapBasedKeyBasedValueResolver<String>(finalPlaceHolderValues);
-        PlaceholderHandler placeholderHandler = new PlaceholderHandler();
-        placeholderHandler.visit(
-                mMergeType,
-                xmlDocumentOptional.get(),
-                placeHolderValueResolver,
-                mergingReportBuilder);
-        if (mergingReportBuilder.hasErrors()) {
-            return mergingReportBuilder.build();
+        if (!mOptionalFeatures.contains(Invoker.Feature.NO_PLACEHOLDER_REPLACEMENT)) {
+            // do one last placeholder substitution, this is useful as we don't stop the build
+            // when a library failed a placeholder substitution, but the element might have
+            // been overridden so the problem was transient. However, with the final document
+            // ready, all placeholders values must have been provided.
+            KeyBasedValueResolver<String> placeHolderValueResolver =
+                    new MapBasedKeyBasedValueResolver<String>(finalPlaceHolderValues);
+            PlaceholderHandler placeholderHandler = new PlaceholderHandler();
+            placeholderHandler.visit(
+                    mMergeType,
+                    xmlDocumentOptional.get(),
+                    placeHolderValueResolver,
+                    mergingReportBuilder);
+            if (mergingReportBuilder.hasErrors()) {
+                return mergingReportBuilder.build();
+            }
         }
 
         // perform system property injection.
@@ -415,6 +417,10 @@ public class ManifestMerger2 {
             XmlDocument xmlDocument,
             MergingReport.Builder mergingReportBuilder) {
 
+        if (mOptionalFeatures.contains(Invoker.Feature.NO_PLACEHOLDER_REPLACEMENT)) {
+            return;
+        }
+
         // check for placeholders presence, switch first the packageName and application id if
         // it is not explicitly set.
         Map<String, Object> finalPlaceHolderValues = mPlaceHolderValues;
@@ -542,7 +548,7 @@ public class ManifestMerger2 {
      * List of manifest files properties that can be directly overridden without using a
      * placeholder.
      */
-    public static enum SystemProperty implements AutoAddingProperty {
+    public enum SystemProperty implements AutoAddingProperty {
 
         /**
          * Allow setting the merged manifest file package name.
@@ -866,7 +872,12 @@ public class ManifestMerger2 {
             /**
              * Perform a sweep after all merging activities to remove all tools: decorations.
              */
-            REMOVE_TOOLS_DECLARATIONS;
+            REMOVE_TOOLS_DECLARATIONS,
+
+            /**
+             * Do no perform placeholders replacement.
+             */
+            NO_PLACEHOLDER_REPLACEMENT;
         }
 
         /**
