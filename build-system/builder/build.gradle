@@ -53,7 +53,6 @@ apply from: "$rootDir/buildSrc/base/javadoc.gradle"
 
 jar.manifest.attributes("Builder-Version": version)
 
-
 def generated = new File("${project.buildDir}/generated/java")
 
 sourceSets {
