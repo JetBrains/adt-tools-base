@@ -24,6 +24,7 @@ import static com.android.tools.lint.client.api.IssueRegistry.PARSER_ERROR;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
+import com.android.tools.lint.checks.HardcodedValuesDetector;
 import com.android.tools.lint.client.api.Configuration;
 import com.android.tools.lint.client.api.DefaultConfiguration;
 import com.android.tools.lint.client.api.IssueRegistry;
@@ -118,8 +119,6 @@ public class LintCliClient extends LintClient {
             public void update(@NonNull LintDriver driver, @NonNull EventType type,
                     @Nullable Context context) {
                 if (type == EventType.SCANNING_PROJECT && !mValidatedIds) {
-                    mValidatedIds = true;
-
                     // Make sure all the id's are valid once the driver is all set up and
                     // ready to run (such that custom rules are available in the registry etc)
                     validateIssueIds(context != null ? context.getProject() : null);
@@ -501,6 +500,25 @@ public class LintCliClient extends LintClient {
     private void validateIssueIds(@Nullable Project project) {
         if (mDriver != null) {
             IssueRegistry registry = mDriver.getRegistry();
+            if (!registry.isIssueId(HardcodedValuesDetector.ISSUE.getId())) {
+                // This should not be necessary, but there have been some strange
+                // reports where lint has reported some well known builtin issues
+                // to not exist:
+                //
+                //   Error: Unknown issue id "DuplicateDefinition" [LintError]
+                //   Error: Unknown issue id "GradleIdeError" [LintError]
+                //   Error: Unknown issue id "InvalidPackage" [LintError]
+                //   Error: Unknown issue id "JavascriptInterface" [LintError]
+                //   ...
+                //
+                // It's not clear how this can happen, though it's probably related
+                // to using 3rd party lint rules (where lint will create new composite
+                // issue registries to wrap the various additional issues) - but
+                // we definitely don't want to validate issue id's if we can't find
+                // well known issues.
+                return;
+            }
+            mValidatedIds = true;
             validateIssueIds(project, registry, mFlags.getExactCheckedIds());
             validateIssueIds(project, registry, mFlags.getEnabledIds());
             validateIssueIds(project, registry, mFlags.getSuppressedIds());
