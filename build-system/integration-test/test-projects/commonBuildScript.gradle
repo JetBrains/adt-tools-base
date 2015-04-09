@@ -14,14 +14,11 @@
  * limitations under the License.
  */
 
-def gradleVersion = System.env.CUSTOM_GRADLE
-
-if (gradleVersion == null) {
-    throw new RuntimeException("Android Gradle plugin version for tests 'CUSTOM_GRADLE' not set.")
-}
+def env = new Object() { String gradleVersion };
+apply from: "commonGradlePluginVersion.gradle", to: env
 
 apply from: "commonLocalRepo.gradle"
 
 dependencies {
-    classpath "com.android.tools.build:gradle:$gradleVersion"
+    classpath "com.android.tools.build:gradle:$env.gradleVersion"
 }
