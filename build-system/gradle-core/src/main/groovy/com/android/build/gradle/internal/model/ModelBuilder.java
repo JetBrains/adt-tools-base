@@ -14,83 +14,89 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.model
-import com.android.annotations.NonNull
-import com.android.annotations.Nullable
-import com.android.build.OutputFile
-import com.android.build.gradle.BaseExtension
-import com.android.build.gradle.api.ApkOutputFile
-import com.android.build.gradle.internal.BuildTypeData
-import com.android.build.gradle.internal.ExtraModelInfo
-import com.android.build.gradle.internal.ProductFlavorData
-import com.android.build.gradle.internal.TaskManager
-import com.android.build.gradle.internal.VariantManager
-import com.android.build.gradle.internal.variant.ApkVariantOutputData
-import com.android.build.gradle.internal.variant.BaseVariantData
-import com.android.build.gradle.internal.variant.BaseVariantOutputData
-import com.android.build.gradle.internal.variant.TestVariantData
-import com.android.build.gradle.internal.variant.TestedVariantData
-import com.android.builder.core.AndroidBuilder
-import com.android.builder.core.DefaultProductFlavor
-import com.android.builder.core.VariantConfiguration
-import com.android.builder.core.VariantType
-import com.android.builder.model.AaptOptions
-import com.android.builder.model.AndroidArtifact
-import com.android.builder.model.AndroidArtifactOutput
-import com.android.builder.model.AndroidProject
-import com.android.builder.model.ApiVersion
-import com.android.builder.model.ArtifactMetaData
-import com.android.builder.model.JavaArtifact
-import com.android.builder.model.LintOptions
-import com.android.builder.model.SigningConfig
-import com.android.builder.model.SourceProvider
-import com.android.builder.model.SourceProviderContainer
-import com.android.builder.model.SyncIssue
-import com.android.sdklib.AndroidVersion
-import com.android.sdklib.IAndroidTarget
-import com.google.common.collect.ImmutableCollection
-import com.google.common.collect.ImmutableList
-import com.google.common.collect.Lists
-import groovy.transform.CompileStatic
-import org.gradle.api.NamedDomainObjectContainer
-import org.gradle.api.Project
-import org.gradle.tooling.provider.model.ToolingModelBuilder
+package com.android.build.gradle.internal.model;
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+import com.android.build.OutputFile;
+import com.android.build.gradle.BaseExtension;
+import com.android.build.gradle.api.ApkOutputFile;
+import com.android.build.gradle.internal.BuildTypeData;
+import com.android.build.gradle.internal.ExtraModelInfo;
+import com.android.build.gradle.internal.ProductFlavorData;
+import com.android.build.gradle.internal.TaskManager;
+import com.android.build.gradle.internal.VariantManager;
+import com.android.build.gradle.internal.core.GradleVariantConfiguration;
+import com.android.build.gradle.internal.dsl.GroupableProductFlavor;
+import com.android.build.gradle.internal.variant.ApkVariantOutputData;
+import com.android.build.gradle.internal.variant.BaseVariantData;
+import com.android.build.gradle.internal.variant.BaseVariantOutputData;
+import com.android.build.gradle.internal.variant.TestVariantData;
+import com.android.build.gradle.internal.variant.TestedVariantData;
+import com.android.builder.Version;
+import com.android.builder.core.AndroidBuilder;
+import com.android.builder.core.DefaultProductFlavor;
+import com.android.builder.core.VariantType;
+import com.android.builder.model.AaptOptions;
+import com.android.builder.model.AndroidArtifact;
+import com.android.builder.model.AndroidArtifactOutput;
+import com.android.builder.model.AndroidProject;
+import com.android.builder.model.ApiVersion;
+import com.android.builder.model.ArtifactMetaData;
+import com.android.builder.model.JavaArtifact;
+import com.android.builder.model.LintOptions;
+import com.android.builder.model.SigningConfig;
+import com.android.builder.model.SourceProvider;
+import com.android.builder.model.SourceProviderContainer;
+import com.android.builder.model.SyncIssue;
+import com.android.sdklib.AndroidVersion;
+import com.android.sdklib.IAndroidTarget;
+import com.google.common.collect.ImmutableCollection;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 
-import java.util.jar.Attributes
-import java.util.jar.Manifest
+import org.gradle.api.NamedDomainObjectContainer;
+import org.gradle.api.Project;
+import org.gradle.tooling.provider.model.ToolingModelBuilder;
 
-import static com.android.builder.model.AndroidProject.ARTIFACT_MAIN
+import java.io.File;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+
+import static com.android.builder.model.AndroidProject.ARTIFACT_MAIN;
+
 /**
  * Builder for the custom Android model.
  */
-@CompileStatic
 public class ModelBuilder implements ToolingModelBuilder {
 
-    AndroidBuilder androidBuilder
+    @NonNull
+    private final AndroidBuilder androidBuilder;
+    @NonNull
+    private final BaseExtension extension;
+    @NonNull
+    private final ExtraModelInfo extraModelInfo;
+    @NonNull
+    private final VariantManager variantManager;
+    @NonNull
+    private final TaskManager taskManager;
 
-    BaseExtension extension
+    private final boolean isLibrary;
 
-    ExtraModelInfo extraModelInfo
-
-    VariantManager variantManager
-
-    TaskManager taskManager
-
-    boolean isLibrary
-
-    ModelBuilder(
-            AndroidBuilder androidBuilder,
-            VariantManager variantManager,
-            TaskManager taskManager,
-            BaseExtension extension,
-            ExtraModelInfo extraModelInfo,
+    public ModelBuilder(
+            @NonNull AndroidBuilder androidBuilder,
+            @NonNull VariantManager variantManager,
+            @NonNull TaskManager taskManager,
+            @NonNull BaseExtension extension,
+            @NonNull ExtraModelInfo extraModelInfo,
             boolean isLibrary) {
-        this.androidBuilder = androidBuilder
-        this.extension = extension
-        this.extraModelInfo = extraModelInfo
-        this.variantManager = variantManager
-        this.taskManager = taskManager
-        this.isLibrary = isLibrary
+        this.androidBuilder = androidBuilder;
+        this.extension = extension;
+        this.extraModelInfo = extraModelInfo;
+        this.variantManager = variantManager;
+        this.taskManager = taskManager;
+        this.isLibrary = isLibrary;
     }
 
     public static void clearCaches() {
@@ -100,44 +106,48 @@ public class ModelBuilder implements ToolingModelBuilder {
     @Override
     public boolean canBuild(String modelName) {
         // The default name for a model is the name of the Java interface.
-        return modelName == AndroidProject.name
+        return modelName.equals(AndroidProject.class.getName());
     }
 
     @Override
     public Object buildAll(String modelName, Project project) {
-        NamedDomainObjectContainer<SigningConfig> signingConfigs
+        NamedDomainObjectContainer<SigningConfig> signingConfigs;
 
         // Cast is needed due to covariance issues.
-        signingConfigs = extension.signingConfigs as NamedDomainObjectContainer<SigningConfig>
+        //noinspection unchecked
+        signingConfigs = (NamedDomainObjectContainer<SigningConfig>) (NamedDomainObjectContainer<?>) extension.getSigningConfigs();
 
         // Get the boot classpath. This will ensure the target is configured.
-        List<String> bootClasspath = androidBuilder.bootClasspathAsStrings
+        List<String> bootClasspath = androidBuilder.getBootClasspathAsStrings();
 
         List<File> frameworkSource = Collections.emptyList();
 
         // List of extra artifacts, with all test variants added.
-        List<ArtifactMetaData> artifactMetaDataList = extraModelInfo.extraArtifacts.collect()
+        List<ArtifactMetaData> artifactMetaDataList = Lists.newArrayList(
+                extraModelInfo.getExtraArtifacts());
 
-        VariantType.testingTypes
-                .collect { new ArtifactMetaDataImpl(it.artifactName, true, it.artifactType) }
-                .each artifactMetaDataList.&add
+        for (VariantType variantType : VariantType.getTestingTypes()) {
+            artifactMetaDataList.add(new ArtifactMetaDataImpl(
+                    variantType.getArtifactName(),
+                    true /*isTest*/,
+                    variantType.getArtifactType()));
+        }
 
-        LintOptions lintOptions = com.android.build.gradle.internal.dsl.LintOptions.create(extension.lintOptions)
+        LintOptions lintOptions = com.android.build.gradle.internal.dsl.LintOptions.create(
+                extension.getLintOptions());
 
-        AaptOptions aaptOptions = AaptOptionsImpl.create(extension.aaptOptions)
+        AaptOptions aaptOptions = AaptOptionsImpl.create(extension.getAaptOptions());
 
-        List<SyncIssue> syncIssues = Lists.newArrayList(extraModelInfo.syncIssues.values());
+        List<SyncIssue> syncIssues = Lists.newArrayList(extraModelInfo.getSyncIssues().values());
 
-        def manifestData = parseManifestData()
-
-        List<String> flavorDimensionList = (extension.flavorDimensionList != null ?
-                extension.flavorDimensionList : (List<String>) [])
+        List<String> flavorDimensionList = (extension.getFlavorDimensionList() != null ?
+                extension.getFlavorDimensionList() : Lists.<String>newArrayList());
 
         DefaultAndroidProject androidProject = new DefaultAndroidProject(
-                manifestData.modelVersion as String,
-                project.name,
+                Version.ANDROID_GRADLE_PLUGIN_VERSION,
+                project.getName(),
                 flavorDimensionList,
-                androidBuilder.getTarget().hashString(),
+                androidBuilder.getTarget() != null ? androidBuilder.getTarget().hashString() : "",
                 bootClasspath,
                 frameworkSource,
                 cloneSigningConfigs(signingConfigs),
@@ -145,187 +155,176 @@ public class ModelBuilder implements ToolingModelBuilder {
                 artifactMetaDataList,
                 findUnresolvedDependencies(syncIssues),
                 syncIssues,
-                extension.compileOptions,
+                extension.getCompileOptions(),
                 lintOptions,
                 project.getBuildDir(),
-                extension.resourcePrefix,
+                extension.getResourcePrefix(),
                 isLibrary,
-                manifestData.modelApiVersion as int)
+                Version.BUILDER_MODEL_API_VERSION);
 
         androidProject.setDefaultConfig(ProductFlavorContainerImpl.createProductFlavorContainer(
-                variantManager.defaultConfig,
+                variantManager.getDefaultConfig(),
                 extraModelInfo.getExtraFlavorSourceProviders(
-                        variantManager.defaultConfig.productFlavor.name)))
+                        variantManager.getDefaultConfig().getProductFlavor().getName())));
 
-        for (BuildTypeData btData : variantManager.buildTypes.values()) {
+        for (BuildTypeData btData : variantManager.getBuildTypes().values()) {
             androidProject.addBuildType(BuildTypeContainerImpl.create(
                     btData,
-                    extraModelInfo.getExtraBuildTypeSourceProviders(btData.buildType.name)))
+                    extraModelInfo.getExtraBuildTypeSourceProviders(btData.getBuildType().getName())));
         }
-        for (ProductFlavorData pfData : variantManager.productFlavors.values()) {
+        for (ProductFlavorData pfData : variantManager.getProductFlavors().values()) {
             androidProject.addProductFlavors(ProductFlavorContainerImpl.createProductFlavorContainer(
                     pfData,
-                    extraModelInfo.getExtraFlavorSourceProviders(pfData.productFlavor.name)))
+                    extraModelInfo.getExtraFlavorSourceProviders(pfData.getProductFlavor().getName())));
         }
 
-        for (BaseVariantData variantData : variantManager.variantDataList) {
-            if (!variantData.type.isForTesting()) {
-                androidProject.addVariant(createVariant(variantData))
+        for (BaseVariantData<? extends BaseVariantOutputData> variantData : variantManager.getVariantDataList()) {
+            if (!variantData.getType().isForTesting()) {
+                androidProject.addVariant(createVariant(variantData));
             }
         }
 
-        return androidProject
-    }
-
-    @NonNull
-    private static Map parseManifestData() {
-        Class clazz = AndroidProject.class
-        String className = clazz.getSimpleName() + ".class"
-        String classPath = clazz.getResource(className).toString()
-        if (!classPath.startsWith("jar")) {
-            // Class not from JAR, unlikely
-            return [modelVersion: "unknown", modelApiVersion: 0]
-        }
-        String manifestPath = classPath.substring(0, classPath.lastIndexOf("!") + 1) +
-                "/META-INF/MANIFEST.MF"
-        Manifest manifest = new Manifest(new URL(manifestPath).openStream())
-        Attributes attr = manifest.getMainAttributes()
-        String modelVersion = attr.getValue("Model-Version")
-        def modelApiVersion = attr.getValue("Model-Api-Version")
-        if (modelApiVersion) {
-            try {
-                modelApiVersion = modelApiVersion as int
-            } catch (ignored) {
-                modelApiVersion = 0
-            }
-        }
-        [modelVersion: modelVersion ?: "unknown",
-         modelApiVersion: modelApiVersion]
+        return androidProject;
     }
 
     @NonNull
     private VariantImpl createVariant(
-            @NonNull BaseVariantData variantData) {
+            @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData) {
         AndroidArtifact mainArtifact = createAndroidArtifact(
-                ARTIFACT_MAIN, variantData, androidBuilder, extraModelInfo)
+                ARTIFACT_MAIN, variantData, androidBuilder, extraModelInfo);
 
-        String variantName = variantData.variantConfiguration.fullName
+        GradleVariantConfiguration variantConfiguration = variantData.getVariantConfiguration();
+
+        String variantName = variantConfiguration.getFullName();
 
         List<AndroidArtifact> extraAndroidArtifacts = Lists.newArrayList(
-                extraModelInfo.getExtraAndroidArtifacts(variantName))
+                extraModelInfo.getExtraAndroidArtifacts(variantName));
         // Make sure all extra artifacts are serializable.
-        List<JavaArtifact> extraJavaArtifacts =
-                extraModelInfo.getExtraJavaArtifacts(variantName).collect(JavaArtifactImpl.&clone)
+        Collection<JavaArtifact> extraJavaArtifacts = extraModelInfo.getExtraJavaArtifacts(variantName);
+        List<JavaArtifact> clonedExtraJavaArtifacts = Lists.newArrayListWithCapacity(extraJavaArtifacts.size());
+        for (JavaArtifact javaArtifact : extraJavaArtifacts) {
+            clonedExtraJavaArtifacts.add(JavaArtifactImpl.clone(javaArtifact));
+        }
 
         if (variantData instanceof TestedVariantData) {
-            for (variantType in VariantType.testingTypes) {
-                TestVariantData testVariantData = variantData.getTestVariantData(variantType)
-                switch (testVariantData?.type) {
-                    case VariantType.ANDROID_TEST:
-                        extraAndroidArtifacts.add(createAndroidArtifact(
-                                variantType.artifactName,
-                                testVariantData,
-                                androidBuilder,
-                                extraModelInfo))
-                        break
-                    case VariantType.UNIT_TEST:
-                        extraJavaArtifacts.add(createUnitTestsJavaArtifact(
-                                variantType,
-                                testVariantData))
-                        break
-                    case null:
-                        // No test variant with the given type for the current variant.
-                        break
-                    default:
-                        throw new IllegalArgumentException(
-                                "Unsupported test variant type ${variantType}.")
+            for (VariantType variantType : VariantType.getTestingTypes()) {
+                TestVariantData testVariantData = ((TestedVariantData) variantData).getTestVariantData(variantType);
+                if (testVariantData != null) {
+                    VariantType type = testVariantData.getType();
+                    if (type != null) {
+                        switch (type) {
+                            case ANDROID_TEST:
+                                extraAndroidArtifacts.add(createAndroidArtifact(
+                                        variantType.getArtifactName(),
+                                        testVariantData,
+                                        androidBuilder,
+                                        extraModelInfo));
+                                break;
+                            case UNIT_TEST:
+                                clonedExtraJavaArtifacts.add(createUnitTestsJavaArtifact(
+                                        variantType,
+                                        testVariantData));
+                                break;
+                            default:
+                                throw new IllegalArgumentException(
+                                        "Unsupported test variant type ${variantType}.");
+                        }
+                    }
                 }
             }
         }
 
         // if the target is a codename, override the model value.
-        ApiVersion sdkVersionOverride = null
-        IAndroidTarget androidTarget = androidBuilder.getTargetInfo().target
-        AndroidVersion version = androidTarget.getVersion()
-        if (version.codename != null) {
-            sdkVersionOverride = ApiVersionImpl.clone(version)
+        ApiVersion sdkVersionOverride = null;
+
+        // we know the getTargetInfo won't return null here.
+        @SuppressWarnings("ConstantConditions")
+        IAndroidTarget androidTarget = androidBuilder.getTargetInfo().getTarget();
+
+        AndroidVersion version = androidTarget.getVersion();
+        if (version.getCodename() != null) {
+            sdkVersionOverride = ApiVersionImpl.clone(version);
         }
 
-        VariantImpl variant = new VariantImpl(
+        return new VariantImpl(
                 variantName,
-                variantData.variantConfiguration.baseName,
-                variantData.variantConfiguration.buildType.name,
+                variantConfiguration.getBaseName(),
+                variantConfiguration.getBuildType().getName(),
                 getProductFlavorNames(variantData),
                 ProductFlavorImpl.cloneFlavor(
-                        variantData.variantConfiguration.mergedFlavor,
+                        variantConfiguration.getMergedFlavor(),
                         sdkVersionOverride,
                         sdkVersionOverride),
                 mainArtifact,
                 extraAndroidArtifacts,
-                extraJavaArtifacts)
-
-        return variant
+                clonedExtraJavaArtifacts);
     }
 
     private JavaArtifactImpl createUnitTestsJavaArtifact(
             @NonNull VariantType variantType,
-            @NonNull BaseVariantData variantData) {
-        def sourceProviders = determineSourceProviders(variantType.artifactName, variantData, extraModelInfo)
-        def dependencies = DependenciesImpl.cloneDependencies(variantData, androidBuilder)
+            @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData) {
+        SourceProviders sourceProviders = determineSourceProviders(variantType.getArtifactName(),
+                variantData, extraModelInfo);
+        DependenciesImpl dependencies = DependenciesImpl.cloneDependencies(variantData,
+                androidBuilder);
 
         // Add the mockable JAR path. It will be created before tests are actually run from the IDE.
-        dependencies.javaLibraries.add(
+        dependencies.getJavaLibraries().add(
                 new JavaLibraryImpl(
-                        taskManager.createMockableJar.outputFile,
+                        taskManager.createMockableJar.getOutputFile(),
                         null,
-                        null))
+                        null));
 
+        List<File> extraGeneratedSourceFolders = variantData.getExtraGeneratedSourceFolders();
         return new JavaArtifactImpl(
-                variantType.artifactName,
-                variantData.assembleVariantTask.name,
-                variantData.compileTask.name,
-                [variantData.prepareDependenciesTask.name, taskManager.createMockableJar.name] as Set,
-                variantData.extraGeneratedSourceFolders,
-                variantData.javaCompileTask.destinationDir,
-                variantData.processJavaResourcesTask.destinationDir,
+                variantType.getArtifactName(),
+                variantData.assembleVariantTask.getName(),
+                variantData.compileTask.getName(),
+                Sets.newHashSet(variantData.prepareDependenciesTask.getName(),
+                        taskManager.createMockableJar.getName()),
+                extraGeneratedSourceFolders != null ? extraGeneratedSourceFolders : Collections.<File>emptyList(),
+                variantData.javaCompileTask.getDestinationDir(),
+                variantData.processJavaResourcesTask.getDestinationDir(),
                 dependencies,
                 sourceProviders.variantSourceProvider,
-                sourceProviders.multiFlavorSourceProvider)
+                sourceProviders.multiFlavorSourceProvider);
     }
 
     private static AndroidArtifact createAndroidArtifact(
             @NonNull String name,
-            @NonNull BaseVariantData variantData,
+            @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData,
             @NonNull AndroidBuilder androidBuilder,
             @NonNull ExtraModelInfo extraModelInfo) {
-        VariantConfiguration variantConfiguration = variantData.variantConfiguration
+        GradleVariantConfiguration variantConfiguration = variantData.getVariantConfiguration();
 
-        SigningConfig signingConfig = variantConfiguration.signingConfig
-        String signingConfigName = null
+        SigningConfig signingConfig = variantConfiguration.getSigningConfig();
+        String signingConfigName = null;
         if (signingConfig != null) {
-            signingConfigName = signingConfig.name
+            signingConfigName = signingConfig.getName();
         }
 
-        def sourceProviders = determineSourceProviders(name, variantData, extraModelInfo)
+        SourceProviders sourceProviders = determineSourceProviders(name, variantData, extraModelInfo);
 
         // get the outputs
-        List<? extends BaseVariantOutputData> variantOutputs = variantData.outputs
-        List<AndroidArtifactOutput> outputs = Lists.newArrayListWithCapacity(variantOutputs.size())
+        List<? extends BaseVariantOutputData> variantOutputs = variantData.getOutputs();
+        List<AndroidArtifactOutput> outputs = Lists.newArrayListWithCapacity(variantOutputs.size());
 
         for (BaseVariantOutputData variantOutputData : variantOutputs) {
-            Integer versionCode = (variantOutputData instanceof ApkVariantOutputData) ?
-                    ((ApkVariantOutputData) variantOutputData).versionCode :
-                    variantConfiguration.mergedFlavor.versionCode
-
-            int intVersionCode = versionCode != null ? versionCode.intValue() : 1;
+            int intVersionCode;
+            if (variantOutputData instanceof ApkVariantOutputData) {
+                intVersionCode =  variantOutputData.getVersionCode();
+            } else {
+                Integer versionCode = variantConfiguration.getMergedFlavor().getVersionCode();
+                intVersionCode = versionCode != null ? versionCode : 1;
+            }
 
             ImmutableCollection.Builder<OutputFile> outputFiles = ImmutableList.builder();
 
             // add the main APK
             outputFiles.add(new OutputFileImpl(
-                    variantOutputData.getMainOutputFile().filters,
+                    variantOutputData.getMainOutputFile().getFilters(),
                     variantOutputData.getMainOutputFile().getType().name(),
-                    variantOutputData.outputFile));
+                    variantOutputData.getOutputFile()));
 
             for (ApkOutputFile splitApk : variantOutputData.getOutputs()) {
                 if (splitApk.getType() == OutputFile.OutputType.SPLIT) {
@@ -337,132 +336,141 @@ public class ModelBuilder implements ToolingModelBuilder {
             // add the main APK.
             outputs.add(new AndroidArtifactOutputImpl(
                     outputFiles.build(),
-                    variantOutputData.assembleTask.name,
-                    variantOutputData.manifestProcessorTask.manifestOutputFile,
+                    variantOutputData.assembleTask.getName(),
+                    variantOutputData.manifestProcessorTask.getManifestOutputFile(),
                     intVersionCode));
         }
 
         return new AndroidArtifactImpl(
                 name,
                 outputs,
-                variantData.assembleVariantTask.name,
+                variantData.assembleVariantTask.getName(),
                 variantConfiguration.isSigningReady() || variantData.outputsAreSigned,
                 signingConfigName,
-                variantConfiguration.applicationId,
-                variantData.sourceGenTask.name,
-                variantData.compileTask.name,
+                variantConfiguration.getApplicationId(),
+                variantData.sourceGenTask.getName(),
+                variantData.compileTask.getName(),
                 getGeneratedSourceFolders(variantData),
                 getGeneratedResourceFolders(variantData),
-                variantData.javaCompileTask.destinationDir,
-                variantData.processJavaResourcesTask.destinationDir,
+                variantData.javaCompileTask.getDestinationDir(),
+                variantData.processJavaResourcesTask.getDestinationDir(),
                 DependenciesImpl.cloneDependencies(variantData, androidBuilder),
                 sourceProviders.variantSourceProvider,
                 sourceProviders.multiFlavorSourceProvider,
-                variantConfiguration.supportedAbis,
+                variantConfiguration.getSupportedAbis(),
                 variantConfiguration.getMergedBuildConfigFields(),
-                variantConfiguration.getMergedResValues())
+                variantConfiguration.getMergedResValues());
     }
 
     private static SourceProviders determineSourceProviders(
             @NonNull String name,
-            @NonNull BaseVariantData variantData,
+            @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData,
             @NonNull ExtraModelInfo extraModelInfo) {
-        SourceProvider variantSourceProvider = null
-        SourceProvider multiFlavorSourceProvider = null
+        SourceProvider variantSourceProvider = null;
+        SourceProvider multiFlavorSourceProvider = null;
 
         if (ARTIFACT_MAIN.equals(name)) {
-            variantSourceProvider = variantData.variantConfiguration.variantSourceProvider
-            multiFlavorSourceProvider = variantData.variantConfiguration.multiFlavorSourceProvider
+            variantSourceProvider = variantData.getVariantConfiguration().getVariantSourceProvider();
+            multiFlavorSourceProvider = variantData.getVariantConfiguration().getMultiFlavorSourceProvider();
         } else {
             SourceProviderContainer container = getSourceProviderContainer(
                     extraModelInfo.getExtraVariantSourceProviders(
                             variantData.getVariantConfiguration().getFullName()),
-                    name)
+                    name);
             if (container != null) {
-                variantSourceProvider = container.sourceProvider
+                variantSourceProvider = container.getSourceProvider();
             }
         }
 
         return new SourceProviders(
-                variantSourceProvider: variantSourceProvider != null ?
+                variantSourceProvider != null ?
                         SourceProviderImpl.cloneProvider(variantSourceProvider) :
                         null,
-                multiFlavorSourceProvider: multiFlavorSourceProvider != null ?
+                multiFlavorSourceProvider != null ?
                         SourceProviderImpl.cloneProvider(multiFlavorSourceProvider) :
-                        null)
+                        null);
     }
 
     @NonNull
-    private static List<String> getProductFlavorNames(@NonNull BaseVariantData variantData) {
-        List<String> flavorNames = Lists.newArrayList()
+    private static List<String> getProductFlavorNames(
+            @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData) {
+        List<GroupableProductFlavor> productFlavors = variantData.getVariantConfiguration()
+                .getProductFlavors();
 
-        for (DefaultProductFlavor flavor : variantData.variantConfiguration.productFlavors) {
-            flavorNames.add(flavor.name)
+        List<String> flavorNames = Lists.newArrayListWithCapacity(productFlavors.size());
+
+        for (DefaultProductFlavor flavor : productFlavors) {
+            flavorNames.add(flavor.getName());
         }
 
-        return flavorNames
+        return flavorNames;
     }
 
     @NonNull
     private static List<File> getGeneratedSourceFolders(
             @Nullable BaseVariantData<? extends BaseVariantOutputData> variantData) {
         if (variantData == null) {
-            return Collections.emptyList()
+            return Collections.emptyList();
         }
 
-        List<File> folders = Lists.newArrayList()
+        List<File> extraFolders = variantData.getExtraGeneratedSourceFolders();
+
+        List<File> folders;
+        if (extraFolders != null) {
+            folders = Lists.newArrayListWithExpectedSize(5 + extraFolders.size());
+            folders.addAll(extraFolders);
+        } else {
+            folders = Lists.newArrayListWithExpectedSize(5);
+        }
 
         // The R class is only generated by the first output.
-        BaseVariantOutputData variantOutputData = variantData.outputs.get(0)
-        folders.add(variantOutputData.processResourcesTask.sourceOutputDir)
+        BaseVariantOutputData variantOutputData = variantData.getOutputs().get(0);
+        folders.add(variantOutputData.processResourcesTask.getSourceOutputDir());
 
-        folders.add(variantData.aidlCompileTask.sourceOutputDir)
-        folders.add(variantData.generateBuildConfigTask.sourceOutputDir)
-        if (!variantData.variantConfiguration.mergedFlavor.renderscriptNdkModeEnabled) {
-            folders.add(variantData.renderscriptCompileTask.sourceOutputDir)
+        folders.add(variantData.aidlCompileTask.getSourceOutputDir());
+        folders.add(variantData.generateBuildConfigTask.getSourceOutputDir());
+        Boolean ndkMode = variantData.getVariantConfiguration().getMergedFlavor().getRenderscriptNdkModeEnabled();
+        if (ndkMode == null || !ndkMode) {
+            folders.add(variantData.renderscriptCompileTask.getSourceOutputDir());
         }
 
-        List<File> extraFolders = variantData.extraGeneratedSourceFolders
-        if (extraFolders != null) {
-            folders.addAll(extraFolders)
-        }
-
-        return folders
+        return folders;
     }
 
     @NonNull
-    private static List<File> getGeneratedResourceFolders(@Nullable BaseVariantData variantData) {
+    private static List<File> getGeneratedResourceFolders(
+            @Nullable BaseVariantData<? extends BaseVariantOutputData> variantData) {
         if (variantData == null) {
-            return Collections.emptyList()
+            return Collections.emptyList();
         }
 
-        List<File> result
+        List<File> result;
 
-        List<File> extraFolders = variantData.extraGeneratedResFolders
+        List<File> extraFolders = variantData.getExtraGeneratedResFolders();
         if (extraFolders != null && !extraFolders.isEmpty()) {
-            result = Lists.newArrayListWithCapacity(extraFolders.size() + 2)
+            result = Lists.newArrayListWithCapacity(extraFolders.size() + 2);
 
-            result.addAll(extraFolders)
+            result.addAll(extraFolders);
         } else {
-            result = Lists.newArrayListWithCapacity(2)
+            result = Lists.newArrayListWithCapacity(2);
         }
 
-        result.add(variantData.renderscriptCompileTask.resOutputDir)
-        result.add(variantData.generateResValuesTask.resOutputDir)
+        result.add(variantData.renderscriptCompileTask.getResOutputDir());
+        result.add(variantData.generateResValuesTask.getResOutputDir());
 
-        return result
+        return result;
     }
 
     @NonNull
     private static Collection<SigningConfig> cloneSigningConfigs(
             @NonNull Collection<SigningConfig> signingConfigs) {
-        Collection<SigningConfig> results = Lists.newArrayListWithCapacity(signingConfigs.size())
+        Collection<SigningConfig> results = Lists.newArrayListWithCapacity(signingConfigs.size());
 
         for (SigningConfig signingConfig : signingConfigs) {
-            results.add(SigningConfigImpl.createSigningConfig(signingConfig))
+            results.add(SigningConfigImpl.createSigningConfig(signingConfig));
         }
 
-        return results
+        return results;
     }
 
     @Nullable
@@ -479,14 +487,22 @@ public class ModelBuilder implements ToolingModelBuilder {
     }
 
     private static class SourceProviders {
-        SourceProviderImpl variantSourceProvider
-        SourceProviderImpl multiFlavorSourceProvider
+        protected SourceProviderImpl variantSourceProvider;
+        protected SourceProviderImpl multiFlavorSourceProvider;
+
+        public SourceProviders(
+                SourceProviderImpl variantSourceProvider,
+                SourceProviderImpl multiFlavorSourceProvider) {
+            this.variantSourceProvider = variantSourceProvider;
+            this.multiFlavorSourceProvider = multiFlavorSourceProvider;
+        }
     }
 
     /**
      * Return the unresolved dependencies in SyncIssues
      */
-    private static Collection<String> findUnresolvedDependencies(Collection<SyncIssue> syncIssues) {
+    private static Collection<String> findUnresolvedDependencies(
+            @NonNull Collection<SyncIssue> syncIssues) {
         List<String> unresolvedDependencies = Lists.newArrayList();
 
         for (SyncIssue issue : syncIssues) {
@@ -496,5 +512,4 @@ public class ModelBuilder implements ToolingModelBuilder {
         }
         return unresolvedDependencies;
     }
-
 }
