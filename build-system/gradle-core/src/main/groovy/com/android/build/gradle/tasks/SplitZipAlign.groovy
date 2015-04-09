@@ -17,9 +17,10 @@
 package com.android.build.gradle.tasks
 
 import com.android.annotations.NonNull
+import com.android.annotations.Nullable
 import com.android.build.FilterData
-import com.android.build.OutputFile
 import com.android.build.OutputFile.FilterType
+import com.android.build.OutputFile.OutputType
 import com.android.build.gradle.api.ApkOutputFile
 import com.android.build.gradle.internal.model.FilterDataImpl
 import com.google.common.collect.ImmutableList
@@ -27,6 +28,7 @@ import com.google.common.util.concurrent.Callables
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.OutputFiles
 import org.gradle.api.tasks.ParallelizableTask
 import org.gradle.api.tasks.TaskAction
@@ -41,7 +43,10 @@ import java.util.regex.Pattern
 class SplitZipAlign extends SplitRelatedTask {
 
     @InputFiles
-    List<File> inputFiles = new ArrayList<>();
+    List<File> densityOrLanguageInputFiles = new ArrayList<>();
+
+    @InputFiles
+    List<File> abiInputFiles = new ArrayList<>()
 
     @Input
     String outputBaseName;
@@ -66,11 +71,16 @@ class SplitZipAlign extends SplitRelatedTask {
     }
 
     @NonNull
+    List<File> getInputFiles() {
+        return getDensityOrLanguageInputFiles() + getAbiInputFiles();
+    }
+
+    @NonNull
     public synchronized  ImmutableList<ApkOutputFile> getOutputSplitFiles() {
 
         ImmutableList.Builder<ApkOutputFile> outputFiles = ImmutableList.builder();
         Closure addingLogic = { String split, File file ->
-            outputFiles.add(new ApkOutputFile(OutputFile.OutputType.SPLIT,
+            outputFiles.add(new ApkOutputFile(OutputType.SPLIT,
                     ImmutableList.<FilterData>of(
                             FilterDataImpl.build(
                                     getFilterType(split).toString(), getFilter(split))),
@@ -103,6 +113,9 @@ class SplitZipAlign extends SplitRelatedTask {
                     return density
                 }
             }
+        }
+        if (type == FilterType.LANGUAGE) {
+            return PackageSplitRes.unMangleSplitName(filterWithPossibleSuffix)
         }
         return filterWithPossibleSuffix
     }

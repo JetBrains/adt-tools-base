@@ -81,8 +81,8 @@ class CombinedDensityAndLanguageTest {
         expected.add("xhdpi")
         expected.add("xxhdpi")
         expected.add("en")
-        expected.add("fr_fr-BE")
-        expected.add("fr-CA")
+        expected.add("fr,fr-rBE")
+        expected.add("fr-rCA")
 
         assertEquals(1, debugOutputs.size())
         AndroidArtifactOutput output = debugOutputs.iterator().next()
