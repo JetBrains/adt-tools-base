@@ -84,7 +84,7 @@ import groovy.lang.Closure;
 public class VariantManager implements VariantModel {
 
     protected static final String COM_ANDROID_SUPPORT_MULTIDEX =
-            "com.android.support:multidex:1.0.0";
+            "com.android.support:multidex:1.0.1";
 
     @NonNull
     private final Project project;
