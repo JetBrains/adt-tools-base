@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.internal.variant
 import com.android.annotations.NonNull
+import com.android.annotations.Nullable
 import com.android.build.gradle.LibraryExtension
 import com.android.build.gradle.api.BaseVariantOutput
 import com.android.build.gradle.api.LibraryVariant
@@ -29,6 +30,7 @@ import com.android.build.gradle.internal.api.ReadOnlyObjectProvider
 import com.android.build.gradle.internal.core.GradleVariantConfiguration
 import com.android.build.gradle.internal.dsl.BuildType
 import com.android.build.gradle.internal.dsl.GroupableProductFlavor
+import com.android.build.gradle.internal.dsl.ProductFlavor
 import com.android.build.gradle.internal.dsl.SigningConfig
 import com.android.builder.core.AndroidBuilder
 import com.android.builder.core.VariantType

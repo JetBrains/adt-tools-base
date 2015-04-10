@@ -133,6 +133,12 @@ public class Dex extends BaseTask {
         File tmpFolder = getTmpFolder()
         tmpFolder.mkdirs()
 
+        // if some of our .jar input files exist, just reset the inputDir to null
+        for (File inputFile : inputFiles) {
+            if (inputFile.exists()) {
+                inputDir = null;
+            }
+        }
         if (inputDir != null) {
             inputFiles = project.files(inputDir).files
         }

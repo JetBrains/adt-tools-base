@@ -495,17 +495,14 @@ public class VariantManager implements VariantModel {
         densities = densities.isEmpty() ? Collections.singleton(NO_FILTER) : densities;
         abis = abis.isEmpty() ? Collections.singleton(NO_FILTER) : abis;
 
-        ProductFlavor defaultConfig = defaultConfigData.getProductFlavor();
-        DefaultAndroidSourceSet defaultConfigSourceSet = defaultConfigData.getSourceSet();
-
         BuildTypeData buildTypeData = buildTypes.get(buildType.getName());
 
         Set<String> compatibleScreens = extension.getSplits().getDensity()
                 .getCompatibleScreens();
 
         GradleVariantConfiguration variantConfig = new GradleVariantConfiguration(
-                defaultConfig,
-                defaultConfigSourceSet,
+                defaultConfigData.getProductFlavor(),
+                defaultConfigData.getSourceSet(),
                 buildTypeData.getBuildType(),
                 buildTypeData.getSourceSet(),
                 variantFactory.getVariantConfigurationType(),
