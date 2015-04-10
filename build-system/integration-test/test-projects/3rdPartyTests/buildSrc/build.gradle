@@ -1,8 +1,10 @@
 apply plugin: 'java'
 apply plugin: 'idea'
 
+def env = new Object() { String gradleVersion };
+apply from: "../../commonGradlePluginVersion.gradle", to: env
 apply from: "../../commonLocalRepo.gradle"
 
 dependencies {
-    compile 'com.android.tools.build:builder-test-api:1.3.0-alpha2'
+    compile "com.android.tools.build:builder-test-api:$env.gradleVersion"
 }

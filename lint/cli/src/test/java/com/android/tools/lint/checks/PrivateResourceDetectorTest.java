@@ -29,6 +29,7 @@ import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.Dependencies;
 import com.android.builder.model.Variant;
+import com.android.builder.model.Version;
 import com.android.testutils.TestUtils;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Project;
@@ -140,7 +141,8 @@ public class PrivateResourceDetectorTest extends AbstractCheckTest {
                     @Nullable
                     @Override
                     public AndroidProject getGradleProjectModel() {
-                        return createMockProject("1.3.0-alpha2", 3);
+                        return createMockProject(Version.ANDROID_GRADLE_PLUGIN_VERSION,
+                                                 Version.BUILDER_MODEL_API_VERSION);
                     }
 
                     @Nullable
