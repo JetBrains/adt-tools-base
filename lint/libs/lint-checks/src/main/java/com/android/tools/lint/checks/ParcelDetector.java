@@ -59,7 +59,7 @@ public class ParcelDetector extends Detector implements Detector.JavaScanner {
 
             Category.USABILITY,
             3,
-            Severity.WARNING,
+            Severity.ERROR,
             new Implementation(
                     ParcelDetector.class,
                     Scope.JAVA_FILE_SCOPE))
