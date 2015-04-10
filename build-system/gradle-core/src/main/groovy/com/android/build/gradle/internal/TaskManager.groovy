@@ -2081,14 +2081,14 @@ abstract class TaskManager {
         }
 
         // ----- Minify next ----
+        BaseVariantData<? extends BaseVariantOutputData> testedVariantData =
+                (variantData instanceof TestVariantData ? variantData.testedVariantData :
+                        null) as BaseVariantData
 
-        if (isMinifyEnabled) {
-            // first proguard task.
-            BaseVariantData<? extends BaseVariantOutputData> testedVariantData =
-                    (variantData instanceof TestVariantData ? variantData.testedVariantData :
-                            null) as BaseVariantData
-            createProguardTasks(variantData, testedVariantData, pcData)
-
+        File outFile = maybeCreateProguardTasks(variantData, testedVariantData, pcData);
+        if (outFile != null) {
+            pcData.inputFiles = { [outFile] }
+            pcData.inputLibraries = { [] }
         } else if ((getExtension().dexOptions.preDexLibraries && !isMultiDexEnabled) ||
                 (isMultiDexEnabled && !isLegacyMultiDexMode)) {
             def preDexTaskName = "preDex${config.fullName.capitalize()}"
@@ -2247,15 +2247,15 @@ abstract class TaskManager {
         // ----- Dex Task ----
 
         // dependencies, some of these could be null
+        optionalDependsOn(dexTask, variantData.obfuscationTask)
         optionalDependsOn(dexTask, pcData.classGeneratingTask)
         optionalDependsOn(dexTask, pcData.libraryGeneratingTask,)
 
         // inputs
         if (pcData.inputDir != null) {
             conventionMapping(dexTask).map("inputDir", pcData.inputDir)
-        } else {
-            conventionMapping(dexTask).map("inputFiles", pcData.inputFiles)
         }
+        conventionMapping(dexTask).map("inputFiles", pcData.inputFiles)
         conventionMapping(dexTask).map("libraries", pcData.inputLibraries)
     }
 
@@ -2871,17 +2871,22 @@ abstract class TaskManager {
     }
 
     /**
-     * Creates the proguarding task for the given Variant.
+     * Creates the proguarding task for the given Variant if necessary.
      * @param variantData the variant data.
      * @param testedVariantData optional. variant data representing the tested variant, null if the
      *                          variant is not a test variant
-     * @return outFile file outputted by proguard
+     * @return null if the proguard task was not created, otherwise the expected outputFile.
      */
-    @NonNull
-    public void createProguardTasks(
+    @Nullable
+    public File maybeCreateProguardTasks(
             final @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData,
             final @Nullable BaseVariantData<? extends BaseVariantOutputData> testedVariantData,
             final @NonNull PostCompilationData pcData) {
+
+        if (!variantData.getVariantConfiguration().isMinifyEnabled()) {
+            return null;
+        }
+
         final VariantConfiguration variantConfig = variantData.variantConfiguration
 
         // use single output for now.
@@ -3048,9 +3053,7 @@ abstract class TaskManager {
         pcData.classGeneratingTask = [proguardTask]
 
         // Update the inputs
-        pcData.inputFiles = { [outFile] }
-        pcData.inputDir = null
-        pcData.inputLibraries = { [] }
+        return outFile;
     }
 
     private ShrinkResources createShrinkResourcesTask(ApkVariantOutputData variantOutputData) {

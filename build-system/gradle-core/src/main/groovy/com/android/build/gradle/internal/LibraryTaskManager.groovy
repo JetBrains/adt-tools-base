@@ -260,7 +260,10 @@ class LibraryTaskManager extends TaskManager {
         if (buildType.isMinifyEnabled()) {
             // run proguard on output of compile task
             SpanRecorders.record(ExecutionType.LIB_TASK_MANAGER_CREATE_PROGUARD_TASK) {
-                createProguardTasks(variantData, null, pcData)
+                File outFile = maybeCreateProguardTasks(variantData, null, pcData)
+                pcData.inputFiles = { [outFile] }
+                pcData.inputDir = null
+                pcData.inputLibraries = { [] }
             }
         } else {
             // package the local jar in libs/
