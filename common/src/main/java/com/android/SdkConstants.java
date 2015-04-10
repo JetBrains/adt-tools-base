@@ -571,6 +571,7 @@ public final class SdkConstants {
         "android.preference." + CLASS_NAME_PREFERENCE_SCREEN; //$NON-NLS-1$
     public static final String CLASS_PREFERENCEGROUP = "android.preference.PreferenceGroup"; //$NON-NLS-1$
     public static final String CLASS_PARCELABLE = "android.os.Parcelable"; //$NON-NLS-1$
+    public static final String CLASS_PARCEL = "android.os.Parcel"; //$NON-NLS-1$
     public static final String CLASS_FRAGMENT = "android.app.Fragment"; //$NON-NLS-1$
     public static final String CLASS_V4_FRAGMENT = "android.support.v4.app.Fragment"; //$NON-NLS-1$
     public static final String CLASS_ACTION_PROVIDER = "android.view.ActionProvider"; //$NON-NLS-1$
