@@ -70,7 +70,7 @@ import com.android.build.gradle.tasks.AndroidProGuardTask
 import com.android.build.gradle.tasks.CompatibleScreensManifest
 import com.android.build.gradle.tasks.Dex
 import com.android.build.gradle.tasks.GenerateBuildConfig
-import com.android.build.gradle.tasks.GeneratePngsFromVectorDrawablesTask
+import com.android.build.gradle.tasks.PreprocessResourcesTask
 import com.android.build.gradle.tasks.GenerateResValues
 import com.android.build.gradle.tasks.GenerateSplitAbiRes
 import com.android.build.gradle.tasks.JackTask
@@ -837,31 +837,30 @@ abstract class TaskManager {
         }
     }
 
-    public void createBackportResourcesTask(
+    public void createPreprocessResourcesTask(
             @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData) {
         String variantName = variantData.variantConfiguration.fullName.capitalize()
-
-        variantData.backportResourcesTask = project.tasks.create("backport${variantName}Resources")
-
         int minSdk = variantData.variantConfiguration.minSdkVersion.getApiLevel()
-        if (extension.generatePngs  && minSdk < VectorDrawableRenderer.MIN_SDK_WITH_VECTOR_SUPPORT) {
-            GeneratePngsFromVectorDrawablesTask generatePngs = project.tasks.create(
-                    "generate${variantName}Pngs",
-                    GeneratePngsFromVectorDrawablesTask)
-            variantData.generatePngsFromVectorDrawablesTask = generatePngs
 
-            generatePngs.dependsOn variantData.mergeResourcesTask
+        if (extension.preprocessResources  && minSdk < PreprocessResourcesTask.MIN_SDK) {
+            PreprocessResourcesTask preprocessResourcesTask = project.tasks.create(
+                    "preprocess${variantName}Resources",
+                    PreprocessResourcesTask)
+            variantData.preprocessResourcesTask = preprocessResourcesTask
 
-            File resDirectory = variantData.mergeResourcesTask.outputDir
+            preprocessResourcesTask.dependsOn variantData.mergeResourcesTask
 
-            generatePngs.xmlFiles =  project.fileTree(
-                    dir: resDirectory,
-                    includes: ["drawable*/*.xml"])
-            generatePngs.outputResDirectory = resDirectory
+            preprocessResourcesTask.mergedResDirectory =
+                    variantData.mergeResourcesTask.outputDir
+            preprocessResourcesTask.generatedResDirectory =
+                    project.file("$project.buildDir/${FD_GENERATED}/res/pngs/${variantData.variantConfiguration.dirName}")
+            preprocessResourcesTask.outputResDirectory =
+                    project.file("$project.buildDir/${FD_INTERMEDIATES}/res/preprocessed/${variantData.variantConfiguration.dirName}")
+            preprocessResourcesTask.incrementalFolder =
+                    project.file("$project.buildDir/${FD_INTERMEDIATES}/incremental/preprocessResourcesTask/${variantData.variantConfiguration.dirName}")
+
             // TODO: configure this in the extension.
-            generatePngs.densitiesToGenerate = [Density.HIGH, Density.XHIGH]
-
-            variantData.backportResourcesTask.dependsOn variantData.generatePngsFromVectorDrawablesTask
+            preprocessResourcesTask.densitiesToGenerate = [Density.HIGH, Density.XHIGH]
         }
     }
 
@@ -897,8 +896,9 @@ abstract class TaskManager {
             variantOutputData.processResourcesTask = processResources
 
             processResources.dependsOn variantOutputData.manifestProcessorTask,
-                    variantData.mergeResourcesTask, variantData.mergeAssetsTask,
-                    variantData.backportResourcesTask
+                    variantData.mergeResourcesTask, variantData.mergeAssetsTask
+            // TODO: Make it non-optional once this is not behind a flag.
+            optionalDependsOn(processResources, variantData.preprocessResourcesTask)
             processResources.androidBuilder = androidBuilder
 
             if (variantData.getSplitHandlingPolicy() ==
@@ -957,7 +957,7 @@ abstract class TaskManager {
             }
 
             conventionMapping(processResources).map("resDir") {
-                variantData.mergeResourcesTask.outputDir
+                variantData.finalResourcesDir
             }
 
             conventionMapping(processResources).map("assetsDir") {
@@ -1458,7 +1458,7 @@ abstract class TaskManager {
         // Add a task to create the BuildConfig class
         createBuildConfigTask(variantData)
 
-        createBackportResourcesTask(variantData)
+        createPreprocessResourcesTask(variantData)
 
         // Add a task to generate resource source files
         createProcessResTask(variantData, true /*generateResourcePackage*/)

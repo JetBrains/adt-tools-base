@@ -20,6 +20,8 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import com.android.annotations.NonNull;
 import com.android.resources.Density;
+import com.google.common.base.Charsets;
+import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 
 import java.io.File;
@@ -34,32 +36,41 @@ public class VectorDrawableRenderer {
     /** Projects with minSdk set to this or higher don't need to generate PNGs. */
     public static final int MIN_SDK_WITH_VECTOR_SUPPORT = 21;
 
-    public void createPngFiles(
+    public Collection<File> createPngFiles(
             @NonNull File inputXmlFile,
             @NonNull File outputResDirectory,
             @NonNull Collection<Density> densities) throws IOException {
         checkArgument(inputXmlFile.exists());
         checkArgument(outputResDirectory.exists());
 
+        Collection<File> createdFiles = Lists.newArrayList();
+
         for (Density density : densities) {
             // Sketch implementation.
 
             // TODO: add the density to all other qualifiers of the original file.
             File directory = new File(outputResDirectory, "drawable-" + density.getResourceValue());
-            directory.mkdir();
             File pngFile = new File(directory, inputXmlFile.getName().replace(".xml", ".png"));
 
-            pngFile.createNewFile(); // Create an empty file for now.
+            Files.createParentDirs(pngFile);
+            Files.write("PNG for " + density.getResourceValue(), pngFile, Charsets.UTF_8);
+            createdFiles.add(pngFile);
         }
 
         File v21Dir = new File(outputResDirectory, "drawable-v21");
-        v21Dir.mkdirs();
+        File v21Copy = new File(v21Dir, inputXmlFile.getName());
+        Files.createParentDirs(v21Copy);
+        Files.copy(inputXmlFile, v21Copy);
+        createdFiles.add(v21Copy);
+
         // TODO: make all the drawable-hdpi-v21 aliases.
-        Files.move(inputXmlFile, new File(v21Dir, inputXmlFile.getName()));
+
+        return createdFiles;
     }
 
-    public boolean isVectorDrawable(File xmlFile) {
+    public boolean isVectorDrawable(File resourceFile) {
         // TODO: parse the root element of the file to check.
-        return true;
+        return resourceFile.getPath().endsWith(".xml")
+                && resourceFile.getParentFile().getName().equals("drawable");
     }
 }
