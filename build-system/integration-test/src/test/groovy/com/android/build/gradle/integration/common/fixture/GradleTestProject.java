@@ -98,6 +98,7 @@ public class GradleTestProject implements TestRule {
     private static final String COMMON_LOCAL_REPO = "commonLocalRepo.gradle";
     private static final String COMMON_BUILD_SCRIPT = "commonBuildScript.gradle";
     private static final String COMMON_BUILD_SCRIPT_EXP = "commonBuildScriptExperimental.gradle";
+    private static final String COMMON_GRADLE_PLUGIN_VERSION = "commonGradlePluginVersion.gradle";
     private static final String DEFAULT_TEST_PROJECT_NAME = "project";
 
     public static class Builder {
@@ -340,6 +341,9 @@ public class GradleTestProject implements TestRule {
                 Files.copy(
                         new File(Builder.TEST_PROJECT_DIR, COMMON_BUILD_SCRIPT_EXP),
                         new File(testDir.getParent(), COMMON_BUILD_SCRIPT_EXP));
+                Files.copy(
+                        new File(Builder.TEST_PROJECT_DIR, COMMON_GRADLE_PLUGIN_VERSION),
+                        new File(testDir.getParent(), COMMON_GRADLE_PLUGIN_VERSION));
 
                 if (testProject != null) {
                     testProject.write(
