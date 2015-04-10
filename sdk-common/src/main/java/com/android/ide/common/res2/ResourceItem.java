@@ -316,14 +316,13 @@ public class ResourceItem extends DataItem<ResourceFile>
                     value = parseStyleValue(
                             new StyleResourceValue(type, name, parent, isFrameworks));
                 } catch (Throwable t) {
-                    // TEMPORARY DIAGNOSTICS
+                    //noinspection UseOfSystemOutOrSystemErr
                     System.err.println("Problem parsing attribute " + name + " of type " + type
                             + " for node " + mValue);
                     return null;
                 }
                 break;
             case DECLARE_STYLEABLE:
-                //noinspection deprecation
                 value = parseDeclareStyleable(new DeclareStyleableResourceValue(type, name,
                         isFrameworks));
                 break;
@@ -469,7 +468,6 @@ public class ResourceItem extends DataItem<ResourceFile>
         return value;
     }
 
-    @SuppressWarnings("deprecation") // support for deprecated (but supported) API
     @NonNull
     private ResourceValue parseDeclareStyleable(
             @NonNull DeclareStyleableResourceValue declareStyleable) {
