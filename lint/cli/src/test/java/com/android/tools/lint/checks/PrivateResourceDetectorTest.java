@@ -140,7 +140,7 @@ public class PrivateResourceDetectorTest extends AbstractCheckTest {
                     @Nullable
                     @Override
                     public AndroidProject getGradleProjectModel() {
-                        return createMockProject("1.3.0-alpha1", 3);
+                        return createMockProject("1.3.0-alpha2", 3);
                     }
 
                     @Nullable
