@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="jack-api-0.1">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/com/android/tools/jack/jack-api/0.1/jack-api-0.1.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

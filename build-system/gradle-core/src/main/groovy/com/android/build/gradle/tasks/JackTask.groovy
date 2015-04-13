@@ -83,18 +83,32 @@ public class JackTask extends AbstractAndroidCompile
 
     @TaskAction
     void compile() {
-        androidBuilder.convertByteCodeWithJack(
+
+        if (System.getenv("USE_JACK_API") == null ||
+                !androidBuilder.convertByteCodeUsingJackApis(
                 getDestinationDir(),
                 getJackFile(),
-                computeBootClasspath(),
+                getClasspath().files,
                 getPackagedLibraries(),
-                computeEcjOptionFile(),
+                getSource().files,
                 getProguardFiles(),
                 getMappingFile(),
                 isMultiDexEnabled(),
-                getMinSdkVersion(),
-                isDebugLog,
-                getJavaMaxHeapSize())
+                getMinSdkVersion())) {
+
+            androidBuilder.convertByteCodeWithJack(
+                    getDestinationDir(),
+                    getJackFile(),
+                    computeBootClasspath(),
+                    getPackagedLibraries(),
+                    computeEcjOptionFile(),
+                    getProguardFiles(),
+                    getMappingFile(),
+                    isMultiDexEnabled(),
+                    getMinSdkVersion(),
+                    isDebugLog,
+                    getJavaMaxHeapSize())
+        }
     }
 
     private File computeEcjOptionFile() {

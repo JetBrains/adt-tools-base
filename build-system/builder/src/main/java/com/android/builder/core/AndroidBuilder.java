@@ -31,6 +31,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.builder.compiling.DependencyFileProcessor;
+import com.android.builder.core.BuildToolsServiceLoader.BuildToolServiceLoader;
 import com.android.builder.dependency.ManifestDependency;
 import com.android.builder.dependency.SymbolFileProvider;
 import com.android.builder.internal.ClassFieldImpl;
@@ -72,6 +73,15 @@ import com.android.ide.common.process.ProcessResult;
 import com.android.ide.common.signing.CertificateInfo;
 import com.android.ide.common.signing.KeystoreHelper;
 import com.android.ide.common.signing.KeytoolException;
+import com.android.jack.api.ConfigNotSupportedException;
+import com.android.jack.api.JackProvider;
+import com.android.jack.api.v01.Api01CompilationTask;
+import com.android.jack.api.v01.Api01Config;
+import com.android.jack.api.v01.CompilationException;
+import com.android.jack.api.v01.ConfigurationException;
+import com.android.jack.api.v01.MultiDexKind;
+import com.android.jack.api.v01.ReporterKind;
+import com.android.jack.api.v01.UnrecoverableException;
 import com.android.manifmerger.ManifestMerger2;
 import com.android.manifmerger.MergingReport;
 import com.android.manifmerger.PlaceholderEncoder;
@@ -83,6 +93,7 @@ import com.android.sdklib.repository.FullRevision;
 import com.android.utils.ILogger;
 import com.android.utils.Pair;
 import com.google.common.base.Charsets;
+import com.google.common.base.Optional;
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import com.google.common.collect.ArrayListMultimap;
@@ -94,6 +105,7 @@ import com.google.common.hash.HashCode;
 import com.google.common.hash.Hashing;
 import com.google.common.io.Files;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -101,10 +113,12 @@ import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.ServiceLoader;
 import java.util.Set;
 
 /**
@@ -884,11 +898,11 @@ public class AndroidBuilder {
 
         String content = String.format(
                 "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
-                "<wearableApp package=\"%1$s\">\n" +
-                "    <versionCode>%2$s</versionCode>\n" +
-                "    <versionName>%3$s</versionName>\n" +
-                "    <rawPathResId>%4$s</rawPathResId>\n" +
-                "</wearableApp>",
+                        "<wearableApp package=\"%1$s\">\n" +
+                        "    <versionCode>%2$s</versionCode>\n" +
+                        "    <versionName>%3$s</versionName>\n" +
+                        "    <rawPathResId>%4$s</rawPathResId>\n" +
+                        "</wearableApp>",
                 apkInfo.getPackageName(),
                 apkInfo.getVersionCode(),
                 apkInfo.getVersionName(),
@@ -1311,6 +1325,96 @@ public class AndroidBuilder {
         } else {
             return Collections.singletonList(outFile);
         }
+    }
+
+    /**
+     * Converts java source code into android byte codes using the jack integration APIs.
+     * Jack will run in memory.
+     */
+    public boolean convertByteCodeUsingJackApis(
+            @NonNull File dexOutputFolder,
+            @NonNull File jackOutputFile,
+            @NonNull Collection<File> classpath,
+            @NonNull Collection<File> packagedLibraries,
+            @NonNull Collection<File> sourceFiles,
+            @Nullable Collection<File> proguardFiles,
+            @Nullable File mappingFile,
+            boolean multiDex,
+            int minSdkVersion) {
+
+        BuildToolServiceLoader buildToolServiceLoader
+                = BuildToolsServiceLoader.INSTANCE.forVersion(mTargetInfo.getBuildTools());
+
+        Api01CompilationTask compilationTask = null;
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        try {
+            Optional<JackProvider> jackProvider = buildToolServiceLoader
+                    .getSingleService(BuildToolsServiceLoader.JACK);
+            if (jackProvider.isPresent()) {
+                Api01Config config;
+
+                // Get configuration object
+                try {
+                    config = jackProvider.get().createConfig(Api01Config.class);
+
+                    config.setClasspath(new ArrayList<File>(classpath));
+                    config.setOutputDexDir(dexOutputFolder);
+                    config.setOutputJackFile(jackOutputFile);
+                    config.setImportedJackLibraryFiles(new ArrayList<File>(packagedLibraries));
+
+                    if (proguardFiles != null) {
+                        config.setProguardConfigFiles(new ArrayList<File>(proguardFiles));
+                    }
+
+                    if (multiDex) {
+                        if (minSdkVersion < BuildToolInfo.SDK_LEVEL_FOR_MULTIDEX_NATIVE_SUPPORT) {
+                            config.setMultiDexKind(MultiDexKind.LEGACY);
+                        } else {
+                            config.setMultiDexKind(MultiDexKind.NATIVE);
+                        }
+                    }
+
+                    config.setSourceEntries(new ArrayList<File>(sourceFiles));
+                    if (mappingFile != null) {
+                        config.setProperty("jack.obfuscation.mapping.dump", "true");
+                        config.setObfuscationMappingOutputFile(mappingFile);
+                    }
+
+                    config.setProperty("jack.import.resource.policy", "keep-first");
+
+                    config.setReporter(ReporterKind.DEFAULT, outputStream);
+
+                    compilationTask = config.getTask();
+                } catch (ConfigNotSupportedException e1) {
+                    mLogger.warning("Jack APIs v01 not supported");
+                } catch (ConfigurationException e) {
+                    mLogger.error(e,
+                            "Jack APIs v01 configuration failed, reverting to native process");
+                }
+            }
+
+            if (compilationTask == null) {
+                return false;
+            }
+
+            // Run the compilation
+            try {
+                compilationTask.run();
+                mLogger.info(outputStream.toString());
+                return true;
+            } catch (CompilationException e) {
+                mLogger.error(e, outputStream.toString());
+            } catch (UnrecoverableException e) {
+                mLogger.error(e,
+                        "Something out of Jack control has happened: " + e.getMessage());
+            } catch (ConfigurationException e) {
+                mLogger.error(e, outputStream.toString());
+            }
+        } catch (ClassNotFoundException e) {
+            getLogger().warning("Cannot load Jack APIs v01 " + e.getMessage());
+            getLogger().warning("Reverting to native process invocation");
+        }
+        return false;
     }
 
     public void convertByteCodeWithJack(
