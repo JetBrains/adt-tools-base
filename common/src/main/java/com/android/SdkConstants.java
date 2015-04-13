@@ -830,6 +830,8 @@ public final class SdkConstants {
     public static final String ATTR_PACKAGE = "package";               //$NON-NLS-1$
     public static final String ATTR_CORE_APP = "coreApp";              //$NON-NLS-1$
     public static final String ATTR_THEME = "theme";                   //$NON-NLS-1$
+    public static final String ATTR_SCHEME = "scheme";                 //$NON_NLS-1$
+    public static final String ATTR_HOST = "host";                     //$NON_NLS-1$
     public static final String ATTR_PATH = "path";                     //$NON-NLS-1$
     public static final String ATTR_PATH_PREFIX = "pathPrefix";        //$NON-NLS-1$
     public static final String ATTR_PATH_PATTERN = "pathPattern";      //$NON-NLS-1$
