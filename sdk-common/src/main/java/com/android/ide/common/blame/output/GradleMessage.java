@@ -18,7 +18,7 @@ package com.android.ide.common.blame.output;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.ide.common.blame.SourceFragmentPositionRange;
+import com.android.ide.common.blame.SourcePosition;
 import com.google.common.base.Objects;
 import com.google.gson.annotations.SerializedName;
 
@@ -41,21 +41,21 @@ public class GradleMessage {
 
     @SerializedName("position")
     @NonNull
-    private final SourceFragmentPositionRange mPosition;
+    private final SourcePosition mPosition;
 
     @SerializedName("original")
     @NonNull
     private final String mOriginal;
 
     public GradleMessage(@NonNull Kind kind, @NonNull String text) {
-        this(kind, text, null /* sourcePath */, SourceFragmentPositionRange.UNKNOWN, text);
+        this(kind, text, null /* sourcePath */, SourcePosition.UNKNOWN, text);
     }
 
 
     public GradleMessage(@NonNull Kind kind,
                          @NonNull String text,
                          @Nullable String sourcePath,
-                         @NonNull SourceFragmentPositionRange position,
+                         @NonNull SourcePosition position,
                          @NonNull String original) {
         mKind = kind;
         mText = text;
@@ -65,7 +65,7 @@ public class GradleMessage {
     }
 
     public GradleMessage(@NonNull Kind kind, @NonNull String text, @Nullable String sourcePath, int line, int column) {
-        this(kind, text, sourcePath, new SourceFragmentPositionRange(line, column, -1), text);
+        this(kind, text, sourcePath, new SourcePosition(line, column, -1), text);
     }
 
     @NonNull
@@ -123,7 +123,7 @@ public class GradleMessage {
                 ']';
     }
 
-    public SourceFragmentPositionRange getPosition() {
+    public SourcePosition getPosition() {
         return mPosition;
     }
 

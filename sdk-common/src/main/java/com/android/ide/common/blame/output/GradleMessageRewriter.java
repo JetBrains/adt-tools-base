@@ -16,7 +16,8 @@
 package com.android.ide.common.blame.output;
 
 import com.android.annotations.NonNull;
-import com.android.ide.common.blame.SourceFragmentPositionRange;
+import com.android.ide.common.blame.SourcePosition;
+import com.android.ide.common.blame.SourcePositionJsonTypeAdapter;
 import com.android.ide.common.blame.parser.ToolOutputParser;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -70,8 +71,8 @@ public class GradleMessageRewriter {
 
     private static Gson createGson() {
         GsonBuilder gsonBuilder = new GsonBuilder();
-        gsonBuilder.registerTypeAdapter(SourceFragmentPositionRange.class,
-                new SourceFragmentPositionRange.Serializer());
+        gsonBuilder.registerTypeAdapter(SourcePosition.class,
+                new SourcePositionJsonTypeAdapter());
         return gsonBuilder.create();
     }
 }

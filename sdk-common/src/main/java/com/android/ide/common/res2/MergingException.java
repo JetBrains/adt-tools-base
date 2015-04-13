@@ -19,7 +19,7 @@ package com.android.ide.common.res2;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.ide.common.blame.FilePosition;
-import com.android.ide.common.blame.SourceFragmentPositionRange;
+import com.android.ide.common.blame.SourcePosition;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Iterables;
@@ -62,7 +62,7 @@ public class MergingException extends Exception {
     }
 
     public MergingException addFile(@NonNull File file) {
-        mFilePositions.add(new FilePosition(file, SourceFragmentPositionRange.UNKNOWN));
+        mFilePositions.add(new FilePosition(file, SourcePosition.UNKNOWN));
         return this;
     }
 
@@ -78,7 +78,7 @@ public class MergingException extends Exception {
     public MergingException addFilePosition(@NonNull File file, @NonNull SAXParseException exception) {
         int lineNumber = exception.getLineNumber();
         if (lineNumber != -1) {
-            addFilePosition(new FilePosition(file, new SourceFragmentPositionRange(
+            addFilePosition(new FilePosition(file, new SourcePosition(
                     exception.getLineNumber() - 1, exception.getColumnNumber() - 1, -1)));
         } else {
             addFile(file);
