@@ -46,8 +46,14 @@ import java.util.Map;
  */
 public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
 
+    private boolean mNormalizeResources = false;
+
     public ResourceSet(String name) {
         super(name);
+    }
+
+    public void setNormalizeResources(boolean normalizeResources) {
+        mNormalizeResources = normalizeResources;
     }
 
     @Override
@@ -298,7 +304,7 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
      * @return the FolderData object.
      */
     @Nullable
-    private static FolderData getFolderData(File folder) throws MergingException {
+    private FolderData getFolderData(File folder) throws MergingException {
         FolderData fd = new FolderData();
 
         String folderName = folder.getName();
@@ -314,8 +320,10 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
                 throw new MergingException("Invalid resource directory name").setFile(folder);
             }
 
-            // normalize it
-            folderConfiguration.normalize();
+            if (mNormalizeResources) {
+                // normalize it
+                folderConfiguration.normalize();
+            }
 
             // get the qualifier portion from the folder config.
             // the returned string starts with "-" so we remove that.

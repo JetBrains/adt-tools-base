@@ -103,6 +103,7 @@ import com.android.sdklib.AndroidTargetHash
 import com.android.sdklib.BuildToolInfo
 import com.android.sdklib.IAndroidTarget
 import com.android.sdklib.SdkVersionInfo
+import com.android.sdklib.repository.FullRevision
 import com.google.common.base.CharMatcher
 import com.google.common.collect.ImmutableSet
 import com.google.common.collect.Lists
@@ -678,6 +679,7 @@ abstract class TaskManager {
 
         mergeResourcesTask.process9Patch = process9Patch
         mergeResourcesTask.crunchPng = extension.aaptOptions.getCruncherEnabled()
+        mergeResourcesTask.normalizeResources = extension.buildToolsRevision.compareTo(new FullRevision(21, 0, 0)) < 0
 
         conventionMapping(mergeResourcesTask).
                 map("useNewCruncher") { getExtension().aaptOptions.useNewCruncher }

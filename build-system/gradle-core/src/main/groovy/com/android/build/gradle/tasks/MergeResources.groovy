@@ -63,6 +63,9 @@ public class MergeResources extends IncrementalTask {
     @Input
     boolean insertSourceMarkers = true
 
+    @Input
+    boolean normalizeResources
+
     // actual inputs
     List<ResourceSet> inputResourceSets
 
@@ -98,6 +101,7 @@ public class MergeResources extends IncrementalTask {
 
         try {
             for (ResourceSet resourceSet : resourceSets) {
+                resourceSet.setNormalizeResources(normalizeResources)
                 // set needs to be loaded.
                 resourceSet.loadFromFiles(getILogger())
                 merger.addDataSet(resourceSet)
@@ -134,6 +138,9 @@ public class MergeResources extends IncrementalTask {
             // This is in case there's a change that's too hard to do incrementally. In this case
             // we'll simply revert to full build.
             List<ResourceSet> resourceSets = getInputResourceSets()
+            for (ResourceSet resourceSet : resourceSets) {
+                resourceSet.setNormalizeResources(normalizeResources)
+            }
 
             if (!merger.checkValidUpdate(resourceSets)) {
                 project.logger.info("Changed Resource sets: full task run!")
