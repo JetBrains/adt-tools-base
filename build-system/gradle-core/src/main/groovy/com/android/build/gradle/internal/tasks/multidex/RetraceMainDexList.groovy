@@ -137,7 +137,7 @@ class RetraceMainDexList extends DefaultAndroidTask {
 
         @Override
         String getName() {
-            return "retrace${scope.variantConfiguration.fullName.capitalize()}MainDexClassList";
+            return scope.getTaskName("retrace", "MainDexClassList");
         }
 
         @Override

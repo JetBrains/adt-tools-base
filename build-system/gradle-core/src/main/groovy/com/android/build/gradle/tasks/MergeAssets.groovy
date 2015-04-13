@@ -15,7 +15,16 @@
  */
 package com.android.build.gradle.tasks
 
+import com.android.annotations.NonNull
+import com.android.build.gradle.internal.scope.ConventionMappingHelper
+import com.android.build.gradle.internal.scope.TaskConfigAction
+import com.android.build.gradle.internal.scope.VariantScope
 import com.android.build.gradle.internal.tasks.IncrementalTask
+import com.android.build.gradle.internal.variant.BaseVariantData
+import com.android.build.gradle.internal.variant.BaseVariantOutputData
+import com.android.builder.core.VariantConfiguration
+import com.android.builder.core.VariantType
+import com.android.builder.model.AndroidProject
 import com.android.ide.common.res2.AssetMerger
 import com.android.ide.common.res2.AssetSet
 import com.android.ide.common.res2.FileStatus
@@ -137,6 +146,52 @@ public class MergeAssets extends IncrementalTask {
             println e.getMessage()
             merger.cleanBlob(getIncrementalFolder())
             throw new ResourceException(e.getMessage(), e)
+        }
+    }
+
+
+    public static class ConfigAction implements TaskConfigAction<MergeAssets> {
+
+        @NonNull
+        VariantScope scope
+
+        ConfigAction(VariantScope scope) {
+            this.scope = scope
+        }
+
+        @Override
+        String getName() {
+            return scope.getTaskName("merge", "Assets");
+        }
+
+        @Override
+        Class<MergeAssets> getType() {
+            return MergeAssets
+        }
+
+        @Override
+        void execute(MergeAssets mergeAssetsTask) {
+            BaseVariantData<? extends BaseVariantOutputData> variantData = scope.variantData
+            VariantConfiguration variantConfig = variantData.variantConfiguration
+            boolean includeDependencies = variantConfig.type != VariantType.LIBRARY
+
+            variantData.mergeAssetsTask = mergeAssetsTask
+
+            mergeAssetsTask.androidBuilder = scope.globalScope.androidBuilder
+            mergeAssetsTask.incrementalFolder =
+                    new File(
+                            "$scope.globalScope.buildDir/${AndroidProject.FD_INTERMEDIATES}/incremental/mergeAssets/${variantConfig.dirName}")
+
+            ConventionMappingHelper.map(mergeAssetsTask, "inputAssetSets") {
+                def generatedAssets = []
+                if (variantData.copyApkTask != null) {
+                    generatedAssets.add(variantData.copyApkTask.destinationDir)
+                }
+                variantConfig.getAssetSets(generatedAssets, includeDependencies)
+            }
+            ConventionMappingHelper.map(mergeAssetsTask, "outputDir") {
+                scope.getMergeAssetsOutputDir()
+            }
         }
     }
 }

@@ -141,7 +141,6 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
                 "default-mapping",
                 "Metadata for published APKs")
 
-
         project.tasks.getByName("assemble").description =
                 "Assembles all variants of all applications and secondary packages."
 
@@ -384,8 +383,6 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
                     repo.url = file.toURI()
                 }
             }
-
-            taskManager.createLintCompileTask();
 
             // TODO: determine how to provide functionalities of variant API objects.
         }

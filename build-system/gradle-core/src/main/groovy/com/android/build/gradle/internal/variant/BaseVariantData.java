@@ -93,7 +93,8 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
     private VariantDependencies variantDependency;
 
     // Needed for ModelBuilder.  Should be removed once VariantScope can replace BaseVariantData.
-    private VariantScope scope;
+    @NonNull
+    private final VariantScope scope;
 
     public Task preBuildTask;
     public PrepareDependenciesTask prepareDependenciesTask;
@@ -180,6 +181,8 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
                             variantConfiguration.getMinSdkVersion().getApiLevel()));
         }
         variantConfiguration.checkSourceProviders();
+
+        scope = new VariantScope(taskManager.getGlobalScope(), this);
     }
 
 
@@ -374,8 +377,8 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
      */
     private List<File> getGeneratedResFolders() {
         List<File> generatedResFolders = Lists.newArrayList(
-                renderscriptCompileTask.getResOutputDir(),
-                generateResValuesTask.getResOutputDir());
+                scope.getRenderscriptResOutputDir(),
+                scope.getGeneratedResOutputDir());
         if (extraGeneratedResFolders != null) {
             generatedResFolders.addAll(extraGeneratedResFolders);
         }
@@ -535,22 +538,22 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
             }
 
             // then all the generated src folders.
-            if (generateRClassTask != null) {
-                sourceList.add(generateRClassTask.getSourceOutputDir());
+            if (getScope().getGenerateRClassTask() != null) {
+                sourceList.add(getScope().getRClassSourceOutputDir());
             }
 
             // for the other, there's no duplicate so no issue.
-            if (generateBuildConfigTask != null) {
-                sourceList.add(generateBuildConfigTask.getSourceOutputDir());
+            if (getScope().getGenerateBuildConfigTask() != null) {
+                sourceList.add(scope.getBuildConfigSourceOutputDir());
             }
 
-            if (aidlCompileTask != null) {
-                sourceList.add(aidlCompileTask.getSourceOutputDir());
+            if (getScope().getAidlCompileTask() != null) {
+                sourceList.add(scope.getAidlSourceOutputDir());
             }
 
             if (!variantConfiguration.getRenderscriptNdkModeEnabled()
-                    && renderscriptCompileTask != null) {
-                sourceList.add(renderscriptCompileTask.getSourceOutputDir());
+                    && getScope().getRenderscriptCompileTask() != null) {
+                sourceList.add(scope.getRenderscriptSourceOutputDir());
             }
 
             javaSources = sourceList.toArray();
@@ -651,12 +654,8 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
         return output;
     }
 
-    @Nullable
+    @NonNull
     public VariantScope getScope() {
         return scope;
-    }
-
-    public void setScope(@NonNull VariantScope scope) {
-        this.scope = scope;
     }
 }

@@ -34,8 +34,7 @@ public class ProGuardTaskConfigAction implements TaskConfigAction<ProGuardTask> 
 
     @Override
     public String getName() {
-        return "shrink" + StringHelper.capitalize(
-                scope.getVariantConfiguration().getFullName()) + "MultiDexComponents";
+        return scope.getTaskName("shrink", "MultiDexComponents");
     }
 
     @Override
@@ -62,7 +61,7 @@ public class ProGuardTaskConfigAction implements TaskConfigAction<ProGuardTask> 
                             scope.getGlobalScope().getAndroidBuilder().getTargetInfo()
                                     .getBuildTools()
                                     .getLocation(),
-                            "lib" + String.valueOf(File.separatorChar) + "shrinkedAndroid.jar");
+                            "lib" + File.separatorChar + "shrinkedAndroid.jar");
 
                     // TODO remove in 1.0
                     // STOPSHIP

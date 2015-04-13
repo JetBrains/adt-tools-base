@@ -16,13 +16,25 @@
 
 package com.android.build.gradle.tasks
 
+import com.android.SdkConstants
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
 import com.android.annotations.concurrency.GuardedBy
+import com.android.build.gradle.api.ApkVariant
+import com.android.build.gradle.internal.TaskManager
+import com.android.build.gradle.internal.scope.ConventionMappingHelper
+import com.android.build.gradle.internal.scope.TaskConfigAction
+import com.android.build.gradle.internal.scope.VariantScope
 import com.android.build.gradle.internal.tasks.IncrementalTask
+import com.android.build.gradle.internal.variant.ApkVariantData
+import com.android.build.gradle.internal.variant.BaseVariantData
+import com.android.build.gradle.internal.variant.BaseVariantOutputData
 import com.android.builder.compiling.DependencyFileProcessor
+import com.android.builder.core.VariantConfiguration
+import com.android.builder.core.VariantType
 import com.android.builder.internal.incremental.DependencyData
 import com.android.builder.internal.incremental.DependencyDataStore
+import com.android.builder.model.AndroidProject
 import com.android.ide.common.internal.WaitableExecutor
 import com.android.ide.common.res2.FileStatus
 import com.google.common.collect.Lists
@@ -35,6 +47,9 @@ import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.util.PatternSet
 
 import java.util.concurrent.Callable
+
+import static com.android.builder.model.AndroidProject.FD_GENERATED
+import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
 
 /**
  * Task to compile aidl files. Supports incremental update.
@@ -278,4 +293,54 @@ public class AidlCompile extends IncrementalTask {
             new File(output).delete()
         }
     }
+
+
+    public static class ConfigAction implements TaskConfigAction<AidlCompile> {
+
+        @NonNull
+        VariantScope scope
+
+        ConfigAction(@NonNull VariantScope scope) {
+            this.scope = scope
+        }
+
+        @Override
+        @NonNull
+        String getName() {
+            return scope.getTaskName("compile", "Aidl")
+        }
+
+        @Override
+        @NonNull
+        Class<AidlCompile> getType() {
+            return AidlCompile
+        }
+
+        @Override
+        void execute(AidlCompile compileTask) {
+            VariantConfiguration variantConfiguration = scope.variantConfiguration
+
+            scope.variantData.aidlCompileTask = compileTask
+
+            compileTask.androidBuilder = scope.globalScope.androidBuilder
+            compileTask.incrementalFolder =
+                    new File(
+                            "$scope.globalScope.buildDir/${FD_INTERMEDIATES}/incremental/aidl/${variantConfiguration.dirName}")
+
+            ConventionMappingHelper.map(compileTask, "sourceDirs") { variantConfiguration.aidlSourceList }
+            ConventionMappingHelper.map(compileTask, "importDirs") { variantConfiguration.aidlImports }
+
+            ConventionMappingHelper.map(compileTask, "sourceOutputDir") {
+                //new File(scope.globalScope.generatedDir, "source/aidl/${variantConfiguration.dirName}")
+                scope.getAidlSourceOutputDir()
+            }
+
+            if (variantConfiguration.type == VariantType.LIBRARY) {
+                compileTask.aidlParcelableDir = new File(
+                        "$scope.globalScope.buildDir/${FD_INTERMEDIATES}/$TaskManager.DIR_BUNDLES/${variantConfiguration.dirName}/$SdkConstants.FD_AIDL")
+            }
+
+        }
+    }
+
 }

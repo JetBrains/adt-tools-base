@@ -242,7 +242,7 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
 
         @Override
         public String getName() {
-            return "package" + StringHelper.capitalize(scope.getVariantOutputData().getFullName());
+            return scope.getTaskName("package");
         }
 
         @Override
@@ -406,7 +406,9 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
                 }
             });
 
-            task.dependsOn(variantData.obfuscationTask, variantOutputData.manifestProcessorTask,
+            task.dependsOn(
+                    scope.getVariantScope().getObfuscationTask().getName(),
+                    scope.getManifestProcessorTask().getName(),
                     variantOutputData.processResourcesTask);
 
             return task;

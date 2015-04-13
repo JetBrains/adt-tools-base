@@ -217,7 +217,7 @@ public class PreDex extends BaseTask {
 
         @Override
         String getName() {
-            return "preDex${scope.variantConfiguration.fullName.capitalize()}"
+            return scope.getTaskName("preDex")
         }
 
         @Override

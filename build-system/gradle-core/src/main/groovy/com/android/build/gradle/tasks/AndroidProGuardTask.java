@@ -130,8 +130,7 @@ public class AndroidProGuardTask extends ProGuardTask implements FileSupplier {
 
         @Override
         public String getName() {
-            return "proguard" + StringHelper.capitalize(
-                    scope.getVariantData().getVariantConfiguration().getFullName());
+            return scope.getTaskName("proguard");
         }
 
         @Override
@@ -149,7 +148,7 @@ public class AndroidProGuardTask extends ProGuardTask implements FileSupplier {
             final BaseVariantOutputData variantOutputData = scope.getVariantData().getOutputs().get(0);
 
             if (testedVariantData != null) {
-                proguardTask.dependsOn(testedVariantData.obfuscationTask);
+                proguardTask.dependsOn(testedVariantData.getScope().getObfuscationTask().getName());
             }
 
             variantData.obfuscationTask = proguardTask;

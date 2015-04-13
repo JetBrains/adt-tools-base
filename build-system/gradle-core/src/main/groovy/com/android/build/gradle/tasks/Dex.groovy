@@ -185,8 +185,7 @@ public class Dex extends BaseTask {
 
         @Override
         public String getName() {
-            return "dex" + StringHelper.capitalize(
-                    scope.getVariantData().getVariantConfiguration().getFullName());
+            return scope.getTaskName("dex")
         }
 
         @Override

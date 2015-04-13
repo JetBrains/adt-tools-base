@@ -193,8 +193,7 @@ public class ShrinkResources extends BaseTask {
 
         @Override
         String getName() {
-            return "shrink" + StringHelper.capitalize(scope.variantOutputData.getFullName()) +
-                    "Resources";
+            return scope.getTaskName("shrink", "Resources");
         }
 
         @Override

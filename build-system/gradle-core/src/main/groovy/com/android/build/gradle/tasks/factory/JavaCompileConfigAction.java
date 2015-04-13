@@ -6,6 +6,7 @@ import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
 
 import com.android.build.gradle.internal.CompileOptions;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
+import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.sdklib.AndroidTargetHash;
@@ -26,7 +27,7 @@ import groovy.lang.Closure;
 /**
  * Configuration Action for a JavaCompile task.
  */
-public class JavaCompileConfigAction implements Action<JavaCompile> {
+public class JavaCompileConfigAction implements TaskConfigAction<JavaCompile> {
 
     private VariantScope scope;
 
@@ -35,31 +36,38 @@ public class JavaCompileConfigAction implements Action<JavaCompile> {
     }
 
     @Override
+    public String getName() {
+        return scope.getTaskName("compile", "Java");
+    }
+
+    @Override
+    public Class<JavaCompile> getType() {
+        return JavaCompile.class;
+    }
+
+    @Override
     public void execute(final JavaCompile javaCompileTask) {
         final BaseVariantData testedVariantData = scope.getTestedVariantData();
         scope.getVariantData().javaCompileTask = javaCompileTask;
-        scope.getVariantData().compileTask.dependsOn(javaCompileTask);
 
         javaCompileTask.setSource(scope.getVariantData().getJavaSources());
 
         ConventionMappingHelper
                 .map(javaCompileTask, "classpath", new Closure<FileCollection>(this, this) {
                     public FileCollection doCall(Object it) {
-                        FileCollection classpath = scope.getGlobalScope().getProject()
-                                .files(scope.getGlobalScope().getAndroidBuilder()
-                                        .getCompileClasspath(
-                                                scope.getVariantData().getVariantConfiguration()));
+                        FileCollection classpath = scope.getJavaClasspath();
 
-                        if (DefaultGroovyMethods.asBoolean(testedVariantData)) {
+                        if (testedVariantData != null) {
                             // For libraries, the classpath from androidBuilder includes the library output
                             // (bundle/classes.jar) as a normal dependency. In unit tests we don't want to package
                             // the jar at every run, so we use the *.class files instead.
                             if (!testedVariantData.getType().equals(LIBRARY) || scope
                                     .getVariantData().getType().equals(UNIT_TEST)) {
                                 classpath = classpath
-                                        .plus(testedVariantData.javaCompileTask.getClasspath())
-                                        .plus(testedVariantData.javaCompileTask.getOutputs()
-                                                .getFiles());
+                                        .plus(testedVariantData.getScope().getJavaClasspath())
+                                        .plus(scope.getGlobalScope().getProject().files(
+                                                testedVariantData.getScope().getJavaOutputDir(),
+                                                testedVariantData.getScope().getJavaDependencyCache()));
                             }
 
                             if (scope.getVariantData().getType().equals(UNIT_TEST)
@@ -82,15 +90,6 @@ public class JavaCompileConfigAction implements Action<JavaCompile> {
 
                 });
 
-        javaCompileTask.dependsOn(scope.getVariantData().prepareDependenciesTask);
-        javaCompileTask.dependsOn(scope.getVariantData().processJavaResourcesTask);
-
-        // TODO - dependency information for the compile classpath is being lost.
-        // Add a temporary approximation
-        javaCompileTask.dependsOn(
-                scope.getVariantData().getVariantDependency().getCompileConfiguration()
-                        .getBuildDependencies());
-
         ConventionMappingHelper
                 .map(javaCompileTask, "destinationDir", new Closure<File>(this, this) {
                     public File doCall(Object it) {
@@ -105,10 +104,7 @@ public class JavaCompileConfigAction implements Action<JavaCompile> {
         ConventionMappingHelper
                 .map(javaCompileTask, "dependencyCacheDir", new Closure<File>(this, this) {
                     public File doCall(Object it) {
-                        return scope.getGlobalScope().getProject()
-                                .file(String.valueOf(scope.getGlobalScope().getBuildDir()) + "/"
-                                        + FD_INTERMEDIATES + "/dependency-cache/" + scope
-                                        .getVariantData().getVariantConfiguration().getDirName());
+                        return scope.getJavaDependencyCache();
                     }
 
                     public File doCall() {

@@ -73,7 +73,7 @@ public class JacocoInstrumentTask extends DefaultTask {
 
         @Override
         String getName() {
-            return "instrument${scope.variantData.variantConfiguration.fullName.capitalize()}";
+            return scope.getTaskName("instrument");
         }
 
         @Override

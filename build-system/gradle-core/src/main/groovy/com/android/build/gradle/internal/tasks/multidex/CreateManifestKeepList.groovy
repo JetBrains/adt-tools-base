@@ -129,7 +129,7 @@ class CreateManifestKeepList extends DefaultAndroidTask {
 
         @Override
         String getName() {
-            return "collect${scope.variantConfiguration.fullName.capitalize()}MultiDexComponents";
+            return scope.getTaskName("collect", "MultiDexComponents");
         }
 
         @Override
@@ -142,9 +142,8 @@ class CreateManifestKeepList extends DefaultAndroidTask {
             // since all the output have the same manifest, besides the versionCode,
             // we can take any of the output and use that.
             final BaseVariantOutputData output = scope.variantData.outputs.get(0)
-            manifestKeepListTask.dependsOn output.manifestProcessorTask
             ConventionMappingHelper.map(manifestKeepListTask, "manifest") {
-                output.manifestProcessorTask.getOutputFile()
+                output.getScope().getManifestOutputFile()
             }
 
             manifestKeepListTask.proguardFile = scope.variantConfiguration.getMultiDexKeepProguard()

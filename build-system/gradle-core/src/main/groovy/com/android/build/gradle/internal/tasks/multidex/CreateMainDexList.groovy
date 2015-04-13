@@ -115,7 +115,7 @@ public class CreateMainDexList extends BaseTask {
 
         @Override
         String getName() {
-            return "create${scope.variantConfiguration.fullName.capitalize()}MainDexClassList";
+            return scope.getTaskName("create", "MainDexClassList");
         }
 
         @Override

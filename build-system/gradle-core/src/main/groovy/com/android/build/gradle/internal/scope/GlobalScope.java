@@ -16,6 +16,8 @@
 
 package com.android.build.gradle.internal.scope;
 
+import static com.android.builder.model.AndroidProject.FD_GENERATED;
+import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
 import static com.android.builder.model.AndroidProject.FD_OUTPUTS;
 import static com.android.builder.model.AndroidProject.PROPERTY_APK_LOCATION;
 
@@ -23,8 +25,10 @@ import com.android.annotations.NonNull;
 import com.android.build.gradle.BaseExtension;
 import com.android.build.gradle.internal.SdkHandler;
 import com.android.builder.core.AndroidBuilder;
+import com.android.builder.model.AndroidProject;
 
 import org.gradle.api.Project;
+import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
 
 import java.io.File;
 
@@ -40,19 +44,31 @@ public class GlobalScope {
     private String projectBaseName;
     @NonNull
     private BaseExtension extension;
+    @NonNull
     private SdkHandler sdkHandler;
+    @NonNull
+    private ToolingModelBuilderRegistry toolingRegistry;
+
+    @NonNull
+    private final File intermediatesDir;
+    @NonNull
+    private final File generatedDir;
 
     public GlobalScope(
             @NonNull Project project,
             @NonNull AndroidBuilder androidBuilder,
             @NonNull String projectBaseName,
             @NonNull BaseExtension extension,
-            @NonNull SdkHandler sdkHandler) {
+            @NonNull SdkHandler sdkHandler,
+            @NonNull ToolingModelBuilderRegistry toolingRegistry) {
         this.project = project;
         this.androidBuilder = androidBuilder;
         this.projectBaseName = projectBaseName;
         this.extension = extension;
         this.sdkHandler = sdkHandler;
+        this.toolingRegistry = toolingRegistry;
+        intermediatesDir = new File(getBuildDir(), FD_INTERMEDIATES);
+        generatedDir = new File(getBuildDir(), FD_GENERATED);
     }
 
     @NonNull
@@ -81,8 +97,23 @@ public class GlobalScope {
     }
 
     @NonNull
+    public ToolingModelBuilderRegistry getToolingRegistry() {
+        return toolingRegistry;
+    }
+
+    @NonNull
     public File getBuildDir() {
         return project.getBuildDir();
+    }
+
+    @NonNull
+    public File getIntermediatesDir() {
+        return intermediatesDir;
+    }
+
+    @NonNull
+    public File getGeneratedDir() {
+        return generatedDir;
     }
 
     @NonNull

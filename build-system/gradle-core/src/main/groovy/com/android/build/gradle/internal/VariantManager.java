@@ -304,7 +304,7 @@ public class VariantManager implements VariantModel {
             TaskFactory tasks,
             final BaseVariantData<?> variantData) {
         if (variantData.getType().isForTesting()) {
-            variantData.assembleVariantTask = taskManager.createAssembleTask(variantData);
+            variantData.assembleVariantTask = taskManager.createAssembleTask(tasks, variantData);
         } else {
             BuildTypeData buildTypeData =
                     buildTypes.get(variantData.getVariantConfiguration().getBuildType().getName());
@@ -313,7 +313,7 @@ public class VariantManager implements VariantModel {
                 // Reuse assemble task for build type if there is no product flavor.
                 variantData.assembleVariantTask = buildTypeData.getAssembleTask();
             } else {
-                variantData.assembleVariantTask = taskManager.createAssembleTask(variantData);
+                variantData.assembleVariantTask = taskManager.createAssembleTask(tasks, variantData);
 
                 // setup the task dependencies
                 // build type
@@ -323,7 +323,7 @@ public class VariantManager implements VariantModel {
                 GradleVariantConfiguration variantConfig = variantData.getVariantConfiguration();
                 for (GroupableProductFlavor flavor : variantConfig.getProductFlavors()) {
                     productFlavors.get(flavor.getName()).getAssembleTask()
-                            .dependsOn(variantData.assembleVariantTask);
+                             .dependsOn(variantData.assembleVariantTask);
                 }
 
                 // assembleTask for this flavor(dimension), created on demand if needed.
@@ -437,9 +437,6 @@ public class VariantManager implements VariantModel {
      * Create all variants.
      */
     public void populateVariantDataList() {
-        // Add a compile lint task
-        taskManager.createLintCompileTask();
-
         if (productFlavors.isEmpty()) {
             createVariantDataForProductFlavors(
                     Collections.<com.android.build.gradle.api.GroupableProductFlavor>emptyList());

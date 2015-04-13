@@ -173,7 +173,7 @@ class JarMergingTask extends DefaultAndroidTask {
 
         @Override
         String getName() {
-            return "packageAll${scope.variantConfiguration.fullName.capitalize()}ClassesForMultiDex"
+            return scope.getTaskName("packageAll", "ClassesForMultiDex")
         }
 
         @Override
