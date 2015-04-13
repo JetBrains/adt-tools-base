@@ -135,9 +135,6 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
                 "default-mapping",
                 "Metadata for published APKs")
 
-        project.tasks.getByName("assemble").description =
-                "Assembles all variants of all applications and secondary packages."
-
         project.apply plugin: NdkComponentModelPlugin
 
         // Remove this when our models no longer depends on Project.
@@ -443,6 +440,13 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
                 signingReportTask.setGroup("Android")
             }
         }
+
+        @Mutate
+        void modifyAssembleTaskDescription(@Path("tasks.assemble") Task assembleTask) {
+            assembleTask.description =
+                    "Assembles all variants of all applications and secondary packages."
+        }
+
     }
 
     /**
