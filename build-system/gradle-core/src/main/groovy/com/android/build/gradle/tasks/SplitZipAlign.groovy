@@ -80,11 +80,6 @@ class SplitZipAlign extends SplitRelatedTask {
     }
 
     @NonNull
-    List<File> getInputFiles() {
-        return getDensityOrLanguageInputFiles() + getAbiInputFiles();
-    }
-
-    @NonNull
     public synchronized  ImmutableList<ApkOutputFile> getOutputSplitFiles() {
 
         ImmutableList.Builder<ApkOutputFile> outputFiles = ImmutableList.builder();
