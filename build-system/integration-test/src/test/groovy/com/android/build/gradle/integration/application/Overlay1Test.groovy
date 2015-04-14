@@ -50,7 +50,7 @@ class Overlay1Test {
     void "check image color"() {
         int GREEN = ImageHelper.GREEN
         File drawableOutput = project.
-                file("build/" + AndroidProject.FD_INTERMEDIATES + "/res/debug/drawable")
+                file("build/" + AndroidProject.FD_INTERMEDIATES + "/res/merged/debug/drawable")
         ImageHelper.checkImageColor(drawableOutput, "no_overlay.png", GREEN)
         ImageHelper.checkImageColor(drawableOutput, "type_overlay.png", GREEN)
     }
