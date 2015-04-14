@@ -38,6 +38,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.zip.ZipFile;
 
 /**
  * Truth support for apk files.
@@ -76,6 +77,19 @@ public class ApkSubject extends Subject<ApkSubject, File> {
     public void doesNotContainClass(String className) throws IOException, ProcessException {
         if (checkForClass(className)) {
             failWithRawMessage("'%s' unexpectedly contains '%s'", getDisplaySubject(), className);
+        }
+    }
+
+    @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
+    public void containsResource(String name) throws IOException, ProcessException {
+        if (!checkForResource(name)) {
+            failWithRawMessage("'%s' does not contain resource '%s'", getDisplaySubject(), name);
+        }
+    }
+
+    public void doesNotContainResource(String name) throws IOException, ProcessException {
+        if (checkForResource(name)) {
+            failWithRawMessage("'%s' unexpectedly contains resource '%s'", getDisplaySubject(), name);
         }
     }
 
@@ -154,6 +168,18 @@ public class ApkSubject extends Subject<ApkSubject, File> {
             }
         }
         return false;
+    }
+
+    private boolean checkForResource(String name) throws IOException {
+        ZipFile zipFile = null;
+        try {
+            zipFile = new ZipFile(getSubject());
+            return zipFile.getEntry("res/" + name) != null;
+        } finally {
+            if (zipFile != null) {
+                zipFile.close();
+            }
+        }
     }
 
     @NonNull

@@ -143,7 +143,7 @@ class LibraryTaskManager extends TaskManager {
         }
 
         SpanRecorders.record(ExecutionType.LIB_TASK_MANAGER_CREATE_BACKPORT_RESOURCES_TASK) {
-            createBackportResourcesTask(variantData)
+            createPreprocessResourcesTask(variantData)
         }
 
         SpanRecorders.record(ExecutionType.LIB_TASK_MANAGER_CREATE_PROCESS_RES_TASK) {
