@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.tools.lint.checks;
+package com.android.tools.lint.checks.infrastructure;
 
 import static com.android.SdkConstants.ANDROID_URI;
 import static com.android.SdkConstants.ATTR_ID;
@@ -40,6 +40,7 @@ import com.android.tools.lint.LintCliFlags;
 import com.android.tools.lint.Reporter;
 import com.android.tools.lint.TextReporter;
 import com.android.tools.lint.Warning;
+import com.android.tools.lint.checks.BuiltinIssueRegistry;
 import com.android.tools.lint.client.api.Configuration;
 import com.android.tools.lint.client.api.DefaultConfiguration;
 import com.android.tools.lint.client.api.IssueRegistry;
@@ -103,7 +104,7 @@ import java.util.Set;
  */
 @Beta
 @SuppressWarnings("javadoc")
-public abstract class AbstractCheckTest extends SdkTestCase {
+public abstract class LintDetectorTest extends SdkTestCase {
     @Override
     protected void setUp() throws Exception {
         super.setUp();
@@ -141,7 +142,7 @@ public abstract class AbstractCheckTest extends SdkTestCase {
         @NonNull
         @Override
         public List<Issue> getIssues() {
-            return AbstractCheckTest.this.getIssues();
+            return LintDetectorTest.this.getIssues();
         }
     }
 
@@ -343,28 +344,7 @@ public abstract class AbstractCheckTest extends SdkTestCase {
     @Override
     protected InputStream getTestResource(String relativePath, boolean expectExists) {
         String path = "data" + File.separator + relativePath; //$NON-NLS-1$
-        InputStream stream =
-            AbstractCheckTest.class.getResourceAsStream(path);
-        if (stream == null) {
-            File root = getRootDir();
-            assertNotNull(root);
-            String pkg = AbstractCheckTest.class.getName();
-            pkg = pkg.substring(0, pkg.lastIndexOf('.'));
-            File f = new File(root,
-                    "tools/base/lint/cli/src/test/java/".replace('/', File.separatorChar)
-                        + pkg.replace('.', File.separatorChar)
-                        + File.separatorChar + path);
-            if (f.exists()) {
-                try {
-                    return new BufferedInputStream(new FileInputStream(f));
-                } catch (FileNotFoundException e) {
-                    stream = null;
-                    if (expectExists) {
-                        fail("Could not find file " + relativePath);
-                    }
-                }
-            }
-        }
+        InputStream stream = LintDetectorTest.class.getResourceAsStream(path);
         if (!expectExists && stream == null) {
             return null;
         }
@@ -411,7 +391,7 @@ public abstract class AbstractCheckTest extends SdkTestCase {
 
         @Override
         public String getSuperClass(@NonNull Project project, @NonNull String name) {
-            String superClass = AbstractCheckTest.this.getSuperClass(project, name);
+            String superClass = LintDetectorTest.this.getSuperClass(project, name);
             if (superClass != null) {
                 return superClass;
             }
@@ -565,7 +545,7 @@ public abstract class AbstractCheckTest extends SdkTestCase {
 
         @Override
         public Configuration getConfiguration(@NonNull Project project) {
-            return AbstractCheckTest.this.getConfiguration(this, project);
+            return LintDetectorTest.this.getConfiguration(this, project);
         }
 
         @Override
@@ -830,7 +810,7 @@ public abstract class AbstractCheckTest extends SdkTestCase {
      * Returns the Android source tree root dir.
      * @return the root dir or null if it couldn't be computed.
      */
-    private File getRootDir() {
+    protected File getRootDir() {
         CodeSource source = getClass().getProtectionDomain().getCodeSource();
         if (source != null) {
             URL location = source.getLocation();
@@ -890,7 +870,7 @@ public abstract class AbstractCheckTest extends SdkTestCase {
 
         @Override
         public boolean isEnabled(@NonNull Issue issue) {
-            return AbstractCheckTest.this.isEnabled(issue);
+            return LintDetectorTest.this.isEnabled(issue);
         }
 
         @Override

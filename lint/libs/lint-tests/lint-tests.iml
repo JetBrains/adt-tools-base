@@ -14,10 +14,9 @@
     <orderEntry type="module" module-name="lint-checks-base" exported="" />
     <orderEntry type="module" module-name="lint-cli" exported="" />
     <orderEntry type="module" module-name="testutils" exported="" />
-    <orderEntry type="library" exported="" name="JUnit3" level="project" />
     <orderEntry type="module" module-name="lint-api-base" exported="" />
     <orderEntry type="module" module-name="sdk-common-base" exported="" />
-    <orderEntry type="library" name="JUnit4" level="project" />
+    <orderEntry type="library" exported="" name="JUnit4" level="project" />
     <orderEntry type="module" module-name="layoutlib-api-base" exported="" />
     <orderEntry type="module" module-name="sdklib-base" exported="" />
     <orderEntry type="library" exported="" name="intellij-annotations" level="project" />
