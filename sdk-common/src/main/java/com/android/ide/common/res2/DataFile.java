@@ -42,15 +42,6 @@ public abstract class DataFile<I extends DataItem> {
     protected File mFile;
     protected final Map<String, I> mItems = Maps.newHashMap();
 
-    /**
-     * Creates a data file with a list of data items.
-     *
-     * The source file is set on the items with {@link DataItem#setSource(DataFile)}
-     *
-     * The type of the DataFile will by {@link FileType#MULTI}.
-     *
-     * @param file the File
-     */
     DataFile(@NonNull File file, FileType fileType) {
         mType = fileType;
         mFile = file;
