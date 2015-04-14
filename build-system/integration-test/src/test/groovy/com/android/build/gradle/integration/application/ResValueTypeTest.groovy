@@ -92,7 +92,7 @@ android {
     @Test
     void "check <string> tag is used in generated.xml" () {
         project.execute("clean", "generateDebugResValue")
-        File outputFile = project.file("build/generated/res/generated/debug/values/generated.xml")
+        File outputFile = project.file("build/generated/res/resValues/debug/values/generated.xml")
         assertTrue("Missing file: " + outputFile, outputFile.isFile())
         assertEquals(
 """<?xml version="1.0" encoding="utf-8"?>
