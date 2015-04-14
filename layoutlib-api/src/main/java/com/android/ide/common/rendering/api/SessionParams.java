@@ -63,7 +63,7 @@ public class SessionParams extends RenderParams {
      * @param projectKey An Object identifying the project. This is used for the cache mechanism.
      * @param hardwareConfig the {@link HardwareConfig}.
      * @param renderResources a {@link RenderResources} object providing access to the resources.
-     * @param projectCallback The {@link IProjectCallback} object to get information from
+     * @param layoutlibCallback The {@link LayoutlibCallback} object to get information from
      * the project.
      * @param minSdkVersion the minSdkVersion of the project
      * @param targetSdkVersion the targetSdkVersion of the project
@@ -75,11 +75,11 @@ public class SessionParams extends RenderParams {
             Object projectKey,
             HardwareConfig hardwareConfig,
             RenderResources renderResources,
-            IProjectCallback projectCallback,
+            LayoutlibCallback layoutlibCallback,
             int minSdkVersion, int targetSdkVersion,
             LayoutLog log) {
         this(layoutDescription, renderingMode, projectKey, hardwareConfig,
-                renderResources, projectCallback, minSdkVersion, targetSdkVersion, log, 0);
+                renderResources, layoutlibCallback, minSdkVersion, targetSdkVersion, log, 0);
     }
 
     /**
@@ -90,7 +90,7 @@ public class SessionParams extends RenderParams {
      * @param projectKey An Object identifying the project. This is used for the cache mechanism.
      * @param hardwareConfig the {@link HardwareConfig}.
      * @param renderResources a {@link RenderResources} object providing access to the resources.
-     * @param projectCallback The {@link IProjectCallback} object to get information from
+     * @param projectCallback The {@link LayoutlibCallback} object to get information from
      * the project.
      * @param minSdkVersion the minSdkVersion of the project
      * @param targetSdkVersion the targetSdkVersion of the project
@@ -103,7 +103,7 @@ public class SessionParams extends RenderParams {
             Object projectKey,
             HardwareConfig hardwareConfig,
             RenderResources renderResources,
-            IProjectCallback projectCallback,
+            LayoutlibCallback projectCallback,
             int minSdkVersion, int targetSdkVersion,
             LayoutLog log, int simulatedPlatformVersion) {
         super(projectKey, hardwareConfig, renderResources, projectCallback,
