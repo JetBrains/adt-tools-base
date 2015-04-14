@@ -52,7 +52,7 @@ class Overlay3Test {
         int RED = ImageHelper.RED
 
         File drawableOutput = project.file(
-                "build/" + AndroidProject.FD_INTERMEDIATES + "/res/freebeta/debug/drawable")
+                "build/" + AndroidProject.FD_INTERMEDIATES + "/res/merged/freebeta/debug/drawable")
 
         ImageHelper.checkImageColor(drawableOutput, "no_overlay.png", GREEN)
         ImageHelper.checkImageColor(drawableOutput, "debug_overlay.png", GREEN)
@@ -63,7 +63,7 @@ class Overlay3Test {
         ImageHelper.checkImageColor(drawableOutput, "free_normal_overlay.png", RED)
 
         drawableOutput = project.file(
-                "build/" + AndroidProject.FD_INTERMEDIATES + "/res/freenormal/debug/drawable")
+                "build/" + AndroidProject.FD_INTERMEDIATES + "/res/merged/freenormal/debug/drawable")
 
         ImageHelper.checkImageColor(drawableOutput, "no_overlay.png", GREEN)
         ImageHelper.checkImageColor(drawableOutput, "debug_overlay.png", GREEN)
@@ -74,7 +74,7 @@ class Overlay3Test {
         ImageHelper.checkImageColor(drawableOutput, "free_normal_overlay.png", GREEN)
 
         drawableOutput = project.file(
-                "build/" + AndroidProject.FD_INTERMEDIATES + "/res/paidbeta/debug/drawable")
+                "build/" + AndroidProject.FD_INTERMEDIATES + "/res/merged/paidbeta/debug/drawable")
 
         ImageHelper.checkImageColor(drawableOutput, "no_overlay.png", GREEN)
         ImageHelper.checkImageColor(drawableOutput, "debug_overlay.png", GREEN)
