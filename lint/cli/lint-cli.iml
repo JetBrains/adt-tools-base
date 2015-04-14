@@ -14,7 +14,6 @@
     <orderEntry type="module" module-name="testutils" exported="" scope="TEST" />
     <orderEntry type="library" scope="TEST" name="JUnit4" level="project" />
     <orderEntry type="module" module-name="builder-model" exported="" />
-    <orderEntry type="library" name="easymock-tools" level="project" />
     <orderEntry type="library" name="ecj" level="project" />
     <orderEntry type="library" scope="TEST" name="groovy" level="project" />
     <orderEntry type="module" module-name="sdk-common-base" />
@@ -22,5 +21,6 @@
     <orderEntry type="module" module-name="lint-api-base" />
     <orderEntry type="library" scope="TEST" name="intellij-annotations" level="project" />
     <orderEntry type="module" module-name="lint-tests" scope="TEST" />
+    <orderEntry type="library" scope="TEST" name="mockito" level="project" />
   </component>
 </module>
