@@ -190,4 +190,4 @@
 
 @errors
 
-WARNING:Missing 'package' declaration in manifest at ManifestMerger2Test4_lib4_not_package.xml:4:1
+WARNING:Missing 'package' declaration in manifest at ManifestMerger2Test4_lib4_not_package.xml:4:1-21:12

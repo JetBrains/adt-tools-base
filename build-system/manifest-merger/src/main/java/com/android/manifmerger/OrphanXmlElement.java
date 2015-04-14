@@ -21,7 +21,8 @@ import static com.android.manifmerger.ManifestModel.NodeTypes;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.utils.PositionXmlParser;
+import com.android.ide.common.blame.SourceFile;
+import com.android.ide.common.blame.SourcePosition;
 import com.android.utils.XmlUtils;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
@@ -107,14 +108,14 @@ public class OrphanXmlElement extends XmlNode {
 
     @NonNull
     @Override
-    public PositionXmlParser.Position getPosition() {
-        return PositionImpl.UNKNOWN;
+    public SourcePosition getPosition() {
+        return SourcePosition.UNKNOWN;
     }
 
     @Override
     @NonNull
-    public XmlLoader.SourceLocation getSourceLocation() {
-        return XmlLoader.UNKNOWN;
+    public SourceFile getSourceFile() {
+        return SourceFile.UNKNOWN;
     }
 }
 

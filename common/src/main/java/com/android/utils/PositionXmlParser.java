@@ -18,9 +18,9 @@ package com.android.utils;
 
 import static com.android.SdkConstants.UTF_8;
 
-import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.ide.common.blame.SourcePosition;
 
 import org.w3c.dom.Attr;
 import org.w3c.dom.Comment;
@@ -40,7 +40,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -313,8 +312,8 @@ public class PositionXmlParser {
      * @return the position, or null if the node type is not supported for
      *         position info
      */
-    @Nullable
-    public Position getPosition(@NonNull Node node) {
+    @NonNull
+    public SourcePosition getPosition(@NonNull Node node) {
         return getPosition(node, -1, -1);
     }
 
@@ -332,8 +331,15 @@ public class PositionXmlParser {
      * @return the position, or null if the node type is not supported for
      *         position info
      */
+
+    @NonNull
+    public SourcePosition getPosition(@NonNull Node node, int start, int end) {
+        Position p = getPositionHelper(node, start, end);
+        return p == null ? SourcePosition.UNKNOWN : p.toSourcePosition();
+    }
+
     @Nullable
-    public Position getPosition(@NonNull Node node, int start, int end) {
+    private Position getPositionHelper(@NonNull Node node, int start, int end) {
         // Look up the position information stored while parsing for the given node.
         // Note however that we only store position information for elements (because
         // there is no SAX callback for individual attributes).
@@ -384,10 +390,10 @@ public class PositionXmlParser {
                         }
                     }
 
-                    Position attributePosition = createPosition(line, column, index);
+                    Position attributePosition = new Position(line, column, index);
                     // Also set end range for retrieval in getLocation
-                    attributePosition.setEnd(createPosition(line, column + matcher.end(1) - index,
-                            matcher.end(1)));
+                    attributePosition.setEnd(
+                            new Position(line, column + matcher.end(1) - index, matcher.end(1)));
                     return attributePosition;
                 } else {
                     // No regexp match either: just fall back to element position
@@ -465,15 +471,13 @@ public class PositionXmlParser {
                             column = newColumn;
                         }
 
-                        Position attributePosition = createPosition(line, column,
-                                offset + textIndex);
+                        Position attributePosition = new Position(line, column, offset + textIndex);
                         // Also set end range for retrieval in getLocation
                         if (end != -1) {
-                            attributePosition.setEnd(createPosition(line, column,
-                                    offset + end));
+                            attributePosition.setEnd(new Position(line, column, offset + end));
                         } else {
-                            attributePosition.setEnd(createPosition(line, column,
-                                    offset + textLength));
+                            attributePosition.setEnd(
+                                    new Position(line, column, offset + textLength));
                         }
                         return attributePosition;
                     } else if (c == '"') {
@@ -640,7 +644,7 @@ public class PositionXmlParser {
                         }
                     }
 
-                    return createPosition(line, column, offset);
+                    return new Position(line, column, offset);
                 }
             }
             // we did not find it, approximate.
@@ -685,7 +689,7 @@ public class PositionXmlParser {
             }
             mCurrentColumn = column;
 
-            return createPosition(mCurrentLine, mCurrentColumn, mCurrentOffset);
+            return new Position(mCurrentLine, mCurrentColumn, mCurrentOffset);
         }
 
         @Override
@@ -703,50 +707,7 @@ public class PositionXmlParser {
         }
     }
 
-    /**
-     * Creates a position while constructing the DOM document. This method
-     * allows a subclass to create a custom implementation of the position
-     * class.
-     *
-     * @param line the line number for the position
-     * @param column the column number for the position
-     * @param offset the character offset
-     * @return a new position
-     */
-    @NonNull
-    protected Position createPosition(int line, int column, int offset) {
-        return new DefaultPosition(line, column, offset);
-    }
-
-    public interface Position {
-        /**
-         * Linked position: for a begin position this will point to the
-         * corresponding end position. For an end position this will be null.
-         *
-         * @return the end position, or null
-         */
-        @Nullable
-        public Position getEnd();
-
-        /**
-         * Linked position: for a begin position this will point to the
-         * corresponding end position. For an end position this will be null.
-         *
-         * @param end the end position
-         */
-        public void setEnd(@NonNull Position end);
-
-        /** @return the line number, 0-based */
-        public int getLine();
-
-        /** @return the offset number, 0-based */
-        public int getOffset();
-
-        /** @return the column number, 0-based, and -1 if the column number if not known */
-        public int getColumn();
-    }
-
-    protected static class DefaultPosition implements Position {
+    private static class Position {
         /** The line number (0-based where the first line is line 0) */
         private final int mLine;
         private final int mColumn;
@@ -760,35 +721,42 @@ public class PositionXmlParser {
          * @param column the 0-based column number, or -1 if unknown
          * @param offset the offset, or -1 if unknown
          */
-        public DefaultPosition(int line, int column, int offset) {
+        public Position(int line, int column, int offset) {
             this.mLine = line;
             this.mColumn = column;
             this.mOffset = offset;
         }
 
-        @Override
         public int getLine() {
             return mLine;
         }
 
-        @Override
         public int getOffset() {
             return mOffset;
         }
 
-        @Override
         public int getColumn() {
             return mColumn;
         }
 
-        @Override
         public Position getEnd() {
             return mEnd;
         }
 
-        @Override
         public void setEnd(@NonNull Position end) {
             mEnd = end;
+        }
+
+        public SourcePosition toSourcePosition() {
+           int endLine = mLine, endColumn = mColumn, endOffset = mOffset;
+
+            if (mEnd != null) {
+                endLine = mEnd.getLine();
+                endColumn = mEnd.getColumn();
+                endOffset = mEnd.getOffset();
+            }
+
+            return new SourcePosition(mLine, mColumn, mOffset, endLine, endColumn, endOffset);
         }
     }
 }

@@ -26,6 +26,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.android.annotations.NonNull;
+import com.android.ide.common.blame.SourceFile;
+import com.android.ide.common.blame.SourceFilePosition;
+import com.android.ide.common.blame.SourcePosition;
 import com.android.sdklib.mock.MockLog;
 import com.google.common.base.Optional;
 
@@ -82,7 +85,7 @@ public class PlaceholderHandlerTest extends TestCase {
                 + "</manifest>";
 
         XmlDocument refDocument = TestUtils.xmlDocumentFromString(
-                new TestUtils.TestSourceLocation(getClass(), "testPlaceholders#xml"), xml);
+                TestUtils.sourceFile(getClass(), "testPlaceholders#xml"), xml);
 
         PlaceholderHandler handler = new PlaceholderHandler();
         handler.visit(
@@ -117,7 +120,7 @@ public class PlaceholderHandlerTest extends TestCase {
             if (!xmlAttribute.getName().toString().contains("name")) {
                 verify(mActionRecorder).recordAttributeAction(
                         xmlAttribute,
-                        PositionImpl.UNKNOWN,
+                        SourcePosition.UNKNOWN,
                         Actions.ActionType.INJECTED,
                         null);
             }
@@ -137,7 +140,7 @@ public class PlaceholderHandlerTest extends TestCase {
                 + "</manifest>";
 
         XmlDocument refDocument = TestUtils.xmlDocumentFromString(
-                new TestUtils.TestSourceLocation(getClass(), "testPlaceholders#xml"), xml);
+                TestUtils.sourceFile(getClass(), "testPlaceholders#xml"), xml);
 
         PlaceholderHandler handler = new PlaceholderHandler();
         handler.visit(
@@ -180,7 +183,7 @@ public class PlaceholderHandlerTest extends TestCase {
             if (!xmlAttribute.getName().toString().contains("name")) {
                 verify(mActionRecorder, times(2)).recordAttributeAction(
                         xmlAttribute,
-                        PositionImpl.UNKNOWN,
+                        SourcePosition.UNKNOWN,
                         Actions.ActionType.INJECTED,
                         null);
 
@@ -198,13 +201,13 @@ public class PlaceholderHandlerTest extends TestCase {
                 + "</manifest>";
 
         XmlDocument refDocument = TestUtils.xmlDocumentFromString(
-                new TestUtils.TestSourceLocation(getClass(), "testPlaceholders#xml"), xml);
+                TestUtils.sourceFile(getClass(), "testPlaceholders#xml"), xml);
 
         PlaceholderHandler handler = new PlaceholderHandler();
         handler.visit(ManifestMerger2.MergeType.APPLICATION, refDocument, nullResolver, mBuilder);
         // verify the error was recorded.
         verify(mBuilder).addMessage(
-                any(XmlLoader.SourceLocation.class), anyInt(), anyInt(),
+                any(SourceFilePosition.class),
                 eq(MergingReport.Record.Severity.ERROR), anyString());
     }
 
@@ -218,13 +221,13 @@ public class PlaceholderHandlerTest extends TestCase {
                 + "</manifest>";
 
         XmlDocument refDocument = TestUtils.xmlDocumentFromString(
-                new TestUtils.TestSourceLocation(getClass(), "testPlaceholders#xml"), xml);
+                TestUtils.sourceFile(getClass(), "testPlaceholders#xml"), xml);
 
         PlaceholderHandler handler = new PlaceholderHandler();
         handler.visit(ManifestMerger2.MergeType.LIBRARY, refDocument, nullResolver, mBuilder);
         // verify the error was recorded.
         verify(mBuilder).addMessage(
-                any(XmlLoader.SourceLocation.class), anyInt(), anyInt(),
+                any(SourceFilePosition.class),
                 eq(MergingReport.Record.Severity.INFO), anyString());
     }
 }

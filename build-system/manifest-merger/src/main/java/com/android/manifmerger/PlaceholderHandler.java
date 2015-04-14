@@ -18,6 +18,7 @@ package com.android.manifmerger;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.ide.common.blame.SourcePosition;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -116,7 +117,7 @@ public class PlaceholderHandler {
                         // record the attribute set
                         mergingReportBuilder.getActionRecorder().recordAttributeAction(
                                 xmlAttribute,
-                                PositionImpl.UNKNOWN,
+                                SourcePosition.UNKNOWN,
                                 Actions.ActionType.INJECTED,
                                 null /* attributeOperationType */);
 

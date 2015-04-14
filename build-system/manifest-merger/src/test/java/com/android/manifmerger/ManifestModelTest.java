@@ -52,8 +52,7 @@ public class ManifestModelTest extends TestCase {
                 + "</manifest>";
 
         XmlDocument xmlDocument = TestUtils.xmlDocumentFromString(
-                new TestUtils.TestSourceLocation(
-                        getClass(), "testNoUseFeaturesDeclaration"), input);
+                TestUtils.sourceFile(getClass(), "testNoUseFeaturesDeclaration"), input);
 
         XmlElement xmlElement = xmlDocument.getRootNode().getMergeableElements().get(0);
         assertEquals("uses-feature",xmlElement.getXml().getNodeName());
@@ -73,8 +72,7 @@ public class ManifestModelTest extends TestCase {
                 + "</manifest>";
 
         XmlDocument xmlDocument = TestUtils.xmlDocumentFromString(
-                new TestUtils.TestSourceLocation(
-                        getClass(), "testNoUseFeaturesDeclaration"), input);
+                TestUtils.sourceFile(getClass(), "testNoUseFeaturesDeclaration"), input);
 
         XmlElement xmlElement = xmlDocument.getRootNode().getMergeableElements().get(0);
         assertEquals("uses-feature",xmlElement.getXml().getNodeName());
@@ -174,8 +172,7 @@ public class ManifestModelTest extends TestCase {
                 + "</manifest>";
 
         XmlDocument xmlDocument = TestUtils.xmlDocumentFromString(
-                new TestUtils.TestSourceLocation(
-                        getClass(), "testNoUseFeaturesDeclaration"), input);
+                TestUtils.sourceFile(getClass(), "testNoUseFeaturesDeclaration"), input);
 
         XmlElement xmlElement = xmlDocument.getRootNode().getMergeableElements().get(0);
         assertEquals("uses-feature",xmlElement.getXml().getNodeName());
@@ -201,8 +198,7 @@ public class ManifestModelTest extends TestCase {
                 + "</manifest>";
 
         XmlDocument xmlDocument = TestUtils.xmlDocumentFromString(
-                new TestUtils.TestSourceLocation(
-                        getClass(), "testNoUseFeaturesDeclaration"), input);
+                TestUtils.sourceFile(getClass(), "testNoUseFeaturesDeclaration"), input);
 
         XmlElement xmlElement = xmlDocument.getRootNode().getMergeableElements().get(0);
         ImmutableList<XmlElement> screenDefinitions = xmlElement.getMergeableElements();

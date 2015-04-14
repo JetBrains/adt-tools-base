@@ -19,9 +19,10 @@ package com.android.manifmerger;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.ide.common.blame.SourceFile;
+import com.android.ide.common.blame.SourcePosition;
 import com.android.ide.common.res2.MergingException;
 import com.android.utils.ILogger;
-import com.android.utils.PositionXmlParser;
 import com.android.utils.SdkUtils;
 import com.android.utils.XmlUtils;
 import com.google.common.base.Joiner;
@@ -119,8 +120,8 @@ public class XmlElement extends OrphanXmlElement {
                             String errorMessage =
                                     String.format("[%1$s:%2$s] Invalid instruction '%3$s', "
                                                     + "valid instructions are : %4$s",
-                                            mDocument.getSourceLocation().print(false),
-                                            mDocument.getNodePosition(xml).getLine(),
+                                            mDocument.getSourceFile().print(false),
+                                            mDocument.getNodePosition(xml).getStartLine(),
                                             instruction,
                                             Joiner.on(',').join(AttributeOperationType.values())
                                     );
@@ -220,15 +221,16 @@ public class XmlElement extends OrphanXmlElement {
 
     @NonNull
     @Override
-    public PositionXmlParser.Position getPosition() {
+    public SourcePosition getPosition() {
         return mDocument.getNodePosition(this);
     }
 
     @NonNull
     @Override
-    public XmlLoader.SourceLocation getSourceLocation() {
-        return getDocument().getSourceLocation();
+    public SourceFile getSourceFile() {
+        return mDocument.getSourceFile();
     }
+
 
     /**
      * Merge this xml element with a lower priority node.
@@ -245,9 +247,7 @@ public class XmlElement extends OrphanXmlElement {
 
 
         if (mSelector != null && !mSelector.isResolvable(getDocument().getSelectors())) {
-            mergingReport.addMessage(getSourceLocation(),
-                    getLine(),
-                    getColumn(),
+            mergingReport.addMessage(getSourceFilePosition(),
                     MergingReport.Record.Severity.ERROR,
                     String.format("'tools:selector=\"%1$s\"' is not a valid library identifier, "
                             + "valid identifiers are : %2$s",
@@ -871,9 +871,7 @@ public class XmlElement extends OrphanXmlElement {
     void addMessage(MergingReport.Builder mergingReport,
             MergingReport.Record.Severity severity,
             String message) {
-        mergingReport.addMessage(getDocument().getSourceLocation(),
-                getLine(),
-                getColumn(),
+        mergingReport.addMessage(getSourceFilePosition(),
                 severity,
                 message);
     }

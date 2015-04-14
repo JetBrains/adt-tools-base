@@ -16,16 +16,17 @@
 
 package com.android.manifmerger;
 
-import static com.android.manifmerger.Actions.ActionLocation;
 import static com.android.manifmerger.Actions.DecisionTreeRecord;
 import static com.android.manifmerger.XmlNode.NodeKey;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.android.SdkConstants;
+import com.android.ide.common.blame.SourceFile;
+import com.android.ide.common.blame.SourceFilePosition;
+import com.android.ide.common.blame.SourcePosition;
 import com.android.sdklib.mock.MockLog;
 import com.android.utils.ILogger;
-import com.android.utils.PositionXmlParser;
 import com.android.utils.StdLogger;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
@@ -73,8 +74,7 @@ public class ActionsTest extends TestCase {
         DecisionTreeRecord activityDecisionTree = new DecisionTreeRecord();
         activityDecisionTree.addNodeRecord(new Actions.NodeRecord(
                 Actions.ActionType.ADDED,
-                new ActionLocation(mock(XmlLoader.SourceLocation.class), mock(
-                        PositionXmlParser.Position.class)),
+                new SourceFilePosition(new SourceFile("file"), new SourcePosition(1, 2, -1)),
                 new NodeKey("nodeKey"),
                 null, /* reason */
                 NodeOperationType.MERGE));
@@ -98,8 +98,7 @@ public class ActionsTest extends TestCase {
         DecisionTreeRecord activityDecisionTree = new DecisionTreeRecord();
         activityDecisionTree.addNodeRecord(new Actions.NodeRecord(
                 Actions.ActionType.ADDED,
-                new ActionLocation(mock(XmlLoader.SourceLocation.class), mock(
-                        PositionXmlParser.Position.class)),
+                new SourceFilePosition(new SourceFile("file"), new SourcePosition(1, 2, -1)),
                 new NodeKey("nodeKey"),
                 null, /* reason */
                 NodeOperationType.MERGE));
@@ -107,8 +106,8 @@ public class ActionsTest extends TestCase {
         activityDecisionTree.mAttributeRecords.put(attributeName,
                 ImmutableList.of(
                     new Actions.AttributeRecord(Actions.ActionType.INJECTED,
-                            new ActionLocation(mock(XmlLoader.SourceLocation.class),
-                                    mock(PositionXmlParser.Position.class)),
+                            new SourceFilePosition(
+                                    new SourceFile("file"), new SourcePosition(1, 2, -1)),
                             new NodeKey("nodeKey"),
                             null, /* reason */
                             AttributeOperationType.STRICT)));
@@ -183,11 +182,11 @@ public class ActionsTest extends TestCase {
                 + "</manifest>";                                                            // 13
 
         XmlDocument refDocument = TestUtils.xmlDocumentFromString(
-                new TestUtils.TestSourceLocation(getClass(), "higherPriority"), higherPriority);
+                TestUtils.sourceFile(getClass(), "higherPriority"), higherPriority);
         XmlDocument firstLibrary = TestUtils.xmlLibraryFromString(
-                new TestUtils.TestSourceLocation(getClass(), "lowerPriorityOne"), lowerPriorityOne);
+                TestUtils.sourceFile(getClass(), "lowerPriorityOne"), lowerPriorityOne);
         XmlDocument secondLibrary = TestUtils.xmlLibraryFromString(
-                new TestUtils.TestSourceLocation(getClass(), "lowerPriorityTwo"), lowerPriorityTwo);
+                TestUtils.sourceFile(getClass(), "lowerPriorityTwo"), lowerPriorityTwo);
 
         MergingReport.Builder mergingReportBuilder = new MergingReport.Builder(
                 new StdLogger(StdLogger.Level.VERBOSE));
@@ -207,25 +206,25 @@ public class ActionsTest extends TestCase {
                 + "3    package=\"com.example.lib3\" >\n"
                 + "4\n"
                 + "5    <permission\n"
-                + "5-->ActionsTest#higherPriority:14:5\n"
+                + "5-->ActionsTest#higherPriority:14:5-18:18\n"
                 + "6        android:name=\"permissionThree\"\n"
-                + "6-->ActionsTest#higherPriority:15:14\n"
+                + "6-->ActionsTest#higherPriority:15:14-44\n"
                 + "7        android:protectionLevel=\"signature\" >\n"
-                + "7-->ActionsTest#higherPriority:16:14\n"
+                + "7-->ActionsTest#higherPriority:16:14-49\n"
                 + "8    </permission>\n"
                 + "9    <permission\n"
-                + "9-->ActionsTest#lowerPriorityOne:9:5\n"
+                + "9-->ActionsTest#lowerPriorityOne:9:5-11:18\n"
                 + "10        android:name=\"permissionTwo\"\n"
-                + "10-->ActionsTest#lowerPriorityOne:9:17\n"
+                + "10-->ActionsTest#lowerPriorityOne:9:17-45\n"
                 + "11        android:protectionLevel=\"signature\" >\n"
-                + "11-->ActionsTest#lowerPriorityOne:10:14\n"
+                + "11-->ActionsTest#lowerPriorityOne:10:14-49\n"
                 + "12    </permission>\n"
                 + "13    <permission\n"
-                + "13-->ActionsTest#lowerPriorityTwo:9:5\n"
+                + "13-->ActionsTest#lowerPriorityTwo:9:5-11:18\n"
                 + "14        android:name=\"permissionFour\"\n"
-                + "14-->ActionsTest#lowerPriorityTwo:9:17\n"
+                + "14-->ActionsTest#lowerPriorityTwo:9:17-46\n"
                 + "15        android:protectionLevel=\"normal\" >\n"
-                + "15-->ActionsTest#lowerPriorityTwo:10:14\n"
+                + "15-->ActionsTest#lowerPriorityTwo:10:14-46\n"
                 + "16    </permission>\n"
                 + "17\n"
                 + "18</manifest>\n";
@@ -274,12 +273,7 @@ public class ActionsTest extends TestCase {
             Actions.NodeRecord nodeRecord,
             List<Actions.NodeRecord> nodeRecordList) {
         for (Actions.NodeRecord record : nodeRecordList) {
-            if (record.getActionLocation().getPosition().getLine()
-                    == nodeRecord.getActionLocation().getPosition().getLine()
-                    && record.getActionLocation().getPosition().getColumn()
-                    == nodeRecord.getActionLocation().getPosition().getColumn()
-                    && record.getActionLocation().getPosition().getOffset()
-                    == nodeRecord.getActionLocation().getPosition().getOffset()
+            if (record.getActionLocation().equals(nodeRecord.getActionLocation())
                     && record.getActionType() == nodeRecord.getActionType()) {
                 return true;
             }
@@ -294,12 +288,7 @@ public class ActionsTest extends TestCase {
         for (Actions.AttributeRecord record : attributeRecordList) {
             if (record.getOperationType() == attributeRecord.getOperationType()
                     && record.getActionType() == attributeRecord.getActionType()
-                    && record.getActionLocation().getPosition().getLine()
-                    == attributeRecord.getActionLocation().getPosition().getLine()
-                    && record.getActionLocation().getPosition().getColumn()
-                    == attributeRecord.getActionLocation().getPosition().getColumn()
-                    && record.getActionLocation().getPosition().getOffset()
-                    == attributeRecord.getActionLocation().getPosition().getOffset()) {
+                    && record.getActionLocation().equals(attributeRecord.getActionLocation())) {
                 return true;
             }
         }

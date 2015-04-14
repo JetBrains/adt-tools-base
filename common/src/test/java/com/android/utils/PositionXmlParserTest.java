@@ -16,7 +16,7 @@
 
 package com.android.utils;
 
-import com.android.utils.PositionXmlParser.Position;
+import com.android.ide.common.blame.SourcePosition;
 
 import junit.framework.TestCase;
 
@@ -79,35 +79,31 @@ public class PositionXmlParserTest extends TestCase {
         // Check attribute positions
         Attr attr = linearLayout.getAttributeNodeNS(ANDROID_URI, "layout_width");
         assertNotNull(attr);
-        Position start = parser.getPosition(attr);
-        Position end = start.getEnd();
-        assertEquals(2, start.getLine());
-        assertEquals(4, start.getColumn());
-        assertEquals(xml.indexOf("android:layout_width"), start.getOffset());
-        assertEquals(2, end.getLine());
+        SourcePosition position = parser.getPosition(attr);
+        assertEquals(2, position.getStartLine());
+        assertEquals(4, position.getStartColumn());
+        assertEquals(xml.indexOf("android:layout_width"), position.getStartOffset());
+        assertEquals(2, position.getEndLine());
         String target = "android:layout_width=\"match_parent\"";
-        assertEquals(xml.indexOf(target) + target.length(), end.getOffset());
+        assertEquals(xml.indexOf(target) + target.length(), position.getEndOffset());
 
         // Check element positions
         Element button = (Element) buttons.item(0);
-        start = parser.getPosition(button);
-        end = start.getEnd();
-        assertNull(end.getEnd());
-        assertEquals(6, start.getLine());
-        assertEquals(4, start.getColumn());
-        assertEquals(xml.indexOf("<Button"), start.getOffset());
-        assertEquals(xml.indexOf("/>") + 2, end.getOffset());
-        assertEquals(10, end.getLine());
-        int button1End = end.getOffset();
+        position = parser.getPosition(button);
+        assertEquals(6, position.getStartLine());
+        assertEquals(4, position.getStartColumn());
+        assertEquals(xml.indexOf("<Button"), position.getStartOffset());
+        assertEquals(xml.indexOf("/>") + 2, position.getEndOffset());
+        assertEquals(10, position.getEndLine());
+        int button1End = position.getEndOffset();
 
         Element button2 = (Element) buttons.item(1);
-        start = parser.getPosition(button2);
-        end = start.getEnd();
-        assertEquals(12, start.getLine());
-        assertEquals(4, start.getColumn());
-        assertEquals(xml.indexOf("<Button", button1End), start.getOffset());
-        assertEquals(xml.indexOf("/>", start.getOffset()) + 2, end.getOffset());
-        assertEquals(16, end.getLine());
+        position = parser.getPosition(button2);
+        assertEquals(12, position.getStartLine());
+        assertEquals(4, position.getStartColumn());
+        assertEquals(xml.indexOf("<Button", button1End), position.getStartOffset());
+        assertEquals(xml.indexOf("/>", position.getStartOffset()) + 2, position.getEndOffset());
+        assertEquals(16, position.getEndLine());
 
         file.delete();
     }
@@ -152,16 +148,16 @@ public class PositionXmlParserTest extends TestCase {
         assertNotNull(text);
 
         // Check attribute positions
-        Position start = parser.getPosition(text);
-        assertEquals(11, start.getLine());
-        assertEquals(10, start.getColumn());
-        assertEquals(xml.indexOf("some text"), start.getOffset());
+        SourcePosition start = parser.getPosition(text);
+        assertEquals(11, start.getStartLine());
+        assertEquals(10, start.getStartColumn());
+        assertEquals(xml.indexOf("some text"), start.getStartOffset());
 
         // Check attribute positions with text node offsets
         start = parser.getPosition(text, 13, 15);
-        assertEquals(11, start.getLine());
-        assertEquals(12, start.getColumn());
-        assertEquals(xml.indexOf("me"), start.getOffset());
+        assertEquals(11, start.getStartLine());
+        assertEquals(12, start.getStartColumn());
+        assertEquals(xml.indexOf("me"), start.getStartOffset());
     }
 
     public void testLineEndings() throws Exception {
@@ -251,14 +247,14 @@ public class PositionXmlParserTest extends TestCase {
         assertNotNull(document);
         Element root = document.getDocumentElement();
         assertEquals(file.getPath(), value, root.getAttribute("attr"));
-        assertEquals(4, parser.getPosition(root).getLine());
+        assertEquals(4, parser.getPosition(root).getStartLine());
 
         Attr attribute = root.getAttributeNode("attr");
         assertNotNull(attribute);
-        Position position = parser.getPosition(attribute);
+        SourcePosition position = parser.getPosition(attribute);
         assertNotNull(position);
-        assertEquals(4, position.getLine());
-        assertEquals(startAttrOffset, position.getOffset());
+        assertEquals(4, position.getStartLine());
+        assertEquals(startAttrOffset, position.getStartOffset());
 
         file.delete();
     }
@@ -354,18 +350,18 @@ public class PositionXmlParserTest extends TestCase {
         // first child is a comment.
         org.w3c.dom.Node commentNode = linearLayout.getFirstChild().getNextSibling();
         assertEquals(Node.COMMENT_NODE, commentNode.getNodeType());
-        Position position = parser.getPosition(commentNode);
+        SourcePosition position = parser.getPosition(commentNode);
         assertNotNull(position);
-        assertEquals(6, position.getLine());
-        assertEquals(4, position.getColumn());
-        assertEquals(xml.indexOf("<!--"), position.getOffset());
+        assertEquals(6, position.getStartLine());
+        assertEquals(4, position.getStartColumn());
+        assertEquals(xml.indexOf("<!--"), position.getStartOffset());
 
         // ensure that the next siblings' position start at the right location.
         Element button = (Element) document.getElementsByTagName("Button").item(0);
-        Position buttonPosition = parser.getPosition(button);
+        SourcePosition buttonPosition = parser.getPosition(button);
         assertNotNull(buttonPosition);
-        assertEquals(7, buttonPosition.getLine());
-        assertEquals(4, buttonPosition.getColumn());
+        assertEquals(7, buttonPosition.getStartLine());
+        assertEquals(4, buttonPosition.getStartColumn());
     }
 
     public void testMultipleLineComment() throws Exception {
@@ -403,18 +399,18 @@ public class PositionXmlParserTest extends TestCase {
         // first child is a comment.
         Node commentNode = linearLayout.getFirstChild().getNextSibling();
         assertEquals(Node.COMMENT_NODE, commentNode.getNodeType());
-        Position position = parser.getPosition(commentNode);
+        SourcePosition position = parser.getPosition(commentNode);
         assertNotNull(position);
-        assertEquals(6, position.getLine());
-        assertEquals(4, position.getColumn());
+        assertEquals(6, position.getStartLine());
+        assertEquals(4, position.getStartColumn());
 
 
         // ensure that the next siblings' position start at the right location.
         Element button = (Element) document.getElementsByTagName("Button").item(0);
-        Position buttonPosition = parser.getPosition(button);
+        SourcePosition buttonPosition = parser.getPosition(button);
         assertNotNull(buttonPosition);
-        assertEquals(9, buttonPosition.getLine());
-        assertEquals(4, buttonPosition.getColumn());
+        assertEquals(9, buttonPosition.getStartLine());
+        assertEquals(4, buttonPosition.getStartColumn());
     }
 
     public void testAttributeWithoutNamespace() throws Exception {
@@ -463,33 +459,26 @@ public class PositionXmlParserTest extends TestCase {
         for (int i = 0, n = buttons.getLength(); i < n; i++) {
             Element button = (Element)buttons.item(i);
             Attr attr;
-            Position start;
-            Position end;
+            SourcePosition position;
 
             attr = button.getAttributeNode("orientation");
-            start = parser.getPosition(attr);
-            assertNotNull(start);
-            end = start.getEnd();
-            assertNotNull(end);
+            position = parser.getPosition(attr);
+            assertNotNull(position);
             assertEquals(" orientation=\"true\"",
-                    xml.substring(start.getOffset() - 1, end.getOffset()));
+                    xml.substring(position.getStartOffset() - 1, position.getEndOffset()));
 
             attr = button.getAttributeNodeNS("http://schemas.android.com/apk/res/android",
                     "orientation");
-            start = parser.getPosition(attr);
-            assertNotNull(start);
-            end = start.getEnd();
-            assertNotNull(end);
+            position = parser.getPosition(attr);
+            assertNotNull(position);
             assertEquals("android:orientation=\"vertical\"",
-                    xml.substring(start.getOffset(), end.getOffset()));
+                    xml.substring(position.getStartOffset(), position.getEndOffset()));
 
             attr = button.getAttributeNodeNS("http://foo.bar", "orientation");
-            start = parser.getPosition(attr);
-            assertNotNull(start);
-            end = start.getEnd();
-            assertNotNull(end);
+            position = parser.getPosition(attr);
+            assertNotNull(position);
             assertEquals("other:orientation=\"vertical\"",
-                    xml.substring(start.getOffset(), end.getOffset()));
+                    xml.substring(position.getStartOffset(), position.getEndOffset()));
         }
     }
 
@@ -526,11 +515,10 @@ public class PositionXmlParserTest extends TestCase {
         assertEquals("SubTag", subTag.getLocalName());
         Attr attr = subTag.getAttributeNodeNS(NAMESPACE_URL, "text");
         assertNotNull(attr);
-        Position start = parser.getPosition(attr);
-        assertNotNull(start);
-        Position end = start.getEnd();
-        assertNotNull(end);
-        assertEquals("ns:text=\"Button\"", XML.substring(start.getOffset(), end.getOffset()));
+        SourcePosition position = parser.getPosition(attr);
+        assertNotNull(position);
+        assertEquals("ns:text=\"Button\"",
+                XML.substring(position.getStartOffset(), position.getEndOffset()));
         assertEquals("Button", subTag.getAttributeNS(NAMESPACE_URL, "text"));
         assertEquals(NAMESPACE_URL, subTag.getNamespaceURI());
     }

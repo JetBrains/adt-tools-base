@@ -19,7 +19,9 @@ package com.android.manifmerger;
 import static com.android.manifmerger.ManifestMerger2.SystemProperty;
 import static com.android.manifmerger.PlaceholderHandler.KeyBasedValueResolver;
 
+import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.ide.common.blame.SourceFile;
 import com.android.utils.PositionXmlParser;
 import com.google.common.base.Optional;
 import com.google.common.base.Strings;
@@ -41,45 +43,6 @@ import javax.xml.parsers.ParserConfigurationException;
  * Responsible for loading XML files.
  */
 public final class XmlLoader {
-
-    /**
-     * Abstraction for the notion of source location. This is useful for logging and records
-     * collection when a origin of an xml declaration is needed.
-     */
-    public static class SourceLocation {
-
-        @Nullable
-        private final File mSource;
-
-        @Nullable
-        private final String mDescription;
-
-        /**
-         * Build a source location, one of the parameter must not be null.
-         */
-        public SourceLocation(@Nullable String description, @Nullable File source) {
-            if (description == null && source == null) {
-                throw new IllegalArgumentException("description and source cannot be both null");
-            }
-            mDescription = description == null ? source.getName() : description;
-            mSource = source;
-        }
-
-        /**
-         * print this source location in a human and machine readable format.
-         *
-         * @param shortFormat whether or not to use the short format. For instance, for a file, a
-         *                    short format is the file name while the long format is its path.
-         * @return the human and machine readable source location.
-         */
-        String print(boolean shortFormat) {
-            return shortFormat
-                    ? mDescription
-                    : mSource == null
-                            ? mDescription :
-                            mSource.getAbsolutePath();
-        }
-    }
 
     private XmlLoader() {}
 
@@ -103,8 +66,7 @@ public final class XmlLoader {
         PositionXmlParser positionXmlParser = new PositionXmlParser();
         Document domDocument = positionXmlParser.parse(inputStream);
         return domDocument != null
-                ? new XmlDocument(positionXmlParser,
-                new SourceLocation(displayName, xmlFile),
+                ? new XmlDocument(positionXmlParser, new SourceFile(xmlFile, displayName),
                 selectors,
                 systemPropertyResolver,
                 domDocument.getDocumentElement(),
@@ -117,7 +79,7 @@ public final class XmlLoader {
     /**
      * Loads a xml document from its {@link String} representation without doing xml validation and
      * return a {@link com.android.manifmerger.XmlDocument}
-     * @param sourceLocation the source location to use for logging and record collection.
+     * @param sourceFile the source location to use for logging and record collection.
      * @param xml the persisted xml.
      * @return the initialized {@link com.android.manifmerger.XmlDocument}
      * @throws IOException this should never be thrown.
@@ -127,7 +89,7 @@ public final class XmlLoader {
     public static XmlDocument load(
             KeyResolver<String> selectors,
             KeyBasedValueResolver<SystemProperty> systemPropertyResolver,
-            SourceLocation sourceLocation,
+            SourceFile sourceFile,
             String xml,
             XmlDocument.Type type,
             Optional<String> mainManifestPackageName)
@@ -137,7 +99,7 @@ public final class XmlLoader {
         return domDocument != null
                 ? new XmlDocument(
                         positionXmlParser,
-                        sourceLocation,
+                        sourceFile,
                         selectors,
                         systemPropertyResolver,
                         domDocument.getDocumentElement(),
@@ -145,7 +107,4 @@ public final class XmlLoader {
                         mainManifestPackageName)
                 : null;
     }
-
-    public static final SourceLocation UNKNOWN =
-            new SourceLocation("Unknown location", null /* source */);
 }

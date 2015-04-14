@@ -181,8 +181,8 @@ public class PostValidator {
                                     "%1$s was tagged at %2$s:%3$d to replace another declaration "
                                             + "but no other declaration present",
                                     xmlElement.getId(),
-                                    xmlElement.getDocument().getSourceLocation().print(true),
-                                    xmlElement.getPosition().getLine()
+                                    xmlElement.getDocument().getSourceFile().print(true),
+                                    xmlElement.getPosition().getStartLine() + 1
                             ));
                 }
                 break;
@@ -195,8 +195,8 @@ public class PostValidator {
                                     "%1$s was tagged at %2$s:%3$d to remove other declarations "
                                             + "but no other declaration present",
                                     xmlElement.getId(),
-                                    xmlElement.getDocument().getSourceLocation().print(true),
-                                    xmlElement.getPosition().getLine()
+                                    xmlElement.getDocument().getSourceFile().print(true),
+                                    xmlElement.getPosition().getStartLine() + 1
                             ));
                 }
                 break;
@@ -231,8 +231,8 @@ public class PostValidator {
                                                 + " declarations but no other declaration present",
                                         xmlElement.getId(),
                                         attributeOperation.getKey(),
-                                        xmlElement.getDocument().getSourceLocation().print(true),
-                                        xmlElement.getPosition().getLine()
+                                        xmlElement.getDocument().getSourceFile().print(true),
+                                        xmlElement.getPosition().getStartLine() + 1
                                 ));
                     }
                     break;
@@ -245,8 +245,8 @@ public class PostValidator {
                                                 + " declarations but no other declaration present",
                                         xmlElement.getId(),
                                         attributeOperation.getKey(),
-                                        xmlElement.getDocument().getSourceLocation().print(true),
-                                        xmlElement.getPosition().getLine()
+                                        xmlElement.getDocument().getSourceFile().print(true),
+                                        xmlElement.getPosition().getStartLine() + 1
                                 ));
                     }
                     break;

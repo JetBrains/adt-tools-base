@@ -35,15 +35,15 @@ public class MergingExceptionTest extends TestCase {
                 new MergingException("My error message").addFile(file).getMessage());
         assertEquals("/some/random/path:50: Error: My error message",
                 new MergingException("My error message").addFilePosition(
-                        new FilePosition(file, new SourcePosition(50, -1, -1)))
+                        new FilePosition(file, new SourcePosition(49, -1, -1)))
                         .getMessage());
         assertEquals("/some/random/path:50:4: Error: My error message",
                 new MergingException("My error message").addFilePosition(
-                        new FilePosition(file, new SourcePosition(50, 4, -1)))
+                        new FilePosition(file, new SourcePosition(49, 3, -1)))
                         .getMessage());
         assertEquals("/some/random/path:50:4: Error: My error message",
                 new MergingException("My error message").addFilePosition(
-                        new FilePosition(file, new SourcePosition(50, 4, -1)))
+                        new FilePosition(file, new SourcePosition(49, 3, -1)))
                         .getLocalizedMessage());
         assertEquals("/some/random/path: Error: My error message",
                 new MergingException("/some/random/path: My error message").addFile(file)
