@@ -668,7 +668,7 @@ abstract class TaskManager {
         MergeResources mergeResourcesTask = basicCreateMergeResourcesTask(
                 variantData,
                 "merge",
-                "$project.buildDir/${FD_INTERMEDIATES}/res/${variantData.variantConfiguration.dirName}",
+                "$project.buildDir/${FD_INTERMEDIATES}/res/merged/${variantData.variantConfiguration.dirName}",
                 true /*includeDependencies*/,
                 process9Patch)
         variantData.mergeResourcesTask = mergeResourcesTask
@@ -833,7 +833,7 @@ abstract class TaskManager {
 
         conventionMapping(generateResValuesTask).map("resOutputDir") {
             project.file(
-                    "$project.buildDir/${FD_GENERATED}/res/generated/${variantData.variantConfiguration.dirName}")
+                    "$project.buildDir/${FD_GENERATED}/res/resValues/${variantData.variantConfiguration.dirName}")
         }
     }
 
@@ -863,7 +863,6 @@ abstract class TaskManager {
 
             variantData.backportResourcesTask.dependsOn variantData.generatePngsFromVectorDrawablesTask
         }
-
     }
 
 
@@ -968,7 +967,7 @@ abstract class TaskManager {
             if (generateResourcePackage) {
                 conventionMapping(processResources).map("packageOutputFile") {
                     project.file(
-                            "$project.buildDir/${FD_INTERMEDIATES}/resources/resources-${outputBaseName}.ap_")
+                            "$project.buildDir/${FD_INTERMEDIATES}/res/resources-${outputBaseName}.ap_")
                 }
             }
 
@@ -3066,7 +3065,7 @@ abstract class TaskManager {
 
         String outputBaseName = variantOutputData.baseName
         conventionMapping(task).map("compressedResources") {
-            project.file("$project.buildDir/${FD_INTERMEDIATES}/resources/" +
+            project.file("$project.buildDir/${FD_INTERMEDIATES}/res/" +
                             "resources-${outputBaseName}-stripped.ap_")
         }
 
