@@ -16,9 +16,8 @@
 
 package com.android.tools.lint.checks;
 
-import static org.easymock.EasyMock.createNiceMock;
-import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.replay;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -38,7 +37,7 @@ import com.android.tools.lint.detector.api.Project;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
-import org.easymock.IExpectationSetters;
+import org.mockito.stubbing.OngoingStubbing;
 
 import java.io.File;
 import java.util.Arrays;
@@ -640,69 +639,58 @@ public class IconDetectorTest extends AbstractCheckTest {
                                 paid { flavorDimension "pricing" }
                             }
                          */
-                        ProductFlavor flavorFree = createNiceMock(ProductFlavor.class);
-                        expect(flavorFree.getName()).andReturn("free").anyTimes();
-                        expect(flavorFree.getResourceConfigurations())
-                                .andReturn(Collections.<String>emptyList()).anyTimes();
-                        replay(flavorFree);
+                        ProductFlavor flavorFree = mock(ProductFlavor.class);
+                        when(flavorFree.getName()).thenReturn("free");
+                        when(flavorFree.getResourceConfigurations())
+                                .thenReturn(Collections.<String>emptyList());
 
-                        ProductFlavor flavorNormal = createNiceMock(ProductFlavor.class);
-                        expect(flavorNormal.getName()).andReturn("normal").anyTimes();
-                        expect(flavorNormal.getResourceConfigurations())
-                                .andReturn(Collections.<String>emptyList()).anyTimes();
-                        replay(flavorNormal);
+                        ProductFlavor flavorNormal = mock(ProductFlavor.class);
+                        when(flavorNormal.getName()).thenReturn("normal");
+                        when(flavorNormal.getResourceConfigurations())
+                                .thenReturn(Collections.<String>emptyList());
 
-                        ProductFlavor flavorPaid = createNiceMock(ProductFlavor.class);
-                        expect(flavorPaid.getName()).andReturn("paid").anyTimes();
-                        expect(flavorPaid.getResourceConfigurations())
-                                .andReturn(Collections.<String>emptyList()).anyTimes();
-                        replay(flavorPaid);
+                        ProductFlavor flavorPaid = mock(ProductFlavor.class);
+                        when(flavorPaid.getName()).thenReturn("paid");
+                        when(flavorPaid.getResourceConfigurations())
+                                .thenReturn(Collections.<String>emptyList());
 
-                        ProductFlavor flavorBeta = createNiceMock(ProductFlavor.class);
-                        expect(flavorBeta.getName()).andReturn("beta").anyTimes();
+                        ProductFlavor flavorBeta = mock(ProductFlavor.class);
+                        when(flavorBeta.getName()).thenReturn("beta");
                         List<String> resConfigs = Arrays.asList("hdpi", "en", "nodpi");
-                        expect(flavorBeta.getResourceConfigurations()).andReturn(resConfigs).anyTimes();
-                        replay(flavorBeta);
+                        when(flavorBeta.getResourceConfigurations()).thenReturn(resConfigs);
 
-                        ProductFlavor defaultFlavor = createNiceMock(ProductFlavor.class);
-                        expect(defaultFlavor.getName()).andReturn("main").anyTimes();
-                        expect(defaultFlavor.getResourceConfigurations()).andReturn(
-                                Collections.singleton("mdpi")).anyTimes();
-                        replay(defaultFlavor);
+                        ProductFlavor defaultFlavor = mock(ProductFlavor.class);
+                        when(defaultFlavor.getName()).thenReturn("main");
+                        when(defaultFlavor.getResourceConfigurations()).thenReturn(
+                                Collections.singleton("mdpi"));
 
                         ProductFlavorContainer containerBeta =
-                                createNiceMock(ProductFlavorContainer.class);
-                        expect(containerBeta.getProductFlavor()).andReturn(flavorBeta).anyTimes();
-                        replay(containerBeta);
+                                mock(ProductFlavorContainer.class);
+                        when(containerBeta.getProductFlavor()).thenReturn(flavorBeta);
 
                         ProductFlavorContainer containerFree =
-                                createNiceMock(ProductFlavorContainer.class);
-                        expect(containerFree.getProductFlavor()).andReturn(flavorFree).anyTimes();
-                        replay(containerFree);
+                                mock(ProductFlavorContainer.class);
+                        when(containerFree.getProductFlavor()).thenReturn(flavorFree);
 
                         ProductFlavorContainer containerPaid =
-                                createNiceMock(ProductFlavorContainer.class);
-                        expect(containerPaid.getProductFlavor()).andReturn(flavorPaid).anyTimes();
-                        replay(containerPaid);
+                                mock(ProductFlavorContainer.class);
+                        when(containerPaid.getProductFlavor()).thenReturn(flavorPaid);
 
                         ProductFlavorContainer containerNormal =
-                                createNiceMock(ProductFlavorContainer.class);
-                        expect(containerNormal.getProductFlavor()).andReturn(flavorNormal).anyTimes();
-                        replay(containerNormal);
+                                mock(ProductFlavorContainer.class);
+                        when(containerNormal.getProductFlavor()).thenReturn(flavorNormal);
 
                         ProductFlavorContainer defaultContainer =
-                                createNiceMock(ProductFlavorContainer.class);
-                        expect(defaultContainer.getProductFlavor()).andReturn(defaultFlavor).anyTimes();
-                        replay(defaultContainer);
+                                mock(ProductFlavorContainer.class);
+                        when(defaultContainer.getProductFlavor()).thenReturn(defaultFlavor);
 
                         List<ProductFlavorContainer> containers = Arrays.asList(
                                 containerPaid, containerFree, containerNormal, containerBeta
                         );
 
-                        AndroidProject project = createNiceMock(AndroidProject.class);
-                        expect(project.getProductFlavors()).andReturn(containers).anyTimes();
-                        expect(project.getDefaultConfig()).andReturn(defaultContainer).anyTimes();
-                        replay(project);
+                        AndroidProject project = mock(AndroidProject.class);
+                        when(project.getProductFlavors()).thenReturn(containers);
+                        when(project.getDefaultConfig()).thenReturn(defaultContainer);
                         return project;
                     }
 
@@ -710,9 +698,8 @@ public class IconDetectorTest extends AbstractCheckTest {
                     @Override
                     public Variant getCurrentVariant() {
                         List<String> productFlavorNames = Arrays.asList("free", "beta");
-                        Variant mock = createNiceMock(Variant.class);
-                        expect(mock.getProductFlavors()).andReturn(productFlavorNames).anyTimes();
-                        replay(mock);
+                        Variant mock = mock(Variant.class);
+                        when(mock.getProductFlavors()).thenReturn(productFlavorNames);
                         return mock;
                     }
                 };
@@ -749,22 +736,19 @@ public class IconDetectorTest extends AbstractCheckTest {
                             }
                          */
 
-                        ProductFlavor defaultFlavor = createNiceMock(ProductFlavor.class);
-                        expect(defaultFlavor.getName()).andReturn("main").anyTimes();
-                        expect(defaultFlavor.getResourceConfigurations()).andReturn(
-                                Collections.<String>emptyList()).anyTimes();
-                        replay(defaultFlavor);
+                        ProductFlavor defaultFlavor = mock(ProductFlavor.class);
+                        when(defaultFlavor.getName()).thenReturn("main");
+                        when(defaultFlavor.getResourceConfigurations()).thenReturn(
+                                Collections.<String>emptyList());
 
                         ProductFlavorContainer defaultContainer =
-                                createNiceMock(ProductFlavorContainer.class);
-                        expect(defaultContainer.getProductFlavor()).andReturn(defaultFlavor).anyTimes();
-                        replay(defaultContainer);
+                                mock(ProductFlavorContainer.class);
+                        when(defaultContainer.getProductFlavor()).thenReturn(defaultFlavor);
 
-                        AndroidProject project = createNiceMock(AndroidProject.class);
-                        expect(project.getProductFlavors()).andReturn(
-                                Collections.<ProductFlavorContainer>emptyList()).anyTimes();
-                        expect(project.getDefaultConfig()).andReturn(defaultContainer).anyTimes();
-                        replay(project);
+                        AndroidProject project = mock(AndroidProject.class);
+                        when(project.getProductFlavors()).thenReturn(
+                                Collections.<ProductFlavorContainer>emptyList());
+                        when(project.getDefaultConfig()).thenReturn(defaultContainer);
                         return project;
                     }
 
@@ -777,51 +761,47 @@ public class IconDetectorTest extends AbstractCheckTest {
                         outputs.add(createAndroidArtifactOutput("DENSITY", "mdpi"));
                         outputs.add(createAndroidArtifactOutput("DENSITY", "hdpi"));
 
-                        AndroidArtifact mainArtifact = createNiceMock(AndroidArtifact.class);
-                        expect(mainArtifact.getOutputs()).andReturn(outputs).anyTimes();
-                        replay(mainArtifact);
+                        AndroidArtifact mainArtifact = mock(AndroidArtifact.class);
+                        when(mainArtifact.getOutputs()).thenReturn(outputs);
 
                         List<String> productFlavorNames = Collections.emptyList();
-                        Variant mock = createNiceMock(Variant.class);
-                        expect(mock.getProductFlavors()).andReturn(productFlavorNames).anyTimes();
-                        expect(mock.getMainArtifact()).andReturn(mainArtifact).anyTimes();
-                        replay(mock);
+                        Variant mock = mock(Variant.class);
+                        when(mock.getProductFlavors()).thenReturn(productFlavorNames);
+                        when(mock.getMainArtifact()).thenReturn(mainArtifact);
                         return mock;
                     }
 
                     private AndroidArtifactOutput createAndroidArtifactOutput(
                             @NonNull String filterType,
                             @NonNull String identifier) {
-                        AndroidArtifactOutput artifactOutput = createNiceMock(
+                        AndroidArtifactOutput artifactOutput = mock(
                                 AndroidArtifactOutput.class);
 
-                        OutputFile outputFile = createNiceMock(OutputFile.class);
+                        OutputFile outputFile = mock(OutputFile.class);
                         if (filterType.isEmpty()) {
-                            expect(outputFile.getFilterTypes())
-                                    .andReturn(Collections.<String>emptyList()).anyTimes();
-                            expect(outputFile.getFilters())
-                                    .andReturn(Collections.<FilterData>emptyList()).anyTimes();
+                            when(outputFile.getFilterTypes())
+                                    .thenReturn(Collections.<String>emptyList());
+                            when(outputFile.getFilters())
+                                    .thenReturn(Collections.<FilterData>emptyList());
                         } else {
-                            expect(outputFile.getFilterTypes())
-                                    .andReturn(Collections.singletonList(filterType)).anyTimes();
+                            when(outputFile.getFilterTypes())
+                                    .thenReturn(Collections.singletonList(filterType));
                             List<FilterData> filters = Lists.newArrayList();
-                            FilterData filter = createNiceMock(FilterData.class);
-                            expect(filter.getFilterType()).andReturn(filterType).anyTimes();
-                            expect(filter.getIdentifier()).andReturn(identifier).anyTimes();
-                            replay(filter);
+                            FilterData filter = mock(FilterData.class);
+                            when(filter.getFilterType()).thenReturn(filterType);
+                            when(filter.getIdentifier()).thenReturn(identifier);
                             filters.add(filter);
-                            expect(outputFile.getFilters()).andReturn(filters).anyTimes();
+                            when(outputFile.getFilters()).thenReturn(filters);
                         }
-                        replay(outputFile);
 
                         // Work around wildcard capture
-                        //expect(artifactOutput.getOutputs()).andReturn(outputFiles).anyTimes();
-                        IExpectationSetters setter = expect(artifactOutput.getOutputs());
+                        //when(artifactOutput.getOutputs()).thenReturn(outputFiles);
                         List<OutputFile> outputFiles = Collections.singletonList(outputFile);
+                        OngoingStubbing<? extends Collection<? extends OutputFile>> when = when(
+                                artifactOutput.getOutputs());
                         //noinspection unchecked
-                        setter.andReturn(outputFiles);
-                        setter.anyTimes();
-                        replay(artifactOutput);
+                        ((OngoingStubbing<Collection<? extends OutputFile>>) when)
+                                .thenReturn(outputFiles);
 
                         return artifactOutput;
                     }

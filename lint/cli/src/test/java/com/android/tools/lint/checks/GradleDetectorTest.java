@@ -32,19 +32,15 @@ import static com.android.tools.lint.checks.GradleDetector.getNamedDependency;
 import static com.android.tools.lint.checks.GradleDetector.getNewValue;
 import static com.android.tools.lint.checks.GradleDetector.getOldValue;
 import static com.android.tools.lint.detector.api.TextFormat.TEXT;
-import static org.easymock.EasyMock.createNiceMock;
-import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.replay;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.model.AndroidArtifact;
 import com.android.builder.model.AndroidLibrary;
-import com.android.builder.model.AndroidProject;
 import com.android.builder.model.Dependencies;
 import com.android.builder.model.MavenCoordinates;
-import com.android.builder.model.ProductFlavor;
-import com.android.builder.model.ProductFlavorContainer;
 import com.android.builder.model.Variant;
 import com.android.tools.lint.client.api.LintClient;
 import com.android.tools.lint.detector.api.Context;
@@ -80,7 +76,6 @@ import org.codehaus.groovy.ast.stmt.Statement;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -662,28 +657,23 @@ public class GradleDetectorTest extends AbstractCheckTest {
 
                         com.google.android.gms:play-services-wearable:5.0.77"
                          */
-                        MavenCoordinates coordinates = createNiceMock(MavenCoordinates.class);
-                        expect(coordinates.getGroupId()).andReturn("com.google.android.gms").anyTimes();
-                        expect(coordinates.getArtifactId()).andReturn("play-services-wearable").anyTimes();
-                        expect(coordinates.getVersion()).andReturn("5.0.77").anyTimes();
-                        replay(coordinates);
+                        MavenCoordinates coordinates = mock(MavenCoordinates.class);
+                        when(coordinates.getGroupId()).thenReturn("com.google.android.gms");
+                        when(coordinates.getArtifactId()).thenReturn("play-services-wearable");
+                        when(coordinates.getVersion()).thenReturn("5.0.77");
 
-                        AndroidLibrary library = createNiceMock(AndroidLibrary.class);
-                        expect(library.getResolvedCoordinates()).andReturn(coordinates).anyTimes();
-                        replay(library);
+                        AndroidLibrary library = mock(AndroidLibrary.class);
+                        when(library.getResolvedCoordinates()).thenReturn(coordinates);
                         List<AndroidLibrary> libraries = Collections.singletonList(library);
 
-                        Dependencies dependencies = createNiceMock(Dependencies.class);
-                        expect(dependencies.getLibraries()).andReturn(libraries).anyTimes();
-                        replay(dependencies);
+                        Dependencies dependencies = mock(Dependencies.class);
+                        when(dependencies.getLibraries()).thenReturn(libraries);
 
-                        AndroidArtifact artifact = createNiceMock(AndroidArtifact.class);
-                        expect(artifact.getDependencies()).andReturn(dependencies).anyTimes();
-                        replay(artifact);
+                        AndroidArtifact artifact = mock(AndroidArtifact.class);
+                        when(artifact.getDependencies()).thenReturn(dependencies);
 
-                        Variant variant = createNiceMock(Variant.class);
-                        expect(variant.getMainArtifact()).andReturn(artifact).anyTimes();
-                        replay(variant);
+                        Variant variant = mock(Variant.class);
+                        when(variant.getMainArtifact()).thenReturn(artifact);
                         return variant;
                     }
                 };

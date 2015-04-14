@@ -18,9 +18,8 @@ package com.android.tools.lint.checks;
 
 import static com.android.SdkConstants.FN_PUBLIC_TXT;
 import static com.android.SdkConstants.FN_RESOURCE_TEXT;
-import static org.easymock.EasyMock.createNiceMock;
-import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.replay;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -36,7 +35,7 @@ import com.android.tools.lint.detector.api.Project;
 import com.google.common.base.Charsets;
 import com.google.common.io.Files;
 
-import org.easymock.IExpectationSetters;
+import org.mockito.stubbing.OngoingStubbing;
 
 import java.io.File;
 import java.io.IOException;
@@ -162,9 +161,8 @@ public class PrivateResourceDetectorTest extends AbstractCheckTest {
                             AndroidArtifact artifact = createMockArtifact(
                                     Collections.singletonList(library));
 
-                            Variant variant = createNiceMock(Variant.class);
-                            expect(variant.getMainArtifact()).andReturn(artifact).anyTimes();
-                            replay(variant);
+                            Variant variant = mock(Variant.class);
+                            when(variant.getMainArtifact()).thenReturn(artifact);
                             return variant;
                         } catch (Exception e) {
                             fail(e.toString());
@@ -177,22 +175,19 @@ public class PrivateResourceDetectorTest extends AbstractCheckTest {
     }
 
     public static AndroidProject createMockProject(String modelVersion, int apiVersion) {
-        AndroidProject project = createNiceMock(AndroidProject.class);
-        expect(project.getApiVersion()).andReturn(apiVersion).anyTimes();
-        expect(project.getModelVersion()).andReturn(modelVersion).anyTimes();
-        replay(project);
+        AndroidProject project = mock(AndroidProject.class);
+        when(project.getApiVersion()).thenReturn(apiVersion);
+        when(project.getModelVersion()).thenReturn(modelVersion);
 
         return project;
     }
 
     public static AndroidArtifact createMockArtifact(List<AndroidLibrary> libraries) {
-        Dependencies dependencies = createNiceMock(Dependencies.class);
-        expect(dependencies.getLibraries()).andReturn(libraries).anyTimes();
-        replay(dependencies);
+        Dependencies dependencies = mock(Dependencies.class);
+        when(dependencies.getLibraries()).thenReturn(libraries);
 
-        AndroidArtifact artifact = createNiceMock(AndroidArtifact.class);
-        expect(artifact.getDependencies()).andReturn(dependencies).anyTimes();
-        replay(artifact);
+        AndroidArtifact artifact = mock(AndroidArtifact.class);
+        when(artifact.getDependencies()).thenReturn(dependencies);
 
         return artifact;
     }
@@ -207,17 +202,14 @@ public class PrivateResourceDetectorTest extends AbstractCheckTest {
         if (publicResources != null) {
             Files.write(publicResources, publicTxtFile, Charsets.UTF_8);
         }
-        AndroidLibrary library = createNiceMock(AndroidLibrary.class);
-        expect(library.getPublicResources()).andReturn(publicTxtFile).anyTimes();
+        AndroidLibrary library = mock(AndroidLibrary.class);
+        when(library.getPublicResources()).thenReturn(publicTxtFile);
 
         // Work around wildcard capture
-        //expect(mock.getLibraryDependencies()).andReturn(dependencies).anyTimes();
-        IExpectationSetters setter = expect(library.getLibraryDependencies());
-        //noinspection unchecked
-        setter.andReturn(dependencies);
-        setter.anyTimes();
-
-        replay(library);
+        //when(mock.getLibraryDependencies()).thenReturn(dependencies);
+        List libraryDependencies = library.getLibraryDependencies();
+        OngoingStubbing<List> setter = when(libraryDependencies);
+        setter.thenReturn(dependencies);
         return library;
     }
 }

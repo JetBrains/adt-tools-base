@@ -18,9 +18,8 @@ package com.android.tools.lint.checks;
 
 import static com.android.tools.lint.checks.PropertyFileDetector.suggestEscapes;
 import static com.android.tools.lint.detector.api.TextFormat.TEXT;
-import static org.easymock.EasyMock.createNiceMock;
-import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.replay;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -109,9 +108,8 @@ public class PropertyFileDetectorTest extends AbstractCheckTest {
                     @Nullable
                     @Override
                     public AndroidProject getGradleProjectModel() {
-                        AndroidProject project = createNiceMock(AndroidProject.class);
-                        expect(project.getResourcePrefix()).andReturn("unit_test_prefix_").anyTimes();
-                        replay(project);
+                        AndroidProject project = mock(AndroidProject.class);
+                        when(project.getResourcePrefix()).thenReturn("unit_test_prefix_");
                         return project;
                     }
                 };

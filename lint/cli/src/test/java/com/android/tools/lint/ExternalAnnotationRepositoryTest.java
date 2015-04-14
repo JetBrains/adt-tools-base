@@ -19,9 +19,8 @@ package com.android.tools.lint;
 import static com.android.tools.lint.ExternalAnnotationRepository.FN_ANNOTATIONS_XML;
 import static com.google.common.base.Charsets.UTF_8;
 import static java.io.File.separatorChar;
-import static org.easymock.EasyMock.createMock;
-import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.replay;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -460,10 +459,9 @@ public class ExternalAnnotationRepositoryTest extends SdkTestCase {
     }
 
     private static ResolvedClass createClass(String name) {
-        ResolvedClass mock = createMock(ResolvedClass.class);
-        expect(mock.getName()).andReturn(name).anyTimes();
-        expect(mock.getSignature()).andReturn(name).anyTimes();
-        replay(mock);
+        ResolvedClass mock = mock(ResolvedClass.class);
+        when(mock.getName()).thenReturn(name);
+        when(mock.getSignature()).thenReturn(name);
         return mock;
     }
 
@@ -485,30 +483,30 @@ public class ExternalAnnotationRepositoryTest extends SdkTestCase {
 
     private static ResolvedMethod createMethod(String containingClass, String returnType,
             String name, Iterable<String> parameters, boolean isConstructor) {
-        ResolvedMethod mock = createMock(ResolvedMethod.class);
-        expect(mock.isConstructor()).andReturn(isConstructor).anyTimes();
-        expect(mock.getName()).andReturn(name).anyTimes();
+        ResolvedMethod mock = mock(ResolvedMethod.class);
+        when(mock.isConstructor()).thenReturn(isConstructor);
+        when(mock.getName()).thenReturn(name);
         if (!isConstructor) {
             DefaultTypeDescriptor typeDescriptor = new DefaultTypeDescriptor(returnType);
-            expect(mock.getReturnType()).andReturn(typeDescriptor).anyTimes();
+            when(mock.getReturnType()).thenReturn(typeDescriptor);
         }
-        expect(mock.getContainingClass()).andReturn(createClass(containingClass)).anyTimes();
+        ResolvedClass cls = createClass(containingClass);
+        when(mock.getContainingClass()).thenReturn(cls);
         int index = 0;
         for (String argument : parameters) {
             TypeDescriptor typeDescriptor = new DefaultTypeDescriptor(argument);
-            expect(mock.getArgumentType(index)).andReturn(typeDescriptor).anyTimes();
+            when(mock.getArgumentType(index)).thenReturn(typeDescriptor);
             index++;
         }
-        expect(mock.getArgumentCount()).andReturn(index).anyTimes();
-        replay(mock);
+        when(mock.getArgumentCount()).thenReturn(index);
         return mock;
     }
 
     private static ResolvedField createField(String containingClass, String name) {
-        ResolvedField mock = createMock(ResolvedField.class);
-        expect(mock.getName()).andReturn(name).anyTimes();
-        expect(mock.getContainingClass()).andReturn(createClass(containingClass)).anyTimes();
-        replay(mock);
+        ResolvedField mock = mock(ResolvedField.class);
+        when(mock.getName()).thenReturn(name);
+        ResolvedClass cls = createClass(containingClass);
+        when(mock.getContainingClass()).thenReturn(cls);
         return mock;
     }
 }

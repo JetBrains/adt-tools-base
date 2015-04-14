@@ -17,10 +17,8 @@ version = rootProject.ext.baseVersion
 dependencies {
     compile project(':base:lint')
 
-    compile 'org.easymock:easymock:3.3'
     compile 'junit:junit:4.12'
     compile project(':base:testutils')
-    compile 'org.codehaus.groovy:groovy-all:2.2.1'
 }
 
 sourceSets {
