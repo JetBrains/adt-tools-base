@@ -27,12 +27,23 @@ import java.util.Set;
 /**
  * Base data representing how an APK should be split for a given dimension (density, abi).
  */
-public class SplitOptions {
+public abstract class SplitOptions {
+
+    @NonNull
+    private final Set<String> values;
+
+    @NonNull
+    private final Set<String> allowedValues;
 
     private boolean enable = false;
-    private boolean reset = false;
-    private Set<String> exclude;
-    private Set<String> include;
+
+    protected SplitOptions() {
+        this.values = getDefaultValues();
+        this.allowedValues = getAllowedValues();
+    }
+
+    protected abstract Set<String> getDefaultValues();
+    protected abstract Set<String> getAllowedValues();
 
     /**
      * Whether to split in this dimension.
@@ -46,46 +57,17 @@ public class SplitOptions {
     }
 
     /**
-     * Collection of exclude patterns.
+     * excludes some values
      */
-    public Set<String> getExclude() {
-        return exclude;
-    }
-
-    /**
-     * Collection of include patterns.
-     */
-    public Set<String> getInclude() {
-        return include;
-    }
-
-    /**
-     * Collection of exclude patterns.
-     */
-    public void setExclude(@NonNull List<String> list) {
-        exclude = Sets.newHashSet(list);
-    }
-
     public void exclude(@NonNull String... excludes) {
-        if (exclude == null) {
-            exclude = Sets.newHashSet(excludes);
-            return;
-        }
-
-        exclude.addAll(Arrays.asList(excludes));
+        values.removeAll(Arrays.asList(excludes));
     }
 
-    public void setInclude(@NonNull List<String> list) {
-        include = Sets.newHashSet(list);
-    }
-
+    /**
+     * includes some values
+     */
     public void include(@NonNull String... includes) {
-        if (include == null) {
-            include = Sets.newHashSet(includes);
-            return;
-        }
-
-        include.addAll(Arrays.asList(includes));
+        values.addAll(Arrays.asList(includes));
     }
 
     /**
@@ -95,7 +77,7 @@ public class SplitOptions {
      * to split on, rather than excluding from the default list.
      */
     public void reset() {
-        reset = true;
+        values.clear();
     }
 
     /**
@@ -103,30 +85,19 @@ public class SplitOptions {
      *
      * The list can return null, indicating that the no-filter option must also be used.
      *
-     * @param allFilters the available filters, excluding the no-filter option.
-     *
      * @return the filters to use.
      */
     @NonNull
-    public Set<String> getApplicableFilters(@NonNull Set<String> allFilters) {
+    public Set<String> getApplicableFilters() {
         if (!enable) {
             return Collections.singleton(null);
         }
 
-        Set<String> results = reset ?
-                Sets.<String>newHashSetWithExpectedSize(allFilters.size() + 1) :
-                Sets.newHashSet(allFilters);
+        Set<String> results = Sets.newHashSetWithExpectedSize(values.size());
 
-        if (exclude != null) {
-            results.removeAll(exclude);
-        }
-
-        if (include != null) {
-            // we need to make sure we only include stuff that's from the full list.
-            for (String inc : include) {
-                if (allFilters.contains(inc)) {
-                    results.add(inc);
-                }
+        for (String value : values) {
+            if (allowedValues.contains(value)) {
+                results.add(value);
             }
         }
 
