@@ -26,12 +26,47 @@ import java.io.IOException;
 public class ResourceSetTest extends BaseTestCase {
 
     public void testBaseResourceSetByCount() throws Exception {
-        ResourceSet resourceSet = getBaseResourceSet();
+        ResourceSet resourceSet = getBaseResourceSet(false /*normalize*/);
         assertEquals(29, resourceSet.size());
     }
 
     public void testBaseResourceSetByName() throws Exception {
-        ResourceSet resourceSet = getBaseResourceSet();
+        ResourceSet resourceSet = getBaseResourceSet(false /*normalize*/);
+
+        verifyResourceExists(resourceSet,
+                "drawable/icon",
+                "drawable/patch",
+                "raw/foo",
+                "layout/main",
+                "layout/layout_ref",
+                "layout/alias_replaced_by_file",
+                "layout/file_replaced_by_alias",
+                "drawable/color_drawable",
+                "drawable/drawable_ref",
+                "color/color",
+                "string/basic_string",
+                "string/xliff_string",
+                "string/styled_string",
+                "style/style",
+                "array/string_array",
+                "attr/dimen_attr",
+                "attr/string_attr",
+                "attr/enum_attr",
+                "attr/flag_attr",
+                "attr/blah",
+                "attr/blah2",
+                "attr/flagAttr",
+                "declare-styleable/declare_styleable",
+                "dimen/dimen",
+                "dimen-sw600dp/offset",
+                "id/item_id",
+                "integer/integer",
+                "plurals/plurals"
+        );
+    }
+
+    public void testBaseResourceSetWithNormalizationByName() throws Exception {
+        ResourceSet resourceSet = getBaseResourceSet(true /*normalize*/);
 
         verifyResourceExists(resourceSet,
                 "drawable/icon",
@@ -177,10 +212,11 @@ public class ResourceSetTest extends BaseTestCase {
         assertFalse(logger.getErrorMsgs().isEmpty());
     }
 
-    static ResourceSet getBaseResourceSet() throws MergingException, IOException {
+    static ResourceSet getBaseResourceSet(boolean normalize) throws MergingException, IOException {
         File root = TestUtils.getRoot("resources", "baseSet");
 
         ResourceSet resourceSet = new ResourceSet("main");
+        resourceSet.setNormalizeResources(normalize);
         resourceSet.addSource(root);
         RecordingLogger logger =  new RecordingLogger();
         resourceSet.loadFromFiles(logger);
