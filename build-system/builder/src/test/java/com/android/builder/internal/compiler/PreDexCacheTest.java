@@ -25,6 +25,7 @@ import static com.android.SdkConstants.FN_RENDERSCRIPT;
 import static com.android.SdkConstants.FN_ZIPALIGN;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.builder.core.DexOptions;
 import com.android.ide.common.process.JavaProcessExecutor;
 import com.android.ide.common.process.JavaProcessInfo;
@@ -197,13 +198,15 @@ public class PreDexCacheTest extends TestCase {
         }
 
         @Override
+        @Nullable
         public String getJavaMaxHeapSize() {
             return null;
         }
 
         @Override
-        public int getThreadCount() {
-            return 1;
+        @Nullable
+        public Integer getThreadCount() {
+            return null;
         }
     }
 
