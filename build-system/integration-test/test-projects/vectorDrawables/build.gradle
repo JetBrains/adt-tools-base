@@ -14,4 +14,7 @@ android {
     }
 
     preprocessResources = true
+
+    // Don't modify files when merging.
+    aaptOptions.cruncherEnabled = false
 }

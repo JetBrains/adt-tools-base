@@ -16,29 +16,23 @@
 
 package com.android.build.gradle.tasks;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
-import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.tasks.IncrementalTask;
 import com.android.builder.png.VectorDrawableRenderer;
 import com.android.ide.common.res2.FileStatus;
+import com.android.ide.common.res2.MergingException;
+import com.android.ide.common.res2.PreprocessDataSet;
+import com.android.ide.common.res2.PreprocessResourcesMerger;
+import com.android.ide.common.res2.PreprocessResourcesWriter;
 import com.android.resources.Density;
-import com.google.common.base.Charsets;
 import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
 import com.google.common.collect.SetMultimap;
 import com.google.common.io.Files;
-import com.google.common.reflect.TypeToken;
-import com.google.gson.Gson;
 
-import org.gradle.api.logging.Logger;
-import org.gradle.api.logging.Logging;
 import org.gradle.api.tasks.InputDirectory;
 import org.gradle.api.tasks.OutputDirectory;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.Map;
 
@@ -47,13 +41,13 @@ import java.util.Map;
  */
 public class PreprocessResourcesTask extends IncrementalTask {
     public static final int MIN_SDK = VectorDrawableRenderer.MIN_SDK_WITH_VECTOR_SUPPORT;
-    private static final Type TYPE_TOKEN = new TypeToken<Map<String, Collection<String>>>() {}.getType();
 
     private final VectorDrawableRenderer renderer = new VectorDrawableRenderer();
     private File outputResDirectory;
     private File generatedResDirectory;
     private File mergedResDirectory;
     private Collection<Density> densitiesToGenerate;
+    private String variantName;
 
     @Override
     protected boolean isIncremental() {
@@ -62,118 +56,134 @@ public class PreprocessResourcesTask extends IncrementalTask {
 
     @Override
     protected void doIncrementalTaskAction(Map<File, FileStatus> changedInputs) {
+        // TODO: Check for changes in the densities.
+        PreprocessResourcesMerger merger = new PreprocessResourcesMerger();
         try {
-            File incrementalMarker = new File(getIncrementalFolder(), "build_was_incremental");
-            Files.touch(incrementalMarker);
+            Files.touch(new File(getIncrementalFolder(), "build_was_incremental"));
 
-            // TODO: store and check the set of densities.
-
-            File stateFile = getStateFile();
-            if (!stateFile.exists()) {
+            if (!merger.loadFromBlob(getIncrementalFolder(), true /*incrementalState*/)) {
                 doFullTaskAction();
+                return;
             }
 
-            SetMultimap<String, String> state = readState(stateFile);
+            SetMultimap<File, File> generatedFiles = HashMultimap.create();
+            for (PreprocessDataSet dataSet : merger.getDataSets()) {
+                dataSet.setGeneratedResDirectory(getGeneratedResDirectory());
+                dataSet.setMergedResDirectory(getMergedResDirectory());
+                dataSet.setGeneratedFiles(generatedFiles);
+            }
 
             for (Map.Entry<File, FileStatus> entry : changedInputs.entrySet()) {
                 switch (entry.getValue()) {
+                    case CHANGED: // Fall through.
                     case NEW:
-                    case CHANGED:
-                        getLogger().debug("Incremental change to {}.",
-                                entry.getKey().getAbsolutePath());
-                        handleFile(entry.getKey(), state);
+                        handleFile(
+                                entry.getKey(),
+                                entry.getValue(),
+                                merger.getMergedDataSet(),
+                                merger.getGeneratedDataSet(),
+                                generatedFiles);
                         break;
                     case REMOVED:
-                        for (String path : state.get(entry.getKey().getAbsolutePath())) {
-                            File file = new File(path);
-                            getLogger().debug("Deleting {}.", file.getAbsolutePath());
-                            file.delete();
-                        }
-                        state.removeAll(entry.getKey());
-                        break;
-                    default:
-                        throw new RuntimeException("Unsupported operation " + entry.getValue());
+                        merger.getMergedDataSet().updateWith(
+                                getMergedResDirectory(),
+                                entry.getKey(),
+                                FileStatus.REMOVED,
+                                getILogger());
+                        merger.getGeneratedDataSet().updateWith(
+                                getMergedResDirectory(),
+                                entry.getKey(),
+                                FileStatus.REMOVED,
+                                getILogger());
+                       break;
                 }
             }
 
-            saveState(state);
+            finalizeMerge(merger);
+        } catch (MergingException e) {
+            merger.cleanBlob(getIncrementalFolder());
+            throw new RuntimeException(e);
         } catch (IOException e) {
+            merger.cleanBlob(getIncrementalFolder());
             throw new RuntimeException(e);
         }
     }
 
     @Override
     protected void doFullTaskAction() {
-        SetMultimap<String, String> state = HashMultimap.create();
+        // Maps input files to all files generated from them. This is used by the generated data set
+        // when it needs to create all data items that come from a given data file.
+        SetMultimap<File, File> generatedFiles = HashMultimap.create();
         emptyFolder(getOutputResDirectory());
         emptyFolder(getGeneratedResDirectory());
         emptyFolder(getIncrementalFolder());
 
+        PreprocessDataSet mergedSet = new PreprocessDataSet(
+                getVariantName(),
+                PreprocessDataSet.ResourcesDirectory.MERGED);
+        mergedSet.addSource(getMergedResDirectory());
+        mergedSet.setMergedResDirectory(getMergedResDirectory());
+
+        PreprocessDataSet generatedSet = new PreprocessDataSet(
+                getVariantName(),
+                PreprocessDataSet.ResourcesDirectory.GENERATED);
+        generatedSet.addSource(getMergedResDirectory());
+        generatedSet.setGeneratedResDirectory(getGeneratedResDirectory());
+
+        // This map will be updated as we generate more files.
+        generatedSet.setGeneratedFiles(generatedFiles);
+
         try {
             for (File resourceFile : getProject().fileTree(getMergedResDirectory())) {
-                handleFile(resourceFile, state);
+                handleFile(resourceFile, FileStatus.NEW, mergedSet, generatedSet, generatedFiles);
             }
-            saveState(state);
+
+            PreprocessResourcesMerger merger = new PreprocessResourcesMerger();
+            // Files from the merged directory take precedence.
+            merger.addDataSet(generatedSet);
+            merger.addDataSet(mergedSet);
+
+            finalizeMerge(merger);
+        } catch (MergingException e) {
+            throw new RuntimeException(e);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    @NonNull
-    private static SetMultimap<String, String> readState(@NonNull File stateFile) throws IOException {
-        String stateString = Files.toString(stateFile, Charsets.UTF_8);
-        Map<String, Collection<String>> stateMap = new Gson().fromJson(stateString, TYPE_TOKEN);
-
-        SetMultimap<String, String> state = HashMultimap.create();
-        for (Map.Entry<String, Collection<String>> entry : stateMap.entrySet()) {
-            state.putAll(entry.getKey(), entry.getValue());
-        }
-        return state;
+    private void finalizeMerge(PreprocessResourcesMerger merger)
+            throws MergingException {
+        PreprocessResourcesWriter writer = new PreprocessResourcesWriter(getOutputResDirectory());
+        merger.mergeData(writer, true);
+        merger.writeBlobTo(getIncrementalFolder(), writer);
     }
 
-    private void saveState(@NonNull Multimap<String, String> state) throws IOException {
-        File stateFile = getStateFile();
-        Files.write(new Gson().toJson(state.asMap(), TYPE_TOKEN), stateFile, Charsets.UTF_8);
-    }
-
-    @NonNull
-    private File getStateFile() {
-        return new File(getIncrementalFolder(), "state.json");
-    }
-
-
-    private void handleFile(@NonNull File resourceFile, @NonNull SetMultimap<String, String> state)
-            throws IOException {
+    private void handleFile(
+            File resourceFile,
+            FileStatus fileStatus,
+            PreprocessDataSet mergedSet,
+            PreprocessDataSet generatedSet,
+            SetMultimap<File, File> generatedFiles) throws IOException, MergingException {
         if (renderer.isVectorDrawable(resourceFile)) {
-            getLogger().debug("Generating files for {}.", resourceFile.getAbsolutePath());
-            Collection<File> generatedFiles = renderer.createPngFiles(
+            Collection<File> newFiles = renderer.createPngFiles(
                     resourceFile,
                     getGeneratedResDirectory(),
                     getDensitiesToGenerate());
 
-            for (File generatedFile : generatedFiles) {
-                getLogger().debug("Copying generated file: {}.", generatedFile.getAbsolutePath());
-                copyFile(generatedFile, resourceFile, getGeneratedResDirectory(), state);
-            }
+            generatedFiles.putAll(resourceFile, newFiles);
+
+            generatedSet.updateWith(
+                    getMergedResDirectory(),
+                    resourceFile,
+                    fileStatus,
+                    getILogger());
         } else {
-            getLogger().debug("Copying as-is: {}", resourceFile.getAbsolutePath());
-            copyFile(resourceFile, resourceFile, getMergedResDirectory(), state);
+            mergedSet.updateWith(
+                    getMergedResDirectory(),
+                    resourceFile,
+                    fileStatus,
+                    getILogger());
         }
-    }
-
-    private void copyFile(
-            @NonNull File fileToUse,
-            @NonNull File originalFile,
-            @NonNull File resDir,
-            @NonNull SetMultimap<String, String> state) throws IOException {
-        checkNotNull(resDir);
-        String relativePath =
-                resDir.toURI().relativize(fileToUse.toURI()).getPath();
-
-        File finalFile = new File(getOutputResDirectory(), relativePath);
-        Files.createParentDirs(finalFile);
-        Files.copy(fileToUse, finalFile);
-        state.put(originalFile.getAbsolutePath(), finalFile.getAbsolutePath());
     }
 
     /**
@@ -224,9 +234,11 @@ public class PreprocessResourcesTask extends IncrementalTask {
         this.densitiesToGenerate = densitiesToGenerate;
     }
 
-    @NonNull
-    @Override
-    public Logger getLogger() {
-        return Logging.getLogger(getClass());
+    public String getVariantName() {
+        return variantName;
+    }
+
+    public void setVariantName(String variantName) {
+        this.variantName = variantName;
     }
 }
