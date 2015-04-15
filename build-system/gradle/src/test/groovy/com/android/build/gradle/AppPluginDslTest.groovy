@@ -48,6 +48,7 @@ public class AppPluginDslTest extends BaseTest {
 
         project.android {
             compileSdkVersion 15
+            buildToolsVersion '20.0.0'
         }
 
         AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
@@ -77,6 +78,7 @@ public class AppPluginDslTest extends BaseTest {
 
         project.android {
             compileSdkVersion = 15
+            buildToolsVersion '20.0.0'
         }
 
         AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
@@ -103,6 +105,7 @@ public class AppPluginDslTest extends BaseTest {
 
         project.android {
             compileSdkVersion "android-15"
+            buildToolsVersion '20.0.0'
         }
 
         AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
@@ -129,6 +132,7 @@ public class AppPluginDslTest extends BaseTest {
 
         project.android {
             compileSdkVersion 15
+            buildToolsVersion '20.0.0'
 
             sourceSets {
                 main {
@@ -150,6 +154,7 @@ public class AppPluginDslTest extends BaseTest {
 
         project.android {
             compileSdkVersion 15
+            buildToolsVersion '20.0.0'
             testBuildType "staging"
 
             buildTypes {
@@ -189,6 +194,7 @@ public class AppPluginDslTest extends BaseTest {
 
         project.android {
             compileSdkVersion 15
+            buildToolsVersion '20.0.0'
 
             productFlavors {
                 flavor1 {
@@ -231,6 +237,7 @@ public class AppPluginDslTest extends BaseTest {
 
         project.android {
             compileSdkVersion 15
+            buildToolsVersion '20.0.0'
 
             flavorDimensions   "dimension1", "dimension2"
 
@@ -293,6 +300,7 @@ public class AppPluginDslTest extends BaseTest {
 
         project.android {
             compileSdkVersion 15
+            buildToolsVersion '20.0.0'
         }
 
         // query the sourceSets, will throw if missing
@@ -311,6 +319,7 @@ public class AppPluginDslTest extends BaseTest {
 
         project.android {
             compileSdkVersion 15
+            buildToolsVersion '20.0.0'
 
             buildTypes {
                 release {
@@ -348,6 +357,7 @@ public class AppPluginDslTest extends BaseTest {
 
         project.android {
             compileSdkVersion 15
+            buildToolsVersion '20.0.0'
 
             buildTypes {
                 release {
@@ -452,6 +462,7 @@ public class AppPluginDslTest extends BaseTest {
             project.apply plugin: 'com.android.application'
             project.android {
                 compileSdkVersion version
+                buildToolsVersion '20.0.0'
             }
 
             AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
@@ -495,6 +506,8 @@ public class AppPluginDslTest extends BaseTest {
         project.apply plugin: 'com.android.application'
         project.android {
             compileSdkVersion 21
+            buildToolsVersion '20.0.0'
+
             compileOptions {
                 sourceCompatibility JavaVersion.VERSION_1_6
                 targetCompatibility JavaVersion.VERSION_1_6
@@ -518,6 +531,7 @@ public class AppPluginDslTest extends BaseTest {
         project.apply plugin: 'com.android.application'
         project.android {
             compileSdkVersion 'foo'
+            buildToolsVersion '20.0.0'
         }
         AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
         plugin.createAndroidTasks(false)
@@ -538,6 +552,7 @@ public class AppPluginDslTest extends BaseTest {
 
         project.android {
             compileSdkVersion "Google Inc.:Google APIs:21"
+            buildToolsVersion '20.0.0'
         }
 
         AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
