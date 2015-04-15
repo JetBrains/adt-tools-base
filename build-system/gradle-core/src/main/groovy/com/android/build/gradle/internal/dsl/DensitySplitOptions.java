@@ -20,6 +20,7 @@ import static com.android.build.OutputFile.NO_FILTER;
 
 import com.android.annotations.NonNull;
 import com.android.resources.Density;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 
 import java.util.Arrays;
@@ -50,16 +51,16 @@ public class DensitySplitOptions extends SplitOptions {
     }
 
     @Override
-    protected Set<String> getAllowedValues() {
-        Density[] values = Density.values();
-        Set<String> fullList = Sets.newHashSetWithExpectedSize(values.length - 2);
-        for (Density value : values) {
+    protected ImmutableSet<String> getAllowedValues() {
+        ImmutableSet.Builder<String> builder = ImmutableSet.builder();
+
+        for (Density value : Density.values()) {
             if (value != Density.NODPI && value != Density.ANYDPI) {
-                fullList.add(value.getResourceValue());
+                builder.add(value.getResourceValue());
             }
         }
 
-        return fullList;
+        return builder.build();
     }
 
     /**
