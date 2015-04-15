@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal.dsl;
 
 import com.android.annotations.NonNull;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 
 import java.util.Arrays;
@@ -33,7 +34,7 @@ public abstract class SplitOptions {
     private final Set<String> values;
 
     @NonNull
-    private final Set<String> allowedValues;
+    private final ImmutableSet<String> allowedValues;
 
     private boolean enable = false;
 
@@ -43,7 +44,7 @@ public abstract class SplitOptions {
     }
 
     protected abstract Set<String> getDefaultValues();
-    protected abstract Set<String> getAllowedValues();
+    protected abstract ImmutableSet<String> getAllowedValues();
 
     /**
      * Whether to split in this dimension.

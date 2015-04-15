@@ -27,11 +27,11 @@ import org.junit.Test;
 
 import java.util.Set;
 
-public class DensitySplitOptionsTest {
+public class AbiSplitOptionsTest {
 
     @Test
     public void testDisabled() {
-        DensitySplitOptions options = new DensitySplitOptions();
+        AbiSplitOptions options = new AbiSplitOptions();
 
         Set<String> values = options.getApplicableFilters();
 
@@ -40,56 +40,53 @@ public class DensitySplitOptionsTest {
     }
 
     @Test
-    public void testUniversal() {
-        DensitySplitOptions options = new DensitySplitOptions();
+    public void testNonUniversal() {
+        AbiSplitOptions options = new AbiSplitOptions();
         options.setEnable(true);
 
         Set<String> values = options.getApplicableFilters();
 
-        // test first release is the universal filter
-        assertEquals(OutputFile.NO_FILTER, values.iterator().next());
+        assertFalse(values.contains(OutputFile.NO_FILTER));
     }
 
     @Test
-    public void testNonDefaultInclude() {
-        DensitySplitOptions options = new DensitySplitOptions();
+    public void testUniversal() {
+        AbiSplitOptions options = new AbiSplitOptions();
         options.setEnable(true);
-
-        options.include(Density.TV.getResourceValue());
+        options.setUniversalApk(true);
 
         Set<String> values = options.getApplicableFilters();
 
-        // test TV is showing up.
-        assertTrue(values.contains(Density.TV.getResourceValue()));
-        // test another default value also shows up
-        assertTrue(values.contains(Density.HIGH.getResourceValue()));
+        assertTrue(values.contains(OutputFile.NO_FILTER));
     }
 
     @Test
     public void testUnallowedInclude() {
-        DensitySplitOptions options = new DensitySplitOptions();
+        AbiSplitOptions options = new AbiSplitOptions();
         options.setEnable(true);
 
-        options.include(Density.ANYDPI.getResourceValue());
+        String wrongValue = "x86_126bit";
+        options.include(wrongValue);
 
         Set<String> values = options.getApplicableFilters();
 
-        // test ANYDPI isn't there.
-        assertFalse(values.contains(Density.ANYDPI.getResourceValue()));
+        // test wrong value isn't there.
+        assertFalse(values.contains(wrongValue));
 
         // test another default value shows up
-        assertTrue(values.contains(Density.XHIGH.getResourceValue()));
+        assertTrue(values.contains("x86"));
     }
 
     @Test
     public void testExclude() {
-        DensitySplitOptions options = new DensitySplitOptions();
+        AbiSplitOptions options = new AbiSplitOptions();
         options.setEnable(true);
 
-        options.exclude(Density.XXHIGH.getResourceValue());
+        String oldValue = "armeabi";
+        options.exclude(oldValue);
 
         Set<String> values = options.getApplicableFilters();
 
-        assertFalse(values.contains(Density.XXHIGH.getResourceValue()));
+        assertFalse(values.contains(oldValue));
     }
 }
