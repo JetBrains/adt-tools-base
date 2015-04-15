@@ -136,9 +136,9 @@ public class PlatformLoader implements SdkLoader {
         if (mHostToolsFolder == null) {
             File tools = new File(mTreeLocation, "prebuilts/sdk/tools");
             if (SdkConstants.CURRENT_PLATFORM == SdkConstants.PLATFORM_DARWIN) {
-                mHostToolsFolder = new File(tools, "darwin");
+                mHostToolsFolder = new File(tools, "darwin/bin");
             } else if (SdkConstants.CURRENT_PLATFORM == SdkConstants.PLATFORM_LINUX) {
-                mHostToolsFolder = new File(tools, "linux");
+                mHostToolsFolder = new File(tools, "linux/bin");
             } else {
                 throw new IllegalStateException(
                         "Windows is not supported for platform development");
