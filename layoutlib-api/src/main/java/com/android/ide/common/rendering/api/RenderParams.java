@@ -34,7 +34,7 @@ public abstract class RenderParams {
     private final Object mProjectKey;
     private final HardwareConfig mHardwareConfig;
     private final RenderResources mRenderResources;
-    private final IProjectCallback mProjectCallback;
+    private final LayoutlibCallback mLayoutlibCallback;
     private final int mMinSdkVersion;
     private final int mTargetSdkVersion;
     private final LayoutLog mLog;
@@ -63,7 +63,7 @@ public abstract class RenderParams {
      * @param projectKey An Object identifying the project. This is used for the cache mechanism.
      * @param hardwareConfig the {@link HardwareConfig}.
      * @param renderResources a {@link RenderResources} object providing access to the resources.
-     * @param projectCallback The {@link IProjectCallback} object to get information from
+     * @param layoutlibCallback The {@link LayoutlibCallback} object to get information from
      * the project.
      * @param minSdkVersion the minSdkVersion of the project
      * @param targetSdkVersion the targetSdkVersion of the project
@@ -73,13 +73,13 @@ public abstract class RenderParams {
             Object projectKey,
             HardwareConfig hardwareConfig,
             RenderResources renderResources,
-            IProjectCallback projectCallback,
+            LayoutlibCallback layoutlibCallback,
             int minSdkVersion, int targetSdkVersion,
             LayoutLog log) {
         mProjectKey = projectKey;
         mHardwareConfig = hardwareConfig;
         mRenderResources = renderResources;
-        mProjectCallback = projectCallback;
+        mLayoutlibCallback = layoutlibCallback;
         mMinSdkVersion = minSdkVersion;
         mTargetSdkVersion = targetSdkVersion;
         mLog = log;
@@ -95,7 +95,7 @@ public abstract class RenderParams {
         mHardwareConfig = params.mHardwareConfig;
         mRenderResources = params.mRenderResources;
         mAssetRepository = params.mAssetRepository;
-        mProjectCallback = params.mProjectCallback;
+        mLayoutlibCallback = params.mLayoutlibCallback;
         mMinSdkVersion = params.mMinSdkVersion;
         mTargetSdkVersion = params.mTargetSdkVersion;
         mLog = params.mLog;
@@ -219,8 +219,14 @@ public abstract class RenderParams {
         return mAssetRepository;
     }
 
+    /** @deprecated use {@link #getLayoutlibCallback()} */
+    @Deprecated
     public IProjectCallback getProjectCallback() {
-        return mProjectCallback;
+        return getLayoutlibCallback();
+    }
+
+    public LayoutlibCallback getLayoutlibCallback() {
+        return mLayoutlibCallback;
     }
 
     public LayoutLog getLog() {
