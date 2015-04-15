@@ -35,9 +35,6 @@ public class Splits {
     private final AbiSplitOptions abi;
     private final LanguageSplitOptions language;
 
-    private static final Set<String> ABI_LIST = ImmutableSet.of(
-            "armeabi", "armeabi-v7a", "arm64-v8a","x86", "x86_64", "mips", "mips64");
-
     public Splits(@NonNull Instantiator instantiator) {
         density = instantiator.newInstance(DensitySplitOptions.class);
         abi = instantiator.newInstance(AbiSplitOptions.class);
@@ -95,15 +92,7 @@ public class Splits {
      */
     @NonNull
     public Set<String> getDensityFilters() {
-        Density[] values = Density.values();
-        Set<String> fullList = Sets.newHashSetWithExpectedSize(values.length - 1);
-        for (Density value : values) {
-            if (value != Density.NODPI && value != Density.ANYDPI && value.isRecommended()) {
-                fullList.add(value.getResourceValue());
-            }
-        }
-
-        return density.getApplicableFilters(fullList);
+        return density.getApplicableFilters();
     }
 
     /**
@@ -115,7 +104,7 @@ public class Splits {
      */
     @NonNull
     public Set<String> getAbiFilters() {
-        return abi.getApplicableFilters(ABI_LIST);
+        return abi.getApplicableFilters();
     }
 
     /**
