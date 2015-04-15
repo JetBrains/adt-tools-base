@@ -33,7 +33,7 @@ public class DrawableParams extends RenderParams {
     * @param projectKey An Object identifying the project. This is used for the cache mechanism.
     * @param hardwareConfig the {@link HardwareConfig}.
     * @param renderResources a {@link RenderResources} object providing access to the resources.
-    * @param projectCallback The {@link IProjectCallback} object to get information from
+    * @param layoutlibCallback The {@link LayoutlibCallback} object to get information from
     * the project.
     * @param minSdkVersion the minSdkVersion of the project
     * @param targetSdkVersion the targetSdkVersion of the project
@@ -44,11 +44,11 @@ public class DrawableParams extends RenderParams {
             Object projectKey,
             HardwareConfig hardwareConfig,
             RenderResources renderResources,
-            IProjectCallback projectCallback,
+            LayoutlibCallback layoutlibCallback,
             int minSdkVersion, int targetSdkVersion,
             LayoutLog log) {
         super(projectKey, hardwareConfig,
-                renderResources, projectCallback, minSdkVersion, targetSdkVersion, log);
+                renderResources, layoutlibCallback, minSdkVersion, targetSdkVersion, log);
         mDrawable = drawable;
     }
 

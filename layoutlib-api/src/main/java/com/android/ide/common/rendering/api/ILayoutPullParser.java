@@ -38,7 +38,7 @@ public interface ILayoutPullParser extends XmlPullParser {
      * @param layoutName the name of the layout.
      * @return returns a custom parser or null if no custom parsers are needed.
      *
-     * @deprecated use {@link IProjectCallback#getParser(String)} instead
+     * @deprecated use {@link LayoutlibCallback#getParser(String)} instead
      */
     @Deprecated
     ILayoutPullParser getParser(String layoutName);
