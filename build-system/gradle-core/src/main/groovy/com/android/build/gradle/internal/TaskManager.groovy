@@ -103,7 +103,6 @@ import com.android.builder.internal.testing.SimpleTestCallable
 import com.android.builder.model.ApiVersion
 import com.android.builder.model.ProductFlavor
 import com.android.builder.model.SourceProvider
-import com.android.builder.png.VectorDrawableRenderer
 import com.android.builder.testing.ConnectedDeviceProvider
 import com.android.builder.testing.TestData
 import com.android.builder.testing.api.DeviceProvider
@@ -116,6 +115,8 @@ import com.android.sdklib.SdkVersionInfo
 import com.android.sdklib.repository.FullRevision
 import com.google.common.base.CharMatcher
 import com.google.common.collect.ImmutableList
+import com.google.common.collect.ImmutableSet
+import com.google.common.collect.Iterators
 import com.google.common.collect.Lists
 import com.google.common.collect.Sets
 import groovy.transform.CompileDynamic
@@ -915,11 +916,11 @@ abstract class TaskManager {
             if (variantData.getSplitHandlingPolicy() ==
                     BaseVariantData.SplitHandlingPolicy.RELEASE_21_AND_AFTER_POLICY) {
 
-                Set<String> filters = new HashSet<String>(
-                        getExtension().getSplits().getDensityFilters());
-                filters.addAll(getExtension().getSplits().getLanguageFilters());
-                filters = removeAllNullEntries(filters);
-                processResources.splits = filters;
+                variantData.calculateFilters(getExtension().getSplits());
+                Set<String> allFilters = new HashSet<>();
+                allFilters.addAll(variantData.getFilters(OutputFile.FilterType.DENSITY))
+                allFilters.addAll(variantData.getFilters(OutputFile.FilterType.LANGUAGE))
+                processResources.splits = allFilters;
             }
 
             // only generate code if the density filter is null, and if we haven't generated
@@ -989,6 +990,12 @@ abstract class TaskManager {
                     map("pseudoLocalesEnabled") { config.buildType.pseudoLocalesEnabled }
 
             conventionMapping(processResources).map("resourceConfigs") {
+                Collection<String> resConfigs = config.mergedFlavor.resourceConfigurations;
+                if (resConfigs != null && resConfigs.size() == 1
+                    && Iterators.getOnlyElement(resConfigs.iterator()).equals("auto")) {
+
+                    return variantData.discoverListOfResourceConfigs();
+                }
                 return config.mergedFlavor.resourceConfigurations
             }
             conventionMapping(processResources).map("preferredDensity") {
@@ -1011,11 +1018,9 @@ abstract class TaskManager {
                 BaseVariantData.SplitHandlingPolicy.RELEASE_21_AND_AFTER_POLICY;
 
         VariantConfiguration config = variantData.variantConfiguration
-        Set<String> densityFilters =
-                removeAllNullEntries(getExtension().getSplits().getDensityFilters());
-        Set<String> abiFilters = removeAllNullEntries(getExtension().getSplits().getAbiFilters());
-        Set<String> languageFilters =
-                removeAllNullEntries(getExtension().getSplits().getLanguageFilters());
+        Set<String> densityFilters = variantData.getFilters(OutputFile.FilterType.DENSITY)
+        Set<String> abiFilters = variantData.getFilters(OutputFile.FilterType.ABI);
+        Set<String> languageFilters = variantData.getFilters(OutputFile.FilterType.LANGUAGE);
 
         def outputs = variantData.outputs;
         if (outputs.size() != 1) {
@@ -3078,16 +3083,6 @@ abstract class TaskManager {
                 main.dependsOn dependency
             }
         }
-    }
-
-    private static <T> Set<T> removeAllNullEntries(Set<T> input) {
-        HashSet<T> output = new HashSet<T>();
-        for (T element : input) {
-            if (element != null) {
-                output.add(element);
-            }
-        }
-        return output;
     }
 
     @NonNull

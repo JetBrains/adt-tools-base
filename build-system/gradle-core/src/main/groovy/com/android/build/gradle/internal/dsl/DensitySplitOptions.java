@@ -35,6 +35,7 @@ import java.util.Set;
 public class DensitySplitOptions extends SplitOptions {
 
     private boolean strict = true;
+    private boolean auto = false;
     private Set<String> compatibleScreens;
 
     @Override
@@ -111,5 +112,25 @@ public class DensitySplitOptions extends SplitOptions {
         }
         filters.addAll(super.getApplicableFilters());
         return filters;
+    }
+
+
+    /**
+     * Sets whether the build system should determine the splits based on the "language-*" folders
+     * in the resources. If the auto mode is set to true, the include list will be ignored.
+     * @param auto true to automatically set the splits list based on the folders presence, false
+     *             to use the include list.
+     */
+    public void setAuto(boolean auto) {
+        this.auto = auto;
+    }
+
+    /**
+     * Returns whether to use the automatic discovery mechanism for supported languages (true) or
+     * the manual include list (false).
+     * @return true for automatic, false for manual mode.
+     */
+    public boolean isAuto() {
+        return auto;
     }
 }
