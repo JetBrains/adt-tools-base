@@ -18,6 +18,8 @@ package com.android.build.gradle.internal.dsl;
 
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.Optional;
+import com.android.annotations.Nullable;
+
 /**
  * DSL object for configuring dx options.
  */
@@ -29,7 +31,7 @@ public class DexOptions implements com.android.builder.core.DexOptions {
 
     private boolean isJumboModeFlag = false;
 
-    private int threadCount = 4;
+    private Integer threadCount = null;
 
     private String javaMaxHeapSize;
 
@@ -88,6 +90,7 @@ public class DexOptions implements com.android.builder.core.DexOptions {
      */
     @Override
     @Optional @Input
+    @Nullable
     public String getJavaMaxHeapSize() {
         return javaMaxHeapSize;
     }
@@ -97,11 +100,11 @@ public class DexOptions implements com.android.builder.core.DexOptions {
     }
 
     /**
-     * TODO: Document.
+     * Sets the number of threads to use when running dx
      */
     @Override
-    public int getThreadCount() {
+    @Nullable
+    public Integer getThreadCount() {
         return threadCount;
     }
-
 }
