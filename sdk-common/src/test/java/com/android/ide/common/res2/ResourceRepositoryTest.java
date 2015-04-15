@@ -51,7 +51,7 @@ public class ResourceRepositoryTest extends BaseTestCase {
         assertEquals(1, items.get(ResourceType.ARRAY).size());
         assertEquals(7, items.get(ResourceType.ATTR).size());
         assertEquals(1, items.get(ResourceType.DECLARE_STYLEABLE).size());
-        assertEquals(2, items.get(ResourceType.DIMEN).size());
+        assertEquals(3, items.get(ResourceType.DIMEN).size());
         assertEquals(1, items.get(ResourceType.ID).size());
         assertEquals(1, items.get(ResourceType.INTEGER).size());
     }
@@ -62,7 +62,7 @@ public class ResourceRepositoryTest extends BaseTestCase {
         // use ? between type and qualifier because of declare-styleable
         verifyResourceExists(repo,
                 "drawable/icon",
-                "drawable?ldpi-v4/icon",
+                "drawable?ldpi/icon",
                 "drawable/icon2",
                 "drawable/patch",
                 "drawable/color_drawable",
@@ -87,6 +87,7 @@ public class ResourceRepositoryTest extends BaseTestCase {
                 "attr/flagAttr",
                 "declare-styleable/declare_styleable",
                 "dimen/dimen",
+                "dimen?sw600dp/offset",
                 "dimen?sw600dp-v13/offset",
                 "id/item_id",
                 "integer/integer"
@@ -232,7 +233,7 @@ public class ResourceRepositoryTest extends BaseTestCase {
         verifyResourceExists(repo,
                 "drawable/new_overlay",
                 "drawable/removed",
-                "drawable?ldpi-v4/removed",
+                "drawable?ldpi/removed",
                 "drawable/touched",
                 "drawable/removed_overlay",
                 "drawable/untouched");
@@ -295,7 +296,7 @@ public class ResourceRepositoryTest extends BaseTestCase {
                 "drawable/touched",
                 "drawable/removed_overlay",
                 "drawable/untouched",
-                "drawable?hdpi-v4/new_alternate");
+                "drawable?hdpi/new_alternate");
         checkRemovedItems(resourceMerger);
     }
 
@@ -541,7 +542,7 @@ public class ResourceRepositoryTest extends BaseTestCase {
             throws MergingException, IOException {
         File root = TestUtils.getRoot("resources", "baseMerge");
 
-        ResourceSet res = ResourceSetTest.getBaseResourceSet();
+        ResourceSet res = ResourceSetTest.getBaseResourceSet(false /*normalize*/);
 
         RecordingLogger logger = new RecordingLogger();
 
