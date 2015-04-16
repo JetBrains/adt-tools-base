@@ -23,6 +23,7 @@ import com.android.sdklib.repository.IListDescription;
 import com.android.sdklib.repository.License;
 import com.android.sdklib.repository.FullRevision;
 import com.android.sdklib.repository.MajorRevision;
+import com.android.sdklib.repository.PreciseRevision;
 
 import java.io.File;
 
@@ -80,6 +81,15 @@ public interface IPkgDesc extends Comparable<IPkgDesc>, IPkgCapabilities, IListD
     MajorRevision getMajorRevision();
 
     /**
+     * Returns the package's revision or null. This will come from the {@link FullRevision} or
+     * {@link MajorRevision}, with the precision set as appropriate.
+     * @return A non-null value if {@link #hasMajorRevision()} or {@link #hasFullRevision()}
+     * is true; otherwise a null value.
+     */
+    @Nullable
+    PreciseRevision getPreciseRevision();
+
+  /**
      * Returns the package's {@link AndroidVersion} or null.
      * @return A non-null value if {@link #hasAndroidVersion()} is true; otherwise a null value.
      */
