@@ -420,6 +420,7 @@ public class AppPluginDslTest extends BaseTest {
 
         project.android {
             compileSdkVersion 15
+            buildToolsVersion '20.0.0'
 
             buildTypes {
                 common {
