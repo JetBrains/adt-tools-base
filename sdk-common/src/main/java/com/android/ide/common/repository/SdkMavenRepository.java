@@ -163,11 +163,16 @@ public enum SdkMavenRepository {
                 if (!dir.isDirectory()) {
                     continue;
                 }
-                if (filter != null && !dir.getName().startsWith(filter)) {
+                String name = dir.getName();
+                if (name.isEmpty() || !Character.isDigit(name.charAt(0))) {
+                    // For example, a .DS_Store folder in the version directory
+                    continue;
+                }
+                if (filter != null && !name.startsWith(filter)) {
                     continue;
                 }
                 GradleCoordinate gc = GradleCoordinate.parseCoordinateString(
-                        groupId + ":" + artifactId + ":" + dir.getName());
+                        groupId + ":" + artifactId + ":" + name);
 
                 if (gc != null && (allowPreview || !gc.getFullRevision().contains("-rc"))) {
                     if (!allowPreview && "5.2.08".equals(gc.getFullRevision()) &&
@@ -176,8 +181,14 @@ public enum SdkMavenRepository {
                         // not be used (https://code.google.com/p/android/issues/detail?id=75292)
                         continue;
                     }
-                    FullRevision.parseRevision(gc.getFullRevision());
-                    versionCoordinates.add(gc);
+                    try {
+                        String fullRevision = gc.getFullRevision();
+                        FullRevision.parseRevision(fullRevision);
+                        versionCoordinates.add(gc);
+                    } catch (NumberFormatException ignore) {
+                        // Some non-version directory in the repository.
+                        // For example, play-services-base recently included ".gradle"
+                    }
                 }
             }
             if (!versionCoordinates.isEmpty()) {

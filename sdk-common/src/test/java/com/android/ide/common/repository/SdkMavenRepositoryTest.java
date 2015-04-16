@@ -19,12 +19,16 @@ package com.android.ide.common.repository;
 import com.android.annotations.Nullable;
 import com.android.sdklib.SdkManager;
 import com.android.sdklib.repository.local.LocalSdk;
+import com.android.testutils.TestUtils;
 import com.android.utils.ILogger;
 import com.android.utils.StdLogger;
+import com.google.common.base.Charsets;
+import com.google.common.io.Files;
 
 import junit.framework.TestCase;
 
 import java.io.File;
+import java.io.IOException;
 
 public class SdkMavenRepositoryTest extends TestCase {
 
@@ -97,6 +101,34 @@ public class SdkMavenRepositoryTest extends TestCase {
     public void testGetDirName() {
         assertEquals("android", SdkMavenRepository.ANDROID.getDirName());
         assertEquals("google", SdkMavenRepository.GOOGLE.getDirName());
+    }
+
+    public void testUnexpectedVersions() throws IOException {
+        // Regression test for
+        //    https://code.google.com/p/android/issues/detail?id=166395
+        // Ensure that we handle directories in the artifact folder that do not
+        // correspond to valid versions
+
+        // Simulate a SDK with some expected and unexpected directories in the version location
+        File sdkHome = Files.createTempDir();
+        String[] files = new String[]{
+                "extras/google/m2repository/com/google/android/gms/play-services-base/.DS_Store",
+                "extras/google/m2repository/com/google/android/gms/play-services-base/.gradle/2.2.1/taskArtifacts",
+                "extras/google/m2repository/com/google/android/gms/play-services-base/6.5.87/play-services-base-6.5.87.aar"
+        };
+        for (String line : files) {
+            File dir = new File(sdkHome, line.replace('/', File.separatorChar));
+            boolean mkdirs = dir.mkdirs();
+            assertTrue(dir.getPath(), mkdirs);
+        }
+
+        File repository = SdkMavenRepository.GOOGLE.getRepositoryLocation(sdkHome, true);
+        assertNotNull(repository);
+        GradleCoordinate max = SdkMavenRepository.getHighestInstalledVersion(
+                "com.google.android.gms", "play-services-base", repository, null, false);
+        assertNotNull(max);
+        assertEquals("com.google.android.gms:play-services-base:6.5.87", max.toString());
+        TestUtils.deleteFile(sdkHome);
     }
 
     /**
