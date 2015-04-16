@@ -109,7 +109,6 @@ public class DensitySplitOptions extends SplitOptions {
         if (isEnable()) {
             filters.add(NO_FILTER);
         }
-
         filters.addAll(super.getApplicableFilters());
         return filters;
     }

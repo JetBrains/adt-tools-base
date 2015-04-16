@@ -54,6 +54,20 @@ public class LanguageSplitOptions {
 
     @NonNull
     public Set<String> getApplicationFilters() {
-        return include == null ? new HashSet<String>() : include;
+        return include == null || !enable ? new HashSet<String>() : include;
+    }
+
+    /**
+     * enables or disables splits for language
+     */
+    public void setEnable(boolean enable) {
+        this.enable = enable;
+    }
+
+    /**
+     * Returns true if splits should be generated for languages.
+     */
+    public boolean isEnable() {
+        return enable;
     }
 }
