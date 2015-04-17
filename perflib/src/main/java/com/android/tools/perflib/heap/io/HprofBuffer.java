@@ -17,27 +17,27 @@ package com.android.tools.perflib.heap.io;
 
 public interface HprofBuffer {
 
-    public byte readByte();
+    byte readByte();
 
-    public void read(byte[] b);
+    void read(byte[] b);
 
-    public char readChar();
+    char readChar();
 
-    public short readShort();
+    short readShort();
 
-    public int readInt();
+    int readInt();
 
-    public long readLong();
+    long readLong();
 
-    public float readFloat();
+    float readFloat();
 
-    public double readDouble();
+    double readDouble();
 
-    public void setPosition(long position);
+    void setPosition(long position);
 
-    public long position();
+    long position();
 
-    public boolean hasRemaining();
+    boolean hasRemaining();
 
-    public long remaining();
+    long remaining();
 }

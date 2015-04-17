@@ -72,13 +72,13 @@ public interface OutputFile {
      * is the string representation of an element of the {@see FilterType} enum.
      */
     @NonNull
-    public Collection<String> getFilterTypes();
+    Collection<String> getFilterTypes();
 
     /**
      * Returns all the split information used to create the APK.
      */
     @NonNull
-    public Collection<FilterData> getFilters();
+    Collection<FilterData> getFilters();
 
     /**
      * Returns the output file for this artifact's output.

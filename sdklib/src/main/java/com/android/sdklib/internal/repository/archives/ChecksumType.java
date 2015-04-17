@@ -40,7 +40,7 @@ public enum ChecksumType {
      * These names are officially documented at
      * http://java.sun.com/javase/6/docs/technotes/guides/security/StandardNames.html#MessageDigest
      */
-    private ChecksumType(String algorithmName) {
+    ChecksumType(String algorithmName) {
         mAlgorithmName = algorithmName;
     }
 

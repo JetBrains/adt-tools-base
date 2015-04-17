@@ -124,7 +124,7 @@ public final class Log {
          * @param tag The tag associated with the message.
          * @param message The message to display.
          */
-        public void printLog(LogLevel logLevel, String tag, String message);
+        void printLog(LogLevel logLevel, String tag, String message);
 
         /**
          * Sent when a log message needs to be printed, and, if possible, displayed to the user
@@ -133,7 +133,7 @@ public final class Log {
          * @param tag The tag associated with the message.
          * @param message The message to display.
          */
-        public void printAndPromptLog(LogLevel logLevel, String tag, String message);
+        void printAndPromptLog(LogLevel logLevel, String tag, String message);
     }
 
     private static LogLevel sLevel = DdmPreferences.getLogLevel();

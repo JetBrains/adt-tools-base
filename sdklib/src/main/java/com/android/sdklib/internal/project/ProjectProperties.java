@@ -95,7 +95,7 @@ public class ProjectProperties implements IPropertySource {
     public static final String PROPERTY_KEY_STORE = "key.store";
     public static final String PROPERTY_KEY_ALIAS = "key.alias";
 
-    public static enum PropertyType {
+    public enum PropertyType {
         ANT(SdkConstants.FN_ANT_PROPERTIES, BUILD_HEADER, new String[] {
                 PROPERTY_BUILD_SOURCE_DIR, PROPERTY_BUILD_OUT_DIR
             }, null),

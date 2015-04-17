@@ -87,7 +87,7 @@ public abstract class Package implements IDescription, IListDescription, Compara
      * but just not an update.
      * @see #canBeUpdatedBy(Package)
      */
-    public static enum UpdateInfo {
+    public enum UpdateInfo {
         /** Means that the 2 packages are not the same thing */
         INCOMPATIBLE,
         /** Means that the 2 packages are the same thing but one does not upgrade the other.

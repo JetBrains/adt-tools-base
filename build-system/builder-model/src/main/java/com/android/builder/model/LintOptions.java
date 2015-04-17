@@ -92,14 +92,14 @@ public interface LintOptions {
      * To suppress a given issue, add the lint issue id to the returned set.
      */
     @NonNull
-    public Set<String> getDisable();
+    Set<String> getDisable();
 
     /**
      * Returns the set of issue id's to enable. Callers are allowed to modify this collection.
      * To enable a given issue, add the lint issue id to the returned set.
      */
     @NonNull
-    public Set<String> getEnable();
+    Set<String> getEnable();
 
     /**
      * Returns the exact set of issues to check, or null to run the issues that are enabled
@@ -107,86 +107,86 @@ public interface LintOptions {
      * via {@link #getDisable}. If non-null, callers are allowed to modify this collection.
      */
     @Nullable
-    public Set<String> getCheck();
+    Set<String> getCheck();
 
     /** Whether lint should abort the build if errors are found */
-    public boolean isAbortOnError();
+    boolean isAbortOnError();
 
     /**
      * Whether lint should display full paths in the error output. By default the paths
      * are relative to the path lint was invoked from.
      */
-    public boolean isAbsolutePaths();
+    boolean isAbsolutePaths();
 
     /**
      * Whether lint should include the source lines in the output where errors occurred
      * (true by default)
      */
-    public boolean isNoLines();
+    boolean isNoLines();
 
     /**
      * Returns whether lint should be quiet (for example, not write informational messages
      * such as paths to report files written)
      */
-    public boolean isQuiet();
+    boolean isQuiet();
 
     /** Returns whether lint should check all warnings, including those off by default */
-    public boolean isCheckAllWarnings();
+    boolean isCheckAllWarnings();
 
     /** Returns whether lint will only check for errors (ignoring warnings) */
-    public boolean isIgnoreWarnings();
+    boolean isIgnoreWarnings();
 
     /** Returns whether lint should treat all warnings as errors */
-    public boolean isWarningsAsErrors();
+    boolean isWarningsAsErrors();
 
     /** Returns whether lint should include explanations for issue errors. (Note that
      * HTML and XML reports intentionally do this unconditionally, ignoring this setting.) */
-    public boolean isExplainIssues();
+    boolean isExplainIssues();
 
     /**
      * Returns whether lint should include all output (e.g. include all alternate
      * locations, not truncating long messages, etc.)
      */
-    public boolean isShowAll();
+    boolean isShowAll();
 
     /**
      * Returns an optional path to a lint.xml configuration file
      */
     @Nullable
-    public File getLintConfig();
+    File getLintConfig();
 
     /** Whether we should write an text report. Default false. The location can be
      * controlled by {@link #getTextOutput()}. */
-    public boolean getTextReport();
+    boolean getTextReport();
 
     /**
      * The optional path to where a text report should be written. The special value
      * "stdout" can be used to point to standard output.
      */
     @Nullable
-    public File getTextOutput();
+    File getTextOutput();
 
     /** Whether we should write an HTML report. Default true. The location can be
      * controlled by {@link #getHtmlOutput()}. */
-    public boolean getHtmlReport();
+    boolean getHtmlReport();
 
     /** The optional path to where an HTML report should be written */
     @Nullable
-    public File getHtmlOutput();
+    File getHtmlOutput();
 
     /** Whether we should write an XML report. Default true. The location can be
      * controlled by {@link #getXmlOutput()}. */
-    public boolean getXmlReport();
+    boolean getXmlReport();
 
     /** The optional path to where an XML report should be written */
     @Nullable
-    public File getXmlOutput();
+    File getXmlOutput();
 
     /**
      * Returns whether lint should check for fatal errors during release builds. Default is true.
      * If issues with severity "fatal" are found, the release build is aborted.
      */
-    public boolean isCheckReleaseBuilds();
+    boolean isCheckReleaseBuilds();
 
     /**
      * An optional map of severity overrides. The map maps from issue id's to the corresponding
@@ -197,16 +197,16 @@ public interface LintOptions {
      *  {@link #SEVERITY_INFORMATIONAL}, {@link #SEVERITY_IGNORE}
      */
     @Nullable
-    public Map<String, Integer> getSeverityOverrides();
+    Map<String, Integer> getSeverityOverrides();
 
     /** A severity for Lint. Corresponds to com.android.tools.lint.detector.api.Severity#FATAL */
-    public static final int SEVERITY_FATAL         = 1;
+    int SEVERITY_FATAL         = 1;
     /** A severity for Lint. Corresponds to com.android.tools.lint.detector.api.Severity#ERROR */
-    public static final int SEVERITY_ERROR         = 2;
+    int SEVERITY_ERROR         = 2;
     /** A severity for Lint. Corresponds to com.android.tools.lint.detector.api.Severity#WARNING */
-    public static final int SEVERITY_WARNING       = 3;
+    int SEVERITY_WARNING       = 3;
     /** A severity for Lint. Corresponds to com.android.tools.lint.detector.api.Severity#INFORMATIONAL */
-    public static final int SEVERITY_INFORMATIONAL = 4;
+    int SEVERITY_INFORMATIONAL = 4;
     /** A severity for Lint. Corresponds to com.android.tools.lint.detector.api.Severity#IGNORE */
-    public static final int SEVERITY_IGNORE        = 5;
+    int SEVERITY_IGNORE        = 5;
 }

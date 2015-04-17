@@ -32,7 +32,7 @@ public enum UiMode implements ResourceEnum {
     private final String mDisplayValue;
     private final int mSince;
 
-    private UiMode(String value, String display, int since) {
+    UiMode(String value, String display, int since) {
         mValue = value;
         mDisplayValue = display;
         mSince = since;

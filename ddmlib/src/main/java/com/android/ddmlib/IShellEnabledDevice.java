@@ -31,7 +31,7 @@ public interface IShellEnabledDevice {
      * Returns a (humanized) name for this device. Typically this is the AVD name for AVD's, and
      * a combination of the manufacturer name, model name & serial number for devices.
      */
-    public String getName();
+    String getName();
 
     /**
      * Executes a shell command on the device, and sends the result to a <var>receiver</var>.
@@ -61,7 +61,7 @@ public interface IShellEnabledDevice {
      *
      * @see DdmPreferences#getTimeOut()
      */
-    public void executeShellCommand(String command, IShellOutputReceiver receiver,
+    void executeShellCommand(String command, IShellOutputReceiver receiver,
             long maxTimeToOutputResponse, TimeUnit maxTimeUnits)
             throws TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException,
             IOException;
@@ -74,5 +74,5 @@ public interface IShellEnabledDevice {
      *         return null if property can not be retrieved.
      */
     @NonNull
-    public Future<String> getSystemProperty(@NonNull String name);
+    Future<String> getSystemProperty(@NonNull String name);
 }

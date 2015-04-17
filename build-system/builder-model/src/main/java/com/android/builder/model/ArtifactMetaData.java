@@ -23,8 +23,8 @@ import com.android.annotations.NonNull;
  */
 public interface ArtifactMetaData {
 
-    public final static int TYPE_ANDROID = 1;
-    public final static int TYPE_JAVA = 2;
+    int TYPE_ANDROID = 1;
+    int TYPE_JAVA = 2;
 
     @NonNull
     String getName();

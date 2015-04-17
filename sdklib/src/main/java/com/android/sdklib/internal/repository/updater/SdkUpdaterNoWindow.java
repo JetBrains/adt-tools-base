@@ -578,7 +578,7 @@ public class SdkUpdaterNoWindow {
     }
 
     private interface IConsoleSubTaskMonitor extends ITaskMonitor {
-        public void subIncProgress(double realDelta);
+        void subIncProgress(double realDelta);
     }
 
     private static class ConsoleSubTaskMonitor implements IConsoleSubTaskMonitor {

@@ -27,7 +27,7 @@ public class GradleMessageRewriter {
 
     public static final String STDOUT_ERROR_TAG = "AGPBI: ";
 
-    public static enum ErrorFormatMode {
+    public enum ErrorFormatMode {
         MACHINE_PARSABLE, HUMAN_READABLE
     }
 

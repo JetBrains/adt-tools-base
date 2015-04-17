@@ -43,7 +43,7 @@ public enum Density implements ResourceEnum {
     private final int mDensity;
     private final int mSince;
 
-    private Density(String value, String displayValue, int density, int since) {
+    Density(String value, String displayValue, int density, int since) {
         mValue = value;
         mDisplayValue = displayValue;
         mDensity = density;

@@ -35,7 +35,7 @@ public class DebugPortManager {
      */
     public interface IDebugPortProvider {
 
-        public static final int NO_STATIC_PORT = -1;
+        int NO_STATIC_PORT = -1;
 
         /**
          * Returns a non-random debugger port for the specified application running on the
@@ -46,7 +46,7 @@ public class DebugPortManager {
          * @return The non-random debugger port or {@link #NO_STATIC_PORT} if the {@link Client}
          * should use the automatic debugger port provider.
          */
-        public int getPort(IDevice device, String appName);
+        int getPort(IDevice device, String appName);
     }
 
     private static IDebugPortProvider sProvider = null;

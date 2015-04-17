@@ -27,7 +27,7 @@ public enum LayoutDirection implements ResourceEnum {
     private final String mShortDisplayValue;
     private final String mLongDisplayValue;
 
-    private LayoutDirection(String value, String shortDisplayValue, String longDisplayValue) {
+    LayoutDirection(String value, String shortDisplayValue, String longDisplayValue) {
         mValue = value;
         mShortDisplayValue = shortDisplayValue;
         mLongDisplayValue = longDisplayValue;

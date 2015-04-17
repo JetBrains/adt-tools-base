@@ -32,23 +32,23 @@ public interface VariantFilter {
      * Sets whether or not to ignore this particular variant. Default is false.
      * @param ignore whether to ignore the variant
      */
-    public void setIgnore(boolean ignore);
+    void setIgnore(boolean ignore);
 
     /**
      * Returns the ProductFlavor that represents the default config.
      */
     @NonNull
-    public ProductFlavor getDefaultConfig();
+    ProductFlavor getDefaultConfig();
 
     /**
      * Returns the Build Type.
      */
     @NonNull
-    public BuildType getBuildType();
+    BuildType getBuildType();
 
     /**
      * Returns the list of flavors, or an empty list.
      */
     @NonNull
-    public List<GroupableProductFlavor> getFlavors();
+    List<GroupableProductFlavor> getFlavors();
 }

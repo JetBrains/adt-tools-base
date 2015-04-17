@@ -41,7 +41,7 @@ public enum LegacyOs {
 
     private final String mUiName;
 
-    private LegacyOs(String uiName) {
+    LegacyOs(String uiName) {
         mUiName = uiName;
     }
 

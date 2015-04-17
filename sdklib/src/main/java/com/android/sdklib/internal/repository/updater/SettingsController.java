@@ -54,8 +54,8 @@ public class SettingsController {
     private final Settings mSettings;
 
     public interface OnChangedListener {
-        public void onSettingsChanged(@NonNull SettingsController controller,
-                                      @NonNull Settings oldSettings);
+        void onSettingsChanged(@NonNull SettingsController controller,
+                @NonNull Settings oldSettings);
     }
     private final List<OnChangedListener> mChangedListeners = new ArrayList<OnChangedListener>(1);
 

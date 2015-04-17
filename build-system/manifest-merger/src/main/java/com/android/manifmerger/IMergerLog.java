@@ -26,7 +26,7 @@ import com.android.annotations.Nullable;
 public interface IMergerLog {
 
     /** Severity of the error message. */
-    public enum Severity {
+    enum Severity {
         /**
          * A very low severity information. This does not stop processing.
          * Clients might want to have a "not verbose" flag to not display this.
@@ -53,11 +53,11 @@ public interface IMergerLog {
      * @param message A message string, suitable for {@link String#format(String, Object...)}.
      * @param msgParams The optional parameters for the {@code message} string.
      */
-    public abstract void error(
+    void error(
             @NonNull Severity severity,
             @NonNull FileAndLine location,
             @NonNull String message,
-            Object...msgParams);
+            Object... msgParams);
 
     /**
      * Logs a conflict, that is an error that happens when comparing 2 manifests.
@@ -70,17 +70,17 @@ public interface IMergerLog {
      * @param message A message string, suitable for {@link String#format(String, Object...)}.
      * @param msgParams The optional parameters for the {@code message} string.
      */
-    public abstract void conflict(
+    void conflict(
             @NonNull Severity severity,
             @NonNull FileAndLine location1,
             @NonNull FileAndLine location2,
             @NonNull String message,
-            Object...msgParams);
+            Object... msgParams);
 
     /**
      * Information about the file and line number where an error occurred.
      */
-    public static class FileAndLine {
+    class FileAndLine {
         private final String mFilePath;
         private final int mLine;
 
@@ -152,7 +152,7 @@ public interface IMergerLog {
      * {@link ManifestMerger} is called with the {@code process(Document...)}
      * interface.
      */
-    public static final String MAIN_MANIFEST = "@main";     //$NON-NLS-1$
+    String MAIN_MANIFEST = "@main";     //$NON-NLS-1$
 
     /**
      * The reference to "a library" used in {@link FileAndLine} when the
@@ -160,6 +160,6 @@ public interface IMergerLog {
      * {@link ManifestMerger} is called with the {@code process(Document...)}
      * interface.
      */
-    public static final String LIBRARY = "@library";        //$NON-NLS-1$
+    String LIBRARY = "@library";        //$NON-NLS-1$
 
 }
