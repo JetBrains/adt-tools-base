@@ -31,6 +31,7 @@ import com.android.ide.common.blame.parser.util.OutputLineReader;
 import com.android.ide.common.blame.parser.ParsingFailedException;
 import com.android.ide.common.blame.parser.PatternAwareOutputParser;
 import com.android.ide.common.res2.MergedResourceWriter;
+import com.android.resources.ResourceFolderType;
 import com.android.utils.ILogger;
 import com.android.utils.SdkUtils;
 import com.google.common.cache.Cache;
@@ -497,7 +498,7 @@ public abstract class AbstractAaptOutputParser implements PatternAwareOutputPars
         int searchStart;
         String fileName = file.getName();
         boolean isManifest = fileName.equals(ANDROID_MANIFEST_XML);
-        boolean isValueFile = fileName.equals(MergedResourceWriter.FN_VALUES_XML);
+        boolean isValueFile = fileName.startsWith(ResourceFolderType.VALUES.getName());
         if (isValueFile || isManifest) {
             searchStart = document.lineOffset(locationLine);
         } else {

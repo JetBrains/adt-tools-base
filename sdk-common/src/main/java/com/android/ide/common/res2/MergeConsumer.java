@@ -30,7 +30,7 @@ public interface MergeConsumer<I extends DataItem> {
      * An exception thrown during by the consumer. It always contains the original exception
      * as its cause.
      */
-    public static class ConsumerException extends MergingException {
+    class ConsumerException extends MergingException {
         public ConsumerException(Throwable cause) {
             super(cause);
         }
