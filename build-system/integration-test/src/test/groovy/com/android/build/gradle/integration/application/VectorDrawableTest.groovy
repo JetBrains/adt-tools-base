@@ -16,36 +16,29 @@
 
 package com.android.build.gradle.integration.application
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.google.common.base.Charsets
 import com.google.common.io.Files
-import org.junit.AfterClass
-import org.junit.Before
-import org.junit.ClassRule
+import groovy.transform.CompileStatic
+import org.junit.Rule
 import org.junit.Test
 
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
 /**
  * Tests for the PNG generation feature.
  */
+@CompileStatic
 class VectorDrawableTest {
-    @ClassRule
-    public static GradleTestProject project = GradleTestProject.builder()
+    @Rule
+    public GradleTestProject project = GradleTestProject.builder()
             .fromTestProject("vectorDrawables")
             .create()
 
-
-    @AfterClass
-    public static void freeResources() throws Exception {
-        project = null
-    }
-
-    @Before
-    public void assemble() throws Exception {
-        project.execute("clean", "assembleDebug")
-    }
-
     @Test
     public void "vector file is moved and PNGs are generated"() throws Exception {
+        project.execute("clean", "assembleDebug")
         File apk = project.getApk("debug")
+        assertThatApk(apk).containsResource("drawable/icon.png")
         assertThatApk(apk).doesNotContainResource("drawable/heart.xml")
         assertThatApk(apk).containsResource("drawable-v21/heart.xml")
         assertThatApk(apk).containsResource("drawable-hdpi-v4/heart.png")
@@ -54,31 +47,68 @@ class VectorDrawableTest {
 
     @Test
     public void "incremental build: add file"() throws Exception {
-        File apk = project.getApk("debug")
-        assertThatApk(apk).doesNotContainResource("drawable/heart2.xml")
-        assertThatApk(apk).doesNotContainResource("drawable-v21/heart2.xml")
-        assertThatApk(apk).doesNotContainResource("drawable-hdpi-v4/heart2.png")
-        assertThatApk(apk).doesNotContainResource("drawable-xhdpi-v4/heart2.png")
+        project.execute("assembleDebug")
 
         File heartXml = new File(project.testDir, "src/main/res/drawable/heart.xml")
         File heartXmlCopy = new File(project.testDir, "src/main/res/drawable/heart2.xml")
         Files.copy(heartXml, heartXmlCopy)
 
         project.execute("assembleDebug")
+        checkIncrementalBuild()
 
-        apk = project.getApk("debug")
+        File apk = project.getApk("debug")
+        assertThatApk(apk).containsResource("drawable/icon.png")
         assertThatApk(apk).doesNotContainResource("drawable/heart2.xml")
         assertThatApk(apk).containsResource("drawable-v21/heart2.xml")
         assertThatApk(apk).containsResource("drawable-hdpi-v4/heart2.png")
         assertThatApk(apk).containsResource("drawable-xhdpi-v4/heart2.png")
+    }
 
-        heartXmlCopy.delete()
+    @Test
+    public void "incremental build: delete file"() throws Exception {
         project.execute("assembleDebug")
 
-        apk = project.getApk("debug")
+        File heartXml = new File(project.testDir, "src/main/res/drawable/heart.xml")
+        heartXml.delete()
+
+        project.execute("assembleDebug")
+        checkIncrementalBuild()
+
+        File apk = project.getApk("debug")
+        assertThatApk(apk).containsResource("drawable/icon.png")
         assertThatApk(apk).doesNotContainResource("drawable/heart2.xml")
         assertThatApk(apk).doesNotContainResource("drawable-v21/heart2.xml")
         assertThatApk(apk).doesNotContainResource("drawable-hdpi-v4/heart2.png")
         assertThatApk(apk).doesNotContainResource("drawable-xhdpi-v4/heart2.png")
+    }
+
+    @Test
+    public void "incremental build: modify file"() throws Exception {
+        project.execute("assembleDebug")
+
+        File preprocessedHeartXml = new File(project.testDir, "build/intermediates/res/preprocessed/debug/drawable-hdpi/heart.png")
+        File preprocessedIconPng = new File(project.testDir, "build/intermediates/res/preprocessed/debug/drawable/icon.png")
+        long heartXmlModified = preprocessedHeartXml.lastModified()
+        long iconModified = preprocessedIconPng.lastModified()
+
+        File heartXml = new File(project.testDir, "src/main/res/drawable/heart.xml")
+        String content = Files.toString(heartXml, Charsets.UTF_8)
+        // Change the heart to blue.
+        Files.write(content.replace("ff0000", "0000ff"), heartXml, Charsets.UTF_8)
+
+        project.execute("assembleDebug")
+        checkIncrementalBuild()
+
+        assertThat(preprocessedIconPng.lastModified()).isEqualTo(iconModified)
+        assertThat(preprocessedHeartXml.lastModified()).isNotEqualTo(heartXmlModified)
+    }
+
+    private void checkIncrementalBuild() {
+        File incrementalFolder = new File(
+                project.testDir,
+                "build/intermediates/incremental/preprocessResourcesTask/debug")
+        // state.json is always left behind, this is to make sure incrementalFolder is correct.
+        assertThat(new File(incrementalFolder, "state.json").exists()).isTrue()
+        assertThat(new File(incrementalFolder, "build_was_incremental").exists()).isTrue()
     }
 }

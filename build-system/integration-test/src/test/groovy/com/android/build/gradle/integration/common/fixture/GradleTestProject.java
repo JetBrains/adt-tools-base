@@ -313,7 +313,9 @@ public class GradleTestProject implements TestRule {
         // Create separate directory based on test method name if @Rule is used.
         // getMethodName() is null if this rule is used as a @ClassRule.
         if (description.getMethodName() != null) {
-            testDir = new File(testDir, description.getMethodName());
+            String dirName = description.getMethodName();
+            dirName = dirName.replaceAll("[^a-zA-Z0-9_]", "_");
+            testDir = new File(testDir, dirName);
         }
         testDir = new File(testDir, name);
 
