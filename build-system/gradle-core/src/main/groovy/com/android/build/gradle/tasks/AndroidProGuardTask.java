@@ -21,8 +21,12 @@ import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.tasks.FileSupplier;
 
 import org.gradle.api.Task;
+import org.gradle.api.tasks.InputFile;
+import org.gradle.api.tasks.Optional;
+import org.gradle.api.tasks.TaskAction;
 
 import java.io.File;
+import java.io.IOException;
 
 import proguard.ParseException;
 import proguard.gradle.ProGuardTask;
@@ -33,12 +37,32 @@ import proguard.gradle.ProGuardTask;
  */
 public class AndroidProGuardTask extends ProGuardTask implements FileSupplier {
 
+    /**
+     * resulting obfuscation mapping file.
+     */
     @Nullable
+    @InputFile
+    @Optional
     File mappingFile;
 
-    public void printmapping(File printMapping) throws ParseException {
-        mappingFile = printMapping;
+    /**
+     * if this is a test related proguard task, this will point to tested application mapping file
+     * which can be absent in case the tested application did not request obfuscation.
+     */
+    @Nullable
+    @InputFile
+    @Optional
+    File testedAppMappingFile;
+
+    @Override
+    public void printmapping(Object printMapping) throws ParseException {
+        mappingFile = (File) printMapping;
         super.printmapping(printMapping);
+    }
+
+    @Override
+    public void applymapping(Object applyMapping) throws ParseException {
+        testedAppMappingFile = (File) applyMapping;
     }
 
     @Override
@@ -50,5 +74,16 @@ public class AndroidProGuardTask extends ProGuardTask implements FileSupplier {
     @Override
     public Task getTask() {
         return this;
+    }
+
+    @Override
+    @TaskAction
+    public void proguard() throws ParseException, IOException {
+        // only set the tested application mapping file if it exists (it must at this point or that
+        // means the tested application did not request obfuscation).
+        if (testedAppMappingFile != null && testedAppMappingFile.exists()) {
+            super.applymapping(testedAppMappingFile);
+        }
+        super.proguard();
     }
 }
