@@ -200,7 +200,7 @@ public class VariantManager implements VariantModel {
         if (variantFactory.hasTestScope()) {
             unitTestSourceSet = (DefaultAndroidSourceSet) extension
                     .getSourceSetsContainer().maybeCreate(
-                            UNIT_TEST.getPrefix() + StringHelper.capitalize(buildType.getName()));
+                            computeSourceSetName(buildType.getName(), UNIT_TEST));
         }
 
         BuildTypeData buildTypeData = new BuildTypeData(
@@ -232,12 +232,10 @@ public class VariantManager implements VariantModel {
         if (variantFactory.hasTestScope()) {
             androidTestSourceSet = (DefaultAndroidSourceSet) extension
                     .getSourceSetsContainer().maybeCreate(
-                            ANDROID_TEST.getPrefix() + StringHelper
-                                    .capitalize(productFlavor.getName()));
+                            computeSourceSetName(productFlavor.getName(), ANDROID_TEST));
             unitTestSourceSet = (DefaultAndroidSourceSet) extension
                     .getSourceSetsContainer().maybeCreate(
-                            UNIT_TEST.getPrefix() + StringHelper
-                                    .capitalize(productFlavor.getName()));
+                            computeSourceSetName(productFlavor.getName(), UNIT_TEST));
         }
 
         ProductFlavorData<GroupableProductFlavor> productFlavorData =
@@ -529,22 +527,22 @@ public class VariantManager implements VariantModel {
                     dimensionName);
         }
 
+        createCompoundSourceSets(productFlavorList, variantConfig, sourceSetsContainer);
+
         // Add the container of dependencies.
         // The order of the libraries is important, in descending order:
         // variant-specific, build type, multi-flavor, flavor1, flavor2, ..., defaultConfig.
         // variant-specific if the full combo of flavors+build type. Does not exist if no flavors.
         // multi-flavor is the combination of all flavor dimensions. Does not exist if <2 dimension.
-
         final List<ConfigurationProvider> variantProviders =
                 Lists.newArrayListWithExpectedSize(productFlavorList.size() + 4);
 
         // 1. add the variant-specific if applicable.
         if (!productFlavorList.isEmpty()) {
-            DefaultAndroidSourceSet variantSourceSet =
-                    (DefaultAndroidSourceSet) sourceSetsContainer.maybeCreate(
-                            variantConfig.getFullName());
-            variantConfig.setVariantSourceProvider(variantSourceSet);
-            variantProviders.add(new ConfigurationProviderImpl(project, variantSourceSet));
+            variantProviders.add(
+                    new ConfigurationProviderImpl(
+                            project,
+                            (DefaultAndroidSourceSet) variantConfig.getVariantSourceProvider()));
         }
 
         // 2. the build type.
@@ -552,11 +550,10 @@ public class VariantManager implements VariantModel {
 
         // 3. the multi-flavor combination
         if (productFlavorList.size() > 1) {
-            DefaultAndroidSourceSet multiFlavorSourceSet =
-                    (DefaultAndroidSourceSet) sourceSetsContainer.maybeCreate(
-                            variantConfig.getFlavorName());
-            variantConfig.setMultiFlavorSourceProvider(multiFlavorSourceSet);
-            variantProviders.add(new ConfigurationProviderImpl(project, multiFlavorSourceSet));
+            variantProviders.add(
+                    new ConfigurationProviderImpl(
+                            project,
+                            (DefaultAndroidSourceSet) variantConfig.getMultiFlavorSourceProvider()));
         }
 
         // 4. the flavors.
@@ -597,6 +594,48 @@ public class VariantManager implements VariantModel {
         variantConfig.setDependencies(variantDep);
 
         return variantData;
+    }
+
+    private static void createCompoundSourceSets(
+            @NonNull List<? extends com.android.build.gradle.api.GroupableProductFlavor> productFlavorList,
+            GradleVariantConfiguration variantConfig,
+            NamedDomainObjectContainer<AndroidSourceSet> sourceSetsContainer) {
+        if (!productFlavorList.isEmpty() && !variantConfig.getType().isSingleBuildType()) {
+            DefaultAndroidSourceSet variantSourceSet =
+                    (DefaultAndroidSourceSet) sourceSetsContainer.maybeCreate(
+                            computeSourceSetName(
+                                    variantConfig.getFullName(),
+                                    variantConfig.getType()));
+            variantConfig.setVariantSourceProvider(variantSourceSet);
+        }
+
+        if (productFlavorList.size() > 1) {
+            DefaultAndroidSourceSet multiFlavorSourceSet =
+                    (DefaultAndroidSourceSet) sourceSetsContainer.maybeCreate(
+                            computeSourceSetName(
+                                    variantConfig.getFlavorName(),
+                                    variantConfig.getType()));
+            variantConfig.setMultiFlavorSourceProvider(multiFlavorSourceSet);
+        }
+    }
+
+    /**
+     * Turns a string into a valid source set name for the given {@link VariantType}, e.g.
+     * "fooBarUnitTest" becomes "testFooBar".
+     */
+    @NonNull
+    private static String computeSourceSetName(
+            @NonNull String name,
+            @NonNull VariantType variantType) {
+        if (name.endsWith(variantType.getSuffix())) {
+            name = name.substring(0, name.length() - variantType.getSuffix().length());
+        }
+
+        if (!variantType.getPrefix().isEmpty()) {
+            name = variantType.getPrefix() + StringHelper.capitalize(name);
+        }
+
+        return name;
     }
 
     /**
@@ -642,6 +681,11 @@ public class VariantManager implements VariantModel {
                     data.getTestSourceSet(type),
                     dimensionName);
         }
+
+        createCompoundSourceSets(
+                productFlavorList,
+                testVariantConfig,
+                extension.getSourceSetsContainer());
 
         // create the internal storage for this variant.
         TestVariantData testVariantData = new TestVariantData(

@@ -4,6 +4,9 @@
   android {
     packagingOptions.excludes = []
   }
+- New sourceSets task for inspecting the set of all available source sets.
+- Unit tests recognize multi-flavor and per-variant source folders (e.g.
+  testDemoDebug). Android tests recognized multi-flavor source folders.
 
 1.2.0
 - Unit testing improvements

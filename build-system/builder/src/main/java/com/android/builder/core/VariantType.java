@@ -30,11 +30,13 @@ public enum VariantType {
     ANDROID_TEST(
             "androidTest",
             "AndroidTest",
+            true,
             AndroidProject.ARTIFACT_ANDROID_TEST,
             ArtifactMetaData.TYPE_ANDROID),
     UNIT_TEST(
             "test",
             "UnitTest",
+            false,
             AndroidProject.ARTIFACT_UNIT_TEST,
             ArtifactMetaData.TYPE_JAVA),
     ;
@@ -52,6 +54,7 @@ public enum VariantType {
     private final boolean mIsForTesting;
     private final String mPrefix;
     private final String mSuffix;
+    private final boolean isSingleBuildType;
     private final String mArtifactName;
     private final int mArtifactType;
 
@@ -62,15 +65,22 @@ public enum VariantType {
         this.mSuffix = "";
         this.mArtifactName = AndroidProject.ARTIFACT_MAIN;
         this.mArtifactType = ArtifactMetaData.TYPE_ANDROID;
+        this.isSingleBuildType = false;
     }
 
     /** Testing variant. */
-    VariantType(String prefix, String suffix, String artifactName, int artifactType) {
+    VariantType(
+            String prefix,
+            String suffix,
+            boolean isSingleBuildType,
+            String artifactName,
+            int artifactType) {
         this.mArtifactName = artifactName;
         this.mArtifactType = artifactType;
         this.mIsForTesting = true;
         this.mPrefix = prefix;
         this.mSuffix = suffix;
+        this.isSingleBuildType = isSingleBuildType;
     }
 
     /**
@@ -113,5 +123,12 @@ public enum VariantType {
      */
     public int getArtifactType() {
         return mArtifactType;
+    }
+
+    /**
+     * Whether the artifact type supports only a single build type.
+     */
+    public boolean isSingleBuildType() {
+        return isSingleBuildType;
     }
 }

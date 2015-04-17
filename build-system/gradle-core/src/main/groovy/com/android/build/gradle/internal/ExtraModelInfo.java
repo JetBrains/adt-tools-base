@@ -70,7 +70,6 @@ public class ExtraModelInfo {
     private final ListMultimap<String, AndroidArtifact> extraAndroidArtifacts = ArrayListMultimap.create();
     private final ListMultimap<String, JavaArtifact> extraJavaArtifacts = ArrayListMultimap.create();
 
-    private final ListMultimap<String, SourceProviderContainer> extraVariantSourceProviders = ArrayListMultimap.create();
     private final ListMultimap<String, SourceProviderContainer> extraBuildTypeSourceProviders = ArrayListMultimap.create();
     private final ListMultimap<String, SourceProviderContainer> extraProductFlavorSourceProviders = ArrayListMultimap.create();
     private final ListMultimap<String, SourceProviderContainer> extraMultiFlavorSourceProviders = ArrayListMultimap.create();
@@ -147,11 +146,6 @@ public class ExtraModelInfo {
 
     public Collection<JavaArtifact> getExtraJavaArtifacts(@NonNull String variantName) {
         return extraJavaArtifacts.get(variantName);
-    }
-
-    public Collection<SourceProviderContainer> getExtraVariantSourceProviders(
-            @NonNull String variantName) {
-        return extraVariantSourceProviders.get(variantName);
     }
 
     public Collection<SourceProviderContainer> getExtraFlavorSourceProviders(
