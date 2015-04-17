@@ -17,6 +17,10 @@
 package com.android.ide.common.res2;
 
 import com.android.annotations.NonNull;
+import com.android.ide.common.blame.FilePosition;
+import com.android.utils.PositionXmlParser;
+
+import org.w3c.dom.Node;
 
 /**
  * Exception when a {@link DataItem} is declared more than once in a {@link DataSet}
@@ -32,7 +36,8 @@ public class DuplicateDataException extends MergingException {
                 two.getSource().getFile().getAbsolutePath(), two.getKey()));
         mOne = one;
         mTwo = two;
-        setFile(one.getSource().getFile());
+        addFile(one.getSource().getFile());
+        addFile(two.getSource().getFile());
     }
 
     public DataItem getOne() {

@@ -260,7 +260,7 @@ public abstract class AbstractResourceRepository {
     public ResourceFile getMatchingFile(
             @NonNull String name,
             @NonNull ResourceType type,
-            @NonNull FolderConfiguration config) {
+            @NonNull FolderConfiguration config) throws MergingException {
         List<ResourceFile> matchingFiles = getMatchingFiles(name, type, config);
         return matchingFiles.isEmpty() ? null : matchingFiles.get(0);
     }
@@ -282,7 +282,7 @@ public abstract class AbstractResourceRepository {
     public List<ResourceFile> getMatchingFiles(
             @NonNull String name,
             @NonNull ResourceType type,
-            @NonNull FolderConfiguration config) {
+            @NonNull FolderConfiguration config) throws MergingException {
         return getMatchingFiles(name, type, config, new HashSet<String>(), 0);
     }
 
@@ -292,7 +292,7 @@ public abstract class AbstractResourceRepository {
             @NonNull ResourceType type,
             @NonNull FolderConfiguration config,
             @NonNull Set<String> seenNames,
-            int depth) {
+            int depth) throws MergingException {
         assert !seenNames.contains(name);
         if (depth >= MAX_RESOURCE_INDIRECTION) {
             return Collections.emptyList();
@@ -341,7 +341,7 @@ public abstract class AbstractResourceRepository {
      */
     @NonNull
     public Map<ResourceType, Map<String, ResourceValue>> getConfiguredResources(
-            @NonNull FolderConfiguration referenceConfig) {
+            @NonNull FolderConfiguration referenceConfig) throws MergingException {
         Map<ResourceType, Map<String, ResourceValue>> map = Maps.newEnumMap(ResourceType.class);
 
         synchronized (ITEM_MAP_LOCK) {
@@ -365,7 +365,7 @@ public abstract class AbstractResourceRepository {
     @NonNull
     public Map<String, ResourceValue> getConfiguredResources(
             @NonNull ResourceType type,
-            @NonNull FolderConfiguration referenceConfig) {
+            @NonNull FolderConfiguration referenceConfig) throws MergingException {
         return getConfiguredResources(getMap(), type, referenceConfig);
     }
 
@@ -373,7 +373,7 @@ public abstract class AbstractResourceRepository {
     public Map<String, ResourceValue> getConfiguredResources(
             @NonNull Map<ResourceType, ListMultimap<String, ResourceItem>> itemMap,
             @NonNull ResourceType type,
-            @NonNull FolderConfiguration referenceConfig) {
+            @NonNull FolderConfiguration referenceConfig) throws MergingException {
         // get the resource item for the given type
         ListMultimap<String, ResourceItem> items = itemMap.get(type);
         if (items == null) {
@@ -406,7 +406,7 @@ public abstract class AbstractResourceRepository {
     public ResourceValue getConfiguredValue(
             @NonNull ResourceType type,
             @NonNull String name,
-            @NonNull FolderConfiguration referenceConfig) {
+            @NonNull FolderConfiguration referenceConfig) throws MergingException {
         // get the resource item for the given type
         ListMultimap<String, ResourceItem> items = getMap(type, false);
         if (items == null) {
@@ -446,7 +446,7 @@ public abstract class AbstractResourceRepository {
      * Returns the sorted list of languages used in the resources.
      */
     @NonNull
-    public SortedSet<String> getLanguages() {
+    public SortedSet<String> getLanguages() throws MergingException {
         SortedSet<String> set = new TreeSet<String>();
 
         // As an optimization we could just look for values since that's typically where
@@ -479,7 +479,7 @@ public abstract class AbstractResourceRepository {
      * Returns the sorted list of languages used in the resources.
      */
     @NonNull
-    public SortedSet<LocaleQualifier> getLocales() {
+    public SortedSet<LocaleQualifier> getLocales() throws MergingException {
         SortedSet<LocaleQualifier> set = new TreeSet<LocaleQualifier>();
 
         // As an optimization we could just look for values since that's typically where
@@ -513,7 +513,7 @@ public abstract class AbstractResourceRepository {
      * @param currentLanguage the current language the region must be associated with.
      */
     @NonNull
-    public SortedSet<String> getRegions(@NonNull String currentLanguage) {
+    public SortedSet<String> getRegions(@NonNull String currentLanguage) throws MergingException {
         SortedSet<String> set = new TreeSet<String>();
 
         // As an optimization we could just look for values since that's typically where

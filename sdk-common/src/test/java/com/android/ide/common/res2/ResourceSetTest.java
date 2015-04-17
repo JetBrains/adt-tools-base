@@ -118,7 +118,8 @@ public class ResourceSetTest extends BaseTestCase {
             assertTrue(index != -1);
             String prefix = message.substring(0, index);
             message = message.replaceAll(prefix, "<PREFIX>").replace('\\','/');
-            assertEquals("<PREFIX>dupSet/res2/drawable/icon.png: Error: Duplicate resources: "
+            assertEquals("<PREFIX>dupSet/res2/drawable/icon.png\t<PREFIX>dupSet/res1/drawable/icon.png: "
+                    + "Error: Duplicate resources: "
                     + "<PREFIX>dupSet/res2/drawable/icon.png:drawable/icon, "
                     + "<PREFIX>dupSet/res1/drawable/icon.png:drawable/icon", message);
         }

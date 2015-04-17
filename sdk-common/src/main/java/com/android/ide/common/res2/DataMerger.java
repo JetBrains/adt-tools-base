@@ -78,7 +78,7 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
         mFactory.setIgnoringComments(true);
     }
 
-    protected abstract S createFromXml(Node node);
+    protected abstract S createFromXml(Node node) throws MergingException;
 
     protected abstract boolean requiresMerge(@NonNull String dataItemKey);
 
@@ -339,13 +339,13 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
             try {
                 createDir(blobRootFolder);
             } catch (IOException ioe) {
-                throw new MergingException(ioe).setFile(blobRootFolder);
+                throw new MergingException(ioe).addFile(blobRootFolder);
             }
             File file = new File(blobRootFolder, FN_MERGER_XML);
             try {
                 Files.write(content, file, Charsets.UTF_8);
             } catch (IOException ioe) {
-                throw new MergingException(ioe).setFile(file);
+                throw new MergingException(ioe).addFile(file);
             }
         } catch (ParserConfigurationException e) {
             throw new MergingException(e);
@@ -428,28 +428,21 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
 
             return true;
         } catch (SAXParseException e) {
-            MergingException exception = new MergingException(e);
-            exception.setFile(file);
-            int lineNumber = e.getLineNumber();
-            if (lineNumber != -1) {
-                exception.setLine(lineNumber - 1); // make line numbers 0-based
-                exception.setColumn(e.getColumnNumber() - 1);
-            }
-            throw exception;
+            throw new MergingException(e).addFilePosition(file, e);
         } catch (IOException e) {
-            throw new MergingException(e).setFile(file);
+            throw new MergingException(e).addFile(file);
         } catch (ParserConfigurationException e) {
-            throw new MergingException(e).setFile(file);
+            throw new MergingException(e).addFile(file);
         } catch (SAXException e) {
-            throw new MergingException(e).setFile(file);
+            throw new MergingException(e).addFile(file);
         }
     }
 
-    protected void loadMergedItems(@NonNull Node mergedItemsNode) {
+    protected void loadMergedItems(@NonNull Node mergedItemsNode) throws MergingException {
         // do nothing by default.
     }
 
-    protected void writeMergedItems(Document document, Node rootNode) {
+    protected void writeMergedItems(Document document, Node rootNode) throws MergingException {
         // do nothing by default.
     }
 

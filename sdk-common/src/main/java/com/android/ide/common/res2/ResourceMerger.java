@@ -99,7 +99,7 @@ public class ResourceMerger extends DataMerger<ResourceItem, ResourceFile, Resou
 
 
     @Override
-    protected ResourceSet createFromXml(Node node) {
+    protected ResourceSet createFromXml(Node node) throws MergingException {
         ResourceSet set = new ResourceSet("");
         return (ResourceSet) set.createFromXml(node);
     }
@@ -229,7 +229,7 @@ public class ResourceMerger extends DataMerger<ResourceItem, ResourceFile, Resou
     }
 
     @Override
-    protected void loadMergedItems(@NonNull Node mergedItemsNode) {
+    protected void loadMergedItems(@NonNull Node mergedItemsNode) throws MergingException {
         // loop on the qualifiers.
         NodeList configurationList = mergedItemsNode.getChildNodes();
 
@@ -306,7 +306,8 @@ public class ResourceMerger extends DataMerger<ResourceItem, ResourceFile, Resou
      * @param node the node representing the resource.
      * @return a ResourceItem object or null.
      */
-    static MergedResourceItem getMergedResourceItem(@NonNull Node node, @NonNull String qualifiers) {
+    static MergedResourceItem getMergedResourceItem(@NonNull Node node, @NonNull String qualifiers)
+            throws MergingException {
         ResourceType type = ValueResourceParser2.getType(node, null);
         String name = ValueResourceParser2.getName(node);
 

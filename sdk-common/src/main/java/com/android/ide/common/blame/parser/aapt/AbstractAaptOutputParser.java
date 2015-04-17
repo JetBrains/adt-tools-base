@@ -24,6 +24,7 @@ import static com.android.SdkConstants.TAG_ITEM;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
+import com.android.ide.common.blame.FilePosition;
 import com.android.ide.common.blame.SourceFragmentPositionRange;
 import com.android.ide.common.blame.output.GradleMessage;
 import com.android.ide.common.blame.parser.util.OutputLineReader;
@@ -449,10 +450,10 @@ public abstract class AbstractAaptOutputParser implements PatternAwareOutputPars
         if (sourcePath != null) {
             FilePosition source = findSourcePosition(file, errorPosition.getStartLine(), text, logger);
             if (source != null) {
-                file = source.sourceFile;
+                file = source.getSourceFile();
                 sourcePath = file.getPath();
-                if (source.position.getStartLine() != -1) {
-                    errorPosition = source.position;
+                if (source.getStartLine() != -1) {
+                    errorPosition = source;
                 }
             }
         }
@@ -466,7 +467,7 @@ public abstract class AbstractAaptOutputParser implements PatternAwareOutputPars
         return new GradleMessage(kind, text, sourcePath, errorPosition, original);
     }
 
-    private SourceFragmentPositionRange parseLineNumber(String lineNumberAsText) throws ParsingFailedException {
+    private static SourceFragmentPositionRange parseLineNumber(String lineNumberAsText) throws ParsingFailedException {
         int lineNumber = -1;
         if (lineNumberAsText != null) {
             try {
@@ -550,25 +551,9 @@ public abstract class AbstractAaptOutputParser implements PatternAwareOutputPars
             // Look up the line number
             SourceFragmentPositionRange position = findMessagePositionInFile(sourceFile, message,
                     1, logger); // Search from the beginning
-            if (position != null) {
-                return new FilePosition(sourceFile, position);
-            }
+            return new FilePosition(sourceFile, position);
         }
 
-        return new FilePosition(sourceFile, new SourceFragmentPositionRange());
+        return new FilePosition(sourceFile, SourceFragmentPositionRange.UNKNOWN);
     }
-
-    private static class FilePosition {
-
-        final File sourceFile;
-
-        final SourceFragmentPositionRange position;
-
-        FilePosition(File sourceFile, SourceFragmentPositionRange position) {
-            this.sourceFile = sourceFile;
-            this.position = position;
-        }
-    }
-
-
 }
