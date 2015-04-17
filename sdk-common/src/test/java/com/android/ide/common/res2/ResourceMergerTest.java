@@ -657,13 +657,13 @@ public class ResourceMergerTest extends BaseTestCase {
         assertEquals("touched", map.get("touched"));
         assertEquals("new_overlay", map.get("new_overlay"));
 
-        // values/values-fr.xml
+        // values-fr/values-fr.xml
         map = quickStringOnlyValueFileParser(
-                new File(resFolder, "values-fr" + File.separator + "values.xml"));
+                new File(resFolder, "values-fr" + File.separator + "values-fr.xml"));
         assertEquals("new_alternate", map.get("new_alternate"));
 
-        // deleted values-en/values.xml
-        assertFalse(new File(resFolder, "values-en" + File.separator + "values.xml").isFile());
+        // deleted values-en/values-en.xml
+        assertFalse(new File(resFolder, "values-en" + File.separator + "values-en.xml").isFile());
     }
 
     public void testUpdateWithBasicValues2() throws Exception {
