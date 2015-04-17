@@ -59,8 +59,6 @@ import javax.xml.parsers.DocumentBuilderFactory;
  * A {@link MergeWriter} for assets, using {@link ResourceItem}.
  */
 public class MergedResourceWriter extends MergeWriter<ResourceItem> {
-    /** Filename to save the merged file as */
-    public static final String FN_VALUES_XML = "values.xml";
 
     @NonNull
     private final PngCruncher mCruncher;
@@ -293,7 +291,9 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
                         ResourceFolderType.VALUES.getName() + RES_QUALIFIER_SEP + key;
 
                 File valuesFolder = new File(getRootFolder(), folderName);
-                File outFile = new File(valuesFolder, FN_VALUES_XML);
+                // Name of the file is the same as the folder as AAPT gets confused with name
+                // collision when not normalizing folders name.
+                File outFile = new File(valuesFolder, folderName + DOT_XML);
                 ResourceFile currentFile = null;
                 try {
                     createDir(valuesFolder);
@@ -386,7 +386,7 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
                     ResourceFolderType.VALUES.getName() + RES_QUALIFIER_SEP + key :
                     ResourceFolderType.VALUES.getName();
 
-            removeOutFile(folderName, FN_VALUES_XML);
+            removeOutFile(folderName, folderName + DOT_XML);
         }
     }
 
