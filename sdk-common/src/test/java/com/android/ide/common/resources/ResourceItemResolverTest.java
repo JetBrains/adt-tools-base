@@ -150,11 +150,7 @@ public class ResourceItemResolverTest extends TestCase {
             public ResourceResolver getResolver(boolean createIfNecessary) {
                 if (mResolver == null && createIfNecessary) {
                     Map<ResourceType, Map<String, ResourceValue>> appResourceMap;
-                    try {
-                        appResourceMap = appResources.getConfiguredResources(config);
-                    } catch (MergingException e) {
-                        throw new RuntimeException(e);
-                    }
+                    appResourceMap = appResources.getConfiguredResources(config);
                     Map<ResourceType, Map<String, ResourceValue>> frameworkResourcesMap =
                             frameworkResources.getConfiguredResources(config);
                     assertNotNull(appResourceMap);
