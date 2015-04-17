@@ -172,11 +172,7 @@ public class ResourceItemResolver extends RenderResources {
                 }
             }
             ResourceValue item = null;
-            try {
-                item = myAppResources.getConfiguredValue(resType, resName, mConfiguration);
-            } catch (MergingException e) {
-                return null;
-            }
+            item = myAppResources.getConfiguredValue(resType, resName, mConfiguration);
             if (item != null) {
                 if (mLookupChain != null) {
                     mLookupChain.add(item);
