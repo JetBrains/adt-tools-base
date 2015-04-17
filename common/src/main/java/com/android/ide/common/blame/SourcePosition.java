@@ -27,8 +27,7 @@ import com.google.common.base.Objects;
  * Positions that are unknown are represented by -1.
  */
 @Immutable
-//TODO: make final once FilePosition is removed.
-public class SourcePosition {
+public final class SourcePosition {
 
     public static final SourcePosition UNKNOWN = new SourcePosition();
 

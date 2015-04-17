@@ -16,6 +16,7 @@
 package com.android.ide.common.blame.parser.aapt;
 
 import com.android.annotations.NonNull;
+import com.android.ide.common.blame.SourcePosition;
 import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
@@ -58,7 +59,6 @@ class ReadOnlyDocument {
         myFile = file;
         myLastModified = file.lastModified();
         myOffsets = Lists.newArrayListWithExpectedSize(mFileContents.length() / 30);
-        myOffsets.add(0);
         for (int i = 0; i < mFileContents.length(); i++) {
             char c = mFileContents.charAt(i);
             if (c == '\n') {
@@ -76,7 +76,8 @@ class ReadOnlyDocument {
     }
 
     /**
-     * Returns the offset of the given line number, relative to the beginning of the document.
+     * Returns the [0-based] offset of the given [0-based] line number,
+     * relative to the beginning of the document.
      *
      * @param lineNumber the given line number.
      * @return the offset of the given line. -1 is returned if the document is empty, or if the
@@ -91,7 +92,7 @@ class ReadOnlyDocument {
     }
 
     /**
-     * Returns the line number of the given offset.
+     * Returns the [0-based] line number of the given [0-based] offset.
      *
      * @param offset the given offset.
      * @return the line number of the given offset. -1 is returned if the document is empty or if
@@ -99,12 +100,21 @@ class ReadOnlyDocument {
      */
     int lineNumber(int offset) {
         for (int i = 0; i < myOffsets.size(); i++) {
-            int savedOffset = myOffsets.get(i);
-            if (offset <= savedOffset) {
+            if (offset < myOffsets.get(i)) {
                 return i;
             }
         }
         return -1;
+    }
+
+    SourcePosition sourcePosition(int offset) {
+        for (int i = 0; i < myOffsets.size(); i++) {
+            if (offset < myOffsets.get(i)) {
+                int lineStartOffset = i==0 ? 0 : myOffsets.get(i-1);
+                return new SourcePosition(i, offset - lineStartOffset, offset);
+            }
+        }
+        return SourcePosition.UNKNOWN;
     }
 
     /**

@@ -17,10 +17,13 @@
 package com.android.ide.common.blame;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.annotations.concurrency.Immutable;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 
+import java.io.File;
 import java.util.List;
 
 @Immutable
@@ -35,28 +38,68 @@ public final class Message {
     @NonNull
     private final List<SourceFilePosition> mSourceFilePositions;
 
+    @NonNull
+    private final String mRawMessage;
+
+    /**
+     * Create a new message, which has a {@link Kind}, a String which will be shown to the user and
+     * at least one {@link SourceFilePosition}.
+     *
+     * @param kind the message type.
+     * @param text the text of the message.
+     * @param sourceFilePosition the first source file position the message .
+     * @param sourceFilePositions any additional source file positions, may be empty.
+     */
     public Message(@NonNull Kind kind,
             @NonNull String text,
             @NonNull SourceFilePosition sourceFilePosition,
             @NonNull SourceFilePosition... sourceFilePositions) {
         mKind = kind;
         mText = text;
+        mRawMessage = text;
+        mSourceFilePositions = ImmutableList.<SourceFilePosition>builder()
+                .add(sourceFilePosition).add(sourceFilePositions).build();
+    }
+
+    /**
+     * Create a new message, which has a {@link Kind}, a String which will be shown to the user and
+     * at least one {@link SourceFilePosition}.
+     *
+     * It also has a rawMessage, to store the original string for cases when the message is
+     * constructed by parsing the output from another tool.
+     *
+     * @param kind the message kind.
+     * @param text a human-readable string explaining the issue.
+     * @param rawMessage the original text of the message, usually from an external tool.
+     * @param sourceFilePosition the first source file position.
+     * @param sourceFilePositions any additional source file positions, may be empty.
+     */
+    public Message(@NonNull Kind kind,
+            @NonNull String text,
+            @NonNull String rawMessage,
+            @NonNull SourceFilePosition sourceFilePosition,
+            @NonNull SourceFilePosition... sourceFilePositions) {
+        mKind = kind;
+        mText = text;
+        mRawMessage = rawMessage;
         mSourceFilePositions = ImmutableList.<SourceFilePosition>builder()
                 .add(sourceFilePosition).add(sourceFilePositions).build();
     }
 
     /*package*/ Message(@NonNull Kind kind,
             @NonNull String text,
-            @NonNull List<SourceFilePosition> positions) {
+            @NonNull String rawMessage,
+            @NonNull ImmutableList<SourceFilePosition> positions) {
         mKind = kind;
         mText = text;
+        mRawMessage = rawMessage;
+
         if (positions.isEmpty()) {
             mSourceFilePositions = ImmutableList.of(SourceFilePosition.UNKNOWN);
         } else {
             mSourceFilePositions = positions;
         }
     }
-
 
     @NonNull
     public Kind getKind() {
@@ -69,15 +112,60 @@ public final class Message {
     }
 
     /**
-     * Returns a list of sourceFilePositions. Will always contain at least one item.
+     * Returns a list of source positions. Will always contain at least one item.
      */
     @NonNull
     public List<SourceFilePosition> getSourceFilePositions() {
         return mSourceFilePositions;
     }
 
+    @NonNull
+    public String getRawMessage() {
+        return mRawMessage;
+    }
+
+    @Nullable
+    public String getSourcePath() {
+        File file = mSourceFilePositions.get(0).getFile().getSourceFile();
+        if (file == null) {
+            return null;
+        }
+        return file.getAbsolutePath();
+    }
+
+    /**
+     * Returns a legacy 1-based line number.
+     */
+    @Deprecated
+    public int getLineNumber() {
+        return mSourceFilePositions.get(0).getPosition().getStartLine() + 1;
+    }
+
+    /**
+     * Returns a legacy 1-based column number.
+     * @return
+     */
+    @Deprecated
+    public int getColumn() {
+        return mSourceFilePositions.get(0).getPosition().getStartColumn() + 1;
+    }
+
     public enum Kind {
-        ERROR, WARNING, INFO, STATISTICS, UNKNOWN
+        ERROR, WARNING, INFO, STATISTICS, UNKNOWN, SIMPLE;
+
+        public static Kind findIgnoringCase(String s, Kind defaultKind) {
+            for (Kind kind : values()) {
+                if (kind.toString().equalsIgnoreCase(s)) {
+                    return kind;
+                }
+            }
+            return defaultKind;
+        }
+
+        @Nullable
+        public static Kind findIgnoringCase(String s) {
+            return findIgnoringCase(s, null);
+        }
     }
 
     @Override
@@ -101,7 +189,7 @@ public final class Message {
 
     @Override
     public String toString() {
-        return Objects.toStringHelper(this).add("kind", mKind).add("text", mText)
-                .add("sources", mSourceFilePositions).toString();
+        return Objects.toStringHelper(this).add("kind", mKind).add("text", mText).add("sources",
+                mSourceFilePositions).toString();
     }
 }

@@ -16,7 +16,7 @@
 package com.android.ide.common.blame.parser.aapt;
 
 import com.android.annotations.NonNull;
-import com.android.ide.common.blame.output.GradleMessage;
+import com.android.ide.common.blame.Message;
 import com.android.ide.common.blame.parser.util.OutputLineReader;
 import com.android.ide.common.blame.parser.ParsingFailedException;
 import com.android.utils.ILogger;
@@ -37,7 +37,7 @@ class SkippingHiddenFileParser extends AbstractAaptOutputParser {
             .compile("^\\s+\\(skipping hidden file\\s'(.*)'\\)$");
 
     @Override
-    public boolean parse(@NonNull String line, @NonNull OutputLineReader reader, @NonNull List<GradleMessage> messages, @NonNull ILogger logger)
+    public boolean parse(@NonNull String line, @NonNull OutputLineReader reader, @NonNull List<Message> messages, @NonNull ILogger logger)
             throws ParsingFailedException {
         Matcher m = MSG_PATTERN.matcher(line);
         return m.matches();
