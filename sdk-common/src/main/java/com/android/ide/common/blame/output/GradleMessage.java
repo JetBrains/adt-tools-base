@@ -48,7 +48,7 @@ public class GradleMessage {
     private final String mOriginal;
 
     public GradleMessage(@NonNull Kind kind, @NonNull String text) {
-        this(kind, text, null /* sourcePath */, new SourceFragmentPositionRange(), text);
+        this(kind, text, null /* sourcePath */, SourceFragmentPositionRange.UNKNOWN, text);
     }
 
 

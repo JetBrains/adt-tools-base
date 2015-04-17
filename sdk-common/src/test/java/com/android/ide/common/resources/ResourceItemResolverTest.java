@@ -19,6 +19,7 @@ package com.android.ide.common.resources;
 import com.android.annotations.Nullable;
 import com.android.ide.common.rendering.api.LayoutLog;
 import com.android.ide.common.rendering.api.ResourceValue;
+import com.android.ide.common.res2.MergingException;
 import com.android.ide.common.res2.ResourceRepository;
 import com.android.ide.common.resources.configuration.FolderConfiguration;
 import com.android.resources.ResourceType;
@@ -148,8 +149,12 @@ public class ResourceItemResolverTest extends TestCase {
             @Override
             public ResourceResolver getResolver(boolean createIfNecessary) {
                 if (mResolver == null && createIfNecessary) {
-                    Map<ResourceType, Map<String, ResourceValue>> appResourceMap =
-                            appResources.getConfiguredResources(config);
+                    Map<ResourceType, Map<String, ResourceValue>> appResourceMap;
+                    try {
+                        appResourceMap = appResources.getConfiguredResources(config);
+                    } catch (MergingException e) {
+                        throw new RuntimeException(e);
+                    }
                     Map<ResourceType, Map<String, ResourceValue>> frameworkResourcesMap =
                             frameworkResources.getConfiguredResources(config);
                     assertNotNull(appResourceMap);

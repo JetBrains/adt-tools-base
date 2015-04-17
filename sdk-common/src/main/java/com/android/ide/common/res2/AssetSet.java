@@ -84,12 +84,12 @@ public class AssetSet extends DataSet<AssetItem, AssetFile> {
     }
 
     @Override
-    protected void readSourceFolder(File sourceFolder, ILogger logger)
+    protected void readSourceFolder(@NonNull File sourceFolder, @NonNull ILogger logger)
             throws MergingException {
         readFiles(sourceFolder, sourceFolder, logger);
     }
 
-    private void readFiles(File sourceFolder, File folder, ILogger logger)
+    private void readFiles(@NonNull File sourceFolder, @NonNull File folder, @NonNull ILogger logger)
             throws MergingException {
         File[] files = folder.listFiles();
         if (files != null && files.length > 0) {

@@ -18,15 +18,22 @@ package com.android.ide.common.res2;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.ide.common.blame.FilePosition;
+import com.android.ide.common.blame.SourceFragmentPositionRange;
+import com.google.common.base.Function;
+import com.google.common.base.Joiner;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+
+import org.xml.sax.SAXParseException;
 
 import java.io.File;
+import java.util.List;
 
 /** Exception for errors during merging */
 public class MergingException extends Exception {
     private String mMessage; // Keeping our own copy since parent prepends exception class name
-    private File mFile;
-    private int mLine = -1;
-    private int mColumn = -1;
+    private List<FilePosition> mFilePositions = Lists.newArrayList();
 
     public MergingException(@NonNull String message, @Nullable Throwable cause) {
         super(message, cause);
@@ -41,8 +48,41 @@ public class MergingException extends Exception {
         this(cause.getLocalizedMessage(), cause);
     }
 
+    /**
+     *  Add the file if it hasn't already been included in the list of file positions.
+     */
     public MergingException setFile(@NonNull File file) {
-        mFile = file;
+        for (FilePosition filePosition : mFilePositions) {
+            if (filePosition.getSourceFile().equals(file)) {
+                return this;
+            }
+        }
+        addFile(file);
+        return this;
+    }
+
+    public MergingException addFile(@NonNull File file) {
+        mFilePositions.add(new FilePosition(file, SourceFragmentPositionRange.UNKNOWN));
+        return this;
+    }
+
+    public MergingException addFileIfNonNull(@Nullable File file) {
+        return (file != null) ? addFile(file) : this;
+    }
+
+    public MergingException addFilePosition(@NonNull FilePosition filePosition) {
+        mFilePositions.add(filePosition);
+        return this;
+    }
+
+    public MergingException addFilePosition(@NonNull File file, @NonNull SAXParseException exception) {
+        int lineNumber = exception.getLineNumber();
+        if (lineNumber != -1) {
+            addFilePosition(new FilePosition(file, new SourceFragmentPositionRange(
+                    exception.getLineNumber() - 1, exception.getColumnNumber() - 1, -1)));
+        } else {
+            addFile(file);
+        }
         return this;
     }
 
@@ -51,33 +91,11 @@ public class MergingException extends Exception {
         return this;
     }
 
-    public MergingException setLine(int line) {
-        mLine = line;
-        return this;
-    }
-
-    public MergingException setColumn(int column) {
-        mColumn = column;
-        return this;
-    }
-
     /** Computes the error message to display for this error */
     @Override
     public String getMessage() {
         StringBuilder sb = new StringBuilder();
-        String path = null;
-        if (mFile != null) {
-            path = mFile.getAbsolutePath();
-            sb.append(path);
-            if (mLine >= 0) {
-                sb.append(':');
-                sb.append(Integer.toString(mLine));
-                if (mColumn >= 0) {
-                    sb.append(':');
-                    sb.append(Integer.toString(mColumn));
-                }
-            }
-        }
+        sb.append(Joiner.on('\t').join(mFilePositions));
 
         if (sb.length() > 0) {
             sb.append(':').append(' ');
@@ -101,15 +119,18 @@ public class MergingException extends Exception {
         // like for example for permission denied errors where the error message
         // string itself contains the path as a prefix:
         //    /my/full/path: /my/full/path (Permission denied)
-        if (path != null && message.startsWith(path)) {
-            int stripStart = path.length();
-            if (message.length() > stripStart && message.charAt(stripStart) == ':') {
-                stripStart++;
+        if (mFilePositions.size() == 1) {
+           String path = mFilePositions.get(0).getSourceFile().getAbsolutePath();
+            if (path != null && message.startsWith(path)) {
+                int stripStart = path.length();
+                if (message.length() > stripStart && message.charAt(stripStart) == ':') {
+                    stripStart++;
+                }
+                if (message.length() > stripStart && message.charAt(stripStart) == ' ') {
+                    stripStart++;
+                }
+                message = message.substring(stripStart);
             }
-            if (message.length() > stripStart && message.charAt(stripStart) == ' ') {
-                stripStart++;
-            }
-            message = message.substring(stripStart);
         }
 
         sb.append(message);
@@ -119,21 +140,5 @@ public class MergingException extends Exception {
     @Override
     public String toString() {
         return getMessage();
-    }
-
-    /** @return the source file where the error occurred, if known */
-    @Nullable
-    public File getFile() {
-        return mFile;
-    }
-
-    /** @return the 0-based line number, if known, otherwise -1 */
-    public int getLine() {
-        return mLine;
-    }
-
-    /** @return the 0-based column number, if known, otherwise -1 */
-    public int getColumn() {
-        return mColumn;
     }
 }
