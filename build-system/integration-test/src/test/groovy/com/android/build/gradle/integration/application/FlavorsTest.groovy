@@ -15,7 +15,6 @@
  */
 
 package com.android.build.gradle.integration.application
-
 import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.utils.ModelHelper
@@ -109,6 +108,17 @@ class FlavorsTest {
         new ProductFlavorHelper(f1faDebugVariant.getMergedFlavor(), "F1faDebug Merged Flavor")
                 .test()
         new VariantHelper(f1faDebugVariant, projectDir, "flavors-f1-fa-debug.apk").test()
+    }
+
+    @Test
+    public void "compound source sets are in the model"() throws Exception {
+        for (variant in model.variants) {
+            assert variant.extraJavaArtifacts.every { it.multiFlavorSourceProvider != null }
+            assert variant.extraJavaArtifacts.every { it.variantSourceProvider != null }
+            assert variant.extraAndroidArtifacts.every { it.multiFlavorSourceProvider != null }
+            // No per-variant source providers for android tests.
+            assert variant.extraAndroidArtifacts.every { it.variantSourceProvider == null }
+        }
     }
 
     @Test
