@@ -18,29 +18,32 @@ package com.android.tools.chartlib;
 import com.android.annotations.NonNull;
 import com.android.annotations.VisibleForTesting;
 
-import java.awt.*;
-import java.awt.event.ActionEvent;
+import java.awt.BasicStroke;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.FontMetrics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
+import java.awt.Stroke;
 import java.awt.event.ActionListener;
-import java.awt.event.HierarchyEvent;
 import java.awt.event.HierarchyListener;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Arc2D;
 import java.awt.geom.Path2D;
 
-import gnu.trove.TIntObjectHashMap;
+import javax.swing.Icon;
 
-import javax.swing.*;
+import gnu.trove.TIntObjectHashMap;
 
 /**
  * A component to display a TimelineData object. It locks the timeline object to prevent
  * modifications to it while it's begin rendered, but objects of this class should not be accessed
  * from different threads.
  */
-@SuppressWarnings({"FieldAccessedSynchronizedAndUnsynchronized", "UseJBColor"})
-public class TimelineComponent extends JComponent implements ActionListener, HierarchyListener {
+public class TimelineComponent extends AnimatedComponent
+        implements ActionListener, HierarchyListener {
 
     private static final Color TEXT_COLOR = new Color(128, 128, 128);
-
-    private static final Font TIMELINE_FONT = new Font("Sans", Font.PLAIN, 10);
 
     private static final int LEFT_MARGIN = 120;
 
@@ -62,25 +65,20 @@ public class TimelineComponent extends JComponent implements ActionListener, Hie
     @NonNull
     private final TimelineData mData;
 
+    @NonNull
+    private final EventData mEvents;
+
     private final float mInitialMax;
 
     private final float mAbsoluteMax;
 
     private final float mInitialMarkerSeparation;
 
-    private final Timer mTimer;
-
     private String[] mStreamNames;
 
     private Color[] mStreamColors;
 
     private boolean mFirstFrame;
-
-    private long mLastRenderTime;
-
-    private Path2D.Float[] mPaths;
-
-    private boolean mDrawDebugInfo;
 
     /**
      * The current maximum range in y-axis units.
@@ -110,11 +108,6 @@ public class TimelineComponent extends JComponent implements ActionListener, Hie
     private int mRight;
 
     /**
-     * The length of the last frame in seconds.
-     */
-    private float mFrameLength;
-
-    /**
      * The current scale from y-axis values to pixels.
      */
     private float mYScale;
@@ -130,19 +123,65 @@ public class TimelineComponent extends JComponent implements ActionListener, Hie
     private float mBeginTime;
 
     /**
-     * The current state for all in-progress markers.
+     * How to render each event type.
      */
-    private float mEventProgress;
-
-    /**
-     * Which sample types should be rendered as events.
-     */
-    private TIntObjectHashMap<Event> mEvents;
+    private TIntObjectHashMap<EventInfo> mEventsInfo;
 
     /**
      * The units of the y-axis values.
      */
     private String mUnits;
+
+    /**
+     * The number of available local samples.
+     */
+    private int mSize;
+
+    /**
+     * The times at which the samples occured.
+     */
+    private float[] mTimes;
+
+
+    /**
+     * The vaues of the samples as in mValues[stream][sample]
+     */
+    private final float[][] mValues;
+
+    /**
+     * The number of events to render.
+     */
+    private int mEventsSize;
+
+    /**
+     * The start time of each event.
+     */
+    private float[] mEventStart;
+
+    /**
+     * The end time of each event, if NaN then the event did not end.
+     */
+    private float[] mEventEnd;
+
+    /**
+     * The type of each event.
+     */
+    private int[] mEventTypes;
+
+    /**
+     * The animated angle of an event in progress.
+     */
+    private float mEventProgressStart;
+
+    /**
+     * The direction of the event animation.
+     */
+    private float mEventProgressDir = 1.0f;
+
+    /**
+     * The current state for all in-progress events.
+     */
+    private float mEventProgress;
 
     /**
      * Creates a timeline component that renders the given timeline data. It will animate the
@@ -154,29 +193,32 @@ public class TimelineComponent extends JComponent implements ActionListener, Hie
      * @param absoluteMax             the absolute maximum value for the y-axis.
      * @param initialMarkerSeparation the initial separations for the markers on the y-axis.
      */
-    public TimelineComponent(@NonNull TimelineData data,
+    public TimelineComponent(
+            @NonNull TimelineData data,
+            @NonNull EventData events,
             float bufferTime,
             float initialMax,
             float absoluteMax,
             float initialMarkerSeparation) {
+        super(FPS);
         mData = data;
+        mEvents = events;
         mBufferTime = bufferTime;
         mInitialMax = initialMax;
         mAbsoluteMax = absoluteMax;
         mInitialMarkerSeparation = initialMarkerSeparation;
         int streams = mData.getStreamCount();
-        mTimer = new Timer(1000 / FPS, this);
         addHierarchyListener(this);
-        mPaths = new Path2D.Float[streams];
         mStreamNames = new String[streams];
         mStreamColors = new Color[streams];
+        mValues = new float[streams][];
+        mSize = 0;
         for (int i = 0; i < streams; i++) {
-            mPaths[i] = new Path2D.Float();
             mStreamNames[i] = "Stream " + i;
             mStreamColors[i] = Color.BLACK;
         }
         mUnits = "";
-        mEvents = new TIntObjectHashMap<Event>();
+        mEventsInfo = new TIntObjectHashMap<EventInfo>();
         setOpaque(true);
         reset();
     }
@@ -186,28 +228,13 @@ public class TimelineComponent extends JComponent implements ActionListener, Hie
         mStreamColors[stream] = color;
     }
 
-    public void configureEvent(int typeFrom, int typeTo, int stream, Icon icon, Color color,
+    public void configureEvent(int type, int stream, Icon icon, Color color,
             Color progress) {
-        mEvents.put(typeFrom, new Event(typeFrom, typeTo, stream, icon, color, progress));
+        mEventsInfo.put(type, new EventInfo(type, stream, icon, color, progress));
     }
 
     public void configureUnits(String units) {
         mUnits = units;
-    }
-
-    /**
-     * A linear interpolation that accumulates over time. This gives an exponential effect where the
-     * value {@code from} moves towards the value {@code to} at a rate of {@code fraction} per
-     * second. The actual interpolated amount depends on the current frame length.
-     *
-     * @param from     the value to interpolate from.
-     * @param to       the target value.
-     * @param fraction the interpolation fraction.
-     * @return the interpolated value.
-     */
-    private float lerp(float from, float to, float fraction) {
-        float q = (float) Math.pow(1.0f - fraction, mFrameLength);
-        return from * q + to * (1.0f - q);
     }
 
     public void reset() {
@@ -217,199 +244,184 @@ public class TimelineComponent extends JComponent implements ActionListener, Hie
         mFirstFrame = true;
     }
 
-    public boolean isDrawDebugInfo() {
-        return mDrawDebugInfo;
-    }
-
-    public void setDrawDebugInfo(boolean drawDebugInfo) {
-        mDrawDebugInfo = drawDebugInfo;
-    }
-
     @Override
-    public void paintComponent(Graphics g) {
-        Graphics2D g2d = (Graphics2D) g.create();
-        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-        g2d.setFont(TIMELINE_FONT);
+    protected void draw(Graphics2D g2d) {
 
         Dimension dim = getSize();
-
-        g2d.setClip(0, 0, dim.width, dim.height);
-        g2d.setColor(getBackground());
-        g2d.fillRect(0, 0, dim.width, dim.height);
 
         mBottom = dim.height - BOTTOM_MARGIN;
         mRight = dim.width - RIGHT_MARGIN;
 
-        // Update frame length.
-        long now = System.nanoTime();
-        mFrameLength = (now - mLastRenderTime) / 1000000000.0f;
-        mLastRenderTime = now;
-
-        synchronized (mData) {
-            // Calculate begin and end times in seconds.
-            mEndTime = mData.getEndTime() - mBufferTime;
-            mBeginTime = mEndTime - (mRight - LEFT_MARGIN) / X_SCALE;
-
-            // Animate the current maximum towards the real one.
-            float cappedMax = Math.min(mData.getMaxTotal(), mAbsoluteMax);
-            if (cappedMax > mCurrentMax) {
-                mCurrentMax = lerp(mCurrentMax, cappedMax, mFirstFrame ? 1.f : .95f);
-            }
-            mYScale = (mBottom - TOP_MARGIN) / mCurrentMax;
-
-            g2d.setClip(LEFT_MARGIN, TOP_MARGIN, mRight - LEFT_MARGIN, mBottom - TOP_MARGIN);
-
-            drawTimelineData(g2d);
-            drawEvents(g2d);
-
-            g2d.setClip(0, 0, dim.width, dim.height);
-
-            drawLabels(g2d);
-            drawTimeMarkers(g2d);
-            drawMarkers(g2d);
-            drawGuides(g2d);
-            if (mDrawDebugInfo) {
-                drawDebugInfo(g2d);
-            }
-
-            g2d.dispose();
-        }
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g2d.setFont(DEFAULT_FONT);
+        g2d.setClip(0, 0, dim.width, dim.height);
+        g2d.setColor(getBackground());
+        g2d.fillRect(0, 0, dim.width, dim.height);
+        g2d.setClip(LEFT_MARGIN, TOP_MARGIN, mRight - LEFT_MARGIN, mBottom - TOP_MARGIN);
+        drawTimelineData(g2d);
+        drawEvents(g2d);
+        g2d.setClip(0, 0, dim.width, dim.height);
+        drawLabels(g2d);
+        drawTimeMarkers(g2d);
+        drawMarkers(g2d);
+        drawGuides(g2d);
 
         mFirstFrame = false;
     }
 
-    private void drawDebugInfo(Graphics2D g2d) {
-        int size = mData.size();
+    @Override
+    protected void debugDraw(Graphics2D g2d) {
         int drawn = 0;
-        g2d.setFont(TIMELINE_FONT.deriveFont(5.0f));
-        for (int i = 0; i < size; ++i) {
-            TimelineData.Sample sample = mData.get(i);
-            if (sample.time > mBeginTime && sample.time < mEndTime) {
+        g2d.setFont(DEFAULT_FONT.deriveFont(5.0f));
+        for (int i = 0; i < mSize; ++i) {
+            if (mTimes[i] > mBeginTime && mTimes[i] < mEndTime) {
                 float v = 0.0f;
-                for (float f : sample.values) {
-                    v += f;
-                    int x = (int) timeToX(sample.time);
+                for (int j = 0; j < mValues.length; ++j) {
+                    v += mValues[j][i];
+                    int x = (int) timeToX(mTimes[i]);
                     int y = (int) valueToY(v);
-                    Color c = new Color((17 * sample.type) % 255, (121 * sample.type) % 255,
-                            (71 * sample.type) % 255);
+                    Color c = new Color(66, 66, 66);
                     g2d.setColor(c);
                     g2d.drawLine(x, y - 2, x, y + 2);
                     g2d.drawLine(x - 2, y, x + 2, y);
                     g2d.setColor(TEXT_COLOR);
-                    if (sample.id > 0) {
-                        g2d.drawString(String.format("[%d]", sample.id), x - 3, y - 5);
-                    }
                 }
                 drawn++;
             }
         }
 
-        g2d.setFont(TIMELINE_FONT);
-        g2d.drawString(String.format("FPS: %.2f", (1.0f / mFrameLength)), mRight + 20,
-                mBottom - 40);
-        g2d.drawString(String.format("Total samples: %d", size), mRight + 20, mBottom - 30);
-        g2d.drawString(String.format("Drawn samples: %d", drawn), mRight + 20, mBottom - 20);
-        g2d.drawString(String.format("Render time: %.2fms",
-                (System.nanoTime() - mLastRenderTime) / 1000000.f), mRight + 20, mBottom - 10);
-    }
-
-    @Override
-    public void actionPerformed(ActionEvent actionEvent) {
-        repaint();
-    }
-
-    @Override
-    public void hierarchyChanged(HierarchyEvent hierarchyEvent) {
-        if (mTimer.isRunning() && !isShowing()) {
-            mTimer.stop();
-        } else if (!mTimer.isRunning() && isShowing()) {
-            mTimer.start();
-        }
+        addDebugInfo("Drawn samples: %d", drawn);
     }
 
     private void drawTimelineData(Graphics2D g2d) {
-        if (mData.size() > 1) {
-            setPaths(0, mData.size());
-            for (int i = mPaths.length - 1; i >= 0; i--) {
-                g2d.setColor(mStreamColors[i]);
-                g2d.fill(mPaths[i]);
+        mYScale = (mBottom - TOP_MARGIN) / mCurrentMax;
+        Path2D.Float[] paths = new Path2D.Float[mValues.length];
+        if (mSize > 1) {
+            int sample = 0;
+            // Optimize to not render too many samples since they get clipped.
+            while (sample < mSize - 1 && mTimes[sample + 1] < mBeginTime) {
+                sample++;
+            }
+            for (int j = 0; j < mValues.length; j++) {
+                paths[j] = new Path2D.Float();
+                paths[j].moveTo(timeToX(mTimes[sample]), valueToY(0.0f));
+            }
+            for (; sample < mSize; sample++) {
+                float val = 0.0f;
+                for (int j = 0; j < mValues.length; j++) {
+                    val += mValues[j][sample];
+                    paths[j].lineTo(timeToX(mTimes[sample]), valueToY(Math.min(val, mAbsoluteMax)));
+                }
+                // Stop rendering if we are over the end limit.
+                if (mTimes[sample] > mEndTime) {
+                    sample++;
+                    break;
+                }
+            }
+            for (Path2D.Float path : paths) {
+                path.lineTo(timeToX(mTimes[sample - 1]), valueToY(0.0f));
             }
         }
+        for (int i = paths.length - 1; i >= 0; i--) {
+            if (paths[i] != null) {
+                g2d.setColor(mStreamColors[i]);
+                g2d.fill(paths[i]);
+            }
+        }
+        addDebugInfo(String.format("Total samples: %d", mSize));
+    }
+
+    private float interpolate(int stream, int sample, float time) {
+        float a = 0.0f;
+        float b = 0.0f;
+        int prev = sample > 0 ? sample - 1 : 0;
+        int next = sample < mSize ? sample : mSize - 1;
+        for (int i = 0; i <= stream; i++) {
+            a += mValues[i][prev];
+            b += mValues[i][next];
+        }
+        float delta = mTimes[next] - mTimes[prev];
+        float ratio = delta != 0 ? (time - mTimes[prev]) / delta : 1.0f;
+        return (b - a) * ratio + a;
     }
 
     private void drawEvents(Graphics2D g2d) {
-        int size = mData.size();
-        AffineTransform tx = g2d.getTransform();
-        Stroke stroke = g2d.getStroke();
-        Event currentEvent = null;
-        int start = 0;
-        float startX = 0;
-        float startY = 0;
 
-        for (int i = 0; i < size + 1; ++i) {
-            TimelineData.Sample sample = i < size ? mData.get(i) : null;
-            Event event = sample == null ? null : mEvents.get(sample.type);
-            // A new event or the end of the current one.
-            if (sample == null || event != null || (currentEvent != null
-                    && currentEvent.typeTo == sample.type)) {
-                // If there was an event in progress, end it.
-                if (currentEvent != null) {
-                    setPaths(start, i < size ? i + 1 : size);
-                    g2d.setColor(currentEvent.color);
-                    g2d.fill(mPaths[0]);
-
+        if (mSize > 0) {
+            int drawnEvents = 0;
+            AffineTransform tx = g2d.getTransform();
+            Stroke stroke = g2d.getStroke();
+            int s = 0;
+            int e = 0;
+            while (e < mEventsSize) {
+                if (s < mSize && mTimes[s] < mEventStart[e]) {
+                    s++;
+                } else if (Float.isNaN(mEventEnd[e])
+                        || mEventEnd[e] > mBeginTime && mEventEnd[e] > mTimes[0]) {
+                    drawnEvents++;
+                    EventInfo info = mEventsInfo.get(mEventTypes[e]);
+                    float x = timeToX(mEventStart[e]);
+                    float y = valueToY(interpolate(info.stream, s, mEventStart[e]));
                     AffineTransform dt = new AffineTransform(tx);
-                    dt.translate(startX, startY);
+                    dt.translate(x, y);
                     g2d.setTransform(dt);
-                    Icon icon = currentEvent.icon;
-                    icon.paintIcon(this, g2d, 0, -icon.getIconHeight());
-
-                    g2d.setColor(currentEvent.progress);
+                    info.icon.paintIcon(this, g2d, -info.icon.getIconWidth() / 2,
+                            -info.icon.getIconHeight() - 5);
+                    g2d.setTransform(tx);
 
                     g2d.setStroke(
                             new BasicStroke(1.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-                    g2d.drawLine(0, 0, 0, (int) (mBottom - startY));
-                    g2d.drawLine(0, 0, icon.getIconWidth(), 0);
-                    if (sample == null) {
-                        drawInProgressMarker(g2d, icon.getIconWidth() + 6, -icon.getIconHeight(),
-                                6);
+                    Path2D.Float p = new Path2D.Float();
+                    p.moveTo(x, mBottom);
+                    p.lineTo(x, y);
+                    float endTime = Float.isNaN(mEventEnd[e]) ? mEndTime : mEventEnd[e];
+                    int i = s;
+                    for (; i < mSize && mTimes[i] < endTime; i++) {
+                        float val = 0.0f;
+                        for (int j = 0; j <= info.stream; j++) {
+                            val += mValues[j][i];
+                        }
+                        p.lineTo(timeToX(mTimes[i]), valueToY(val));
                     }
-                    g2d.setTransform(tx);
-                }
+                    p.lineTo(timeToX(endTime), valueToY(interpolate(info.stream, i, endTime)));
+                    if (!Float.isNaN(mEventEnd[e])) {
+                        p.lineTo(timeToX(mEventEnd[e]), valueToY(0));
+                        if (info.color != null) {
+                            g2d.setColor(info.color);
+                            g2d.fill(p);
+                        }
+                        g2d.setColor(info.progress);
+                        g2d.draw(p);
+                    } else {
+                        p.lineTo(timeToX(endTime), valueToY(0));
+                        if (info.color != null) {
+                            g2d.setColor(info.color);
+                            g2d.fill(p);
+                        }
+                        g2d.setColor(info.progress);
+                        g2d.draw(p);
+                        // Draw in progress marker
+                        float end = 360 * mEventProgress;
+                        float start = mEventProgressStart;
+                        if (mEventProgressDir < 0.0f) {
+                            start += end;
+                            end = 360 - end;
+                        }
+                        g2d.draw(new Arc2D.Float(
+                                x + info.icon.getIconWidth() / 2 + 3,
+                                y - info.icon.getIconHeight() - 3,
+                                6, 6,
+                                start, end, Arc2D.OPEN));
 
-                if (sample != null) {
-                    float x = timeToX(sample.time);
-                    float y = valueToY(sample.values[0]);
-
-                    currentEvent = event;
-                    if (currentEvent != null) {
-                        start = i;
-                        startX = x;
-                        startY = y;
                     }
+                    e++;
+                } else {
+                    e++;
                 }
             }
+            g2d.setStroke(stroke);
+            addDebugInfo("Drawn events: %d", drawnEvents);
         }
-        g2d.setStroke(stroke);
-    }
-
-    private void drawInProgressMarker(Graphics2D g2d, int x, int y, int size) {
-        float dir = mEventProgress < 0.f ? -1.f : 1.f;
-
-        float startAngle = (System.currentTimeMillis() / 8) % 360;
-        float endAngle = 360 * mEventProgress * dir;
-
-        // Invert the animation if we move in the opposite direction.
-        if (dir < 0.0f) {
-            startAngle += endAngle;
-            endAngle = 360 - endAngle;
-        }
-
-        g2d.drawArc(x - size / 2, y - size / 2, size, size, (int) startAngle, (int) endAngle);
-        mEventProgress = mEventProgress * dir > 0.95f ? 0.01f * -dir
-                : lerp(mEventProgress, dir, .9f);
-
     }
 
     private float valueToY(float val) {
@@ -421,25 +433,22 @@ public class TimelineComponent extends JComponent implements ActionListener, Hie
     }
 
     private void drawLabels(Graphics2D g2d) {
-        if (!mData.isEmpty()) {
-            TimelineData.Sample value = mData.get(mData.size() - 1);
-            g2d.setFont(TIMELINE_FONT);
-            FontMetrics metrics = g2d.getFontMetrics();
-            for (int i = 0; i < mData.getStreamCount(); i++) {
-                g2d.setColor(mStreamColors[i]);
-                int y = TOP_MARGIN + 15 + (mData.getStreamCount() - i - 1) * 20;
-                g2d.fillRect(mRight + 20, y, 15, 15);
-                g2d.setColor(TEXT_COLOR);
-                g2d.drawString(
-                        String.format("%s [%.2f %s]", mStreamNames[i], value.values[i], mUnits),
-                        mRight + 40,
-                        y + 7 + metrics.getAscent() * .5f);
-            }
+        g2d.setFont(DEFAULT_FONT);
+        FontMetrics metrics = g2d.getFontMetrics();
+        for (int i = 0; i < mStreamNames.length && mSize > 0; i++) {
+            g2d.setColor(mStreamColors[i]);
+            int y = TOP_MARGIN + 15 + (mStreamNames.length - i - 1) * 20;
+            g2d.fillRect(mRight + 20, y, 15, 15);
+            g2d.setColor(TEXT_COLOR);
+            g2d.drawString(
+                    String.format("%s [%.2f %s]", mStreamNames[i], mValues[i][mSize - 1], mUnits),
+                    mRight + 40,
+                    y + 7 + metrics.getAscent() * .5f);
         }
     }
 
     private void drawTimeMarkers(Graphics2D g2d) {
-        g2d.setFont(TIMELINE_FONT);
+        g2d.setFont(DEFAULT_FONT);
         g2d.setColor(TEXT_COLOR);
         FontMetrics metrics = g2d.getFontMetrics();
         float offset = metrics.stringWidth("000") * 0.5f;
@@ -476,27 +485,6 @@ public class TimelineComponent extends JComponent implements ActionListener, Hie
             return;
         }
 
-        // Animate the fade in/out of markers.
-        g2d.setFont(TIMELINE_FONT);
-        FontMetrics metrics = g2d.getFontMetrics();
-        int ascent = metrics.getAscent();
-        float distance = mMarkerSeparation * mYScale;
-        float evenMarkersTarget = 1.0f;
-        if (distance < ascent * 2) { // Too many markers
-            if (mEvenMarkersAlpha < 0.1f) {
-                mMarkerSeparation *= 2;
-                mEvenMarkersAlpha = 1.0f;
-            } else {
-                evenMarkersTarget = 0.0f;
-            }
-        } else if (distance > ascent * 5) { // Not enough
-            if (mEvenMarkersAlpha > 0.9f) {
-                mMarkerSeparation /= 2;
-                mEvenMarkersAlpha = 0.0f;
-            }
-        }
-        mEvenMarkersAlpha = lerp(mEvenMarkersAlpha, evenMarkersTarget, 0.999f);
-
         int markers = (int) (mCurrentMax / mMarkerSeparation);
         float markerPosition = LEFT_MARGIN - 10;
         for (int i = 0; i < markers + 1; i++) {
@@ -518,8 +506,10 @@ public class TimelineComponent extends JComponent implements ActionListener, Hie
             }
             g2d.drawLine(LEFT_MARGIN - 2, y, LEFT_MARGIN, y);
 
+            FontMetrics metrics = getFontMetrics(DEFAULT_FONT);
             String marker = String.format("%.2f %s", markerValue, mUnits);
-            g2d.drawString(marker, markerPosition - metrics.stringWidth(marker), y + ascent * 0.5f);
+            g2d.drawString(marker, markerPosition - metrics.stringWidth(marker),
+                    y + metrics.getAscent() * 0.5f);
         }
     }
 
@@ -532,42 +522,85 @@ public class TimelineComponent extends JComponent implements ActionListener, Hie
         }
     }
 
-    private void setPaths(int from, int to) {
-        for (Path2D.Float path : mPaths) {
-            path.reset();
+    @Override
+    protected void updateData() {
+        long start;
+        synchronized (mData) {
+            start = mData.getStartTime();
+            mSize = mData.size();
+            assert mData.getStreamCount() == mValues.length;
+            if (mTimes == null || mTimes.length < mSize) {
+                int alloc = Math.max(mSize, mTimes == null ? 64 : mTimes.length * 2);
+                mTimes = new float[alloc];
+                for (int j = 0; j < mData.getStreamCount(); ++j) {
+                    mValues[j] = new float[alloc];
+                }
+            }
+            for (int i = 0; i < mSize; ++i) {
+                TimelineData.Sample sample = mData.get(i);
+                mTimes[i] = sample.time;
+                for (int j = 0; j < mData.getStreamCount(); ++j) {
+                    mValues[j][i] = sample.values[j];
+                }
+            }
+            // Calculate begin and end times in seconds.
+            mEndTime = mData.getEndTime() - mBufferTime;
+            mBeginTime = mEndTime - (mRight - LEFT_MARGIN) / X_SCALE;
+            // Animate the current maximum towards the real one.
+            float cappedMax = Math.min(mData.getMaxTotal(), mAbsoluteMax);
+            if (cappedMax > mCurrentMax) {
+                mCurrentMax = lerp(mCurrentMax, cappedMax, mFirstFrame ? 1.f : .95f);
+            }
+
+            // Animate the fade in/out of markers.
+            FontMetrics metrics = getFontMetrics(DEFAULT_FONT);
+            int ascent = metrics.getAscent();
+            float distance = mMarkerSeparation * mYScale;
+            float evenMarkersTarget = 1.0f;
+            if (distance < ascent * 2) { // Too many markers
+                if (mEvenMarkersAlpha < 0.1f) {
+                    mMarkerSeparation *= 2;
+                    mEvenMarkersAlpha = 1.0f;
+                } else {
+                    evenMarkersTarget = 0.0f;
+                }
+            } else if (distance > ascent * 5) { // Not enough
+                if (mEvenMarkersAlpha > 0.9f) {
+                    mMarkerSeparation /= 2;
+                    mEvenMarkersAlpha = 0.0f;
+                }
+            }
+            mEvenMarkersAlpha = lerp(mEvenMarkersAlpha, evenMarkersTarget, 0.999f);
         }
-        if (to - from > 1) {
-            // Optimize to not render too many samples since they get clipped.
-            while (from < to - 1 && mData.get(from + 1).time < mBeginTime) {
-                from++;
+        synchronized (mEvents) {
+            mEventsSize = mEvents.size();
+            if (mEventStart == null || mEventStart.length < mEventsSize) {
+                int alloc = Math.max(mEventsSize, mEventStart == null ? 64 : mEventStart.length * 2);
+                mEventStart = new float[alloc];
+                mEventEnd = new float[alloc];
+                mEventTypes = new int[alloc];
+
             }
-            TimelineData.Sample sample = mData.get(from);
-            for (Path2D.Float path : mPaths) {
-                path.moveTo(timeToX(sample.time), valueToY(0.0f));
+            for (int i = 0; i < mEventsSize; i++) {
+                EventData.Event event = mEvents.get(i);
+                mEventStart[i] = (event.from - start) / 1000.0f;
+                mEventEnd[i] = event.to == -1 ? Float.NaN : (event.to - start) / 1000.0f;
+                mEventTypes[i] = event.type;
             }
-            for (int i = from; i < to; i++) {
-                sample = mData.get(i);
-                float val = 0.0f;
-                for (int j = 0; j < sample.values.length; j++) {
-                    val += sample.values[j];
-                    mPaths[j].lineTo(timeToX(sample.time), valueToY(Math.min(val, mAbsoluteMax)));
-                }
-                // Stop rendering if we are over the end limit.
-                if (sample.time > mEndTime) {
-                    break;
-                }
+
+            // Animate events in progress
+            if (mEventProgress > 0.95f) {
+                mEventProgressDir = -mEventProgressDir;
+                mEventProgress = 0.0f;
             }
-            for (Path2D.Float path : mPaths) {
-                path.lineTo(timeToX(sample.time), valueToY(0.0f));
-            }
+            mEventProgressStart = (mEventProgressStart + mFrameLength * 200.0f) % 360.0f;
+            mEventProgress = lerp(mEventProgress, 1.0f, .99f);
         }
     }
 
-    private static class Event {
+    private static class EventInfo {
 
-        public final int typeFrom;
-
-        public final int typeTo;
+        public final int type;
 
         public final int stream;
 
@@ -577,10 +610,9 @@ public class TimelineComponent extends JComponent implements ActionListener, Hie
 
         public final Color progress;
 
-        private Event(int typeFrom, int typeTo, int stream, Icon icon, Color color,
+        private EventInfo(int type, int stream, Icon icon, Color color,
                 Color progress) {
-            this.typeFrom = typeFrom;
-            this.typeTo = typeTo;
+            this.type = type;
             this.stream = stream;
             this.icon = icon;
             this.color = color;

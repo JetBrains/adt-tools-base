@@ -34,6 +34,13 @@ public class CircularArrayListTest extends TestCase {
         assertEquals(1, mList.get(1).intValue());
 
         try {
+            mList.get(-1);
+            fail("IndexOutOfBoundsException expected");
+        } catch (IndexOutOfBoundsException e) {
+            // Expected.
+        }
+
+        try {
             mList.get(2);
             fail("IndexOutOfBoundsException expected");
         } catch (IndexOutOfBoundsException e) {

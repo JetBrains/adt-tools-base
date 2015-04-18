@@ -45,7 +45,7 @@ public class TimelineData {
     }
 
     @VisibleForTesting
-    synchronized public long getStartTime() {
+    public synchronized long getStartTime() {
         return mStart;
     }
 
@@ -53,21 +53,21 @@ public class TimelineData {
         return myStreams;
     }
 
-    synchronized public float getMaxTotal() {
+    public synchronized float getMaxTotal() {
         return mMaxTotal;
     }
 
-    synchronized public void add(long time, int type, int id, float... values) {
+    public synchronized void add(long time, int type, float... values) {
         assert values.length == myStreams;
         float total = 0.0f;
         for (float value : values) {
             total += value;
         }
         mMaxTotal = Math.max(mMaxTotal, total);
-        mSamples.add(new Sample((time - mStart) / 1000.0f, type, id, values));
+        mSamples.add(new Sample((time - mStart) / 1000.0f, type, values));
     }
 
-    synchronized public void clear() {
+    public synchronized void clear() {
         mSamples.clear();
         mMaxTotal = 0.0f;
         mStart = System.currentTimeMillis();
@@ -85,7 +85,7 @@ public class TimelineData {
         return size() == 0;
     }
 
-    synchronized public float getEndTime() {
+    public synchronized float getEndTime() {
         return (mSamples.isEmpty() ? 0.0f : (System.currentTimeMillis() - mStart)) / 1000.f;
     }
 
@@ -103,13 +103,10 @@ public class TimelineData {
 
         public final int type;
 
-        public final int id;
-
-        public Sample(float time, int type, int id, float[] values) {
+        public Sample(float time, int type, float[] values) {
             this.time = time;
             this.values = values;
             this.type = type;
-            this.id = id;
         }
     }
 }
