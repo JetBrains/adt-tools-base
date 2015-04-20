@@ -87,6 +87,7 @@ class BasicTest {
         JavaCompileOptions javaCompileOptions = model.getJavaCompileOptions()
         assertEquals("1.6", javaCompileOptions.getSourceCompatibility())
         assertEquals("1.6", javaCompileOptions.getTargetCompatibility())
+        assertEquals("UTF-8", javaCompileOptions.getEncoding())
     }
 
     @Test
