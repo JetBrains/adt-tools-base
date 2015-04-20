@@ -21,6 +21,13 @@ import com.android.annotations.NonNull;
  * Java compile options.
  */
 public interface JavaCompileOptions {
+
+    /**
+     * @return the java compiler encoding setting.
+     */
+    @NonNull
+    String getEncoding();
+
     /**
      * @return the level of compliance Java source code has.
      */

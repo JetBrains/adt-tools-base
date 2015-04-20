@@ -564,6 +564,28 @@ public class AppPluginDslTest extends BaseTest {
         assertEquals("mockable-Google-Inc.-Google-APIs-21.jar", mockableJarFile.name)
     }
 
+    public void testEncoding() {
+        Project project = ProjectBuilder.builder().withProjectDir(
+                new File(testDir, "${FOLDER_TEST_PROJECTS}/basic")).build()
+
+        project.apply plugin: 'com.android.application'
+        project.android {
+            compileSdkVersion 21
+            buildToolsVersion '20.0.0'
+
+            compileOptions {
+                encoding "foo"
+            }
+        }
+
+        AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
+        plugin.createAndroidTasks(false)
+
+        assertEquals(
+                "foo",
+                project.compileReleaseJava.options.encoding)
+    }
+
     private static void checkTestedVariant(@NonNull String variantName,
                                            @NonNull String testedVariantName,
                                            @NonNull Collection<ApplicationVariant> variants,
