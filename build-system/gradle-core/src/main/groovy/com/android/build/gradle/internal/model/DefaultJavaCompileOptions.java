@@ -29,10 +29,13 @@ class DefaultJavaCompileOptions implements JavaCompileOptions, Serializable {
     private final String sourceCompatibility;
     @NonNull
     private final String targetCompatibility;
+    @NonNull
+    private final String encoding;
 
     DefaultJavaCompileOptions(@NonNull CompileOptions options) {
       sourceCompatibility = options.getSourceCompatibility().toString();
       targetCompatibility = options.getTargetCompatibility().toString();
+      encoding = options.getEncoding();
     }
 
     @NonNull
@@ -45,5 +48,11 @@ class DefaultJavaCompileOptions implements JavaCompileOptions, Serializable {
     @Override
     public String getTargetCompatibility() {
         return targetCompatibility;
+    }
+
+    @NonNull
+    @Override
+    public String getEncoding() {
+        return encoding;
     }
 }
