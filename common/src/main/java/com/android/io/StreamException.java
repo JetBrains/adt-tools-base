@@ -23,7 +23,7 @@ package com.android.io;
 public class StreamException extends Exception {
     private static final long serialVersionUID = 1L;
 
-    public static enum Error {
+    public enum Error {
         DEFAULT, OUTOFSYNC, FILENOTFOUND
     }
 

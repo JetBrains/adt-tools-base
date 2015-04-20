@@ -30,35 +30,35 @@ public interface NdkConfig {
      * The module name
      */
     @Nullable
-    public String getModuleName();
+    String getModuleName();
 
     /**
      * The C Flags
      */
     @Nullable
-    public String getcFlags();
+    String getcFlags();
 
     /**
      * The LD Libs
      */
     @Nullable
-    public Collection<String> getLdLibs();
+    Collection<String> getLdLibs();
 
     /**
      * The ABI Filters
      */
     @Nullable
-    public Set<String> getAbiFilters();
+    Set<String> getAbiFilters();
 
     /**
      * The APP_STL value
      */
     @Nullable
-    public String getStl();
+    String getStl();
 
     /**
      * Number of parallel threads to spawn.
      */
     @Nullable
-    public Integer getJobs();
+    Integer getJobs();
 }

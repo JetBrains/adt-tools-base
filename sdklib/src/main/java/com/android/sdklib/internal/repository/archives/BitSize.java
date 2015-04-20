@@ -33,7 +33,7 @@ public enum BitSize {
 
     private final int mSize;
 
-    private BitSize(int size) {
+    BitSize(int size) {
         mSize = size;
     }
 

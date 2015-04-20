@@ -630,9 +630,9 @@ public final class FileListingService {
      * @see FileListingService#getChildren(com.android.ddmlib.FileListingService.FileEntry, boolean, com.android.ddmlib.FileListingService.IListingReceiver)
      */
     public interface IListingReceiver {
-        public void setChildren(FileEntry entry, FileEntry[] children);
+        void setChildren(FileEntry entry, FileEntry[] children);
 
-        public void refreshEntry(FileEntry entry);
+        void refreshEntry(FileEntry entry);
     }
 
     /**

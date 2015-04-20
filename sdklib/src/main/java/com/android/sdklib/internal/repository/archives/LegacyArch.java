@@ -41,7 +41,7 @@ public enum LegacyArch {
 
     private final String mUiName;
 
-    private LegacyArch(String uiName) {
+    LegacyArch(String uiName) {
         mUiName = uiName;
     }
 

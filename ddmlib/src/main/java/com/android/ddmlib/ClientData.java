@@ -53,7 +53,7 @@ public class ClientData {
     /** Temporary name of VM to be ignored. */
     private static final String PRE_INITIALIZED = "<pre-initialized>"; //$NON-NLS-1$
 
-    public static enum DebuggerStatus {
+    public enum DebuggerStatus {
         /** Debugger connection status: not waiting on one, not connected to one, but accepting
          * new connections. This is the default value. */
         DEFAULT,
@@ -68,7 +68,7 @@ public class ClientData {
         ERROR
     }
 
-    public static enum AllocationTrackingStatus {
+    public enum AllocationTrackingStatus {
         /**
          * Allocation tracking status: unknown.
          * <p/>This happens right after a {@link Client} is discovered
@@ -83,7 +83,7 @@ public class ClientData {
         ON
     }
 
-    public static enum MethodProfilingStatus {
+    public enum MethodProfilingStatus {
         /**
          * Method profiling status: unknown.
          * <p/>This happens right after a {@link Client} is discovered

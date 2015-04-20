@@ -32,7 +32,7 @@ import java.io.File;
 public interface ISystemImage extends Comparable<ISystemImage> {
 
     /** Indicates the type of location for the system image folder in the SDK. */
-    public enum LocationType {
+    enum LocationType {
         /**
          * The system image is located in the legacy platform's {@link SdkConstants#FD_IMAGES}
          * folder.
@@ -62,19 +62,19 @@ public interface ISystemImage extends Comparable<ISystemImage> {
 
     /** Returns the actual location of an installed system image. */
     @NonNull
-    public File getLocation();
+    File getLocation();
 
     /** Indicates the location strategy for this system image in the SDK. */
     @NonNull
-    public LocationType getLocationType();
+    LocationType getLocationType();
 
     /** Returns the tag of the system image. */
     @NonNull
-    public IdDisplay getTag();
+    IdDisplay getTag();
 
     /** Returns the vendor for an add-on's system image, or null for a platform system-image. */
     @Nullable
-    public IdDisplay getAddonVendor();
+    IdDisplay getAddonVendor();
 
     /**
      * Returns the ABI type.
@@ -82,7 +82,7 @@ public interface ISystemImage extends Comparable<ISystemImage> {
      * Cannot be null nor empty.
      */
     @NonNull
-    public String getAbiType();
+    String getAbiType();
 
     /**
      * Returns the skins embedded in the system image. <br/>
@@ -91,5 +91,5 @@ public interface ISystemImage extends Comparable<ISystemImage> {
      * @return A non-null skin list, possibly empty.
      */
     @NonNull
-    public File[] getSkins();
+    File[] getSkins();
 }

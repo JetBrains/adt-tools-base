@@ -57,7 +57,7 @@ public class SyncException extends CanceledException {
 
         private final String mMessage;
 
-        private SyncError(String message) {
+        SyncError(String message) {
             mMessage = message;
         }
 

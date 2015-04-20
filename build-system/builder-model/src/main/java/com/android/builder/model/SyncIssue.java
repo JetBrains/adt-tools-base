@@ -24,42 +24,42 @@ import com.android.annotations.NonNull;
  * of a successful sync.
  */
 public interface SyncIssue {
-    public static final int SEVERITY_WARNING = 1;
-    public static final int SEVERITY_ERROR = 2;
+    int SEVERITY_WARNING = 1;
+    int SEVERITY_ERROR = 2;
 
-    public static final int TYPE_NONE                     = 0;
+    int TYPE_NONE                     = 0;
 
     // data is expiration data
-    public static final int TYPE_PLUGIN_OBSOLETE          = 1;
+    int TYPE_PLUGIN_OBSOLETE          = 1;
 
     // data is dependency coordinate
-    public static final int TYPE_UNRESOLVED_DEPENDENCY    = 2;
+    int TYPE_UNRESOLVED_DEPENDENCY    = 2;
 
     // data is dependency coordinate
-    public static final int TYPE_DEPENDENCY_IS_APK        = 3;
+    int TYPE_DEPENDENCY_IS_APK        = 3;
 
     // data is dependency coordinate
-    public static final int TYPE_DEPENDENCY_IS_APKLIB     = 4;
+    int TYPE_DEPENDENCY_IS_APKLIB     = 4;
 
     // data is local file
-    public static final int TYPE_NON_JAR_LOCAL_DEP        = 5;
+    int TYPE_NON_JAR_LOCAL_DEP        = 5;
 
     // data is dependency coordinate/path
-    public static final int TYPE_NON_JAR_PACKAGE_DEP      = 6;
+    int TYPE_NON_JAR_PACKAGE_DEP      = 6;
 
     // data is dependency coordinate/path
-    public static final int TYPE_NON_JAR_PROVIDED_DEP     = 7;
+    int TYPE_NON_JAR_PROVIDED_DEP     = 7;
 
     // data is dependency coordinate/path
-    public static final int TYPE_JAR_DEPEND_ON_AAR        = 8;
+    int TYPE_JAR_DEPEND_ON_AAR        = 8;
 
     /**
      * Mismatch dependency version between tested and test
      * app. Data is dep coordinate without the version (groupId:artifactId)
      */
-    public static final int TYPE_MISMATCH_DEP             = 9;
+    int TYPE_MISMATCH_DEP             = 9;
 
-    public static final int TYPE_MAX                      = 10; // increment when adding new types.
+    int TYPE_MAX                      = 10; // increment when adding new types.
 
     /**
      * Returns the severity of the issue.

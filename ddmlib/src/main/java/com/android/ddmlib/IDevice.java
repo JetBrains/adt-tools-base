@@ -32,43 +32,43 @@ import java.util.concurrent.TimeUnit;
  */
 public interface IDevice extends IShellEnabledDevice {
 
-    public static final String PROP_BUILD_VERSION = "ro.build.version.release";
-    public static final String PROP_BUILD_API_LEVEL = "ro.build.version.sdk";
-    public static final String PROP_BUILD_CODENAME = "ro.build.version.codename";
-    public static final String PROP_DEVICE_MODEL = "ro.product.model";
-    public static final String PROP_DEVICE_MANUFACTURER = "ro.product.manufacturer";
-    public static final String PROP_DEVICE_CPU_ABI_LIST = "ro.product.cpu.abilist";
-    public static final String PROP_DEVICE_CPU_ABI = "ro.product.cpu.abi";
-    public static final String PROP_DEVICE_CPU_ABI2 = "ro.product.cpu.abi2";
-    public static final String PROP_BUILD_CHARACTERISTICS = "ro.build.characteristics";
-    public static final String PROP_DEVICE_DENSITY = "ro.sf.lcd_density";
-    public static final String PROP_DEVICE_LANGUAGE = "persist.sys.language";
-    public static final String PROP_DEVICE_REGION = "persist.sys.country";
+    String PROP_BUILD_VERSION = "ro.build.version.release";
+    String PROP_BUILD_API_LEVEL = "ro.build.version.sdk";
+    String PROP_BUILD_CODENAME = "ro.build.version.codename";
+    String PROP_DEVICE_MODEL = "ro.product.model";
+    String PROP_DEVICE_MANUFACTURER = "ro.product.manufacturer";
+    String PROP_DEVICE_CPU_ABI_LIST = "ro.product.cpu.abilist";
+    String PROP_DEVICE_CPU_ABI = "ro.product.cpu.abi";
+    String PROP_DEVICE_CPU_ABI2 = "ro.product.cpu.abi2";
+    String PROP_BUILD_CHARACTERISTICS = "ro.build.characteristics";
+    String PROP_DEVICE_DENSITY = "ro.sf.lcd_density";
+    String PROP_DEVICE_LANGUAGE = "persist.sys.language";
+    String PROP_DEVICE_REGION = "persist.sys.country";
 
-    public static final String PROP_DEBUGGABLE = "ro.debuggable";
+    String PROP_DEBUGGABLE = "ro.debuggable";
 
     /** Serial number of the first connected emulator. */
-    public static final String FIRST_EMULATOR_SN = "emulator-5554"; //$NON-NLS-1$
+    String FIRST_EMULATOR_SN = "emulator-5554"; //$NON-NLS-1$
     /** Device change bit mask: {@link DeviceState} change. */
-    public static final int CHANGE_STATE = 0x0001;
+    int CHANGE_STATE = 0x0001;
     /** Device change bit mask: {@link Client} list change. */
-    public static final int CHANGE_CLIENT_LIST = 0x0002;
+    int CHANGE_CLIENT_LIST = 0x0002;
     /** Device change bit mask: build info change. */
-    public static final int CHANGE_BUILD_INFO = 0x0004;
+    int CHANGE_BUILD_INFO = 0x0004;
 
     /** Device level software features. */
-    public enum Feature {
+    enum Feature {
         SCREEN_RECORD,      // screen recorder available?
         PROCSTATS,          // procstats service (dumpsys procstats) available
-    };
+    }
 
     /** Device level hardware features. */
-    public enum HardwareFeature {
+    enum HardwareFeature {
         WATCH("watch");                   // supports feature watch
 
         private final String mCharacteristic;
 
-        private HardwareFeature(String characteristic) {
+        HardwareFeature(String characteristic) {
             mCharacteristic = characteristic;
         }
 
@@ -79,16 +79,16 @@ public interface IDevice extends IShellEnabledDevice {
 
     /** @deprecated Use {@link #PROP_BUILD_API_LEVEL}. */
     @Deprecated
-    public static final String PROP_BUILD_VERSION_NUMBER = PROP_BUILD_API_LEVEL;
+    String PROP_BUILD_VERSION_NUMBER = PROP_BUILD_API_LEVEL;
 
-    public static final String MNT_EXTERNAL_STORAGE = "EXTERNAL_STORAGE"; //$NON-NLS-1$
-    public static final String MNT_ROOT = "ANDROID_ROOT"; //$NON-NLS-1$
-    public static final String MNT_DATA = "ANDROID_DATA"; //$NON-NLS-1$
+    String MNT_EXTERNAL_STORAGE = "EXTERNAL_STORAGE"; //$NON-NLS-1$
+    String MNT_ROOT = "ANDROID_ROOT"; //$NON-NLS-1$
+    String MNT_DATA = "ANDROID_DATA"; //$NON-NLS-1$
 
     /**
      * The state of a device.
      */
-    public static enum DeviceState {
+    enum DeviceState {
         BOOTLOADER("bootloader"), //$NON-NLS-1$
         OFFLINE("offline"), //$NON-NLS-1$
         ONLINE("device"), //$NON-NLS-1$
@@ -121,14 +121,14 @@ public interface IDevice extends IShellEnabledDevice {
     /**
      * Namespace of a Unix Domain Socket created on the device.
      */
-    public static enum DeviceUnixSocketNamespace {
+    enum DeviceUnixSocketNamespace {
         ABSTRACT("localabstract"),      //$NON-NLS-1$
         FILESYSTEM("localfilesystem"),  //$NON-NLS-1$
         RESERVED("localreserved");      //$NON-NLS-1$
 
         private String mType;
 
-        private DeviceUnixSocketNamespace(String type) {
+        DeviceUnixSocketNamespace(String type) {
             mType = type;
         }
 
@@ -139,7 +139,7 @@ public interface IDevice extends IShellEnabledDevice {
 
     /** Returns the serial number of the device. */
     @NonNull
-    public String getSerialNumber();
+    String getSerialNumber();
 
     /**
      * Returns the name of the AVD the emulator is running.
@@ -150,12 +150,12 @@ public interface IDevice extends IShellEnabledDevice {
      * @return the name of the AVD or <code>null</code> if there isn't any.
      */
     @Nullable
-    public String getAvdName();
+    String getAvdName();
 
     /**
      * Returns the state of the device.
      */
-    public DeviceState getState();
+    DeviceState getState();
 
     /**
      * Returns the cached device properties. It contains the whole output of 'getprop'
@@ -163,7 +163,7 @@ public interface IDevice extends IShellEnabledDevice {
      * @deprecated use {@link #getSystemProperty(String)} instead
      */
     @Deprecated
-    public Map<String, String> getProperties();
+    Map<String, String> getProperties();
 
     /**
      * Returns the number of property for this device.
@@ -171,7 +171,7 @@ public interface IDevice extends IShellEnabledDevice {
      * @deprecated implementation detail
      */
     @Deprecated
-    public int getPropertyCount();
+    int getPropertyCount();
 
     /**
      * Convenience method that attempts to retrieve a property via
@@ -181,12 +181,12 @@ public interface IDevice extends IShellEnabledDevice {
      * @return the value or <code>null</code> if the property value was not immediately available
      */
     @Nullable
-    public String getProperty(@NonNull String name);
+    String getProperty(@NonNull String name);
 
     /**
      * Returns <code>true></code> if properties have been cached
      */
-    public boolean arePropertiesSet();
+    boolean arePropertiesSet();
 
     /**
      * A variant of {@link #getProperty(String)} that will attempt to retrieve the given
@@ -203,7 +203,7 @@ public interface IDevice extends IShellEnabledDevice {
      * @deprecated use {@link #getSystemProperty(String)}
      */
     @Deprecated
-    public String getPropertySync(String name) throws TimeoutException,
+    String getPropertySync(String name) throws TimeoutException,
             AdbCommandRejectedException, ShellCommandUnresponsiveException, IOException;
 
     /**
@@ -221,7 +221,7 @@ public interface IDevice extends IShellEnabledDevice {
      * @deprecated use {@link #getSystemProperty(String)} instead
      */
     @Deprecated
-    public String getPropertyCacheOrSync(String name) throws TimeoutException,
+    String getPropertyCacheOrSync(String name) throws TimeoutException,
             AdbCommandRejectedException, ShellCommandUnresponsiveException, IOException;
 
     /** Returns whether this device supports the given software feature. */
@@ -239,43 +239,43 @@ public interface IDevice extends IShellEnabledDevice {
      * @see #MNT_ROOT
      * @see #MNT_DATA
      */
-    public String getMountPoint(String name);
+    String getMountPoint(String name);
 
     /**
      * Returns if the device is ready.
      *
      * @return <code>true</code> if {@link #getState()} returns {@link DeviceState#ONLINE}.
      */
-    public boolean isOnline();
+    boolean isOnline();
 
     /**
      * Returns <code>true</code> if the device is an emulator.
      */
-    public boolean isEmulator();
+    boolean isEmulator();
 
     /**
      * Returns if the device is offline.
      *
      * @return <code>true</code> if {@link #getState()} returns {@link DeviceState#OFFLINE}.
      */
-    public boolean isOffline();
+    boolean isOffline();
 
     /**
      * Returns if the device is in bootloader mode.
      *
      * @return <code>true</code> if {@link #getState()} returns {@link DeviceState#BOOTLOADER}.
      */
-    public boolean isBootLoader();
+    boolean isBootLoader();
 
     /**
      * Returns whether the {@link Device} has {@link Client}s.
      */
-    public boolean hasClients();
+    boolean hasClients();
 
     /**
      * Returns the array of clients.
      */
-    public Client[] getClients();
+    Client[] getClients();
 
     /**
      * Returns a {@link Client} by its application name.
@@ -283,7 +283,7 @@ public interface IDevice extends IShellEnabledDevice {
      * @param applicationName the name of the application
      * @return the <code>Client</code> object or <code>null</code> if no match was found.
      */
-    public Client getClient(String applicationName);
+    Client getClient(String applicationName);
 
     /**
      * Returns a {@link SyncService} object to push / pull files to and from the device.
@@ -295,13 +295,13 @@ public interface IDevice extends IShellEnabledDevice {
      * @throws AdbCommandRejectedException if adb rejects the command
      * @throws IOException if the connection with adb failed.
      */
-    public SyncService getSyncService()
+    SyncService getSyncService()
             throws TimeoutException, AdbCommandRejectedException, IOException;
 
     /**
      * Returns a {@link FileListingService} for this device.
      */
-    public FileListingService getFileListingService();
+    FileListingService getFileListingService();
 
     /**
      * Takes a screen shot of the device and returns it as a {@link RawImage}.
@@ -320,7 +320,7 @@ public interface IDevice extends IShellEnabledDevice {
     /**
      * Initiates screen recording on the device if the device supports {@link Feature#SCREEN_RECORD}.
      */
-    public void startScreenRecorder(@NonNull String remoteFilePath,
+    void startScreenRecorder(@NonNull String remoteFilePath,
             @NonNull ScreenRecorderOptions options, @NonNull IShellOutputReceiver receiver) throws
             TimeoutException, AdbCommandRejectedException, IOException,
             ShellCommandUnresponsiveException;
@@ -329,7 +329,7 @@ public interface IDevice extends IShellEnabledDevice {
      * @deprecated Use {@link #executeShellCommand(String, IShellOutputReceiver, long, java.util.concurrent.TimeUnit)}.
      */
     @Deprecated
-    public void executeShellCommand(String command, IShellOutputReceiver receiver,
+    void executeShellCommand(String command, IShellOutputReceiver receiver,
             int maxTimeToOutputResponse)
             throws TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException,
             IOException;
@@ -351,7 +351,7 @@ public interface IDevice extends IShellEnabledDevice {
      * @see #executeShellCommand(String, IShellOutputReceiver, int)
      * @see DdmPreferences#getTimeOut()
      */
-    public void executeShellCommand(String command, IShellOutputReceiver receiver)
+    void executeShellCommand(String command, IShellOutputReceiver receiver)
             throws TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException,
             IOException;
 
@@ -365,7 +365,7 @@ public interface IDevice extends IShellEnabledDevice {
      * @throws AdbCommandRejectedException if adb rejects the command
      * @throws IOException in case of I/O error on the connection.
      */
-    public void runEventLogService(LogReceiver receiver)
+    void runEventLogService(LogReceiver receiver)
             throws TimeoutException, AdbCommandRejectedException, IOException;
 
     /**
@@ -380,7 +380,7 @@ public interface IDevice extends IShellEnabledDevice {
      * @throws AdbCommandRejectedException if adb rejects the command
      * @throws IOException in case of I/O error on the connection.
      */
-    public void runLogService(String logname, LogReceiver receiver)
+    void runLogService(String logname, LogReceiver receiver)
             throws TimeoutException, AdbCommandRejectedException, IOException;
 
     /**
@@ -392,7 +392,7 @@ public interface IDevice extends IShellEnabledDevice {
      * @throws AdbCommandRejectedException if adb rejects the command
      * @throws IOException in case of I/O error on the connection.
      */
-    public void createForward(int localPort, int remotePort)
+    void createForward(int localPort, int remotePort)
             throws TimeoutException, AdbCommandRejectedException, IOException;
 
     /**
@@ -405,7 +405,7 @@ public interface IDevice extends IShellEnabledDevice {
      * @throws AdbCommandRejectedException if adb rejects the command
      * @throws IOException in case of I/O error on the connection.
      */
-    public void createForward(int localPort, String remoteSocketName,
+    void createForward(int localPort, String remoteSocketName,
             DeviceUnixSocketNamespace namespace)
             throws TimeoutException, AdbCommandRejectedException, IOException;
 
@@ -418,7 +418,7 @@ public interface IDevice extends IShellEnabledDevice {
      * @throws AdbCommandRejectedException if adb rejects the command
      * @throws IOException in case of I/O error on the connection.
      */
-    public void removeForward(int localPort, int remotePort)
+    void removeForward(int localPort, int remotePort)
             throws TimeoutException, AdbCommandRejectedException, IOException;
 
     /**
@@ -431,7 +431,7 @@ public interface IDevice extends IShellEnabledDevice {
      * @throws AdbCommandRejectedException if adb rejects the command
      * @throws IOException in case of I/O error on the connection.
      */
-    public void removeForward(int localPort, String remoteSocketName,
+    void removeForward(int localPort, String remoteSocketName,
             DeviceUnixSocketNamespace namespace)
             throws TimeoutException, AdbCommandRejectedException, IOException;
 
@@ -439,7 +439,7 @@ public interface IDevice extends IShellEnabledDevice {
      * Returns the name of the client by pid or <code>null</code> if pid is unknown
      * @param pid the pid of the client.
      */
-    public String getClientName(int pid);
+    String getClientName(int pid);
 
     /**
      * Push a single file.
@@ -451,7 +451,7 @@ public interface IDevice extends IShellEnabledDevice {
      * @throws TimeoutException in case of a timeout reading responses from the device.
      * @throws SyncException if file could not be pushed
      */
-    public void pushFile(String local, String remote)
+    void pushFile(String local, String remote)
             throws IOException, AdbCommandRejectedException, TimeoutException, SyncException;
 
     /**
@@ -465,7 +465,7 @@ public interface IDevice extends IShellEnabledDevice {
      * @throws TimeoutException in case of a timeout reading responses from the device.
      * @throws SyncException in case of a sync exception.
      */
-    public void pullFile(String remote, String local)
+    void pullFile(String remote, String local)
             throws IOException, AdbCommandRejectedException, TimeoutException, SyncException;
 
     /**
@@ -479,7 +479,7 @@ public interface IDevice extends IShellEnabledDevice {
      * @return a {@link String} with an error code, or <code>null</code> if success.
      * @throws InstallException if the installation fails.
      */
-    public String installPackage(String packageFilePath, boolean reinstall, String... extraArgs)
+    String installPackage(String packageFilePath, boolean reinstall, String... extraArgs)
             throws InstallException;
 
     /**
@@ -493,7 +493,7 @@ public interface IDevice extends IShellEnabledDevice {
      * @throws InstallException if the installation fails.
      */
 
-    public void installPackages(List<String> apkFilePaths, int timeOutInMs,
+    void installPackages(List<String> apkFilePaths, int timeOutInMs,
             boolean reinstall, String... extraArgs) throws InstallException;
     /**
      * Pushes a file to device
@@ -505,7 +505,7 @@ public interface IDevice extends IShellEnabledDevice {
      * @throws IOException in case of I/O error on the connection.
      * @throws SyncException if an error happens during the push of the package on the device.
      */
-    public String syncPackageToDevice(String localFilePath)
+    String syncPackageToDevice(String localFilePath)
             throws TimeoutException, AdbCommandRejectedException, IOException, SyncException;
 
     /**
@@ -517,7 +517,7 @@ public interface IDevice extends IShellEnabledDevice {
      *            available options.
      * @throws InstallException if the installation fails.
      */
-    public String installRemotePackage(String remoteFilePath, boolean reinstall,
+    String installRemotePackage(String remoteFilePath, boolean reinstall,
             String... extraArgs) throws InstallException;
 
     /**
@@ -526,7 +526,7 @@ public interface IDevice extends IShellEnabledDevice {
      * @param remoteFilePath path on device of file to remove
      * @throws InstallException if the installation fails.
      */
-    public void removeRemotePackage(String remoteFilePath) throws InstallException;
+    void removeRemotePackage(String remoteFilePath) throws InstallException;
 
     /**
      * Uninstalls an package from the device.
@@ -535,7 +535,7 @@ public interface IDevice extends IShellEnabledDevice {
      * @return a {@link String} with an error code, or <code>null</code> if success.
      * @throws InstallException if the uninstallation fails.
      */
-    public String uninstallPackage(String packageName) throws InstallException;
+    String uninstallPackage(String packageName) throws InstallException;
 
     /**
      * Reboot the device.
@@ -545,7 +545,7 @@ public interface IDevice extends IShellEnabledDevice {
      * @throws AdbCommandRejectedException if adb rejects the command
      * @throws IOException
      */
-    public void reboot(String into)
+    void reboot(String into)
             throws TimeoutException, AdbCommandRejectedException, IOException;
 
     /**
@@ -558,7 +558,7 @@ public interface IDevice extends IShellEnabledDevice {
      * @deprecated use {@link #getBattery()}
      */
     @Deprecated
-    public Integer getBatteryLevel() throws TimeoutException,
+    Integer getBatteryLevel() throws TimeoutException,
             AdbCommandRejectedException, IOException, ShellCommandUnresponsiveException;
 
     /**
@@ -573,7 +573,7 @@ public interface IDevice extends IShellEnabledDevice {
      * @deprecated use {@link #getBattery(long, TimeUnit))}
      */
     @Deprecated
-    public Integer getBatteryLevel(long freshnessMs) throws TimeoutException,
+    Integer getBatteryLevel(long freshnessMs) throws TimeoutException,
             AdbCommandRejectedException, IOException, ShellCommandUnresponsiveException;
 
     /**
@@ -586,7 +586,7 @@ public interface IDevice extends IShellEnabledDevice {
      * a {@link ExecutionException} if battery level could not be retrieved.
      */
     @NonNull
-    public Future<Integer> getBattery();
+    Future<Integer> getBattery();
 
     /**
      * Return the device's battery level, from 0 to 100 percent.
@@ -600,7 +600,7 @@ public interface IDevice extends IShellEnabledDevice {
      * a {@link ExecutionException} if battery level could not be retrieved.
      */
     @NonNull
-    public Future<Integer> getBattery(long freshnessTime, @NonNull TimeUnit timeUnit);
+    Future<Integer> getBattery(long freshnessTime, @NonNull TimeUnit timeUnit);
 
 
     /**
@@ -609,7 +609,7 @@ public interface IDevice extends IShellEnabledDevice {
      * @return the list of ABIs.
      */
     @NonNull
-    public List<String> getAbis();
+    List<String> getAbis();
 
     /**
      * Returns the density bucket of the device screen by reading the value for system property
@@ -617,19 +617,19 @@ public interface IDevice extends IShellEnabledDevice {
      *
      * @return the density, or -1 if it cannot be determined.
      */
-    public int getDensity();
+    int getDensity();
 
     /**
      * Returns the user's language.
      *
      * @return the user's language, or null if it's unknown
      */
-    public String getLanguage();
+    String getLanguage();
 
     /**
      * Returns the user's region.
      *
      * @return the user's region, or null if it's unknown
      */
-    public String getRegion();
+    String getRegion();
 }

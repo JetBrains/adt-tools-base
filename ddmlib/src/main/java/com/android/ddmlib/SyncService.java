@@ -87,26 +87,26 @@ public class SyncService {
          * Sent when the transfer starts
          * @param totalWork the total amount of work.
          */
-        public void start(int totalWork);
+        void start(int totalWork);
         /**
          * Sent when the transfer is finished or interrupted.
          */
-        public void stop();
+        void stop();
         /**
          * Sent to query for possible cancellation.
          * @return true if the transfer should be stopped.
          */
-        public boolean isCanceled();
+        boolean isCanceled();
         /**
          * Sent when a sub task is started.
          * @param name the name of the sub task.
          */
-        public void startSubTask(String name);
+        void startSubTask(String name);
         /**
          * Sent when some progress have been made.
          * @param work the amount of work done.
          */
-        public void advance(int work);
+        void advance(int work);
     }
 
     /**

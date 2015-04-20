@@ -758,11 +758,11 @@ public class PkgDesc implements IPkgDesc {
     // ---- Constructors -----
 
     public interface IIsUpdateFor {
-        public boolean isUpdateFor(@NonNull PkgDesc thisPkgDesc, @NonNull IPkgDesc existingDesc);
+        boolean isUpdateFor(@NonNull PkgDesc thisPkgDesc, @NonNull IPkgDesc existingDesc);
     }
 
     public interface IGetPath {
-        public String getPath(@NonNull PkgDesc thisPkgDesc);
+        String getPath(@NonNull PkgDesc thisPkgDesc);
     }
 
     public static class Builder {

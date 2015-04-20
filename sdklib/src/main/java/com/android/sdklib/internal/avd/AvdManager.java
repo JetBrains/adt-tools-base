@@ -314,7 +314,7 @@ public class AvdManager {
     /**
      * Status returned by {@link AvdManager#isAvdNameConflicting(String)}.
      */
-    public static enum AvdConflict {
+    public enum AvdConflict {
         /** There is no known conflict for the given AVD name. */
         NO_CONFLICT,
         /** The AVD name conflicts with an existing valid AVD. */

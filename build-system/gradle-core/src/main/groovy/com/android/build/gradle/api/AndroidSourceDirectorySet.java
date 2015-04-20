@@ -71,7 +71,7 @@ public interface AndroidSourceDirectorySet extends PatternFilterable {
      * @return a non null {@link FileTree} for all the source files in this set.
      */
     @NonNull
-    public FileTree getSourceFiles();
+    FileTree getSourceFiles();
 
     /**
      * Returns the filter used to select the source from the source directories.

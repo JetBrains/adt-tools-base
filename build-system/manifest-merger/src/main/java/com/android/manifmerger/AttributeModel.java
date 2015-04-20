@@ -192,7 +192,7 @@ class AttributeModel {
      * strict when it is illegal to try to merge or override a value by another. Another example
      * is a OR merging policy on boolean attribute values.
      */
-    static interface MergingPolicy {
+    interface MergingPolicy {
 
         /**
          * Returns true if it should be attempted to merge this attribute value with
@@ -288,7 +288,7 @@ class AttributeModel {
      * This is a poor-mans replacement for not having a proper XML Schema do perform such
      * validations.
      */
-    static interface Validator {
+    interface Validator {
 
         /**
          * Validates a value, issuing a warning or error in case of failure through the passed
