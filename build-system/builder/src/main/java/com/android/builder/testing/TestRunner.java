@@ -65,7 +65,7 @@ public interface TestRunner {
             @NonNull  ILogger logger)
                 throws TestException, NoAuthorizedDeviceFoundException, InterruptedException;
 
-    public class NoAuthorizedDeviceFoundException extends Exception {
+    class NoAuthorizedDeviceFoundException extends Exception {
 
         public NoAuthorizedDeviceFoundException() {
             super("No suitable device connected");

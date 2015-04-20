@@ -716,7 +716,7 @@ public class RuleAction implements Comparable<RuleAction> {
          * @return a list of nested actions
          */
         @NonNull
-        public List<RuleAction> getNestedActions(@NonNull INode node);
+        List<RuleAction> getNestedActions(@NonNull INode node);
     }
 
     /**
@@ -733,7 +733,7 @@ public class RuleAction implements Comparable<RuleAction> {
          * @param iconUrls a list of icon URLs that the provider should append to
          * @param ids a list of ids that the provider should append to
          */
-        public void addChoices(
+        void addChoices(
                 @NonNull List<String> titles,
                 @NonNull List<URL> iconUrls,
                 @NonNull List<String> ids);

@@ -30,7 +30,7 @@ import java.util.concurrent.TimeUnit;
  */
 public interface IRemoteAndroidTestRunner {
 
-    public static enum TestSize {
+    enum TestSize {
         /** Run tests annotated with SmallTest */
         SMALL("small"),
         /** Run tests annotated with MediumTest */
@@ -78,12 +78,12 @@ public interface IRemoteAndroidTestRunner {
     /**
      * Returns the application package name.
      */
-    public String getPackageName();
+    String getPackageName();
 
     /**
      * Returns the runnerName.
      */
-    public String getRunnerName();
+    String getRunnerName();
 
     /**
      * Sets to run only tests in this class
@@ -91,7 +91,7 @@ public interface IRemoteAndroidTestRunner {
      *
      * @param className fully qualified class name (eg x.y.z)
      */
-    public void setClassName(String className);
+    void setClassName(String className);
 
     /**
      * Sets to run only tests in the provided classes
@@ -102,7 +102,7 @@ public interface IRemoteAndroidTestRunner {
      *
      * @param classNames array of fully qualified class names (eg x.y.z)
      */
-    public void setClassNames(String[] classNames);
+    void setClassNames(String[] classNames);
 
     /**
      * Sets to run only specified test method
@@ -111,7 +111,7 @@ public interface IRemoteAndroidTestRunner {
      * @param className fully qualified class name (eg x.y.z)
      * @param testName method name
      */
-    public void setMethodName(String className, String testName);
+    void setMethodName(String className, String testName);
 
     /**
      * Sets to run all tests in specified package
@@ -119,7 +119,7 @@ public interface IRemoteAndroidTestRunner {
      *
      * @param packageName fully qualified package name (eg x.y.z)
      */
-    public void setTestPackageName(String packageName);
+    void setTestPackageName(String packageName);
 
     /**
      * Sets to run only tests of given size.
@@ -127,7 +127,7 @@ public interface IRemoteAndroidTestRunner {
      *
      * @param size the {@link TestSize} to run.
      */
-    public void setTestSize(TestSize size);
+    void setTestSize(TestSize size);
 
     /**
      * Adds a argument to include in instrumentation command.
@@ -138,14 +138,14 @@ public interface IRemoteAndroidTestRunner {
      * @param name the name of the instrumentation bundle argument
      * @param value the value of the argument
      */
-    public void addInstrumentationArg(String name, String value);
+    void addInstrumentationArg(String name, String value);
 
     /**
      * Removes a previously added argument.
      *
      * @param name the name of the instrumentation bundle argument to remove
      */
-    public void removeInstrumentationArg(String name);
+    void removeInstrumentationArg(String name);
 
     /**
      * Adds a boolean argument to include in instrumentation command.
@@ -155,35 +155,35 @@ public interface IRemoteAndroidTestRunner {
      * @param name the name of the instrumentation bundle argument
      * @param value the value of the argument
      */
-    public void addBooleanArg(String name, boolean value);
+    void addBooleanArg(String name, boolean value);
 
     /**
      * Sets this test run to log only mode - skips test execution.
      */
-    public void setLogOnly(boolean logOnly);
+    void setLogOnly(boolean logOnly);
 
     /**
      * Sets this debug mode of this test run. If true, the Android test runner will wait for a
      * debugger to attach before proceeding with test execution.
      */
-    public void setDebug(boolean debug);
+    void setDebug(boolean debug);
 
     /**
      * Sets this code coverage mode of this test run.
      */
-    public void setCoverage(boolean coverage);
+    void setCoverage(boolean coverage);
 
     /**
      * Sets this test run to test collection mode. If true, will skip test execution and will set
      * all appropriate runner arguments required for a successful test collection.
      */
-    public void setTestCollection (boolean collection);
+    void setTestCollection(boolean collection);
 
     /**
      * @deprecated Use {@link #setMaxTimeToOutputResponse(long, java.util.concurrent.TimeUnit)}.
      */
     @Deprecated
-    public void setMaxtimeToOutputResponse(int maxTimeToOutputResponse);
+    void setMaxtimeToOutputResponse(int maxTimeToOutputResponse);
 
     /**
      * Sets the maximum time allowed between output of the shell command running the tests on
@@ -202,7 +202,7 @@ public interface IRemoteAndroidTestRunner {
      *
      * @see IDevice#executeShellCommand(String, com.android.ddmlib.IShellOutputReceiver, int)
      */
-    public void setMaxTimeToOutputResponse(long maxTimeToOutputResponse, TimeUnit maxTimeUnits);
+    void setMaxTimeToOutputResponse(long maxTimeToOutputResponse, TimeUnit maxTimeUnits);
 
     /**
      * Set a custom run name to be reported to the {@link ITestRunListener} on {@link #run}
@@ -211,7 +211,7 @@ public interface IRemoteAndroidTestRunner {
      *
      * @param runName
      */
-    public void setRunName(String runName);
+    void setRunName(String runName);
 
     /**
      * Execute this test run.
@@ -227,7 +227,7 @@ public interface IRemoteAndroidTestRunner {
      *
      * @see #setMaxtimeToOutputResponse(int)
      */
-    public void run(ITestRunListener... listeners)
+    void run(ITestRunListener... listeners)
             throws TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException,
             IOException;
 
@@ -243,13 +243,13 @@ public interface IRemoteAndroidTestRunner {
      *
      * @see #setMaxtimeToOutputResponse(int)
      */
-    public void run(Collection<ITestRunListener> listeners)
+    void run(Collection<ITestRunListener> listeners)
             throws TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException,
             IOException;
 
     /**
      * Requests cancellation of this test run.
      */
-    public void cancel();
+    void cancel();
 
 }

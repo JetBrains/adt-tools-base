@@ -584,14 +584,14 @@ class ManifestModel {
         private final ImmutableList<AttributeModel> mAttributeModels;
         private final boolean mMultipleDeclarationAllowed;
 
-        private NodeTypes(
+        NodeTypes(
                 @NonNull MergeType mergeType,
                 @NonNull NodeKeyResolver nodeKeyResolver,
                 @Nullable AttributeModel.Builder... attributeModelBuilders) {
             this(mergeType, nodeKeyResolver, false, attributeModelBuilders);
         }
 
-        private NodeTypes(
+        NodeTypes(
                 @NonNull MergeType mergeType,
                 @NonNull NodeKeyResolver nodeKeyResolver,
                 boolean mutipleDeclarationAllowed,

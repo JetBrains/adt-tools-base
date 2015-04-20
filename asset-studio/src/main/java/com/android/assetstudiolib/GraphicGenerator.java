@@ -68,7 +68,7 @@ public abstract class GraphicGenerator {
     }
 
     /** Shapes that can be used for icon backgrounds */
-    public static enum Shape {
+    public enum Shape {
         /** No background */
         NONE("none"),
         /** Circular background */
@@ -95,7 +95,7 @@ public abstract class GraphicGenerator {
     }
 
     /** Foreground effects styles */
-    public static enum Style {
+    public enum Style {
         /** No effects */
         SIMPLE("fore1");
 

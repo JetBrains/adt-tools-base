@@ -98,13 +98,13 @@ public class PackageLoader {
          * @param packages All the packages loaded from the source. Never null.
          * @return True if the load operation should continue, false if it should stop.
          */
-        public boolean onUpdateSource(SdkSource source, Package[] packages);
+        boolean onUpdateSource(SdkSource source, Package[] packages);
 
         /**
          * This method is guaranteed to be called at the end, no matter how the
          * loader stopped, so that the client can clean up or perform any final action.
          */
-        public void onLoadCompleted();
+        void onLoadCompleted();
     }
 
     /**
@@ -124,7 +124,7 @@ public class PackageLoader {
          * @param source The source of the packages. Null for the locally installed packages.
          * @param packages The packages found in the source.
          */
-        public Package[] filterLoadedSource(SdkSource source, Package[] packages);
+        Package[] filterLoadedSource(SdkSource source, Package[] packages);
 
         /**
          * Called by the install task for every package available (new ones, updates as well
@@ -135,7 +135,7 @@ public class PackageLoader {
          * to access any UI widgets must wrap their calls into {@code Display.syncExec(Runnable)}
          * or {@code Display.asyncExec(Runnable)}.
          */
-        public boolean acceptPackage(Package pkg);
+        boolean acceptPackage(Package pkg);
 
         /**
          * Called when the accepted package has been installed, successfully or not.
@@ -146,12 +146,12 @@ public class PackageLoader {
          * to access any UI widgets must wrap their calls into {@code Display.syncExec(Runnable)}
          * or {@code Display.asyncExec(Runnable)}.
          */
-        public void setResult(boolean success, Map<Package, File> installPaths);
+        void setResult(boolean success, Map<Package, File> installPaths);
 
         /**
          * Called when the task is done iterating and completed.
          */
-        public void taskCompleted();
+        void taskCompleted();
     }
 
     /**

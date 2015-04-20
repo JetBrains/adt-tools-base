@@ -20,16 +20,16 @@ import com.android.annotations.NonNull;
 
 public interface Visitor {
 
-    public void visitRootObj(@NonNull RootObj root);
+    void visitRootObj(@NonNull RootObj root);
 
-    public void visitArrayInstance(@NonNull ArrayInstance instance);
+    void visitArrayInstance(@NonNull ArrayInstance instance);
 
-    public void visitClassInstance(@NonNull ClassInstance instance);
+    void visitClassInstance(@NonNull ClassInstance instance);
 
-    public void visitClassObj(@NonNull ClassObj instance);
+    void visitClassObj(@NonNull ClassObj instance);
 
     /**
      * Marks an instance to be visited later, depending on the visitor's traversal strategy.
      */
-    public void visitLater(@NonNull Instance instance);
+    void visitLater(@NonNull Instance instance);
 }

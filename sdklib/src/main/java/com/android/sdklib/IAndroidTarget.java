@@ -32,55 +32,55 @@ import java.util.Map;
 public interface IAndroidTarget extends Comparable<IAndroidTarget> {
 
     /** OS Path to the "android.jar" file. */
-    public static final int ANDROID_JAR         = 1;
+    int ANDROID_JAR         = 1;
     /** OS Path to the "framework.aidl" file. */
-    public static final int ANDROID_AIDL        = 2;
+    int ANDROID_AIDL        = 2;
     /** OS Path to the "samples" folder which contains sample projects. */
-    public static final int SAMPLES             = 4;
+    int SAMPLES             = 4;
     /** OS Path to the "skins" folder which contains the emulator skins. */
-    public static final int SKINS               = 5;
+    int SKINS               = 5;
     /** OS Path to the "templates" folder which contains the templates for new projects. */
-    public static final int TEMPLATES           = 6;
+    int TEMPLATES           = 6;
     /** OS Path to the "data" folder which contains data & libraries for the SDK tools. */
-    public static final int DATA                = 7;
+    int DATA                = 7;
     /** OS Path to the "attrs.xml" file. */
-    public static final int ATTRIBUTES          = 8;
+    int ATTRIBUTES          = 8;
     /** OS Path to the "attrs_manifest.xml" file. */
-    public static final int MANIFEST_ATTRIBUTES = 9;
+    int MANIFEST_ATTRIBUTES = 9;
     /** OS Path to the "data/layoutlib.jar" library. */
-    public static final int LAYOUT_LIB          = 10;
+    int LAYOUT_LIB          = 10;
     /** OS Path to the "data/res" folder. */
-    public static final int RESOURCES           = 11;
+    int RESOURCES           = 11;
     /** OS Path to the "data/fonts" folder. */
-    public static final int FONTS               = 12;
+    int FONTS               = 12;
     /** OS Path to the "data/widgets.txt" file. */
-    public static final int WIDGETS             = 13;
+    int WIDGETS             = 13;
     /** OS Path to the "data/activity_actions.txt" file. */
-    public static final int ACTIONS_ACTIVITY    = 14;
+    int ACTIONS_ACTIVITY    = 14;
     /** OS Path to the "data/broadcast_actions.txt" file. */
-    public static final int ACTIONS_BROADCAST   = 15;
+    int ACTIONS_BROADCAST   = 15;
     /** OS Path to the "data/service_actions.txt" file. */
-    public static final int ACTIONS_SERVICE     = 16;
+    int ACTIONS_SERVICE     = 16;
     /** OS Path to the "data/categories.txt" file. */
-    public static final int CATEGORIES          = 17;
+    int CATEGORIES          = 17;
     /** OS Path to the "sources" folder. */
-    public static final int SOURCES             = 18;
+    int SOURCES             = 18;
     /** OS Path to the target specific docs */
-    public static final int DOCS                = 19;
+    int DOCS                = 19;
     /** OS Path to the "ant" folder which contains the ant build rules (ver 2 and above) */
-    public static final int ANT                 = 24;
+    int ANT                 = 24;
     /** OS Path to the "uiautomator.jar" file. */
-    public static final int UI_AUTOMATOR_JAR    = 27;
+    int UI_AUTOMATOR_JAR    = 27;
 
 
     /**
      * Return value for {@link #getUsbVendorId()} meaning no USB vendor IDs are defined by the
      * Android target.
      */
-    public static final int NO_USB_ID = 0;
+    int NO_USB_ID = 0;
 
     /** An optional library provided by an Android Target */
-    public interface IOptionalLibrary {
+    interface IOptionalLibrary {
         /** The name of the library, as used in the manifest (&lt;uses-library&gt;). */
         String getName();
         /** The file name of the jar file. */
@@ -135,7 +135,7 @@ public interface IAndroidTarget extends Comparable<IAndroidTarget> {
     /**
      * Returns the platform version as a readable string.
      */
-    public String getVersionName();
+    String getVersionName();
 
     /** Returns the revision number for the target. */
     int getRevision();
@@ -273,7 +273,7 @@ public interface IAndroidTarget extends Comparable<IAndroidTarget> {
      * Returns an array of system images for this target.
      * The array can be empty but not null.
      */
-    public ISystemImage[] getSystemImages();
+    ISystemImage[] getSystemImages();
 
     /**
      * Returns the system image information for the given {@code tag} and {@code abiType}.
@@ -284,7 +284,7 @@ public interface IAndroidTarget extends Comparable<IAndroidTarget> {
      *         or null if none exists for this type.
      */
     @Nullable
-    public ISystemImage getSystemImage(@NonNull IdDisplay tag, @NonNull String abiType);
+    ISystemImage getSystemImage(@NonNull IdDisplay tag, @NonNull String abiType);
 
     /**
      * Returns whether the given target is compatible with the receiver.

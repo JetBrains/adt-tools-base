@@ -60,7 +60,7 @@ public enum SdkSourceCategory implements IDescription {
     private final String mUiName;
     private final boolean mAlwaysDisplay;
 
-    private SdkSourceCategory(String uiName, boolean alwaysDisplay) {
+    SdkSourceCategory(String uiName, boolean alwaysDisplay) {
         mUiName = uiName;
         mAlwaysDisplay = alwaysDisplay;
     }

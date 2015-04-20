@@ -102,7 +102,7 @@ public final class AndroidDebugBridge {
          * This is sent from a non UI thread.
          * @param bridge the new {@link AndroidDebugBridge} object.
          */
-        public void bridgeChanged(AndroidDebugBridge bridge);
+        void bridgeChanged(AndroidDebugBridge bridge);
     }
 
     /**
@@ -116,7 +116,7 @@ public final class AndroidDebugBridge {
          * This is sent from a non UI thread.
          * @param device the new device.
          */
-        public void deviceConnected(IDevice device);
+        void deviceConnected(IDevice device);
 
         /**
          * Sent when the a device is connected to the {@link AndroidDebugBridge}.
@@ -124,7 +124,7 @@ public final class AndroidDebugBridge {
          * This is sent from a non UI thread.
          * @param device the new device.
          */
-        public void deviceDisconnected(IDevice device);
+        void deviceDisconnected(IDevice device);
 
         /**
          * Sent when a device data changed, or when clients are started/terminated on the device.
@@ -135,7 +135,7 @@ public final class AndroidDebugBridge {
          * values: {@link IDevice#CHANGE_BUILD_INFO}, {@link IDevice#CHANGE_STATE},
          * {@link IDevice#CHANGE_CLIENT_LIST}
          */
-        public void deviceChanged(IDevice device, int changeMask);
+        void deviceChanged(IDevice device, int changeMask);
     }
 
     /**
@@ -154,7 +154,7 @@ public final class AndroidDebugBridge {
          * {@link Client#CHANGE_THREAD_DATA}, {@link Client#CHANGE_HEAP_MODE},
          * {@link Client#CHANGE_HEAP_DATA}, {@link Client#CHANGE_NATIVE_HEAP_DATA}
          */
-        public void clientChanged(Client client, int changeMask);
+        void clientChanged(Client client, int changeMask);
     }
 
     /**

@@ -44,7 +44,7 @@ public enum HostOs {
 
     private final String mUiName;
 
-    private HostOs(@NonNull String uiName) {
+    HostOs(@NonNull String uiName) {
         mUiName = uiName;
     }
 

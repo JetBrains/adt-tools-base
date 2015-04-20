@@ -29,7 +29,7 @@ public enum ScreenOrientation implements ResourceEnum {
     private final String mShortDisplayValue;
     private final String mLongDisplayValue;
 
-    private ScreenOrientation(String value, String shortDisplayValue, String longDisplayValue) {
+    ScreenOrientation(String value, String shortDisplayValue, String longDisplayValue) {
         mValue = value;
         mShortDisplayValue = shortDisplayValue;
         mLongDisplayValue = longDisplayValue;

@@ -162,7 +162,7 @@ public class ZoomPanInteractor implements MouseListener, MouseMotionListener, Mo
     }
 
     public interface ViewTransformListener {
-        public void transformChanged(@NonNull AffineTransform transform);
+        void transformChanged(@NonNull AffineTransform transform);
     }
 
     public void addViewTransformListener(@NonNull ViewTransformListener l) {

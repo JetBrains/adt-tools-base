@@ -38,7 +38,7 @@ public final class EventValueDescription {
      * Represents the type of a numerical value. This is used to display values of vastly different
      * type/range in graphs.
      */
-    public static enum ValueType {
+    public enum ValueType {
         NOT_APPLICABLE(0),
         OBJECTS(1),
         BYTES(2),
@@ -88,7 +88,7 @@ public final class EventValueDescription {
             return super.toString().toLowerCase(Locale.US);
         }
 
-        private ValueType(int value) {
+        ValueType(int value) {
             mValue = value;
         }
     }
