@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-def gradleVersion = System.env.CUSTOM_GRADLE ?: '1.2.0-beta4'
+def gradleVersion = System.env.CUSTOM_GRADLE ?: '1.2.0-rc1'
 
 apply from: "commonLocalRepo.gradle"
 
