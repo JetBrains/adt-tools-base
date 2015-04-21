@@ -25,7 +25,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.ide.common.blame.FilePosition;
-import com.android.ide.common.blame.SourceFragmentPositionRange;
+import com.android.ide.common.blame.SourcePosition;
 import com.android.ide.common.blame.output.GradleMessage;
 import com.android.ide.common.blame.parser.util.OutputLineReader;
 import com.android.ide.common.blame.parser.ParsingFailedException;
@@ -103,17 +103,17 @@ public abstract class AbstractAaptOutputParser implements PatternAwareOutputPars
     public static File ourRootDir;
 
     @NonNull
-    private static SourceFragmentPositionRange findMessagePositionInFile(@NonNull File file, @NonNull String msgText, int locationLine, ILogger logger) {
-        SourceFragmentPositionRange exactPosition = findExactMessagePositionInFile(file, msgText, locationLine, logger);
+    private static SourcePosition findMessagePositionInFile(@NonNull File file, @NonNull String msgText, int locationLine, ILogger logger) {
+        SourcePosition exactPosition = findExactMessagePositionInFile(file, msgText, locationLine, logger);
         if (exactPosition != null) {
             return exactPosition;
         } else {
-            return new SourceFragmentPositionRange(locationLine, -1, -1);
+            return new SourcePosition(locationLine, -1, -1);
         }
     }
 
     @Nullable
-    private static SourceFragmentPositionRange findExactMessagePositionInFile(@NonNull File file, @NonNull String msgText, int locationLine, @NonNull ILogger logger) {
+    private static SourcePosition findExactMessagePositionInFile(@NonNull File file, @NonNull String msgText, int locationLine, @NonNull ILogger logger) {
         Matcher matcher = PROPERTY_NAME_AND_VALUE.matcher(msgText);
         if (matcher.find()) {
             String name = matcher.group(1);
@@ -121,8 +121,8 @@ public abstract class AbstractAaptOutputParser implements PatternAwareOutputPars
             if (!value.isEmpty()) {
                 return findText(file, name, value, locationLine, logger);
             }
-            SourceFragmentPositionRange position1 = findText(file, name, "\"\"", locationLine, logger);
-            SourceFragmentPositionRange position2 = findText(file, name, "''", locationLine, logger);
+            SourcePosition position1 = findText(file, name, "\"\"", locationLine, logger);
+            SourcePosition position2 = findText(file, name, "''", locationLine, logger);
             if (position1 == null) {
                 if (position2 == null) {
                     // position at the property name instead.
@@ -163,7 +163,7 @@ public abstract class AbstractAaptOutputParser implements PatternAwareOutputPars
     }
 
     @Nullable
-    private static SourceFragmentPositionRange findText(@NonNull File file, @NonNull String first,
+    private static SourcePosition findText(@NonNull File file, @NonNull String first,
             @Nullable String second, int locationLine, @NonNull ILogger logger) {
         ReadOnlyDocument document = getDocument(file, logger);
         if (document == null) {
@@ -190,12 +190,12 @@ public abstract class AbstractAaptOutputParser implements PatternAwareOutputPars
         int endResultOffset = resultOffset + (second != null ? second.length() : first.length());
         int endLineNumber = document.lineNumber(endResultOffset);
         int endLineOffset = document.lineOffset((endLineNumber));
-        return new SourceFragmentPositionRange(startLineNumber, resultOffset - startLineOffset + 1, resultOffset,
+        return new SourcePosition(startLineNumber, resultOffset - startLineOffset + 1, resultOffset,
                 endLineNumber, endResultOffset - endLineOffset + 1, endResultOffset);
     }
 
     @Nullable
-    private static SourceFragmentPositionRange findLineStart(@NonNull File file, int locationLine, ILogger logger) {
+    private static SourcePosition findLineStart(@NonNull File file, int locationLine, ILogger logger) {
         ReadOnlyDocument document = getDocument(file, logger);
         if (document == null) {
             return null;
@@ -231,7 +231,7 @@ public abstract class AbstractAaptOutputParser implements PatternAwareOutputPars
                 break;
             }
         }
-        return new SourceFragmentPositionRange(locationLine, resultOffset - lineOffset + 1, resultOffset,
+        return new SourcePosition(locationLine, resultOffset - lineOffset + 1, resultOffset,
                 locationLine, endResultOffset - lineOffset + 1, endResultOffset);
     }
 
@@ -447,7 +447,7 @@ public abstract class AbstractAaptOutputParser implements PatternAwareOutputPars
             }
         }
 
-        SourceFragmentPositionRange errorPosition = parseLineNumber(lineNumberAsText);
+        SourcePosition errorPosition = parseLineNumber(lineNumberAsText);
         if (sourcePath != null) {
             FilePosition source = findSourcePosition(file, errorPosition.getStartLine(), text, logger);
             if (source != null) {
@@ -468,7 +468,7 @@ public abstract class AbstractAaptOutputParser implements PatternAwareOutputPars
         return new GradleMessage(kind, text, sourcePath, errorPosition, original);
     }
 
-    private static SourceFragmentPositionRange parseLineNumber(String lineNumberAsText) throws ParsingFailedException {
+    private SourcePosition parseLineNumber(String lineNumberAsText) throws ParsingFailedException {
         int lineNumber = -1;
         if (lineNumberAsText != null) {
             try {
@@ -478,7 +478,7 @@ public abstract class AbstractAaptOutputParser implements PatternAwareOutputPars
             }
         }
 
-        return new SourceFragmentPositionRange(lineNumber, -1, -1);
+        return new SourcePosition(lineNumber, -1, -1);
     }
 
     @Nullable
@@ -550,11 +550,11 @@ public abstract class AbstractAaptOutputParser implements PatternAwareOutputPars
 
         if (isValueFile) {
             // Look up the line number
-            SourceFragmentPositionRange position = findMessagePositionInFile(sourceFile, message,
+            SourcePosition position = findMessagePositionInFile(sourceFile, message,
                     1, logger); // Search from the beginning
             return new FilePosition(sourceFile, position);
         }
 
-        return new FilePosition(sourceFile, SourceFragmentPositionRange.UNKNOWN);
+        return new FilePosition(sourceFile, SourcePosition.UNKNOWN);
     }
 }

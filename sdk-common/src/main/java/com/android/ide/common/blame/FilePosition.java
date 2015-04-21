@@ -24,17 +24,17 @@ import java.io.File;
 /**
  * An immutable position in a text file with a reference to that file.
  */
-public class FilePosition extends SourceFragmentPositionRange {
+public class FilePosition extends SourcePosition {
 
     private final File sourceFile;
 
-    public FilePosition(@NonNull File sourceFile, @NonNull SourceFragmentPositionRange position) {
+    public FilePosition(@NonNull File sourceFile, @NonNull SourcePosition position) {
         super(position);
         this.sourceFile = sourceFile;
     }
 
     public static FilePosition wholeFile(@NonNull File sourceFile) {
-        return new FilePosition(sourceFile, SourceFragmentPositionRange.UNKNOWN);
+        return new FilePosition(sourceFile, SourcePosition.UNKNOWN);
     }
 
     public File getSourceFile() {
@@ -60,7 +60,7 @@ public class FilePosition extends SourceFragmentPositionRange {
         FilePosition other = (FilePosition) obj;
 
         return other.getSourceFile().getAbsolutePath().equals(getSourceFile().getAbsolutePath()) &&
-                super.equals((SourceFragmentPositionRange) other);
+                super.equals((SourcePosition) other);
 
     }
 
