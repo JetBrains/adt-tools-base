@@ -47,11 +47,11 @@ public class TimelineDataTest extends TestCase {
     public void testGetMaxTotal() throws Exception {
         assertEquals(0.0f, mData.getMaxTotal());
         long now = System.currentTimeMillis();
-        mData.add(now + 1, 0, 0, 1.0f, 2.0f);
+        mData.add(now + 1, 0, 1.0f, 2.0f);
         assertEquals(3.0f, mData.getMaxTotal());
-        mData.add(now + 2, 0, 0, 1.0f, 1.0f);
+        mData.add(now + 2, 0, 1.0f, 1.0f);
         assertEquals(3.0f, mData.getMaxTotal());
-        mData.add(now + 3, 0, 0, 2.0f, 2.0f);
+        mData.add(now + 3, 0, 2.0f, 2.0f);
         assertEquals(4.0f, mData.getMaxTotal());
     }
 
@@ -59,19 +59,19 @@ public class TimelineDataTest extends TestCase {
         assertEquals(0, mData.size());
         long start = mData.getStartTime();
 
-        mData.add(start, 0, 0, 1.0f, 2.0f);
+        mData.add(start, 0, 1.0f, 2.0f);
         assertEquals(1, mData.size());
         assertEquals(0.0f, mData.get(0).time, 0.0001f);
         assertEquals(1.0f, mData.get(0).values[0]);
         assertEquals(2.0f, mData.get(0).values[1]);
 
-        mData.add(start + 1000, 0, 0, 3.0f, 4.0f);
+        mData.add(start + 1000, 0, 3.0f, 4.0f);
         assertEquals(2, mData.size());
         assertEquals(1.0f, mData.get(1).time, 0.0001f);
         assertEquals(3.0f, mData.get(1).values[0]);
         assertEquals(4.0f, mData.get(1).values[1]);
 
-        mData.add(start + 2000, 0, 0, 5.0f, 6.0f);
+        mData.add(start + 2000, 0, 5.0f, 6.0f);
         assertEquals(2, mData.size());
         assertEquals(2.0f, mData.get(1).time, 0.0001);
         assertEquals(5.0f, mData.get(1).values[0]);

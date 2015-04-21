@@ -40,7 +40,7 @@ class CircularArrayList<T> extends AbstractList<T> {
 
     @Override
     public T get(int i) {
-        if (i >= mSize) {
+        if (i < 0 || i >= mSize) {
             throw new IndexOutOfBoundsException();
         }
         return mData[(mStart + i) % mSize];

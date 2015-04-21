@@ -11,6 +11,6 @@ dependencies {
 }
 
 project.ext.pomName = 'Android Tools chartlib'
-project.ext.pomDesc = 'Library with swing chart widgets'
+project.ext.pomDesc = 'Library with Swing chart widgets'
 
 apply from: "$rootDir/buildSrc/base/javadoc.gradle"
