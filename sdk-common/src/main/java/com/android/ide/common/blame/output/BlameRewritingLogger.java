@@ -18,15 +18,9 @@ package com.android.ide.common.blame.output;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.ide.common.blame.SourceFragmentPositionRange;
-import com.android.ide.common.blame.output.GradleMessage;
 import com.android.ide.common.blame.parser.ToolOutputParser;
 import com.android.ide.common.blame.parser.aapt.AaptOutputParser;
 import com.android.utils.ILogger;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-
-import java.util.List;
 
 public class BlameRewritingLogger implements ILogger {
 

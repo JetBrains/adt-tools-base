@@ -16,7 +16,7 @@
 package com.android.ide.common.blame.parser;
 
 import com.android.annotations.NonNull;
-import com.android.ide.common.blame.SourceFragmentPositionRange;
+import com.android.ide.common.blame.SourcePosition;
 import com.android.ide.common.blame.output.GradleMessage;
 import com.android.ide.common.blame.output.GradleMessageRewriter;
 import com.android.ide.common.blame.parser.util.OutputLineReader;
@@ -74,7 +74,7 @@ public class GradleMessageRewriterTest extends TestCase {
                 String nextLine = reader.readLine();
                 if ("next line".equals(nextLine)) {
                     messages.add(new GradleMessage(GradleMessage.Kind.WARNING, "two line warning",
-                            "sourcePath", new SourceFragmentPositionRange(1, 2, -1), ""));
+                            "sourcePath", new SourcePosition(1, 2, -1), ""));
                 } else {
                     throw new ParsingFailedException();
                 }
@@ -86,7 +86,7 @@ public class GradleMessageRewriterTest extends TestCase {
                                 GradleMessage.Kind.ERROR,
                                 "errorText",
                                 "error/source",
-                                new SourceFragmentPositionRange(1, 2, 3, 4, 5, 6),
+                                new SourcePosition(1, 2, 3, 4, 5, 6),
                                 ""));
                 return true;
             }
