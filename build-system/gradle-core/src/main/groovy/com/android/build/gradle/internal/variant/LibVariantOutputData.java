@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal.variant;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.build.FilterData;
 import com.android.build.OutputFile;
 import com.android.build.gradle.api.ApkOutputFile;
@@ -55,10 +56,10 @@ public class LibVariantOutputData extends BaseVariantOutputData {
         return ImmutableList.of();
     }
 
-    @NonNull
+    @Nullable
     @Override
     public File getOutputFile() {
-        return packageLibTask.getArchivePath();
+        return packageLibTask == null ? null : packageLibTask.getArchivePath();
     }
 
     @Override

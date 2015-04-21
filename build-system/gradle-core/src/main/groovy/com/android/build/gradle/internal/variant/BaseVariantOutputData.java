@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal.variant;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.build.FilterData;
 import com.android.build.OutputFile;
 import com.android.build.VariantOutput;
@@ -68,7 +69,7 @@ public abstract class BaseVariantOutputData implements VariantOutput {
                 outputType, filters, getOutputFilePromise());
     }
 
-    @NonNull
+    @Nullable
     @Override
     public ApkOutputFile getMainOutputFile() {
         return mainApkOutputFile;
@@ -86,7 +87,7 @@ public abstract class BaseVariantOutputData implements VariantOutput {
 
     public abstract void setOutputFile(@NonNull File file);
 
-    @NonNull
+    @Nullable
     public abstract File getOutputFile();
 
     @NonNull

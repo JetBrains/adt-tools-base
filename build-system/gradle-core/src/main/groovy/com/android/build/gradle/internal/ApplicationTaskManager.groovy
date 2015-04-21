@@ -19,6 +19,7 @@ package com.android.build.gradle.internal
 import com.android.annotations.NonNull
 import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.internal.profile.SpanRecorders
+import com.android.build.gradle.internal.scope.VariantScope
 import com.android.build.gradle.internal.variant.ApplicationVariantData
 import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.build.gradle.internal.variant.BaseVariantOutputData
@@ -44,9 +45,8 @@ class ApplicationTaskManager extends TaskManager {
 
     @Override
     public void  createTasksForVariantData(
-            TaskFactory tasks,
+            @NonNull TaskFactory tasks,
             @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData) {
-
         assert variantData instanceof ApplicationVariantData;
         ApplicationVariantData appVariantData = (ApplicationVariantData) variantData;
 
@@ -120,6 +120,11 @@ class ApplicationTaskManager extends TaskManager {
             }
         }
 
+        // Variant scope should be created at the beginning of the function, but there is currently
+        // a dependency on the NdkCompile tasks, and the scope mechanism does not support lazy
+        // evaluation yet.
+        VariantScope variantScope = createVariantScope(variantData);
+
         if (variantData.getSplitHandlingPolicy() ==
                 BaseVariantData.SplitHandlingPolicy.RELEASE_21_AND_AFTER_POLICY) {
             if (extension.getBuildToolsRevision().getMajor() < 21) {
@@ -131,7 +136,7 @@ class ApplicationTaskManager extends TaskManager {
             }
         }
         SpanRecorders.record(ExecutionType.APP_TASK_MANAGER_CREATE_PACKAGING_TASK) {
-            createPackagingTask(tasks, appVariantData, true /*publishApk*/);
+            createPackagingTask(tasks, variantScope, true /*publishApk*/);
         }
     }
 
