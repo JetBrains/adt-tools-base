@@ -1485,7 +1485,8 @@ public class AndroidBuilder {
                 buildToolInfo,
                 mVerboseExec,
                 mJavaProcessExecutor,
-                mProcessOutputHandler);
+                mProcessOutputHandler,
+                mLogger);
     }
 
     public static List<File> convertLibaryToJackUsingApis(
@@ -1495,10 +1496,8 @@ public class AndroidBuilder {
             @NonNull BuildToolInfo buildToolInfo,
             boolean verbose,
             @NonNull JavaProcessExecutor processExecutor,
-            @NonNull ProcessOutputHandler processOutputHandler) throws ProcessException {
-
-        // TODO: provide a better logger.
-        Logger logger = Logger.getLogger(AndroidBuilder.class.getName());
+            @NonNull ProcessOutputHandler processOutputHandler,
+            @NonNull ILogger logger) throws ProcessException {
 
         BuildToolServiceLoader buildToolServiceLoader = BuildToolsServiceLoader.INSTANCE
                 .forVersion(buildToolInfo);
@@ -1529,12 +1528,11 @@ public class AndroidBuilder {
             } catch (com.android.jill.api.v01.ConfigurationException e) {
                 logger.warning(e.getMessage() + ", reverting to native");
             } catch (TranslationException e) {
-                logger.log(Level.SEVERE,
-                        "In process translation failed, reverting to native, file a bug", e);
+                logger.error(e, "In process translation failed, reverting to native, file a bug");
             }
         }
         return convertLibraryToJack(inputFile, outFile, dexOptions, buildToolInfo, verbose,
-                processExecutor, processOutputHandler);
+                processExecutor, processOutputHandler, logger);
     }
 
     public static List<File> convertLibraryToJack(
@@ -1544,7 +1542,8 @@ public class AndroidBuilder {
             @NonNull BuildToolInfo buildToolInfo,
             boolean verbose,
             @NonNull JavaProcessExecutor processExecutor,
-            @NonNull ProcessOutputHandler processOutputHandler)
+            @NonNull ProcessOutputHandler processOutputHandler,
+            @NonNull ILogger logger)
             throws ProcessException {
         checkNotNull(inputFile, "inputFile cannot be null.");
         checkNotNull(outFile, "outFile cannot be null.");
@@ -1572,6 +1571,7 @@ public class AndroidBuilder {
             builder.addArgs("--verbose");
         }
 
+        logger.verbose(builder.toString());
         JavaProcessInfo javaProcessInfo = builder.createJavaProcess();
         ProcessResult result = processExecutor.execute(javaProcessInfo, processOutputHandler);
         result.rethrowFailure().assertNormalExitValue();
