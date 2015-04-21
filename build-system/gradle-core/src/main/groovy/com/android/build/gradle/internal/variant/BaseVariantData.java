@@ -26,6 +26,7 @@ import com.android.build.gradle.internal.api.DefaultAndroidSourceSet;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.coverage.JacocoInstrumentTask;
 import com.android.build.gradle.internal.dependency.VariantDependencies;
+import com.android.build.gradle.internal.dsl.Splits;
 import com.android.build.gradle.internal.tasks.CheckManifest;
 import com.android.build.gradle.internal.tasks.FileSupplier;
 import com.android.build.gradle.internal.tasks.GenerateApkDataTask;
@@ -42,6 +43,7 @@ import com.android.build.gradle.tasks.ProcessAndroidResources;
 import com.android.build.gradle.tasks.RenderscriptCompile;
 import com.android.builder.core.VariantType;
 import com.android.builder.model.SourceProvider;
+import com.android.ide.common.res2.ResourceSet;
 import com.android.utils.StringHelper;
 import com.google.common.base.Objects;
 import com.google.common.collect.Lists;
@@ -53,9 +55,12 @@ import org.gradle.api.tasks.bundling.Jar;
 import org.gradle.api.tasks.compile.AbstractCompile;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Base data about a variant.
@@ -132,6 +137,10 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
     private List<File> extraGeneratedResFolders;
 
     private final List<T> outputs = Lists.newArrayListWithExpectedSize(4);
+
+    private Set<String> densityFilters;
+    private Set<String> languageFilters;
+    private Set<String> abiFilters;
 
     /**
      * If true, variant outputs will be considered signed. Only set if you manually set the outputs
@@ -314,6 +323,198 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
     }
 
     /**
+     * Calculates the filters for this variant. The filters can either be manually specified by
+     * the user within the build.gradle or can be automatically discovered using the variant
+     * specific folders.
+     *
+     * This method must be called before {@link #getFilters(OutputFile.FilterType)}.
+     *
+     * @param splits the splits configuration from the build.gradle.
+     */
+    public void calculateFilters(Splits splits) {
+
+        List<ResourceSet> resourceSets = variantConfiguration
+                .getResourceSets(getGeneratedResFolders(), false);
+        densityFilters = getFilters(resourceSets, DiscoverableFilterType.DENSITY, splits);
+        languageFilters = getFilters(resourceSets, DiscoverableFilterType.LANGUAGE, splits);
+        abiFilters = getFilters(resourceSets, DiscoverableFilterType.ABI, splits);
+    }
+
+    /**
+     * Returns the filters values (as manually specified or automatically discovered) for a
+     * particular {@link com.android.build.OutputFile.FilterType}
+     * @param filterType the type of filter in question
+     * @return a possibly empty set of filter values.
+     * @throws IllegalStateException if {@link #calculateFilters(Splits)} has not been called prior
+     * to invoking this method.
+     */
+    @NonNull
+    public Set<String> getFilters(OutputFile.FilterType filterType) {
+        if (densityFilters == null || languageFilters == null || abiFilters == null) {
+            throw new IllegalStateException("calculateFilters method not called");
+        }
+        switch(filterType) {
+            case DENSITY:
+                return densityFilters;
+            case LANGUAGE:
+                return languageFilters;
+            case ABI:
+                return abiFilters;
+            default:
+                throw new RuntimeException("Unhandled filter type");
+        }
+    }
+
+    /**
+     * Returns the list of generated res folders for this variant.
+     */
+    private List<File> getGeneratedResFolders() {
+        List<File> generatedResFolders = Lists.newArrayList(
+                renderscriptCompileTask.getResOutputDir(),
+                generateResValuesTask.getResOutputDir());
+        if (extraGeneratedResFolders != null) {
+            generatedResFolders.addAll(extraGeneratedResFolders);
+        }
+        if (generateApkDataTask != null &&
+                getVariantConfiguration().getBuildType().isEmbedMicroApp()) {
+            generatedResFolders.add(generateApkDataTask.getResOutputDir());
+        }
+        return generatedResFolders;
+    }
+
+    @NonNull
+    public List<String> discoverListOfResourceConfigs() {
+        List<String> resFoldersOnDisk = new ArrayList<String>();
+        List<ResourceSet> resourceSets = variantConfiguration.getResourceSets(
+                getGeneratedResFolders(), false /* no libraries resources */);
+        resFoldersOnDisk.addAll(getAllFilters(
+                resourceSets,
+                DiscoverableFilterType.LANGUAGE.folderPrefix,
+                DiscoverableFilterType.DENSITY.folderPrefix));
+        return resFoldersOnDisk;
+    }
+
+    /**
+     * Defines the discoverability attributes of filters.
+     */
+    private enum DiscoverableFilterType {
+
+        DENSITY("drawable-") {
+            @NonNull
+            @Override
+            Collection<String> getConfiguredFilters(@NonNull Splits splits) {
+                return splits.getDensityFilters();
+            }
+
+            @Override
+            boolean isAuto(@NonNull Splits splits) {
+                return splits.getDensity().isAuto();
+            }
+
+        }, LANGUAGE("values-") {
+            @NonNull
+            @Override
+            Collection<String> getConfiguredFilters(@NonNull Splits splits) {
+                return splits.getLanguageFilters();
+            }
+
+            @Override
+            boolean isAuto(@NonNull Splits splits) {
+                return splits.getLanguage().isAuto();
+            }
+        }, ABI("") {
+            @NonNull
+            @Override
+            Collection<String> getConfiguredFilters(@NonNull Splits splits) {
+                return splits.getAbiFilters();
+            }
+
+            @Override
+            boolean isAuto(@NonNull Splits splits) {
+                // so far, we never auto-discover abi filters.
+                return false;
+            }
+        };
+
+        /**
+         * Sets the folder prefix that filter specific resources must start with.
+         */
+        private String folderPrefix;
+
+        DiscoverableFilterType(String folderPrefix) {
+            this.folderPrefix = folderPrefix;
+        }
+
+        /**
+         * Returns the applicable filters configured in the build.gradle for this filter type.
+         * @param splits the build.gradle splits configuration
+         * @return a list of filters.
+         */
+        @NonNull
+        abstract Collection<String> getConfiguredFilters(@NonNull Splits splits);
+
+        /**
+         * Returns true if the user wants the build system to auto discover the splits for this
+         * split type.
+         * @param splits the build.gradle splits configuration.
+         * @return true to use auto-discovery, false to use the build.gradle configuration.
+         */
+        abstract boolean isAuto(@NonNull Splits splits);
+    }
+
+    /**
+     * Gets the list of filter values for a filter type either from the user specified build.gradle
+     * settings or through a discovery mechanism using folders names.
+     * @param resourceSets the list of source folders to discover from.
+     * @param filterType the filter type
+     * @param splits the variant's configuration for splits.
+     * @return a possibly empty list of filter value for this filter type.
+     */
+    @NonNull
+    private static Set<String> getFilters(
+            @NonNull List<ResourceSet> resourceSets,
+            @NonNull DiscoverableFilterType filterType,
+            @NonNull Splits splits) {
+
+        Set<String> filtersList = new HashSet<String>();
+        if (filterType.isAuto(splits)) {
+            filtersList.addAll(getAllFilters(resourceSets, filterType.folderPrefix));
+        } else {
+            filtersList.addAll(removeAllNullEntries(filterType.getConfiguredFilters(splits)));
+        }
+        return filtersList;
+    }
+
+    /**
+     * Discover all sub-folders of all the {@link ResourceSet#getSourceFiles()} which names are
+     * starting with one of the provided prefixes.
+     * @param resourceSets the list of sources {@link ResourceSet}
+     * @param prefixes the list of prefixes to look for folders.
+     * @return a possibly empty list of folders.
+     */
+    @NonNull
+    private static List<String> getAllFilters(List<ResourceSet> resourceSets, String... prefixes) {
+        List<String> providedResFolders = new ArrayList<String>();
+        for (ResourceSet resourceSet : resourceSets) {
+            for (File resFolder : resourceSet.getSourceFiles()) {
+                File[] subResFolders = resFolder.listFiles();
+                if (subResFolders != null) {
+                    for (File subResFolder : subResFolders) {
+                        for (String prefix : prefixes) {
+                            if (subResFolder.getName().startsWith(prefix)) {
+                                providedResFolders
+                                        .add(subResFolder.getName().substring(prefix.length()));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return providedResFolders;
+    }
+
+
+    /**
      * Computes the Java sources to use for compilation. This Object[] contains
      * {@link org.gradle.api.file.FileCollection} and {@link File} instances
      */
@@ -434,5 +635,15 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
         return preprocessResourcesTask != null
                 ? preprocessResourcesTask.getOutputResDirectory()
                 : mergeResourcesTask.getOutputDir();
+    }
+
+    private static <T> Set<T> removeAllNullEntries(Collection<T> input) {
+        HashSet<T> output = new HashSet<T>();
+        for (T element : input) {
+            if (element != null) {
+                output.add(element);
+            }
+        }
+        return output;
     }
 }
