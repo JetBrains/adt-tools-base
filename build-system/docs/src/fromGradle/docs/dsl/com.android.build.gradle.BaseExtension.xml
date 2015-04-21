@@ -47,6 +47,7 @@
             <tr><td>jacoco</td></tr>
             <tr><td>splits</td></tr>
             <tr><td>adbOptions</td></tr>
+            <tr><td>useLibrary</td></tr>
         </table>
     </section>
 </section>

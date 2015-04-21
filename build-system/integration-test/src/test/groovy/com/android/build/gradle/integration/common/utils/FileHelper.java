@@ -21,12 +21,10 @@ import static org.junit.Assert.assertTrue;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.gradle.integration.common.fixture.app.TestSourceFile;
 import com.google.common.base.Charsets;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
-import com.google.common.truth.Truth;
 
 import java.io.File;
 import java.io.IOException;

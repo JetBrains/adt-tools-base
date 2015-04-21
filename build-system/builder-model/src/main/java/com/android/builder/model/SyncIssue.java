@@ -59,7 +59,10 @@ public interface SyncIssue {
      */
     int TYPE_MISMATCH_DEP             = 9;
 
-    int TYPE_MAX                      = 10; // increment when adding new types.
+    // data is dependency coordinate
+    int TYPE_OPTIONAL_LIB_NOT_FOUND   = 10;
+
+    int TYPE_MAX                      = 11; // increment when adding new types.
 
     /**
      * Returns the severity of the issue.

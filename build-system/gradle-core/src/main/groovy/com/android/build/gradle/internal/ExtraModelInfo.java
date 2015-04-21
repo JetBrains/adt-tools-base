@@ -31,6 +31,7 @@ import com.android.build.gradle.internal.model.JavaArtifactImpl;
 import com.android.build.gradle.internal.model.SyncIssueImpl;
 import com.android.build.gradle.internal.model.SyncIssueKey;
 import com.android.build.gradle.internal.variant.DefaultSourceProviderContainer;
+import com.android.builder.core.EvaluationErrorReporter;
 import com.android.builder.model.AndroidArtifact;
 import com.android.builder.model.ArtifactMetaData;
 import com.android.builder.model.JavaArtifact;
@@ -52,16 +53,11 @@ import java.util.Map;
 /**
  * For storing additional model information.
  */
-public class ExtraModelInfo {
-
-    public enum ModelQueryMode {
-        STANDARD, IDE, IDE_ADVANCED
-    }
+public class ExtraModelInfo extends EvaluationErrorReporter {
 
     @NonNull
     private final Project project;
 
-    private final ModelQueryMode modelQueryMode;
     private final ErrorFormatMode errorFormatMode;
 
     private final Map<SyncIssueKey, SyncIssue> syncIssues = Maps.newHashMap();
@@ -75,8 +71,8 @@ public class ExtraModelInfo {
     private final ListMultimap<String, SourceProviderContainer> extraMultiFlavorSourceProviders = ArrayListMultimap.create();
 
     public ExtraModelInfo(@NonNull Project project) {
+        super(computeModelQueryMode(project));
         this.project = project;
-        modelQueryMode = computeModelQueryMode(project);
         errorFormatMode = computeErrorFormatMode(project);
     }
 
@@ -84,39 +80,42 @@ public class ExtraModelInfo {
         return syncIssues;
     }
 
-    public ModelQueryMode getModelQueryMode() {
-        return modelQueryMode;
-    }
-
     public ErrorFormatMode getErrorFormatMode() {
         return errorFormatMode;
     }
 
+    @Override
+    @NonNull
     public SyncIssue handleSyncError(@NonNull String data, int type, @NonNull String msg) {
-        switch (modelQueryMode) {
+        SyncIssue issue;
+        switch (getMode()) {
             case STANDARD:
-                if (isDependencyIssue(type)) {
-                    // if it's a dependency issue we don't throw right away. we'll
-                    // throw during build instead.
-                    // but we do log.
-                    project.getLogger().warn("WARNING: " + msg);
-                    return new SyncIssueImpl(type, SyncIssue.SEVERITY_ERROR, data, msg);
+                if (!isDependencyIssue(type)) {
+                    throw new GradleException(msg);
                 }
-                throw new GradleException(msg);
-            case IDE:
+                // if it's a dependency issue we don't throw right away. we'll
+                // throw during build instead.
+                // but we do log.
+                project.getLogger().warn("WARNING: " + msg);
+                issue = new SyncIssueImpl(type, SyncIssue.SEVERITY_ERROR, data, msg);
+                break;
+            case IDE_LEGACY:
                 // compat mode for the only issue supported before the addition of SyncIssue
                 // in the model.
                 if (type != SyncIssue.TYPE_UNRESOLVED_DEPENDENCY) {
                     throw new GradleException(msg);
                 }
                 // intended fall-through
-            case IDE_ADVANCED:
+            case IDE:
                 // new IDE, able to support SyncIssue.
-                SyncIssue syncIssue = new SyncIssueImpl(type, SyncIssue.SEVERITY_ERROR, data, msg);
-                syncIssues.put(SyncIssueKey.from(syncIssue), syncIssue);
+                issue = new SyncIssueImpl(type, SyncIssue.SEVERITY_ERROR, data, msg);
+                syncIssues.put(SyncIssueKey.from(issue), issue);
+                break;
+            default:
+                throw new RuntimeException("Unknown SyncIssue type");
         }
 
-        return null;
+        return issue;
     }
 
     private static boolean isDependencyIssue(int type) {
@@ -246,16 +245,16 @@ public class ExtraModelInfo {
      * means we will attempt to resolve dependencies even if some are broken/unsupported to avoid
      * failing the import in the IDE.
      */
-    private static ModelQueryMode computeModelQueryMode(@NonNull Project project) {
+    private static EvaluationMode computeModelQueryMode(@NonNull Project project) {
         if (isPropertyTrue(project, PROPERTY_BUILD_MODEL_ONLY_ADVANCED)) {
-            return ModelQueryMode.IDE_ADVANCED;
+            return EvaluationMode.IDE;
         }
 
         if (isPropertyTrue(project, PROPERTY_BUILD_MODEL_ONLY)) {
-            return ModelQueryMode.IDE;
+            return EvaluationMode.IDE_LEGACY;
         }
 
-        return ModelQueryMode.STANDARD;
+        return EvaluationMode.STANDARD;
     }
 
     private static ErrorFormatMode computeErrorFormatMode(@NonNull Project project) {

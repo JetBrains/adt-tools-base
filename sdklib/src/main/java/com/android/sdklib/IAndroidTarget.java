@@ -18,7 +18,9 @@ package com.android.sdklib;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.annotations.concurrency.Immutable;
 import com.android.sdklib.repository.descriptors.IdDisplay;
+import com.google.common.collect.ImmutableList;
 
 import java.io.File;
 import java.util.List;
@@ -80,15 +82,18 @@ public interface IAndroidTarget extends Comparable<IAndroidTarget> {
     int NO_USB_ID = 0;
 
     /** An optional library provided by an Android Target */
-    interface IOptionalLibrary {
+    interface OptionalLibrary {
         /** The name of the library, as used in the manifest (&lt;uses-library&gt;). */
+        @NonNull
         String getName();
-        /** The file name of the jar file. */
-        String getJarName();
-        /** Absolute OS path to the jar file. */
-        String getJarPath();
+        /** Location of the jar file. */
+        @NonNull
+        File getJar();
         /** Description of the library. */
+        @NonNull
         String getDescription();
+        /** Whether the library requires a manifest entry */
+        boolean isManifestEntryRequired();
     }
 
     /**
@@ -187,6 +192,32 @@ public interface IAndroidTarget extends Comparable<IAndroidTarget> {
     List<String> getBootClasspath();
 
     /**
+     * Returns a list of optional libraries for this target.
+     *
+     * These libraries are not automatically added to the classpath.
+     * Using them requires adding a <code>uses-library</code> entry in the manifest.
+     *
+     * @return a list of libraries.
+     *
+     * @see OptionalLibrary#getName()
+     */
+    @NonNull
+    List<OptionalLibrary> getOptionalLibraries();
+
+    /**
+     * Returns the additional libraries for this target.
+     *
+     * These libraries are automatically added to the classpath, but using them requires
+     * adding a <code>uses-library</code> entry in the manifest.
+     *
+     * @return a list of libraries.
+     *
+     * @see OptionalLibrary#getName()
+     */
+    @NonNull
+    List<OptionalLibrary> getAdditionalLibraries();
+
+    /**
      * Returns whether the target is able to render layouts.
      */
     boolean hasRenderingLibrary();
@@ -213,12 +244,6 @@ public interface IAndroidTarget extends Comparable<IAndroidTarget> {
      */
     @Nullable
     File getDefaultSkin();
-
-    /**
-     * Returns the available optional libraries for this target.
-     * @return an array of optional libraries or <code>null</code> if there is none.
-     */
-    IOptionalLibrary[] getOptionalLibraries();
 
     /**
      * Returns the list of libraries available for a given platform.

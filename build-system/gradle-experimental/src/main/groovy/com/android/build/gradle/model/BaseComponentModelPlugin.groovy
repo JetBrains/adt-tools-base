@@ -213,7 +213,7 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
         }
 
         @Model
-        AndroidBuilder createAndroidBuilder(Project project) {
+        AndroidBuilder createAndroidBuilder(Project project, ExtraModelInfo extraModelInfo) {
             String creator = "Android Gradle"
             ILogger logger = new LoggerWrapper(project.logger)
 
@@ -223,6 +223,7 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
                     new GradleProcessExecutor(project),
                     new GradleJavaProcessExecutor(project),
                     new LoggedProcessOutputHandler(logger),
+                    extraModelInfo,
                     logger,
                     project.logger.isEnabled(LogLevel.INFO))
 
@@ -313,6 +314,7 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
                 sdkHandler.initTarget(
                         androidExtension.getCompileSdkVersion(),
                         androidExtension.buildToolsRevision,
+                        androidExtension.libraryRequests,
                         androidBuilder)
             }
 

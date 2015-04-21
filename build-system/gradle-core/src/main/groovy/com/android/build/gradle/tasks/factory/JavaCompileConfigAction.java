@@ -11,6 +11,7 @@ import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.sdklib.AndroidTargetHash;
 import com.android.sdklib.AndroidVersion;
+import com.google.common.base.Joiner;
 
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.gradle.api.Action;
@@ -67,7 +68,8 @@ public class JavaCompileConfigAction implements TaskConfigAction<JavaCompile> {
                                         .plus(testedVariantData.getScope().getJavaClasspath())
                                         .plus(scope.getGlobalScope().getProject().files(
                                                 testedVariantData.getScope().getJavaOutputDir(),
-                                                testedVariantData.getScope().getJavaDependencyCache()));
+                                                testedVariantData.getScope()
+                                                        .getJavaDependencyCache()));
                             }
 
                             if (scope.getVariantData().getType().equals(UNIT_TEST)
@@ -116,21 +118,9 @@ public class JavaCompileConfigAction implements TaskConfigAction<JavaCompile> {
         configureLanguageLevel(javaCompileTask);
         javaCompileTask.getOptions().setEncoding(
                 scope.getGlobalScope().getExtension().getCompileOptions().getEncoding());
-
-        // setup the boot classpath just before the task actually runs since this will
-        // force the sdk to be parsed.
-        javaCompileTask.doFirst(new Closure<String>(this, this) {
-            public String doCall(Task it) {
-                return setBootClasspath(javaCompileTask.getOptions(), DefaultGroovyMethods
-                        .join(scope.getGlobalScope().getAndroidBuilder()
-                                .getBootClasspathAsStrings(), File.pathSeparator));
-            }
-
-            public String doCall() {
-                return doCall(null);
-            }
-
-        });
+        javaCompileTask.getOptions().setBootClasspath(
+                Joiner.on(File.pathSeparator).join(
+                        scope.getGlobalScope().getAndroidBuilder().getBootClasspathAsStrings()));
     }
 
     private void configureLanguageLevel(AbstractCompile compileTask) {

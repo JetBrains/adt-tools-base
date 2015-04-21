@@ -21,6 +21,7 @@ import static com.android.SdkConstants.FN_LOCAL_PROPERTIES;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.core.AndroidBuilder;
+import com.android.builder.core.LibraryRequest;
 import com.android.builder.sdk.DefaultSdkLoader;
 import com.android.builder.sdk.PlatformLoader;
 import com.android.builder.sdk.SdkInfo;
@@ -29,6 +30,7 @@ import com.android.builder.sdk.TargetInfo;
 import com.android.sdklib.repository.FullRevision;
 import com.android.utils.ILogger;
 import com.google.common.base.Charsets;
+import com.google.common.base.Preconditions;
 import com.google.common.io.Closeables;
 
 import org.gradle.api.Project;
@@ -38,6 +40,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.Collection;
 import java.util.Properties;
 
 /**
@@ -73,23 +76,19 @@ public class SdkHandler {
     }
 
     public void initTarget(
-            String targetHash,
-            FullRevision buildToolRevision,
+            @NonNull String targetHash,
+            @NonNull FullRevision buildToolRevision,
+            @NonNull Collection<LibraryRequest> usedLibraries,
             @NonNull AndroidBuilder androidBuilder) {
-        if (targetHash == null) {
-            throw new IllegalArgumentException("android.compileSdkVersion is missing!");
-        }
-
-        if (buildToolRevision == null) {
-            throw new IllegalArgumentException("android.buildToolsVersion is missing!");
-        }
+        Preconditions.checkNotNull(targetHash, "android.compileSdkVersion is missing!");
+        Preconditions.checkNotNull(buildToolRevision, "android.buildToolsVersion is missing!");
 
         SdkLoader sdkLoader = getSdkLoader();
 
         SdkInfo sdkInfo = sdkLoader.getSdkInfo(logger);
         TargetInfo targetInfo = sdkLoader.getTargetInfo(targetHash, buildToolRevision, logger);
 
-        androidBuilder.setTargetInfo(sdkInfo, targetInfo);
+        androidBuilder.setTargetInfo(sdkInfo, targetInfo, usedLibraries);
     }
 
     @Nullable
