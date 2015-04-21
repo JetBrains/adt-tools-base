@@ -163,7 +163,8 @@ public class ExtraModelInfo {
             int artifactType) {
 
         if (extraArtifactMap.get(name) != null) {
-            throw new IllegalArgumentException("Artifact with name $name already registered.");
+            throw new IllegalArgumentException(
+                    String.format("Artifact with name %1$s already registered.", name));
         }
 
         extraArtifactMap.put(name, new ArtifactMetaDataImpl(name, isTest, artifactType));
@@ -173,8 +174,9 @@ public class ExtraModelInfo {
             @NonNull BuildType buildType,
             @NonNull SourceProvider sourceProvider) {
         if (extraArtifactMap.get(name) == null) {
-            throw new IllegalArgumentException(
-                    "Artifact with name $name is not yet registered. Use registerArtifactType()");
+            throw new IllegalArgumentException(String.format(
+                    "Artifact with name %1$s is not yet registered. Use registerArtifactType()",
+                    name));
         }
 
         extraBuildTypeSourceProviders.put(buildType.getName(),
@@ -186,8 +188,9 @@ public class ExtraModelInfo {
             @NonNull ProductFlavor productFlavor,
             @NonNull SourceProvider sourceProvider) {
         if (extraArtifactMap.get(name) == null) {
-            throw new IllegalArgumentException(
-                    "Artifact with name $name is not yet registered. Use registerArtifactType()");
+            throw new IllegalArgumentException(String.format(
+                    "Artifact with name %1$s is not yet registered. Use registerArtifactType()",
+                    name));
         }
 
         extraProductFlavorSourceProviders.put(productFlavor.getName(),
@@ -199,8 +202,9 @@ public class ExtraModelInfo {
             @NonNull String flavorName,
             @NonNull SourceProvider sourceProvider) {
         if (extraArtifactMap.get(name) == null) {
-            throw new IllegalArgumentException(
-                    "Artifact with name $name is not yet registered. Use registerArtifactType()");
+            throw new IllegalArgumentException(String.format(
+                    "Artifact with name %1$s is not yet registered. Use registerArtifactType()",
+                    name));
         }
 
         extraMultiFlavorSourceProviders.put(flavorName,
@@ -220,12 +224,13 @@ public class ExtraModelInfo {
             @Nullable SourceProvider sourceProvider) {
         ArtifactMetaData artifactMetaData = extraArtifactMap.get(name);
         if (artifactMetaData == null) {
-            throw new IllegalArgumentException(
-                    "Artifact with name $name is not yet registered. Use registerArtifactType()");
+            throw new IllegalArgumentException(String.format(
+                    "Artifact with name %1$s is not yet registered. Use registerArtifactType()",
+                    name));
         }
         if (artifactMetaData.getType() != ArtifactMetaData.TYPE_JAVA) {
             throw new IllegalArgumentException(
-                    "Artifact with name $name is not of type JAVA");
+                    String.format("Artifact with name %1$s is not of type JAVA", name));
         }
 
         JavaArtifact artifact = new JavaArtifactImpl(

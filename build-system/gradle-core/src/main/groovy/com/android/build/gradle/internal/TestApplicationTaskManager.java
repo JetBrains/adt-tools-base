@@ -99,7 +99,8 @@ public class TestApplicationTaskManager extends ApplicationTaskManager {
         DeviceProviderInstrumentTestTask testConnectedCheck =
                 createDeviceProviderInstrumentTestTask(
                         project.getName() + "ConnectedCheck",
-                        "Installs and runs the tests for ${baseVariantData.description} on connected devices.",
+                        "Installs and runs the tests for " + variantData.getDescription()
+                                + " on connected devices.",
                         DeviceProviderInstrumentTestTask.class,
                         testData,
                         ImmutableList.of(variantData.assembleVariantTask),
