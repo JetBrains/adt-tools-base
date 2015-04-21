@@ -36,6 +36,11 @@ import com.android.build.gradle.internal.dsl.SigningConfig
 import com.android.build.gradle.internal.publishing.ApkPublishArtifact
 import com.android.build.gradle.internal.publishing.MappingPublishArtifact
 import com.android.build.gradle.internal.publishing.MetadataPublishArtifact
+import com.android.build.gradle.internal.scope.AndroidTask
+import com.android.build.gradle.internal.scope.AndroidTaskRegistry
+import com.android.build.gradle.internal.scope.GlobalScope
+import com.android.build.gradle.internal.scope.VariantOutputScope
+import com.android.build.gradle.internal.scope.VariantScope
 import com.android.build.gradle.internal.tasks.AndroidReportTask
 import com.android.build.gradle.internal.tasks.CheckManifest
 import com.android.build.gradle.internal.tasks.DependencyReportTask
@@ -50,7 +55,6 @@ import com.android.build.gradle.internal.tasks.SigningReportTask
 import com.android.build.gradle.internal.tasks.SourceSetsTask
 import com.android.build.gradle.internal.tasks.TestServerTask
 import com.android.build.gradle.internal.tasks.UninstallTask
-import com.android.build.gradle.internal.tasks.ValidateSigningTask
 import com.android.build.gradle.internal.tasks.multidex.CreateMainDexList
 import com.android.build.gradle.internal.tasks.multidex.CreateManifestKeepList
 import com.android.build.gradle.internal.tasks.multidex.JarMergingTask
@@ -89,7 +93,6 @@ import com.android.build.gradle.tasks.ProcessAndroidResources
 import com.android.build.gradle.tasks.ProcessManifest
 import com.android.build.gradle.tasks.ProcessTestManifest
 import com.android.build.gradle.tasks.RenderscriptCompile
-import com.android.build.gradle.tasks.ShrinkResources
 import com.android.build.gradle.tasks.SplitZipAlign
 import com.android.build.gradle.tasks.ZipAlign
 import com.android.builder.core.AndroidBuilder
@@ -113,7 +116,6 @@ import com.android.sdklib.SdkVersionInfo
 import com.android.sdklib.repository.FullRevision
 import com.google.common.base.CharMatcher
 import com.google.common.collect.ImmutableList
-import com.google.common.collect.ImmutableSet
 import com.google.common.collect.Lists
 import com.google.common.collect.Sets
 import groovy.transform.CompileDynamic
@@ -175,14 +177,11 @@ abstract class TaskManager {
 
     public final static String DIR_BUNDLES = "bundles";
 
-    // These need to be public for gradle-dev.
-    public static final String INSTALL_GROUP = "Install"
+    private static final String INSTALL_GROUP = "Install"
 
-    public static final String BUILD_GROUP = BasePlugin.BUILD_GROUP
+    private static final String BUILD_GROUP = BasePlugin.BUILD_GROUP
 
-    public static final String ANDROID_GROUP = "Android"
-
-    final Map<SigningConfig, ValidateSigningTask> validateSigningTaskMap = [:]
+    private static final String ANDROID_GROUP = "Android"
 
     protected Project project
 
@@ -195,6 +194,10 @@ abstract class TaskManager {
     protected BaseExtension extension
 
     private ToolingModelBuilderRegistry toolingRegistry
+
+    private final GlobalScope globalScope
+
+    private AndroidTaskRegistry androidTasks = new AndroidTaskRegistry();
 
     private Logger logger
 
@@ -236,6 +239,12 @@ abstract class TaskManager {
         this.toolingRegistry = toolingRegistry
         this.dependencyManager = dependencyManager
         logger = Logging.getLogger(this.class)
+
+        globalScope = new GlobalScope(
+                project,
+                androidBuilder,
+                getArchivesBaseName(project),
+                extension);
     }
 
     private boolean isVerbose() {
@@ -1423,7 +1432,6 @@ abstract class TaskManager {
     public void createAndroidTestVariantTasks(
             @NonNull TaskFactory tasks,
             @NonNull TestVariantData variantData) {
-
         BaseVariantData<? extends BaseVariantOutputData> testedVariantData =
                 variantData.
                         getTestedVariantData() as BaseVariantData<? extends BaseVariantOutputData>
@@ -1483,7 +1491,12 @@ abstract class TaskManager {
             createPostCompilationTasks(variantData);
         }
 
-        createPackagingTask(tasks, variantData, false /*publishApk*/)
+        // Variant scope should be create at the function, but there is currently a dependencies
+        // on the NdkCompile tasks, and the scope mechanism does not support lazy evaluation yet.
+        VariantScope variantScope = createVariantScope(variantData);
+
+
+        createPackagingTask(tasks, variantScope, false /*publishApk*/)
 
         tasks.named(ASSEMBLE_ANDROID_TEST) {
             it.dependsOn variantOutputData.assembleTask
@@ -2500,13 +2513,13 @@ abstract class TaskManager {
      */
     public void createPackagingTask(
             @NonNull TaskFactory tasks,
-            @NonNull ApkVariantData variantData,
+            @NonNull VariantScope variantScope,
             boolean publishApk) {
-        GradleVariantConfiguration config = variantData.variantConfiguration
+        ApkVariantData variantData = (ApkVariantData) variantScope.getVariantData()
 
+        GradleVariantConfiguration config = variantData.variantConfiguration
         boolean signedApk = variantData.isSigned()
         // use a dynamic property invocation due to gradle issue.
-        String projectBaseName = getArchivesBaseName(project)
         String defaultLocation = "$project.buildDir/${FD_OUTPUTS}/apk"
         String apkLocation = defaultLocation
         if (project.hasProperty(PROPERTY_APK_LOCATION)) {
@@ -2519,154 +2532,41 @@ abstract class TaskManager {
         // loop on all outputs. The only difference will be the name of the task, and location
         // of the generated data.
         for (ApkVariantOutputData vod : variantData.outputs) {
+            VariantOutputScope variantOutputScope = new VariantOutputScope(variantScope, vod);
+
             // create final var inside the loop to ensure the closures will work.
             final ApkVariantOutputData variantOutputData = vod
 
             String outputName = variantOutputData.fullName
-            String outputBaseName = variantOutputData.baseName
 
-            // Add a task to generate application package
-            PackageApplication packageApp = project.tasks.
-                    create("package${outputName.capitalize()}",
-                            PackageApplication)
-            variantOutputData.packageApplicationTask = packageApp
-            packageApp.dependsOn variantOutputData.processResourcesTask,
-                    variantData.processJavaResourcesTask
+            AndroidTask<PackageApplication> packageApp = androidTasks.create(
+                    tasks,
+                    new PackageApplication.ConfigAction(variantOutputScope));
 
-            optionalDependsOn(packageApp, variantData.dexTask, variantData.javaCompileTask)
+            packageApp.dependsOn(tasks,
+                    variantOutputData.processResourcesTask,
+                    variantData.processJavaResourcesTask,
+                    variantOutputScope.getVariantScope().getNdkBuildable());
 
-            if (variantOutputData.packageSplitResourcesTask != null) {
-                packageApp.dependsOn variantOutputData.packageSplitResourcesTask
-            }
-            if (variantOutputData.packageSplitAbiTask != null) {
-                packageApp.dependsOn variantOutputData.packageSplitAbiTask
-            }
+            TaskManager.optionalDependsOn(
+                    packageApp,
+                    tasks,
+                    variantData.dexTask,
+                    variantData.javaCompileTask,
+                    variantOutputData.packageSplitResourcesTask,
+                    variantOutputData.packageSplitAbiTask);
 
-            packageApp.dependsOn getNdkBuildable(variantData)
-
-            packageApp.androidBuilder = androidBuilder
-
-            if (config.minifyEnabled && config.buildType.shrinkResources && !config.useJack) {
-                def shrinkTask = createShrinkResourcesTask(vod)
-
-                // When shrinking resources, rather than having the packaging task
-                // directly map to the packageOutputFile of ProcessAndroidResources,
-                // we insert the ShrinkResources task into the chain, such that its
-                // input is the ProcessAndroidResources packageOutputFile, and its
-                // output is what the PackageApplication task reads.
-                packageApp.dependsOn shrinkTask
-                conventionMapping(packageApp).map("resourceFile") {
-                    shrinkTask.compressedResources
-                }
-            } else {
-                conventionMapping(packageApp).map("resourceFile") {
-                    variantOutputData.processResourcesTask.packageOutputFile
-                }
-            }
-            conventionMapping(packageApp).map("dexFolder") {
-                if (variantData.dexTask != null) {
-                    return variantData.dexTask.outputFolder
-                }
-
-                if (variantData.javaCompileTask != null) {
-                    return variantData.javaCompileTask.getDestinationDir()
-                }
-
-                return null
-            }
-            conventionMapping(packageApp).map("dexedLibraries") {
-                if (config.isMultiDexEnabled() &&
-                        !config.isLegacyMultiDexMode() &&
-                        variantData.preDexTask != null) {
-                    return project.fileTree(variantData.preDexTask.outputFolder).files
-                }
-
-                return Collections.<File> emptyList()
-            }
-            conventionMapping(packageApp).
-                    map("packagedJars") { androidBuilder.getPackagedJars(config) }
-            conventionMapping(packageApp).map("javaResourceDir") {
-                getOptionalDir(variantData.processJavaResourcesTask.destinationDir)
-            }
-            conventionMapping(packageApp).map("jniFolders") {
-                if (variantData.getSplitHandlingPolicy() ==
-                        BaseVariantData.SplitHandlingPolicy.PRE_21_POLICY) {
-                    return getJniFolders(variantData)
-                }
-                Set<String> filters = AbiSplitOptions.getAbiFilters(
-                        getExtension().getSplits().getAbiFilters())
-                return filters.isEmpty() ? getJniFolders(variantData) : Collections.emptySet();
-            }
-            conventionMapping(packageApp).map("abiFilters") {
-                if (variantOutputData.getMainOutputFile().getFilter(OutputFile.ABI) != null) {
-                    return ImmutableSet.
-                            of(variantOutputData.getMainOutputFile().getFilter(OutputFile.ABI))
-                }
-                return config.supportedAbis
-            }
-            conventionMapping(packageApp).map("jniDebugBuild") { config.buildType.jniDebuggable }
-
-            conventionMapping(packageApp).map("signingConfig") { sc }
-            if (sc != null) {
-                ValidateSigningTask validateSigningTask = validateSigningTaskMap.get(sc)
-                if (validateSigningTask == null) {
-                    validateSigningTask =
-                            project.tasks.create("validate${sc.name.capitalize()}Signing",
-                                    ValidateSigningTask)
-                    validateSigningTask.androidBuilder = androidBuilder
-                    validateSigningTask.signingConfig = sc
-
-                    validateSigningTaskMap.put(sc, validateSigningTask)
-                }
-
-                packageApp.dependsOn validateSigningTask
-            }
-
-            String apkName = signedApk ?
-                    "$projectBaseName-${outputBaseName}-unaligned.apk" :
-                    "$projectBaseName-${outputBaseName}-unsigned.apk"
-
-            conventionMapping(packageApp).map("packagingOptions") { getExtension().packagingOptions }
-
-            conventionMapping(packageApp).map("outputFile") {
-                // if this is the final task then the location is
-                // the potentially overridden one.
-                if (!signedApk || !variantData.zipAlignEnabled) {
-                    project.file("$apkLocation/${apkName}")
-                } else {
-                    // otherwise default one.
-                    project.file("$defaultLocation/${apkName}")
-                }
-            }
-
-            Task appTask = packageApp
+            AndroidTask appTask = packageApp
 
             if (signedApk) {
                 if (variantData.zipAlignEnabled) {
-                    // Add a task to zip align application package
-                    def zipAlignTask = project.tasks.create(
-                            "zipalign${outputName.capitalize()}",
-                            ZipAlign)
-                    variantOutputData.zipAlignTask = zipAlignTask
-
-                    zipAlignTask.dependsOn packageApp
-                    conventionMapping(zipAlignTask).map("inputFile") { packageApp.outputFile }
-                    conventionMapping(zipAlignTask).map("outputFile") {
-                        project.file(
-                                "$apkLocation/$projectBaseName-${outputBaseName}.apk")
-                    }
-                    conventionMapping(zipAlignTask).map("zipAlignExe") {
-                        String path = androidBuilder.targetInfo?.buildTools?.getPath(ZIP_ALIGN)
-                        if (path != null) {
-                            return new File(path)
-                        }
-
-                        return null
-                    }
+                    AndroidTask<ZipAlign> zipAlignTask = androidTasks.create(
+                            tasks,
+                            new ZipAlign.ConfigAction(variantOutputScope));
+                    zipAlignTask.dependsOn(tasks, packageApp);
                     if (variantOutputData.splitZipAlign != null) {
-                        zipAlignTask.dependsOn variantOutputData.splitZipAlign
+                        zipAlignTask.dependsOn(tasks, variantOutputData.splitZipAlign)
                     }
-
                     appTask = zipAlignTask
                 }
             }
@@ -2695,18 +2595,26 @@ abstract class TaskManager {
                 copyTask.destinationDir = new File(apkLocation as String);
                 copyTask.from(variantOutputData.packageSplitResourcesTask.getOutputDirectory())
                 variantOutputData.assembleTask.dependsOn(copyTask)
-                copyTask.mustRunAfter(appTask)
+                copyTask.mustRunAfter(appTask.name)
             }
 
-            variantOutputData.assembleTask.dependsOn appTask
+            variantOutputData.assembleTask.dependsOn appTask.name
 
             if (publishApk) {
+                String projectBaseName = globalScope.projectBaseName;
+
                 // if this variant is the default publish config or we also should publish non
                 // defaults, proceed with declaring our artifacts.
                 if (getExtension().defaultPublishConfig.equals(outputName)) {
+                    appTask.configure(tasks) { FileSupplier packageTask ->
+                        project.artifacts.add("default", new ApkPublishArtifact(
+                                projectBaseName,
+                                null,
+                                packageTask))
+                    }
 
                     for (FileSupplier outputFileProvider :
-                            variantOutputData.getOutputFileSuppliers()) {
+                            variantOutputData.getSplitOutputFileSuppliers()) {
                         project.artifacts.add("default", new ApkPublishArtifact(
                                 projectBaseName,
                                 null,
@@ -2728,8 +2636,17 @@ abstract class TaskManager {
                 }
 
                 if (getExtension().publishNonDefault) {
+                    appTask.configure(tasks) { FileSupplier packageTask ->
+                        project.artifacts.add(
+                                variantData.variantDependency.publishConfiguration.name,
+                                new ApkPublishArtifact(
+                                        projectBaseName,
+                                        null,
+                                        packageTask))
+                    }
+
                     for (FileSupplier outputFileProvider :
-                            variantOutputData.getOutputFileSuppliers()) {
+                            variantOutputData.getSplitOutputFileSuppliers()) {
                         project.artifacts.add(
                                 variantData.variantDependency.publishConfiguration.name,
                                 new ApkPublishArtifact(
@@ -3060,30 +2977,6 @@ abstract class TaskManager {
         return outFile;
     }
 
-    private ShrinkResources createShrinkResourcesTask(ApkVariantOutputData variantOutputData) {
-        def variantData = variantOutputData.variantData
-        def task = project.tasks.create(
-                "shrink${variantOutputData.fullName.capitalize()}Resources",
-                ShrinkResources)
-        task.androidBuilder = androidBuilder
-        task.variantOutputData = variantOutputData
-
-        String outputBaseName = variantOutputData.baseName
-        conventionMapping(task).map("compressedResources") {
-            project.file("$project.buildDir/${FD_INTERMEDIATES}/res/" +
-                            "resources-${outputBaseName}-stripped.ap_")
-        }
-
-        conventionMapping(task).map("uncompressedResources") {
-            variantOutputData.processResourcesTask.packageOutputFile
-        }
-
-        task.dependsOn variantData.obfuscationTask, variantOutputData.manifestProcessorTask,
-                variantOutputData.processResourcesTask
-
-        return task
-    }
-
     public void createReportTasks(
             List<BaseVariantData<? extends BaseVariantOutputData>> variantDataList) {
         def dependencyReportTask = project.tasks.create("androidDependencies", DependencyReportTask)
@@ -3163,6 +3056,14 @@ abstract class TaskManager {
         }
     }
 
+    public static void optionalDependsOn(@NonNull AndroidTask main, TaskFactory taskFactory, Task... dependencies) {
+        for (Task dependency : dependencies) {
+            if (dependency != null) {
+                main.dependsOn(taskFactory, dependency)
+            }
+        }
+    }
+
     public static void optionalDependsOn(@NonNull Task main, Task... dependencies) {
         for (Task dependency : dependencies) {
             if (dependency != null) {
@@ -3222,11 +3123,11 @@ abstract class TaskManager {
         return list
     }
 
-    protected static File getOptionalDir(File dir) {
-        if (dir.isDirectory()) {
-            return dir
-        }
-
-        return null
+    protected VariantScope createVariantScope(BaseVariantData variantData) {
+        return new VariantScope(
+                globalScope,
+                variantData,
+                getNdkBuildable(variantData),
+                getNdkOutputDirectories(variantData));
     }
 }

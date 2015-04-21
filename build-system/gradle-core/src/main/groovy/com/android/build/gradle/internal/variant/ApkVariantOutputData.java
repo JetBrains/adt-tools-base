@@ -67,14 +67,14 @@ public class ApkVariantOutputData extends BaseVariantOutputData {
         }
     }
 
-    @NonNull
+    @Nullable
     @Override
     public File getOutputFile() {
         if (zipAlignTask != null) {
             return zipAlignTask.getOutputFile();
         }
 
-        return packageApplicationTask.getOutputFile();
+        return packageApplicationTask == null ? null : packageApplicationTask.getOutputFile();
     }
 
     @NonNull
@@ -153,9 +153,8 @@ public class ApkVariantOutputData extends BaseVariantOutputData {
      * than one file when dealing with pure splits.
      * @return the complete list of tasks producing an APK for this variant.
      */
-    public List<FileSupplier> getOutputFileSuppliers() {
+    public List<FileSupplier> getSplitOutputFileSuppliers() {
         ImmutableList.Builder<FileSupplier> tasks = ImmutableList.builder();
-        tasks.add(zipAlignTask == null ? packageApplicationTask : zipAlignTask);
         if (splitZipAlign != null || packageSplitResourcesTask != null) {
             tasks.addAll(splitZipAlign == null ? packageSplitResourcesTask.getOutputFileSuppliers()
                 : splitZipAlign.getOutputFileSuppliers());
