@@ -76,7 +76,7 @@ public class ResourceRepositoryTest2 extends TestCase {
         drawable.mkdirs();
         new File(layout, "layout1.xml").createNewFile();
         new File(layoutLand, "layout1.xml").createNewFile();
-        new File(layoutLand, "onlyLand.xml").createNewFile();
+        new File(layoutLand, "only_land.xml").createNewFile();
         new File(layout, "layout2.xml").createNewFile();
         new File(drawable, "graphic.9.png").createNewFile();
         File strings = new File(values, "strings.xml");
@@ -211,12 +211,12 @@ public class ResourceRepositoryTest2 extends TestCase {
         assertEquals("Todo", value.getValue());
         assertSame(ResourceType.STRING, value.getResourceType());
 
-        itemList = mRepository.getResourceItem(ResourceType.LAYOUT, "onlyLand");
+        itemList = mRepository.getResourceItem(ResourceType.LAYOUT, "only_land");
         assertNotNull(itemList);
         //assertFalse(item.hasDefault());
         assertEquals(1, itemList.size());
         ResourceFile resourceFile = itemList.get(0).getSource();
-        assertEquals("onlyLand.xml", resourceFile.getFile().getName());
+        assertEquals("only_land.xml", resourceFile.getFile().getName());
         assertEquals(ScreenOrientation.LANDSCAPE.getResourceValue(), resourceFile.getQualifiers());
 
         itemList = mRepository.getResourceItem(ResourceType.LAYOUT, "layout1");
