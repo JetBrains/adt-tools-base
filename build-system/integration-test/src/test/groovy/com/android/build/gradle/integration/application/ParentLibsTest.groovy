@@ -57,6 +57,6 @@ public class ParentLibsTest {
     @Test
     @Category(DeviceTests.class)
     void connectedCheck() {
-        project.execute(ImmutableList.of("-p", "app"), "connectedCheck")
+        project.executeConnectedCheck(ImmutableList.of("-p", "app"))
     }
 }

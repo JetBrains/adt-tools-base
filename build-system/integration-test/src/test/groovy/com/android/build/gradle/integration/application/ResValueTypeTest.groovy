@@ -133,6 +133,7 @@ android {
     @Test
     @Category(DeviceTests.class)
     void "check resValue is treated as string"() {
-        project.execute("clean", "connectedAndroidTest")
+        project.execute("clean")
+        project.executeConnectedCheck()
     }
 }
