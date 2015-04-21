@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="jill-api">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/com/android/tools/jack/jill-api/0.1/jill-api-0.1.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

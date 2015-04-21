@@ -29,6 +29,7 @@ dependencies {
     compile 'org.ow2.asm:asm:5.0.3'
     compile 'org.ow2.asm:asm-tree:5.0.3'
     compile 'com.android.tools.jack:jack-api:0.1'
+    compile 'com.android.tools.jack:jill-api:0.1'
 
     testCompile 'junit:junit:4.12'
     testCompile 'org.mockito:mockito-all:1.9.5'
