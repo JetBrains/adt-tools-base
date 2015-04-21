@@ -1799,7 +1799,9 @@ abstract class TaskManager {
                         testType.taskType,
                         testData,
                         artifactsTasks,
-                        new ConnectedDeviceProvider(sdkHandler.getSdkInfo().adb),
+                        new ConnectedDeviceProvider(
+                                sdkHandler.getSdkInfo().adb,
+                                new LoggerWrapper(logger)),
                         CONNECTED
                 )
 
@@ -2801,7 +2803,8 @@ abstract class TaskManager {
         uninstallTask.description = "Uninstalls the ${variantData.description}."
         uninstallTask.group = INSTALL_GROUP
         uninstallTask.variant = variantData
-        conventionMapping(uninstallTask).map("adbExe") { sdkHandler.getSdkInfo()?.adb }
+        uninstallTask.androidBuilder = androidBuilder
+        uninstallTask.timeOutInMs = getExtension().getAdbOptions().getTimeOutInMs()
 
         variantData.uninstallTask = uninstallTask
         tasks.named(UNINSTALL_ALL) {
@@ -3199,6 +3202,11 @@ abstract class TaskManager {
         }
 
         return list
+    }
+
+    @NonNull
+    protected Logger getLogger() {
+        return logger
     }
 
     @NonNull

@@ -15,20 +15,36 @@
  */
 package com.android.build.gradle.internal;
 
+import com.android.annotations.NonNull;
 import com.android.ide.common.res2.MergingException;
 import com.android.utils.ILogger;
 import org.gradle.api.logging.LogLevel;
 import org.gradle.api.logging.Logger;
 
 /**
- * Implementation of Android's {@link ILogger} over gradle's {@link Logger}.
+ * Implementation of Android's {@link ILogger} over Gradle's {@link Logger}.
  */
 public class LoggerWrapper implements ILogger {
 
     private final Logger logger;
 
-    public LoggerWrapper(Logger logger) {
+    private final LogLevel infoLogLevel;
+
+    public LoggerWrapper(@NonNull Logger logger) {
+        this(logger, LogLevel.INFO);
+    }
+
+    /**
+     * Allow {@link ILogger} info() level messages to be remapped to e.g. {@link
+     * LogLevel}.LIFECYCLE} rather than INFO
+     *
+     * This is useful for installs and uninstalls, so install details can be shown without the user
+     * having to use the noisy INFO log level, while not flagging informational log output as
+     * warnings or errors.
+     */
+    public LoggerWrapper(@NonNull Logger logger, @NonNull LogLevel infoLogLevel) {
         this.logger = logger;
+        this.infoLogLevel = infoLogLevel;
     }
 
     @Override
@@ -61,7 +77,7 @@ public class LoggerWrapper implements ILogger {
     }
 
     @Override
-    public void warning(String s, Object... objects) {
+    public void warning(@NonNull String s, Object... objects) {
         if (!logger.isEnabled(LogLevel.WARN)) {
             return;
         }
@@ -73,19 +89,19 @@ public class LoggerWrapper implements ILogger {
     }
 
     @Override
-    public void info(String s, Object... objects) {
-        if (!logger.isEnabled(LogLevel.INFO)) {
+    public void info(@NonNull String s, Object... objects) {
+        if (!logger.isEnabled(infoLogLevel)) {
             return;
         }
         if (objects == null || objects.length == 0) {
-            logger.log(LogLevel.INFO, s);
+            logger.log(infoLogLevel, s);
         } else {
-            logger.log(LogLevel.INFO, String.format(s, objects));
+            logger.log(infoLogLevel, String.format(s, objects));
         }
     }
 
     @Override
-    public void verbose(String s, Object... objects) {
+    public void verbose(@NonNull String s, Object... objects) {
         if (!logger.isEnabled(LogLevel.DEBUG)) {
             return;
         }

@@ -104,7 +104,9 @@ public class TestApplicationTaskManager extends ApplicationTaskManager {
                         DeviceProviderInstrumentTestTask.class,
                         testData,
                         ImmutableList.of(variantData.assembleVariantTask),
-                        new ConnectedDeviceProvider(sdkHandler.getSdkInfo().getAdb()),
+                        new ConnectedDeviceProvider(
+                                sdkHandler.getSdkInfo().getAdb(),
+                                new LoggerWrapper(getLogger())),
                         CONNECTED
                 );
 
