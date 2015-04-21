@@ -72,7 +72,7 @@ public class ResourceItemResolverTest extends TestCase {
 
                         "layout-land/layout1.xml", "<!--contents doesn't matter-->",
 
-                        "layout-land/onlyLand.xml", "<!--contents doesn't matter-->",
+                        "layout-land/only_land.xml", "<!--contents doesn't matter-->",
 
                         "drawable/graphic.9.png", new byte[0],
 

@@ -130,6 +130,7 @@ class ValueResourceParser2 {
 
         if (name != null) {
             if (type != null) {
+                ValueResourceNameValidator.validate(name, type, from);
                 return new ResourceItem(name, type, node);
             }
         } else if (type == ResourceType.PUBLIC) {
