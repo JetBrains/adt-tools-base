@@ -20,3 +20,11 @@ ext {
 
     useJack = System.env.CUSTOM_JACK || project.properties["CUSTOM_JACK"]
 }
+
+plugins.withId("com.android.application") { plugin ->
+    plugin.extension.defaultConfig.useJack = ext.useJack
+}
+
+plugins.withId("com.android.library") { plugin ->
+    plugin.extension.defaultConfig.useJack = ext.useJack
+}

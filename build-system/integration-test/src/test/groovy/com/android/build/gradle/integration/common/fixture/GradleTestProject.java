@@ -81,17 +81,24 @@ import java.util.concurrent.TimeUnit;
 public class GradleTestProject implements TestRule {
 
     public static final int DEFAULT_COMPILE_SDK_VERSION = 21;
-    public static final String DEFAULT_BUILD_TOOL_VERSION = "22.0.1";
+    public static final String DEFAULT_BUILD_TOOL_VERSION;
 
     public static final String GRADLE_TEST_VERSION = "2.2.1";
     public static final String GRADLE_EXP_TEST_VERSION = "2.4-20150322230018+0000";
 
     public static final String ANDROID_GRADLE_PLUGIN_VERSION;
 
+    public static final String CUSTOM_JACK;
+
     static {
+        String envBuildToolVersion = System.getenv("CUSTOM_BUILDTOOLS");
+        DEFAULT_BUILD_TOOL_VERSION = !Strings.isNullOrEmpty(envBuildToolVersion) ?
+                envBuildToolVersion : "22.0.1";
         String envVersion = System.getenv().get("CUSTOM_GRADLE");
         ANDROID_GRADLE_PLUGIN_VERSION = !Strings.isNullOrEmpty(envVersion) ? envVersion
                 : Version.ANDROID_GRADLE_PLUGIN_VERSION;
+        String envJack = System.getenv().get("CUSTOM_JACK");
+        CUSTOM_JACK = !Strings.isNullOrEmpty(envJack) ? envJack : "false";
     }
 
     private static final String COMMON_HEADER = "commonHeader.gradle";
