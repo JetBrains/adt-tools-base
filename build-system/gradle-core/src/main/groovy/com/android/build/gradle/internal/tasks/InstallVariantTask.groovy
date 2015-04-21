@@ -15,6 +15,7 @@
  */
 package com.android.build.gradle.internal.tasks
 
+import com.android.build.gradle.internal.LoggerWrapper
 import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.build.gradle.internal.variant.BaseVariantOutputData
 import com.android.builder.testing.api.DeviceConfigProviderImpl
@@ -26,9 +27,11 @@ import com.android.builder.testing.api.DeviceProvider
 import com.android.ddmlib.IDevice
 import com.android.ide.common.build.SplitOutputMatcher
 import com.android.ide.common.process.ProcessExecutor
+import com.android.utils.ILogger
 import com.google.common.base.Joiner
 import com.google.common.collect.ImmutableList
 import org.gradle.api.GradleException
+import org.gradle.api.logging.LogLevel
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.Optional
@@ -58,6 +61,7 @@ public class InstallVariantTask extends BaseTask {
     Collection<String> installOptions;
 
     BaseVariantData<? extends BaseVariantOutputData> variantData
+
     InstallVariantTask() {
         this.getOutputs().upToDateWhen {
             logger.debug("Install task is always run.");
@@ -67,68 +71,56 @@ public class InstallVariantTask extends BaseTask {
 
     @TaskAction
     void install() {
-        DeviceProvider deviceProvider = new ConnectedDeviceProvider(getAdbExe())
+        final ILogger iLogger = new LoggerWrapper(getLogger(), LogLevel.LIFECYCLE)
+        DeviceProvider deviceProvider = new ConnectedDeviceProvider(getAdbExe(), iLogger)
         deviceProvider.init()
 
         VariantConfiguration variantConfig = variantData.variantConfiguration
         String variantName = variantConfig.fullName
 
-        String serial = System.getenv("ANDROID_SERIAL");
-
         int successfulInstallCount = 0;
 
         for (DeviceConnector device : deviceProvider.getDevices()) {
-            if (serial != null && !serial.equals(device.getSerialNumber())) {
-                continue;
-            }
+            if (InstallUtils.checkDeviceApiLevel(
+                    device, variantConfig.minSdkVersion, iLogger, projectName, variantName)) {
+                // When InstallUtils.checkDeviceApiLevel returns false, it logs the reason.
+                List<File> apkFiles = SplitOutputMatcher.computeBestOutput(processExecutor,
+                        getSplitSelectExe(),
+                        new DeviceConfigProviderImpl(device),
+                        variantData.outputs,
+                        variantData.variantConfiguration.getSupportedAbis())
 
-            if (device.getState() != IDevice.DeviceState.UNAUTHORIZED) {
-                if (InstallUtils.checkDeviceApiLevel(
-                        device, variantConfig.minSdkVersion, getILogger(), projectName,
-                        variantName)) {
+                if (apkFiles.isEmpty()) {
+                    logger.lifecycle(
+                            "Skipping device '${device.getName()}' for " +
+                                    "'${projectName}:${variantName}': " +
+                                    "Could not find build of variant which supports " +
+                                    "density " + "${device.getDensity()} " +
+                                    "and an ABI in " + Joiner.on(", ").join(device.getAbis()));
+                } else {
+                    logger.lifecycle(
+                            "Installing APK '${Joiner.on(", ").join(apkFiles*.getName())}'" +
+                                    " on '${device.getName()}'")
 
-                    List<File> apkFiles = SplitOutputMatcher.computeBestOutput(processExecutor,
-                            getSplitSelectExe(),
-                            new DeviceConfigProviderImpl(device),
-                            variantData.outputs,
-                            variantData.variantConfiguration.getSupportedAbis())
-
-                    if (apkFiles.isEmpty()) {
-                        logger.lifecycle(
-                                "Skipping device '${device.getName()}' for '${projectName}:${variantName}': " +
-                                        "Could not find build of variant which supports density ${device.getDensity()} " +
-                                        "and an ABI in " + Joiner.on(", ").join(device.getAbis()));
+                    List<String> extraArgs = installOptions == null ? ImmutableList.of() :
+                            installOptions;
+                    if (apkFiles.size() > 1 || device.getApiLevel() >= 21) {
+                        device.installPackages(apkFiles, extraArgs, getTimeOutInMs(), getILogger());
+                        successfulInstallCount++
                     } else {
-                        logger.lifecycle("Installing APK '${Joiner.on(", ").join(apkFiles*.getName())}'" +
-                                " on '${device.getName()}'")
-
-                        List<String> extraArgs = installOptions == null ? ImmutableList.of() : installOptions;
-                        if (apkFiles.size() > 1 || device.getApiLevel() >= 21) {
-                            device.installPackages(apkFiles, extraArgs, getTimeOutInMs(), getILogger());
-                            successfulInstallCount++
-                        } else {
-                            device.installPackage(apkFiles.get(0), extraArgs, getTimeOutInMs(), getILogger())
-                            successfulInstallCount++
-                        }
+                        device.installPackage(apkFiles.get(0), extraArgs, getTimeOutInMs(),
+                                getILogger())
+                        successfulInstallCount++
                     }
-                } // When InstallUtils.checkDeviceApiLevel returns false, it logs the reason.
-            } else {
-                logger.lifecycle(
-                        "Skipping device '${device.getName()}' for '${projectName}:${variantName}" +
-                                "': Device not authorized, see http://developer.android.com/tools/help/adb.html#Enabling.");
-
+                }
             }
         }
 
         if (successfulInstallCount == 0) {
-            if (serial != null) {
-                throw new GradleException("Failed to find device with serial '${serial}'. " +
-                        "Unset ANDROID_SERIAL to search for any device.")
-            } else {
-                throw new GradleException("Failed to install on any devices.")
-            }
+            throw new GradleException("Failed to install on any devices.")
         } else {
-            logger.quiet("Installed on ${successfulInstallCount} ${successfulInstallCount==1?'device':'devices'}.");
+            logger.quiet("Installed on ${successfulInstallCount} " +
+                    "${successfulInstallCount==1?'device':'devicess'}.");
         }
     }
 }
