@@ -27,6 +27,7 @@
       <module fileurl="file://$PROJECT_DIR$/build-system/manifest-merger/manifest-merger-base.iml" filepath="$PROJECT_DIR$/build-system/manifest-merger/manifest-merger-base.iml" />
       <module fileurl="file://$PROJECT_DIR$/ninepatch/ninepatch.iml" filepath="$PROJECT_DIR$/ninepatch/ninepatch.iml" />
       <module fileurl="file://$PROJECT_DIR$/perflib/perflib.iml" filepath="$PROJECT_DIR$/perflib/perflib.iml" />
+      <module fileurl="file://$PROJECT_DIR$/build-system/profile/profile.iml" filepath="$PROJECT_DIR$/build-system/profile/profile.iml" />
       <module fileurl="file://$PROJECT_DIR$/build-system/project-test/project-test.iml" filepath="$PROJECT_DIR$/build-system/project-test/project-test.iml" />
       <module fileurl="file://$PROJECT_DIR$/build-system/project-test-lib/project-test-lib.iml" filepath="$PROJECT_DIR$/build-system/project-test-lib/project-test-lib.iml" />
       <module fileurl="file://$PROJECT_DIR$/rule-api/rule-api.iml" filepath="$PROJECT_DIR$/rule-api/rule-api.iml" />
