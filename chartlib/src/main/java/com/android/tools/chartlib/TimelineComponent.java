@@ -142,11 +142,15 @@ public class TimelineComponent extends AnimatedComponent
      */
     private float[] mTimes;
 
-
     /**
-     * The vaues of the samples as in mValues[stream][sample]
+     * The render values of the samples depending on the layout mode, as in mValues[stream][sample]
      */
     private final float[][] mValues;
+
+    /**
+     * The last values of the samples for each stream
+     */
+    private final float[] mCurrent;
 
     /**
      * The number of events to render.
@@ -212,6 +216,7 @@ public class TimelineComponent extends AnimatedComponent
         mStreamNames = new String[streams];
         mStreamColors = new Color[streams];
         mValues = new float[streams][];
+        mCurrent = new float[streams];
         mSize = 0;
         for (int i = 0; i < streams; i++) {
             mStreamNames[i] = "Stream " + i;
@@ -275,11 +280,9 @@ public class TimelineComponent extends AnimatedComponent
         g2d.setFont(DEFAULT_FONT.deriveFont(5.0f));
         for (int i = 0; i < mSize; ++i) {
             if (mTimes[i] > mBeginTime && mTimes[i] < mEndTime) {
-                float v = 0.0f;
                 for (int j = 0; j < mValues.length; ++j) {
-                    v += mValues[j][i];
                     int x = (int) timeToX(mTimes[i]);
-                    int y = (int) valueToY(v);
+                    int y = (int) valueToY(mValues[j][i]);
                     Color c = new Color(66, 66, 66);
                     g2d.setColor(c);
                     g2d.drawLine(x, y - 2, x, y + 2);
@@ -295,51 +298,36 @@ public class TimelineComponent extends AnimatedComponent
 
     private void drawTimelineData(Graphics2D g2d) {
         mYScale = (mBottom - TOP_MARGIN) / mCurrentMax;
-        Path2D.Float[] paths = new Path2D.Float[mValues.length];
         if (mSize > 1) {
-            int sample = 0;
+            int from = 0;
             // Optimize to not render too many samples since they get clipped.
-            while (sample < mSize - 1 && mTimes[sample + 1] < mBeginTime) {
-                sample++;
+            while (from < mSize - 1 && mTimes[from + 1] < mBeginTime) {
+                from++;
             }
-            for (int j = 0; j < mValues.length; j++) {
-                paths[j] = new Path2D.Float();
-                paths[j].moveTo(timeToX(mTimes[sample]), valueToY(0.0f));
+            int to = from + 1;
+            while (to + 1 < mSize && mTimes[to] <= mEndTime) {
+              to++;
             }
-            for (; sample < mSize; sample++) {
-                float val = 0.0f;
-                for (int j = 0; j < mValues.length; j++) {
-                    val += mValues[j][sample];
-                    paths[j].lineTo(timeToX(mTimes[sample]), valueToY(Math.min(val, mAbsoluteMax)));
+            for (int j = mValues.length - 1; j >= 0; j--) {
+                Path2D.Float path = new Path2D.Float();
+                path.moveTo(timeToX(mTimes[from]), valueToY(0.0f));
+                for (int i = from; i <= to; i++) {
+                  float val = mValues[j][i];
+                  path.lineTo(timeToX(mTimes[i]), valueToY(Math.min(val, mAbsoluteMax)));
                 }
-                // Stop rendering if we are over the end limit.
-                if (mTimes[sample] > mEndTime) {
-                    sample++;
-                    break;
-                }
-            }
-            for (Path2D.Float path : paths) {
-                path.lineTo(timeToX(mTimes[sample - 1]), valueToY(0.0f));
+                path.lineTo(timeToX(mTimes[to]), valueToY(0.0f));
+                g2d.setColor(mStreamColors[j]);
+                g2d.fill(path);
             }
         }
-        for (int i = paths.length - 1; i >= 0; i--) {
-            if (paths[i] != null) {
-                g2d.setColor(mStreamColors[i]);
-                g2d.fill(paths[i]);
-            }
-        }
-        addDebugInfo(String.format("Total samples: %d", mSize));
+        addDebugInfo("Total samples: %d", mSize);
     }
 
     private float interpolate(int stream, int sample, float time) {
-        float a = 0.0f;
-        float b = 0.0f;
         int prev = sample > 0 ? sample - 1 : 0;
         int next = sample < mSize ? sample : mSize - 1;
-        for (int i = 0; i <= stream; i++) {
-            a += mValues[i][prev];
-            b += mValues[i][next];
-        }
+        float a = mValues[stream][prev];
+        float b = mValues[stream][next];
         float delta = mTimes[next] - mTimes[prev];
         float ratio = delta != 0 ? (time - mTimes[prev]) / delta : 1.0f;
         return (b - a) * ratio + a;
@@ -377,10 +365,7 @@ public class TimelineComponent extends AnimatedComponent
                     float endTime = Float.isNaN(mEventEnd[e]) ? mEndTime : mEventEnd[e];
                     int i = s;
                     for (; i < mSize && mTimes[i] < endTime; i++) {
-                        float val = 0.0f;
-                        for (int j = 0; j <= info.stream; j++) {
-                            val += mValues[j][i];
-                        }
+                        float val = mValues[info.stream][i];
                         p.lineTo(timeToX(mTimes[i]), valueToY(val));
                     }
                     p.lineTo(timeToX(endTime), valueToY(interpolate(info.stream, i, endTime)));
@@ -441,7 +426,7 @@ public class TimelineComponent extends AnimatedComponent
             g2d.fillRect(mRight + 20, y, 15, 15);
             g2d.setColor(TEXT_COLOR);
             g2d.drawString(
-                    String.format("%s [%.2f %s]", mStreamNames[i], mValues[i][mSize - 1], mUnits),
+                    String.format("%s [%.2f %s]", mStreamNames[i], mCurrent[i], mUnits),
                     mRight + 40,
                     y + 7 + metrics.getAscent() * .5f);
         }
@@ -539,10 +524,16 @@ public class TimelineComponent extends AnimatedComponent
             for (int i = 0; i < mSize; ++i) {
                 TimelineData.Sample sample = mData.get(i);
                 mTimes[i] = sample.time;
+                float value = 0.0f;
                 for (int j = 0; j < mData.getStreamCount(); ++j) {
-                    mValues[j][i] = sample.values[j];
+                    value += sample.values[j];
+                    mValues[j][i] = value;
                 }
             }
+            for (int j = 0; j < mData.getStreamCount(); ++j) {
+              mCurrent[j] = mSize > 0 ? mData.get(mSize - 1).values[j] : 0.0f;
+            }
+
             // Calculate begin and end times in seconds.
             mEndTime = mData.getEndTime() - mBufferTime;
             mBeginTime = mEndTime - (mRight - LEFT_MARGIN) / X_SCALE;

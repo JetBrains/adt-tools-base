@@ -162,7 +162,7 @@ public class AnimatedComponentVisualTests extends JDialog {
         final TimelineData data = new TimelineData(2, 2000);
         final EventData events = new EventData();
         final int streams = 2;
-        final float variance = 10.0f;
+        final AtomicInteger variance = new AtomicInteger(10);
         final AtomicInteger delay = new AtomicInteger(100);
         new Thread() {
             @Override
@@ -172,7 +172,7 @@ public class AnimatedComponentVisualTests extends JDialog {
                     float[] values = new float[streams];
                     while (true) {
                         for (int i = 0; i < streams; i++) {
-                            float delta = (float) Math.random() * variance - variance * 0.5f;
+                            float delta = (float) Math.random() * variance.get() - variance.get() * 0.5f;
                             values[i] = Math.max(0, delta + values[i]);
                             synchronized (data) {
                                 data.add(System.currentTimeMillis(), 0, Arrays.copyOf(values,
@@ -187,12 +187,13 @@ public class AnimatedComponentVisualTests extends JDialog {
         }.start();
         final TimelineComponent timeline = new TimelineComponent(data, events, 1.0f, 10.0f, 1000.0f,
                 10.0f);
-        timeline.configureStream(0, "Data 0", new Color(93, 217, 133));
-        timeline.configureStream(1, "Data 1", new Color(217, 37, 78));
+        timeline.configureStream(0, "Data 0", new Color(0x78abd9));
+        timeline.configureStream(1, "Data 1", new Color(0xbaccdc));
+
         timeline.configureUnits("@");
         timeline.configureEvent(1, 0, UIManager.getIcon("Tree.leafIcon"),
-                new Color(179, 255, 204),
-                new Color(31, 73, 45));
+                new Color(0x92ADC6),
+                new Color(0x2B4E8C));
         timeline.configureEvent(2, 1, UIManager.getIcon("Tree.leafIcon"),
                 new Color(255, 191, 176),
                 new Color(76, 14, 29));
@@ -210,18 +211,32 @@ public class AnimatedComponentVisualTests extends JDialog {
                 return delay.get();
             }
         }));
-        controls.add(createEventButton(1, events));
-        controls.add(createEventButton(2, events));
+        controls.add(createVaribleSlider("Variance", 0, 50, new Value() {
+            @Override
+            public void set(int v) {
+                variance.set(v);
+            }
+
+            @Override
+            public int get() {
+                return variance.get();
+            }
+        }));
+        controls.add(createEventButton(1, events, variance));
+        controls.add(createEventButton(1, events, null));
+        controls.add(createEventButton(2, events, variance));
 
         panel.add(timeline, BorderLayout.CENTER);
         return panel;
     }
 
-    private Component createEventButton(final int type, final EventData events) {
-        final String start = "Start event type " + type;
+    private Component createEventButton(final int type, final EventData events,
+            final AtomicInteger variance) {
+        final String start = "Start " + (variance != null ? "blocking " : "") + "event type " + type;
         final String stop = "Stop event type " + type;
         return createButton(start, new ActionListener() {
             EventData.Event event = null;
+            int var = 0;
 
             @Override
             public void actionPerformed(ActionEvent actionEvent) {
@@ -229,9 +244,16 @@ public class AnimatedComponentVisualTests extends JDialog {
                 if (event != null) {
                     event.stop(System.currentTimeMillis());
                     event = null;
+                    if (variance != null) {
+                        variance.set(var);
+                    }
                     button.setText(start);
                 } else {
                     event = events.start(System.currentTimeMillis(), type);
+                    if (variance != null) {
+                        var = variance.get();
+                        variance.set(0);
+                    }
                     button.setText(stop);
                 }
             }
