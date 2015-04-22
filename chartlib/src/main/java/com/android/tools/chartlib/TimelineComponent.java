@@ -30,6 +30,9 @@ import java.awt.event.HierarchyListener;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Arc2D;
 import java.awt.geom.Path2D;
+import java.awt.geom.Point2D;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.swing.Icon;
 
@@ -77,6 +80,8 @@ public class TimelineComponent extends AnimatedComponent
     private String[] mStreamNames;
 
     private Color[] mStreamColors;
+
+    private Map<Integer, Style> mStyles;
 
     private boolean mFirstFrame;
 
@@ -138,9 +143,14 @@ public class TimelineComponent extends AnimatedComponent
     private int mSize;
 
     /**
-     * The times at which the samples occured.
+     * The times at which the samples occurred.
      */
     private float[] mTimes;
+
+    /**
+     * The times at which the samples occurred.
+     */
+    private int[] mTypes;
 
     /**
      * The render values of the samples depending on the layout mode, as in mValues[stream][sample]
@@ -222,6 +232,7 @@ public class TimelineComponent extends AnimatedComponent
             mStreamNames[i] = "Stream " + i;
             mStreamColors[i] = Color.BLACK;
         }
+        mStyles = new HashMap<Integer, Style>();
         mUnits = "";
         mEventsInfo = new TIntObjectHashMap<EventInfo>();
         setOpaque(true);
@@ -234,8 +245,12 @@ public class TimelineComponent extends AnimatedComponent
     }
 
     public void configureEvent(int type, int stream, Icon icon, Color color,
-            Color progress) {
-        mEventsInfo.put(type, new EventInfo(type, stream, icon, color, progress));
+            Color progress, boolean range) {
+        mEventsInfo.put(type, new EventInfo(type, stream, icon, color, progress, range));
+    }
+
+    public void configureType(int type, Style style) {
+        mStyles.put(type, style);
     }
 
     public void configureUnits(String units) {
@@ -283,8 +298,8 @@ public class TimelineComponent extends AnimatedComponent
                 for (int j = 0; j < mValues.length; ++j) {
                     int x = (int) timeToX(mTimes[i]);
                     int y = (int) valueToY(mValues[j][i]);
-                    Color c = new Color(66, 66, 66);
-                    g2d.setColor(c);
+                    g2d.setColor(new Color((17 * mTypes[i]) % 255, (121 * mTypes[i]) % 255,
+                                                (71 * mTypes[i]) % 255));
                     g2d.drawLine(x, y - 2, x, y + 2);
                     g2d.drawLine(x - 2, y, x + 2, y);
                     g2d.setColor(TEXT_COLOR);
@@ -304,21 +319,74 @@ public class TimelineComponent extends AnimatedComponent
             while (from < mSize - 1 && mTimes[from + 1] < mBeginTime) {
                 from++;
             }
-            int to = from + 1;
+            int to = from;
             while (to + 1 < mSize && mTimes[to] <= mEndTime) {
-              to++;
+                to++;
             }
+            if (from == to) {
+                return;
+            }
+            int drawnSegments = 0;
             for (int j = mValues.length - 1; j >= 0; j--) {
                 Path2D.Float path = new Path2D.Float();
                 path.moveTo(timeToX(mTimes[from]), valueToY(0.0f));
                 for (int i = from; i <= to; i++) {
-                  float val = mValues[j][i];
-                  path.lineTo(timeToX(mTimes[i]), valueToY(Math.min(val, mAbsoluteMax)));
+                    float val = mValues[j][i];
+                    path.lineTo(timeToX(mTimes[i]), valueToY(Math.min(val, mAbsoluteMax)));
                 }
                 path.lineTo(timeToX(mTimes[to]), valueToY(0.0f));
                 g2d.setColor(mStreamColors[j]);
                 g2d.fill(path);
+
+                if (!mStyles.isEmpty()) {
+                    path = new Path2D.Float();
+                    Stroke current = g2d.getStroke();
+                    float step = 3.0f;
+                    float x0 = timeToX(mTimes[from]);
+                    float y0 = valueToY(mValues[j][from]);
+                    g2d.setColor(mStreamColors[j].darker());
+                    Stroke stroke = null;
+                    float strokeScale = Float.NaN;
+                    for (int i = from + 1; i <= to; i++) {
+                        float x1 = timeToX(mTimes[i]);
+                        float y1 = valueToY(mValues[j][i]);
+                        Style style = mStyles.get(mTypes[i]);
+                        if (style != null && style != Style.NONE) {
+                            BasicStroke str = new BasicStroke(1.0f);
+                            float scale = 0;
+                            if (style == Style.DASHED) {
+                                float distance = (float) Point2D.distance(x0, y0, x1, y1);
+                                float delta = mTimes[i] * X_SCALE;
+                                scale = distance / (x1 - x0);
+                                str = new BasicStroke(1.0f, BasicStroke.CAP_ROUND,
+                                        BasicStroke.JOIN_ROUND, 0.0f, new float[]{step * scale},
+                                        (delta * scale) % (step * scale * 2));
+                            }
+                            if (scale != strokeScale) {
+                                if (stroke != null) {
+                                    g2d.setStroke(stroke);
+                                    g2d.draw(path);
+                                    path.reset();
+                                    drawnSegments++;
+                                }
+                                strokeScale = scale;
+                                stroke = str;
+                                path.moveTo(x0, y0);
+                            }
+                            path.lineTo(x1, y1);
+                        }
+                        x0 = x1;
+                        y0 = y1;
+                    }
+                    if (stroke != null) {
+                        g2d.setStroke(stroke);
+                        g2d.draw(path);
+                        drawnSegments++;
+                    }
+                    g2d.setStroke(current);
+                }
             }
+            addDebugInfo("Drawn segments: %d", drawnSegments);
         }
         addDebugInfo("Total samples: %d", mSize);
     }
@@ -360,17 +428,18 @@ public class TimelineComponent extends AnimatedComponent
                     g2d.setStroke(
                             new BasicStroke(1.5f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
                     Path2D.Float p = new Path2D.Float();
-                    p.moveTo(x, mBottom);
-                    p.lineTo(x, y);
-                    float endTime = Float.isNaN(mEventEnd[e]) ? mEndTime : mEventEnd[e];
-                    int i = s;
-                    for (; i < mSize && mTimes[i] < endTime; i++) {
-                        float val = mValues[info.stream][i];
-                        p.lineTo(timeToX(mTimes[i]), valueToY(val));
-                    }
-                    p.lineTo(timeToX(endTime), valueToY(interpolate(info.stream, i, endTime)));
-                    if (!Float.isNaN(mEventEnd[e])) {
-                        p.lineTo(timeToX(mEventEnd[e]), valueToY(0));
+                    boolean closed = !Float.isNaN(mEventEnd[e]);
+                    if (info.range) {
+                        p.moveTo(x, mBottom);
+                        p.lineTo(x, y);
+                        float endTime = Float.isNaN(mEventEnd[e]) ? mEndTime : mEventEnd[e];
+                        int i = s;
+                        for (; i < mSize && mTimes[i] < endTime; i++) {
+                            float val = mValues[info.stream][i];
+                            p.lineTo(timeToX(mTimes[i]), valueToY(val));
+                        }
+                        p.lineTo(timeToX(endTime), valueToY(interpolate(info.stream, i, endTime)));
+                        p.lineTo(timeToX(closed ? mEventEnd[e] : endTime), valueToY(0));
                         if (info.color != null) {
                             g2d.setColor(info.color);
                             g2d.fill(p);
@@ -378,13 +447,13 @@ public class TimelineComponent extends AnimatedComponent
                         g2d.setColor(info.progress);
                         g2d.draw(p);
                     } else {
-                        p.lineTo(timeToX(endTime), valueToY(0));
-                        if (info.color != null) {
-                            g2d.setColor(info.color);
-                            g2d.fill(p);
-                        }
+                        p.moveTo(x, y - 2.0f);
+                        p.lineTo(x, y + 2.0f);
                         g2d.setColor(info.progress);
                         g2d.draw(p);
+                    }
+                    if (!closed) {
+                        g2d.setColor(info.progress);
                         // Draw in progress marker
                         float end = 360 * mEventProgress;
                         float start = mEventProgressStart;
@@ -517,6 +586,7 @@ public class TimelineComponent extends AnimatedComponent
             if (mTimes == null || mTimes.length < mSize) {
                 int alloc = Math.max(mSize, mTimes == null ? 64 : mTimes.length * 2);
                 mTimes = new float[alloc];
+                mTypes = new int[alloc];
                 for (int j = 0; j < mData.getStreamCount(); ++j) {
                     mValues[j] = new float[alloc];
                 }
@@ -524,6 +594,7 @@ public class TimelineComponent extends AnimatedComponent
             for (int i = 0; i < mSize; ++i) {
                 TimelineData.Sample sample = mData.get(i);
                 mTimes[i] = sample.time;
+                mTypes[i] = sample.type;
                 float value = 0.0f;
                 for (int j = 0; j < mData.getStreamCount(); ++j) {
                     value += sample.values[j];
@@ -531,7 +602,7 @@ public class TimelineComponent extends AnimatedComponent
                 }
             }
             for (int j = 0; j < mData.getStreamCount(); ++j) {
-              mCurrent[j] = mSize > 0 ? mData.get(mSize - 1).values[j] : 0.0f;
+                mCurrent[j] = mSize > 0 ? mData.get(mSize - 1).values[j] : 0.0f;
             }
 
             // Calculate begin and end times in seconds.
@@ -589,6 +660,12 @@ public class TimelineComponent extends AnimatedComponent
         }
     }
 
+    public static enum Style {
+        NONE,
+        SOLID,
+        DASHED
+    }
+
     private static class EventInfo {
 
         public final int type;
@@ -601,13 +678,16 @@ public class TimelineComponent extends AnimatedComponent
 
         public final Color progress;
 
+        public final boolean range;
+
         private EventInfo(int type, int stream, Icon icon, Color color,
-                Color progress) {
+                Color progress, boolean range) {
             this.type = type;
             this.stream = stream;
             this.icon = icon;
             this.color = color;
             this.progress = progress;
+            this.range = range;
         }
     }
 }
