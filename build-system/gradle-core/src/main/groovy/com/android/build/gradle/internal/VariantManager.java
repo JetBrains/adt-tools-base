@@ -472,18 +472,7 @@ public class VariantManager implements VariantModel {
     public BaseVariantData<? extends BaseVariantOutputData> createVariantData(
             @NonNull com.android.builder.model.BuildType buildType,
             @NonNull List<? extends com.android.build.gradle.api.GroupableProductFlavor> productFlavorList) {
-        Splits splits = extension.getSplits();
-        Set<String> densities = splits.getDensityFilters();
-        Set<String> abis = splits.getAbiFilters();
-
-        // check against potentially empty lists. We always need to generate at least one output
-        densities = densities.isEmpty() ? Collections.singleton(NO_FILTER) : densities;
-        abis = abis.isEmpty() ? Collections.singleton(NO_FILTER) : abis;
-
         BuildTypeData buildTypeData = buildTypes.get(buildType.getName());
-
-        Set<String> compatibleScreens = extension.getSplits().getDensity()
-                .getCompatibleScreens();
 
         GradleVariantConfiguration variantConfig = new GradleVariantConfiguration(
                 defaultConfigData.getProductFlavor(),
@@ -552,8 +541,8 @@ public class VariantManager implements VariantModel {
         variantProviders.add(defaultConfigData.getMainProvider());
 
         // Done. Create the variant and get its internal storage object.
-        BaseVariantData<?> variantData = variantFactory.createVariantData(variantConfig,
-                densities, abis, compatibleScreens, taskManager);
+        BaseVariantData<?> variantData =
+                variantFactory.createVariantData(variantConfig, taskManager);
 
         final VariantDependencies variantDep = VariantDependencies.compute(
                 project, variantConfig.getFullName(),

@@ -35,8 +35,7 @@ public class DensitySplitOptionsTest {
 
         Set<String> values = options.getApplicableFilters();
 
-        assertEquals(1, values.size());
-        assertTrue(values.contains(OutputFile.NO_FILTER));
+        assertEquals(0, values.size());
     }
 
     @Test
@@ -45,9 +44,8 @@ public class DensitySplitOptionsTest {
         options.setEnable(true);
 
         Set<String> values = options.getApplicableFilters();
-
-        // test first release is the universal filter
-        assertEquals(OutputFile.NO_FILTER, values.iterator().next());
+        // at this time we have 6 densities, maybe more later.
+        assertTrue(values.size() >= 6);
     }
 
     @Test

@@ -35,29 +35,7 @@ public class AbiSplitOptionsTest {
 
         Set<String> values = options.getApplicableFilters();
 
-        assertEquals(1, values.size());
-        assertTrue(values.contains(OutputFile.NO_FILTER));
-    }
-
-    @Test
-    public void testNonUniversal() {
-        AbiSplitOptions options = new AbiSplitOptions();
-        options.setEnable(true);
-
-        Set<String> values = options.getApplicableFilters();
-
-        assertFalse(values.contains(OutputFile.NO_FILTER));
-    }
-
-    @Test
-    public void testUniversal() {
-        AbiSplitOptions options = new AbiSplitOptions();
-        options.setEnable(true);
-        options.setUniversalApk(true);
-
-        Set<String> values = options.getApplicableFilters();
-
-        assertTrue(values.contains(OutputFile.NO_FILTER));
+        assertEquals(0, values.size());
     }
 
     @Test
