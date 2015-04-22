@@ -164,6 +164,7 @@ public class AnimatedComponentVisualTests extends JDialog {
         final int streams = 2;
         final AtomicInteger variance = new AtomicInteger(10);
         final AtomicInteger delay = new AtomicInteger(100);
+        final AtomicInteger type = new AtomicInteger(0);
         new Thread() {
             @Override
             public void run() {
@@ -171,13 +172,14 @@ public class AnimatedComponentVisualTests extends JDialog {
                 try {
                     float[] values = new float[streams];
                     while (true) {
+                        int v = variance.get();
                         for (int i = 0; i < streams; i++) {
-                            float delta = (float) Math.random() * variance.get() - variance.get() * 0.5f;
+                            float delta = (float) Math.random() * variance.get() - v * 0.5f;
                             values[i] = Math.max(0, delta + values[i]);
-                            synchronized (data) {
-                                data.add(System.currentTimeMillis(), 0, Arrays.copyOf(values,
-                                        streams));
-                            }
+                        }
+                        synchronized (data) {
+                            data.add(System.currentTimeMillis(), type.get() + (v == 0 ? 1 : 0), Arrays.copyOf(values,
+                                    streams));
                         }
                         Thread.sleep(delay.get());
                     }
@@ -193,10 +195,12 @@ public class AnimatedComponentVisualTests extends JDialog {
         timeline.configureUnits("@");
         timeline.configureEvent(1, 0, UIManager.getIcon("Tree.leafIcon"),
                 new Color(0x92ADC6),
-                new Color(0x2B4E8C));
+                new Color(0x2B4E8C), false);
         timeline.configureEvent(2, 1, UIManager.getIcon("Tree.leafIcon"),
                 new Color(255, 191, 176),
-                new Color(76, 14, 29));
+                new Color(76, 14, 29), true);
+        timeline.configureType(1, TimelineComponent.Style.SOLID);
+        timeline.configureType(2, TimelineComponent.Style.DASHED);
 
         final JPanel panel = new JPanel();
         final JPanel controls = createControlledPane(panel, timeline);
@@ -220,6 +224,17 @@ public class AnimatedComponentVisualTests extends JDialog {
             @Override
             public int get() {
                 return variance.get();
+            }
+        }));
+        controls.add(createVaribleSlider("Type", 0, 2, new Value() {
+            @Override
+            public void set(int v) {
+                type.set(v);
+            }
+
+            @Override
+            public int get() {
+                return type.get();
             }
         }));
         controls.add(createEventButton(1, events, variance));
