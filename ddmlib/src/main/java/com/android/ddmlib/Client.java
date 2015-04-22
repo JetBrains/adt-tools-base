@@ -65,6 +65,8 @@ public class Client {
     public static final int CHANGE_HEAP_ALLOCATION_STATUS     = 0x0400;
     /** Client change bit mask: allocation information updated */
     public static final int CHANGE_METHOD_PROFILING_STATUS    = 0x0800;
+    /** Client change bit mask: hprof data updated */
+    public static final int CHANGE_HPROF                      = 0x1000;
 
     /** Client change bit mask: combination of {@link Client#CHANGE_NAME},
      * {@link Client#CHANGE_DEBUGGER_STATUS}, and {@link Client#CHANGE_PORT}.
