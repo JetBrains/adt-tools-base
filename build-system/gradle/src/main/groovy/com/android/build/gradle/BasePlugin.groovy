@@ -15,7 +15,6 @@
  */
 
 package com.android.build.gradle
-
 import com.android.annotations.Nullable
 import com.android.annotations.VisibleForTesting
 import com.android.build.gradle.internal.BadPluginException
@@ -34,12 +33,11 @@ import com.android.build.gradle.internal.dsl.GroupableProductFlavor
 import com.android.build.gradle.internal.dsl.GroupableProductFlavorFactory
 import com.android.build.gradle.internal.dsl.SigningConfig
 import com.android.build.gradle.internal.dsl.SigningConfigFactory
-import com.android.build.gradle.internal.model.DependenciesImpl
 import com.android.build.gradle.internal.model.ModelBuilder
 import com.android.build.gradle.internal.process.GradleJavaProcessExecutor
 import com.android.build.gradle.internal.process.GradleProcessExecutor
-import com.android.build.gradle.internal.profile.SpanRecorders
 import com.android.build.gradle.internal.profile.RecordingBuildListener
+import com.android.build.gradle.internal.profile.SpanRecorders
 import com.android.build.gradle.internal.variant.VariantFactory
 import com.android.build.gradle.tasks.JillTask
 import com.android.build.gradle.tasks.PreDex
@@ -64,21 +62,17 @@ import org.gradle.api.internal.project.ProjectInternal
 import org.gradle.api.logging.LogLevel
 import org.gradle.api.plugins.JavaBasePlugin
 import org.gradle.api.plugins.JavaPlugin
-import org.gradle.api.tasks.TaskContainer
 import org.gradle.internal.reflect.Instantiator
 import org.gradle.tooling.BuildException
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry
 
 import java.security.MessageDigest
-import java.util.jar.Attributes
 import java.util.jar.Manifest
 import java.util.regex.Pattern
 
-import static com.android.builder.core.BuilderConstants.DEBUG
-import static com.android.builder.core.BuilderConstants.RELEASE
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
+import static com.google.common.base.Preconditions.checkState
 import static java.io.File.separator
-
 /**
  * Base class for all Android plugins
  */
@@ -410,6 +404,10 @@ public abstract class BasePlugin {
 
     @VisibleForTesting
     final void createAndroidTasks(boolean force) {
+        // Make sure unit tests set the required fields.
+        checkState(extension.getBuildToolsRevision() != null, "buildToolsVersion is not specified.")
+        checkState(extension.getCompileSdkVersion() != null, "compileSdkVersion is not specified.")
+
         // get current plugins and look for the default Java plugin.
         if (project.plugins.hasPlugin(JavaPlugin.class)) {
             throw new BadPluginException(
