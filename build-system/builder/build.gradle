@@ -83,3 +83,28 @@ public final class Version {
 }
 
 tasks.compileJava.dependsOn generateVersionConstantsJava
+
+configurations {
+    provided
+    sourcesProvided
+}
+
+dependencies {
+    provided(project(':base:profile')) {
+        transitive = false
+    }
+    sourcesProvided(project(path:':base:profile', configuration:'sourcesOnly')) {
+        transitive = false
+    }
+}
+
+sourceSets.main.compileClasspath += [configurations.provided]
+tasks.compileJava.dependsOn(configurations.provided)
+tasks.sourcesJar.dependsOn(configurations.sourcesProvided)
+
+tasks.jar {
+    from({zipTree(configurations.provided.singleFile)})
+}
+tasks.sourcesJar {
+    from({zipTree(configurations.sourcesProvided.singleFile)})
+}
