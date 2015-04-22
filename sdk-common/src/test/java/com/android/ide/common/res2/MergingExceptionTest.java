@@ -17,7 +17,7 @@
 package com.android.ide.common.res2;
 
 import com.android.ide.common.blame.FilePosition;
-import com.android.ide.common.blame.SourceFragmentPositionRange;
+import com.android.ide.common.blame.SourcePosition;
 
 import junit.framework.TestCase;
 
@@ -35,15 +35,15 @@ public class MergingExceptionTest extends TestCase {
                 new MergingException("My error message").addFile(file).getMessage());
         assertEquals("/some/random/path:50: Error: My error message",
                 new MergingException("My error message").addFilePosition(
-                        new FilePosition(file, new SourceFragmentPositionRange(50, -1, -1)))
+                        new FilePosition(file, new SourcePosition(50, -1, -1)))
                         .getMessage());
         assertEquals("/some/random/path:50:4: Error: My error message",
                 new MergingException("My error message").addFilePosition(
-                        new FilePosition(file, new SourceFragmentPositionRange(50, 4, -1)))
+                        new FilePosition(file, new SourcePosition(50, 4, -1)))
                         .getMessage());
         assertEquals("/some/random/path:50:4: Error: My error message",
                 new MergingException("My error message").addFilePosition(
-                        new FilePosition(file, new SourceFragmentPositionRange(50, 4, -1)))
+                        new FilePosition(file, new SourcePosition(50, 4, -1)))
                         .getLocalizedMessage());
         assertEquals("/some/random/path: Error: My error message",
                 new MergingException("/some/random/path: My error message").addFile(file)
