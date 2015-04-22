@@ -34,7 +34,7 @@ import java.io.File;
  * <li><code>EXT_</code> File name extension, without the dot </li>
  * </ul>
  */
-@SuppressWarnings("javadoc") // Not documenting all the fields here
+@SuppressWarnings({"javadoc", "unused"}) // Not documenting all the fields here
 public final class SdkConstants {
     public static final int PLATFORM_UNKNOWN = 0;
     public static final int PLATFORM_LINUX = 1;
@@ -452,7 +452,7 @@ public final class SdkConstants {
     /** Path of the bin folder of proguard folder relative to the sdk folder.
      *  This is an OS path, ending with a separator. */
     public static final String OS_SDK_TOOLS_PROGUARD_BIN_FOLDER =
-        SdkConstants.OS_SDK_TOOLS_FOLDER +
+        OS_SDK_TOOLS_FOLDER +
         "proguard" + File.separator +                                   //$NON-NLS-1$
         "bin" + File.separator;                                         //$NON-NLS-1$
 
@@ -821,6 +821,10 @@ public final class SdkConstants {
     // Tags: Drawables
     public static final String TAG_BITMAP = "bitmap";                  //$NON-NLS-1$
 
+    // Tags: Data-Binding
+    public static final String TAG_LAYOUT = "layout";                  //$NON-NLS-1$
+    public static final String TAG_DATA = "data";                      //$NON-NLS-1$
+
     // Attributes: Manifest
     public static final String ATTR_EXPORTED = "exported";             //$NON-NLS-1$
     public static final String ATTR_PERMISSION = "permission";         //$NON-NLS-1$
@@ -1136,6 +1140,7 @@ public final class SdkConstants {
     // Resources
     public static final String PREFIX_RESOURCE_REF = "@";               //$NON-NLS-1$
     public static final String PREFIX_THEME_REF = "?";                  //$NON-NLS-1$
+    public static final String PREFIX_BINDING_EXPR = "@{";              //$NON-NLS-1$
     public static final String ANDROID_PREFIX = "@android:";            //$NON-NLS-1$
     public static final String ANDROID_THEME_PREFIX = "?android:";      //$NON-NLS-1$
     public static final String LAYOUT_RESOURCE_PREFIX = "@layout/";     //$NON-NLS-1$
