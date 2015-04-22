@@ -142,6 +142,7 @@ public class ClientData {
      */
     public static final String FEATURE_HPROF_STREAMING = "hprof-heap-dump-streaming"; //$NON-NLS-1$
 
+    @Deprecated
     private static IHprofDumpHandler sHprofDumpHandler;
     private static IMethodProfilingHandler sMethodProfilingHandler;
     private static IAllocationTrackingHandler sAllocationTrackingHandler;
@@ -184,6 +185,9 @@ public class ClientData {
     /** Native Heap data */
     private final HeapData mNativeHeapData = new HeapData();
 
+    /** Hprof data */
+    private HprofData mHprofData = null;
+
     private HashMap<Integer, HeapInfo> mHeapInfoMap = new HashMap<Integer, HeapInfo>();
 
     /** library map info. Stored here since the backtrace data
@@ -200,6 +204,7 @@ public class ClientData {
     private AllocationInfo[] mAllocations;
     private AllocationTrackingStatus mAllocationStatus = AllocationTrackingStatus.UNKNOWN;
 
+    @Deprecated
     private String mPendingHprofDump;
 
     private MethodProfilingStatus mProfilingStatus = MethodProfilingStatus.UNKNOWN;
@@ -326,9 +331,33 @@ public class ClientData {
         }
     }
 
+    public static class HprofData {
+        public static enum Type {
+            FILE,
+            DATA
+        }
+
+        public final Type type;
+        public final String filename;
+        public final byte[] data;
+
+        public HprofData(@NonNull String filename) {
+            type = Type.FILE;
+            this.filename = filename;
+            this.data = null;
+        }
+
+        public HprofData(@NonNull byte[] data) {
+            type = Type.DATA;
+            this.data = data;
+            this.filename = null;
+        }
+    }
+
     /**
      * Handlers able to act on HPROF dumps.
      */
+    @Deprecated
     public interface IHprofDumpHandler {
         /**
          * Called when a HPROF dump succeeded.
@@ -398,19 +427,39 @@ public class ClientData {
       void onSuccess(@NonNull byte[] data, @NonNull Client client);
     }
 
+    public void setHprofData(byte[] data) {
+        mHprofData = new HprofData(data);
+    }
+
+    public void setHprofData(String filename) {
+        mHprofData = new HprofData(filename);
+    }
+
+    public void clearHprofData() {
+        mHprofData = null;
+    }
+
+    public HprofData getHprofData() {
+        return mHprofData;
+    }
+
     /**
      * Sets the handler to receive notifications when an HPROF dump succeeded or failed.
+     * This method is deprecated, please register a client listener and listen for CHANGE_HPROF.
      */
+    @Deprecated
     public static void setHprofDumpHandler(IHprofDumpHandler handler) {
         sHprofDumpHandler = handler;
     }
 
+    @Deprecated
     static IHprofDumpHandler getHprofDumpHandler() {
         return sHprofDumpHandler;
     }
 
     /**
      * Sets the handler to receive notifications when an HPROF dump succeeded or failed.
+     * This method is deprecated, please register a client listener and listen for CHANGE_HPROF.
      */
     public static void setMethodProfilingHandler(IMethodProfilingHandler handler) {
         sMethodProfilingHandler = handler;
@@ -746,6 +795,7 @@ public class ClientData {
      * Sets the device-side path to the hprof file being written
      * @param pendingHprofDump the file to the hprof file
      */
+    @Deprecated
     void setPendingHprofDump(String pendingHprofDump) {
         mPendingHprofDump = pendingHprofDump;
     }
@@ -753,10 +803,12 @@ public class ClientData {
     /**
      * Returns the path to the device-side hprof file being written.
      */
+    @Deprecated
     String getPendingHprofDump() {
         return mPendingHprofDump;
     }
 
+    @Deprecated
     public boolean hasPendingHprofDump() {
         return mPendingHprofDump != null;
     }
