@@ -89,6 +89,16 @@ public class ClassObj extends Instance implements Comparable<ClassObj> {
         mClassLoaderId = classLoader;
     }
 
+    public int getAllFieldsCount() {
+        int result = 0;
+        ClassObj clazz = this;
+        while (clazz != null) {
+            result += clazz.getFields().length;
+            clazz = clazz.getSuperClassObj();
+        }
+        return result;
+    }
+
     public Field[] getFields() {
         return mFields;
     }
