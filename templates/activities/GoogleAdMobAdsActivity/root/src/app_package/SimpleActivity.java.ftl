@@ -9,20 +9,12 @@ import com.google.android.gms.ads.AdRequest;
 import com.google.android.gms.ads.InterstitialAd;
 </#if>
 
-import android.content.Context;
 import android.os.Bundle;
-<#if adFormat == "interstitial">
-import android.<#if appCompat>support.v4.</#if>app.Fragment;
-</#if>
 import <#if appCompat>android.support.v7.app.ActionBarActivity<#else>android.app.Activity</#if>;
-<#if adFormat == "interstitial">
-import android.view.LayoutInflater;
-</#if>
 import android.view.Menu;
 import android.view.MenuItem;
 <#if adFormat == "interstitial">
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.TextView;
 </#if>
@@ -51,7 +43,8 @@ public class ${activityClass} extends ${(appCompat)?string('ActionBar','')}Activ
         <#if adFormat == "banner">
         // Load an ad into the AdMob banner view.
         AdView adView = (AdView) findViewById(R.id.adView);
-        AdRequest adRequest = new AdRequest.Builder().build();
+        AdRequest adRequest = new AdRequest.Builder()
+                .setRequestAgent("android_studio:ad_template").build();
         adView.loadAd(adRequest);
         <#elseif adFormat == "interstitial">
         // Create the next level button, which tries to show an interstitial when clicked.
@@ -131,7 +124,8 @@ public class ${activityClass} extends ${(appCompat)?string('ActionBar','')}Activ
     private void loadInterstitial() {
         // Disable the next level button and load the ad.
         mNextLevelButton.setEnabled(false);
-        AdRequest adRequest = new AdRequest.Builder().build();
+        AdRequest adRequest = new AdRequest.Builder()
+                .setRequestAgent("android_studio:ad_template").build();
         mInterstitialAd.loadAd(adRequest);
     }
 

@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <recipe>
-    <dependency mavenUrl="com.google.android.gms:play-services-ads:6.5.87" />
+    <dependency mavenUrl="com.google.android.gms:play-services-ads:7.0.0" />
 
     <merge from="AndroidManifest.xml.ftl"
              to="${escapeXmlAttribute(manifestOut)}/AndroidManifest.xml" />
