@@ -44,6 +44,8 @@ public class ClassObj extends Instance implements Comparable<ClassObj> {
 
     private int mInstanceSize;
 
+    private int mShalowSize;
+
     @NonNull
     ArrayList<Instance> mInstances = new ArrayList<Instance>();
 
@@ -78,6 +80,7 @@ public class ClassObj extends Instance implements Comparable<ClassObj> {
     }
 
     public final void addInstance(@NonNull Instance instance) {
+        mShalowSize += instance.getSize();
         mInstances.add(instance);
     }
 
@@ -117,6 +120,10 @@ public class ClassObj extends Instance implements Comparable<ClassObj> {
 
     public int getInstanceSize() {
         return mInstanceSize;
+    }
+
+    public int getShalowSize() {
+        return mShalowSize;
     }
 
     @NonNull
