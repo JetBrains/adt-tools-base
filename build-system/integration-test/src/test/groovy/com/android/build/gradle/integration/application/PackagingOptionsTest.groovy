@@ -51,6 +51,9 @@ class PackagingOptionsTest {
     @Test
     void "check packinging"() {
         assertThatZip(project.getApk("debug")).contains("first_pick.txt")
+        assertThatZip(project.getApk("debug")).doesNotContain("excluded.txt")
+
+        assertThatZip(project.getApk("debug")).contains("lib/x86/libdummy.so")
     }
 
     @Test
