@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.sdklib.repository.IDescription;
 import com.android.sdklib.repository.IListDescription;
+import com.android.sdklib.io.FileOp;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
 
 import java.io.File;
@@ -42,9 +43,7 @@ public abstract class LocalPkgInfo
 
     private String mLoadError;
 
-    protected LocalPkgInfo(@NonNull LocalSdk   localSdk,
-                           @NonNull File       localDir,
-                           @NonNull Properties sourceProps) {
+    protected LocalPkgInfo(@NonNull LocalSdk localSdk, @NonNull File localDir, @NonNull Properties sourceProps) {
         mLocalSdk = localSdk;
         mLocalDir = localDir;
         mSourceProperties = sourceProps;
@@ -74,7 +73,9 @@ public abstract class LocalPkgInfo
 
     // ----
 
-    /** Returns the {@link IPkgDesc} describing this package. */
+    /**
+     * Returns the {@link IPkgDesc} describing this package.
+     */
     @NonNull
     public abstract IPkgDesc getDesc();
 
@@ -93,7 +94,9 @@ public abstract class LocalPkgInfo
         return getDesc().compareTo(o.getDesc());
     }
 
-    /** String representation for debugging purposes. */
+    /**
+     * String representation for debugging purposes.
+     */
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
@@ -112,8 +115,8 @@ public abstract class LocalPkgInfo
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result + ((getDesc() == null)         ? 0 : getDesc().hashCode());
-        result = prime * result + ((mLocalDir == null)         ? 0 : mLocalDir.hashCode());
+        result = prime * result + ((getDesc() == null) ? 0 : getDesc().hashCode());
+        result = prime * result + ((mLocalDir == null) ? 0 : mLocalDir.hashCode());
         result = prime * result + ((mSourceProperties == null) ? 0 : mSourceProperties.hashCode());
         return result;
     }
@@ -136,7 +139,7 @@ public abstract class LocalPkgInfo
         if (!(obj instanceof LocalPkgInfo)) {
             return false;
         }
-        LocalPkgInfo other = (LocalPkgInfo) obj;
+        LocalPkgInfo other = (LocalPkgInfo)obj;
 
         if (!getDesc().equals(other.getDesc())) {
             return false;
@@ -145,14 +148,16 @@ public abstract class LocalPkgInfo
             if (other.mLocalDir != null) {
                 return false;
             }
-        } else if (!mLocalDir.equals(other.mLocalDir)) {
+        }
+        else if (!mLocalDir.equals(other.mLocalDir)) {
             return false;
         }
         if (mSourceProperties == null) {
             if (other.mSourceProperties != null) {
                 return false;
             }
-        } else if (!mSourceProperties.equals(other.mSourceProperties)) {
+        }
+        else if (!mSourceProperties.equals(other.mSourceProperties)) {
             return false;
         }
         return true;
@@ -161,8 +166,9 @@ public abstract class LocalPkgInfo
 
     //---- Package Management ----
 
-    /** A "broken" package is installed but is not fully operational.
-     *
+    /**
+     * A "broken" package is installed but is not fully operational.
+     * <p/>
      * For example an addon that lacks its underlying platform or a tool package
      * that lacks some of its binaries or essentially files.
      * <p/>
@@ -173,11 +179,12 @@ public abstract class LocalPkgInfo
         return mLoadError != null;
     }
 
-    void appendLoadError(@NonNull String format, Object...params) {
+    void appendLoadError(@NonNull String format, Object... params) {
         String loadError = String.format(format, params);
         if (mLoadError == null) {
             mLoadError = loadError;
-        } else {
+        }
+        else {
             mLoadError = mLoadError + '\n' + loadError;
         }
     }
@@ -222,6 +229,12 @@ public abstract class LocalPkgInfo
         return sb.toString();
     }
 
+    /**
+     * Deletes the files in the SDK corresponding to this package.
+     */
+    public void delete() {
+        new FileOp().deleteFileOrFolder(getLocalDir());
+    }
 
 }
 

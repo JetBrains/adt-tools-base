@@ -29,6 +29,7 @@ import com.android.sdklib.repository.FullRevision;
 import com.android.sdklib.repository.FullRevision.PreviewComparison;
 import com.android.sdklib.repository.MajorRevision;
 import com.android.sdklib.repository.NoPreviewRevision;
+import com.android.sdklib.repository.PreciseRevision;
 
 import java.io.File;
 import java.util.Locale;
@@ -187,6 +188,16 @@ public class PkgDesc implements IPkgDesc {
 
     @Nullable
     @Override
+    public final PreciseRevision getPreciseRevision() {
+        if (mMajorRevision == null) {
+            return new PreciseRevision(mFullRevision.getMajor(), mFullRevision.getMinor(),
+                                       mFullRevision.getMicro(), mFullRevision.getPreview());
+        }
+        return new PreciseRevision(mMajorRevision.getMajor());
+    }
+
+    @Nullable
+    @Override
     public AndroidVersion getAndroidVersion() {
         return mAndroidVersion;
     }
@@ -274,7 +285,7 @@ public class PkgDesc implements IPkgDesc {
 
         case PKG_ADDON:
             sb.append("addon-")
-              .append(((IPkgDescAddon) this).getName().getId())
+              .append(((IPkgDescAddon)this).getName().getId())
               .append('-')
               .append(getVendor().getId())
               .append('-')
