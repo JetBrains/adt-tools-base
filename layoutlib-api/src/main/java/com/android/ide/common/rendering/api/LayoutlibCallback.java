@@ -21,6 +21,8 @@ import com.android.resources.ResourceType;
 import com.android.util.Pair;
 
 import org.intellij.lang.annotations.MagicConstant;
+import org.xmlpull.v1.XmlPullParser;
+import org.xmlpull.v1.XmlPullParserException;
 
 /**
  * Intermediary class implementing parts of both the old and new ProjectCallback from the
@@ -32,7 +34,7 @@ import org.intellij.lang.annotations.MagicConstant;
  * Clients should use this instead of {@link IProjectCallback} to target both old and new
  * Layout Libraries.
  */
-@SuppressWarnings("deprecation")
+@SuppressWarnings({"deprecation", "MethodMayBeStatic", "unused"})
 public abstract class LayoutlibCallback implements IProjectCallback,
         com.android.layoutlib.api.IProjectCallback {
 
@@ -76,6 +78,18 @@ public abstract class LayoutlibCallback implements IProjectCallback,
     @Nullable
     public <T> T getFlag(@NonNull SessionParams.Key<T> key) {
         return null;
+    }
+
+    /**
+     * Creates a new XmlPullParser with an optional display name.
+     *
+     * @param displayName an optional name to aid with debugging.
+     * @throws XmlPullParserException
+     * @since API 15
+     */
+    @NonNull
+    public XmlPullParser createParser(@Nullable String displayName) throws XmlPullParserException {
+        throw new UnsupportedOperationException("createNewParser not supported.");
     }
 
     // ------ implementation of the old interface using the new interface.
