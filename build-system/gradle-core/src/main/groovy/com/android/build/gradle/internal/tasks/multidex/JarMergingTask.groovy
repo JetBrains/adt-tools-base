@@ -19,6 +19,10 @@
 package com.android.build.gradle.internal.tasks.multidex
 
 import com.android.build.gradle.internal.tasks.DefaultAndroidTask
+import com.android.build.gradle.internal.TaskManager
+import com.android.build.gradle.internal.scope.ConventionMappingHelper
+import com.android.build.gradle.internal.scope.TaskConfigAction
+import com.android.build.gradle.internal.scope.VariantScope
 import com.google.common.collect.Sets
 import com.google.common.hash.Hashing
 import com.google.common.io.Files
@@ -151,5 +155,38 @@ class JarMergingTask extends DefaultAndroidTask {
         }
 
         fis.close()
+    }
+
+    public static class ConfigAction implements TaskConfigAction<JarMergingTask> {
+
+        private VariantScope scope
+
+        private Closure<File> inputDir;
+
+        private Closure<List<File>> inputLibraries;
+
+        ConfigAction(VariantScope scope, TaskManager.PostCompilationData pcData) {
+            this.scope = scope
+            inputDir = pcData.inputDir
+            inputLibraries = pcData.inputLibraries
+        }
+
+        @Override
+        String getName() {
+            return scope.getTaskName("packageAll", "ClassesForMultiDex")
+        }
+
+        @Override
+        Class<JarMergingTask> getType() {
+            return JarMergingTask
+        }
+
+        @Override
+        void execute(JarMergingTask jarMergingTask) {
+            ConventionMappingHelper.map(jarMergingTask, "inputJars", inputLibraries)
+            ConventionMappingHelper.map(jarMergingTask, "inputDir", inputDir)
+
+            jarMergingTask.jarFile = scope.getJarMergingOutputFile()
+        }
     }
 }

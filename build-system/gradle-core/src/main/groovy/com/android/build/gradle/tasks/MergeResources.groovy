@@ -15,7 +15,14 @@
  */
 package com.android.build.gradle.tasks
 
+import com.android.annotations.NonNull
+import com.android.build.gradle.internal.scope.ConventionMappingHelper
+import com.android.build.gradle.internal.scope.TaskConfigAction
+import com.android.build.gradle.internal.scope.VariantScope
 import com.android.build.gradle.internal.tasks.IncrementalTask
+import com.android.build.gradle.internal.variant.BaseVariantData
+import com.android.build.gradle.internal.variant.BaseVariantOutputData
+import com.android.builder.core.VariantType
 import com.android.builder.png.QueuedCruncher
 import com.android.ide.common.internal.PngCruncher
 import com.android.ide.common.res2.FileStatus
@@ -25,12 +32,16 @@ import com.android.ide.common.res2.MergingException
 import com.android.ide.common.res2.ResourceMerger
 import com.android.ide.common.res2.ResourceSet
 import com.android.sdklib.BuildToolInfo
+import com.android.sdklib.repository.FullRevision
+import com.google.common.collect.Lists
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.ParallelizableTask
 import org.gradle.api.tasks.OutputFile
+
+import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
 
 @ParallelizableTask
 public class MergeResources extends IncrementalTask {
@@ -189,6 +200,75 @@ public class MergeResources extends IncrementalTask {
             println e.getMessage()
             merger.cleanBlob(getIncrementalFolder())
             throw new ResourceException(e.getMessage(), e)
+        }
+    }
+
+    public static class ConfigAction implements TaskConfigAction<MergeResources> {
+
+        @NonNull
+        VariantScope scope
+        @NonNull
+        String taskNamePrefix
+        @NonNull
+        File outputLocation;
+        boolean includeDependencies;
+        boolean process9Patch;
+
+        ConfigAction(VariantScope scope, String taskNamePrefix, File outputLocation,
+                boolean includeDependencies, boolean process9Patch) {
+            this.scope = scope
+            this.taskNamePrefix = taskNamePrefix
+            this.outputLocation = outputLocation
+            this.includeDependencies = includeDependencies
+            this.process9Patch = process9Patch
+
+            scope.setMergeResourceOutputDir(outputLocation)
+        }
+
+        @Override
+        String getName() {
+            return scope.getTaskName(taskNamePrefix, "Resources")
+        }
+
+        @Override
+        Class<MergeResources> getType() {
+            return MergeResources
+        }
+
+        @Override
+        void execute(MergeResources mergeResourcesTask) {
+            BaseVariantData<? extends BaseVariantOutputData> variantData = scope.variantData
+
+            mergeResourcesTask.androidBuilder = scope.globalScope.androidBuilder
+            mergeResourcesTask.incrementalFolder = new File(
+                    "$scope.globalScope.buildDir/${FD_INTERMEDIATES}/incremental/" +
+                            "${taskNamePrefix}Resources/${variantData.variantConfiguration.dirName}")
+
+            mergeResourcesTask.process9Patch = process9Patch
+            mergeResourcesTask.crunchPng = scope.globalScope.extension.aaptOptions.getCruncherEnabled()
+            mergeResourcesTask.normalizeResources = scope.globalScope.extension.buildToolsRevision.compareTo(new FullRevision(21, 0, 0)) < 0
+
+            ConventionMappingHelper.map(mergeResourcesTask, "useNewCruncher") { scope.globalScope.getExtension().aaptOptions.useNewCruncher }
+
+            ConventionMappingHelper.map(mergeResourcesTask, "inputResourceSets") {
+                List<File> generatedResFolders = Lists.newArrayList(
+                        scope.getRenderscriptResOutputDir(),
+                        scope.getGeneratedResOutputDir())
+                if (variantData.extraGeneratedResFolders != null) {
+                    generatedResFolders += variantData.extraGeneratedResFolders
+                }
+                if (variantData.generateApkDataTask != null &&
+                        variantData.getVariantConfiguration().getBuildType().isEmbedMicroApp()) {
+                    generatedResFolders.add(variantData.generateApkDataTask.getResOutputDir())
+                }
+                variantData.variantConfiguration.getResourceSets(generatedResFolders,
+                        includeDependencies)
+            }
+
+            ConventionMappingHelper.map(mergeResourcesTask, "outputDir") {
+                outputLocation ?: scope.getDefaultMergeResourcesOutputDir()
+            }
+            variantData.mergeResourcesTask = mergeResourcesTask
         }
     }
 }

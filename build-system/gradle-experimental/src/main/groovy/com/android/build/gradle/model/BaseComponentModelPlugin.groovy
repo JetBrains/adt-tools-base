@@ -39,6 +39,7 @@ import com.android.build.gradle.internal.dsl.SigningConfigFactory
 import com.android.build.gradle.internal.model.ModelBuilder
 import com.android.build.gradle.internal.process.GradleJavaProcessExecutor
 import com.android.build.gradle.internal.process.GradleProcessExecutor
+import com.android.build.gradle.internal.profile.RecordingBuildListener
 import com.android.build.gradle.internal.tasks.DependencyReportTask
 import com.android.build.gradle.internal.tasks.SigningReportTask
 import com.android.build.gradle.internal.variant.VariantFactory
@@ -49,6 +50,10 @@ import com.android.builder.core.AndroidBuilder
 import com.android.builder.core.BuilderConstants
 import com.android.builder.internal.compiler.JackConversionCache
 import com.android.builder.internal.compiler.PreDexCache
+import com.android.builder.profile.ExecutionType
+import com.android.builder.profile.ProcessRecorderFactory
+import com.android.builder.profile.Recorder
+import com.android.builder.profile.ThreadRecorder
 import com.android.builder.sdk.TargetInfo
 import com.android.ide.common.internal.ExecutorSingleton
 import com.android.ide.common.process.LoggedProcessOutputHandler
@@ -109,6 +114,10 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
      */
     @Override
     public void apply(Project project) {
+        ProcessRecorderFactory.initialize(new LoggerWrapper(project.logger), project.rootProject.
+                file("profiler" + System.currentTimeMillis() + ".json"))
+        project.gradle.addListener(new RecordingBuildListener(ThreadRecorder.get()));
+
         project.apply plugin: AndroidComponentModelPlugin
 
         project.apply plugin: JavaBasePlugin
@@ -131,7 +140,6 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
                 configurations,
                 "default-mapping",
                 "Metadata for published APKs")
-
 
         project.tasks.getByName("assemble").description =
                 "Assembles all variants of all applications and secondary packages."
@@ -376,8 +384,6 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
                 }
             }
 
-            taskManager.createLintCompileTask();
-
             // TODO: determine how to provide functionalities of variant API objects.
         }
 
@@ -388,12 +394,20 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
                 BinaryContainer binaries,
                 AndroidComponentSpec spec,
                 TaskManager taskManager) {
+
             VariantManager variantManager = (spec as DefaultAndroidComponentSpec).variantManager
             binaries.withType(AndroidBinary) { androidBinary ->
-                DefaultAndroidBinary binary = androidBinary as DefaultAndroidBinary
-                variantManager.createTasksForVariantData(
-                        new TaskCollectionBuilderAdaptor(tasks),
-                        binary.variantData)
+                ThreadRecorder.get().record(ExecutionType.VARIANT_MANAGER_CREATE_TASKS_FOR_VARIANT,
+                        new Recorder.Block<Void>() {
+                            @Override
+                            public Void call() throws Exception {
+                                    DefaultAndroidBinary binary = androidBinary as DefaultAndroidBinary
+                                    variantManager.createTasksForVariantData(
+                                            new TaskCollectionBuilderAdaptor(tasks),
+                                            binary.variantData)
+                                return null;
+                            }
+                        });
             }
         }
 
@@ -406,11 +420,6 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
                 TaskManager taskManager,
                 AndroidComponentSpec spec) {
             VariantManager variantManager = (spec as DefaultAndroidComponentSpec).variantManager
-
-            // create the lint tasks.
-            taskManager.createLintTasks(
-                    new TaskCollectionBuilderAdaptor(tasks),
-                    variantManager.variantDataList);
 
             // create the test tasks.
             taskManager.createTopLevelTestTasks (

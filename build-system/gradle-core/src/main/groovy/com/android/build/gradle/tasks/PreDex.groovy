@@ -16,9 +16,18 @@
 package com.android.build.gradle.tasks
 import com.android.SdkConstants
 import com.android.annotations.NonNull
+import com.android.build.gradle.internal.TaskManager
+import com.android.build.gradle.internal.scope.ConventionMappingHelper
+import com.android.build.gradle.internal.scope.TaskConfigAction
+import com.android.build.gradle.internal.scope.VariantScope
 import com.android.build.gradle.internal.tasks.BaseTask
+import com.android.build.gradle.internal.variant.ApkVariantData
+import com.android.build.gradle.internal.variant.TestVariantData
 import com.android.builder.core.AndroidBuilder
 import com.android.builder.core.DexOptions
+import com.android.builder.core.VariantConfiguration
+import com.android.builder.core.VariantType
+import com.android.builder.model.AndroidProject
 import com.android.ide.common.internal.WaitableExecutor
 import com.google.common.base.Charsets
 import com.google.common.collect.Lists
@@ -36,6 +45,8 @@ import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.incremental.IncrementalTaskInputs
 
 import java.util.concurrent.Callable
+
+import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
 
 @ParallelizableTask
 public class PreDex extends BaseTask {
@@ -191,5 +202,48 @@ public class PreDex extends BaseTask {
         HashCode hashCode = hashFunction.hashString(input, Charsets.UTF_16LE)
 
         return new File(outFolder, name + "-" + hashCode.toString() + SdkConstants.DOT_JAR)
+    }
+
+    public static class ConfigAction implements TaskConfigAction<PreDex> {
+
+        VariantScope scope;
+
+        TaskManager.PostCompilationData pcData
+
+        ConfigAction(VariantScope scope, TaskManager.PostCompilationData pcData) {
+            this.scope = scope
+            this.pcData = pcData
+        }
+
+        @Override
+        String getName() {
+            return scope.getTaskName("preDex")
+        }
+
+        @Override
+        Class<PreDex> getType() {
+            return PreDex.class
+        }
+
+        @Override
+        void execute(PreDex preDexTask) {
+            ApkVariantData variantData = (ApkVariantData) scope.variantData;
+            VariantConfiguration config = variantData.variantConfiguration
+
+            boolean isTestForApp = config.type.isForTesting() &&
+                    (variantData as TestVariantData).testedVariantData.variantConfiguration.type ==
+                    VariantType.DEFAULT
+            boolean isMultiDexEnabled = config.isMultiDexEnabled() && !isTestForApp
+
+            variantData.preDexTask = preDexTask
+            preDexTask.androidBuilder = scope.globalScope.androidBuilder
+            preDexTask.dexOptions = scope.globalScope.getExtension().dexOptions
+            preDexTask.multiDex = isMultiDexEnabled
+
+            ConventionMappingHelper.map(preDexTask, "inputFiles", pcData.inputLibraries)
+            ConventionMappingHelper.map(preDexTask, "outputFolder") {
+                scope.getPreDexOutputDir();
+            }
+        }
     }
 }

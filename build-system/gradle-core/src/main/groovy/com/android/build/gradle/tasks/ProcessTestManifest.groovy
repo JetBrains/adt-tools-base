@@ -15,7 +15,15 @@
  */
 package com.android.build.gradle.tasks
 
+import com.android.build.gradle.internal.DependencyManager
 import com.android.build.gradle.internal.dependency.ManifestDependencyImpl
+import com.android.build.gradle.internal.scope.ConventionMappingHelper
+import com.android.build.gradle.internal.scope.TaskConfigAction
+import com.android.build.gradle.internal.scope.VariantOutputScope
+import com.android.build.gradle.internal.scope.VariantScope
+import com.android.build.gradle.internal.variant.BaseVariantOutputData
+import com.android.builder.core.VariantConfiguration
+import com.android.builder.model.AndroidProject
 import com.google.common.collect.Lists
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
@@ -97,5 +105,85 @@ public class ProcessTestManifest extends ManifestProcessorTask {
                 getPlaceholdersValues(),
                 getManifestOutputFile(),
                 getTmpDir())
+    }
+
+    // ----- ConfigAction -----
+
+
+    public static class ConfigAction implements TaskConfigAction<ProcessTestManifest> {
+
+        VariantScope scope
+
+        ConfigAction(VariantScope scope) {
+            this.scope = scope
+        }
+
+        @Override
+        String getName() {
+            return scope.getTaskName("process", "Manifest")
+        }
+
+        @Override
+        Class<ProcessTestManifest> getType() {
+            return ProcessTestManifest
+        }
+
+        @Override
+        void execute(ProcessTestManifest processTestManifestTask) {
+
+            VariantConfiguration config = scope.variantConfiguration
+            ConventionMappingHelper.map(processTestManifestTask, "testManifestFile") {
+                config.getMainManifest()
+            }
+            ConventionMappingHelper.map(processTestManifestTask, "tmpDir") {
+                new File(scope.globalScope.getIntermediatesDir(), "manifest/tmp")
+            }
+
+            // get single output for now.
+            BaseVariantOutputData variantOutputData = scope.variantData.outputs.get(0)
+
+            variantOutputData.manifestProcessorTask = processTestManifestTask
+
+            processTestManifestTask.androidBuilder = scope.globalScope.androidBuilder
+
+            ConventionMappingHelper.map(processTestManifestTask, "testApplicationId") {
+                config.applicationId
+            }
+            ConventionMappingHelper.map(processTestManifestTask, "minSdkVersion") {
+                if (scope.globalScope.androidBuilder.isPreviewTarget()) {
+                    return scope.globalScope.androidBuilder.getTargetCodename()
+                }
+
+                config.minSdkVersion?.apiString
+            }
+            ConventionMappingHelper.map(processTestManifestTask, "targetSdkVersion") {
+                if (scope.globalScope.androidBuilder.isPreviewTarget()) {
+                    return scope.globalScope.androidBuilder.getTargetCodename()
+                }
+
+                return config.targetSdkVersion?.apiString
+            }
+            ConventionMappingHelper.map(processTestManifestTask, "testedApplicationId") {
+                config.testedApplicationId
+            }
+            ConventionMappingHelper.map(processTestManifestTask, "instrumentationRunner") {
+                config.instrumentationRunner
+            }
+            ConventionMappingHelper.map(processTestManifestTask, "handleProfiling") {
+                config.handleProfiling
+            }
+            ConventionMappingHelper.map(processTestManifestTask, "functionalTest") {
+                config.functionalTest
+            }
+            ConventionMappingHelper.map(processTestManifestTask, "libraries") {
+                DependencyManager.getManifestDependencies(config.directLibraries)
+            }
+            ConventionMappingHelper.map(processTestManifestTask, "manifestOutputFile") {
+                variantOutputData.getScope().getManifestOutputFile()
+            }
+            ConventionMappingHelper.map(processTestManifestTask, "placeholdersValues") {
+                config.getManifestPlaceholders()
+            }
+        }
     }
 }

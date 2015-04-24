@@ -15,8 +15,15 @@
  */
 package com.android.build.gradle.tasks
 
+import com.android.annotations.NonNull
+import com.android.build.gradle.internal.scope.ConventionMappingHelper
+import com.android.build.gradle.internal.scope.TaskConfigAction
+import com.android.build.gradle.internal.scope.VariantScope
 import com.android.build.gradle.internal.tasks.BaseTask
+import com.android.build.gradle.internal.variant.BaseVariantData
+import com.android.build.gradle.internal.variant.BaseVariantOutputData
 import com.android.builder.compiling.BuildConfigGenerator
+import com.android.builder.core.VariantConfiguration
 import com.android.builder.model.ClassField
 import com.google.common.collect.Lists
 import org.gradle.api.tasks.Input
@@ -53,7 +60,8 @@ public class GenerateBuildConfig extends BaseTask {
     @Input
     String buildTypeName
 
-    @Input @Optional
+    @Input
+    @Optional
     String versionName
 
     @Input
@@ -103,22 +111,100 @@ public class GenerateBuildConfig extends BaseTask {
         // where debug is true, which is the most likely scenario while the user is looking
         // at source code.
         //map.put(PH_DEBUG, Boolean.toString(mDebug));
-        generator.addField("boolean", "DEBUG", getDebuggable() ? "Boolean.parseBoolean(\"true\")" : "false")
-            .addField("String", "APPLICATION_ID", "\"${getAppPackageName()}\"")
-            .addField("String", "BUILD_TYPE", "\"${getBuildTypeName()}\"")
-            .addField("String", "FLAVOR", "\"${getFlavorName()}\"")
-            .addField("int", "VERSION_CODE", Integer.toString(getVersionCode()))
-            .addField("String", "VERSION_NAME", "\"${vn}\"")
-            .addItems(getItems())
+        generator.addField("boolean", "DEBUG",
+                getDebuggable() ? "Boolean.parseBoolean(\"true\")" : "false")
+                .addField("String", "APPLICATION_ID", "\"${getAppPackageName()}\"")
+                .addField("String", "BUILD_TYPE", "\"${getBuildTypeName()}\"")
+                .addField("String", "FLAVOR", "\"${getFlavorName()}\"")
+                .addField("int", "VERSION_CODE", Integer.toString(getVersionCode()))
+                .addField("String", "VERSION_NAME", "\"${vn}\"")
+                .addItems(getItems())
 
         List<String> flavors = getFlavorNamesWithDimensionNames()
         int count = flavors.size()
         if (count > 1) {
-            for (int i = 0; i < count ; i+=2) {
-                generator.addField("String", "FLAVOR_${flavors.get(i+1)}", "\"${flavors.get(i)}\"")
+            for (int i = 0; i < count; i += 2) {
+                generator.
+                        addField("String", "FLAVOR_${flavors.get(i + 1)}", "\"${flavors.get(i)}\"")
             }
         }
 
         generator.generate()
+    }
+
+    // ----- Config Action -----
+
+    public static class ConfigAction implements TaskConfigAction<GenerateBuildConfig> {
+
+        @NonNull
+        VariantScope scope
+
+        ConfigAction(@NonNull VariantScope scope) {
+            this.scope = scope
+        }
+
+        @Override
+        @NonNull
+        String getName() {
+            return scope.getTaskName("generate", "BuildConfig");
+        }
+
+        @Override
+        @NonNull
+        Class<GenerateBuildConfig> getType() {
+            return GenerateBuildConfig
+        }
+
+
+        @Override
+        void execute(GenerateBuildConfig generateBuildConfigTask) {
+            BaseVariantData<? extends BaseVariantOutputData> variantData = scope.variantData
+
+            variantData.generateBuildConfigTask = generateBuildConfigTask
+
+            VariantConfiguration variantConfiguration = variantData.variantConfiguration
+
+            generateBuildConfigTask.androidBuilder = scope.globalScope.androidBuilder
+
+            ConventionMappingHelper.map(generateBuildConfigTask, "buildConfigPackageName") {
+                variantConfiguration.originalApplicationId
+            }
+
+            ConventionMappingHelper.map(generateBuildConfigTask, "appPackageName") {
+                variantConfiguration.applicationId
+            }
+
+            ConventionMappingHelper.map(generateBuildConfigTask, "versionName") {
+                variantConfiguration.versionName
+            }
+
+            ConventionMappingHelper.map(generateBuildConfigTask, "versionCode") {
+                variantConfiguration.versionCode
+            }
+
+            ConventionMappingHelper.map(generateBuildConfigTask, "debuggable") {
+                variantConfiguration.buildType.isDebuggable()
+            }
+
+            ConventionMappingHelper.map(generateBuildConfigTask, "buildTypeName") {
+                variantConfiguration.buildType.name
+            }
+
+            ConventionMappingHelper.map(generateBuildConfigTask, "flavorName") {
+                variantConfiguration.flavorName
+            }
+
+            ConventionMappingHelper.map(generateBuildConfigTask, "flavorNamesWithDimensionNames") {
+                variantConfiguration.flavorNamesWithDimensionNames
+            }
+
+            ConventionMappingHelper.map(generateBuildConfigTask, "items") {
+                variantConfiguration.buildConfigItems
+            }
+
+            ConventionMappingHelper.map(generateBuildConfigTask, "sourceOutputDir") {
+                scope.getBuildConfigSourceOutputDir()
+            }
+        }
     }
 }

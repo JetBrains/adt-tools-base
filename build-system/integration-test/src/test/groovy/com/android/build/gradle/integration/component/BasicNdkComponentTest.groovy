@@ -27,6 +27,8 @@ import org.junit.experimental.categories.Category
 
 import java.util.zip.ZipFile
 
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatZip
 import static org.junit.Assert.assertNotNull
 
 /**
@@ -78,11 +80,11 @@ model {
         project.execute("assembleRelease");
 
         // Verify .so are built for all platform.
-        ZipFile apk = new ZipFile(project.getApk("release", "unsigned"));
-        assertNotNull(apk.getEntry("lib/x86/libhello-jni.so"));
-        assertNotNull(apk.getEntry("lib/mips/libhello-jni.so"));
-        assertNotNull(apk.getEntry("lib/armeabi/libhello-jni.so"));
-        assertNotNull(apk.getEntry("lib/armeabi-v7a/libhello-jni.so"));
+        File apk = project.getApk("release", "unsigned");
+        assertThatZip(apk).contains("lib/x86/libhello-jni.so");
+        assertThatZip(apk).contains("lib/mips/libhello-jni.so");
+        assertThatZip(apk).contains("lib/armeabi/libhello-jni.so");
+        assertThatZip(apk).contains("lib/armeabi-v7a/libhello-jni.so");
     }
 
     @Test
@@ -90,19 +92,19 @@ model {
         project.execute("assembleDebug");
 
         // Verify .so are built for all platform.
-        ZipFile apk = new ZipFile(project.getApk("debug"));
-        assertNotNull(apk.getEntry("lib/x86/libhello-jni.so"));
-        assertNotNull(apk.getEntry("lib/x86/gdbserver"));
-        assertNotNull(apk.getEntry("lib/x86/gdb.setup"));
-        assertNotNull(apk.getEntry("lib/mips/libhello-jni.so"));
-        assertNotNull(apk.getEntry("lib/mips/gdbserver"));
-        assertNotNull(apk.getEntry("lib/mips/gdb.setup"));
-        assertNotNull(apk.getEntry("lib/armeabi/libhello-jni.so"));
-        assertNotNull(apk.getEntry("lib/armeabi/gdbserver"));
-        assertNotNull(apk.getEntry("lib/armeabi/gdb.setup"));
-        assertNotNull(apk.getEntry("lib/armeabi-v7a/libhello-jni.so"));
-        assertNotNull(apk.getEntry("lib/armeabi-v7a/gdbserver"));
-        assertNotNull(apk.getEntry("lib/armeabi-v7a/gdb.setup"));
+        File apk = project.getApk("debug");
+        assertThatZip(apk).contains("lib/x86/libhello-jni.so");
+        assertThatZip(apk).contains("lib/x86/gdbserver");
+        assertThatZip(apk).contains("lib/x86/gdb.setup");
+        assertThatZip(apk).contains("lib/mips/libhello-jni.so");
+        assertThatZip(apk).contains("lib/mips/gdbserver");
+        assertThatZip(apk).contains("lib/mips/gdb.setup");
+        assertThatZip(apk).contains("lib/armeabi/libhello-jni.so");
+        assertThatZip(apk).contains("lib/armeabi/gdbserver");
+        assertThatZip(apk).contains("lib/armeabi/gdb.setup");
+        assertThatZip(apk).contains("lib/armeabi-v7a/libhello-jni.so");
+        assertThatZip(apk).contains("lib/armeabi-v7a/gdbserver");
+        assertThatZip(apk).contains("lib/armeabi-v7a/gdb.setup");
     }
 
     @Test

@@ -16,11 +16,27 @@
 
 package com.android.build.gradle.tasks
 
+import com.android.annotations.NonNull
+import com.android.build.gradle.internal.core.GradleVariantConfiguration
+import com.android.build.gradle.internal.scope.ConventionMappingHelper
+import com.android.build.gradle.internal.scope.TaskConfigAction
+import com.android.build.gradle.internal.scope.VariantOutputScope
+import com.android.build.gradle.internal.scope.VariantScope
 import com.android.build.gradle.internal.tasks.NdkTask
+import com.android.build.gradle.internal.variant.BaseVariantData
+import com.android.build.gradle.internal.variant.BaseVariantOutputData
+import com.android.builder.core.VariantConfiguration
+import com.android.builder.model.AndroidProject
+import com.android.builder.model.ApiVersion
+import com.android.builder.model.ProductFlavor
+import com.android.sdklib.SdkVersionInfo
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
+
+import static com.android.builder.model.AndroidProject.FD_GENERATED
+import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
 
 /**
  * Task to compile Renderscript files. Supports incremental update.
@@ -102,5 +118,79 @@ public class RenderscriptCompile extends NdkTask {
                 getNdkMode(),
                 getSupportMode(),
                 getNdkConfig()?.abiFilters)
+    }
+
+    // ----- ConfigAction -----
+
+    public static class ConfigAction implements TaskConfigAction<RenderscriptCompile> {
+
+        @NonNull
+        VariantScope scope
+
+        ConfigAction(VariantScope scope) {
+            this.scope = scope
+        }
+
+        @Override
+        String getName() {
+            return scope.getTaskName("compile", "Renderscript");
+        }
+
+        @Override
+        Class<RenderscriptCompile> getType() {
+            return RenderscriptCompile
+        }
+
+        @Override
+        void execute(RenderscriptCompile renderscriptTask) {
+            BaseVariantData<? extends BaseVariantOutputData> variantData = scope.variantData
+            GradleVariantConfiguration config = variantData.variantConfiguration
+
+            variantData.renderscriptCompileTask = renderscriptTask
+            ProductFlavor mergedFlavor = config.mergedFlavor
+            boolean ndkMode = config.renderscriptNdkModeEnabled
+            renderscriptTask.androidBuilder = scope.globalScope.androidBuilder
+
+            ConventionMappingHelper.map(renderscriptTask, "targetApi") {
+                int targetApi = mergedFlavor.renderscriptTargetApi != null ?
+                        mergedFlavor.renderscriptTargetApi : -1
+                ApiVersion apiVersion = config.getMinSdkVersion()
+                if (apiVersion != null) {
+                    int minSdk = apiVersion.apiLevel
+                    if (apiVersion.codename != null) {
+                        minSdk = SdkVersionInfo.getApiByBuildCode(apiVersion.codename, true)
+                    }
+
+                    return targetApi > minSdk ? targetApi : minSdk
+                }
+
+                return targetApi
+            }
+
+            renderscriptTask.supportMode = config.renderscriptSupportModeEnabled
+            renderscriptTask.ndkMode = ndkMode
+            renderscriptTask.debugBuild = config.buildType.renderscriptDebuggable
+            renderscriptTask.optimLevel = config.buildType.renderscriptOptimLevel
+
+            ConventionMappingHelper.map(renderscriptTask, "sourceDirs") { config.renderscriptSourceList }
+            ConventionMappingHelper.map(renderscriptTask, "importDirs") { config.renderscriptImports }
+
+            ConventionMappingHelper.map(renderscriptTask, "sourceOutputDir") {
+                new File(
+                        "$scope.globalScope.buildDir/${FD_GENERATED}/source/rs/${variantData.variantConfiguration.dirName}")
+            }
+            ConventionMappingHelper.map(renderscriptTask, "resOutputDir") {
+                scope.getRenderscriptResOutputDir()
+            }
+            ConventionMappingHelper.map(renderscriptTask, "objOutputDir") {
+                new File(
+                        "$scope.globalScope.buildDir/${FD_INTERMEDIATES}/rs/${variantData.variantConfiguration.dirName}/obj")
+            }
+            ConventionMappingHelper.map(renderscriptTask, "libOutputDir") {
+                new File(
+                        "$scope.globalScope.buildDir/${FD_INTERMEDIATES}/rs/${variantData.variantConfiguration.dirName}/lib")
+            }
+            ConventionMappingHelper.map(renderscriptTask, "ndkConfig") { config.ndkConfig }
+        }
     }
 }

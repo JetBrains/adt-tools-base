@@ -15,14 +15,22 @@
  */
 package com.android.build.gradle.tasks
 
+import com.android.annotations.NonNull
+import com.android.build.gradle.internal.scope.ConventionMappingHelper
+import com.android.build.gradle.internal.scope.TaskConfigAction
+import com.android.build.gradle.internal.scope.VariantScope
 import com.android.build.gradle.internal.tasks.BaseTask
 import com.android.builder.compiling.ResValueGenerator
+import com.android.builder.core.VariantConfiguration
+import com.android.builder.model.AndroidProject
 import com.android.builder.model.ClassField
 import com.google.common.collect.Lists
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.ParallelizableTask
 import org.gradle.api.tasks.TaskAction
+
+import static com.android.builder.model.AndroidProject.FD_GENERATED
 
 @ParallelizableTask
 public class GenerateResValues extends BaseTask {
@@ -67,6 +75,45 @@ public class GenerateResValues extends BaseTask {
             generator.addItems(getItems())
 
             generator.generate()
+        }
+    }
+
+
+    public static class ConfigAction implements TaskConfigAction<GenerateResValues> {
+
+        @NonNull
+        VariantScope scope
+
+        ConfigAction(@NonNull VariantScope scope) {
+            this.scope = scope
+        }
+
+        @Override
+        String getName() {
+            return scope.getTaskName("generate", "ResValues");
+        }
+
+        @Override
+        Class getType() {
+            return GenerateResValues.class
+        }
+
+        @Override
+        void execute(GenerateResValues generateResValuesTask) {
+            scope.variantData.generateResValuesTask = generateResValuesTask
+
+            VariantConfiguration variantConfiguration = scope.variantData.variantConfiguration
+
+            generateResValuesTask.androidBuilder = scope.globalScope.androidBuilder
+
+            ConventionMappingHelper.map(generateResValuesTask, "items") {
+                variantConfiguration.resValues
+            }
+
+            ConventionMappingHelper.map(generateResValuesTask, "resOutputDir") {
+                new File(scope.globalScope.generatedDir,
+                        "res/resValues/${scope.variantData.variantConfiguration.dirName}")
+            }
         }
     }
 }

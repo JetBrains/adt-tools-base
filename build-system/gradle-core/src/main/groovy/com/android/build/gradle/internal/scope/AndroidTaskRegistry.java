@@ -19,10 +19,14 @@ package com.android.build.gradle.internal.scope;
 import com.android.build.gradle.internal.TaskFactory;
 
 import org.gradle.api.Action;
+import org.gradle.api.DefaultTask;
 import org.gradle.api.Task;
+import org.gradle.api.internal.ClosureBackedAction;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import groovy.lang.Closure;
 
 /**
  * Registry for creating and storing AndroidTask.
@@ -38,6 +42,31 @@ public class AndroidTaskRegistry {
             Action<T> configAction) {
 
         taskFactory.create(taskName, taskClass, configAction);
+        final AndroidTask<T> newTask = new AndroidTask<T>(taskName, taskClass);
+        tasks.put(taskName, newTask);
+
+        return newTask;
+    }
+
+    public synchronized AndroidTask<Task> create(
+            TaskFactory taskFactory,
+            String taskName,
+            Closure configAction) {
+
+        taskFactory.create(taskName, DefaultTask.class, new ClosureBackedAction<Task>(configAction));
+        final AndroidTask<Task> newTask = new AndroidTask<Task>(taskName, Task.class);
+        tasks.put(taskName, newTask);
+
+        return newTask;
+    }
+
+    public synchronized <T extends Task> AndroidTask<T> create(
+            TaskFactory taskFactory,
+            String taskName,
+            Class<T> taskClass,
+            Closure configAction) {
+
+        taskFactory.create(taskName, taskClass, new ClosureBackedAction<T>(configAction));
         final AndroidTask<T> newTask = new AndroidTask<T>(taskName, taskClass);
         tasks.put(taskName, newTask);
 

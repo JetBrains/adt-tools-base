@@ -18,7 +18,12 @@
 
 package com.android.build.gradle.internal.tasks.multidex
 
+import com.android.build.gradle.internal.TaskManager
+import com.android.build.gradle.internal.scope.ConventionMappingHelper
+import com.android.build.gradle.internal.scope.TaskConfigAction
+import com.android.build.gradle.internal.scope.VariantScope
 import com.android.build.gradle.internal.tasks.DefaultAndroidTask
+import com.android.build.gradle.internal.variant.BaseVariantOutputData
 import com.google.common.base.Charsets
 import com.google.common.io.Files
 import org.gradle.api.tasks.InputFile
@@ -111,4 +116,41 @@ class CreateManifestKeepList extends DefaultAndroidTask {
             }
         }
     }
+
+    public static class ConfigAction implements TaskConfigAction<CreateManifestKeepList> {
+
+        VariantScope scope;
+        TaskManager.PostCompilationData pcData;
+
+        ConfigAction(VariantScope scope, TaskManager.PostCompilationData pcData) {
+            this.scope = scope
+            this.pcData = pcData
+        }
+
+        @Override
+        String getName() {
+            return scope.getTaskName("collect", "MultiDexComponents");
+        }
+
+        @Override
+        Class<CreateManifestKeepList> getType() {
+            return CreateManifestKeepList
+        }
+
+        @Override
+        void execute(CreateManifestKeepList manifestKeepListTask) {
+            // since all the output have the same manifest, besides the versionCode,
+            // we can take any of the output and use that.
+            final BaseVariantOutputData output = scope.variantData.outputs.get(0)
+            ConventionMappingHelper.map(manifestKeepListTask, "manifest") {
+                output.getScope().getManifestOutputFile()
+            }
+
+            manifestKeepListTask.proguardFile = scope.variantConfiguration.getMultiDexKeepProguard()
+            manifestKeepListTask.outputFile = scope.getManifestKeepListFile();
+
+            //variant.ext.collectMultiDexComponents = manifestKeepListTask
+        }
+    }
+
 }

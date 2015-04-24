@@ -21,6 +21,7 @@ import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.dependency.JarInfo;
 import com.android.build.gradle.internal.dependency.LibInfo;
 import com.android.build.gradle.internal.dependency.LibraryDependencyImpl;
+import com.android.build.gradle.internal.dependency.ManifestDependencyImpl;
 import com.android.build.gradle.internal.dependency.VariantDependencies;
 import com.android.build.gradle.internal.model.MavenCoordinatesImpl;
 import com.android.build.gradle.internal.tasks.PrepareDependenciesTask;
@@ -971,6 +972,21 @@ public class DependencyManager {
         addDependsOnTaskInOtherProjects(
                 project.getTasks().getByName(JavaBasePlugin.BUILD_DEPENDENTS_TASK_NAME), false,
                 JavaBasePlugin.BUILD_DEPENDENTS_TASK_NAME, "compile");
+    }
+
+    @NonNull
+    public static List<ManifestDependencyImpl> getManifestDependencies(
+            List<LibraryDependency> libraries) {
+
+        List<ManifestDependencyImpl> list = Lists.newArrayListWithCapacity(libraries.size());
+
+        for (LibraryDependency lib : libraries) {
+            // get the dependencies
+            List<ManifestDependencyImpl> children = getManifestDependencies(lib.getDependencies());
+            list.add(new ManifestDependencyImpl(lib.getName(), lib.getManifest(), children));
+        }
+
+        return list;
     }
 
     /**

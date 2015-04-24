@@ -14,9 +14,20 @@
  * limitations under the License.
  */
 package com.android.build.gradle.tasks
+
+import com.android.annotations.NonNull
 import com.android.build.gradle.internal.dependency.ManifestDependencyImpl
+import com.android.build.gradle.internal.scope.ConventionMappingHelper
+import com.android.build.gradle.internal.scope.TaskConfigAction
+import com.android.build.gradle.internal.scope.VariantOutputScope
+import com.android.build.gradle.internal.scope.VariantScope
+import com.android.build.gradle.internal.tasks.PrepareDependenciesTask
 import com.android.build.gradle.internal.variant.ApkVariantOutputData
+import com.android.build.gradle.internal.variant.BaseVariantData
+import com.android.build.gradle.internal.variant.BaseVariantOutputData
 import com.android.builder.core.VariantConfiguration
+import com.android.builder.dependency.LibraryDependency
+import com.android.builder.model.AndroidProject
 import com.android.manifmerger.ManifestMerger2
 import com.google.common.collect.Lists
 import org.gradle.api.tasks.Input
@@ -24,6 +35,9 @@ import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.ParallelizableTask
+
+import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
+import static com.android.builder.model.AndroidProject.FD_OUTPUTS
 
 /**
  * A task that processes the manifest
@@ -128,5 +142,121 @@ public class MergeManifests extends ManifestProcessorTask {
                 ManifestMerger2.MergeType.APPLICATION,
                 variantConfiguration.getManifestPlaceholders(),
                 getReportFile())
+    }
+
+    // ----- ConfigAction -----
+
+    public static class ConfigAction implements TaskConfigAction<MergeManifests> {
+
+        VariantOutputScope scope
+
+        ConfigAction(VariantOutputScope scope) {
+            this.scope = scope
+        }
+
+        @Override
+        String getName() {
+            return scope.getTaskName("process", "Manifest")
+        }
+
+        @Override
+        Class<MergeManifests> getType() {
+            return MergeManifests
+        }
+
+        @Override
+        void execute(MergeManifests processManifestTask) {
+            BaseVariantOutputData variantOutputData = scope.variantOutputData
+
+            BaseVariantData<? extends BaseVariantOutputData> variantData =
+                    scope.variantScope.variantData
+            VariantConfiguration config = variantData.getVariantConfiguration()
+
+            variantOutputData.manifestProcessorTask = processManifestTask
+
+            processManifestTask.androidBuilder = scope.globalScope.androidBuilder
+
+            processManifestTask.dependsOn variantData.prepareDependenciesTask
+            if (variantData.generateApkDataTask != null) {
+                processManifestTask.dependsOn variantData.generateApkDataTask
+            }
+            if (scope.compatibleScreensManifestTask != null) {
+                processManifestTask.dependsOn scope.compatibleScreensManifestTask.name
+            }
+
+            processManifestTask.variantConfiguration = config
+            if (variantOutputData instanceof ApkVariantOutputData) {
+                processManifestTask.variantOutputData =
+                        variantOutputData as ApkVariantOutputData
+            }
+
+            ConventionMappingHelper.map(processManifestTask, "libraries") {
+                List<ManifestDependencyImpl> manifests =
+                        getManifestDependencies(config.directLibraries)
+
+                if (variantData.generateApkDataTask != null &&
+                        variantData.getVariantConfiguration().getBuildType().
+                                isEmbedMicroApp()) {
+                    manifests.add(new ManifestDependencyImpl(
+                            variantData.generateApkDataTask.getManifestFile(), []))
+                }
+
+                if (scope.compatibleScreensManifestTask != null) {
+                    manifests.add(new ManifestDependencyImpl(
+                            scope.getCompatibleScreensManifestFile(), []))
+                }
+
+                return manifests
+            }
+
+            ConventionMappingHelper.map(processManifestTask, "minSdkVersion") {
+                if (scope.globalScope.androidBuilder.isPreviewTarget()) {
+                    return scope.globalScope.androidBuilder.getTargetCodename()
+                }
+
+                config.mergedFlavor.minSdkVersion?.apiString
+            }
+
+            ConventionMappingHelper.map(processManifestTask, "targetSdkVersion") {
+                if (scope.globalScope.androidBuilder.isPreviewTarget()) {
+                    return scope.globalScope.androidBuilder.getTargetCodename()
+                }
+
+                return config.mergedFlavor.targetSdkVersion?.apiString
+            }
+
+            ConventionMappingHelper.map(processManifestTask, "maxSdkVersion") {
+                if (scope.globalScope.androidBuilder.isPreviewTarget()) {
+                    return null
+                }
+
+                return config.mergedFlavor.maxSdkVersion
+            }
+
+            ConventionMappingHelper.map(processManifestTask, "manifestOutputFile") {
+                scope.getManifestOutputFile()
+            }
+
+            ConventionMappingHelper.map(processManifestTask, "reportFile") {
+                new File(
+                        "${scope.getGlobalScope().getBuildDir()}/${FD_OUTPUTS}/logs/manifest-merger-${config.baseName}-report.txt")
+            }
+
+        }
+
+        @NonNull
+        private static List<ManifestDependencyImpl> getManifestDependencies(
+                List<LibraryDependency> libraries) {
+
+            List<ManifestDependencyImpl> list = Lists.newArrayListWithCapacity(libraries.size())
+
+            for (LibraryDependency lib : libraries) {
+                // get the dependencies
+                List<ManifestDependencyImpl> children = getManifestDependencies(lib.dependencies)
+                list.add(new ManifestDependencyImpl(lib.getName(), lib.manifest, children))
+            }
+
+            return list
+        }
     }
 }

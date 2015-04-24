@@ -88,7 +88,7 @@ public class AndroidTask<T extends Task> {
      * @param taskFactory TaskFactory used to configure the task for dependencies.
      * @param other The task that this depends on.
      */
-    public void dependsOn(final TaskFactory taskFactory, final AndroidTask<? extends Task> other) {
+    public void dependsOn(final TaskFactory taskFactory, final AndroidTask<?> other) {
         taskFactory.named(name, new Action<Task>() {
             @Override
             public void execute(Task task) {
@@ -100,19 +100,53 @@ public class AndroidTask<T extends Task> {
     }
 
     /**
-     * Add dependency on another object.
+     * Add dependency on objects.
      * This method adds dependencies on any objects accepted by {@link Task#dependsOn} and is
      * needed for compatibility until all tasks are trasitioned to AndroidTask.
      * @param taskFactory TaskFactory used to configure the task for dependencies.
-     * @param other Objects accepted by {@link Task#dependsOn}.
+     * @param dependencies Objects accepted by {@link Task#dependsOn}.
      */
-    public void dependsOn(final TaskFactory taskFactory, final Object... other) {
+    public void dependsOn(final TaskFactory taskFactory, final Object... dependencies) {
         taskFactory.named(name, new Action<Task>() {
             @Override
             public void execute(Task task) {
-                task.dependsOn(other);
+                for (Object dependency : dependencies) {
+                    if (dependency instanceof AndroidTask) {
+                        task.dependsOn(((AndroidTask) dependency).getName());
+                    } else {
+                        task.dependsOn(dependency);
+                    }
+                }
             }
         });
+    }
+
+    /**
+     * Add dependency on other objects if the object is not null.
+     * This method adds dependencies on any objects accepted by {@link Task#dependsOn} and is
+     * needed for compatibility until all tasks are trasitioned to AndroidTask.
+     * @param taskFactory TaskFactory used to configure the task for dependencies.
+     * @param dependencies Objects accepted by {@link Task#dependsOn}.
+     */
+    public void optionalDependsOn(final TaskFactory taskFactory, final Object... dependencies) {
+        for (Object dependency : dependencies) {
+            if (dependency != null) {
+                if (dependency instanceof AndroidTask) {
+                    dependsOn(taskFactory, ((AndroidTask) dependency).getName());
+                } else {
+                    dependsOn(taskFactory, dependency);
+                }
+            }
+        }
+    }
+
+
+    public void optionalDependsOn(final TaskFactory taskFactory, @NonNull List<?> dependencies) {
+        for (Object dependency : dependencies) {
+            if (dependency != null) {
+                dependsOn(taskFactory, dependency);
+            }
+        }
     }
 
     private void addDependent(AndroidTask<? extends Task> tAndroidTask) {

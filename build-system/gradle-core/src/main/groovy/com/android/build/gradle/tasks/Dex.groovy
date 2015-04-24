@@ -17,8 +17,17 @@ package com.android.build.gradle.tasks
 
 import com.android.SdkConstants
 import com.android.annotations.Nullable
+import com.android.build.gradle.internal.TaskManager
+import com.android.build.gradle.internal.core.GradleVariantConfiguration
 import com.android.build.gradle.internal.dsl.DexOptions
+import com.android.build.gradle.internal.scope.ConventionMappingHelper
+import com.android.build.gradle.internal.scope.TaskConfigAction
+import com.android.build.gradle.internal.scope.VariantScope
 import com.android.build.gradle.internal.tasks.BaseTask
+import com.android.build.gradle.internal.variant.ApkVariantData
+import com.android.build.gradle.internal.variant.TestVariantData
+import com.android.utils.StringHelper
+import org.codehaus.groovy.runtime.DefaultGroovyMethods
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.InputFile
@@ -29,7 +38,11 @@ import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.incremental.IncrementalTaskInputs
 
+import java.util.concurrent.Callable
 import java.util.concurrent.atomic.AtomicBoolean
+
+import static com.android.builder.core.VariantType.DEFAULT
+import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
 
 public class Dex extends BaseTask {
 
@@ -156,5 +169,75 @@ public class Dex extends BaseTask {
                 incremental,
                 getOptimize(),
                 )
+    }
+
+
+    public static class ConfigAction implements TaskConfigAction<Dex> {
+
+        private final VariantScope scope;
+
+        private final TaskManager.PostCompilationData pcData;
+
+        public ConfigAction(VariantScope scope, TaskManager.PostCompilationData pcData) {
+            this.scope = scope;
+            this.pcData = pcData;
+        }
+
+        @Override
+        public String getName() {
+            return scope.getTaskName("dex")
+        }
+
+        @Override
+        public Class<Dex> getType() {
+            return Dex.class;
+        }
+
+        @Override
+        public void execute(Dex dexTask) {
+            ApkVariantData variantData = (ApkVariantData) scope.getVariantData();
+            final GradleVariantConfiguration config = variantData.getVariantConfiguration();
+
+            boolean isTestForApp = config.getType().isForTesting() && (DefaultGroovyMethods
+                    .asType(variantData, TestVariantData.class)).getTestedVariantData()
+                    .getVariantConfiguration().getType().equals(DEFAULT);
+
+            boolean isMultiDexEnabled = config.isMultiDexEnabled() && !isTestForApp;
+            boolean isLegacyMultiDexMode = config.isLegacyMultiDexMode();
+
+            variantData.dexTask = dexTask;
+            dexTask.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
+            ConventionMappingHelper.map(dexTask, "outputFolder", new Callable<File>() {
+                @Override
+                public File call() throws Exception {
+                    return scope.getDexOutputFolder();
+                }
+            });
+            dexTask.setTmpFolder(new File(
+                    String.valueOf(scope.getGlobalScope().getBuildDir()) + "/" + FD_INTERMEDIATES
+                            + "/tmp/dex/" + config.getDirName()));
+            dexTask.setDexOptions(scope.getGlobalScope().getExtension().getDexOptions());
+            dexTask.setMultiDexEnabled(isMultiDexEnabled);
+            dexTask.setLegacyMultiDexMode(isLegacyMultiDexMode);
+            // dx doesn't work with receving --no-optimize in debug so we disable it for now.
+            dexTask.setOptimize(true);//!variantData.variantConfiguration.buildType.debuggable
+
+            // inputs
+            if (pcData.getInputDir() != null) {
+                ConventionMappingHelper.map(dexTask, "inputDir", pcData.getInputDir());
+            }
+            ConventionMappingHelper.map(dexTask, "inputFiles", pcData.getInputFiles());
+            ConventionMappingHelper.map(dexTask, "libraries", pcData.getInputLibraries());
+
+            if (isMultiDexEnabled && isLegacyMultiDexMode) {
+                // configure the dex task to receive the generated class list.
+                ConventionMappingHelper.map(dexTask, "mainDexListFile", new Callable<File>() {
+                    @Override
+                    public File call() throws Exception {
+                        return scope.getMainDexListFile();
+                    }
+                });
+            }
+        }
     }
 }
