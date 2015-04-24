@@ -18,14 +18,23 @@
 
 package com.android.build.gradle.internal.tasks.multidex
 
+import com.android.build.gradle.internal.TaskManager
+import com.android.build.gradle.internal.scope.ConventionMappingHelper
+import com.android.build.gradle.internal.scope.TaskConfigAction
+import com.android.build.gradle.internal.scope.VariantScope
 import com.android.build.gradle.internal.tasks.BaseTask
+import com.android.builder.model.AndroidProject
 import com.google.common.base.Charsets
 import com.google.common.base.Joiner
 import com.google.common.io.Files
+import org.gradle.api.Task
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
+
+import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
+
 /**
  * Task to create the main (non-obfuscated) list of classes to keep.
  * It uses a jar containing all the classes, as well as a shrinked jar file created by proguard.
@@ -91,5 +100,41 @@ public class CreateMainDexList extends BaseTask {
 
     private Set<String> callDx(File allClassesJarFile, File jarOfRoots) {
         return getBuilder().createMainDexList(allClassesJarFile, jarOfRoots)
+    }
+
+    public static class ConfigAction implements TaskConfigAction<CreateMainDexList> {
+
+        VariantScope scope;
+
+        private Closure<List<File>> inputFiles
+
+        ConfigAction(VariantScope scope, TaskManager.PostCompilationData pcData) {
+            this.scope = scope
+            inputFiles = pcData.inputFiles;
+        }
+
+        @Override
+        String getName() {
+            return scope.getTaskName("create", "MainDexClassList");
+        }
+
+        @Override
+        Class<CreateMainDexList> getType() {
+            return CreateMainDexList
+        }
+
+        @Override
+        void execute(CreateMainDexList createMainDexList) {
+            createMainDexList.androidBuilder = scope.globalScope.androidBuilder
+
+            def files = inputFiles
+            createMainDexList.allClassesJarFile = files().first()
+            ConventionMappingHelper.map(createMainDexList, "componentsJarFile") {
+                scope.getProguardComponentsJarFile()
+            }
+            // ConventionMappingHelper.map(createMainDexListTask, "includeInMainDexJarFile") { mainDexJarFile }
+            createMainDexList.mainDexListFile = scope.manifestKeepListFile
+            createMainDexList.outputFile = scope.getMainDexListFile()
+        }
     }
 }

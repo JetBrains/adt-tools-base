@@ -16,12 +16,18 @@
 
 package com.android.build.gradle.internal.coverage
 
+import com.android.build.gradle.internal.TaskManager
+import com.android.build.gradle.internal.scope.ConventionMappingHelper
+import com.android.build.gradle.internal.scope.TaskConfigAction
+import com.android.build.gradle.internal.scope.VariantScope
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.FileCollection
 import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
+
+import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
 
 /**
  * Simple Jacoco instrument task that calls the Ant version.
@@ -51,6 +57,42 @@ public class JacocoInstrumentTask extends DefaultTask {
                          classpath: getJacocoClasspath().asPath)
         getAnt().instrumentWithJacoco(destdir: outDir) {
             fileset(dir: getInputDir())
+        }
+    }
+
+    public static class ConfigAction implements TaskConfigAction<JacocoInstrumentTask> {
+
+        VariantScope scope;
+
+        TaskManager.PostCompilationData pcData;
+
+        ConfigAction(VariantScope scope, TaskManager.PostCompilationData pcData) {
+            this.scope = scope
+            this.pcData = pcData
+        }
+
+        @Override
+        String getName() {
+            return scope.getTaskName("instrument");
+        }
+
+        @Override
+        Class<JacocoInstrumentTask> getType() {
+            return JacocoInstrumentTask.class
+        }
+
+        @Override
+        void execute(JacocoInstrumentTask jacocoTask) {
+
+            ConventionMappingHelper.map(jacocoTask, "jacocoClasspath") {
+                scope.globalScope.project.configurations[JacocoPlugin.ANT_CONFIGURATION_NAME]
+            }
+            // can't directly use the existing inputFiles closure as we need the dir instead :\
+            ConventionMappingHelper.map(jacocoTask, "inputDir", pcData.inputDir)
+            ConventionMappingHelper.map(jacocoTask, "outputDir") {
+                new File("${scope.globalScope.buildDir}/${FD_INTERMEDIATES}/coverage-instrumented-classes/${scope.variantConfiguration.dirName}")
+            }
+            scope.variantData.jacocoInstrumentTask = jacocoTask
         }
     }
 }

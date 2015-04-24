@@ -17,6 +17,9 @@
 package com.android.build.gradle.tasks
 
 import com.android.annotations.NonNull
+import com.android.build.gradle.internal.scope.ConventionMappingHelper
+import com.android.build.gradle.internal.scope.TaskConfigAction
+import com.android.build.gradle.internal.scope.VariantOutputScope
 import com.android.build.gradle.internal.tasks.DefaultAndroidTask
 import com.android.resources.Density
 import com.google.common.base.Charsets
@@ -75,5 +78,42 @@ class CompatibleScreensManifest extends DefaultAndroidTask {
         }
 
         return density;
+    }
+
+    public static class ConfigAction implements TaskConfigAction<CompatibleScreensManifest> {
+
+        @NonNull
+        VariantOutputScope scope
+        @NonNull
+        Set<String> screenSizes
+
+        ConfigAction(
+                @NonNull VariantOutputScope scope,
+                @NonNull Set<String> screenSizes) {
+            this.scope = scope
+            this.screenSizes = screenSizes
+        }
+
+        @Override
+        String getName() {
+            return scope.getTaskName("create", "CompatibleScreenManifest")
+        }
+
+        @Override
+        Class<CompatibleScreensManifest> getType() {
+            return CompatibleScreensManifest.class
+        }
+
+        @Override
+        void execute(CompatibleScreensManifest csmTask) {
+
+            csmTask.screenDensity = scope.variantOutputData.getMainOutputFile().getFilter(
+                    com.android.build.OutputFile.DENSITY)
+            csmTask.screenSizes = screenSizes
+
+            ConventionMappingHelper.map(csmTask, "manifestFile") {
+                scope.getCompatibleScreensManifestFile()
+            }
+        }
     }
 }

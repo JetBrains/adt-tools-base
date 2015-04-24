@@ -21,6 +21,9 @@ import com.android.annotations.Nullable
 import com.android.build.gradle.internal.LintGradleClient
 import com.android.build.gradle.internal.dsl.LintOptions
 import com.android.build.gradle.internal.model.ModelBuilder
+import com.android.build.gradle.internal.scope.AndroidTask
+import com.android.build.gradle.internal.scope.TaskConfigAction
+import com.android.build.gradle.internal.scope.VariantScope
 import com.android.build.gradle.internal.tasks.DefaultAndroidTask
 import com.android.builder.model.AndroidProject
 import com.android.builder.model.Variant
@@ -35,6 +38,7 @@ import com.android.tools.lint.detector.api.Severity
 import com.google.common.collect.Maps
 import org.gradle.api.GradleException
 import org.gradle.api.Project
+import org.gradle.api.plugins.JavaBasePlugin
 import org.gradle.api.tasks.ParallelizableTask
 import org.gradle.api.tasks.TaskAction
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry
@@ -261,6 +265,38 @@ public class Lint extends DefaultAndroidTask {
             }
 
             return issues;
+        }
+    }
+
+    public static class ConfigAction implements TaskConfigAction<Lint> {
+
+        @NonNull
+        VariantScope scope
+
+        ConfigAction(@NonNull VariantScope scope) {
+            this.scope = scope
+        }
+
+        @Override
+        @NonNull
+        String getName() {
+            return scope.getTaskName("lint")
+        }
+
+        @Override
+        @NonNull
+        Class<Lint> getType() {
+            return Lint
+        }
+
+        @Override
+        void execute(Lint lint) {
+            lint.setLintOptions(scope.globalScope.getExtension().lintOptions)
+            lint.setSdkHome(scope.globalScope.sdkHandler.getSdkFolder())
+            lint.setVariantName(scope.variantConfiguration.fullName)
+            lint.setToolingRegistry(scope.globalScope.toolingRegistry)
+            lint.description = "Runs lint on the " + scope.variantConfiguration.fullName.capitalize() + " build."
+            lint.group = JavaBasePlugin.VERIFICATION_GROUP
         }
     }
 }

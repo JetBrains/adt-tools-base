@@ -16,7 +16,15 @@
 
 package com.android.build.gradle.tasks
 
+import com.android.build.gradle.internal.TaskManager
+import com.android.build.gradle.internal.scope.ConventionMappingHelper
+import com.android.build.gradle.internal.scope.TaskConfigAction
+import com.android.build.gradle.internal.scope.VariantScope
+import com.android.build.gradle.internal.variant.BaseVariantOutputData
+import com.android.builder.core.AndroidBuilder
 import com.android.builder.core.VariantConfiguration
+import com.android.builder.model.AndroidProject
+import com.android.builder.model.ProductFlavor
 import com.android.manifmerger.ManifestMerger2
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
@@ -98,5 +106,72 @@ class ProcessManifest extends ManifestProcessorTask {
                 ManifestMerger2.MergeType.LIBRARY,
                 variantConfiguration.getManifestPlaceholders(),
                 getReportFile())
+    }
+
+    public static class ConfigAction implements TaskConfigAction<ProcessManifest> {
+
+        VariantScope scope
+
+        ConfigAction(VariantScope scope) {
+            this.scope = scope
+        }
+
+        @Override
+        String getName() {
+            return scope.getTaskName("process", "Manifest")
+        }
+
+        @Override
+        Class<ProcessManifest> getType() {
+            return ProcessManifest
+        }
+
+        @Override
+        void execute(ProcessManifest processManifest) {
+            VariantConfiguration config = scope.variantConfiguration
+            AndroidBuilder androidBuilder = scope.globalScope.androidBuilder
+
+            // get single output for now.
+            BaseVariantOutputData variantOutputData = scope.variantData.outputs.get(0)
+
+            variantOutputData.manifestProcessorTask = processManifest
+            processManifest.androidBuilder = androidBuilder
+
+            processManifest.variantConfiguration = config
+
+            ProductFlavor mergedFlavor = config.mergedFlavor
+
+            ConventionMappingHelper.map(processManifest, "minSdkVersion") {
+                if (androidBuilder.isPreviewTarget()) {
+                    return androidBuilder.getTargetCodename()
+                }
+                return mergedFlavor.minSdkVersion?.apiString
+            }
+
+            ConventionMappingHelper.map(processManifest, "targetSdkVersion") {
+                if (androidBuilder.isPreviewTarget()) {
+                    return androidBuilder.getTargetCodename()
+                }
+
+                return mergedFlavor.targetSdkVersion?.apiString
+            }
+
+            ConventionMappingHelper.map(processManifest, "maxSdkVersion") {
+                if (androidBuilder.isPreviewTarget()) {
+                    return null
+                }
+
+                return mergedFlavor.maxSdkVersion
+            }
+
+            ConventionMappingHelper.map(processManifest, "manifestOutputFile") {
+                variantOutputData.getScope().getManifestOutputFile()
+            }
+
+            ConventionMappingHelper.map(processManifest, "aaptFriendlyManifestOutputFile") {
+                new File(scope.globalScope.getIntermediatesDir(),
+                        "$TaskManager.DIR_BUNDLES/${config.dirName}/aapt/AndroidManifest.xml")
+            }
+        }
     }
 }

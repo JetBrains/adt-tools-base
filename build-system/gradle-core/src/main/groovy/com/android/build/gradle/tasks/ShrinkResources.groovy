@@ -16,14 +16,26 @@
 
 package com.android.build.gradle.tasks
 
+import com.android.build.gradle.internal.scope.ConventionMappingHelper
+import com.android.build.gradle.internal.scope.TaskConfigAction
+import com.android.build.gradle.internal.scope.VariantOutputScope
 import com.android.build.gradle.internal.tasks.BaseTask
+import com.android.build.gradle.internal.variant.ApkVariantOutputData
+import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.build.gradle.internal.variant.BaseVariantOutputData
 import com.android.builder.core.AaptPackageProcessBuilder
+import com.android.builder.model.AndroidProject
+import com.android.utils.StringHelper
+import org.codehaus.groovy.runtime.StringGroovyMethods
 import org.gradle.api.logging.LogLevel
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.ParallelizableTask
 import org.gradle.api.tasks.TaskAction
+
+import java.util.concurrent.Callable
+
+import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
 
 /**
  * Task which strips out unused resources
@@ -169,5 +181,43 @@ public class ShrinkResources extends BaseTask {
 
     private static String toKbString(long size) {
         return Integer.toString((int)size/1024);
+    }
+
+    public static class ConfigAction implements TaskConfigAction<ShrinkResources> {
+
+        private VariantOutputScope scope;
+
+        public ConfigAction(VariantOutputScope scope) {
+            this.scope = scope;
+        }
+
+        @Override
+        String getName() {
+            return scope.getTaskName("shrink", "Resources");
+        }
+
+        @Override
+        Class<ShrinkResources> getType() {
+            return ShrinkResources.class
+        }
+
+        @Override
+        void execute(ShrinkResources task) {
+            BaseVariantData<? extends BaseVariantOutputData> variantData =
+                    scope.variantScope.variantData
+            task.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
+            task.variantOutputData = scope.variantOutputData;
+
+            final String outputBaseName = scope.variantOutputData.getBaseName();
+            task.setCompressedResources(scope.getCompressedResourceFile());
+
+            ConventionMappingHelper.map(task, "uncompressedResources", new Callable<File>() {
+                @Override
+                public File call() {
+                    return scope.variantOutputData.processResourcesTask.getPackageOutputFile();
+                }
+            });
+
+        }
     }
 }

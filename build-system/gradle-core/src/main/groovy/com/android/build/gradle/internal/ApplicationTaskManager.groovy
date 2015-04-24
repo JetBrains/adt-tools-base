@@ -25,6 +25,8 @@ import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.build.gradle.internal.variant.BaseVariantOutputData
 import com.android.builder.core.AndroidBuilder
 import com.android.builder.profile.ExecutionType
+import com.android.builder.profile.Recorder
+import com.android.builder.profile.ThreadRecorder
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry
@@ -50,56 +52,57 @@ class ApplicationTaskManager extends TaskManager {
         assert variantData instanceof ApplicationVariantData;
         ApplicationVariantData appVariantData = (ApplicationVariantData) variantData;
 
-        createAnchorTasks(variantData);
-        createCheckManifestTask(variantData);
+        VariantScope variantScope = variantData.getScope()
 
-        handleMicroApp(variantData);
+        createAnchorTasks(tasks, variantScope);
+        createCheckManifestTask(tasks, variantScope);
+
+        handleMicroApp(tasks, variantScope);
 
         // Add a task to process the manifest(s)
         SpanRecorders.record(ExecutionType.APP_TASK_MANAGER_CREATE_MERGE_MANIFEST_TASK) {
-            createMergeAppManifestsTask(variantData)
+            createMergeAppManifestsTask(tasks, variantScope)
         }
 
         // Add a task to create the res values
         SpanRecorders.record(ExecutionType.APP_TASK_MANAGER_CREATE_GENERATE_RES_VALUES_TASK) {
-            createGenerateResValuesTask(variantData);
+            createGenerateResValuesTask(tasks, variantScope);
         }
 
         // Add a task to compile renderscript files.
         SpanRecorders.record(ExecutionType.APP_TASK_MANAGER_CREATE_CREATE_RENDERSCRIPT_TASK) {
-            createRenderscriptTask(variantData);
+            createRenderscriptTask(tasks, variantScope);
         }
 
         // Add a task to merge the resource folders
         SpanRecorders.record(ExecutionType.APP_TASK_MANAGER_CREATE_MERGE_RESOURCES_TASK) {
-            createMergeResourcesTask(variantData, true /*process9Patch*/);
+            createMergeResourcesTask(tasks, variantScope);
         }
 
         // Add a task to merge the asset folders
         SpanRecorders.record(ExecutionType.APP_TASK_MANAGER_CREATE_MERGE_ASSETS_TASK) {
-            createMergeAssetsTask(
-                    variantData, null /*default location*/, true /*includeDependencies*/);
+            createMergeAssetsTask(tasks, variantScope);
         }
 
         // Add a task to create the BuildConfig class
         SpanRecorders.record(ExecutionType.APP_TASK_MANAGER_CREATE_BUILD_CONFIG_TASK) {
-            createBuildConfigTask(variantData);
+            createBuildConfigTask(tasks, variantScope);
         }
 
         SpanRecorders.record(ExecutionType.APP_TASK_MANAGER_CREATE_PREPROCESS_RESOURCES_TASK) {
-            createPreprocessResourcesTask(variantData)
+            createPreprocessResourcesTask(tasks, variantScope)
         }
 
         SpanRecorders.record(ExecutionType.APP_TASK_MANAGER_CREATE_PROCESS_RES_TASK) {
             // Add a task to process the Android Resources and generate source files
-            createProcessResTask(variantData, true /*generateResourcePackage*/);
+            createProcessResTask(tasks, variantScope, true /*generateResourcePackage*/);
 
             // Add a task to process the java resources
-            createProcessJavaResTask(variantData);
+            createProcessJavaResTask(tasks, variantScope);
         }
 
         SpanRecorders.record(ExecutionType.APP_TASK_MANAGER_CREATE_AIDL_TASK) {
-            createAidlTask(variantData, null /*parcelableDir*/);
+            createAidlTask(tasks, variantScope);
         }
 
         // Add a compile task
@@ -107,9 +110,9 @@ class ApplicationTaskManager extends TaskManager {
             if (variantData.getVariantConfiguration().getUseJack()) {
                 createJackTask(appVariantData, null /*testedVariant*/);
             } else {
-                createJavaCompileTask(variantData, null /*testedVariant*/);
-                createJarTask(variantData);
-                createPostCompilationTasks(appVariantData);
+                createJavaCompileTask(tasks, variantScope);
+                createJarTask(tasks, variantScope);
+                createPostCompilationTasks(tasks, variantScope);
             }
         }
 
@@ -119,11 +122,8 @@ class ApplicationTaskManager extends TaskManager {
                 createNdkTasks(variantData);
             }
         }
-
-        // Variant scope should be created at the beginning of the function, but there is currently
-        // a dependency on the NdkCompile tasks, and the scope mechanism does not support lazy
-        // evaluation yet.
-        VariantScope variantScope = createVariantScope(variantData);
+        variantScope.setNdkBuildable(getNdkBuildable(variantData))
+        variantScope.setNdkOutputDirectories(getNdkOutputDirectories(variantData))
 
         if (variantData.getSplitHandlingPolicy() ==
                 BaseVariantData.SplitHandlingPolicy.RELEASE_21_AND_AFTER_POLICY) {
@@ -131,12 +131,17 @@ class ApplicationTaskManager extends TaskManager {
                 throw new RuntimeException("Pure splits can only be used with buildtools 21 and later")
             }
             SpanRecorders.record(ExecutionType.APP_TASK_MANAGER_CREATE_SPLIT_TASK) {
-                createSplitResourcesTasks(appVariantData);
-                createSplitAbiTasks(appVariantData);
+                createSplitResourcesTasks(variantScope);
+                createSplitAbiTasks(variantScope);
             }
         }
         SpanRecorders.record(ExecutionType.APP_TASK_MANAGER_CREATE_PACKAGING_TASK) {
             createPackagingTask(tasks, variantScope, true /*publishApk*/);
+        }
+
+        // create the lint tasks.
+        SpanRecorders.record(ExecutionType.APP_TASK_MANAGER_CREATE_LINT_TASK) {
+            createLintTasks(tasks, variantScope);
         }
     }
 
@@ -144,7 +149,9 @@ class ApplicationTaskManager extends TaskManager {
      * Configure variantData to generate embedded wear application.
      */
     private void handleMicroApp(
-            @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData) {
+            @NonNull TaskFactory tasks,
+            @NonNull VariantScope scope) {
+        BaseVariantData<? extends BaseVariantOutputData> variantData = scope.variantData
         if (variantData.getVariantConfiguration().getBuildType().isEmbedMicroApp()) {
             // get all possible configurations for the variant. We'll take the highest priority
             // of them that have a file.
@@ -162,7 +169,7 @@ class ApplicationTaskManager extends TaskManager {
 
                 int count = file.size();
                 if (count == 1) {
-                    createGenerateMicroApkDataTask(variantData, config);
+                    createGenerateMicroApkDataTask(tasks, scope, config);
                     // found one, bail out.
                     return;
                 } else if (count > 1) {

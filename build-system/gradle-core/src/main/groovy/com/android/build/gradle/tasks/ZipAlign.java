@@ -97,7 +97,7 @@ public class ZipAlign extends DefaultTask implements FileSupplier {
 
         @Override
         public String getName() {
-            return "zipalign" + StringHelper.capitalize(scope.getVariantOutputData().getFullName());
+            return scope.getTaskName("zipalign");
         }
 
         @Override

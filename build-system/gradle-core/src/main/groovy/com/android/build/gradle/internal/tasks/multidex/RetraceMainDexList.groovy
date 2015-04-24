@@ -18,6 +18,10 @@
 
 package com.android.build.gradle.internal.tasks.multidex
 
+import com.android.build.gradle.internal.TaskManager
+import com.android.build.gradle.internal.scope.ConventionMappingHelper
+import com.android.build.gradle.internal.scope.TaskConfigAction
+import com.android.build.gradle.internal.scope.VariantScope
 import com.android.build.gradle.internal.tasks.DefaultAndroidTask
 import com.google.common.base.Charsets
 import com.google.common.base.Joiner
@@ -28,6 +32,9 @@ import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
+
+import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
+
 /**
  * Take a list of classes for the main dex (that was computed before obfuscation),
  * a proguard-generated mapping file and create a new list of classes with the new
@@ -114,5 +121,40 @@ class RetraceMainDexList extends DefaultAndroidTask {
         }
 
         return map
+    }
+
+
+    public static class ConfigAction implements TaskConfigAction<RetraceMainDexList> {
+
+        VariantScope scope;
+
+        TaskManager.PostCompilationData pcData;
+
+        ConfigAction(VariantScope scope, TaskManager.PostCompilationData pcData) {
+            this.scope = scope
+            this.pcData = pcData
+        }
+
+        @Override
+        String getName() {
+            return scope.getTaskName("retrace", "MainDexClassList");
+        }
+
+        @Override
+        Class<RetraceMainDexList> getType() {
+            return RetraceMainDexList.class
+        }
+
+        @Override
+        void execute(RetraceMainDexList retraceTask) {
+            ConventionMappingHelper.map(retraceTask, "mainDexListFile") { scope.getMainDexListFile() }
+            ConventionMappingHelper.map(retraceTask, "mappingFile") {
+                scope.variantData.getMappingFile()
+            }
+            retraceTask.outputFile = new File(
+                    "${scope.globalScope.buildDir}/${FD_INTERMEDIATES}/multi-dex/" +
+                            "${scope.variantConfiguration.dirName}/maindexlist_deobfuscated.txt")
+
+        }
     }
 }

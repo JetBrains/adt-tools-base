@@ -27,6 +27,7 @@ import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.coverage.JacocoInstrumentTask;
 import com.android.build.gradle.internal.dependency.VariantDependencies;
 import com.android.build.gradle.internal.dsl.Splits;
+import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.CheckManifest;
 import com.android.build.gradle.internal.tasks.FileSupplier;
 import com.android.build.gradle.internal.tasks.GenerateApkDataTask;
@@ -90,6 +91,10 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
     private final GradleVariantConfiguration variantConfiguration;
 
     private VariantDependencies variantDependency;
+
+    // Needed for ModelBuilder.  Should be removed once VariantScope can replace BaseVariantData.
+    @NonNull
+    private final VariantScope scope;
 
     public Task preBuildTask;
     public PrepareDependenciesTask prepareDependenciesTask;
@@ -176,6 +181,8 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
                             variantConfiguration.getMinSdkVersion().getApiLevel()));
         }
         variantConfiguration.checkSourceProviders();
+
+        scope = new VariantScope(taskManager.getGlobalScope(), this);
     }
 
 
@@ -298,7 +305,7 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
         addJavaSourceFoldersToModel(generatedSourceFolders);
     }
 
-   public void registerResGeneratingTask(@NonNull Task task, @NonNull File... generatedResFolders) {
+    public void registerResGeneratingTask(@NonNull Task task, @NonNull File... generatedResFolders) {
         // no need add the folders anywhere, the convention mapping closure for the MergeResources
         // action will pick them up from here
         resourceGenTask.dependsOn(task);
@@ -370,8 +377,8 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
      */
     private List<File> getGeneratedResFolders() {
         List<File> generatedResFolders = Lists.newArrayList(
-                renderscriptCompileTask.getResOutputDir(),
-                generateResValuesTask.getResOutputDir());
+                scope.getRenderscriptResOutputDir(),
+                scope.getGeneratedResOutputDir());
         if (extraGeneratedResFolders != null) {
             generatedResFolders.addAll(extraGeneratedResFolders);
         }
@@ -531,22 +538,22 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
             }
 
             // then all the generated src folders.
-            if (generateRClassTask != null) {
-                sourceList.add(generateRClassTask.getSourceOutputDir());
+            if (getScope().getGenerateRClassTask() != null) {
+                sourceList.add(getScope().getRClassSourceOutputDir());
             }
 
             // for the other, there's no duplicate so no issue.
-            if (generateBuildConfigTask != null) {
-                sourceList.add(generateBuildConfigTask.getSourceOutputDir());
+            if (getScope().getGenerateBuildConfigTask() != null) {
+                sourceList.add(scope.getBuildConfigSourceOutputDir());
             }
 
-            if (aidlCompileTask != null) {
-                sourceList.add(aidlCompileTask.getSourceOutputDir());
+            if (getScope().getAidlCompileTask() != null) {
+                sourceList.add(scope.getAidlSourceOutputDir());
             }
 
             if (!variantConfiguration.getRenderscriptNdkModeEnabled()
-                    && renderscriptCompileTask != null) {
-                sourceList.add(renderscriptCompileTask.getSourceOutputDir());
+                    && getScope().getRenderscriptCompileTask() != null) {
+                sourceList.add(scope.getRenderscriptSourceOutputDir());
             }
 
             javaSources = sourceList.toArray();
@@ -645,5 +652,10 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
             }
         }
         return output;
+    }
+
+    @NonNull
+    public VariantScope getScope() {
+        return scope;
     }
 }

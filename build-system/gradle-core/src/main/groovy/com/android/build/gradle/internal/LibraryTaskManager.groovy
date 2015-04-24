@@ -22,6 +22,8 @@ import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.LibraryExtension
 import com.android.build.gradle.internal.core.GradleVariantConfiguration
 import com.android.build.gradle.internal.profile.SpanRecorders
+import com.android.build.gradle.internal.scope.AndroidTask
+import com.android.build.gradle.internal.scope.VariantScope
 import com.android.build.gradle.internal.tasks.MergeFileTask
 import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.build.gradle.internal.variant.BaseVariantOutputData
@@ -33,6 +35,7 @@ import com.android.build.gradle.tasks.MergeResources
 import com.android.builder.core.AndroidBuilder
 import com.android.builder.core.BuilderConstants
 import com.android.builder.core.DefaultBuildType
+import com.android.builder.core.VariantType
 import com.android.builder.dependency.LibraryBundle
 import com.android.builder.dependency.LibraryDependency
 import com.android.builder.dependency.ManifestDependency
@@ -81,91 +84,92 @@ class LibraryTaskManager extends TaskManager {
         GradleVariantConfiguration variantConfig = variantData.variantConfiguration
         DefaultBuildType buildType = variantConfig.buildType
 
+        VariantScope variantScope = variantData.getScope()
+
         String fullName = variantConfig.fullName
         String dirName = variantConfig.dirName
 
-        createAnchorTasks(variantData)
+        createAnchorTasks(tasks, variantScope)
 
-        createCheckManifestTask(variantData)
+        createCheckManifestTask(tasks, variantScope)
 
         // Add a task to create the res values
         SpanRecorders.record(ExecutionType.LIB_TASK_MANAGER_CREATE_GENERATE_RES_VALUES_TASK) {
-            createGenerateResValuesTask(variantData);
+            createGenerateResValuesTask(tasks, variantScope)
         }
 
         // Add a task to process the manifest(s)
         SpanRecorders.record(ExecutionType.LIB_TASK_MANAGER_CREATE_MERGE_MANIFEST_TASK) {
-            createMergeLibManifestsTask(variantData, DIR_BUNDLES)
+            createMergeLibManifestsTask(tasks, variantScope)
         }
 
         // Add a task to compile renderscript files.
         SpanRecorders.record(ExecutionType.LIB_TASK_MANAGER_CREATE_CREATE_RENDERSCRIPT_TASK) {
-            createRenderscriptTask(variantData)
+            createRenderscriptTask(tasks, variantScope)
         }
 
-        MergeResources packageRes = SpanRecorders.record(ExecutionType.LIB_TASK_MANAGER_CREATE_MERGE_RESOURCES_TASK) {
+        AndroidTask<MergeResources> packageRes = SpanRecorders.record(ExecutionType.LIB_TASK_MANAGER_CREATE_MERGE_RESOURCES_TASK) {
             // Create a merge task to only merge the resources from this library and not
             // the dependencies. This is what gets packaged in the aar.
-            MergeResources packageRes = basicCreateMergeResourcesTask(variantData,
+            AndroidTask<MergeResources> mergeResourceTask = basicCreateMergeResourcesTask(
+                    tasks,
+                    variantScope,
                     "package",
-                    "$project.buildDir/${FD_INTERMEDIATES}/$DIR_BUNDLES/${dirName}/res",
+                    new File(variantScope.getGlobalScope().getIntermediatesDir(),
+                            "$DIR_BUNDLES/$variantScope.variantConfiguration.dirName/res"),
                     false /*includeDependencies*/,
-                    false /*process9Patch*/)
+                    false /*process9Patch*/);
 
-            if (variantData.variantDependency.androidDependencies.isEmpty()) {
-                // if there is no android dependencies, then we should use the packageRes task above
-                // as the only res merging task.
-                variantData.mergeResourcesTask = packageRes
-            } else {
+            if (!variantData.variantDependency.androidDependencies.isEmpty()) {
                 // Add a task to merge the resource folders, including the libraries, in order to
                 // generate the R.txt file with all the symbols, including the ones from
                 // the dependencies.
-                createMergeResourcesTask(variantData, false /*process9Patch*/)
+                createMergeResourcesTask(tasks, variantScope)
             }
 
-            variantData.mergeResourcesTask.conventionMapping.publicFile = { project.file(
-                    "$project.buildDir/${FD_INTERMEDIATES}/$DIR_BUNDLES/${dirName}/${SdkConstants.FN_PUBLIC_TXT}")
+            mergeResourceTask.configure(tasks) { MergeResources task ->
+                task.conventionMapping.publicFile = {
+                    new File(variantScope.globalScope.intermediatesDir,
+                            "$DIR_BUNDLES/${dirName}/${SdkConstants.FN_PUBLIC_TXT}")
+                }
             }
 
-            return packageRes;
+            return mergeResourceTask;
         }
 
         // Add a task to merge the assets folders
         SpanRecorders.record(ExecutionType.LIB_TASK_MANAGER_CREATE_MERGE_ASSETS_TASK) {
-            createMergeAssetsTask(variantData,
-                    "$project.buildDir/${FD_INTERMEDIATES}/$DIR_BUNDLES/${dirName}/assets",
-                    false /*includeDependencies*/)
+            createMergeAssetsTask(tasks, variantScope)
         }
 
         // Add a task to create the BuildConfig class
         SpanRecorders.record(ExecutionType.LIB_TASK_MANAGER_CREATE_BUILD_CONFIG_TASK) {
-            createBuildConfigTask(variantData)
+            createBuildConfigTask(tasks, variantScope)
         }
 
         SpanRecorders.record(ExecutionType.LIB_TASK_MANAGER_CREATE_BACKPORT_RESOURCES_TASK) {
-            createPreprocessResourcesTask(variantData)
+            createPreprocessResourcesTask(tasks, variantScope)
         }
 
         SpanRecorders.record(ExecutionType.LIB_TASK_MANAGER_CREATE_PROCESS_RES_TASK) {
             // Add a task to generate resource source files, directing the location
             // of the r.txt file to be directly in the bundle.
-            createProcessResTask(variantData,
-                    "$project.buildDir/${FD_INTERMEDIATES}/$DIR_BUNDLES/${dirName}",
+            createProcessResTask(tasks, variantScope,
+                    new File("$project.buildDir/${FD_INTERMEDIATES}/$DIR_BUNDLES/${dirName}"),
                     false /*generateResourcePackage*/,
             )
 
             // process java resources
-            createProcessJavaResTask(variantData)
+            createProcessJavaResTask(tasks, variantScope)
         }
 
         SpanRecorders.record(ExecutionType.LIB_TASK_MANAGER_CREATE_AIDL_TASK) {
-            createAidlTask(variantData, project.file(
-                    "$project.buildDir/${FD_INTERMEDIATES}/$DIR_BUNDLES/${dirName}/$SdkConstants.FD_AIDL"))
+            createAidlTask(tasks, variantScope)
         }
 
         // Add a compile task
         SpanRecorders.record(ExecutionType.LIB_TASK_MANAGER_CREATE_COMPILE_TASK) {
-            createJavaCompileTask(variantData, null /*testedVariant*/)
+            createJavaCompileTask(tasks, variantScope);
         }
 
         // package the prebuilt native libs into the bundle folder
@@ -217,7 +221,7 @@ class LibraryTaskManager extends TaskManager {
         Copy lintCopy = project.tasks.create(
                 "copy${fullName.capitalize()}Lint",
                 Copy)
-        lintCopy.dependsOn lintCompile
+        lintCopy.dependsOn LINT_COMPILE
         lintCopy.from("$project.buildDir/${FD_INTERMEDIATES}/lint/lint.jar")
         lintCopy.into("$project.buildDir/${FD_INTERMEDIATES}/$DIR_BUNDLES/$dirName")
 
@@ -238,14 +242,14 @@ class LibraryTaskManager extends TaskManager {
         // post-compilation steps are inserted between the compilation and dx.
         PostCompilationData pcData = new PostCompilationData()
         SpanRecorders.record(ExecutionType.LIB_TASK_MANAGER_CREATE_POST_COMPILATION_TASK) {
-            pcData.classGeneratingTask = Collections.singletonList(variantData.javaCompileTask)
+            pcData.classGeneratingTask = [variantScope.javaCompileTask.name]
             pcData.libraryGeneratingTask = Collections.singletonList(
                     variantData.variantDependency.packageConfiguration.buildDependencies)
             pcData.inputFiles = {
                 return variantData.javaCompileTask.outputs.files.files
             }
             pcData.inputDir = {
-                return variantData.javaCompileTask.destinationDir
+                return variantScope.javaOutputDir
             }
             pcData.inputLibraries = {
                 return Collections.emptyList()
@@ -253,14 +257,14 @@ class LibraryTaskManager extends TaskManager {
 
             // if needed, instrument the code
             if (instrumented) {
-                pcData = createJacocoTask(variantConfig, variantData, pcData)
+                pcData = createJacocoTask(tasks, variantScope, pcData);
             }
         }
 
         if (buildType.isMinifyEnabled()) {
             // run proguard on output of compile task
             SpanRecorders.record(ExecutionType.LIB_TASK_MANAGER_CREATE_PROGUARD_TASK) {
-                File outFile = maybeCreateProguardTasks(variantData, null, pcData)
+                File outFile = maybeCreateProguardTasks(tasks, variantScope, pcData);
                 pcData.inputFiles = { [outFile] }
                 pcData.inputDir = null
                 pcData.inputLibraries = { [] }
@@ -286,14 +290,14 @@ class LibraryTaskManager extends TaskManager {
 
                 // jar the classes.
                 Jar jar = project.tasks.create("package${fullName.capitalize()}Jar", Jar);
-                jar.dependsOn variantData.processJavaResourcesTask
+                jar.dependsOn variantScope.processJavaResourcesTask.name
 
                 // add the class files (whether they are instrumented or not.
                 jar.from(pcData.inputDir)
                 TaskManager.optionalDependsOn(jar, pcData.classGeneratingTask)
                 pcData.classGeneratingTask = Collections.singletonList(jar)
 
-                jar.from(variantData.processJavaResourcesTask.destinationDir)
+                jar.from(variantScope.getJavaResourcesDestinationDir())
 
                 jar.destinationDir = project.file(
                         "$project.buildDir/${FD_INTERMEDIATES}/$DIR_BUNDLES/${dirName}")
@@ -320,7 +324,7 @@ class LibraryTaskManager extends TaskManager {
             }
         }
 
-        bundle.dependsOn packageRes, packageRenderscript, lintCopy, packageJniLibs, mergeProGuardFileTask
+        bundle.dependsOn packageRes.name, packageRenderscript, lintCopy, packageJniLibs, mergeProGuardFileTask
         TaskManager.optionalDependsOn(bundle, pcData.classGeneratingTask)
         TaskManager.optionalDependsOn(bundle, pcData.libraryGeneratingTask)
 
@@ -404,6 +408,10 @@ class LibraryTaskManager extends TaskManager {
                 return getFolder();
             }
         };
+
+        SpanRecorders.record(ExecutionType.LIB_TASK_MANAGER_CREATE_LINT_TASK) {
+            createLintTasks(tasks, variantScope);
+        }
     }
 
     public ExtractAnnotations createExtractAnnotations(

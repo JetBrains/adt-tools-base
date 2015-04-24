@@ -242,7 +242,7 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
 
         @Override
         public String getName() {
-            return "package" + StringHelper.capitalize(scope.getVariantOutputData().getFullName());
+            return scope.getTaskName("package");
         }
 
         @Override
@@ -257,26 +257,15 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
                     .getVariantOutputData();
             final GradleVariantConfiguration config = scope.getVariantScope().getVariantConfiguration();
 
-            String outputName = variantOutputData.getFullName();
-            String outputBaseName = variantOutputData.getBaseName();
-
             variantOutputData.packageApplicationTask = packageApp;
             packageApp.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
 
             if (config.isMinifyEnabled() && config.getBuildType().isShrinkResources() && !config
                     .getUseJack()) {
-                final ShrinkResources shrinkTask = createShrinkResourcesTask(variantOutputData);
-
-                // When shrinking resources, rather than having the packaging task
-                // directly map to the packageOutputFile of ProcessAndroidResources,
-                // we insert the ShrinkResources task into the chain, such that its
-                // input is the ProcessAndroidResources packageOutputFile, and its
-                // output is what the PackageApplication task reads.
-                packageApp.dependsOn(shrinkTask);
                 ConventionMappingHelper.map(packageApp, "resourceFile", new Callable<File>() {
                     @Override
                     public File call() {
-                        return shrinkTask.getCompressedResources();
+                        return scope.getCompressedResourceFile();
                     }
                 });
             } else {
@@ -291,14 +280,17 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
             ConventionMappingHelper.map(packageApp, "dexFolder", new Callable<File>() {
                 @Override
                 public File call() {
-                    if (variantData.dexTask != null) {
-                        return variantData.dexTask.getOutputFolder();
+                    if (scope.getVariantScope().getDexTask() != null) {
+                        return scope.getVariantScope().getDexOutputFolder();
+                    }
+
+                    if (scope.getVariantScope().getJavaCompileTask() != null) {
+                        return scope.getVariantScope().getJavaOutputDir();
                     }
 
                     if (variantData.javaCompileTask != null) {
                         return variantData.javaCompileTask.getDestinationDir();
                     }
-
                     return null;
                 }
             });
@@ -414,7 +406,9 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
                 }
             });
 
-            task.dependsOn(variantData.obfuscationTask, variantOutputData.manifestProcessorTask,
+            task.dependsOn(
+                    scope.getVariantScope().getObfuscationTask().getName(),
+                    scope.getManifestProcessorTask().getName(),
                     variantOutputData.processResourcesTask);
 
             return task;
