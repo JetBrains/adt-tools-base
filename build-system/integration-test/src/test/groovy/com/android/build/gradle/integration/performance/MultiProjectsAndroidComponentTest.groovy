@@ -17,28 +17,26 @@
 package com.android.build.gradle.integration.performance
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.integration.common.fixture.TestProject
+import com.android.build.gradle.integration.common.fixture.app.AndroidTestApp
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
+import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestProject
+import com.android.build.gradle.integration.common.fixture.app.TestSourceFile
 import com.android.build.gradle.integration.common.fixture.app.VariantBuildScriptGenerator
 import org.junit.AfterClass
-import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
 
 /**
- * Performance test on gradle experimantal plugin with a large number of variants
+ * Performance test on gradle experimantal plugin with multiple subprojects and multiple variants.
  */
-class LargeVariantAndroidComponentTest {
-    @ClassRule
-    static public GradleTestProject project = GradleTestProject.builder()
-            .fromTestApp(new HelloWorldApp())
-            .forExpermimentalPlugin(true)
-            .create()
-
-    @BeforeClass
-    static void setUp() {
-        project.buildFile << new VariantBuildScriptGenerator(
-                buildTypes: VariantBuildScriptGenerator.LARGE_NUMBER,
-                productFlavors: VariantBuildScriptGenerator.LARGE_NUMBER,
+class MultiProjectsAndroidComponentTest {
+    public static AndroidTestApp app = new HelloWorldApp()
+    static {
+        app.addFile(new TestSourceFile("", "build.gradle",
+                new VariantBuildScriptGenerator(
+                buildTypes: VariantBuildScriptGenerator.MEDIUM_NUMBER,
+                productFlavors: VariantBuildScriptGenerator.MEDIUM_NUMBER,
                 """
                 apply plugin: "com.android.model.application"
 
@@ -56,15 +54,23 @@ class LargeVariantAndroidComponentTest {
                         \${productFlavors}
                     }
                 }
-                """.stripIndent()).createBuildScript()
-
-        // Execute before performance test to warm up the cache.
-        project.execute("help");
+                """.stripIndent()).createBuildScript())
+        )
     }
+
+    public static TestProject baseProject = new MultiModuleTestProject("app", app, 10)
+
+    @ClassRule
+    public static GradleTestProject project = GradleTestProject.builder()
+            .fromTestApp(baseProject)
+            .forExpermimentalPlugin(true)
+            .create()
 
     @AfterClass
     static void cleanUp() {
-        project = null
+        app = null;
+        baseProject = null;
+        project = null;
     }
 
     @Test
