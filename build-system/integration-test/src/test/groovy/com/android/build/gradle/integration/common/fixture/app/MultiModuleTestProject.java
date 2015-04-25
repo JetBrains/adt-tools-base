@@ -16,7 +16,7 @@ import java.util.Map;
  */
 public class MultiModuleTestProject implements TestProject {
 
-    private Map<String, ? extends TestProject> subprojects;
+    private Map<String, TestProject> subprojects;
 
     /**
      * Creates a MultiModuleTestProject.
@@ -24,8 +24,22 @@ public class MultiModuleTestProject implements TestProject {
      * @param subprojects a map with gradle project path as key and the corresponding TestProject as
      *                    value.
      */
-    public MultiModuleTestProject(Map<String, ? extends TestProject> subprojects) {
+    public MultiModuleTestProject(Map<String, TestProject> subprojects) {
         this.subprojects = Maps.newHashMap(subprojects);
+    }
+
+    /**
+     * Creates a MultiModuleTestProject with multiple subproject of the same TestProject.
+     *
+     * @param baseName Base name of the subproject.  Actual project name will be baseName + index.
+     * @param subproject A TestProject.
+     * @param count Number of subprojects to create.
+     */
+    public MultiModuleTestProject(String baseName, TestProject subproject, int count) {
+        subprojects = Maps.newHashMapWithExpectedSize(count);
+        for (int i = 0; i < count; i++) {
+            subprojects.put(baseName + i, subproject);
+        }
     }
 
     /**
