@@ -61,20 +61,9 @@ public abstract class GeneratorTest extends TestCase implements GraphicGenerator
                         + relativePath;
                 InputStream is = GeneratorTest.class.getResourceAsStream(path);
                 if (is == null) {
-                    if (targetDir == null) {
-                        fail("Did not find " + path
-                                + ". Set $ANDROID_SRC to have it created automatically");
-                    }
-                    File fileName = new File(targetDir, folderName + File.separator
-                            + relativePath);
-                    assertFalse(fileName.exists());
-                    if (!fileName.getParentFile().exists()) {
-                        boolean mkdir = fileName.getParentFile().mkdirs();
-                        assertTrue(fileName.getParent(), mkdir);
-                    }
-
-                    ImageIO.write(image, "PNG", fileName);
-                    errors.add("File did not exist, created " + fileName.getPath());
+                    String filePath = folderName + File.separator + relativePath;
+                    String generatedFilePath = generateGoldenImage(targetDir, image, path, filePath);
+                    errors.add("File did not exist, created " + generatedFilePath);
                 } else {
                     BufferedImage goldenImage = ImageIO.read(is);
                     assertImageSimilar(relativePath, goldenImage, image, 5.0f);
@@ -88,6 +77,24 @@ public abstract class GeneratorTest extends TestCase implements GraphicGenerator
         }
 
         assertEquals("Wrong number of generated files", expectedFileCount, fileCount);
+    }
+
+    protected String generateGoldenImage(File targetDir,
+                                       BufferedImage goldenImage,
+                                       String missingFilePath,
+                                       String filePath) throws IOException {
+        if (targetDir == null) {
+            fail("Did not find " + missingFilePath + ". Set $ANDROID_SRC to have it created automatically");
+        }
+        File fileName = new File(targetDir, filePath);
+        assertFalse(fileName.exists());
+        if (!fileName.getParentFile().exists()) {
+            boolean mkdir = fileName.getParentFile().mkdirs();
+            assertTrue(fileName.getParent(), mkdir);
+        }
+
+        ImageIO.write(goldenImage, "PNG", fileName);
+        return fileName.getPath();
     }
 
     public static void assertImageSimilar(String imageName, BufferedImage goldenImage,
