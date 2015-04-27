@@ -154,7 +154,12 @@ public class ${detailsFragment} extends DetailsFragment {
                 listRowAdapter.add(list.get(j % 5));
             }
 
-            HeaderItem header = new HeaderItem(0, subcategories[0], null);
+            <#if buildApi gte 22>
+                HeaderItem header = new HeaderItem(0, subcategories[0]);
+            <#else>
+                HeaderItem header = new HeaderItem(0, subcategories[0], null);
+            </#if>
+
             adapter.add(new ListRow(header, listRowAdapter));
 
             setAdapter(adapter);
