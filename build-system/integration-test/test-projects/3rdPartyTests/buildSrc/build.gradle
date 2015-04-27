@@ -4,5 +4,5 @@ apply plugin: 'idea'
 apply from: "../../commonLocalRepo.gradle"
 
 dependencies {
-    compile 'com.android.tools.build:builder-test-api:1.2.0'
+    compile 'com.android.tools.build:builder-test-api:1.2.1'
 }
