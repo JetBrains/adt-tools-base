@@ -71,6 +71,8 @@ public class HprofParserTest extends TestCase {
     public void testPrimitiveArrays() {
         ClassObj byteArray = mSnapshot.findClass("byte[]");
         assertEquals(1406, byteArray.getInstances().size());
+        assertEquals(0, byteArray.getInstanceSize());
+        assertEquals(681489, byteArray.getShalowSize());
 
         ArrayInstance byteArrayInstance = (ArrayInstance) mSnapshot.findReference(0xB0D60401);
         assertEquals(byteArray, byteArrayInstance.getClassObj());
