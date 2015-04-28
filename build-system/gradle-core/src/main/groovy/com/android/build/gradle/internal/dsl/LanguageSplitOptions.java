@@ -25,7 +25,9 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Data for per-language split.
+ * DSL object for configuring per-language splits options.
+ *
+ * <p>See <a href="http://tools.android.com/tech-docs/new-build-system/user-guide/apk-splits">APK Splits</a>.
  */
 public class LanguageSplitOptions {
 
@@ -43,6 +45,9 @@ public class LanguageSplitOptions {
         include = Sets.newHashSet(list);
     }
 
+    /**
+     * Adds an include pattern.
+     */
     public void include(@NonNull String... includes) {
         if (include == null) {
             include = Sets.newHashSet(includes);

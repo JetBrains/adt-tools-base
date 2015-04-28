@@ -49,40 +49,80 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
     @Nullable
     private File mMultiDexKeepFile;
 
+    /**
+     * Adds a BuildConfig field.
+     */
     public void addBuildConfigField(@NonNull ClassField field) {
         mBuildConfigFields.put(field.getName(), field);
     }
 
-    public void addResValue(@NonNull ClassField field) {
-        mResValues.put(field.getName(), field);
+    /**
+     * Adds a generated resource value.
+     */
+    public void addResValue(@NonNull ClassField field) { mResValues.put(field.getName(), field);
     }
 
+    /**
+     * Adds a generated resource value.
+     */
     public void addResValues(@NonNull Map<String, ClassField> values) {
         mResValues.putAll(values);
     }
 
+    /**
+     * Returns the BuildConfig fields.
+     */
     @Override
     @NonNull
     public Map<String, ClassField> getBuildConfigFields() {
         return mBuildConfigFields;
     }
 
+    /**
+     * Adds BuildConfig fields.
+     */
     public void addBuildConfigFields(@NonNull Map<String, ClassField> fields) {
         mBuildConfigFields.putAll(fields);
     }
 
+    /**
+     * Returns the generated resource values.
+     */
     @NonNull
     @Override
     public Map<String, ClassField> getResValues() {
         return mResValues;
     }
 
+    /**
+     * Returns ProGuard configuration files to be used.
+     *
+     * <p>There are 2 default rules files
+     * <ul>
+     *     <li>proguard-android.txt
+     *     <li>proguard-android-optimize.txt
+     * </ul>
+     * <p>They are located in the SDK. Using <code>getDefaultProguardFile(String filename)</code> will return the
+     * full path to the files. They are identical except for enabling optimizations.
+     *
+     * <p>See similarly named methods to specify the files.
+     */
     @Override
     @NonNull
     public List<File> getProguardFiles() {
         return mProguardFiles;
     }
 
+    /**
+     * ProGuard rule files to be included in the published AAR.
+     *
+     * <p>These proguard rule files will then be used by any application project that consumes the
+     * AAR (if ProGuard is enabled).
+     *
+     * <p>This allows AAR to specify shrinking or obfuscation exclude rules.
+     *
+     * <p>This is only valid for Library project. This is ignored in Application project.
+     */
     @Override
     @NonNull
     public List<File> getConsumerProguardFiles() {
@@ -95,16 +135,34 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
         return mTestProguardFiles;
     }
 
+    /**
+     * Returns the manifest placeholders.
+     *
+     * <p>See <a href="http://tools.android.com/tech-docs/new-build-system/user-guide/manifest-merger#TOC-Placeholder-support">
+     *     Manifest merger</a>.
+     */
     @NonNull
     @Override
     public Map<String, Object> getManifestPlaceholders() {
         return mManifestPlaceholders;
     }
 
+    /**
+     * Adds manifest placeholders.
+     *
+     * <p>See <a href="http://tools.android.com/tech-docs/new-build-system/user-guide/manifest-merger#TOC-Placeholder-support">
+     *     Manifest merger</a>.
+     */
     public void addManifestPlaceholders(@NonNull Map<String, Object> manifestPlaceholders) {
         mManifestPlaceholders.putAll(manifestPlaceholders);
     }
 
+    /**
+     * Sets a new set of manifest placeholders.
+     *
+     * <p>See <a href="http://tools.android.com/tech-docs/new-build-system/user-guide/manifest-merger#TOC-Placeholder-support">
+     *     Manifest merger</a>.
+     */
     public void setManifestPlaceholders(@NonNull Map<String, Object> manifestPlaceholders) {
         mManifestPlaceholders.clear();
         this.mManifestPlaceholders.putAll(manifestPlaceholders);

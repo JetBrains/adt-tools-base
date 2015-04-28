@@ -27,7 +27,9 @@ import com.google.common.collect.Sets;
 import java.util.Set;
 
 /**
- * Data for per-ABI splits.
+ * DSL object for configuring per-abi splits options.
+ *
+ * <p>See <a href="http://tools.android.com/tech-docs/new-build-system/user-guide/apk-splits">APK Splits</a>.
  */
 public class AbiSplitOptions extends SplitOptions {
 

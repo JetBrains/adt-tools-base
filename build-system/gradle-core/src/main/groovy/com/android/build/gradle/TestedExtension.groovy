@@ -44,6 +44,11 @@ public abstract class TestedExtension extends BaseExtension {
     private final DefaultDomainObjectSet<TestVariant> testVariantList =
             new DefaultDomainObjectSet<TestVariant>(TestVariant.class)
 
+    /**
+     * Name of the build type that will be used when running Android (on-device) tests.
+     *
+     * <p>Defaults to "debug".
+     */
     String testBuildType = "debug"
 
     TestedExtension(

@@ -32,7 +32,7 @@ import org.gradle.api.internal.project.ProjectInternal
 import org.gradle.internal.reflect.Instantiator
 
 /**
- * 'android' extension for 'com.android.library' project.
+ * Options for <code>com.android.library</code> projects.
  */
 @CompileStatic
 public class LibraryExtension extends TestedExtension {
