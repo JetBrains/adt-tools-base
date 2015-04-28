@@ -26,8 +26,8 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * An object representing a Variant (made of a build type and one or more flavors), and
- * a boolean controlling whether this variant is to be excluded.
+ * Exposes a read-only view of a variant as well as a flag that can be used to signal that the
+ * variant should be ignored.
  */
 public class VariantFilter implements com.android.build.gradle.api.VariantFilter {
 
@@ -67,8 +67,10 @@ public class VariantFilter implements com.android.build.gradle.api.VariantFilter
     }
 
     /**
-     * The default config. This is a Read-Only version of the global
-     * <code>android.defaultConfig</code> object.
+     * Returns a read-only ProductFlavor that represents the default config.
+     *
+     * <p>See {@link com.android.build.gradle.internal.dsl.ProductFlavor} for properties present
+     * on the returned object.
      */
     @Override
     @NonNull
@@ -77,8 +79,10 @@ public class VariantFilter implements com.android.build.gradle.api.VariantFilter
     }
 
     /**
-     * The Build Type used by the variant. This is Read-Only version, as changing this
-     * object would have global impact.
+     * Returns a read-only Build Type.
+     *
+     * <p>See {@link com.android.build.gradle.internal.dsl.BuildType} for properties present
+     * on the returned object.
      */
     @Override
     @NonNull
@@ -87,8 +91,10 @@ public class VariantFilter implements com.android.build.gradle.api.VariantFilter
     }
 
     /**
-     * The list of Product Flavors for this variant. These are returned as Read-Only versions, as
-     * changing these objects would have global impact.
+     * Returns the list of read-only flavors, or an empty list.
+     *
+     * <p>See {@link com.android.build.gradle.internal.dsl.GroupableProductFlavor} for properties
+     * present on the returned objects.
      */
     @NonNull
     @Override

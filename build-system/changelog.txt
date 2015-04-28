@@ -59,6 +59,8 @@
   * New configurations for adding test-only dependencies, e.g.
       testCompile 'junit:junit:4.11'
       testMyFlavorCompile 'some:library:1.0'
+  * New option, android.testOptions.unitTests.returnDefaultValues to control
+    the behaviour of the "mockable" android.jar.
 - Task names that used to contain 'Test', e.g. 'assembleDebugTest' now use
   'AndroidTest', e.g. 'assembleDebugAndroidTest'. This is to distinguish them
   from the unit test tasks, e.g. 'assembleDebugUnitTest'.
@@ -79,6 +81,7 @@
             useNewCruncher false
         }
     }
+- Improved DSL reference. See http://developer.android.com/tools/building/plugin-for-gradle.html
 
 1.0.0
 - Final 1.0.0 version

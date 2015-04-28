@@ -64,6 +64,9 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
         return this;
     }
 
+    /**
+     * Name of this build type.
+     */
     @Override
     @NonNull
     public String getName() {
@@ -89,6 +92,22 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
         mTestCoverageEnabled = testCoverageEnabled;
     }
 
+    /**
+     * Whether test coverage is enabled for this build type.
+     *
+     * <p>If enabled this uses Jacoco to capture coverage and creates a report in the build
+     * directory.
+     *
+     * <p>The version of Jacoco can be configured with:
+     * <pre>
+     * android {
+     *   jacoco {
+     *     version = '0.6.2.201302030002'
+     *   }
+     * }
+     * </pre>
+     *
+     */
     @Override
     public boolean isTestCoverageEnabled() {
         return mTestCoverageEnabled;
@@ -98,6 +117,12 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
         mPseudoLocalesEnabled = pseudoLocalesEnabled;
     }
 
+    /**
+     * Whether to generate pseudo locale in the APK.
+     *
+     * <p>If enabled, 2 fake pseudo locales (en-XA and ar-XB) will be added to the APK to help
+     * test internationalization support in the app.
+     */
     @Override
     public boolean isPseudoLocalesEnabled() {
         return mPseudoLocalesEnabled;
@@ -136,7 +161,9 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
         return this;
     }
 
-    /** Optimization level to use by the renderscript compiler. */
+    /**
+     * Optimization level to use by the renderscript compiler.
+     */
     @Override
     public int getRenderscriptOptimLevel() {
         return mRenderscriptOptimLevel;
@@ -220,6 +247,18 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
         return mSigningConfig;
     }
 
+    /**
+     * Whether a linked Android Wear app should be embedded in variant using this build type.
+     *
+     * <p>Wear apps can be linked with the following code:
+     *
+     * <pre>
+     * dependencies {
+     *   freeWearApp project(:wear:free') // applies to variant using the free flavor
+     *   wearApp project(':wear:base') // applies to all other variants
+     * }
+     * </pre>
+     */
     @Override
     public boolean isEmbedMicroApp() {
         return mEmbedMicroApp;

@@ -68,6 +68,9 @@ public class BuildType extends DefaultBuildType implements Serializable {
         return ndkConfig;
     }
 
+    /**
+     * Initialize the DSL object. Not meant to be used from the build scripts.
+     */
     public void init(SigningConfig debugSigningConfig) {
         if (BuilderConstants.DEBUG.equals(getName())) {
             setDebuggable(true)
@@ -113,6 +116,18 @@ public class BuildType extends DefaultBuildType implements Serializable {
 
     // -- DSL Methods. TODO remove once the instantiator does what I expect it to do.
 
+    /**
+     * Adds a new field to the generated BuildConfig class.
+     *
+     * <p>The field is generated as: <code>&lt;type&gt; &lt;name&gt; = &lt;value&gt;;</code>
+     *
+     * <p>This means each of these must have valid Java content. If the type is a String, then the
+     * value should include quotes.
+     *
+     * @param type the type of the field
+     * @param name the name of the field
+     * @param value the value of the field
+     */
     public void buildConfigField(
             @NonNull String type,
             @NonNull String name,
@@ -125,6 +140,13 @@ public class BuildType extends DefaultBuildType implements Serializable {
         addBuildConfigField(AndroidBuilder.createClassField(type, name, value));
     }
 
+    /**
+     * Adds a new generated resource.
+     *
+     * @param type the type of the resource
+     * @param name the name of the resource
+     * @param value the value of the resource
+     */
     public void resValue(
             @NonNull String type,
             @NonNull String name,
@@ -177,6 +199,16 @@ public class BuildType extends DefaultBuildType implements Serializable {
         return this;
     }
 
+    /**
+     * Specifies a proguard rule file to be included in the published AAR.
+     *
+     * This proguard rule file will then be used by any application project that consume the AAR
+     * (if proguard is enabled).
+     *
+     * This allows AAR to specify shrinking or obfuscation exclude rules.
+     *
+     * This is only valid for Library project. This is ignored in Application project.
+     */
     @NonNull
     public BuildType testProguardFile(Object proguardFile) {
         testProguardFiles.add(project.file(proguardFile));
@@ -198,6 +230,16 @@ public class BuildType extends DefaultBuildType implements Serializable {
         return this;
     }
 
+    /**
+     * Specifies a proguard rule file to be included in the published AAR.
+     *
+     * This proguard rule file will then be used by any application project that consume the AAR
+     * (if proguard is enabled).
+     *
+     * This allows AAR to specify shrinking or obfuscation exclude rules.
+     *
+     * This is only valid for Library project. This is ignored in Application project.
+     */
     @NonNull
     public BuildType setConsumerProguardFiles(Iterable<?> proguardFileIterable) {
         consumerProguardFiles.clear();
@@ -211,20 +253,39 @@ public class BuildType extends DefaultBuildType implements Serializable {
         action.execute(ndkConfig)
     }
 
+    /**
+     * Whether the experimental Jack toolchain should be used.
+     */
     Boolean getUseJack() {
         return useJack
     }
 
+    /**
+     * Whether the experimental Jack toolchain should be used.
+     */
     void setUseJack(Boolean useJack) {
         this.useJack = useJack
     }
 
+    /**
+     * Whether the experimental Jack toolchain should be used.
+     */
     void useJack(Boolean useJack) {
         setUseJack(useJack)
     }
 
+    /**
+     * Whether shrinking of unused resources is enabled.
+     *
+     * Default is false;
+     */
     boolean shrinkResources = false // opt-in for now until we've validated it in the field
 
+    /**
+     * Whether shrinking of unused resources is enabled.
+     *
+     * Default is false;
+     */
     void shrinkResources(boolean flag) {
         this.shrinkResources = flag
     }
