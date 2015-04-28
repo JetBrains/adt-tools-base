@@ -52,8 +52,6 @@ public class VariantBuildScriptGenerator {
                 variants.append(i);
                 variants.append("\n");
             }
-            System.out.println(variants.toString());
-
             buildScript = buildScript.replace("${" + variantName + "}", variants.toString());
         }
 
