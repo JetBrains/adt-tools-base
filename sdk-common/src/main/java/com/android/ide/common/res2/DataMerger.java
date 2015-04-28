@@ -57,7 +57,7 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
     static final String FN_MERGER_XML = "merger.xml";
     static final String NODE_MERGER = "merger";
     static final String NODE_DATA_SET = "dataSet";
-    static final String NODE_MERGED_ITEMS = "mergedItems";
+
     static final String NODE_CONFIGURATION = "configuration";
 
     static final String ATTR_VERSION = "version";
@@ -332,7 +332,7 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
             }
 
             // write merged items
-            writeMergedItems(document, rootNode);
+            writeAdditionalData(document, rootNode);
 
             String content = XmlUtils.toXml(document, true /*preserveWhitespace*/);
 
@@ -412,11 +412,9 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
                     if (dataSet != null) {
                         addDataSet(dataSet);
                     }
-                } else if (incrementalState && NODE_MERGED_ITEMS.equals(node.getLocalName())) {
-                    // only load the merged item in incremental state.
-                    // In non incremental state, they will be recreated by the touched
-                    // items anyway.
-                    loadMergedItems(node);
+                } else if (incrementalState
+                        && getAdditionalDataTagName().equals(node.getLocalName())) {
+                    loadAdditionalData(node, incrementalState);
                 }
             }
 
@@ -438,11 +436,19 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
         }
     }
 
-    protected void loadMergedItems(@NonNull Node mergedItemsNode) throws MergingException {
+    @NonNull
+    protected String getAdditionalDataTagName() {
+        // No tag can have an empty name, so mergers that store additional data, have to provide
+        // this.
+        return "";
+    }
+
+    protected void loadAdditionalData(@NonNull Node additionalDataNode, boolean incrementalState)
+            throws MergingException {
         // do nothing by default.
     }
 
-    protected void writeMergedItems(Document document, Node rootNode) throws MergingException {
+    protected void writeAdditionalData(Document document, Node rootNode) throws MergingException {
         // do nothing by default.
     }
 

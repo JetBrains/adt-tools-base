@@ -20,16 +20,28 @@ import static com.google.common.base.Preconditions.checkState;
 
 import com.android.annotations.NonNull;
 import com.android.ide.common.res2.PreprocessDataSet.ResourcesDirectory;
+import com.android.resources.Density;
 
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
+import java.util.Collection;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * {@link DataMerger} for preprocessing resources.
  */
 public class PreprocessResourcesMerger extends DataMerger<PreprocessDataItem, PreprocessDataFile, PreprocessDataSet> {
+    private static final String NODE_DENSITIES = "densities";
+    private static final String NODE_DENSITY = "density";
+
+    /** Keep track of the densities used, save it to XML. */
+    private EnumSet<Density> mDensities = EnumSet.noneOf(Density.class);
+
     private PreprocessDataSet mGeneratedDataSet;
     private PreprocessDataSet mMergedDataSet;
 
@@ -51,9 +63,35 @@ public class PreprocessResourcesMerger extends DataMerger<PreprocessDataItem, Pr
         throw new IllegalStateException("PreprocessMerger doesn't merge file contents.");
     }
 
+    @NonNull
     @Override
-    protected void writeMergedItems(Document document, Node rootNode) {
+    protected String getAdditionalDataTagName() {
+        return NODE_DENSITIES;
+    }
 
+    @Override
+    protected void loadAdditionalData(@NonNull Node densitiesNode, boolean incrementalState)
+            throws MergingException {
+        NodeList childNodes = densitiesNode.getChildNodes();
+        for (int i = 0; i < childNodes.getLength(); i++) {
+            Node child = childNodes.item(i);
+            if (child.getNodeName().equals(NODE_DENSITY)) {
+                mDensities.add(Density.getEnum(child.getTextContent()));
+            }
+        }
+    }
+
+    @Override
+    protected void writeAdditionalData(Document document, Node rootNode) {
+        Element densities = document.createElement(getAdditionalDataTagName());
+
+        for (Density density : mDensities) {
+            Element densityElement = document.createElement(NODE_DENSITY);
+            densityElement.setTextContent(density.getResourceValue());
+            densities.appendChild(densityElement);
+        }
+
+        rootNode.appendChild(densities);
     }
 
     @Override
@@ -80,5 +118,13 @@ public class PreprocessResourcesMerger extends DataMerger<PreprocessDataItem, Pr
 
     public PreprocessDataSet getMergedDataSet() {
         return mMergedDataSet;
+    }
+
+    public Set<Density> getDensities() {
+        return EnumSet.copyOf(mDensities);
+    }
+
+    public void setDensities(Collection<Density> densities) {
+        mDensities = EnumSet.copyOf(densities);
     }
 }
