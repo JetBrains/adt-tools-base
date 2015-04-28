@@ -19,6 +19,7 @@ package com.android.builder.core;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.jack.api.JackProvider;
+import com.android.jill.api.JillProvider;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.repository.FullRevision;
 import com.google.common.base.Optional;
@@ -32,6 +33,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 
 /**
@@ -101,7 +103,7 @@ public enum BuildToolsServiceLoader {
      *
      * @param <T> the type of service.
      */
-    public abstract static class Service<T> {
+    public static class Service<T> {
 
         private final Collection<String> classpath;
         private final Class<T> serviceClass;
@@ -122,13 +124,14 @@ public enum BuildToolsServiceLoader {
     /**
      * Jack service description.
      */
-    public static final Service<JackProvider> JACK = new Jack();
+    public static final Service<JackProvider> JACK =
+            new Service<JackProvider>(ImmutableList.of("jack.jar"), JackProvider.class);
 
-    private static final class Jack extends Service<JackProvider> {
-        Jack() {
-            super(ImmutableList.of("jack.jar", "jill.jar"), JackProvider.class);
-        }
-    }
+    /**
+     * Jill service description.
+     */
+    public static final Service<JillProvider> JILL =
+            new Service<JillProvider>(ImmutableList.of("jill.jar"), JillProvider.class);
 
     /**
      * build-tools version specific {@link ServiceLoader} helper.
@@ -191,7 +194,7 @@ public enum BuildToolsServiceLoader {
                     throw new RuntimeException(e);
                 }
             }
-            ClassLoader cl = new URLClassLoader(urls, getClass().getClassLoader());
+            ClassLoader cl = new URLClassLoader(urls, serviceType.getServiceClass().getClassLoader());
             ServiceLoader<T> serviceLoader = ServiceLoader.load(serviceType.getServiceClass(), cl);
             loadedServicesLoaders.add(new LoadedServiceLoader<T>(
                     serviceType.getServiceClass(), serviceLoader));

@@ -102,7 +102,7 @@ public class JackConversionCache extends PreProcessCache<PreProcessCache.Key> {
         if (pair.getSecond()) {
             try {
                 // haven't process this file yet so do it and record it.
-                List<File> files = AndroidBuilder.convertLibraryToJack(
+                List<File> files = AndroidBuilder.convertLibaryToJackUsingApis(
                         inputFile,
                         outFile,
                         dexOptions,
