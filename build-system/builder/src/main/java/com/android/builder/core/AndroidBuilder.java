@@ -82,6 +82,9 @@ import com.android.jack.api.v01.ConfigurationException;
 import com.android.jack.api.v01.MultiDexKind;
 import com.android.jack.api.v01.ReporterKind;
 import com.android.jack.api.v01.UnrecoverableException;
+import com.android.jill.api.JillProvider;
+import com.android.jill.api.v01.Api01TranslationTask;
+import com.android.jill.api.v01.TranslationException;
 import com.android.manifmerger.ManifestMerger2;
 import com.android.manifmerger.MergingReport;
 import com.android.manifmerger.PlaceholderEncoder;
@@ -120,6 +123,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * This is the main builder class. It is given all the data to process the build (such as
@@ -1481,6 +1486,55 @@ public class AndroidBuilder {
                 mVerboseExec,
                 mJavaProcessExecutor,
                 mProcessOutputHandler);
+    }
+
+    public static List<File> convertLibaryToJackUsingApis(
+            @NonNull File inputFile,
+            @NonNull File outFile,
+            @NonNull DexOptions dexOptions,
+            @NonNull BuildToolInfo buildToolInfo,
+            boolean verbose,
+            @NonNull JavaProcessExecutor processExecutor,
+            @NonNull ProcessOutputHandler processOutputHandler) throws ProcessException {
+
+        // TODO: provide a better logger.
+        Logger logger = Logger.getLogger(AndroidBuilder.class.getName());
+
+        BuildToolServiceLoader buildToolServiceLoader = BuildToolsServiceLoader.INSTANCE
+                .forVersion(buildToolInfo);
+        if (System.getenv("USE_JACK_API") != null) {
+            try {
+                Optional<JillProvider> jillProviderOptional = buildToolServiceLoader
+                        .getSingleService(BuildToolsServiceLoader.JILL);
+
+                if (jillProviderOptional.isPresent()) {
+                    com.android.jill.api.v01.Api01Config config =
+                            jillProviderOptional.get().createConfig(
+                                    com.android.jill.api.v01.Api01Config.class);
+
+                    config.setInputJavaBinaryFile(inputFile);
+                    config.setOutputJackFile(outFile);
+                    config.setVerbose(verbose);
+
+                    Api01TranslationTask translationTask = config.getTask();
+                    translationTask.run();
+
+                    return ImmutableList.of(outFile);
+                }
+
+            } catch (ClassNotFoundException e) {
+                logger.warning("Cannot find the jill tool in the classpath, reverting to native");
+            } catch (com.android.jill.api.ConfigNotSupportedException e) {
+                logger.warning(e.getMessage() + ", reverting to native");
+            } catch (com.android.jill.api.v01.ConfigurationException e) {
+                logger.warning(e.getMessage() + ", reverting to native");
+            } catch (TranslationException e) {
+                logger.log(Level.SEVERE,
+                        "In process translation failed, reverting to native, file a bug", e);
+            }
+        }
+        return convertLibraryToJack(inputFile, outFile, dexOptions, buildToolInfo, verbose,
+                processExecutor, processOutputHandler);
     }
 
     public static List<File> convertLibraryToJack(
