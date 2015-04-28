@@ -35,7 +35,7 @@ public interface AndroidSourceFile {
     File getSrcFile();
 
     /**
-     * Sets the location of the file.
+     * Sets the location of the file. Returns this object.
      *
      * @param srcPath The source directory. This is evaluated as for
      *                {@link org.gradle.api.Project#file(Object)}

@@ -27,7 +27,9 @@ import org.gradle.internal.reflect.Instantiator;
 import java.util.Set;
 
 /**
- * Main entry point for all splits related information.
+ * DSL object for configuring APK Splits options.
+ *
+ * <p>See <a href="http://tools.android.com/tech-docs/new-build-system/user-guide/apk-splits">APK Splits</a>.
  */
 public class Splits {
 
