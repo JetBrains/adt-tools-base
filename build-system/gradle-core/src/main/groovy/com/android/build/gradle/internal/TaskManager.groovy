@@ -15,7 +15,6 @@
  */
 
 package com.android.build.gradle.internal
-
 import com.android.SdkConstants
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
@@ -66,7 +65,6 @@ import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.build.gradle.internal.variant.BaseVariantOutputData
 import com.android.build.gradle.internal.variant.LibraryVariantData
 import com.android.build.gradle.internal.variant.TestVariantData
-import com.android.build.gradle.internal.variant.TestedVariantData
 import com.android.build.gradle.tasks.AidlCompile
 import com.android.build.gradle.tasks.AndroidJarTask
 import com.android.build.gradle.tasks.AndroidProGuardTask
@@ -103,7 +101,6 @@ import com.android.builder.core.VariantConfiguration
 import com.android.builder.core.VariantType
 import com.android.builder.dependency.LibraryDependency
 import com.android.builder.internal.testing.SimpleTestCallable
-import com.android.builder.model.AndroidProject
 import com.android.builder.testing.ConnectedDeviceProvider
 import com.android.builder.testing.TestData
 import com.android.builder.testing.api.DeviceProvider
@@ -112,10 +109,9 @@ import com.android.resources.Density
 import com.android.sdklib.AndroidTargetHash
 import com.android.sdklib.BuildToolInfo
 import com.android.sdklib.IAndroidTarget
+import com.android.sdklib.repository.FullRevision
 import com.google.common.base.CharMatcher
 import com.google.common.collect.ImmutableList
-import com.google.common.collect.ImmutableSet
-import com.google.common.collect.Iterators
 import com.google.common.collect.Lists
 import com.google.common.collect.Sets
 import groovy.transform.CompileDynamic
@@ -160,6 +156,7 @@ import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
 import static com.android.builder.model.AndroidProject.FD_OUTPUTS
 import static com.android.builder.model.AndroidProject.PROPERTY_APK_LOCATION
 import static com.android.sdklib.BuildToolInfo.PathId.ZIP_ALIGN
+import static com.google.common.base.Preconditions.checkArgument
 
 /**
  * Manages tasks creation.
@@ -178,6 +175,14 @@ abstract class TaskManager {
     public static final String BUILD_GROUP = BasePlugin.BUILD_GROUP
 
     public static final String ANDROID_GROUP = "Android"
+
+    /**
+     * The first version of build tools that normalizes resources when packaging the APK.
+     *
+     * <p>This means that e.g. drawable-hdpi becomes drawable-hdpi-v4 to make it clear it was not
+     * available before API 4.
+     */
+    public static final FullRevision NORMALIZE_RESOURCES_BUILD_TOOLS = new FullRevision(21, 0, 0)
 
     protected Project project
 
@@ -531,6 +536,12 @@ abstract class TaskManager {
         int minSdk = variantData.variantConfiguration.minSdkVersion.getApiLevel()
 
         if (extension.preprocessResources  && minSdk < PreprocessResourcesTask.MIN_SDK) {
+            // Otherwise mergeResources will rename files when merging and it's hard to keep track
+            // of PNGs that the user wanted to use instead of the generated ones.
+            checkArgument(
+                    extension.buildToolsRevision >= MergeResources.NORMALIZE_RESOURCES_BUILD_TOOLS,
+                    "To preprocess resources, you have to use build tools >= ${MergeResources.NORMALIZE_RESOURCES_BUILD_TOOLS}")
+
             scope.preprocessResourcesTask = androidTasks.create(
                     tasks,
                     "preprocess${variantName}Resources",
@@ -539,6 +550,7 @@ abstract class TaskManager {
 
                 preprocessResourcesTask.dependsOn variantData.mergeResourcesTask
 
+                preprocessResourcesTask.variantName = variantData.name
                 preprocessResourcesTask.mergedResDirectory =
                         scope.getMergeResourcesOutputDir()
                 preprocessResourcesTask.generatedResDirectory =

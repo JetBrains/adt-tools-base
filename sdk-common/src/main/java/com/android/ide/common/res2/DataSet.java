@@ -450,7 +450,9 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
     protected boolean handleChangedFile(@NonNull File sourceFolder,
                                         @NonNull File changedFile) throws MergingException {
         F dataFile = mDataFileMap.get(changedFile);
-        dataFile.getItem().setTouched();
+        for (I item : dataFile.getItems()) {
+            item.setTouched();
+        }
         return true;
     }
 
@@ -487,7 +489,7 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
      * @param file the file to check
      * @return true if it is a valid file, false if it should be ignored.
      */
-    protected boolean checkFileForAndroidRes(@NonNull File file) {
+    protected static boolean checkFileForAndroidRes(@NonNull File file) {
         return !isIgnored(file);
     }
 

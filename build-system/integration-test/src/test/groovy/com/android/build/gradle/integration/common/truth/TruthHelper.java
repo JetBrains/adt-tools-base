@@ -43,6 +43,7 @@ import com.google.common.truth.PrimitiveIntArraySubject;
 import com.google.common.truth.PrimitiveLongArraySubject;
 import com.google.common.truth.StringSubject;
 import com.google.common.truth.Subject;
+import com.google.common.truth.TestVerb;
 
 import java.io.File;
 import java.util.Collection;
@@ -166,5 +167,9 @@ public class TruthHelper {
     public static <K, V, M extends Map<K, V>> MapSubject<? extends MapSubject<?, K, V, M>, K, V, M>
     assertThat(Map<K, V> target) {
         return assert_().that(target);
+    }
+
+    public static TestVerb assertWithMessage(String message) {
+        return assert_().withFailureMessage(message);
     }
 }

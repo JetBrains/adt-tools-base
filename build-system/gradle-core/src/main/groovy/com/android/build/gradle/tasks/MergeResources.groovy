@@ -45,6 +45,7 @@ import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
 
 @ParallelizableTask
 public class MergeResources extends IncrementalTask {
+    public static final FullRevision NORMALIZE_RESOURCES_BUILD_TOOLS = new FullRevision(21, 0, 0)
 
     // ----- PUBLIC TASK API -----
 
@@ -246,7 +247,8 @@ public class MergeResources extends IncrementalTask {
 
             mergeResourcesTask.process9Patch = process9Patch
             mergeResourcesTask.crunchPng = scope.globalScope.extension.aaptOptions.getCruncherEnabled()
-            mergeResourcesTask.normalizeResources = scope.globalScope.extension.buildToolsRevision.compareTo(new FullRevision(21, 0, 0)) < 0
+            mergeResourcesTask.normalizeResources =
+                    scope.globalScope.extension.buildToolsRevision < NORMALIZE_RESOURCES_BUILD_TOOLS
 
             ConventionMappingHelper.map(mergeResourcesTask, "useNewCruncher") { scope.globalScope.getExtension().aaptOptions.useNewCruncher }
 
