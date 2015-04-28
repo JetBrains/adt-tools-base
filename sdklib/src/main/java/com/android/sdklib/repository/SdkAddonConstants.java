@@ -21,6 +21,7 @@ import java.io.InputStream;
 
 /**
  * Public constants for the sdk-addon XML Schema.
+ * @deprecated moved to studio
  */
 public class SdkAddonConstants extends RepoConstants {
 

@@ -21,6 +21,7 @@ import java.io.InputStream;
 
 /**
  * Public constants for the sdk-addons-list XML Schema.
+ * @deprecated moved to studio
  */
 public class SdkAddonsListConstants {
 
