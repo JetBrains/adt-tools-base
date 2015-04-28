@@ -46,6 +46,7 @@ import javax.xml.parsers.ParserConfigurationException;
  * {@link ResourceFile}.
  */
 public class ResourceMerger extends DataMerger<ResourceItem, ResourceFile, ResourceSet> {
+    private static final String NODE_MERGED_ITEMS = "mergedItems";
 
     /**
      * Override of the normal ResourceItem to handle merged item cases.
@@ -228,8 +229,21 @@ public class ResourceMerger extends DataMerger<ResourceItem, ResourceFile, Resou
         return null;
     }
 
+    @NonNull
     @Override
-    protected void loadMergedItems(@NonNull Node mergedItemsNode) throws MergingException {
+    protected String getAdditionalDataTagName() {
+        return NODE_MERGED_ITEMS;
+    }
+
+    @Override
+    protected void loadAdditionalData(@NonNull Node mergedItemsNode, boolean incrementalState) throws MergingException {
+        // only load the merged item in incremental state.
+        // In non incremental state, they will be recreated by the touched
+        // items anyway.
+        if (!incrementalState) {
+            return;
+        }
+
         // loop on the qualifiers.
         NodeList configurationList = mergedItemsNode.getChildNodes();
 
@@ -269,8 +283,8 @@ public class ResourceMerger extends DataMerger<ResourceItem, ResourceFile, Resou
     }
 
     @Override
-    protected void writeMergedItems(Document document, Node rootNode) {
-        Node mergedItemsNode = document.createElement(NODE_MERGED_ITEMS);
+    protected void writeAdditionalData(Document document, Node rootNode) {
+        Node mergedItemsNode = document.createElement(getAdditionalDataTagName());
         rootNode.appendChild(mergedItemsNode);
 
         for (String qualifier : mMergedItems.keySet()) {

@@ -105,7 +105,6 @@ import com.android.builder.testing.ConnectedDeviceProvider
 import com.android.builder.testing.TestData
 import com.android.builder.testing.api.DeviceProvider
 import com.android.builder.testing.api.TestServer
-import com.android.resources.Density
 import com.android.sdklib.AndroidTargetHash
 import com.android.sdklib.BuildToolInfo
 import com.android.sdklib.IAndroidTarget
@@ -157,7 +156,6 @@ import static com.android.builder.model.AndroidProject.FD_OUTPUTS
 import static com.android.builder.model.AndroidProject.PROPERTY_APK_LOCATION
 import static com.android.sdklib.BuildToolInfo.PathId.ZIP_ALIGN
 import static com.google.common.base.Preconditions.checkArgument
-
 /**
  * Manages tasks creation.
  */
@@ -535,7 +533,7 @@ abstract class TaskManager {
         String variantName = variantData.variantConfiguration.fullName.capitalize()
         int minSdk = variantData.variantConfiguration.minSdkVersion.getApiLevel()
 
-        if (extension.preprocessResources  && minSdk < PreprocessResourcesTask.MIN_SDK) {
+        if (extension.preprocessingOptions.preprocessResources && minSdk < PreprocessResourcesTask.MIN_SDK) {
             // Otherwise mergeResources will rename files when merging and it's hard to keep track
             // of PNGs that the user wanted to use instead of the generated ones.
             checkArgument(
@@ -563,8 +561,7 @@ abstract class TaskManager {
                         project.file(
                                 "$project.buildDir/${FD_INTERMEDIATES}/incremental/preprocessResourcesTask/${variantData.variantConfiguration.dirName}")
 
-                // TODO: configure this in the extension.
-                preprocessResourcesTask.densitiesToGenerate = [Density.HIGH, Density.XHIGH]
+                preprocessResourcesTask.densitiesToGenerate = extension.preprocessingOptions.typedDensities
             }
         }
     }

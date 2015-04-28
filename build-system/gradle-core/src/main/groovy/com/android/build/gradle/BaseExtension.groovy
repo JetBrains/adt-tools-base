@@ -34,6 +34,7 @@ import com.android.build.gradle.internal.dsl.DexOptions
 import com.android.build.gradle.internal.dsl.GroupableProductFlavor
 import com.android.build.gradle.internal.dsl.LintOptions
 import com.android.build.gradle.internal.dsl.PackagingOptions
+import com.android.build.gradle.internal.dsl.PreprocessingOptions
 import com.android.build.gradle.internal.dsl.ProductFlavor
 import com.android.build.gradle.internal.dsl.SigningConfig
 import com.android.build.gradle.internal.dsl.Splits
@@ -92,6 +93,8 @@ public abstract class BaseExtension {
 
     /** Packaging options. */
     final PackagingOptions packagingOptions
+
+    final PreprocessingOptions preprocessingOptions
 
     /** JaCoCo options. */
     final JacocoExtension jacoco
@@ -170,6 +173,7 @@ public abstract class BaseExtension {
         testOptions = instantiator.newInstance(TestOptions)
         compileOptions = instantiator.newInstance(CompileOptions)
         packagingOptions = instantiator.newInstance(PackagingOptions)
+        preprocessingOptions = instantiator.newInstance(PreprocessingOptions)
         jacoco = instantiator.newInstance(JacocoExtension)
         adbOptions = instantiator.newInstance(AdbOptions)
         splits = instantiator.newInstance(Splits, instantiator)
@@ -389,6 +393,14 @@ public abstract class BaseExtension {
     }
 
     /**
+     * Configures preprocessing options.
+     */
+    void preprocessingOptions(Action<PreprocessingOptions> action) {
+        checkWritability()
+        action.execute(preprocessingOptions)
+    }
+
+    /**
      * Configures JaCoCo options.
      */
     void jacoco(Action<JacocoExtension> action) {
@@ -587,12 +599,6 @@ public abstract class BaseExtension {
 
     // ---------------
     // TEMP for compatibility
-
-    /**
-     * Whether to generate PNGs from vector drawables. This doesn't work yet, so it's disabled by
-     * default.
-     */
-    boolean preprocessResources = false;
 
     // by default, we do not generate pure splits
     boolean generatePureSplits = false;

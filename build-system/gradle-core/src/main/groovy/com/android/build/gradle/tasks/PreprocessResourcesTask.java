@@ -24,16 +24,19 @@ import com.android.ide.common.res2.PreprocessDataSet;
 import com.android.ide.common.res2.PreprocessResourcesMerger;
 import com.android.ide.common.res2.PreprocessResourcesWriter;
 import com.android.resources.Density;
+import com.google.common.base.Joiner;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.SetMultimap;
 import com.google.common.io.Files;
 
+import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputDirectory;
 import org.gradle.api.tasks.OutputDirectory;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.Map;
 
 /**
@@ -46,7 +49,7 @@ public class PreprocessResourcesTask extends IncrementalTask {
     private File outputResDirectory;
     private File generatedResDirectory;
     private File mergedResDirectory;
-    private Collection<Density> densitiesToGenerate;
+    private EnumSet<Density> densitiesToGenerate;
     private String variantName;
 
     @Override
@@ -62,6 +65,12 @@ public class PreprocessResourcesTask extends IncrementalTask {
             Files.touch(new File(getIncrementalFolder(), "build_was_incremental"));
 
             if (!merger.loadFromBlob(getIncrementalFolder(), true /*incrementalState*/)) {
+                doFullTaskAction();
+                return;
+            }
+
+            if (!merger.getDensities().equals(densitiesToGenerate)) {
+                getLogger().info("Set of densities for generating PNG files changed, starting from scratch.");
                 doFullTaskAction();
                 return;
             }
@@ -139,6 +148,7 @@ public class PreprocessResourcesTask extends IncrementalTask {
             }
 
             PreprocessResourcesMerger merger = new PreprocessResourcesMerger();
+            merger.setDensities(densitiesToGenerate);
             // Files from the merged directory take precedence.
             merger.addDataSet(generatedSet);
             merger.addDataSet(mergedSet);
@@ -229,9 +239,8 @@ public class PreprocessResourcesTask extends IncrementalTask {
         return densitiesToGenerate;
     }
 
-    public void setDensitiesToGenerate(
-            Collection<Density> densitiesToGenerate) {
-        this.densitiesToGenerate = densitiesToGenerate;
+    public void setDensitiesToGenerate(Collection<Density> densitiesToGenerate) {
+        this.densitiesToGenerate = EnumSet.copyOf(densitiesToGenerate);
     }
 
     public String getVariantName() {
@@ -240,5 +249,14 @@ public class PreprocessResourcesTask extends IncrementalTask {
 
     public void setVariantName(String variantName) {
         this.variantName = variantName;
+    }
+
+    /**
+     * Make sure Gradle the task when densities change. {@link Input} doesn't work on collections,
+     * so we need to use a trick.
+     */
+    @Input
+    public String getDensitiesFingerprint() {
+        return Joiner.on(':').join(densitiesToGenerate);
     }
 }

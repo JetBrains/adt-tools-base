@@ -13,7 +13,9 @@ android {
         minSdkVersion 19
     }
 
-    preprocessResources = true
+    preprocessingOptions {
+      preprocessResources = true
+    }
 
     // Don't modify files when merging.
     aaptOptions.cruncherEnabled = false
