@@ -73,6 +73,8 @@ public class AaptOptions implements com.android.builder.model.AaptOptions {
 
     /**
      * Extensions of files that will not be stored compressed in the APK.
+     *
+     * <p>Equivalent of the -0 flag. See <code>aapt --help</code>
      */
     @Override
     @Optional
@@ -91,7 +93,6 @@ public class AaptOptions implements com.android.builder.model.AaptOptions {
 
     /**
      * Enables or disables PNG crunching.
-     * @param value true to enable, false to disable.
      */
     public void setCruncherEnabled(boolean value) {
         cruncherEnabled = value;
@@ -104,10 +105,9 @@ public class AaptOptions implements com.android.builder.model.AaptOptions {
     public boolean getCruncherEnabled() {
         return cruncherEnabled;
     }
+    
     /**
      * Whether to use the new cruncher.
-     *
-     * <p>TODO: Document.
      */
     @Input
     public boolean getUseNewCruncher() {
@@ -124,6 +124,8 @@ public class AaptOptions implements com.android.builder.model.AaptOptions {
 
     /**
      * Forces aapt to return an error if it fails to find an entry for a configuration.
+     *
+     * <p>See <code>aapt --help</code>
      */
     @Override
     @Input
@@ -131,10 +133,22 @@ public class AaptOptions implements com.android.builder.model.AaptOptions {
         return failOnMissingConfigEntry;
     }
 
+    // -- DSL Methods. TODO remove once the instantiator does what I expect it to do.
+
+    /**
+     * Sets extensions of files that will not be stored compressed in the APK.
+     *
+     * <p>Equivalent of the -0 flag. See <code>aapt --help</code>
+     */
     public void noCompress(String noCompress) {
         noCompressList = Collections.singletonList(noCompress);
     }
 
+    /**
+     * Sets extensions of files that will not be stored compressed in the APK.
+     *
+     * <p>Equivalent of the -0 flag. See <code>aapt --help</code>
+     */
     public void noCompress(String... noCompress) {
         noCompressList = Arrays.asList(noCompress);
     }

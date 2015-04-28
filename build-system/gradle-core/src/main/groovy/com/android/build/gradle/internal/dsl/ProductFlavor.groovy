@@ -127,6 +127,12 @@ class ProductFlavor extends DefaultProductFlavor {
         setTargetSdkVersion(targetSdkVersion);
     }
 
+    /**
+     * Sets the maximum SDK version to the given value.
+     *
+     * <p>See <a href="http://developer.android.com/guide/topics/manifest/uses-sdk-element.html">
+     * uses-sdk element documentation</a>.
+     */
     @NonNull
     public void maxSdkVersion(int targetSdkVersion) {
         setMaxSdkVersion(targetSdkVersion);
@@ -160,6 +166,20 @@ class ProductFlavor extends DefaultProductFlavor {
 
 // -- DSL Methods. TODO remove once the instantiator does what I expect it to do.
 
+    /**
+     * Adds a new field to the generated BuildConfig class.
+     *
+     * The field is generated as:
+     *
+     * <type> <name> = <value>;
+     *
+     * This means each of these must have valid Java content. If the type is a String, then the
+     * value should include quotes.
+     *
+     * @param type the type of the field
+     * @param name the name of the field
+     * @param value the value of the field
+     */
     public void buildConfigField(
             @NonNull String type,
             @NonNull String name,
@@ -178,6 +198,17 @@ class ProductFlavor extends DefaultProductFlavor {
         addBuildConfigField(AndroidBuilder.createClassField(type, name, value));
     }
 
+    /**
+     * Adds a new generated resource.
+     *
+     * <p>This is equivalent to specifying a resource in res/values.
+     *
+     * <p>See <a href="http://developer.android.com/guide/topics/resources/available-resources.html">Resource Types</a>.
+     *
+     * @param type the type of the resource
+     * @param name the name of the resource
+     * @param value the value of the resource
+     */
     public void resValue(
             @NonNull String type,
             @NonNull String name,
@@ -216,6 +247,14 @@ class ProductFlavor extends DefaultProductFlavor {
 
     /**
      * Adds new ProGuard configuration files.
+     *
+     * <p>There are 2 default rules files
+     * <ul>
+     *     <li>proguard-android.txt
+     *     <li>proguard-android-optimize.txt
+     * </ul>
+     * <p>They are located in the SDK. Using <code>getDefaultProguardFile(String filename)</code> will return the
+     * full path to the files. They are identical except for enabling optimizations.
      */
     @NonNull
     public void proguardFiles(Object... proguardFileArray) {
@@ -224,6 +263,14 @@ class ProductFlavor extends DefaultProductFlavor {
 
     /**
      * Sets the ProGuard configuration files.
+     *
+     * <p>There are 2 default rules files
+     * <ul>
+     *     <li>proguard-android.txt
+     *     <li>proguard-android-optimize.txt
+     * </ul>
+     * <p>They are located in the SDK. Using <code>getDefaultProguardFile(String filename)</code> will return the
+     * full path to the files. They are identical except for enabling optimizations.
      */
     @NonNull
     public void setProguardFiles(Iterable<?> proguardFileIterable) {
@@ -233,6 +280,16 @@ class ProductFlavor extends DefaultProductFlavor {
         }
     }
 
+    /**
+     * Specifies a proguard rule file to be included in the published AAR.
+     *
+     * <p>This proguard rule file will then be used by any application project that consume the AAR
+     * (if proguard is enabled).
+     *
+     * <p>This allows AAR to specify shrinking or obfuscation exclude rules.
+     *
+     * <p>This is only valid for Library project. This is ignored in Application project.
+     */
     @NonNull
     public void testProguardFile(Object proguardFile) {
         testProguardFiles.add(project.file(proguardFile));
@@ -251,6 +308,16 @@ class ProductFlavor extends DefaultProductFlavor {
         consumerProguardFiles.addAll(project.files(proguardFileArray).files)
     }
 
+    /**
+     * Specifies a proguard rule file to be included in the published AAR.
+     *
+     * <p>This proguard rule file will then be used by any application project that consume the AAR
+     * (if proguard is enabled).
+     *
+     * <p>This allows AAR to specify shrinking or obfuscation exclude rules.
+     *
+     * <p>This is only valid for Library project. This is ignored in Application project.
+     */
     @NonNull
     public void setConsumerProguardFiles(Iterable<?> proguardFileIterable) {
         consumerProguardFiles.clear()
@@ -267,26 +334,65 @@ class ProductFlavor extends DefaultProductFlavor {
                 "Current NDK support is deprecated.  Alternative will be provided in the future.");
     }
 
+    /**
+     * Adds a resource configuration filter.
+     *
+     * <p>If a qualifier value is passed, then all other resources using a qualifier of the same type
+     * but of different value will be ignored from the final packaging of the APK.
+     *
+     * <p>For instance, specifying 'hdpi', will ignore all resources using mdpi, xhdpi, etc...
+     */
     void resConfig(@NonNull String config) {
         addResourceConfiguration(config);
     }
 
+    /**
+     * Adds several resource configuration filters.
+     *
+     * <p>If a qualifier value is passed, then all other resources using a qualifier of the same type
+     * but of different value will be ignored from the final packaging of the APK.
+     *
+     * <p>For instance, specifying 'hdpi', will ignore all resources using mdpi, xhdpi, etc...
+     */
     void resConfigs(@NonNull String... config) {
         addResourceConfigurations(config);
     }
 
+    /**
+     * Adds several resource configuration filters.
+     *
+     * <p>If a qualifier value is passed, then all other resources using a qualifier of the same type
+     * but of different value will be ignored from the final packaging of the APK.
+     *
+     * <p>For instance, specifying 'hdpi', will ignore all resources using mdpi, xhdpi, etc...
+     */
     void resConfigs(@NonNull Collection<String> config) {
         addResourceConfigurations(config);
     }
 
+    /**
+     * Whether the experimental Jack toolchain should be used.
+     *
+     * <p>See <a href="http://tools.android.com/tech-docs/jackandjill">Jack and Jill</a>
+     */
     Boolean getUseJack() {
         return useJack
     }
 
+    /**
+     * Whether the experimental Jack toolchain should be used.
+     *
+     * <p>See <a href="http://tools.android.com/tech-docs/jackandjill">Jack and Jill</a>
+     */
     void setUseJack(Boolean useJack) {
         this.useJack = useJack
     }
 
+    /**
+     * Whether the experimental Jack toolchain should be used.
+     *
+     * <p>See <a href="http://tools.android.com/tech-docs/jackandjill">Jack and Jill</a>
+     */
     void useJack(Boolean useJack) {
         setUseJack(useJack)
     }

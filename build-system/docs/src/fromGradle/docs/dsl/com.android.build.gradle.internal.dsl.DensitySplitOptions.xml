@@ -5,7 +5,6 @@
             <thead>
                 <tr><td>Name</td></tr>
             </thead>
-            <tr><td>strict</td></tr>
             <tr><td>compatibleScreens</td></tr>
         </table>
     </section>

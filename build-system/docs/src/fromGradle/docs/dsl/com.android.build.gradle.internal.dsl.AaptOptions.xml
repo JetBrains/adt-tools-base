@@ -8,7 +8,6 @@
             <tr><td>ignoreAssets</td></tr>
             <tr><td>noCompress</td></tr>
             <tr><td>failOnMissingConfigEntry</td></tr>
-            <tr><td>useNewCruncher</td></tr>
         </table>
     </section>
     <section>
@@ -17,6 +16,7 @@
             <thead>
                 <tr><td>Name</td></tr>
             </thead>
+            <tr><td>noCompress</td></tr>
         </table>
     </section>
 </section>

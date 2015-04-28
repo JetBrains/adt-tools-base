@@ -21,10 +21,7 @@
             <thead>
                 <tr><td>Name</td></tr>
             </thead>
-            <tr><td>proguardFiles</td></tr>
-            <tr><td>consumerProguardFiles</td></tr>
-            <tr><td>manifestPlaceholders</td></tr>
-            <tr><td>multiDexEnabled</td></tr>
+            <tr><td>returnDefaultValues</td></tr>
         </table>
     </section>
     <section>
@@ -33,6 +30,7 @@
             <thead>
                 <tr><td>Name</td></tr>
             </thead>
+            <tr><td>returnDefaultValues</td></tr>
         </table>
     </section>
 </section>
