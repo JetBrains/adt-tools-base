@@ -20,6 +20,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import com.android.annotations.NonNull;
 import com.android.resources.Density;
+import com.android.utils.FileUtils;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
@@ -53,7 +54,15 @@ public class VectorDrawableRenderer {
             File pngFile = new File(directory, inputXmlFile.getName().replace(".xml", ".png"));
 
             Files.createParentDirs(pngFile);
-            Files.write("PNG for " + density.getResourceValue(), pngFile, Charsets.UTF_8);
+            Files.write(
+                    String.format(
+                            "%s in %s, %s%n",
+                            inputXmlFile.getName(),
+                            density.getResourceValue(),
+                            // For testing, make sure different inputs produce different outputs.
+                            FileUtils.sha1(inputXmlFile)),
+                    pngFile,
+                    Charsets.UTF_8);
             createdFiles.add(pngFile);
         }
 

@@ -410,7 +410,7 @@ abstract class DataMerger<I extends DataItem<F>, F extends DataFile<I>, S extend
                 if (NODE_DATA_SET.equals(node.getLocalName())) {
                     S dataSet = createFromXml(node);
                     if (dataSet != null) {
-                        mDataSets.add(dataSet);
+                        addDataSet(dataSet);
                     }
                 } else if (incrementalState && NODE_MERGED_ITEMS.equals(node.getLocalName())) {
                     // only load the merged item in incremental state.

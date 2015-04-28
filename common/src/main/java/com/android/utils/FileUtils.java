@@ -16,6 +16,12 @@
 
 package com.android.utils;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+
+import com.android.annotations.NonNull;
+import com.google.common.hash.HashFunction;
+import com.google.common.hash.Hashing;
 import com.google.common.io.Files;
 
 import java.io.File;
@@ -55,5 +61,16 @@ public class FileUtils {
         } else if (from.isFile()) {
             Files.copy(from, to);
         }
+    }
+
+    public static String relativePath(@NonNull File file, @NonNull File dir) {
+        checkArgument(file.isFile(), "%s is not a file.", file.getPath());
+        checkArgument(dir.isDirectory(), "%s is not a directory.", dir.getPath());
+
+        return dir.toURI().relativize(file.toURI()).getPath();
+    }
+
+    public static String sha1(@NonNull File file) throws IOException {
+        return Hashing.sha1().hashBytes(Files.toByteArray(file)).toString();
     }
 }
