@@ -19,7 +19,11 @@ package com.android.builder.png;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import com.android.annotations.NonNull;
+import com.android.ide.common.resources.configuration.DensityQualifier;
+import com.android.ide.common.resources.configuration.FolderConfiguration;
+import com.android.ide.common.resources.configuration.VersionQualifier;
 import com.android.resources.Density;
+import com.android.resources.ResourceFolderType;
 import com.android.utils.FileUtils;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
@@ -43,15 +47,25 @@ public class VectorDrawableRenderer {
             @NonNull Collection<Density> densities) throws IOException {
         checkArgument(inputXmlFile.exists());
         checkArgument(outputResDirectory.exists());
+        checkArgument(
+                isInDrawable(inputXmlFile),
+                "XML file is not in a 'drawable-*' folder, [%s].",
+                inputXmlFile);
 
+        FolderConfiguration originalConfiguration = getFolderConfiguration(inputXmlFile);
+
+        // Create all the PNG files.
         Collection<File> createdFiles = Lists.newArrayList();
-
         for (Density density : densities) {
-            // Sketch implementation.
+            FolderConfiguration newConfiguration = FolderConfiguration.copyOf(originalConfiguration);
+            newConfiguration.setDensityQualifier(new DensityQualifier(density));
 
-            // TODO: add the density to all other qualifiers of the original file.
-            File directory = new File(outputResDirectory, "drawable-" + density.getResourceValue());
-            File pngFile = new File(directory, inputXmlFile.getName().replace(".xml", ".png"));
+            File directory = new File(
+                    outputResDirectory,
+                    newConfiguration.getFolderName(ResourceFolderType.DRAWABLE));
+            File pngFile = new File(
+                    directory,
+                    inputXmlFile.getName().replace(".xml", ".png"));
 
             Files.createParentDirs(pngFile);
             Files.write(
@@ -66,20 +80,56 @@ public class VectorDrawableRenderer {
             createdFiles.add(pngFile);
         }
 
-        File v21Dir = new File(outputResDirectory, "drawable-v21");
+        FolderConfiguration newConfiguration = FolderConfiguration.copyOf(originalConfiguration);
+        newConfiguration.setVersionQualifier(new VersionQualifier(MIN_SDK_WITH_VECTOR_SUPPORT));
+
+        // Create a copy of the original in a folder with the version qualifier.
+        File v21Dir = new File(
+                outputResDirectory,
+                newConfiguration.getFolderName(ResourceFolderType.DRAWABLE));
         File v21Copy = new File(v21Dir, inputXmlFile.getName());
+
         Files.createParentDirs(v21Copy);
         Files.copy(inputXmlFile, v21Copy);
+
         createdFiles.add(v21Copy);
 
-        // TODO: make all the drawable-hdpi-v21 aliases.
+        // TODO: Create v21 aliases.
 
         return createdFiles;
     }
 
-    public boolean isVectorDrawable(File resourceFile) {
+    @NonNull
+    private FolderConfiguration getFolderConfiguration(@NonNull File inputXmlFile) {
+        String parentName = inputXmlFile.getParentFile().getName();
+        FolderConfiguration originalConfiguration =
+                FolderConfiguration.getConfigForFolder(parentName);
+        checkArgument(
+                originalConfiguration != null,
+                "Invalid resource folder name [%s].",
+                parentName);
+        return originalConfiguration;
+    }
+
+    private boolean isInDrawable(@NonNull File inputXmlFile) {
+        ResourceFolderType folderType =
+                ResourceFolderType.getFolderType(inputXmlFile.getParentFile().getName());
+
+        return folderType == ResourceFolderType.DRAWABLE;
+    }
+
+    public boolean needsPreprocessing(File resourceFile) {
         // TODO: parse the root element of the file to check.
         return resourceFile.getPath().endsWith(".xml")
-                && resourceFile.getParentFile().getName().equals("drawable");
+                && isInDrawable(resourceFile)
+                && getEffectiveVersion(resourceFile) < MIN_SDK_WITH_VECTOR_SUPPORT;
+    }
+
+    private int getEffectiveVersion(File resourceFile) {
+        FolderConfiguration configuration = getFolderConfiguration(resourceFile);
+        configuration.createDefault();
+        // Because of the above, the will be no NPE here.
+        //noinspection ConstantConditions
+        return configuration.getVersionQualifier().getVersion();
     }
 }

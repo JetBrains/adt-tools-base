@@ -51,13 +51,13 @@ class VectorDrawableTest {
         // generated one.
         File originalPng = new File(
                 project.testDir,
-                "build/intermediates/res/merged/debug/drawable-hdpi/specialheart.png")
+                "build/intermediates/res/merged/debug/drawable-hdpi/special_heart.png")
         File generatedPng = new File(
                 project.testDir,
-                "build/generated/res/pngs/debug/drawable-hdpi/specialheart.png")
+                "build/generated/res/pngs/debug/drawable-hdpi/special_heart.png")
         File pngToUse = new File(
                 project.testDir,
-                "build/intermediates/res/preprocessed/debug/drawable-hdpi/specialheart.png")
+                "build/intermediates/res/preprocessed/debug/drawable-hdpi/special_heart.png")
 
 
         assertWithMessage("Generated file is just a copy.")
@@ -70,14 +70,31 @@ class VectorDrawableTest {
         // Check XHDPI.
         generatedPng = new File(
                 project.testDir,
-                "build/generated/res/pngs/debug/drawable-xhdpi/specialheart.png")
+                "build/generated/res/pngs/debug/drawable-xhdpi/special_heart.png")
         pngToUse = new File(
                 project.testDir,
-                "build/intermediates/res/preprocessed/debug/drawable-xhdpi/specialheart.png")
+                "build/intermediates/res/preprocessed/debug/drawable-xhdpi/special_heart.png")
 
         assertWithMessage("Wrong file used.")
                 .that(FileUtils.sha1(pngToUse))
                 .isEqualTo(FileUtils.sha1(generatedPng))
+
+        // Check interactions with other qualifiers.
+        assertThatApk(apk).containsResource("drawable-fr-v21/french_heart.xml")
+        assertThatApk(apk).doesNotContainResource("drawable-v21/french_heart.xml")
+        assertThatApk(apk).doesNotContainResource("drawable-fr/french_heart.xml")
+        assertThatApk(apk).containsResource("drawable-fr-hdpi-v4/french_heart.png")
+        assertThatApk(apk).doesNotContainResource("drawable-hdpi/french_heart.png")
+        assertThatApk(apk).doesNotContainResource("drawable-hdpi-v4/french_heart.png")
+        assertThatApk(apk).doesNotContainResource("drawable-fr/french_heart.png")
+
+        assertThatApk(apk).containsResource("drawable-v21/modern_heart.xml")
+        assertThatApk(apk).doesNotContainResource("drawable-v16/modern_heart.xml")
+        assertThatApk(apk).containsResource("drawable-hdpi-v16/modern_heart.png")
+        assertThatApk(apk).doesNotContainResource("drawable-v16/modern_heart.png")
+        assertThatApk(apk).doesNotContainResource("drawable-v21/modern_heart.png")
+        assertThatApk(apk).doesNotContainResource("drawable-hdpi/modern_heart.png")
+        assertThatApk(apk).doesNotContainResource("drawable-hdpi-v4/modern_heart.png")
     }
 
     @Test
@@ -85,7 +102,7 @@ class VectorDrawableTest {
         project.execute("assembleDebug")
 
         File heartXml = new File(project.testDir, "src/main/res/drawable/heart.xml")
-        File heartXmlCopy = new File(project.testDir, "src/main/res/drawable/heart2.xml")
+        File heartXmlCopy = new File(project.testDir, "src/main/res/drawable/heart_copy.xml")
         Files.copy(heartXml, heartXmlCopy)
 
         project.execute("assembleDebug")
@@ -93,10 +110,10 @@ class VectorDrawableTest {
 
         File apk = project.getApk("debug")
         assertThatApk(apk).containsResource("drawable/icon.png")
-        assertThatApk(apk).doesNotContainResource("drawable/heart2.xml")
-        assertThatApk(apk).containsResource("drawable-v21/heart2.xml")
-        assertThatApk(apk).containsResource("drawable-hdpi-v4/heart2.png")
-        assertThatApk(apk).containsResource("drawable-xhdpi-v4/heart2.png")
+        assertThatApk(apk).doesNotContainResource("drawable/heart_copy.xml")
+        assertThatApk(apk).containsResource("drawable-v21/heart_copy.xml")
+        assertThatApk(apk).containsResource("drawable-hdpi-v4/heart_copy.png")
+        assertThatApk(apk).containsResource("drawable-xhdpi-v4/heart_copy.png")
     }
 
     @Test
@@ -123,16 +140,16 @@ class VectorDrawableTest {
 
         File generatedPng = new File(
                 project.testDir,
-                "build/generated/res/pngs/debug/drawable-hdpi/specialheart.png")
+                "build/generated/res/pngs/debug/drawable-hdpi/special_heart.png")
         File pngToUse = new File(
                 project.testDir,
-                "build/intermediates/res/preprocessed/debug/drawable-hdpi/specialheart.png")
+                "build/intermediates/res/preprocessed/debug/drawable-hdpi/special_heart.png")
 
         assertWithMessage("Wrong file used.")
                 .that(FileUtils.sha1(pngToUse))
                 .isNotEqualTo(FileUtils.sha1(generatedPng))
 
-        File pngFile = new File(project.testDir, "src/main/res/drawable-hdpi/specialheart.png")
+        File pngFile = new File(project.testDir, "src/main/res/drawable-hdpi/special_heart.png")
         pngFile.delete()
 
         project.execute("assembleDebug")
@@ -149,18 +166,18 @@ class VectorDrawableTest {
 
         File generatedPng = new File(
                 project.testDir,
-                "build/generated/res/pngs/debug/drawable-xhdpi/specialheart.png")
+                "build/generated/res/pngs/debug/drawable-xhdpi/special_heart.png")
         File pngToUse = new File(
                 project.testDir,
-                "build/intermediates/res/preprocessed/debug/drawable-xhdpi/specialheart.png")
+                "build/intermediates/res/preprocessed/debug/drawable-xhdpi/special_heart.png")
 
         assertWithMessage("Wrong file used.")
                 .that(FileUtils.sha1(pngToUse))
                 .isEqualTo(FileUtils.sha1(generatedPng))
 
         // Create a PNG file for XHDPI. It should be used instead of the generated one.
-        File hdpiPng = new File(project.testDir, "src/main/res/drawable-hdpi/specialheart.png")
-        File xhdpiPng = new File(project.testDir, "src/main/res/drawable-xhdpi/specialheart.png")
+        File hdpiPng = new File(project.testDir, "src/main/res/drawable-hdpi/special_heart.png")
+        File xhdpiPng = new File(project.testDir, "src/main/res/drawable-xhdpi/special_heart.png")
         Files.createParentDirs(xhdpiPng)
         Files.copy(hdpiPng, xhdpiPng)
 

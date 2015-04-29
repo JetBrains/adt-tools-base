@@ -53,7 +53,7 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
     public static final Splitter QUALIFIER_SPLITTER = Splitter.on('-');
 
 
-    private final ResourceQualifier[] mQualifiers = new ResourceQualifier[INDEX_COUNT];
+    private final ResourceQualifier[] mQualifiers;
 
     private static final int INDEX_COUNTRY_CODE          = 0;
     private static final int INDEX_NETWORK_CODE          = 1;
@@ -77,6 +77,14 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
     private static final int INDEX_VERSION               = 19;
     private static final int INDEX_COUNT                 = 20;
 
+    public FolderConfiguration() {
+        mQualifiers = new ResourceQualifier[INDEX_COUNT];
+    }
+
+    private FolderConfiguration(ResourceQualifier[] qualifiers) {
+        this();
+        System.arraycopy(qualifiers, 0, mQualifiers, 0, INDEX_COUNT);
+    }
     /**
      * Creates a {@link FolderConfiguration} matching the folder segments.
      * @param folderSegments The segments of the folder name. The first segments should contain
@@ -302,6 +310,15 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
     }
 
     /**
+     * Creates a copy of the given {@link FolderConfiguration}, that can be modified without
+     * affecting the original.
+     */
+    @NonNull
+    public static FolderConfiguration copyOf(@NonNull FolderConfiguration original) {
+        return new FolderConfiguration(original.mQualifiers);
+    }
+
+    /**
      * Creates a {@link FolderConfiguration} matching the given qualifier string
      * (just the qualifiers; e.g. for a folder like "values-en-rUS" this would be "en-rUS").
      *
@@ -310,7 +327,11 @@ public final class FolderConfiguration implements Comparable<FolderConfiguration
      */
     @Nullable
     public static FolderConfiguration getConfigForQualifierString(@NonNull String qualifierString) {
-        return getConfigFromQualifiers(QUALIFIER_SPLITTER.split(qualifierString));
+        if (qualifierString.isEmpty()) {
+            return new FolderConfiguration();
+        } else {
+            return getConfigFromQualifiers(QUALIFIER_SPLITTER.split(qualifierString));
+        }
     }
 
     /**
