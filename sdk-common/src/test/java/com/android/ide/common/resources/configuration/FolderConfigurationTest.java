@@ -18,6 +18,7 @@ package com.android.ide.common.resources.configuration;
 
 import com.android.ide.common.res2.ResourceFile;
 import com.android.ide.common.res2.ResourceItem;
+import com.android.resources.Density;
 import com.android.resources.ResourceFolderType;
 import com.android.resources.ResourceType;
 import com.android.resources.ScreenOrientation;
@@ -426,5 +427,51 @@ public class FolderConfigurationTest extends TestCase {
         assertEquals(Arrays.<Configurable>asList(itemBcpEn, itemEn),
                 configBcpEn.findMatchingConfigurables(
                         Arrays.asList(itemBlank, itemBcpEn, itemEn, itemDe)));
+    }
+
+    public void testFromQualifierString() throws Exception {
+        FolderConfiguration blankFolder = FolderConfiguration.getConfigForQualifierString("");
+        FolderConfiguration enFolder = FolderConfiguration.getConfigForQualifierString("en");
+        FolderConfiguration deFolder = FolderConfiguration.getConfigForQualifierString("de");
+        FolderConfiguration deBcp47Folder = FolderConfiguration.getConfigForQualifierString("b+de");
+        FolderConfiguration twoQualifiersFolder =
+                FolderConfiguration.getConfigForQualifierString("de-hdpi");
+
+        assertNotNull(enFolder);
+        assertNotNull(deFolder);
+        assertNotNull(deBcp47Folder);
+        assertFalse(enFolder.isMatchFor(deFolder));
+        assertFalse(deFolder.isMatchFor(enFolder));
+        assertFalse(enFolder.isMatchFor(deBcp47Folder));
+        assertFalse(deBcp47Folder.isMatchFor(enFolder));
+
+        assertTrue(enFolder.isMatchFor(blankFolder));
+        assertTrue(deFolder.isMatchFor(blankFolder));
+        assertTrue(deBcp47Folder.isMatchFor(blankFolder));
+
+        assertEquals("de", twoQualifiersFolder.getLocaleQualifier().getLanguage());
+        assertEquals(Density.HIGH, twoQualifiersFolder.getDensityQualifier().getValue());
+    }
+
+    public void testCopyOf() throws Exception {
+        FolderConfiguration deBcp47Folder = FolderConfiguration.getConfigForFolder("values-b+de");
+        FolderConfiguration copy = FolderConfiguration.copyOf(deBcp47Folder);
+        assertTrue(copy.isMatchFor(deBcp47Folder));
+
+        copy.setLocaleQualifier(new LocaleQualifier("en"));
+        assertEquals("en", copy.getLocaleQualifier().getLanguage());
+        assertEquals("de", deBcp47Folder.getLocaleQualifier().getLanguage());
+
+        copy.setDensityQualifier(new DensityQualifier(Density.HIGH));
+        assertEquals(Density.HIGH, copy.getDensityQualifier().getValue());
+        assertNull(deBcp47Folder.getDensityQualifier());
+
+        FolderConfiguration blankFolder = FolderConfiguration.getConfigForFolder("values");
+        copy = FolderConfiguration.copyOf(blankFolder);
+        assertTrue(copy.isMatchFor(blankFolder));
+
+        copy.setVersionQualifier(new VersionQualifier(21));
+        assertEquals(21, copy.getVersionQualifier().getVersion());
+        assertNull(blankFolder.getVersionQualifier());
     }
 }

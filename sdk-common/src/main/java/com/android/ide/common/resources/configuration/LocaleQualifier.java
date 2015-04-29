@@ -387,7 +387,11 @@ public final class LocaleQualifier extends ResourceQualifier {
         return false;
     }
 
-    public void setRegionSegment(@NonNull String segment) {
+    /**
+     * Used only when constructing the qualifier, don't use after it's been assigned to a
+     * {@link FolderConfiguration}.
+     */
+    void setRegionSegment(@NonNull String segment) {
         assert segment.length() == 3 : segment;
         mRegion = new String(new char[] {
                 Character.toUpperCase(segment.charAt(1)),
