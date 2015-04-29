@@ -487,7 +487,7 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
         if (filterType.isAuto(splits)) {
             filtersList.addAll(getAllFilters(resourceSets, filterType.folderPrefix));
         } else {
-            filtersList.addAll(removeAllNullEntries(filterType.getConfiguredFilters(splits)));
+            filtersList.addAll(filterType.getConfiguredFilters(splits));
         }
         return filtersList;
     }
@@ -642,16 +642,6 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
         return preprocessResourcesTask != null
                 ? preprocessResourcesTask.getOutputResDirectory()
                 : mergeResourcesTask.getOutputDir();
-    }
-
-    private static <T> Set<T> removeAllNullEntries(Collection<T> input) {
-        HashSet<T> output = new HashSet<T>();
-        for (T element : input) {
-            if (element != null) {
-                output.add(element);
-            }
-        }
-        return output;
     }
 
     @NonNull

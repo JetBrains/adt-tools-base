@@ -59,19 +59,6 @@ public class AbiSplitOptions extends SplitOptions {
         this.universalApk = universalApk;
     }
 
-    @NonNull
-    @Override
-    public Set<String> getApplicableFilters() {
-        Set<String> list = super.getApplicableFilters();
-
-        // if universal, and splitting enabled, then add an entry with no filter.
-        if (isEnable() && universalApk) {
-            list.add(NO_FILTER);
-        }
-
-        return list;
-    }
-
     /**
      * Returns the list of actual abi filters, each value of the collection is guaranteed to be non
      * null and of the possible API value.

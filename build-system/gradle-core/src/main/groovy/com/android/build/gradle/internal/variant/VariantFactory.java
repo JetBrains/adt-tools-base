@@ -49,9 +49,6 @@ public interface VariantFactory {
     @NonNull
     BaseVariantData createVariantData(
             @NonNull GradleVariantConfiguration variantConfiguration,
-            @NonNull Set<String> densities,
-            @NonNull Set<String> abi,
-            @NonNull Set<String> compatibleScreens,
             @NonNull TaskManager taskManager);
 
     @NonNull
