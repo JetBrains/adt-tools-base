@@ -102,6 +102,12 @@ public interface AndroidArtifact extends BaseArtifact {
     Set<String> getAbiFilters();
 
     /**
+     * Returns the native libraries associated with the artifact.
+     */
+    @Nullable
+    Collection<NativeLibrary> getNativeLibraries();
+
+    /**
      * Map of Build Config Fields where the key is the field name.
      *
      * @return a non-null map of class fields (possibly empty).

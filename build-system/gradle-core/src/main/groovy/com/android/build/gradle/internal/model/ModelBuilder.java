@@ -48,10 +48,12 @@ import com.android.builder.model.ArtifactMetaData;
 import com.android.builder.model.JavaArtifact;
 import com.android.builder.model.LintOptions;
 import com.android.builder.model.ProductFlavor;
+import com.android.builder.model.NativeLibrary;
 import com.android.builder.model.SigningConfig;
 import com.android.builder.model.SourceProvider;
 import com.android.builder.model.SourceProviderContainer;
 import com.android.builder.model.SyncIssue;
+import com.android.builder.model.NativeToolchain;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.IAndroidTarget;
 import com.google.common.collect.ImmutableCollection;
@@ -156,6 +158,7 @@ public class ModelBuilder implements ToolingModelBuilder {
                 lintOptions,
                 project.getBuildDir(),
                 config.getResourcePrefix(),
+                Collections.<NativeToolchain>emptySet(),
                 isLibrary,
                 Version.BUILDER_MODEL_API_VERSION);
 
@@ -356,6 +359,7 @@ public class ModelBuilder implements ToolingModelBuilder {
                 sourceProviders.variantSourceProvider,
                 sourceProviders.multiFlavorSourceProvider,
                 variantConfiguration.getSupportedAbis(),
+                Collections.<NativeLibrary>emptySet(), /*nativeLibraries*/
                 variantConfiguration.getMergedBuildConfigFields(),
                 variantConfiguration.getMergedResValues());
     }

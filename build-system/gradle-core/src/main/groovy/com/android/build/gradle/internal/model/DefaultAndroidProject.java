@@ -28,12 +28,14 @@ import com.android.builder.model.LintOptions;
 import com.android.builder.model.ProductFlavorContainer;
 import com.android.builder.model.SigningConfig;
 import com.android.builder.model.SyncIssue;
+import com.android.builder.model.NativeToolchain;
 import com.android.builder.model.Variant;
 import com.google.common.collect.Lists;
 
 import java.io.File;
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.Set;
 
 /**
  * Implementation of the AndroidProject model object.
@@ -69,6 +71,8 @@ class DefaultAndroidProject implements AndroidProject, Serializable {
     private final File buildFolder;
     @Nullable
     private final String resourcePrefix;
+    @NonNull
+    private final Set<NativeToolchain> nativeToolchains;
     private final boolean isLibrary;
     private final int apiVersion;
 
@@ -97,6 +101,7 @@ class DefaultAndroidProject implements AndroidProject, Serializable {
             @NonNull LintOptions lintOptions,
             @NonNull File buildFolder,
             @Nullable String resourcePrefix,
+            @NonNull Set<NativeToolchain> nativeToolchains,
             boolean isLibrary,
             int apiVersion) {
         this.modelVersion = modelVersion;
@@ -116,6 +121,7 @@ class DefaultAndroidProject implements AndroidProject, Serializable {
         this.resourcePrefix = resourcePrefix;
         this.isLibrary = isLibrary;
         this.apiVersion = apiVersion;
+        this.nativeToolchains = nativeToolchains;
     }
 
     @NonNull
@@ -267,4 +273,9 @@ class DefaultAndroidProject implements AndroidProject, Serializable {
         return resourcePrefix;
     }
 
+    @NonNull
+    @Override
+    public Set<NativeToolchain> getNativeToolchains() {
+        return nativeToolchains;
+    }
 }
