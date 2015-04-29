@@ -109,22 +109,6 @@ public class DensitySplitOptions extends SplitOptions {
         return compatibleScreens;
     }
 
-    @NonNull
-    @Override
-    public Set<String> getApplicableFilters() {
-        // use a LinkedHashSet so iteration order follows insertion order.
-        LinkedHashSet<String> filters = new LinkedHashSet<String>();
-
-        // if splitting enabled, then add an entry with no filter for universal
-        // add it FIRST, since code assume that the first variant output will be the universal one.
-        if (isEnable()) {
-            filters.add(NO_FILTER);
-        }
-        filters.addAll(super.getApplicableFilters());
-        return filters;
-    }
-
-
     /**
      * Sets whether the build system should determine the splits based on the "language-*" folders
      * in the resources. If the auto mode is set to true, the include list will be ignored.

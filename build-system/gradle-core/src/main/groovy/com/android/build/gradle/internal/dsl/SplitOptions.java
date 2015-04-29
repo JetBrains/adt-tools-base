@@ -91,7 +91,7 @@ public abstract class SplitOptions {
     @NonNull
     public Set<String> getApplicableFilters() {
         if (!enable) {
-            return Collections.singleton(null);
+            return Collections.emptySet();
         }
 
         Set<String> results = Sets.newHashSetWithExpectedSize(values.size());

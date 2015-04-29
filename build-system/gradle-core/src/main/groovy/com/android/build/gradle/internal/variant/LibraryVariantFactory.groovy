@@ -65,9 +65,6 @@ public class LibraryVariantFactory implements VariantFactory {
     @NonNull
     public BaseVariantData createVariantData(
             @NonNull GradleVariantConfiguration variantConfiguration,
-            @NonNull Set<String> densities,
-            @NonNull Set<String> abis,
-            @NonNull Set<String> compatibleScreens,
             @NonNull TaskManager taskManager) {
         return new LibraryVariantData(extension, taskManager, variantConfiguration)
     }

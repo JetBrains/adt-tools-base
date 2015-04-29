@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.internal.variant;
 
+import static com.android.build.OutputFile.NO_FILTER;
 import static com.android.builder.core.BuilderConstants.DEBUG;
 import static com.android.builder.core.BuilderConstants.RELEASE;
 
@@ -49,6 +50,7 @@ import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.Project;
 import org.gradle.internal.reflect.Instantiator;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -80,23 +82,41 @@ public class ApplicationVariantFactory implements VariantFactory {
     @NonNull
     public BaseVariantData createVariantData(
             @NonNull GradleVariantConfiguration variantConfiguration,
-            @NonNull Set<String> densities,
-            @NonNull Set<String> abis,
-            @NonNull Set<String> compatibleScreens,
             @NonNull TaskManager taskManager) {
         ApplicationVariantData variant =
                 new ApplicationVariantData(extension, variantConfiguration, taskManager);
 
+        variant.calculateFilters(extension.getSplits());
+
+        Set<String> densities = variant.getFilters(OutputFile.FilterType.DENSITY);
+        Set<String> abis = variant.getFilters(OutputFile.FilterType.ABI);
+
         if (!densities.isEmpty()) {
-            variant.setCompatibleScreens(compatibleScreens);
+            variant.setCompatibleScreens(extension.getSplits().getDensity()
+                    .getCompatibleScreens());
         }
 
         // create its outputs
         if (variant.getSplitHandlingPolicy() ==
                 BaseVariantData.SplitHandlingPolicy.PRE_21_POLICY) {
+
+            // Always dd an entry with no filter for universal and add it FIRST,
+            // since code assume that the first variant output will be the universal one.
+            List<String> orderedDensities = new ArrayList<String>();
+            orderedDensities.add(NO_FILTER);
+            orderedDensities.addAll(densities);
+
+            List<String> orderedAbis = new ArrayList<String>();
+            // if the abi list is empty or we must generate a universal apk, add a NO_FILTER
+            if (abis.isEmpty() || (extension.getSplits().getAbi().isEnable() &&
+                    extension.getSplits().getAbi().isUniversalApk())) {
+                orderedAbis.add(NO_FILTER);
+            }
+            orderedAbis.addAll(abis);
+
             // create its outputs
-            for (String density : densities) {
-                for (String abi : abis) {
+            for (String density : orderedDensities) {
+                for (String abi : orderedAbis) {
                     ImmutableList.Builder<FilterData> builder = ImmutableList.builder();
                     if (density != null) {
                         builder.add(FilterDataImpl.build(OutputFile.DENSITY, density));
