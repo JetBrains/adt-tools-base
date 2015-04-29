@@ -77,9 +77,6 @@ public class Dex extends BaseTask {
     boolean multiDexEnabled = false
 
     @Input
-    boolean legacyMultiDexMode = false
-
-    @Input
     boolean optimize = true
 
     @InputFile @Optional
@@ -161,7 +158,6 @@ public class Dex extends BaseTask {
                 getLibraries(),
                 outFolder,
                 getMultiDexEnabled(),
-                getLegacyMultiDexMode(),
                 getMainDexListFile(),
                 getDexOptions(),
                 getAdditionalParameters(),
@@ -218,7 +214,6 @@ public class Dex extends BaseTask {
                             + "/tmp/dex/" + config.getDirName()));
             dexTask.setDexOptions(scope.getGlobalScope().getExtension().getDexOptions());
             dexTask.setMultiDexEnabled(isMultiDexEnabled);
-            dexTask.setLegacyMultiDexMode(isLegacyMultiDexMode);
             // dx doesn't work with receving --no-optimize in debug so we disable it for now.
             dexTask.setOptimize(true);//!variantData.variantConfiguration.buildType.debuggable
 

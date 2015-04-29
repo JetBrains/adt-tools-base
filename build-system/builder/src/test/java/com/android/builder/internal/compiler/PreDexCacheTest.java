@@ -44,9 +44,15 @@ import junit.framework.TestCase;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
+import java.util.jar.JarOutputStream;
+import java.util.zip.ZipEntry;
 
 public class PreDexCacheTest extends TestCase {
 
@@ -92,19 +98,19 @@ public class PreDexCacheTest extends TestCase {
                 }
 
                 // read the source content
-                List<String> lines = Files.readLines(input, Charsets.UTF_8);
+                JarFile jarFile = new JarFile(input);
+                JarEntry jarEntry = jarFile.getJarEntry("content.class");
+                assert jarEntry != null;
+                InputStream contentStream = jarFile.getInputStream(jarEntry);
+                byte[] content  = new byte[256];
+                int read = contentStream.read(content);
+                contentStream.close();
+                jarFile.close();
 
-                // modify the lines
-                List<String> dexedLines = Lists.newArrayListWithCapacity(lines.size());
-                for (String line : lines) {
-                    dexedLines.add(DEX_DATA + line + DEX_DATA);
-                }
-
-                // combine the lines
-                String content = Joiner.on('\n').join(dexedLines);
+                String line = new String(content, 0, read, Charsets.UTF_8);
 
                 // write it
-                Files.write(content, new File(output), Charsets.UTF_8);
+                Files.write(DEX_DATA + line + DEX_DATA, new File(output), Charsets.UTF_8);
             } catch (Exception e) {
                 //noinspection ThrowableInstanceNeverThrown
                 processException = new ProcessException(null, e);
@@ -412,7 +418,15 @@ public class PreDexCacheTest extends TestCase {
         File input = File.createTempFile("predex", ".jar");
         input.deleteOnExit();
 
-        Files.write(content, input, Charsets.UTF_8);
+        JarOutputStream jarOutputStream = new JarOutputStream(new FileOutputStream(input));
+        try {
+            jarOutputStream.putNextEntry(new ZipEntry("content.class"));
+            jarOutputStream.write(content.getBytes(Charsets.UTF_8));
+            jarOutputStream.closeEntry();
+        } finally {
+            jarOutputStream.close();
+        }
+
         return input;
     }
 
