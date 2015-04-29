@@ -37,38 +37,56 @@ import javax.xml.transform.stream.StreamSource;
  */
 public class RepoXsdUtil {
 
+    public static final String NODE_IMPORT = "import";
+    public static final String NODE_INCLUDE = "include";
+
+    public static final String ATTR_SCHEMA_LOCATION = "schemaLocation";
+
+
     /**
-     * Returns a stream to the requested XML Schema.
+     * Gets StreamSources for the given xsd (implied by the name and version), as well as any xsds imported or included by the main one.
      *
      * @param rootElement The root of the filename of the XML schema. This is by convention the same
      *                    as the root element declared by the schema.
      * @param version     The XML schema revision number, an integer >= 1.
-     * @return An {@link InputStream} object for the local XSD file or null if there is no schema
-     * for the requested version.
      */
-    public static InputStream getXsdStream(String rootElement, int version) {
+    public static StreamSource[] getXsdStream(final String rootElement, int version) {
         String filename = String.format("%1$s-%2$02d.xsd", rootElement, version);      //$NON-NLS-1$
-
+        final List<StreamSource> streams = Lists.newArrayList();
         InputStream stream = null;
         try {
             stream = RepoXsdUtil.class.getResourceAsStream(filename);
+            if (stream == null) {
+                filename = String.format("%1$s-%2$d.xsd", rootElement, version);      //$NON-NLS-1$
+                stream = RepoXsdUtil.class.getResourceAsStream(filename);
+            }
+            if (stream == null) {
+                // Try the alternate schemas that are not published yet.
+                // This allows us to internally test with new schemas before the
+                // public repository uses it.
+                filename = String.format("-%1$s-%2$02d.xsd", rootElement, version);      //$NON-NLS-1$
+                stream = RepoXsdUtil.class.getResourceAsStream(filename);
+            }
+
+            // Parse the schema and find any imports or includes so we can return them as well.
+            // Currently transitive includes are not supported.
+            SAXParserFactory.newInstance().newSAXParser().parse(stream, new DefaultHandler() {
+                @Override
+                public void startElement(String uri, String localName, String name, Attributes attributes) throws SAXException {
+                    name = name.substring(name.indexOf(':') + 1);
+                    if (name.equals(NODE_IMPORT) || name.equals(NODE_INCLUDE)) {
+                        String importFile = attributes.getValue(ATTR_SCHEMA_LOCATION);
+                        streams.add(new StreamSource(RepoXsdUtil.class.getResourceAsStream(importFile)));
+                    }
+                }
+            });
+            // create and add the first stream again, since SaxParser closes the original one
+            streams.add(new StreamSource(RepoXsdUtil.class.getResourceAsStream(filename)));
         } catch (Exception e) {
             // Some implementations seem to return null on failure,
             // others throw an exception. We want to return null.
+            return null;
         }
-        if (stream == null) {
-            // Try the alternate schemas that are not published yet.
-            // This allows us to internally test with new schemas before the
-            // public repository uses it.
-            filename = String.format("-%1$s-%2$02d.xsd", rootElement, version);      //$NON-NLS-1$
-            try {
-                stream = RepoXsdUtil.class.getResourceAsStream(filename);
-            } catch (Exception e) {
-                // Some implementations seem to return null on failure,
-                // others throw an exception. We want to return null.
-            }
-        }
-
-        return stream;
+        return streams.toArray(new StreamSource[streams.size()]);
     }
 }
