@@ -15,52 +15,198 @@
  */
 
 package com.android.build.gradle.integration.application
-import com.android.build.gradle.integration.common.category.DeviceTests
+
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.integration.common.fixture.app.AndroidTestApp
+import com.android.build.gradle.integration.common.fixture.app.EmptyAndroidTestApp
+import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
+import com.android.build.gradle.integration.common.fixture.app.TestSourceFile
+import com.google.common.io.Files
 import groovy.transform.CompileStatic
-import org.junit.AfterClass
+import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.ClassRule
+import org.junit.Rule
 import org.junit.Test
-import org.junit.experimental.categories.Category
 
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatZip
 /**
  * Assemble tests for packagingOptions.
+ *
+ * Creates two jar files and test various packaging options.
  */
 @CompileStatic
 class PackagingOptionsTest {
+
+    // Projects to create jar files.
+    private static AndroidTestApp jarProject1 = new EmptyAndroidTestApp()
+    static {
+        jarProject1.addFile(new TestSourceFile("", "build.gradle", "apply plugin: 'java'"))
+        jarProject1.addFile(new TestSourceFile("src/main/resources", "conflict.txt", "foo"))
+    }
+    private static AndroidTestApp jarProject2 = new EmptyAndroidTestApp()
+    static {
+        jarProject2.addFile(new TestSourceFile("", "build.gradle", "apply plugin: 'java'"))
+        jarProject2.addFile(new TestSourceFile("src/main/resources", "conflict.txt", "foo"))
+        // add an extra file so that jar1 is different from jar2.
+        jarProject2.addFile(new TestSourceFile("src/main/resources", "dummy2.txt", "bar"))
+    }
+
     @ClassRule
-    static public GradleTestProject project = GradleTestProject.builder()
-            .fromTestProject("packagingOptions")
+    public static GradleTestProject jar1 = GradleTestProject.builder()
+            .fromTestApp(jarProject1)
+            .withName("jar1")
+            .create()
+    @ClassRule
+    public static GradleTestProject jar2 = GradleTestProject.builder()
+            .fromTestApp(jarProject2)
+            .withName("jar2")
             .create()
 
     @BeforeClass
-    static void setUp() {
+    static void createJars() {
+        jar1.execute("assemble")
+        jar2.execute("assemble")
+    }
+
+
+    // Main test project.
+    @Rule
+    public GradleTestProject project = GradleTestProject.builder()
+            .fromTestApp(new HelloWorldApp())
+            .create()
+
+    @Before
+    void setUp() {
+        Files.copy(jar1.file("build/libs/jar1.jar"), project.file("jar1.jar"))
+        Files.copy(jar2.file("build/libs/jar2.jar"), project.file("jar2.jar"))
+
+        project.getBuildFile() << """
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
+    buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
+}
+"""
+
+    }
+
+    @Test
+    void "check pickFirst"() {
+        project.getBuildFile() << """
+android {
+    packagingOptions {
+        pickFirst 'conflict.txt'
+    }
+}
+
+dependencies {
+    compile files('jar1.jar')
+    compile files('jar2.jar')
+}
+"""
         project.execute("clean", "assembleDebug")
-    }
-
-    @AfterClass
-    static void cleanUp() {
-        project = null
+        assertThatZip(project.getApk("debug")).contains("conflict.txt")
     }
 
     @Test
-    void lint() {
-        project.execute("lint")
+    void "check exclude"() {
+        project.getBuildFile() << """
+android {
+    packagingOptions {
+        exclude 'conflict.txt'
+    }
+}
+
+dependencies {
+    compile files('jar1.jar')
+    compile files('jar2.jar')
+}
+"""
+        project.execute("clean", "assembleDebug")
+        assertThatZip(project.getApk("debug")).doesNotContain("conflict.txt")
     }
 
     @Test
-    void "check packinging"() {
-        assertThatZip(project.getApk("debug")).contains("first_pick.txt")
-        assertThatZip(project.getApk("debug")).doesNotContain("excluded.txt")
-
-        assertThatZip(project.getApk("debug")).contains("lib/x86/libdummy.so")
+    void "check exclude on direct files"() {
+        project.getBuildFile() << """
+android {
+    packagingOptions {
+        exclude 'lib/x86/libconflict.so'
+        exclude 'conflict.txt'
+    }
+}
+"""
+        createFile('src/main/jniLibs/x86/libconflict.so')
+        createFile('src/main/resources/conflict.txt')
+        project.execute("clean", "assembleDebug")
+        assertThatZip(project.getApk("debug")).doesNotContain('lib/x86/libconflict.so')
+        assertThatZip(project.getApk("debug")).doesNotContain('conflict.txt')
     }
 
     @Test
-    @Category(DeviceTests.class)
-    void connectedCheck() {
-        project.executeConnectedCheck()
+    void "check merge on jar entries"() {
+        project.getBuildFile() << """
+android {
+    packagingOptions {
+        merge 'conflict.txt'
+    }
+}
+
+dependencies {
+    compile files('jar1.jar')
+    compile files('jar2.jar')
+}
+"""
+        project.execute("clean", "assembleDebug")
+
+        assertThatZip(project.getApk("debug")).containsFileWithContent("conflict.txt", "foofoo")
+    }
+
+    @Test
+    void "check merge on direct files"() {
+        project.getBuildFile() << """
+android {
+    packagingOptions {
+        // Doesn't make sense to merge native library, but it should work.
+        merge 'lib/x86/libconflict.so'
+    }
+}
+"""
+        createFile('src/main/jniLibs/x86/libconflict.so') << "foo"
+        createFile('src/debug/jniLibs/x86/libconflict.so') << "bar"
+        project.execute("clean", "assembleDebug")
+        assertThatZip(project.getApk("debug")).containsFileWithContent("lib/x86/libconflict.so", "foobar")
+    }
+
+    @Test
+    void "check merge on a direct file and a jar entry"() {
+        project.getBuildFile() << """
+android {
+    packagingOptions {
+        merge 'conflict.txt'
+    }
+}
+
+dependencies {
+    compile files('jar1.jar')
+}
+"""
+        createFile('src/main/resources/conflict.txt') << "foo"
+        project.execute("clean", "assembleDebug")
+        assertThatZip(project.getApk("debug")).containsFileWithContent("conflict.txt", "foofoo")
+    }
+
+    /**
+     * Create a new empty file including its directories.
+     */
+    private File createFile(String filename) {
+        File newFile = project.file(filename)
+        newFile.getParentFile().mkdirs()
+        newFile.createNewFile()
+        assertThat(newFile).exists()
+        return newFile
     }
 }

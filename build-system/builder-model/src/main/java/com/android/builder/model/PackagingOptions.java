@@ -29,4 +29,7 @@ public interface PackagingOptions {
 
     @NonNull
     Set<String> getPickFirsts();
+
+    @NonNull
+    Set<String> getMerges();
 }

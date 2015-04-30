@@ -105,7 +105,7 @@ public abstract class AbstractZipSubject<T extends Subject<T, File>> extends Sub
      */
     @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
     public void containsFileWithContent(@NonNull String path, @NonNull String content) {
-        assertThat(extractContentAsString(path).trim()).named(path).comparesEqualTo(content.trim());
+        assertThat(extractContentAsString(path).trim()).named(path).isEqualTo(content.trim());
     }
 
     /**
