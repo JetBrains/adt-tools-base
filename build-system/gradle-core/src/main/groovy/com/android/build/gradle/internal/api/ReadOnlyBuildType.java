@@ -21,6 +21,8 @@ import com.android.annotations.Nullable;
 import com.android.builder.model.BuildType;
 import com.android.builder.model.SigningConfig;
 
+import java.io.File;
+
 /**
  * Read-only version of the BuildType wrapping another BuildType.
  *
@@ -111,5 +113,11 @@ public class ReadOnlyBuildType extends ReadOnlyBaseConfig implements BuildType {
     @Override
     public SigningConfig getSigningConfig() {
         return readOnlyObjectProvider.getSigningConfig(buildType.getSigningConfig());
+    }
+
+    @Nullable
+    @Override
+    public File getJarJarRuleFile() {
+        return buildType.getJarJarRuleFile();
     }
 }
