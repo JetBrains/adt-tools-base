@@ -59,7 +59,14 @@ configure([connectedIntegrationTest, connectedIntegrationTestPrebuilts]) {
                     "and a device."
     group = "verification"
     systemProperties['jar.path'] = jar.archivePath
-    environment = testEnvironment
+    // Add to, rather than replace the environment, so that TEST_CLASSPATH_DEPENDENCY,
+    // REMOTE_TEST_PROVIDER, ADDITIONAL_TEST_CUSTOM_REPO and any dependencies of the remote test
+    // provider are present in the test environment only for these tests.
+    environment testEnvironment
+
+    forkEvery= 1
+    maxParallelForks = System.env.containsKey("REMOTE_TEST_PROVIDER") ? 50 : 1
+
     useJUnit {
         includeCategories "com.android.build.gradle.integration.common.category.DeviceTests"
     }

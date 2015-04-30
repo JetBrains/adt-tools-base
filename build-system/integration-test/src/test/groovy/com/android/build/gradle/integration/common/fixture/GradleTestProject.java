@@ -29,6 +29,8 @@ import com.android.build.gradle.integration.common.fixture.app.TestSourceFile;
 import com.android.build.gradle.integration.common.utils.FileHelper;
 import com.android.build.gradle.integration.common.utils.JacocoAgent;
 import com.android.build.gradle.integration.common.utils.SdkHelper;
+import com.android.builder.core.AndroidBuilder;
+import com.android.builder.core.BuilderConstants;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.SyncIssue;
 import com.android.builder.Version;
@@ -53,6 +55,7 @@ import org.gradle.tooling.model.GradleTask;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
+import org.truth0.Truth;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -82,6 +85,10 @@ public class GradleTestProject implements TestRule {
 
     public static final int DEFAULT_COMPILE_SDK_VERSION = 21;
     public static final String DEFAULT_BUILD_TOOL_VERSION;
+    public static final String REMOTE_TEST_PROVIDER = System.getenv().get("REMOTE_TEST_PROVIDER");
+
+    public static final String DEVICE_PROVIDER_NAME = REMOTE_TEST_PROVIDER != null ?
+            REMOTE_TEST_PROVIDER : BuilderConstants.CONNECTED;
 
     public static final String GRADLE_TEST_VERSION = "2.2.1";
     public static final String GRADLE_EXP_TEST_VERSION = "2.4-20150322230018+0000";
@@ -530,6 +537,14 @@ public class GradleTestProject implements TestRule {
         execute(arguments, false, false, tasks);
     }
 
+    public void executeConnectedCheck() {
+        executeConnectedCheck(Collections.<String>emptyList());
+    }
+
+    public void executeConnectedCheck(List<String> arguments) {
+        execute(arguments, REMOTE_TEST_PROVIDER == null ? "connectedCheck" : "deviceCheck");
+    }
+
     /**
      * Runs gradle on the project, and returns the project model.  Throws exception on failure.
      *
@@ -929,5 +944,10 @@ public class GradleTestProject implements TestRule {
         localProp.save();
 
         return (File) localProp.getFile();
+    }
+
+    public static void assumeLocalDevice() {
+        Truth.ASSUME.withFailureMessage("Install task not run against device provider")
+                .that(GradleTestProject.REMOTE_TEST_PROVIDER).isNull();
     }
 }

@@ -23,6 +23,7 @@ import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
 import org.junit.experimental.categories.Category
+import org.truth0.Truth
 
 /**
  * Assemble tests for multiproject.
@@ -51,6 +52,9 @@ class MultiprojectTest {
     @Test
     @Category(DeviceTests.class)
     void connectedCheckAndReport() {
-        project.execute("connectedCheck", "mergeAndroidReports")
+        project.executeConnectedCheck()
+        // android-reporting plugin currently executes connected tasks.
+        GradleTestProject.assumeLocalDevice();
+        project.execute("mergeAndroidReports")
     }
 }

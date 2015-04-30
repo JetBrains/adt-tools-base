@@ -140,7 +140,7 @@ class AndroidTestResourcesTest {
     @Test
     @Category(DeviceTests.class)
     public void "check test layout can be used in device tests"() {
-        appProject.execute("connectedAndroidTest")
+        appProject.executeConnectedCheck()
     }
 
 

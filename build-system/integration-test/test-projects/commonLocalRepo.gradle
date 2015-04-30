@@ -22,4 +22,7 @@ repositories {
     } else {
         throw new RuntimeException("Neither CUSTOM_REPO nor USE_EXTERNAL_REPO set.")
     }
+    if (System.env.ADDITIONAL_TEST_CUSTOM_REPO != null) {
+        maven { url System.env.ADDITIONAL_TEST_CUSTOM_REPO }
+    }
 }

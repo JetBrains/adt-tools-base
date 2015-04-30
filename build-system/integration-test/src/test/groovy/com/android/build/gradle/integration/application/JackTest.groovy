@@ -76,13 +76,13 @@ class JackTest {
     @Test
     @Category(DeviceTests.class)
     void "basic connectedCheck"() {
-        basic.execute(JACK_OPTIONS, "connectedCheck")
+        basic.executeConnectedCheck(JACK_OPTIONS)
     }
 
     @Test
     @Category(DeviceTests.class)
     void "multiDex connectedCheck"() {
-        multiDex.execute(JACK_OPTIONS, "connectedCheck")
+        multiDex.executeConnectedCheck(JACK_OPTIONS)
     }
 
     @Test
