@@ -10,6 +10,7 @@ android {
     packagingOptions {
         exclude 'excluded.txt'
         pickFirst 'first_pick.txt'
+        merge 'merge.txt'
 
         pickFirst 'lib/x86/libdummy.so'
     }

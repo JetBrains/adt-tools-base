@@ -30,6 +30,7 @@ public class PackagingOptions implements com.android.builder.model.PackagingOpti
 
     private Set<String> excludes = Sets.newHashSet("LICENSE.txt", "LICENSE");
     private Set<String> pickFirsts = Sets.newHashSet();
+    private Set<String> merges = Sets.newHashSet();
 
     /**
      * Returns the list of excluded paths.
@@ -77,5 +78,27 @@ public class PackagingOptions implements com.android.builder.model.PackagingOpti
 
     public void setPickFirsts(Set<String> pickFirsts) {
         this.pickFirsts = Sets.newHashSet(pickFirsts);
+    }
+
+    /**
+     * Returns the list of paths where all occurrences are concatenated and packaged in the APK.
+     */
+    @Override
+    @NonNull
+    @Input
+    public Set<String> getMerges() {
+        return Sets.newHashSet(merges);
+    }
+
+    public void setMerges(Set<String> merges) {
+        this.merges = Sets.newHashSet(merges);
+    }
+
+    /**
+     * Adds a merge path.
+     * @param path the path, as packaged in the APK
+     */
+    public void merge(String path) {
+        merges.add(path);
     }
 }

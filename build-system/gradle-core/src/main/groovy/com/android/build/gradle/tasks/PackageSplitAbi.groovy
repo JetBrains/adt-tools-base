@@ -70,6 +70,8 @@ class PackageSplitAbi extends SplitRelatedTask {
     @Input
     Collection<File> jniFolders;
 
+    File mergingFolder
+
     @OutputFiles
     public List<File> getOutputFiles() {
         return getOutputSplitFiles()*.getOutputFile();
@@ -129,6 +131,7 @@ class PackageSplitAbi extends SplitRelatedTask {
                         ImmutableList.of(),
                         null, /* getJavaResourceDir */
                         getJniFolders(),
+                        getMergingFolder(),
                         ImmutableSet.of(matcher.group(1)),
                         getJniDebuggable(),
                         getSigningConfig(),

@@ -1733,6 +1733,7 @@ public class AndroidBuilder {
      * @param packagedJars the jars that are packaged (libraries + jar dependencies)
      * @param javaResourcesLocation the processed Java resource folder
      * @param jniLibsFolders the folders containing jni shared libraries
+     * @param mergingFolder folder to contain files that are being merged
      * @param abiFilters optional ABI filter
      * @param jniDebugBuild whether the app should include jni debug data
      * @param signingConfig the signing configuration
@@ -1753,6 +1754,7 @@ public class AndroidBuilder {
             @NonNull Collection<File> packagedJars,
             @Nullable String javaResourcesLocation,
             @Nullable Collection<File> jniLibsFolders,
+            @NonNull File mergingFolder,
             @Nullable Set<String> abiFilters,
             boolean jniDebugBuild,
             @Nullable SigningConfig signingConfig,
@@ -1776,7 +1778,7 @@ public class AndroidBuilder {
 
         try {
             Packager packager = new Packager(
-                    outApkLocation, androidResPkgLocation,
+                    outApkLocation, androidResPkgLocation, mergingFolder,
                     certificateInfo, mCreatedBy, packagingOptions, mLogger);
 
             // add dex folder to the apk root.
@@ -1864,7 +1866,7 @@ public class AndroidBuilder {
                 Packager.getLocalVersion(), mCreatedBy);
 
 
-        signedJarBuilder.writeZip(new FileInputStream(in), null);
+        signedJarBuilder.writeZip(new FileInputStream(in));
         signedJarBuilder.close();
 
     }
