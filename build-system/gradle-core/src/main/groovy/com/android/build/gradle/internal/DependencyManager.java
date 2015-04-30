@@ -16,6 +16,13 @@
 
 package com.android.build.gradle.internal;
 
+import static com.android.SdkConstants.DOT_JAR;
+import static com.android.SdkConstants.EXT_ANDROID_PACKAGE;
+import static com.android.SdkConstants.EXT_JAR;
+import static com.android.builder.core.BuilderConstants.EXT_LIB_ARCHIVE;
+import static com.android.builder.core.EvaluationErrorReporter.EvaluationMode.STANDARD;
+import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.dependency.JarInfo;
@@ -60,13 +67,6 @@ import org.gradle.api.logging.Logging;
 import org.gradle.api.plugins.JavaBasePlugin;
 import org.gradle.api.specs.Specs;
 import org.gradle.util.GUtil;
-
-import static com.android.SdkConstants.DOT_JAR;
-import static com.android.SdkConstants.EXT_ANDROID_PACKAGE;
-import static com.android.SdkConstants.EXT_JAR;
-import static com.android.builder.core.BuilderConstants.EXT_LIB_ARCHIVE;
-import static com.android.builder.core.EvaluationErrorReporter.EvaluationMode.STANDARD;
-import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
 
 import java.io.File;
 import java.util.Collection;
@@ -315,22 +315,35 @@ public class DependencyManager {
         }
 
         // now look through both results.
-        // 1. All Android libraries must be in both lists.
-        // since we reuse the same instance of LibInfo for identical modules
+        // 1. Handle the compile and package list of Libraries.
+        // For Libraries:
+        // Only library projects can support provided aar.
+        // However, package(publish)-only are still not supported (they don't make sense).
+        // For now, provided only dependencies will be kept normally in the compile-graph.
+        // However we'll want to not include them in the resource merging.
+        // For Applications:
+        // All Android libraries must be in both lists.
+        // ---
+        // Since we reuse the same instance of LibInfo for identical modules
         // we can simply run through each list and look for libs that are in only one.
         // While the list of library is actually a graph, it's fine to look only at the
-        // top level ones since they transitive ones are in the same scope as the direct libraries.
+        // top level ones since the transitive ones are in the same scope as the direct libraries.
         List<LibInfo> copyOfPackagedLibs = Lists.newArrayList(packagedAndroidLibraries);
+        boolean isLibrary = extraModelInfo.isLibrary();
 
         for (LibInfo lib : compiledAndroidLibraries) {
             if (!copyOfPackagedLibs.contains(lib)) {
-                //noinspection ConstantConditions
-                variantDeps.getChecker().addSyncIssue(extraModelInfo.handleSyncError(
-                        lib.getResolvedCoordinates().toString(),
-                        SyncIssue.TYPE_NON_JAR_PROVIDED_DEP,
-                        String.format(
-                                "Project %s: provided dependencies can only be jars. %s is an Android Library.",
-                                project.getName(), lib.getResolvedCoordinates())));
+                if (isLibrary) {
+                    lib.setIsOptional(true);
+                } else {
+                    //noinspection ConstantConditions
+                    variantDeps.getChecker().addSyncIssue(extraModelInfo.handleSyncError(
+                            lib.getResolvedCoordinates().toString(),
+                            SyncIssue.TYPE_NON_JAR_PROVIDED_DEP,
+                            String.format(
+                                    "Project %s: provided dependencies can only be jars. %s is an Android Library.",
+                                    project.getName(), lib.getResolvedCoordinates())));
+                }
             } else {
                 copyOfPackagedLibs.remove(lib);
             }
@@ -376,9 +389,11 @@ public class DependencyManager {
 
             for (JarDependency jar : jarDependencies) {
                 if (jar.isPackaged()) {
-                    MavenCoordinates coord = jar.getResolvedCoordinates();
+                    MavenCoordinates coordinates = jar.getResolvedCoordinates();
                     //noinspection ConstantConditions
-                    testedDeps.put(computeVersionLessCoordinateKey(coord), coord.getVersion());
+                    testedDeps.put(
+                            computeVersionLessCoordinateKey(coordinates),
+                            coordinates.getVersion());
                 }
             }
 
@@ -387,28 +402,32 @@ public class DependencyManager {
             // to the final immutable instance
             for (JarInfo jar : jarInfoSet) {
                 if (jar.isPackaged()) {
-                    MavenCoordinates coord = jar.getResolvedCoordinates();
+                    MavenCoordinates coordinates = jar.getResolvedCoordinates();
 
-                    String testedVersion = testedDeps.get(computeVersionLessCoordinateKey(coord));
+                    String testedVersion = testedDeps.get(
+                            computeVersionLessCoordinateKey(coordinates));
                     if (testedVersion != null) {
                         // same artifact, skip packaging of the dependency in the test app,
                         // whether the version is a match or not.
 
                         // if the dependency is present in both tested and test artifact,
                         // verify that they are the same version
-                        if (!testedVersion.equals(coord.getVersion())) {
-                            String artifactInfo =  coord.getGroupId() + ":" + coord.getArtifactId();
+                        if (!testedVersion.equals(coordinates.getVersion())) {
+                            String artifactInfo =  coordinates.getGroupId() + ":" + coordinates.getArtifactId();
                             variantDeps.getChecker().addSyncIssue(extraModelInfo.handleSyncError(
                                     artifactInfo,
                                     SyncIssue.TYPE_MISMATCH_DEP,
                                     String.format(
                                             "Conflict with dependency '%s'. Resolved versions for app (%s) and test app (%s) differ.",
-                                            artifactInfo, testedVersion, coord.getVersion())));
+                                            artifactInfo,
+                                            testedVersion,
+                                            coordinates.getVersion())));
 
                         } else {
                             logger.info(String.format(
                                     "Removed '%s' from packaging of %s: Already in tested package.",
-                                    coord, variantDeps.getName()));
+                                    coordinates,
+                                    variantDeps.getName()));
                         }
                     } else {
                         // new artifact, convert it.
@@ -581,7 +600,8 @@ public class DependencyManager {
                     libInfo.getProjectVariant(),
                     libInfo.getProject(),
                     libInfo.getRequestedCoordinates(),
-                    libInfo.getResolvedCoordinates());
+                    libInfo.getResolvedCoordinates(),
+                    libInfo.isOptional());
 
             // add it to the map
             convertedMap.put(libInfo, convertedLib);
@@ -1012,16 +1032,16 @@ public class DependencyManager {
     }
 
     /**
-     * Compute a version-less key represening the given coordinate.
-     * @param coord the coordinate
+     * Compute a version-less key representing the given coordinates.
+     * @param coordinates the coordinate
      * @return the key.
      */
     @NonNull
-    private static String computeVersionLessCoordinateKey(@NonNull MavenCoordinates coord) {
-        StringBuilder sb = new StringBuilder(coord.getGroupId());
-        sb.append(':').append(coord.getArtifactId());
-        if (coord.getClassifier() != null) {
-            sb.append(':').append(coord.getClassifier());
+    private static String computeVersionLessCoordinateKey(@NonNull MavenCoordinates coordinates) {
+        StringBuilder sb = new StringBuilder(coordinates.getGroupId());
+        sb.append(':').append(coordinates.getArtifactId());
+        if (coordinates.getClassifier() != null) {
+            sb.append(':').append(coordinates.getClassifier());
         }
         return sb.toString();
     }
