@@ -3,6 +3,8 @@ package com.android.tests.basic;
 import android.test.ActivityInstrumentationTestCase2;
 import android.test.suitebuilder.annotation.MediumTest;
 import android.widget.TextView;
+import android.test.UiThreadTest;
+import android.os.Looper;
 
 public class MainTest extends ActivityInstrumentationTestCase2<Main> {
 
@@ -55,6 +57,11 @@ public class MainTest extends ActivityInstrumentationTestCase2<Main> {
         o.doSomething();
 
         assertEquals("com.android.tests.basic.UsedTestClass", UsedTestClass.class.getName());
+    }
+
+    @UiThreadTest
+    public void testAnnotationNotStripped() {
+        assertTrue("Should be running on UI thread", Looper.myLooper() == Looper.getMainLooper());
     }
 }
 
