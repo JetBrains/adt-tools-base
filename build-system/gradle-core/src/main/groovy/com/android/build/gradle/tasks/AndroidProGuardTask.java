@@ -178,6 +178,7 @@ public class AndroidProGuardTask extends ProGuardTask implements FileSupplier {
                     proguardTask.keep("class * {*;}");
                     proguardTask.keep("interface * {*;}");
                     proguardTask.keep("enum * {*;}");
+                    proguardTask.keepattributes();
 
                     // Input the mapping from the tested app so that we can deal with obfuscated code.
                     proguardTask.applymapping(testedVariantData.getMappingFile());
