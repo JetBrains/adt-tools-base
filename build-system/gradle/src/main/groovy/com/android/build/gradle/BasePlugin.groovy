@@ -56,6 +56,7 @@ import com.android.builder.sdk.TargetInfo
 import com.android.ide.common.blame.output.BlameAwareLoggedProcessOutputHandler
 import com.android.ide.common.internal.ExecutorSingleton
 import com.android.utils.ILogger
+import com.google.common.base.CharMatcher
 import groovy.transform.CompileStatic
 import org.gradle.api.GradleException
 import org.gradle.api.Project
@@ -66,6 +67,7 @@ import org.gradle.api.internal.project.ProjectInternal
 import org.gradle.api.logging.LogLevel
 import org.gradle.api.plugins.JavaBasePlugin
 import org.gradle.api.plugins.JavaPlugin
+import org.gradle.api.tasks.StopExecutionException
 import org.gradle.internal.reflect.Instantiator
 import org.gradle.tooling.BuildException
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry
@@ -88,9 +90,11 @@ public abstract class BasePlugin {
     public static final Pattern GRADLE_ACCEPTABLE_VERSIONS = Pattern.compile("2\\.[2-9].*")
     private static final String GRADLE_VERSION_CHECK_OVERRIDE_PROPERTY =
             "com.android.build.gradle.overrideVersionCheck"
-
-    // default retirement age in days since its inception date for RC or beta versions.
+    private static final String SKIP_PATH_CHECK_PROPERTY =
+            "com.android.build.gradle.overridePathCheck"
+    /** default retirement age in days since its inception date for RC or beta versions. */
     private static final int DEFAULT_RETIREMENT_AGE_FOR_NON_RELEASE = 40
+
 
     protected BaseExtension extension
 
@@ -230,6 +234,9 @@ public abstract class BasePlugin {
 
     protected void apply(Project project) {
         this.project = project
+
+        checkPathForErrors()
+
         ProcessRecorderFactory.initialize(logger, project.rootProject.
                 file("profiler" + System.currentTimeMillis() + ".json"))
         project.gradle.addListener(new RecordingBuildListener(ThreadRecorder.get()));
@@ -483,5 +490,40 @@ public abstract class BasePlugin {
                     extension.getLibraryRequests(),
                     androidBuilder)
         }
+    }
+
+    private void checkPathForErrors() {
+        // See if the user disabled the check:
+        if (Boolean.getBoolean(SKIP_PATH_CHECK_PROPERTY)) {
+            return
+        }
+
+        if (project.hasProperty(SKIP_PATH_CHECK_PROPERTY)
+                && project.property(SKIP_PATH_CHECK_PROPERTY) instanceof String
+                && Boolean.valueOf((String) project.property(SKIP_PATH_CHECK_PROPERTY))) {
+            return
+        }
+
+        // See if we're on Windows:
+        if (!System.getProperty('os.name').toLowerCase().contains('windows')) {
+            return
+        }
+
+        // See if the path contains non-ASCII characters.
+        if (CharMatcher.ASCII.matchesAllOf(project.rootDir.absolutePath)) {
+            return
+        }
+
+        String message = """
+Your project path contains non-ASCII characters. This will most likely
+cause the build to fail on Windows. Please move your project to a different
+directory. See http://b.android.com/95744 for details.
+
+This warning can be disabled by using the command line flag
+-D${SKIP_PATH_CHECK_PROPERTY}=true, or adding the line
+'${SKIP_PATH_CHECK_PROPERTY}=true' to gradle.properties file
+in the project directory.""".trim()
+
+        throw new StopExecutionException(message)
     }
 }
