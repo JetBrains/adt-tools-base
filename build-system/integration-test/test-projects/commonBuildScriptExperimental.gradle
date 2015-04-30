@@ -20,4 +20,7 @@ apply from: "commonLocalRepo.gradle"
 
 dependencies {
     classpath "com.android.tools.build:gradle-experimental:$env.gradleVersion"
+    if (System.env.TEST_CLASSPATH_DEPENDENCY) {
+        classpath System.env.TEST_CLASSPATH_DEPENDENCY
+    }
 }

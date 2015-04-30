@@ -19,6 +19,7 @@ package com.android.build.gradle.integration.ndk
 import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldJniApp
+import com.android.builder.core.BuilderConstants
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
@@ -124,6 +125,10 @@ android {
     @Test
     @Category(DeviceTests.class)
     public void connectedAndroidTest() {
-        project.execute("connectedAndroidTestArmDebug")
+        if (GradleTestProject.DEVICE_PROVIDER_NAME.equals(BuilderConstants.CONNECTED)) {
+            project.execute(GradleTestProject.DEVICE_PROVIDER_NAME + "AndroidTestArmDebug")
+        } else {
+            project.execute(GradleTestProject.DEVICE_PROVIDER_NAME + "AndroidTestX86Debug")
+        }
     }
 }

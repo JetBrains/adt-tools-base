@@ -59,6 +59,6 @@ dependencies {
     @Test
     @Category(DeviceTests.class)
     void "run tests on devices"() {
-        project.execute("connectedCheck")
+        project.executeConnectedCheck()
     }
 }

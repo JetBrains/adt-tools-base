@@ -282,12 +282,13 @@ class BasicTest2 {
     @Test
     @Category(DeviceTests.class)
     void install() {
+        GradleTestProject.assumeLocalDevice();
         project.execute("installDebug", "uninstallAll")
     }
 
     @Test
     @Category(DeviceTests.class)
     void connectedCheck() {
-        project.execute("connectedCheck")
+        project.executeConnectedCheck()
     }
 }

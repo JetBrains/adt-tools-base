@@ -111,6 +111,6 @@ model {
     @Test
     @Category(DeviceTests.class)
     public void connectedAndroidTest() {
-        project.execute("connectedAndroidTest");
+        project.executeConnectedCheck();
     }
 }
