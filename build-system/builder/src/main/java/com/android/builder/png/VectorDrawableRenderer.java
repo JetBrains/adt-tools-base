@@ -34,7 +34,7 @@ import java.io.IOException;
 import java.util.Collection;
 
 /**
- * Generates PNG images from VectorDrawable files.
+ * Generates PNG images (and XML copies) from VectorDrawable files.
  */
 public class VectorDrawableRenderer {
 
@@ -54,7 +54,7 @@ public class VectorDrawableRenderer {
 
         FolderConfiguration originalConfiguration = getFolderConfiguration(inputXmlFile);
 
-        // Create all the PNG files.
+        // Create all the PNG files and duplicate the XML into folders with the version qualifier.
         Collection<File> createdFiles = Lists.newArrayList();
         for (Density density : densities) {
             FolderConfiguration newConfiguration = FolderConfiguration.copyOf(originalConfiguration);
@@ -78,25 +78,28 @@ public class VectorDrawableRenderer {
                     pngFile,
                     Charsets.UTF_8);
             createdFiles.add(pngFile);
+
+            newConfiguration.setVersionQualifier(new VersionQualifier(MIN_SDK_WITH_VECTOR_SUPPORT));
+            File xmlCopy = copyOriginalXml(inputXmlFile, outputResDirectory, newConfiguration);
+            createdFiles.add(xmlCopy);
         }
 
-        FolderConfiguration newConfiguration = FolderConfiguration.copyOf(originalConfiguration);
-        newConfiguration.setVersionQualifier(new VersionQualifier(MIN_SDK_WITH_VECTOR_SUPPORT));
+        return createdFiles;
+    }
 
-        // Create a copy of the original in a folder with the version qualifier.
-        File v21Dir = new File(
+    @NonNull
+    private File copyOriginalXml(
+            @NonNull File inputXmlFile,
+            @NonNull File outputResDirectory,
+            FolderConfiguration newConfiguration) throws IOException {
+        File destination = new File(
                 outputResDirectory,
                 newConfiguration.getFolderName(ResourceFolderType.DRAWABLE));
-        File v21Copy = new File(v21Dir, inputXmlFile.getName());
+        File copy = new File(destination, inputXmlFile.getName());
 
-        Files.createParentDirs(v21Copy);
-        Files.copy(inputXmlFile, v21Copy);
-
-        createdFiles.add(v21Copy);
-
-        // TODO: Create v21 aliases.
-
-        return createdFiles;
+        Files.createParentDirs(copy);
+        Files.copy(inputXmlFile, copy);
+        return copy;
     }
 
     @NonNull
