@@ -515,6 +515,7 @@
                         <xsd:enumeration value="mdpi" />
                         <xsd:enumeration value="tvdpi" />
                         <xsd:enumeration value="hdpi" />
+                        <xsd:enumeration value="280dpi" />
                         <xsd:enumeration value="xhdpi" />
                         <xsd:enumeration value="400dpi" />
                         <xsd:enumeration value="xxhdpi" />
