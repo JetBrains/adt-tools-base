@@ -17,64 +17,41 @@
 package com.android.build.gradle.integration.common.truth;
 
 import com.android.annotations.NonNull;
-import com.android.annotations.VisibleForTesting;
-import com.android.build.gradle.integration.common.utils.ApkHelper;
-import com.android.build.gradle.integration.common.utils.SdkHelper;
-import com.android.builder.core.ApkInfoParser;
-import com.android.ide.common.process.DefaultProcessExecutor;
 import com.android.ide.common.process.ProcessException;
-import com.android.ide.common.process.ProcessExecutor;
-import com.android.ide.common.process.ProcessInfoBuilder;
-import com.android.utils.StdLogger;
+import com.google.common.base.Charsets;
+import com.google.common.io.CharStreams;
 import com.google.common.truth.FailureStrategy;
-import com.google.common.truth.ListSubject;
-import com.google.common.truth.Subject;
-import com.google.common.truth.Truth;
-
-import junit.framework.Assert;
+import com.google.common.truth.StringSubject;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.io.InputStreamReader;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 /**
  * Truth support for aar files.
  */
-public class AarSubject extends AbstractZipSubject<AarSubject> {
+public class AarSubject extends AbstractAndroidSubject<AarSubject> {
 
     public AarSubject(FailureStrategy failureStrategy, File subject) {
         super(failureStrategy, subject);
     }
 
-    @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
-    public void containsClass(String className) throws IOException, ProcessException {
-        if (!checkForClass(className)) {
-            failWithRawMessage("'%s' does not contain '%s'", getDisplaySubject(), className);
-        }
-    }
+    public StringSubject textSymbolFile() throws IOException {
+        InputStream stream = getInputStream("R.txt");
 
-    public void doesNotContainClass(String className) throws IOException, ProcessException {
-        if (checkForClass(className)) {
-            failWithRawMessage("'%s' unexpectedly contains '%s'", getDisplaySubject(), className);
-        }
-    }
-
-    @Override
-    protected String getDisplaySubject() {
-        String name = (internalCustomName() == null) ? "" : "\"" + internalCustomName() + "\" ";
-        return name + "<" + getSubject().getName() + ">";
+        return new StringSubject(failureStrategy,
+                CharStreams.toString(new InputStreamReader(stream, Charsets.UTF_8)));
     }
 
     /**
      * Returns true if the provided class is present in the file.
      * @param expectedClassName the class name in the format Lpkg1/pk2/Name;
      */
-    private boolean checkForClass(
+    @Override
+    protected boolean checkForClass(
             @NonNull String expectedClassName)
             throws ProcessException, IOException {
         InputStream stream = getInputStream("classes.jar");
@@ -94,4 +71,5 @@ public class AarSubject extends AbstractZipSubject<AarSubject> {
             zis.close();
         }
     }
+
 }
