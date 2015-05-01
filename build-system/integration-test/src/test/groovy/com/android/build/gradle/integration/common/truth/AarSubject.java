@@ -22,6 +22,7 @@ import com.google.common.base.Charsets;
 import com.google.common.io.CharStreams;
 import com.google.common.truth.FailureStrategy;
 import com.google.common.truth.StringSubject;
+import com.google.common.truth.SubjectFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -35,10 +36,27 @@ import java.util.zip.ZipInputStream;
  */
 public class AarSubject extends AbstractAndroidSubject<AarSubject> {
 
-    public AarSubject(FailureStrategy failureStrategy, File subject) {
+    static class Factory extends SubjectFactory<AarSubject, File> {
+        @NonNull
+        public static Factory get() {
+            return new Factory();
+        }
+
+        private Factory() {}
+
+        @Override
+        public AarSubject getSubject(
+                @NonNull FailureStrategy failureStrategy,
+                @NonNull File subject) {
+            return new AarSubject(failureStrategy, subject);
+        }
+    }
+
+    public AarSubject(@NonNull FailureStrategy failureStrategy, @NonNull File subject) {
         super(failureStrategy, subject);
     }
 
+    @NonNull
     public StringSubject textSymbolFile() throws IOException {
         InputStream stream = getInputStream("R.txt");
 

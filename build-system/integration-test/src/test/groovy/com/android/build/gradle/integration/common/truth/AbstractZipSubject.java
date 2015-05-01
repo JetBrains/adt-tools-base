@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.common.truth;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import com.android.annotations.NonNull;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.ByteStreams;
@@ -40,7 +41,7 @@ import java.util.zip.ZipFile;
 public abstract class AbstractZipSubject<T extends Subject<T, File>> extends Subject<T, File> {
     private ZipFile zip;
 
-    public AbstractZipSubject(FailureStrategy failureStrategy, File subject) {
+    public AbstractZipSubject(@NonNull FailureStrategy failureStrategy, @NonNull File subject) {
         super(failureStrategy, subject);
         try {
             zip = new ZipFile(subject);
@@ -53,7 +54,7 @@ public abstract class AbstractZipSubject<T extends Subject<T, File>> extends Sub
      * Asserts the zip file contains a file with the specified path.
      */
     @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
-    public void contains(String path) {
+    public void contains(@NonNull String path) {
         if (zip.getEntry(path) == null) {
             failWithRawMessage("'%s' does not contain '%s'", zip.getName(), path);
         }
@@ -62,7 +63,7 @@ public abstract class AbstractZipSubject<T extends Subject<T, File>> extends Sub
     /**
      * Asserts the zip file does not contains a file with the specified path.
      */
-    public void doesNotContain(String path) {
+    public void doesNotContain(@NonNull String path) {
         if (zip.getEntry(path) != null) {
             failWithRawMessage("'%s' unexpectedly contains '%s'", zip.getName(), path);
         }
@@ -77,7 +78,7 @@ public abstract class AbstractZipSubject<T extends Subject<T, File>> extends Sub
      * @throws IOException of the zip file cannot be opened.
      */
     public IterableSubject<? extends IterableSubject<?, String, List<String>>, String, List<String>> entries(
-            String conformingTo) throws IOException {
+            @NonNull String conformingTo) throws IOException {
 
         ImmutableList.Builder<String> entries = ImmutableList.builder();
         Pattern pattern = Pattern.compile(conformingTo);
@@ -102,7 +103,7 @@ public abstract class AbstractZipSubject<T extends Subject<T, File>> extends Sub
      * Content is trimmed when compared.
      */
     @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
-    public void containsFileWithContent(String path, String content) {
+    public void containsFileWithContent(@NonNull String path, @NonNull String content) {
         assertThat(extractContentAsString(path).trim()).named(path).comparesEqualTo(content.trim());
     }
 
@@ -110,11 +111,11 @@ public abstract class AbstractZipSubject<T extends Subject<T, File>> extends Sub
      * Asserts the zip file contains a file with the specified byte array content.
      */
     @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
-    public void containsFileWithContent(String path, byte[] content) {
+    public void containsFileWithContent(@NonNull String path, @NonNull byte[] content) {
         assertThat(extractContentAsByte(path)).named(path).isEqualTo(content);
     }
 
-    protected String extractContentAsString(String path) {
+    protected String extractContentAsString(@NonNull String path) {
         InputStream stream = getInputStream(path);
         try {
             return new String(ByteStreams.toByteArray(stream), Charsets.UTF_8).trim();
@@ -124,7 +125,7 @@ public abstract class AbstractZipSubject<T extends Subject<T, File>> extends Sub
         }
     }
 
-    protected byte[] extractContentAsByte(String path) {
+    protected byte[] extractContentAsByte(@NonNull String path) {
         InputStream stream = getInputStream(path);
         try {
             return ByteStreams.toByteArray(stream);
@@ -134,7 +135,7 @@ public abstract class AbstractZipSubject<T extends Subject<T, File>> extends Sub
         }
     }
 
-    protected InputStream getInputStream(String path) {
+    protected InputStream getInputStream(@NonNull String path) {
         ZipEntry entry = zip.getEntry(path);
         if (entry == null) {
             failWithRawMessage("'%s' does not contain '%s'", zip.getName(), path);

@@ -29,7 +29,7 @@ import java.util.zip.ZipFile;
  */
 public abstract class AbstractAndroidSubject<T extends AbstractZipSubject<T>> extends AbstractZipSubject<T> {
 
-    public AbstractAndroidSubject(FailureStrategy failureStrategy, File subject) {
+    public AbstractAndroidSubject(@NonNull FailureStrategy failureStrategy, @NonNull File subject) {
         super(failureStrategy, subject);
     }
 
