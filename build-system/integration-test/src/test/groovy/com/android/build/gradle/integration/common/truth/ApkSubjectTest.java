@@ -35,6 +35,8 @@ public class ApkSubjectTest {
         FakeFailureStrategy failure = new FakeFailureStrategy();
         File file = new File("foo");
         ApkSubject subject = new ApkSubject(failure, file);
+        // apk file doesn't exist so the failure gets filled with error. Ignore and reset.
+        failure.reset();
 
         subject.checkMaxSdkVersion(strings, 1);
 
@@ -51,6 +53,8 @@ public class ApkSubjectTest {
         FakeFailureStrategy failure = new FakeFailureStrategy();
         File file = new File("foo");
         ApkSubject subject = new ApkSubject(failure, file);
+        // apk file doesn't exist so the failure gets filled with error. Ignore and reset.
+        failure.reset();
 
         subject.checkMaxSdkVersion(strings, 14);
 
@@ -67,6 +71,8 @@ public class ApkSubjectTest {
         FakeFailureStrategy failure = new FakeFailureStrategy();
         File file = new File("foo");
         ApkSubject subject = new ApkSubject(failure, file);
+        // apk file doesn't exist so the failure gets filled with error. Ignore and reset.
+        failure.reset();
 
         subject.checkMaxSdkVersion(strings, 14);
 
