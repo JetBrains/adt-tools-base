@@ -27,6 +27,7 @@ import com.android.sdklib.ISystemImage.LocationType;
 import com.android.sdklib.SystemImage;
 import com.android.sdklib.io.FileOp;
 import com.android.sdklib.repository.descriptors.IdDisplay;
+import com.google.common.collect.ImmutableList;
 
 import java.io.File;
 import java.util.List;
@@ -100,9 +101,16 @@ public class MockPlatformTarget implements IAndroidTarget {
         return "/sdk/platforms/android-" + getVersion().getApiString();
     }
 
+    @NonNull
     @Override
-    public IOptionalLibrary[] getOptionalLibraries() {
-        return null;
+    public List<OptionalLibrary> getOptionalLibraries() {
+        return ImmutableList.of();
+    }
+
+    @NonNull
+    @Override
+    public List<OptionalLibrary> getAdditionalLibraries() {
+        return ImmutableList.of();
     }
 
     @Override
@@ -160,6 +168,7 @@ public class MockPlatformTarget implements IAndroidTarget {
         return mRevision;
     }
 
+    @NonNull
     @Override
     public File[] getSkins() {
         return FileOp.EMPTY_FILE_ARRAY;

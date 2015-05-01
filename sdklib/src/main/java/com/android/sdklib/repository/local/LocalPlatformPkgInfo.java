@@ -19,12 +19,15 @@ package com.android.sdklib.repository.local;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.annotations.VisibleForTesting;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.IAndroidTarget;
+import com.android.sdklib.IAndroidTarget.OptionalLibrary;
 import com.android.sdklib.ISystemImage;
 import com.android.sdklib.ISystemImage.LocationType;
 import com.android.sdklib.SdkManager.LayoutlibVersion;
 import com.android.sdklib.SystemImage;
+import com.android.sdklib.internal.androidTarget.OptionalLibraryImpl;
 import com.android.sdklib.internal.androidTarget.PlatformTarget;
 import com.android.sdklib.internal.project.ProjectProperties;
 import com.android.sdklib.io.FileOp;
@@ -36,12 +39,27 @@ import com.android.sdklib.repository.descriptors.IPkgDesc;
 import com.android.sdklib.repository.descriptors.IdDisplay;
 import com.android.sdklib.repository.descriptors.PkgDesc;
 import com.android.sdklib.repository.descriptors.PkgType;
+import com.google.common.base.Charsets;
+import com.google.common.collect.Lists;
 import com.google.common.collect.SetMultimap;
 import com.google.common.collect.TreeMultimap;
+import com.google.common.io.Files;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.util.*;
+import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.TreeSet;
 
 @SuppressWarnings("ConstantConditions")
 public class LocalPlatformPkgInfo extends LocalPkgInfo {
@@ -238,6 +256,7 @@ public class LocalPlatformPkgInfo extends LocalPkgInfo {
                 layoutlibVersion,
                 systemImages,
                 platformProp,
+                getOptionalLibraries(platformFolder),
                 sdk.getLatestBuildTool());
 
         // add the skins from the platform. Make a copy to not modify the original collection.
@@ -360,6 +379,58 @@ public class LocalPlatformPkgInfo extends LocalPkgInfo {
         }
 
         return found.toArray(new ISystemImage[found.size()]);
+    }
+
+    private List<OptionalLibrary> getOptionalLibraries(@NonNull File platformDir) {
+        File optionalDir = new File(platformDir, "optional");
+        if (!optionalDir.isDirectory()) {
+            return Collections.emptyList();
+        }
+
+        File optionalJson = new File(optionalDir, "optional.json");
+        if (!optionalJson.isFile()) {
+            return Collections.emptyList();
+        }
+
+        return getLibsFromJson(optionalJson);
+    }
+
+    public static class Library {
+        String name;
+        String jar;
+        boolean manifest;
+    }
+
+
+    @VisibleForTesting
+    static List<OptionalLibrary> getLibsFromJson(@NonNull File jsonFile) {
+
+        Gson gson = new Gson();
+
+        try {
+            Type collectionType = new TypeToken<Collection<Library>>() {
+            }.getType();
+            Collection<Library> libs = gson
+                    .fromJson(Files.newReader(jsonFile, Charsets.UTF_8), collectionType);
+
+            // convert into the right format.
+            List<OptionalLibrary> optionalLibraries = Lists.newArrayListWithCapacity(libs.size());
+
+            File rootFolder = jsonFile.getParentFile();
+            for (Library lib : libs) {
+                optionalLibraries.add(new OptionalLibraryImpl(
+                        lib.name,
+                        new File(rootFolder, lib.jar),
+                        lib.name,
+                        lib.manifest));
+            }
+
+            return optionalLibraries;
+        } catch (FileNotFoundException e) {
+            // shouldn't happen since we've checked the file is here, but can happen in
+            // some cases (too many files open).
+            return Collections.emptyList();
+        }
     }
 
     /**

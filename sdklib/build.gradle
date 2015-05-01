@@ -20,6 +20,7 @@ dependencies {
     compile project(':base:layoutlib-api')
     compile project(':base:dvlib')
 
+    compile 'com.google.code.gson:gson:2.2.4'
     compile 'org.apache.commons:commons-compress:1.8.1'
     compile 'org.apache.httpcomponents:httpclient:4.1.1'
     compile 'org.apache.httpcomponents:httpmime:4.1'
