@@ -235,7 +235,7 @@ public class ExtraModelInfo {
 
         JavaArtifact artifact = new JavaArtifactImpl(
                 name, assembleTaskName, javaCompileTaskName, ideSetupTaskNames,
-                generatedSourceFolders, classesFolder, javaResourcesFolder,
+                generatedSourceFolders, classesFolder, javaResourcesFolder, null,
                 new ConfigurationDependencies(configuration), sourceProvider, null);
 
         extraJavaArtifacts.put(variant.getName(), artifact);
