@@ -16,15 +16,35 @@
 
 package com.android.build.gradle.integration.common.truth;
 
+import com.android.annotations.NonNull;
 import com.android.builder.model.SyncIssue;
 import com.google.common.truth.FailureStrategy;
 import com.google.common.truth.Subject;
+import com.google.common.truth.SubjectFactory;
 
 
 public class IssueSubject extends Subject<IssueSubject, SyncIssue> {
 
-    public IssueSubject(FailureStrategy failureStrategy,
-            SyncIssue subject) {
+    static class Factory extends SubjectFactory<IssueSubject, SyncIssue> {
+        @NonNull
+        public static Factory get() {
+            return new Factory();
+        }
+
+        private Factory() {}
+
+        @Override
+        public IssueSubject getSubject(
+                @NonNull FailureStrategy failureStrategy,
+                @NonNull SyncIssue subject) {
+            return new IssueSubject(failureStrategy, subject);
+        }
+    }
+
+
+    public IssueSubject(
+            @NonNull FailureStrategy failureStrategy,
+            @NonNull SyncIssue subject) {
         super(failureStrategy, subject);
     }
 
@@ -40,13 +60,13 @@ public class IssueSubject extends Subject<IssueSubject, SyncIssue> {
         }
     }
 
-    public void hasData(String data) {
+    public void hasData(@NonNull String data) {
         if (!data.equals(getSubject().getData())) {
             failWithBadResults("has data", data, "is", getSubject().getData());
         }
     }
 
-    public void hasMessage(String message) {
+    public void hasMessage(@NonNull String message) {
         if (!message.equals(getSubject().getMessage())) {
             failWithBadResults("has message", message, "is", getSubject().getMessage());
         }

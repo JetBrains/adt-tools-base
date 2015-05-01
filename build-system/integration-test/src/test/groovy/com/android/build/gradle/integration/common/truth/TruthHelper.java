@@ -19,8 +19,11 @@ package com.android.build.gradle.integration.common.truth;
 import static com.google.common.truth.Truth.assert_;
 
 import com.android.annotations.NonNull;
+import com.android.builder.model.AndroidArtifact;
 import com.android.builder.model.AndroidProject;
+import com.android.builder.model.Dependencies;
 import com.android.builder.model.SyncIssue;
+import com.android.builder.model.Variant;
 import com.google.common.base.Optional;
 import com.google.common.truth.BooleanSubject;
 import com.google.common.truth.ClassSubject;
@@ -57,27 +60,43 @@ public class TruthHelper {
 
     @NonNull
     public static ApkSubject assertThatApk(@NonNull File apk) {
-        return assert_().about(ApkSubjectFactory.factory()).that(apk);
+        return assert_().about(ApkSubject.Factory.get()).that(apk);
     }
 
     @NonNull
     public static AarSubject assertThatAar(@NonNull File aar) {
-        return assert_().about(AarSubjectFactory.factory()).that(aar);
+        return assert_().about(AarSubject.Factory.get()).that(aar);
     }
 
     @NonNull
     public static ZipFileSubject assertThatZip(@NonNull File file) {
-        return assert_().about(ZipFileSubjectFactory.factory()).that(file);
+        return assert_().about(ZipFileSubject.Factory.get()).that(file);
     }
 
     @NonNull
     public static ModelSubject assertThat(@NonNull AndroidProject androidProject) {
-        return assert_().about(ModelSubjectFactory.factory()).that(androidProject);
+        return assert_().about(ModelSubject.Factory.get()).that(androidProject);
+    }
+
+    @NonNull
+    public static VariantSubject assertThat(@NonNull Variant variant) {
+        return assert_().about(VariantSubject.Factory.get()).that(variant);
+    }
+
+    @NonNull
+    public static ArtifactSubject assertThat(@NonNull AndroidArtifact artifact) {
+        return assert_().about(ArtifactSubject.Factory.get()).that(artifact);
+    }
+
+    @NonNull
+    public static DependenciesSubject assertThat(@NonNull Dependencies dependencies) {
+        return assert_().about(DependenciesSubject.Factory.get()).that(
+                dependencies);
     }
 
     @NonNull
     public static IssueSubject assertThat(@NonNull SyncIssue issue) {
-        return assert_().about(IssueSubjectFactory.factory()).that(issue);
+        return assert_().about(IssueSubject.Factory.get()).that(issue);
     }
 
 

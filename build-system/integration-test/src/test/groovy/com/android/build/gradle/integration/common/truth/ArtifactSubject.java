@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 The Android Open Source Project
+ * Copyright (C) 2015 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,17 +17,14 @@
 package com.android.build.gradle.integration.common.truth;
 
 import com.android.annotations.NonNull;
+import com.android.builder.model.AndroidArtifact;
 import com.google.common.truth.FailureStrategy;
+import com.google.common.truth.Subject;
 import com.google.common.truth.SubjectFactory;
 
-import java.io.File;
+public class ArtifactSubject extends Subject<ArtifactSubject, AndroidArtifact> {
 
-/**
- * Truth support for zip files.
- */
-public class ZipFileSubject extends AbstractZipSubject<ZipFileSubject> {
-
-    static class Factory extends SubjectFactory<ZipFileSubject, File> {
+    static class Factory extends SubjectFactory<ArtifactSubject, AndroidArtifact> {
         @NonNull
         public static Factory get() {
             return new Factory();
@@ -36,16 +33,16 @@ public class ZipFileSubject extends AbstractZipSubject<ZipFileSubject> {
         private Factory() {}
 
         @Override
-        public ZipFileSubject getSubject(
+        public ArtifactSubject getSubject(
                 @NonNull FailureStrategy failureStrategy,
-                @NonNull File subject) {
-            return new ZipFileSubject(failureStrategy, subject);
+                @NonNull AndroidArtifact subject) {
+            return new ArtifactSubject(failureStrategy, subject);
         }
     }
 
-    public ZipFileSubject(
+    public ArtifactSubject(
             @NonNull FailureStrategy failureStrategy,
-            @NonNull File subject) {
+            @NonNull AndroidArtifact subject) {
         super(failureStrategy, subject);
     }
 }

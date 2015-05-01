@@ -28,6 +28,7 @@ import com.android.ide.common.process.ProcessInfoBuilder;
 import com.android.utils.StdLogger;
 import com.google.common.truth.FailureStrategy;
 import com.google.common.truth.ListSubject;
+import com.google.common.truth.SubjectFactory;
 import com.google.common.truth.Truth;
 
 import junit.framework.Assert;
@@ -49,7 +50,26 @@ public class ApkSubject extends AbstractAndroidSubject<ApkSubject> {
     private static final Pattern PATTERN_MAX_SDK_VERSION = Pattern.compile(
             "^maxSdkVersion\\W*:\\W*'(.+)'$");
 
-    public ApkSubject(FailureStrategy failureStrategy, File subject) {
+    static class Factory extends SubjectFactory<ApkSubject, File> {
+        @NonNull
+        public static Factory get() {
+            return new Factory();
+        }
+
+        private Factory() {}
+
+        @Override
+        public ApkSubject getSubject(
+                @NonNull FailureStrategy failureStrategy,
+                @NonNull File subject) {
+            return new ApkSubject(failureStrategy, subject);
+        }
+    }
+
+
+    public ApkSubject(
+            @NonNull FailureStrategy failureStrategy,
+            @NonNull File subject) {
         super(failureStrategy, subject);
     }
 
@@ -82,7 +102,7 @@ public class ApkSubject extends AbstractAndroidSubject<ApkSubject> {
     }
 
     @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
-    public void hasVersionName(String versionName) throws ProcessException {
+    public void hasVersionName(@NonNull String versionName) throws ProcessException {
         File apk = getSubject();
 
         ApkInfoParser.ApkInfo apkInfo = getApkInfo(apk);
@@ -144,7 +164,7 @@ public class ApkSubject extends AbstractAndroidSubject<ApkSubject> {
     }
 
     @NonNull
-    private static ApkInfoParser.ApkInfo getApkInfo(File apk) throws ProcessException {
+    private static ApkInfoParser.ApkInfo getApkInfo(@NonNull File apk) throws ProcessException {
         ProcessExecutor processExecutor = new DefaultProcessExecutor(
                 new StdLogger(StdLogger.Level.ERROR));
         ApkInfoParser parser = new ApkInfoParser(SdkHelper.getAapt(), processExecutor);
@@ -152,7 +172,7 @@ public class ApkSubject extends AbstractAndroidSubject<ApkSubject> {
     }
 
     @VisibleForTesting
-    void checkMaxSdkVersion(List<String> output, int maxSdkVersion) {
+    void checkMaxSdkVersion(@NonNull List<String> output, int maxSdkVersion) {
         for (String line : output) {
             Matcher m = PATTERN_MAX_SDK_VERSION.matcher(line.trim());
             if (m.matches()) {

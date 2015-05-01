@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 The Android Open Source Project
+ * Copyright (C) 2015 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,17 +17,15 @@
 package com.android.build.gradle.integration.common.truth;
 
 import com.android.annotations.NonNull;
+import com.android.builder.model.Variant;
 import com.google.common.truth.FailureStrategy;
+import com.google.common.truth.Subject;
 import com.google.common.truth.SubjectFactory;
 
-import java.io.File;
 
-/**
- * Truth support for zip files.
- */
-public class ZipFileSubject extends AbstractZipSubject<ZipFileSubject> {
+public class VariantSubject extends Subject<VariantSubject, Variant> {
 
-    static class Factory extends SubjectFactory<ZipFileSubject, File> {
+    static class Factory extends SubjectFactory<VariantSubject, Variant> {
         @NonNull
         public static Factory get() {
             return new Factory();
@@ -36,16 +34,16 @@ public class ZipFileSubject extends AbstractZipSubject<ZipFileSubject> {
         private Factory() {}
 
         @Override
-        public ZipFileSubject getSubject(
+        public VariantSubject getSubject(
                 @NonNull FailureStrategy failureStrategy,
-                @NonNull File subject) {
-            return new ZipFileSubject(failureStrategy, subject);
+                @NonNull Variant subject) {
+            return new VariantSubject(failureStrategy, subject);
         }
     }
 
-    public ZipFileSubject(
+    public VariantSubject(
             @NonNull FailureStrategy failureStrategy,
-            @NonNull File subject) {
+            @NonNull Variant subject) {
         super(failureStrategy, subject);
     }
 }
