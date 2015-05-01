@@ -21,7 +21,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.IAndroidTarget;
-import com.android.sdklib.IAndroidTarget.IOptionalLibrary;
+import com.android.sdklib.IAndroidTarget.OptionalLibrary;
 import com.android.sdklib.SdkManager;
 import com.android.sdklib.internal.project.ProjectProperties;
 import com.android.utils.ILogger;
@@ -40,6 +40,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathExpressionException;
@@ -194,17 +195,15 @@ public class GetTargetTask extends Task {
         element.setPath(androidJar);
 
         // create PathElement for each optional library.
-        IOptionalLibrary[] libraries = androidTarget.getOptionalLibraries();
-        if (libraries != null) {
-            HashSet<String> visitedJars = new HashSet<String>();
-            for (IOptionalLibrary library : libraries) {
-                String jarPath = library.getJarPath();
-                if (visitedJars.contains(jarPath) == false) {
-                    visitedJars.add(jarPath);
+        List<OptionalLibrary> libraries = androidTarget.getAdditionalLibraries();
+        HashSet<File> visitedJars = new HashSet<File>();
+        for (OptionalLibrary library : libraries) {
+            File jarFile = library.getJar();
+            if (!visitedJars.contains(jarFile)) {
+                visitedJars.add(jarFile);
 
-                    element = bootclasspath.createPathElement();
-                    element.setPath(jarPath);
-                }
+                element = bootclasspath.createPathElement();
+                element.setPath(jarFile.getAbsolutePath());
             }
         }
 

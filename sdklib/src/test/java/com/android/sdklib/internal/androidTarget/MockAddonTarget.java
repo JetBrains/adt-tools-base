@@ -27,6 +27,7 @@ import com.android.sdklib.ISystemImage.LocationType;
 import com.android.sdklib.SystemImage;
 import com.android.sdklib.io.FileOp;
 import com.android.sdklib.repository.descriptors.IdDisplay;
+import com.google.common.collect.ImmutableList;
 
 import java.io.File;
 import java.util.List;
@@ -42,7 +43,7 @@ public class MockAddonTarget implements IAndroidTarget {
     private final int mRevision;
     private final String mName;
     private ISystemImage[] mSystemImages;
-    private IOptionalLibrary[] mOptionalLibraries;
+    private ImmutableList<OptionalLibrary> mOptionalLibraries = ImmutableList.of();
 
     public MockAddonTarget(String name, IAndroidTarget parentTarget, int revision) {
         mName = name;
@@ -103,12 +104,19 @@ public class MockAddonTarget implements IAndroidTarget {
         return "/sdk/add-ons/addon-" + mName;
     }
 
+    @NonNull
     @Override
-    public IOptionalLibrary[] getOptionalLibraries() {
+    public List<OptionalLibrary> getAdditionalLibraries() {
         return mOptionalLibraries;
     }
 
-    public void setOptionalLibraries(IOptionalLibrary[] libraries) {
+    @NonNull
+    @Override
+    public List<OptionalLibrary> getOptionalLibraries() {
+        return ImmutableList.of();
+    }
+
+    public void setOptionalLibraries(ImmutableList<OptionalLibrary> libraries) {
         mOptionalLibraries = libraries;
     }
 
@@ -167,6 +175,7 @@ public class MockAddonTarget implements IAndroidTarget {
         return mRevision;
     }
 
+    @NonNull
     @Override
     public File[] getSkins() {
         return FileOp.EMPTY_FILE_ARRAY;

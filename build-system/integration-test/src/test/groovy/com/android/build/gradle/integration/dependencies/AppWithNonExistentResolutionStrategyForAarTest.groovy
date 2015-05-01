@@ -26,6 +26,8 @@ import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
 
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertTrue
 
@@ -88,10 +90,9 @@ dependencies {
 
     @Test
     void "check we received a sync issue"() {
-        assertEquals(1, models.get(":app").getSyncIssues().size());
-        SyncIssue syncIssue = Iterables.getOnlyElement(models.get(":app").getSyncIssues());
-        assertEquals(SyncIssue.SEVERITY_ERROR, syncIssue.getSeverity());
-        assertEquals(SyncIssue.TYPE_UNRESOLVED_DEPENDENCY, syncIssue.getType());
-        assertTrue(syncIssue.message.contains("org.jdeferred:jdeferred-android-aar:-1.-1.-1"));
+        SyncIssue issue = assertThat(models.get(":app")).issues().hasSingleIssue(
+                SyncIssue.SEVERITY_ERROR,
+                SyncIssue.TYPE_UNRESOLVED_DEPENDENCY)
+        assertTrue(issue.message.contains("org.jdeferred:jdeferred-android-aar:-1.-1.-1"));
     }
 }

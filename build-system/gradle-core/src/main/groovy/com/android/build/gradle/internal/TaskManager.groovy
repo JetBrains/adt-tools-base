@@ -825,7 +825,6 @@ abstract class TaskManager {
                     testedVariantData.javaCompileTask ?: testedVariantData.scope.javaCompileTask)
         }
 
-
         // Create jar task for uses by external modules.
         if (variantData.variantDependency.classesConfiguration != null) {
             tasks.create("package${variantData.variantConfiguration.fullName.capitalize()}JarArtifact", Jar) { Jar jar ->

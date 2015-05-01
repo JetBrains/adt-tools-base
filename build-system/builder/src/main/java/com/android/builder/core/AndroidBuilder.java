@@ -50,6 +50,7 @@ import com.android.builder.internal.packaging.Packager;
 import com.android.builder.model.ClassField;
 import com.android.builder.model.PackagingOptions;
 import com.android.builder.model.SigningConfig;
+import com.android.builder.model.SyncIssue;
 import com.android.builder.packaging.DuplicateFileException;
 import com.android.builder.packaging.PackagerException;
 import com.android.builder.packaging.SealedPackageException;
@@ -92,6 +93,7 @@ import com.android.manifmerger.PlaceholderHandler;
 import com.android.manifmerger.XmlDocument;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
+import com.android.sdklib.IAndroidTarget.OptionalLibrary;
 import com.android.sdklib.repository.FullRevision;
 import com.android.utils.ILogger;
 import com.android.utils.Pair;
@@ -138,7 +140,7 @@ import java.util.logging.Logger;
  *
  * then build steps can be done with
  * {@link #mergeManifests(File, List, List, String, int, String, String, String, Integer, String, String, ManifestMerger2.MergeType, Map, File)}
- * {@link #processTestManifest(String, String, String, String, String, Boolean, Boolean, java.io.File, java.util.List, java.io.File, java.io.File)}
+ * {@link #processTestManifest(String, String, String, String, String, Boolean, Boolean, File, List, Map, File, File)}
  * {@link #processResources(AaptPackageProcessBuilder, boolean)}
  * {@link #compileAllAidlFiles(java.util.List, java.io.File, java.io.File, java.util.List, com.android.builder.compiling.DependencyFileProcessor)}
  * {@link #convertByteCode(Collection, Collection, File, boolean, boolean, File, DexOptions, List, File, boolean, boolean)}
@@ -157,12 +159,20 @@ public class AndroidBuilder {
         }
     };
 
-    @NonNull private final String mProjectId;
-    @NonNull private final ILogger mLogger;
+    @NonNull
+    private final String mProjectId;
+    @NonNull
+    private final ILogger mLogger;
 
-    @NonNull private final ProcessExecutor mProcessExecutor;
-    @NonNull private final JavaProcessExecutor mJavaProcessExecutor;
-    @NonNull private final ProcessOutputHandler mProcessOutputHandler;
+    @NonNull
+    private final ProcessExecutor mProcessExecutor;
+    @NonNull
+    private final JavaProcessExecutor mJavaProcessExecutor;
+    @NonNull
+    private final ProcessOutputHandler mProcessOutputHandler;
+    @NonNull
+    private final EvaluationErrorReporter mErrorHandler;
+
     private final boolean mVerboseExec;
 
     @Nullable private String mCreatedBy;
@@ -170,6 +180,10 @@ public class AndroidBuilder {
 
     private SdkInfo mSdkInfo;
     private TargetInfo mTargetInfo;
+
+    private List<File> mBootClasspath;
+    @NonNull
+    private List<LibraryRequest> mLibraryRequests = ImmutableList.of();
 
     /**
      * Creates an AndroidBuilder.
@@ -187,13 +201,15 @@ public class AndroidBuilder {
             @NonNull ProcessExecutor processExecutor,
             @NonNull JavaProcessExecutor javaProcessExecutor,
             @NonNull ProcessOutputHandler processOutputHandler,
+            @NonNull EvaluationErrorReporter errorHandler,
             @NonNull ILogger logger,
             boolean verboseExec) {
-        mProjectId = projectId;
+        mProjectId = checkNotNull(projectId);
         mCreatedBy = createdBy;
-        mProcessExecutor = processExecutor;
-        mJavaProcessExecutor = javaProcessExecutor;
-        mProcessOutputHandler = processOutputHandler;
+        mProcessExecutor = checkNotNull(processExecutor);
+        mJavaProcessExecutor = checkNotNull(javaProcessExecutor);
+        mProcessOutputHandler = checkNotNull(processOutputHandler);
+        mErrorHandler = checkNotNull(errorHandler);
         mLogger = checkNotNull(logger);
         mVerboseExec = verboseExec;
     }
@@ -205,12 +221,14 @@ public class AndroidBuilder {
             @NonNull ProcessExecutor processExecutor,
             @NonNull JavaProcessExecutor javaProcessExecutor,
             @NonNull ProcessOutputHandler processOutputHandler,
+            @NonNull EvaluationErrorReporter errorHandler,
             @NonNull ILogger logger,
             boolean verboseExec) {
-        mProjectId = projectId;
+        mProjectId = checkNotNull(projectId);
         mProcessExecutor = checkNotNull(processExecutor);
         mJavaProcessExecutor = checkNotNull(javaProcessExecutor);
-        mProcessOutputHandler = processOutputHandler;
+        mProcessOutputHandler = checkNotNull(processOutputHandler);
+        mErrorHandler = checkNotNull(errorHandler);
         mLogger = checkNotNull(logger);
         mVerboseExec = verboseExec;
     }
@@ -224,7 +242,10 @@ public class AndroidBuilder {
      *
      * @see com.android.builder.sdk.SdkLoader
      */
-    public void setTargetInfo(@NonNull SdkInfo sdkInfo, @NonNull TargetInfo targetInfo) {
+    public void setTargetInfo(
+            @NonNull SdkInfo sdkInfo,
+            @NonNull TargetInfo targetInfo,
+            @NonNull Collection<LibraryRequest> libraryRequests) {
         mSdkInfo = sdkInfo;
         mTargetInfo = targetInfo;
 
@@ -233,6 +254,8 @@ public class AndroidBuilder {
                     "The SDK Build Tools revision (%1$s) is too low for project '%2$s'. Minimum required is %3$s",
                     mTargetInfo.getBuildTools().getRevision(), mProjectId, MIN_BUILD_TOOLS_REV));
         }
+
+        mLibraryRequests = ImmutableList.copyOf(libraryRequests);
     }
 
     /**
@@ -293,31 +316,75 @@ public class AndroidBuilder {
      */
     @NonNull
     public List<File> getBootClasspath() {
-        checkState(mTargetInfo != null,
-                "Cannot call getBootClasspath() before setTargetInfo() is called.");
+        if (mBootClasspath == null) {
+            checkState(mTargetInfo != null,
+                    "Cannot call getBootClasspath() before setTargetInfo() is called.");
 
-        List<File> classpath = Lists.newArrayList();
+            List<File> classpath = Lists.newArrayList();
 
-        IAndroidTarget target = mTargetInfo.getTarget();
+            IAndroidTarget target = mTargetInfo.getTarget();
 
-        for (String p : target.getBootClasspath()) {
-            classpath.add(new File(p));
+            for (String p : target.getBootClasspath()) {
+                classpath.add(new File(p));
+            }
+
+            List<LibraryRequest> requestedLibs = Lists.newArrayList(mLibraryRequests);
+
+            // add additional libraries if any
+            List<OptionalLibrary> libs = target.getAdditionalLibraries();
+            for (OptionalLibrary lib : libs) {
+                // add it always for now
+                classpath.add(lib.getJar());
+
+                // remove from list of requested if match
+                LibraryRequest requestedLib = findMatchingLib(lib.getName(), requestedLibs);
+                if (requestedLib != null) {
+                    requestedLibs.remove(requestedLib);
+                }
+            }
+
+            // add optional libraries if needed.
+            List<OptionalLibrary> optionalLibraries = target.getOptionalLibraries();
+            for (OptionalLibrary lib : optionalLibraries) {
+                // search if requested
+                LibraryRequest requestedLib = findMatchingLib(lib.getName(), requestedLibs);
+                if (requestedLib != null) {
+                    // add to classpath
+                    classpath.add(lib.getJar());
+
+                    // remove from requested list.
+                    requestedLibs.remove(requestedLib);
+                }
+            }
+
+            // look for not found requested libraries.
+            for (LibraryRequest library : requestedLibs) {
+                mErrorHandler.handleSyncError(
+                        library.getName(),
+                        SyncIssue.TYPE_OPTIONAL_LIB_NOT_FOUND,
+                        "Unable to find optional library: " + library.getName());
+            }
+
+            // add annotations.jar if needed.
+            if (target.getVersion().getApiLevel() <= 15) {
+                classpath.add(mSdkInfo.getAnnotationsJar());
+            }
+
+            mBootClasspath = ImmutableList.copyOf(classpath);
         }
 
-        // add optional libraries if any
-        IAndroidTarget.IOptionalLibrary[] libs = target.getOptionalLibraries();
-        if (libs != null) {
-            for (IAndroidTarget.IOptionalLibrary lib : libs) {
-                classpath.add(new File(lib.getJarPath()));
+        return mBootClasspath;
+    }
+
+    @Nullable
+    private static LibraryRequest findMatchingLib(@NonNull String name, @NonNull List<LibraryRequest> libraries) {
+        for (LibraryRequest library : libraries) {
+            if (name.equals(library.getName())) {
+                return library;
             }
         }
 
-        // add annotations.jar if needed.
-        if (target.getVersion().getApiLevel() <= 15) {
-            classpath.add(mSdkInfo.getAnnotationsJar());
-        }
-
-        return classpath;
+        return null;
     }
 
     /**
@@ -325,29 +392,15 @@ public class AndroidBuilder {
      */
     @NonNull
     public List<String> getBootClasspathAsStrings() {
-        checkState(mTargetInfo != null,
-                "Cannot call getBootClasspath() before setTargetInfo() is called.");
+        List<File> classpath = getBootClasspath();
 
-        List<String> classpath = Lists.newArrayList();
-
-        IAndroidTarget target = mTargetInfo.getTarget();
-
-        classpath.addAll(target.getBootClasspath());
-
-        // add optional libraries if any
-        IAndroidTarget.IOptionalLibrary[] libs = target.getOptionalLibraries();
-        if (libs != null) {
-            for (IAndroidTarget.IOptionalLibrary lib : libs) {
-                classpath.add(lib.getJarPath());
-            }
+        // convert to Strings.
+        List<String> results = Lists.newArrayListWithCapacity(classpath.size());
+        for (File f : classpath) {
+            results.add(f.getAbsolutePath());
         }
 
-        // add annotations.jar if needed.
-        if (target.getVersion().getApiLevel() <= 15) {
-            classpath.add(mSdkInfo.getAnnotationsJar().getPath());
-        }
-
-        return classpath;
+        return results;
     }
 
     /**
@@ -357,7 +410,7 @@ public class AndroidBuilder {
      *
      * @return the jar file, or null.
      *
-     * @see #setTargetInfo(com.android.builder.sdk.SdkInfo, com.android.builder.sdk.TargetInfo)
+     * @see #setTargetInfo(SdkInfo, TargetInfo, Collection)
      */
     @Nullable
     public File getRenderScriptSupportJar() {
@@ -425,7 +478,7 @@ public class AndroidBuilder {
      *
      * @return the folder, or null.
      *
-     * @see #setTargetInfo(com.android.builder.sdk.SdkInfo, com.android.builder.sdk.TargetInfo)
+     * @see #setTargetInfo(SdkInfo, TargetInfo, Collection)
      */
     @Nullable
     public File getSupportNativeLibFolder() {

@@ -19,7 +19,7 @@ package com.android.ant;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.sdklib.IAndroidTarget;
-import com.android.sdklib.IAndroidTarget.IOptionalLibrary;
+import com.android.sdklib.IAndroidTarget.OptionalLibrary;
 import com.android.sdklib.SdkManager;
 import com.android.sdklib.internal.project.ProjectProperties;
 import com.android.utils.ILogger;
@@ -33,6 +33,7 @@ import org.apache.tools.ant.types.Path.PathElement;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 
 /**
  * Task to resolve the target of the current Android uiautomator project.
@@ -114,7 +115,7 @@ public class GetUiTargetTask extends Task {
 
         // display the project info
         System.out.println(    "Project Target:   " + androidTarget.getName());
-        if (androidTarget.isPlatform() == false) {
+        if (!androidTarget.isPlatform()) {
             System.out.println("Vendor:           " + androidTarget.getVendor());
             System.out.println("Platform Version: " + androidTarget.getVersionName());
         }
@@ -141,17 +142,15 @@ public class GetUiTargetTask extends Task {
         element.setPath(uiAutomatorJar);
 
         // create PathElement for each optional library.
-        IOptionalLibrary[] libraries = androidTarget.getOptionalLibraries();
-        if (libraries != null) {
-            HashSet<String> visitedJars = new HashSet<String>();
-            for (IOptionalLibrary library : libraries) {
-                String jarPath = library.getJarPath();
-                if (visitedJars.contains(jarPath) == false) {
-                    visitedJars.add(jarPath);
+        List<OptionalLibrary> libraries = androidTarget.getAdditionalLibraries();
+        HashSet<File> visitedJars = new HashSet<File>();
+        for (OptionalLibrary library : libraries) {
+            File jarPath = library.getJar();
+            if (!visitedJars.contains(jarPath)) {
+                visitedJars.add(jarPath);
 
-                    element = compileclasspath.createPathElement();
-                    element.setPath(jarPath);
-                }
+                element = compileclasspath.createPathElement();
+                element.setPath(jarPath.getAbsolutePath());
             }
         }
 

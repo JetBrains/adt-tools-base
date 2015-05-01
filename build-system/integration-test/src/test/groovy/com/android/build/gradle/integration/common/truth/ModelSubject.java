@@ -38,4 +38,9 @@ public class ModelSubject extends Subject<ModelSubject, AndroidProject> {
     public CollectionSubject issuesAsCollection() {
         return Truth.assertThat(getSubject().getSyncIssues());
     }
+
+    public CollectionSubject bootClasspath() {
+        return Truth.assertThat(getSubject().getBootClasspath());
+    }
+
 }

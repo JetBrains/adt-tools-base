@@ -17,9 +17,8 @@
     <orderEntry type="library" scope="TEST" name="JUnit4" level="project" />
     <orderEntry type="module" module-name="testutils" scope="TEST" />
     <orderEntry type="module" module-name="builder-model" exported="" />
-    <orderEntry type="library" name="mockito" level="project" />
-    <orderEntry type="library" name="gson" level="project" />
-    <orderEntry type="module" module-name="builder-test-api" />
+    <orderEntry type="library" scope="TEST" name="mockito" level="project" />
+    <orderEntry type="module" module-name="builder-test-api" exported="" />
     <orderEntry type="module" module-name="sdklib-base" exported="" />
     <orderEntry type="library" scope="TEST" name="easymock-tools" level="project" />
   </component>

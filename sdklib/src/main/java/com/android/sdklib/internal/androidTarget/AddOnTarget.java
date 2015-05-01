@@ -25,11 +25,11 @@ import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.IAndroidTarget;
 import com.android.sdklib.ISystemImage;
 import com.android.sdklib.repository.descriptors.IdDisplay;
+import com.google.common.collect.ImmutableList;
 
 import java.io.File;
 import java.io.FileFilter;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -40,40 +40,6 @@ import java.util.Map.Entry;
  * An add-on extends a standard {@link PlatformTarget}.
  */
 public final class AddOnTarget implements IAndroidTarget {
-
-    private static final class OptionalLibrary implements IOptionalLibrary {
-        private final String mJarName;
-        private final String mJarPath;
-        private final String mName;
-        private final String mDescription;
-
-        OptionalLibrary(String jarName, String jarPath, String name, String description) {
-            mJarName = jarName;
-            mJarPath = jarPath;
-            mName = name;
-            mDescription = description;
-        }
-
-        @Override
-        public String getJarName() {
-            return mJarName;
-        }
-
-        @Override
-        public String getJarPath() {
-            return mJarPath;
-        }
-
-        @Override
-        public String getName() {
-            return mName;
-        }
-
-        @Override
-        public String getDescription() {
-            return mDescription;
-        }
-    }
 
     private final String mLocation;
     private final PlatformTarget mBasePlatform;
@@ -87,7 +53,7 @@ public final class AddOnTarget implements IAndroidTarget {
 
     private File[] mSkins;
     private File mDefaultSkin;
-    private IOptionalLibrary[] mLibraries;
+    private ImmutableList<OptionalLibrary> mLibraries;
     private int mVendorId = NO_USB_ID;
 
     /**
@@ -115,7 +81,7 @@ public final class AddOnTarget implements IAndroidTarget {
             boolean hasRenderingLibrary,
             boolean hasRenderingResources,
             PlatformTarget basePlatform) {
-        if (location.endsWith(File.separator) == false) {
+        if (!location.endsWith(File.separator)) {
             location = location + File.separator;
         }
 
@@ -135,15 +101,17 @@ public final class AddOnTarget implements IAndroidTarget {
 
         // handle the optional libraries.
         if (libMap != null) {
-            mLibraries = new IOptionalLibrary[libMap.size()];
-            int index = 0;
+            ImmutableList.Builder<OptionalLibrary> builder = ImmutableList.builder();
             for (Entry<String, String[]> entry : libMap.entrySet()) {
                 String jarFile = entry.getValue()[0];
                 String desc = entry.getValue()[1];
-                mLibraries[index++] = new OptionalLibrary(jarFile,
-                        mLocation + SdkConstants.OS_ADDON_LIBS_FOLDER + jarFile,
-                        entry.getKey(), desc);
+                builder.add(new OptionalLibraryImpl(
+                        entry.getKey(),
+                        new File(mLocation, SdkConstants.OS_ADDON_LIBS_FOLDER + jarFile),
+                        desc,
+                        true /*requireManifestEntry*/));
             }
+            mLibraries = builder.build();
         }
     }
 
@@ -288,7 +256,19 @@ public final class AddOnTarget implements IAndroidTarget {
 
     @Override @NonNull
     public List<String> getBootClasspath() {
-        return Collections.singletonList(getPath(IAndroidTarget.ANDROID_JAR));
+        return mBasePlatform.getBootClasspath();
+    }
+
+    @NonNull
+    @Override
+    public List<OptionalLibrary> getOptionalLibraries() {
+        return mBasePlatform.getOptionalLibraries();
+    }
+
+    @NonNull
+    @Override
+    public List<OptionalLibrary> getAdditionalLibraries() {
+        return mLibraries;
     }
 
     @Override
@@ -306,11 +286,6 @@ public final class AddOnTarget implements IAndroidTarget {
     @Override
     public File getDefaultSkin() {
         return mDefaultSkin;
-    }
-
-    @Override
-    public IOptionalLibrary[] getOptionalLibraries() {
-        return mLibraries;
     }
 
     /**
@@ -364,7 +339,7 @@ public final class AddOnTarget implements IAndroidTarget {
 
         // The receiver is an add-on. There are 2 big use cases: The add-on has libraries
         // or the add-on doesn't (in which case we consider it a platform).
-        if (mLibraries == null || mLibraries.length == 0) {
+        if (mLibraries == null || mLibraries.isEmpty()) {
             return mBasePlatform.canRunOn(target);
         } else {
             // the only targets that can run the receiver are the same add-on in the same or later
@@ -412,7 +387,7 @@ public final class AddOnTarget implements IAndroidTarget {
      * @see java.lang.Comparable#compareTo(java.lang.Object)
      */
     @Override
-    public int compareTo(IAndroidTarget target) {
+    public int compareTo(@NonNull IAndroidTarget target) {
         // quick check.
         if (this == target) {
             return 0;

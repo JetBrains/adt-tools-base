@@ -43,6 +43,7 @@ import com.android.build.gradle.internal.dsl.Splits
 import com.android.build.gradle.internal.dsl.TestOptions
 import com.android.builder.core.AndroidBuilder
 import com.android.builder.core.BuilderConstants
+import com.android.builder.core.LibraryRequest
 import com.android.builder.model.SourceProvider
 import com.android.builder.sdk.TargetInfo
 import com.android.builder.testing.api.DeviceProvider
@@ -75,6 +76,7 @@ public abstract class BaseExtension {
 
     private String target
     private FullRevision buildToolsRevision
+    private List<LibraryRequest> libraryRequests = []
 
     /** Default config, shared by all flavors. */
     final ProductFlavor defaultConfig
@@ -277,6 +279,24 @@ public abstract class BaseExtension {
 
     void setCompileSdkVersion(String target) {
         compileSdkVersion(target)
+    }
+
+    /**
+     * Request the use a of Library. The library is then added to the classpath.
+     * @param name the name of the library.
+     */
+    void useLibrary(String name) {
+        useLibrary(name, true)
+    }
+
+    /**
+     * Request the use a of Library. The library is then added to the classpath.
+     * @param name the name of the library.
+     * @param required if using the library requires a manifest entry, the  entry will
+     * indicate that the library is not required.
+     */
+    void useLibrary(String name, boolean required) {
+        libraryRequests.add(new LibraryRequest(name, required))
     }
 
     void buildToolsVersion(String version) {
@@ -576,6 +596,10 @@ public abstract class BaseExtension {
         return buildToolsRevision
     }
 
+    public Collection<LibraryRequest> getLibraryRequests() {
+        return libraryRequests
+    }
+
     public File getSdkDirectory() {
         return sdkHandler.getSdkFolder()
     }
@@ -638,6 +662,7 @@ public abstract class BaseExtension {
             sdkHandler.initTarget(
                     getCompileSdkVersion(),
                     buildToolsRevision,
+                    libraryRequests,
                     androidBuilder)
         }
     }

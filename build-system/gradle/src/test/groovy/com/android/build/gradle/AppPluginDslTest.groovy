@@ -38,7 +38,7 @@ public class AppPluginDslTest extends BaseTest {
 
     @Override
     protected void setUp() throws Exception {
-        SdkHandler.testSdkFolder = new File("foo")
+        SdkHandler.testSdkFolder = new File(System.getenv("ANDROID_HOME"))
     }
 
     public void testBasic() {
@@ -48,7 +48,7 @@ public class AppPluginDslTest extends BaseTest {
         project.apply plugin: 'com.android.application'
 
         project.android {
-            compileSdkVersion 15
+            compileSdkVersion COMPILE_SDK_VERSION
             buildToolsVersion '20.0.0'
         }
 
@@ -78,7 +78,7 @@ public class AppPluginDslTest extends BaseTest {
         project.apply plugin: 'com.android.application'
 
         project.android {
-            compileSdkVersion = 15
+            compileSdkVersion COMPILE_SDK_VERSION
             buildToolsVersion '20.0.0'
         }
 
@@ -105,7 +105,7 @@ public class AppPluginDslTest extends BaseTest {
         project.apply plugin: 'com.android.application'
 
         project.android {
-            compileSdkVersion "android-15"
+            compileSdkVersion "android-" + COMPILE_SDK_VERSION
             buildToolsVersion '20.0.0'
         }
 
@@ -132,7 +132,7 @@ public class AppPluginDslTest extends BaseTest {
         project.apply plugin: 'com.android.application'
 
         project.android {
-            compileSdkVersion 15
+            compileSdkVersion COMPILE_SDK_VERSION
             buildToolsVersion '20.0.0'
 
             sourceSets {
@@ -154,7 +154,7 @@ public class AppPluginDslTest extends BaseTest {
         project.apply plugin: 'com.android.application'
 
         project.android {
-            compileSdkVersion 15
+            compileSdkVersion COMPILE_SDK_VERSION
             buildToolsVersion '20.0.0'
             testBuildType "staging"
 
@@ -194,7 +194,7 @@ public class AppPluginDslTest extends BaseTest {
         project.apply plugin: 'com.android.application'
 
         project.android {
-            compileSdkVersion 15
+            compileSdkVersion COMPILE_SDK_VERSION
             buildToolsVersion '20.0.0'
 
             productFlavors {
@@ -237,7 +237,7 @@ public class AppPluginDslTest extends BaseTest {
         project.apply plugin: 'com.android.application'
 
         project.android {
-            compileSdkVersion 15
+            compileSdkVersion COMPILE_SDK_VERSION
             buildToolsVersion '20.0.0'
 
             flavorDimensions   "dimension1", "dimension2"
@@ -300,7 +300,7 @@ public class AppPluginDslTest extends BaseTest {
         project.apply plugin: 'com.android.application'
 
         project.android {
-            compileSdkVersion 15
+            compileSdkVersion COMPILE_SDK_VERSION
             buildToolsVersion '20.0.0'
         }
 
@@ -319,7 +319,7 @@ public class AppPluginDslTest extends BaseTest {
         project.apply plugin: 'com.android.application'
 
         project.android {
-            compileSdkVersion 15
+            compileSdkVersion COMPILE_SDK_VERSION
             buildToolsVersion '20.0.0'
 
             buildTypes {
@@ -357,7 +357,7 @@ public class AppPluginDslTest extends BaseTest {
         project.apply plugin: 'com.android.application'
 
         project.android {
-            compileSdkVersion 15
+            compileSdkVersion COMPILE_SDK_VERSION
             buildToolsVersion '20.0.0'
 
             buildTypes {
@@ -420,7 +420,7 @@ public class AppPluginDslTest extends BaseTest {
         project.apply plugin: 'com.android.application'
 
         project.android {
-            compileSdkVersion 15
+            compileSdkVersion COMPILE_SDK_VERSION
             buildToolsVersion '20.0.0'
 
             buildTypes {
@@ -485,16 +485,16 @@ public class AppPluginDslTest extends BaseTest {
             String originalVersion = System.getProperty(propName)
             try{
                 System.setProperty(propName, '1.7')
-                testLanguageLevel(15, JavaVersion.VERSION_1_6, useJack)
-                testLanguageLevel(21, JavaVersion.VERSION_1_7, useJack)
+                testLanguageLevel('android-15', JavaVersion.VERSION_1_6, useJack)
                 testLanguageLevel('android-21', JavaVersion.VERSION_1_7, useJack)
-                testLanguageLevel('Google:GoogleInc:22', JavaVersion.VERSION_1_7, useJack)
+                testLanguageLevel('android-21', JavaVersion.VERSION_1_7, useJack)
+                testLanguageLevel('Google Inc.:Google APIs:22', JavaVersion.VERSION_1_7, useJack)
 
                 System.setProperty(propName, '1.6')
                 testLanguageLevel(15, JavaVersion.VERSION_1_6, useJack)
                 testLanguageLevel(21, JavaVersion.VERSION_1_6, useJack)
                 testLanguageLevel('android-21', JavaVersion.VERSION_1_6, useJack)
-                testLanguageLevel('Google:GoogleInc:22', JavaVersion.VERSION_1_6, useJack)
+                testLanguageLevel('Google Inc.:Google APIs:22', JavaVersion.VERSION_1_6, useJack)
             } finally {
                 System.setProperty(propName, originalVersion)
             }
@@ -507,33 +507,13 @@ public class AppPluginDslTest extends BaseTest {
 
         project.apply plugin: 'com.android.application'
         project.android {
-            compileSdkVersion 21
+            compileSdkVersion COMPILE_SDK_VERSION
             buildToolsVersion '20.0.0'
 
             compileOptions {
                 sourceCompatibility JavaVersion.VERSION_1_6
                 targetCompatibility JavaVersion.VERSION_1_6
             }
-        }
-        AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
-        plugin.createAndroidTasks(false)
-
-        assertEquals(
-                JavaVersion.VERSION_1_6.toString(),
-                project.compileReleaseJava.targetCompatibility)
-        assertEquals(
-                JavaVersion.VERSION_1_6.toString(),
-                project.compileReleaseJava.sourceCompatibility)
-    }
-
-    public void testSettingLanguageLevelFromCompileSdk_unknownVersion() {
-        Project project = ProjectBuilder.builder().withProjectDir(
-                new File(testDir, "${FOLDER_TEST_PROJECTS}/basic")).build()
-
-        project.apply plugin: 'com.android.application'
-        project.android {
-            compileSdkVersion 'foo'
-            buildToolsVersion '20.0.0'
         }
         AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
         plugin.createAndroidTasks(false)
@@ -553,7 +533,7 @@ public class AppPluginDslTest extends BaseTest {
         project.apply plugin: 'com.android.application'
 
         project.android {
-            compileSdkVersion "Google Inc.:Google APIs:21"
+            compileSdkVersion "Google Inc.:Google APIs:" + COMPILE_SDK_VERSION
             buildToolsVersion '20.0.0'
         }
 
@@ -571,7 +551,7 @@ public class AppPluginDslTest extends BaseTest {
 
         project.apply plugin: 'com.android.application'
         project.android {
-            compileSdkVersion 21
+            compileSdkVersion COMPILE_SDK_VERSION
             buildToolsVersion '20.0.0'
 
             compileOptions {
