@@ -28,7 +28,6 @@ import com.android.ide.common.process.ProcessInfoBuilder;
 import com.android.utils.StdLogger;
 import com.google.common.truth.FailureStrategy;
 import com.google.common.truth.ListSubject;
-import com.google.common.truth.Subject;
 import com.google.common.truth.Truth;
 
 import junit.framework.Assert;
@@ -38,12 +37,11 @@ import java.io.IOException;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.zip.ZipFile;
 
 /**
  * Truth support for apk files.
  */
-public class ApkSubject extends Subject<ApkSubject, File> {
+public class ApkSubject extends AbstractAndroidSubject<ApkSubject> {
 
     private static final Pattern PATTERN_CLASS_DESC = Pattern.compile(
             "^Class descriptor\\W*:\\W*'(L.+;)'$");
@@ -65,32 +63,6 @@ public class ApkSubject extends Subject<ApkSubject, File> {
         }
 
         return Truth.assertThat(locales);
-    }
-
-    @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
-    public void containsClass(String className) throws IOException, ProcessException {
-        if (!checkForClass(className)) {
-            failWithRawMessage("'%s' does not contain '%s'", getDisplaySubject(), className);
-        }
-    }
-
-    public void doesNotContainClass(String className) throws IOException, ProcessException {
-        if (checkForClass(className)) {
-            failWithRawMessage("'%s' unexpectedly contains '%s'", getDisplaySubject(), className);
-        }
-    }
-
-    @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
-    public void containsResource(String name) throws IOException, ProcessException {
-        if (!checkForResource(name)) {
-            failWithRawMessage("'%s' does not contain resource '%s'", getDisplaySubject(), name);
-        }
-    }
-
-    public void doesNotContainResource(String name) throws IOException, ProcessException {
-        if (checkForResource(name)) {
-            failWithRawMessage("'%s' unexpectedly contains resource '%s'", getDisplaySubject(), name);
-        }
     }
 
     @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
@@ -143,7 +115,8 @@ public class ApkSubject extends Subject<ApkSubject, File> {
      * Returns true if the provided class is present in the file.
      * @param expectedClassName the class name in the format Lpkg1/pk2/Name;
      */
-    private boolean checkForClass(
+    @Override
+    protected boolean checkForClass(
             @NonNull String expectedClassName)
             throws ProcessException, IOException {
         // get the dexdump exec
@@ -168,18 +141,6 @@ public class ApkSubject extends Subject<ApkSubject, File> {
             }
         }
         return false;
-    }
-
-    private boolean checkForResource(String name) throws IOException {
-        ZipFile zipFile = null;
-        try {
-            zipFile = new ZipFile(getSubject());
-            return zipFile.getEntry("res/" + name) != null;
-        } finally {
-            if (zipFile != null) {
-                zipFile.close();
-            }
-        }
     }
 
     @NonNull
