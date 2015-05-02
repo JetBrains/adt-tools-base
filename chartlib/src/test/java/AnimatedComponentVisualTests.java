@@ -23,6 +23,7 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.LayoutManager;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.Arrays;
@@ -42,8 +43,6 @@ import javax.swing.JTabbedPane;
 import javax.swing.UIManager;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-
-import sun.awt.VerticalBagLayout;
 
 public class AnimatedComponentVisualTests extends JDialog {
 
@@ -145,7 +144,15 @@ public class AnimatedComponentVisualTests extends JDialog {
         panel.setLayout(new BorderLayout());
         mComponents.add(animated);
         panel.add(animated, BorderLayout.CENTER);
-        JPanel controls = new JPanel(new VerticalBagLayout());
+
+        JPanel controls = new JPanel();
+        LayoutManager manager;
+        try {
+            manager = (LayoutManager) Class.forName("sun.awt.VerticalBagLayout").newInstance();
+        } catch (Exception e) {
+            manager = new BoxLayout(controls, BoxLayout.Y_AXIS);
+        }
+        controls.setLayout(manager);
         controls.setPreferredSize(new Dimension(300, 800));
         panel.add(controls, BorderLayout.WEST);
         return controls;
