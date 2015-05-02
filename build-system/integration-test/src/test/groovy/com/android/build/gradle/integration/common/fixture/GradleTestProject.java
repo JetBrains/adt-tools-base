@@ -29,7 +29,6 @@ import com.android.build.gradle.integration.common.fixture.app.TestSourceFile;
 import com.android.build.gradle.integration.common.utils.FileHelper;
 import com.android.build.gradle.integration.common.utils.JacocoAgent;
 import com.android.build.gradle.integration.common.utils.SdkHelper;
-import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.BuilderConstants;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.SyncIssue;
@@ -52,10 +51,10 @@ import org.gradle.tooling.ProjectConnection;
 import org.gradle.tooling.internal.consumer.DefaultGradleConnector;
 import org.gradle.tooling.model.GradleProject;
 import org.gradle.tooling.model.GradleTask;
+import org.junit.Assume;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
-import org.truth0.Truth;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -947,7 +946,8 @@ public class GradleTestProject implements TestRule {
     }
 
     public static void assumeLocalDevice() {
-        Truth.ASSUME.withFailureMessage("Install task not run against device provider")
-                .that(GradleTestProject.REMOTE_TEST_PROVIDER).isNull();
+        Assume.assumeTrue(
+                "Install task not run against device provider",
+                GradleTestProject.REMOTE_TEST_PROVIDER == null);
     }
 }

@@ -15,25 +15,21 @@
  */
 
 package com.android.build.gradle.integration.component
-
 import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldJniApp
+import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
 import org.junit.experimental.categories.Category
 
-import java.util.zip.ZipFile
-
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatZip
-import static org.junit.Assert.assertNotNull
-import static org.junit.Assert.assertNull
-
 /**
  * Integration test of the native plugin with multiple variants.
  */
+@CompileStatic
 class NdkComponentSplitTest {
 
     @ClassRule

@@ -21,6 +21,7 @@ import com.android.builder.model.AndroidArtifact
 import com.android.builder.model.AndroidArtifactOutput
 import com.android.builder.model.AndroidProject
 import com.android.builder.model.Variant
+import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
@@ -33,6 +34,7 @@ import static org.junit.Assert.assertEquals
 /**
  * MultiAPK test where densities are obtained automatically.
  */
+@CompileStatic
 class AutoDensitySplitTest {
     static AndroidProject model
 

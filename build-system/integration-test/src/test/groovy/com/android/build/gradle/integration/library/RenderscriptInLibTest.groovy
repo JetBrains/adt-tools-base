@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.library
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
@@ -25,6 +26,7 @@ import org.junit.Test
 /**
  * Assemble tests for renderscriptInLib.
  */
+@CompileStatic
 class RenderscriptInLibTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()

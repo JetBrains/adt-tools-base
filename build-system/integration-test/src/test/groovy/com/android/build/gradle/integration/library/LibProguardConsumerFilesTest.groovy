@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.library
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.utils.FileHelper
+import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
@@ -28,6 +29,7 @@ import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
 /**
  * Assemble tests for libProguarConsumerFiles.
  */
+@CompileStatic
 class LibProguardConsumerFilesTest {
 
     @ClassRule

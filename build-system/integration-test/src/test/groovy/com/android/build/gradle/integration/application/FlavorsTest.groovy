@@ -27,6 +27,7 @@ import com.android.builder.model.ProductFlavor
 import com.android.builder.model.ProductFlavorContainer
 import com.android.builder.model.SourceProviderContainer
 import com.android.builder.model.Variant
+import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
@@ -43,6 +44,7 @@ import static com.google.common.truth.Truth.assertThat;
 /**
  * Assemble tests for flavors.
  */
+@CompileStatic
 class FlavorsTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()

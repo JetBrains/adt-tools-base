@@ -20,6 +20,7 @@ import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
 import com.android.builder.model.AndroidProject
 import com.android.builder.model.ArtifactMetaData
 import com.android.builder.model.JavaArtifact
+import groovy.transform.CompileStatic
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -29,6 +30,7 @@ import static com.google.common.truth.Truth.assertThat
 /**
  * Tests for the unit-tests related parts of the builder model.
  */
+@CompileStatic
 class UnitTestingModelTest {
 
     @Rule

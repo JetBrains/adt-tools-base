@@ -1,5 +1,4 @@
 package com.android.build.gradle.integration.library
-
 import com.android.SdkConstants
 import com.android.annotations.NonNull
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
@@ -22,7 +21,6 @@ import static org.junit.Assert.assertFalse
 import static org.junit.Assert.assertNotNull
 import static org.junit.Assert.assertNull
 import static org.junit.Assert.assertTrue
-
 /**
   * Integration test to check that libraries included directly as jar files are correctly handled
   * when using proguard.

@@ -15,21 +15,20 @@
  */
 
 package com.android.build.gradle.integration.component
-
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.AndroidTestApp
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldLibraryApp
 import com.android.build.gradle.integration.common.fixture.app.TestSourceFile
+import groovy.transform.CompileStatic
 import org.junit.AfterClass
-import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
-
 /**
  * Basic integration test for LibraryComponentModelPlugin.
  */
+@CompileStatic
 class LibraryComponentPluginTest {
-    private static testApp = new HelloWorldLibraryApp()
+    private static HelloWorldLibraryApp testApp = new HelloWorldLibraryApp()
 
     static {
         AndroidTestApp app = (AndroidTestApp) testApp.getSubproject(":app")

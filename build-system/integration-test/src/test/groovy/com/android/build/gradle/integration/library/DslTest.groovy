@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.library
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
+import groovy.transform.CompileStatic
 import org.gradle.tooling.BuildException
 import org.junit.Before
 import org.junit.Rule
@@ -25,6 +26,7 @@ import org.junit.Test
 import static org.junit.Assert.assertEquals
 import static org.junit.Assert.fail
 
+@CompileStatic
 class DslTest {
 
     @Rule

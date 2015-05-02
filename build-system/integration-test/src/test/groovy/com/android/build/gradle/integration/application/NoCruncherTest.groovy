@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.application
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import groovy.transform.CompileStatic
 import org.junit.ClassRule
 import org.junit.Test
 
@@ -28,6 +29,7 @@ import static junit.framework.Assert.assertTrue
 /**
  * Integration test for the cruncherEnabled settings.
  */
+@CompileStatic
 class NoCruncherTest {
 
     @ClassRule

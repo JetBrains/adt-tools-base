@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.dsl
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
+import groovy.transform.CompileStatic
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -25,6 +26,7 @@ import org.junit.Test
 /**
  * Test that the test variant returns what it should.
  */
+@CompileStatic
 class TestedVariantTest {
 
     @Rule

@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.application
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.builder.model.AndroidProject
+import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
@@ -29,6 +30,7 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
  * Ensures that archivesBaseName setting on android project is used when choosing the apk file
  * names
  */
+@CompileStatic
 class ArchivesBaseNameTest {
 
     @ClassRule
@@ -56,8 +58,11 @@ android {
 
     @Test
     void "check model failed to load"() {
-        File outputFile = models.get(":").getVariants().get(0).getMainArtifact().getOutputs()
-                .get(0).getMainOutputFile().getOutputFile()
+        File outputFile = models.get(":").getVariants().iterator().next()
+                .getMainArtifact()
+                .getOutputs().iterator().next()
+                .getMainOutputFile()
+                .getOutputFile()
 
         assertThat(outputFile.getName().startsWith("random_apk_name"))
     }

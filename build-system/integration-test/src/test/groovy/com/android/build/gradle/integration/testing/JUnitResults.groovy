@@ -15,7 +15,6 @@
  */
 
 package com.android.build.gradle.integration.testing
-
 /**
  * Helper class for inspecting JUnit XML files.
  */

@@ -19,22 +19,32 @@ package com.android.build.gradle.integration.common.truth;
 import static com.google.common.truth.Truth.assert_;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.builder.model.AndroidArtifact;
 import com.android.builder.model.AndroidProject;
 import com.android.builder.model.Dependencies;
 import com.android.builder.model.SyncIssue;
 import com.android.builder.model.Variant;
+import com.google.common.annotations.GwtIncompatible;
 import com.google.common.base.Optional;
+import com.google.common.collect.ListMultimap;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Multiset;
+import com.google.common.collect.SetMultimap;
+import com.google.common.collect.Table;
+import com.google.common.truth.BigDecimalSubject;
 import com.google.common.truth.BooleanSubject;
 import com.google.common.truth.ClassSubject;
-import com.google.common.truth.CollectionSubject;
 import com.google.common.truth.ComparableSubject;
 import com.google.common.truth.DefaultSubject;
+import com.google.common.truth.DoubleSubject;
 import com.google.common.truth.IntegerSubject;
 import com.google.common.truth.IterableSubject;
-import com.google.common.truth.ListSubject;
+import com.google.common.truth.ListMultimapSubject;
 import com.google.common.truth.LongSubject;
 import com.google.common.truth.MapSubject;
+import com.google.common.truth.MultimapSubject;
+import com.google.common.truth.MultisetSubject;
 import com.google.common.truth.ObjectArraySubject;
 import com.google.common.truth.OptionalSubject;
 import com.google.common.truth.PrimitiveBooleanArraySubject;
@@ -44,13 +54,15 @@ import com.google.common.truth.PrimitiveDoubleArraySubject;
 import com.google.common.truth.PrimitiveFloatArraySubject;
 import com.google.common.truth.PrimitiveIntArraySubject;
 import com.google.common.truth.PrimitiveLongArraySubject;
+import com.google.common.truth.SetMultimapSubject;
 import com.google.common.truth.StringSubject;
 import com.google.common.truth.Subject;
+import com.google.common.truth.TableSubject;
 import com.google.common.truth.TestVerb;
+import com.google.common.truth.ThrowableSubject;
 
 import java.io.File;
-import java.util.Collection;
-import java.util.List;
+import java.math.BigDecimal;
 import java.util.Map;
 
 /**
@@ -79,6 +91,11 @@ public class TruthHelper {
     }
 
     @NonNull
+    public static IssueSubject assertThat(@NonNull SyncIssue issue) {
+        return assert_().about(IssueSubject.Factory.get()).that(issue);
+    }
+
+    @NonNull
     public static VariantSubject assertThat(@NonNull Variant variant) {
         return assert_().about(VariantSubject.Factory.get()).that(variant);
     }
@@ -94,101 +111,128 @@ public class TruthHelper {
                 dependencies);
     }
 
-    @NonNull
-    public static IssueSubject assertThat(@NonNull SyncIssue issue) {
-        return assert_().about(IssueSubject.Factory.get()).that(issue);
-    }
-
-
     // ---- helper method from com.google.common.truth.Truth
     // this to allow a single static import of assertThat
 
-    public static <T extends Comparable<?>> ComparableSubject<?, T> assertThat(T target) {
+    /**
+     * Returns a {@link TestVerb} that will prepend the given message to the failure message in
+     * the event of a test failure.
+     */
+    public static TestVerb assertWithMessage(String messageToPrepend) {
+        return assert_().withFailureMessage(messageToPrepend);
+    }
+
+    public static <T extends Comparable<?>> ComparableSubject<?, T> assertThat(@Nullable T target) {
         return assert_().that(target);
     }
 
-    public static Subject<DefaultSubject, Object> assertThat(Object target) {
+    public static BigDecimalSubject assertThat(@Nullable BigDecimal target) {
         return assert_().that(target);
     }
 
-    public static ClassSubject assertThat(Class<?> target) {
+    public static Subject<DefaultSubject, Object> assertThat(@Nullable Object target) {
         return assert_().that(target);
     }
 
-    public static LongSubject assertThat(Long target) {
+    @GwtIncompatible("ClassSubject.java")
+    public static ClassSubject assertThat(@Nullable Class<?> target) {
         return assert_().that(target);
     }
 
-    public static IntegerSubject assertThat(Integer target) {
+    public static ThrowableSubject assertThat(@Nullable Throwable target) {
         return assert_().that(target);
     }
 
-    public static BooleanSubject assertThat(Boolean target) {
+    public static LongSubject assertThat(@Nullable Long target) {
         return assert_().that(target);
     }
 
-    public static StringSubject assertThat(String target) {
+    public static DoubleSubject assertThat(@Nullable Double target) {
+        return assert_().that(target);
+    }
+
+    public static IntegerSubject assertThat(@Nullable Integer target) {
+        return assert_().that(target);
+    }
+
+    public static BooleanSubject assertThat(@Nullable Boolean target) {
+        return assert_().that(target);
+    }
+
+    public static StringSubject assertThat(@Nullable String target) {
         return assert_().that(target);
     }
 
     public static <T, C extends Iterable<T>> IterableSubject<? extends IterableSubject<?, T, C>, T, C>
-    assertThat(Iterable<T> target) {
+    assertThat(@Nullable Iterable<T> target) {
         return assert_().that(target);
     }
 
-    public static <T, C extends Collection<T>>
-    CollectionSubject<? extends CollectionSubject<?, T, C>, T, C>
-    assertThat(Collection<T> target) {
+    public static <T> ObjectArraySubject<T> assertThat(@Nullable T[] target) {
         return assert_().that(target);
     }
 
-    public static <T, C extends List<T>> ListSubject<? extends ListSubject<?, T, C>, T, C>
-    assertThat(List<T> target) {
+    public static PrimitiveBooleanArraySubject assertThat(@Nullable boolean[] target) {
         return assert_().that(target);
     }
 
-    public static <T> ObjectArraySubject<T> assertThat(T[] target) {
+    public static PrimitiveIntArraySubject assertThat(@Nullable int[] target) {
         return assert_().that(target);
     }
 
-    public static PrimitiveBooleanArraySubject assertThat(boolean[] target) {
+    public static PrimitiveLongArraySubject assertThat(@Nullable long[] target) {
         return assert_().that(target);
     }
 
-    public static PrimitiveIntArraySubject assertThat(int[] target) {
+    public static PrimitiveByteArraySubject assertThat(@Nullable byte[] target) {
         return assert_().that(target);
     }
 
-    public static PrimitiveLongArraySubject assertThat(long[] target) {
+    public static PrimitiveCharArraySubject assertThat(@Nullable char[] target) {
         return assert_().that(target);
     }
 
-    public static PrimitiveByteArraySubject assertThat(byte[] target) {
+    public static PrimitiveFloatArraySubject assertThat(@Nullable float[] target) {
         return assert_().that(target);
     }
 
-    public static PrimitiveCharArraySubject assertThat(char[] target) {
+    public static PrimitiveDoubleArraySubject assertThat(@Nullable double[] target) {
         return assert_().that(target);
     }
 
-    public static PrimitiveFloatArraySubject assertThat(float[] target) {
+    public static <T> OptionalSubject<T> assertThat(@Nullable Optional<T> target) {
         return assert_().that(target);
     }
 
-    public static PrimitiveDoubleArraySubject assertThat(double[] target) {
+    public static MapSubject assertThat(@Nullable Map<?, ?> target) {
         return assert_().that(target);
     }
 
-    public static <T> OptionalSubject<T> assertThat(Optional<T> target) {
+    public static <K, V, M extends Multimap<K, V>>
+    MultimapSubject<? extends MultimapSubject<?, K, V, M>, K, V, M> assertThat(
+            @Nullable Multimap<K, V> target) {
         return assert_().that(target);
     }
 
-    public static <K, V, M extends Map<K, V>> MapSubject<? extends MapSubject<?, K, V, M>, K, V, M>
-    assertThat(Map<K, V> target) {
+    public static <K, V, M extends ListMultimap<K, V>>
+    ListMultimapSubject<? extends ListMultimapSubject<?, K, V, M>, K, V, M> assertThat(
+            @Nullable ListMultimap<K, V> target) {
         return assert_().that(target);
     }
 
-    public static TestVerb assertWithMessage(String message) {
-        return assert_().withFailureMessage(message);
+    public static <K, V, M extends SetMultimap<K, V>>
+    SetMultimapSubject<? extends SetMultimapSubject<?, K, V, M>, K, V, M> assertThat(
+            @Nullable SetMultimap<K, V> target) {
+        return assert_().that(target);
+    }
+
+    public static <E, M extends Multiset<E>>
+    MultisetSubject<? extends MultisetSubject<?, E, M>, E, M> assertThat(
+            @Nullable Multiset<E> target) {
+        return assert_().that(target);
+    }
+
+    public static TableSubject assertThat(@Nullable Table<?, ?, ?> target) {
+        return assert_().that(target);
     }
 }

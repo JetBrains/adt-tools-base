@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.dependencies
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.AndroidTestApp
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
+import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
@@ -26,6 +27,7 @@ import org.junit.Test
 /**
  * Tests the handling of test dependency.
  */
+@CompileStatic
 class TestWithSameDepAsAppWithProguard {
 
     private static AndroidTestApp testApp = new HelloWorldApp()

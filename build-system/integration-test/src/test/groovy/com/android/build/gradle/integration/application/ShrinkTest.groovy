@@ -21,6 +21,7 @@ import com.android.builder.model.AndroidProject
 import com.google.common.base.Joiner
 import com.google.common.collect.Lists
 import com.google.common.io.ByteStreams
+import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
@@ -40,6 +41,7 @@ import static org.junit.Assert.assertTrue
 /**
  * Assemble tests for shrink.
  */
+@CompileStatic
 class ShrinkTest {
 
     @ClassRule

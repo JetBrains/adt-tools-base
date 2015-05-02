@@ -26,6 +26,7 @@ import com.android.builder.model.AndroidArtifactOutput
 import com.android.builder.model.AndroidProject
 import com.android.builder.model.Variant
 import com.google.common.collect.Maps
+import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
@@ -40,6 +41,7 @@ import static org.junit.Assert.assertTrue
 /**
  * Assemble tests for ndkSanAngeles.
  */
+@CompileStatic
 class NdkSanAngelesTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()

@@ -63,7 +63,7 @@ dependencies {
 
     @Test
     void "check model failed to load"() {
-        SyncIssue issue = assertThat(model).issues().hasSingleIssue(
+        SyncIssue issue = assertThat(model).hasSingleIssue(
                 SyncIssue.SEVERITY_ERROR,
                 SyncIssue.TYPE_NON_JAR_LOCAL_DEP)
         assertThat(new File(issue.getData()).getName()).is('baseLib-1.0.aar')

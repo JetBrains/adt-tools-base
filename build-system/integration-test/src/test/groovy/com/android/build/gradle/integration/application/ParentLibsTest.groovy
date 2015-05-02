@@ -20,6 +20,7 @@ import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.builder.model.AndroidProject
 import com.google.common.collect.ImmutableList
+import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
@@ -29,9 +30,8 @@ import org.junit.experimental.categories.Category
 /**
  * Assemble tests for parentLibTest
  */
+@CompileStatic
 public class ParentLibsTest {
-    static AndroidProject model
-
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
             .fromTestProject("parentLibsTest")
@@ -39,14 +39,13 @@ public class ParentLibsTest {
 
     @BeforeClass
     static void setUp() {
-        model = project.execute(ImmutableList.of("-p", "app"),
+        project.execute(ImmutableList.of("-p", "app"),
                 "clean", "assembleDebug")
     }
 
     @AfterClass
     static void cleanUp() {
         project = null
-        model = null
     }
 
     @Test

@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.component
 
 import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
@@ -29,6 +30,7 @@ import org.junit.experimental.categories.Category
  * Assemble tests for ndkStandaloneSo.
  */
 @Ignore("Test is disabled until new dependency model is ready.")
+@CompileStatic
 class NdkStandaloneSoTest {
 
     @ClassRule

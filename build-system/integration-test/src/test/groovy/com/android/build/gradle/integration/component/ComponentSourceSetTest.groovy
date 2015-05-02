@@ -20,6 +20,7 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.AndroidTestApp
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldJniApp
 import com.android.build.gradle.integration.common.fixture.app.TestSourceFile
+import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
@@ -30,6 +31,7 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
 /**
  * Integration tests for different configuration of source sets.
  */
+@CompileStatic
 class ComponentSourceSetTest {
 
     public static AndroidTestApp app = new HelloWorldJniApp()

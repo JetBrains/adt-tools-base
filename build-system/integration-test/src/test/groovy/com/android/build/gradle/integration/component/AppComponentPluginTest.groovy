@@ -19,6 +19,7 @@ package com.android.build.gradle.integration.component
 import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
+import groovy.transform.CompileStatic
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -29,6 +30,7 @@ import static com.google.common.truth.Truth.assertThat
 /**
  * Basic integration test for AppComponentModelPlugin.
  */
+@CompileStatic
 class AppComponentPluginTest {
 
     @Rule
