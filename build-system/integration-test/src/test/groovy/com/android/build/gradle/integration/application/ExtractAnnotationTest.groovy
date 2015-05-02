@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-
-
 package com.android.build.gradle.integration.application
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.builder.model.AndroidProject
+import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
@@ -30,6 +29,7 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
 /**
  * Integration test for extracting annotations.
  */
+@CompileStatic
 class ExtractAnnotationTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()

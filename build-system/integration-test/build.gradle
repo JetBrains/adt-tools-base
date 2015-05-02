@@ -8,11 +8,11 @@ repositories {
 dependencies {
     compile gradleApi()
     compile localGroovy()
-    compile project(':base:builder-model')
-    compile project(':base:builder')
-    compile project(':base:sdk-common')
-    compile "com.google.truth:truth:0.24"
-    testCompile "org.jacoco:org.jacoco.agent:0.7.4.201502262128"
+    testCompile project(':base:builder-model')
+    testCompile project(':base:builder')
+    testCompile project(':base:sdk-common')
+    testCompile 'com.google.truth:truth:0.26'
+    testCompile 'org.jacoco:org.jacoco.agent:0.7.4.201502262128'
 }
 
 def testEnvironment = [

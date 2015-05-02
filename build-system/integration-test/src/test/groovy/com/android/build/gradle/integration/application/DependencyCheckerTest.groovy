@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.application
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import groovy.transform.CompileStatic
 import org.gradle.tooling.BuildException
 import org.junit.AfterClass
 import org.junit.ClassRule
@@ -27,6 +28,7 @@ import static org.junit.Assert.fail
 /**
  * Assemble tests for dependencyChecker.
  */
+@CompileStatic
 class DependencyCheckerTest {
     @ClassRule
     static public GradleTestProject httpClientProject = GradleTestProject.builder()

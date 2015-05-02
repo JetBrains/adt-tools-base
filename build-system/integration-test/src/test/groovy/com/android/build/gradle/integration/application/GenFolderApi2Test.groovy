@@ -20,6 +20,7 @@ import com.android.builder.model.AndroidArtifact
 import com.android.builder.model.AndroidProject
 import com.android.builder.model.JavaArtifact
 import com.android.builder.model.Variant
+import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
@@ -31,6 +32,7 @@ import static org.junit.Assert.assertTrue
 /**
  * Assemble tests for genFolderApi2.
  */
+@CompileStatic
 class GenFolderApi2Test {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
@@ -72,7 +74,7 @@ class GenFolderApi2Test {
             })
 
             // Unit testing artifact:
-            assertThat(variant.extraJavaArtifacts).hasSize(1)
+            assertThat(variant.getExtraJavaArtifacts()).hasSize(1)
             JavaArtifact unitTestArtifact = variant.extraJavaArtifacts.first()
             def sortedFolders = unitTestArtifact.generatedSourceFolders.sort()
             assertThat(sortedFolders).hasSize(2)

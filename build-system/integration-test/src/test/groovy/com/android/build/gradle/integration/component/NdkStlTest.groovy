@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.component
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldJniApp
+import groovy.transform.CompileStatic
 import org.gradle.tooling.BuildException
 import org.junit.Before
 import org.junit.Rule
@@ -36,6 +37,7 @@ import static org.junit.Assert.fail
  * This unit test is parameterized and will be executed for various values of STL.
  */
 @RunWith(Parameterized.class)
+@CompileStatic
 public class NdkStlTest {
 
     @Parameterized.Parameters

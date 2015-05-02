@@ -15,9 +15,9 @@
  */
 
 package com.android.build.gradle.integration.application
-
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
+import com.android.builder.model.AndroidProject
 import com.android.builder.model.SyncIssue
 import groovy.transform.CompileStatic
 import org.junit.Before
@@ -55,7 +55,8 @@ dependencies {
     compile 'foo:bar:1.2.3'
 }
 """
-        assertThat(project.getSingleModelIgnoringSyncIssues()).issues().hasSingleIssue(
+        AndroidProject model = project.getSingleModelIgnoringSyncIssues()
+        assertThat(model).hasSingleIssue(
                 SyncIssue.SEVERITY_ERROR,
                 SyncIssue.TYPE_UNRESOLVED_DEPENDENCY,
                 'foo:bar:1.2.3')

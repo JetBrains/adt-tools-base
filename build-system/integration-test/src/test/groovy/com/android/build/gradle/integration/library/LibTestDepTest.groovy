@@ -15,7 +15,6 @@
  */
 
 package com.android.build.gradle.integration.library
-
 import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.utils.ModelHelper
@@ -24,6 +23,7 @@ import com.android.builder.model.AndroidProject
 import com.android.builder.model.Dependencies
 import com.android.builder.model.JavaLibrary
 import com.android.builder.model.Variant
+import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
@@ -34,12 +34,11 @@ import static com.android.builder.core.BuilderConstants.DEBUG
 import static com.android.builder.model.AndroidProject.ARTIFACT_ANDROID_TEST
 import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertNotNull
-import static org.junit.Assert.assertThat
 import static org.junit.Assert.assertTrue
-
 /**
  * Assemble tests for libTestDep.
  */
+@CompileStatic
 class LibTestDepTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()

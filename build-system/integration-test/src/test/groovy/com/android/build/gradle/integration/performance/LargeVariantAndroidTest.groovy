@@ -15,7 +15,6 @@
  */
 
 package com.android.build.gradle.integration.performance
-
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
 import com.android.build.gradle.integration.common.fixture.app.VariantBuildScriptGenerator
@@ -23,7 +22,6 @@ import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
-
 /**
  * Performance test on gradle plugin with a large number of variants
  */

@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.application
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.google.common.base.Throwables
+import groovy.transform.CompileStatic
 import org.gradle.tooling.BuildException
 import org.junit.AfterClass
 import org.junit.BeforeClass
@@ -30,6 +31,7 @@ import static junit.framework.Assert.fail
  * Debug builds with a wearApp with applicationId that does not match that of the main application
  * should fail.
  */
+@CompileStatic
 class WearWithCustomApplicationIdTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()

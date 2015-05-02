@@ -19,6 +19,7 @@ package com.android.build.gradle.integration.application
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.builder.model.AndroidProject
 import com.android.builder.model.Variant
+import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
@@ -29,6 +30,7 @@ import static org.junit.Assert.assertEquals
 /**
  * Assemble tests for filteredOutBuildType.
  */
+@CompileStatic
 class FilteredOutBuildTypeTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()

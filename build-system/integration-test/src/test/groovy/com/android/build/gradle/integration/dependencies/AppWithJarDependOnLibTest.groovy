@@ -65,7 +65,7 @@ dependencies {
 
     @Test
     void "check model failed to load"() {
-        assertThat(models.get(':app')).issues().hasSingleIssue(
+        assertThat(models.get(':app')).hasSingleIssue(
                 SyncIssue.SEVERITY_ERROR,
                 SyncIssue.TYPE_JAR_DEPEND_ON_AAR,
                 'projectWithModules:jar:jar:unspecified')

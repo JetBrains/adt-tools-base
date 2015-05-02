@@ -23,6 +23,7 @@ import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
 import com.android.build.gradle.integration.common.fixture.app.TestSourceFile
 import com.android.builder.model.AndroidProject
 import com.google.common.base.Joiner
+import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
@@ -34,6 +35,7 @@ import static org.junit.Assert.assertTrue
 /**
  * Check resources in androidTest are available in the generated R.java.
  */
+@CompileStatic
 class AndroidTestResourcesTest {
     private static AndroidTestApp testApp = new HelloWorldApp()
     static {

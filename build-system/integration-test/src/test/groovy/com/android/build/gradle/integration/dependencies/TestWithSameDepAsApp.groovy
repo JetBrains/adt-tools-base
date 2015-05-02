@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.dependencies
 import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
@@ -27,6 +28,7 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
 /**
  * Tests the handling of test dependency.
  */
+@CompileStatic
 class TestWithSameDepAsApp {
 
     @ClassRule

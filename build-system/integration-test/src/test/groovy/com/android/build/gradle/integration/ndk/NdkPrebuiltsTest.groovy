@@ -15,7 +15,6 @@
  */
 
 package com.android.build.gradle.integration.ndk
-
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.builder.model.AndroidProject
 import com.android.builder.model.Variant
@@ -29,7 +28,6 @@ import org.junit.Test
 import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertNotNull
 import static org.junit.Assert.assertTrue
-
 /**
  * Assemble tests for ndkPrebuilts.
  */

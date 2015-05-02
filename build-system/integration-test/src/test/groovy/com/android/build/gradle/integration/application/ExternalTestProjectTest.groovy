@@ -154,7 +154,7 @@ dependencies {
         AndroidProject model = modelMap.get(':app2')
         assertNotNull(model)
 
-        SyncIssue issue = assertThat(model).issues().hasSingleIssue(
+        SyncIssue issue = assertThat(model).hasSingleIssue(
                 SyncIssue.SEVERITY_ERROR,
                 SyncIssue.TYPE_DEPENDENCY_IS_APK,
                 'project:app1:unspecified')
