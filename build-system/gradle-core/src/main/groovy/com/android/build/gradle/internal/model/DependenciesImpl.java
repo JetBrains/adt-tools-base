@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal.model;
 
 import static com.android.SdkConstants.DOT_JAR;
+import static com.android.SdkConstants.FD_JARS;
 
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
@@ -222,6 +223,8 @@ public class DependenciesImpl implements Dependencies, Serializable {
         if (aarFile.isFile()) {
             List<File> jarList = Lists.newArrayList();
 
+            File jarsFolder = new File(explodedFolder, FD_JARS);
+
             ZipFile zipFile = null;
             try {
                 //noinspection IOResourceOpenedButNotSafelyClosed
@@ -231,7 +234,7 @@ public class DependenciesImpl implements Dependencies, Serializable {
                     ZipEntry zipEntry = e.nextElement();
                     String name = zipEntry.getName();
                     if (name.startsWith("libs/") && name.endsWith(DOT_JAR)) {
-                        jarList.add(new File(explodedFolder, name.replace('/', File.separatorChar)));
+                        jarList.add(new File(jarsFolder, name.replace('/', File.separatorChar)));
                     }
                 }
 
