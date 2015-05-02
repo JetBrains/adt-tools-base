@@ -390,8 +390,9 @@ public class VariantManager implements VariantModel {
             testVariantProviders.add(defaultConfigData.getTestConfigurationProvider(variantType));
 
             assert(testVariantConfig.getTestedConfig() != null);
+            VariantDependencies parentVariant = null;
             if (testVariantConfig.getTestedConfig().getType() == VariantType.LIBRARY) {
-                testVariantProviders.add(testedVariantData.getVariantDependency());
+                parentVariant = testedVariantData.getVariantDependency();
             }
 
             // If the variant being tested is a library variant, VariantDependencies must be
@@ -401,6 +402,7 @@ public class VariantManager implements VariantModel {
                     project, testVariantConfig.getFullName(),
                     false /*publishVariant*/,
                     variantType,
+                    parentVariant,
                     testVariantProviders.toArray(
                             new ConfigurationProvider[testVariantProviders.size()]));
             variantData.setVariantDependency(variantDep);
@@ -548,6 +550,7 @@ public class VariantManager implements VariantModel {
                 project, variantConfig.getFullName(),
                 isVariantPublished(),
                 variantData.getType(),
+                null,
                 variantProviders.toArray(new ConfigurationProvider[variantProviders.size()]));
         variantData.setVariantDependency(variantDep);
 
