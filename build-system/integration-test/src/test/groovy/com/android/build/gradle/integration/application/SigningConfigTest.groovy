@@ -20,6 +20,7 @@ package com.android.build.gradle.integration.application
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.google.common.collect.ImmutableList
+import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.ClassRule
 import org.junit.Test
@@ -33,6 +34,7 @@ import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_STORE_PA
 /**
  * Integration test with signing overrider.
  */
+@CompileStatic
 class SigningConfigTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()

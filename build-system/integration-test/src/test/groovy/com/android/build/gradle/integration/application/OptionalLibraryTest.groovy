@@ -15,7 +15,6 @@
  */
 
 package com.android.build.gradle.integration.application
-
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
 import com.android.builder.model.AndroidProject
@@ -23,19 +22,19 @@ import com.android.builder.model.SyncIssue
 import com.android.sdklib.IAndroidTarget
 import com.android.sdklib.SdkManager
 import com.android.utils.NullLogger
+import groovy.transform.CompileStatic
 import org.junit.After
 import org.junit.Assume
-import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
 import static com.android.SdkConstants.FN_FRAMEWORK_LIBRARY
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
-
 /**
  * Test for BuildConfig field declared in build type, flavors, and variant and how they
  * override each other
  */
+@CompileStatic
 class OptionalLibraryTest {
     @Rule
     public GradleTestProject project = GradleTestProject.builder()
@@ -65,7 +64,7 @@ class OptionalLibraryTest {
 
         AndroidProject project = project.getSingleModelIgnoringSyncIssues()
 
-        assertThat(project).issues().hasSingleIssue(
+        assertThat(project).hasSingleIssue(
                 SyncIssue.SEVERITY_ERROR,
                 SyncIssue.TYPE_OPTIONAL_LIB_NOT_FOUND,
                 'foo');
@@ -98,7 +97,7 @@ class OptionalLibraryTest {
 
         File targetLocation = new File(target.getLocation())
 
-        assertThat(project).bootClasspath().containsExactly(
+        assertThat(project.getBootClasspath()).containsExactly(
                 new File(targetLocation, FN_FRAMEWORK_LIBRARY).getAbsolutePath(),
                 new File(targetLocation, "optional/org.apache.http.legacy.jar").getAbsolutePath())
     }
@@ -127,7 +126,7 @@ class OptionalLibraryTest {
 
         File targetLocation = new File(target.getLocation())
 
-        assertThat(project).bootClasspath().containsExactly(
+        assertThat(project.getBootClasspath()).containsExactly(
                 new File(targetLocation, FN_FRAMEWORK_LIBRARY).getAbsolutePath())
     }
 

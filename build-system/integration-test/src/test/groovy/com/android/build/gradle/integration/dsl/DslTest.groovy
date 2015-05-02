@@ -15,7 +15,6 @@
  */
 
 package com.android.build.gradle.integration.dsl
-
 import com.android.build.gradle.integration.application.BuildConfigTest
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
@@ -26,7 +25,6 @@ import org.junit.Test
 
 import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertNotNull
-
 /**
  * General DSL tests
  */

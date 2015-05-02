@@ -79,7 +79,7 @@ public class IssueSubjectTest {
         IssueSubject subject = new IssueSubject(failure, issue);
         subject.hasSeverity(0);
 
-        assertThat(failure.message).is("Not true that <1|2|> has severity <0>. It is <1>");
+        assertThat(failure.message).isEqualTo("Not true that <1|2|> has severity <0>. It is <1>");
     }
 
     @Test
@@ -91,7 +91,7 @@ public class IssueSubjectTest {
         IssueSubject subject = new IssueSubject(failure, issue);
         subject.hasType(0);
 
-        assertThat(failure.message).is("Not true that <1|2|> has type <0>. It is <2>");
+        assertThat(failure.message).isEqualTo("Not true that <1|2|> has type <0>. It is <2>");
     }
 
     @Test
@@ -103,7 +103,7 @@ public class IssueSubjectTest {
         IssueSubject subject = new IssueSubject(failure, issue);
         subject.hasData("bar");
 
-        assertThat(failure.message).is("Not true that <1|2|foo> has data <bar>. It is <foo>");
+        assertThat(failure.message).isEqualTo("Not true that <1|2|foo> has data <bar>. It is <foo>");
     }
 
     @Test
@@ -115,7 +115,7 @@ public class IssueSubjectTest {
         IssueSubject subject = new IssueSubject(failure, issue);
         subject.hasMessage("robert");
 
-        assertThat(failure.message).is("Not true that <1|2|foo> has message <robert>. It is <bob>");
+        assertThat(failure.message).isEqualTo("Not true that <1|2|foo> has message <robert>. It is <bob>");
     }
 
 }

@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.library
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.utils.FileHelper
+import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
@@ -26,6 +27,7 @@ import org.junit.Test
 /**
  * Assemble tests for libMinify.
  */
+@CompileStatic
 class LibMinifyTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()

@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.testing
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import groovy.transform.CompileStatic
 import org.junit.ClassRule
 import org.junit.Test
 

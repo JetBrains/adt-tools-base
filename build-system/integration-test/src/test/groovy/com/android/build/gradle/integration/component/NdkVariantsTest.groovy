@@ -17,6 +17,7 @@
 package com.android.build.gradle.integration.component
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
@@ -25,6 +26,7 @@ import org.junit.Test
 /**
  * Assemble tests for ndkVariants.
  */
+@CompileStatic
 class NdkVariantsTest {
 
     @ClassRule

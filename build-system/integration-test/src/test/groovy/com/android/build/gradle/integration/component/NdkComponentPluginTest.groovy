@@ -21,6 +21,7 @@ package com.android.build.gradle.integration.component
  */
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldJniApp
+import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
@@ -29,6 +30,7 @@ import org.junit.Test
 /**
  * Basic integration test for ndk component plugin.
  */
+@CompileStatic
 class NdkComponentPluginTest {
 
     @ClassRule

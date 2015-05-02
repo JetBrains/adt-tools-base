@@ -21,6 +21,7 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.AndroidTestApp
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
 import com.android.build.gradle.integration.common.fixture.app.TestSourceFile
+import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
@@ -33,6 +34,7 @@ import static org.junit.Assert.assertTrue
 /**
  * Test resValue for string type is treated as String.
  */
+@CompileStatic
 class ResValueTypeTest {
     static AndroidTestApp app = new HelloWorldApp()
     static {

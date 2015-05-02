@@ -1,11 +1,11 @@
 <component name="libraryTable">
   <library name="truth">
     <CLASSES>
-      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/com/google/truth/truth/0.24/truth-0.24.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/com/google/truth/truth/0.26/truth-0.26.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES>
-      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/com/google/truth/truth/0.24/truth-0.24-sources.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../prebuilts/tools/common/m2/repository/com/google/truth/truth/0.26/truth-0.26-sources.jar!/" />
     </SOURCES>
   </library>
 </component>

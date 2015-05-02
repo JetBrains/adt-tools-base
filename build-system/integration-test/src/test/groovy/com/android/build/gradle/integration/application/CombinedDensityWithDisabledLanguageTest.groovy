@@ -15,7 +15,6 @@
  */
 
 package com.android.build.gradle.integration.application
-
 import com.android.build.OutputFile
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.utils.ApkHelper
@@ -35,7 +34,6 @@ import static com.android.builder.core.BuilderConstants.DEBUG
 import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertNotNull
 import static org.junit.Assert.assertTrue
-
 /**
  * Tests that produce density pure splits but leave languages in the main APK.
  */

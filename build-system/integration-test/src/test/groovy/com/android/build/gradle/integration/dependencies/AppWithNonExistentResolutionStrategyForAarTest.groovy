@@ -15,11 +15,9 @@
  */
 
 package com.android.build.gradle.integration.dependencies
-
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.builder.model.AndroidProject
 import com.android.builder.model.SyncIssue
-import com.google.common.collect.Iterables
 import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
@@ -27,10 +25,7 @@ import org.junit.ClassRule
 import org.junit.Test
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
-import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
-import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertTrue
-
 /**
  * test for flavored dependency on a different package.
  */
@@ -90,7 +85,7 @@ dependencies {
 
     @Test
     void "check we received a sync issue"() {
-        SyncIssue issue = assertThat(models.get(":app")).issues().hasSingleIssue(
+        SyncIssue issue = assertThat(models.get(":app")).hasSingleIssue(
                 SyncIssue.SEVERITY_ERROR,
                 SyncIssue.TYPE_UNRESOLVED_DEPENDENCY)
         assertTrue(issue.message.contains("org.jdeferred:jdeferred-android-aar:-1.-1.-1"));

@@ -27,7 +27,7 @@ import com.android.ide.common.process.ProcessExecutor;
 import com.android.ide.common.process.ProcessInfoBuilder;
 import com.android.utils.StdLogger;
 import com.google.common.truth.FailureStrategy;
-import com.google.common.truth.ListSubject;
+import com.google.common.truth.IterableSubject;
 import com.google.common.truth.SubjectFactory;
 import com.google.common.truth.Truth;
 
@@ -74,7 +74,7 @@ public class ApkSubject extends AbstractAndroidSubject<ApkSubject> {
     }
 
     @NonNull
-    public ListSubject locales() throws ProcessException {
+    public IterableSubject<? extends IterableSubject<?, String, List<String>>, String, List<String>> locales() throws ProcessException {
         File apk = getSubject();
         List<String> locales = ApkHelper.getLocales(apk);
 

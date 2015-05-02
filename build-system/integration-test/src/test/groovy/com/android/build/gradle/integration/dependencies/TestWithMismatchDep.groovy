@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.dependencies
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.builder.model.AndroidProject
 import com.android.builder.model.SyncIssue
+import groovy.transform.CompileStatic
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -26,10 +27,10 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
 import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertTrue
 import static org.junit.Assert.fail
-
 /**
  * Tests the handling of test dependencies.
  */
+@CompileStatic
 class TestWithMismatchDep {
 
     @Rule
@@ -55,7 +56,7 @@ dependencies {
         // Query the model to get the mismatch dep sync error.
         AndroidProject model = project.getSingleModelIgnoringSyncIssues()
 
-        assertThat(model).issues().hasSingleIssue(
+        assertThat(model).hasSingleIssue(
                 SyncIssue.SEVERITY_ERROR,
                 SyncIssue.TYPE_MISMATCH_DEP,
                 'com.google.guava:guava',

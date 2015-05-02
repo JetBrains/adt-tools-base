@@ -15,7 +15,6 @@
  */
 
 package com.android.build.gradle.integration.application
-
 import com.android.build.OutputFile
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.utils.ApkHelper
@@ -35,8 +34,6 @@ import static com.android.builder.core.BuilderConstants.DEBUG
 import static org.junit.Assert.assertEquals
 import static org.junit.Assert.assertNotNull
 import static org.junit.Assert.assertTrue
-import static org.junit.Assert.fail;
-
 /**
  * Tests that create pure splits for language but keep drawable resources in the main APK.
  */

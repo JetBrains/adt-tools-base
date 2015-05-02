@@ -20,6 +20,7 @@ import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.utils.ImageHelper
 import com.android.builder.model.AndroidProject
+import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
@@ -29,6 +30,7 @@ import org.junit.experimental.categories.Category
 /**
  * Assemble tests for overlay3.
  */
+@CompileStatic
 class Overlay3Test {
 
     @ClassRule

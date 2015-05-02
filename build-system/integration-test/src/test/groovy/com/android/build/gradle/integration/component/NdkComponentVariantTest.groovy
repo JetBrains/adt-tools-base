@@ -20,6 +20,7 @@ import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldJniApp
 import com.android.builder.core.BuilderConstants
+import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
@@ -35,6 +36,7 @@ import static org.junit.Assert.assertNull
 /**
  * Integration test of the native plugin with multiple variants.
  */
+@CompileStatic
 class NdkComponentVariantTest {
 
     @ClassRule
