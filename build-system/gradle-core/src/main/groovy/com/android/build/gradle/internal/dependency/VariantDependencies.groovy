@@ -36,7 +36,7 @@ import org.gradle.api.artifacts.Configuration
  *
  * It optionally contains the dependencies for a test config for the given config.
  */
-public class VariantDependencies implements DependencyContainer, ConfigurationProvider {
+public class VariantDependencies implements DependencyContainer {
 
     final String name
 
@@ -69,11 +69,13 @@ public class VariantDependencies implements DependencyContainer, ConfigurationPr
 
     DependencyChecker checker
 
-    static VariantDependencies compute(@NonNull Project project,
-                                       @NonNull String name,
-                                                boolean publishVariant,
-                                                VariantType variantType,
-                                       @NonNull ConfigurationProvider... providers) {
+    static VariantDependencies compute(
+            @NonNull Project project,
+            @NonNull String name,
+            boolean publishVariant,
+            @NonNull VariantType variantType,
+            @Nullable VariantDependencies parentVariant,
+            @NonNull ConfigurationProvider... providers) {
         Set<Configuration> compileConfigs = Sets.newHashSetWithExpectedSize(providers.length * 2)
         Set<Configuration> apkConfigs = Sets.newHashSetWithExpectedSize(providers.length)
 
@@ -87,6 +89,11 @@ public class VariantDependencies implements DependencyContainer, ConfigurationPr
                 apkConfigs.add(provider.compileConfiguration)
                 apkConfigs.add(provider.packageConfiguration)
             }
+        }
+
+        if (parentVariant != null) {
+            compileConfigs.add(parentVariant.getCompileConfiguration())
+            apkConfigs.add(parentVariant.getPackageConfiguration())
         }
 
         Configuration compile = project.configurations.maybeCreate("_${name}Compile")
@@ -160,22 +167,14 @@ public class VariantDependencies implements DependencyContainer, ConfigurationPr
         return name
     }
 
-    @Override
     @NonNull
     Configuration getCompileConfiguration() {
         return compileConfiguration
     }
 
-    @Override
     @NonNull
     Configuration getPackageConfiguration() {
         return packageConfiguration
-    }
-
-    @Override
-    @Nullable
-    Configuration getProvidedConfiguration() {
-        return null
     }
 
     @Nullable
