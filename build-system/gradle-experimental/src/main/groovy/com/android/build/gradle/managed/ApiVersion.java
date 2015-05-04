@@ -29,7 +29,4 @@ public interface ApiVersion {
 
     String getCodename();
     void setCodename(String codename);
-
-    String getApiString();
-    void setApiString(String apiString);
 }

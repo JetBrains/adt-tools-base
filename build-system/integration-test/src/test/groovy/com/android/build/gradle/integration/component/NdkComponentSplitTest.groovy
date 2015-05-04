@@ -44,16 +44,18 @@ class NdkComponentSplitTest {
 apply plugin: 'com.android.model.application'
 
 model {
-    android.config {
-        compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
-        buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
-        generatePureSplits true
+    android {
+        compileSdkVersion = $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
+        buildToolsVersion = "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
+        generatePureSplits = true
 
-        defaultConfig {
-            minSdkVersion 21
+        defaultConfig.with {
+            minSdkVersion.with {
+                 apiLevel = 21
+            }
         }
 
-        splits {
+        splits.with {
             abi {
                 enable true
                 reset()

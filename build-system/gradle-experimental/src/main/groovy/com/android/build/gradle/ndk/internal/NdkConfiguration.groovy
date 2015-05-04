@@ -18,7 +18,7 @@ package com.android.build.gradle.ndk.internal
 
 import com.android.build.gradle.managed.ManagedString
 import com.android.build.gradle.model.AndroidComponentModelSourceSet
-import com.android.build.gradle.ndk.managed.NdkConfig
+import com.android.build.gradle.managed.NdkConfig
 import com.android.build.gradle.tasks.GdbSetupTask
 import com.android.builder.core.BuilderConstants
 import org.gradle.api.tasks.TaskContainer

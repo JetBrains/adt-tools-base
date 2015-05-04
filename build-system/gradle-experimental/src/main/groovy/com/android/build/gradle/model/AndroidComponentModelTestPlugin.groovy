@@ -16,11 +16,11 @@
 
 package com.android.build.gradle.model
 
-import com.android.build.gradle.TestedExtension
 import com.android.build.gradle.internal.TaskManager
 import com.android.build.gradle.internal.VariantManager
 import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.build.gradle.internal.variant.TestVariantData
+import com.android.builder.core.BuilderConstants
 import groovy.transform.CompileStatic
 import org.gradle.api.Task
 import org.gradle.model.Mutate
@@ -43,18 +43,12 @@ class AndroidComponentModelTestPlugin extends RuleSource {
             BinaryContainer binaries,
             TaskManager taskManager,
             AndroidComponentSpec spec) {
-        TestedExtension extension
-        if (spec.extension instanceof TestedExtension) {
-            extension = spec.extension as TestedExtension
-        } else {
-            return
-        }
-
         VariantManager variantManager = (spec as DefaultAndroidComponentSpec).variantManager
         binaries.withType(AndroidBinary) { androidBinary->
             DefaultAndroidBinary binary = androidBinary as DefaultAndroidBinary
 
-            if (binary.buildType.name != extension.testBuildType) {
+            // TODO: compare against testBuildType instead of BuilderConstants.DEBUG.
+            if (binary.buildType.name != BuilderConstants.DEBUG) {
                 return
             }
 

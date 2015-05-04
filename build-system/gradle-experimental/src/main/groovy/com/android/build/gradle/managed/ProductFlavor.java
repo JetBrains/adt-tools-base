@@ -17,7 +17,6 @@
 package com.android.build.gradle.managed;
 
 import com.android.annotations.Nullable;
-import com.android.build.gradle.ndk.managed.NdkConfig;
 
 import org.gradle.model.Managed;
 import org.gradle.model.collection.ManagedSet;

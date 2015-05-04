@@ -18,8 +18,7 @@ package com.android.build.gradle.internal
 import com.android.SdkConstants
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
-import com.android.build.gradle.BaseExtension
-import com.android.build.gradle.LibraryExtension
+import com.android.build.gradle.AndroidConfig
 import com.android.build.gradle.internal.core.GradleVariantConfiguration
 import com.android.build.gradle.internal.dsl.CoreBuildType
 import com.android.build.gradle.internal.profile.SpanRecorders
@@ -68,7 +67,7 @@ class LibraryTaskManager extends TaskManager {
     public LibraryTaskManager (
             Project project,
             AndroidBuilder androidBuilder,
-            BaseExtension extension,
+            AndroidConfig extension,
             SdkHandler sdkHandler,
             DependencyManager dependencyManager,
             ToolingModelBuilderRegistry toolingRegistry) {
@@ -310,7 +309,7 @@ class LibraryTaskManager extends TaskManager {
 
                 jar.exclude(packageName + "/R.class")
                 jar.exclude(packageName + "/R\$*.class")
-                if (!((LibraryExtension) extension).packageBuildConfig) {
+                if (!extension.packageBuildConfig) {
                     jar.exclude(packageName + "/Manifest.class")
                     jar.exclude(packageName + "/Manifest\$*.class")
                     jar.exclude(packageName + "/BuildConfig.class")

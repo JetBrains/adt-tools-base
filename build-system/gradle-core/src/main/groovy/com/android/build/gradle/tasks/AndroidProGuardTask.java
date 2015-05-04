@@ -19,9 +19,9 @@ package com.android.build.gradle.tasks;
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
 import static com.android.builder.model.AndroidProject.FD_OUTPUTS;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.gradle.LibraryExtension;
 import com.android.build.gradle.internal.DependencyManager;
 import com.android.build.gradle.internal.TaskManager;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
@@ -31,12 +31,10 @@ import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.internal.variant.LibraryVariantData;
 import com.android.builder.core.VariantConfiguration;
-import com.android.utils.StringHelper;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.gradle.api.Action;
 import org.gradle.api.Task;
 import org.gradle.api.tasks.InputFile;
@@ -198,9 +196,8 @@ public class AndroidProGuardTask extends ProGuardTask implements FileSupplier {
                     proguardTask.configuration(new Closure<Collection<File>>(this, this) {
                         public Collection<File> doCall(Object it) {
                             List<File> proguardFiles = variantConfig.getProguardFiles(true,
-                                    Collections.singletonList(scope.getGlobalScope().getExtension()
-                                            .getDefaultProguardFile(
-                                                    TaskManager.DEFAULT_PROGUARD_CONFIG_FILE)));
+                                    Collections.singletonList(getDefaultProguardFile(
+                                            TaskManager.DEFAULT_PROGUARD_CONFIG_FILE)));
                             proguardFiles.add(
                                     variantOutputData.processResourcesTask.getProguardOutputFile());
                             return proguardFiles;
@@ -227,8 +224,7 @@ public class AndroidProGuardTask extends ProGuardTask implements FileSupplier {
                     // exclude R files and such from output
                     String exclude = "!" + packageName + "/R.class";
                     exclude += (", !" + packageName + "/R$*.class");
-                    if (!((LibraryExtension) scope.getGlobalScope().getExtension())
-                            .getPackageBuildConfig()) {
+                    if (!scope.getGlobalScope().getExtension().getPackageBuildConfig()) {
                         exclude += (", !" + packageName + "/Manifest.class");
                         exclude += (", !" + packageName + "/Manifest$*.class");
                         exclude += (", !" + packageName + "/BuildConfig.class");
@@ -376,6 +372,14 @@ public class AndroidProGuardTask extends ProGuardTask implements FileSupplier {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
+        }
+
+        private File getDefaultProguardFile(String name) {
+            File sdkDir = scope.getGlobalScope().getSdkHandler().getAndCheckSdkFolder();
+            return new File(sdkDir,
+                    SdkConstants.FD_TOOLS + File.separatorChar
+                            + SdkConstants.FD_PROGUARD + File.separatorChar
+                            + name);
         }
     }
 }

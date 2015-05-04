@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.managed;
+package com.android.build.gradle.managed.adaptor;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.core.NdkConfig;
 import com.android.build.gradle.internal.dsl.CoreProductFlavor;
+import com.android.build.gradle.managed.ProductFlavor;
 import com.android.builder.model.ApiVersion;
 import com.android.builder.model.ClassField;
 import com.android.builder.model.SigningConfig;
@@ -31,7 +32,7 @@ import java.util.Collection;
 import java.util.Map;
 
 /**
- * An adaptor to convert a ManagedProductFlavor to GradleProductFlavor.
+ * An adaptor to convert a ProductFlavor to CoreProductFlavor.
  */
 public class ProductFlavorAdaptor implements CoreProductFlavor {
 
@@ -70,13 +71,6 @@ public class ProductFlavorAdaptor implements CoreProductFlavor {
 
     @NonNull
     @Override
-    public Collection<File> getTestProguardFiles() {
-        // TODO: To be implemented
-        return Lists.newArrayList();
-    }
-
-    @NonNull
-    @Override
     public Collection<File> getProguardFiles() {
         // TODO: To be implemented
         return Lists.newArrayList();
@@ -85,6 +79,13 @@ public class ProductFlavorAdaptor implements CoreProductFlavor {
     @NonNull
     @Override
     public Collection<File> getConsumerProguardFiles() {
+        // TODO: To be implemented
+        return Lists.newArrayList();
+    }
+
+    @NonNull
+    @Override
+    public Collection<File> getTestProguardFiles() {
         // TODO: To be implemented
         return Lists.newArrayList();
     }

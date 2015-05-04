@@ -16,7 +16,7 @@
 
 package com.android.build.gradle.model;
 
-import com.android.build.gradle.BaseExtension;
+import com.android.build.gradle.managed.AndroidConfig;
 
 import org.gradle.platform.base.ComponentSpec;
 
@@ -24,5 +24,5 @@ import org.gradle.platform.base.ComponentSpec;
  * Android ComponentSpec.
  */
 public interface AndroidComponentSpec extends ComponentSpec{
-    BaseExtension getExtension();
+    AndroidConfig getExtension();
 }

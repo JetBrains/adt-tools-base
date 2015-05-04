@@ -19,7 +19,7 @@ package com.android.build.gradle.model
 
 import com.android.build.gradle.internal.ProductFlavorCombo
 import com.android.build.gradle.managed.BuildType
-import com.android.build.gradle.ndk.managed.NdkConfig
+import com.android.build.gradle.managed.NdkConfig
 import com.android.build.gradle.ndk.internal.NdkConfiguration
 import com.android.build.gradle.ndk.internal.NdkExtensionConvention
 import com.android.build.gradle.ndk.internal.NdkHandler
@@ -76,7 +76,6 @@ class NdkComponentModelPlugin implements Plugin<Project> {
         @Mutate
         void initializeNdkConfig(@Path("android.ndk") NdkConfig ndk) {
             ndk.moduleName = ""
-            ndk.compileSdkVersion = ""
             ndk.toolchain = ""
             ndk.toolchainVersion = ""
             ndk.CFlags = ""
@@ -99,11 +98,12 @@ class NdkComponentModelPlugin implements Plugin<Project> {
         @Model
         NdkHandler ndkHandler(
                 ProjectIdentifier projectId,
+                @Path("android.compileSdkVersion") String compileSdkVersion,
                 @Path("android.ndk") NdkConfig ndkConfig) {
             while (projectId.parentIdentifier != null) {
                 projectId = projectId.parentIdentifier
             }
-            return new NdkHandler(projectId.projectDir, ndkConfig)
+            return new NdkHandler(projectId.projectDir, compileSdkVersion, ndkConfig)
         }
 
         @Mutate

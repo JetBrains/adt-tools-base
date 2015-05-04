@@ -1,7 +1,7 @@
 apply plugin: 'com.android.model.library'
 
 model {
-    android.config {
+    android {
         compileSdkVersion 19
         buildToolsVersion = rootProject.ext.buildToolsVersion
     }

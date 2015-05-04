@@ -16,7 +16,7 @@
 
 package com.android.build.gradle.model
 
-import com.android.build.gradle.BaseExtension
+import com.android.build.gradle.AndroidConfig
 import com.android.build.gradle.internal.DependencyManager
 import com.android.build.gradle.internal.ExtraModelInfo
 import com.android.build.gradle.internal.SdkHandler
@@ -52,7 +52,7 @@ public class AppComponentModelPlugin implements Plugin<Project> {
 
         @Model
         TaskManager createTaskManager(
-                BaseExtension androidExtension,
+                AndroidConfig androidExtension,
                 Project project,
                 AndroidBuilder androidBuilder,
                 SdkHandler sdkHandler,
@@ -74,7 +74,7 @@ public class AppComponentModelPlugin implements Plugin<Project> {
         VariantFactory createVariantFactory(
                 ServiceRegistry serviceRegistry,
                 AndroidBuilder androidBuilder,
-                BaseExtension extension) {
+                AndroidConfig extension) {
             Instantiator instantiator = serviceRegistry.get(Instantiator.class);
             return new ApplicationVariantFactory(
                     instantiator,

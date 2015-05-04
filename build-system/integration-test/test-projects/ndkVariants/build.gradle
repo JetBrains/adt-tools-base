@@ -5,10 +5,9 @@ buildscript { apply from: "../commonBuildScriptExperimental.gradle", to: buildsc
 apply plugin: 'com.android.model.application'
 
 model {
-    android.config {
-        compileSdkVersion 19
+    android {
+        compileSdkVersion = 19
         buildToolsVersion = rootProject.ext.buildToolsVersion
-
     }
 
     android.ndk {

@@ -16,7 +16,7 @@
 
 package com.android.build.gradle.model;
 
-import com.android.build.gradle.BaseExtension;
+import com.android.build.gradle.AndroidConfig;
 import com.android.build.gradle.internal.DependencyManager;
 import com.android.build.gradle.internal.LibraryTaskManager;
 import com.android.build.gradle.internal.SdkHandler;
@@ -25,7 +25,6 @@ import com.android.builder.core.AndroidBuilder;
 import com.google.common.collect.ImmutableList;
 
 import org.gradle.api.Project;
-import org.gradle.api.tasks.TaskContainer;
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
 
 import java.io.File;
@@ -39,7 +38,7 @@ public class LibraryComponentTaskManager extends LibraryTaskManager {
     public LibraryComponentTaskManager(
             Project project,
             AndroidBuilder androidBuilder,
-            BaseExtension extension,
+            AndroidConfig extension,
             SdkHandler sdkHandler,
             DependencyManager dependencyManager,
             ToolingModelBuilderRegistry toolingRegistry) {

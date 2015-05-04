@@ -23,7 +23,7 @@ import static com.android.builder.core.BuilderConstants.RELEASE;
 import com.android.annotations.NonNull;
 import com.android.build.FilterData;
 import com.android.build.OutputFile;
-import com.android.build.gradle.BaseExtension;
+import com.android.build.gradle.AndroidConfig;
 import com.android.build.gradle.api.ApplicationVariant;
 import com.android.build.gradle.api.BaseVariantOutput;
 import com.android.build.gradle.internal.TaskManager;
@@ -61,14 +61,14 @@ public class ApplicationVariantFactory implements VariantFactory {
 
     Instantiator instantiator;
     @NonNull
-    protected final BaseExtension extension;
+    protected final AndroidConfig extension;
     @NonNull
     private final AndroidBuilder androidBuilder;
 
     public ApplicationVariantFactory(
             @NonNull Instantiator instantiator,
             @NonNull AndroidBuilder androidBuilder,
-            @NonNull BaseExtension extension) {
+            @NonNull AndroidConfig extension) {
         this.instantiator = instantiator;
         this.androidBuilder = androidBuilder;
         this.extension = extension;

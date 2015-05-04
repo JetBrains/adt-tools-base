@@ -22,10 +22,9 @@ import static com.android.builder.model.AndroidProject.FD_OUTPUTS;
 import static com.android.builder.model.AndroidProject.PROPERTY_APK_LOCATION;
 
 import com.android.annotations.NonNull;
-import com.android.build.gradle.BaseExtension;
+import com.android.build.gradle.AndroidConfig;
 import com.android.build.gradle.internal.SdkHandler;
 import com.android.builder.core.AndroidBuilder;
-import com.android.builder.model.AndroidProject;
 
 import org.gradle.api.Project;
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
@@ -43,7 +42,7 @@ public class GlobalScope {
     @NonNull
     private String projectBaseName;
     @NonNull
-    private BaseExtension extension;
+    private AndroidConfig extension;
     @NonNull
     private SdkHandler sdkHandler;
     @NonNull
@@ -58,7 +57,7 @@ public class GlobalScope {
             @NonNull Project project,
             @NonNull AndroidBuilder androidBuilder,
             @NonNull String projectBaseName,
-            @NonNull BaseExtension extension,
+            @NonNull AndroidConfig extension,
             @NonNull SdkHandler sdkHandler,
             @NonNull ToolingModelBuilderRegistry toolingRegistry) {
         this.project = project;
@@ -77,7 +76,7 @@ public class GlobalScope {
     }
 
     @NonNull
-    public BaseExtension getExtension() {
+    public AndroidConfig getExtension() {
         return extension;
     }
 
