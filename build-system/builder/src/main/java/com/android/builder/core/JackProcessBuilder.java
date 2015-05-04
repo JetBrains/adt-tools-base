@@ -48,6 +48,7 @@ public class JackProcessBuilder extends ProcessEnvBuilder<JackProcessBuilder> {
     private boolean mMultiDex = false;
     private int mMinSdkVersion = 21;
     private File mEcjOptionFile = null;
+    private File mJarJarRuleFile = null;
 
     public JackProcessBuilder() {
     }
@@ -133,6 +134,12 @@ public class JackProcessBuilder extends ProcessEnvBuilder<JackProcessBuilder> {
     }
 
     @NonNull
+    public JackProcessBuilder setJarJarRuleFile(@NonNull File jarJarRuleFile) {
+        mJarJarRuleFile = jarJarRuleFile;
+        return this;
+    }
+
+    @NonNull
     public JavaProcessInfo build(@NonNull BuildToolInfo buildToolInfo) throws ProcessException {
 
         FullRevision revision = buildToolInfo.getRevision();
@@ -199,6 +206,10 @@ public class JackProcessBuilder extends ProcessEnvBuilder<JackProcessBuilder> {
             } else {
                 builder.addArgs("native");
             }
+        }
+
+        if (mJarJarRuleFile != null) {
+            builder.addArgs("--config-jarjar", mJarJarRuleFile.getAbsolutePath());
         }
 
         builder.addArgs("@" + mEcjOptionFile.getAbsolutePath());

@@ -184,4 +184,11 @@ public class BuildTypeAdaptor implements CoreBuildType {
     public boolean isShrinkResources() {
         return buildType.getShrinkResources();
     }
+
+    @Nullable
+    @Override
+    public File getJarJarRuleFile() {
+        // TODO: To be implemented
+        return null;
+    }
 }

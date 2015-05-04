@@ -465,6 +465,10 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
 
         flavor.setMultiDexKeepProguard(chooseNotNull(
                 overlay.getMultiDexKeepProguard(), base.getMultiDexKeepProguard()));
+
+        flavor.setJarJarRuleFile(chooseNotNull(
+                overlay.getJarJarRuleFile(), base.getJarJarRuleFile()));
+
         return flavor;
     }
 
@@ -509,6 +513,7 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
 
         flavor.setMultiDexKeepFile(productFlavor.getMultiDexKeepFile());
         flavor.setMultiDexKeepProguard(productFlavor.getMultiDexKeepProguard());
+        flavor.setJarJarRuleFile(productFlavor.getJarJarRuleFile());
 
         return flavor;
     }
