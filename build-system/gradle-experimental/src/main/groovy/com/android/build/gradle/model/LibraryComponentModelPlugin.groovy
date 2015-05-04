@@ -32,6 +32,9 @@ import org.gradle.model.Model
 import org.gradle.model.RuleSource
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry
 
+import static com.android.build.gradle.model.ModelConstants.IS_APPLICATION
+import static com.android.build.gradle.model.ModelConstants.TASK_MANAGER
+
 /**
  * Gradle component model plugin class for 'application' projects.
  */
@@ -45,12 +48,12 @@ public class LibraryComponentModelPlugin implements Plugin<Project> {
 
     static class Rules extends RuleSource{
 
-        @Model
+        @Model(IS_APPLICATION)
         Boolean isApplication() {
             return false
         }
 
-        @Model
+        @Model(TASK_MANAGER)
         TaskManager createTaskManager(
                 AndroidConfig androidExtension,
                 Project project,

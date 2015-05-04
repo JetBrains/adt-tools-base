@@ -329,7 +329,7 @@ public class ModelBuilder implements ToolingModelBuilder {
             // add the main APK.
             outputs.add(new AndroidArtifactOutputImpl(
                     outputFiles.build(),
-                    variantOutputData.assembleTask.getName(),
+                    "assemble" + variantOutputData.getFullName(),
                     variantOutputData.getScope().getManifestOutputFile(),
                     intVersionCode));
         }
@@ -338,12 +338,14 @@ public class ModelBuilder implements ToolingModelBuilder {
         return new AndroidArtifactImpl(
                 name,
                 outputs,
-                variantData.assembleVariantTask.getName(),
+                variantData.assembleVariantTask == null ? scope.getTaskName("assemble") : variantData.assembleVariantTask.getName(),
                 variantConfiguration.isSigningReady() || variantData.outputsAreSigned,
                 signingConfigName,
                 variantConfiguration.getApplicationId(),
-                scope.getSourceGenTask().getName(),
-                scope.getCompileTask().getName(),
+                // TODO: Need to determine the tasks' name when the tasks may not be created
+                // in component plugin.
+                scope.getSourceGenTask() == null ? scope.getTaskName("generate", "Sources") : scope.getSourceGenTask().getName(),
+                scope.getCompileTask() == null ? scope.getTaskName("compile", "Sources") : scope.getCompileTask().getName(),
                 getGeneratedSourceFolders(variantData),
                 getGeneratedResourceFolders(variantData),
                 (variantData.javaCompileTask != null) ?

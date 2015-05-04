@@ -25,7 +25,6 @@ import com.android.build.gradle.internal.SdkHandler
 import com.android.build.gradle.internal.TaskManager
 import com.android.build.gradle.internal.VariantManager
 import com.android.build.gradle.internal.coverage.JacocoPlugin
-import com.android.build.gradle.internal.model.ModelBuilder
 import com.android.build.gradle.internal.process.GradleJavaProcessExecutor
 import com.android.build.gradle.internal.process.GradleProcessExecutor
 import com.android.build.gradle.internal.profile.RecordingBuildListener
@@ -33,12 +32,12 @@ import com.android.build.gradle.internal.tasks.DependencyReportTask
 import com.android.build.gradle.internal.tasks.SigningReportTask
 import com.android.build.gradle.internal.variant.VariantFactory
 import com.android.build.gradle.managed.AndroidConfig
-import com.android.build.gradle.managed.adaptor.BuildTypeAdaptor
 import com.android.build.gradle.managed.BuildType
-import com.android.build.gradle.managed.SigningConfig
 import com.android.build.gradle.managed.ProductFlavor
-import com.android.build.gradle.managed.adaptor.ProductFlavorAdaptor
+import com.android.build.gradle.managed.SigningConfig
 import com.android.build.gradle.managed.adaptor.AndroidConfigAdaptor
+import com.android.build.gradle.managed.adaptor.BuildTypeAdaptor
+import com.android.build.gradle.managed.adaptor.ProductFlavorAdaptor
 import com.android.build.gradle.tasks.JillTask
 import com.android.build.gradle.tasks.PreDex
 import com.android.builder.core.AndroidBuilder
@@ -86,6 +85,8 @@ import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry
 import javax.inject.Inject
 import java.security.KeyStore
 
+import static com.android.build.gradle.model.ModelConstants.ANDROID_BUILDER
+import static com.android.build.gradle.model.ModelConstants.EXTRA_MODEL_INFO
 import static com.android.builder.core.BuilderConstants.DEBUG
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
 
@@ -145,6 +146,11 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
                         ModelReference.of("projectModel", Project), project)
                         .descriptor("Model of project.")
                         .build())
+
+        toolingRegistry.register(new ComponentModelBuilder(modelRegistry))
+
+        // Inserting the ToolingModelBuilderRegistry into the model so that it can be use to create
+        // TaskManager in child classes.
         modelRegistry.create(
                 ModelCreators.bridgedInstance(
                         ModelReference.of("toolingRegistry", ToolingModelBuilderRegistry), toolingRegistry)
@@ -154,7 +160,6 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
 
     @SuppressWarnings("GrMethodMayBeStatic")
     static class Rules extends RuleSource {
-
         @Mutate
         void configureAndroidModel(
                 AndroidConfig androidModel,
@@ -173,7 +178,7 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
         }
 
         // TODO: Remove code duplicated from BasePlugin.
-        @Model
+        @Model(EXTRA_MODEL_INFO)
         ExtraModelInfo createExtraModelInfo(Project project) {
             return new ExtraModelInfo(project)
         }
@@ -219,7 +224,7 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
             return sdkHandler
         }
 
-        @Model
+        @Model(ANDROID_BUILDER)
         AndroidBuilder createAndroidBuilder(Project project, ExtraModelInfo extraModelInfo) {
             String creator = "Android Gradle"
             ILogger logger = new LoggerWrapper(project.logger)
@@ -309,7 +314,6 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
                 AndroidBuilder androidBuilder,
                 SdkHandler sdkHandler,
                 ExtraModelInfo extraModelInfo,
-                ToolingModelBuilderRegistry toolingRegistry,
                 @Path("isApplication") Boolean isApplication) {
             Instantiator instantiator = serviceRegistry.get(Instantiator.class);
 
@@ -338,16 +342,6 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
                 variantManager.addProductFlavor(new ProductFlavorAdaptor(productFlavor))
             }
 
-            ModelBuilder modelBuilder = new ModelBuilder(
-                    androidBuilder,
-                    variantManager,
-                    taskManager,
-                    adaptedModel,
-                    extraModelInfo,
-                    !isApplication);
-            toolingRegistry.register(modelBuilder);
-
-
             DefaultAndroidComponentSpec spec = (DefaultAndroidComponentSpec) androidSpec
             spec.extension = androidExtension
             spec.variantManager = variantManager
@@ -356,7 +350,7 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
         @Mutate
         void createVariantData(
                 CollectionBuilder<AndroidBinary> binaries,
-                AndroidComponentSpec spec) {
+                AndroidComponentSpec spec, TaskManager taskManager) {
             VariantManager variantManager = (spec as DefaultAndroidComponentSpec).variantManager
             binaries.all {
                 DefaultAndroidBinary binary = it as DefaultAndroidBinary

@@ -125,7 +125,11 @@ public class AndroidConfigHelper {
         if (configuration == null) {
             configuration = configurations.create(configurationName);
         }
-        configuration.setVisible(false);
-        configuration.setDescription(configurationDescription);
+
+        // Disable modification to configurations as this causes issues when accessed through the
+        // tooling-api.  Check that it works with Studio's ImportProjectAction before re-enabling
+        // them.
+        //configuration.setVisible(false);
+        //configuration.setDescription(configurationDescription);
     }
 }
