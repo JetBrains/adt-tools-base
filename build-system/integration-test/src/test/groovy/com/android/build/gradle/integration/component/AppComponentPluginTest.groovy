@@ -63,7 +63,7 @@ model {
         project.buildFile << """
 model {
     android.buildTypes {
-        b1
+        create { name = "b1" }
     }
     android.productFlavors {
         f1

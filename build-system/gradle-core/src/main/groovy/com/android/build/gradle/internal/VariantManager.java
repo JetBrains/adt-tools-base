@@ -17,7 +17,6 @@
 package com.android.build.gradle.internal;
 
 import static com.android.build.OutputFile.NO_FILTER;
-import static com.android.builder.core.BuilderConstants.DEBUG;
 import static com.android.builder.core.BuilderConstants.LINT;
 import static com.android.builder.core.VariantType.ANDROID_TEST;
 import static com.android.builder.core.VariantType.UNIT_TEST;
@@ -41,10 +40,9 @@ import com.android.build.gradle.internal.api.UnitTestVariantImpl;
 import com.android.build.gradle.internal.api.VariantFilter;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.dependency.VariantDependencies;
-import com.android.build.gradle.internal.dsl.BuildType;
+import com.android.build.gradle.internal.dsl.CoreBuildType;
 import com.android.build.gradle.internal.dsl.GroupableProductFlavor;
 import com.android.build.gradle.internal.dsl.ProductFlavor;
-import com.android.build.gradle.internal.dsl.SigningConfig;
 import com.android.build.gradle.internal.dsl.Splits;
 import com.android.build.gradle.internal.profile.SpanRecorders;
 import com.android.build.gradle.internal.variant.ApplicationVariantFactory;
@@ -55,6 +53,7 @@ import com.android.build.gradle.internal.variant.TestedVariantData;
 import com.android.build.gradle.internal.variant.VariantFactory;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.core.VariantType;
+import com.android.builder.model.SigningConfig;
 import com.android.builder.profile.ExecutionType;
 import com.android.builder.profile.Recorder;
 import com.android.builder.profile.ThreadRecorder;
@@ -184,9 +183,7 @@ public class VariantManager implements VariantModel {
      * and adding it to the map.
      * @param buildType the build type.
      */
-    public void addBuildType(@NonNull BuildType buildType) {
-        buildType.init(signingConfigs.get(DEBUG));
-
+    public void addBuildType(@NonNull CoreBuildType buildType) {
         String name = buildType.getName();
         checkName(name, "BuildType");
 
@@ -624,7 +621,7 @@ public class VariantManager implements VariantModel {
             BaseVariantData testedVariantData,
             VariantType type) {
         ProductFlavor defaultConfig = defaultConfigData.getProductFlavor();
-        BuildType buildType = testedVariantData.getVariantConfiguration().getBuildType();
+        CoreBuildType buildType = testedVariantData.getVariantConfiguration().getBuildType();
         BuildTypeData buildTypeData = buildTypes.get(buildType.getName());
 
         GradleVariantConfiguration testedConfig = testedVariantData.getVariantConfiguration();
@@ -823,7 +820,8 @@ public class VariantManager implements VariantModel {
                 project.hasProperty(PROPERTY_SIGNING_KEY_ALIAS) &&
                 project.hasProperty(PROPERTY_SIGNING_KEY_PASSWORD)) {
 
-            SigningConfig signingConfigDsl = new SigningConfig("externalOverride");
+            com.android.build.gradle.internal.dsl.SigningConfig signingConfigDsl =
+                    new com.android.build.gradle.internal.dsl.SigningConfig("externalOverride");
             Map<String, ?> props = project.getProperties();
 
             signingConfigDsl.setStoreFile(new File((String) props.get(PROPERTY_SIGNING_STORE_FILE)));

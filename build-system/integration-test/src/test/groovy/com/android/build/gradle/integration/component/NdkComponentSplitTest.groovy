@@ -65,8 +65,10 @@ model {
         moduleName "hello-jni"
     }
     android.buildTypes {
-        debug {
-            jniDebuggable true
+        afterEach {
+            if (name == "debug") {
+                isJniDebuggable = true
+            }
         }
     }
 }

@@ -21,6 +21,7 @@ import com.android.annotations.Nullable
 import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.LibraryExtension
 import com.android.build.gradle.internal.core.GradleVariantConfiguration
+import com.android.build.gradle.internal.dsl.CoreBuildType
 import com.android.build.gradle.internal.profile.SpanRecorders
 import com.android.build.gradle.internal.scope.AndroidTask
 import com.android.build.gradle.internal.scope.VariantScope
@@ -34,8 +35,6 @@ import com.android.build.gradle.tasks.ExtractAnnotations
 import com.android.build.gradle.tasks.MergeResources
 import com.android.builder.core.AndroidBuilder
 import com.android.builder.core.BuilderConstants
-import com.android.builder.core.DefaultBuildType
-import com.android.builder.core.VariantType
 import com.android.builder.dependency.LibraryBundle
 import com.android.builder.dependency.LibraryDependency
 import com.android.builder.dependency.ManifestDependency
@@ -82,7 +81,7 @@ class LibraryTaskManager extends TaskManager {
             @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData) {
         LibraryVariantData libVariantData = variantData as LibraryVariantData
         GradleVariantConfiguration variantConfig = variantData.variantConfiguration
-        DefaultBuildType buildType = variantConfig.buildType
+        CoreBuildType buildType = variantConfig.buildType
 
         VariantScope variantScope = variantData.getScope()
 

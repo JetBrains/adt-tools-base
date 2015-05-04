@@ -42,7 +42,7 @@ apply plugin: AndroidComponentModelPlugin
 
 model {
     android.buildTypes {
-        custom
+        create { name = "custom" }
     }
     android.productFlavors {
         flavor1

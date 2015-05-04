@@ -17,10 +17,10 @@
 package com.android.build.gradle.model
 
 import com.android.build.gradle.internal.ProductFlavorCombo
-import com.android.build.gradle.internal.dsl.BuildType
-import com.android.build.gradle.internal.dsl.BuildTypeFactory
 import com.android.build.gradle.internal.dsl.GroupableProductFlavor
 import com.android.build.gradle.internal.dsl.GroupableProductFlavorFactory
+import com.android.build.gradle.managed.BuildTypeAdaptor
+import com.android.build.gradle.managed.BuildType
 import com.android.builder.core.BuilderConstants
 import groovy.transform.CompileStatic
 import org.gradle.api.NamedDomainObjectContainer
@@ -38,12 +38,10 @@ import org.gradle.model.Mutate
 import org.gradle.model.Path
 import org.gradle.model.RuleSource
 import org.gradle.model.collection.CollectionBuilder
+import org.gradle.model.collection.ManagedSet
 import org.gradle.model.internal.core.ModelCreators
-import org.gradle.model.internal.core.ModelPath
 import org.gradle.model.internal.core.ModelReference
 import org.gradle.model.internal.registry.ModelRegistry
-import org.gradle.platform.base.Binary
-import org.gradle.platform.base.BinaryContainer
 import org.gradle.platform.base.BinaryType
 import org.gradle.platform.base.BinaryTypeBuilder
 import org.gradle.platform.base.ComponentBinaries
@@ -97,13 +95,6 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
 
         // Initialize each component separately to ensure correct ordering.
         @Defaults
-        void androidModelBuildTypes (
-                AndroidModel androidModel,
-                @Path("androidBuildTypes") NamedDomainObjectContainer<BuildType> buildTypes) {
-            androidModel.buildTypes = buildTypes
-        }
-
-        @Defaults
         void androidModelProductFlavors (
                 AndroidModel androidModel,
                 @Path("androidProductFlavors") NamedDomainObjectContainer<GroupableProductFlavor> productFlavors) {
@@ -117,22 +108,17 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
             androidModel.sources = sources
         }
 
-        @Model
-        NamedDomainObjectContainer<BuildType> androidBuildTypes(
-                ServiceRegistry serviceRegistry,
-                Project project) {
-            Instantiator instantiator = serviceRegistry.get(Instantiator.class)
-            def buildTypeContainer = project.container(BuildType,
-                    new BuildTypeFactory(instantiator, project, project.getLogger()))
-
-            // create default Objects, signingConfig first as its used by the BuildTypes.
-            buildTypeContainer.create(BuilderConstants.DEBUG)
-            buildTypeContainer.create(BuilderConstants.RELEASE)
-
-            buildTypeContainer.whenObjectRemoved {
-                throw new UnsupportedOperationException("Removing build types is not supported.")
+        @Defaults
+        void createDefaultBuildTypes(
+                @Path("android.buildTypes") ManagedSet<BuildType> buildTypes) {
+            buildTypes.create {
+                it.name = BuilderConstants.DEBUG
+                it.setIsDebuggable(true)
+                it.setIsEmbedMicroApp(false)
             }
-            return buildTypeContainer
+            buildTypes.create {
+                it.name = BuilderConstants.RELEASE
+            }
         }
 
         @Model
@@ -149,6 +135,7 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
             }
 
             return productFlavorContainer
+
         }
 
         @Model
@@ -202,7 +189,7 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
         @Mutate
         void createVariantSourceSet(
                 @Path("android.sources") AndroidComponentModelSourceSet sources,
-                @Path("android.buildTypes") NamedDomainObjectContainer<BuildType> buildTypes,
+                @Path("android.buildTypes") ManagedSet<BuildType> buildTypes,
                 @Path("android.productFlavors") NamedDomainObjectContainer<GroupableProductFlavor> flavors,
                 List<ProductFlavorCombo> flavorGroups) {
             buildTypes.each { buildType ->
@@ -238,18 +225,18 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
         @ComponentBinaries
         void createBinaries(
                 CollectionBuilder<AndroidBinary> binaries,
-                @Path("android.buildTypes") NamedDomainObjectContainer<BuildType> buildTypes,
+                @Path("android.buildTypes") ManagedSet<BuildType> buildTypes,
                 List<ProductFlavorCombo> flavorCombos,
                 AndroidComponentSpec spec) {
             if (flavorCombos.isEmpty()) {
                 flavorCombos.add(new ProductFlavorCombo());
             }
 
-            buildTypes.each { BuildType buildType ->
+            for (BuildType buildType : buildTypes) {
                 flavorCombos.each { ProductFlavorCombo flavorCombo ->
                     binaries.create(getBinaryName(buildType, flavorCombo)) {
                         def binary = it as DefaultAndroidBinary
-                        binary.buildType = buildType
+                        binary.buildType = new BuildTypeAdaptor(buildType)
                         binary.productFlavors = flavorCombo.flavorList
                     }
                 }
