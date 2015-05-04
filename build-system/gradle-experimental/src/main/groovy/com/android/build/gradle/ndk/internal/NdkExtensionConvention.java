@@ -1,8 +1,9 @@
 package com.android.build.gradle.ndk.internal;
 
+import com.android.build.gradle.managed.ManagedString;
+import com.android.build.gradle.ndk.managed.NdkConfig;
 
-import com.android.build.gradle.ndk.NdkExtension;
-
+import org.gradle.api.Action;
 import org.gradle.api.InvalidUserDataException;
 
 /**
@@ -21,35 +22,58 @@ public class NdkExtensionConvention {
     /**
      * Validate the NdkExtension and provide default values.
      */
-    public static void setExtensionDefault(NdkExtension extension) {
-        if (extension.getToolchain().isEmpty()) {
-            extension.setToolchain(DEFAULT_TOOLCHAIN);
-        } else {
-            if (!extension.getToolchain().equals("gcc") &&
-                    !extension.getToolchain().equals("clang")) {
-                throw new InvalidUserDataException(String.format(
-                        "Invalid toolchain '%s'.  Supported toolchains are 'gcc' and 'clang'.",
-                        extension.getToolchain()));
+    public static void setExtensionDefault(NdkConfig ndkConfig) {
+        if (!ndkConfig.getCompileSdkVersion().isEmpty()) {
+            try {
+                int version = Integer.parseInt(ndkConfig.getCompileSdkVersion());
+                ndkConfig.setCompileSdkVersion("android-" + ndkConfig.getCompileSdkVersion());
+            } catch (NumberFormatException ignored) {
             }
         }
 
-        if (extension.getToolchainVersion().isEmpty()) {
-            extension.setToolchainVersion(DEFAULT_TOOLCHAIN_VERSION);
-        }
 
-        if (extension.getCFilePattern().getIncludes().isEmpty()) {
-            extension.getCFilePattern().include("**/*.c");
-        }
-
-        if (extension.getCppFilePattern().getIncludes().isEmpty()) {
-            extension.getCppFilePattern().include("**/*.cpp");
-            extension.getCppFilePattern().include("**/*.cc");
-        }
-
-        if (extension.getStl().isEmpty()) {
-            extension.setStl(DEFAULT_STL);
+        if (ndkConfig.getToolchain().isEmpty()) {
+            ndkConfig.setToolchain(DEFAULT_TOOLCHAIN);
         } else {
-            StlConfiguration.checkStl(extension.getStl());
+            if (!ndkConfig.getToolchain().equals("gcc") &&
+                    !ndkConfig.getToolchain().equals("clang")) {
+                throw new InvalidUserDataException(String.format(
+                        "Invalid toolchain '%s'.  Supported toolchains are 'gcc' and 'clang'.",
+                        ndkConfig.getToolchain()));
+            }
+        }
+
+        if (ndkConfig.getToolchainVersion().isEmpty()) {
+            ndkConfig.setToolchainVersion(DEFAULT_TOOLCHAIN_VERSION);
+        }
+
+        ndkConfig.getCFilePattern().getIncludes().create(
+                new Action<ManagedString>() {
+            @Override
+            public void execute(ManagedString managedString) {
+                        managedString.setValue("**/*.c");
+                }
+            });
+
+        ndkConfig.getCppFilePattern().getIncludes().create(
+                new Action<ManagedString>() {
+                    @Override
+                    public void execute(ManagedString managedString) {
+                        managedString.setValue("**/*.cpp");
+                    }
+                });
+        ndkConfig.getCppFilePattern().getIncludes().create(
+                new Action<ManagedString>() {
+            @Override
+            public void execute(ManagedString managedString) {
+                        managedString.setValue("**/*.cc");
+                }
+            });
+
+        if (ndkConfig.getStl().isEmpty()) {
+            ndkConfig.setStl(DEFAULT_STL);
+        } else {
+            StlConfiguration.checkStl(ndkConfig.getStl());
         }
     }
 }

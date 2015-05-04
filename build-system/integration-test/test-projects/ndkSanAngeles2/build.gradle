@@ -32,12 +32,14 @@ model {
     }
 
     android.ndk {
-        compileSdkVersion 19
-        moduleName "sanangeles"
-        cFlags "-DDISABLE_IMPORTGL"
-        ldLibs "GLESv1_CM", "dl", "log"
-        stl "stlport_static"
-        toolchain "clang"
+        compileSdkVersion = 19
+        moduleName = "sanangeles"
+        CFlags = "-DDISABLE_IMPORTGL"
+        ldLibs.create { value = "GLESv1_CM" }
+        ldLibs.create { value = "dl" }
+        ldLibs.create { value = "log" }
+        stl = "stlport_static"
+        toolchain = "clang"
     }
 
     android.productFlavors {

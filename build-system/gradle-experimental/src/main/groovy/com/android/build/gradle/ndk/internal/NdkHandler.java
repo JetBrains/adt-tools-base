@@ -20,14 +20,13 @@ import static com.android.SdkConstants.FN_LOCAL_PROPERTIES;
 
 import com.android.SdkConstants;
 import com.android.annotations.Nullable;
-import com.android.build.gradle.ndk.NdkExtension;
+import com.android.build.gradle.ndk.managed.NdkConfig;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.Closeables;
 
 import org.gradle.api.InvalidUserDataException;
-import org.gradle.api.Project;
 import org.gradle.nativeplatform.platform.NativePlatform;
 
 import java.io.File;
@@ -74,7 +73,7 @@ public class NdkHandler {
     private static final String DEFAULT_LLVM_GCC32_VERSION="4.8";
     private static final String DEFAULT_LLVM_GCC64_VERSION="4.9";
 
-    private NdkExtension ndkExtension;
+    private NdkConfig ndkConfig;
 
     private File ndkDirectory;
 
@@ -106,8 +105,8 @@ public class NdkHandler {
                 .build();
     }
 
-    public NdkHandler(File projectDir, NdkExtension ndkExtension) {
-        this.ndkExtension = ndkExtension;
+    public NdkHandler(File projectDir, NdkConfig ndkConfig) {
+        this.ndkConfig = ndkConfig;
         ndkDirectory = findNdkDirectory(projectDir);
     }
 
@@ -178,8 +177,8 @@ public class NdkHandler {
         return ndkDirectory;
     }
 
-    NdkExtension getNdkExtension() {
-        return ndkExtension;
+    NdkConfig getNdkConfig() {
+        return ndkConfig;
     }
 
     /**
@@ -256,7 +255,7 @@ public class NdkHandler {
      * Returns the sysroot directory for the toolchain.
      */
     public String getSysroot(NativePlatform platform) {
-        return ndkDirectory + "/platforms/" + ndkExtension.getCompileSdkVersion()
+        return ndkDirectory + "/platforms/" + ndkConfig.getCompileSdkVersion()
                 + "/arch-" + ARCHITECTURE_STRING.get(platform.getName());
     }
 
@@ -272,7 +271,7 @@ public class NdkHandler {
      * Return true if compiledSdkVersion supports 64 bits ABI.
      */
     public boolean supports64Bits() {
-        String targetString = getNdkExtension().getCompileSdkVersion().replace("android-", "");
+        String targetString = getNdkConfig().getCompileSdkVersion().replace("android-", "");
         try {
             return Integer.parseInt(targetString) >= 20;
         } catch (NumberFormatException ignored) {
@@ -288,11 +287,11 @@ public class NdkHandler {
      * If clang is used, then it depends the target abi.
      */
     public String getGccToolchainVersion(String abi) {
-        String toolchain = ndkExtension.getToolchain();
+        String toolchain = ndkConfig.getToolchain();
         if (toolchain.equals("gcc")) {
             return (toolchain.equals(NdkExtensionConvention.DEFAULT_TOOLCHAIN))
                     ? ToolchainConfiguration.getDefaultToolchainVersion(toolchain, abi)
-                    : ndkExtension.getToolchainVersion();
+                    : ndkConfig.getToolchainVersion();
         } else {
             return is64Bits(abi) ? DEFAULT_LLVM_GCC64_VERSION : DEFAULT_LLVM_GCC32_VERSION;
         }

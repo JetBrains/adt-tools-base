@@ -12,11 +12,11 @@ model {
     }
 
     android.ndk {
-        moduleName "simple-jni"
+        moduleName = "simple-jni"
 
         // TODO: Include a way to set include directories the DSL.
-        cppFlags "-I$rootDir/src/include"
-        stl "stlport_static"
+        cppFlags = "-I$rootDir/src/include"
+        stl = "stlport_static"
     }
 
     android.productFlavors {
