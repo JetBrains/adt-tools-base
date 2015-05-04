@@ -92,7 +92,7 @@ public class VariantFilter implements com.android.build.gradle.api.VariantFilter
     /**
      * Returns the list of read-only flavors, or an empty list.
      *
-     * <p>See {@link com.android.build.gradle.internal.dsl.GroupableProductFlavor} for properties
+     * <p>See {@link com.android.build.gradle.internal.dsl.ProductFlavor} for properties
      * present on the returned objects.
      */
     @NonNull

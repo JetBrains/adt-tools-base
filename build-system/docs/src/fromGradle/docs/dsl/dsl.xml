@@ -59,7 +59,6 @@
             <tr><td>com.android.build.gradle.internal.dsl.LintOptions</td></tr>
             <tr><td>com.android.build.gradle.internal.dsl.DexOptions</td></tr>
             <tr><td>com.android.build.gradle.internal.CompileOptions</td></tr>
-            <tr><td>com.android.build.gradle.internal.dsl.GroupableProductFlavor</td></tr>
             <tr><td>com.android.build.gradle.internal.coverage.JacocoExtension</td></tr>
             <tr><td>com.android.build.gradle.internal.dsl.PackagingOptions</td></tr>
             <tr><td>com.android.build.gradle.internal.dsl.ProductFlavor</td></tr>
