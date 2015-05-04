@@ -30,7 +30,7 @@ import java.util.List;
 /** Registry which provides a list of checks to be performed on an Android project */
 public class BuiltinIssueRegistry extends IssueRegistry {
     private static final List<Issue> sIssues;
-    static final int INITIAL_CAPACITY = 215;
+    static final int INITIAL_CAPACITY = 218;
 
     static {
         List<Issue> issues = new ArrayList<Issue>(INITIAL_CAPACITY);
@@ -211,8 +211,10 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(SupportAnnotationDetector.CHECK_PERMISSION);
         issues.add(SupportAnnotationDetector.CHECK_RESULT);
         issues.add(SupportAnnotationDetector.COLOR_USAGE);
+        issues.add(SupportAnnotationDetector.MISSING_PERMISSION);
         issues.add(SupportAnnotationDetector.RANGE);
         issues.add(SupportAnnotationDetector.RESOURCE_TYPE);
+        issues.add(SupportAnnotationDetector.THREAD);
         issues.add(SupportAnnotationDetector.TYPE_DEF);
         issues.add(SystemPermissionsDetector.ISSUE);
         issues.add(TextFieldDetector.ISSUE);
@@ -279,7 +281,7 @@ public class BuiltinIssueRegistry extends IssueRegistry {
             }
 
             if (scope.contains(Scope.JAVA_FILE)) {
-                initialSize += 48;
+                initialSize += 50;
             } else if (scope.contains(Scope.CLASS_FILE)) {
                 initialSize += 15;
             } else if (scope.contains(Scope.MANIFEST)) {
