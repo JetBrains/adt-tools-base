@@ -16,9 +16,9 @@
 
 package com.android.build.gradle.model;
 
-import com.android.build.gradle.api.GroupableProductFlavor;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.builder.model.BuildType;
+import com.android.builder.model.ProductFlavor;
 import com.google.common.collect.Lists;
 
 import org.gradle.nativeplatform.NativeLibraryBinarySpec;
@@ -33,7 +33,7 @@ public class DefaultAndroidBinary extends BaseBinarySpec implements AndroidBinar
 
     private BuildType buildType;
 
-    private List<? extends GroupableProductFlavor> productFlavors;
+    private List<? extends ProductFlavor> productFlavors;
 
     private BaseVariantData variantData;
 
@@ -51,11 +51,11 @@ public class DefaultAndroidBinary extends BaseBinarySpec implements AndroidBinar
     }
 
     @Override
-    public List<? extends GroupableProductFlavor> getProductFlavors() {
+    public List<? extends ProductFlavor> getProductFlavors() {
         return productFlavors;
     }
 
-    public void setProductFlavors(List<? extends GroupableProductFlavor> productFlavors) {
+    public void setProductFlavors(List<? extends ProductFlavor> productFlavors) {
         this.productFlavors = productFlavors;
     }
 

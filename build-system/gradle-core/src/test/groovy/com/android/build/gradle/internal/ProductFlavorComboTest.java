@@ -20,7 +20,7 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
-import com.android.build.gradle.internal.dsl.GroupableProductFlavor;
+import com.android.builder.model.ProductFlavor;
 import com.google.common.collect.ImmutableList;
 
 import org.gradle.api.Project;
@@ -31,6 +31,10 @@ import org.gradle.internal.reflect.Instantiator;
 import org.gradle.testfixtures.ProjectBuilder;
 import org.junit.Before;
 import org.junit.Test;
+
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 
 import java.util.Collections;
 import java.util.List;
@@ -43,27 +47,36 @@ public class ProductFlavorComboTest {
     private static final String DIMENSION1 = "dimension1";
     private static final String DIMENSION2 = "dimension2";
 
-    private GroupableProductFlavor f1;
-    private GroupableProductFlavor f2;
-    private GroupableProductFlavor f1d1;
-    private GroupableProductFlavor f2d1;
-    private GroupableProductFlavor f1d2;
-    private GroupableProductFlavor f2d2;
+    @Mock
+    private ProductFlavor f1;
+    @Mock
+    private ProductFlavor f2;
+    @Mock
+    private ProductFlavor f1d1;
+    @Mock
+    private ProductFlavor f2d1;
+    @Mock
+    private ProductFlavor f1d2;
+    @Mock
+    private ProductFlavor f2d2;
 
     @Before
     public void setup() {
-        f1 = new GroupableProductFlavor("flavor1", project, instantiator, logger);
-        f2 = new GroupableProductFlavor("flavor2", project, instantiator, logger);
+        MockitoAnnotations.initMocks(this);
+        Mockito.when(f1.getName()).thenReturn("flavor1");
+        Mockito.when(f1.getDimension()).thenReturn(null);
+        Mockito.when(f2.getName()).thenReturn("flavor2");
+        Mockito.when(f2.getDimension()).thenReturn(null);
 
-        f1d1 = new GroupableProductFlavor("flavor1", project, instantiator, logger);
-        f1d1.setFlavorDimension(DIMENSION1);
-        f2d1 = new GroupableProductFlavor("flavor2", project, instantiator, logger);
-        f2d1.setFlavorDimension(DIMENSION1);
+        Mockito.when(f1d1.getName()).thenReturn("flavor1");
+        Mockito.when(f1d1.getDimension()).thenReturn(DIMENSION1);
+        Mockito.when(f2d1.getName()).thenReturn("flavor2");
+        Mockito.when(f2d1.getDimension()).thenReturn(DIMENSION1);
 
-        f1d2 = new GroupableProductFlavor("flavor1", project, instantiator, logger);
-        f1d2.setFlavorDimension(DIMENSION2);
-        f2d2 = new GroupableProductFlavor("flavor2", project, instantiator, logger);
-        f2d2.setFlavorDimension(DIMENSION2);
+        Mockito.when(f1d2.getName()).thenReturn("flavor1");
+        Mockito.when(f1d2.getDimension()).thenReturn(DIMENSION2);
+        Mockito.when(f2d2.getName()).thenReturn("flavor2");
+        Mockito.when(f2d2.getDimension()).thenReturn(DIMENSION2);
     }
 
     @Test
@@ -87,7 +100,7 @@ public class ProductFlavorComboTest {
                 ImmutableList.<ProductFlavorCombo>of(),
                 ProductFlavorCombo.createCombinations(
                         Collections.<String>emptyList(),
-                        Collections.<GroupableProductFlavor>emptyList()));
+                        Collections.<ProductFlavor>emptyList()));
     }
 
     @Test

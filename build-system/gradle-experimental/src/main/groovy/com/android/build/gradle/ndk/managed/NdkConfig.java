@@ -28,6 +28,8 @@ public interface NdkConfig {
     String getToolchainVersion();
     void setToolchainVersion(@NonNull String toolchainVersion);
 
+    ManagedSet<ManagedString> getAbiFilters();
+
     String getCFlags();
     void setCFlags(@NonNull String cFlags);
 

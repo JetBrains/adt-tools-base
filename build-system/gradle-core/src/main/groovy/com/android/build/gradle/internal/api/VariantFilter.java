@@ -18,7 +18,6 @@ package com.android.build.gradle.internal.api;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.gradle.api.GroupableProductFlavor;
 import com.android.builder.model.BuildType;
 import com.android.builder.model.ProductFlavor;
 
@@ -38,7 +37,7 @@ public class VariantFilter implements com.android.build.gradle.api.VariantFilter
 
     private ProductFlavor defaultConfig;
     private BuildType buildType;
-    private List<GroupableProductFlavor> flavors;
+    private List<ProductFlavor> flavors;
 
     public VariantFilter(@NonNull ReadOnlyObjectProvider readOnlyObjectProvider) {
         this.readOnlyObjectProvider = readOnlyObjectProvider;
@@ -47,7 +46,7 @@ public class VariantFilter implements com.android.build.gradle.api.VariantFilter
     public void reset(
             @NonNull ProductFlavor defaultConfig,
             @NonNull BuildType buildType,
-            @Nullable List<GroupableProductFlavor> flavors) {
+            @Nullable List<ProductFlavor> flavors) {
         ignore = false;
         this.defaultConfig = defaultConfig;
         this.buildType = buildType;
@@ -98,9 +97,9 @@ public class VariantFilter implements com.android.build.gradle.api.VariantFilter
      */
     @NonNull
     @Override
-    public List<GroupableProductFlavor> getFlavors() {
+    public List<ProductFlavor> getFlavors() {
         return flavors != null ?
                 new ImmutableFlavorList(flavors, readOnlyObjectProvider) :
-                Collections.<GroupableProductFlavor>emptyList();
+                Collections.<ProductFlavor>emptyList();
     }
 }

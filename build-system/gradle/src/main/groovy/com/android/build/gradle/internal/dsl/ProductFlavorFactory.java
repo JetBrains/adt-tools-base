@@ -24,10 +24,10 @@ import org.gradle.api.logging.Logger;
 import org.gradle.internal.reflect.Instantiator;
 
 /**
- * Factory to create GroupableProductFlavor object using an {@link Instantiator} to add
+ * Factory to create ProductFlavor object using an {@link Instantiator} to add
  * the DSL methods.
  */
-public class GroupableProductFlavorFactory implements NamedDomainObjectFactory<GroupableProductFlavor> {
+public class ProductFlavorFactory implements NamedDomainObjectFactory<ProductFlavor> {
 
     @NonNull
     private final Instantiator instantiator;
@@ -36,17 +36,17 @@ public class GroupableProductFlavorFactory implements NamedDomainObjectFactory<G
     @NonNull
     private final Logger logger;
 
-    public GroupableProductFlavorFactory(@NonNull Instantiator instantiator,
-                                         @NonNull Project project,
-                                         @NonNull Logger logger) {
+    public ProductFlavorFactory(@NonNull Instantiator instantiator,
+            @NonNull Project project,
+            @NonNull Logger logger) {
         this.instantiator = instantiator;
         this.project = project;
         this.logger = logger;
     }
 
     @Override
-    public GroupableProductFlavor create(String name) {
-        return instantiator.newInstance(GroupableProductFlavor.class,
+    public ProductFlavor create(String name) {
+        return instantiator.newInstance(ProductFlavor.class,
                 name, project, instantiator, logger);
     }
 }

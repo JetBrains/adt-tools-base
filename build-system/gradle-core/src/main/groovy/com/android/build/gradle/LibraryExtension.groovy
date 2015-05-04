@@ -22,7 +22,7 @@ import com.android.build.gradle.internal.ExtraModelInfo
 import com.android.build.gradle.internal.LoggingUtil
 import com.android.build.gradle.internal.SdkHandler
 import com.android.build.gradle.internal.dsl.BuildType
-import com.android.build.gradle.internal.dsl.GroupableProductFlavor
+import com.android.build.gradle.internal.dsl.ProductFlavor
 import com.android.build.gradle.internal.dsl.SigningConfig
 import com.android.builder.core.AndroidBuilder
 import groovy.transform.CompileStatic
@@ -46,7 +46,7 @@ public class LibraryExtension extends TestedExtension {
             @NonNull AndroidBuilder androidBuilder,
             @NonNull SdkHandler sdkHandler,
             @NonNull NamedDomainObjectContainer<BuildType> buildTypes,
-            @NonNull NamedDomainObjectContainer<GroupableProductFlavor> productFlavors,
+            @NonNull NamedDomainObjectContainer<ProductFlavor> productFlavors,
             @NonNull NamedDomainObjectContainer<SigningConfig> signingConfigs,
             @NonNull ExtraModelInfo extraModelInfo,
             boolean isLibrary) {

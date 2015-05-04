@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 The Android Open Source Project
+ * Copyright (C) 2015 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,20 +14,22 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.model;
+package com.android.build.gradle.managed;
 
-import com.android.builder.model.BuildType;
-import com.android.builder.model.ProductFlavor;
-
-import org.gradle.platform.base.BinarySpec;
-
-import java.util.List;
+import org.gradle.model.Managed;
 
 /**
- * Binary interface for Android.
+ * A Managed ApiVersion.
  */
-public interface AndroidBinary extends BinarySpec {
-    BuildType getBuildType();
+@Managed
+public interface ApiVersion {
 
-    List<? extends ProductFlavor> getProductFlavors();
+    Integer getApiLevel();
+    void setApiLevel(Integer apiLevel);
+
+    String getCodename();
+    void setCodename(String codename);
+
+    String getApiString();
+    void setApiString(String apiString);
 }

@@ -20,7 +20,6 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.api.BaseVariant;
 import com.android.build.gradle.api.BaseVariantOutput;
-import com.android.build.gradle.api.GroupableProductFlavor;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.tasks.AidlCompile;
 import com.android.build.gradle.tasks.GenerateBuildConfig;
@@ -118,7 +117,7 @@ abstract class BaseVariantImpl implements BaseVariant {
 
     @Override
     @NonNull
-    public List<GroupableProductFlavor> getProductFlavors() {
+    public List<ProductFlavor> getProductFlavors() {
         return new ImmutableFlavorList(
                 getVariantData().getVariantConfiguration().getProductFlavors(),
                 readOnlyObjectProvider);

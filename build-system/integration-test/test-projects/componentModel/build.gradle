@@ -26,8 +26,8 @@ model {
         buildToolsVersion '19.1.0'
     }
     android.productFlavors {
-        f1 {}
-        f2 {}
+        create { name = "f1" }
+        create { name = "f2" }
     }
 }
 

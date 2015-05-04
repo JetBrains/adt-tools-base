@@ -17,12 +17,11 @@
 package com.android.build.gradle.model;
 
 import com.android.build.gradle.BaseExtension;
-import com.android.build.gradle.internal.dsl.GroupableProductFlavor;
 import com.android.build.gradle.managed.BuildType;
 import com.android.build.gradle.managed.SigningConfig;
 import com.android.build.gradle.ndk.managed.NdkConfig;
+import com.android.build.gradle.managed.ProductFlavor;
 
-import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.model.Managed;
 import org.gradle.model.Unmanaged;
 import org.gradle.model.collection.ManagedSet;
@@ -34,10 +33,7 @@ import org.gradle.model.collection.ManagedSet;
 public interface AndroidModel {
     ManagedSet<BuildType> getBuildTypes();
 
-    @Unmanaged
-    NamedDomainObjectContainer<GroupableProductFlavor> getProductFlavors();
-
-    void setProductFlavors(NamedDomainObjectContainer<GroupableProductFlavor> productFlavors);
+    ManagedSet<ProductFlavor> getProductFlavors();
 
     ManagedSet<SigningConfig> getSigningConfigs();
 
