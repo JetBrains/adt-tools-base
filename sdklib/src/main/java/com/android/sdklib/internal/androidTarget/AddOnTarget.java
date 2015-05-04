@@ -112,6 +112,8 @@ public final class AddOnTarget implements IAndroidTarget {
                         true /*requireManifestEntry*/));
             }
             mLibraries = builder.build();
+        } else {
+            mLibraries = ImmutableList.of();
         }
     }
 
@@ -339,7 +341,7 @@ public final class AddOnTarget implements IAndroidTarget {
 
         // The receiver is an add-on. There are 2 big use cases: The add-on has libraries
         // or the add-on doesn't (in which case we consider it a platform).
-        if (mLibraries == null || mLibraries.isEmpty()) {
+        if (mLibraries.isEmpty()) {
             return mBasePlatform.canRunOn(target);
         } else {
             // the only targets that can run the receiver are the same add-on in the same or later
