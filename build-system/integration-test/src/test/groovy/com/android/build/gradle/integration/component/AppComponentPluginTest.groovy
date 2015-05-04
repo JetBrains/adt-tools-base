@@ -20,6 +20,7 @@ import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.fixture.app.HelloWorldApp
 import groovy.transform.CompileStatic
+import com.android.builder.model.AndroidProject
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -55,7 +56,11 @@ model {
 
     @Test
     public void basicAssemble() {
-        project.execute("assemble");
+        AndroidProject model = project.executeAndReturnModel("assemble");
+        assertThat(model).isNotNull();
+        assertThat(model.getName()).isEqualTo(project.name)
+        assertThat(model.getBuildTypes()).hasSize(2)
+        assertThat(model.getVariants()).hasSize(2)
     }
 
     @Test
