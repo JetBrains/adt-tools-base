@@ -1465,6 +1465,7 @@ public class AndroidBuilder {
             @NonNull Collection<File> sourceFiles,
             @Nullable Collection<File> proguardFiles,
             @Nullable File mappingFile,
+            @Nullable File jarJarRulesFile,
             boolean multiDex,
             int minSdkVersion) {
 
@@ -1490,6 +1491,10 @@ public class AndroidBuilder {
 
                     if (proguardFiles != null) {
                         config.setProguardConfigFiles(new ArrayList<File>(proguardFiles));
+                    }
+
+                    if (jarJarRulesFile != null) {
+                        config.setJarJarConfigFile(jarJarRulesFile);
                     }
 
                     if (multiDex) {
@@ -1551,6 +1556,7 @@ public class AndroidBuilder {
             @NonNull File ecjOptionFile,
             @Nullable Collection<File> proguardFiles,
             @Nullable File mappingFile,
+            @Nullable File jarJarRuleFile,
             boolean multiDex,
             int minSdkVersion,
             boolean debugLog,
@@ -1572,6 +1578,10 @@ public class AndroidBuilder {
 
         if (multiDex) {
             builder.setMultiDex(true).setMinSdkVersion(minSdkVersion);
+        }
+
+        if (jarJarRuleFile != null) {
+            builder.setJarJarRuleFile(jarJarRuleFile);
         }
 
         mJavaProcessExecutor.execute(

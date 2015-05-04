@@ -96,4 +96,12 @@ public interface BaseConfig {
 
     @Nullable
     File getMultiDexKeepProguard();
+
+    /**
+     * Returns the optional jarjar rule file, or null if jarjar should be skipped.
+     * Can only be used with Jack toolchain.
+     * @return the optional jarjar rule file.
+     */
+    @Nullable
+    File getJarJarRuleFile();
 }

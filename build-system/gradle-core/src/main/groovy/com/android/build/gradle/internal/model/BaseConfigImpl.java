@@ -48,6 +48,8 @@ abstract class BaseConfigImpl implements BaseConfig, Serializable {
     private File mMultiDexKeepFile;
     @Nullable
     private File mMultiDexKeepProguard;
+    @Nullable
+    private File mJarJarRuleFile;
 
     protected BaseConfigImpl(@NonNull BaseConfig baseConfig) {
         mManifestPlaceholders = ImmutableMap.copyOf(baseConfig.getManifestPlaceholders());
@@ -56,6 +58,7 @@ abstract class BaseConfigImpl implements BaseConfig, Serializable {
         mMultiDexEnabled = baseConfig.getMultiDexEnabled();
         mMultiDexKeepFile = baseConfig.getMultiDexKeepFile();
         mMultiDexKeepProguard = baseConfig.getMultiDexKeepProguard();
+        mJarJarRuleFile = baseConfig.getJarJarRuleFile();
     }
 
     @NonNull
@@ -112,6 +115,12 @@ abstract class BaseConfigImpl implements BaseConfig, Serializable {
         return mMultiDexKeepProguard;
     }
 
+    @Nullable
+    @Override
+    public File getJarJarRuleFile() {
+        return mJarJarRuleFile;
+    }
+
     @Override
     public String toString() {
         return "BaseConfigImpl{" +
@@ -119,6 +128,7 @@ abstract class BaseConfigImpl implements BaseConfig, Serializable {
                 ", mBuildConfigFields=" + mBuildConfigFields +
                 ", mResValues=" + mResValues +
                 ", mMultiDexEnabled=" + mMultiDexEnabled +
+                ", mJarJarRuleFile=" + mJarJarRuleFile +
                 '}';
     }
 }

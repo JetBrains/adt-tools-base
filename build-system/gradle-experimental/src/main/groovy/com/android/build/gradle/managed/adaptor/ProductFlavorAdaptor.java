@@ -221,4 +221,11 @@ public class ProductFlavorAdaptor implements CoreProductFlavor {
     public Boolean getUseJack() {
         return productFlavor.getUseJack();
     }
+
+    @Nullable
+    @Override
+    public File getJarJarRuleFile() {
+        // TODO: To be implemented
+        return null;
+    }
 }

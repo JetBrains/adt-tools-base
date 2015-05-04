@@ -120,4 +120,7 @@ public interface ProductFlavor {
     void setUseJack(Boolean useJack);
 
     NdkConfig getNdkConfig();
+
+    String getJarJarRuleFile();
+    void setJarJarRuleFile(String jarJarRuleFile);
 }

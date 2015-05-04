@@ -417,4 +417,16 @@ class ProductFlavor extends DefaultProductFlavor implements CoreProductFlavor {
         return getDimension();
     }
 
+
+    void jarJarRuleFile(String ...files) {
+        if (files.length == 0) {
+            setJarJarRuleFile(null);
+            return;
+        }
+        String jarJarRuleFile = files[0];
+        if (files.length > 1) {
+            logger.error("More than one jarJarRuleFile provided, ignoring all but " + jarJarRuleFile);
+        }
+        setJarJarRuleFile(project.file(jarJarRuleFile))
+    }
 }
