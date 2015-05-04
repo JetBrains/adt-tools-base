@@ -22,6 +22,7 @@ import com.android.builder.model.AndroidArtifact;
 import com.android.builder.model.AndroidArtifactOutput;
 import com.android.builder.model.ClassField;
 import com.android.builder.model.Dependencies;
+import com.android.builder.model.NativeLibrary;
 import com.android.builder.model.SourceProvider;
 import com.google.common.collect.Sets;
 
@@ -53,6 +54,8 @@ public class AndroidArtifactImpl extends BaseArtifactImpl implements AndroidArti
     @Nullable
     private final Set<String> abiFilters;
     @NonNull
+    private final Set<NativeLibrary> nativeLibraries;
+    @NonNull
     private final Map<String, ClassField> buildConfigFields;
     @NonNull
     private final Map<String, ClassField> resValues;
@@ -74,6 +77,7 @@ public class AndroidArtifactImpl extends BaseArtifactImpl implements AndroidArti
             @Nullable SourceProvider variantSourceProvider,
             @Nullable SourceProvider multiFlavorSourceProviders,
             @Nullable Set<String> abiFilters,
+            @NonNull Set<NativeLibrary> nativeLibraries,
             @NonNull Map<String,ClassField> buildConfigFields,
             @NonNull Map<String,ClassField> resValues) {
         super(name, assembleTaskName, compileTaskName, classesFolder, javaResourcesFolder,
@@ -87,6 +91,7 @@ public class AndroidArtifactImpl extends BaseArtifactImpl implements AndroidArti
         this.sourceGenTaskName = sourceGenTaskName;
         this.generatedResourceFolders = generatedResourceFolders;
         this.abiFilters = abiFilters;
+        this.nativeLibraries = nativeLibraries;
         this.buildConfigFields = buildConfigFields;
         this.resValues = resValues;
     }
@@ -136,6 +141,12 @@ public class AndroidArtifactImpl extends BaseArtifactImpl implements AndroidArti
     @Override
     public Set<String> getAbiFilters() {
         return abiFilters;
+    }
+
+    @Nullable
+    @Override
+    public Set<NativeLibrary> getNativeLibraries() {
+        return nativeLibraries;
     }
 
     @NonNull
