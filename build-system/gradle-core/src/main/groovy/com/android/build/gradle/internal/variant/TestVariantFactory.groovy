@@ -17,8 +17,8 @@
 package com.android.build.gradle.internal.variant
 
 import com.android.annotations.NonNull
-import com.android.build.gradle.BaseExtension
-import com.android.build.gradle.TestExtension
+import com.android.build.gradle.AndroidConfig
+import com.android.build.gradle.TestAndroidConfig
 import com.android.build.gradle.internal.dsl.BuildType
 import com.android.build.gradle.internal.dsl.ProductFlavor
 import com.android.build.gradle.internal.dsl.SigningConfig
@@ -39,7 +39,7 @@ public class TestVariantFactory extends ApplicationVariantFactory {
     public TestVariantFactory(
             @NonNull Instantiator instantiator,
             @NonNull AndroidBuilder androidBuilder,
-            @NonNull BaseExtension extension) {
+            @NonNull AndroidConfig extension) {
         super(instantiator, androidBuilder, extension)
     }
 
@@ -50,7 +50,7 @@ public class TestVariantFactory extends ApplicationVariantFactory {
 
     @Override
     public void preVariantWork(Project project) {
-        TestExtension testExtension = (TestExtension) extension
+        TestAndroidConfig testExtension = (TestAndroidConfig) extension
 
         String path = testExtension.targetProjectPath
         if (path == null) {

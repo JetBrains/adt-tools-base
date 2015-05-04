@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.managed;
+package com.android.build.gradle.managed.adaptor;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.core.NdkConfig;
 import com.android.build.gradle.internal.dsl.CoreBuildType;
+import com.android.build.gradle.managed.BuildType;
 import com.android.builder.model.ClassField;
 import com.android.builder.model.SigningConfig;
 import com.google.common.collect.Lists;
@@ -30,7 +31,7 @@ import java.util.Collection;
 import java.util.Map;
 
 /**
- * An adaptor to convert a ManagedBuildType to a BuildType.
+ * An adaptor to convert a BuildType to a CoreBuildType.
  */
 public class BuildTypeAdaptor implements CoreBuildType {
     @NonNull
@@ -62,13 +63,6 @@ public class BuildTypeAdaptor implements CoreBuildType {
 
     @NonNull
     @Override
-    public Collection<File> getTestProguardFiles() {
-        // TODO: To be implemented
-        return Lists.newArrayList();
-    }
-
-    @NonNull
-    @Override
     public Collection<File> getProguardFiles() {
         // TODO: To be implemented
         return Lists.newArrayList();
@@ -77,6 +71,13 @@ public class BuildTypeAdaptor implements CoreBuildType {
     @NonNull
     @Override
     public Collection<File> getConsumerProguardFiles() {
+        // TODO: To be implemented
+        return Lists.newArrayList();
+    }
+
+    @NonNull
+    @Override
+    public Collection<File> getTestProguardFiles() {
         // TODO: To be implemented
         return Lists.newArrayList();
     }

@@ -28,15 +28,11 @@ import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_STORE_TY
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.gradle.BaseExtension;
-import com.android.build.gradle.TestedExtension;
+import com.android.build.gradle.AndroidConfig;
+import com.android.build.gradle.TestedAndroidConfig;
 import com.android.build.gradle.api.AndroidSourceSet;
-import com.android.build.gradle.api.BaseVariant;
 import com.android.build.gradle.internal.api.DefaultAndroidSourceSet;
 import com.android.build.gradle.internal.api.ReadOnlyObjectProvider;
-import com.android.build.gradle.internal.api.TestVariantImpl;
-import com.android.build.gradle.internal.api.TestedVariant;
-import com.android.build.gradle.internal.api.UnitTestVariantImpl;
 import com.android.build.gradle.internal.api.VariantFilter;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.dependency.VariantDependencies;
@@ -44,7 +40,6 @@ import com.android.build.gradle.internal.dsl.CoreBuildType;
 import com.android.build.gradle.internal.dsl.CoreProductFlavor;
 import com.android.build.gradle.internal.dsl.Splits;
 import com.android.build.gradle.internal.profile.SpanRecorders;
-import com.android.build.gradle.internal.variant.ApplicationVariantFactory;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.internal.variant.TestVariantData;
@@ -90,7 +85,7 @@ public class VariantManager implements VariantModel {
     @NonNull
     private final AndroidBuilder androidBuilder;
     @NonNull
-    private final BaseExtension extension;
+    private final AndroidConfig extension;
     @NonNull
     private final VariantFactory variantFactory;
     @NonNull
@@ -119,7 +114,7 @@ public class VariantManager implements VariantModel {
     public VariantManager(
             @NonNull Project project,
             @NonNull AndroidBuilder androidBuilder,
-            @NonNull BaseExtension extension,
+            @NonNull AndroidConfig extension,
             @NonNull VariantFactory variantFactory,
             @NonNull TaskManager taskManager,
             @NonNull Instantiator instantiator) {
@@ -191,12 +186,12 @@ public class VariantManager implements VariantModel {
             throw new RuntimeException("BuildType names cannot collide with ProductFlavor names");
         }
 
-        DefaultAndroidSourceSet mainSourceSet = (DefaultAndroidSourceSet) extension.getSourceSetsContainer().maybeCreate(name);
+        DefaultAndroidSourceSet mainSourceSet = (DefaultAndroidSourceSet) extension.getSourceSets().maybeCreate(name);
 
         DefaultAndroidSourceSet unitTestSourceSet = null;
         if (variantFactory.hasTestScope()) {
             unitTestSourceSet = (DefaultAndroidSourceSet) extension
-                    .getSourceSetsContainer().maybeCreate(
+                    .getSourceSets().maybeCreate(
                             computeSourceSetName(buildType.getName(), UNIT_TEST));
         }
 
@@ -221,17 +216,17 @@ public class VariantManager implements VariantModel {
             throw new RuntimeException("ProductFlavor names cannot collide with BuildType names");
         }
 
-        DefaultAndroidSourceSet mainSourceSet = (DefaultAndroidSourceSet) extension.getSourceSetsContainer().maybeCreate(
+        DefaultAndroidSourceSet mainSourceSet = (DefaultAndroidSourceSet) extension.getSourceSets().maybeCreate(
                 productFlavor.getName());
 
         DefaultAndroidSourceSet androidTestSourceSet = null;
         DefaultAndroidSourceSet unitTestSourceSet = null;
         if (variantFactory.hasTestScope()) {
             androidTestSourceSet = (DefaultAndroidSourceSet) extension
-                    .getSourceSetsContainer().maybeCreate(
+                    .getSourceSets().maybeCreate(
                             computeSourceSetName(productFlavor.getName(), ANDROID_TEST));
             unitTestSourceSet = (DefaultAndroidSourceSet) extension
-                    .getSourceSetsContainer().maybeCreate(
+                    .getSourceSets().maybeCreate(
                             computeSourceSetName(productFlavor.getName(), UNIT_TEST));
         }
 
@@ -287,9 +282,6 @@ public class VariantManager implements VariantModel {
                     },
                     new Recorder.Property(SpanRecorders.VARIANT, variantData.getName()));
         }
-
-        // Create the variant API objects after the tasks have been created!
-        createApiObjects();
 
         taskManager.createReportTasks(variantDataList);
     }
@@ -481,7 +473,7 @@ public class VariantManager implements VariantModel {
 
         // sourceSetContainer in case we are creating variant specific sourceSets.
         NamedDomainObjectContainer<AndroidSourceSet> sourceSetsContainer = extension
-                .getSourceSetsContainer();
+                .getSourceSets();
 
         // We must first add the flavors to the variant config, in order to get the proper
         // variant-specific and multi-flavor name as we add/create the variant providers later.
@@ -659,7 +651,7 @@ public class VariantManager implements VariantModel {
         createCompoundSourceSets(
                 productFlavorList,
                 testVariantConfig,
-                extension.getSourceSetsContainer());
+                extension.getSourceSets());
 
         // create the internal storage for this variant.
         TestVariantData testVariantData = new TestVariantData(
@@ -681,8 +673,8 @@ public class VariantManager implements VariantModel {
             @NonNull List<ProductFlavor> productFlavorList) {
 
         BuildTypeData testBuildTypeData = null;
-        if (extension instanceof TestedExtension) {
-            TestedExtension testedExtension = (TestedExtension) extension;
+        if (extension instanceof TestedAndroidConfig) {
+            TestedAndroidConfig testedExtension = (TestedAndroidConfig) extension;
 
             testBuildTypeData = buildTypes.get(testedExtension.getTestBuildType());
             if (testBuildTypeData == null) {
@@ -735,59 +727,6 @@ public class VariantManager implements VariantModel {
                     variantForAndroidTest,
                     ANDROID_TEST);
             variantDataList.add(androidTestVariantData);
-        }
-    }
-
-    public void createApiObjects() {
-        for (BaseVariantData<?> variantData : variantDataList) {
-            if (variantData.getType().isForTesting()) {
-                // Testing variants are handled together with their "owners".
-                continue;
-            }
-
-            BaseVariant variantApi =
-                    variantFactory.createVariantApi(variantData, readOnlyObjectProvider);
-
-            if (variantFactory.hasTestScope()) {
-                TestVariantData androidTestVariantData =
-                        ((TestedVariantData) variantData).getTestVariantData(ANDROID_TEST);
-
-                if (androidTestVariantData != null) {
-                    TestVariantImpl androidTestVariant = instantiator.newInstance(
-                            TestVariantImpl.class,
-                            androidTestVariantData,
-                            variantApi,
-                            androidBuilder,
-                            readOnlyObjectProvider);
-
-                    // add the test output.
-                    ApplicationVariantFactory.createApkOutputApiObjects(
-                            instantiator,
-                            androidTestVariantData,
-                            androidTestVariant);
-
-                    ((TestedExtension) extension).addTestVariant(androidTestVariant);
-                    ((TestedVariant) variantApi).setTestVariant(androidTestVariant);
-                }
-
-                TestVariantData unitTestVariantData =
-                        ((TestedVariantData) variantData).getTestVariantData(UNIT_TEST);
-                if (unitTestVariantData != null) {
-                    UnitTestVariantImpl unitTestVariant = instantiator.newInstance(
-                            UnitTestVariantImpl.class,
-                            unitTestVariantData,
-                            variantApi,
-                            androidBuilder,
-                            readOnlyObjectProvider);
-
-                    ((TestedExtension) extension).addUnitTestVariant(unitTestVariant);
-                    ((TestedVariant) variantApi).setUnitTestVariant(unitTestVariant);
-                }
-            }
-
-            // Only add the variant API object to the domain object set once it's been fully
-            // initialized.
-            extension.addVariant(variantApi);
         }
     }
 

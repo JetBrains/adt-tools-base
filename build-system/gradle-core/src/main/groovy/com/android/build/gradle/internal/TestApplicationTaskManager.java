@@ -17,12 +17,13 @@
 package com.android.build.gradle.internal;
 
 import static com.android.builder.core.BuilderConstants.CONNECTED;
+import static com.android.builder.model.AndroidProject.FD_OUTPUTS;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.gradle.BaseExtension;
-import com.android.build.gradle.TestExtension;
 import com.android.build.gradle.internal.scope.VariantScope;
+import com.android.build.gradle.AndroidConfig;
+import com.android.build.gradle.TestAndroidConfig;
 import com.android.build.gradle.internal.tasks.DeviceProviderInstrumentTestTask;
 import com.android.build.gradle.internal.test.TestApplicationTestData;
 import com.android.build.gradle.internal.variant.BaseVariantData;
@@ -43,9 +44,6 @@ import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.artifacts.dsl.DependencyHandler;
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
 
-import static com.android.builder.model.AndroidProject.FD_OUTPUTS;
-
-
 import java.io.File;
 import java.util.Locale;
 
@@ -60,7 +58,7 @@ public class TestApplicationTaskManager extends ApplicationTaskManager {
 
     public TestApplicationTaskManager(Project project,
             AndroidBuilder androidBuilder,
-            BaseExtension extension,
+            AndroidConfig extension,
             SdkHandler sdkHandler,
             DependencyManager dependencyManager,
             ToolingModelBuilderRegistry toolingRegistry) {
@@ -77,7 +75,7 @@ public class TestApplicationTaskManager extends ApplicationTaskManager {
         Configuration testTarget = project.getConfigurations().create("testTarget");
 
         DependencyHandler dependencyHandler = project.getDependencies();
-        TestExtension testExtension = (TestExtension) extension;
+        TestAndroidConfig testExtension = (TestAndroidConfig) extension;
         dependencyHandler.add("testTarget",
                 dependencyHandler.project(
                         ImmutableMap.of(
@@ -153,7 +151,7 @@ public class TestApplicationTaskManager extends ApplicationTaskManager {
         variantData.obfuscatedClassesJar = outFile;
 
         DependencyHandler dependencyHandler = project.getDependencies();
-        TestExtension testExtension = (TestExtension) extension;
+        TestAndroidConfig testExtension = (TestAndroidConfig) extension;
 
         // and create the configuration for the project's classes.jar file.
         Configuration testClassesMapping = project.getConfigurations().create("testTargetClasses");

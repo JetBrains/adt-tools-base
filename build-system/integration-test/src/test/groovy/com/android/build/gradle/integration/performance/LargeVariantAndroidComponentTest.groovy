@@ -44,9 +44,9 @@ class LargeVariantAndroidComponentTest {
                 apply plugin: "com.android.model.application"
 
                 model {
-                    android.config {
-                        compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
-                        buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
+                    android {
+                        compileSdkVersion = $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
+                        buildToolsVersion = "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
                     }
 
                     android.buildTypes {

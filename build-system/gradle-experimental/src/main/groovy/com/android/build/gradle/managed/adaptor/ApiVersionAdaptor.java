@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.managed;
+package com.android.build.gradle.managed.adaptor;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.build.gradle.managed.ApiVersion;
 
 /**
- * An adaptor to convert a ManagedApiVersion to an ApiVersion.
+ * An adaptor to convert a managed.ApiVersion to an model.ApiVersion.
  */
 public class ApiVersionAdaptor implements com.android.builder.model.ApiVersion {
 
@@ -28,7 +29,6 @@ public class ApiVersionAdaptor implements com.android.builder.model.ApiVersion {
 
     public static boolean isEmpty(ApiVersion apiVersion) {
         return apiVersion.getApiLevel() == null &&
-                apiVersion.getApiString() == null &&
                 apiVersion.getCodename() == null;
     }
 
@@ -50,6 +50,6 @@ public class ApiVersionAdaptor implements com.android.builder.model.ApiVersion {
     @NonNull
     @Override
     public String getApiString() {
-        return apiVersion.getApiString();
+        return getCodename() != null ? getCodename() : Integer.toString(getApiLevel());
     }
 }

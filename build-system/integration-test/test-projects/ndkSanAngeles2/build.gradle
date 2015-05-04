@@ -5,24 +5,16 @@ buildscript { apply from: "../commonBuildScriptExperimental.gradle", to: buildsc
 apply plugin: 'com.android.model.application'
 
 model {
-    android.config {
-        compileSdkVersion 19
+    android {
+        compileSdkVersion = 19
         buildToolsVersion = rootProject.ext.buildToolsVersion
 
-        defaultConfig {
+        defaultConfig.with {
             // This actual the app version code. Giving ourselves 1,000,000 values
             versionCode = 123
         }
-
-        // make per-variant version code
-        applicationVariants.all { variant ->
-            // get the single flavor
-            def flavorVersion = variant.productFlavors.get(0).versionCode
-
-            // set the composite code
-            variant.mergedFlavor.versionCode = flavorVersion * 1000000 + defaultConfig.versionCode
-        }
     }
+
     android.buildTypes {
         afterEach {
             if (name == "debug") {

@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.managed;
+package com.android.build.gradle.managed.adaptor;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.gradle.ndk.managed.NdkConfig;
+import com.android.build.gradle.managed.ManagedString;
+import com.android.build.gradle.managed.NdkConfig;
 import com.google.common.base.Function;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -65,13 +66,14 @@ public class NdkConfigAdaptor implements com.android.build.gradle.internal.core.
     @Nullable
     @Override
     public Set<String> getAbiFilters() {
-        return Sets.newHashSet(Iterables.transform(ndkConfig.getAbiFilters(),
-                new Function<ManagedString, String>() {
-                    @Override
-                    public String apply(@Nullable ManagedString managedString) {
-                        return managedString == null ? null : managedString.getValue();
-                    }
-                }));
+        return ndkConfig.getAbiFilters().isEmpty() ? null :
+                Sets.newHashSet(Iterables.transform(ndkConfig.getAbiFilters(),
+                        new Function<ManagedString, String>() {
+                            @Override
+                            public String apply(@Nullable ManagedString managedString) {
+                                return managedString == null ? null : managedString.getValue();
+                            }
+                        }));
     }
 
     @Nullable

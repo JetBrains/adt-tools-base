@@ -17,11 +17,13 @@
 package com.android.build.gradle.model
 
 import com.android.build.gradle.internal.ProductFlavorCombo
+import com.android.build.gradle.managed.AndroidConfig
 import com.android.build.gradle.managed.BuildType
-import com.android.build.gradle.managed.BuildTypeAdaptor
+import com.android.build.gradle.managed.adaptor.BuildTypeAdaptor
 import com.android.build.gradle.managed.ProductFlavor
-import com.android.build.gradle.managed.ProductFlavorAdaptor
+import com.android.build.gradle.managed.adaptor.ProductFlavorAdaptor
 import com.android.builder.core.BuilderConstants
+import com.android.sdklib.repository.FullRevision
 import groovy.transform.CompileStatic
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -49,6 +51,9 @@ import org.gradle.platform.base.LanguageType
 import org.gradle.platform.base.LanguageTypeBuilder
 
 import javax.inject.Inject
+
+import static com.android.builder.core.VariantType.ANDROID_TEST
+import static com.android.builder.core.VariantType.UNIT_TEST
 
 /**
  * Plugin to set up infrastructure for other android plugins.
@@ -83,15 +88,29 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
          * Create "android" model block.
          */
         @Model("android")
-        void android(AndroidModel androidModel) {
+        void android(AndroidConfig androidModel) {
         }
 
         // Initialize each component separately to ensure correct ordering.
         @Defaults
         void androidModelSources (
-                AndroidModel androidModel,
+                AndroidConfig androidModel,
                 @Path("androidSources") AndroidComponentModelSourceSet sources) {
             androidModel.sources = sources
+        }
+
+        @Finalize
+        void finalizeAndroidModel(AndroidConfig androidModel) {
+            if (androidModel.buildToolsRevision == null && androidModel.buildToolsVersion != null) {
+                androidModel.buildToolsRevision =
+                        FullRevision.parseRevision(androidModel.buildToolsVersion);
+            }
+
+            if (androidModel.compileSdkVersion != null &&
+                    !androidModel.compileSdkVersion.startsWith("android-") &&
+                    androidModel.compileSdkVersion.isNumber()) {
+                androidModel.compileSdkVersion = "android-" + androidModel.compileSdkVersion
+            }
         }
 
         @Defaults
@@ -159,6 +178,8 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
             }
             // Create main source set.
             sources.create("main")
+            sources.create(ANDROID_TEST.prefix)
+            sources.create(UNIT_TEST.prefix)
 
             buildTypes.each { buildType ->
                 sources.maybeCreate(buildType.name)

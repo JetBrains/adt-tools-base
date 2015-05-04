@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.ListIterator;
 
 /**
- * Implementation of List that create read-only GroupableProductFlavor on the fly as they are
+ * Implementation of List that create read-only ProductFlavor on the fly as they are
  * queried. The list itself is immutable.
  */
 public class ImmutableFlavorList implements List<ProductFlavor> {
