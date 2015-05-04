@@ -20,7 +20,7 @@ import com.android.build.gradle.BaseExtension;
 import com.android.build.gradle.internal.dsl.GroupableProductFlavor;
 import com.android.build.gradle.managed.BuildType;
 import com.android.build.gradle.managed.SigningConfig;
-import com.android.build.gradle.ndk.NdkExtension;
+import com.android.build.gradle.ndk.managed.NdkConfig;
 
 import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.model.Managed;
@@ -43,13 +43,9 @@ public interface AndroidModel {
 
     @Unmanaged
     AndroidComponentModelSourceSet getSources();
-
     void setSources(AndroidComponentModelSourceSet sources);
 
-    @Unmanaged
-    NdkExtension getNdk();
-
-    void setNdk(NdkExtension ndk);
+    NdkConfig getNdk();
 
     @Unmanaged
     BaseExtension getConfig();

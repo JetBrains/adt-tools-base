@@ -16,14 +16,13 @@
 
 package com.android.build.gradle.ndk.internal
 
+import com.android.build.gradle.managed.ManagedString
 import com.android.build.gradle.model.AndroidComponentModelSourceSet
-import com.android.build.gradle.ndk.NdkExtension
+import com.android.build.gradle.ndk.managed.NdkConfig
 import com.android.build.gradle.tasks.GdbSetupTask
 import com.android.builder.core.BuilderConstants
 import org.gradle.api.tasks.TaskContainer
 import org.gradle.language.base.FunctionalSourceSet
-import org.gradle.language.c.CSourceSet
-import org.gradle.language.cpp.CppSourceSet
 import org.gradle.api.Task
 import org.gradle.api.tasks.Copy
 import org.gradle.nativeplatform.NativeBinarySpec
@@ -41,7 +40,7 @@ class NdkConfiguration {
             NativeLibrarySpec library,
             AndroidComponentModelSourceSet sources,
             File buildDir,
-            NdkExtension ndkExtension,
+            NdkConfig ndkConfig,
             NdkHandler ndkHandler) {
         Collection<String> abiList = ndkHandler.getSupportedAbis()
         abiList.each {
@@ -62,7 +61,7 @@ class NdkConfiguration {
             // Set output library filename.
             binary.sharedLibraryFile =
                     new File(buildDir, NdkNamingScheme.getOutputDirectoryName(binary) + "/" +
-                            NdkNamingScheme.getSharedLibraryFileName(ndkExtension.getModuleName()))
+                            NdkNamingScheme.getSharedLibraryFileName(ndkConfig.getModuleName()))
 
             // Replace output directory of compile tasks.
             binary.tasks.withType(CCompile) { task ->
@@ -81,7 +80,7 @@ class NdkConfiguration {
             cppCompiler.args  "--sysroot=$sysroot"
             linker.args "--sysroot=$sysroot"
 
-            if (ndkExtension.getRenderscriptNdkMode()) {
+            if (ndkConfig.getRenderscriptNdkMode()) {
                 cCompiler.args "-I$sysroot/usr/include/rs"
                 cCompiler.args "-I$sysroot/usr/include/rs/cpp"
                 cppCompiler.args "-I$sysroot/usr/include/rs"
@@ -92,14 +91,14 @@ class NdkConfiguration {
             NativeToolSpecificationFactory.create(ndkHandler, binary.buildType, binary.targetPlatform).apply(binary)
 
             // Add flags defined in NdkExtension
-            if (ndkExtension.getcFlags() != null) {
-                cCompiler.args ndkExtension.getcFlags()
+            if (ndkConfig.getCFlags() != null) {
+                cCompiler.args ndkConfig.getCFlags()
             }
-            if (ndkExtension.getCppFlags() != null) {
-                cppCompiler.args ndkExtension.getCppFlags()
+            if (ndkConfig.getCppFlags() != null) {
+                cppCompiler.args ndkConfig.getCppFlags()
             }
-            for (String ldLibs : ndkExtension.getLdLibs()) {
-                linker.args "-l$ldLibs"
+            for (ManagedString ldLibs : ndkConfig.getLdLibs()) {
+                linker.args "-l$ldLibs.value"
             }
         }
     }
@@ -108,12 +107,12 @@ class NdkConfiguration {
             TaskContainer tasks,
             SharedLibraryBinarySpec binary,
             File buildDir,
-            NdkExtension ndkExtension,
+            NdkConfig ndkConfig,
             NdkHandler ndkHandler) {
-        StlConfiguration.apply(ndkHandler, ndkExtension.getStl(), tasks, buildDir, binary)
+        StlConfiguration.apply(ndkHandler, ndkConfig.getStl(), tasks, buildDir, binary)
 
         if (binary.buildType.name.equals(BuilderConstants.DEBUG)) {
-            setupNdkGdbDebug(tasks, binary, buildDir, ndkExtension, ndkHandler)
+            setupNdkGdbDebug(tasks, binary, buildDir, ndkConfig, ndkHandler)
         }
     }
 
@@ -137,7 +136,7 @@ class NdkConfiguration {
             TaskContainer tasks,
             NativeBinarySpec binary,
             File buildDir,
-            NdkExtension ndkExtension,
+            NdkConfig ndkConfig,
             NdkHandler handler) {
         Task copyGdbServerTask = tasks.create(
                 name: NdkNamingScheme.getTaskName(binary, "copy", "GdbServer"),
@@ -153,7 +152,7 @@ class NdkConfiguration {
                 name: NdkNamingScheme.getTaskName(binary, "create", "Gdbsetup"),
                 type: GdbSetupTask) { def task ->
             task.ndkHandler = handler
-            task.extension = ndkExtension
+            task.extension = ndkConfig
             task.binary = binary
             task.outputDir = new File(buildDir, NdkNamingScheme.getOutputDirectoryName(binary))
         }

@@ -19,8 +19,8 @@ package com.android.build.gradle.model
 import com.android.build.gradle.internal.ProductFlavorCombo
 import com.android.build.gradle.internal.dsl.GroupableProductFlavor
 import com.android.build.gradle.internal.dsl.GroupableProductFlavorFactory
-import com.android.build.gradle.managed.BuildTypeAdaptor
 import com.android.build.gradle.managed.BuildType
+import com.android.build.gradle.managed.BuildTypeAdaptor
 import com.android.builder.core.BuilderConstants
 import groovy.transform.CompileStatic
 import org.gradle.api.NamedDomainObjectContainer
@@ -165,33 +165,30 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
 
         @Model
         AndroidComponentModelSourceSet androidSources (
-                ServiceRegistry serviceRegistry,
-                ProjectSourceSet projectSourceSet,
-                LanguageRegistry languageRegistry) {
+                ServiceRegistry serviceRegistry) {
             def instantiator = serviceRegistry.get(Instantiator.class)
-            def sources = new AndroidComponentModelSourceSet(instantiator, projectSourceSet)
-
-            languageRegistry.each { languageRegistration ->
-                sources.registerLanguage(languageRegistration)
-            }
-
-            // Create main source set.
-            sources.create("main")
-
+            def sources = new AndroidComponentModelSourceSet(instantiator)
             return sources
         }
 
         /**
          * Create all source sets for each AndroidBinary.
-         *
-         * Need to ensure this is done before model mutation in build.gradle.
          */
         @Mutate
         void createVariantSourceSet(
                 @Path("android.sources") AndroidComponentModelSourceSet sources,
                 @Path("android.buildTypes") ManagedSet<BuildType> buildTypes,
                 @Path("android.productFlavors") NamedDomainObjectContainer<GroupableProductFlavor> flavors,
-                List<ProductFlavorCombo> flavorGroups) {
+                List<ProductFlavorCombo> flavorGroups,
+                ProjectSourceSet projectSourceSet,
+                LanguageRegistry languageRegistry) {
+            sources.setProjectSourceSet(projectSourceSet)
+            languageRegistry.each { languageRegistration ->
+                sources.registerLanguage(languageRegistration)
+            }
+            // Create main source set.
+            sources.create("main")
+
             buildTypes.each { buildType ->
                 sources.maybeCreate(buildType.name)
             }

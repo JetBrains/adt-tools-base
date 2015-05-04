@@ -52,7 +52,7 @@ model {
         buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
     }
     android.ndk {
-        moduleName "hello-jni"
+        moduleName = "hello-jni"
     }
     android.buildTypes {
         afterEach {
