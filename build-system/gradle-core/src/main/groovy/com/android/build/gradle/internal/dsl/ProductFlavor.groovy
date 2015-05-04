@@ -35,7 +35,7 @@ import org.gradle.internal.reflect.Instantiator
 /**
  * DSL object used to configure product flavors.
  */
-class ProductFlavor extends DefaultProductFlavor {
+class ProductFlavor extends DefaultProductFlavor implements CoreProductFlavor {
 
     @NonNull
     protected final Project project
@@ -396,4 +396,25 @@ class ProductFlavor extends DefaultProductFlavor {
     void useJack(Boolean useJack) {
         setUseJack(useJack)
     }
+
+    @Deprecated
+    public void setFlavorDimension(String dimension) {
+        LoggingUtil.displayDeprecationWarning(logger, project,
+                "'flavorDimension' will be removed by Android Gradle Plugin 2.0, " +
+                        "it has been replaced by 'dimension'.")
+        setDimension(dimension);
+    }
+
+    /**
+     * Name of the dimension this product flavor belongs to. Has been replaced by
+     * <code>dimension</code>
+     */
+    @Deprecated
+    public String getFlavorDimension() {
+        LoggingUtil.displayDeprecationWarning(logger, project,
+                "'flavorDimension' will be removed by Android Gradle Plugin 2.0, " +
+                        "it has been replaced by 'dimension'.")
+        return getDimension();
+    }
+
 }

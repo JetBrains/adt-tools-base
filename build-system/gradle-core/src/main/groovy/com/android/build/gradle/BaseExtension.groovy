@@ -20,7 +20,6 @@ import com.android.annotations.NonNull
 import com.android.annotations.Nullable
 import com.android.build.gradle.api.AndroidSourceSet
 import com.android.build.gradle.api.BaseVariant
-import com.android.build.gradle.api.TestVariant
 import com.android.build.gradle.api.VariantFilter
 import com.android.build.gradle.internal.CompileOptions
 import com.android.build.gradle.internal.ExtraModelInfo
@@ -32,8 +31,8 @@ import com.android.build.gradle.internal.dsl.AaptOptions
 import com.android.build.gradle.internal.dsl.AdbOptions
 import com.android.build.gradle.internal.dsl.AndroidSourceSetFactory
 import com.android.build.gradle.internal.dsl.BuildType
+import com.android.build.gradle.internal.dsl.CoreProductFlavor
 import com.android.build.gradle.internal.dsl.DexOptions
-import com.android.build.gradle.internal.dsl.GroupableProductFlavor
 import com.android.build.gradle.internal.dsl.LintOptions
 import com.android.build.gradle.internal.dsl.PackagingOptions
 import com.android.build.gradle.internal.dsl.PreprocessingOptions
@@ -112,7 +111,7 @@ public abstract class BaseExtension {
     final Splits splits
 
     /** All product flavors used by this project. */
-    final NamedDomainObjectContainer<GroupableProductFlavor> productFlavors
+    final NamedDomainObjectContainer<CoreProductFlavor> productFlavors
 
     /** Build types used by this project. */
     final NamedDomainObjectContainer<BuildType> buildTypes
@@ -159,7 +158,7 @@ public abstract class BaseExtension {
             @NonNull AndroidBuilder androidBuilder,
             @NonNull SdkHandler sdkHandler,
             @NonNull NamedDomainObjectContainer<BuildType> buildTypes,
-            @NonNull NamedDomainObjectContainer<GroupableProductFlavor> productFlavors,
+            @NonNull NamedDomainObjectContainer<ProductFlavor> productFlavors,
             @NonNull NamedDomainObjectContainer<SigningConfig> signingConfigs,
             @NonNull ExtraModelInfo extraModelInfo,
             boolean isLibrary) {
@@ -329,7 +328,7 @@ public abstract class BaseExtension {
     /**
      * Configures the product flavors.
      */
-    void productFlavors(Action<? super NamedDomainObjectContainer<GroupableProductFlavor>> action) {
+    void productFlavors(Action<? super NamedDomainObjectContainer<CoreProductFlavor>> action) {
         checkWritability()
         action.execute(productFlavors)
     }
@@ -542,7 +541,7 @@ public abstract class BaseExtension {
 
     public void registerProductFlavorSourceProvider(
             @NonNull String name,
-            @NonNull ProductFlavor productFlavor,
+            @NonNull CoreProductFlavor productFlavor,
             @NonNull SourceProvider sourceProvider) {
         extraModelInfo.registerProductFlavorSourceProvider(name, productFlavor, sourceProvider)
     }

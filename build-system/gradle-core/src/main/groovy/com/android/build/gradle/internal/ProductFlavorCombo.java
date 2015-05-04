@@ -18,7 +18,6 @@ package com.android.build.gradle.internal;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.gradle.api.GroupableProductFlavor;
 import com.android.builder.model.ProductFlavor;
 import com.android.utils.StringHelper;
 import com.google.common.collect.ArrayListMultimap;
@@ -35,17 +34,17 @@ public class ProductFlavorCombo {
     private String name;
 
     @NonNull
-    private final List<GroupableProductFlavor> flavorList;
+    private final List<ProductFlavor> flavorList;
 
     /**
      * Create a ProductFlavorCombo.
      * @param flavors Lists of ProductFlavor.
      */
-    public ProductFlavorCombo(@NonNull GroupableProductFlavor... flavors) {
+    public ProductFlavorCombo(@NonNull ProductFlavor... flavors) {
         flavorList = ImmutableList.copyOf(flavors);
     }
 
-    public ProductFlavorCombo(@NonNull Iterable<GroupableProductFlavor> flavors) {
+    public ProductFlavorCombo(@NonNull Iterable<ProductFlavor> flavors) {
         flavorList = ImmutableList.copyOf(flavors);
     }
 
@@ -68,7 +67,7 @@ public class ProductFlavorCombo {
     }
 
     @NonNull
-    public List<GroupableProductFlavor> getFlavorList() {
+    public List<ProductFlavor> getFlavorList() {
         return flavorList;
     }
 
@@ -81,18 +80,18 @@ public class ProductFlavorCombo {
     @NonNull
     public static List<ProductFlavorCombo> createCombinations(
             @Nullable List<String> flavorDimensions,
-            @NonNull Iterable<? extends GroupableProductFlavor> productFlavors) {
+            @NonNull Iterable<? extends ProductFlavor> productFlavors) {
 
         List <ProductFlavorCombo> result = Lists.newArrayList();
         if (flavorDimensions == null || flavorDimensions.isEmpty()) {
-            for (GroupableProductFlavor flavor : productFlavors) {
+            for (ProductFlavor flavor : productFlavors) {
                 result.add(new ProductFlavorCombo(ImmutableList.of(flavor)));
             }
         } else {
             // need to group the flavor per dimension.
             // First a map of dimension -> list(ProductFlavor)
-            ArrayListMultimap<String, GroupableProductFlavor> map = ArrayListMultimap.create();
-            for (GroupableProductFlavor flavor : productFlavors) {
+            ArrayListMultimap<String, ProductFlavor> map = ArrayListMultimap.create();
+            for (ProductFlavor flavor : productFlavors) {
                 String flavorDimension = flavor.getDimension();
 
                 if (flavorDimension == null) {
@@ -109,7 +108,7 @@ public class ProductFlavorCombo {
             }
 
             createProductFlavorCombinations(result,
-                    new GroupableProductFlavor[flavorDimensions.size()],
+                    new ProductFlavor[flavorDimensions.size()],
                     0, flavorDimensions, map);
         }
         return result;
@@ -118,10 +117,9 @@ public class ProductFlavorCombo {
     /**
      * Remove all null reference from an array and create an ImmutableList it.
      */
-    private static ImmutableList<GroupableProductFlavor> filterNullFromArray(
-            GroupableProductFlavor[] flavors) {
-        ImmutableList.Builder<GroupableProductFlavor> builder = ImmutableList.builder();
-        for (GroupableProductFlavor flavor : flavors) {
+    private static ImmutableList<ProductFlavor> filterNullFromArray(ProductFlavor[] flavors) {
+        ImmutableList.Builder<ProductFlavor> builder = ImmutableList.builder();
+        for (ProductFlavor flavor : flavors) {
             if (flavor != null) {
                 builder.add(flavor);
             }
@@ -131,10 +129,10 @@ public class ProductFlavorCombo {
 
     private static void createProductFlavorCombinations(
             List<ProductFlavorCombo> flavorGroups,
-            GroupableProductFlavor[] group,
+            ProductFlavor[] group,
             int index,
             List<String> flavorDimensionList,
-            ListMultimap<String, GroupableProductFlavor> map) {
+            ListMultimap<String, ProductFlavor> map) {
         if (index == flavorDimensionList.size()) {
             flavorGroups.add(new ProductFlavorCombo(filterNullFromArray(group)));
             return;
@@ -145,7 +143,7 @@ public class ProductFlavorCombo {
         String dimension = flavorDimensionList.get(index);
 
         // from our map, get all the possible flavors in that dimension.
-        List<GroupableProductFlavor> flavorList = map.get(dimension);
+        List<ProductFlavor> flavorList = map.get(dimension);
 
         // loop on all the flavors to add them to the current index and recursively fill the next
         // indices.
@@ -153,7 +151,7 @@ public class ProductFlavorCombo {
             throw new RuntimeException(String.format(
                     "No flavor is associated with flavor dimension '%1$s'.", dimension));
         } else {
-            for (GroupableProductFlavor flavor : flavorList) {
+            for (ProductFlavor flavor : flavorList) {
                 group[index] = flavor;
                 createProductFlavorCombinations(
                         flavorGroups, group, index + 1, flavorDimensionList, map);

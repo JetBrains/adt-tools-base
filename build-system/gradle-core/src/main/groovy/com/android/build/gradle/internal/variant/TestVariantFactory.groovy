@@ -20,7 +20,7 @@ import com.android.annotations.NonNull
 import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.TestExtension
 import com.android.build.gradle.internal.dsl.BuildType
-import com.android.build.gradle.internal.dsl.GroupableProductFlavor
+import com.android.build.gradle.internal.dsl.ProductFlavor
 import com.android.build.gradle.internal.dsl.SigningConfig
 import com.android.builder.core.AndroidBuilder
 import org.gradle.api.GradleException
@@ -70,7 +70,7 @@ public class TestVariantFactory extends ApplicationVariantFactory {
     @Override
     public void createDefaultComponents(
             @NonNull NamedDomainObjectContainer<BuildType> buildTypes,
-            @NonNull NamedDomainObjectContainer<GroupableProductFlavor> productFlavors,
+            @NonNull NamedDomainObjectContainer<ProductFlavor> productFlavors,
             @NonNull NamedDomainObjectContainer<SigningConfig> signingConfigs) {
         // don't call super as we don't want the default app version.
         // must create signing config first so that build type 'debug' can be initialized

@@ -30,8 +30,8 @@ import com.android.build.gradle.internal.VariantManager
 import com.android.build.gradle.internal.coverage.JacocoPlugin
 import com.android.build.gradle.internal.dsl.BuildType
 import com.android.build.gradle.internal.dsl.BuildTypeFactory
-import com.android.build.gradle.internal.dsl.GroupableProductFlavor
-import com.android.build.gradle.internal.dsl.GroupableProductFlavorFactory
+import com.android.build.gradle.internal.dsl.ProductFlavor
+import com.android.build.gradle.internal.dsl.ProductFlavorFactory
 import com.android.build.gradle.internal.dsl.SigningConfig
 import com.android.build.gradle.internal.dsl.SigningConfigFactory
 import com.android.build.gradle.internal.model.DefaultAndroidConfig
@@ -308,8 +308,8 @@ public abstract class BasePlugin {
     private void createExtension() {
         def buildTypeContainer = project.container(BuildType,
                 new BuildTypeFactory(instantiator, project, project.getLogger()))
-        def productFlavorContainer = project.container(GroupableProductFlavor,
-                new GroupableProductFlavorFactory(instantiator, project, project.getLogger()))
+        def productFlavorContainer = project.container(ProductFlavor,
+                new ProductFlavorFactory(instantiator, project, project.getLogger()))
         def signingConfigContainer = project.container(SigningConfig,
                 new SigningConfigFactory(instantiator))
 
@@ -361,7 +361,7 @@ public abstract class BasePlugin {
             variantManager.addBuildType(buildType)
         }
 
-        productFlavorContainer.whenObjectAdded { GroupableProductFlavor productFlavor ->
+        productFlavorContainer.whenObjectAdded { ProductFlavor productFlavor ->
             variantManager.addProductFlavor(productFlavor)
         }
 

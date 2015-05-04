@@ -108,7 +108,7 @@ public interface BaseVariant {
      * This is always non-null but could be empty.
      */
     @NonNull
-    List<GroupableProductFlavor> getProductFlavors();
+    List<ProductFlavor> getProductFlavors();
 
     /**
      * Returns a list of sorted SourceProvider in order of ascending order, meaning, the earlier

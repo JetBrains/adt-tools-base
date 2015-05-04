@@ -17,7 +17,7 @@
 package com.android.build.gradle.internal.api;
 
 import com.android.annotations.NonNull;
-import com.android.build.gradle.api.GroupableProductFlavor;
+import com.android.builder.model.ProductFlavor;
 
 import java.lang.reflect.Array;
 import java.util.Collection;
@@ -29,16 +29,16 @@ import java.util.ListIterator;
  * Implementation of List that create read-only GroupableProductFlavor on the fly as they are
  * queried. The list itself is immutable.
  */
-public class ImmutableFlavorList implements List<GroupableProductFlavor> {
+public class ImmutableFlavorList implements List<ProductFlavor> {
 
     @NonNull
-    private final List<? extends GroupableProductFlavor> list;
+    private final List<? extends ProductFlavor> list;
 
     @NonNull
     private final ReadOnlyObjectProvider immutableObjectProvider;
 
     ImmutableFlavorList(
-            @NonNull List<? extends GroupableProductFlavor> list,
+            @NonNull List<? extends ProductFlavor> list,
             @NonNull ReadOnlyObjectProvider immutableObjectProvider) {
         this.list = list;
         this.immutableObjectProvider = immutableObjectProvider;
@@ -61,16 +61,16 @@ public class ImmutableFlavorList implements List<GroupableProductFlavor> {
 
     @NonNull
     @Override
-    public Iterator<GroupableProductFlavor> iterator() {
-        final Iterator<? extends GroupableProductFlavor> baseIterator = list.iterator();
-        return new Iterator<GroupableProductFlavor>() {
+    public Iterator<ProductFlavor> iterator() {
+        final Iterator<? extends ProductFlavor> baseIterator = list.iterator();
+        return new Iterator<ProductFlavor>() {
             @Override
             public boolean hasNext() {
                 return baseIterator.hasNext();
             }
 
             @Override
-            public GroupableProductFlavor next() {
+            public ProductFlavor next() {
                 return immutableObjectProvider.getProductFlavor(baseIterator.next());
             }
 
@@ -116,7 +116,7 @@ public class ImmutableFlavorList implements List<GroupableProductFlavor> {
     }
 
     @Override
-    public boolean add(GroupableProductFlavor e) {
+    public boolean add(ProductFlavor e) {
         throw new UnsupportedOperationException();
     }
 
@@ -131,12 +131,12 @@ public class ImmutableFlavorList implements List<GroupableProductFlavor> {
     }
 
     @Override
-    public boolean addAll(@NonNull Collection<? extends GroupableProductFlavor> es) {
+    public boolean addAll(@NonNull Collection<? extends ProductFlavor> es) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public boolean addAll(int i, @NonNull Collection<? extends GroupableProductFlavor> es) {
+    public boolean addAll(int i, @NonNull Collection<? extends ProductFlavor> es) {
         throw new UnsupportedOperationException();
     }
 
@@ -156,23 +156,23 @@ public class ImmutableFlavorList implements List<GroupableProductFlavor> {
     }
 
     @Override
-    public GroupableProductFlavor get(int i) {
-        GroupableProductFlavor gpf = list.get(i);
+    public ProductFlavor get(int i) {
+        ProductFlavor gpf = list.get(i);
         return immutableObjectProvider.getProductFlavor(gpf);
     }
 
     @Override
-    public GroupableProductFlavor set(int i, GroupableProductFlavor e) {
+    public ProductFlavor set(int i, ProductFlavor e) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void add(int i, GroupableProductFlavor e) {
+    public void add(int i, ProductFlavor e) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public GroupableProductFlavor remove(int i) {
+    public ProductFlavor remove(int i) {
         throw new UnsupportedOperationException();
     }
 
@@ -194,16 +194,16 @@ public class ImmutableFlavorList implements List<GroupableProductFlavor> {
 
     @NonNull
     @Override
-    public ListIterator<GroupableProductFlavor> listIterator() {
-        final ListIterator<? extends GroupableProductFlavor> baseIterator = list.listIterator();
-        return new ListIterator<GroupableProductFlavor>() {
+    public ListIterator<ProductFlavor> listIterator() {
+        final ListIterator<? extends ProductFlavor> baseIterator = list.listIterator();
+        return new ListIterator<ProductFlavor>() {
             @Override
             public boolean hasNext() {
                 return baseIterator.hasNext();
             }
 
             @Override
-            public GroupableProductFlavor next() {
+            public ProductFlavor next() {
                 return immutableObjectProvider.getProductFlavor(baseIterator.next());
             }
 
@@ -213,7 +213,7 @@ public class ImmutableFlavorList implements List<GroupableProductFlavor> {
             }
 
             @Override
-            public GroupableProductFlavor previous() {
+            public ProductFlavor previous() {
                 return immutableObjectProvider.getProductFlavor(baseIterator.previous());
             }
 
@@ -233,12 +233,12 @@ public class ImmutableFlavorList implements List<GroupableProductFlavor> {
             }
 
             @Override
-            public void set(GroupableProductFlavor productFlavor) {
+            public void set(ProductFlavor productFlavor) {
                 throw new UnsupportedOperationException();
             }
 
             @Override
-            public void add(GroupableProductFlavor productFlavor) {
+            public void add(ProductFlavor productFlavor) {
                 throw new UnsupportedOperationException();
             }
         };
@@ -246,16 +246,16 @@ public class ImmutableFlavorList implements List<GroupableProductFlavor> {
 
     @NonNull
     @Override
-    public ListIterator<GroupableProductFlavor> listIterator(int i) {
-        final ListIterator<? extends GroupableProductFlavor> baseIterator = list.listIterator(i);
-        return new ListIterator<GroupableProductFlavor>() {
+    public ListIterator<ProductFlavor> listIterator(int i) {
+        final ListIterator<? extends ProductFlavor> baseIterator = list.listIterator(i);
+        return new ListIterator<ProductFlavor>() {
             @Override
             public boolean hasNext() {
                 return baseIterator.hasNext();
             }
 
             @Override
-            public GroupableProductFlavor next() {
+            public ProductFlavor next() {
                 return immutableObjectProvider.getProductFlavor(baseIterator.next());
             }
 
@@ -265,7 +265,7 @@ public class ImmutableFlavorList implements List<GroupableProductFlavor> {
             }
 
             @Override
-            public GroupableProductFlavor previous() {
+            public ProductFlavor previous() {
                 return immutableObjectProvider.getProductFlavor(baseIterator.previous());
             }
 
@@ -285,12 +285,12 @@ public class ImmutableFlavorList implements List<GroupableProductFlavor> {
             }
 
             @Override
-            public void set(GroupableProductFlavor productFlavor) {
+            public void set(ProductFlavor productFlavor) {
                 throw new UnsupportedOperationException();
             }
 
             @Override
-            public void add(GroupableProductFlavor productFlavor) {
+            public void add(ProductFlavor productFlavor) {
                 throw new UnsupportedOperationException();
             }
         };
@@ -298,7 +298,7 @@ public class ImmutableFlavorList implements List<GroupableProductFlavor> {
 
     @NonNull
     @Override
-    public List<GroupableProductFlavor> subList(int i, int i2) {
+    public List<ProductFlavor> subList(int i, int i2) {
         throw new UnsupportedOperationException();
     }
 }

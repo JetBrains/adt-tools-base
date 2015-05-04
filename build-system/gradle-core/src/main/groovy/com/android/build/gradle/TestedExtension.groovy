@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 package com.android.build.gradle
+
 import com.android.annotations.NonNull
 import com.android.build.gradle.api.TestVariant
 import com.android.build.gradle.api.UnitTestVariant
 import com.android.build.gradle.internal.ExtraModelInfo
 import com.android.build.gradle.internal.SdkHandler
 import com.android.build.gradle.internal.dsl.BuildType
-import com.android.build.gradle.internal.dsl.GroupableProductFlavor
+import com.android.build.gradle.internal.dsl.ProductFlavor
 import com.android.build.gradle.internal.dsl.SigningConfig
 import com.android.builder.core.AndroidBuilder
 import groovy.transform.CompileStatic
@@ -32,6 +33,7 @@ import org.gradle.internal.reflect.Instantiator
 
 import static com.android.builder.core.VariantType.ANDROID_TEST
 import static com.android.builder.core.VariantType.UNIT_TEST
+
 /**
  * base 'android' extension for plugins that have a test component.
  */
@@ -57,7 +59,7 @@ public abstract class TestedExtension extends BaseExtension {
             @NonNull AndroidBuilder androidBuilder,
             @NonNull SdkHandler sdkHandler,
             @NonNull NamedDomainObjectContainer<BuildType> buildTypes,
-            @NonNull NamedDomainObjectContainer<GroupableProductFlavor> productFlavors,
+            @NonNull NamedDomainObjectContainer<ProductFlavor> productFlavors,
             @NonNull NamedDomainObjectContainer<SigningConfig> signingConfigs,
             @NonNull ExtraModelInfo extraModelInfo,
             boolean isLibrary) {

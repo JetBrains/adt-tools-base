@@ -25,6 +25,7 @@ import com.android.build.gradle.ndk.internal.NdkExtensionConvention
 import com.android.build.gradle.ndk.internal.NdkHandler
 import com.android.build.gradle.ndk.internal.ToolchainConfiguration
 import com.android.builder.core.VariantConfiguration
+import com.android.builder.model.ProductFlavor
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
@@ -70,6 +71,7 @@ class NdkComponentModelPlugin implements Plugin<Project> {
         }
     }
 
+    @SuppressWarnings("GrMethodMayBeStatic")
     static class Rules extends RuleSource {
         @Mutate
         void initializeNdkConfig(@Path("android.ndk") NdkConfig ndk) {
@@ -234,7 +236,7 @@ class NdkComponentModelPlugin implements Plugin<Project> {
     private static Collection<SharedLibraryBinarySpec> getNativeBinaries(
             NativeLibrarySpec library,
             com.android.builder.model.BuildType buildType,
-            List<? extends com.android.build.gradle.api.GroupableProductFlavor> productFlavors) {
+            List<? extends ProductFlavor> productFlavors) {
         ProductFlavorCombo flavorGroup = new ProductFlavorCombo(productFlavors);
         library.binaries.withType(SharedLibraryBinarySpec).matching { binary ->
             (binary.buildType.name.equals(buildType.name)
@@ -259,6 +261,7 @@ class NdkComponentModelPlugin implements Plugin<Project> {
                             || (binary.flavor.name.equals("default")
                                     && variantConfig.getFlavorName().isEmpty()))
                     && (variantConfig.getNdkConfig().getAbiFilters() == null
+                            || variantConfig.getNdkConfig().getAbiFilters().isEmpty()
                             || variantConfig.getNdkConfig().getAbiFilters().contains(
                                     binary.targetPlatform.name)))
         }

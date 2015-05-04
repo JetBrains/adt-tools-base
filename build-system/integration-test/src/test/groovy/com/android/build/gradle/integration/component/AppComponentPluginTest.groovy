@@ -66,8 +66,8 @@ model {
         create { name = "b1" }
     }
     android.productFlavors {
-        f1
-        f2
+        create { name = "f1" }
+        create { name = "f2" }
     }
 }
 """

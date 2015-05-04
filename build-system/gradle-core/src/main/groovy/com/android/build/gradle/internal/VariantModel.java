@@ -17,8 +17,7 @@
 package com.android.build.gradle.internal;
 
 import com.android.annotations.NonNull;
-import com.android.build.gradle.internal.dsl.GroupableProductFlavor;
-import com.android.build.gradle.internal.dsl.ProductFlavor;
+import com.android.build.gradle.internal.dsl.CoreProductFlavor;
 import com.android.builder.model.SigningConfig;
 
 import java.util.Map;
@@ -29,13 +28,13 @@ import java.util.Map;
 public interface VariantModel {
 
     @NonNull
-    ProductFlavorData<ProductFlavor> getDefaultConfig();
+    ProductFlavorData<CoreProductFlavor> getDefaultConfig();
 
     @NonNull
     Map<String, BuildTypeData> getBuildTypes();
 
     @NonNull
-    Map<String, ProductFlavorData<GroupableProductFlavor>> getProductFlavors();
+    Map<String, ProductFlavorData<CoreProductFlavor>> getProductFlavors();
 
     @NonNull
     Map<String, ? extends SigningConfig> getSigningConfigs();

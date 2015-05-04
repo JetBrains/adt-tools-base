@@ -18,8 +18,8 @@ package com.android.build.gradle.internal
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
 import com.android.build.gradle.internal.api.DefaultAndroidSourceSet
+import com.android.build.gradle.internal.dsl.CoreProductFlavor
 import com.android.builder.core.BuilderConstants
-import com.android.builder.core.DefaultProductFlavor
 import groovy.transform.CompileStatic
 import org.gradle.api.Project
 import org.gradle.api.Task
@@ -27,7 +27,7 @@ import org.gradle.api.Task
  * Class containing a ProductFlavor and associated data (sourcesets)
  */
 @CompileStatic
-public class ProductFlavorData<T extends DefaultProductFlavor> extends VariantDimensionData {
+public class ProductFlavorData<T extends CoreProductFlavor> extends VariantDimensionData {
     final T productFlavor
     final Task assembleTask
 
