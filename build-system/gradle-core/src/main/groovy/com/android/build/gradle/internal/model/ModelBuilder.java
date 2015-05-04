@@ -15,6 +15,7 @@
  */
 
 package com.android.build.gradle.internal.model;
+
 import static com.android.builder.model.AndroidProject.ARTIFACT_MAIN;
 
 import com.android.annotations.NonNull;
@@ -58,7 +59,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
-import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.api.Project;
 import org.gradle.tooling.provider.model.ToolingModelBuilder;
 
@@ -75,7 +75,7 @@ public class ModelBuilder implements ToolingModelBuilder {
     @NonNull
     private final AndroidBuilder androidBuilder;
     @NonNull
-    private final BaseExtension extension;
+    private final AndroidConfig config;
     @NonNull
     private final ExtraModelInfo extraModelInfo;
     @NonNull
@@ -89,11 +89,11 @@ public class ModelBuilder implements ToolingModelBuilder {
             @NonNull AndroidBuilder androidBuilder,
             @NonNull VariantManager variantManager,
             @NonNull TaskManager taskManager,
-            @NonNull BaseExtension extension,
+            @NonNull AndroidConfig config,
             @NonNull ExtraModelInfo extraModelInfo,
             boolean isLibrary) {
         this.androidBuilder = androidBuilder;
-        this.extension = extension;
+        this.config = config;
         this.extraModelInfo = extraModelInfo;
         this.variantManager = variantManager;
         this.taskManager = taskManager;
@@ -112,11 +112,7 @@ public class ModelBuilder implements ToolingModelBuilder {
 
     @Override
     public Object buildAll(String modelName, Project project) {
-        NamedDomainObjectContainer<SigningConfig> signingConfigs;
-
-        // Cast is needed due to covariance issues.
-        //noinspection unchecked
-        signingConfigs = (NamedDomainObjectContainer<SigningConfig>) (NamedDomainObjectContainer<?>) extension.getSigningConfigs();
+        BaseExtension extension = config.getExtension();
 
         // Get the boot classpath. This will ensure the target is configured.
         List<String> bootClasspath = androidBuilder.getBootClasspathAsStrings();
@@ -151,7 +147,7 @@ public class ModelBuilder implements ToolingModelBuilder {
                 androidBuilder.getTarget() != null ? androidBuilder.getTarget().hashString() : "",
                 bootClasspath,
                 frameworkSource,
-                cloneSigningConfigs(signingConfigs),
+                cloneSigningConfigs(config.getSigningConfigs()),
                 aaptOptions,
                 artifactMetaDataList,
                 findUnresolvedDependencies(syncIssues),
@@ -453,7 +449,7 @@ public class ModelBuilder implements ToolingModelBuilder {
 
     @NonNull
     private static Collection<SigningConfig> cloneSigningConfigs(
-            @NonNull Collection<SigningConfig> signingConfigs) {
+            @NonNull Collection<? extends SigningConfig> signingConfigs) {
         Collection<SigningConfig> results = Lists.newArrayListWithCapacity(signingConfigs.size());
 
         for (SigningConfig signingConfig : signingConfigs) {

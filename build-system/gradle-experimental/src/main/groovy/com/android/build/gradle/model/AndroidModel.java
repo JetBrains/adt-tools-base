@@ -17,34 +17,29 @@
 package com.android.build.gradle.model;
 
 import com.android.build.gradle.BaseExtension;
-import com.android.build.gradle.internal.dsl.BuildType;
 import com.android.build.gradle.internal.dsl.GroupableProductFlavor;
-import com.android.build.gradle.internal.dsl.SigningConfig;
+import com.android.build.gradle.managed.BuildType;
+import com.android.build.gradle.managed.SigningConfig;
 import com.android.build.gradle.ndk.NdkExtension;
 
 import org.gradle.api.NamedDomainObjectContainer;
 import org.gradle.model.Managed;
 import org.gradle.model.Unmanaged;
+import org.gradle.model.collection.ManagedSet;
 
 /**
  * Component model for all Android plugin.
  */
 @Managed
 public interface AndroidModel {
-    @Unmanaged
-    NamedDomainObjectContainer<BuildType> getBuildTypes();
-
-    void setBuildTypes(NamedDomainObjectContainer<BuildType> buildTypes);
+    ManagedSet<BuildType> getBuildTypes();
 
     @Unmanaged
     NamedDomainObjectContainer<GroupableProductFlavor> getProductFlavors();
 
     void setProductFlavors(NamedDomainObjectContainer<GroupableProductFlavor> productFlavors);
 
-    @Unmanaged
-    NamedDomainObjectContainer<SigningConfig> getSigningConfigs();
-
-    void setSigningConfigs(NamedDomainObjectContainer<SigningConfig> signingConfigs);
+    ManagedSet<SigningConfig> getSigningConfigs();
 
     @Unmanaged
     AndroidComponentModelSourceSet getSources();

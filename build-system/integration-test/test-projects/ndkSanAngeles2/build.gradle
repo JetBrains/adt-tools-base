@@ -24,8 +24,10 @@ model {
         }
     }
     android.buildTypes {
-        debug {
-            debuggable true
+        afterEach {
+            if (name == "debug") {
+                isJniDebuggable = true
+            }
         }
     }
 

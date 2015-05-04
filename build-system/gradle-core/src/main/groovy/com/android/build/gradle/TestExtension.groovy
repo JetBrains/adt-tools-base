@@ -16,7 +16,6 @@
 package com.android.build.gradle
 
 import com.android.annotations.NonNull
-import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.api.ApplicationVariant
 import com.android.build.gradle.api.BaseVariant
 import com.android.build.gradle.internal.ExtraModelInfo
