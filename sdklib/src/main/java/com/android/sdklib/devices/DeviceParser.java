@@ -439,38 +439,44 @@ public class DeviceParser {
     @NonNull
     public static List<Device> parse(@NonNull File devicesFile)
             throws SAXException, ParserConfigurationException, IOException {
-        InputStream stream = null;
-        try {
-            stream = new FileInputStream(devicesFile);
-            return parseImpl(stream, devicesFile.getAbsoluteFile().getParentFile());
-        } finally {
-            if (stream != null) {
-                try {
-                    stream.close();
-                } catch (IOException ignore) {}
-            }
-        }
+        // stream closed by parseImpl.
+        @SuppressWarnings("IOResourceOpenedButNotSafelyClosed")
+        InputStream stream = new FileInputStream(devicesFile);
+        return parseImpl(stream, devicesFile.getAbsoluteFile().getParentFile());
     }
 
+    /**
+     * This method closes the stream.
+     */
     @NonNull
     public static List<Device> parse(@NonNull InputStream devices)
             throws SAXException, IOException, ParserConfigurationException {
         return parseImpl(devices, null);
     }
 
+    /**
+     * After parsing, this method closes the stream.
+     */
     @NonNull
     private static List<Device> parseImpl(@NonNull InputStream devices, @Nullable File parentDir)
             throws SAXException, IOException, ParserConfigurationException {
-        if (!devices.markSupported()) {
-            devices = new BufferedInputStream(devices);
+        try {
+            if (!devices.markSupported()) {
+                //noinspection IOResourceOpenedButNotSafelyClosed
+                devices = new BufferedInputStream(devices);  // closed in the finally block.
+            }
+            devices.mark(500000);
+            int version = DeviceSchema.getXmlSchemaVersion(devices);
+            SAXParser parser = getParser(version);
+            DeviceHandler dHandler = new DeviceHandler(parentDir);
+            devices.reset();
+            parser.parse(devices, dHandler);
+            return dHandler.getDevices();
         }
-        devices.mark(500000);
-        int version = DeviceSchema.getXmlSchemaVersion(devices);
-        SAXParser parser = getParser(version);
-        DeviceHandler dHandler = new DeviceHandler(parentDir);
-        devices.reset();
-        parser.parse(devices, dHandler);
-        return dHandler.getDevices();
+        finally {
+            // It's better to close the stream here since we may have created it above.
+            devices.close();
+        }
     }
 
     @NonNull
