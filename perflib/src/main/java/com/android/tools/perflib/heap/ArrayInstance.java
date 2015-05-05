@@ -73,6 +73,10 @@ public class ArrayInstance extends Instance {
         }
     }
 
+    public Type getArrayType() {
+        return mType;
+    }
+
     public final String toString() {
         return String.format("%s[%d]@0x%08x", mType.name(), mLength, mId);
     }
