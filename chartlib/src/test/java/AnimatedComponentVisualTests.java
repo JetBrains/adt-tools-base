@@ -112,7 +112,7 @@ public class AnimatedComponentVisualTests extends JDialog {
         });
     }
 
-    static interface Value {
+    interface Value {
 
         void set(int v);
 
@@ -137,6 +137,7 @@ public class AnimatedComponentVisualTests extends JDialog {
         panel.add(slider, BorderLayout.CENTER);
         panel.add(new JLabel(name + ": "), BorderLayout.WEST);
         panel.add(text, BorderLayout.EAST);
+        panel.setAlignmentX(Component.LEFT_ALIGNMENT);
         return panel;
     }
 
@@ -146,12 +147,7 @@ public class AnimatedComponentVisualTests extends JDialog {
         panel.add(animated, BorderLayout.CENTER);
 
         JPanel controls = new JPanel();
-        LayoutManager manager;
-        try {
-            manager = (LayoutManager) Class.forName("sun.awt.VerticalBagLayout").newInstance();
-        } catch (Exception e) {
-            manager = new BoxLayout(controls, BoxLayout.Y_AXIS);
-        }
+        LayoutManager manager = new BoxLayout(controls, BoxLayout.Y_AXIS);
         controls.setLayout(manager);
         controls.setPreferredSize(new Dimension(300, 800));
         panel.add(controls, BorderLayout.WEST);
@@ -160,8 +156,8 @@ public class AnimatedComponentVisualTests extends JDialog {
 
     private static Component createButton(String label, ActionListener action) {
         JButton button = new JButton(label);
-        button.setPreferredSize(button.getPreferredSize());
         button.addActionListener(action);
+        button.setMaximumSize(new Dimension(Integer.MAX_VALUE, button.getMaximumSize().height));
         return button;
     }
 
@@ -248,6 +244,7 @@ public class AnimatedComponentVisualTests extends JDialog {
         controls.add(createEventButton(1, events, null));
         controls.add(createEventButton(2, events, variance));
 
+        controls.add(new Box.Filler(new Dimension(0, 0), new Dimension(300, Integer.MAX_VALUE), new Dimension(300, Integer.MAX_VALUE)));
         panel.add(timeline, BorderLayout.CENTER);
         return panel;
     }
