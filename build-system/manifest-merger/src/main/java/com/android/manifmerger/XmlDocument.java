@@ -479,9 +479,7 @@ public class XmlDocument {
             addIfAbsent(mergingReport.getActionRecorder(),
                     USES_PERMISSION,
                     permission("WRITE_EXTERNAL_STORAGE"),
-                    lowerPriorityDocument.getPackageName() + " has a targetSdkVersion < 4",
-                    Pair.of("maxSdkVersion", "18") // permission became implied at 19.
-            );
+                    lowerPriorityDocument.getPackageName() + " has a targetSdkVersion < 4");
             hasWriteToExternalStoragePermission = true;
 
             addIfAbsent(mergingReport.getActionRecorder(),
@@ -499,10 +497,7 @@ public class XmlDocument {
             addIfAbsent(mergingReport.getActionRecorder(),
                     USES_PERMISSION,
                     permission("READ_EXTERNAL_STORAGE"),
-                    lowerPriorityDocument.getPackageName() + " requested WRITE_EXTERNAL_STORAGE",
-                    // NOTE TO @xav, where can we find the list of implied permissions at versions X
-                    Pair.of("maxSdkVersion", "18") // permission became implied at 19, DID IT ???
-            );
+                    lowerPriorityDocument.getPackageName() + " requested WRITE_EXTERNAL_STORAGE");
         }
 
         // Pre-JellyBean call log permission compatibility.
