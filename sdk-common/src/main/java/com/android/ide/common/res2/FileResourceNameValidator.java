@@ -136,7 +136,7 @@ public final class FileResourceNameValidator {
                 }
             }
         }
-        return getErrorTextForFileResourceNoExt(fileName);
+        return getErrorTextForNameWithoutExtension(fileName);
     }
 
     /**
@@ -146,7 +146,7 @@ public final class FileResourceNameValidator {
      * @return null if no error, otherwise a string describing the error.
      */
     @Nullable
-    private static String getErrorTextForFileResourceNoExt(
+    public static String getErrorTextForNameWithoutExtension(
             @NonNull final String fileNameWithoutExt) {
         char first = fileNameWithoutExt.charAt(0);
         if (!(first >= 'a' && first <= 'z')) {
