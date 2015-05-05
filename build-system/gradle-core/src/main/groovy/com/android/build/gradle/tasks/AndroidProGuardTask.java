@@ -44,7 +44,6 @@ import org.gradle.tooling.BuildException;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -323,7 +322,7 @@ public class AndroidProGuardTask extends ProGuardTask implements FileSupplier {
 
                 if (testedVariantData != null) {
                     // input the tested app as library
-                    proguardTask.libraryjars(testedVariantData.javaCompileTask.getDestinationDir());
+                    proguardTask.libraryjars(testedVariantData.javacTask.getDestinationDir());
                     // including its dependencies
                     Closure testedPackagedJars = new Closure<Set<File>>(this, this) {
                         public Set<File> doCall(Object it) {

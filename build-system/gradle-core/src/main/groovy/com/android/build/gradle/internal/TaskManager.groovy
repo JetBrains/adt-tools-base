@@ -82,7 +82,6 @@ import com.android.build.gradle.tasks.NdkCompile
 import com.android.build.gradle.tasks.PackageApplication
 import com.android.build.gradle.tasks.PackageSplitAbi
 import com.android.build.gradle.tasks.PackageSplitRes
-import com.android.build.gradle.tasks.PreCompilationVerificationTask
 import com.android.build.gradle.tasks.PreDex
 import com.android.build.gradle.tasks.PreprocessResourcesTask
 import com.android.build.gradle.tasks.ProcessAndroidResources
@@ -286,7 +285,7 @@ abstract class TaskManager {
         return Collections.singleton(variantData.ndkCompileTask.soFolder)
     }
 
-    private AndroidConfig getExtension() {
+    protected AndroidConfig getExtension() {
         return extension
     }
 
@@ -784,51 +783,42 @@ abstract class TaskManager {
         scope.aidlCompileTask.dependsOn(tasks, scope.variantData.prepareDependenciesTask)
     }
 
-    public void createJackAndUnitTestVerificationTask(
-            @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData,
-            @NonNull BaseVariantData<? extends BaseVariantOutputData> testedVariantData) {
-
-        PreCompilationVerificationTask verificationTask = project.tasks.create(
-                "preCompile${variantData.variantConfiguration.fullName.capitalize()}Java",
-                PreCompilationVerificationTask)
-        verificationTask.useJack = testedVariantData.getVariantConfiguration().getUseJack()
-        verificationTask.testSourceFiles = variantData.getJavaSources()
-        variantData.javaCompileTask.dependsOn verificationTask
-    }
-
-    public void createJavaCompileTask(
+    /**
+     * Creates the task for creating *.class files using javac. These tasks are created regardless
+     * of whether Jack is used or not, but assemble will not depend on them if it is. They are
+     * always used when running unit tests.
+     */
+    public AndroidTask<JavaCompile> createJavacTask(
             @NonNull final TaskFactory tasks,
             @NonNull final VariantScope scope) {
         BaseVariantData<? extends BaseVariantOutputData> variantData = scope.variantData;
-        AndroidTask<JavaCompile> javaCompileTask = androidTasks.create(tasks,
+        AndroidTask<JavaCompile> javacTask = androidTasks.create(tasks,
                 new JavaCompileConfigAction(scope));
-        scope.javaCompileTask = javaCompileTask;
+        scope.javacTask = javacTask;
 
-        scope.compileTask.dependsOn(tasks, javaCompileTask);
-
-        javaCompileTask.optionalDependsOn(tasks, scope.sourceGenTask)
-        javaCompileTask.dependsOn(tasks,
+        javacTask.optionalDependsOn(tasks, scope.sourceGenTask)
+        javacTask.dependsOn(tasks,
                 scope.getVariantData().prepareDependenciesTask,
                 scope.processJavaResourcesTask);
 
         // TODO - dependency information for the compile classpath is being lost.
         // Add a temporary approximation
-        javaCompileTask.dependsOn(tasks,
+        javacTask.dependsOn(tasks,
                 scope.getVariantData().getVariantDependency().getCompileConfiguration()
                         .getBuildDependencies());
 
         if (variantData.getType().isForTesting()) {
             BaseVariantData testedVariantData =
                     ((TestVariantData) variantData).getTestedVariantData() as BaseVariantData
-            javaCompileTask.dependsOn(tasks,
-                    testedVariantData.javaCompileTask ?: testedVariantData.scope.javaCompileTask)
+            javacTask.dependsOn(tasks,
+                    testedVariantData.javacTask ?: testedVariantData.scope.javacTask)
         }
 
         // Create jar task for uses by external modules.
         if (variantData.variantDependency.classesConfiguration != null) {
             tasks.create("package${variantData.variantConfiguration.fullName.capitalize()}JarArtifact", Jar) { Jar jar ->
                 variantData.classesJarTask = jar
-                jar.dependsOn javaCompileTask.name
+                jar.dependsOn javacTask.name
 
                 // add the class files (whether they are instrumented or not.
                 jar.from({ scope.getJavaOutputDir() })
@@ -836,6 +826,27 @@ abstract class TaskManager {
                 jar.destinationDir = scope.getJavaOutputDir();
                 jar.archiveName = "classes.jar"
             }
+        }
+
+        return javacTask
+    }
+
+    /**
+     * Makes the given task the one used by top-level "compile" task.
+     */
+    public void setJavaCompilerTask(
+            @NonNull AndroidTask<? extends AbstractCompile> javaCompilerTask,
+            @NonNull TaskFactory tasks,
+            @NonNull VariantScope scope) {
+        scope.compileTask.dependsOn(tasks, javaCompilerTask)
+        scope.javaCompilerTask = javaCompilerTask
+
+        // TODO: Get rid of it once we stop keeping tasks in variant data.
+        if (scope.variantData.javacTask != null) {
+            // This is not the experimental plugin, let's update variant data, so Variants API
+            // keeps working.
+            scope.variantData.javaCompilerTask =
+                    tasks.named(javaCompilerTask.name) as AbstractCompile
         }
     }
 
@@ -911,15 +922,14 @@ abstract class TaskManager {
     void createUnitTestVariantTasks(
             @NonNull TaskFactory tasks,
             @NonNull TestVariantData variantData) {
-        BaseVariantData testedVariantData = variantData.getTestedVariantData() as BaseVariantData
         variantData.assembleVariantTask.dependsOn createMockableJar
         VariantScope variantScope = variantData.getScope()
 
         createPreBuildTasks(tasks, variantScope)
         createProcessJavaResTask(tasks, variantScope)
         createCompileAnchorTask(tasks, variantScope)
-        createJavaCompileTask(tasks, variantScope);
-        createJackAndUnitTestVerificationTask(variantData, testedVariantData)
+        AndroidTask<JavaCompile> javacTask = createJavacTask(tasks, variantScope);
+        setJavaCompilerTask(javacTask, tasks, variantScope)
         createUnitTestTask(tasks, variantData)
 
         // This hides the assemble unit test task from the task list.
@@ -994,8 +1004,8 @@ abstract class TaskManager {
         if (variantData.getVariantConfiguration().useJack) {
             createJackTask(variantData, testedVariantData);
         } else {
-            //createJavaCompileTask(variantData, testedVariantData)
-            createJavaCompileTask(tasks, variantScope)
+            AndroidTask<JavaCompile> javacTask = createJavacTask(tasks, variantScope);
+            setJavaCompilerTask(javacTask, tasks, variantScope)
             createPostCompilationTasks(tasks, variantScope)
         }
 
@@ -1045,11 +1055,11 @@ abstract class TaskManager {
         // wire the main lint task dependency.
         tasks.named(LINT) {
             it.dependsOn(LINT_COMPILE)
-            if (baseVariantData.javaCompileTask != null) {
-                it.dependsOn(baseVariantData.javaCompileTask)
+            if (baseVariantData.javacTask != null) {
+                it.dependsOn(baseVariantData.javacTask)
             }
-            if (scope.javaCompileTask != null) {
-                it.dependsOn(scope.javaCompileTask.name)
+            if (scope.javacTask != null) {
+                it.dependsOn(scope.javacTask.name)
             }
         }
 
@@ -1057,8 +1067,8 @@ abstract class TaskManager {
                 tasks, new Lint.ConfigAction(scope))
         variantLintCheck.dependsOn(tasks, LINT_COMPILE)
         variantLintCheck.optionalDependsOn(tasks,
-                baseVariantData.javaCompileTask,
-                scope.javaCompileTask)
+                baseVariantData.javacTask,
+                scope.javacTask)
     }
 
     private void createLintVitalTask(@NonNull ApkVariantData variantData) {
@@ -1071,7 +1081,7 @@ abstract class TaskManager {
             def taskName = "lintVital" + capitalizedVariantName
             Lint lintReleaseCheck = project.tasks.create(taskName, Lint)
             // TODO: Make this task depend on lintCompile too (resolve initialization order first)
-            optionalDependsOn(lintReleaseCheck, variantData.javaCompileTask)
+            optionalDependsOn(lintReleaseCheck, variantData.javacTask)
             lintReleaseCheck.setLintOptions(getExtension().lintOptions)
             lintReleaseCheck.setSdkHome(sdkHandler.getSdkFolder())
             lintReleaseCheck.setVariantName(variantName)
@@ -1105,7 +1115,7 @@ abstract class TaskManager {
 
         runTestsTask.dependsOn variantData.assembleVariantTask
 
-        AbstractCompile testCompileTask = variantData.javaCompileTask
+        AbstractCompile testCompileTask = variantData.javacTask
         runTestsTask.testClassesDir = testCompileTask.destinationDir
 
         conventionMapping(runTestsTask).map("classpath") {
@@ -1307,7 +1317,8 @@ abstract class TaskManager {
         }
         testVariantData.connectedTestTask = connectedTask
 
-        if (baseVariantData.variantConfiguration.buildType.isTestCoverageEnabled()) {
+        if (baseVariantData.variantConfiguration.buildType.isTestCoverageEnabled()
+                && !baseVariantData.variantConfiguration.useJack) {
             def reportTask = project.tasks.create(
                     "create${baseVariantData.variantConfiguration.fullName.capitalize()}CoverageReport",
                     JacocoReportTask)
@@ -1320,7 +1331,7 @@ abstract class TaskManager {
                         SimpleTestCallable.FILE_COVERAGE_EC)
             }
             conventionMapping(reportTask).map("classDir") {
-                return baseVariantData.javaCompileTask.destinationDir
+                return baseVariantData.javacTask.destinationDir
             }
             conventionMapping(reportTask).
                     map("sourceDir") { baseVariantData.getJavaSourceFoldersForCoverage() }
@@ -1516,7 +1527,7 @@ abstract class TaskManager {
             jarTask.setDestinationDir(new File(
                     "$scope.globalScope.buildDir/${FD_INTERMEDIATES}/packaged/${config.dirName}/"))
             jarTask.from(scope.javaOutputDir);
-            jarTask.dependsOn scope.javaCompileTask.name
+            jarTask.dependsOn scope.javacTask.name
             variantData.binayFileProviderTask = jarTask
         }
     }
@@ -1536,11 +1547,11 @@ abstract class TaskManager {
         // data holding dependencies and input for the dex. This gets updated as new
         // post-compilation steps are inserted between the compilation and dx.
         PostCompilationData pcData = new PostCompilationData()
-        pcData.classGeneratingTask = [scope.javaCompileTask.name]
+        pcData.classGeneratingTask = [scope.javacTask.name]
         pcData.libraryGeneratingTask =
                 [variantData.variantDependency.packageConfiguration.buildDependencies]
         pcData.inputFiles = {
-            variantData.javaCompileTask.outputs.files.files as List
+            variantData.javacTask.outputs.files.files as List
         }
         pcData.inputDir = {
             scope.javaOutputDir
@@ -1731,66 +1742,68 @@ abstract class TaskManager {
         }
 
         // ----- Create Jack Task -----
-        JackTask compileTask = project.tasks.create(
+        JackTask jackTask = project.tasks.create(
                 "compile${config.fullName.capitalize()}JavaWithJack",
                 JackTask)
-        compileTask.isVerbose = isVerbose()
-        compileTask.isDebugLog = isDebugLog()
+        jackTask.isVerbose = isVerbose()
+        jackTask.isDebugLog = isDebugLog()
 
         // Jack is compiling and also providing the binary and mapping files.
-        variantData.javaCompileTask = compileTask
-        variantData.mappingFileProviderTask = compileTask
-        variantData.binayFileProviderTask = compileTask
+        // TODO: Use setJavaCompilerTask once this uses scopes etc.
+        variantData.compileTask.dependsOn jackTask
+        variantData.javaCompilerTask = jackTask
+        variantData.jackTask = jackTask
+        variantData.mappingFileProviderTask = jackTask
+        variantData.binayFileProviderTask = jackTask
 
-        variantData.javaCompileTask.dependsOn variantData.sourceGenTask, jillRuntimeTask, jillPackagedTask
-        variantData.compileTask.dependsOn variantData.javaCompileTask
+        jackTask.dependsOn variantData.sourceGenTask, jillRuntimeTask, jillPackagedTask
         // TODO - dependency information for the compile classpath is being lost.
         // Add a temporary approximation
-        compileTask.dependsOn variantData.variantDependency.compileConfiguration.buildDependencies
+        jackTask.dependsOn variantData.variantDependency.compileConfiguration.buildDependencies
 
-        compileTask.androidBuilder = androidBuilder
-        conventionMapping(compileTask).
-                map("javaMaxHeapSize") { getExtension().dexOptions.getJavaMaxHeapSize() }
+        jackTask.androidBuilder = androidBuilder
+        conventionMapping(jackTask).map("javaMaxHeapSize") {
+            getExtension().dexOptions.getJavaMaxHeapSize()
+        }
 
-        compileTask.source = variantData.getJavaSources()
+        jackTask.source = variantData.getJavaSources()
 
-        compileTask.multiDexEnabled = config.isMultiDexEnabled()
-        compileTask.minSdkVersion = config.minSdkVersion.apiLevel
+        jackTask.multiDexEnabled = config.isMultiDexEnabled()
+        jackTask.minSdkVersion = config.minSdkVersion.apiLevel
 
         // if the tested variant is an app, add its classpath. For the libraries,
         // it's done automatically since the classpath includes the library output as a normal
         // dependency.
         if (testedVariantData instanceof ApplicationVariantData) {
-            JackTask jackTask = (JackTask) testedVariantData.javaCompileTask
-            conventionMapping(compileTask).map("classpath") {
+            conventionMapping(jackTask).map("classpath") {
                 project.fileTree(jillRuntimeTask.outputFolder) +
-                        jackTask.classpath +
-                        project.fileTree(jackTask.jackFile)
+                        testedVariantData.jackTask.classpath +
+                        project.fileTree(testedVariantData.jackTask.jackFile)
             }
         } else {
-            conventionMapping(compileTask).map("classpath") {
+            conventionMapping(jackTask).map("classpath") {
                 project.fileTree(jillRuntimeTask.outputFolder)
             }
         }
 
-        conventionMapping(compileTask).map("packagedLibraries") {
+        conventionMapping(jackTask).map("packagedLibraries") {
             project.fileTree(jillPackagedTask.outputFolder).files
         }
 
-        conventionMapping(compileTask).map("destinationDir") {
+        conventionMapping(jackTask).map("destinationDir") {
             project.file("$project.buildDir/${FD_INTERMEDIATES}/dex/${config.dirName}")
         }
 
-        conventionMapping(compileTask).map("jackFile") {
+        conventionMapping(jackTask).map("jackFile") {
             project.file(
                     "$project.buildDir/${FD_INTERMEDIATES}/packaged/${config.dirName}/classes.zip")
         }
 
-        conventionMapping(compileTask).map("tempFolder") {
+        conventionMapping(jackTask).map("tempFolder") {
             project.file("$project.buildDir/${FD_INTERMEDIATES}/tmp/jack/${config.dirName}")
         }
         if (config.isMinifyEnabled()) {
-            conventionMapping(compileTask).map("proguardFiles") {
+            conventionMapping(jackTask).map("proguardFiles") {
                 // since all the output use the same resources, we can use the first output
                 // to query for a proguard file.
                 BaseVariantOutputData variantOutputData = variantData.outputs.get(0)
@@ -1815,17 +1828,17 @@ abstract class TaskManager {
                 return proguardFiles
             }
 
-            compileTask.mappingFile = project.file(
+            jackTask.mappingFile = project.file(
                     "${project.buildDir}/${FD_OUTPUTS}/mapping/${variantData.variantConfiguration.dirName}/mapping.txt")
         }
 
-        conventionMapping(compileTask).map("jarJarRuleFile") {
+        conventionMapping(jackTask).map("jarJarRuleFile") {
             if (config.getJarJarRuleFile() != null) {
                 project.file(config.getJarJarRuleFile())
             }
         }
 
-        configureLanguageLevel(compileTask)
+        configureLanguageLevel(jackTask)
     }
 
     /**
@@ -1932,9 +1945,10 @@ abstract class TaskManager {
             packageApp.optionalDependsOn(
                     tasks,
                     shrinkTask,
+                    // TODO: When Jack is converted, add activeDexTask to VariantScope.
                     variantOutputScope.variantScope.dexTask,
-                    variantOutputScope.variantScope.javaCompileTask,
-                    variantData.javaCompileTask,  // TODO: Remove when Jack is converted to AndroidTask.
+                    variantOutputScope.variantScope.javaCompilerTask,
+                    variantData.javaCompilerTask,  // TODO: Remove when Jack is converted to AndroidTask.
                     variantOutputData.packageSplitResourcesTask,
                     variantOutputData.packageSplitAbiTask);
 

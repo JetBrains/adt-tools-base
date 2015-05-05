@@ -19,16 +19,16 @@ package com.android.build.gradle.internal
 import com.android.annotations.NonNull
 import com.android.build.gradle.AndroidConfig
 import com.android.build.gradle.internal.profile.SpanRecorders
+import com.android.build.gradle.internal.scope.AndroidTask
 import com.android.build.gradle.internal.scope.VariantScope
 import com.android.build.gradle.internal.variant.ApplicationVariantData
 import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.build.gradle.internal.variant.BaseVariantOutputData
 import com.android.builder.core.AndroidBuilder
 import com.android.builder.profile.ExecutionType
-import com.android.builder.profile.Recorder
-import com.android.builder.profile.ThreadRecorder
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
+import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry
 
 /**
@@ -107,10 +107,12 @@ class ApplicationTaskManager extends TaskManager {
 
         // Add a compile task
         SpanRecorders.record(ExecutionType.APP_TASK_MANAGER_CREATE_COMPILE_TASK) {
+            AndroidTask<JavaCompile> javacTask = createJavacTask(tasks, variantScope);
+
             if (variantData.getVariantConfiguration().getUseJack()) {
                 createJackTask(appVariantData, null /*testedVariant*/);
             } else {
-                createJavaCompileTask(tasks, variantScope);
+                setJavaCompilerTask(javacTask, tasks, variantScope)
                 createJarTask(tasks, variantScope);
                 createPostCompilationTasks(tasks, variantScope);
             }

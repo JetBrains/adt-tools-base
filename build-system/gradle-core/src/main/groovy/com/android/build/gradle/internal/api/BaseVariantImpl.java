@@ -183,15 +183,13 @@ abstract class BaseVariantImpl implements BaseVariant {
     @Override
     @Nullable
     public JavaCompile getJavaCompile() {
-        return getVariantData().javaCompileTask instanceof JavaCompile
-                ? (JavaCompile) getVariantData().javaCompileTask
-                : null;
+        return getVariantData().javacTask;
     }
 
     @NonNull
     @Override
     public AbstractCompile getJavaCompiler() {
-        return getVariantData().javaCompileTask;
+        return getVariantData().javaCompilerTask;
     }
 
     @NonNull
