@@ -232,6 +232,16 @@ public class VariantDependencies implements DependencyContainer {
         return localJars
     }
 
+    public boolean hasNonOptionalLibraries() {
+        for (LibraryDependency libraryDependency : libraries) {
+            if (!libraryDependency.isOptional()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     @Override
     public String toString() {
         return Objects.toStringHelper(this)

@@ -861,7 +861,7 @@ public class GradleTestProject implements TestRule {
             @NonNull BuildAction<Map<K, V>> action,
             boolean emulateStudio_1_0) {
 
-        BuildActionExecuter<Map<K, V>> executer = connection.action(action);
+        BuildActionExecuter<Map<K, V>> executor = connection.action(action);
 
         List<String> arguments = Lists.newArrayListWithCapacity(emulateStudio_1_0 ? 2 : 3);
         arguments.add("-P" + AndroidProject.PROPERTY_BUILD_MODEL_ONLY + "=true");
@@ -875,12 +875,12 @@ public class GradleTestProject implements TestRule {
             arguments.add("-Dorg.gradle.jvmargs=" + Joiner.on(' ').join(debugJvmArguments));
         }
 
-        executer.withArguments(Iterables.toArray(arguments, String.class));
+        executor.withArguments(Iterables.toArray(arguments, String.class));
 
-        executer.setStandardOutput(System.out);
-        executer.setStandardError(System.err);
+        executor.setStandardOutput(System.out);
+        executor.setStandardError(System.err);
 
-        return executer.run();
+        return executor.run();
     }
 
     /**

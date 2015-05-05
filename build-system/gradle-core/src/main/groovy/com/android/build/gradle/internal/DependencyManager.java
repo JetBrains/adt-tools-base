@@ -128,10 +128,11 @@ public class DependencyManager {
 
     public void resolveDependencies(
             @NonNull VariantDependencies variantDeps,
-            @Nullable VariantDependencies testedVariantDeps) {
+            @Nullable VariantDependencies testedVariantDeps,
+            @Nullable String testedProjectPath) {
         Multimap<LibraryDependency, VariantDependencies> reverseMap = ArrayListMultimap.create();
 
-        resolveDependencyForConfig(variantDeps, testedVariantDeps, reverseMap);
+        resolveDependencyForConfig(variantDeps, testedVariantDeps, testedProjectPath, reverseMap);
         processLibraries(variantDeps.getLibraries(), reverseMap);
     }
 
@@ -224,6 +225,7 @@ public class DependencyManager {
     private void resolveDependencyForConfig(
             @NonNull VariantDependencies variantDeps,
             @Nullable VariantDependencies testedVariantDeps,
+            @Nullable String testedProjectPath,
             @NonNull Multimap<LibraryDependency, VariantDependencies> reverseMap) {
 
         Configuration compileClasspath = variantDeps.getCompileConfiguration();
@@ -276,6 +278,7 @@ public class DependencyManager {
                         artifacts,
                         reverseMap,
                         currentUnresolvedDependencies,
+                        testedProjectPath,
                         0);
             } else if (dependencyResult instanceof UnresolvedDependencyResult) {
                 ComponentSelector attempted = ((UnresolvedDependencyResult) dependencyResult).getAttempted();
@@ -304,6 +307,7 @@ public class DependencyManager {
                         artifacts,
                         reverseMap,
                         currentUnresolvedDependencies,
+                        testedProjectPath,
                         0);
             } else if (dependencyResult instanceof UnresolvedDependencyResult) {
                 ComponentSelector attempted = ((UnresolvedDependencyResult) dependencyResult)
@@ -333,7 +337,7 @@ public class DependencyManager {
 
         for (LibInfo lib : compiledAndroidLibraries) {
             if (!copyOfPackagedLibs.contains(lib)) {
-                if (isLibrary) {
+                if (isLibrary || lib.isOptional()) {
                     lib.setIsOptional(true);
                 } else {
                     //noinspection ConstantConditions
@@ -709,15 +713,16 @@ public class DependencyManager {
     }
 
     private void addDependency(
-            ResolvedComponentResult resolvedComponentResult,
-            VariantDependencies configDependencies,
-            Collection<LibInfo> outLibraries,
-            List<JarInfo> outJars,
-            Map<ModuleVersionIdentifier, List<LibInfo>> alreadyFoundLibraries,
-            Map<ModuleVersionIdentifier, List<JarInfo>> alreadyFoundJars,
-            Map<ModuleVersionIdentifier, List<ResolvedArtifact>> artifacts,
-            Multimap<LibraryDependency, VariantDependencies> reverseMap,
-            Set<String> currentUnresolvedDependencies,
+            @NonNull ResolvedComponentResult resolvedComponentResult,
+            @NonNull VariantDependencies configDependencies,
+            @NonNull Collection<LibInfo> outLibraries,
+            @NonNull List<JarInfo> outJars,
+            @NonNull Map<ModuleVersionIdentifier, List<LibInfo>> alreadyFoundLibraries,
+            @NonNull Map<ModuleVersionIdentifier, List<JarInfo>> alreadyFoundJars,
+            @NonNull Map<ModuleVersionIdentifier, List<ResolvedArtifact>> artifacts,
+            @NonNull Multimap<LibraryDependency, VariantDependencies> reverseMap,
+            @NonNull Set<String> currentUnresolvedDependencies,
+            @Nullable String testedProjectPath,
             int indent) {
 
         ModuleVersionIdentifier moduleVersion = resolvedComponentResult.getModuleVersion();
@@ -772,6 +777,7 @@ public class DependencyManager {
                             artifacts,
                             reverseMap,
                             currentUnresolvedDependencies,
+                            testedProjectPath,
                             indent+1);
                 } else if (dependencyResult instanceof UnresolvedDependencyResult) {
                     ComponentSelector attempted = ((UnresolvedDependencyResult) dependencyResult).getAttempted();
@@ -837,11 +843,23 @@ public class DependencyManager {
                         }
                         // check this jar does not have a dependency on an library, as this would not work.
                         if (!nestedLibraries.isEmpty()) {
-                            configDependencies.getChecker().addSyncIssue(extraModelInfo.handleSyncError(
-                                    new MavenCoordinatesImpl(artifact).toString(),
-                                    SyncIssue.TYPE_JAR_DEPEND_ON_AAR,
-                                    String.format(
-                                    "Module version %s depends on libraries but is a jar", moduleVersion)));
+                            if (testedProjectPath != null && testedProjectPath.equals(gradlePath)) {
+                                // TODO: make sure this is a direct dependency and not a transitive one.
+                                // add nested libs as optional somehow...
+                                for (LibInfo lib : nestedLibraries) {
+                                    lib.setIsOptional(true);
+                                }
+                                outLibraries.addAll(nestedLibraries);
+
+                            } else {
+                                configDependencies.getChecker()
+                                        .addSyncIssue(extraModelInfo.handleSyncError(
+                                                new MavenCoordinatesImpl(artifact).toString(),
+                                                SyncIssue.TYPE_JAR_DEPEND_ON_AAR,
+                                                String.format(
+                                                        "Module '%s' depends on one or more Android Libraries but is a jar",
+                                                        moduleVersion)));
+                            }
                         }
 
                         if (jarsForThisModule == null) {

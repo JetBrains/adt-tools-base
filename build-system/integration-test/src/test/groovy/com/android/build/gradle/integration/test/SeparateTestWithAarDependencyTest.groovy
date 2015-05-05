@@ -15,17 +15,24 @@
  */
 
 package com.android.build.gradle.integration.test
-
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.integration.common.utils.ModelHelper
+import com.android.builder.model.AndroidArtifact
 import com.android.builder.model.AndroidProject
+import com.android.builder.model.Dependencies
+import com.android.builder.model.Variant
+import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
-import org.junit.Test;
+import org.junit.Test
 
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
 /**
- * Created by jedo on 5/4/15.
+ * Test separate test module testing an app with aar dependencies.
  */
+@CompileStatic
 public class SeparateTestWithAarDependencyTest {
 
     @ClassRule
@@ -51,11 +58,11 @@ android {
     }
 }
 dependencies {
-    compile 'com.google.android.gms:play-services:3.1.36'
+    compile 'com.android.support:appcompat-v7:22.1.0'
 }
         """
-        // Uncomment next line to reproduce issue.
-        //project.execute("clean", "assemble")
+
+        models = project.executeAndReturnMultiModel("clean", "assemble")
     }
 
     @AfterClass
@@ -65,8 +72,47 @@ dependencies {
     }
 
     @Test
-    void "check model"() throws Exception {
-        // check the content of the test model.
+    void "check app doesn't contain test app's code"() {
+        File apk = project.getSubproject('test').getApk("debug")
+        assertThatApk(apk).doesNotContainClass("Lcom/android/tests/basic/Main;")
     }
 
+    @Test
+    void "check app doesn't contain test app's layout"() {
+        File apk = project.getSubproject('test').getApk("debug")
+        assertThatApk(apk).doesNotContainResource("layout/main.xml")
+    }
+
+    @Test
+    void "check app doesn't contain test app's dependency lib's code"() {
+        File apk = project.getSubproject('test').getApk("debug")
+        assertThatApk(apk).doesNotContainClass("Landroid/support/v7/app/ActionBar;")
+    }
+
+    @Test
+    void "check app doesn't contain test app's dependency lib's resources"() {
+        File apk = project.getSubproject('test').getApk("debug")
+        assertThatApk(apk).doesNotContainResource("layout/abc_action_bar_title_item.xml")
+    }
+
+    @Test
+    void "check test model includes the tested app"() {
+        Collection<Variant> variants = models.get(":test").getVariants()
+
+        // get the main artifact of the debug artifact and its dependencies
+        Variant variant = ModelHelper.getVariant(variants, "debug")
+        AndroidArtifact artifact = variant.getMainArtifact()
+        Dependencies dependencies = artifact.getDependencies()
+
+        // check the app project shows up as a project dependency
+        Collection<String> projects = dependencies.getProjects()
+        assertThat(projects).containsExactly(":app")
+
+        // and that nothing else shows up.
+        // TODO: fix this.
+//        Collection<JavaLibrary> javaLibs = dependencies.getJavaLibraries();
+//        assertThat(javaLibs).hasSize(0);
+//        Collection<AndroidLibrary> libs = dependencies.getLibraries();
+//        assertThat(libs).hasSize(0);
+    }
 }

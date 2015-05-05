@@ -293,7 +293,7 @@ public class ProcessAndroidResources extends IncrementalTask {
             List<SymbolFileProviderImpl> list = Lists.newArrayListWithCapacity(libraries.size())
 
             for (LibraryDependency lib : libraries) {
-                list.add(new SymbolFileProviderImpl(lib.manifest, lib.symbolFile))
+                list.add(new SymbolFileProviderImpl(lib))
             }
 
             return list

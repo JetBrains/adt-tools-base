@@ -118,14 +118,7 @@ class LibraryTaskManager extends TaskManager {
                     false /*includeDependencies*/,
                     false /*process9Patch*/);
 
-            boolean hasLibraries = false;
-            for (LibraryDependency libraryDependency : variantData.variantDependency.androidDependencies) {
-                if (!libraryDependency.isOptional()) {
-                    hasLibraries = true;
-                    break;
-                }
-            }
-            if (hasLibraries) {
+            if (variantData.variantDependency.hasNonOptionalLibraries()) {
                 // Add a task to merge the resource folders, including the libraries, in order to
                 // generate the R.txt file with all the symbols, including the ones from
                 // the dependencies.
