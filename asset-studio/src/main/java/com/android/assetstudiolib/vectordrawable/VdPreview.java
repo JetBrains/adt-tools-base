@@ -16,6 +16,7 @@
 
 package com.android.assetstudiolib.vectordrawable;
 
+import com.android.annotations.Nullable;
 import com.google.common.base.Charsets;
 
 import java.awt.*;
@@ -26,14 +27,22 @@ import java.io.*;
  * Generate a Image based on the VectorDrawable's XML content.
  */
 public class VdPreview {
-    public static BufferedImage getPreviewFromVectorXml(int imageWidth, String xmlFileContent) {
+    @Nullable
+    public static BufferedImage getPreviewFromVectorXml(int imageWidth,
+                                                        @Nullable String xmlFileContent,
+                                                        @Nullable StringBuilder vdErrorLog) {
+        if (xmlFileContent == null || xmlFileContent.isEmpty()) {
+            return null;
+        }
         VdParser p = new VdParser();
         VdTree vdTree;
 
         InputStream inputStream = new ByteArrayInputStream(
             xmlFileContent.getBytes(Charsets.UTF_8));
-        vdTree = p.parse(inputStream);
-
+        vdTree = p.parse(inputStream, vdErrorLog);
+        if (vdTree == null) {
+            return null;
+        }
         // Create the image according to the vectorDrawable's aspect ratio.
         BufferedImage image = new BufferedImage(imageWidth,
                                   (int) (imageWidth / vdTree.getAspectRatio()),

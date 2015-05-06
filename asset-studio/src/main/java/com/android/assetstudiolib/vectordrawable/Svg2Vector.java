@@ -16,18 +16,16 @@
 
 package com.android.assetstudiolib.vectordrawable;
 
-import com.android.utils.XmlUtils;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Sets;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
+import java.io.*;
+import java.util.HashSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -64,29 +62,59 @@ public class Svg2Vector {
 
     public static final ImmutableMap<String, String> presentationMap =
         ImmutableMap.<String, String>builder()
-        .put(SVG_STROKE_COLOR, "android:strokeColor")
-        .put(SVG_STROKE_OPACITY, "android:strokeAlpha")
-        .put(SVG_STROKE_LINEJOINE, "android:strokeLinejoin")
-        .put(SVG_STROKE_LINECAP, "android:strokeLinecap")
-        .put(SVG_STROKE_WIDTH, "android:strokeWidth")
-        .put(SVG_FILL_COLOR, "android:fillColor")
-        .put(SVG_FILL_OPACITY, "android:fillAlpha")
-        .put(SVG_CLIP, "android:clip")
-        .put(SVG_OPACITY, "android:fillAlpha")
-        .build();
+            .put(SVG_STROKE_COLOR, "android:strokeColor")
+            .put(SVG_STROKE_OPACITY, "android:strokeAlpha")
+            .put(SVG_STROKE_LINEJOINE, "android:strokeLinejoin")
+            .put(SVG_STROKE_LINECAP, "android:strokeLinecap")
+            .put(SVG_STROKE_WIDTH, "android:strokeWidth")
+            .put(SVG_FILL_COLOR, "android:fillColor")
+            .put(SVG_FILL_OPACITY, "android:fillAlpha")
+            .put(SVG_CLIP, "android:clip").put(SVG_OPACITY, "android:fillAlpha")
+            .build();
+
+    // List all the Svg nodes that we don't support. Categorized by the types.
+    private static final HashSet<String> unsupportedSvgNodes = Sets.newHashSet(
+        // Animation elements
+        "animate", "animateColor", "animateMotion", "animateTransform", "mpath", "set",
+        // Container elements
+        "a", "defs", "glyph", "marker", "mask", "missing-glyph", "pattern", "switch", "symbol",
+        // Filter primitive elements
+        "feBlend", "feColorMatrix", "feComponentTransfer", "feComposite", "feConvolveMatrix",
+        "feDiffuseLighting", "feDisplacementMap", "feFlood", "feFuncA", "feFuncB", "feFuncG",
+        "feFuncR", "feGaussianBlur", "feImage", "feMerge", "feMergeNode", "feMorphology",
+        "feOffset", "feSpecularLighting", "feTile", "feTurbulence",
+        // Font elements
+        "font", "font-face", "font-face-format", "font-face-name", "font-face-src", "font-face-uri",
+        "hkern", "vkern",
+        // Gradient elements
+        "linearGradient", "radialGradient", "stop",
+        // Graphics elements
+        "ellipse", "polyline", "text", "use",
+        // Light source elements
+        "feDistantLight", "fePointLight", "feSpotLight",
+        // Structural elements
+        "defs", "symbol", "use",
+        // Text content elements
+        "altGlyph", "altGlyphDef", "altGlyphItem", "glyph", "glyphRef", "textPath", "text", "tref",
+        "tspan",
+        // Text content child elements
+        "altGlyph", "textPath", "tref", "tspan",
+        // Uncategorized elements
+        "clipPath", "color-profile", "cursor", "filter", "foreignObject", "script", "view");
 
     private static SvgTree parse(File f) throws Exception {
-        Document doc = XmlUtils.parseUtfXmlFile(f, false);
-        SvgTree svgTree = new SvgTree(f.getName());
-        NodeList nSVGNode;
+        SvgTree svgTree = new SvgTree();
+        Document doc = svgTree.parse(f);
+        NodeList nSvgNode;
 
         // Parse svg elements
-        nSVGNode = doc.getElementsByTagName("svg");
-        if (nSVGNode.getLength() != 1) {
+        nSvgNode = doc.getElementsByTagName("svg");
+        if (nSvgNode.getLength() != 1) {
             throw new IllegalStateException("Not a proper SVG file");
         }
-        for (int temp = 0; temp < nSVGNode.getLength(); temp++) {
-            Node nNode = nSVGNode.item(temp);
+        Node rootNode = nSvgNode.item(0);
+        for (int i = 0; i < nSvgNode.getLength(); i++) {
+            Node nNode = nSvgNode.item(i);
             if (nNode.getNodeType() == Node.ELEMENT_NODE) {
                 parseDimension(svgTree, nNode);
             }
@@ -113,11 +141,11 @@ public class Svg2Vector {
             }
         }
 
-        SvgGroupNode root = new SvgGroupNode("root");
+        SvgGroupNode root = new SvgGroupNode(svgTree, rootNode, "root");
         svgTree.setRoot(root);
 
         // Parse all the group and path node recursively.
-        traverseSVGAndExtract(svgTree, root, nSVGNode.item(0));
+        traverseSVGAndExtract(svgTree, root, rootNode);
 
         svgTree.dump(root);
 
@@ -131,19 +159,27 @@ public class Svg2Vector {
         for (int i = 0; i < allChildren.getLength(); i++) {
             Node currentNode = allChildren.item(i);
             String nodeName = currentNode.getNodeName();
-            if (SVG_PATH.equals(nodeName) || SVG_RECT.equals(nodeName) || SVG_CIRCLE.equals(nodeName)
-                    || SVG_POLYGON.equals(nodeName) || SVG_LINE.equals(nodeName) ) {
-                SvgLeafNode child = new SvgLeafNode(nodeName + i);
+            if (SVG_PATH.equals(nodeName) ||
+                SVG_RECT.equals(nodeName) ||
+                SVG_CIRCLE.equals(nodeName) ||
+                SVG_POLYGON.equals(nodeName) ||
+                SVG_LINE.equals(nodeName)) {
+                SvgLeafNode child = new SvgLeafNode(svgTree, currentNode, nodeName + i);
 
                 extractAllItemsAs(svgTree, child, currentNode);
 
                 currentGroup.addChild(child);
             } else if (SVG_GROUP.equals(nodeName)) {
-                SvgGroupNode childGroup = new SvgGroupNode("child" + i);
+                SvgGroupNode childGroup = new SvgGroupNode(svgTree, currentNode, "child" + i);
                 currentGroup.addChild(childGroup);
                 traverseSVGAndExtract(svgTree, childGroup, currentNode);
             } else {
                 // For other fancy tags, like <refs>, they can contain children too.
+                // Report the unsupported nodes.
+                if (unsupportedSvgNodes.contains(nodeName)) {
+                    svgTree.logErrorLine("<" + nodeName + "> is not supported", currentNode,
+                                         SvgTree.SvgLogLevel.ERROR);
+                }
                 traverseSVGAndExtract(svgTree, currentGroup, currentNode);
             }
         }
@@ -223,8 +259,7 @@ public class Svg2Vector {
             // Search for the "display:none", if existed, then skip this item.
             if (nodeAttr != null) {
                 styleContent += nodeAttr.getTextContent() + ";";
-                logger.log(Level.FINE,
-                        "styleContent is :" + styleContent + "at number group ");
+                logger.log(Level.FINE, "styleContent is :" + styleContent + "at number group ");
                 if (styleContent.contains("display:none")) {
                     logger.log(Level.FINE, "Found none style, skip the whole group");
                     nothingToDisplay = true;
@@ -303,8 +338,7 @@ public class Svg2Vector {
             if (val.trim().equals("")) {
                 // Whitespace
                 logger.log(Level.FINE, "[WS]");
-            }
-            else {
+            } else {
                 logger.log(Level.FINE, "\"" + n.getNodeValue() + "\"");
             }
         }
@@ -498,7 +532,7 @@ public class Svg2Vector {
                 // "M x1, y1 L x2, y2"
                 PathBuilder builder = new PathBuilder();
                 builder.absoluteMoveTo(x1, y1);
-                builder.absoluteLineTo(x2,  y2);
+                builder.absoluteLineTo(x2, y2);
                 child.setPathData(builder.toString());
             }
         }
@@ -509,7 +543,7 @@ public class Svg2Vector {
         logger.log(Level.FINE, "Path found " + currentGroupNode.getTextContent());
 
         if (currentGroupNode.getNodeType() == Node.ELEMENT_NODE) {
-            Element eElement = (Element) currentGroupNode;
+            Element eElement = (Element)currentGroupNode;
 
             NamedNodeMap a = currentGroupNode.getAttributes();
             int len = a.getLength();
@@ -554,8 +588,8 @@ public class Svg2Vector {
     private final static String head = "<vector xmlns:android=\"http://schemas.android.com/apk/res/android\"\n";
 
     private static String getSizeString(float w, float h, float scaleFactor) {
-        String size = "        android:width=\"" + (w * scaleFactor) + "dp\"\n"
-                + "        android:height=\"" + (h * scaleFactor) + "dp\"\n";
+        String size = "        android:width=\"" + (w * scaleFactor) + "dp\"\n" +
+                      "        android:height=\"" + (h * scaleFactor) + "dp\"\n";
         return size;
     }
 
@@ -580,8 +614,17 @@ public class Svg2Vector {
         svgTree.getRoot().writeXML(fw);
     }
 
-    public static void parseSvgToXml(File inputSVG, OutputStream outStream) throws Exception {
-        SvgTree svgTree = parse(inputSVG);
-        writeFile(outStream, svgTree);
+    public static String parseSvgToXml(File inputSVG, OutputStream outStream) {
+        // Write all the error message during parsing into SvgTree. and return here as getErrorLog().
+        // We will also log the exceptions here.
+        String errorLog = null;
+        try {
+            SvgTree svgTree = parse(inputSVG);
+            errorLog = svgTree.getErrorLog();
+            writeFile(outStream, svgTree);
+        } catch (Exception e) {
+            errorLog = "EXCEPTION in parsing " + inputSVG.getName() + ":\n" + e.getMessage();
+        }
+        return errorLog;
     }
 }
