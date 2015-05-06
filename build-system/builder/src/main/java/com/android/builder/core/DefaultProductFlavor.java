@@ -536,109 +536,47 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
 
         DefaultProductFlavor that = (DefaultProductFlavor) o;
 
-        if (mDimension !=null ? !mDimension.equals(that.mDimension) :
-                that.mDimension != null) {
-            return false;
-        }
-
-        if (mApplicationId != null ? !mApplicationId.equals(that.mApplicationId)
-                : that.mApplicationId != null) {
-            return false;
-        }
-        if (mMaxSdkVersion != null ? !mMaxSdkVersion.equals(that.mMaxSdkVersion)
-                : that.mMaxSdkVersion != null) {
-            return false;
-        }
-        if (mMinSdkVersion != null ? !mMinSdkVersion.equals(that.mMinSdkVersion)
-                : that.mMinSdkVersion != null) {
-            return false;
-        }
-        if (!mName.equals(that.mName)) {
-            return false;
-        }
-        if (mRenderscriptNdkModeEnabled != null ? !mRenderscriptNdkModeEnabled
-                .equals(that.mRenderscriptNdkModeEnabled)
-                : that.mRenderscriptNdkModeEnabled != null) {
-            return false;
-        }
-        if (mRenderscriptSupportModeEnabled != null ? !mRenderscriptSupportModeEnabled
-                .equals(that.mRenderscriptSupportModeEnabled) : that.mRenderscriptSupportModeEnabled
-                != null) {
-            return false;
-        }
-        if (mRenderscriptTargetApi != null ? !mRenderscriptTargetApi
-                .equals(that.mRenderscriptTargetApi)
-                : that.mRenderscriptTargetApi != null) {
-            return false;
-        }
-        if (mResourceConfiguration != null ? !mResourceConfiguration
-                .equals(that.mResourceConfiguration)
-                : that.mResourceConfiguration != null) {
-            return false;
-        }
-        if (mSigningConfig != null ? !mSigningConfig.equals(that.mSigningConfig)
-                : that.mSigningConfig != null) {
-            return false;
-        }
-        if (mTargetSdkVersion != null ? !mTargetSdkVersion.equals(that.mTargetSdkVersion)
-                : that.mTargetSdkVersion != null) {
-            return false;
-        }
-        if (mTestApplicationId != null ? !mTestApplicationId.equals(that.mTestApplicationId)
-                : that.mTestApplicationId != null) {
-            return false;
-        }
-        if (mTestFunctionalTest != null ? !mTestFunctionalTest.equals(that.mTestFunctionalTest)
-                : that.mTestFunctionalTest != null) {
-            return false;
-        }
-        if (mTestHandleProfiling != null ? !mTestHandleProfiling.equals(that.mTestHandleProfiling)
-                : that.mTestHandleProfiling != null) {
-            return false;
-        }
-        if (mTestInstrumentationRunner != null ? !mTestInstrumentationRunner
-                .equals(that.mTestInstrumentationRunner)
-                : that.mTestInstrumentationRunner != null) {
-            return false;
-        }
-        if (mVersionCode != null ? !mVersionCode.equals(that.mVersionCode)
-                : that.mVersionCode != null) {
-            return false;
-        }
-        if (mVersionName != null ? !mVersionName.equals(that.mVersionName)
-                : that.mVersionName != null) {
-            return false;
-        }
-
-        return true;
+        return Objects.equal(mDimension, that.mDimension) &&
+                Objects.equal(mApplicationId, that.mApplicationId) &&
+                Objects.equal(mMaxSdkVersion, that.mMaxSdkVersion) &&
+                Objects.equal(mMinSdkVersion, that.mMinSdkVersion) &&
+                Objects.equal(mName, that.mName) &&
+                Objects.equal(mRenderscriptNdkModeEnabled, that.mRenderscriptNdkModeEnabled) &&
+                Objects.equal(mRenderscriptSupportModeEnabled,
+                        that.mRenderscriptSupportModeEnabled) &&
+                Objects.equal(mRenderscriptTargetApi, that.mRenderscriptTargetApi) &&
+                Objects.equal(mResourceConfiguration, that.mResourceConfiguration) &&
+                Objects.equal(mSigningConfig, that.mSigningConfig) &&
+                Objects.equal(mTargetSdkVersion, that.mTargetSdkVersion) &&
+                Objects.equal(mTestApplicationId, that.mTestApplicationId) &&
+                Objects.equal(mTestFunctionalTest, that.mTestFunctionalTest) &&
+                Objects.equal(mTestHandleProfiling, that.mTestHandleProfiling) &&
+                Objects.equal(mTestInstrumentationRunner, that.mTestInstrumentationRunner) &&
+                Objects.equal(mVersionCode, that.mVersionCode) &&
+                Objects.equal(mVersionName, that.mVersionName);
     }
 
     @Override
     public int hashCode() {
-        int result = super.hashCode();
-        result = 31 * result + mName.hashCode();
-        result = 31 * result + (mDimension != null ? mDimension.hashCode() : 0);
-        result = 31 * result + (mMinSdkVersion != null ? mMinSdkVersion.hashCode() : 0);
-        result = 31 * result + (mTargetSdkVersion != null ? mTargetSdkVersion.hashCode() : 0);
-        result = 31 * result + (mMaxSdkVersion != null ? mMaxSdkVersion.hashCode() : 0);
-        result = 31 * result + (mRenderscriptTargetApi != null ? mRenderscriptTargetApi.hashCode()
-                : 0);
-        result = 31 * result + (mRenderscriptSupportModeEnabled != null ? mRenderscriptSupportModeEnabled
-                .hashCode()
-                : 0);
-        result = 31 * result + (mRenderscriptNdkModeEnabled != null ? mRenderscriptNdkModeEnabled.hashCode() : 0);
-        result = 31 * result + (mVersionCode != null ? mVersionCode.hashCode() : 0);
-        result = 31 * result + (mVersionName != null ? mVersionName.hashCode() : 0);
-        result = 31 * result + (mApplicationId != null ? mApplicationId.hashCode() : 0);
-        result = 31 * result + (mTestApplicationId != null ? mTestApplicationId.hashCode() : 0);
-        result = 31 * result + (mTestInstrumentationRunner != null ? mTestInstrumentationRunner
-                .hashCode() : 0);
-        result = 31 * result + (mTestHandleProfiling != null ? mTestHandleProfiling.hashCode() : 0);
-        result = 31 * result + (mTestFunctionalTest != null ? mTestFunctionalTest.hashCode() : 0);
-        result = 31 * result + (mSigningConfig != null ? mSigningConfig.hashCode() : 0);
-        result = 31 * result + (mResourceConfiguration != null ? mResourceConfiguration.hashCode()
-                : 0);
-        return result;
+        return Objects.hashCode(
+                super.hashCode(),
+                mName,
+                mDimension,
+                mMinSdkVersion,
+                mTargetSdkVersion,
+                mMaxSdkVersion,
+                mRenderscriptTargetApi,
+                mRenderscriptSupportModeEnabled,
+                mRenderscriptNdkModeEnabled,
+                mVersionCode,
+                mVersionName,
+                mApplicationId,
+                mTestApplicationId,
+                mTestInstrumentationRunner,
+                mTestHandleProfiling,
+                mTestFunctionalTest,
+                mSigningConfig,
+                mResourceConfiguration);
     }
 
     @Override

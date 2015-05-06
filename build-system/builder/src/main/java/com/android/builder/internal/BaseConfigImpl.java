@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.model.BaseConfig;
 import com.android.builder.model.ClassField;
+import com.google.common.base.Objects;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
@@ -259,48 +260,28 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
 
         BaseConfigImpl that = (BaseConfigImpl) o;
 
-        if (!mBuildConfigFields.equals(that.mBuildConfigFields)) {
-            return false;
-        }
-        if (!mConsumerProguardFiles.equals(that.mConsumerProguardFiles)) {
-            return false;
-        }
-        if (!mManifestPlaceholders.equals(that.mManifestPlaceholders)) {
-            return false;
-        }
-        if (mMultiDexEnabled != null ? !mMultiDexEnabled.equals(that.mMultiDexEnabled) :
-                that.mMultiDexEnabled != null) {
-            return false;
-        }
-        if (mMultiDexKeepFile != null ? !mMultiDexKeepFile.equals(that.mMultiDexKeepFile) :
-                that.mMultiDexKeepFile != null) {
-            return false;
-        }
-        if (mMultiDexKeepProguard != null ? !mMultiDexKeepProguard.equals(that.mMultiDexKeepProguard) :
-                that.mMultiDexKeepProguard != null) {
-            return false;
-        }
-        if (!mProguardFiles.equals(that.mProguardFiles)) {
-            return false;
-        }
-        if (!mResValues.equals(that.mResValues)) {
-            return false;
-        }
+        return Objects.equal(mBuildConfigFields, that.mBuildConfigFields) &&
+                Objects.equal(mConsumerProguardFiles, that.mConsumerProguardFiles) &&
+                Objects.equal(mManifestPlaceholders, that.mManifestPlaceholders) &&
+                Objects.equal(mMultiDexEnabled, that.mMultiDexEnabled) &&
+                Objects.equal(mMultiDexKeepFile, that.mMultiDexKeepFile) &&
+                Objects.equal(mMultiDexKeepProguard, that.mMultiDexKeepProguard) &&
+                Objects.equal(mProguardFiles, that.mProguardFiles) &&
+                Objects.equal(mResValues, that.mResValues);
 
-        return true;
     }
 
     @Override
     public int hashCode() {
-        int result = mBuildConfigFields.hashCode();
-        result = 31 * result + mResValues.hashCode();
-        result = 31 * result + mProguardFiles.hashCode();
-        result = 31 * result + mConsumerProguardFiles.hashCode();
-        result = 31 * result + mManifestPlaceholders.hashCode();
-        result = 31 * result + (mMultiDexEnabled != null ? mMultiDexEnabled.hashCode() : 0);
-        result = 31 * result + (mMultiDexKeepFile != null ? mMultiDexKeepFile.hashCode() : 0);
-        result = 31 * result + (mMultiDexKeepProguard != null ? mMultiDexKeepProguard.hashCode() : 0);
-        return result;
+        return Objects.hashCode(
+                mBuildConfigFields,
+                mResValues,
+                mProguardFiles,
+                mConsumerProguardFiles,
+                mManifestPlaceholders,
+                mMultiDexEnabled,
+                mMultiDexKeepFile,
+                mMultiDexKeepProguard);
     }
 
     @Override
