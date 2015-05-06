@@ -256,7 +256,7 @@ public abstract class BasePlugin {
 
     protected void configureProject() {
         checkGradleVersion()
-        extraModelInfo = new ExtraModelInfo(project)
+        extraModelInfo = new ExtraModelInfo(project, isLibrary())
         sdkHandler = new SdkHandler(project, logger)
         androidBuilder = new AndroidBuilder(
                 project == project.rootProject ? project.name : project.path,

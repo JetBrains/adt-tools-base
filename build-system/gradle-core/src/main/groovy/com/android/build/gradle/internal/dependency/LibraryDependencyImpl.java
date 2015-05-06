@@ -44,6 +44,8 @@ public class LibraryDependencyImpl extends LibraryBundle {
     @Nullable
     private final MavenCoordinates resolvedCoordinates;
 
+    private final boolean isOptional;
+
     public LibraryDependencyImpl(
             @NonNull File bundle,
             @NonNull File explodedBundle,
@@ -52,12 +54,14 @@ public class LibraryDependencyImpl extends LibraryBundle {
             @Nullable String variantName,
             @Nullable String projectPath,
             @Nullable MavenCoordinates requestedCoordinates,
-            @Nullable MavenCoordinates resolvedCoordinates) {
+            @Nullable MavenCoordinates resolvedCoordinates,
+            boolean isOptional) {
         super(bundle, explodedBundle, name, projectPath);
         this.dependencies = dependencies;
         this.variantName = variantName;
         this.requestedCoordinates = requestedCoordinates;
         this.resolvedCoordinates = resolvedCoordinates;
+        this.isOptional = isOptional;
     }
 
     @NonNull
@@ -96,6 +100,11 @@ public class LibraryDependencyImpl extends LibraryBundle {
         return resolvedCoordinates;
     }
 
+    @Override
+    public boolean isOptional() {
+        return isOptional;
+    }
+
     /**
      * Returns a version of the library dependency with the dependencies removed.
      */
@@ -109,7 +118,8 @@ public class LibraryDependencyImpl extends LibraryBundle {
                 variantName,
                 getProject(),
                 requestedCoordinates,
-                resolvedCoordinates);
+                resolvedCoordinates,
+                isOptional);
     }
 
     @Override
@@ -126,12 +136,18 @@ public class LibraryDependencyImpl extends LibraryBundle {
         LibraryDependencyImpl that = (LibraryDependencyImpl) o;
         return Objects.equal(dependencies, that.dependencies) &&
                 Objects.equal(variantName, that.variantName) &&
-                Objects.equal(resolvedCoordinates, that.resolvedCoordinates);
+                Objects.equal(resolvedCoordinates, that.resolvedCoordinates) &&
+                Objects.equal(isOptional, that.isOptional());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(super.hashCode(), dependencies, variantName, resolvedCoordinates);
+        return Objects.hashCode(
+                super.hashCode(),
+                dependencies,
+                variantName,
+                resolvedCoordinates,
+                isOptional);
     }
 
     @Override
@@ -141,6 +157,7 @@ public class LibraryDependencyImpl extends LibraryBundle {
                 .add("variantName", variantName)
                 .add("requestedCoordinates", requestedCoordinates)
                 .add("resolvedCoordinates", resolvedCoordinates)
+                .add("isOptional", isOptional)
                 .add("super", super.toString())
                 .toString();
     }

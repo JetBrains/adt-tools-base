@@ -57,6 +57,7 @@ public class ExtraModelInfo extends EvaluationErrorReporter {
 
     @NonNull
     private final Project project;
+    private final boolean isLibrary;
 
     private final ErrorFormatMode errorFormatMode;
 
@@ -70,10 +71,15 @@ public class ExtraModelInfo extends EvaluationErrorReporter {
     private final ListMultimap<String, SourceProviderContainer> extraProductFlavorSourceProviders = ArrayListMultimap.create();
     private final ListMultimap<String, SourceProviderContainer> extraMultiFlavorSourceProviders = ArrayListMultimap.create();
 
-    public ExtraModelInfo(@NonNull Project project) {
+    public ExtraModelInfo(@NonNull Project project, boolean isLibrary) {
         super(computeModelQueryMode(project));
         this.project = project;
+        this.isLibrary = isLibrary;
         errorFormatMode = computeErrorFormatMode(project);
+    }
+
+    public boolean isLibrary() {
+        return isLibrary;
     }
 
     public Map<SyncIssueKey, SyncIssue> getSyncIssues() {
