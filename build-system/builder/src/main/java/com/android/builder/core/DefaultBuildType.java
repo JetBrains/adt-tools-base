@@ -276,49 +276,38 @@ public class DefaultBuildType extends BaseConfigImpl implements BuildType {
 
         DefaultBuildType buildType = (DefaultBuildType) o;
 
-        if (!mName.equals(buildType.mName)) return false;
-        if (mDebuggable != buildType.mDebuggable) return false;
-        if (mTestCoverageEnabled != buildType.mTestCoverageEnabled) return false;
-        if (mJniDebuggable != buildType.mJniDebuggable) return false;
-        if (mPseudoLocalesEnabled != buildType.mPseudoLocalesEnabled) return false;
-        if (mRenderscriptDebuggable != buildType.mRenderscriptDebuggable) return false;
-        if (mRenderscriptOptimLevel != buildType.mRenderscriptOptimLevel) return false;
-        if (mMinifyEnabled != buildType.mMinifyEnabled) return false;
-        if (mZipAlignEnabled != buildType.mZipAlignEnabled) return false;
-        if (mApplicationIdSuffix != null ?
-                !mApplicationIdSuffix.equals(buildType.mApplicationIdSuffix) :
-                buildType.mApplicationIdSuffix != null)
-            return false;
-        if (mVersionNameSuffix != null ?
-                !mVersionNameSuffix.equals(buildType.mVersionNameSuffix) :
-                buildType.mVersionNameSuffix != null)
-            return false;
-        if (mSigningConfig != null ?
-                !mSigningConfig.equals(buildType.mSigningConfig) :
-                buildType.mSigningConfig != null)
-            return false;
-        if (mEmbedMicroApp != buildType.mEmbedMicroApp) return false;
-
-        return true;
+        return Objects.equal(mName, buildType.mName) &&
+                mDebuggable == buildType.mDebuggable &&
+                mTestCoverageEnabled == buildType.mTestCoverageEnabled &&
+                mJniDebuggable == buildType.mJniDebuggable &&
+                mPseudoLocalesEnabled == buildType.mPseudoLocalesEnabled &&
+                mRenderscriptDebuggable == buildType.mRenderscriptDebuggable &&
+                mRenderscriptOptimLevel == buildType.mRenderscriptOptimLevel &&
+                mMinifyEnabled == buildType.mMinifyEnabled &&
+                mZipAlignEnabled == buildType.mZipAlignEnabled &&
+                mEmbedMicroApp == buildType.mEmbedMicroApp &&
+                Objects.equal(mApplicationIdSuffix, buildType.mApplicationIdSuffix) &&
+                Objects.equal(mVersionNameSuffix, buildType.mVersionNameSuffix) &&
+                Objects.equal(mSigningConfig, buildType.mSigningConfig);
     }
 
     @Override
     public int hashCode() {
-        int result = super.hashCode();
-        result = 31 * result + (mName.hashCode());
-        result = 31 * result + (mDebuggable ? 1 : 0);
-        result = 31 * result + (mTestCoverageEnabled ? 1 : 0);
-        result = 31 * result + (mJniDebuggable ? 1 : 0);
-        result = 31 * result + (mPseudoLocalesEnabled ? 1 : 0);
-        result = 31 * result + (mRenderscriptDebuggable ? 1 : 0);
-        result = 31 * result + mRenderscriptOptimLevel;
-        result = 31 * result + (mApplicationIdSuffix != null ? mApplicationIdSuffix.hashCode() : 0);
-        result = 31 * result + (mVersionNameSuffix != null ? mVersionNameSuffix.hashCode() : 0);
-        result = 31 * result + (mMinifyEnabled ? 1 : 0);
-        result = 31 * result + (mZipAlignEnabled ? 1 : 0);
-        result = 31 * result + (mSigningConfig != null ? mSigningConfig.hashCode() : 0);
-        result = 31 * result + (mEmbedMicroApp ? 1 : 0);
-        return result;
+        return Objects.hashCode(
+                super.hashCode(),
+                mName,
+                mDebuggable,
+                mTestCoverageEnabled,
+                mJniDebuggable,
+                mPseudoLocalesEnabled,
+                mRenderscriptDebuggable,
+                mRenderscriptOptimLevel,
+                mApplicationIdSuffix,
+                mVersionNameSuffix,
+                mMinifyEnabled,
+                mZipAlignEnabled,
+                mSigningConfig,
+                mEmbedMicroApp);
     }
 
     @Override
