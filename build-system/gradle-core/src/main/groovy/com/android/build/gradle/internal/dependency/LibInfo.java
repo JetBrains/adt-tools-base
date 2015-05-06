@@ -18,7 +18,6 @@ package com.android.build.gradle.internal.dependency;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.annotations.concurrency.Immutable;
 import com.android.builder.dependency.LibraryDependency;
 import com.android.builder.model.MavenCoordinates;
 
@@ -29,11 +28,12 @@ import java.util.List;
 /**
  * Version of LibraryDependency that includes transitive jar dependencies as JarInfo.
  */
-@Immutable
 public class LibInfo extends LibraryDependencyImpl {
 
     @NonNull
     private final Collection<JarInfo> jarDependencies;
+
+    private boolean isOptionalOverride = false;
 
     public LibInfo(@NonNull File bundle,
             @NonNull File explodedBundle,
@@ -51,13 +51,22 @@ public class LibInfo extends LibraryDependencyImpl {
                 variantName,
                 projectPath,
                 requestedCoordinates,
-                resolvedCoordinates);
+                resolvedCoordinates,
+                false);
         this.jarDependencies = jarDependencies;
+    }
+
+    public void setIsOptional(boolean isOptional) {
+        this.isOptionalOverride = isOptional;
+    }
+
+    @Override
+    public boolean isOptional() {
+        return isOptionalOverride;
     }
 
     @NonNull
     public Collection<JarInfo> getJarDependencies() {
         return jarDependencies;
     }
-
 }

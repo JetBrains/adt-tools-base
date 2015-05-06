@@ -1109,11 +1109,13 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
         if (includeDependencies) {
             for (int n = mFlatLibraries.size() - 1 ; n >= 0 ; n--) {
                 LibraryDependency dependency = mFlatLibraries.get(n);
-                File resFolder = dependency.getResFolder();
-                if (resFolder.isDirectory()) {
-                    ResourceSet resourceSet = new ResourceSet(dependency.getFolder().getName());
-                    resourceSet.addSource(resFolder);
-                    resourceSets.add(resourceSet);
+                if (!dependency.isOptional()) {
+                    File resFolder = dependency.getResFolder();
+                    if (resFolder.isDirectory()) {
+                        ResourceSet resourceSet = new ResourceSet(dependency.getFolder().getName());
+                        resourceSet.addSource(resFolder);
+                        resourceSets.add(resourceSet);
+                    }
                 }
             }
         }

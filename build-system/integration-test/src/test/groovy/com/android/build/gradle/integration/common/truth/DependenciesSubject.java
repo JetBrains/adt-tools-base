@@ -16,11 +16,16 @@
 
 package com.android.build.gradle.integration.common.truth;
 
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
+
 import com.android.annotations.NonNull;
+import com.android.builder.model.AndroidLibrary;
 import com.android.builder.model.Dependencies;
 import com.google.common.truth.FailureStrategy;
 import com.google.common.truth.Subject;
 import com.google.common.truth.SubjectFactory;
+
+import java.util.Collection;
 
 
 public class DependenciesSubject extends Subject<DependenciesSubject, Dependencies> {
@@ -46,5 +51,19 @@ public class DependenciesSubject extends Subject<DependenciesSubject, Dependenci
             @NonNull FailureStrategy failureStrategy,
             @NonNull Dependencies subject) {
         super(failureStrategy, subject);
+    }
+
+    /**
+     * Checks that the dependencies has a single library.
+     *
+     * @return the library.
+     */
+    @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
+    public AndroidLibrary hasOneLibrary() {
+        Collection<AndroidLibrary> libs = getSubject().getLibraries();
+
+        assertThat(libs).hasSize(1);
+
+        return libs.iterator().next();
     }
 }

@@ -65,6 +65,7 @@ public class AndroidLibraryImpl extends LibraryImpl implements AndroidLibrary, S
     private final File publicResources;
     @NonNull
     private final List<AndroidLibrary> dependencies;
+    private final boolean isOptional;
 
     AndroidLibraryImpl(
             @NonNull LibraryDependency libraryDependency,
@@ -90,6 +91,7 @@ public class AndroidLibraryImpl extends LibraryImpl implements AndroidLibrary, S
         lintJar = libraryDependency.getLintJar();
         annotations = libraryDependency.getExternalAnnotations();
         publicResources = libraryDependency.getPublicResources();
+        isOptional = libraryDependency.isOptional();
 
         this.project = project;
         this.variant = variant;
@@ -195,5 +197,10 @@ public class AndroidLibraryImpl extends LibraryImpl implements AndroidLibrary, S
     @NonNull
     public File getPublicResources() {
         return publicResources;
+    }
+
+    @Override
+    public boolean isOptional() {
+        return isOptional;
     }
 }

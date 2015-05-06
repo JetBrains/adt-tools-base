@@ -179,8 +179,10 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
 
         // TODO: Remove code duplicated from BasePlugin.
         @Model(EXTRA_MODEL_INFO)
-        ExtraModelInfo createExtraModelInfo(Project project) {
-            return new ExtraModelInfo(project)
+        ExtraModelInfo createExtraModelInfo(
+                Project project,
+                @NonNull @Path("isApplication") Boolean isApplication) {
+            return new ExtraModelInfo(project, isApplication)
         }
 
         @Model
