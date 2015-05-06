@@ -141,7 +141,7 @@ public class ResourceSetTest extends BaseTestCase {
         } catch (MergingException e) {
             gotException = true;
             assertEquals(new File(root, "values" + separator + "dimens.xml").getAbsolutePath() +
-                    ":0:0: Error: Content is not allowed in prolog.",
+                    ":1:1: Error: Content is not allowed in prolog.",
                     e.getMessage());
         }
 
@@ -204,7 +204,7 @@ public class ResourceSetTest extends BaseTestCase {
         } catch (MergingException e) {
             gotException = true;
             assertEquals(new File(root, "values" + separator + "values.xml").getAbsolutePath() +
-                    ":6:5: Error: The element type \"declare-styleable\" "
+                    ":7:6: Error: The element type \"declare-styleable\" "
                     + "must be terminated by the matching end-tag \"</declare-styleable>\".",
                     e.getMessage());
         }

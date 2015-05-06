@@ -100,9 +100,9 @@
 
 @errors
 
-ERROR:Missing 'name' key attribute on element uses-library at ManifestMerger2Test1_lib1.xml:10:9
-ERROR:Missing 'name' key attribute on element uses-library at ManifestMerger2Test1_lib1.xml:9:9
-ERROR:Missing 'name' key attribute on element uses-library at ManifestMerger2Test1_lib1.xml:8:9
-WARNING:Element uses-library#com.example.SomeLibrary3_RequiredFalse at ManifestMerger2Test0_main.xml:35:9 duplicated with element declared at ManifestMerger2Test0_main.xml:30:9
-ERROR:Attribute uses-library#com.example.SomeLibrary4_RequiredFalse@required at ManifestMerger2Test1_lib1.xml:25:13 has an illegal value=\(foo\), expected 'true' or 'false'
+ERROR:Missing 'name' key attribute on element uses-library at ManifestMerger2Test1_lib1.xml:10:9-49
+ERROR:Missing 'name' key attribute on element uses-library at ManifestMerger2Test1_lib1.xml:9:9-50
+ERROR:Missing 'name' key attribute on element uses-library at ManifestMerger2Test1_lib1.xml:8:9-25
+WARNING:Element uses-library#com.example.SomeLibrary3_RequiredFalse at ManifestMerger2Test0_main.xml:35:9-37:40 duplicated with element declared at ManifestMerger2Test0_main.xml:30:9-32:40
+ERROR:Attribute uses-library#com.example.SomeLibrary4_RequiredFalse@required at ManifestMerger2Test1_lib1.xml:25:13-35 has an illegal value=\(foo\), expected 'true' or 'false'
 ERROR:Validation failed, exiting

@@ -173,7 +173,7 @@ public class ManifestMerger2SmallTest extends TestCase {
                 + "</manifest>";
 
         XmlDocument refDocument = TestUtils.xmlDocumentFromString(
-                new TestUtils.TestSourceLocation(getClass(), "testPackageOverride#xml"), xml);
+                TestUtils.sourceFile(getClass(), "testPackageOverride#xml"), xml);
 
         ManifestMerger2.SystemProperty.PACKAGE.addTo(mActionRecorder, refDocument, "com.bar.new");
         // verify the package value was overriden.
@@ -189,7 +189,7 @@ public class ManifestMerger2SmallTest extends TestCase {
                 + "</manifest>";
 
         XmlDocument refDocument = TestUtils.xmlDocumentFromString(
-                new TestUtils.TestSourceLocation(getClass(), "testMissingPackageOverride#xml"), xml);
+                TestUtils.sourceFile(getClass(), "testMissingPackageOverride#xml"), xml);
 
         ManifestMerger2.SystemProperty.PACKAGE.addTo(mActionRecorder, refDocument, "com.bar.new");
         // verify the package value was added.
@@ -205,7 +205,7 @@ public class ManifestMerger2SmallTest extends TestCase {
                 + "</manifest>";
 
         XmlDocument document = TestUtils.xmlDocumentFromString(
-                new TestUtils.TestSourceLocation(getClass(),
+                TestUtils.sourceFile(getClass(),
                         "testAddingSystemProperties#xml"), xml);
 
         ManifestMerger2.SystemProperty.VERSION_CODE.addTo(mActionRecorder, document, "101");
@@ -241,7 +241,7 @@ public class ManifestMerger2SmallTest extends TestCase {
                 + "</manifest>";
 
         XmlDocument document = TestUtils.xmlDocumentFromString(
-                new TestUtils.TestSourceLocation(getClass(),
+                TestUtils.sourceFile(getClass(),
                         "testAddingSystemProperties#xml"), xml
         );
 
@@ -261,7 +261,7 @@ public class ManifestMerger2SmallTest extends TestCase {
                 + "</manifest>";
 
         XmlDocument document = TestUtils.xmlDocumentFromString(
-                new TestUtils.TestSourceLocation(getClass(),
+                TestUtils.sourceFile(getClass(),
                         "testAddingSystemProperties#xml"), xml);
         // check initial state.
         assertEquals("34", document.getXml().getDocumentElement().getAttribute("versionCode"));

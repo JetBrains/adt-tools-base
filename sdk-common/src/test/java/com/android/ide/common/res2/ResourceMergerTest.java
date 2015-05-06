@@ -1610,7 +1610,7 @@ public class ResourceMergerTest extends BaseTestCase {
         } catch (MergingException e) {
             File file = new File(root, "values" + File.separator + "dimens.xml");
             file = file.getAbsoluteFile();
-            assertEquals(file.getPath() + ":3:5: Error: The content of elements must consist "
+            assertEquals(file.getPath() + ":4:6: Error: The content of elements must consist "
                     + "of well-formed character data or markup.",
                     e.getMessage());
             return;
@@ -1637,7 +1637,7 @@ public class ResourceMergerTest extends BaseTestCase {
         } catch (MergingException e) {
             File file = new File(root, "values" + File.separator + "dimens.xml");
             file = file.getAbsoluteFile();
-            assertEquals(file.getPath() + ":1:16: Error: Open quote is expected for "
+            assertEquals(file.getPath() + ":2:17: Error: Open quote is expected for "
                     + "attribute \"{1}\" associated with an  element type  \"name\".",
                     e.getMessage());
             return;

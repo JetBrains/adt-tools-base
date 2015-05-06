@@ -53,8 +53,7 @@ public class ToolsInstructionsCleanerTest extends TestCase {
                 + "</manifest>";
 
         XmlDocument mainDocument = TestUtils.xmlDocumentFromString(
-                new TestUtils.TestSourceLocation(
-                        getClass(), "testNodeRemoveOperation"), main);
+                TestUtils.sourceFile(getClass(), "testNodeRemoveOperation"), main);
 
         Element rootElement = mainDocument.getRootNode().getXml();
         ToolsInstructionsCleaner.cleanToolsReferences(mainDocument, mockLog);
@@ -87,8 +86,7 @@ public class ToolsInstructionsCleanerTest extends TestCase {
                 + "</manifest>";
 
         XmlDocument mainDocument = TestUtils.xmlDocumentFromString(
-                new TestUtils.TestSourceLocation(
-                        getClass(), "testNodeRemoveWithChildrenOperation"), main);
+                TestUtils.sourceFile(getClass(), "testNodeRemoveWithChildrenOperation"), main);
 
         Element rootElement = mainDocument.getRootNode().getXml();
         ToolsInstructionsCleaner.cleanToolsReferences(mainDocument, mockLog);
@@ -117,8 +115,7 @@ public class ToolsInstructionsCleanerTest extends TestCase {
                 + "</manifest>";
 
         XmlDocument mainDocument = TestUtils.xmlDocumentFromString(
-                new TestUtils.TestSourceLocation(
-                        getClass(), "testNodeRemoveOperation"), main);
+                TestUtils.sourceFile(getClass(), "testNodeRemoveOperation"), main);
 
         assertNull(ToolsInstructionsCleaner.cleanToolsReferences(mainDocument, mockLog));
     }
@@ -136,8 +133,7 @@ public class ToolsInstructionsCleanerTest extends TestCase {
                 + "</manifest>";
 
         XmlDocument mainDocument = TestUtils.xmlDocumentFromString(
-                new TestUtils.TestSourceLocation(
-                        getClass(), "testNodeRemoveOperation"), main);
+                TestUtils.sourceFile(getClass(), "testNodeRemoveOperation"), main);
 
         assertNull(ToolsInstructionsCleaner.cleanToolsReferences(mainDocument, mockLog));
     }
@@ -158,8 +154,7 @@ public class ToolsInstructionsCleanerTest extends TestCase {
                 + "</manifest>";
 
         XmlDocument mainDocument = TestUtils.xmlDocumentFromString(
-                new TestUtils.TestSourceLocation(
-                        getClass(), "testNodeReplaceOperation"), main);
+                TestUtils.sourceFile(getClass(), "testNodeReplaceOperation"), main);
 
         Element rootElement = mainDocument.getRootNode().getXml();
         ToolsInstructionsCleaner.cleanToolsReferences(mainDocument, mockLog);
@@ -187,8 +182,7 @@ public class ToolsInstructionsCleanerTest extends TestCase {
                 + "</manifest>";
 
         XmlDocument mainDocument = TestUtils.xmlDocumentFromString(
-                new TestUtils.TestSourceLocation(
-                        getClass(), "testAttributeRemoveOperation"), main);
+                TestUtils.sourceFile(getClass(), "testAttributeRemoveOperation"), main);
 
         Element rootElement = mainDocument.getRootNode().getXml();
         ToolsInstructionsCleaner.cleanToolsReferences(mainDocument, mockLog);
@@ -220,8 +214,7 @@ public class ToolsInstructionsCleanerTest extends TestCase {
                 + "</manifest>";
 
         XmlDocument mainDocument = TestUtils.xmlDocumentFromString(
-                new TestUtils.TestSourceLocation(
-                        getClass(), "testSelectorRemoval"), main);
+                TestUtils.sourceFile(getClass(), "testSelectorRemoval"), main);
 
         Element rootElement = mainDocument.getRootNode().getXml();
         ToolsInstructionsCleaner.cleanToolsReferences(mainDocument, mockLog);
@@ -251,8 +244,7 @@ public class ToolsInstructionsCleanerTest extends TestCase {
                 + "</manifest>";
 
         XmlDocument mainDocument = TestUtils.xmlDocumentFromString(
-                new TestUtils.TestSourceLocation(
-                        getClass(), "testNodeReplaceOperation"), main);
+                TestUtils.sourceFile(getClass(), "testNodeReplaceOperation"), main);
 
         Element rootElement = mainDocument.getRootNode().getXml();
         ToolsInstructionsCleaner.cleanToolsReferences(mainDocument, mockLog);

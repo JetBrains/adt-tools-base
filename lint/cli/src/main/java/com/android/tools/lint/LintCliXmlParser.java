@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.tools.lint.client.api.IssueRegistry;
 import com.android.tools.lint.client.api.XmlParser;
+import com.android.tools.lint.detector.api.DefaultPosition;
 import com.android.tools.lint.detector.api.Location;
 import com.android.tools.lint.detector.api.Location.Handle;
 import com.android.tools.lint.detector.api.Position;
@@ -43,13 +44,7 @@ import java.io.UnsupportedEncodingException;
  * It also catches and reports parser errors as lint errors.
  */
 public class LintCliXmlParser extends XmlParser {
-    private final PositionXmlParser mParser = new PositionXmlParser() {
-        @NonNull
-        @Override
-        protected OffsetPosition createPosition(int line, int column, int offset) {
-            return new OffsetPosition(line, column, offset);
-        }
-    };
+    private final PositionXmlParser mParser = new PositionXmlParser();
 
     @Override
     public Document parseXml(@NonNull XmlContext context) {
@@ -66,7 +61,7 @@ public class LintCliXmlParser extends XmlParser {
                     // is valid
                     IssueRegistry.PARSER_ERROR, Location.create(context.file),
                     e.getCause() != null ? e.getCause().getLocalizedMessage() :
-                        e.getLocalizedMessage()
+                            e.getLocalizedMessage()
             );
         } catch (SAXException e) {
             Location location = Location.create(context.file);
@@ -96,24 +91,14 @@ public class LintCliXmlParser extends XmlParser {
     @NonNull
     @Override
     public Location getLocation(@NonNull XmlContext context, @NonNull Node node) {
-        OffsetPosition pos = (OffsetPosition) mParser.getPosition(node, -1, -1);
-        if (pos != null) {
-            return Location.create(context.file, pos, (OffsetPosition) pos.getEnd());
-        }
-
-        return Location.create(context.file);
+        return Location.create(context.file, mParser.getPosition(node));
     }
 
     @NonNull
     @Override
     public Location getLocation(@NonNull XmlContext context, @NonNull Node node,
             int start, int end) {
-        OffsetPosition pos = (OffsetPosition) mParser.getPosition(node, start, end);
-        if (pos != null) {
-            return Location.create(context.file, pos, (OffsetPosition) pos.getEnd());
-        }
-
-        return Location.create(context.file);
+        return Location.create(context.file, mParser.getPosition(node, start, end));
     }
 
     @Override
@@ -130,8 +115,8 @@ public class LintCliXmlParser extends XmlParser {
         int startOffset = start.getOffset() + delta;
         int startColumn = start.getColumn() + delta;
         return Location.create(location.getFile(),
-                new OffsetPosition(start.getLine(), startColumn, startOffset),
-                new OffsetPosition(end.getLine(), startColumn + length, startOffset + length));
+                new DefaultPosition(start.getLine(), startColumn, startOffset),
+                new DefaultPosition(end.getLine(), startColumn + length, startOffset + length));
     }
 
     @Override
@@ -149,8 +134,8 @@ public class LintCliXmlParser extends XmlParser {
         int startOffset = start.getOffset() + delta;
         int startColumn = start.getColumn() + delta;
         return Location.create(location.getFile(),
-                new OffsetPosition(start.getLine(), startColumn, startOffset),
-                new OffsetPosition(end.getLine(), startColumn + length, startOffset + length));
+                new DefaultPosition(start.getLine(), startColumn, startOffset),
+                new DefaultPosition(end.getLine(), startColumn + length, startOffset + length));
     }
 
     @NonNull
@@ -159,92 +144,14 @@ public class LintCliXmlParser extends XmlParser {
         return new LocationHandle(context.file, node);
     }
 
-    private static class OffsetPosition extends com.android.tools.lint.detector.api.Position
-            implements PositionXmlParser.Position {
-        /** The line number (0-based where the first line is line 0) */
-        private final int mLine;
-
-        /**
-         * The column number (where the first character on the line is 0), or -1 if
-         * unknown
-         */
-        private final int mColumn;
-
-        /** The character offset */
-        private final int mOffset;
-
-        /**
-         * Linked position: for a begin offset this will point to the end
-         * offset, and for an end offset this will be null
-         */
-        private PositionXmlParser.Position mEnd;
-
-        /**
-         * Creates a new {@link OffsetPosition}
-         *
-         * @param line the 0-based line number, or -1 if unknown
-         * @param column the 0-based column number, or -1 if unknown
-         * @param offset the offset, or -1 if unknown
-         */
-        public OffsetPosition(int line, int column, int offset) {
-            mLine = line;
-            mColumn = column;
-            mOffset = offset;
-        }
-
-        @Override
-        public int getLine() {
-            return mLine;
-        }
-
-        @Override
-        public int getOffset() {
-            return mOffset;
-        }
-
-        @Override
-        public int getColumn() {
-            return mColumn;
-        }
-
-        @Override
-        public PositionXmlParser.Position getEnd() {
-            return mEnd;
-        }
-
-        @Override
-        public void setEnd(@NonNull PositionXmlParser.Position end) {
-            mEnd = end;
-        }
-
-        @Override
-        public String toString() {
-            return "OffsetPosition [line=" + mLine + ", column=" + mColumn + ", offset="
-                    + mOffset + ", end=" + mEnd + ']';
-        }
-    }
-
     @Override
     public int getNodeStartOffset(@NonNull XmlContext context, @NonNull Node node) {
-        OffsetPosition pos = (OffsetPosition) mParser.getPosition(node, -1, -1);
-        if (pos != null) {
-            return pos.getOffset();
-        }
-
-        return -1;
+        return  mParser.getPosition(node).getStartOffset();
     }
 
     @Override
     public int getNodeEndOffset(@NonNull XmlContext context, @NonNull Node node) {
-        OffsetPosition pos = (OffsetPosition) mParser.getPosition(node, -1, -1);
-        if (pos != null) {
-            PositionXmlParser.Position end = pos.getEnd();
-            if (end != null) {
-                return end.getOffset();
-            }
-        }
-
-        return -1;
+        return  mParser.getPosition(node).getEndOffset();
     }
 
     /* Handle for creating DOM positions cheaply and returning full fledged locations later */
@@ -261,12 +168,7 @@ public class LintCliXmlParser extends XmlParser {
         @NonNull
         @Override
         public Location resolve() {
-            OffsetPosition pos = (OffsetPosition) mParser.getPosition(mNode);
-            if (pos != null) {
-                return Location.create(mFile, pos, (OffsetPosition) pos.getEnd());
-            }
-
-            return Location.create(mFile);
+            return Location.create(mFile, mParser.getPosition(mNode));
         }
 
         @Override
