@@ -19,7 +19,9 @@ package com.android.manifmerger;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.concurrency.Immutable;
-import com.android.utils.PositionXmlParser;
+import com.android.ide.common.blame.SourceFile;
+import com.android.ide.common.blame.SourceFilePosition;
+import com.android.ide.common.blame.SourcePosition;
 import com.google.common.base.Function;
 import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
@@ -31,8 +33,6 @@ import org.w3c.dom.Node;
  * Common behavior of any xml declaration.
  */
 public abstract class XmlNode {
-
-    private static final String UNKNOWN_POSITION = "Unknown position";
 
     protected static final Function<Node, String> NODE_TO_NAME =
             new Function<Node, String>() {
@@ -65,13 +65,20 @@ public abstract class XmlNode {
      * Returns the element's position
      */
     @NonNull
-    public abstract PositionXmlParser.Position getPosition();
+    public abstract SourcePosition getPosition();
 
     /**
      * Returns the element's document xml source file location.
      */
     @NonNull
-    public abstract XmlLoader.SourceLocation getSourceLocation();
+    public abstract SourceFile getSourceFile();
+
+    /**
+     * Returns the element's document xml source file location.
+     */
+    public SourceFilePosition getSourceFilePosition() {
+        return new SourceFilePosition(getSourceFile(), getPosition());
+    }
 
     /**
      * Returns the element's xml
@@ -134,36 +141,13 @@ public abstract class XmlNode {
     }
 
     /**
-     * Return the line number in the original xml file this element or attribute was declared.
-     */
-    public int getLine() {
-        return getPosition().getLine();
-    }
-
-    /**
-     * Return the column number in the original xml file this element or attribute was declared.
-     */
-    public int getColumn() {
-        return getPosition().getColumn();
-    }
-
-    /**
      * Returns the position of this attribute in the original xml file. This may return an invalid
      * location as this xml fragment does not exist in any xml file but is the temporary result
      * of the merging process.
-     * @return a human readable position or {@link #UNKNOWN_POSITION}
+     * @return a human readable position.
      */
     public String printPosition() {
-        return printPosition(true);
-    }
-
-    public String printPosition(boolean shortFormat) {
-        PositionXmlParser.Position position = getPosition();
-        return new StringBuilder()
-                .append(getSourceLocation().print(shortFormat))
-                .append(":").append(position.getLine())
-                .append(":").append(position.getColumn())
-                .toString();
+        return getSourceFilePosition().print(true /*shortFormat*/);
     }
 
     /**

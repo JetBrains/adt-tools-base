@@ -143,5 +143,5 @@ android:versionName="1.0.0">
 
 @errors
 
-ERROR:Overlay manifest:package attribute declared at ManifestMerger2Test0_overlay1.xml:3:5 value=\(suffix.not.allowed.in.overlay\)
-    has a different value=\(com.example.app1\) declared in main manifest at ManifestMerger2Test1_main.xml:9:5
+ERROR:Overlay manifest:package attribute declared at ManifestMerger2Test0_overlay1.xml:3:5-44 value=\(suffix.not.allowed.in.overlay\)
+    has a different value=\(com.example.app1\) declared in main manifest at ManifestMerger2Test1_main.xml:9:5-31

@@ -16,6 +16,9 @@
 
 package com.android.ide.common.blame;
 
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+import com.android.annotations.concurrency.Immutable;
 import com.google.common.base.Objects;
 
 /**
@@ -23,25 +26,16 @@ import com.google.common.base.Objects;
  *
  * Positions that are unknown are represented by -1.
  */
+@Immutable
+//TODO: make final once FilePosition is removed.
 public class SourcePosition {
 
     public static final SourcePosition UNKNOWN = new SourcePosition();
 
-    private final int mStartLine;
+    private final int mStartLine, mStartColumn, mStartOffset, mEndLine, mEndColumn, mEndOffset;
 
-    private final int mStartColumn;
-
-    private final int mStartOffset;
-
-    private final int mEndLine;
-
-    private final int mEndColumn;
-
-    private final int mEndOffset;
-
-    public SourcePosition(int startLine, int startColumn, int startOffset, int endLine,
-            int endColumn,
-            int endOffset) {
+    public SourcePosition(int startLine, int startColumn, int startOffset,
+            int endLine, int endColumn, int endOffset) {
         mStartLine = startLine;
         mStartColumn = startColumn;
         mStartOffset = startOffset;
@@ -83,25 +77,28 @@ public class SourcePosition {
      */
     @Override
     public String toString() {
-        StringBuilder sB = new StringBuilder();
-        sB.append(mStartLine);
+        if (mStartLine == -1) {
+            return "?";
+        }
+        StringBuilder sB = new StringBuilder(15);
+        sB.append(mStartLine + 1); // Humans think that the first line is line 1.
         if (mStartColumn != -1) {
             sB.append(':');
-            sB.append(mStartColumn);
+            sB.append(mStartColumn + 1);
         }
         if (mEndLine != -1) {
 
             if (mEndLine == mStartLine) {
                 if (mEndColumn != -1 && mEndColumn != mStartColumn) {
                     sB.append('-');
-                    sB.append(mEndColumn);
+                    sB.append(mEndColumn + 1);
                 }
             } else {
                 sB.append('-');
-                sB.append(mEndLine);
+                sB.append(mEndLine + 1);
                 if (mEndColumn != -1) {
                     sB.append(':');
-                    sB.append(mEndColumn);
+                    sB.append(mEndColumn + 1);
                 }
             }
         }
@@ -110,17 +107,20 @@ public class SourcePosition {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof SourcePosition) {
-            SourcePosition other = (SourcePosition) obj;
-
-            return other.mStartLine == mStartLine &&
-                    other.mStartColumn == mStartColumn &&
-                    other.mStartOffset == mStartOffset &&
-                    other.mEndLine == mEndLine &&
-                    other.mEndColumn == mEndColumn &&
-                    other.mEndOffset == mEndOffset;
+        if (this == obj) {
+            return true;
         }
-        return false;
+        if (!(obj instanceof SourcePosition)) {
+            return false;
+        }
+        SourcePosition other = (SourcePosition) obj;
+
+        return other.mStartLine == mStartLine &&
+                other.mStartColumn == mStartColumn &&
+                other.mStartOffset == mStartOffset &&
+                other.mEndLine == mEndLine &&
+                other.mEndColumn == mEndColumn &&
+                other.mEndOffset == mEndOffset;
     }
 
     @Override

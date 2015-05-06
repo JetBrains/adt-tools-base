@@ -17,10 +17,10 @@
 package com.android.manifmerger;
 
 import com.android.SdkConstants;
+import com.android.ide.common.blame.SourcePosition;
 import com.android.ide.common.xml.XmlFormatPreferences;
 import com.android.ide.common.xml.XmlFormatStyle;
 import com.android.ide.common.xml.XmlPrettyPrinter;
-import com.android.utils.PositionXmlParser;
 import com.google.common.base.Optional;
 
 import junit.framework.TestCase;
@@ -51,7 +51,7 @@ public class XmlLoaderTest extends TestCase {
                 + "</manifest>";
 
         XmlDocument xmlDocument = TestUtils.xmlDocumentFromString(
-                new TestUtils.TestSourceLocation(getClass(),"testToolsPrefix()"), input);
+                TestUtils.sourceFile(getClass(), "testToolsPrefix()"), input);
         Optional<XmlElement> applicationOptional = xmlDocument.getRootNode()
                 .getNodeByTypeAndKey(ManifestModel.NodeTypes.APPLICATION, null);
         assertTrue(applicationOptional.isPresent());
@@ -87,7 +87,7 @@ public class XmlLoaderTest extends TestCase {
                 + "</manifest>";
 
         XmlDocument xmlDocument = TestUtils.xmlDocumentFromString(
-                new TestUtils.TestSourceLocation(getClass(),"testPrettyPrint()"), input);
+                TestUtils.sourceFile(getClass(), "testPrettyPrint()"), input);
         Optional<XmlElement> applicationOptional = xmlDocument.getRootNode()
                 .getNodeByTypeAndKey(ManifestModel.NodeTypes.APPLICATION, null);
         assertTrue(applicationOptional.isPresent());
@@ -110,7 +110,7 @@ public class XmlLoaderTest extends TestCase {
                 + "</manifest>";
 
         XmlDocument xmlDocument = TestUtils.xmlDocumentFromString(
-                new TestUtils.TestSourceLocation(getClass(),"testToolsPrefix()"),input);
+                TestUtils.sourceFile(getClass(), "testToolsPrefix()"),input);
         Optional<XmlElement> applicationOptional = xmlDocument.getRootNode()
                 .getNodeByTypeAndKey(ManifestModel.NodeTypes.APPLICATION, null);
         assertTrue(applicationOptional.isPresent());
@@ -123,17 +123,17 @@ public class XmlLoaderTest extends TestCase {
         assertEquals("replace", tools.getNodeValue());
 
         // check positions.
-        PositionXmlParser.Position applicationPosition = applicationOptional.get().getPosition();
+        SourcePosition applicationPosition = applicationOptional.get().getPosition();
         assertNotNull(applicationPosition);
-        assertEquals(6, applicationPosition.getLine());
-        assertEquals(5, applicationPosition.getColumn());
+        assertEquals(6, applicationPosition.getStartLine() + 1);
+        assertEquals(5, applicationPosition.getStartColumn() + 1);
 
         XmlAttribute xmlAttribute =
                 new XmlAttribute(applicationOptional.get(), tools, null /* AttributeModel */);
-        PositionXmlParser.Position toolsPosition = xmlAttribute.getPosition();
+        SourcePosition toolsPosition = xmlAttribute.getPosition();
         assertNotNull(toolsPosition);
-        assertEquals(6, toolsPosition.getLine());
-        assertEquals(51, toolsPosition.getColumn());
+        assertEquals(6, toolsPosition.getStartLine() + 1);
+        assertEquals(51, toolsPosition.getStartColumn() + 1);
     }
 
     public void testUnusualPrefixes()
@@ -150,7 +150,7 @@ public class XmlLoaderTest extends TestCase {
                 + "</manifest>";
 
         XmlDocument xmlDocument = TestUtils.xmlDocumentFromString(
-                new TestUtils.TestSourceLocation(getClass(), "testUnusualPrefixes()"), input);
+                TestUtils.sourceFile(getClass(), "testUnusualPrefixes()"), input);
         Optional<XmlElement> applicationOptional = xmlDocument.getRootNode()
                 .getNodeByTypeAndKey(ManifestModel.NodeTypes.APPLICATION, null);
         assertTrue(applicationOptional.isPresent());

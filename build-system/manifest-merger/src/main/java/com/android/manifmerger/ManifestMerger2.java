@@ -24,6 +24,8 @@ import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.concurrency.Immutable;
+import com.android.ide.common.blame.SourceFilePosition;
+import com.android.ide.common.blame.SourcePosition;
 import com.android.utils.ILogger;
 import com.android.utils.Pair;
 import com.android.utils.SdkUtils;
@@ -122,12 +124,12 @@ public class ManifestMerger2 {
                 loadedMainManifestInfo.getXmlDocument().getPackage();
         if (!mainPackageAttribute.isPresent()) {
             mergingReportBuilder.addMessage(
-                    loadedMainManifestInfo.getXmlDocument().getSourceLocation(), 0, 0,
+                    loadedMainManifestInfo.getXmlDocument().getSourceFile(),
                     MergingReport.Record.Severity.ERROR,
                     String.format(
                             "Main AndroidManifest.xml at %1$s manifest:package attribute "
                                     + "is not declared",
-                            loadedMainManifestInfo.getXmlDocument().getSourceLocation()
+                            loadedMainManifestInfo.getXmlDocument().getSourceFile()
                                     .print(true)));
             return mergingReportBuilder.build();
         }
@@ -187,7 +189,7 @@ public class ManifestMerger2 {
                                 packageAttribute.get().getValue(),
                                 mainPackageAttribute.get().getValue(),
                                 mainPackageAttribute.get().printPosition(),
-                                packageAttribute.get().getSourceLocation().print(true))
+                                packageAttribute.get().getSourceFile().print(true))
                         : String.format(
                                 "Overlay manifest:package attribute declared at %1$s value=(%2$s)\n"
                                         + "\thas a different value=(%3$s) "
@@ -197,7 +199,7 @@ public class ManifestMerger2 {
                                 mainPackageAttribute.get().getValue(),
                                 mainPackageAttribute.get().printPosition());
                 mergingReportBuilder.addMessage(
-                        overlayDocument.getXmlDocument().getSourceLocation(), 0, 0,
+                        overlayDocument.getXmlDocument().getSourceFile(),
                         MergingReport.Record.Severity.ERROR,
                         message);
                 return mergingReportBuilder.build();
@@ -460,7 +462,7 @@ public class ManifestMerger2 {
                 .validate(mergingReportBuilder, lowerPriorityDocument.getXmlDocument());
         if (validationResult == MergingReport.Result.ERROR) {
             mergingReportBuilder.addMessage(
-                    lowerPriorityDocument.getXmlDocument().getSourceLocation(), 0, 0,
+                    lowerPriorityDocument.getXmlDocument().getSourceFile(),
                     MergingReport.Record.Severity.ERROR,
                     "Validation failed, exiting");
             return Optional.absent();
@@ -634,9 +636,7 @@ public class ManifestMerger2 {
                     to.getXml().getAttributeNode(systemProperty.toCamelCase()), null);
             actionRecorder.recordAttributeAction(xmlAttribute, new Actions.AttributeRecord(
                     Actions.ActionType.INJECTED,
-                    new Actions.ActionLocation(
-                            to.getSourceLocation(),
-                            PositionImpl.UNKNOWN),
+                    new SourceFilePosition(to.getSourceFile(), SourcePosition.UNKNOWN),
                     xmlAttribute.getId(),
                     null, /* reason */
                     null /* attributeOperationType */));
@@ -661,9 +661,7 @@ public class ManifestMerger2 {
             actionRecorder.recordAttributeAction(xmlAttribute,
                     new Actions.AttributeRecord(
                             Actions.ActionType.INJECTED,
-                            new Actions.ActionLocation(
-                                    to.getSourceLocation(),
-                                    PositionImpl.UNKNOWN),
+                            new SourceFilePosition(to.getSourceFile(), SourcePosition.UNKNOWN),
                             xmlAttribute.getId(),
                             null, /* reason */
                             null /* attributeOperationType */
@@ -695,8 +693,8 @@ public class ManifestMerger2 {
                 XmlElement xmlElement = new XmlElement(useSdk, document);
                 Actions.NodeRecord nodeRecord = new Actions.NodeRecord(
                         Actions.ActionType.INJECTED,
-                        new Actions.ActionLocation(xmlElement.getSourceLocation(),
-                                PositionImpl.UNKNOWN),
+                        new SourceFilePosition(xmlElement.getSourceFile(),
+                                SourcePosition.UNKNOWN),
                         xmlElement.getId(),
                         "use-sdk injection requested",
                         NodeOperationType.STRICT);

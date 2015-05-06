@@ -194,10 +194,10 @@
 
 @errors
 
-ERROR:Missing one of the key attributes 'name,glEsVersion' on element uses-feature at ManifestMerger2Test1_lib1.xml:6:5
-ERROR:Missing one of the key attributes 'name,glEsVersion' on element uses-feature at ManifestMerger2Test1_lib1.xml:7:5
-ERROR:Missing one of the key attributes 'name,glEsVersion' on element uses-feature at ManifestMerger2Test1_lib1.xml:8:5
-ERROR:Attribute uses-feature#com.example.SomeFeature3_RequiredFalse@required at ManifestMerger2Test1_lib1.xml:18:9 has an illegal value=\(booh!\), expected 'true' or 'false'
-ERROR:Attribute uses-feature#com.example.SomeFeature4_RequiredFalse@required at ManifestMerger2Test1_lib1.xml:23:9 has an illegal value=\(foo\), expected 'true' or 'false'
+ERROR:Missing one of the key attributes 'name,glEsVersion' on element uses-feature at ManifestMerger2Test1_lib1.xml:6:5-21
+ERROR:Missing one of the key attributes 'name,glEsVersion' on element uses-feature at ManifestMerger2Test1_lib1.xml:7:5-46
+ERROR:Missing one of the key attributes 'name,glEsVersion' on element uses-feature at ManifestMerger2Test1_lib1.xml:8:5-45
+ERROR:Attribute uses-feature#com.example.SomeFeature3_RequiredFalse@required at ManifestMerger2Test1_lib1.xml:18:9-33 has an illegal value=\(booh!\), expected 'true' or 'false'
+ERROR:Attribute uses-feature#com.example.SomeFeature4_RequiredFalse@required at ManifestMerger2Test1_lib1.xml:23:9-31 has an illegal value=\(foo\), expected 'true' or 'false'
 ERROR:Validation failed, exiting
-WARNING:Element uses-feature#com.example.SomeFeature3_RequiredFalse at ManifestMerger2Test0_main.xml:26:5 duplicated with element declared at ManifestMerger2Test0_main.xml:21:5
+WARNING:Element uses-feature#com.example.SomeFeature3_RequiredFalse at ManifestMerger2Test0_main.xml:26:5-28:36 duplicated with element declared at ManifestMerger2Test0_main.xml:21:5-23:36

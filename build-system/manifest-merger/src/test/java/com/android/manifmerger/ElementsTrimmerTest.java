@@ -70,8 +70,7 @@ public class ElementsTrimmerTest extends TestCase {
                 + "</manifest>";
 
         XmlDocument xmlDocument = TestUtils.xmlDocumentFromString(
-                new TestUtils.TestSourceLocation(
-                        getClass(), "testNoUseFeaturesDeclaration"), input);
+                TestUtils.sourceFile(getClass(), "testNoUseFeaturesDeclaration"), input);
 
         MergingReport.Builder mergingReport = new MergingReport.Builder(mILogger);
         ElementsTrimmer.trim(xmlDocument, mergingReport);
@@ -97,8 +96,7 @@ public class ElementsTrimmerTest extends TestCase {
                 + "</manifest>";
 
         XmlDocument xmlDocument = TestUtils.xmlDocumentFromString(
-                new TestUtils.TestSourceLocation(
-                        getClass(), "testNothingToTrim"), input);
+                TestUtils.sourceFile(getClass(), "testNothingToTrim"), input);
 
         MergingReport.Builder mergingReport = new MergingReport.Builder(mILogger);
         ElementsTrimmer.trim(xmlDocument, mergingReport);
@@ -132,8 +130,7 @@ public class ElementsTrimmerTest extends TestCase {
                 + "</manifest>";
 
         XmlDocument xmlDocument = TestUtils.xmlDocumentFromString(
-                new TestUtils.TestSourceLocation(
-                        getClass(), "testMultipleAboveTwoResults"), input);
+                TestUtils.sourceFile(getClass(), "testMultipleAboveTwoResults"), input);
 
         MergingReport.Builder mergingReport = new MergingReport.Builder(mILogger);
         ElementsTrimmer.trim(xmlDocument, mergingReport);
@@ -163,8 +160,7 @@ public class ElementsTrimmerTest extends TestCase {
                 + "</manifest>";
 
         XmlDocument xmlDocument = TestUtils.xmlDocumentFromString(
-                new TestUtils.TestSourceLocation(
-                        getClass(), "testSingleAboveTwoResults"), input);
+                TestUtils.sourceFile(getClass(), "testSingleAboveTwoResults"), input);
 
         MergingReport.Builder mergingReport = new MergingReport.Builder(mILogger);
         ElementsTrimmer.trim(xmlDocument, mergingReport);
@@ -199,8 +195,7 @@ public class ElementsTrimmerTest extends TestCase {
                 + "</manifest>";
 
         XmlDocument xmlDocument = TestUtils.xmlDocumentFromString(
-                new TestUtils.TestSourceLocation(
-                        getClass(), "testMultipleBelowTwoResults"), input);
+                TestUtils.sourceFile(getClass(), "testMultipleBelowTwoResults"), input);
 
         MergingReport.Builder mergingReport = new MergingReport.Builder(mILogger);
         ElementsTrimmer.trim(xmlDocument, mergingReport);
@@ -230,8 +225,7 @@ public class ElementsTrimmerTest extends TestCase {
                 + "</manifest>";
 
         XmlDocument xmlDocument = TestUtils.xmlDocumentFromString(
-                new TestUtils.TestSourceLocation(
-                        getClass(), "testSingleBelowTwoResults"), input);
+                TestUtils.sourceFile(getClass(), "testSingleBelowTwoResults"), input);
 
         MergingReport.Builder mergingReport = new MergingReport.Builder(mILogger);
         ElementsTrimmer.trim(xmlDocument, mergingReport);
@@ -277,8 +271,7 @@ public class ElementsTrimmerTest extends TestCase {
                 + "</manifest>";
 
         XmlDocument xmlDocument = TestUtils.xmlDocumentFromString(
-                new TestUtils.TestSourceLocation(
-                        getClass(), "testMultipleAboveAndBelowTwoResults"), input);
+                TestUtils.sourceFile(getClass(), "testMultipleAboveAndBelowTwoResults"), input);
 
         MergingReport.Builder mergingReport = new MergingReport.Builder(mILogger);
         ElementsTrimmer.trim(xmlDocument, mergingReport);
@@ -312,8 +305,7 @@ public class ElementsTrimmerTest extends TestCase {
                 + "</manifest>";
 
         XmlDocument xmlDocument = TestUtils.xmlDocumentFromString(
-                new TestUtils.TestSourceLocation(
-                        getClass(), "testUsesFeatureSplit"), input);
+                TestUtils.sourceFile(getClass(), "testUsesFeatureSplit"), input);
 
         ActionRecorder mockActionRecorder = Mockito.mock(ActionRecorder.class);
         MergingReport.Builder mockReport = Mockito.mock(MergingReport.Builder.class);
@@ -354,8 +346,7 @@ public class ElementsTrimmerTest extends TestCase {
                 + "</manifest>";
 
         XmlDocument xmlDocument = TestUtils.xmlDocumentFromString(
-                new TestUtils.TestSourceLocation(
-                        getClass(), "testUsesFeatureSplit"), input);
+                TestUtils.sourceFile(getClass(), "testUsesFeatureSplit"), input);
 
         ActionRecorder mockActionRecorder = Mockito.mock(ActionRecorder.class);
         MergingReport.Builder mockReport = Mockito.mock(MergingReport.Builder.class);

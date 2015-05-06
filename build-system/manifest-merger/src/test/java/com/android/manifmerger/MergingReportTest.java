@@ -19,8 +19,8 @@ package com.android.manifmerger;
 import static com.android.manifmerger.MergingReport.Record.Severity;
 import static com.android.manifmerger.PlaceholderHandler.KeyBasedValueResolver;
 import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.when;
 
+import com.android.ide.common.blame.SourceFile;
 import com.android.utils.ILogger;
 import com.android.utils.PositionXmlParser;
 import com.google.common.base.Optional;
@@ -40,7 +40,7 @@ public class MergingReportTest extends TestCase {
 
     @Mock ILogger mLoggerMock;
     @Mock Element mElement;
-    @Mock XmlLoader.SourceLocation mSourceLocation;
+    SourceFile mSourceLocation = new SourceFile("location");
     @Mock KeyResolver<String> mKeyResolver;
     @Mock KeyBasedValueResolver<ManifestMerger2.SystemProperty> mPropertyResolver;
 
@@ -112,18 +112,17 @@ public class MergingReportTest extends TestCase {
     }
 
     public void testLogging() {
-        when(mSourceLocation.print(any(boolean.class))).thenReturn("location");
         MergingReport mergingReport = new MergingReport.Builder(mLoggerMock)
-                .addMessage(mSourceLocation,0, 0, Severity.INFO, "merging info")
-                .addMessage(mSourceLocation,0, 0, Severity.WARNING, "something weird happened")
-                .addMessage(mSourceLocation,0, 0, Severity.ERROR, "something bad happened")
+                .addMessage(mSourceLocation,1, 1, Severity.INFO, "merging info")
+                .addMessage(mSourceLocation,1, 1, Severity.WARNING, "something weird happened")
+                .addMessage(mSourceLocation,1, 1, Severity.ERROR, "something bad happened")
                 .build();
 
         mergingReport.log(mLoggerMock);
-        Mockito.verify(mLoggerMock).verbose("location:0:0 Info:\n\tmerging info");
-        Mockito.verify(mLoggerMock).warning("location:0:0 Warning:\n\tsomething weird happened");
+        Mockito.verify(mLoggerMock).verbose("location:1:1 Info:\n\tmerging info");
+        Mockito.verify(mLoggerMock).warning("location:1:1 Warning:\n\tsomething weird happened");
         Mockito.verify(mLoggerMock).error(null /* throwable */,
-                "location:0:0 Error:\n\tsomething bad happened");
+                "location:1:1 Error:\n\tsomething bad happened");
         Mockito.verify(mLoggerMock).verbose(Actions.HEADER);
         Mockito.verifyNoMoreInteractions(mLoggerMock);
     }
