@@ -20,6 +20,7 @@ import static com.android.SdkConstants.ATTR_VALUE;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.tools.lint.detector.api.ClassContext;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.DefaultPosition;
 import com.android.tools.lint.detector.api.JavaContext;
@@ -230,12 +231,36 @@ public abstract class JavaParser {
          * */
         @NonNull public abstract String getName();
 
+        /** Returns the simple name of this class */
+        @NonNull
+        public String getSimpleName() {
+            // This doesn't handle inner classes properly, so subclasses with more
+            // accurate type information will override to handle it correctly.
+            String name = getName();
+            int index = name.lastIndexOf('.');
+            if (index != -1) {
+                return name.substring(index + 1);
+            }
+            return name;
+        }
+
         /**
          * Returns the full signature of the type, which is normally the same as {@link #getName()}
          * but for arrays can include []'s, for generic methods can include generics parameters
          * etc
          */
         @NonNull public abstract String getSignature();
+
+        /**
+         * Computes the internal class name of the given fully qualified class name.
+         * For example, it converts foo.bar.Foo.Bar into foo/bar/Foo$Bar.
+         * This should only be called for class types, not primitives.
+         *
+         * @return the internal class name
+         */
+        @NonNull public String getInternalName() {
+            return ClassContext.getInternalName(getName());
+        }
 
         public abstract boolean matchesName(@NonNull String name);
 
@@ -272,6 +297,10 @@ public abstract class JavaParser {
         @Override
         public abstract boolean equals(Object o);
 
+        @Override
+        public String toString() {
+            return getName();
+        }
     }
 
     /** Convenience implementation of {@link TypeDescriptor} */
@@ -403,7 +432,7 @@ public abstract class JavaParser {
         @NonNull
         public abstract String getName();
 
-        /** Returns the simple of this class */
+        /** Returns the simple name of this class */
         @NonNull
         public abstract String getSimpleName();
 

@@ -20,13 +20,14 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Severity;
+import com.android.utils.Pair;
 
 import java.io.File;
 import java.io.PrintWriter;
 import java.io.RandomAccessFile;
 import java.io.StringWriter;
 
-@SuppressWarnings("javadoc")
+@SuppressWarnings({"javadoc", "ConstantConditions"})
 public class ApiLookupTest extends AbstractCheckTest {
     private final ApiLookup mDb = ApiLookup.get(new TestLintClient());
 
@@ -80,6 +81,39 @@ public class ApiLookupTest extends AbstractCheckTest {
                 "(Ljava/lang/Throwable;)V"));
     }
 
+    public void testDeprecatedFields() {
+        // Not deprecated:
+        assertEquals(-1, mDb.getFieldDeprecatedIn("android/Manifest$permission", "GET_PACKAGE_SIZE"));
+        // Field only has since > 1, no deprecation
+        assertEquals(9, mDb.getFieldVersion("android/Manifest$permission", "NFC"));
+
+        // Deprecated
+        assertEquals(21, mDb.getFieldDeprecatedIn("android/Manifest$permission", "GET_TASKS"));
+        // Field both deprecated and since > 1
+        assertEquals(21, mDb.getFieldDeprecatedIn("android/Manifest$permission", "READ_SOCIAL_STREAM"));
+        assertEquals(15, mDb.getFieldVersion("android/Manifest$permission", "READ_SOCIAL_STREAM"));
+    }
+
+    public void testDeprecatedCalls() {
+        // Not deprecated:
+        //assertEquals(12, mDb.getCallVersion("android/app/Fragment", "onInflate",
+        //        "(Landroid/app/Activity;Landroid/util/AttributeSet;Landroid/os/Bundle;)V"));
+        assertEquals(23, mDb.getCallDeprecatedIn("android/app/Fragment", "onInflate",
+                "(Landroid/app/Activity;Landroid/util/AttributeSet;Landroid/os/Bundle;)V"));
+        assertEquals(-1, mDb.getCallDeprecatedIn("android/app/Fragment", "onInflate",
+                "(Landroid/content/Context;Landroid/util/AttributeSet;Landroid/os/Bundle;)V"));
+        // Deprecated
+        assertEquals(16, mDb.getCallDeprecatedIn("android/app/Service", "onStart", "(Landroid/content/Intent;I)V"));
+        assertEquals(16, mDb.getCallDeprecatedIn("android/app/Fragment", "onInflate", "(Landroid/util/AttributeSet;Landroid/os/Bundle;)V"));
+    }
+
+    public void testDeprecatedClasses() {
+        // Not deprecated:
+        assertEquals(-1, mDb.getClassDeprecatedIn("android/app/Fragment"));
+        // Deprecated
+        assertEquals(9, mDb.getClassDeprecatedIn("org/xml/sax/Parser"));
+    }
+
     public void testInheritInterfaces() {
         // The onPreferenceStartFragment is inherited via the
         // android/preference/PreferenceFragment$OnPreferenceStartFragmentCallback
@@ -87,6 +121,24 @@ public class ApiLookupTest extends AbstractCheckTest {
         assertEquals(11, mDb.getCallVersion("android/preference/PreferenceActivity",
                 "onPreferenceStartFragment",
                 "(Landroid/preference/PreferenceFragment;Landroid/preference/Preference;)"));
+    }
+
+    public void testInterfaceApi() {
+        assertEquals(21, mDb.getClassVersion("android/animation/StateListAnimator"));
+        assertEquals(11, mDb.getValidCastVersion("android/animation/AnimatorListenerAdapter",
+                "android/animation/Animator$AnimatorListener"));
+        assertEquals(19, mDb.getValidCastVersion("android/animation/AnimatorListenerAdapter",
+                "android/animation/Animator$AnimatorPauseListener"));
+
+        assertEquals(11, mDb.getValidCastVersion("android/animation/Animator",
+                "java/lang/Cloneable"));
+        assertEquals(22, mDb.getValidCastVersion("android/animation/StateListAnimator",
+                "java/lang/Cloneable"));
+    }
+
+    public void testSuperClassCast() {
+        assertEquals(22, mDb.getValidCastVersion("android/view/animation/AccelerateDecelerateInterpolator",
+                "android/view/animation/BaseInterpolator"));
     }
 
     public void testIsValidPackage() {
@@ -112,6 +164,11 @@ public class ApiLookupTest extends AbstractCheckTest {
     @SuppressWarnings({"ConstantConditions", "IOResourceOpenedButNotSafelyClosed",
             "ResultOfMethodCallIgnored"})
     public void testCorruptedCacheHandling() throws Exception {
+        if (ApiLookup.DEBUG_FORCE_REGENERATE_BINARY) {
+            System.err.println("Skipping " + getName() + ": not valid while regenerating indices");
+            return;
+        }
+
         ApiLookup lookup;
 
         // Real cache:
@@ -143,7 +200,7 @@ public class ApiLookupTest extends AbstractCheckTest {
         // Truncate file in half
         raf.setLength(100);  // Broken header
         raf.close();
-        lookup = ApiLookup.get(new LookupTestClient());
+        ApiLookup.get(new LookupTestClient());
         String message = mLogBuffer.toString();
         // NOTE: This test is incompatible with the DEBUG_FORCE_REGENERATE_BINARY and WRITE_STATS
         // flags in the ApiLookup class, so if the test fails during development and those are
@@ -182,6 +239,88 @@ public class ApiLookupTest extends AbstractCheckTest {
         assertNotNull(lookup);
         assertEquals("", mLogBuffer.toString()); // No warnings
         ApiLookup.dispose();
+    }
+
+    private static final boolean CHECK_DEPRECATED = true;
+
+    private static void assertSameApi(String desc, int expected, int actual) {
+        // In the database we don't distinguish between 1 and -1 (to save diskspace)
+        if (expected <= 1) {
+            expected = -1;
+        }
+        if (actual <= 1) {
+            actual = -1;
+        }
+        assertEquals(desc, expected, actual);
+    }
+
+    public void testFindEverything() throws Exception {
+        // Load the API versions file and look up every single method/field/class in there
+        // (provided since != 1) and also check the deprecated calls.
+
+        File file = createClient().findResource("platform-tools/api/api-versions.xml");
+        if (file == null || !file.exists()) {
+            return;
+        }
+
+        Api info = Api.parseApi(file);
+        assertNotNull(info);
+        for (ApiClass cls : info.getClasses().values()) {
+            int classSince = cls.getSince();
+            String className = cls.getName();
+            assertSameApi(className, classSince, mDb.getClassVersion(className));
+
+            for (String method : cls.getAllMethods(info)) {
+                int since = cls.getMethod(method, info);
+                int index = method.indexOf('(');
+                String name = method.substring(0, index);
+                String desc = method.substring(index);
+                assertSameApi(method, since, mDb.getCallVersion(className, name, desc));
+
+            }
+            for (String method : cls.getAllFields(info)) {
+                int since = cls.getField(method, info);
+                assertSameApi(method, since, mDb.getFieldVersion(className, method));
+            }
+
+            for (Pair<String, Integer> pair : cls.getInterfaces()) {
+                String interfaceName = pair.getFirst();
+                int api = pair.getSecond();
+                assertSameApi(interfaceName, api,
+                        mDb.getValidCastVersion(className, interfaceName));
+            }
+        }
+
+        if (CHECK_DEPRECATED) {
+            for (ApiClass cls : info.getClasses().values()) {
+                int classDeprecatedIn = cls.getDeprecatedIn();
+                String className = cls.getName();
+                if (classDeprecatedIn > 1) {
+                    assertSameApi(className, classDeprecatedIn,
+                            mDb.getClassDeprecatedIn(className));
+                } else {
+                    assertSameApi(className, -1, mDb.getClassDeprecatedIn(className));
+                }
+
+                for (String method : cls.getAllMethods(info)) {
+                    int deprecatedIn = cls.getMemberDeprecatedIn(method, info);
+                    int index = method.indexOf('(');
+                    String name = method.substring(0, index);
+                    String desc = method.substring(index);
+                    assertSameApi(method, deprecatedIn, mDb.getCallDeprecatedIn(className,
+                            name, desc));
+                }
+                for (String method : cls.getAllFields(info)) {
+                    int deprecatedIn = cls.getMemberDeprecatedIn(method, info);
+                    assertSameApi(method, deprecatedIn, mDb.getFieldDeprecatedIn(className,
+                            method));
+                }
+            }
+        }
+    }
+
+    public void test() {
+        assertEquals(14, mDb.getFieldVersion("android/provider/ContactsContract$Settings", "DATA_SET"));
     }
 
     private final class LookupTestClient extends TestLintClient {

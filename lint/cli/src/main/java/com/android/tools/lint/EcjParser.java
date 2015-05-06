@@ -1145,6 +1145,45 @@ public class EcjParser extends JavaParser {
             return getName();
         }
 
+        @NonNull
+        @Override
+        public String getSimpleName() {
+            if (mBinding instanceof ReferenceBinding) {
+                ReferenceBinding ref = (ReferenceBinding) mBinding;
+                char[][] name = ref.compoundName;
+                char[] lastSegment = name[name.length - 1];
+                StringBuilder sb = new StringBuilder(lastSegment.length);
+                for (char c : lastSegment) {
+                    if (c == '$') {
+                        c = '.';
+                    }
+                    sb.append(c);
+                }
+                return sb.toString();
+            }
+            return super.getSimpleName();
+        }
+
+        @NonNull
+        @Override
+        public String getInternalName() {
+            if (mBinding instanceof ReferenceBinding) {
+                ReferenceBinding ref = (ReferenceBinding) mBinding;
+                StringBuilder sb = new StringBuilder(100);
+                char[][] name = ref.compoundName;
+                for (char[] segment : name) {
+                    if (sb.length() != 0) {
+                        sb.append('/');
+                    }
+                    for (char c : segment) {
+                        sb.append(c);
+                    }
+                }
+                return sb.toString();
+            }
+            return super.getInternalName();
+        }
+
         @Override
         @Nullable
         public ResolvedClass getTypeClass() {

@@ -17,6 +17,8 @@
 package com.android.tools.lint.checks;
 
 
+import com.android.annotations.NonNull;
+
 import org.xml.sax.SAXException;
 
 import java.io.File;
@@ -51,7 +53,7 @@ public class Api {
             SAXParser parser = parserFactory.newSAXParser();
             ApiParser apiParser = new ApiParser();
             parser.parse(fileInputStream, apiParser);
-            return new Api(apiParser.getClasses());
+            return new Api(apiParser.getClasses(), apiParser.getPackages());
         } catch (ParserConfigurationException e) {
             e.printStackTrace();
         } catch (SAXException e) {
@@ -72,9 +74,13 @@ public class Api {
     }
 
     private final Map<String, ApiClass> mClasses;
+    private final Map<String, ApiPackage> mPackages;
 
-    private Api(Map<String, ApiClass> classes) {
+    private Api(
+            @NonNull Map<String, ApiClass> classes,
+            @NonNull Map<String, ApiPackage> packages) {
         mClasses = new HashMap<String, ApiClass>(classes);
+        mPackages = new HashMap<String, ApiPackage>(packages);
     }
 
     ApiClass getClass(String fqcn) {
@@ -83,5 +89,9 @@ public class Api {
 
     Map<String, ApiClass> getClasses() {
         return Collections.unmodifiableMap(mClasses);
+    }
+
+    Map<String, ApiPackage> getPackages() {
+        return Collections.unmodifiableMap(mPackages);
     }
 }

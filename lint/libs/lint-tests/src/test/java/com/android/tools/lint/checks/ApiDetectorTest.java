@@ -1067,7 +1067,7 @@ public class ApiDetectorTest extends AbstractCheckTest {
                 lintProject(
                         "apicheck/classpath=>.classpath",
                         "apicheck/minsdk4.xml=>AndroidManifest.xml",
-                        "project.properties1=>project.properties",
+                        "project.properties19=>project.properties",
                         "apicheck/ApiCallTest13.java.txt=>src/test/pkg/ApiCallTest13.java",
                         "apicheck/ApiCallTest13.class.data=>bin/classes/test/pkg/ApiCallTest13.class"
                 ));
@@ -1847,6 +1847,131 @@ public class ApiDetectorTest extends AbstractCheckTest {
                         copy("apicheck/ApiCallTest12.java.txt", "src/test/pkg/ApiCallTest12.java"),
                         copy("apicheck/ApiCallTest12.class.data", "bin/classes/test/pkg/ApiCallTest12.class")
                 )));
+    }
+
+    @SuppressWarnings({"MethodMayBeStatic", "ConstantConditions", "ClassNameDiffersFromFileName"})
+    public void testCastChecks() throws Exception {
+        // When editing a file we place the error on the first line of the file instead
+        assertEquals(""
+                + "src/test/pkg/CastTest.java:15: Error: Cast from Cursor to Closeable requires API level 16 (current min is 14) [NewApi]\n"
+                + "        Closeable closeable = (Closeable) cursor; // Requires 16\n"
+                + "                              ~~~~~~~~~~~~~~~~~~\n"
+                + "src/test/pkg/CastTest.java:21: Error: Cast from KeyCharacterMap to Parcelable requires API level 16 (current min is 14) [NewApi]\n"
+                + "        Parcelable parcelable2 = (Parcelable)map; // Requires API 16\n"
+                + "                                 ~~~~~~~~~~~~~~~\n"
+                + "src/test/pkg/CastTest.java:27: Error: Cast from AnimatorListenerAdapter to Animator.AnimatorPauseListener requires API level 19 (current min is 14) [NewApi]\n"
+                + "        AnimatorPauseListener listener = (AnimatorPauseListener)adapter;\n"
+                + "                                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "3 errors, 0 warnings\n",
+
+                lintProject(
+                        java("src/test/pkg/CastTest.java", ""
+                                + "import android.animation.Animator.AnimatorPauseListener;\n"
+                                + "import android.animation.AnimatorListenerAdapter;\n"
+                                + "import android.database.Cursor;\n"
+                                + "import android.database.CursorWindow;\n"
+                                + "import android.os.Parcelable;\n"
+                                + "import android.view.KeyCharacterMap;\n"
+                                + "\n"
+                                + "import java.io.Closeable;\n"
+                                + "import java.io.IOException;\n"
+                                + "\n"
+                                + "@SuppressWarnings({\"RedundantCast\", \"unused\"})\n"
+                                + "public class CastTest {\n"
+                                + "    public void test(Cursor cursor) throws IOException {\n"
+                                + "        cursor.close();\n"
+                                + "        Closeable closeable = (Closeable) cursor; // Requires 16\n"
+                                + "        closeable.close();\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    public void test(CursorWindow window, KeyCharacterMap map) {\n"
+                                + "        Parcelable parcelable1 = (Parcelable)window; // OK\n"
+                                + "        Parcelable parcelable2 = (Parcelable)map; // Requires API 16\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    @SuppressWarnings(\"UnnecessaryLocalVariable\")\n"
+                                + "    public void test(AnimatorListenerAdapter adapter) {\n"
+                                + "        // Uh oh - what if the cast isn't needed anymore\n"
+                                + "        AnimatorPauseListener listener = (AnimatorPauseListener)adapter;\n"
+                                + "    }\n"
+                                + "}"),
+                        copy("apicheck/minsdk14.xml", "AndroidManifest.xml")
+                ));
+    }
+
+    @SuppressWarnings({"MethodMayBeStatic", "ConstantConditions", "ClassNameDiffersFromFileName",
+            "UnnecessaryLocalVariable"})
+    public void testImplicitCastTest() throws Exception {
+        // When editing a file we place the error on the first line of the file instead
+        assertEquals(""
+                + "src/test/pkg/ImplicitCastTest.java:14: Error: Cast from Cursor to Closeable requires API level 16 (current min is 14) [NewApi]\n"
+                + "        Closeable closeable = c;\n"
+                + "                              ~\n"
+                + "src/test/pkg/ImplicitCastTest.java:26: Error: Cast from Cursor to Closeable requires API level 16 (current min is 14) [NewApi]\n"
+                + "        closeable = c;\n"
+                + "        ~~~~~~~~~~~~~\n"
+                + "src/test/pkg/ImplicitCastTest.java:36: Error: Cast from ParcelFileDescriptor to Closeable requires API level 16 (current min is 14) [NewApi]\n"
+                + "        safeClose(pfd);\n"
+                + "                  ~~~\n"
+                + "src/test/pkg/ImplicitCastTest.java:47: Error: Cast from AccelerateDecelerateInterpolator to BaseInterpolator requires API level 22 (current min is 14) [NewApi]\n"
+                + "        android.view.animation.BaseInterpolator base = interpolator;\n"
+                + "                                                       ~~~~~~~~~~~~\n"
+                + "4 errors, 0 warnings\n",
+
+                lintProject(
+                        java("src/test/pkg/ImplicitCastTest.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import android.database.Cursor;\n"
+                                + "import android.os.ParcelFileDescriptor;\n"
+                                + "\n"
+                                + "import java.io.Closeable;\n"
+                                + "import java.io.IOException;\n"
+                                + "\n"
+                                + "@SuppressWarnings(\"unused\")\n"
+                                + "public class ImplicitCastTest {\n"
+                                + "    // https://code.google.com/p/android/issues/detail?id=174535\n"
+                                + "    @SuppressWarnings(\"UnnecessaryLocalVariable\")\n"
+                                + "    public void testImplicitCast(Cursor c) {\n"
+                                + "        Closeable closeable = c;\n"
+                                + "        try {\n"
+                                + "            closeable.close();\n"
+                                + "        } catch (IOException e) {\n"
+                                + "            e.printStackTrace();\n"
+                                + "        }\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    // Like the above, but with assignment instead of initializer\n"
+                                + "    public void testImplicitCast2(Cursor c) {\n"
+                                + "        @SuppressWarnings(\"UnnecessaryLocalVariable\")\n"
+                                + "        Closeable closeable;\n"
+                                + "        closeable = c;\n"
+                                + "        try {\n"
+                                + "            closeable.close();\n"
+                                + "        } catch (IOException e) {\n"
+                                + "            e.printStackTrace();\n"
+                                + "        }\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    // https://code.google.com/p/android/issues/detail?id=191120\n"
+                                + "    public void testImplicitCast(ParcelFileDescriptor pfd) {\n"
+                                + "        safeClose(pfd);\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    private static void safeClose(Closeable closeable) {\n"
+                                + "        try {\n"
+                                + "            closeable.close();\n"
+                                + "        } catch (IOException ignore) {\n"
+                                + "        }\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    public void testImplicitCast(android.view.animation.AccelerateDecelerateInterpolator interpolator) {\n"
+                                + "        android.view.animation.BaseInterpolator base = interpolator;\n"
+                                + "    }\n"
+                                + "\n"
+                                + "}\n"),
+                        copy("apicheck/minsdk14.xml", "AndroidManifest.xml")
+                ));
     }
 
     @Override
