@@ -36,6 +36,9 @@ public class JavaArtifactImpl extends BaseArtifactImpl implements JavaArtifact, 
 
     private final Set<String> ideSetupTaskNames;
 
+    @Nullable
+    private final File mockablePlatformJar;
+
     public static JavaArtifactImpl clone(@NonNull JavaArtifact javaArtifact) {
         SourceProvider variantSP = javaArtifact.getVariantSourceProvider();
         SourceProvider flavorsSP = javaArtifact.getMultiFlavorSourceProvider();
@@ -48,6 +51,7 @@ public class JavaArtifactImpl extends BaseArtifactImpl implements JavaArtifact, 
                 javaArtifact.getGeneratedSourceFolders(),
                 javaArtifact.getClassesFolder(),
                 javaArtifact.getJavaResourcesFolder(),
+                javaArtifact.getMockablePlatformJar(),
                 DependenciesImpl.cloneDependenciesForJavaArtifacts(javaArtifact.getDependencies()),
                 variantSP != null ? SourceProviderImpl.cloneProvider(variantSP) : null,
                 flavorsSP != null ? SourceProviderImpl.cloneProvider(flavorsSP) : null);
@@ -60,6 +64,7 @@ public class JavaArtifactImpl extends BaseArtifactImpl implements JavaArtifact, 
                             @NonNull Collection<File> generatedSourceFolders,
                             @NonNull File classesFolder,
                             @NonNull File javaResourcesFolder,
+                            @Nullable File mockablePlatformJar,
                             @NonNull Dependencies dependencies,
                             @Nullable SourceProvider variantSourceProvider,
                             @Nullable SourceProvider multiFlavorSourceProviders) {
@@ -67,11 +72,18 @@ public class JavaArtifactImpl extends BaseArtifactImpl implements JavaArtifact, 
                 dependencies,
                 variantSourceProvider, multiFlavorSourceProviders, generatedSourceFolders);
         this.ideSetupTaskNames = Sets.newHashSet(ideSetupTaskNames);
+        this.mockablePlatformJar = mockablePlatformJar;
     }
 
     @NonNull
     @Override
     public Set<String> getIdeSetupTaskNames() {
         return ideSetupTaskNames;
+    }
+
+    @Override
+    @Nullable
+    public File getMockablePlatformJar() {
+        return mockablePlatformJar;
     }
 }

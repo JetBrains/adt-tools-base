@@ -264,13 +264,6 @@ public class ModelBuilder implements ToolingModelBuilder {
         DependenciesImpl dependencies = DependenciesImpl.cloneDependencies(variantData,
                 androidBuilder);
 
-        // Add the mockable JAR path. It will be created before tests are actually run from the IDE.
-        dependencies.getJavaLibraries().add(
-                new JavaLibraryImpl(
-                        taskManager.createMockableJar.getOutputFile(),
-                        null,
-                        null));
-
         List<File> extraGeneratedSourceFolders = variantData.getExtraGeneratedSourceFolders();
         return new JavaArtifactImpl(
                 variantType.getArtifactName(),
@@ -283,6 +276,7 @@ public class ModelBuilder implements ToolingModelBuilder {
                         variantData.javaCompileTask.getDestinationDir() :
                         variantData.getScope().getJavaOutputDir(),
                 variantData.processJavaResourcesTask.getDestinationDir(),
+                taskManager.createMockableJar.getOutputFile(),
                 dependencies,
                 sourceProviders.variantSourceProvider,
                 sourceProviders.multiFlavorSourceProvider);
