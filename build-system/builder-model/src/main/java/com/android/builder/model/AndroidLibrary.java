@@ -158,11 +158,13 @@ public interface AndroidLibrary extends Library {
     File getPublicResources();
 
     /**
-     * Returns whether the library is considered optional, meaning that it could not
+     * Returns whether the library is considered optional, meaning that it may or may not
      * be present in the final APK.
      *
-     * If the library is optional, then it'll get skipped from resource merging inside other
-     * libraries.
+     * If the library is optional, then:
+     * - if the consumer is a library, it'll get skipped from resource merging and won't show up
+     *   in the consumer R.txt
+     * - if the consumer is a separate test project, all the resources gets skipped from merging.
      */
     boolean isOptional();
 }

@@ -27,13 +27,18 @@ import java.util.List;
 
 /**
  * Version of LibraryDependency that includes transitive jar dependencies as JarInfo.
+ *
+ * This is used as a temporary object as the dependencies are processed. This object contains
+ * more information and can be mutated ({@link #setIsOptional(boolean)}) during the process.
+ *
+ * In the end the object will be converted into an immutable LibraryDependency instance.
  */
 public class LibInfo extends LibraryDependencyImpl {
 
     @NonNull
     private final Collection<JarInfo> jarDependencies;
 
-    private boolean isOptionalOverride = false;
+    private boolean isOptional = false;
 
     public LibInfo(@NonNull File bundle,
             @NonNull File explodedBundle,
@@ -56,13 +61,16 @@ public class LibInfo extends LibraryDependencyImpl {
         this.jarDependencies = jarDependencies;
     }
 
+    /**
+     * Mark the dependency as optional.
+     */
     public void setIsOptional(boolean isOptional) {
-        this.isOptionalOverride = isOptional;
+        this.isOptional = isOptional;
     }
 
     @Override
     public boolean isOptional() {
-        return isOptionalOverride;
+        return isOptional;
     }
 
     @NonNull

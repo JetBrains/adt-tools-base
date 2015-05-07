@@ -17,6 +17,7 @@
 package com.android.build.gradle.internal.dependency;
 
 import com.android.annotations.NonNull;
+import com.android.builder.dependency.LibraryDependency;
 import com.android.builder.dependency.SymbolFileProvider;
 
 import org.gradle.api.tasks.InputFile;
@@ -30,10 +31,12 @@ public class SymbolFileProviderImpl implements SymbolFileProvider {
 
     private final File manifest;
     private final File symbolFile;
+    private final boolean isOptional;
 
-    public SymbolFileProviderImpl(@NonNull File manifest, @NonNull File symbolFile) {
-        this.manifest = manifest;
-        this.symbolFile = symbolFile;
+    public SymbolFileProviderImpl(@NonNull LibraryDependency library) {
+        manifest = library.getManifest();
+        symbolFile = library.getSymbolFile();
+        isOptional = library.isOptional();
     }
 
     @InputFile
@@ -48,5 +51,10 @@ public class SymbolFileProviderImpl implements SymbolFileProvider {
     @NonNull
     public File getSymbolFile() {
         return symbolFile;
+    }
+
+    @Override
+    public boolean isOptional() {
+        return isOptional;
     }
 }
