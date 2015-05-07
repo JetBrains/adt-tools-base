@@ -137,7 +137,10 @@ public abstract class GraphicGenerator {
      * example in unselected tabs we change foo.png to foo-unselected.png
      */
     protected String getIconName(Options options, String name) {
-        return name + ".png"; //$NON-NLS-1$
+        if (options.density == Density.ANYDPI) {
+            return name + SdkConstants.DOT_XML;
+        }
+        return name + SdkConstants.DOT_PNG; //$NON-NLS-1$
     }
 
     /**
@@ -146,6 +149,10 @@ public abstract class GraphicGenerator {
      * notification icons we add in -v9 or -v11.
      */
     protected String getIconFolder(Options options) {
+        if (options.density == Density.ANYDPI) {
+            return SdkConstants.FD_RES + '/' +
+                   ResourceFolderType.DRAWABLE.getName();
+        }
         StringBuilder sb = new StringBuilder(50);
         sb.append(SdkConstants.FD_RES);
         sb.append('/');
@@ -176,6 +183,12 @@ public abstract class GraphicGenerator {
      */
     public void generate(String category, Map<String, Map<String, BufferedImage>> categoryMap,
             GraphicGeneratorContext context, Options options, String name) {
+        // Vector image only need to generate one preview image, so we by pass all the
+        // other image densities.
+        if (options.density == Density.ANYDPI) {
+            generateImageAndUpdateMap(category, categoryMap, context, options, name);
+            return;
+        }
         Density[] densityValues = Density.values();
         // Sort density values into ascending order
         Arrays.sort(densityValues, new Comparator<Density>() {
@@ -184,7 +197,6 @@ public abstract class GraphicGenerator {
                 return d1.getDpiValue() - d2.getDpiValue();
             }
         });
-
         for (Density density : densityValues) {
             if (!density.isValidValueForDevice()) {
                 continue;
@@ -195,19 +207,27 @@ public abstract class GraphicGenerator {
                 continue;
             }
             options.density = density;
-            BufferedImage image = generate(context, options);
-            if (image != null) {
-                String mapCategory = category;
-                if (mapCategory == null) {
-                    mapCategory = options.density.getResourceValue();
-                }
-                Map<String, BufferedImage> imageMap = categoryMap.get(mapCategory);
-                if (imageMap == null) {
-                    imageMap = new LinkedHashMap<String, BufferedImage>();
-                    categoryMap.put(mapCategory, imageMap);
-                }
-                imageMap.put(getIconPath(options, name), image);
+            generateImageAndUpdateMap(category, categoryMap, context, options, name);
+        }
+    }
+
+    private void generateImageAndUpdateMap(String category,
+                                           Map<String, Map<String, BufferedImage>> categoryMap,
+                                           GraphicGeneratorContext context,
+                                           Options options,
+                                           String name) {
+        BufferedImage image = generate(context, options);
+        if (image != null) {
+            String mapCategory = category;
+            if (mapCategory == null) {
+                mapCategory = options.density.getResourceValue();
             }
+            Map<String, BufferedImage> imageMap = categoryMap.get(mapCategory);
+            if (imageMap == null) {
+                imageMap = new LinkedHashMap<String, BufferedImage>();
+                categoryMap.put(mapCategory, imageMap);
+            }
+            imageMap.put(getIconPath(options, name), image);
         }
     }
 
@@ -223,6 +243,9 @@ public abstract class GraphicGenerator {
      * @return a factor to multiple mdpi distances with to compute the target density
      */
     public static float getMdpiScaleFactor(Density density) {
+        if (density == Density.ANYDPI) {
+            density = Density.XXHIGH;
+        }
         return density.getDpiValue() / (float) Density.MEDIUM.getDpiValue();
     }
 

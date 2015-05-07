@@ -17,6 +17,7 @@ package com.android.assetstudiolib;
 
 import com.android.assetstudiolib.Util.Effect;
 import com.android.assetstudiolib.Util.FillEffect;
+import com.android.resources.Density;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
@@ -45,15 +46,17 @@ public class ActionBarIconGenerator extends GraphicGenerator {
         BufferedImage outImage = Util.newArgbBufferedImage(imageRect.width, imageRect.height);
         Graphics2D g = (Graphics2D) outImage.getGraphics();
 
-        BufferedImage tempImage = Util.newArgbBufferedImage(
-                imageRect.width, imageRect.height);
-        Graphics2D g2 = (Graphics2D) tempImage.getGraphics();
+        BufferedImage tempImage = Util.newArgbBufferedImage(imageRect.width, imageRect.height);
+        Graphics2D g2 = (Graphics2D)tempImage.getGraphics();
         Util.drawCenterInside(g2, options.sourceImage, targetRect);
 
-        if (actionBarOptions.theme == Theme.CUSTOM) {
-          Util.drawEffects(g, tempImage, 0, 0, new Effect[] {
-            new FillEffect(new Color(actionBarOptions.customThemeColor), 0.8),
-          });
+        // When the input image is vector base, then skip the theme drawing.
+        if (actionBarOptions.density == Density.ANYDPI) {
+            Util.drawEffects(g, tempImage, 0, 0, new Effect[]{});
+        } else if (actionBarOptions.theme == Theme.CUSTOM) {
+            Util.drawEffects(g, tempImage, 0, 0, new Effect[] {
+                    new FillEffect(new Color(actionBarOptions.customThemeColor), 0.8),
+            });
         } else if (actionBarOptions.theme == Theme.HOLO_LIGHT) {
             Util.drawEffects(g, tempImage, 0, 0, new Effect[] {
                     new FillEffect(new Color(0x333333), 0.6),
