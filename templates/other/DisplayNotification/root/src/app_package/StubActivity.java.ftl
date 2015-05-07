@@ -3,7 +3,9 @@ package ${packageName};
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
-<#if applicationPackage??>import ${applicationPackage}.R;</#if>
+<#if applicationPackage??>
+import ${applicationPackage}.R;
+</#if>
 
 /**
  * Example shell activity which simply broadcasts to our receiver and exits.

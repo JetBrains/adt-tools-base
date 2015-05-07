@@ -17,7 +17,9 @@ import android.graphics.Color;
 import android.text.SpannableStringBuilder;
 import android.text.style.ForegroundColorSpan;
 </#if>
-<#if applicationPackage??>import ${applicationPackage}.R;</#if>
+<#if applicationPackage??>
+import ${applicationPackage}.R;
+</#if>
 
 /**
  * Helper class for showing and canceling ${display_title?lower_case}

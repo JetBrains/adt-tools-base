@@ -8,7 +8,9 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.EditText;
-<#if applicationPackage??>import ${applicationPackage}.R;</#if>
+<#if applicationPackage??>
+import ${applicationPackage}.R;
+</#if>
 
 /**
  * The configuration screen for the {@link ${className} ${className}} AppWidget.
