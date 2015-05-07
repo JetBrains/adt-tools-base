@@ -19,6 +19,9 @@ package com.android.ddmlib;
 import com.android.annotations.NonNull;
 import com.android.ddmlib.Log.LogLevel;
 import com.google.common.base.Joiner;
+import com.google.common.collect.Iterables;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -32,8 +35,7 @@ import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.concurrent.*;
 
 /**
  * A connection to the host-side android debug bridge (adb)
@@ -47,12 +49,7 @@ public final class AndroidDebugBridge {
      * Minimum and maximum version of adb supported. This correspond to
      * ADB_SERVER_VERSION found in //device/tools/adb/adb.h
      */
-
-    private static final int ADB_VERSION_MICRO_MIN = 20;
-    private static final int ADB_VERSION_MICRO_MAX = -1;
-
-    private static final Pattern sAdbVersion = Pattern.compile(
-            "^.*(\\d+)\\.(\\d+)\\.(\\d+)$"); //$NON-NLS-1$
+    private static final AdbVersion MIN_ADB_VERSION = AdbVersion.parseFrom("1.0.20");
 
     private static final String ADB = "adb"; //$NON-NLS-1$
     private static final String DDMS = "ddms"; //$NON-NLS-1$
@@ -572,8 +569,7 @@ public final class AndroidDebugBridge {
     }
 
     /**
-     * Queries adb for its version number and checks it against {@link #ADB_VERSION_MICRO_MIN} and
-     * {@link #ADB_VERSION_MICRO_MAX}
+     * Queries adb for its version number and checks that it is atleast {@link #MIN_ADB_VERSION}.
      */
     private void checkAdbVersion() {
         // default is bad check
@@ -583,127 +579,73 @@ public final class AndroidDebugBridge {
             return;
         }
 
-        String[] command = new String[2];
-        command[0] = mAdbOsLocation;
-        command[1] = "version"; //$NON-NLS-1$
-        Log.d(DDMS, String.format("Checking '%1$s version'", mAdbOsLocation));
-        Process process = null;
-        try {
-            process = Runtime.getRuntime().exec(command);
-        } catch (IOException e) {
-            boolean exists = new File(mAdbOsLocation).exists();
-            String msg;
-            if (exists) {
-                msg = String.format(
-                        "Unexpected exception '%1$s' while attempting to get adb version from '%2$s'",
-                        e.getMessage(), mAdbOsLocation);
-            } else {
-                msg = "Unable to locate adb: '" + mAdbOsLocation + "'.\n" +
-                      "Please use SDK Manager and check if Android SDK platform-tools are installed.";
-            }
+
+        File adb = new File(mAdbOsLocation);
+        if (!adb.exists()) {
+            String msg = "Unable to locate adb.\nPlease use SDK Manager and check if platform tools are installed.";
             Log.logAndDisplay(LogLevel.ERROR, ADB, msg);
             return;
         }
 
-        ArrayList<String> errorOutput = new ArrayList<String>();
-        ArrayList<String> stdOutput = new ArrayList<String>();
-        int status;
+        ListenableFuture<AdbVersion> future = getAdbVersion(adb);
+        AdbVersion version;
         try {
-            status = grabProcessOutput(process, errorOutput, stdOutput,
-                    true /* waitForReaders */);
+            version = future.get(5, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
+            return;
+        } catch (java.util.concurrent.TimeoutException e) {
+            String msg = "Unable to obtain result of 'adb version'";
+            Log.logAndDisplay(LogLevel.ERROR, ADB, msg);
+            return;
+        } catch (ExecutionException e) {
+            Log.logAndDisplay(LogLevel.ERROR, ADB, e.getCause().getMessage());
             return;
         }
 
-        if (status != 0) {
-            StringBuilder builder = new StringBuilder("'adb version' failed!"); //$NON-NLS-1$
-            for (String error : errorOutput) {
-                builder.append('\n');
-                builder.append(error);
-            }
-            Log.logAndDisplay(LogLevel.ERROR, ADB, builder.toString());
-        }
-
-        // check both stdout and stderr
-        boolean versionFound = false;
-        for (String line : stdOutput) {
-            versionFound = scanVersionLine(line);
-            if (versionFound) {
-                break;
-            }
-        }
-        if (!versionFound) {
-            for (String line : errorOutput) {
-                versionFound = scanVersionLine(line);
-                if (versionFound) {
-                    break;
-                }
-            }
-        }
-
-        if (!versionFound) {
-            // if we get here, we failed to parse the output.
-            StringBuilder builder = new StringBuilder(
-                    "Failed to parse the output of 'adb version':\n"); //$NON-NLS-1$
-            builder.append("Standard Output was:\n"); //$NON-NLS-1$
-            for (String line : stdOutput) {
-                builder.append(line);
-                builder.append('\n');
-            }
-            builder.append("\nError Output was:\n"); //$NON-NLS-1$
-            for (String line : errorOutput) {
-                builder.append(line);
-                builder.append('\n');
-            }
-            Log.logAndDisplay(LogLevel.ERROR, ADB, builder.toString());
+        if (version.compareTo(MIN_ADB_VERSION) > 0) {
+            mVersionCheck = true;
+        } else {
+            String message = String.format(
+                    "Required minimum version of adb: %1$s."
+                            + "Current version is %2$s", MIN_ADB_VERSION, version);
+            Log.logAndDisplay(LogLevel.ERROR, ADB, message);
         }
     }
 
-    /**
-     * Scans a line resulting from 'adb version' for a potential version number.
-     * <p/>
-     * If a version number is found, it checks the version number against what is expected
-     * by this version of ddms.
-     * <p/>
-     * Returns true when a version number has been found so that we can stop scanning,
-     * whether the version number is in the acceptable range or not.
-     *
-     * @param line The line to scan.
-     * @return True if a version number was found (whether it is acceptable or not).
-     */
-    @SuppressWarnings("all") // With Eclipse 3.6, replace by @SuppressWarnings("unused")
-    private boolean scanVersionLine(String line) {
-        if (line != null) {
-            Matcher matcher = sAdbVersion.matcher(line);
-            if (matcher.matches()) {
-                int majorVersion = Integer.parseInt(matcher.group(1));
-                int minorVersion = Integer.parseInt(matcher.group(2));
-                int microVersion = Integer.parseInt(matcher.group(3));
+    public static ListenableFuture<AdbVersion> getAdbVersion(@NonNull final File adb) {
+        return MoreExecutors.listeningDecorator(Executors.newFixedThreadPool(1)).submit(
+          new Callable<AdbVersion>() {
+              @Override
+              public AdbVersion call() throws Exception {
+                  if (!adb.canExecute()) {
+                      throw new IllegalArgumentException("File " + adb.getPath() + " cannot be executed.");
+                  }
 
-                // check only the micro version for now.
-                if (microVersion < ADB_VERSION_MICRO_MIN) {
-                    String message = String.format(
-                            "Required minimum version of adb: %1$d.%2$d.%3$d." //$NON-NLS-1$
-                            + "Current version is %1$d.%2$d.%4$d", //$NON-NLS-1$
-                            majorVersion, minorVersion, ADB_VERSION_MICRO_MIN,
-                            microVersion);
-                    Log.logAndDisplay(LogLevel.ERROR, ADB, message);
-                } else if (ADB_VERSION_MICRO_MAX != -1 &&
-                        microVersion > ADB_VERSION_MICRO_MAX) {
-                    String message = String.format(
-                            "Required maximum version of adb: %1$d.%2$d.%3$d." //$NON-NLS-1$
-                            + "Current version is %1$d.%2$d.%4$d", //$NON-NLS-1$
-                            majorVersion, minorVersion, ADB_VERSION_MICRO_MAX,
-                            microVersion);
-                    Log.logAndDisplay(LogLevel.ERROR, ADB, message);
-                } else {
-                    mVersionCheck = true;
-                }
+                  ProcessBuilder pb = new ProcessBuilder(adb.getCanonicalPath(), "version");
+                  pb.redirectErrorStream(true);
 
-                return true;
-            }
-        }
-        return false;
+                  Process p = pb.start();
+
+                  StringBuilder sb = new StringBuilder();
+                  BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()));
+                  try {
+                      String line;
+                      while ((line = br.readLine()) != null) {
+                          AdbVersion version = AdbVersion.parseFrom(line);
+                          if (version != AdbVersion.UNKNOWN) {
+                              return version;
+                          }
+                          sb.append(line);
+                          sb.append('\n');
+                      }
+                  } finally {
+                      br.close();
+                  }
+
+                  throw new RuntimeException(
+                          "Unable to detect adb version, adb output: " + sb.toString());
+              }
+          });
     }
 
     /**
