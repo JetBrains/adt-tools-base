@@ -112,16 +112,18 @@ public class ResourceSetTest extends BaseTestCase {
             set.loadFromFiles(logger);
         } catch (DuplicateDataException e) {
             gotException = true;
+
+
+
+
             String message = e.getMessage();
             // Clean up paths etc for unit test
             int index = message.indexOf("dupSet");
             assertTrue(index != -1);
             String prefix = message.substring(0, index);
-            message = message.replaceAll(prefix, "<PREFIX>").replace('\\','/');
-            assertEquals("<PREFIX>dupSet/res2/drawable/icon.png\t<PREFIX>dupSet/res1/drawable/icon.png: "
-                    + "Error: Duplicate resources: "
-                    + "<PREFIX>dupSet/res2/drawable/icon.png:drawable/icon, "
-                    + "<PREFIX>dupSet/res1/drawable/icon.png:drawable/icon", message);
+            message = message.replace(prefix, "<PREFIX>").replace('\\','/');
+            assertEquals("<PREFIX>dupSet/res1/drawable/icon.png\t<PREFIX>dupSet/res2/drawable/icon.png: "
+                    + "Error: Duplicate resources", message);
         }
 
         checkLogger(logger);

@@ -63,7 +63,9 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
     @NonNull
     private final PngCruncher mCruncher;
 
-    /** If non-null, points to a File that we should write public.txt to */
+    /**
+     * If non-null, points to a File that we should write public.txt to
+     */
     private final File mPublicFile;
 
     private DocumentBuilderFactory mFactory;
@@ -82,9 +84,9 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
     private ListMultimap<String, ResourceItem> mValuesResMap;
 
     /**
-     * Set of qualifier that had a previously written resource now gone.
-     * This is to keep a list of values files that must be written out even with no
-     * touched or updated resources, in case one or more resources were removed.
+     * Set of qualifier that had a previously written resource now gone. This is to keep a list of
+     * values files that must be written out even with no touched or updated resources, in case one
+     * or more resources were removed.
      */
     private Set<String> mQualifierWithDeletedValues;
 
@@ -107,7 +109,7 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
      * @param insertSourceMarkers if true, insert source markers
      */
     public void setInsertSourceMarkers(boolean insertSourceMarkers) {
-      mInsertSourceMarkers = insertSourceMarkers;
+        mInsertSourceMarkers = insertSourceMarkers;
     }
 
     /**
@@ -116,7 +118,7 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
      * @return whether this manifest merger will insert source markers into the merged source
      */
     public boolean isInsertSourceMarkers() {
-      return mInsertSourceMarkers;
+        return mInsertSourceMarkers;
     }
 
     @Override
@@ -172,7 +174,7 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
                         try {
                             createDir(typeFolder);
                         } catch (IOException ioe) {
-                            throw new MergingException(ioe).setFile(typeFolder);
+                            throw MergingException.wrapException(ioe).withFile(typeFolder).build();
                         }
 
                         File outFile = new File(typeFolder, filename);
@@ -199,9 +201,9 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
                                 Files.copy(file, outFile);
                             }
                         } catch (PngException e) {
-                            throw new MergingException(e).setFile(file);
+                            throw MergingException.wrapException(e).withFile(file).build();
                         } catch (IOException ioe) {
-                            throw new MergingException(ioe).setFile(file);
+                            throw MergingException.wrapException(ioe).withFile(file).build();
                         }
                         return null;
                     }
@@ -352,8 +354,8 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
                         Files.write(text, mPublicFile, Charsets.UTF_8);
                     }
                 } catch (Throwable t) {
-                    ConsumerException exception = new ConsumerException(t);
-                    exception.setFile(currentFile != null ? currentFile.getFile() : outFile);
+                    ConsumerException exception = new ConsumerException(t,
+                            currentFile != null ? currentFile.getFile() : outFile);
                     throw exception;
                 }
             }
@@ -392,7 +394,7 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
      * Removes a file from a folder based on a sub folder name and a filename
      *
      * @param folderName the sub folder name
-     * @param fileName the file name.
+     * @param fileName   the file name.
      * @return true if success.
      */
     private boolean removeOutFile(String folderName, String fileName) {
@@ -409,6 +411,7 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
 
     /**
      * Calculates the right folder name give a resource item.
+     *
      * @param resourceItem the resource item to calculate the folder name from.
      * @return a relative folder name
      */

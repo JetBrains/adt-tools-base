@@ -170,12 +170,10 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
         ResourceFile resourceFile = getDataFile(changedFile);
 
         if (resourceFile == null) {
-            String message = String.format(
-                    "In DataSet '%s', no data file for changedFile '%s'. "
+            throw MergingException.withMessage("In DataSet '%s', no data file for changedFile. "
                             + "This is an internal error in the incremental builds code; "
                             + "to work around it, try doing a full clean build.",
-                    getConfigName(), changedFile.getAbsolutePath());
-            throw new MergingException(message).addFile(changedFile);
+                    getConfigName()).withFile(changedFile).build();
         }
 
         //noinspection VariableNotUsedInsideIf
@@ -284,7 +282,6 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
 
                 return new ResourceFile(file, items, folderData.qualifiers);
             } catch (MergingException e) {
-                e.setFile(file);
                 logger.error(e, "Failed to parse %s", file.getAbsolutePath());
                 throw e;
             }
@@ -319,7 +316,8 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
 
             FolderConfiguration folderConfiguration = FolderConfiguration.getConfigForFolder(folderName);
             if (folderConfiguration == null) {
-                throw new MergingException("Invalid resource directory name").addFile(folder);
+                throw MergingException.withMessage("Invalid resource directory name")
+                        .withFile(folder).build();
             }
 
             if (mNormalizeResources) {
