@@ -29,8 +29,9 @@ import com.android.build.gradle.internal.ProductFlavorData;
 import com.android.build.gradle.internal.TaskManager;
 import com.android.build.gradle.internal.VariantManager;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
-import com.android.build.gradle.internal.scope.VariantScope;
+import com.android.build.gradle.internal.core.NdkConfig;
 import com.android.build.gradle.internal.dsl.CoreProductFlavor;
+import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.variant.ApkVariantOutputData;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
@@ -47,13 +48,13 @@ import com.android.builder.model.ApiVersion;
 import com.android.builder.model.ArtifactMetaData;
 import com.android.builder.model.JavaArtifact;
 import com.android.builder.model.LintOptions;
-import com.android.builder.model.ProductFlavor;
 import com.android.builder.model.NativeLibrary;
+import com.android.builder.model.NativeToolchain;
+import com.android.builder.model.ProductFlavor;
 import com.android.builder.model.SigningConfig;
 import com.android.builder.model.SourceProvider;
 import com.android.builder.model.SourceProviderContainer;
 import com.android.builder.model.SyncIssue;
-import com.android.builder.model.NativeToolchain;
 import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.IAndroidTarget;
 import com.google.common.collect.ImmutableCollection;
@@ -282,6 +283,34 @@ public class ModelBuilder implements ToolingModelBuilder {
                 sourceProviders.multiFlavorSourceProvider);
     }
 
+    /**
+     * Create a NativeLibrary for each ABI.
+     */
+    private static Collection<NativeLibrary> createNativeLibraries(
+            @NonNull NdkConfig ndkConfig,
+            @NonNull Collection<String> abis) {
+        Collection<NativeLibrary> nativeLibraries = Lists.newArrayListWithCapacity(abis.size());
+        for (String abi : abis) {
+            // The DSL currently do not support all options available in the model such as the
+            // include dirs and the defines.  Therefore, just pass an empty collection for now.
+            @SuppressWarnings("ConstantConditions")
+            NativeLibrary lib = new NativeLibraryImpl(
+                    ndkConfig.getModuleName(),
+                    "",  /*toolchainName*/
+                    abi,
+                    Collections.<File>emptyList(),  /*cIncludeDirs*/
+                    Collections.<File>emptyList(),  /*cppIncludeDirs*/
+                    Collections.<File>emptyList(),  /*cSystemIncludeDirs*/
+                    Collections.<File>emptyList(),  /*cppSystemIncludeDirs*/
+                    Collections.<String>emptyList(),  /*cDefines*/
+                    Collections.<String>emptyList(),  /*cppDefines*/
+                    Lists.newArrayList(ndkConfig.getcFlags()),
+                    Lists.newArrayList(ndkConfig.getcFlags()));
+            nativeLibraries.add(lib);
+        }
+        return nativeLibraries;
+    }
+
     private AndroidArtifact createAndroidArtifact(
             @NonNull String name,
             @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData) {
@@ -298,6 +327,24 @@ public class ModelBuilder implements ToolingModelBuilder {
         // get the outputs
         List<? extends BaseVariantOutputData> variantOutputs = variantData.getOutputs();
         List<AndroidArtifactOutput> outputs = Lists.newArrayListWithCapacity(variantOutputs.size());
+
+        NdkConfig ndkConfig = variantData.getVariantConfiguration().getNdkConfig();
+        Collection<NativeLibrary> nativeLibraries = Collections.emptyList();
+        if (ndkConfig.getModuleName() != null) {
+            if (config.getSplits().getAbi().isEnable()) {
+                nativeLibraries = createNativeLibraries(ndkConfig, config.getSplits().getAbiFilters());
+            } else {
+                if (ndkConfig.getAbiFilters() == null || ndkConfig.getAbiFilters().isEmpty()) {
+                    nativeLibraries = createNativeLibraries(
+                            ndkConfig,
+                            ImmutableList.of(
+                                    "armeabi", "armeabi-v7a", "arm64-v8a", "x86", "x86_64", "mips",
+                                    "mips64"));
+                } else {
+                    nativeLibraries = createNativeLibraries(ndkConfig, ndkConfig.getAbiFilters());
+                }
+            }
+        }
 
         for (BaseVariantOutputData variantOutputData : variantOutputs) {
             int intVersionCode;
@@ -353,7 +400,7 @@ public class ModelBuilder implements ToolingModelBuilder {
                 sourceProviders.variantSourceProvider,
                 sourceProviders.multiFlavorSourceProvider,
                 variantConfiguration.getSupportedAbis(),
-                Collections.<NativeLibrary>emptySet(), /*nativeLibraries*/
+                nativeLibraries,
                 variantConfiguration.getMergedBuildConfigFields(),
                 variantConfiguration.getMergedResValues());
     }
