@@ -191,11 +191,9 @@ final class AdbHelper {
     /**
      * Create an ASCII string preceded by four hex digits. The opening "####"
      * is the length of the rest of the string, encoded as ASCII hex (case
-     * doesn't matter). "port" and "host" are what we want to forward to. If
-     * we're on the host side connecting into the device, "addrStr" should be
-     * null.
+     * doesn't matter).
      */
-    static byte[] formAdbRequest(String req) {
+    public static byte[] formAdbRequest(String req) {
         String resultStr = String.format("%04X%s", req.length(), req); //$NON-NLS-1$
         byte[] result;
         try {
