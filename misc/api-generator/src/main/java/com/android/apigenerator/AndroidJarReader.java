@@ -17,7 +17,6 @@
 package com.android.apigenerator;
 
 import com.android.utils.Pair;
-
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.ClassNode;
@@ -93,40 +92,41 @@ public class AndroidJarReader {
                         ClassNode classNode = new ClassNode();
                         reader.accept(classNode, 0 /*flags*/);
 
-                        if (classNode != null) {
-                            ApiClass theClass = addClass(map, classNode.name, apiLevel);
+                        ApiClass theClass = addClass(map, classNode.name, apiLevel,
+                                (classNode.access & Opcodes.ACC_DEPRECATED) != 0);
 
-                            // super class
-                            if (classNode.superName != null) {
-                                theClass.addSuperClass(classNode.superName, apiLevel);
+                        // super class
+                        if (classNode.superName != null) {
+                            theClass.addSuperClass(classNode.superName, apiLevel);
+                        }
+
+                        // interfaces
+                        for (Object interfaceName : classNode.interfaces) {
+                            theClass.addInterface((String) interfaceName, apiLevel);
+                        }
+
+                        // fields
+                        for (Object field : classNode.fields) {
+                            FieldNode fieldNode = (FieldNode) field;
+                            if ((fieldNode.access & Opcodes.ACC_PRIVATE) != 0) {
+                                continue;
                             }
-
-                            // interfaces
-                            for (Object interfaceName : classNode.interfaces) {
-                                theClass.addInterface((String) interfaceName, apiLevel);
+                            if (!fieldNode.name.startsWith("this$") &&
+                                    !fieldNode.name.equals("$VALUES")) {
+                                boolean deprecated = (fieldNode.access & Opcodes.ACC_DEPRECATED) != 0;
+                                theClass.addField(fieldNode.name, apiLevel, deprecated);
                             }
+                        }
 
-                            // fields
-                            for (Object field : classNode.fields) {
-                                FieldNode fieldNode = (FieldNode) field;
-                                if ((fieldNode.access & Opcodes.ACC_PRIVATE) != 0) {
-                                    continue;
-                                }
-                                if (fieldNode.name.startsWith("this$") == false &&
-                                        fieldNode.name.equals("$VALUES") == false) {
-                                    theClass.addField(fieldNode.name, apiLevel);
-                                }
+                        // methods
+                        for (Object method : classNode.methods) {
+                            MethodNode methodNode = (MethodNode) method;
+                            if ((methodNode.access & Opcodes.ACC_PRIVATE) != 0) {
+                                continue;
                             }
-
-                            // methods
-                            for (Object method : classNode.methods) {
-                                MethodNode methodNode = (MethodNode) method;
-                                if ((methodNode.access & Opcodes.ACC_PRIVATE) != 0) {
-                                    continue;
-                                }
-                                if (methodNode.name.equals("<clinit>") == false) {
-                                    theClass.addMethod(methodNode.name + methodNode.desc, apiLevel);
-                                }
+                            if (!methodNode.name.equals("<clinit>")) {
+                                boolean deprecated = (methodNode.access & Opcodes.ACC_DEPRECATED) != 0;
+                                theClass.addMethod(methodNode.name + methodNode.desc, apiLevel, deprecated);
                             }
                         }
                     }
@@ -171,7 +171,7 @@ public class AndroidJarReader {
                 String methodName = method.getKey();
                 int apiLevel = method.getValue();
 
-                if (methodName.startsWith("<init>(") == false) {
+                if (!methodName.startsWith("<init>(")) {
 
                     for (Pair<String, Integer> parent : superClasses) {
                         // only check the parent if it was a parent class at the introduction
@@ -255,11 +255,15 @@ public class AndroidJarReader {
         return false;
     }
 
-    private ApiClass addClass(HashMap<String, ApiClass> classes, String name, int apiLevel) {
+    private ApiClass addClass(HashMap<String, ApiClass> classes, String name, int apiLevel, boolean deprecated) {
         ApiClass theClass = classes.get(name);
         if (theClass == null) {
             theClass = new ApiClass(name, apiLevel);
             classes.put(name, theClass);
+        }
+
+        if (deprecated && apiLevel < theClass.deprecatedIn) {
+            theClass.deprecatedIn = apiLevel;
         }
 
         return theClass;
