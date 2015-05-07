@@ -242,6 +242,16 @@ public abstract class LintDetectorTest extends SdkTestCase {
         return checkLint(client, Collections.singletonList(projectDir));
     }
 
+    protected String lintProjectIncrementally(String currentFile, TestFile... files)
+            throws Exception {
+        File projectDir = getProjectDir(null, files);
+        File current = new File(projectDir, currentFile.replace('/', File.separatorChar));
+        assertTrue(current.exists());
+        TestLintClient client = createClient();
+        client.setIncremental(current);
+        return checkLint(client, Collections.singletonList(projectDir));
+    }
+
     /**
      * Run lint on the given files when constructed as a separate project
      * @return The output of the lint check. On Windows, this transforms all directory
@@ -647,8 +657,11 @@ public abstract class LintDetectorTest extends SdkTestCase {
                 }
             };
             // Only support 1 resource folder in test setup right now
-            assertEquals(1, project.getResourceFolders().size());
-            resourceSet.addSource(project.getResourceFolders().get(0));
+            int size = project.getResourceFolders().size();
+            assertTrue("Found " + size + " test resources folders", size <= 1);
+            if (size == 1) {
+                resourceSet.addSource(project.getResourceFolders().get(0));
+            }
             try {
                 resourceSet.loadFromFiles(logger);
                 merger.addDataSet(resourceSet);

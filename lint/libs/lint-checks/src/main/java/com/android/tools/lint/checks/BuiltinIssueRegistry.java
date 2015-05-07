@@ -30,7 +30,7 @@ import java.util.List;
 /** Registry which provides a list of checks to be performed on an Android project */
 public class BuiltinIssueRegistry extends IssueRegistry {
     private static final List<Issue> sIssues;
-    static final int INITIAL_CAPACITY = 219;
+    static final int INITIAL_CAPACITY = 220;
 
     static {
         List<Issue> issues = new ArrayList<Issue>(INITIAL_CAPACITY);
@@ -76,6 +76,7 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(DuplicateResourceDetector.TYPE_MISMATCH);
         issues.add(ExtraTextDetector.ISSUE);
         issues.add(FieldGetterDetector.ISSUE);
+        issues.add(FullBackupContentDetector.ISSUE);
         issues.add(FragmentDetector.ISSUE);
         issues.add(GetSignaturesDetector.ISSUE);
         issues.add(GradleDetector.COMPATIBILITY);
@@ -277,13 +278,13 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         } else {
             int initialSize = 12;
             if (scope.contains(Scope.RESOURCE_FILE)) {
-                initialSize += 70;
+                initialSize += 75;
             } else if (scope.contains(Scope.ALL_RESOURCE_FILES)) {
                 initialSize += 10;
             }
 
             if (scope.contains(Scope.JAVA_FILE)) {
-                initialSize += 50;
+                initialSize += 55;
             } else if (scope.contains(Scope.CLASS_FILE)) {
                 initialSize += 15;
             } else if (scope.contains(Scope.MANIFEST)) {
