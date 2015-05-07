@@ -17,15 +17,7 @@
 package com.android.tools.perflib.heap.analysis;
 
 import com.android.annotations.NonNull;
-import com.android.tools.perflib.heap.ArrayInstance;
-import com.android.tools.perflib.heap.ClassInstance;
-import com.android.tools.perflib.heap.ClassObj;
-import com.android.tools.perflib.heap.Field;
-import com.android.tools.perflib.heap.Instance;
-import com.android.tools.perflib.heap.RootObj;
-import com.android.tools.perflib.heap.RootType;
-import com.android.tools.perflib.heap.Snapshot;
-import com.android.tools.perflib.heap.Type;
+import com.android.tools.perflib.heap.*;
 import com.android.tools.perflib.heap.io.InMemoryBuffer;
 import com.google.common.collect.Maps;
 
