@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 The Android Open Source Project
+ * Copyright (C) 2015 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,30 +16,28 @@
 
 package com.android.builder.tasks;
 
-import com.android.annotations.Nullable;
+import com.android.annotations.NonNull;
+
+import java.io.IOException;
 
 /**
- * Contains contextual (and usually mutable) job data.
+ * Adapter for {@link QueueThreadContext} with empty methods implementations.
  */
-public class JobContext<T> {
+public abstract class QueueThreadContextAdapter<T> implements QueueThreadContext<T> {
 
-    private final T payload;
-    private final long creationTime = System.currentTimeMillis();
-
-    public JobContext(@Nullable T payload) {
-        this.payload = payload;
+    @Override
+    public void creation(@NonNull Thread t) throws IOException {
     }
 
-    @Nullable
-    public T getPayload() {
-        return payload;
+    @Override
+    public void runTask(@NonNull Job<T> job) throws Exception {
     }
 
-    /**
-     * Returns time spent processing this job so far.
-     * @return the real time spent.
-     */
-    public long elapsed() {
-        return System.currentTimeMillis() - creationTime;
+    @Override
+    public void destruction(@NonNull Thread t) throws IOException, InterruptedException {
+    }
+
+    @Override
+    public void shutdown() {
     }
 }

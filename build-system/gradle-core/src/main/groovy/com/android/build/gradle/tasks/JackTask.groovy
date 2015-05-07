@@ -20,6 +20,8 @@ import com.android.annotations.NonNull
 import com.android.build.gradle.internal.tasks.AbstractAndroidCompile
 import com.android.build.gradle.internal.tasks.FileSupplier
 import com.android.builder.core.AndroidBuilder
+import com.android.builder.tasks.Job
+import com.android.builder.tasks.JobContext
 import com.android.sdklib.BuildToolInfo
 import com.android.sdklib.repository.FullRevision
 import com.google.common.base.Charsets
@@ -32,6 +34,8 @@ import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.ParallelizableTask
 import org.gradle.api.tasks.TaskAction
+import proguard.ParseException
+
 /**
  * Jack task.
  */
@@ -90,7 +94,27 @@ public class JackTask extends AbstractAndroidCompile
     File incrementalDir
 
     @TaskAction
-    void compile() {
+    public void compile() {
+        final Job<Void> job = new Job<Void>(getName(),
+                new com.android.builder.tasks.Task<Void>() {
+                    @Override
+                    public void run(@NonNull Job<Void> job,
+                            @NonNull JobContext<Void> context) throws IOException {
+                        JackTask.this.doMinification();
+                    }
+                });
+        try {
+            SimpleWorkQueue.push(job);
+
+            // wait for the task completion.
+            job.await();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        }
+    }
+
+    void doMinification() {
 
         if (System.getenv("USE_JACK_API") == null ||
                 !androidBuilder.convertByteCodeUsingJackApis(
