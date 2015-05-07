@@ -16,6 +16,8 @@
 
 package com.android.build.gradle.ndk.internal
 
+import com.android.build.gradle.internal.NdkHandler
+import com.android.build.gradle.internal.core.Toolchain
 import org.gradle.nativeplatform.BuildType
 import org.gradle.nativeplatform.platform.NativePlatform
 
@@ -34,8 +36,7 @@ class NativeToolSpecificationFactory {
             NdkHandler ndkHandler,
             BuildType buildType,
             NativePlatform platform) {
-        String toolchain = ndkHandler.getNdkConfig().getToolchain()
-        return (toolchain == null || toolchain.equals("gcc")
+        return (ndkHandler.getToolchain() == Toolchain.GCC
                 ? new GccNativeToolSpecification(buildType, platform)
                 : new ClangNativeToolSpecification(ndkHandler, buildType, platform))
     }

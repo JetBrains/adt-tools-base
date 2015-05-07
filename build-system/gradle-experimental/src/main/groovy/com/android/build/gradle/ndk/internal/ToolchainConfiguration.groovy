@@ -16,10 +16,15 @@
 
 package com.android.build.gradle.ndk.internal
 
-import com.android.SdkConstants
+import com.android.build.gradle.internal.NdkHandler
+import com.android.build.gradle.internal.core.Abi
+import com.android.build.gradle.internal.core.Toolchain
+import org.gradle.api.Action
 import org.gradle.nativeplatform.platform.NativePlatform
 import org.gradle.nativeplatform.toolchain.Clang
 import org.gradle.nativeplatform.toolchain.Gcc
+import org.gradle.nativeplatform.toolchain.GccCompatibleToolChain
+import org.gradle.nativeplatform.toolchain.GccPlatformToolChain
 import org.gradle.nativeplatform.toolchain.NativeToolChainRegistry
 import org.gradle.platform.base.PlatformContainer
 
@@ -28,24 +33,9 @@ import org.gradle.platform.base.PlatformContainer
  */
 class ToolchainConfiguration {
 
-    private static final String DEFAULT_GCC32_VERSION="4.6"
-    private static final String DEFAULT_GCC64_VERSION="4.9"
-    private static final String DEFAULT_LLVM_VERSION="3.4"
-
-    private static final GCC_PREFIX = [
-            (SdkConstants.ABI_INTEL_ATOM) : "i686-linux-android",
-            (SdkConstants.ABI_INTEL_ATOM64) : "x86_64-linux-android",
-            (SdkConstants.ABI_ARMEABI_V7A) : "arm-linux-androideabi",
-            (SdkConstants.ABI_ARMEABI) : "arm-linux-androideabi",
-            (SdkConstants.ABI_ARM64_V8A) : "aarch64-linux-android",
-            (SdkConstants.ABI_MIPS) : "mipsel-linux-android",
-            (SdkConstants.ABI_MIPS64) : "mips64el-linux-android"
-    ]
-
     public static void configurePlatforms(PlatformContainer platforms, NdkHandler ndkHandler) {
-        List<String> abiList = ndkHandler.getSupportedAbis();
-        for (String abi : abiList) {
-            NativePlatform platform = platforms.maybeCreate(abi, NativePlatform)
+        for (Abi abi : ndkHandler.getSupportedAbis()) {
+            NativePlatform platform = platforms.maybeCreate(abi.getName(), NativePlatform)
 
             // All we care is the name of the platform.  It doesn't matter what the
             // architecture is, but it must be set to non-x86 so that it does not match
@@ -56,56 +46,41 @@ class ToolchainConfiguration {
     }
 
     /**
-     * Return the default version of the specified toolchain for a target abi.
-     */
-    public static String getDefaultToolchainVersion(String toolchain, String abi) {
-        if (NdkHandler.is64Bits(abi)) {
-            return (toolchain.equals("gcc")) ? DEFAULT_GCC64_VERSION : DEFAULT_LLVM_VERSION
-        } else {
-            return (toolchain.equals("gcc")) ? DEFAULT_GCC32_VERSION : DEFAULT_LLVM_VERSION
-        }
-    }
-
-    /**
      * Configure toolchain for a platform.
      */
     public static void configureToolchain(
-            NativeToolChainRegistry toolchains,
+            NativeToolChainRegistry toolchainRegistry,
             String toolchainName,
-            String toolchainVersion,
             NdkHandler ndkHandler) {
-        toolchains.create("ndk-" + toolchainName, toolchainName.equals("gcc") ? Gcc : Clang) {
+        final Toolchain ndkToolchain = Toolchain.getByName(toolchainName);
+        toolchainRegistry.create(
+                "ndk-" + toolchainName,
+                toolchainName.equals("gcc") ? Gcc : Clang) { GccCompatibleToolChain toolchain ->
             // Configure each platform.
-            List<String> abiList = ndkHandler.getSupportedAbis();
-            for (String abi: abiList) {
-                String platform = abi
-                String localToolchainVersion = toolchainVersion
+            for (final Abi abi : ndkHandler.getSupportedAbis()) {
+                toolchain.target(abi.getName(), new Action<GccPlatformToolChain>() {
+                    @Override
+                    void execute(GccPlatformToolChain targetPlatform) {
+                        if (ndkToolchain == Toolchain.GCC) {
+                            String gccPrefix = abi.getGccPrefix()
+                            targetPlatform.cCompiler.setExecutable("$gccPrefix-gcc")
+                            targetPlatform.cppCompiler.setExecutable("$gccPrefix-g++")
+                            targetPlatform.linker.setExecutable("$gccPrefix-g++")
+                            targetPlatform.assembler.setExecutable("$gccPrefix-as")
+                            targetPlatform.staticLibArchiver.setExecutable("$gccPrefix-ar")
+                        }
 
-                if (localToolchainVersion.equals(NdkExtensionConvention.DEFAULT_TOOLCHAIN_VERSION)) {
-                    localToolchainVersion = getDefaultToolchainVersion(toolchainName, platform);
-                }
-
-                target(platform) {
-                    if (toolchainName.equals("gcc")) {
-                        cCompiler.setExecutable("${GCC_PREFIX[platform]}-gcc")
-                        cppCompiler.setExecutable("${GCC_PREFIX[platform]}-g++")
-                        linker.setExecutable("${GCC_PREFIX[platform]}-g++")
-                        assembler.setExecutable("${GCC_PREFIX[platform]}-as")
-                        staticLibArchiver.setExecutable("${GCC_PREFIX[platform]}-ar")
+                        // By default, gradle will use -Xlinker to pass arguments to the linker.
+                        // Removing it as it prevents -sysroot from being properly set.
+                        targetPlatform.linker.withArguments(new Action<List<String>>() {
+                            @Override
+                            void execute(List<String> args) {
+                                args.removeAll("-Xlinker")
+                            }
+                        })
                     }
-
-                    // By default, gradle will use -Xlinker to pass arguments to the linker.
-                    // Removing it as it prevents -sysroot from being properly set.
-                    linker.withArguments { List<String> args ->
-                        args.removeAll("-Xlinker")
-                    }
-
-                    String bin = (
-                            ndkHandler.getToolchainPath(toolchainName, localToolchainVersion, platform).
-                                    toString()
-                                    + "/bin")
-                    path bin
-                }
+                })
+                toolchain.path(ndkHandler.getCCompiler(abi).getParentFile())
             }
         }
     }

@@ -20,6 +20,7 @@ import static com.android.build.gradle.model.ModelConstants.ANDROID_BUILDER;
 import static com.android.build.gradle.model.ModelConstants.ANDROID_COMPONENT_SPEC;
 import static com.android.build.gradle.model.ModelConstants.EXTRA_MODEL_INFO;
 import static com.android.build.gradle.model.ModelConstants.IS_APPLICATION;
+import static com.android.build.gradle.model.ModelConstants.NDK_HANDLER;
 import static com.android.build.gradle.model.ModelConstants.TASK_MANAGER;
 
 import com.android.build.gradle.AndroidConfig;
@@ -27,12 +28,11 @@ import com.android.build.gradle.internal.ExtraModelInfo;
 import com.android.build.gradle.internal.TaskManager;
 import com.android.build.gradle.internal.VariantManager;
 import com.android.build.gradle.internal.model.ModelBuilder;
+import com.android.build.gradle.internal.NdkHandler;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.model.AndroidProject;
 
 import org.gradle.api.Project;
-import org.gradle.api.Task;
-import org.gradle.model.internal.core.DefaultCollectionBuilder;
 import org.gradle.model.internal.core.ModelPath;
 import org.gradle.model.internal.registry.ModelRegistry;
 import org.gradle.model.internal.type.ModelType;
@@ -88,12 +88,15 @@ public class ComponentModelBuilder implements ToolingModelBuilder {
         Boolean isApplication = registry.realize(
                 new ModelPath(IS_APPLICATION),
                 ModelType.of(Boolean.class));
+        NdkHandler ndkHandler = registry.realize(
+                new ModelPath(NDK_HANDLER),
+                ModelType.of(NdkHandler.class));
 
         // Forces rules for binaries to run so that the variants are created.
         registry.realizeNode(new ModelPath("binaries"));
 
         return new ModelBuilder(
                 androidBuilder, variantManager, taskManager,
-                extension, extraModelInfo, !isApplication);
+                extension, extraModelInfo, ndkHandler, !isApplication);
     }
 }

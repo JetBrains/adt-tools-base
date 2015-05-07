@@ -16,11 +16,16 @@ public interface NdkConfig {
     String getModuleName();
     void setModuleName(@NonNull String moduleName);
 
+    /**
+     * The toolchain version.
+     * Support "gcc" or "clang" (default: "gcc").
+     */
     String getToolchain();
     void setToolchain(@NonNull String toolchain);
 
     /**
      * The toolchain version.
+     * Set as empty to use the default version for the toolchain.
      */
     String getToolchainVersion();
     void setToolchainVersion(@NonNull String toolchainVersion);

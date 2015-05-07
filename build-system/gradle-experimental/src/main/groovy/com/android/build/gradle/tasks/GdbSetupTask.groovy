@@ -16,9 +16,10 @@
 
 package com.android.build.gradle.tasks
 
+import com.android.build.gradle.internal.core.Abi
 import com.android.build.gradle.internal.tasks.DefaultAndroidTask
 import com.android.build.gradle.managed.NdkConfig
-import com.android.build.gradle.ndk.internal.NdkHandler
+import com.android.build.gradle.internal.NdkHandler
 import com.android.build.gradle.ndk.internal.StlConfiguration
 import com.google.common.base.Charsets
 import com.google.common.collect.Sets
@@ -53,7 +54,7 @@ class GdbSetupTask extends DefaultAndroidTask {
 
         sb.append("set solib-search-path ${outputDir.toString()}\n")
         sb.append("directory ")
-        sb.append("${ndkHandler.getSysroot(binary.targetPlatform)}/usr/include ")
+        sb.append("${ndkHandler.getSysroot(Abi.getByName(binary.targetPlatform.name))}/usr/include ")
 
         Set<String> sources = Sets.newHashSet();
         binary.getSource().withType(CSourceSet) { sourceSet ->
