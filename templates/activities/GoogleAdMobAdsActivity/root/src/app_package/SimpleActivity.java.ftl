@@ -10,7 +10,7 @@ import com.google.android.gms.ads.InterstitialAd;
 </#if>
 
 import android.os.Bundle;
-import <#if appCompat>android.support.v7.app.ActionBarActivity<#else>android.app.Activity</#if>;
+import ${superClassFqcn};
 import android.view.Menu;
 import android.view.MenuItem;
 <#if adFormat == "interstitial">
@@ -19,10 +19,11 @@ import android.widget.Button;
 import android.widget.TextView;
 </#if>
 import android.widget.Toast;
+<#if applicationPackage??>
+import ${applicationPackage}.R;
+</#if>
 
-<#if applicationPackage??>import ${applicationPackage}.R;</#if>
-
-public class ${activityClass} extends ${(appCompat)?string('ActionBar','')}Activity {
+public class ${activityClass} extends ${superClass} {
     // Remove the below line after defining your own ad unit ID.
     private static final String TOAST_TEXT = "Test ads are being shown. "
             + "To show live ads, replace the ad unit ID in res/values/strings.xml with your own ad unit ID.";

@@ -1,6 +1,6 @@
 package ${packageName};
 
-import <#if appCompat>android.support.v7.app.ActionBarActivity<#else>android.app.Activity</#if>;
+import ${superClassFqcn};
 import android.<#if appCompat>support.v7.</#if>app.ActionBar;
 import android.<#if appCompat>support.v4.</#if>app.Fragment;
 import android.content.Context;
@@ -14,9 +14,11 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.TextView;
-<#if applicationPackage??>import ${applicationPackage}.R;</#if>
+<#if applicationPackage??>
+import ${applicationPackage}.R;
+</#if>
 
-public class ${activityClass} extends ${(appCompat)?string('ActionBar','')}Activity implements ActionBar.OnNavigationListener {
+public class ${activityClass} extends ${superClass} implements ActionBar.OnNavigationListener {
 
     /**
      * The serialization (saved instance state) Bundle key representing the
