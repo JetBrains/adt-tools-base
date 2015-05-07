@@ -22,11 +22,6 @@
     <instantiate from="src/app_package/SimpleActivity.java.ftl"
              to="${escapeXmlAttribute(srcOut)}/${activityClass}.java" />
 
-    <#if adFormat == "interstitial">
-    <instantiate from="res/layout/fragment_interstitial.xml.ftl"
-             to="${escapeXmlAttribute(resOut)}/layout/fragment_interstitial.xml" />
-    </#if>
-
     <open file="${escapeXmlAttribute(srcOut)}/${activityClass}.java" />
     <open file="${escapeXmlAttribute(resOut)}/layout/${layoutName}.xml" />
 </recipe>

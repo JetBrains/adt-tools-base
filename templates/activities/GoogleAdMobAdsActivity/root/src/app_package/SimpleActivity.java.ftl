@@ -69,25 +69,7 @@ public class ${activityClass} extends ${(appCompat)?string('ActionBar','')}Activ
         mLevel = START_LEVEL;
 
         // Create the InterstitialAd and set the adUnitId (defined in values/strings.xml).
-        mInterstitialAd = new InterstitialAd(this);
-        mInterstitialAd.setAdUnitId(getString(R.string.interstitial_ad_unit_id));
-        mInterstitialAd.setAdListener(new AdListener() {
-            @Override
-            public void onAdLoaded() {
-                mNextLevelButton.setEnabled(true);
-            }
-
-            @Override
-            public void onAdFailedToLoad(int errorCode) {
-                mNextLevelButton.setEnabled(true);
-            }
-
-            @Override
-            public void onAdClosed() {
-                // Proceed to the next level.
-                goToNextLevel();
-            }
-        });
+        mInterstitialAd = newInterstitialAd();
         loadInterstitial();
         </#if>
 
@@ -118,6 +100,29 @@ public class ${activityClass} extends ${(appCompat)?string('ActionBar','')}Activ
     }
 
     <#if adFormat == "interstitial">
+    private InterstitialAd newInterstitialAd() {
+        InterstitialAd interstitialAd = new InterstitialAd(this);
+        interstitialAd.setAdUnitId(getString(R.string.interstitial_ad_unit_id));
+        interstitialAd.setAdListener(new AdListener() {
+            @Override
+            public void onAdLoaded() {
+                mNextLevelButton.setEnabled(true);
+            }
+
+            @Override
+            public void onAdFailedToLoad(int errorCode) {
+                mNextLevelButton.setEnabled(true);
+            }
+
+            @Override
+            public void onAdClosed() {
+                // Proceed to the next level.
+                goToNextLevel();
+            }
+        });
+        return interstitialAd;
+    }
+
     private void showInterstitial() {
         // Show the ad if it's ready. Otherwise toast and reload the ad.
         if (mInterstitialAd != null && mInterstitialAd.isLoaded()) {
@@ -138,6 +143,7 @@ public class ${activityClass} extends ${(appCompat)?string('ActionBar','')}Activ
     private void goToNextLevel() {
         // Show the next level and reload the ad to prepare for the level after.
         mLevelTextView.setText("Level " + (++mLevel));
+        mInterstitialAd = newInterstitialAd();
         loadInterstitial();
     }
     </#if>
