@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.internal;
 
-import static com.android.build.OutputFile.NO_FILTER;
 import static com.android.builder.core.BuilderConstants.LINT;
 import static com.android.builder.core.VariantType.ANDROID_TEST;
 import static com.android.builder.core.VariantType.UNIT_TEST;
@@ -29,6 +28,7 @@ import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_STORE_TY
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.AndroidConfig;
+import com.android.build.gradle.TestAndroidConfig;
 import com.android.build.gradle.TestedAndroidConfig;
 import com.android.build.gradle.api.AndroidSourceSet;
 import com.android.build.gradle.internal.api.DefaultAndroidSourceSet;
@@ -38,7 +38,6 @@ import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.dependency.VariantDependencies;
 import com.android.build.gradle.internal.dsl.CoreBuildType;
 import com.android.build.gradle.internal.dsl.CoreProductFlavor;
-import com.android.build.gradle.internal.dsl.Splits;
 import com.android.build.gradle.internal.profile.SpanRecorders;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
@@ -68,7 +67,6 @@ import java.io.File;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import groovy.lang.Closure;
 
@@ -402,7 +400,8 @@ public class VariantManager implements VariantModel {
                             taskManager.resolveDependencies(variantDep,
                                     testVariantConfig.getTestedConfig().getType() == VariantType.LIBRARY
                                             ? null
-                                            : testedVariantData.getVariantDependency());
+                                            : testedVariantData.getVariantDependency(),
+                                    null /*testedProjectPath*/);
                             return null;
                         }
                     },
@@ -548,11 +547,18 @@ public class VariantManager implements VariantModel {
                     variantDep.getPackageConfiguration().getName(), COM_ANDROID_SUPPORT_MULTIDEX);
         }
 
+        final String testedProjectPath = extension instanceof TestAndroidConfig ?
+                ((TestAndroidConfig) extension).getTargetProjectPath() :
+                null;
+
         SpanRecorders.record(project, ExecutionType.RESOLVE_DEPENDENCIES,
                 new Recorder.Block<Void>() {
                     @Override
                     public Void call() {
-                        taskManager.resolveDependencies(variantDep, null);
+                        taskManager.resolveDependencies(
+                                variantDep,
+                                null /*testedVariantDeps*/,
+                                testedProjectPath);
                         return null;
                     }
                 }, new Recorder.Property(SpanRecorders.VARIANT, variantConfig.getFullName()));

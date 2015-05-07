@@ -872,6 +872,9 @@ public class AndroidBuilder {
             Multimap<String, SymbolLoader> libMap = ArrayListMultimap.create();
 
             for (SymbolFileProvider lib : aaptCommand.getLibraries()) {
+                if (lib.isOptional()) {
+                    continue;
+                }
                 String packageName = VariantConfiguration.getManifestPackage(lib.getManifest());
                 if (appPackageName == null) {
                     continue;
@@ -892,7 +895,6 @@ public class AndroidBuilder {
                 File rFile = lib.getSymbolFile();
                 // if the library has no resource, this file won't exist.
                 if (rFile.isFile()) {
-
 
                     // load the full values if that's not already been done.
                     // Doing it lazily allow us to support the case where there's no

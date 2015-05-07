@@ -30,4 +30,15 @@ public interface SymbolFileProvider extends ManifestProvider {
      */
     @NonNull
     File getSymbolFile();
+
+    /**
+     * Returns whether the library is considered optional, meaning that it may or may not
+     * be present in the final APK.
+     *
+     * If the library is optional, then:
+     * - if the consumer is a library, it'll get skipped from resource merging and won't show up
+     *   in the consumer R.txt
+     * - if the consumer is a separate test project, all the resources gets skipped from merging.
+     */
+    boolean isOptional();
 }

@@ -48,4 +48,12 @@ public class JavaLibraryImpl extends LibraryImpl implements JavaLibrary, Seriali
     public List<? extends JavaLibrary> getDependencies() {
         return Collections.emptyList();
     }
+
+    @Override
+    public String toString() {
+        final StringBuffer sb = new StringBuffer("JavaLibraryImpl{");
+        sb.append("jarFile=").append(jarFile);
+        sb.append('}');
+        return sb.toString();
+    }
 }
