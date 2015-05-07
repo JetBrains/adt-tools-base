@@ -21,6 +21,7 @@ import static com.android.ide.common.res2.ResourceFile.ATTR_QUALIFIER;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.ide.common.blame.Message;
 import com.android.ide.common.resources.configuration.FolderConfiguration;
 import com.android.resources.FolderTypeRelationship;
 import com.android.resources.ResourceConstants;
@@ -132,17 +133,23 @@ public class ResourceSet extends DataSet<ResourceItem, ResourceFile> {
     @Override
     protected void readSourceFolder(File sourceFolder, ILogger logger)
             throws MergingException {
+        List<Message> errors = Lists.newArrayList();
         File[] folders = sourceFolder.listFiles();
         if (folders != null) {
             for (File folder : folders) {
                 if (folder.isDirectory() && !isIgnored(folder)) {
                     FolderData folderData = getFolderData(folder);
                     if (folderData != null) {
-                        parseFolder(sourceFolder, folder, folderData, logger);
+                        try {
+                            parseFolder(sourceFolder, folder, folderData, logger);
+                        } catch (MergingException e) {
+                            errors.addAll(e.getMessages());
+                        }
                     }
                 }
             }
         }
+        MergingException.throwIfNonEmpty(errors);
     }
 
     @Override
