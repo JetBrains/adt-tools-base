@@ -46,6 +46,10 @@ public abstract class Instance {
     //  Another identifier for this Instance, that we computed during the analysis phase.
     int mTopologicalOrder;
 
+    int mDistanceToGcRoot = Integer.MAX_VALUE;
+
+    Instance mNextInstanceToGcRoot = null;
+
     //  The immediate dominator of this instance, or null if not reachable from any GC roots.
     @Nullable
     private Instance mImmediateDominator;
@@ -116,6 +120,23 @@ public abstract class Instance {
 
     public void setImmediateDominator(@NonNull Instance dominator) {
         mImmediateDominator = dominator;
+    }
+
+    public int getDistanceToGcRoot() {
+        return mDistanceToGcRoot;
+    }
+
+    public Instance getNextInstanceToGcRoot() {
+        return mNextInstanceToGcRoot;
+    }
+
+    public void setDistanceToGcRoot(int newDistance) {
+        assert(newDistance < mDistanceToGcRoot);
+        mDistanceToGcRoot = newDistance;
+    }
+
+    public void setNextInstanceToGcRoot(Instance instance) {
+        mNextInstanceToGcRoot = instance;
     }
 
     public void resetRetainedSize() {

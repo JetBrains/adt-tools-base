@@ -47,6 +47,12 @@ public class DominatorsTest extends TestCase {
         assertDominates(1, 4);
         assertDominates(1, 6);
         assertDominates(3, 5);
+
+        assertParentPathToGc(2, 1);
+        assertParentPathToGc(3, 1);
+        assertParentPathToGc(4, 2, 3);
+        assertParentPathToGc(5, 3);
+        assertParentPathToGc(6, 2);
     }
 
     public void testCyclicGraph() {
@@ -64,6 +70,10 @@ public class DominatorsTest extends TestCase {
         assertDominates(1, 2);
         assertDominates(1, 3);
         assertDominates(1, 4);
+
+        assertParentPathToGc(2, 1);
+        assertParentPathToGc(3, 1);
+        assertParentPathToGc(4, 1);
     }
 
     public void testMultipleRoots() {
@@ -86,6 +96,11 @@ public class DominatorsTest extends TestCase {
         assertEquals(mSnapshot.SENTINEL_ROOT,
                 mSnapshot.findReference(5).getImmediateDominator());
         assertDominates(5, 6);
+
+        assertParentPathToGc(3, 1);
+        assertParentPathToGc(4, 2);
+        assertParentPathToGc(5, 3, 4);
+        assertParentPathToGc(6, 5);
     }
 
     public void testDoublyLinkedList() {
@@ -110,6 +125,15 @@ public class DominatorsTest extends TestCase {
         for (int i = 3; i <= 9; i++) {
             assertEquals(i, mSnapshot.findReference(i).getRetainedSize(1));
         }
+
+        assertParentPathToGc(2, 1);
+        assertParentPathToGc(3, 2);
+        assertParentPathToGc(9, 2);
+        assertParentPathToGc(4, 3);
+        assertParentPathToGc(8, 9);
+        assertParentPathToGc(5, 4);
+        assertParentPathToGc(7, 8);
+        assertParentPathToGc(6, 5, 7);
     }
 
     public void testTopSort() {
@@ -158,5 +182,18 @@ public class DominatorsTest extends TestCase {
     private void assertDominates(int nodeA, int nodeB) {
         assertEquals(mSnapshot.findReference(nodeA),
                 mSnapshot.findReference(nodeB).getImmediateDominator());
+    }
+
+    /**
+     * Asserts that one of the parents is the direct parent to node in the shortest path to the GC root.
+     */
+    private void assertParentPathToGc(int node, int... parents) {
+        for (int parent : parents) {
+            Instance parentInstance = mSnapshot.findReference(node).getNextInstanceToGcRoot();
+            if (parentInstance != null && parentInstance.getId() == parent) {
+                return;
+            }
+        }
+        fail();
     }
 }
