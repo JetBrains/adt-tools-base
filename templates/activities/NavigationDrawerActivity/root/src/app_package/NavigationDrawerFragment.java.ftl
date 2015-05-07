@@ -1,6 +1,6 @@
 package ${packageName};
 
-<#if appCompat>import android.support.v7.app.ActionBarActivity;</#if>
+<#if appCompat>import ${superClassFqcn};</#if>
 import android.app.Activity;
 import android.<#if appCompat>support.v7.</#if>app.ActionBar;
 import android.<#if appCompat>support.v4.</#if>app.Fragment;
@@ -267,7 +267,7 @@ public class NavigationDrawerFragment extends Fragment {
     }
 
     private ActionBar getActionBar() {
-        return <#if appCompat>((ActionBarActivity) getActivity()).getSupportActionBar();<#else>getActivity().getActionBar();</#if>
+        return <#if appCompat>((${superClass}) getActivity()).getSupportActionBar();<#else>getActivity().getActionBar();</#if>
     }
 
     /**
