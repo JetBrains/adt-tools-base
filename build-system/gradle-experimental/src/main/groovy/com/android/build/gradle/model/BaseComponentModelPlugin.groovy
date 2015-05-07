@@ -33,6 +33,9 @@ import com.android.build.gradle.internal.tasks.SigningReportTask
 import com.android.build.gradle.internal.variant.VariantFactory
 import com.android.build.gradle.managed.AndroidConfig
 import com.android.build.gradle.managed.BuildType
+import com.android.build.gradle.managed.FilePattern
+import com.android.build.gradle.managed.ManagedString
+import com.android.build.gradle.managed.NdkConfig
 import com.android.build.gradle.managed.ProductFlavor
 import com.android.build.gradle.managed.SigningConfig
 import com.android.build.gradle.managed.adaptor.AndroidConfigAdaptor
@@ -175,6 +178,35 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
                 it.keyPassword = DefaultSigningConfig.DEFAULT_PASSWORD;
                 it.storeType = KeyStore.getDefaultType();
             }
+        }
+
+        // com.android.build.gradle.AndroidConfig do not contain an NdkConfig.  Copy it to the
+        // defaultConfig for now.
+        @Mutate
+        void copyNdkConfig(
+                @Path("android.defaultConfig.ndkConfig") NdkConfig defaultNdkConfig,
+                @Path("android.ndk") NdkConfig pluginNdkConfig) {
+            defaultNdkConfig.moduleName = pluginNdkConfig.moduleName
+            defaultNdkConfig.toolchain = pluginNdkConfig.toolchain
+            defaultNdkConfig.toolchainVersion = pluginNdkConfig.toolchainVersion
+
+            for (final ManagedString abi : pluginNdkConfig.getAbiFilters()) {
+                defaultNdkConfig.getAbiFilters().create {
+                    it.value = abi.value
+                }
+            }
+
+            defaultNdkConfig.setCFlags(pluginNdkConfig.getCFlags())
+            defaultNdkConfig.cppFlags = pluginNdkConfig.cppFlags
+
+            for (final ManagedString ldLibs : pluginNdkConfig.getAbiFilters()) {
+                defaultNdkConfig.getLdLibs().create {
+                    it.value = ldLibs.value
+                }
+            }
+
+            defaultNdkConfig.stl = pluginNdkConfig.stl
+            defaultNdkConfig.renderscriptNdkMode = pluginNdkConfig.renderscriptNdkMode
         }
 
         // TODO: Remove code duplicated from BasePlugin.

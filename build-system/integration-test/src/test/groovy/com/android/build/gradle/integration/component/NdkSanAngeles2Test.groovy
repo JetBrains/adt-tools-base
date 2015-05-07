@@ -18,12 +18,22 @@ package com.android.build.gradle.integration.component
 
 import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
+import com.android.build.gradle.integration.common.truth.TruthHelper
+import com.android.build.gradle.integration.common.utils.ModelHelper
+import com.android.builder.core.BuilderConstants
+import com.android.builder.model.AndroidArtifact
+import com.android.builder.model.AndroidProject
+import com.android.builder.model.NativeLibrary
+import com.android.builder.model.Variant
 import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
 import org.junit.experimental.categories.Category
+
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
+import static com.android.builder.core.BuilderConstants.DEBUG
 
 /**
  * Assemble tests for ndkSanAngeles2.
@@ -32,24 +42,42 @@ import org.junit.experimental.categories.Category
 class NdkSanAngeles2Test {
 
     @ClassRule
-    static public GradleTestProject project = GradleTestProject.builder()
+    public static GradleTestProject project = GradleTestProject.builder()
             .forExpermimentalPlugin(true)
             .fromTestProject("ndkSanAngeles2")
             .create()
 
+    private static AndroidProject model;
+
     @BeforeClass
     static void setUp() {
-        project.execute("clean", "assembleDebug");
+        model = project.executeAndReturnModel("clean", "assembleDebug")
     }
 
     @AfterClass
     static void cleanUp() {
         project = null
+        model = null
     }
 
     @Test
     void lint() {
         project.execute("lint")
+    }
+
+    @Test
+    void "check model"() {
+        Collection<Variant> variants = model.getVariants()
+        assertThat(variants).hasSize(8)
+
+        Variant debugVariant = ModelHelper.getVariant(variants, "x86Debug")
+        AndroidArtifact debugMainArtifact = debugVariant.getMainArtifact()
+        assertThat(debugMainArtifact.getNativeLibraries()).hasSize(1)
+        NativeLibrary nativeLibrary = debugMainArtifact.getNativeLibraries().first()
+        assertThat(nativeLibrary.getName()).isEqualTo("sanangeles")
+        assertThat(nativeLibrary.getToolchainName()).isEmpty()
+        assertThat(nativeLibrary.getCCompilerFlags()).containsExactly("-DDISABLE_IMPORTGL");
+        assertThat(nativeLibrary.getCppCompilerFlags()).containsExactly("-DDISABLE_IMPORTGL");
     }
 
     @Test
