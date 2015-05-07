@@ -539,6 +539,173 @@ public class ManifestDetectorTest extends AbstractCheckTest {
                         "mipmap.xml=>AndroidManifest.xml"));
     }
 
+    public void testFullBackupContentBoolean() throws Exception {
+        mEnabled = Collections.singleton(ManifestDetector.ALLOW_BACKUP);
+        assertEquals("No warnings.",
+
+                lintProjectIncrementally(
+                        "AndroidManifest.xml",
+                        xml("AndroidManifest.xml", ""
+                                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                                + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                                + "    package=\"com.example.helloworld\" >\n"
+                                + "\n"
+                                + "    <application\n"
+                                + "        android:allowBackup=\"true\"\n"
+                                + "        android:fullBackupContent=\"true\"\n"
+                                + "        android:label=\"@string/app_name\"\n"
+                                + "        android:theme=\"@style/AppTheme\" >\n"
+                                + "    </application>\n"
+                                + "\n"
+                                + "</manifest>\n")));
+    }
+
+    public void testFullBackupContentMissing() throws Exception {
+        mEnabled = Collections.singleton(ManifestDetector.ALLOW_BACKUP);
+        assertEquals(""
+                + "AndroidManifest.xml:7: Warning: Missing <full-backup-content> resource [AllowBackup]\n"
+                + "        android:fullBackupContent=\"@xml/backup\"\n"
+                + "                                   ~~~~~~~~~~~\n"
+                + "0 errors, 1 warnings\n",
+
+                lintProjectIncrementally(
+                        "AndroidManifest.xml",
+                        xml("AndroidManifest.xml", ""
+                                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                                + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                                + "    package=\"com.example.helloworld\" >\n"
+                                + "\n"
+                                + "    <application\n"
+                                + "        android:allowBackup=\"true\"\n"
+                                + "        android:fullBackupContent=\"@xml/backup\"\n"
+                                + "        android:label=\"@string/app_name\"\n"
+                                + "        android:theme=\"@style/AppTheme\" >\n"
+                                + "    </application>\n"
+                        + "\n"
+                        + "</manifest>\n")));
+    }
+
+    public void testFullBackupContentOk() throws Exception {
+        mEnabled = Collections.singleton(ManifestDetector.ALLOW_BACKUP);
+        assertEquals("No warnings.",
+
+                lintProjectIncrementally(
+                        "AndroidManifest.xml",
+                        xml("AndroidManifest.xml", ""
+                                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                                + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                                + "    package=\"com.example.helloworld\" >\n"
+                                + "\n"
+                                + "    <application\n"
+                                + "        android:allowBackup=\"true\"\n"
+                                + "        android:fullBackupContent=\"@xml/backup\"\n"
+                                + "        android:label=\"@string/app_name\"\n"
+                                + "        android:theme=\"@style/AppTheme\" >\n"
+                                + "    </application>\n"
+                                + "\n"
+                                + "</manifest>\n"),
+                        xml("res/xml/backup.xml", ""
+                                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                                + "<full-backup-content>\n"
+                                + "     <include domain=\"file\" path=\"dd\"/>\n"
+                                + "     <exclude domain=\"file\" path=\"dd/fo3o.txt\"/>\n"
+                                + "     <exclude domain=\"file\" path=\"dd/ss/foo.txt\"/>\n"
+                                + "</full-backup-content>")));
+    }
+
+    public void testHasBackupSpecifiedInTarget23() throws Exception {
+        mEnabled = Collections.singleton(ManifestDetector.ALLOW_BACKUP);
+        assertEquals("No warnings.",
+
+                lintProject(
+                        xml("AndroidManifest.xml", ""
+                                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                                + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                                + "    package=\"com.example.helloworld\" >\n"
+                                + "    <uses-sdk android:targetSdkVersion=\"23\" />"
+                                + "\n"
+                                + "    <application\n"
+                                + "        android:fullBackupContent=\"no\"\n"
+                                + "        android:label=\"@string/app_name\"\n"
+                                + "        android:theme=\"@style/AppTheme\" >\n"
+                                + "    </application>\n"
+                                + "\n"
+                                + "</manifest>\n")));
+    }
+
+    public void testMissingBackupInTarget23() throws Exception {
+        mEnabled = Collections.singleton(ManifestDetector.ALLOW_BACKUP);
+        assertEquals(""
+                + "AndroidManifest.xml:5: Warning: Should explicitly set android:fullBackupContent to true or false to opt-in to or out of full app data back-up and restore, or alternatively to an @xml resource which specifies which files to backup [AllowBackup]\n"
+                + "    <application\n"
+                + "    ^\n"
+                + "0 errors, 1 warnings\n",
+
+                lintProject(
+                        xml("AndroidManifest.xml", ""
+                                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                                + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                                + "    package=\"com.example.helloworld\" >\n"
+                                + "    <uses-sdk android:targetSdkVersion=\"23\" />"
+                                + "\n"
+                                + "    <application\n"
+                                + "        android:label=\"@string/app_name\"\n"
+                                + "        android:theme=\"@style/AppTheme\" >\n"
+                                + "    </application>\n"
+                                + "\n"
+                                + "</manifest>\n")));
+    }
+
+    public void testMissingBackupWithoutGcmPreTarget23() throws Exception {
+        mEnabled = Collections.singleton(ManifestDetector.ALLOW_BACKUP);
+        assertEquals("No warnings.",
+
+                lintProject(
+                        xml("AndroidManifest.xml", ""
+                                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                                + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                                + "    package=\"com.example.helloworld\" >\n"
+                                + "    <uses-sdk android:targetSdkVersion=\"21\" />"
+                                + "\n"
+                                + "    <application\n"
+                                + "        android:label=\"@string/app_name\"\n"
+                                + "        android:theme=\"@style/AppTheme\" >\n"
+                                + "    </application>\n"
+                                + "\n"
+                                + "</manifest>\n")));
+    }
+
+    public void testMissingBackupWithGcmPreTarget23() throws Exception {
+        mEnabled = Collections.singleton(ManifestDetector.ALLOW_BACKUP);
+        assertEquals(""
+                + "AndroidManifest.xml:5: Warning: Should explicitly set android:fullBackupContent to avoid backing up the GCM device specific regId. [AllowBackup]\n"
+                + "    <application\n"
+                + "    ^\n"
+                + "0 errors, 1 warnings\n",
+
+                lintProject(
+                        xml("AndroidManifest.xml", ""
+                                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                                + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                                + "    package=\"com.example.helloworld\" >\n"
+                                + "    <uses-sdk android:targetSdkVersion=\"21\" />"
+                                + "\n"
+                                + "    <application\n"
+                                + "        android:label=\"@string/app_name\"\n"
+                                + "        android:theme=\"@style/AppTheme\" >"
+                                + "        <receiver\n"
+                                + "            android:name=\".GcmBroadcastReceiver\"\n"
+                                + "            android:permission=\"com.google.android.c2dm.permission.SEND\" >\n"
+                                + "            <intent-filter>\n"
+                                + "                <action android:name=\"com.google.android.c2dm.intent.RECEIVE\" />\n"
+                                + "                <category android:name=\"com.example.gcm\" />\n"
+                                + "            </intent-filter>\n"
+                                + "        </receiver>\n"
+                                + "    </application>\n"
+                                + "\n"
+                                + "</manifest>\n")));
+    }
+
     // Custom project which locates all manifest files in the project rather than just
     // being hardcoded to the root level
 
