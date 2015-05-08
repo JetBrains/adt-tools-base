@@ -190,10 +190,15 @@ public abstract class JavaParser {
         /** If the type is not primitive, returns the class of the type if known */
         @Nullable
         public abstract ResolvedClass getTypeClass();
+
+        @Override
+        public abstract boolean equals(Object o);
+
     }
 
     /** Convenience implementation of {@link TypeDescriptor} */
     public static class DefaultTypeDescriptor extends TypeDescriptor {
+
         private String mName;
 
         public DefaultTypeDescriptor(String name) {
@@ -231,6 +236,26 @@ public abstract class JavaParser {
         @Nullable
         public ResolvedClass getTypeClass() {
             return null;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            DefaultTypeDescriptor that = (DefaultTypeDescriptor) o;
+
+            return !(mName != null ? !mName.equals(that.mName) : that.mName != null);
+
+        }
+
+        @Override
+        public int hashCode() {
+            return mName != null ? mName.hashCode() : 0;
         }
     }
 
