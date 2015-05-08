@@ -173,9 +173,13 @@ public class ClassObj extends Instance implements Comparable<ClassObj> {
         visitor.visitClassObj(this);
         for (Object value : getStaticFieldValues().values()) {
             if (value instanceof Instance) {
+                if (!mReferencesAdded) {
+                    ((Instance)value).addReference(this);
+                }
                 visitor.visitLater((Instance) value);
             }
         }
+        mReferencesAdded = true;
     }
 
     @Override

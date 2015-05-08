@@ -14,15 +14,8 @@
  * limitations under the License.
  */
 
-package com.android.tools.perflib.heap.analysis;
+package com.android.tools.perflib.heap;
 
-import com.android.tools.perflib.heap.ClassInstance;
-import com.android.tools.perflib.heap.ClassObj;
-import com.android.tools.perflib.heap.Field;
-import com.android.tools.perflib.heap.RootObj;
-import com.android.tools.perflib.heap.RootType;
-import com.android.tools.perflib.heap.Snapshot;
-import com.android.tools.perflib.heap.Type;
 import com.android.tools.perflib.heap.io.InMemoryBuffer;
 
 import java.nio.ByteBuffer;

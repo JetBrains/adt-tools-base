@@ -48,6 +48,8 @@ public abstract class Instance {
 
     int mDistanceToGcRoot = Integer.MAX_VALUE;
 
+    boolean mReferencesAdded = false;
+
     Instance mNextInstanceToGcRoot = null;
 
     //  The immediate dominator of this instance, or null if not reachable from any GC roots.
@@ -184,11 +186,7 @@ public abstract class Instance {
         switch (type) {
             case OBJECT:
                 long id = readId();
-                Instance result = mHeap.mSnapshot.findReference(id);
-                if (result != null) {
-                    result.addReference(this);
-                }
-                return result;
+                return mHeap.mSnapshot.findReference(id);
             case BOOLEAN:
                 return getBuffer().readByte() != 0;
             case CHAR:

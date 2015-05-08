@@ -16,10 +16,7 @@
 
 package com.android.tools.perflib.heap.analysis;
 
-import com.android.tools.perflib.heap.ClassObj;
-import com.android.tools.perflib.heap.HprofParser;
-import com.android.tools.perflib.heap.Instance;
-import com.android.tools.perflib.heap.Snapshot;
+import com.android.tools.perflib.heap.*;
 import com.android.tools.perflib.heap.io.MemoryMappedFileBuffer;
 
 import junit.framework.TestCase;
