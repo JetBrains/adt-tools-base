@@ -19,6 +19,7 @@ package com.android.ddmlib;
 import com.android.annotations.NonNull;
 import com.android.ddmlib.Log.LogLevel;
 import com.google.common.base.Joiner;
+import com.google.common.base.Throwables;
 import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
@@ -559,7 +560,11 @@ public final class AndroidDebugBridge {
         }
         mAdbOsLocation = osLocation;
 
-        checkAdbVersion();
+        try {
+            checkAdbVersion();
+        } catch (IOException e) {
+            throw new IllegalArgumentException(e);
+        }
     }
 
     /**
@@ -571,7 +576,7 @@ public final class AndroidDebugBridge {
     /**
      * Queries adb for its version number and checks that it is atleast {@link #MIN_ADB_VERSION}.
      */
-    private void checkAdbVersion() {
+    private void checkAdbVersion() throws IOException {
         // default is bad check
         mVersionCheck = false;
 
@@ -579,14 +584,7 @@ public final class AndroidDebugBridge {
             return;
         }
 
-
         File adb = new File(mAdbOsLocation);
-        if (!adb.exists()) {
-            String msg = "Unable to locate adb.\nPlease use SDK Manager and check if platform tools are installed.";
-            Log.logAndDisplay(LogLevel.ERROR, ADB, msg);
-            return;
-        }
-
         ListenableFuture<AdbVersion> future = getAdbVersion(adb);
         AdbVersion version;
         try {
@@ -599,6 +597,7 @@ public final class AndroidDebugBridge {
             return;
         } catch (ExecutionException e) {
             Log.logAndDisplay(LogLevel.ERROR, ADB, e.getCause().getMessage());
+            Throwables.propagateIfInstanceOf(e.getCause(), IOException.class);
             return;
         }
 
@@ -617,11 +616,7 @@ public final class AndroidDebugBridge {
           new Callable<AdbVersion>() {
               @Override
               public AdbVersion call() throws Exception {
-                  if (!adb.canExecute()) {
-                      throw new IllegalArgumentException("File " + adb.getPath() + " cannot be executed.");
-                  }
-
-                  ProcessBuilder pb = new ProcessBuilder(adb.getCanonicalPath(), "version");
+                  ProcessBuilder pb = new ProcessBuilder(adb.getPath(), "version");
                   pb.redirectErrorStream(true);
 
                   Process p = pb.start();
