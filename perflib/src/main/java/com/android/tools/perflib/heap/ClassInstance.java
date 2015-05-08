@@ -56,9 +56,13 @@ public class ClassInstance extends Instance {
         visitor.visitClassInstance(this);
         for (Object value : getValues().values()) {
             if (value instanceof Instance) {
+                if (!mReferencesAdded) {
+                    ((Instance)value).addReference(this);
+                }
                 visitor.visitLater((Instance) value);
             }
         }
+        mReferencesAdded = true;
     }
 
     public final String toString() {

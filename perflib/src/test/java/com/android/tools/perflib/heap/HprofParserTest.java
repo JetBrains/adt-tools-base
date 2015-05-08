@@ -22,6 +22,7 @@ import junit.framework.TestCase;
 
 import java.io.File;
 import java.util.Collection;
+import java.util.Map;
 
 public class HprofParserTest extends TestCase {
 
@@ -130,5 +131,22 @@ public class HprofParserTest extends TestCase {
 
         Object ordinal = instance.getField(Type.INT, "ordinal");
         assertEquals(0, ordinal);
+    }
+
+    /**
+     * Tests getValues to make sure it's not adding duplicate entries to the back references.
+     */
+    public void testDuplicateEntries() {
+        mSnapshot = new SnapshotBuilder(2).addReferences(1, 2).addRoot(1).getSnapshot();
+        mSnapshot.computeDominators();
+
+        assertEquals(2, mSnapshot.getReachableInstances().size());
+        ClassInstance parent = (ClassInstance)mSnapshot.findReference(1);
+        Map<Field, Object> firstGet = parent.getValues();
+        Map<Field, Object> secondGet = parent.getValues();
+        assertEquals(1, firstGet.size());
+        assertEquals(firstGet.size(), secondGet.size());
+        Instance child = mSnapshot.findReference(2);
+        assertEquals(1, child.getReferences().size());
     }
 }

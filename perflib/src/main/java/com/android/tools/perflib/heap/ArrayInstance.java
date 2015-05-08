@@ -57,9 +57,13 @@ public class ArrayInstance extends Instance {
         if (mType == Type.OBJECT) {
             for (Object value : getValues()) {
                 if (value instanceof Instance) {
+                    if (!mReferencesAdded) {
+                        ((Instance)value).addReference(this);
+                    }
                     visitor.visitLater((Instance) value);
                 }
             }
+            mReferencesAdded = true;
         }
     }
 
