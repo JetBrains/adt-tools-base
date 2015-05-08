@@ -359,6 +359,17 @@ public class VariantScope {
                 "source/aidl/" + getVariantConfiguration().getDirName());
     }
 
+    /**
+     * Returns the location of an intermediate directory that can be used by the Jack toolchain
+     * to store states necessary to support incremental compilation.
+     * @return a variant specific directory.
+     */
+    @NonNull
+    public File getJackIncrementalDir() {
+        return new File(globalScope.getIntermediatesDir(), "incremental/jack/"
+                + getVariantConfiguration().getDirName());
+    }
+
     // Tasks getters/setters.
 
     public AndroidTask<Task> getPreBuildTask() {

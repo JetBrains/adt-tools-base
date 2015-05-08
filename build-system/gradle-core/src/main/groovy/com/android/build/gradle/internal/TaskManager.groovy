@@ -1771,6 +1771,8 @@ abstract class TaskManager {
         jackTask.multiDexEnabled = config.isMultiDexEnabled()
         jackTask.minSdkVersion = config.minSdkVersion.apiLevel
 
+        jackTask.incrementalDir = variantData.getScope().getJackIncrementalDir()
+
         // if the tested variant is an app, add its classpath. For the libraries,
         // it's done automatically since the classpath includes the library output as a normal
         // dependency.
