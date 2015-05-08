@@ -20,6 +20,7 @@ import junit.framework.TestCase;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 public class AndroidDebugBridgeTest extends TestCase {
@@ -47,6 +48,17 @@ public class AndroidDebugBridgeTest extends TestCase {
         adb = AndroidDebugBridge.createBridge(mAdbPath.getCanonicalPath(), true);
         assertNotNull(adb);
         AndroidDebugBridge.terminate();
+    }
+
+    // Some consumers of ddmlib rely on adb being on the path, and hence being
+    // able to create a bridge by simply passing in "adb" as the path to adb.
+    // We should be able to create a bridge in such a case as well.
+    // This test will fail if adb is not currently on the path. It is disabled since we
+    // can't enforce that condition (adb on $PATH) very well from a test..
+    public void disabled_testEmptyAdbPath() throws Exception {
+        AdbVersion version = AndroidDebugBridge.getAdbVersion(
+                new File("adb")).get(5, TimeUnit.SECONDS);
+        assertTrue(version.compareTo(AdbVersion.parseFrom("1.0.20")) > 0);
     }
 
     public void testAdbVersion() throws Exception {
