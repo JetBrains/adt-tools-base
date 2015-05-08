@@ -17,12 +17,13 @@
 package com.android.tools.perflib.heap.analysis;
 
 import com.android.annotations.NonNull;
-import com.android.tools.perflib.heap.Heap;
-import com.android.tools.perflib.heap.Instance;
-import com.android.tools.perflib.heap.RootObj;
-import com.android.tools.perflib.heap.Snapshot;
+import com.android.tools.perflib.heap.*;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
+import gnu.trove.TLongHashSet;
+
+import java.util.Comparator;
+import java.util.PriorityQueue;
 
 /**
  * Initial implementation of dominator computation.
