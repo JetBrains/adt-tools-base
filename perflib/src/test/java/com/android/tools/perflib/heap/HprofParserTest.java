@@ -71,7 +71,7 @@ public class HprofParserTest extends TestCase {
 
     public void testPrimitiveArrays() {
         ClassObj byteArray = mSnapshot.findClass("byte[]");
-        assertEquals(1406, byteArray.getInstances().size());
+        assertEquals(1406, byteArray.getInstancesList().size());
         assertEquals(0, byteArray.getInstanceSize());
         assertEquals(681489, byteArray.getShalowSize());
 
@@ -81,7 +81,7 @@ public class HprofParserTest extends TestCase {
         assertEquals(43224, byteArrayInstance.getCompositeSize());
 
         ClassObj intArrayArray = mSnapshot.findClass("int[][]");
-        assertEquals(37, intArrayArray.getInstances().size());
+        assertEquals(37, intArrayArray.getInstancesList().size());
 
         ArrayInstance intArrayInstance = (ArrayInstance) mSnapshot.findReference(0xB0F69F58);
         assertEquals(intArrayArray, intArrayInstance.getClassObj());
@@ -89,7 +89,7 @@ public class HprofParserTest extends TestCase {
         assertEquals(52, intArrayInstance.getCompositeSize());
 
         ClassObj stringArray = mSnapshot.findClass("java.lang.String[]");
-        assertEquals(1396, stringArray.getInstances().size());
+        assertEquals(1396, stringArray.getInstancesList().size());
     }
 
     /**
@@ -106,7 +106,7 @@ public class HprofParserTest extends TestCase {
         Object[] values = array.getValues();
         assertEquals(6, values.length);
 
-        Collection<Instance> instances = clazz.getInstances();
+        Collection<Instance> instances = clazz.getInstancesList();
         for (Object value : values) {
             assertTrue(value instanceof Instance);
             assertTrue(instances.contains(value));
