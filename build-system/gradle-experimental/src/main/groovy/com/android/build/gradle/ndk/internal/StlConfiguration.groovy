@@ -20,6 +20,7 @@ import org.gradle.api.InvalidUserDataException;
 import org.gradle.api.Task;
 import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.TaskContainer
+import org.gradle.model.collection.CollectionBuilder
 import org.gradle.nativeplatform.SharedLibraryBinarySpec;
 
 /**
@@ -86,24 +87,22 @@ public class StlConfiguration {
         }
     }
 
-    public static void apply(
+    public static void createStlCopyTask(
             NdkHandler ndkHandler,
             String stl,
-            TaskContainer tasks,
+            CollectionBuilder<Task> tasks,
             File buildDir,
             SharedLibraryBinarySpec binary) {
-        StlNativeToolSpecification stlConfig =
-                new StlNativeToolSpecification(ndkHandler, stl, binary.targetPlatform)
-        stlConfig.apply(binary)
-
         if (stl.endsWith("_shared")) {
-            Task copySharedLib = tasks.create(
-                    name: NdkNamingScheme.getTaskName(binary, "copy", "StlSo"),
-                    type: Copy) {
-                from(stlConfig.getStlLib(binary.targetPlatform.name))
-                into(new File(buildDir, NdkNamingScheme.getOutputDirectoryName(binary)))
+            StlNativeToolSpecification stlConfig =
+                    new StlNativeToolSpecification(ndkHandler, stl, binary.targetPlatform)
+
+            String copyTaskName = NdkNamingScheme.getTaskName(binary, "copy", "StlSo")
+            tasks.create(copyTaskName, Copy) {
+                it.from(stlConfig.getStlLib(binary.targetPlatform.name))
+                it.into(new File(buildDir, NdkNamingScheme.getOutputDirectoryName(binary)))
             }
-            binary.builtBy copySharedLib
+            binary.buildTask.dependsOn(copyTaskName)
         }
     }
 }
