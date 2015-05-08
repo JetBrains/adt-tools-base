@@ -140,7 +140,7 @@ public class Heap {
     public final void dumpInstanceCounts() {
         for (Object value : mClassesById.getValues()) {
             ClassObj theClass = (ClassObj) value;
-            int count = theClass.mInstances.size();
+            int count = theClass.getInstanceCount();
 
             if (count > 0) {
                 System.out.println(theClass + ": " + count);
@@ -166,7 +166,7 @@ public class Heap {
 
             int size = 0;
 
-            for (Instance instance : theClass.mInstances) {
+            for (Instance instance : theClass.mInstances.get(getId())) {
                 size += instance.getCompositeSize();
             }
 
