@@ -19,13 +19,9 @@ package com.android.tools.perflib.heap;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
+import gnu.trove.TIntObjectHashMap;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class ClassObj extends Instance implements Comparable<ClassObj> {
 
@@ -47,7 +43,7 @@ public class ClassObj extends Instance implements Comparable<ClassObj> {
     private int mShalowSize;
 
     @NonNull
-    ArrayList<Instance> mInstances = new ArrayList<Instance>();
+    TIntObjectHashMap<ArrayList<Instance>> mInstances = new TIntObjectHashMap<ArrayList<Instance>>();
 
     @NonNull
     Set<ClassObj> mSubclasses = new HashSet<ClassObj>();
@@ -79,9 +75,14 @@ public class ClassObj extends Instance implements Comparable<ClassObj> {
         return mClassName.replace('/', '.');
     }
 
-    public final void addInstance(@NonNull Instance instance) {
+    public final void addInstance(int heapId, @NonNull Instance instance) {
         mShalowSize += instance.getSize();
-        mInstances.add(instance);
+        ArrayList<Instance> instances = mInstances.get(heapId);
+        if (instances == null) {
+          instances = new ArrayList<Instance>();
+          mInstances.put(heapId, instances);
+        }
+        instances.add(instance);
     }
 
     public final void setSuperClassId(long superClass) {
@@ -214,8 +215,31 @@ public class ClassObj extends Instance implements Comparable<ClassObj> {
         return mHeap.mSnapshot.findReference(mClassLoaderId);
     }
 
+    public List<Instance> getInstancesList() {
+        int count = getInstanceCount();
+        ArrayList<Instance> resultList = new ArrayList<Instance>(count);
+        for (int heapId : mInstances.keys()) {
+            resultList.addAll(getHeapInstances(heapId));
+        }
+        return resultList;
+    }
+
     @NonNull
-    public Collection<Instance> getInstances() {
-        return mInstances;
+    public List<Instance> getHeapInstances(int heapId) {
+        List<Instance> result = mInstances.get(heapId);
+        return result == null ? new ArrayList<Instance>(0) : result;
+    }
+
+    public int getHeapInstancesCount(int heapId) {
+      List<Instance> result = mInstances.get(heapId);
+      return result == null ? 0 : result.size();
+    }
+
+    public int getInstanceCount() {
+        int count = 0;
+        for (int heapId : mInstances.keys()) {
+            count += mInstances.get(heapId).size();
+        }
+        return count;
     }
 }

@@ -228,7 +228,7 @@ public class Snapshot {
             for (Instance instance : heap.getInstances()) {
                 ClassObj classObj = instance.getClassObj();
                 if (classObj != null) {
-                    classObj.addInstance(instance);
+                    classObj.addInstance(heap.getId(), instance);
                     // Now is a good time to set the size of this instance
                     if (instance instanceof ClassInstance) {
                         instance.setSize(classObj.getInstanceSize());

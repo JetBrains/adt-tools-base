@@ -19,14 +19,7 @@ package com.android.tools.perflib.heap;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
+import java.util.*;
 
 public class Queries {
     /*
@@ -166,9 +159,8 @@ public class Queries {
             throw new IllegalArgumentException("Class not found: " + baseClassName);
         }
 
-        Instance[] instances = new Instance[theClass.mInstances.size()];
-
-        return theClass.mInstances.toArray(instances);
+        List<Instance> instances = theClass.getInstancesList();
+        return instances.toArray(new Instance[instances.size()]);
     }
 
     /*
@@ -191,7 +183,7 @@ public class Queries {
         ArrayList<Instance> instanceList = new ArrayList<Instance>();
 
         for (ClassObj someClass : classList) {
-            instanceList.addAll(someClass.mInstances);
+            instanceList.addAll(someClass.getInstancesList());
         }
 
         Instance[] result = new Instance[instanceList.size()];
