@@ -106,9 +106,24 @@ public class DominatorsTest extends TestCase {
         mSnapshot.computeDominators();
 
         assertEquals(45, mSnapshot.findReference(1).getRetainedSize(1));
-        for (int i = 2; i <= 9; i++) {
+        assertEquals(44, mSnapshot.findReference(2).getRetainedSize(1));
+        for (int i = 3; i <= 9; i++) {
             assertEquals(i, mSnapshot.findReference(i).getRetainedSize(1));
         }
+    }
+
+    public void testTopSort() {
+        mSnapshot = new SnapshotBuilder(4)
+                .addReferences(1, 3, 2)
+                .addReferences(3, 2)
+                .addRoot(1)
+                .getSnapshot();
+
+        mSnapshot.computeDominators();
+
+        assertEquals(6, mSnapshot.findReference(1).getRetainedSize(1));
+        assertEquals(2, mSnapshot.findReference(2).getRetainedSize(1));
+        assertEquals(3, mSnapshot.findReference(3).getRetainedSize(1));
     }
 
     public void testSampleHprof() throws Exception {

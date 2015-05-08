@@ -66,7 +66,19 @@ public class TopologicalSort {
         private final List<Instance> mPostorder = Lists.newArrayList();
 
         @Override
+        public void visitLater(@NonNull Instance instance) {
+            if (!mSeen.contains(instance.getId())) {
+                mStack.push(instance);
+            }
+        }
+
+        @Override
         public void doVisit(Iterable<? extends Instance> startNodes) {
+            // root nodes are instances that share the same id as the node they point to.
+            // This means that we cannot mark them as visited here or they would be marking
+            // the actual root instance
+            // TODO RootObj should not be Instance objects
+
             for (Instance node : startNodes) {
                 node.accept(this);
             }
