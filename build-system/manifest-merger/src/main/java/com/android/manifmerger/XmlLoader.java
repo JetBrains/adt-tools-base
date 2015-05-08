@@ -63,10 +63,9 @@ public final class XmlLoader {
             throws IOException, SAXException, ParserConfigurationException {
         InputStream inputStream = new BufferedInputStream(new FileInputStream(xmlFile));
 
-        PositionXmlParser positionXmlParser = new PositionXmlParser();
-        Document domDocument = positionXmlParser.parse(inputStream);
-        return domDocument != null
-                ? new XmlDocument(positionXmlParser, new SourceFile(xmlFile, displayName),
+        Document domDocument = PositionXmlParser.parse(inputStream);
+        return domDocument != null ? new XmlDocument(
+                new SourceFile(xmlFile, displayName),
                 selectors,
                 systemPropertyResolver,
                 domDocument.getDocumentElement(),
@@ -94,11 +93,9 @@ public final class XmlLoader {
             XmlDocument.Type type,
             Optional<String> mainManifestPackageName)
             throws IOException, SAXException, ParserConfigurationException {
-        PositionXmlParser positionXmlParser = new PositionXmlParser();
-        Document domDocument = positionXmlParser.parse(xml);
+        Document domDocument = PositionXmlParser.parse(xml);
         return domDocument != null
                 ? new XmlDocument(
-                        positionXmlParser,
                         sourceFile,
                         selectors,
                         systemPropertyResolver,

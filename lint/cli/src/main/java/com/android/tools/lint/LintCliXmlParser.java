@@ -44,8 +44,6 @@ import java.io.UnsupportedEncodingException;
  * It also catches and reports parser errors as lint errors.
  */
 public class LintCliXmlParser extends XmlParser {
-    private final PositionXmlParser mParser = new PositionXmlParser();
-
     @Override
     public Document parseXml(@NonNull XmlContext context) {
         String xml = null;
@@ -53,7 +51,7 @@ public class LintCliXmlParser extends XmlParser {
             // Do we need to provide an input stream for encoding?
             xml = context.getContents();
             if (xml != null) {
-                return mParser.parse(xml);
+                return PositionXmlParser.parse(xml);
             }
         } catch (UnsupportedEncodingException e) {
             context.report(
@@ -91,14 +89,14 @@ public class LintCliXmlParser extends XmlParser {
     @NonNull
     @Override
     public Location getLocation(@NonNull XmlContext context, @NonNull Node node) {
-        return Location.create(context.file, mParser.getPosition(node));
+        return Location.create(context.file, PositionXmlParser.getPosition(node));
     }
 
     @NonNull
     @Override
     public Location getLocation(@NonNull XmlContext context, @NonNull Node node,
             int start, int end) {
-        return Location.create(context.file, mParser.getPosition(node, start, end));
+        return Location.create(context.file, PositionXmlParser.getPosition(node, start, end));
     }
 
     @Override
@@ -146,12 +144,12 @@ public class LintCliXmlParser extends XmlParser {
 
     @Override
     public int getNodeStartOffset(@NonNull XmlContext context, @NonNull Node node) {
-        return  mParser.getPosition(node).getStartOffset();
+        return  PositionXmlParser.getPosition(node).getStartOffset();
     }
 
     @Override
     public int getNodeEndOffset(@NonNull XmlContext context, @NonNull Node node) {
-        return  mParser.getPosition(node).getEndOffset();
+        return  PositionXmlParser.getPosition(node).getEndOffset();
     }
 
     /* Handle for creating DOM positions cheaply and returning full fledged locations later */
@@ -168,7 +166,7 @@ public class LintCliXmlParser extends XmlParser {
         @NonNull
         @Override
         public Location resolve() {
-            return Location.create(mFile, mParser.getPosition(mNode));
+            return Location.create(mFile, PositionXmlParser.getPosition(mNode));
         }
 
         @Override
