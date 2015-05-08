@@ -18,6 +18,15 @@ package com.android.sdklib.repository;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.sdklib.SdkManager;
+import com.android.utils.FileUtils;
+import com.google.common.base.Charsets;
+import com.google.common.hash.Hashing;
+import com.google.common.io.Files;
+
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 
 /**
  * License text, with an optional license XML reference.
@@ -25,21 +34,26 @@ import com.android.annotations.Nullable;
 public class License {
     private final String mLicense;
     private final String mLicenseRef;
+    private final String mLicenseHash;
 
-    public License(@NonNull String license) {
-        mLicense = license;
-        mLicenseRef = null;
-    }
+    private static final String LICENSE_DIR = "licenses";
 
     public License(@NonNull String license, @Nullable String licenseRef) {
         mLicense = license;
         mLicenseRef = licenseRef;
+        mLicenseHash = Hashing.sha1().hashBytes(mLicense.getBytes()).toString();
     }
 
     /** Returns the license text. Never null. */
     @NonNull
     public String getLicense() {
         return mLicense;
+    }
+
+    /** Returns the hash of the license text. Never null. */
+    @NonNull
+    public String getLicenseHash() {
+        return mLicenseHash;
     }
 
     /**
@@ -102,6 +116,58 @@ public class License {
                 return false;
             }
         } else if (!mLicenseRef.equals(other.mLicenseRef)) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Checks whether this license has previously been accepted.
+     * @param sdkRoot The root directory of the Android SDK
+     * @return true if this license has already been accepted
+     */
+    public boolean checkAccepted(@Nullable File sdkRoot) {
+        if (sdkRoot == null) {
+            return false;
+        }
+        File licenseDir = new File(sdkRoot, LICENSE_DIR);
+        File licenseFile = new File(licenseDir, mLicenseRef == null ? mLicenseHash : mLicenseRef);
+        if (!licenseFile.exists()) {
+            return false;
+        }
+        try {
+            String hash = Files.readFirstLine(licenseFile, Charsets.UTF_8);
+            return hash.equals(mLicenseHash);
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    /**
+     * Marks this license as accepted.
+     *
+     * @param sdkRoot The root directory of the Android SDK
+     * @return true if the acceptance was persisted successfully.
+     */
+    public boolean setAccepted(@Nullable File sdkRoot) {
+        if (sdkRoot == null) {
+            return false;
+        }
+        if (checkAccepted(sdkRoot)) {
+            return true;
+        }
+        File licenseDir = new File(sdkRoot, LICENSE_DIR);
+        if (licenseDir.exists() && !licenseDir.isDirectory()) {
+            return false;
+        }
+        if (!licenseDir.exists()) {
+            licenseDir.mkdir();
+        }
+        File licenseFile = new File(licenseDir, mLicenseRef == null ? mLicenseHash : mLicenseRef);
+        try {
+            Files.write(mLicenseHash, licenseFile, Charsets.UTF_8);
+        }
+        catch (IOException e) {
             return false;
         }
         return true;
