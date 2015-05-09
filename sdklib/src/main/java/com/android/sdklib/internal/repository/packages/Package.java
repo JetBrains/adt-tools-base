@@ -153,8 +153,13 @@ public abstract class Package implements IDescription, IListDescription, Compara
             descUrl = "";
         }
 
-        mLicense     = new License(getProperty(props, PkgProps.PKG_LICENSE, license),
-                                   getProperty(props, PkgProps.PKG_LICENSE_REF, null));
+        license = getProperty(props, PkgProps.PKG_LICENSE, license);
+        if (license != null) {
+            mLicense = new License(license, getProperty(props, PkgProps.PKG_LICENSE_REF, null));
+        }
+        else {
+            mLicense = null;
+        }
         mListDisplay = getProperty(props, PkgProps.PKG_LIST_DISPLAY, "");       //$NON-NLS-1$
         mDescription = getProperty(props, PkgProps.PKG_DESC,         description);
         mDescUrl     = getProperty(props, PkgProps.PKG_DESC_URL,     descUrl);
