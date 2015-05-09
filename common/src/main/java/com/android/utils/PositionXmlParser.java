@@ -82,7 +82,7 @@ public class PositionXmlParser {
      *             a string.
      */
     @Nullable
-    public Document parse(@NonNull InputStream input)
+    public static Document parse(@NonNull InputStream input)
             throws ParserConfigurationException, SAXException, IOException {
         // Read in all the data
         ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -110,7 +110,7 @@ public class PositionXmlParser {
      *             a string.
      */
     @Nullable
-    public Document parse(@NonNull byte[] data)
+    public static Document parse(@NonNull byte[] data)
             throws ParserConfigurationException, SAXException, IOException {
         String xml = getXmlString(data);
         xml = XmlUtils.stripBom(xml);
@@ -130,14 +130,14 @@ public class PositionXmlParser {
      *             a string.
      */
     @Nullable
-    public Document parse(@NonNull String xml)
+    public static Document parse(@NonNull String xml)
             throws ParserConfigurationException, SAXException, IOException {
         xml = XmlUtils.stripBom(xml);
         return parse(xml, new InputSource(new StringReader(xml)), true);
     }
 
     @NonNull
-    private Document parse(@NonNull String xml, @NonNull InputSource input, boolean checkBom)
+    private static Document parse(@NonNull String xml, @NonNull InputSource input, boolean checkBom)
             throws ParserConfigurationException, SAXException, IOException {
         try {
             SAXParserFactory factory = SAXParserFactory.newInstance();
@@ -313,7 +313,7 @@ public class PositionXmlParser {
      *         position info
      */
     @NonNull
-    public SourcePosition getPosition(@NonNull Node node) {
+    public static SourcePosition getPosition(@NonNull Node node) {
         return getPosition(node, -1, -1);
     }
 
@@ -333,13 +333,13 @@ public class PositionXmlParser {
      */
 
     @NonNull
-    public SourcePosition getPosition(@NonNull Node node, int start, int end) {
+    public static SourcePosition getPosition(@NonNull Node node, int start, int end) {
         Position p = getPositionHelper(node, start, end);
         return p == null ? SourcePosition.UNKNOWN : p.toSourcePosition();
     }
 
     @Nullable
-    private Position getPositionHelper(@NonNull Node node, int start, int end) {
+    private static Position getPositionHelper(@NonNull Node node, int start, int end) {
         // Look up the position information stored while parsing for the given node.
         // Note however that we only store position information for elements (because
         // there is no SAX callback for individual attributes).
@@ -502,7 +502,7 @@ public class PositionXmlParser {
      * information is attached to the DOM nodes by setting user data with the
      * {@link #POS_KEY} key.
      */
-    private final class DomBuilder extends DefaultHandler2 {
+    private static final class DomBuilder extends DefaultHandler2 {
         private final String mXml;
         private final Document mDocument;
         private Locator mLocator;
@@ -759,4 +759,6 @@ public class PositionXmlParser {
             return new SourcePosition(mLine, mColumn, mOffset, endLine, endColumn, endOffset);
         }
     }
+
+    private PositionXmlParser() { }
 }

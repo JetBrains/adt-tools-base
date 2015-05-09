@@ -33,7 +33,6 @@ import com.android.ide.common.xml.XmlPrettyPrinter;
 import com.android.sdklib.SdkVersionInfo;
 import com.android.utils.Pair;
 import com.android.utils.PositionXmlParser;
-import com.android.ide.common.blame.SourcePosition;
 import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
@@ -79,21 +78,19 @@ public class XmlDocument {
     private final Element mRootElement;
     // this is initialized lazily to avoid un-necessary early parsing.
     private final AtomicReference<XmlElement> mRootNode = new AtomicReference<XmlElement>(null);
-    private final PositionXmlParser mPositionXmlParser;
     private final SourceFile mSourceFile;
     private final KeyResolver<String> mSelectors;
     private final KeyBasedValueResolver<SystemProperty> mSystemPropertyResolver;
     private final Type mType;
     private final Optional<String> mMainManifestPackageName;
 
-    public XmlDocument(@NonNull PositionXmlParser positionXmlParser,
+    public XmlDocument(
             @NonNull SourceFile sourceLocation,
             @NonNull KeyResolver<String> selectors,
             @NonNull KeyBasedValueResolver<SystemProperty> systemPropertyResolver,
             @NonNull Element element,
             @NonNull Type type,
             @NonNull Optional<String> mainManifestPackageName) {
-        this.mPositionXmlParser = Preconditions.checkNotNull(positionXmlParser);
         this.mSourceFile = Preconditions.checkNotNull(sourceLocation);
         this.mRootElement = Preconditions.checkNotNull(element);
         this.mSelectors = Preconditions.checkNotNull(selectors);
@@ -149,7 +146,7 @@ public class XmlDocument {
      * @return a new {@link com.android.manifmerger.XmlDocument} with up to date information.
      */
     public XmlDocument reparse() {
-        return new XmlDocument(mPositionXmlParser,
+        return new XmlDocument(
                 mSourceFile,
                 mSelectors,
                 mSystemPropertyResolver,
@@ -192,7 +189,7 @@ public class XmlDocument {
      * understanding, document should start at line 1).
      */
     @NonNull
-    SourcePosition getNodePosition(XmlNode node) {
+    static SourcePosition getNodePosition(XmlNode node) {
         return getNodePosition(node.getXml());
     }
 
@@ -202,8 +199,8 @@ public class XmlDocument {
      * understanding, document should start at line 1).
      */
     @NonNull
-    SourcePosition getNodePosition(Node xml) {
-        return mPositionXmlParser.getPosition(xml);
+    static SourcePosition getNodePosition(Node xml) {
+        return PositionXmlParser.getPosition(xml);
     }
 
     @NonNull

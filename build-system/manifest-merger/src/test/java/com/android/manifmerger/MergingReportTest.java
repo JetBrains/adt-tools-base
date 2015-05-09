@@ -143,7 +143,7 @@ public class MergingReportTest extends TestCase {
 
     public void testGetMergedDocument() {
         XmlDocument xmlDocument =
-                new XmlDocument(new PositionXmlParser(),
+                new XmlDocument(
                         mSourceLocation,
                         mKeyResolver,
                         mPropertyResolver,
