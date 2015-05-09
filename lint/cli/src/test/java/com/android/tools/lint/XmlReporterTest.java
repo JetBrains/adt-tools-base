@@ -132,7 +132,7 @@ public class XmlReporterTest extends AbstractCheckTest {
                 report);
 
             // Make sure the XML is valid
-            Document document = new PositionXmlParser().parse(report);
+            Document document = PositionXmlParser.parse(report);
             assertNotNull(document);
             assertEquals(2, document.getElementsByTagName("issue").getLength());
         } finally {
@@ -236,7 +236,7 @@ public class XmlReporterTest extends AbstractCheckTest {
                 report);
 
             // Make sure the XML is valid
-            Document document = new PositionXmlParser().parse(report);
+            Document document = PositionXmlParser.parse(report);
             assertNotNull(document);
             assertEquals(2, document.getElementsByTagName("issue").getLength());
         } finally {
@@ -303,7 +303,7 @@ public class XmlReporterTest extends AbstractCheckTest {
                     report);
 
             // Make sure the XML is valid
-            Document document = new PositionXmlParser().parse(report);
+            Document document = PositionXmlParser.parse(report);
             assertNotNull(document);
             assertEquals(1, document.getElementsByTagName("issue").getLength());
             String explanation =  ((Element)document.getElementsByTagName("issue").item(0)).
