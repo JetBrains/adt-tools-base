@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 The Android Open Source Project
+ * Copyright (C) 2015 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,232 +14,256 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.model
+package com.android.build.gradle.model;
 
-import com.android.build.gradle.internal.ProductFlavorCombo
-import com.android.build.gradle.managed.AndroidConfig
-import com.android.build.gradle.managed.BuildType
-import com.android.build.gradle.managed.adaptor.BuildTypeAdaptor
-import com.android.build.gradle.managed.ProductFlavor
-import com.android.build.gradle.managed.adaptor.ProductFlavorAdaptor
-import com.android.builder.core.BuilderConstants
-import com.android.sdklib.repository.FullRevision
-import groovy.transform.CompileStatic
-import org.gradle.api.Plugin
-import org.gradle.api.Project
-import org.gradle.internal.reflect.Instantiator
-import org.gradle.internal.service.ServiceRegistry
-import org.gradle.language.base.ProjectSourceSet
-import org.gradle.language.base.internal.registry.LanguageRegistry
-import org.gradle.language.base.plugins.ComponentModelBasePlugin
-import org.gradle.model.Defaults
-import org.gradle.model.Finalize
-import org.gradle.model.Model
-import org.gradle.model.Mutate
-import org.gradle.model.Path
-import org.gradle.model.RuleSource
-import org.gradle.model.collection.CollectionBuilder
-import org.gradle.model.collection.ManagedSet
-import org.gradle.model.internal.registry.ModelRegistry
-import org.gradle.platform.base.BinaryType
-import org.gradle.platform.base.BinaryTypeBuilder
-import org.gradle.platform.base.ComponentBinaries
-import org.gradle.platform.base.ComponentSpecContainer
-import org.gradle.platform.base.ComponentType
-import org.gradle.platform.base.ComponentTypeBuilder
-import org.gradle.platform.base.LanguageType
-import org.gradle.platform.base.LanguageTypeBuilder
+import static com.android.build.gradle.model.ModelConstants.ANDROID_COMPONENT_SPEC;
+import static com.android.builder.core.VariantType.ANDROID_TEST;
+import static com.android.builder.core.VariantType.UNIT_TEST;
 
-import javax.inject.Inject
+import com.android.build.gradle.internal.ProductFlavorCombo;
+import com.android.build.gradle.managed.AndroidConfig;
+import com.android.build.gradle.managed.BuildType;
+import com.android.build.gradle.managed.ProductFlavor;
+import com.android.build.gradle.managed.adaptor.BuildTypeAdaptor;
+import com.android.build.gradle.managed.adaptor.ProductFlavorAdaptor;
+import com.android.builder.core.BuilderConstants;
+import com.android.sdklib.repository.FullRevision;
+import com.android.utils.StringHelper;
+import com.google.common.base.Function;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
+import com.google.common.primitives.Ints;
 
-import static com.android.builder.core.VariantType.ANDROID_TEST
-import static com.android.builder.core.VariantType.UNIT_TEST
-import static com.android.build.gradle.model.ModelConstants.ANDROID_COMPONENT_SPEC
+import org.gradle.api.Action;
+import org.gradle.api.Plugin;
+import org.gradle.api.Project;
+import org.gradle.internal.reflect.Instantiator;
+import org.gradle.internal.service.ServiceRegistry;
+import org.gradle.language.base.ProjectSourceSet;
+import org.gradle.language.base.internal.registry.LanguageRegistration;
+import org.gradle.language.base.internal.registry.LanguageRegistry;
+import org.gradle.language.base.plugins.ComponentModelBasePlugin;
+import org.gradle.model.Defaults;
+import org.gradle.model.Finalize;
+import org.gradle.model.Model;
+import org.gradle.model.Mutate;
+import org.gradle.model.Path;
+import org.gradle.model.RuleSource;
+import org.gradle.model.collection.CollectionBuilder;
+import org.gradle.model.collection.ManagedSet;
+import org.gradle.platform.base.BinaryType;
+import org.gradle.platform.base.BinaryTypeBuilder;
+import org.gradle.platform.base.ComponentBinaries;
+import org.gradle.platform.base.ComponentSpecContainer;
+import org.gradle.platform.base.ComponentType;
+import org.gradle.platform.base.ComponentTypeBuilder;
+import org.gradle.platform.base.LanguageType;
+import org.gradle.platform.base.LanguageTypeBuilder;
+
+import java.util.List;
+import java.util.Set;
 
 /**
  * Plugin to set up infrastructure for other android plugins.
  */
-@CompileStatic
 public class AndroidComponentModelPlugin implements Plugin<Project> {
+
     /**
      * The name of ComponentSpec created with android component model plugin.
      */
     public static final String COMPONENT_NAME = "android";
 
-    private final ModelRegistry modelRegistry
-
-    @Inject
-    public AndroidComponentModelPlugin(ModelRegistry modelRegistry) {
-        this.modelRegistry = modelRegistry
-    }
-
     @Override
     public void apply(Project project) {
-        project.apply plugin: ComponentModelBasePlugin
+        project.getPlugins().apply(ComponentModelBasePlugin.class);
     }
 
-    static class Rules extends RuleSource {
+    @SuppressWarnings("MethodMayBeStatic")
+    public static class Rules extends RuleSource {
+
         @LanguageType
-        void registerLanguage(LanguageTypeBuilder<AndroidLanguageSourceSet> builder) {
-            builder.setLanguageName("android")
-            builder.defaultImplementation(AndroidLanguageSourceSet)
+        public void registerLanguage(LanguageTypeBuilder<AndroidLanguageSourceSet> builder) {
+            builder.setLanguageName("android");
+            builder.defaultImplementation(AndroidLanguageSourceSet.class);
         }
 
         /**
          * Create "android" model block.
          */
         @Model("android")
-        void android(AndroidConfig androidModel) {
+        public void android(AndroidConfig androidModel) {
         }
 
-        // Initialize each component separately to ensure correct ordering.
         @Defaults
-        void androidModelSources (
-                AndroidConfig androidModel,
+        public void androidModelSources(AndroidConfig androidModel,
                 @Path("androidSources") AndroidComponentModelSourceSet sources) {
-            androidModel.sources = sources
+            androidModel.setSources(sources);
         }
 
         @Finalize
-        void finalizeAndroidModel(AndroidConfig androidModel) {
-            if (androidModel.buildToolsRevision == null && androidModel.buildToolsVersion != null) {
-                androidModel.buildToolsRevision =
-                        FullRevision.parseRevision(androidModel.buildToolsVersion);
+        public void finalizeAndroidModel(AndroidConfig androidModel) {
+            if (androidModel.getBuildToolsRevision() == null
+                    && androidModel.getBuildToolsVersion() != null) {
+                androidModel.setBuildToolsRevision(
+                        FullRevision.parseRevision(androidModel.getBuildToolsVersion()));
             }
 
-            if (androidModel.compileSdkVersion != null &&
-                    !androidModel.compileSdkVersion.startsWith("android-") &&
-                    androidModel.compileSdkVersion.isNumber()) {
-                androidModel.compileSdkVersion = "android-" + androidModel.compileSdkVersion
+            if (androidModel.getCompileSdkVersion() != null
+                    && !androidModel.getCompileSdkVersion().startsWith("android-")
+                    && Ints.tryParse(androidModel.getCompileSdkVersion()) != null) {
+                androidModel.setCompileSdkVersion("android-" + androidModel.getCompileSdkVersion());
             }
+
         }
 
         @Defaults
-        void createDefaultBuildTypes(
+        public void createDefaultBuildTypes(
                 @Path("android.buildTypes") ManagedSet<BuildType> buildTypes) {
-            buildTypes.create {
-                it.name = BuilderConstants.DEBUG
-                it.setIsDebuggable(true)
-                it.setIsEmbedMicroApp(false)
-            }
-            buildTypes.create {
-                it.name = BuilderConstants.RELEASE
-            }
+            buildTypes.create(new Action<BuildType>() {
+                @Override
+                public void execute(BuildType buildType) {
+                    buildType.setName(BuilderConstants.DEBUG);
+                    buildType.setIsDebuggable(true);
+                    buildType.setIsEmbedMicroApp(false);
+                }
+            });
+            buildTypes.create(new Action<BuildType>() {
+                @Override
+                public void execute(BuildType buildType) {
+                    buildType.setName(BuilderConstants.RELEASE);
+                }
+            });
         }
 
         @Model
-        List<ProductFlavorCombo> createProductFlavorCombo (
+        public List<ProductFlavorCombo> createProductFlavorCombo(
                 @Path("android.productFlavors") ManagedSet<ProductFlavor> productFlavors) {
             // TODO: Create custom product flavor container to manually configure flavor dimensions.
-            List<String> flavorDimensionList = productFlavors*.dimension.unique().asList()
-            flavorDimensionList.removeAll([null])
+            Set<String> flavorDimensionList = Sets.newHashSet();
+            for (ProductFlavor flavor : productFlavors) {
+                if (flavor.getDimension() != null) {
+                    flavorDimensionList.add(flavor.getDimension());
+                }
+            }
 
             return ProductFlavorCombo.createCombinations(
-                    flavorDimensionList,
-                    productFlavors.collect { new ProductFlavorAdaptor(it) })
+                    Lists.newArrayList(flavorDimensionList),
+                    Iterables.transform(productFlavors,
+                            new Function<ProductFlavor, com.android.builder.model.ProductFlavor>() {
+                                @Override
+                                public com.android.builder.model.ProductFlavor apply(ProductFlavor productFlavor) {
+                                    return new ProductFlavorAdaptor(productFlavor);
+                                }
+                            }));
         }
 
         @ComponentType
-        void defineComponentType(ComponentTypeBuilder<AndroidComponentSpec> builder) {
-            builder.defaultImplementation(DefaultAndroidComponentSpec)
+        public void defineComponentType(ComponentTypeBuilder<AndroidComponentSpec> builder) {
+            builder.defaultImplementation(DefaultAndroidComponentSpec.class);
         }
 
         @Mutate
-        void createAndroidComponents(CollectionBuilder<AndroidComponentSpec> androidComponents) {
-            androidComponents.create(COMPONENT_NAME)
+        public void createAndroidComponents(
+                CollectionBuilder<AndroidComponentSpec> androidComponents) {
+            androidComponents.create(COMPONENT_NAME);
         }
 
         @Model(ANDROID_COMPONENT_SPEC)
-        AndroidComponentSpec createAndroidComponentSpec(ComponentSpecContainer specs) {
-            return (AndroidComponentSpec) specs.getByName(COMPONENT_NAME)
+        public AndroidComponentSpec createAndroidComponentSpec(ComponentSpecContainer specs) {
+            return (AndroidComponentSpec) specs.getByName(COMPONENT_NAME);
         }
 
         @Model
-        AndroidComponentModelSourceSet androidSources (
-                ServiceRegistry serviceRegistry) {
-            def instantiator = serviceRegistry.get(Instantiator.class)
-            def sources = new AndroidComponentModelSourceSet(instantiator)
-            return sources
+        public AndroidComponentModelSourceSet androidSources(ServiceRegistry serviceRegistry) {
+            Instantiator instantiator = serviceRegistry.get(Instantiator.class);
+            return new AndroidComponentModelSourceSet(instantiator);
         }
 
         /**
          * Create all source sets for each AndroidBinary.
          */
         @Mutate
-        void createVariantSourceSet(
-                @Path("android.sources") AndroidComponentModelSourceSet sources,
-                @Path("android.buildTypes") ManagedSet<BuildType> buildTypes,
+        public void createVariantSourceSet(
+                @Path("android.sources") final AndroidComponentModelSourceSet sources,
+                @Path("android.buildTypes") final ManagedSet<BuildType> buildTypes,
                 @Path("android.productFlavors") ManagedSet<ProductFlavor> flavors,
-                List<ProductFlavorCombo> flavorGroups,
-                ProjectSourceSet projectSourceSet,
+                List<ProductFlavorCombo> flavorGroups, ProjectSourceSet projectSourceSet,
                 LanguageRegistry languageRegistry) {
-            sources.setProjectSourceSet(projectSourceSet)
-            languageRegistry.each { languageRegistration ->
-                sources.registerLanguage(languageRegistration)
+            sources.setProjectSourceSet(projectSourceSet);
+            for (LanguageRegistration languageRegistration : languageRegistry) {
+                sources.registerLanguage(languageRegistration);
             }
-            // Create main source set.
-            sources.create("main")
-            sources.create(ANDROID_TEST.prefix)
-            sources.create(UNIT_TEST.prefix)
 
-            buildTypes.each { buildType ->
-                sources.maybeCreate(buildType.name)
-            }
-            flavorGroups.each { group ->
-                sources.maybeCreate(group.name)
-                if (!group.flavorList.isEmpty()) {
-                    buildTypes.each { buildType ->
-                        sources.maybeCreate(group.name + buildType.name.capitalize())
+            // Create main source set.
+            sources.create("main");
+            sources.create(ANDROID_TEST.getPrefix());
+            sources.create(UNIT_TEST.getPrefix());
+
+            for (BuildType buildType : buildTypes) {
+                sources.maybeCreate(buildType.getName());
+
+                for (ProductFlavorCombo group: flavorGroups) {
+                    sources.maybeCreate(group.getName());
+                    if (!group.getFlavorList().isEmpty()) {
+                        sources.maybeCreate(
+                                group.getName() + StringHelper.capitalize(buildType.getName()));
                     }
+
                 }
+
             }
             if (flavorGroups.size() != flavors.size()) {
                 // If flavorGroups and flavors are the same size, there is at most 1 flavor
                 // dimension.  So we don't need to reconfigure the source sets for flavorGroups.
-                flavors.each { flavor ->
-                    sources.maybeCreate(flavor.name)
+                for (ProductFlavor flavor: flavors) {
+                    sources.maybeCreate(flavor.getName());
                 }
             }
         }
 
         @Finalize
-        void setDefaultSrcDir(@Path("android.sources") AndroidComponentModelSourceSet sourceSet) {
-            sourceSet.setDefaultSrcDir()
+        public void setDefaultSrcDir(
+                @Path("android.sources") AndroidComponentModelSourceSet sourceSet) {
+            sourceSet.setDefaultSrcDir();
         }
 
         @BinaryType
-        void defineBinaryType(BinaryTypeBuilder<AndroidBinary> builder) {
-            builder.defaultImplementation(DefaultAndroidBinary)
+        public void defineBinaryType(BinaryTypeBuilder<AndroidBinary> builder) {
+            builder.defaultImplementation(DefaultAndroidBinary.class);
         }
 
         @ComponentBinaries
-        void createBinaries(
-                CollectionBuilder<AndroidBinary> binaries,
+        public void createBinaries(
+                final CollectionBuilder<AndroidBinary> binaries,
                 @Path("android.buildTypes") ManagedSet<BuildType> buildTypes,
-                List<ProductFlavorCombo> flavorCombos,
-                AndroidComponentSpec spec) {
+                List<ProductFlavorCombo> flavorCombos, AndroidComponentSpec spec) {
             if (flavorCombos.isEmpty()) {
                 flavorCombos.add(new ProductFlavorCombo());
             }
 
-            for (BuildType buildType : buildTypes) {
-                flavorCombos.each { ProductFlavorCombo flavorCombo ->
-                    binaries.create(getBinaryName(buildType, flavorCombo)) {
-                        def binary = it as DefaultAndroidBinary
-                        binary.buildType = new BuildTypeAdaptor(buildType)
-                        binary.productFlavors = flavorCombo.flavorList
-                    }
+            for (final BuildType buildType : buildTypes) {
+                for (final ProductFlavorCombo flavorCombo : flavorCombos) {
+                    binaries.create(getBinaryName(buildType, flavorCombo),
+                            new Action<AndroidBinary>() {
+                                @Override
+                                public void execute(AndroidBinary androidBinary) {
+                                    DefaultAndroidBinary binary = (DefaultAndroidBinary) androidBinary;
+                                    binary.setBuildType(new BuildTypeAdaptor(buildType));
+                                    binary.setProductFlavors(flavorCombo.getFlavorList());
+                                }
+                            });
                 }
             }
         }
 
         private static String getBinaryName(BuildType buildType, ProductFlavorCombo flavorCombo) {
-            if (flavorCombo.flavorList.isEmpty()) {
-                return  buildType.name
+            if (flavorCombo.getFlavorList().isEmpty()) {
+                return buildType.getName();
             } else {
-                return  flavorCombo.name + buildType.name.capitalize()
+                return flavorCombo.getName() + StringHelper.capitalize(buildType.getName());
             }
+
         }
     }
-
 }
