@@ -16,7 +16,7 @@
 
 import com.android.tools.chartlib.AnimatedComponent;
 import com.android.tools.chartlib.EventData;
-import com.android.tools.chartlib.LayoutComponent;
+import com.android.tools.chartlib.SunburstComponent;
 import com.android.tools.chartlib.TimelineComponent;
 import com.android.tools.chartlib.TimelineData;
 import com.android.tools.chartlib.ValuedTreeNode;
@@ -215,7 +215,7 @@ public class AnimatedComponentVisualTests extends JDialog {
         final DataNode data = new DataNode();
         data.addDataNode(new DataNode(1, 10));
 
-        final LayoutComponent layout = new LayoutComponent(data);
+        final SunburstComponent layout = new SunburstComponent(data);
 
         JPanel panel = new JPanel();
         JPanel controls = createControlledPane(panel, layout);
@@ -334,9 +334,9 @@ public class AnimatedComponentVisualTests extends JDialog {
                 new Box.Filler(new Dimension(0, 0), new Dimension(300, Integer.MAX_VALUE),
                         new Dimension(300, Integer.MAX_VALUE)));
 
-        layout.addSelectionListener(new LayoutComponent.SliceSelectionListener() {
+        layout.addSelectionListener(new SunburstComponent.SliceSelectionListener() {
             @Override
-            public void valueChanged(LayoutComponent.SliceSelectionEvent e) {
+            public void valueChanged(SunburstComponent.SliceSelectionEvent e) {
                 ValuedTreeNode node = e.getNode();
                 info.setText(node == null ? "<No selection>" : String.format("Value %d Count %d",
                         node.getValue(), node.getCount()));
