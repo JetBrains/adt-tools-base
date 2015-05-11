@@ -36,6 +36,7 @@ import com.android.build.gradle.tasks.BinaryFileProviderTask;
 import com.android.build.gradle.tasks.Dex;
 import com.android.build.gradle.tasks.GenerateBuildConfig;
 import com.android.build.gradle.tasks.GenerateResValues;
+import com.android.build.gradle.tasks.JackTask;
 import com.android.build.gradle.tasks.MergeAssets;
 import com.android.build.gradle.tasks.MergeResources;
 import com.android.build.gradle.tasks.NdkCompile;
@@ -45,17 +46,16 @@ import com.android.build.gradle.tasks.RenderscriptCompile;
 import com.android.builder.core.VariantConfiguration;
 import com.android.builder.core.VariantType;
 import com.android.utils.StringHelper;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 import org.gradle.api.Task;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.tasks.Copy;
 import org.gradle.api.tasks.compile.AbstractCompile;
+import org.gradle.api.tasks.compile.JavaCompile;
 
 import java.io.File;
 import java.util.Collection;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -95,23 +95,29 @@ public class VariantScope {
     private AndroidTask<GenerateBuildConfig> generateBuildConfigTask;
     private AndroidTask<GenerateResValues> generateResValuesTask;
 
-    /**
-     * Anchor task for post-processing the merged resources to backport some features to earlier
-     * API versions, e.g. generate PNGs from vector drawables (vector drawables were added in 21).
-     */
     @Nullable
     private AndroidTask<Dex> dexTask;
     @Nullable
     private AndroidTask jacocoIntrumentTask;
+
+    /**
+     * Anchor task for post-processing the merged resources to backport some features to earlier
+     * API versions, e.g. generate PNGs from vector drawables (vector drawables were added in 21).
+     */
     @Nullable
     private AndroidTask<PreprocessResourcesTask> preprocessResourcesTask;
 
     private AndroidTask<Copy> processJavaResourcesTask;
     private AndroidTask<NdkCompile> ndkCompileTask;
 
-    // can be JavaCompile or JackTask depending on user's settings.
+    /** @see BaseVariantData#javaCompilerTask */
     @Nullable
-    private AndroidTask<? extends AbstractCompile> javaCompileTask;
+    private AndroidTask<? extends AbstractCompile> javaCompilerTask;
+    @Nullable
+    private AndroidTask<JavaCompile> javacTask;
+    @Nullable
+    private AndroidTask<JackTask> jackTask;
+
     // empty anchor compile task to set all compilations tasks as dependents.
     private AndroidTask<Task> compileTask;
     private AndroidTask<JacocoInstrumentTask> jacocoInstrumentTask;
@@ -503,13 +509,33 @@ public class VariantScope {
     }
 
     @Nullable
-    public AndroidTask<? extends AbstractCompile> getJavaCompileTask() {
-        return javaCompileTask;
+    public AndroidTask<? extends AbstractCompile> getJavaCompilerTask() {
+        return javaCompilerTask;
     }
 
-    public void setJavaCompileTask(
-            @Nullable AndroidTask<? extends AbstractCompile> javaCompileTask) {
-        this.javaCompileTask = javaCompileTask;
+    @Nullable
+    public AndroidTask<JackTask> getJackTask() {
+        return jackTask;
+    }
+
+    public void setJackTask(
+            @Nullable AndroidTask<JackTask> jackTask) {
+        this.jackTask = jackTask;
+    }
+
+    @Nullable
+    public AndroidTask<JavaCompile> getJavacTask() {
+        return javacTask;
+    }
+
+    public void setJavacTask(
+            @Nullable AndroidTask<JavaCompile> javacTask) {
+        this.javacTask = javacTask;
+    }
+
+    public void setJavaCompilerTask(
+            @NonNull AndroidTask<? extends AbstractCompile> javaCompileTask) {
+        this.javaCompilerTask = javaCompileTask;
     }
 
     public AndroidTask<Task> getCompileTask() {

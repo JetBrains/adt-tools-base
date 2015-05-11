@@ -473,11 +473,11 @@ public class AppPluginDslTest extends BaseTest {
             assertEquals(
                     "target compatibility for ${version}",
                     expectedLanguageLevel.toString(),
-                    project.compileReleaseJava.targetCompatibility)
+                    project.compileReleaseJavaWithJavac.targetCompatibility)
             assertEquals(
                     "source compatibility for ${version}",
                     expectedLanguageLevel.toString(),
-                    project.compileReleaseJava.sourceCompatibility)
+                    project.compileReleaseJavaWithJavac.sourceCompatibility)
         }
 
         for (useJack in [true, false]) {
@@ -520,10 +520,10 @@ public class AppPluginDslTest extends BaseTest {
 
         assertEquals(
                 JavaVersion.VERSION_1_6.toString(),
-                project.compileReleaseJava.targetCompatibility)
+                project.compileReleaseJavaWithJavac.targetCompatibility)
         assertEquals(
                 JavaVersion.VERSION_1_6.toString(),
-                project.compileReleaseJava.sourceCompatibility)
+                project.compileReleaseJavaWithJavac.sourceCompatibility)
     }
 
     public void testMockableJarName() {
@@ -564,7 +564,7 @@ public class AppPluginDslTest extends BaseTest {
 
         assertEquals(
                 "foo",
-                project.compileReleaseJava.options.encoding)
+                project.compileReleaseJavaWithJavac.options.encoding)
     }
 
     public void testPreprocessResourcesDsl() throws Exception {
