@@ -66,6 +66,6 @@ public class ClassInstance extends Instance {
     }
 
     public final String toString() {
-        return String.format("%s@0x%08x", getClassObj().getClassName(), mId & Type.getIdSizeMask());
+        return String.format("%s@0x%08x", getClassObj().getClassName(), getUniqueId());
     }
 }
