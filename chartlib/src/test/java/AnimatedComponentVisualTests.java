@@ -16,8 +16,10 @@
 
 import com.android.tools.chartlib.AnimatedComponent;
 import com.android.tools.chartlib.EventData;
+import com.android.tools.chartlib.LayoutComponent;
 import com.android.tools.chartlib.TimelineComponent;
 import com.android.tools.chartlib.TimelineData;
+import com.android.tools.chartlib.ValuedTreeNode;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -26,9 +28,12 @@ import java.awt.Dimension;
 import java.awt.LayoutManager;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.swing.Box;
@@ -43,6 +48,7 @@ import javax.swing.JTabbedPane;
 import javax.swing.UIManager;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+import javax.swing.tree.DefaultMutableTreeNode;
 
 public class AnimatedComponentVisualTests extends JDialog {
 
@@ -52,6 +58,7 @@ public class AnimatedComponentVisualTests extends JDialog {
         JPanel contentPane = new JPanel(new BorderLayout());
         JButton close = new JButton("Close");
         JTabbedPane tabs = new JTabbedPane();
+        tabs.addTab("PieChart", getPieChartExample());
         tabs.addTab("Timeline", getTimelineExample());
 
         contentPane.setPreferredSize(new Dimension(1280, 1024));
@@ -85,8 +92,15 @@ public class AnimatedComponentVisualTests extends JDialog {
                 }
             }
         });
+        final JCheckBox dark = new JCheckBox("Dark");
+        dark.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                setDarkMode(dark.isSelected());
+            }
+        });
+        controls.add(dark);
         controls.add(update);
-
         final JButton step = new JButton("Step");
         step.addActionListener(new ActionListener() {
             @Override
@@ -97,9 +111,9 @@ public class AnimatedComponentVisualTests extends JDialog {
             }
         });
         controls.add(step);
-
         contentPane.add(controls, BorderLayout.WEST);
 
+        setDarkMode(false);
         setContentPane(contentPane);
         setModal(true);
         getRootPane().setDefaultButton(close);
@@ -112,10 +126,14 @@ public class AnimatedComponentVisualTests extends JDialog {
         });
     }
 
+    private void setDarkMode(boolean dark) {
+        for (AnimatedComponent c : mComponents) {
+            c.setBackground(dark ? new Color(60, 63, 65) : new Color(244, 244, 244));
+        }
+    }
+
     interface Value {
-
         void set(int v);
-
         int get();
     }
 
@@ -154,11 +172,220 @@ public class AnimatedComponentVisualTests extends JDialog {
         return controls;
     }
 
+    static class DataNode extends DefaultMutableTreeNode implements ValuedTreeNode {
+
+        private int mCount;
+        private int mValue;
+
+        public DataNode() {
+            this(0, 0);
+        }
+
+        public DataNode(int count, int value) {
+            mCount = count;
+            mValue = value;
+        }
+
+        @Override
+        public int getCount() {
+            return mCount;
+        }
+
+        @Override
+        public int getValue() {
+            return mValue;
+        }
+
+        public void add(int count, int value) {
+            mCount += count;
+            mValue += value;
+            if (parent instanceof DataNode) {
+                ((DataNode)parent).add(count, value);
+            }
+        }
+
+        public void addDataNode(DataNode dataNode) {
+            super.add(dataNode);
+            add(dataNode.getCount(), dataNode.getValue());
+        }
+    }
+
+    private JPanel getPieChartExample() {
+
+        final DataNode data = new DataNode();
+        data.addDataNode(new DataNode(1, 10));
+
+        final LayoutComponent layout = new LayoutComponent(data);
+
+        JPanel panel = new JPanel();
+        JPanel controls = createControlledPane(panel, layout);
+        final JLabel info = new JLabel("<No information yet>");
+        panel.add(info, BorderLayout.SOUTH);
+
+        controls.add(createVaribleSlider("Gap", 0, 200, new Value() {
+            @Override
+            public void set(int v) {
+                layout.setGap(v);
+            }
+
+            @Override
+            public int get() {
+                return (int) layout.getGap();
+            }
+        }));
+        controls.add(createVaribleSlider("Size", 0, 200, new Value() {
+            @Override
+            public void set(int v) {
+                layout.setSliceWidth(v);
+            }
+
+            @Override
+            public int get() {
+                return (int) layout.getSliceWidth();
+            }
+        }));
+        controls.add(createVaribleSlider("Angle", 0, 360, new Value() {
+            @Override
+            public void set(int v) {
+                layout.setAngle(v);
+            }
+
+            @Override
+            public int get() {
+                return (int) layout.getAngle();
+            }
+        }));
+        controls.add(createVaribleSlider("Start", 0, 360, new Value() {
+            @Override
+            public void set(int v) {
+                layout.setStart(v);
+            }
+
+            @Override
+            public int get() {
+                return (int) layout.getStart();
+            }
+        }));
+        controls.add(createVaribleSlider("Fixed", 1, 100, new Value() {
+            @Override
+            public void set(int v) {
+                layout.setFixed(v);
+            }
+
+            @Override
+            public int get() {
+                return (int) layout.getFixed();
+            }
+        }));
+        controls.add(createVaribleSlider("Separator", 0, 100, new Value() {
+            @Override
+            public void set(int v) {
+                layout.setSeparator(v);
+            }
+
+            @Override
+            public int get() {
+                return (int) layout.getSeparator();
+            }
+        }));
+        controls.add(createButton("Generate", new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                generateLayoutData((DataNode) layout.getData(), 5);
+            }
+        }));
+        controls.add(createButton("Tree A", new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                DataNode g = new DataNode();
+                g.addDataNode(createTree(1));
+                g.addDataNode(createValue());
+                g.addDataNode(createTree(1));
+                g.addDataNode(createValue());
+                g.addDataNode(createTree(0));
+                layout.setData(g);
+            }
+        }));
+        controls.add(createButton("Tree B", new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                DataNode g = new DataNode();
+                g.addDataNode(createValue());
+                g.addDataNode(createValue());
+                g.addDataNode(createTree(0));
+                layout.setData(g);
+            }
+        }));
+        controls.add(createButton("Value", new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent actionEvent) {
+                DataNode g = new DataNode();
+                g.addDataNode(new DataNode(1, (int) (Math.random() * 50)));
+                layout.setData(g);
+            }
+        }));
+        controls.add(createCheckbox("Auto size", new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent itemEvent) {
+                layout.setAutoSize(itemEvent.getStateChange() == ItemEvent.SELECTED);
+            }
+        }));
+        controls.add(
+                new Box.Filler(new Dimension(0, 0), new Dimension(300, Integer.MAX_VALUE),
+                        new Dimension(300, Integer.MAX_VALUE)));
+
+        layout.addSelectionListener(new LayoutComponent.SliceSelectionListener() {
+            @Override
+            public void valueChanged(LayoutComponent.SliceSelectionEvent e) {
+                ValuedTreeNode node = e.getNode();
+                info.setText(node == null ? "<No selection>" : String.format("Value %d Count %d",
+                        node.getValue(), node.getCount()));
+            }
+        });
+        return panel;
+    }
+
+    private static DataNode createValue() {
+        return new DataNode(1, (int)(Math.random() * 50));
+    }
+
+    private static DataNode createTree(int depth) {
+        DataNode b = depth == 0 ? createValue() : createTree(depth - 1);
+        DataNode c = depth == 0 ? createValue() : createTree(depth - 1);
+        DataNode a = new DataNode();
+        a.addDataNode(b);
+        a.addDataNode(c);
+        return a;
+    }
+
     private static Component createButton(String label, ActionListener action) {
         JButton button = new JButton(label);
         button.addActionListener(action);
         button.setMaximumSize(new Dimension(Integer.MAX_VALUE, button.getMaximumSize().height));
         return button;
+    }
+
+    private static Component createCheckbox(String label, ItemListener action) {
+        JCheckBox button = new JCheckBox(label);
+        button.addItemListener(action);
+        button.setMaximumSize(new Dimension(Integer.MAX_VALUE, button.getMaximumSize().height));
+        return button;
+    }
+
+    private static void generateLayoutData(DataNode data, int maxDepth) {
+        Random random = new Random();
+        int branch = random.nextInt(9) + 1;
+        for (int i = 0; i < branch; i++) {
+            int value = random.nextInt(1024);
+            if (maxDepth > 0 && random.nextInt(4) == 0) {
+                DataNode group = new DataNode();
+                group.add(new DataNode(1, value));
+                generateLayoutData(group, maxDepth - 1);
+                data.addDataNode(group);
+            } else {
+                data.addDataNode(new DataNode(1, value));
+            }
+        }
     }
 
     private JPanel getTimelineExample() {

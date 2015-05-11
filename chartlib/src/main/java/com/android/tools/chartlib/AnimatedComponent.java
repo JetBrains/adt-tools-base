@@ -23,6 +23,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.HierarchyEvent;
 import java.awt.event.HierarchyListener;
+import java.awt.geom.Path2D;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -163,5 +164,25 @@ public class AnimatedComponent extends JComponent implements ActionListener, Hie
 
     public void step() {
         mStep = true;
+    }
+
+    protected void drawArrow(Graphics2D g, float x, float y, float dx, float dy, float len, Color color) {
+        Path2D.Float path = new Path2D.Float();
+        path.moveTo(x, y);
+        path.lineTo(x + dx * len, y + dy * len);
+        path.lineTo(x + dx * (len - 10) + dy * 10, y + dy * (len - 10) - dx * 10);
+        path.lineTo(x + dx * (len - 10) - dy * 10, y + dy * (len - 10) + dx * 10);
+        g.setColor(color);
+        g.draw(path);
+    }
+
+    protected void drawMarker(Graphics2D g, float x, float y, Color color) {
+        Path2D.Float path = new Path2D.Float();
+        path.moveTo(x - 10, y);
+        path.lineTo(x + 10, y);
+        path.moveTo(x, y - 10);
+        path.lineTo(x, y + 10);
+        g.setColor(color);
+        g.draw(path);
     }
 }
