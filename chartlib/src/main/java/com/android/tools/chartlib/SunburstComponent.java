@@ -35,7 +35,7 @@ import java.util.Map;
 
 import javax.swing.tree.TreeNode;
 
-public class LayoutComponent extends AnimatedComponent {
+public class SunburstComponent extends AnimatedComponent {
 
     private static final Color[] COLORS = {
             new Color(0x6baed6),
@@ -116,7 +116,7 @@ public class LayoutComponent extends AnimatedComponent {
 
     private Map<Color, Path2D.Float> mPaths;
 
-    public LayoutComponent(@NonNull ValuedTreeNode data) {
+    public SunburstComponent(@NonNull ValuedTreeNode data) {
         super(30);
         mData = data;
         mSlice = new Slice(0.0f);
