@@ -82,6 +82,6 @@ public class ArrayInstance extends Instance {
     }
 
     public final String toString() {
-        return String.format("%s[%d]@0x%08x", mType.name(), mLength, mId);
+        return String.format("%s[%d]@0x%08x", mType.name(), mLength, mId & Type.getIdSizeMask());
     }
 }
