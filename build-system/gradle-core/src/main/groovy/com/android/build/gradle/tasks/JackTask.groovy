@@ -85,6 +85,10 @@ public class JackTask extends AbstractAndroidCompile
     @Optional
     String javaMaxHeapSize
 
+    @Input
+    @Optional
+    File incrementalDir
+
     @TaskAction
     void compile() {
 
@@ -98,9 +102,11 @@ public class JackTask extends AbstractAndroidCompile
                 getProguardFiles(),
                 getMappingFile(),
                 getJarJarRuleFile(),
+                getIncrementalDir(),
                 isMultiDexEnabled(),
                 getMinSdkVersion())) {
 
+            // no incremental support through command line so far.
             androidBuilder.convertByteCodeWithJack(
                     getDestinationDir(),
                     getJackFile(),

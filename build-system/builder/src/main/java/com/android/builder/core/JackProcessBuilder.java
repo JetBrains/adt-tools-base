@@ -49,6 +49,7 @@ public class JackProcessBuilder extends ProcessEnvBuilder<JackProcessBuilder> {
     private int mMinSdkVersion = 21;
     private File mEcjOptionFile = null;
     private File mJarJarRuleFile = null;
+    private File mIncrementalDir = null;
 
     public JackProcessBuilder() {
     }
