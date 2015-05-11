@@ -23,6 +23,7 @@ def testEnvironment = [
     ANDROID_NDK_HOME: System.env.ANDROID_NDK_HOME,
     CUSTOM_BUILDTOOLS: System.env.CUSTOM_BUILDTOOLS,
     CUSTOM_JACK: System.env.CUSTOM_JACK,
+    DEBUG_INNER_TEST: System.env.DEBUG_INNER_TEST,
 ].findAll { it.value != null }
 
 // These tasks will not depend on publishLocal, so they will run integration
