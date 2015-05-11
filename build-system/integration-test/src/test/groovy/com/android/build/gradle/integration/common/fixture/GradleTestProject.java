@@ -47,6 +47,7 @@ import org.gradle.tooling.BuildAction;
 import org.gradle.tooling.BuildActionExecuter;
 import org.gradle.tooling.BuildLauncher;
 import org.gradle.tooling.GradleConnector;
+import org.gradle.tooling.LongRunningOperation;
 import org.gradle.tooling.ProjectConnection;
 import org.gradle.tooling.internal.consumer.DefaultGradleConnector;
 import org.gradle.tooling.model.GradleProject;
@@ -809,18 +810,11 @@ public class GradleTestProject implements TestRule {
         args.add("-u");
         args.addAll(arguments);
 
+        BuildLauncher launcher = connection.newBuild()
+                .forTasks(tasks)
+                .withArguments(Iterables.toArray(args, String.class));
 
-        List<String> jvmArguments = getJvmArguments();
-
-        if (JacocoAgent.isJacocoEnabled()) {
-            jvmArguments.add(JacocoAgent.getJvmArg());
-        }
-        if (!jvmArguments.isEmpty()) {
-            args.add("-Dorg.gradle.jvmargs=" + Joiner.on(' ').join(jvmArguments));
-        }
-
-        BuildLauncher launcher = connection.newBuild().forTasks(tasks)
-                .withArguments(args.toArray(new String[args.size()]));
+        setJvmArguments(launcher);
 
         if (stdout != null) {
             launcher.setStandardOutput(stdout);
@@ -835,17 +829,25 @@ public class GradleTestProject implements TestRule {
         launcher.run();
     }
 
-    private List<String> getJvmArguments() {
+    private void setJvmArguments(LongRunningOperation launcher) {
         List<String> jvmArguments = new ArrayList<String>();
+
         if (!Strings.isNullOrEmpty(heapSize)) {
             jvmArguments.add("-Xmx" + heapSize);
         }
+
         jvmArguments.add("-XX:MaxPermSize=1024m");
+
         String debugIntegrationTest = System.getenv("DEBUG_INNER_TEST");
         if (!Strings.isNullOrEmpty(debugIntegrationTest)) {
-            jvmArguments.add("-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005");
+            jvmArguments.add("-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5006");
         }
-        return jvmArguments;
+
+        if (JacocoAgent.isJacocoEnabled()) {
+            jvmArguments.add(JacocoAgent.getJvmArg());
+        }
+
+        launcher.setJvmArguments(Iterables.toArray(jvmArguments, String.class));
     }
 
     /**
@@ -870,10 +872,7 @@ public class GradleTestProject implements TestRule {
             arguments.add("-P" + AndroidProject.PROPERTY_BUILD_MODEL_ONLY_ADVANCED + "=true");
         }
 
-        List<String> debugJvmArguments = getJvmArguments();
-        if (!debugJvmArguments.isEmpty()) {
-            arguments.add("-Dorg.gradle.jvmargs=" + Joiner.on(' ').join(debugJvmArguments));
-        }
+        setJvmArguments(executor);
 
         executor.withArguments(Iterables.toArray(arguments, String.class));
 
