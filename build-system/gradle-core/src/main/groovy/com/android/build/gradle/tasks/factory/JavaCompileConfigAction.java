@@ -2,7 +2,6 @@ package com.android.build.gradle.tasks.factory;
 
 import static com.android.builder.core.VariantType.LIBRARY;
 import static com.android.builder.core.VariantType.UNIT_TEST;
-import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
 
 import com.android.build.gradle.internal.CompileOptions;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
@@ -13,10 +12,7 @@ import com.android.sdklib.AndroidTargetHash;
 import com.android.sdklib.AndroidVersion;
 import com.google.common.base.Joiner;
 
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
-import org.gradle.api.Action;
 import org.gradle.api.JavaVersion;
-import org.gradle.api.Task;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.tasks.compile.AbstractCompile;
 import org.gradle.api.tasks.compile.JavaCompile;
@@ -38,7 +34,7 @@ public class JavaCompileConfigAction implements TaskConfigAction<JavaCompile> {
 
     @Override
     public String getName() {
-        return scope.getTaskName("compile", "Java");
+        return scope.getTaskName("compile", "JavaWithJavac");
     }
 
     @Override
@@ -47,14 +43,14 @@ public class JavaCompileConfigAction implements TaskConfigAction<JavaCompile> {
     }
 
     @Override
-    public void execute(final JavaCompile javaCompileTask) {
+    public void execute(final JavaCompile javacTask) {
         final BaseVariantData testedVariantData = scope.getTestedVariantData();
-        scope.getVariantData().javaCompileTask = javaCompileTask;
+        scope.getVariantData().javacTask = javacTask;
 
-        javaCompileTask.setSource(scope.getVariantData().getJavaSources());
+        javacTask.setSource(scope.getVariantData().getJavaSources());
 
         ConventionMappingHelper
-                .map(javaCompileTask, "classpath", new Closure<FileCollection>(this, this) {
+                .map(javacTask, "classpath", new Closure<FileCollection>(this, this) {
                     public FileCollection doCall(Object it) {
                         FileCollection classpath = scope.getJavaClasspath();
 
@@ -93,7 +89,7 @@ public class JavaCompileConfigAction implements TaskConfigAction<JavaCompile> {
                 });
 
         ConventionMappingHelper
-                .map(javaCompileTask, "destinationDir", new Closure<File>(this, this) {
+                .map(javacTask, "destinationDir", new Closure<File>(this, this) {
                     public File doCall(Object it) {
                         return scope.getJavaOutputDir();
                     }
@@ -104,7 +100,7 @@ public class JavaCompileConfigAction implements TaskConfigAction<JavaCompile> {
 
                 });
         ConventionMappingHelper
-                .map(javaCompileTask, "dependencyCacheDir", new Closure<File>(this, this) {
+                .map(javacTask, "dependencyCacheDir", new Closure<File>(this, this) {
                     public File doCall(Object it) {
                         return scope.getJavaDependencyCache();
                     }
@@ -115,10 +111,10 @@ public class JavaCompileConfigAction implements TaskConfigAction<JavaCompile> {
 
                 });
 
-        configureLanguageLevel(javaCompileTask);
-        javaCompileTask.getOptions().setEncoding(
+        configureLanguageLevel(javacTask);
+        javacTask.getOptions().setEncoding(
                 scope.getGlobalScope().getExtension().getCompileOptions().getEncoding());
-        javaCompileTask.getOptions().setBootClasspath(
+        javacTask.getOptions().setBootClasspath(
                 Joiner.on(File.pathSeparator).join(
                         scope.getGlobalScope().getAndroidBuilder().getBootClasspathAsStrings()));
     }

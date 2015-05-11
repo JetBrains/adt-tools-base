@@ -17,18 +17,15 @@
 
 
 package com.android.build.gradle.integration.application
-
 import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.google.common.collect.ImmutableList
 import groovy.transform.CompileStatic
-import org.gradle.tooling.BuildException
 import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
 import org.junit.experimental.categories.Category
-
 /**
  * Test Jack integration.
  */
@@ -92,8 +89,16 @@ class JackTest {
         minify.execute("testMinified")
     }
 
-    @Test(expected = BuildException.class)
+    @Test
     void "minify unitTests with Jack"() {
-        minify.execute(JACK_OPTIONS, "testMinified")
+        minify.execute(JACK_OPTIONS, "clean", "testMinified")
+
+        // Make sure javac was run.
+        File classesDir = new File(minify.testDir, "/build/intermediates/classes/minified")
+        assert classesDir.exists()
+
+        // Make sure jack was not run.
+        File jillDir = new File(minify.testDir, "/build/intermediates/jill")
+        assert !jillDir.exists()
     }
 }

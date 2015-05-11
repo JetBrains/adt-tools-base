@@ -35,6 +35,7 @@ import com.android.build.gradle.internal.tasks.PrepareDependenciesTask;
 import com.android.build.gradle.tasks.AidlCompile;
 import com.android.build.gradle.tasks.BinaryFileProviderTask;
 import com.android.build.gradle.tasks.GenerateBuildConfig;
+import com.android.build.gradle.tasks.JackTask;
 import com.android.build.gradle.tasks.PreprocessResourcesTask;
 import com.android.build.gradle.tasks.GenerateResValues;
 import com.android.build.gradle.tasks.MergeAssets;
@@ -54,6 +55,7 @@ import org.gradle.api.logging.Logging;
 import org.gradle.api.tasks.Copy;
 import org.gradle.api.tasks.bundling.Jar;
 import org.gradle.api.tasks.compile.AbstractCompile;
+import org.gradle.api.tasks.compile.JavaCompile;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -119,8 +121,10 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
     public Copy processJavaResourcesTask;
     public NdkCompile ndkCompileTask;
 
-    // can be JavaCompile or JackTask depending on user's settings.
-    public AbstractCompile javaCompileTask;
+    /** Can be JavaCompile or JackTask depending on user's settings. */
+    public AbstractCompile javaCompilerTask;
+    public JavaCompile javacTask;
+    public JackTask jackTask;
     public Jar classesJarTask;
     // empty anchor compile task to set all compilations tasks as dependents.
     public Task compileTask;
@@ -287,7 +291,12 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
         sourceGenTask.dependsOn(task);
 
         for (File f : generatedSourceFolders) {
-            javaCompileTask.source(f);
+            javacTask.source(f);
+
+            // Jack task is not always created.
+            if (jackTask != null) {
+                jackTask.source(f);
+            }
         }
 
         addJavaSourceFoldersToModel(generatedSourceFolders);
@@ -297,7 +306,12 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
         sourceGenTask.dependsOn(task);
 
         for (File f : generatedSourceFolders) {
-            javaCompileTask.source(f);
+            javacTask.source(f);
+
+            // Jack task is not always created.
+            if (jackTask != null) {
+                jackTask.source(f);
+            }
         }
 
         addJavaSourceFoldersToModel(generatedSourceFolders);
