@@ -51,6 +51,7 @@ public class JarJarWithJackTest {
 
     @BeforeClass
     static void setUp() {
+        GradleTestProject.assumeBuildToolsAtLeast(21, 1, 0)
         model = project.executeAndReturnModel("clean", "assembleDebug")
     }
 

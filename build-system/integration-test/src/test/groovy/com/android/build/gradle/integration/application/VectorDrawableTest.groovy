@@ -20,6 +20,8 @@ import com.android.utils.FileUtils
 import com.google.common.base.Charsets
 import com.google.common.io.Files
 import groovy.transform.CompileStatic
+import org.junit.Before
+import org.junit.BeforeClass
 import org.junit.Rule
 import org.junit.Test
 
@@ -36,6 +38,11 @@ class VectorDrawableTest {
     public GradleTestProject project = GradleTestProject.builder()
             .fromTestProject("vectorDrawables")
             .create()
+
+    @BeforeClass
+    public static void checkBuildTools() {
+        GradleTestProject.assumeBuildToolsAtLeast(21)
+    }
 
     @Test
     public void "vector file is moved and PNGs are generated"() throws Exception {

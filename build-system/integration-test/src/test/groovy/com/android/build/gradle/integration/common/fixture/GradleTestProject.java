@@ -36,6 +36,7 @@ import com.android.builder.model.Version;
 import com.android.io.StreamException;
 import com.android.sdklib.internal.project.ProjectProperties;
 import com.android.sdklib.internal.project.ProjectPropertiesWorkingCopy;
+import com.android.sdklib.repository.FullRevision;
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
@@ -962,5 +963,15 @@ public class GradleTestProject implements TestRule {
         Assume.assumeTrue(
                 "Install task not run against device provider",
                 GradleTestProject.REMOTE_TEST_PROVIDER == null);
+    }
+
+    public static void assumeBuildToolsAtLeast(int major) {
+        assumeBuildToolsAtLeast(
+                major, FullRevision.IMPLICIT_MINOR_REV, FullRevision.IMPLICIT_MICRO_REV);
+    }
+    public static void assumeBuildToolsAtLeast(int major, int minor, int micro) {
+        FullRevision currentVersion = FullRevision.parseRevision(DEFAULT_BUILD_TOOL_VERSION);
+        Assume.assumeTrue("Test is only applicable to build tools > " + major,
+                new FullRevision(major, minor, micro).compareTo(currentVersion) < 0);
     }
 }
