@@ -19,9 +19,7 @@ package com.android.build.gradle.integration.component
 import com.android.SdkConstants
 import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.truth.TruthHelper
 import com.android.build.gradle.integration.common.utils.ModelHelper
-import com.android.builder.core.BuilderConstants
 import com.android.builder.model.AndroidArtifact
 import com.android.builder.model.AndroidProject
 import com.android.builder.model.NativeLibrary
@@ -34,7 +32,6 @@ import org.junit.Test
 import org.junit.experimental.categories.Category
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
-import static com.android.builder.core.BuilderConstants.DEBUG
 
 /**
  * Assemble tests for ndkSanAngeles2.
@@ -81,7 +78,9 @@ class NdkSanAngeles2Test {
         assertThat(nativeLibrary.getCCompilerFlags()).contains("-DDISABLE_IMPORTGL");
         assertThat(nativeLibrary.getCppCompilerFlags()).contains("-DDISABLE_IMPORTGL");
         assertThat(nativeLibrary.getCSystemIncludeDirs()).isEmpty();
-        assertThat(nativeLibrary.getCppSystemIncludeDirs()).isNotEmpty();
+        assertThat(nativeLibrary.getCppSystemIncludeDirs()).isNotEmpty()
+        File solibSearchPath = nativeLibrary.getDebuggableLibraryFolders().first()
+        assertThat(new File(solibSearchPath, "libsanangeles.so")).exists()
 
         Collection<String> toolchainNames = model.getNativeToolchains().collect { it.getName() }
         Collection<String> expectedToolchains = [

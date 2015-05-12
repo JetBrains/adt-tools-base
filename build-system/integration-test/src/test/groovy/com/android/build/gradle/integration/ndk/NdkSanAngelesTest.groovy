@@ -21,7 +21,6 @@ import com.android.build.FilterData
 import com.android.build.OutputFile
 import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
-import com.android.build.gradle.integration.common.truth.TruthHelper
 import com.android.build.gradle.integration.common.utils.ModelHelper
 import com.android.builder.model.AndroidArtifact
 import com.android.builder.model.AndroidArtifactOutput
@@ -126,6 +125,8 @@ class NdkSanAngelesTest {
             assertThat(nativeLibrary.getCppCompilerFlags()).contains("-DANDROID_NDK -DDISABLE_IMPORTGL");
             assertThat(nativeLibrary.getCSystemIncludeDirs()).isEmpty();
             assertThat(nativeLibrary.getCppSystemIncludeDirs()).isNotEmpty();
+            File solibSearchPath = nativeLibrary.getDebuggableLibraryFolders().first()
+            assertThat(new File(solibSearchPath, "libsanangeles.so")).exists()
         }
 
         Collection<String> expectedToolchains = [

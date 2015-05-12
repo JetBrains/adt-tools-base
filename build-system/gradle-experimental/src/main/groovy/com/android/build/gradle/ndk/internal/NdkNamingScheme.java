@@ -16,7 +16,10 @@
 
 package com.android.build.gradle.ndk.internal;
 
+import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
+
 import com.android.annotations.Nullable;
+import com.android.builder.core.BuilderConstants;
 import com.android.builder.model.AndroidProject;
 import com.android.utils.StringHelper;
 import com.google.common.base.Joiner;
@@ -38,7 +41,7 @@ public class NdkNamingScheme {
                 buildDir,
                 String.format(
                         "%s/objectFiles/%s/%s",
-                        AndroidProject.FD_INTERMEDIATES ,
+                        FD_INTERMEDIATES ,
                         binary.getName(),
                         sourceSetName));
     }
@@ -68,14 +71,20 @@ public class NdkNamingScheme {
         }
     }
 
-    public static String getOutputDirectoryName(NativeBinarySpec binary) {
+    public static String getOutputDirectoryName(String buildType, String productFlavor, String abi) {
         return Joiner.on(File.separator).join(
-                AndroidProject.FD_INTERMEDIATES,
+                FD_INTERMEDIATES,
                 "binaries",
-                binary.getName(),
+                buildType,
+                productFlavor,
+                "lib",
+                abi);
+    }
+
+    public static String getOutputDirectoryName(NativeBinarySpec binary) {
+        return getOutputDirectoryName(
                 binary.getBuildType().getName(),
                 binary.getFlavor().getName(),
-                "lib",
                 binary.getTargetPlatform().getName());
     }
 
