@@ -39,6 +39,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
@@ -308,6 +309,13 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
             ConventionMappingHelper.map(packageApp, "packagedJars", new Callable<Set<File>>() {
                 @Override
                 public Set<File> call() {
+                    // when the application is obfuscated, the original resources may have been
+                    // adapted to match changing package names for instance, so we take the
+                    // resources from the obfuscation process results rather than the original
+                    // exploded library's classes.jar files.
+                    if (config.isMinifyEnabled() && variantData.obfuscationTask != null) {
+                        return variantData.obfuscationTask.getOutputs().getFiles().getFiles();
+                    }
                     return scope.getGlobalScope().getAndroidBuilder().getPackagedJars(config);
                 }
             });
@@ -315,12 +323,19 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
             packageApp.setMergingFolder(new File(scope.getGlobalScope().getIntermediatesDir(),
                     variantOutputData.getFullName() + "/merging"));
 
-            ConventionMappingHelper.map(packageApp, "javaResourceDir", new Callable<File>() {
-                @Override
-                public File call() {
-                    return getOptionalDir(variantData.processJavaResourcesTask.getDestinationDir());
-                }
-            });
+            // when we use minification, the javaResources are given to the obfuscation task
+            // so it has a chance to rename java resources in sync with packages renaming,
+            // therefore the javaResources are located with the rest of the proguarded binary
+            // files, otherwise use the output of the Java resources processing task.
+            if (!config.isMinifyEnabled()) {
+                ConventionMappingHelper.map(packageApp, "javaResourceDir", new Callable<File>() {
+                    @Override
+                    public File call() {
+                        return getOptionalDir(
+                                variantData.processJavaResourcesTask.getDestinationDir());
+                    }
+                });
+            }
             ConventionMappingHelper.map(packageApp, "jniFolders", new Callable<Set<File>>() {
                 @Override
                 public Set<File> call() {
