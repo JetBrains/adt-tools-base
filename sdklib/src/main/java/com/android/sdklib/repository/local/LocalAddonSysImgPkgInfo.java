@@ -19,6 +19,7 @@ package com.android.sdklib.repository.local;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.sdklib.AndroidVersion;
+import com.android.sdklib.ISystemImage;
 import com.android.sdklib.repository.MajorRevision;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
 import com.android.sdklib.repository.descriptors.IdDisplay;
@@ -55,5 +56,9 @@ public class LocalAddonSysImgPkgInfo extends LocalPkgInfo {
     @Override
     public IPkgDesc getDesc() {
         return mDesc;
+    }
+
+    public ISystemImage getSystemImage() {
+        return LocalSysImgPkgInfo.getSystemImage(mDesc, getLocalDir());
     }
 }
