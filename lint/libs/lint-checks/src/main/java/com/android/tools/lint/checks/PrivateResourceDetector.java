@@ -239,7 +239,7 @@ public class PrivateResourceDetector extends ResourceXmlDetector implements Java
                         context.report(ISSUE, item, context.getLocation(child), message);
                     }
                 } else {
-                    for (int j = 0, m = text.charAt(j); j < m; j++) {
+                    for (int j = 0, m = text.length(); j < m; j++) {
                         char c = text.charAt(j);
                         if (c == '@') {
                             ResourceUrl url = ResourceUrl.parse(text.trim());
