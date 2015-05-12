@@ -74,6 +74,10 @@ public abstract class Instance {
         return mId;
     }
 
+    public long getUniqueId() {
+        return getId() & Type.getIdSizeMask();
+    }
+
     public abstract void accept(Visitor visitor);
 
     public void setClassId(long classId) {
