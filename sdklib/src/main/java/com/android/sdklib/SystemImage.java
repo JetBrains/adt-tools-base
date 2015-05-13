@@ -23,8 +23,10 @@ import com.android.sdklib.devices.Abi;
 import com.android.sdklib.internal.androidTarget.PlatformTarget;
 import com.android.sdklib.io.FileOp;
 import com.android.sdklib.repository.descriptors.IdDisplay;
+import com.google.common.base.Objects;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.Locale;
 
 
@@ -37,6 +39,7 @@ public class SystemImage implements ISystemImage {
     public static final IdDisplay DEFAULT_TAG = new IdDisplay("default",    //$NON-NLS-1$
                                                               "Default");   //$NON-NLS-1$
 
+    @Deprecated
     private final LocationType mLocationtype;
     private final IdDisplay mTag;
     private final IdDisplay mAddonVendor;
@@ -225,7 +228,10 @@ public class SystemImage implements ISystemImage {
         return mLocation;
     }
 
-    /** Indicates the location strategy for this system image in the SDK. */
+    /**
+     * Indicates the location strategy for this system image in the SDK.
+     * @deprecated
+     */
     @NonNull
     @Override
     public LocationType getLocationType() {
@@ -299,5 +305,18 @@ public class SystemImage implements ISystemImage {
         return sb.toString();
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof SystemImage)) {
+          return false;
+        }
+        SystemImage other = (SystemImage)o;
+        return mTag.equals(other.mTag) && mAbiType.equals(other.getAbiType()) && Objects.equal(mAddonVendor, other.mAddonVendor)
+               && mLocation.equals(other.mLocation) && Arrays.equals(mSkins, other.mSkins);
+    }
 
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(mTag, mAbiType, mAddonVendor, mLocation, mSkins);
+    }
 }

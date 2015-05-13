@@ -260,7 +260,7 @@ public class LocalPlatformPkgInfo extends LocalPkgInfo {
                 sdk.getLatestBuildTool());
 
         // add the skins from the platform. Make a copy to not modify the original collection.
-        List<File> skins = new ArrayList<File>(parseSkinFolder(pt.getFile(IAndroidTarget.SKINS)));
+        List<File> skins = new ArrayList<File>(PackageParserUtils.parseSkinFolder(pt.getFile(IAndroidTarget.SKINS)));
 
         // add the system-image specific skins, if any.
         for (ISystemImage systemImage : systemImages) {
@@ -318,19 +318,7 @@ public class LocalPlatformPkgInfo extends LocalPkgInfo {
                 IdDisplay tag = d.getTag();
                 String abi = d.getPath();
                 if (tag != null && abi != null && !tagToAbiFound.containsEntry(tag, abi)) {
-                    List<File> parsedSkins = parseSkinFolder(
-                            new File(pkg.getLocalDir(), SdkConstants.FD_SKINS));
-                    File[] skins = FileOp.EMPTY_FILE_ARRAY;
-                    if (!parsedSkins.isEmpty()) {
-                        skins = parsedSkins.toArray(new File[parsedSkins.size()]);
-                    }
-
-                    found.add(new SystemImage(
-                            pkg.getLocalDir(),
-                            LocationType.IN_SYSTEM_IMAGE,
-                            tag,
-                            abi,
-                            skins));
+                    found.add(((LocalSysImgPkgInfo)pkg).getSystemImage());
                     tagToAbiFound.put(tag, abi);
                 }
             }
@@ -432,40 +420,6 @@ public class LocalPlatformPkgInfo extends LocalPkgInfo {
             return Collections.emptyList();
         }
     }
-
-    /**
-     * Parses the skin folder and builds the skin list.
-     * @param skinRootFolder The path to the skin root folder.
-     */
-    @NonNull
-    protected List<File> parseSkinFolder(@NonNull File skinRootFolder) {
-        IFileOp fileOp = getLocalSdk().getFileOp();
-
-        if (fileOp.isDirectory(skinRootFolder)) {
-            ArrayList<File> skinList = new ArrayList<File>();
-
-            File[] files = fileOp.listFiles(skinRootFolder);
-
-            for (File skinFolder : files) {
-                if (fileOp.isDirectory(skinFolder)) {
-                    // check for layout file
-                    File layout = new File(skinFolder, SdkConstants.FN_SKIN_LAYOUT);
-
-                    if (fileOp.isFile(layout)) {
-                        // for now we don't parse the content of the layout and
-                        // simply add the directory to the list.
-                        skinList.add(skinFolder);
-                    }
-                }
-            }
-
-            Collections.sort(skinList);
-            return skinList;
-        }
-
-        return Collections.emptyList();
-    }
-
 
     /** List of items in the platform to check when parsing it. These paths are relative to the
      * platform root folder. */
