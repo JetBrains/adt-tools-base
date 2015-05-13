@@ -41,6 +41,9 @@ configure([test, testPrebuilts]) {
     systemProperties['jar.path'] = jar.archivePath
     environment = testEnvironment
 
+    // Always run the task, when requested.
+    outputs.upToDateWhen { false }
+
     forkEvery = 1
     maxParallelForks = Runtime.runtime.availableProcessors() / 2
 
@@ -65,6 +68,9 @@ configure([connectedIntegrationTest, connectedIntegrationTestPrebuilts]) {
     // REMOTE_TEST_PROVIDER, ADDITIONAL_TEST_CUSTOM_REPO and any dependencies of the remote test
     // provider are present in the test environment only for these tests.
     environment testEnvironment
+
+    // Always run the task, when requested.
+    outputs.upToDateWhen { false }
 
     forkEvery= 1
     maxParallelForks = System.env.containsKey("REMOTE_TEST_PROVIDER") ? 50 : 1
