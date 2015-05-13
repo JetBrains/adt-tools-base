@@ -15,6 +15,7 @@
  */
 package com.android.sdklib.repository.local;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.sdklib.repository.FullRevision;
@@ -22,6 +23,10 @@ import com.android.sdklib.repository.MajorRevision;
 import com.android.sdklib.repository.NoPreviewRevision;
 import com.android.sdklib.repository.PkgProps;
 
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Properties;
 
 /**
@@ -124,4 +129,37 @@ class PackageParserUtils {
     }
     return props.getProperty(propKey, defaultValue);
   }
+
+
+  /**
+   * Parses the skin folder and builds the skin list.
+   * @param skinRootFolder The path to the skin root folder.
+   */
+  @NonNull
+  public static List<File> parseSkinFolder(@NonNull File skinRootFolder) {
+    if (skinRootFolder.isDirectory()) {
+      ArrayList<File> skinList = new ArrayList<File>();
+
+      File[] files = skinRootFolder.listFiles();
+
+      for (File skinFolder : files) {
+        if (skinFolder.isDirectory()) {
+          // check for layout file
+          File layout = new File(skinFolder, SdkConstants.FN_SKIN_LAYOUT);
+
+          if (layout.isFile()) {
+            // for now we don't parse the content of the layout and
+            // simply add the directory to the list.
+            skinList.add(skinFolder);
+          }
+        }
+      }
+
+      Collections.sort(skinList);
+      return skinList;
+    }
+
+    return Collections.emptyList();
+  }
+
 }

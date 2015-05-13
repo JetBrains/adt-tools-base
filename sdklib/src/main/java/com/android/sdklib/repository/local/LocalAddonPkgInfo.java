@@ -234,7 +234,7 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
 
             Map<String, File> skinsMap = new TreeMap<String, File>();
 
-            for (File f : parseSkinFolder(targetSkinFolder)) {
+            for (File f : PackageParserUtils.parseSkinFolder(targetSkinFolder)) {
                 skinsMap.put(f.getName().toLowerCase(Locale.US), f);
             }
             for (ISystemImage si : systemImages) {
@@ -446,20 +446,7 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
                 final IdDisplay tag = mAddonDesc.getName();
                 final String abi = d.getPath();
                 if (abi != null && !tagToAbiFound.containsEntry(tag, abi)) {
-                    List<File> parsedSkins = parseSkinFolder(
-                            new File(pkg.getLocalDir(), SdkConstants.FD_SKINS));
-                    File[] skins = FileOp.EMPTY_FILE_ARRAY;
-                    if (!parsedSkins.isEmpty()) {
-                        skins = parsedSkins.toArray(new File[parsedSkins.size()]);
-                    }
-
-                    found.add(new SystemImage(
-                            pkg.getLocalDir(),
-                            LocationType.IN_SYSTEM_IMAGE,
-                            tag,
-                            mAddonDesc.getVendor(),
-                            abi,
-                            skins));
+                    found.add(((LocalAddonSysImgPkgInfo)pkg).getSystemImage());
                     tagToAbiFound.put(tag, abi);
                 }
             }

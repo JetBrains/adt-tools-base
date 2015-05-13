@@ -22,11 +22,9 @@ import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.android.annotations.VisibleForTesting.Visibility;
 import com.android.annotations.concurrency.GuardedBy;
-import com.android.sdklib.AndroidTargetHash;
-import com.android.sdklib.AndroidVersion;
+import com.android.sdklib.*;
 import com.android.sdklib.AndroidVersion.AndroidVersionException;
-import com.android.sdklib.BuildToolInfo;
-import com.android.sdklib.IAndroidTarget;
+import com.android.sdklib.internal.androidTarget.MissingTarget;
 import com.android.sdklib.io.FileOp;
 import com.android.sdklib.io.IFileOp;
 import com.android.sdklib.repository.FullRevision;
@@ -37,21 +35,12 @@ import com.android.sdklib.repository.descriptors.IPkgDesc;
 import com.android.sdklib.repository.descriptors.IdDisplay;
 import com.android.sdklib.repository.descriptors.PkgDescExtra;
 import com.android.sdklib.repository.descriptors.PkgType;
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.TreeMultimap;
+import com.google.common.collect.*;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 
 /**
  * This class keeps information on the current locally installed SDK.
@@ -185,8 +174,8 @@ public class LocalSdk {
     private BuildToolInfo mLegacyBuildTools;
     /** Cache of targets from local sdk. See {@link #getTargets()}. */
     @GuardedBy(value="mLocalPackages")
-    private final List<IAndroidTarget> mCachedTargets = new ArrayList<IAndroidTarget>();
-    private boolean mReloadTargets = true;
+    private List<IAndroidTarget> mCachedTargets = null;
+    private Set<MissingTarget> mCachedMissingTargets = null;
 
     /**
      * Creates an initial LocalSdk instance with an unknown location.
@@ -270,11 +259,12 @@ public class LocalSdk {
                 mVisitedDirs.removeAll(filter);
                 mLocalPackages.removeAll(filter);
             }
-        }
 
-        // Clear the targets if the platforms or addons are being cleared
-        if (filters.contains(PkgType.PKG_PLATFORM) ||  filters.contains(PkgType.PKG_ADDON)) {
-          mReloadTargets = true;
+            // Clear the targets if the platforms or addons are being cleared
+            if (filters.contains(PkgType.PKG_PLATFORM) ||  filters.contains(PkgType.PKG_ADDON)) {
+                mCachedMissingTargets = null;
+                mCachedTargets = null;
+            }
         }
     }
 
@@ -711,24 +701,69 @@ public class LocalSdk {
     @NonNull
     public IAndroidTarget[] getTargets() {
         synchronized (mLocalPackages) {
-            if (mReloadTargets) {
+            if (mCachedTargets == null) {
+                List<IAndroidTarget> result = Lists.newArrayList();
                 LocalPkgInfo[] pkgsInfos = getPkgsInfos(EnumSet.of(PkgType.PKG_PLATFORM,
                                                                    PkgType.PKG_ADDON));
-                int n = pkgsInfos.length;
-                mCachedTargets.clear();
-                for (int i = 0; i < n; i++) {
-                    LocalPkgInfo info = pkgsInfos[i];
+                for (LocalPkgInfo info : pkgsInfos) {
                     assert info instanceof LocalPlatformPkgInfo;
-                    if (info instanceof LocalPlatformPkgInfo) {
-                        IAndroidTarget target = ((LocalPlatformPkgInfo) info).getAndroidTarget();
-                        if (target != null) {
-                            mCachedTargets.add(target);
-                        }
+                    IAndroidTarget target = ((LocalPlatformPkgInfo) info).getAndroidTarget();
+                    if (target != null) {
+                        result.add(target);
                     }
                 }
+                mCachedTargets = result;
             }
             return mCachedTargets.toArray(new IAndroidTarget[mCachedTargets.size()]);
         }
+    }
+
+    public IAndroidTarget[] getTargets(boolean includeMissing) {
+        IAndroidTarget[] result = getTargets();
+        if (includeMissing) {
+            result = ObjectArrays.concat(result, getMissingTargets(), IAndroidTarget.class);
+        }
+        return result;
+    }
+
+    @NonNull
+    public IAndroidTarget[] getMissingTargets() {
+        synchronized (mLocalPackages) {
+            if (mCachedMissingTargets == null) {
+                Map<MissingTarget, MissingTarget> result = Maps.newHashMap();
+                Set<ISystemImage> seen = Sets.newHashSet();
+                for (IAndroidTarget target : getTargets()) {
+                    Collections.addAll(seen, target.getSystemImages());
+                }
+                for (LocalPkgInfo local : getPkgsInfos(PkgType.PKG_ADDON_SYS_IMAGE)) {
+                    LocalAddonSysImgPkgInfo info = (LocalAddonSysImgPkgInfo)local;
+                    ISystemImage image = info.getSystemImage();
+                    if (!seen.contains(image)) {
+                        addOrphanedSystemImage(image, info.getDesc(), result);
+                    }
+                }
+                for (LocalPkgInfo local : getPkgsInfos(PkgType.PKG_SYS_IMAGE)) {
+                    LocalSysImgPkgInfo info = (LocalSysImgPkgInfo)local;
+                    ISystemImage image = info.getSystemImage();
+                    if (!seen.contains(image)) {
+                        addOrphanedSystemImage(image, info.getDesc(), result);
+                    }
+                }
+                mCachedMissingTargets = result.keySet();
+            }
+            return mCachedMissingTargets.toArray(new IAndroidTarget[mCachedMissingTargets.size()]);
+        }
+    }
+
+    private static void addOrphanedSystemImage(ISystemImage image, IPkgDesc desc, Map<MissingTarget, MissingTarget> targets) {
+        IdDisplay vendor = desc.getVendor();
+        MissingTarget target = new MissingTarget(vendor == null ? null : vendor.getDisplay(), desc.getTag().getDisplay(), desc.getAndroidVersion());
+        MissingTarget existing = targets.get(target);
+        if (existing == null) {
+            existing = target;
+            targets.put(target, target);
+        }
+        existing.addSystemImage(image);
     }
 
     /**
@@ -740,7 +775,7 @@ public class LocalSdk {
     @Nullable
     public IAndroidTarget getTargetFromHashString(@Nullable String hash) {
         if (hash != null) {
-            IAndroidTarget[] targets = getTargets();
+            IAndroidTarget[] targets = getTargets(true);
             for (IAndroidTarget target : targets) {
                 if (target != null && hash.equals(AndroidTargetHash.getTargetHashString(target))) {
                     return target;
