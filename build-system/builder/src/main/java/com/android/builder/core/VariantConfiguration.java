@@ -35,15 +35,12 @@ import com.android.builder.model.SigningConfig;
 import com.android.builder.model.SourceProvider;
 import com.android.ide.common.res2.AssetSet;
 import com.android.ide.common.res2.ResourceSet;
-import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
 import java.io.File;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -1821,9 +1818,11 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
         return false;
     }
 
-    public File getJarJarRuleFile() {
+    public Collection<File> getJarJarRuleFiles() {
 
-        return mBuildType.getJarJarRuleFile() != null ?
-                mBuildType.getJarJarRuleFile() : getMergedFlavor().getJarJarRuleFile();
+        ImmutableList.Builder<File> jarjarRuleFiles = ImmutableList.builder();
+        jarjarRuleFiles.addAll(getMergedFlavor().getJarJarRuleFiles());
+        jarjarRuleFiles.addAll(mBuildType.getJarJarRuleFiles());
+        return jarjarRuleFiles.build();
     }
 }

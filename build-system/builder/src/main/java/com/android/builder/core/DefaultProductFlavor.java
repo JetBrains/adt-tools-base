@@ -23,8 +23,10 @@ import com.android.builder.model.ApiVersion;
 import com.android.builder.model.ProductFlavor;
 import com.android.builder.model.SigningConfig;
 import com.google.common.base.Objects;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
 
+import java.io.File;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Set;
@@ -466,8 +468,10 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
         flavor.setMultiDexKeepProguard(chooseNotNull(
                 overlay.getMultiDexKeepProguard(), base.getMultiDexKeepProguard()));
 
-        flavor.setJarJarRuleFile(chooseNotNull(
-                overlay.getJarJarRuleFile(), base.getJarJarRuleFile()));
+        flavor.setJarJarRuleFiles(ImmutableList.<File>builder()
+                .addAll(overlay.getJarJarRuleFiles())
+                .addAll(base.getJarJarRuleFiles())
+                .build());
 
         return flavor;
     }
@@ -513,7 +517,7 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
 
         flavor.setMultiDexKeepFile(productFlavor.getMultiDexKeepFile());
         flavor.setMultiDexKeepProguard(productFlavor.getMultiDexKeepProguard());
-        flavor.setJarJarRuleFile(productFlavor.getJarJarRuleFile());
+        flavor.setJarJarRuleFiles(ImmutableList.copyOf(productFlavor.getJarJarRuleFiles()));
 
         return flavor;
     }

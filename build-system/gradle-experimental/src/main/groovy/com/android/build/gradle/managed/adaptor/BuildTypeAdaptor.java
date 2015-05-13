@@ -23,11 +23,13 @@ import com.android.build.gradle.internal.dsl.CoreBuildType;
 import com.android.build.gradle.managed.BuildType;
 import com.android.builder.model.ClassField;
 import com.android.builder.model.SigningConfig;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 import java.io.File;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -185,10 +187,10 @@ public class BuildTypeAdaptor implements CoreBuildType {
         return buildType.getShrinkResources();
     }
 
-    @Nullable
+    @NonNull
     @Override
-    public File getJarJarRuleFile() {
+    public List<File> getJarJarRuleFiles() {
         // TODO: To be implemented
-        return null;
+        return ImmutableList.of();
     }
 }
