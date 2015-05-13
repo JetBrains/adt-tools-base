@@ -16,8 +16,10 @@
 package com.android.ide.common.blame.output;
 
 import com.android.annotations.NonNull;
+import com.android.ide.common.blame.Message;
+import com.android.ide.common.blame.MessageJsonSerializer;
+import com.android.ide.common.blame.SourceFilePosition;
 import com.android.ide.common.blame.SourcePosition;
-import com.android.ide.common.blame.SourcePositionJsonTypeAdapter;
 import com.android.ide.common.blame.parser.ToolOutputParser;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -43,23 +45,23 @@ public class GradleMessageRewriter {
     }
 
     public String rewriteMessages(@NonNull String originalMessage) {
-        List<GradleMessage> messages = mParser.parseToolOutput(originalMessage);
+        List<Message> messages = mParser.parseToolOutput(originalMessage);
 
         if (messages.isEmpty()) {
             return originalMessage;
         }
 
         StringBuilder errorStringBuilder = new StringBuilder();
-        for (GradleMessage message: messages) {
+        for (Message message: messages) {
             if (mErrorFormatMode == ErrorFormatMode.HUMAN_READABLE) {
-                if (message.getPosition() != null && message.getPosition().getStartLine() != -1) {
-                    errorStringBuilder.append(" Position ");
-                    errorStringBuilder.append(message.getPosition().toString());
-                    errorStringBuilder.append(" : ");
-
+                for (SourceFilePosition pos : message.getSourceFilePositions()) {
+                    errorStringBuilder.append(pos.toString());
+                    errorStringBuilder.append(' ');
                 }
-                errorStringBuilder.append(message.getText())
-                        .append("\n");
+                if (errorStringBuilder.length() > 0) {
+                    errorStringBuilder.append(": ");
+                }
+                errorStringBuilder.append(message.getText()).append("\n");
 
             } else {
                 errorStringBuilder.append(STDOUT_ERROR_TAG)
@@ -71,8 +73,7 @@ public class GradleMessageRewriter {
 
     private static Gson createGson() {
         GsonBuilder gsonBuilder = new GsonBuilder();
-        gsonBuilder.registerTypeAdapter(SourcePosition.class,
-                new SourcePositionJsonTypeAdapter());
+        MessageJsonSerializer.registerTypeAdapters(gsonBuilder);
         return gsonBuilder.create();
     }
 }

@@ -52,11 +52,10 @@ public class MessageJsonSerializerTest {
         @Parameterized.Parameter(value = 1)
         public String serializedMessage;
 
-        @Parameterized.Parameters(name = "expecting {0} got fromJson(\"{0}\")")
+        @Parameterized.Parameters(name = "fromJson(\"{1}\") should give {0}")
         public static Collection<Object[]> data() {
             return Arrays.asList(new Object[][]{
-                    {
-                            new Message(
+                    {new Message(
                                     Message.Kind.ERROR,
                                     "some error text",
                                     new SourceFilePosition(
@@ -73,7 +72,21 @@ public class MessageJsonSerializerTest {
                                     + "\"startOffset\":5"
                                     + "}"
                                     + "}}"
-                    }});
+                    }, {
+                            new Message(
+                                    Message.Kind.ERROR,
+                                    "errorText",
+                                    new SourceFilePosition(
+                                            new File("error/source"),
+                                            new SourcePosition(1,2,3,4,5,6))
+                            ),
+                            "{\"kind\":\"ERROR\",\"text\":\"errorText\",\"sourcePath\":\"error/source\","
+                            + "\"position\":{\"startLine\":1,\"startColumn\":2,\"startOffset\":3,"
+                            + "\"endLine\":4,\"endColumn\":5,\"endOffset\":6},\"original\":\"\"}\n"
+            }, {new Message(Message.Kind.SIMPLE, "something else", new SourceFilePosition(SourceFile.UNKNOWN, SourcePosition.UNKNOWN)),
+                    "{\"kind\":\"SIMPLE\","
+                            + "\"text\":\"something else\",\"position\":{},\"original\":\"something else\"}"
+            }});
         }
 
         @BeforeClass

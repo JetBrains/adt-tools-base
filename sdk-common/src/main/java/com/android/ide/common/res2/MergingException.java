@@ -18,7 +18,7 @@ package com.android.ide.common.res2;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.ide.common.blame.FilePosition;
+import com.android.ide.common.blame.SourceFilePosition;
 import com.android.ide.common.blame.SourcePosition;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
@@ -33,7 +33,7 @@ import java.util.List;
 /** Exception for errors during merging */
 public class MergingException extends Exception {
     private String mMessage; // Keeping our own copy since parent prepends exception class name
-    private List<FilePosition> mFilePositions = Lists.newArrayList();
+    private List<SourceFilePosition> mFilePositions = Lists.newArrayList();
 
     public MergingException(@NonNull String message, @Nullable Throwable cause) {
         super(message, cause);
@@ -52,8 +52,8 @@ public class MergingException extends Exception {
      *  Add the file if it hasn't already been included in the list of file positions.
      */
     public MergingException setFile(@NonNull File file) {
-        for (FilePosition filePosition : mFilePositions) {
-            if (filePosition.getSourceFile().equals(file)) {
+        for (SourceFilePosition filePosition : mFilePositions) {
+            if (file.equals(filePosition.getFile().getSourceFile())) {
                 return this;
             }
         }
@@ -62,7 +62,7 @@ public class MergingException extends Exception {
     }
 
     public MergingException addFile(@NonNull File file) {
-        mFilePositions.add(new FilePosition(file, SourcePosition.UNKNOWN));
+        mFilePositions.add(new SourceFilePosition(file, SourcePosition.UNKNOWN));
         return this;
     }
 
@@ -70,7 +70,7 @@ public class MergingException extends Exception {
         return (file != null) ? addFile(file) : this;
     }
 
-    public MergingException addFilePosition(@NonNull FilePosition filePosition) {
+    public MergingException addFilePosition(@NonNull SourceFilePosition filePosition) {
         mFilePositions.add(filePosition);
         return this;
     }
@@ -78,7 +78,7 @@ public class MergingException extends Exception {
     public MergingException addFilePosition(@NonNull File file, @NonNull SAXParseException exception) {
         int lineNumber = exception.getLineNumber();
         if (lineNumber != -1) {
-            addFilePosition(new FilePosition(file, new SourcePosition(
+            addFilePosition(new SourceFilePosition(file, new SourcePosition(
                     exception.getLineNumber() - 1, exception.getColumnNumber() - 1, -1)));
         } else {
             addFile(file);
@@ -120,16 +120,19 @@ public class MergingException extends Exception {
         // string itself contains the path as a prefix:
         //    /my/full/path: /my/full/path (Permission denied)
         if (mFilePositions.size() == 1) {
-           String path = mFilePositions.get(0).getSourceFile().getAbsolutePath();
-            if (path != null && message.startsWith(path)) {
-                int stripStart = path.length();
-                if (message.length() > stripStart && message.charAt(stripStart) == ':') {
-                    stripStart++;
+            File file = mFilePositions.get(0).getFile().getSourceFile();
+            if (file!= null) {
+                String path = file.getAbsolutePath();
+                if (message.startsWith(path)) {
+                    int stripStart = path.length();
+                    if (message.length() > stripStart && message.charAt(stripStart) == ':') {
+                        stripStart++;
+                    }
+                    if (message.length() > stripStart && message.charAt(stripStart) == ' ') {
+                        stripStart++;
+                    }
+                    message = message.substring(stripStart);
                 }
-                if (message.length() > stripStart && message.charAt(stripStart) == ' ') {
-                    stripStart++;
-                }
-                message = message.substring(stripStart);
             }
         }
 
