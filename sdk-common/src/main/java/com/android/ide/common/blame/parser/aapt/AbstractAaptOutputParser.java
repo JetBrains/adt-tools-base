@@ -24,13 +24,13 @@ import static com.android.SdkConstants.TAG_ITEM;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
-import com.android.ide.common.blame.FilePosition;
+import com.android.ide.common.blame.Message;
+import com.android.ide.common.blame.SourceFile;
+import com.android.ide.common.blame.SourceFilePosition;
 import com.android.ide.common.blame.SourcePosition;
-import com.android.ide.common.blame.output.GradleMessage;
 import com.android.ide.common.blame.parser.util.OutputLineReader;
 import com.android.ide.common.blame.parser.ParsingFailedException;
 import com.android.ide.common.blame.parser.PatternAwareOutputParser;
-import com.android.ide.common.res2.MergedResourceWriter;
 import com.android.resources.ResourceFolderType;
 import com.android.utils.ILogger;
 import com.android.utils.SdkUtils;
@@ -279,11 +279,11 @@ public abstract class AbstractAaptOutputParser implements PatternAwareOutputPars
      * "string/group2_string" it will locate an element {@code <string name="group2_string">} or
      * {@code <item type="string" name="group2_string"}
      */
-    public static int findResourceLine(@NonNull File file, @NonNull String key, @NonNull ILogger logger) {
+    public static SourcePosition findResourceLine(@NonNull File file, @NonNull String key, @NonNull ILogger logger) {
         int slash = key.indexOf('/');
         if (slash == -1) {
             assert false : slash; // invalid key format
-            return -1;
+            return SourcePosition.UNKNOWN;
         }
 
         final String type = key.substring(0, slash);
@@ -296,26 +296,26 @@ public abstract class AbstractAaptOutputParser implements PatternAwareOutputPars
      * Locates a resource value declaration in a given file and returns the corresponding line
      * number, or -1 if not found.
      */
-    public static int findValueDeclaration(@NonNull File file, @NonNull final String type,
+    public static SourcePosition findValueDeclaration(@NonNull File file, @NonNull final String type,
             @NonNull final String name, @NonNull ILogger logger) {
         if (!file.exists()) {
-            return -1;
+            return SourcePosition.UNKNOWN;
         }
 
         final ReadOnlyDocument document = getDocument(file, logger);
         if (document == null) {
-            return -1;
+            return SourcePosition.UNKNOWN;
         }
 
         // First just do something simple: scan for the string. If it only occurs once, it's easy!
         int index = document.findText(name, 0);
         if (index == -1) {
-            return -1;
+            return SourcePosition.UNKNOWN;
         }
 
         // See if there are any more occurrences; if not, we're done
         if (document.findText(name, index + name.length()) == -1) {
-            return document.lineNumber(index);
+            return document.sourcePosition(index);
         }
 
         // Try looking for name="$name"
@@ -323,21 +323,21 @@ public abstract class AbstractAaptOutputParser implements PatternAwareOutputPars
         if (nameIndex != -1) {
             // TODO: Disambiguate by type, so if values.xml contains both R.string.foo and R.dimen.foo we
             // pick the right one!
-            return document.lineNumber(nameIndex);
+            return document.sourcePosition(nameIndex);
         }
 
-        int lineNumber = findValueDeclarationViaParse(type, name, document);
-        if (lineNumber != -1) {
+        SourcePosition lineNumber = findValueDeclarationViaParse(type, name, document);
+        if (!SourcePosition.UNKNOWN.equals(lineNumber)) {
             return lineNumber;
         }
 
         // Just fall back to the first occurrence of the string
         //noinspection ConstantConditions
         assert index != -1;
-        return document.lineNumber(index);
+        return document.sourcePosition(index);
     }
 
-    private static int findValueDeclarationViaParse(final String type, final String name,
+    private static SourcePosition findValueDeclarationViaParse(final String type, final String name,
             ReadOnlyDocument document) {
         // Finally do a full SAX parse to identify the position
         final int[] certain = new int[]{-1, 0};  // line,column for exact match
@@ -361,8 +361,8 @@ public abstract class AbstractAaptOutputParser implements PatternAwareOutputPars
                 myDepth++;
                 if (myDepth == 2) {
                     if (name.equals(attributes.getValue(ATTR_NAME))) {
-                        int lineNumber = myLocator.getLineNumber();
-                        int column = myLocator.getColumnNumber();
+                        int lineNumber = myLocator.getLineNumber() - 1;
+                        int column = myLocator.getColumnNumber() - 1;
                         if (qName.equals(type) || TAG_ITEM.equals(qName) && type
                                 .equals(attributes.getValue(ATTR_TYPE))) {
                             line.set(lineNumber);
@@ -393,31 +393,33 @@ public abstract class AbstractAaptOutputParser implements PatternAwareOutputPars
             // Ignore parser errors; we might have found the error position earlier than the parse error position
         }
 
-        int lineNumber;
-        int column;
+        int endLineNumber;
+        int endColumn;
         if (certain[0] != -1) {
-            lineNumber = certain[0];
-            column = certain[1];
+            endLineNumber = certain[0];
+            endColumn = certain[1];
         } else {
-            lineNumber = possible[0];
-            column = possible[1];
+            endLineNumber = possible[0];
+            endColumn = possible[1];
         }
-        if (lineNumber != -1) {
+        if (endLineNumber != -1) {
             // SAX' locator will point to the END of the opening declaration, meaning that if it spans multiple lines, we are pointing
             // to the last line:
             //     <item
             //       type="dimen"
             //       name="attribute"
             //     >     <--- this is where the locator points, so we need to search backwards
-            int offset = document.lineOffset(lineNumber) + column;
-            offset = document.findTextBackwards(name, offset);
+            int endOffset = document.lineOffset(endLineNumber) + endColumn;
+            int offset = document.findTextBackwards(name, endOffset);
             if (offset != -1) {
-                lineNumber = document.lineNumber(offset);
+                SourcePosition start = document.sourcePosition(offset);
+                return new SourcePosition(start.getStartLine(), start.getStartColumn(), start.getStartOffset(),
+                                          endLineNumber, endColumn, endOffset);
             }
-            return lineNumber;
+            return new SourcePosition(endLineNumber, endColumn, endOffset);
         }
 
-        return -1;
+        return SourcePosition.UNKNOWN;
     }
 
     @Nullable
@@ -433,7 +435,7 @@ public abstract class AbstractAaptOutputParser implements PatternAwareOutputPars
     }
 
     @NonNull
-    GradleMessage createMessage(@NonNull GradleMessage.Kind kind,
+    Message createMessage(@NonNull Message.Kind kind,
                                     @NonNull String text,
                                     @Nullable String sourcePath,
                                     @Nullable String lineNumberAsText,
@@ -449,12 +451,12 @@ public abstract class AbstractAaptOutputParser implements PatternAwareOutputPars
 
         SourcePosition errorPosition = parseLineNumber(lineNumberAsText);
         if (sourcePath != null) {
-            FilePosition source = findSourcePosition(file, errorPosition.getStartLine(), text, logger);
+            SourceFilePosition source = findSourcePosition(file, errorPosition.getStartLine(), text, logger);
             if (source != null) {
-                file = source.getSourceFile();
+                file = source.getFile().getSourceFile();
                 sourcePath = file.getPath();
-                if (source.getStartLine() != -1) {
-                    errorPosition = source;
+                if (source.getPosition().getStartLine() != -1) {
+                    errorPosition = source.getPosition();
                 }
             }
         }
@@ -465,7 +467,7 @@ public abstract class AbstractAaptOutputParser implements PatternAwareOutputPars
         if (file != null && errorPosition.getStartLine() != -1) {
             errorPosition = findMessagePositionInFile(file, text, errorPosition.getStartLine(), logger);
         }
-        return new GradleMessage(kind, text, sourcePath, errorPosition, original);
+        return new Message(kind, text, original, new SourceFilePosition(file, errorPosition));
     }
 
     private SourcePosition parseLineNumber(String lineNumberAsText) throws ParsingFailedException {
@@ -478,11 +480,19 @@ public abstract class AbstractAaptOutputParser implements PatternAwareOutputPars
             }
         }
 
-        return new SourcePosition(lineNumber, -1, -1);
+        return new SourcePosition(lineNumber - 1, -1, -1);
     }
 
+    /**
+     *
+     * @param file
+     * @param locationLine
+     * @param message
+     * @param logger
+     * @return null if could not be found, new SourceFilePosition(new SourceFile file,
+     */
     @Nullable
-    protected static FilePosition findSourcePosition(@NonNull File file, int locationLine,
+    protected static SourceFilePosition findSourcePosition(@NonNull File file, int locationLine,
             String message, ILogger logger) {
         if (!file.getPath().endsWith(DOT_XML)) {
             return null;
@@ -552,9 +562,9 @@ public abstract class AbstractAaptOutputParser implements PatternAwareOutputPars
             // Look up the line number
             SourcePosition position = findMessagePositionInFile(sourceFile, message,
                     1, logger); // Search from the beginning
-            return new FilePosition(sourceFile, position);
+            return new SourceFilePosition(new SourceFile(sourceFile), position);
         }
 
-        return new FilePosition(sourceFile, SourcePosition.UNKNOWN);
+        return new SourceFilePosition(new SourceFile(sourceFile), SourcePosition.UNKNOWN);
     }
 }

@@ -23,7 +23,9 @@ import static com.android.utils.SdkUtils.createPathComment;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.ide.common.blame.output.GradleMessage;
+import com.android.ide.common.blame.Message;
+import com.android.ide.common.blame.SourceFilePosition;
+import com.android.ide.common.blame.SourcePosition;
 import com.android.ide.common.blame.parser.aapt.AaptOutputParser;
 import com.android.ide.common.blame.parser.aapt.AbstractAaptOutputParser;
 import com.android.utils.SdkUtils;
@@ -58,7 +60,7 @@ public class AaptOutputParserTest extends TestCase {
     private ToolOutputParser parser;
 
     @Nullable
-    private static String getSystemIndependentSourcePath(@NonNull GradleMessage message) {
+    private static String getSystemIndependentSourcePath(@NonNull Message message) {
         String sourcePath = message.getSourcePath();
         return sourcePath == null ? null : sourcePath.replace('\\', '/');
     }
@@ -69,21 +71,21 @@ public class AaptOutputParserTest extends TestCase {
     }
 
     @NonNull
-    private static String toString(@NonNull List<GradleMessage> messages) {
+    private static String toString(@NonNull List<Message> messages) {
         StringBuilder sb = new StringBuilder();
         for (int i = 0, n = messages.size(); i < n; i++) {
-            GradleMessage message = messages.get(i);
+            Message message = messages.get(i);
             sb.append(Integer.toString(i)).append(':').append(' ');
             sb.append(
                     StringHelper.capitalize(message.getKind().toString().toLowerCase(Locale.US)))
                     .append(':'); // INFO => Info
             sb.append(message.getText());
-            if (message.getSourcePath() != null) {
+            if (!message.getSourceFilePositions().isEmpty() &&
+                    !message.getSourceFilePositions().get(0).getPosition().equals(
+                            SourcePosition.UNKNOWN)) {
                 sb.append('\n');
                 sb.append('\t');
-                sb.append(message.getSourcePath());
-                sb.append(':').append(Long.toString(message.getLineNumber()));
-                sb.append(':').append(Long.toString(message.getColumn()));
+                sb.append(message.getSourceFilePositions().get(0).toString());
             }
             sb.append('\n');
         }
@@ -116,11 +118,11 @@ public class AaptOutputParserTest extends TestCase {
 
     public void testParseDisplayingUnhandledMessages() {
         String output = " **--- HELLO WORLD ---**";
-        List<GradleMessage> gradleMessages = parser.parseToolOutput(output);
+        List<Message> gradleMessages = parser.parseToolOutput(output);
         assertEquals(1, gradleMessages.size());
-        GradleMessage message = gradleMessages.get(0);
+        Message message = gradleMessages.get(0);
         assertEquals(output, message.getText());
-        assertEquals(GradleMessage.Kind.SIMPLE, message.getKind());
+        assertEquals(Message.Kind.SIMPLE, message.getKind());
     }
 
     public void testParseAaptOutputWithRange1() throws IOException {
@@ -132,7 +134,7 @@ public class AaptOutputParserTest extends TestCase {
         String messageText = "No resource found that matches the given name (at 'label' with value "
                 + "'@string/app_name2').";
         String err = sourceFilePath + ":4: error: Error: " + messageText;
-        Collection<GradleMessage> messages = parser.parseToolOutput(err);
+        Collection<Message> messages = parser.parseToolOutput(err);
         assertHasCorrectErrorMessage(messages, messageText, 4, 61);
     }
 
@@ -149,7 +151,7 @@ public class AaptOutputParserTest extends TestCase {
         String messageText = "No resource found that matches the given name (at 'label' with value "
                 + "'@string/app_name2').";
         String err = sourceFilePath + ":4: error: Error: " + messageText;
-        Collection<GradleMessage> messages = parser.parseToolOutput(err);
+        Collection<Message> messages = parser.parseToolOutput(err);
         assertHasCorrectErrorMessage(messages, messageText, 5, 8);
     }
 
@@ -166,7 +168,7 @@ public class AaptOutputParserTest extends TestCase {
                 "    <item name='android:gravity'>left</item>");
         String messageText = "Resource entry repeatedStyle1 already has bag item android:gravity.";
         String err = sourceFilePath + ":6: error: " + messageText;
-        Collection<GradleMessage> messages = parser.parseToolOutput(err);
+        Collection<Message> messages = parser.parseToolOutput(err);
         assertHasCorrectErrorMessage(messages, messageText, 6, 17);
     }
 
@@ -181,7 +183,7 @@ public class AaptOutputParserTest extends TestCase {
                 "    <item name='android:gravity'>left</item>");
         String messageText = "Originally defined here.";
         String err = sourceFilePath + ":3: " + messageText;
-        Collection<GradleMessage> messages = parser.parseToolOutput(err);
+        Collection<Message> messages = parser.parseToolOutput(err);
         assertHasCorrectErrorMessage(messages, messageText, 3, 5);
     }
 
@@ -194,7 +196,7 @@ public class AaptOutputParserTest extends TestCase {
                 "    <item name='nonexistent'>left</item>");
         String messageText = "No resource found that matches the given name: attr 'nonexistent'.";
         String err = sourceFilePath + ":3: error: Error: " + messageText;
-        Collection<GradleMessage> messages = parser.parseToolOutput(err);
+        Collection<Message> messages = parser.parseToolOutput(err);
         assertHasCorrectErrorMessage(messages, messageText, 3, 17);
     }
 
@@ -205,7 +207,7 @@ public class AaptOutputParserTest extends TestCase {
                 "  <style>");
         String messageText = "A 'name' attribute is required for <style>";
         String err = sourceFilePath + ":2: error: " + messageText;
-        Collection<GradleMessage> messages = parser.parseToolOutput(err);
+        Collection<Message> messages = parser.parseToolOutput(err);
         assertHasCorrectErrorMessage(messages, messageText, 2, 3);
     }
 
@@ -215,7 +217,7 @@ public class AaptOutputParserTest extends TestCase {
                 "  <item>");
         String messageText = "A 'type' attribute is required for <item>";
         String err = sourceFilePath + ":2: error: " + messageText;
-        Collection<GradleMessage> messages = parser.parseToolOutput(err);
+        Collection<Message> messages = parser.parseToolOutput(err);
         assertHasCorrectErrorMessage(messages, messageText, 2, 3);
     }
 
@@ -225,7 +227,7 @@ public class AaptOutputParserTest extends TestCase {
                 "  <item>");
         String messageText = "A 'name' attribute is required for <item>";
         String err = sourceFilePath + ":2: error: " + messageText;
-        Collection<GradleMessage> messages = parser.parseToolOutput(err);
+        Collection<Message> messages = parser.parseToolOutput(err);
         assertHasCorrectErrorMessage(messages, messageText, 2, 3);
     }
 
@@ -236,7 +238,7 @@ public class AaptOutputParserTest extends TestCase {
                 "        <item name='android:layout_width'></item>");
         String messageText = "String types not allowed (at 'android:layout_width' with value '').";
         String err = sourceFilePath + ":3: error: " + messageText;
-        Collection<GradleMessage> messages = parser.parseToolOutput(err);
+        Collection<Message> messages = parser.parseToolOutput(err);
         assertHasCorrectErrorMessage(messages, messageText, 3, 21);
     }
 
@@ -253,7 +255,7 @@ public class AaptOutputParserTest extends TestCase {
                 "        android:layout_marginLeft=''");
         String messageText = "String types not allowed (at 'layout_marginTop' with value '').";
         String err = sourceFilePath + ":5: error: Error: " + messageText;
-        Collection<GradleMessage> messages = parser.parseToolOutput(err);
+        Collection<Message> messages = parser.parseToolOutput(err);
         assertHasCorrectErrorMessage(messages, messageText, 8, 34);
     }
 
@@ -270,7 +272,7 @@ public class AaptOutputParserTest extends TestCase {
                 "        android:layout_marginLeft=''");
         String messageText = "String types not allowed (at 'layout_marginLeft' with value '').";
         String err = sourceFilePath + ":5: error: Error: " + messageText;
-        Collection<GradleMessage> messages = parser.parseToolOutput(err);
+        Collection<Message> messages = parser.parseToolOutput(err);
         assertHasCorrectErrorMessage(messages, messageText, 9, 35);
     }
 
@@ -284,7 +286,7 @@ public class AaptOutputParserTest extends TestCase {
                 "        android:id=''");
         String messageText = "String types not allowed (at 'id' with value '').";
         String err = sourceFilePath + ":5: error: Error: " + messageText;
-        Collection<GradleMessage> messages = parser.parseToolOutput(err);
+        Collection<Message> messages = parser.parseToolOutput(err);
         assertHasCorrectErrorMessage(messages, messageText, 6, 20);
     }
 
@@ -310,33 +312,28 @@ public class AaptOutputParserTest extends TestCase {
             Closeables.close(out, true /* swallowIOException */);
         }
     }
-    //    String homePath = PathManager.getHomePath();
-    //    assertNotNull(homePath);
-    //    // The relative paths in the output file below is relative to the sdk-common directory in tools/base
-    //    // (it's from one of the unit tests there)
-    //    File rootDir = new File(homePath, ".." + File.separator + "base" + File.separator + "sdk-common");
-    //    if (!rootDir.isDirectory()) {
-    //        // Also check for an IDEA project structure where sdk-common is located in this location:
-    //        rootDir = new File(homePath, "android" + File.separator + "tools-base" + File.separator + "sdk-common");
-    //        if (!rootDir.isDirectory()) {
-    //            return false;
-    //        }
-    //    }
-    //    AbstractAaptOutputParser.ourRootDir = rootDir;
-    //    return true;
-    //}
 
-    private void assertHasCorrectErrorMessage(@NonNull Collection<GradleMessage> messages,
+    /**
+     * Assert the error message is correct.
+     *
+     * @param messages       a collection of Messages
+     * @param expectedText   the text the single gradle message should have.
+     * @param expectedLine   the 1-based line
+     * @param expectedColumn the 0-based column.
+     */
+    private void assertHasCorrectErrorMessage(@NonNull Collection<Message> messages,
             @NonNull String expectedText,
-            long expectedLine,
-            long expectedColumn) {
+            int expectedLine,
+            int expectedColumn) {
         assertEquals("[message count]", 1, messages.size());
-        GradleMessage message = messages.iterator().next();
-        assertEquals("[file path]", sourceFilePath, message.getSourcePath());
-        assertEquals("[message severity]", GradleMessage.Kind.ERROR, message.getKind());
+        Message message = messages.iterator().next();
+        assertEquals("[source file position count]", 1, message.getSourceFilePositions().size());
+        SourceFilePosition position = message.getSourceFilePositions().get(0);
+        assertEquals("[file path]", sourceFilePath, position.getFile().toString());
+        assertEquals("[message severity]", Message.Kind.ERROR, message.getKind());
         assertEquals("[message text]", expectedText, message.getText());
-        assertEquals("[position line]", expectedLine, message.getLineNumber());
-        assertEquals("[position column]", expectedColumn, message.getColumn());
+        assertEquals("[position line]", expectedLine, position.getPosition().getStartLine() + 1);
+        assertEquals("[position column]", expectedColumn, position.getPosition().getStartColumn());
     }
 
     public void testRedirectValueLinksOutput() throws Exception {
@@ -445,23 +442,24 @@ public class AaptOutputParserTest extends TestCase {
         String messageText
                 = "String types not allowed (at 'drawable_ref' with value '@drawable/stat_notify_sync_anim0').";
         String err = sourceFilePath + ":46: error: Error: " + messageText;
-        Collection<GradleMessage> messages = parser.parseToolOutput(err);
+        Collection<Message> messages = parser.parseToolOutput(err);
         assertEquals(1, messages.size());
 
         assertEquals("[message count]", 1, messages.size());
-        GradleMessage message = messages.iterator().next();
+        Message message = messages.iterator().next();
 
         assertNotNull(message);
 
         // NOT sourceFilePath; should be translated back from source comment
-        assertEquals("[file path]",
-                "src/test/resources/testData/resources/baseSet/values/values.xml",
-                getSystemIndependentSourcePath(message));
+        assertEquals(new File ("src/test/resources/testData/resources/baseSet/values/values.xml").getAbsolutePath(),
+                     getSystemIndependentSourcePath(message));
 
-        assertEquals("[message severity]", GradleMessage.Kind.ERROR, message.getKind());
+        assertEquals("[message severity]", Message.Kind.ERROR, message.getKind());
         assertEquals("[message text]", messageText, message.getText());
-        assertEquals("[position line]", 9, message.getLineNumber());
-        assertEquals("[position column]", 35, message.getColumn());
+        assertEquals(1, message.getSourceFilePositions().size());
+        SourcePosition pos = message.getSourceFilePositions().get(0).getPosition();
+        assertEquals("[position line]", 9, pos.getStartLine() + 1);
+        assertEquals("[position column]", 35, pos.getStartColumn());
     }
 
     public void testRedirectFileLinksOutput() throws Exception {
@@ -498,21 +496,20 @@ public class AaptOutputParserTest extends TestCase {
 
         String messageText = "Random error message here";
         String err = sourceFilePath + ":4: error: Error: " + messageText;
-        Collection<GradleMessage> messages = parser.parseToolOutput(err);
+        Collection<Message> messages = parser.parseToolOutput(err);
         assertEquals(1, messages.size());
 
         assertEquals("[message count]", 1, messages.size());
-        GradleMessage message = messages.iterator().next();
+        Message message = messages.iterator().next();
         assertNotNull(message);
 
         // NOT sourceFilePath; should be translated back from source comment
-        String expected
-                = "src/test/resources/testData/resources/incMergeData/filesVsValues/main/layout/main.xml";
+        String expected = new File("src/test/resources/testData/resources/incMergeData/filesVsValues/main/layout/main.xml")
+          .getAbsolutePath();
         assertEquals("[file path]", expected, getSystemIndependentSourcePath(message));
-
-        assertEquals("[message severity]", GradleMessage.Kind.ERROR, message.getKind());
+        assertEquals("[message severity]", Message.Kind.ERROR, message.getKind());
         assertEquals("[message text]", messageText, message.getText());
-        assertEquals("[position line]", 4, message.getLineNumber());
+        assertEquals("[position line]", 4, message.getSourceFilePositions().get(0).getPosition().getStartLine() + 1);
         //assertEquals("[position column]", 35, message.getColumn());
 
         // TODO: Test encoding issues (e.g. & in path where the XML source comment would be &amp; instead)
@@ -596,7 +593,7 @@ public class AaptOutputParserTest extends TestCase {
                         "5: Simple::BlankProject1:processDebugManifest UP-TO-DATE\n" +
                         "6: Simple::BlankProject1:processDebugResources\n" +
                         "7: Error:Integer types not allowed (at 'new_name' with value '50').\n" +
-                        "\t" + source.getPath() + ":5:28\n" +
+                        "\t" + source.getPath() + ":5:29-31\n" +
                         "8: Simple::BlankProject1:processDebugResources FAILED\n"; /* +
                         "9: Error:Error while executing aapt command\n" +
                         "10: Error:Integer types not allowed (at 'new_name' with value '50').\n" +
@@ -675,7 +672,7 @@ public class AaptOutputParserTest extends TestCase {
                         "5: Simple::BlankProject1:processDebugManifest UP-TO-DATE\n" +
                         "6: Simple::BlankProject1:processDebugResources\n" +
                         "7: Error:Integer types not allowed (at 'new_name' with value '50').\n" +
-                        "\t" + source.getPath() + ":5:28\n" +
+                        "\t" + source.getPath() + ":5:29-31\n" +
                         "8: Simple::BlankProject1:processDebugResources FAILED\n";
         String actual = toString(parser.parseToolOutput(output));
 
@@ -771,7 +768,7 @@ public class AaptOutputParserTest extends TestCase {
                         "11: Simple::BlankProject1:processDebugResources\n" +
                         "12: Error:No resource identifier found for attribute 'slayout_alignParentTop' in package 'android'\n"
                         +
-                        "\t" + source.getPath() + ":12:-1\n" +
+                        "\t" + source.getPath() + ":12\n" +
                         "13: Simple::BlankProject1:processDebugResources FAILED\n",
                 toString(parser.parseToolOutput(output)));
 
@@ -804,7 +801,7 @@ public class AaptOutputParserTest extends TestCase {
                         "6: Simple::AudioPlayer:processDebugManifest UP-TO-DATE\n" +
                         "7: Simple::AudioPlayer:processDebugResources\n" +
                         "8: Error:Error parsing XML: mismatched tag\n" +
-                        "\t" + sourceFilePath + ":101:-1\n" +
+                        "\t" + sourceFilePath + ":101\n" +
                         "9: Simple::AudioPlayer:processDebugResources FAILED\n",
                 toString(parser.parseToolOutput(output)));
         sourceFile.delete();

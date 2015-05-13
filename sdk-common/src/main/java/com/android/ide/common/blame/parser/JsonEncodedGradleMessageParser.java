@@ -16,9 +16,9 @@
 package com.android.ide.common.blame.parser;
 
 import com.android.annotations.NonNull;
+import com.android.ide.common.blame.Message;
 import com.android.ide.common.blame.SourcePosition;
 import com.android.ide.common.blame.SourcePositionJsonTypeAdapter;
-import com.android.ide.common.blame.output.GradleMessage;
 import com.android.ide.common.blame.output.GradleMessageRewriter;
 import com.android.ide.common.blame.parser.util.OutputLineReader;
 import com.android.utils.ILogger;
@@ -31,7 +31,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Reconstruct GradleMessages that were parsed by the gradle plugin.
+ * Reconstruct Messages that were parsed by the gradle plugin.
  */
 public class JsonEncodedGradleMessageParser implements PatternAwareOutputParser {
 
@@ -45,7 +45,7 @@ public class JsonEncodedGradleMessageParser implements PatternAwareOutputParser 
     @Override
     public boolean parse(@NonNull String line,
             @NonNull OutputLineReader reader,
-            @NonNull List<GradleMessage> messages,
+            @NonNull List<Message> messages,
             @NonNull ILogger logger) throws ParsingFailedException {
         Matcher m = MSG_PATTERN.matcher(line);
         if (!m.matches()) {
@@ -61,7 +61,7 @@ public class JsonEncodedGradleMessageParser implements PatternAwareOutputParser 
                 new SourcePositionJsonTypeAdapter());
         Gson gson = gsonBuilder.create();
         try {
-            GradleMessage msg = gson.fromJson(json, GradleMessage.class);
+            Message msg = gson.fromJson(json, Message.class);
             messages.add(msg);
             return true;
         } catch (JsonParseException e) {

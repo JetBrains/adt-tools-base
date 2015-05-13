@@ -99,11 +99,7 @@ public final class SourceFile {
 
     @Override
     public String toString() {
-        return print(true);
-    }
-
-    public String toShortString() {
-        return print(true);
+        return print(false /* shortFormat */);
     }
 
     public String print(boolean shortFormat) {
