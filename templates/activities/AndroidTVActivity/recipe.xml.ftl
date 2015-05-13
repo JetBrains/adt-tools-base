@@ -2,7 +2,7 @@
 <recipe>
 
     <dependency mavenUrl="com.android.support:appcompat-v7:${targetApi}.+"/>
-    <dependency mavenUrl="com.squareup.picasso:picasso:2.3.2"/>
+    <dependency mavenUrl="com.github.bumptech.glide:glide:3.4.+"/>
 
     <merge from="root/AndroidManifest.xml.ftl"
              to="${escapeXmlAttribute(manifestOut)}/AndroidManifest.xml" />
@@ -53,9 +53,6 @@
 
     <instantiate from="root/src/app_package/MovieList.java.ftl"
                   to="${escapeXmlAttribute(srcOut)}/MovieList.java" />
-
-    <instantiate from="root/src/app_package/PicassoBackgroundManagerTarget.java.ftl"
-                  to="${escapeXmlAttribute(srcOut)}/PicassoBackgroundManagerTarget.java" />
 
     <instantiate from="root/src/app_package/CardPresenter.java.ftl"
                   to="${escapeXmlAttribute(srcOut)}/CardPresenter.java" />
