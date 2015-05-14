@@ -260,7 +260,7 @@ public class LocalPlatformPkgInfo extends LocalPkgInfo {
                 sdk.getLatestBuildTool());
 
         // add the skins from the platform. Make a copy to not modify the original collection.
-        List<File> skins = new ArrayList<File>(PackageParserUtils.parseSkinFolder(pt.getFile(IAndroidTarget.SKINS)));
+        List<File> skins = new ArrayList<File>(PackageParserUtils.parseSkinFolder(pt.getFile(IAndroidTarget.SKINS), fileOp));
 
         // add the system-image specific skins, if any.
         for (ISystemImage systemImage : systemImages) {
