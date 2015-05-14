@@ -57,7 +57,8 @@ class ToolchainConfiguration {
                 "ndk-" + toolchainName,
                 toolchainName.equals("gcc") ? Gcc : Clang) { GccCompatibleToolChain toolchain ->
             // Configure each platform.
-            for (final Abi abi : ndkHandler.getSupportedAbis()) {
+            for (Abi it : ndkHandler.getSupportedAbis()) {
+                final Abi abi = it;
                 toolchain.target(abi.getName(), new Action<GccPlatformToolChain>() {
                     @Override
                     void execute(GccPlatformToolChain targetPlatform) {
