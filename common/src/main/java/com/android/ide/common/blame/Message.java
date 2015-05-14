@@ -179,7 +179,7 @@ public final class Message {
         Message that = (Message) o;
         return Objects.equal(mKind, that.mKind) &&
                 Objects.equal(mText, that.mText) &&
-                Objects.equal(mSourceFilePositions, mSourceFilePositions);
+                Objects.equal(mSourceFilePositions, that.mSourceFilePositions);
     }
 
     @Override
