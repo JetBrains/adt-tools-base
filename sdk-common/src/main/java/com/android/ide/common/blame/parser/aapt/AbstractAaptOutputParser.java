@@ -190,8 +190,8 @@ public abstract class AbstractAaptOutputParser implements PatternAwareOutputPars
         int endResultOffset = resultOffset + (second != null ? second.length() : first.length());
         int endLineNumber = document.lineNumber(endResultOffset);
         int endLineOffset = document.lineOffset((endLineNumber));
-        return new SourcePosition(startLineNumber, resultOffset - startLineOffset + 1, resultOffset,
-                endLineNumber, endResultOffset - endLineOffset + 1, endResultOffset);
+        return new SourcePosition(startLineNumber, resultOffset - startLineOffset, resultOffset,
+                                  endLineNumber, endResultOffset - endLineOffset, endResultOffset);
     }
 
     @Nullable
@@ -231,8 +231,8 @@ public abstract class AbstractAaptOutputParser implements PatternAwareOutputPars
                 break;
             }
         }
-        return new SourcePosition(locationLine, resultOffset - lineOffset + 1, resultOffset,
-                locationLine, endResultOffset - lineOffset + 1, endResultOffset);
+        return new SourcePosition(locationLine, resultOffset - lineOffset, resultOffset,
+                locationLine, endResultOffset - lineOffset, endResultOffset);
     }
 
     @Nullable
