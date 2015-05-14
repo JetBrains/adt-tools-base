@@ -72,7 +72,7 @@ class DefaultAndroidProject implements AndroidProject, Serializable {
     @Nullable
     private final String resourcePrefix;
     @NonNull
-    private final Set<NativeToolchain> nativeToolchains;
+    private final Collection<NativeToolchain> nativeToolchains;
     private final boolean isLibrary;
     private final int apiVersion;
 
@@ -101,7 +101,7 @@ class DefaultAndroidProject implements AndroidProject, Serializable {
             @NonNull LintOptions lintOptions,
             @NonNull File buildFolder,
             @Nullable String resourcePrefix,
-            @NonNull Set<NativeToolchain> nativeToolchains,
+            @NonNull Collection<NativeToolchain> nativeToolchains,
             boolean isLibrary,
             int apiVersion) {
         this.modelVersion = modelVersion;
@@ -275,7 +275,7 @@ class DefaultAndroidProject implements AndroidProject, Serializable {
 
     @NonNull
     @Override
-    public Set<NativeToolchain> getNativeToolchains() {
+    public Collection<NativeToolchain> getNativeToolchains() {
         return nativeToolchains;
     }
 }

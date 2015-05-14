@@ -16,6 +16,8 @@
 
 package com.android.build.gradle.ndk.internal
 
+import com.android.build.gradle.internal.NdkHandler
+import com.android.build.gradle.internal.core.Abi
 import com.android.build.gradle.managed.ManagedString
 import com.android.build.gradle.model.AndroidComponentModelSourceSet
 import com.android.build.gradle.managed.NdkConfig
@@ -42,9 +44,8 @@ class NdkConfiguration {
             File buildDir,
             NdkConfig ndkConfig,
             NdkHandler ndkHandler) {
-        Collection<String> abiList = ndkHandler.getSupportedAbis()
-        abiList.each {
-            library.targetPlatform(it)
+        for (Abi abi : ndkHandler.getSupportedAbis()) {
+            library.targetPlatform(abi.getName())
         }
 
         library.binaries.withType(SharedLibraryBinarySpec) { binary ->
@@ -75,7 +76,7 @@ class NdkConfiguration {
                                 binary, buildDir, sourceSetName)
             }
 
-            String sysroot = ndkHandler.getSysroot(binary.targetPlatform)
+            String sysroot = ndkHandler.getSysroot(Abi.getByName(binary.targetPlatform.getName()))
             cCompiler.args  "--sysroot=$sysroot"
             cppCompiler.args  "--sysroot=$sysroot"
             linker.args "--sysroot=$sysroot"
@@ -143,11 +144,10 @@ class NdkConfiguration {
             File buildDir,
             NdkConfig ndkConfig,
             NdkHandler handler) {
-
         String copyGdbServerTaskName = NdkNamingScheme.getTaskName(binary, "copy", "GdbServer")
         tasks.create(copyGdbServerTaskName, Copy) {
             it.from(new File(
-                    handler.getPrebuiltDirectory(binary.targetPlatform),
+                    handler.getPrebuiltDirectory(Abi.getByName(binary.targetPlatform.name)),
                     "gdbserver/gdbserver"))
             it.into(new File(buildDir, NdkNamingScheme.getOutputDirectoryName(binary)))
         }

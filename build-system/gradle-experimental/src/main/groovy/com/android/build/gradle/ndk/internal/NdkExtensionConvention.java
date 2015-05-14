@@ -1,5 +1,6 @@
 package com.android.build.gradle.ndk.internal;
 
+import com.android.build.gradle.internal.core.Toolchain;
 import com.android.build.gradle.managed.ManagedString;
 import com.android.build.gradle.managed.NdkConfig;
 
@@ -11,12 +12,6 @@ import org.gradle.api.InvalidUserDataException;
  */
 public class NdkExtensionConvention {
 
-    public static final String DEFAULT_TOOLCHAIN = "gcc";
-
-    // Default toolchain version depends on the target ABI.  Setting it to "default" to allow
-    // the version to be determined later.
-    public static final String DEFAULT_TOOLCHAIN_VERSION = "default";
-
     public static final String DEFAULT_STL = "system";
 
     /**
@@ -24,7 +19,7 @@ public class NdkExtensionConvention {
      */
     public static void setExtensionDefault(NdkConfig ndkConfig) {
         if (ndkConfig.getToolchain().isEmpty()) {
-            ndkConfig.setToolchain(DEFAULT_TOOLCHAIN);
+            ndkConfig.setToolchain(Toolchain.getDefault().getName());
         } else {
             if (!ndkConfig.getToolchain().equals("gcc") &&
                     !ndkConfig.getToolchain().equals("clang")) {
@@ -32,10 +27,6 @@ public class NdkExtensionConvention {
                         "Invalid toolchain '%s'.  Supported toolchains are 'gcc' and 'clang'.",
                         ndkConfig.getToolchain()));
             }
-        }
-
-        if (ndkConfig.getToolchainVersion().isEmpty()) {
-            ndkConfig.setToolchainVersion(DEFAULT_TOOLCHAIN_VERSION);
         }
 
         ndkConfig.getCFilePattern().getIncludes().create(

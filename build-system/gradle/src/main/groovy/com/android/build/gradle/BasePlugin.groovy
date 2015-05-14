@@ -42,6 +42,7 @@ import com.android.build.gradle.internal.profile.RecordingBuildListener
 import com.android.build.gradle.internal.profile.SpanRecorders
 import com.android.build.gradle.internal.variant.BaseVariantData
 import com.android.build.gradle.internal.variant.VariantFactory
+import com.android.build.gradle.internal.NdkHandler
 import com.android.build.gradle.tasks.JillTask
 import com.android.build.gradle.tasks.PreDex
 import com.android.builder.Version
@@ -105,6 +106,8 @@ public abstract class BasePlugin {
     protected Project project
 
     protected SdkHandler sdkHandler
+
+    private NdkHandler ndkHandler
 
     protected AndroidBuilder androidBuilder
 
@@ -350,6 +353,8 @@ public abstract class BasePlugin {
                 taskManager,
                 instantiator)
 
+        ndkHandler = new NdkHandler(project.rootDir, null, "gcc", "" /*toolchainVersion*/);
+
         // Register a builder for the custom tooling model
         ModelBuilder modelBuilder = new ModelBuilder(
                 androidBuilder,
@@ -357,6 +362,7 @@ public abstract class BasePlugin {
                 taskManager,
                 extension,
                 extraModelInfo,
+                ndkHandler,
                 isLibrary())
         registry.register(modelBuilder);
 
@@ -428,6 +434,8 @@ public abstract class BasePlugin {
         // Make sure unit tests set the required fields.
         checkState(extension.getBuildToolsRevision() != null, "buildToolsVersion is not specified.")
         checkState(extension.getCompileSdkVersion() != null, "compileSdkVersion is not specified.")
+
+        ndkHandler.compileSdkVersion = extension.compileSdkVersion
 
         // get current plugins and look for the default Java plugin.
         if (project.plugins.hasPlugin(JavaPlugin.class)) {

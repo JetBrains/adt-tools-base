@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.component
 
+import com.android.SdkConstants
 import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.truth.TruthHelper
@@ -73,11 +74,22 @@ class NdkSanAngeles2Test {
         Variant debugVariant = ModelHelper.getVariant(variants, "x86Debug")
         AndroidArtifact debugMainArtifact = debugVariant.getMainArtifact()
         assertThat(debugMainArtifact.getNativeLibraries()).hasSize(1)
+
         NativeLibrary nativeLibrary = debugMainArtifact.getNativeLibraries().first()
         assertThat(nativeLibrary.getName()).isEqualTo("sanangeles")
-        assertThat(nativeLibrary.getToolchainName()).isEmpty()
-        assertThat(nativeLibrary.getCCompilerFlags()).containsExactly("-DDISABLE_IMPORTGL");
-        assertThat(nativeLibrary.getCppCompilerFlags()).containsExactly("-DDISABLE_IMPORTGL");
+        assertThat(nativeLibrary.getToolchainName()).isEqualTo("clang-x86")
+        assertThat(nativeLibrary.getCCompilerFlags()).contains("-DDISABLE_IMPORTGL");
+        assertThat(nativeLibrary.getCppCompilerFlags()).contains("-DDISABLE_IMPORTGL");
+        assertThat(nativeLibrary.getCSystemIncludeDirs()).isEmpty();
+        assertThat(nativeLibrary.getCppSystemIncludeDirs()).isNotEmpty();
+
+        Collection<String> toolchainNames = model.getNativeToolchains().collect { it.getName() }
+        Collection<String> expectedToolchains = [
+                SdkConstants.ABI_INTEL_ATOM,
+                SdkConstants.ABI_ARMEABI_V7A,
+                SdkConstants.ABI_ARMEABI,
+                SdkConstants.ABI_MIPS].collect { "clang-" + it }
+        assertThat(toolchainNames).containsAllIn(expectedToolchains)
     }
 
     @Test

@@ -22,7 +22,7 @@ import com.android.build.gradle.managed.BuildType
 import com.android.build.gradle.managed.NdkConfig
 import com.android.build.gradle.ndk.internal.NdkConfiguration
 import com.android.build.gradle.ndk.internal.NdkExtensionConvention
-import com.android.build.gradle.ndk.internal.NdkHandler
+import com.android.build.gradle.internal.NdkHandler
 import com.android.build.gradle.ndk.internal.ToolchainConfiguration
 import com.android.builder.core.VariantConfiguration
 import com.android.builder.model.ProductFlavor
@@ -57,7 +57,7 @@ import org.gradle.platform.base.PlatformContainer
 /**
  * Plugin for Android NDK applications.
  */
-class NdkComponentModelPlugin implements Plugin<Project> {
+public class NdkComponentModelPlugin implements Plugin<Project> {
     private Project project
 
     void apply(Project project) {
@@ -98,7 +98,7 @@ class NdkComponentModelPlugin implements Plugin<Project> {
             sources.addDefaultSourceSet("cpp", CppSourceSet.class);
         }
 
-        @Model
+        @Model(ModelConstants.NDK_HANDLER)
         NdkHandler ndkHandler(
                 ProjectIdentifier projectId,
                 @Path("android.compileSdkVersion") String compileSdkVersion,
@@ -106,7 +106,11 @@ class NdkComponentModelPlugin implements Plugin<Project> {
             while (projectId.parentIdentifier != null) {
                 projectId = projectId.parentIdentifier
             }
-            return new NdkHandler(projectId.projectDir, compileSdkVersion, ndkConfig)
+            return new NdkHandler(
+                    projectId.projectDir,
+                    compileSdkVersion,
+                    ndkConfig.toolchain,
+                    ndkConfig.toolchainVersion)
         }
 
         @Mutate
@@ -117,14 +121,13 @@ class NdkComponentModelPlugin implements Plugin<Project> {
 
         @Mutate
         void createToolchains(
-                NativeToolChainRegistry toolchains,
+                NativeToolChainRegistry toolchainRegistry,
                 @Path("android.ndk") NdkConfig ndkConfig,
                 NdkHandler ndkHandler) {
             // Create toolchain for each ABI.
             ToolchainConfiguration.configureToolchain(
-                    toolchains,
+                    toolchainRegistry,
                     ndkConfig.getToolchain(),
-                    ndkConfig.getToolchainVersion(),
                     ndkHandler)
         }
 

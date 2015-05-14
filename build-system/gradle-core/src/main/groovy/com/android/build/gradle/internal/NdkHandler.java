@@ -14,20 +14,20 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.ndk.internal;
+package com.android.build.gradle.internal;
 
 import static com.android.SdkConstants.FN_LOCAL_PROPERTIES;
 
-import com.android.SdkConstants;
+import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.gradle.managed.NdkConfig;
+import com.android.build.gradle.internal.core.Abi;
+import com.android.build.gradle.internal.core.Toolchain;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
 import com.google.common.io.Closeables;
 
 import org.gradle.api.InvalidUserDataException;
-import org.gradle.nativeplatform.platform.NativePlatform;
 
 import java.io.File;
 import java.io.FileFilter;
@@ -38,7 +38,6 @@ import java.io.InputStreamReader;
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -46,70 +45,37 @@ import java.util.Properties;
  */
 public class NdkHandler {
 
-    // Map of ABI to toolchain platform string.
-    private static final Map<String, String> PLATFORM_STRING;
-
-    // Map of ABI to target architecture
-    private static final Map<String, String> ARCHITECTURE_STRING;
-
-    // Map of toolchain names to the subdirectory name containing the toolchain.
-    private static final Map<String, String> TOOLCHAIN_STRING;
-
-    private static final List<String> ABI32 = ImmutableList.of(
-            SdkConstants.ABI_INTEL_ATOM,
-            SdkConstants.ABI_ARMEABI_V7A,
-            SdkConstants.ABI_ARMEABI,
-            SdkConstants.ABI_MIPS);
-
-    private static final List<String> ALL_ABI = ImmutableList.of(
-            SdkConstants.ABI_INTEL_ATOM,
-            SdkConstants.ABI_INTEL_ATOM64,
-            SdkConstants.ABI_ARMEABI_V7A,
-            SdkConstants.ABI_ARMEABI,
-            SdkConstants.ABI_ARM64_V8A,
-            SdkConstants.ABI_MIPS,
-            SdkConstants.ABI_MIPS64);
-
-    private static final String DEFAULT_LLVM_GCC32_VERSION="4.8";
-    private static final String DEFAULT_LLVM_GCC64_VERSION="4.9";
-
-    private NdkConfig ndkConfig;
-    private final String compileSdkVersion;
+    private String compileSdkVersion;
+    private final Toolchain toolchain;
+    private final String toolchainVersion;
 
     private File ndkDirectory;
 
-    static {
-        // Initialize static maps.
-        PLATFORM_STRING = ImmutableMap.<String, String>builder()
-                .put(SdkConstants.ABI_INTEL_ATOM, "x86")
-                .put(SdkConstants.ABI_INTEL_ATOM64, "x86_64")
-                .put(SdkConstants.ABI_ARMEABI_V7A, "arm-linux-androideabi")
-                .put(SdkConstants.ABI_ARMEABI, "arm-linux-androideabi")
-                .put(SdkConstants.ABI_ARM64_V8A, "aarch64-linux-android")
-                .put(SdkConstants.ABI_MIPS, "mipsel-linux-android")
-                .put(SdkConstants.ABI_MIPS64, "mips64el-linux-android")
-                .build();
-
-        ARCHITECTURE_STRING = ImmutableMap.<String, String>builder()
-                .put(SdkConstants.ABI_INTEL_ATOM, SdkConstants.CPU_ARCH_INTEL_ATOM)
-                .put(SdkConstants.ABI_INTEL_ATOM64, SdkConstants.CPU_ARCH_INTEL_ATOM64)
-                .put(SdkConstants.ABI_ARMEABI_V7A, SdkConstants.CPU_ARCH_ARM)
-                .put(SdkConstants.ABI_ARMEABI, SdkConstants.CPU_ARCH_ARM)
-                .put(SdkConstants.ABI_ARM64_V8A, SdkConstants.CPU_ARCH_ARM64)
-                .put(SdkConstants.ABI_MIPS, SdkConstants.CPU_ARCH_MIPS)
-                .put(SdkConstants.ABI_MIPS64, SdkConstants.CPU_ARCH_MIPS64)
-                .build();
-
-        TOOLCHAIN_STRING = ImmutableMap.<String, String>builder()
-                .put("gcc", "")
-                .put("clang", "clang")
-                .build();
+    public NdkHandler(
+            @NonNull File projectDir,
+            @NonNull String compileSdkVersion,
+            @NonNull String toolchainName,
+            @NonNull String toolchainVersion) {
+        this.compileSdkVersion = compileSdkVersion;
+        this.toolchain = Toolchain.getByName(toolchainName);
+        this.toolchainVersion = toolchainVersion;
+        ndkDirectory = findNdkDirectory(projectDir);
     }
 
-    public NdkHandler(File projectDir, String compileSdkVersion, NdkConfig ndkConfig) {
+    public String getCompileSdkVersion() {
+        return compileSdkVersion;
+    }
+
+    public void setCompileSdkVersion(String compileSdkVersion) {
         this.compileSdkVersion = compileSdkVersion;
-        this.ndkConfig = ndkConfig;
-        ndkDirectory = findNdkDirectory(projectDir);
+    }
+
+    public Toolchain getToolchain() {
+        return toolchain;
+    }
+
+    public String getToolchainVersion() {
+        return toolchainVersion;
     }
 
     /**
@@ -118,12 +84,15 @@ public class NdkHandler {
      * This is the name of the folder containing the toolchain under $ANDROID_NDK_HOME/toolchain.
      * e.g. for gcc targetting arm64_v8a, this method returns "aarch64-linux-android-4.9".
      */
-    private static String getToolchainName(
-            String toolchain,
-            String toolchainVersion,
-            String platform) {
-        return PLATFORM_STRING.get(platform) + "-" + TOOLCHAIN_STRING.get(toolchain)
-                + toolchainVersion;
+    public String getToolchainDirectory(Abi abi) {
+        return getToolchainDirectory(toolchain, toolchainVersion, abi);
+    }
+
+    private String getToolchainDirectory(Toolchain toolchain, String toolchainVersion, Abi abi) {
+        String version = toolchainVersion.isEmpty()
+                ? getDefaultToolchainVersion(abi)
+                : toolchainVersion;
+        return abi.getPlatform() + "-" + (toolchain == Toolchain.GCC ? "" : "clang") + version;
     }
 
     /**
@@ -179,33 +148,41 @@ public class NdkHandler {
         return ndkDirectory;
     }
 
-    NdkConfig getNdkConfig() {
-        return ndkConfig;
-    }
-
     /**
      * Return the path containing the prebuilt toolchain.
      *
-     * @param toolchain        Name of the toolchain ["gcc", "clang"].
-     * @param toolchainVersion Version of the toolchain.
-     * @param platform         Target platform supported by the NDK.
+     * @param abi         Target platform supported by the NDK.
      * @return Directory containing the prebuilt toolchain.
      */
+    private File getToolchainPath(Abi abi) {
+        return getToolchainPath(toolchain, toolchainVersion, abi);
+    }
 
-    public File getToolchainPath(String toolchain, String toolchainVersion, String platform) {
+
+    private File getDefaultGccToolchainPath(Abi abi) {
+        return getToolchainPath(Toolchain.GCC, getGccToolchainVersion(abi), abi);
+    }
+
+    private File getToolchainPath(Toolchain otherToolchain, String otherToolchainVersion, Abi abi) {
+
+        String version = otherToolchainVersion.isEmpty()
+                ? getDefaultToolchainVersion(abi)
+                : otherToolchainVersion;
+
         File prebuiltFolder;
-        if (toolchain.equals("gcc")) {
+        if (otherToolchain == Toolchain.GCC) {
             prebuiltFolder = new File(
                     getNdkDirectory(),
-                    "toolchains/" + getToolchainName(toolchain, toolchainVersion, platform)
+                    "toolchains/"
+                            + getToolchainDirectory(otherToolchain, otherToolchainVersion, abi)
                             + "/prebuilt");
 
-        } else if (toolchain.equals("clang")) {
+        } else if (otherToolchain == Toolchain.CLANG) {
             prebuiltFolder = new File(
                     getNdkDirectory(),
-                    "toolchains/llvm-" + toolchainVersion + "/prebuilt");
+                    "toolchains/llvm-" + version + "/prebuilt");
         } else {
-            throw new InvalidUserDataException("Unrecognized toolchain: " + toolchain);
+            throw new InvalidUserDataException("Unrecognized toolchain: " + otherToolchain);
         }
 
         String osName = System.getProperty("os.name").toLowerCase(Locale.ENGLISH);
@@ -256,17 +233,15 @@ public class NdkHandler {
     /**
      * Returns the sysroot directory for the toolchain.
      */
-    public String getSysroot(NativePlatform platform) {
-        return ndkDirectory + "/platforms/" + compileSdkVersion
-                + "/arch-" + ARCHITECTURE_STRING.get(platform.getName());
+    public String getSysroot(Abi abi) {
+        return ndkDirectory + "/platforms/" + compileSdkVersion+ "/arch-" + abi.getArchitecture();
     }
 
     /**
      * Return the directory containing prebuilt binaries such as gdbserver.
      */
-    public File getPrebuiltDirectory(NativePlatform platform) {
-        return new File(
-                ndkDirectory, "prebuilt/android-" + ARCHITECTURE_STRING.get(platform.getName()));
+    public File getPrebuiltDirectory(Abi abi) {
+        return new File(ndkDirectory, "prebuilt/android-" + abi.getArchitecture());
     }
 
     /**
@@ -283,33 +258,97 @@ public class NdkHandler {
     }
 
     /**
+     * Return the default version of the specified toolchain for a target abi.
+     */
+    private String getDefaultToolchainVersion(Abi abi) {
+        return abi.supports64Bits() ? toolchain.getDefaultVersion64() : toolchain.getDefaultVersion32();
+    }
+
+    /**
      * Return the gcc version that will be used by the NDK.
      *
      * If the gcc toolchain is used, then it's simply the toolchain version requested by the user.
      * If clang is used, then it depends the target abi.
      */
-    public String getGccToolchainVersion(String abi) {
-        String toolchain = ndkConfig.getToolchain();
-        if (toolchain.equals("gcc")) {
-            return (toolchain.equals(NdkExtensionConvention.DEFAULT_TOOLCHAIN))
-                    ? ToolchainConfiguration.getDefaultToolchainVersion(toolchain, abi)
-                    : ndkConfig.getToolchainVersion();
+    public String getGccToolchainVersion(Abi abi) {
+        if (toolchain == Toolchain.GCC) {
+            return (toolchainVersion.isEmpty())
+                    ? getDefaultToolchainVersion(abi)
+                    : toolchainVersion;
         } else {
-            return is64Bits(abi) ? DEFAULT_LLVM_GCC64_VERSION : DEFAULT_LLVM_GCC32_VERSION;
+            return abi.supports64Bits()
+                    ? Toolchain.CLANG.getDefaultGccVersion64()
+                    : Toolchain.CLANG.getDefaultGccVersion32();
         }
+    }
+
+    /**
+     * Returns a list of all ABI.
+     */
+    public static Collection<Abi> getAbiList() {
+        return ImmutableList.copyOf(Abi.values());
+    }
+
+    /**
+     * Returns a list of 32-bits ABI.
+     */
+    public static Collection<Abi> getAbiList32() {
+        ImmutableList.Builder<Abi> builder = ImmutableList.builder();
+        for (Abi abi : Abi.values()) {
+            if (!abi.supports64Bits()) {
+                builder.add(abi);
+            }
+        }
+        return builder.build();
     }
 
     /**
      * Returns a list of supported ABI.
      */
-    public Collection<String> getSupportedAbis() {
-        return supports64Bits() ? ALL_ABI : ABI32;
+    public Collection<Abi> getSupportedAbis() {
+        return supports64Bits() ? getAbiList() : getAbiList32();
     }
 
-    /**
-     * Return whether the specified abi is 64 bits.
-     */
-    public static boolean is64Bits(String abi) {
-        return !ABI32.contains(abi);
+    public File getCCompiler(Abi abi) {
+        String compiler = toolchain == Toolchain.CLANG ? "clang" : abi.getGccPrefix() + "-gcc";
+        return new File(getToolchainPath(abi), "bin/" + compiler);
+    }
+
+    public File getCppCompiler(Abi abi) {
+        String compiler = toolchain == Toolchain.CLANG ? "clang++" : abi.getGccPrefix() + "-g++";
+        return new File(getToolchainPath(abi), "bin/" + compiler);
+    }
+
+
+    public List<File> getStlIncludes(@Nullable String stlName, @NonNull Abi abi) {
+        File stlBaseDir = new File(ndkDirectory, "sources/cxx-stl/");
+        if (stlName == null || stlName.isEmpty()) {
+            stlName = "system";
+        } else if (stlName.contains("_")) {
+            stlName = stlName.substring(0, stlName.indexOf('_'));
+        }
+
+        List<File> includeDirs = Lists.newArrayList();
+        if (stlName.equals("system")) {
+            includeDirs.add(new File(stlBaseDir, "system/include"));
+        } else if (stlName.equals("stlport")) {
+            includeDirs.add(new File(stlBaseDir, "stlport/stlport"));
+            includeDirs.add(new File(stlBaseDir, "gabi++/include"));
+        } else if (stlName.equals("gnustl")) {
+            String gccToolchainVersion = getGccToolchainVersion(abi);
+            includeDirs.add(new File(stlBaseDir, "gnu-libstdc++/" + gccToolchainVersion + "/include"));
+            includeDirs.add(new File(stlBaseDir, "gnu-libstdc++/" + gccToolchainVersion +
+                    "/libs/" + abi.getName() + "/include"));
+            includeDirs.add(new File(stlBaseDir, "gnu-libstdc++/" + gccToolchainVersion +
+                    "/include/backward"));
+        } else if (stlName.equals("gabi++")) {
+            includeDirs.add(new File(stlBaseDir, "gabi++/include"));
+        } else if (stlName.equals("c++")) {
+            includeDirs.add(new File(stlBaseDir, "llvm-libc++/libcxx/include"));
+            includeDirs.add(new File(stlBaseDir, "gabi++/include"));
+            includeDirs.add(new File(stlBaseDir, "../android/support/include"));
+        }
+
+        return includeDirs;
     }
 }

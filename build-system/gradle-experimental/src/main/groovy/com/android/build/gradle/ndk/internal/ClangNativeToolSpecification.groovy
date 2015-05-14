@@ -17,6 +17,8 @@
 package com.android.build.gradle.ndk.internal
 
 import com.android.SdkConstants
+import com.android.build.gradle.internal.NdkHandler
+import com.android.build.gradle.internal.core.Abi
 import com.android.builder.core.BuilderConstants
 import org.gradle.nativeplatform.BuildType
 import org.gradle.nativeplatform.platform.NativePlatform
@@ -213,10 +215,7 @@ class ClangNativeToolSpecification extends AbstractNativeToolSpecification {
     private Iterable<String> getTargetFlags() {
         [
                 "-gcc-toolchain",
-                ndkHandler.getToolchainPath(
-                        "gcc",
-                        ndkHandler.getGccToolchainVersion(platform.name),
-                        platform.name),
+                ndkHandler.getDefaultGccToolchainPath(Abi.getByName(platform.name)),
                 "-target",
                 TARGET_TRIPLE[platform.name]
         ]
