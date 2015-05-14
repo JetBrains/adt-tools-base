@@ -81,15 +81,12 @@ public abstract class LayoutlibCallback implements IProjectCallback,
     }
 
     /**
-     * Creates a new XmlPullParser with an optional display name.
-     *
-     * @param displayName an optional name to aid with debugging.
-     * @throws XmlPullParserException
+     * Get a ParserFactory which can be used to create XmlPullParsers.
      * @since API 15
      */
     @NonNull
-    public XmlPullParser createParser(@Nullable String displayName) throws XmlPullParserException {
-        throw new UnsupportedOperationException("createNewParser not supported.");
+    public ParserFactory getParserFactory() {
+        throw new UnsupportedOperationException("getParserFactory not supported.");
     }
 
     // ------ implementation of the old interface using the new interface.
