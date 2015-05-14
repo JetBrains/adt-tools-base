@@ -20,8 +20,8 @@ import com.android.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 
+import com.google.common.collect.*;
 import gnu.trove.TIntObjectHashMap;
 import gnu.trove.TLongObjectHashMap;
 import gnu.trove.TObjectProcedure;
@@ -53,8 +53,7 @@ public class Heap {
     @NonNull
     TLongObjectHashMap<ClassObj> mClassesById = new TLongObjectHashMap<ClassObj>();
 
-    @NonNull
-    HashMap<String, ClassObj> mClassesByName = new HashMap<String, ClassObj>();
+    @NonNull Multimap<String, ClassObj> mClassesByName = ArrayListMultimap.create();
 
     //  List of instances of above class definitions
     private final TLongObjectHashMap<Instance> mInstances = new TLongObjectHashMap<Instance>();
@@ -134,6 +133,14 @@ public class Heap {
     }
 
     public final ClassObj getClass(String name) {
+        Collection<ClassObj> classes = mClassesByName.get(name);
+        if (classes.size() == 1) {
+            return classes.iterator().next();
+        }
+        return null;
+    }
+
+    public final Collection<ClassObj> getClasses(String name) {
         return mClassesByName.get(name);
     }
 
