@@ -16,10 +16,10 @@
 
 package com.android.build.gradle.ndk.internal
 
+import com.android.build.gradle.internal.NdkHandler
 import org.gradle.api.InvalidUserDataException;
 import org.gradle.api.Task;
 import org.gradle.api.tasks.Copy
-import org.gradle.api.tasks.TaskContainer
 import org.gradle.model.collection.CollectionBuilder
 import org.gradle.nativeplatform.SharedLibraryBinarySpec;
 

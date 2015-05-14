@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.integration.ndk
 
+import com.android.SdkConstants
 import com.android.build.FilterData
 import com.android.build.OutputFile
 import com.android.build.gradle.integration.common.category.DeviceTests
@@ -110,16 +111,32 @@ class NdkSanAngelesTest {
 
         // this checks we didn't miss any expected output.
         assertTrue(expected.isEmpty())
+    }
+
+    @Test
+    void "check native libraries in model"() {
+        Collection<Variant> variants = model.getVariants()
+        Variant debugVariant = ModelHelper.getVariant(variants, DEBUG)
+        AndroidArtifact debugMainArtifact = debugVariant.getMainArtifact()
 
         assertThat(debugMainArtifact.getNativeLibraries()).hasSize(3)
         for (NativeLibrary nativeLibrary : debugMainArtifact.getNativeLibraries()) {
             assertThat(nativeLibrary.getName()).isEqualTo("sanangeles")
-            assertThat(nativeLibrary.getToolchainName()).isEmpty()
-            assertThat(nativeLibrary.getCCompilerFlags()).containsExactly("-DANDROID_NDK -DDISABLE_IMPORTGL");
-            assertThat(nativeLibrary.getCppCompilerFlags()).containsExactly("-DANDROID_NDK -DDISABLE_IMPORTGL");
+            assertThat(nativeLibrary.getCCompilerFlags()).contains("-DANDROID_NDK -DDISABLE_IMPORTGL");
+            assertThat(nativeLibrary.getCppCompilerFlags()).contains("-DANDROID_NDK -DDISABLE_IMPORTGL");
+            assertThat(nativeLibrary.getCSystemIncludeDirs()).isEmpty();
+            assertThat(nativeLibrary.getCppSystemIncludeDirs()).isNotEmpty();
         }
-    }
 
+        Collection<String> expectedToolchains = [
+                SdkConstants.ABI_INTEL_ATOM,
+                SdkConstants.ABI_ARMEABI_V7A,
+                SdkConstants.ABI_MIPS].collect { "gcc-" + it }
+        Collection<String> toolchainNames = model.getNativeToolchains().collect { it.getName() }
+        assertThat(toolchainNames).containsAllIn(expectedToolchains)
+        Collection<String> nativeLibToolchains = debugMainArtifact.getNativeLibraries().collect { it.getToolchainName() }
+        assertThat(nativeLibToolchains).containsAllIn(expectedToolchains)
+    }
 
     @Test
     @Category(DeviceTests.class)
