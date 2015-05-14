@@ -215,7 +215,7 @@ public class ResourceMerger extends DataMerger<ResourceItem, ResourceFile, Resou
                 }
             }
         } catch (ParserConfigurationException e) {
-            throw new MergingException(e);
+            throw MergingException.wrapException(e).build();
         }
     }
 

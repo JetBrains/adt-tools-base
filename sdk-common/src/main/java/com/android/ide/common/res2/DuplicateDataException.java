@@ -16,32 +16,57 @@
 
 package com.android.ide.common.res2;
 
-
 import com.android.annotations.NonNull;
+import com.android.ide.common.blame.Message;
+import com.android.ide.common.blame.SourceFile;
+import com.android.ide.common.blame.SourceFilePosition;
+import com.android.ide.common.blame.SourcePosition;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+
+import java.io.File;
+import java.util.Collection;
+import java.util.List;
+
 
 /**
  * Exception when a {@link DataItem} is declared more than once in a {@link DataSet}
  */
 public class DuplicateDataException extends MergingException {
 
-    private DataItem mOne;
-    private DataItem mTwo;
+    private static final String DUPLICATE_RESOURCES = "Duplicate resources";
 
-    DuplicateDataException(@NonNull DataItem one, @NonNull DataItem two) {
-        super(String.format("Duplicate resources: %1s:%2s, %3s:%4s",
-                one.getSource().getFile().getAbsolutePath(), one.getKey(),
-                two.getSource().getFile().getAbsolutePath(), two.getKey()));
-        mOne = one;
-        mTwo = two;
-        addFile(one.getSource().getFile());
-        addFile(two.getSource().getFile());
+    DuplicateDataException(Message[] messages) {
+        super(null, messages);
     }
 
-    public DataItem getOne() {
-        return mOne;
+    static <I extends DataItem> Message[] createMessages(
+            @NonNull Collection<Collection<I>> duplicateDataItemSets) {
+        List<Message> messages = Lists.newArrayListWithCapacity(duplicateDataItemSets.size());
+        for (Collection<I> duplicateItems : duplicateDataItemSets) {
+            ImmutableList.Builder<SourceFilePosition> positions = ImmutableList.builder();
+            for (I item : duplicateItems) {
+                if (!item.isRemoved()) {
+                    positions.add(getPosition(item));
+                }
+            }
+            messages.add(new Message(
+                    Message.Kind.ERROR,
+                    DUPLICATE_RESOURCES,
+                    DUPLICATE_RESOURCES,
+                    positions.build()));
+        }
+        return Iterables.toArray(messages, Message.class);
     }
 
-    public DataItem getTwo() {
-        return mTwo;
+    private static SourceFilePosition getPosition(DataItem item) {
+        DataFile dataFile = item.getSource();
+        if (dataFile == null) {
+            return new SourceFilePosition(new SourceFile(item.getKey()), SourcePosition.UNKNOWN);
+        }
+        File f = dataFile.getFile();
+        SourcePosition sourcePosition = SourcePosition.UNKNOWN;  // TODO: find position in file.
+        return new SourceFilePosition(new SourceFile(f, item.getKey()), sourcePosition);
     }
 }

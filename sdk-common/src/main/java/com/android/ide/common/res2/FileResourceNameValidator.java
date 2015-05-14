@@ -21,6 +21,9 @@ import static com.android.SdkConstants.DOT_XML;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.ide.common.blame.Message;
+import com.android.ide.common.blame.SourceFilePosition;
+import com.android.ide.common.blame.SourcePosition;
 import com.android.resources.ResourceType;
 import com.android.utils.SdkUtils;
 
@@ -45,7 +48,7 @@ public final class FileResourceNameValidator {
             throws MergingException {
         String error = getErrorTextForFileResource(file.getName(), resourceType);
         if (error != null) {
-            throw new MergingException(error).setFile(file);
+            throw MergingException.withMessage(error).withFile(file).build();
         }
     }
 

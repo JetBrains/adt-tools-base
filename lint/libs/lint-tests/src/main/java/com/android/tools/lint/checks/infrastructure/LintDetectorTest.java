@@ -750,9 +750,6 @@ public abstract class LintDetectorTest extends SdkTestCase {
                     }
                 }
             }
-            catch (DuplicateDataException e) {
-                fail(e.getMessage());
-            }
             catch (MergingException e) {
                 fail(e.getMessage());
             }

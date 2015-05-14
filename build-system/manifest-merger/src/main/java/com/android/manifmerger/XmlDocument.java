@@ -184,9 +184,7 @@ public class XmlDocument {
     }
 
     /**
-     * Returns a {@link XmlNode} position automatically offsetting the line and number
-     * columns by one (for PositionXmlParser, document starts at line 0, however for the common
-     * understanding, document should start at line 1).
+     * Returns the position of the specified {@link XmlNode}.
      */
     @NonNull
     static SourcePosition getNodePosition(XmlNode node) {
@@ -194,9 +192,7 @@ public class XmlDocument {
     }
 
     /**
-     * Returns a {@link org.w3c.dom.Node} position automatically offsetting the line and number
-     * columns by one (for PositionXmlParser, document starts at line 0, however for the common
-     * understanding, document should start at line 1).
+     * Returns the position of the specified {@link org.w3c.dom.Node}.
      */
     @NonNull
     static SourcePosition getNodePosition(Node xml) {
