@@ -18,6 +18,11 @@ package com.android.ide.common.res2;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.ide.common.blame.Message;
+import com.android.ide.common.blame.SourceFilePosition;
+import com.android.ide.common.blame.SourcePosition;
+
+import java.io.File;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 
@@ -27,24 +32,29 @@ import javax.xml.parsers.DocumentBuilderFactory;
 public interface MergeConsumer<I extends DataItem> {
 
     /**
-     * An exception thrown during by the consumer. It always contains the original exception
-     * as its cause.
+     * An exception thrown during by the consumer. It always contains the original exception as its
+     * cause.
      */
     class ConsumerException extends MergingException {
+
         public ConsumerException(Throwable cause) {
-            super(cause);
+            super(cause, new Message(Message.Kind.ERROR, cause.getLocalizedMessage(),
+                    SourceFilePosition.UNKNOWN));
+        }
+
+        public ConsumerException(Throwable cause, @NonNull File file) {
+            super(cause, new Message(Message.Kind.ERROR, cause.getLocalizedMessage(),
+                    new SourceFilePosition(file, SourcePosition.UNKNOWN)));
         }
     }
 
     /**
      * Called before the merge starts.
-     * @throws ConsumerException
      */
     void start(@NonNull DocumentBuilderFactory factory) throws ConsumerException;
 
     /**
      * Called after the merge ends.
-     * @throws ConsumerException
      */
     void end() throws ConsumerException;
 
@@ -53,20 +63,16 @@ public interface MergeConsumer<I extends DataItem> {
      * indicate whether the item actually changed.
      *
      * @param item the new item.
-     *
-     * @throws ConsumerException
      */
     void addItem(@NonNull I item) throws ConsumerException;
 
     /**
-     * Removes an item. Optionally pass the item that will replace this one.
-     * This methods does not do the replacement. The replaced item is just there
-     * in case the removal can be optimized when it's a replacement vs. a removal.
+     * Removes an item. Optionally pass the item that will replace this one. This methods does not
+     * do the replacement. The replaced item is just there in case the removal can be optimized when
+     * it's a replacement vs. a removal.
      *
      * @param removedItem the removed item.
-     * @param replacedBy the optional item that replaces the removed item.
-     *
-     * @throws ConsumerException
+     * @param replacedBy  the optional item that replaces the removed item.
      */
     void removeItem(@NonNull I removedItem, @Nullable I replacedBy) throws ConsumerException;
 

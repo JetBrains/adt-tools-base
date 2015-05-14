@@ -18,126 +18,178 @@ package com.android.ide.common.res2;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.ide.common.blame.Message;
+import com.android.ide.common.blame.Message.Kind;
+import com.android.ide.common.blame.SourceFile;
 import com.android.ide.common.blame.SourceFilePosition;
 import com.android.ide.common.blame.SourcePosition;
-import com.google.common.base.Function;
 import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 
 import org.xml.sax.SAXParseException;
 
 import java.io.File;
+import java.util.Collection;
 import java.util.List;
 
-/** Exception for errors during merging */
+/**
+ * Exception for errors during merging.
+ */
 public class MergingException extends Exception {
-    private String mMessage; // Keeping our own copy since parent prepends exception class name
-    private List<SourceFilePosition> mFilePositions = Lists.newArrayList();
 
-    public MergingException(@NonNull String message, @Nullable Throwable cause) {
-        super(message, cause);
-        mMessage = message;
+    public static final String MULTIPLE_ERRORS = "Multiple errors:";
+
+    private final List<Message> mMessages;
+
+    /**
+     * For internal use. Creates a new MergingException
+     *
+     * @param cause    the original exception. May be null.
+     * @param messages the messaged. Must contain at least one item.
+     */
+    protected MergingException(@Nullable Throwable cause, @NonNull Message... messages) {
+        super(messages.length == 1 ? messages[0].getText() : MULTIPLE_ERRORS, cause);
+        mMessages = ImmutableList.copyOf(messages);
     }
 
-    public MergingException(@NonNull String message) {
-        this(message, null);
+    public static class Builder {
+
+        private Throwable mCause = null;
+
+        private String mMessageText = null;
+
+        private SourceFile mFile = SourceFile.UNKNOWN;
+
+        private SourcePosition mPosition = SourcePosition.UNKNOWN;
+
+        private Builder() {
+        }
+
+        public Builder wrapException(Throwable cause) {
+            mCause = cause;
+            return this;
+        }
+
+        public Builder withFile(File file) {
+            mFile = new SourceFile(file);
+            return this;
+        }
+
+        public Builder withFile(SourceFile file) {
+            mFile = file;
+            return this;
+        }
+
+        public Builder withPosition(SourcePosition position) {
+            mPosition = position;
+            return this;
+        }
+
+        public Builder withMessage(String messageText, Object... args) {
+            mMessageText = args.length == 0 ? messageText : String.format(messageText, args);
+            return this;
+        }
+
+        public MergingException build() {
+            if (mCause != null) {
+                if (mMessageText == null) {
+                    mMessageText = mCause.getLocalizedMessage();
+                }
+                if (mPosition == SourcePosition.UNKNOWN && mCause instanceof SAXParseException) {
+                    SAXParseException exception = (SAXParseException) mCause;
+                    int lineNumber = exception.getLineNumber();
+                    if (lineNumber != -1) {
+                        // Convert positions to be 0-based for SourceFilePosition.
+                        mPosition = new SourcePosition(lineNumber - 1,
+                                exception.getColumnNumber() - 1, -1);
+                    }
+                }
+            }
+            return new MergingException(
+                    mCause,
+                    new Message(
+                            Kind.ERROR, mMessageText, new SourceFilePosition(mFile, mPosition)));
+        }
+
     }
 
-    public MergingException(@NonNull Throwable cause) {
-        this(cause.getLocalizedMessage(), cause);
+    public static Builder wrapException(@NonNull Throwable cause) {
+        return new Builder().wrapException(cause);
+    }
+
+    public static Builder withMessage(@Nullable String message, Object... args) {
+        return new Builder().withMessage(message, args);
+    }
+
+
+    public static void throwIfNonEmpty(Collection<Message> messages) throws MergingException {
+        if (!messages.isEmpty()) {
+            throw new MergingException(null, Iterables.toArray(messages, Message.class));
+        }
+    }
+
+    public List<Message> getMessages() {
+        return mMessages;
     }
 
     /**
-     *  Add the file if it hasn't already been included in the list of file positions.
+     * Computes the error message to display for this error
      */
-    public MergingException setFile(@NonNull File file) {
-        for (SourceFilePosition filePosition : mFilePositions) {
-            if (file.equals(filePosition.getFile().getSourceFile())) {
-                return this;
-            }
-        }
-        addFile(file);
-        return this;
-    }
-
-    public MergingException addFile(@NonNull File file) {
-        mFilePositions.add(new SourceFilePosition(file, SourcePosition.UNKNOWN));
-        return this;
-    }
-
-    public MergingException addFileIfNonNull(@Nullable File file) {
-        return (file != null) ? addFile(file) : this;
-    }
-
-    public MergingException addFilePosition(@NonNull SourceFilePosition filePosition) {
-        mFilePositions.add(filePosition);
-        return this;
-    }
-
-    public MergingException addFilePosition(@NonNull File file, @NonNull SAXParseException exception) {
-        int lineNumber = exception.getLineNumber();
-        if (lineNumber != -1) {
-            addFilePosition(new SourceFilePosition(file, new SourcePosition(
-                    exception.getLineNumber() - 1, exception.getColumnNumber() - 1, -1)));
-        } else {
-            addFile(file);
-        }
-        return this;
-    }
-
-    public MergingException setCause(@NonNull Throwable cause) {
-        initCause(cause);
-        return this;
-    }
-
-    /** Computes the error message to display for this error */
     @Override
     public String getMessage() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(Joiner.on('\t').join(mFilePositions));
+        List<String> messages = Lists.newArrayListWithCapacity(mMessages.size());
+        for (Message message : mMessages) {
+            StringBuilder sb = new StringBuilder();
+            List<SourceFilePosition> sourceFilePositions = message.getSourceFilePositions();
+            if (sourceFilePositions.size() > 1 || !sourceFilePositions.get(0)
+                    .equals(SourceFilePosition.UNKNOWN)) {
+                sb.append(Joiner.on('\t').join(sourceFilePositions));
+            }
 
-        if (sb.length() > 0) {
-            sb.append(':').append(' ');
+            String text = message.getText();
+            if (sb.length() > 0) {
+                sb.append(':').append(' ');
 
-            // ALWAYS insert the string "Error:" between the path and the message.
-            // This is done to make the error messages more simple to detect
-            // (since a generic path: message pattern can match a lot of output, basically
-            // any labeled output, and we don't want to do file existence checks on any random
-            // string to the left of a colon.)
-            if (!mMessage.startsWith("Error: ")) {
+                // ALWAYS insert the string "Error:" between the path and the message.
+                // This is done to make the error messages more simple to detect
+                // (since a generic path: message pattern can match a lot of output, basically
+                // any labeled output, and we don't want to do file existence checks on any random
+                // string to the left of a colon.)
+                if (!text.startsWith("Error: ")) {
+                    sb.append("Error: ");
+                }
+            } else if (!text.contains("Error: ")) {
                 sb.append("Error: ");
             }
-        } else if (!mMessage.contains("Error: ")) {
-            sb.append("Error: ");
-        }
 
-        String message = mMessage;
-
-        // If the error message already starts with the path, strip it out.
-        // This avoids redundant looking error messages you can end up with
-        // like for example for permission denied errors where the error message
-        // string itself contains the path as a prefix:
-        //    /my/full/path: /my/full/path (Permission denied)
-        if (mFilePositions.size() == 1) {
-            File file = mFilePositions.get(0).getFile().getSourceFile();
-            if (file!= null) {
-                String path = file.getAbsolutePath();
-                if (message.startsWith(path)) {
-                    int stripStart = path.length();
-                    if (message.length() > stripStart && message.charAt(stripStart) == ':') {
-                        stripStart++;
+            // If the error message already starts with the path, strip it out.
+            // This avoids redundant looking error messages you can end up with
+            // like for example for permission denied errors where the error message
+            // string itself contains the path as a prefix:
+            //    /my/full/path: /my/full/path (Permission denied)
+            if (sourceFilePositions.size() == 1) {
+                File file = sourceFilePositions.get(0).getFile().getSourceFile();
+                if (file != null) {
+                    String path = file.getAbsolutePath();
+                    if (text.startsWith(path)) {
+                        int stripStart = path.length();
+                        if (text.length() > stripStart && text.charAt(stripStart) == ':') {
+                            stripStart++;
+                        }
+                        if (text.length() > stripStart && text.charAt(stripStart) == ' ') {
+                            stripStart++;
+                        }
+                        text = text.substring(stripStart);
                     }
-                    if (message.length() > stripStart && message.charAt(stripStart) == ' ') {
-                        stripStart++;
-                    }
-                    message = message.substring(stripStart);
                 }
             }
-        }
 
-        sb.append(message);
-        return sb.toString();
+            sb.append(text);
+            messages.add(sb.toString());
+        }
+        return Joiner.on('\n').join(messages);
     }
 
     @Override

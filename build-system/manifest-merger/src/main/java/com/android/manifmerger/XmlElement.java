@@ -117,15 +117,17 @@ public class XmlElement extends OrphanXmlElement {
                             OtherOperationType.valueOf(instruction);
                             break;
                         } catch (IllegalArgumentException e1) {
+
                             String errorMessage =
-                                    String.format("[%1$s:%2$s] Invalid instruction '%3$s', "
-                                                    + "valid instructions are : %4$s",
-                                            mDocument.getSourceFile().print(false),
-                                            mDocument.getNodePosition(xml).getStartLine(),
+                                    String.format("Invalid instruction '%1$s', "
+                                                    + "valid instructions are : %2$s",
                                             instruction,
                                             Joiner.on(',').join(AttributeOperationType.values())
                                     );
-                            throw new RuntimeException(new MergingException(errorMessage, e));
+                            throw new RuntimeException(MergingException.wrapException(e)
+                                    .withMessage(errorMessage)
+                                    .withFile(mDocument.getSourceFile())
+                                    .withPosition(mDocument.getNodePosition(xml)).build());
                         }
                     }
                     for (String attributeName : Splitter.on(',').trimResults()
