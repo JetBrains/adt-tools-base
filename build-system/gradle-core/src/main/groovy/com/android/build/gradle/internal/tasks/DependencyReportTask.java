@@ -70,7 +70,7 @@ public class DependencyReportTask extends DefaultAndroidTask {
      *
      * @param variants the variants. Must not be null.
      */
-    public void setVariants(@NonNull Collection<BaseVariantData> variants) {
+    public void setVariants(@NonNull Collection<? extends BaseVariantData> variants) {
         this.variants.addAll(variants);
     }
 

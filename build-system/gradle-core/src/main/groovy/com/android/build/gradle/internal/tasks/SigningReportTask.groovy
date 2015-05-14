@@ -111,7 +111,7 @@ class SigningReportTask extends BaseTask {
      *
      * @param configurations The configuration. Must not be null.
      */
-    public void setVariants(Collection<BaseVariantData> variants) {
+    public void setVariants(Collection<? extends BaseVariantData> variants) {
         this.variants.addAll(variants);
     }
 
