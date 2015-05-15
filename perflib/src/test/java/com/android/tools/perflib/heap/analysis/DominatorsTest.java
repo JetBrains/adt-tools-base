@@ -133,6 +133,22 @@ public class DominatorsTest extends TestCase {
         assertParentPathToGc(6, 5, 7);
     }
 
+    public void testSameClassDifferentLoader() {
+        mSnapshot = new SnapshotBuilder(4)
+                .addReferences(1, 3, 2)
+                .addReferences(3, 2)
+                .addRoot(1)
+                .getSnapshot();
+
+        assertNotNull(mSnapshot.getHeap(13).getClass(102));
+        assertNotNull(mSnapshot.getHeap(13).getClass(103));
+
+        mSnapshot.computeDominators();
+
+        assertEquals(0, mSnapshot.getHeap(13).getClass(102).getRetainedSize(1));
+        assertEquals(0, mSnapshot.getHeap(13).getClass(103).getRetainedSize(1));
+    }
+
     public void testTopSort() {
         mSnapshot = new SnapshotBuilder(4)
                 .addReferences(1, 3, 2)
