@@ -31,6 +31,8 @@ import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.internal.variant.LibraryVariantData;
 import com.android.builder.core.VariantConfiguration;
+import com.android.builder.tasks.Job;
+import com.android.builder.tasks.JobContext;
 import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
@@ -101,7 +103,32 @@ public class AndroidProGuardTask extends ProGuardTask implements FileSupplier {
 
     @Override
     @TaskAction
-    public void proguard() throws ParseException, IOException {
+    public void proguard() throws IOException, ParseException {
+        final Job<Void> job = new Job<Void>(getName(),
+                new com.android.builder.tasks.Task<Void>() {
+                    @Override
+                    public void run(@NonNull Job<Void> job,
+                            @NonNull JobContext<Void> context) throws IOException {
+                        try {
+                            AndroidProGuardTask.this.doMinification();
+                        } catch (ParseException e) {
+                            throw new IOException(e);
+                        }
+                    }
+                });
+        try {
+            SimpleWorkQueue.push(job);
+
+            // wait for the task completion.
+            job.await();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        }
+
+    }
+
+    public void doMinification() throws ParseException, IOException {
         // only set the tested application mapping file if it exists (it must at this point or that
         // means the tested application did not request obfuscation).
         if (testedAppMappingFile != null && testedAppMappingFile.exists()) {

@@ -16,6 +16,8 @@
 
 package com.android.builder.tasks;
 
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.google.common.base.Objects;
 
 import java.io.IOException;
@@ -42,7 +44,7 @@ public class Job<T> {
         return mJobTitle;
     }
 
-    public void runTask(JobContext<T> jobContext) throws IOException {
+    public void runTask(@NonNull JobContext<T> jobContext) throws IOException {
         mTask.run(this, jobContext);
     }
 

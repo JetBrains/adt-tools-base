@@ -35,6 +35,8 @@ import java.util.logging.Logger;
  */
 public class WorkQueue<T> implements Runnable {
 
+    private static final boolean VERBOSE = System.getenv("GRADLE_WORK_QUEUE_VERBOSE") != null;
+
     private final ILogger mLogger;
 
     // queue name as human would understand.
@@ -127,9 +129,9 @@ public class WorkQueue<T> implements Runnable {
     private synchronized void checkWorkforce() {
         if (mWorkThreads.isEmpty()
                 || (mPendingJobs.size() / mWorkThreads.size() > mGrowthTriggerRation)) {
-            mLogger.verbose("Request to incrementing workforce from %1$d", mWorkThreads.size());
+            verbose("Request to incrementing workforce from %1$d", mWorkThreads.size());
             if (mWorkThreads.size() >= MAX_WORKFORCE_SIZE) {
-                mLogger.verbose("Already at max workforce %1$d, denied.", MAX_WORKFORCE_SIZE);
+                verbose("Already at max workforce %1$d, denied.", MAX_WORKFORCE_SIZE);
                 return;
             }
             for (int i = 0; i < mMWorkforceIncrement; i++) {
@@ -138,12 +140,12 @@ public class WorkQueue<T> implements Runnable {
                 mWorkThreads.add(t);
                 t.start();
             }
-            mLogger.verbose("thread-pool size=%1$d", mWorkThreads.size());
+            verbose("thread-pool size=%1$d", mWorkThreads.size());
         }
     }
 
     private synchronized void reduceWorkforce() throws InterruptedException {
-        mLogger.verbose("Decrementing workforce from " + mWorkThreads.size());
+        verbose("Decrementing workforce from " + mWorkThreads.size());
         // push a the right number of kiss of death tasks to shutdown threads.
         for (int i = 0; i < mMWorkforceIncrement; i++) {
            _push(new QueueTask<T>(QueueTask.ActionType.Death, null));
@@ -200,7 +202,7 @@ public class WorkQueue<T> implements Runnable {
         // this
         try {
             try {
-                mLogger.verbose("Creating a new working thread %1$s", threadName);
+                verbose("Creating a new working thread %1$s", threadName);
                 mQueueThreadContext.creation(Thread.currentThread());
             } catch (IOException e) {
                 e.printStackTrace();
@@ -208,7 +210,7 @@ public class WorkQueue<T> implements Runnable {
             while(true) {
                 final QueueTask<T> queueTask = mPendingJobs.take();
                 if (queueTask.actionType== QueueTask.ActionType.Death) {
-                    mLogger.verbose("Thread(%1$s): Death requested", threadName);
+                    verbose("Thread(%1$s): Death requested", threadName);
                     // we are done.
                     return;
                 }
@@ -219,7 +221,7 @@ public class WorkQueue<T> implements Runnable {
                             "I got a null pending job out of the priority queue");
                     return;
                 }
-                mLogger.verbose("Thread(%1$s): scheduling %2$s", threadName, job.getJobTitle());
+                verbose("Thread(%1$s): scheduling %2$s", threadName, job.getJobTitle());
 
                 try {
                     mQueueThreadContext.runTask(job);
@@ -230,24 +232,30 @@ public class WorkQueue<T> implements Runnable {
                 }
                 // wait for the job completion.
                 job.await();
-                mLogger.verbose("Thread(%1$s): job %2$s finished", threadName, job.getJobTitle());
+                verbose("Thread(%1$s): job %2$s finished", threadName, job.getJobTitle());
                 // we could potentially reduce the workforce at this point if we have little
                 // queuing comparatively to the number of worker threads but at this point, the
                 // overall process (gradle activity) is fairly short lived so skipping at this
                 // point.
-                mLogger.verbose("Thread(%1$s): queue size %2$d", threadName, mPendingJobs.size());
+                verbose("Thread(%1$s): queue size %2$d", threadName, mPendingJobs.size());
             }
         } catch (InterruptedException e) {
             mLogger.error(e, "Thread(%1$s): Interrupted", threadName);
         } finally {
             try {
-                mLogger.verbose("Thread(%1$s): destruction", threadName);
+                verbose("Thread(%1$s): destruction", threadName);
                 mQueueThreadContext.destruction(Thread.currentThread());
             } catch (IOException e) {
                 mLogger.error(e, "Thread(%1$s): %2$s", threadName, e.getMessage());
             } catch (InterruptedException e) {
                 mLogger.error(e, "Thread(%1$s): %2$s", threadName, e.getMessage());
             }
+        }
+    }
+
+    private void verbose(String format, Object...args) {
+        if (VERBOSE) {
+            mLogger.verbose(format, args);
         }
     }
 }
