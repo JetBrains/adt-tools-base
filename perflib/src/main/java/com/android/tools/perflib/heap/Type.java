@@ -21,7 +21,7 @@ import com.google.common.collect.Maps;
 import java.util.Map;
 
 public enum Type {
-    OBJECT(2, 0),
+    OBJECT(2, 0), // Pointer sizes are dependent on the hprof file, so set it to 0 for now.
     BOOLEAN(4, 1),
     CHAR(5, 2),
     FLOAT(6, 4),
@@ -30,10 +30,6 @@ public enum Type {
     SHORT(9, 2),
     INT(10, 4),
     LONG(11, 8);
-
-    private static int sIdSize = 4; // TODO: This needs to be moved to Snapshot.
-
-    private static long sIdSizeMask = 0x00000000ffffffffl;
 
     private static Map<Integer, Type> sTypeMap = Maps.newHashMap();
 
@@ -52,21 +48,16 @@ public enum Type {
         mSize = size;
     }
 
-    public static final void setIdSize(int size) {
-        sIdSize = size;
-        sIdSizeMask = 0xffffffffffffffffl >>> ((8 - size) * 8);
-    }
-
-    public static final long getIdSizeMask() {
-        return sIdSizeMask;
-    };
-
     public static Type getType(int id) {
         return sTypeMap.get(id);
     }
 
     public int getSize() {
-        return this == OBJECT ? sIdSize : mSize;
+        return mSize;
+    }
+
+    public int getTypeId() {
+        return mId;
     }
 
     public static String getClassNameOfPrimitiveArray(Type type) {

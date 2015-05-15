@@ -75,7 +75,7 @@ public abstract class Instance {
     }
 
     public long getUniqueId() {
-        return getId() & Type.getIdSizeMask();
+        return getId() & mHeap.mSnapshot.getIdSizeMask();
     }
 
     public abstract void accept(Visitor visitor);
@@ -213,7 +213,7 @@ public abstract class Instance {
 
     protected long readId() {
         // As long as we don't interpret IDs, reading signed values here is fine.
-        switch (Type.OBJECT.getSize()) {
+        switch (mHeap.mSnapshot.getTypeSize(Type.OBJECT)) {
             case 1:
                 return getBuffer().readByte();
             case 2:

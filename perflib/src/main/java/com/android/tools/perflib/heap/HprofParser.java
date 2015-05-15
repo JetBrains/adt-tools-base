@@ -150,7 +150,7 @@ public class HprofParser {
                 readNullTerminatedString();  // Version, ignored for now.
 
                 mIdSize = mInput.readInt();
-                Type.setIdSize(mIdSize);
+                mSnapshot.setIdSize(mIdSize);
 
                 mInput.readLong();  // Timestamp, ignored for now.
 
@@ -519,9 +519,9 @@ public class HprofParser {
             Type type = Type.getType(mInput.readByte());
 
             staticFields[i] = new Field(type, name);
-            skipFully(type.getSize());
+            skipFully(mSnapshot.getTypeSize(type));
 
-            bytesRead += mIdSize + 1 + type.getSize();
+            bytesRead += mIdSize + 1 + mSnapshot.getTypeSize(type);
         }
 
         theClass.setStaticFields(staticFields);
@@ -587,7 +587,7 @@ public class HprofParser {
         StackTrace stack = mSnapshot.getStackTrace(stackId);
         int numElements = mInput.readInt();
         Type type = Type.getType(readUnsignedByte());
-        int size = type.getSize();
+        int size = mSnapshot.getTypeSize(type);
         ArrayInstance array = new ArrayInstance(id, stack, type, numElements, mInput.position());
         mSnapshot.addInstance(id, array);
 
@@ -611,7 +611,7 @@ public class HprofParser {
 
     private int skipValue() throws IOException {
         Type type = Type.getType(readUnsignedByte());
-        int size = type.getSize();
+        int size = mSnapshot.getTypeSize(type);
 
         skipFully(size);
 

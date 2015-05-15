@@ -39,13 +39,13 @@ public class SnapshotBuilder {
     private final ByteBuffer mDirectBuffer;
 
     public SnapshotBuilder(int numNodes) {
-        Type.setIdSize(2); // A good opportunity to test the handling of short IDs.
         InMemoryBuffer buffer = new InMemoryBuffer(2 * numNodes * numNodes);
         mDirectBuffer = buffer.getDirectBuffer();
         mOffsets = new int[numNodes + 1];
 
         mSnapshot = new Snapshot(buffer);
         mSnapshot.setHeapTo(13, "testHeap");
+        mSnapshot.setIdSize(2);
 
         mNodes = new ClassInstance[numNodes + 1];
         for (int i = 1; i <= numNodes; i++) {
