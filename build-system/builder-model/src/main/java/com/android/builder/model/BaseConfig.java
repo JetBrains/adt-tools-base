@@ -21,6 +21,7 @@ import com.android.annotations.Nullable;
 
 import java.io.File;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -98,10 +99,12 @@ public interface BaseConfig {
     File getMultiDexKeepProguard();
 
     /**
-     * Returns the optional jarjar rule file, or null if jarjar should be skipped.
+     * Returns the optional jarjar rule files, or empty if jarjar should be skipped.
+     * If more than one file is provided, the rule files will be merged in order with last one
+     * win in case of rule redefinition.
      * Can only be used with Jack toolchain.
      * @return the optional jarjar rule file.
      */
-    @Nullable
-    File getJarJarRuleFile();
+    @NonNull
+    List<File> getJarJarRuleFiles();
 }

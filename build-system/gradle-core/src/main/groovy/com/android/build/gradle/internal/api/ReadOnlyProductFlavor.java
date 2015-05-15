@@ -24,6 +24,7 @@ import com.android.builder.model.SigningConfig;
 
 import java.io.File;
 import java.util.Collection;
+import java.util.List;
 
 /**
  * read-only version of the ProductFlavor wrapping another ProductFlavor.
@@ -150,10 +151,10 @@ public class ReadOnlyProductFlavor extends ReadOnlyBaseConfig implements Product
         return productFlavor.getDimension();
     }
 
-    @Nullable
+    @NonNull
     @Override
-    public File getJarJarRuleFile() {
-        return productFlavor.getJarJarRuleFile();
+    public List<File> getJarJarRuleFiles() {
+        return productFlavor.getJarJarRuleFiles();
     }
 
     @Nullable

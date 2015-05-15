@@ -1467,7 +1467,7 @@ public class AndroidBuilder {
             @NonNull Collection<File> sourceFiles,
             @Nullable Collection<File> proguardFiles,
             @Nullable File mappingFile,
-            @Nullable File jarJarRulesFile,
+            @NonNull Collection<File> jarJarRulesFiles,
             @Nullable File incrementalDir,
             boolean multiDex,
             int minSdkVersion) {
@@ -1496,8 +1496,8 @@ public class AndroidBuilder {
                         config.setProguardConfigFiles(new ArrayList<File>(proguardFiles));
                     }
 
-                    if (jarJarRulesFile != null) {
-                        config.setJarJarConfigFile(jarJarRulesFile);
+                    if (!jarJarRulesFiles.isEmpty()) {
+                        config.setJarJarConfigFiles(ImmutableList.copyOf(jarJarRulesFiles));
                     }
 
                     if (multiDex) {
@@ -1570,7 +1570,7 @@ public class AndroidBuilder {
             @NonNull File ecjOptionFile,
             @Nullable Collection<File> proguardFiles,
             @Nullable File mappingFile,
-            @Nullable File jarJarRuleFile,
+            @NonNull Collection<File> jarJarRuleFiles,
             boolean multiDex,
             int minSdkVersion,
             boolean debugLog,
@@ -1594,8 +1594,8 @@ public class AndroidBuilder {
             builder.setMultiDex(true).setMinSdkVersion(minSdkVersion);
         }
 
-        if (jarJarRuleFile != null) {
-            builder.setJarJarRuleFile(jarJarRuleFile);
+        if (jarJarRuleFiles != null) {
+            builder.setJarJarRuleFiles(jarJarRuleFiles);
         }
 
         mJavaProcessExecutor.execute(
