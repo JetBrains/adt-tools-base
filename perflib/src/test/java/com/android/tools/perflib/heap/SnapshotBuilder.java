@@ -49,7 +49,9 @@ public class SnapshotBuilder {
 
         mNodes = new ClassInstance[numNodes + 1];
         for (int i = 1; i <= numNodes; i++) {
-            ClassObj clazz = new ClassObj(100 + i, null, "Class" + i, 0);
+            // Use same name classes on different loaders to extend test coverage
+            ClassObj clazz = new ClassObj(100 + i, null, "Class" + (i / 2), 0);
+            clazz.setClassLoaderId(i % 2);
             clazz.setFields(new Field[0]);
             mSnapshot.addClass(100 + i, clazz);
 
