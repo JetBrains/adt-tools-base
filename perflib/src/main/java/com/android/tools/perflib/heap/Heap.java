@@ -166,7 +166,7 @@ public class Heap {
 
             int size = 0;
 
-            for (Instance instance : theClass.mInstances.get(getId())) {
+            for (Instance instance : theClass.getHeapInstances(getId())) {
                 size += instance.getCompositeSize();
             }
 
