@@ -319,7 +319,7 @@ public class AaptOutputParserTest extends TestCase {
      * @param messages       a collection of Messages
      * @param expectedText   the text the single gradle message should have.
      * @param expectedLine   the 1-based line
-     * @param expectedColumn the 0-based column.
+     * @param expectedColumn the 1-based column.
      */
     private void assertHasCorrectErrorMessage(@NonNull Collection<Message> messages,
             @NonNull String expectedText,
@@ -333,7 +333,7 @@ public class AaptOutputParserTest extends TestCase {
         assertEquals("[message severity]", Message.Kind.ERROR, message.getKind());
         assertEquals("[message text]", expectedText, message.getText());
         assertEquals("[position line]", expectedLine, position.getPosition().getStartLine() + 1);
-        assertEquals("[position column]", expectedColumn, position.getPosition().getStartColumn());
+        assertEquals("[position column]", expectedColumn, position.getPosition().getStartColumn() + 1);
     }
 
     public void testRedirectValueLinksOutput() throws Exception {
@@ -459,7 +459,7 @@ public class AaptOutputParserTest extends TestCase {
         assertEquals(1, message.getSourceFilePositions().size());
         SourcePosition pos = message.getSourceFilePositions().get(0).getPosition();
         assertEquals("[position line]", 9, pos.getStartLine() + 1);
-        assertEquals("[position column]", 35, pos.getStartColumn());
+        assertEquals("[position column]", 35, pos.getStartColumn() + 1);
     }
 
     public void testRedirectFileLinksOutput() throws Exception {
@@ -593,7 +593,7 @@ public class AaptOutputParserTest extends TestCase {
                         "5: Simple::BlankProject1:processDebugManifest UP-TO-DATE\n" +
                         "6: Simple::BlankProject1:processDebugResources\n" +
                         "7: Error:Integer types not allowed (at 'new_name' with value '50').\n" +
-                        "\t" + source.getPath() + ":5:29-31\n" +
+                        "\t" + source.getPath() + ":5:28-30\n" +
                         "8: Simple::BlankProject1:processDebugResources FAILED\n"; /* +
                         "9: Error:Error while executing aapt command\n" +
                         "10: Error:Integer types not allowed (at 'new_name' with value '50').\n" +
@@ -672,7 +672,7 @@ public class AaptOutputParserTest extends TestCase {
                         "5: Simple::BlankProject1:processDebugManifest UP-TO-DATE\n" +
                         "6: Simple::BlankProject1:processDebugResources\n" +
                         "7: Error:Integer types not allowed (at 'new_name' with value '50').\n" +
-                        "\t" + source.getPath() + ":5:29-31\n" +
+                        "\t" + source.getPath() + ":5:28-30\n" +
                         "8: Simple::BlankProject1:processDebugResources FAILED\n";
         String actual = toString(parser.parseToolOutput(output));
 
