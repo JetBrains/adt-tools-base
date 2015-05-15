@@ -185,6 +185,7 @@ public abstract class BaseVariantData<T extends BaseVariantOutputData> {
                             variantConfiguration.getMinSdkVersion().getApiLevel()));
         }
         scope = new VariantScope(taskManager.getGlobalScope(), this);
+        taskManager.configureScopeForNdk(scope);
     }
 
 

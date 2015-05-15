@@ -182,7 +182,7 @@ class LibraryTaskManager extends TaskManager {
         if (isNdkTaskNeeded) {
             // Add NDK tasks
             SpanRecorders.record(ExecutionType.LIB_TASK_MANAGER_CREATE_NDK_TASK) {
-                createNdkTasks(variantData);
+                createNdkTasks(variantScope);
                 packageJniLibs.dependsOn variantData.ndkCompileTask
                 packageJniLibs.from(variantData.ndkCompileTask.soFolder).include("**/*.so")
             }

@@ -51,6 +51,8 @@ public class NativeLibraryImpl implements NativeLibrary, Serializable{
     List<String> cCompilerFlags;
     @NonNull
     List<String> cppCompilerFlags;
+    @NonNull
+    List<File> debuggableLibraryFolders;
 
     public NativeLibraryImpl(
             @NonNull String name,
@@ -63,7 +65,8 @@ public class NativeLibraryImpl implements NativeLibrary, Serializable{
             @NonNull List<String> cDefines,
             @NonNull List<String> cppDefines,
             @NonNull List<String> cCompilerFlags,
-            @NonNull List<String> cppCompilerFlags) {
+            @NonNull List<String> cppCompilerFlags,
+            @NonNull List<File> debuggableLibraryFolders) {
         this.name = name;
         this.toolchainName = toolchainName;
         this.abi = abi;
@@ -75,6 +78,7 @@ public class NativeLibraryImpl implements NativeLibrary, Serializable{
         this.cppDefines = cppDefines;
         this.cCompilerFlags = cCompilerFlags;
         this.cppCompilerFlags = cppCompilerFlags;
+        this.debuggableLibraryFolders = debuggableLibraryFolders;
     }
 
     @NonNull
@@ -143,6 +147,12 @@ public class NativeLibraryImpl implements NativeLibrary, Serializable{
         return cppCompilerFlags;
     }
 
+    @NonNull
+    @Override
+    public List<File> getDebuggableLibraryFolders() {
+        return debuggableLibraryFolders;
+    }
+
     @Override
     public String toString() {
         return "NativeLibraryImpl{" +
@@ -154,6 +164,7 @@ public class NativeLibraryImpl implements NativeLibrary, Serializable{
                 ", cppDefines=" + cppDefines +
                 ", cCompilerFlags=" + cCompilerFlags +
                 ", cppCompilerFlags=" + cppCompilerFlags +
+                ", solibSearchPaths=" + debuggableLibraryFolders +
                 '}';
     }
 }

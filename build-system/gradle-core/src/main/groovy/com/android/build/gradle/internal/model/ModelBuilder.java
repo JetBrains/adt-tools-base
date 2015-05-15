@@ -320,7 +320,8 @@ public class ModelBuilder implements ToolingModelBuilder {
      */
     private Collection<NativeLibrary> createNativeLibraries(
             @NonNull NdkConfig ndkConfig,
-            @NonNull Collection<Abi> abis) {
+            @NonNull Collection<Abi> abis,
+            @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData) {
         Collection<NativeLibrary> nativeLibraries = Lists.newArrayListWithCapacity(abis.size());
         for (Abi abi : abis) {
             NativeToolchain toolchain = toolchains.get(abi);
@@ -344,8 +345,8 @@ public class ModelBuilder implements ToolingModelBuilder {
                     Collections.<String>emptyList(),  /*cDefines*/
                     Collections.<String>emptyList(),  /*cppDefines*/
                     cFlags,
-                    cFlags);  // TODO: NdkConfig should allow cppFlags to be set separately.
-
+                    cFlags,  // TODO: NdkConfig should allow cppFlags to be set separately.
+                    ImmutableList.of(variantData.getScope().getNdkDebuggableLibraryFolders(abi)));
             nativeLibraries.add(lib);
         }
         return nativeLibraries;
@@ -374,16 +375,19 @@ public class ModelBuilder implements ToolingModelBuilder {
             if (config.getSplits().getAbi().isEnable()) {
                 nativeLibraries = createNativeLibraries(
                         ndkConfig,
-                        createAbiList(config.getSplits().getAbiFilters()));
+                        createAbiList(config.getSplits().getAbiFilters()),
+                        variantData);
             } else {
                 if (ndkConfig.getAbiFilters() == null || ndkConfig.getAbiFilters().isEmpty()) {
                     nativeLibraries = createNativeLibraries(
                             ndkConfig,
-                            ndkHandler.getSupportedAbis());
+                            ndkHandler.getSupportedAbis(),
+                            variantData);
                 } else {
                     nativeLibraries = createNativeLibraries(
                             ndkConfig,
-                            createAbiList(ndkConfig.getAbiFilters()));
+                            createAbiList(ndkConfig.getAbiFilters()),
+                            variantData);
                 }
             }
         }

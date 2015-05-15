@@ -116,4 +116,12 @@ public interface NativeLibrary {
     @NonNull
     List<String> getCppCompilerFlags();
 
+    /**
+     * The folders containing built libraries with debug information.
+     *
+     * @return list of paths to locate shared objects with debug information.
+     */
+    @NonNull
+    List<File> getDebuggableLibraryFolders();
+
 }

@@ -263,7 +263,7 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
     /**
      * Return library binaries for a VariantConfiguration.
      */
-    public Collection<BinarySpec> getBinaries(VariantConfiguration variantConfig) {
+    public Collection<SharedLibraryBinarySpec> getBinaries(VariantConfiguration variantConfig) {
         if (variantConfig.getType().isForTesting()) {
             // Do not return binaries for test variants as test source set is not supported at the
             // moment.
@@ -285,7 +285,7 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
     /**
      * Return the output directory of the native binary tasks for a VariantConfiguration.
      */
-    public Collection<File> getOutputDirectories(VariantConfiguration variantConfig) {
+    public List<File> getOutputDirectories(VariantConfiguration variantConfig) {
         // Return the parent's parent directory of the binaries' output.
         // A binary's output file is set to something in the form of
         // "/path/to/lib/platformName/libmodulename.so".  We want to return "/path/to/lib".
