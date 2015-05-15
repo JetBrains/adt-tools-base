@@ -234,7 +234,7 @@ public class LocalAddonPkgInfo extends LocalPlatformPkgInfo {
 
             Map<String, File> skinsMap = new TreeMap<String, File>();
 
-            for (File f : PackageParserUtils.parseSkinFolder(targetSkinFolder)) {
+            for (File f : PackageParserUtils.parseSkinFolder(targetSkinFolder, fileOp)) {
                 skinsMap.put(f.getName().toLowerCase(Locale.US), f);
             }
             for (ISystemImage si : systemImages) {

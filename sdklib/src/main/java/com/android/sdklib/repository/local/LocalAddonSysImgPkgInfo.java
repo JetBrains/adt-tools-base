@@ -59,6 +59,6 @@ public class LocalAddonSysImgPkgInfo extends LocalPkgInfo {
     }
 
     public ISystemImage getSystemImage() {
-        return LocalSysImgPkgInfo.getSystemImage(mDesc, getLocalDir());
+        return LocalSysImgPkgInfo.getSystemImage(mDesc, getLocalDir(), getLocalSdk().getFileOp());
     }
 }

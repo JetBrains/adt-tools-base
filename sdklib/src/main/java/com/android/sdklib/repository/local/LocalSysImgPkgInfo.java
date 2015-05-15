@@ -111,13 +111,13 @@ public class LocalSysImgPkgInfo extends LocalPkgInfo {
     }
 
     public SystemImage getSystemImage() {
-        return getSystemImage(mDesc, getLocalDir());
+        return getSystemImage(mDesc, getLocalDir(), getLocalSdk().getFileOp());
     }
 
-    static SystemImage getSystemImage(IPkgDesc desc, File localDir) {
+    static SystemImage getSystemImage(IPkgDesc desc, File localDir, @NonNull IFileOp fileOp) {
         final IdDisplay tag = desc.getTag();
         final String abi = desc.getPath();
-        List<File> parsedSkins = PackageParserUtils.parseSkinFolder(new File(localDir, SdkConstants.FD_SKINS));
+        List<File> parsedSkins = PackageParserUtils.parseSkinFolder(new File(localDir, SdkConstants.FD_SKINS), fileOp);
         File[] skins = FileOp.EMPTY_FILE_ARRAY;
         if (!parsedSkins.isEmpty()) {
             skins = parsedSkins.toArray(new File[parsedSkins.size()]);
