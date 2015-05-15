@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.builder.tasks.Job;
 import com.android.builder.tasks.JobContext;
 import com.android.builder.tasks.QueueThreadContext;
+import com.android.builder.tasks.QueueThreadContextAdapter;
 import com.android.builder.tasks.Task;
 import com.android.builder.tasks.WorkQueue;
 import com.android.utils.ILogger;
@@ -66,18 +67,10 @@ public class ProcessRecorder {
 
 
 
-    private class WorkQueueContext implements QueueThreadContext<ExecutionRecordWriter> {
-        @Override
-        public void creation(@NonNull Thread t) throws IOException {
-        }
-
+    private class WorkQueueContext extends QueueThreadContextAdapter<ExecutionRecordWriter> {
         @Override
         public void runTask(@NonNull Job<ExecutionRecordWriter> job) throws Exception {
             job.runTask(singletonJobContext);
-        }
-
-        @Override
-        public void destruction(@NonNull Thread t) throws IOException, InterruptedException {
         }
 
         @Override
