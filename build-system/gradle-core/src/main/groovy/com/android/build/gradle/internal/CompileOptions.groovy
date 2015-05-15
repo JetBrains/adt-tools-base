@@ -43,8 +43,17 @@ class CompileOptions {
 
     boolean ndkCygwinMode = false
 
-    void setSourceCompatibility(@NonNull JavaVersion sourceCompatibility) {
-        this.sourceCompatibility = sourceCompatibility
+    /**
+     * Language level of the source code.
+     *
+     * <p>Formats supported are :
+     *      "1.6"
+     *      1.6
+     *      JavaVersion.Version_1_6
+     *      "Version_1_6"
+     */
+    void setSourceCompatibility(@NonNull Object sourceCompatibility) {
+        this.sourceCompatibility = convert(sourceCompatibility)
     }
 
     /**
@@ -58,8 +67,17 @@ class CompileOptions {
         sourceCompatibility?: defaultJavaVersion
     }
 
-    void setTargetCompatibility(@NonNull JavaVersion targetCompatibility) {
-        this.targetCompatibility = targetCompatibility
+    /**
+     * Language level of the target code.
+     *
+     * <p>Formats supported are :
+     *      "1.6"
+     *      1.6
+     *      JavaVersion.Version_1_6
+     *      "Version_1_6"
+     */
+    void setTargetCompatibility(@NonNull Object targetCompatibility) {
+        this.targetCompatibility = convert(targetCompatibility)
     }
 
     /**
@@ -71,5 +89,22 @@ class CompileOptions {
     @NonNull
     JavaVersion getTargetCompatibility() {
         targetCompatibility?: defaultJavaVersion
+    }
+
+    /**
+     * Convert all possible supported way of specifying a Java version to {@link JavaVersion}
+     * @param version the user provided java version.
+     * @return {@link JavaVersion}
+     * @throws {@link RuntimeException} if it cannot be converted.
+     */
+    @NonNull
+    private JavaVersion convert(@NonNull Object version) {
+        // for backward version reasons, we support setting strings like 'Version_1_6'
+        if (version instanceof String
+                && version.toString().toUpperCase().startsWith(
+                'Version_'.toUpperCase())) {
+            version = version.substring("Version".length() + 1).replace("_", ".")
+        }
+        return JavaVersion.toVersion(version)
     }
 }
