@@ -28,7 +28,6 @@ import com.android.ide.common.blame.SourceFilePosition;
 import com.android.ide.common.blame.SourcePosition;
 import com.android.ide.common.blame.parser.aapt.AaptOutputParser;
 import com.android.ide.common.blame.parser.aapt.AbstractAaptOutputParser;
-import com.android.utils.SdkUtils;
 import com.android.utils.StdLogger;
 import com.android.utils.StringHelper;
 import com.google.common.base.Charsets;
@@ -50,9 +49,6 @@ import java.util.Locale;
  * Tests for {@link ToolOutputParser}.
  */
 public class AaptOutputParserTest extends TestCase {
-
-    private static final String NEWLINE = SdkUtils.getLineSeparator();
-
     private File sourceFile;
 
     private String sourceFilePath;
@@ -497,8 +493,6 @@ public class AaptOutputParserTest extends TestCase {
         String messageText = "Random error message here";
         String err = sourceFilePath + ":4: error: Error: " + messageText;
         Collection<Message> messages = parser.parseToolOutput(err);
-        assertEquals(1, messages.size());
-
         assertEquals("[message count]", 1, messages.size());
         Message message = messages.iterator().next();
         assertNotNull(message);
