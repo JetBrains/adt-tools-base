@@ -24,6 +24,11 @@ import gnu.trove.TIntObjectHashMap;
 import java.util.*;
 
 public class ClassObj extends Instance implements Comparable<ClassObj> {
+    public static class HeapData {
+        public int mShallowSize = 0;
+
+        public List<Instance> mInstances = new ArrayList<Instance>();
+    }
 
     @NonNull
     final String mClassName;
@@ -40,10 +45,8 @@ public class ClassObj extends Instance implements Comparable<ClassObj> {
 
     private int mInstanceSize;
 
-    private int mShalowSize;
-
     @NonNull
-    TIntObjectHashMap<ArrayList<Instance>> mInstances = new TIntObjectHashMap<ArrayList<Instance>>();
+    TIntObjectHashMap<HeapData> mHeapData = new TIntObjectHashMap<HeapData>();
 
     @NonNull
     Set<ClassObj> mSubclasses = new HashSet<ClassObj>();
@@ -76,13 +79,17 @@ public class ClassObj extends Instance implements Comparable<ClassObj> {
     }
 
     public final void addInstance(int heapId, @NonNull Instance instance) {
-        mShalowSize += instance.getSize();
-        ArrayList<Instance> instances = mInstances.get(heapId);
-        if (instances == null) {
-          instances = new ArrayList<Instance>();
-          mInstances.put(heapId, instances);
+        if (instance instanceof ClassInstance) {
+            instance.setSize(mInstanceSize);
         }
-        instances.add(instance);
+
+        HeapData heapData = mHeapData.get(heapId);
+        if (heapData == null) {
+          heapData = new HeapData();
+          mHeapData.put(heapId, heapData);
+        }
+        heapData.mInstances.add(instance);
+        heapData.mShallowSize += instance.getSize();
     }
 
     public final void setSuperClassId(long superClass) {
@@ -123,8 +130,9 @@ public class ClassObj extends Instance implements Comparable<ClassObj> {
         return mInstanceSize;
     }
 
-    public int getShalowSize() {
-        return mShalowSize;
+    public int getShallowSize(int heapId) {
+        HeapData heapData = mHeapData.get(heapId);
+        return heapData == null ? 0 : mHeapData.get(heapId).mShallowSize;
     }
 
     @NonNull
@@ -218,7 +226,7 @@ public class ClassObj extends Instance implements Comparable<ClassObj> {
     public List<Instance> getInstancesList() {
         int count = getInstanceCount();
         ArrayList<Instance> resultList = new ArrayList<Instance>(count);
-        for (int heapId : mInstances.keys()) {
+        for (int heapId : mHeapData.keys()) {
             resultList.addAll(getHeapInstances(heapId));
         }
         return resultList;
@@ -226,20 +234,28 @@ public class ClassObj extends Instance implements Comparable<ClassObj> {
 
     @NonNull
     public List<Instance> getHeapInstances(int heapId) {
-        List<Instance> result = mInstances.get(heapId);
-        return result == null ? new ArrayList<Instance>(0) : result;
+        HeapData result = mHeapData.get(heapId);
+        return result == null ? new ArrayList<Instance>(0) : result.mInstances;
     }
 
     public int getHeapInstancesCount(int heapId) {
-      List<Instance> result = mInstances.get(heapId);
-      return result == null ? 0 : result.size();
+      HeapData result = mHeapData.get(heapId);
+      return result == null ? 0 : result.mInstances.size();
     }
 
     public int getInstanceCount() {
         int count = 0;
-        for (int heapId : mInstances.keys()) {
-            count += mInstances.get(heapId).size();
+        for (Object heapStat : mHeapData.getValues()) {
+            count += ((HeapData)heapStat).mInstances.size();
         }
         return count;
+    }
+
+    public int getShallowSize() {
+        int size = 0;
+        for (Object heapStat : mHeapData.getValues()) {
+            size += ((HeapData)heapStat).mShallowSize;
+        }
+        return size;
     }
 }
