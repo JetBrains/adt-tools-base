@@ -26,6 +26,7 @@ import com.google.common.collect.Maps;
 
 import java.io.File;
 import java.io.Serializable;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -50,8 +51,8 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
     @Nullable
     private File mMultiDexKeepFile;
 
-    @Nullable
-    private File mJarJarRuleFile;
+    @NonNull
+    private List<File> mJarJarRuleFiles = Lists.newArrayList();
 
     /**
      * Adds a BuildConfig field.
@@ -193,7 +194,7 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
         mMultiDexKeepFile = that.getMultiDexKeepFile();
         mMultiDexKeepProguard = that.getMultiDexKeepProguard();
 
-        mJarJarRuleFile = that.getJarJarRuleFile();
+        mJarJarRuleFiles = that.getJarJarRuleFiles();
     }
 
     private void setBuildConfigFields(@NonNull Map<String, ClassField> fields) {
@@ -239,14 +240,14 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
         mMultiDexKeepProguard = file;
     }
 
-    public void setJarJarRuleFile(@Nullable File file) {
-        mJarJarRuleFile = file;
+    public void setJarJarRuleFiles(@NonNull List<File> files) {
+        mJarJarRuleFiles = files;
     }
 
-    @Nullable
+    @NonNull
     @Override
-    public File getJarJarRuleFile() {
-        return mJarJarRuleFile;
+    public List<File> getJarJarRuleFiles() {
+        return mJarJarRuleFiles;
     }
 
     @Override
@@ -267,7 +268,8 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
                 Objects.equal(mMultiDexKeepFile, that.mMultiDexKeepFile) &&
                 Objects.equal(mMultiDexKeepProguard, that.mMultiDexKeepProguard) &&
                 Objects.equal(mProguardFiles, that.mProguardFiles) &&
-                Objects.equal(mResValues, that.mResValues);
+                Objects.equal(mResValues, that.mResValues) &&
+                Objects.equal(mJarJarRuleFiles, that.mJarJarRuleFiles);
 
     }
 
@@ -281,7 +283,8 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
                 mManifestPlaceholders,
                 mMultiDexEnabled,
                 mMultiDexKeepFile,
-                mMultiDexKeepProguard);
+                mMultiDexKeepProguard,
+                mJarJarRuleFiles);
     }
 
     @Override
@@ -295,6 +298,7 @@ public abstract class BaseConfigImpl implements Serializable, BaseConfig {
                 ", mMultiDexEnabled=" + mMultiDexEnabled +
                 ", mMultiDexKeepFile=" + mMultiDexKeepFile +
                 ", mMultiDexKeepProguard=" + mMultiDexKeepProguard +
+                ", mJarJarRuleFiles=" + mJarJarRuleFiles +
                 '}';
     }
 }

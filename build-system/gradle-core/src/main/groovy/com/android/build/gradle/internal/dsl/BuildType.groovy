@@ -291,4 +291,15 @@ public class BuildType extends DefaultBuildType implements CoreBuildType, Serial
     void shrinkResources(boolean flag) {
         this.shrinkResources = flag
     }
+
+    void jarJarRuleFile(Object file) {
+        jarJarRuleFiles.add(project.file(file))
+    }
+
+    void jarJarRuleFiles(Object ...files) {
+        jarJarRuleFiles.clear()
+        for (String file : files) {
+            jarJarRuleFiles.add(project.file(file))
+        }
+    }
 }
