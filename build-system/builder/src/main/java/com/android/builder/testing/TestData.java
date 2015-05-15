@@ -27,6 +27,7 @@ import com.google.common.collect.ImmutableList;
 
 import java.io.File;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Data representing the test app and the tested application/library.
@@ -51,6 +52,9 @@ public interface TestData {
 
     @NonNull
     String getInstrumentationRunner();
+
+    @NonNull
+    Map<String, String> getInstrumentationRunnerArguments();
 
     /**
      * Returns whether the tested app is enabled for code coverage

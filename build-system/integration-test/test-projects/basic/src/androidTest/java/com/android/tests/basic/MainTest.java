@@ -2,8 +2,15 @@ package com.android.tests.basic;
 
 import android.test.ActivityInstrumentationTestCase2;
 import android.test.suitebuilder.annotation.MediumTest;
+import android.test.suitebuilder.annotation.SmallTest;
 import android.widget.TextView;
 
+import java.lang.RuntimeException;
+
+/**
+ * NB: All tests not annotated with @MediumTest will be ignored as the InstrumentationTestRunner
+ * is passed the custom argument of "size medium".
+ */
 public class MainTest extends ActivityInstrumentationTestCase2<Main> {
 
     private TextView mTextView;
@@ -39,6 +46,12 @@ public class MainTest extends ActivityInstrumentationTestCase2<Main> {
     @MediumTest
     public void testBuildConfig() {
         assertEquals("bar", BuildConfig.FOO);
+    }
+
+    @SmallTest
+    public void testSmallTestsShouldNotBeRun() {
+        throw new RuntimeException("Should have been excluded by custom test instrumentation "
+                + "runner argument.");
     }
 }
 
