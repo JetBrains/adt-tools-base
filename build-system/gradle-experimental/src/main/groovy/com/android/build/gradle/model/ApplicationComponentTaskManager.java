@@ -19,9 +19,14 @@ package com.android.build.gradle.model;
 import com.android.build.gradle.AndroidConfig;
 import com.android.build.gradle.internal.ApplicationTaskManager;
 import com.android.build.gradle.internal.DependencyManager;
+import com.android.build.gradle.internal.NdkHandler;
 import com.android.build.gradle.internal.SdkHandler;
+import com.android.build.gradle.internal.core.Abi;
+import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.variant.BaseVariantData;
+import com.android.build.gradle.ndk.internal.NdkNamingScheme;
 import com.android.builder.core.AndroidBuilder;
+import com.android.builder.core.VariantConfiguration;
 import com.google.common.collect.ImmutableList;
 
 import org.gradle.api.Project;
@@ -53,9 +58,24 @@ public class ApplicationComponentTaskManager extends ApplicationTaskManager {
     }
 
     @Override
-    protected Collection<File> getNdkOutputDirectories(BaseVariantData variantData) {
+    public void configureScopeForNdk(VariantScope scope) {
         NdkComponentModelPlugin plugin = project.getPlugins().getPlugin(
                 NdkComponentModelPlugin.class);
-        return plugin.getOutputDirectories(variantData.getVariantConfiguration());
+        scope.setNdkSoFolder(plugin.getOutputDirectories(scope.getVariantConfiguration()));
+
+        VariantConfiguration config = scope.getVariantConfiguration();
+        // TODO: NdkComponentModelPlugin should generate two .so files, one with debugging symbols
+        // and one without.  For now, generate only one file with debugging symbol in the output
+        // directory.
+        for (Abi abi : NdkHandler.getAbiList()) {
+            scope.addNdkDebuggableLibraryFolders(
+                    abi,
+                    new File(
+                            scope.getGlobalScope().getBuildDir(),
+                            NdkNamingScheme.getOutputDirectoryName(
+                                    config.getBuildType().getName(),
+                                    config.getFlavorName(),
+                                    abi.getName())));
+        }
     }
 }

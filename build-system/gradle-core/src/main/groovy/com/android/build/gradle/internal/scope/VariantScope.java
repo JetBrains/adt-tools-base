@@ -21,6 +21,7 @@ import static com.android.builder.model.AndroidProject.FD_GENERATED;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.TaskManager;
+import com.android.build.gradle.internal.core.Abi;
 import com.android.build.gradle.internal.core.GradleVariantConfiguration;
 import com.android.build.gradle.internal.coverage.JacocoInstrumentTask;
 import com.android.build.gradle.internal.tasks.CheckManifest;
@@ -46,6 +47,7 @@ import com.android.build.gradle.tasks.RenderscriptCompile;
 import com.android.builder.core.VariantConfiguration;
 import com.android.builder.core.VariantType;
 import com.android.utils.StringHelper;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 import org.gradle.api.Task;
@@ -56,6 +58,7 @@ import org.gradle.api.tasks.compile.JavaCompile;
 
 import java.io.File;
 import java.util.Collection;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -71,7 +74,11 @@ public class VariantScope {
     @Nullable
     private Collection<Object> ndkBuildable;
     @Nullable
-    private Collection<File> ndkOutputDirectories;
+    private Collection<File> ndkSoFolder;
+    @Nullable
+    private File ndkObjFolder;
+    @NonNull
+    private Map<Abi, File> ndkDebuggableLibraryFolders = Maps.newHashMap();
 
     @Nullable
     private File mergeResourceOutputDir;
@@ -171,23 +178,44 @@ public class VariantScope {
     }
 
     @Nullable
-    public Collection<File> getNdkOutputDirectories() {
-        return ndkOutputDirectories;
+    public Collection<File> getNdkSoFolder() {
+        return ndkSoFolder;
     }
 
-    public void setNdkOutputDirectories(@NonNull Collection<File> ndkOutputDirectories) {
-        this.ndkOutputDirectories = ndkOutputDirectories;
+    public void setNdkSoFolder(@NonNull Collection<File> ndkSoFolder) {
+        this.ndkSoFolder = ndkSoFolder;
+    }
+
+    @Nullable
+    public File getNdkObjFolder() {
+        return ndkObjFolder;
+    }
+
+    public void setNdkObjFolder(@NonNull File ndkObjFolder) {
+        this.ndkObjFolder = ndkObjFolder;
+    }
+
+    /**
+     * Return the folder containing the shared object with debugging symbol for the specified ABI.
+     */
+    @Nullable
+    public File getNdkDebuggableLibraryFolders(@NonNull Abi abi) {
+        return ndkDebuggableLibraryFolders.get(abi);
+    }
+
+    public void addNdkDebuggableLibraryFolders(@NonNull Abi abi, @NonNull File searchPath) {
+        this.ndkDebuggableLibraryFolders.put(abi, searchPath);
     }
 
     @NonNull
     public Set<File> getJniFolders() {
-        assert getNdkOutputDirectories() != null;
+        assert getNdkSoFolder() != null;
 
         VariantConfiguration config = getVariantConfiguration();
         ApkVariantData apkVariantData = (ApkVariantData) variantData;
         // for now only the project's compilation output.
         Set<File> set = Sets.newHashSet();
-        set.addAll(getNdkOutputDirectories());
+        set.addAll(getNdkSoFolder());
         set.add(getRenderscriptLibOutputDir());
         set.addAll(config.getLibraryJniFolders());
         set.addAll(config.getJniLibsList());

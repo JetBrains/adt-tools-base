@@ -353,7 +353,11 @@ public abstract class BasePlugin {
                 taskManager,
                 instantiator)
 
-        ndkHandler = new NdkHandler(project.rootDir, null, "gcc", "" /*toolchainVersion*/);
+        ndkHandler = new NdkHandler(
+                project.rootDir,
+                null, /* compileSkdVersion, this will be set in afterEvaluate */
+                "gcc",
+                "" /*toolchainVersion*/);
 
         // Register a builder for the custom tooling model
         ModelBuilder modelBuilder = new ModelBuilder(

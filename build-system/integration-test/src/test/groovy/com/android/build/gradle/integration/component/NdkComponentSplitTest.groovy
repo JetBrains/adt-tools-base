@@ -88,8 +88,7 @@ model {
     public void assembleDebug() {
         // Ensure compileDebugSource creates the shared object.
         project.execute("compileDebugSources");
-        assertThat(project.file("build/intermediates/binaries/x86DebugHello-jniSharedLibrary/" +
-                "debug/lib/x86/libhello-jni.so"))
+        assertThat(project.file("build/intermediates/binaries/debug/lib/x86/libhello-jni.so"))
                 .exists();
 
         project.execute("assembleDebug");
