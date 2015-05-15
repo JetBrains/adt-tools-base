@@ -46,7 +46,7 @@ public class VisitorsTest extends TestCase {
     }
 
     public void testSimpleStaticFieldsGraph() {
-        Type.setIdSize(4);
+        mSnapshot.setIdSize(4);
         final ClassInstance object1 = new ClassInstance(1, null, 0);
         object1.setClassId(42);
         object1.setSize(20);
@@ -79,7 +79,7 @@ public class VisitorsTest extends TestCase {
     }
 
     public void testSimpleArray() {
-        Type.setIdSize(4);
+        mSnapshot.setIdSize(4);
         final ClassInstance object = new ClassInstance(1, null, 0);
         object.setClassId(42);
         object.setSize(20);

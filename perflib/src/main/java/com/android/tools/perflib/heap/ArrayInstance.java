@@ -48,7 +48,7 @@ public class ArrayInstance extends Instance {
     @Override
     public final int getSize() {
         // TODO: Take the rest of the fields into account: length, type, etc (~16 bytes).
-        return mLength * mType.getSize();
+        return mLength * mHeap.mSnapshot.getTypeSize(mType);
     }
 
     @Override

@@ -25,6 +25,7 @@ import com.android.tools.perflib.heap.io.HprofBuffer;
 import com.google.common.collect.ImmutableList;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
@@ -56,6 +57,10 @@ public class Snapshot {
     private ImmutableList<Instance> mTopSort;
 
     private Dominators mDominators;
+
+    private int[] mTypeSizes;
+
+    private long mIdSizeMask = 0x00000000ffffffffl;
 
     public Snapshot(@NonNull HprofBuffer buffer) {
         mBuffer = buffer;
@@ -135,8 +140,7 @@ public class Snapshot {
         return mCurrentHeap.getStackTrace(traceSerialNumber);
     }
 
-    public final StackTrace getStackTraceAtDepth(int traceSerialNumber,
-            int depth) {
+    public final StackTrace getStackTraceAtDepth(int traceSerialNumber, int depth) {
         return mCurrentHeap.getStackTraceAtDepth(traceSerialNumber, depth);
     }
 
@@ -151,6 +155,30 @@ public class Snapshot {
 
     public final ThreadObj getThread(int serialNumber) {
         return mCurrentHeap.getThread(serialNumber);
+    }
+
+    public final void setIdSize(int size) {
+        int maxId = -1;
+        for (int i = 0; i < Type.values().length; ++i) {
+            maxId = Math.max(Type.values()[i].getTypeId(), maxId);
+        }
+        assert (maxId > 0) && (maxId <= Type.LONG.getTypeId()); // Update this if hprof format ever changes its supported types.
+        mTypeSizes = new int[maxId + 1];
+        Arrays.fill(mTypeSizes, -1);
+
+        for (int i = 0; i < Type.values().length; ++i) {
+            mTypeSizes[Type.values()[i].getTypeId()] = Type.values()[i].getSize();
+        }
+        mTypeSizes[Type.OBJECT.getTypeId()] = size;
+        mIdSizeMask = 0xffffffffffffffffl >>> ((8 - size) * 8);
+    }
+
+    public final int getTypeSize(Type type) {
+        return mTypeSizes[type.getTypeId()];
+    }
+
+    public final long getIdSizeMask() {
+        return mIdSizeMask;
     }
 
     public final void addInstance(long id, @NonNull Instance instance) {
@@ -221,7 +249,7 @@ public class Snapshot {
                 int classSize = javaLangClassSize;
 
                 for (Field f : classObj.mStaticFields) {
-                    classSize += f.getType().getSize();
+                    classSize += getTypeSize(f.getType());
                 }
                 classObj.setSize(classSize);
             }
