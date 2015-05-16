@@ -18,9 +18,12 @@ package com.android.ide.common.blame.output;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.ide.common.blame.parser.LegacyNdkOutputParser;
+import com.android.ide.common.blame.parser.PatternAwareOutputParser;
 import com.android.ide.common.blame.parser.ToolOutputParser;
 import com.android.ide.common.blame.parser.aapt.AaptOutputParser;
 import com.android.utils.ILogger;
+import com.google.common.base.Strings;
 
 public class BlameRewritingLogger implements ILogger {
 
@@ -29,13 +32,14 @@ public class BlameRewritingLogger implements ILogger {
 
     public BlameRewritingLogger(@NonNull ILogger logger, @NonNull GradleMessageRewriter.ErrorFormatMode errorFormatMode) {
         this.mLogger = logger;
-        ToolOutputParser parser = new ToolOutputParser(new AaptOutputParser(), logger);
+        PatternAwareOutputParser[] parsers = {new AaptOutputParser(), new LegacyNdkOutputParser()};
+        ToolOutputParser parser = new ToolOutputParser(parsers, logger);
         mGradleMessageRewriter = new GradleMessageRewriter(parser, errorFormatMode);
     }
 
     @Override
     public void error(@Nullable Throwable t, @Nullable String msgFormat, Object... args) {
-        mLogger.error(t, mGradleMessageRewriter.rewriteMessages(msgFormat), args);
+        mLogger.error(t, mGradleMessageRewriter.rewriteMessages(Strings.nullToEmpty(msgFormat)), args);
     }
 
     @Override
