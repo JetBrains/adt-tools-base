@@ -75,10 +75,8 @@ class DensitySplitTest {
             }
             assertEquals(5, mainArtifact.getOutputs().size())
 
-            for (AndroidArtifactOutput output : mainArtifact.getOutputs()) {
-                assertThatZip(output.getMainOutputFile().getOutputFile())
-                        .contains("res/drawable-mdpi-v4/other.png")
-            }
+            File mdpiApk = project.getApk("mdpi", "debug")
+            assertThatZip(mdpiApk).contains("res/drawable-mdpi-v4/other.png")
         }
     }
 
