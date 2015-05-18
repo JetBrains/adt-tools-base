@@ -20,6 +20,7 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 
 import java.util.Collection;
+import java.util.Map;
 
 /**
  * a Product Flavor. This is only the configuration of the flavor.
@@ -144,6 +145,12 @@ public interface ProductFlavor extends BaseConfig {
      */
     @Nullable
     String getTestInstrumentationRunner();
+
+    /**
+     * Returns the arguments for the test instrumentation runner.
+     */
+    @Nullable
+    Map<String, String> getTestInstrumentationRunnerArguments();
 
     /**
      * Returns the handlingProfile value. This is only the value set on this product flavor.

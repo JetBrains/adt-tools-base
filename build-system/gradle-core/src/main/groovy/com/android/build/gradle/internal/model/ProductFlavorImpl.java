@@ -25,6 +25,7 @@ import com.google.common.collect.ImmutableSet;
 
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -47,6 +48,7 @@ class ProductFlavorImpl extends BaseConfigImpl implements ProductFlavor, Seriali
     private String mApplicationId = null;
     private String mTestApplicationId = null;
     private String mTestInstrumentationRunner = null;
+    private Map<String, String> mTestInstrumentationRunnerArguments = null;
     private Boolean mTestHandleProfiling = null;
     private Boolean mTestFunctionalTest = null;
     private Set<String> mResourceConfigurations = null;
@@ -161,6 +163,12 @@ class ProductFlavorImpl extends BaseConfigImpl implements ProductFlavor, Seriali
     @Override
     public String getTestInstrumentationRunner() {
         return mTestInstrumentationRunner;
+    }
+
+    @Nullable
+    @Override
+    public Map<String, String> getTestInstrumentationRunnerArguments() {
+        return mTestInstrumentationRunnerArguments;
     }
 
     @Nullable

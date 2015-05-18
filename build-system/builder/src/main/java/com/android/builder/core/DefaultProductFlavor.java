@@ -29,6 +29,7 @@ import com.google.common.collect.Sets;
 import java.io.File;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -65,6 +66,8 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
     private String mTestApplicationId;
     @Nullable
     private String mTestInstrumentationRunner;
+    @Nullable
+    private Map<String, String> mTestInstrumentationRunnerArguments;
     @Nullable
     private Boolean mTestHandleProfiling;
     @Nullable
@@ -294,6 +297,29 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
         return mTestInstrumentationRunner;
     }
 
+    /** Sets the test instrumentation runner custom arguments. */
+    @NonNull
+    public ProductFlavor setTestInstrumentationRunnerArguments(
+            Map<String, String> testInstrumentationRunnerArguments) {
+        mTestInstrumentationRunnerArguments = testInstrumentationRunnerArguments;
+        return this;
+    }
+
+    /**
+     * Test instrumentation runner custom arguments.
+     *
+     * e.g. <code>[key: "value"]</code> will give
+     * <code>adb shell am instrument -w <b>-e key value</b> com.example</code>...".
+     *
+     * <p>See <a href="http://developer.android.com/guide/topics/manifest/instrumentation-element.html">
+     * instrumentation</a>.
+     */
+    @Override
+    @Nullable
+    public Map<String, String> getTestInstrumentationRunnerArguments() {
+        return mTestInstrumentationRunnerArguments;
+    }
+
     /**
      * See <a href="http://developer.android.com/guide/topics/manifest/instrumentation-element.html">
      * instrumentation</a>.
@@ -434,6 +460,9 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
         flavor.mTestInstrumentationRunner = chooseNotNull(
                 overlay.getTestInstrumentationRunner(),
                 base.getTestInstrumentationRunner());
+        flavor.mTestInstrumentationRunnerArguments = chooseNotNull(
+                overlay.getTestInstrumentationRunnerArguments(),
+                base.getTestInstrumentationRunnerArguments());
 
         flavor.mTestHandleProfiling = chooseNotNull(
                 overlay.getTestHandleProfiling(),
@@ -502,6 +531,7 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
 
         flavor.mTestApplicationId = productFlavor.getTestApplicationId();
         flavor.mTestInstrumentationRunner = productFlavor.getTestInstrumentationRunner();
+        flavor.mTestInstrumentationRunnerArguments = productFlavor.getTestInstrumentationRunnerArguments();
         flavor.mTestHandleProfiling = productFlavor.getTestHandleProfiling();
         flavor.mTestFunctionalTest = productFlavor.getTestFunctionalTest();
 
@@ -556,6 +586,8 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
                 Objects.equal(mTestFunctionalTest, that.mTestFunctionalTest) &&
                 Objects.equal(mTestHandleProfiling, that.mTestHandleProfiling) &&
                 Objects.equal(mTestInstrumentationRunner, that.mTestInstrumentationRunner) &&
+                Objects.equal(mTestInstrumentationRunnerArguments,
+                        that.mTestInstrumentationRunnerArguments) &&
                 Objects.equal(mVersionCode, that.mVersionCode) &&
                 Objects.equal(mVersionName, that.mVersionName);
     }
@@ -577,6 +609,7 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
                 mApplicationId,
                 mTestApplicationId,
                 mTestInstrumentationRunner,
+                mTestInstrumentationRunnerArguments,
                 mTestHandleProfiling,
                 mTestFunctionalTest,
                 mSigningConfig,
@@ -599,6 +632,7 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
                 .add("applicationId", mApplicationId)
                 .add("testApplicationId", mTestApplicationId)
                 .add("testInstrumentationRunner", mTestInstrumentationRunner)
+                .add("testInstrumentationRunnerArguments", mTestInstrumentationRunnerArguments)
                 .add("testHandleProfiling", mTestHandleProfiling)
                 .add("testFunctionalTest", mTestFunctionalTest)
                 .add("signingConfig", mSigningConfig)
