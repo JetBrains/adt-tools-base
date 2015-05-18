@@ -14,56 +14,61 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.model
+package com.android.build.gradle.model;
 
-import com.android.build.gradle.internal.TaskManager
-import com.android.build.gradle.internal.VariantManager
-import com.android.build.gradle.internal.variant.BaseVariantData
-import com.android.build.gradle.internal.variant.TestVariantData
-import com.android.builder.core.BuilderConstants
-import groovy.transform.CompileStatic
-import org.gradle.api.Task
-import org.gradle.model.Mutate
-import org.gradle.model.RuleSource
-import org.gradle.model.collection.CollectionBuilder
-import org.gradle.platform.base.BinaryContainer
+import static com.android.builder.core.VariantType.ANDROID_TEST;
 
-import static com.android.builder.core.VariantType.ANDROID_TEST
+import com.android.build.gradle.internal.TaskManager;
+import com.android.build.gradle.internal.VariantManager;
+import com.android.build.gradle.internal.variant.BaseVariantData;
+import com.android.build.gradle.internal.variant.TestVariantData;
+import com.android.builder.core.BuilderConstants;
+import com.google.common.base.Preconditions;
+
+import org.gradle.api.Action;
+import org.gradle.api.Task;
+import org.gradle.model.Mutate;
+import org.gradle.model.RuleSource;
+import org.gradle.model.collection.CollectionBuilder;
+import org.gradle.platform.base.BinaryContainer;
 
 /**
  * Plugin for creating test tasks for AndroidBinary.
  */
-@SuppressWarnings("GrMethodMayBeStatic")
-@CompileStatic
-class AndroidComponentModelTestPlugin extends RuleSource {
+@SuppressWarnings("MethodMayBeStatic")
+public class AndroidComponentModelTestPlugin extends RuleSource {
 
     @Mutate
-    void createConnectedTestTasks(
-            CollectionBuilder<Task> tasks,
+    public void createConnectedTestTasks(
+            final CollectionBuilder<Task> tasks,
             BinaryContainer binaries,
             TaskManager taskManager,
             AndroidComponentSpec spec) {
-        VariantManager variantManager = (spec as DefaultAndroidComponentSpec).variantManager
-        binaries.withType(AndroidBinary) { androidBinary->
-            DefaultAndroidBinary binary = androidBinary as DefaultAndroidBinary
+        final VariantManager variantManager = ((DefaultAndroidComponentSpec) spec).getVariantManager();
+        binaries.withType(AndroidBinary.class, new Action<AndroidBinary>() {
+            @Override
+            public void execute(AndroidBinary androidBinary) {
+                DefaultAndroidBinary binary = (DefaultAndroidBinary) androidBinary;
 
-            // TODO: compare against testBuildType instead of BuilderConstants.DEBUG.
-            if (binary.buildType.name != BuilderConstants.DEBUG) {
-                return
+                // TODO: compare against testBuildType instead of BuilderConstants.DEBUG.
+                if (!binary.getBuildType().getName().equals(BuilderConstants.DEBUG)) {
+                    return;
+
+                }
+
+                // Create test tasks.
+                BaseVariantData testedVariantData = binary.getVariantData();
+
+                Preconditions.checkState(testedVariantData != null,
+                        "Internal error: tested variant must be created before test variant.");
+
+                TestVariantData testVariantData =
+                        variantManager.createTestVariantData(testedVariantData, ANDROID_TEST);
+                variantManager.getVariantDataList().add(testVariantData);
+                variantManager.createTasksForVariantData(
+                        new TaskCollectionBuilderAdaptor(tasks),
+                        testVariantData);
             }
-
-            // Create test tasks.
-            BaseVariantData testedVariantData = binary.variantData
-
-            assert testedVariantData != null,
-                    "Internal error: tested variant must be created before test variant."
-
-            TestVariantData testVariantData =
-                    variantManager.createTestVariantData(testedVariantData, ANDROID_TEST)
-            variantManager.getVariantDataList().add(testVariantData);
-            variantManager.createTasksForVariantData(
-                    new TaskCollectionBuilderAdaptor(tasks),
-                    testVariantData)
-        }
+        });
     }
 }

@@ -67,7 +67,7 @@ public class DefaultAndroidBinary extends BaseBinarySpec implements AndroidBinar
         this.variantData = variantData;
     }
 
-    public List<? extends NativeLibraryBinarySpec> getNativeBinaries() {
+    public List<NativeLibraryBinarySpec> getNativeBinaries() {
         return nativeBinaries;
     }
 

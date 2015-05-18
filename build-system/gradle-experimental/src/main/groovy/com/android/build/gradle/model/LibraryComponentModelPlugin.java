@@ -14,54 +14,57 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.model
+package com.android.build.gradle.model;
 
-import com.android.build.gradle.AndroidConfig
-import com.android.build.gradle.internal.DependencyManager
-import com.android.build.gradle.internal.ExtraModelInfo
-import com.android.build.gradle.internal.SdkHandler
-import com.android.build.gradle.internal.TaskManager
-import com.android.build.gradle.internal.variant.LibraryVariantFactory
-import com.android.build.gradle.internal.variant.VariantFactory
-import com.android.builder.core.AndroidBuilder
-import org.gradle.api.Plugin
-import org.gradle.api.Project
-import org.gradle.internal.reflect.Instantiator
-import org.gradle.internal.service.ServiceRegistry
-import org.gradle.model.Model
-import org.gradle.model.RuleSource
-import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry
+import static com.android.build.gradle.model.ModelConstants.IS_APPLICATION;
+import static com.android.build.gradle.model.ModelConstants.TASK_MANAGER;
 
-import static com.android.build.gradle.model.ModelConstants.IS_APPLICATION
-import static com.android.build.gradle.model.ModelConstants.TASK_MANAGER
+import com.android.build.gradle.AndroidConfig;
+import com.android.build.gradle.internal.DependencyManager;
+import com.android.build.gradle.internal.ExtraModelInfo;
+import com.android.build.gradle.internal.SdkHandler;
+import com.android.build.gradle.internal.TaskManager;
+import com.android.build.gradle.internal.variant.LibraryVariantFactory;
+import com.android.build.gradle.internal.variant.VariantFactory;
+import com.android.builder.core.AndroidBuilder;
+
+import org.gradle.api.Plugin;
+import org.gradle.api.Project;
+import org.gradle.internal.reflect.Instantiator;
+import org.gradle.internal.service.ServiceRegistry;
+import org.gradle.model.Model;
+import org.gradle.model.RuleSource;
+import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
 
 /**
  * Gradle component model plugin class for 'application' projects.
  */
 public class LibraryComponentModelPlugin implements Plugin<Project> {
     @Override
-    void apply(Project project) {
-        project.plugins.apply(BaseComponentModelPlugin)
-        project.tasks.create("assembleDefault")
-        project.plugins.apply(AndroidComponentModelTestPlugin)
+    public void apply(Project project) {
+        project.getPluginManager().apply(BaseComponentModelPlugin.class);
+        project.getTasks().create("assembleDefault");
+        project.getPluginManager().apply(AndroidComponentModelTestPlugin.class);
     }
 
-    static class Rules extends RuleSource{
+    @SuppressWarnings("MethodMayBeStatic")
+    public static class Rules extends RuleSource {
 
+        @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
         @Model(IS_APPLICATION)
-        Boolean isApplication() {
-            return false
+        public Boolean isApplication() {
+            return false;
         }
 
         @Model(TASK_MANAGER)
-        TaskManager createTaskManager(
+        public TaskManager createTaskManager(
                 AndroidConfig androidExtension,
                 Project project,
                 AndroidBuilder androidBuilder,
                 SdkHandler sdkHandler,
                 ExtraModelInfo extraModelInfo,
                 ToolingModelBuilderRegistry toolingRegistry) {
-            DependencyManager dependencyManager = new DependencyManager(project, extraModelInfo)
+            DependencyManager dependencyManager = new DependencyManager(project, extraModelInfo);
 
             return new LibraryComponentTaskManager(
                     project,
@@ -69,19 +72,16 @@ public class LibraryComponentModelPlugin implements Plugin<Project> {
                     androidExtension,
                     sdkHandler,
                     dependencyManager,
-                    toolingRegistry)
+                    toolingRegistry);
         }
 
         @Model
-        VariantFactory createVariantFactory(
+        public VariantFactory createVariantFactory(
                 ServiceRegistry serviceRegistry,
                 AndroidBuilder androidBuilder,
                 AndroidConfig extension) {
-            Instantiator instantiator = serviceRegistry.get(Instantiator.class)
-            return new LibraryVariantFactory(
-                    instantiator,
-                    androidBuilder,
-                    extension)
+            Instantiator instantiator = serviceRegistry.get(Instantiator.class);
+            return new LibraryVariantFactory(instantiator, androidBuilder, extension);
         }
     }
 }

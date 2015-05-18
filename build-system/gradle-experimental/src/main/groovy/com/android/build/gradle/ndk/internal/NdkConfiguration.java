@@ -14,125 +14,161 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.ndk.internal
+package com.android.build.gradle.ndk.internal;
 
-import com.android.build.gradle.internal.NdkHandler
-import com.android.build.gradle.internal.core.Abi
-import com.android.build.gradle.managed.ManagedString
-import com.android.build.gradle.model.AndroidComponentModelSourceSet
-import com.android.build.gradle.managed.NdkConfig
-import com.android.build.gradle.tasks.GdbSetupTask
-import com.android.builder.core.BuilderConstants
-import org.gradle.language.base.FunctionalSourceSet
-import org.gradle.api.Task
-import org.gradle.api.tasks.Copy
-import org.gradle.model.collection.CollectionBuilder
-import org.gradle.nativeplatform.NativeBinarySpec
-import org.gradle.nativeplatform.NativeLibrarySpec
-import org.gradle.nativeplatform.SharedLibraryBinarySpec
-import org.gradle.language.c.tasks.CCompile
-import org.gradle.language.cpp.tasks.CppCompile
-import org.gradle.platform.base.BinarySpec
+import static com.android.build.gradle.ndk.internal.BinaryToolHelper.getCCompiler;
+import static com.android.build.gradle.ndk.internal.BinaryToolHelper.getCppCompiler;
+
+import com.android.build.gradle.internal.NdkHandler;
+import com.android.build.gradle.internal.core.Abi;
+import com.android.build.gradle.managed.ManagedString;
+import com.android.build.gradle.managed.NdkConfig;
+import com.android.build.gradle.model.AndroidComponentModelSourceSet;
+import com.android.build.gradle.tasks.GdbSetupTask;
+import com.android.builder.core.BuilderConstants;
+import com.android.utils.StringHelper;
+
+import org.gradle.api.Action;
+import org.gradle.api.Task;
+import org.gradle.api.tasks.Copy;
+import org.gradle.language.base.FunctionalSourceSet;
+import org.gradle.language.c.tasks.CCompile;
+import org.gradle.language.cpp.tasks.CppCompile;
+import org.gradle.model.collection.CollectionBuilder;
+import org.gradle.nativeplatform.NativeBinarySpec;
+import org.gradle.nativeplatform.NativeLibrarySpec;
+import org.gradle.nativeplatform.SharedLibraryBinarySpec;
+import org.gradle.platform.base.BinarySpec;
+
+import java.io.File;
 
 /**
  * Configure settings used by the native binaries.
  */
-class NdkConfiguration {
+public class NdkConfiguration {
+
     public static void configureProperties(
             NativeLibrarySpec library,
-            AndroidComponentModelSourceSet sources,
-            File buildDir,
-            NdkConfig ndkConfig,
-            NdkHandler ndkHandler) {
+            final AndroidComponentModelSourceSet sources,
+            final File buildDir,
+            final NdkConfig ndkConfig,
+            final NdkHandler ndkHandler) {
         for (Abi abi : ndkHandler.getSupportedAbis()) {
-            library.targetPlatform(abi.getName())
+            library.targetPlatform(abi.getName());
         }
 
-        library.binaries.withType(SharedLibraryBinarySpec) { binary ->
-            sourceIfExist(binary, sources, "main")
-            sourceIfExist(binary, sources, binary.flavor.name)
-            sourceIfExist(binary, sources, binary.buildType.name)
-            sourceIfExist(binary, sources, binary.flavor.name + binary.buildType.name.capitalize())
+        library.getBinaries()
+                .withType(SharedLibraryBinarySpec.class, new Action<SharedLibraryBinarySpec>() {
+                    @Override
+                    public void execute(final SharedLibraryBinarySpec binary) {
+                        sourceIfExist(binary, sources, "main");
+                        sourceIfExist(binary, sources, binary.getFlavor().getName());
+                        sourceIfExist(binary, sources, binary.getBuildType().getName());
+                        sourceIfExist(binary, sources,
+                                binary.getFlavor().getName()
+                                        + StringHelper.capitalize(binary.getBuildType().getName()));
 
-            cCompiler.define "ANDROID"
-            cppCompiler.define "ANDROID"
-            cCompiler.define "ANDROID_NDK"
-            cppCompiler.define "ANDROID_NDK"
+                        getCCompiler(binary).define("ANDROID");
+                        getCppCompiler(binary).define("ANDROID");
+                        getCCompiler(binary).define("ANDROID_NDK");
+                        getCppCompiler(binary).define("ANDROID_NDK");
 
-            // Set output library filename.
-            binary.sharedLibraryFile =
-                    new File(buildDir, NdkNamingScheme.getOutputDirectoryName(binary) + "/" +
-                            NdkNamingScheme.getSharedLibraryFileName(ndkConfig.getModuleName()))
+                        // Set output library filename.
+                        binary.setSharedLibraryFile(
+                                new File(
+                                        buildDir,
+                                        NdkNamingScheme.getOutputDirectoryName(binary)
+                                                + "/"
+                                                + NdkNamingScheme.getSharedLibraryFileName(ndkConfig.getModuleName())));
 
-            // Replace output directory of compile tasks.
-            binary.tasks.withType(CCompile) { task ->
-                String sourceSetName = task.objectFileDir.name
-                task.objectFileDir = NdkNamingScheme.getObjectFilesOutputDirectory(
-                        binary, buildDir, sourceSetName)
-            }
-            binary.tasks.withType(CppCompile) { task ->
-                String sourceSetName = task.objectFileDir.name
-                task.objectFileDir = NdkNamingScheme.getObjectFilesOutputDirectory(
-                                binary, buildDir, sourceSetName)
-            }
+                        // Replace output directory of compile tasks.
+                        binary.getTasks().withType(CCompile.class, new Action<CCompile>() {
+                            @Override
+                            public void execute(CCompile task) {
+                                String sourceSetName = task.getObjectFileDir().getName();
+                                task.setObjectFileDir(
+                                        NdkNamingScheme.getObjectFilesOutputDirectory(
+                                                binary,
+                                                buildDir,
+                                                sourceSetName));
+                            }
+                        });
+                        binary.getTasks().withType(CppCompile.class, new Action<CppCompile>() {
+                            @Override
+                            public void execute(CppCompile task) {
+                                String sourceSetName = task.getObjectFileDir().getName();
+                                task.setObjectFileDir(
+                                        NdkNamingScheme.getObjectFilesOutputDirectory(
+                                                binary,
+                                                buildDir,
+                                                sourceSetName));
+                            }
+                        });
 
-            String sysroot = ndkHandler.getSysroot(Abi.getByName(binary.targetPlatform.getName()))
-            cCompiler.args  "--sysroot=$sysroot"
-            cppCompiler.args  "--sysroot=$sysroot"
-            linker.args "--sysroot=$sysroot"
-            linker.args "-Wl,--build-id"
+                        String sysroot = ndkHandler.getSysroot(
+                                Abi.getByName(binary.getTargetPlatform().getName()));
 
-            if (ndkConfig.getRenderscriptNdkMode()) {
-                cCompiler.args "-I$sysroot/usr/include/rs"
-                cCompiler.args "-I$sysroot/usr/include/rs/cpp"
-                cppCompiler.args "-I$sysroot/usr/include/rs"
-                cppCompiler.args "-I$sysroot/usr/include/rs/cpp"
-                linker.args "-L$sysroot/usr/lib/rs"
-            }
+                        getCCompiler(binary).args("--sysroot=" + sysroot);
+                        getCppCompiler(binary).args("--sysroot=" + sysroot);
+                        binary.getLinker().args("--sysroot=" + sysroot);
+                        binary.getLinker().args("-Wl,--build-id");
 
-            NativeToolSpecificationFactory.create(ndkHandler, binary.buildType, binary.targetPlatform).apply(binary)
+                        if (ndkConfig.getRenderscriptNdkMode()) {
+                            getCCompiler(binary).args("-I" + sysroot + "/usr/include/rs");
+                            getCCompiler(binary).args("-I" + sysroot + "/usr/include/rs/cpp");
+                            getCppCompiler(binary).args("-I" + sysroot + "/usr/include/rs");
+                            getCppCompiler(binary).args("-I" + sysroot + "/usr/include/rs/cpp");
+                            binary.getLinker().args("-L" + sysroot + "/usr/lib/rs");
+                        }
 
-            // Add flags defined in NdkConfig
-            if (ndkConfig.getCFlags() != null) {
-                cCompiler.args ndkConfig.getCFlags()
-            }
-            if (ndkConfig.getCppFlags() != null) {
-                cppCompiler.args ndkConfig.getCppFlags()
-            }
-            for (ManagedString ldLibs : ndkConfig.getLdLibs()) {
-                linker.args "-l$ldLibs.value"
-            }
+                        NativeToolSpecificationFactory.create(
+                                ndkHandler,
+                                binary.getBuildType(),
+                                binary.getTargetPlatform()).apply(binary);
 
-            StlNativeToolSpecification stlConfig =
-                    new StlNativeToolSpecification(ndkHandler, ndkConfig.stl, binary.targetPlatform)
-            stlConfig.apply(binary)
-        }
+                        // Add flags defined in NdkConfig
+                        if (ndkConfig.getCFlags() != null) {
+                            getCCompiler(binary).args(ndkConfig.getCFlags());
+                        }
+
+                        if (ndkConfig.getCppFlags() != null) {
+                            getCCompiler(binary).args(ndkConfig.getCppFlags());
+                        }
+
+                        for (ManagedString ldLibs : ndkConfig.getLdLibs()) {
+                            binary.getLinker().args("-l" + ldLibs.getValue());
+                        }
+
+                        StlNativeToolSpecification stlConfig = new StlNativeToolSpecification(
+                                ndkHandler,
+                                ndkConfig.getStl(),
+                                binary.getTargetPlatform());
+                        stlConfig.apply(binary);
+                    }
+
+                });
     }
 
-    public static void createTasks(
-            CollectionBuilder<Task> tasks,
-            SharedLibraryBinarySpec binary,
-            File buildDir,
-            NdkConfig ndkConfig,
-            NdkHandler ndkHandler) {
-        StlConfiguration.createStlCopyTask(ndkHandler, ndkConfig.getStl(), tasks, buildDir, binary)
+    public static void createTasks(CollectionBuilder<Task> tasks, SharedLibraryBinarySpec binary,
+            File buildDir, NdkConfig ndkConfig, NdkHandler ndkHandler) {
+        StlConfiguration.createStlCopyTask(ndkHandler, ndkConfig.getStl(), tasks, buildDir, binary);
 
-        if (binary.buildType.name.equals(BuilderConstants.DEBUG)) {
-            setupNdkGdbDebug(tasks, binary, buildDir, ndkConfig, ndkHandler)
+        if (binary.getBuildType().getName().equals(BuilderConstants.DEBUG)) {
+            setupNdkGdbDebug(tasks, binary, buildDir, ndkConfig, ndkHandler);
         }
+
     }
 
     /**
      * Add the sourceSet with the specified name to the binary if such sourceSet is defined.
      */
-    private static void sourceIfExist(
-            BinarySpec binary,
-            AndroidComponentModelSourceSet projectSourceSet,
-            String sourceSetName) {
-        FunctionalSourceSet sourceSet = projectSourceSet.findByName(sourceSetName)
+    private static void sourceIfExist(BinarySpec binary,
+            AndroidComponentModelSourceSet projectSourceSet, String sourceSetName) {
+        FunctionalSourceSet sourceSet = projectSourceSet.findByName(sourceSetName);
         if (sourceSet != null) {
-            binary.source(sourceSet)
+            binary.source(sourceSet);
         }
+
     }
 
     /**
@@ -140,26 +176,34 @@ class NdkConfiguration {
      */
     private static void setupNdkGdbDebug(
             CollectionBuilder<Task> tasks,
-            NativeBinarySpec binary,
-            File buildDir,
-            NdkConfig ndkConfig,
-            NdkHandler handler) {
-        String copyGdbServerTaskName = NdkNamingScheme.getTaskName(binary, "copy", "GdbServer")
-        tasks.create(copyGdbServerTaskName, Copy) {
-            it.from(new File(
-                    handler.getPrebuiltDirectory(Abi.getByName(binary.targetPlatform.name)),
-                    "gdbserver/gdbserver"))
-            it.into(new File(buildDir, NdkNamingScheme.getOutputDirectoryName(binary)))
-        }
-        binary.buildTask.dependsOn(copyGdbServerTaskName)
+            final NativeBinarySpec binary,
+            final File buildDir,
+            final NdkConfig ndkConfig,
+            final NdkHandler handler) {
+        String copyGdbServerTaskName = NdkNamingScheme.getTaskName(binary, "copy", "GdbServer");
+        tasks.create(copyGdbServerTaskName, Copy.class, new Action<Copy>() {
+            @Override
+            public void execute(Copy task) {
+                task.from(new File(handler.getPrebuiltDirectory(
+                        Abi.getByName(binary.getTargetPlatform().getName())),
+                        "gdbserver/gdbserver"));
+                task.into(new File(buildDir, NdkNamingScheme.getOutputDirectoryName(binary)));
 
-        String createGdbSetupTaskName = NdkNamingScheme.getTaskName(binary, "create", "Gdbsetup")
-        tasks.create(createGdbSetupTaskName, GdbSetupTask) { def task ->
-            task.ndkHandler = handler
-            task.extension = ndkConfig
-            task.binary = binary
-            task.outputDir = new File(buildDir, NdkNamingScheme.getOutputDirectoryName(binary))
-        }
-        binary.buildTask.dependsOn(createGdbSetupTaskName)
+            }
+        });
+        binary.getBuildTask().dependsOn(copyGdbServerTaskName);
+
+        String createGdbSetupTaskName = NdkNamingScheme.getTaskName(binary, "create", "Gdbsetup");
+        tasks.create(createGdbSetupTaskName, GdbSetupTask.class, new Action<GdbSetupTask>() {
+            @Override
+            public void execute(GdbSetupTask task) {
+                task.setNdkHandler(handler);
+                task.setExtension(ndkConfig);
+                task.setBinary(binary);
+                task.setOutputDir(
+                        new File(buildDir, NdkNamingScheme.getOutputDirectoryName(binary)));
+            }
+        });
+        binary.getBuildTask().dependsOn(createGdbSetupTaskName);
     }
 }

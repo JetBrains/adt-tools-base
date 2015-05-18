@@ -14,26 +14,27 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.model
+package com.android.build.gradle.model;
 
-import com.android.build.gradle.AndroidConfig
-import com.android.build.gradle.internal.DependencyManager
-import com.android.build.gradle.internal.ExtraModelInfo
-import com.android.build.gradle.internal.SdkHandler
-import com.android.build.gradle.internal.TaskManager
-import com.android.build.gradle.internal.variant.ApplicationVariantFactory
-import com.android.build.gradle.internal.variant.VariantFactory
-import com.android.builder.core.AndroidBuilder
-import org.gradle.api.Plugin
-import org.gradle.api.Project
-import org.gradle.internal.reflect.Instantiator
-import org.gradle.internal.service.ServiceRegistry
-import org.gradle.model.Model
-import org.gradle.model.RuleSource
-import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry
+import static com.android.build.gradle.model.ModelConstants.IS_APPLICATION;
+import static com.android.build.gradle.model.ModelConstants.TASK_MANAGER;
 
-import static com.android.build.gradle.model.ModelConstants.IS_APPLICATION
-import static com.android.build.gradle.model.ModelConstants.TASK_MANAGER
+import com.android.build.gradle.AndroidConfig;
+import com.android.build.gradle.internal.DependencyManager;
+import com.android.build.gradle.internal.ExtraModelInfo;
+import com.android.build.gradle.internal.SdkHandler;
+import com.android.build.gradle.internal.TaskManager;
+import com.android.build.gradle.internal.variant.ApplicationVariantFactory;
+import com.android.build.gradle.internal.variant.VariantFactory;
+import com.android.builder.core.AndroidBuilder;
+
+import org.gradle.api.Plugin;
+import org.gradle.api.Project;
+import org.gradle.internal.reflect.Instantiator;
+import org.gradle.internal.service.ServiceRegistry;
+import org.gradle.model.Model;
+import org.gradle.model.RuleSource;
+import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
 
 /**
  * Gradle component model plugin class for 'application' projects.
@@ -41,27 +42,28 @@ import static com.android.build.gradle.model.ModelConstants.TASK_MANAGER
 public class AppComponentModelPlugin implements Plugin<Project> {
 
     @Override
-    void apply(Project project) {
-        project.plugins.apply(BaseComponentModelPlugin)
-        project.plugins.apply(AndroidComponentModelTestPlugin)
+    public void apply(Project project) {
+        project.getPluginManager().apply(BaseComponentModelPlugin.class);
+        project.getPluginManager().apply(AndroidComponentModelTestPlugin.class);
     }
 
-    static class Rules extends RuleSource {
-
+    @SuppressWarnings("MethodMayBeStatic")
+    public static class Rules extends RuleSource {
+        @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
         @Model(IS_APPLICATION)
-        Boolean isApplication() {
-            return true
+        public Boolean isApplication() {
+            return true;
         }
 
         @Model(TASK_MANAGER)
-        TaskManager createTaskManager(
+        public TaskManager createTaskManager(
                 AndroidConfig androidExtension,
                 Project project,
                 AndroidBuilder androidBuilder,
                 SdkHandler sdkHandler,
                 ExtraModelInfo extraModelInfo,
                 ToolingModelBuilderRegistry toolingRegistry) {
-            DependencyManager dependencyManager = new DependencyManager(project, extraModelInfo)
+            DependencyManager dependencyManager = new DependencyManager(project, extraModelInfo);
 
             return new ApplicationComponentTaskManager(
                     project,
@@ -72,17 +74,13 @@ public class AppComponentModelPlugin implements Plugin<Project> {
                     toolingRegistry);
         }
 
-
         @Model
-        VariantFactory createVariantFactory(
+        public VariantFactory createVariantFactory(
                 ServiceRegistry serviceRegistry,
                 AndroidBuilder androidBuilder,
                 AndroidConfig extension) {
             Instantiator instantiator = serviceRegistry.get(Instantiator.class);
-            return new ApplicationVariantFactory(
-                    instantiator,
-                    androidBuilder,
-                    extension)
+            return new ApplicationVariantFactory(instantiator, androidBuilder, extension);
         }
     }
 }

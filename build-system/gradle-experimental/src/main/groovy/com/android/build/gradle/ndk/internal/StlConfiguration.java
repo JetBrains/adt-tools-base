@@ -14,21 +14,34 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.ndk.internal
+package com.android.build.gradle.ndk.internal;
 
-import com.android.build.gradle.internal.NdkHandler
+import com.android.build.gradle.internal.NdkHandler;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableListMultimap;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ListMultimap;
+
+import org.gradle.api.Action;
 import org.gradle.api.InvalidUserDataException;
 import org.gradle.api.Task;
-import org.gradle.api.tasks.Copy
-import org.gradle.model.collection.CollectionBuilder
+import org.gradle.api.tasks.Copy;
+import org.gradle.model.collection.CollectionBuilder;
 import org.gradle.nativeplatform.SharedLibraryBinarySpec;
+
+import java.io.File;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Configuration to setup STL for NDK.
  */
 public class StlConfiguration {
-    static final String DEFAULT_STL = "system"
-    static final String[] VALID_STL = [
+
+    private static final String DEFAULT_STL = "system";
+
+    private static final List<String> VALID_STL = ImmutableList.of(
             "system",
             "stlport_static",
             "stlport_shared",
@@ -37,72 +50,70 @@ public class StlConfiguration {
             "gabi++_static",
             "gabi++_shared",
             "c++_static",
-            "c++_shared",
-    ]
+            "c++_shared");
 
-    static final Map<String, Collection<String>> STL_SOURCES = [
-            "system" : [
-                    "system/include"
-            ],
-            "stlport" : [
-                    "stlport/stlport",
-                    "gabi++/include",
-            ],
-            "gnustl" : [
-                    "gnu-libstdc++",
-                    "gnu-libstdc++/4.6/include",
-                    "gnu-libstdc++/4.6/libs/armeabi-v7a/include",
-                    "gnu-libstdc++/4.6/include/backward",
-            ],
-            "gabi++" : [
-                    "gabi++",
-                    "gabi++/include",
-            ],
-            "c++" : [
-                    "../android/support/include",
-                    "llvm-libc++",
-                    "../android/compiler-rt",
-                    "llvm-libc++/libcxx/include",
-                    "gabi++/include",
-                    "../android/support/include",
-            ],
-    ]
+    private static final ListMultimap<String, String> STL_SOURCES =
+            ImmutableListMultimap.<String, String>builder()
+                    .putAll("system", ImmutableList.of(
+                            "system/include"))
+                    .putAll("stlport", ImmutableList.of(
+                            "stlport/stlport",
+                            "gabi++/include"))
+                    .putAll("gnustl", ImmutableList.of(
+                            "gnu-libstdc++",
+                            "gnu-libstdc++/4.6/include",
+                            "gnu-libstdc++/4.6/libs/armeabi-v7a/include",
+                            "gnu-libstdc++/4.6/include/backward"))
+                    .putAll("gabi++", ImmutableList.of(
+                            "gabi++",
+                            "gabi++/include"))
+                    .putAll("c++", ImmutableList.of(
+                            "../android/support/include",
+                            "llvm-libc++",
+                            "../android/compiler-rt",
+                            "llvm-libc++/libcxx/include",
+                            "gabi++/include",
+                            "../android/support/include"))
+                    .build();
 
     public static File getStlBaseDirectory(NdkHandler ndkHandler) {
         return new File(ndkHandler.getNdkDirectory(), "sources/cxx-stl/");
     }
 
     public static Collection<String> getStlSources(NdkHandler ndkHandler, String stl) {
-        String stlBase = getStlBaseDirectory(ndkHandler);
+        final File stlBase = getStlBaseDirectory(ndkHandler);
         String stlName = stl.equals("system") ? "system" : stl.substring(0, stl.indexOf('_'));
-        return STL_SOURCES[stlName].collect { String sourceDir ->
-            stlBase.toString() + "/" + sourceDir
-        }
-    }
 
+        ImmutableList.Builder<String> builder = ImmutableList.builder();
+        for (String sourceDir : STL_SOURCES.get(stlName)) {
+            builder.add(stlBase.toString() + "/" + sourceDir);
+        }
+        return builder.build();
+    }
 
     public static void checkStl(String stl) {
         if (!VALID_STL.contains(stl)) {
-            throw new InvalidUserDataException("Invalid STL: $stl")
+            throw new InvalidUserDataException("Invalid STL: " + stl);
         }
     }
 
-    public static void createStlCopyTask(
-            NdkHandler ndkHandler,
-            String stl,
-            CollectionBuilder<Task> tasks,
-            File buildDir,
-            SharedLibraryBinarySpec binary) {
+    public static void createStlCopyTask(NdkHandler ndkHandler, String stl,
+            CollectionBuilder<Task> tasks, final File buildDir,
+            final SharedLibraryBinarySpec binary) {
         if (stl.endsWith("_shared")) {
-            StlNativeToolSpecification stlConfig =
-                    new StlNativeToolSpecification(ndkHandler, stl, binary.targetPlatform)
+            final StlNativeToolSpecification stlConfig = new StlNativeToolSpecification(ndkHandler,
+                    stl, binary.getTargetPlatform());
 
-            String copyTaskName = NdkNamingScheme.getTaskName(binary, "copy", "StlSo")
-            tasks.create(copyTaskName, Copy) {
-                it.from(stlConfig.getStlLib(binary.targetPlatform.name))
-                it.into(new File(buildDir, NdkNamingScheme.getOutputDirectoryName(binary)))
-            }
-            binary.buildTask.dependsOn(copyTaskName)
+            String copyTaskName = NdkNamingScheme.getTaskName(binary, "copy", "StlSo");
+            tasks.create(copyTaskName, Copy.class, new Action<Copy>() {
+                @Override
+                public void execute(Copy copy) {
+                    copy.from(stlConfig.getStlLib(binary.getTargetPlatform().getName()));
+                    copy.into(new File(buildDir, NdkNamingScheme.getOutputDirectoryName(binary)));
+
+                }
+            });
+            binary.getBuildTask().dependsOn(copyTaskName);
         }
     }
 }

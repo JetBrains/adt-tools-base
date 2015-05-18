@@ -14,203 +14,200 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.ndk.internal
+package com.android.build.gradle.ndk.internal;
 
-import com.android.SdkConstants
-import com.android.builder.core.BuilderConstants
-import org.gradle.nativeplatform.BuildType
-import org.gradle.nativeplatform.platform.NativePlatform
+import com.android.SdkConstants;
+import com.android.builder.core.BuilderConstants;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableListMultimap;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.ListMultimap;
+
+import org.gradle.nativeplatform.BuildType;
+import org.gradle.nativeplatform.platform.NativePlatform;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * Flag configuration for GCC toolchain.
  */
+public class GccNativeToolSpecification extends AbstractNativeToolSpecification {
 
-class GccNativeToolSpecification extends AbstractNativeToolSpecification {
+    private static final ListMultimap<String, String> RELEASE_CFLAGS =
+            ImmutableListMultimap.<String, String>builder()
+                    .putAll(SdkConstants.ABI_ARMEABI, ImmutableList.of(
+                            "-fpic",
+                            "-ffunction-sections",
+                            "-funwind-tables",
+                            "-fstack-protector",
+                            "-no-canonical-prefixes",
+                            "-march=armv5te",
+                            "-mtune=xscale",
+                            "-msoft-float",
+                            "-mthumb",
+                            "-Os",
+                            "-g",
+                            "-DNDEBUG",
+                            "-fomit-frame-pointer",
+                            "-fno-strict-aliasing",
+                            "-finline-limit=64"))
+                    .putAll(SdkConstants.ABI_ARMEABI_V7A, ImmutableList.of(
+                            "-fpic",
+                            "-ffunction-sections",
+                            "-funwind-tables",
+                            "-fstack-protector",
+                            "-no-canonical-prefixes",
+                            "-march=armv7-a",
+                            "-mfpu=vfpv3-d16",
+                            "-mfloat-abi=softfp",
+                            "-mthumb",
+                            "-Os",
+                            "-g",
+                            "-DNDEBUG",
+                            "-fomit-frame-pointer",
+                            "-fno-strict-aliasing",
+                            "-finline-limit=64"))
+                    .putAll(SdkConstants.ABI_ARM64_V8A, ImmutableList.of(
+                            "-fpic",
+                            "-ffunction-sections",
+                            "-funwind-tables",
+                            "-fstack-protector",
+                            "-no-canonical-prefixes",
+                            "-O2",
+                            "-g",
+                            "-DNDEBUG",
+                            "-fomit-frame-pointer",
+                            "-fstrict-aliasing",
+                            "-funswitch-loops",
+                            "-finline-limit=300"))
+                    .putAll(SdkConstants.ABI_INTEL_ATOM, ImmutableList.of(
+                            "-ffunction-sections",
+                            "-funwind-tables",
+                            "-no-canonical-prefixes",
+                            "-fstack-protector",
+                            "-O2",
+                            "-g",
+                            "-DNDEBUG",
+                            "-fomit-frame-pointer",
+                            "-fstrict-aliasing",
+                            "-funswitch-loops",
+                            "-finline-limit=300"))
+                    .putAll(SdkConstants.ABI_INTEL_ATOM64, ImmutableList.of(
+                            "-ffunction-sections",
+                            "-funwind-tables",
+                            "-no-canonical-prefixes",
+                            "-fstack-protector",
+                            "-O2",
+                            "-g",
+                            "-DNDEBUG",
+                            "-fomit-frame-pointer",
+                            "-fstrict-aliasing",
+                            "-funswitch-loops",
+                            "-finline-limit=300"))
+                    .putAll(SdkConstants.ABI_MIPS, ImmutableList.of(
+                            "-fpic",
+                            "-fno-strict-aliasing",
+                            "-finline-functions",
+                            "-ffunction-sections",
+                            "-funwind-tables",
+                            "-fmessage-length=0",
+                            "-fno-inline-functions-called-once",
+                            "-fgcse-after-reload",
+                            "-frerun-cse-after-loop",
+                            "-frename-registers",
+                            "-no-canonical-prefixes",
+                            "-O2",
+                            "-g",
+                            "-DNDEBUG",
+                            "-fomit-frame-pointer",
+                            "-funswitch-loops",
+                            "-finline-limit=300"))
+                    .putAll(SdkConstants.ABI_MIPS64, ImmutableList.of(
+                            "-fpic",
+                            "-fno-strict-aliasing",
+                            "-finline-functions",
+                            "-ffunction-sections",
+                            "-funwind-tables",
+                            "-fmessage-length=0",
+                            "-fno-inline-functions-called-once",
+                            "-fgcse-after-reload",
+                            "-frerun-cse-after-loop",
+                            "-frename-registers",
+                            "-no-canonical-prefixes",
+                            "-O2",
+                            "-g",
+                            "-DNDEBUG",
+                            "-fomit-frame-pointer",
+                            "-funswitch-loops",
+                            "-finline-limit=300"))
+                    .build();
 
-    private static final def RELEASE_CFLAGS = [
-            (SdkConstants.ABI_ARMEABI) : [
-                    "-fpic",
-                    "-ffunction-sections",
-                    "-funwind-tables",
-                    "-fstack-protector",
-                    "-no-canonical-prefixes",
-                    "-march=armv5te",
-                    "-mtune=xscale",
-                    "-msoft-float",
-                    "-mthumb",
-                    "-Os",
-                    "-g",
-                    "-DNDEBUG",
-                    "-fomit-frame-pointer",
-                    "-fno-strict-aliasing",
-                    "-finline-limit=64",
-            ],
-            (SdkConstants.ABI_ARMEABI_V7A) : [
-                    "-fpic",
-                    "-ffunction-sections",
-                    "-funwind-tables",
-                    "-fstack-protector",
-                    "-no-canonical-prefixes",
-                    "-march=armv7-a",
-                    "-mfpu=vfpv3-d16",
-                    "-mfloat-abi=softfp",
-                    "-mthumb",
-                    "-Os",
-                    "-g",
-                    "-DNDEBUG",
-                    "-fomit-frame-pointer",
-                    "-fno-strict-aliasing",
-                    "-finline-limit=64",
-            ],
-            (SdkConstants.ABI_ARM64_V8A) : [
-                    "-fpic",
-                    "-ffunction-sections",
-                    "-funwind-tables",
-                    "-fstack-protector",
-                    "-no-canonical-prefixes",
-                    "-O2",
-                    "-g",
-                    "-DNDEBUG",
-                    "-fomit-frame-pointer",
-                    "-fstrict-aliasing",
-                    "-funswitch-loops",
-                    "-finline-limit=300",
-            ],
-            (SdkConstants.ABI_INTEL_ATOM) : [
-                    "-ffunction-sections",
-                    "-funwind-tables",
-                    "-no-canonical-prefixes",
-                    "-fstack-protector",
-                    "-O2",
-                    "-g",
-                    "-DNDEBUG",
-                    "-fomit-frame-pointer",
-                    "-fstrict-aliasing",
-                    "-funswitch-loops",
-                    "-finline-limit=300",
-            ],
-            (SdkConstants.ABI_INTEL_ATOM64) : [
-                    "-ffunction-sections",
-                    "-funwind-tables",
-                    "-no-canonical-prefixes",
-                    "-fstack-protector",
-                    "-O2",
-                    "-g",
-                    "-DNDEBUG",
-                    "-fomit-frame-pointer",
-                    "-fstrict-aliasing",
-                    "-funswitch-loops",
-                    "-finline-limit=300",
-            ],
-            (SdkConstants.ABI_MIPS)       : [
-                    "-fpic",
-                    "-fno-strict-aliasing",
-                    "-finline-functions",
-                    "-ffunction-sections",
-                    "-funwind-tables",
-                    "-fmessage-length=0",
-                    "-fno-inline-functions-called-once",
-                    "-fgcse-after-reload",
-                    "-frerun-cse-after-loop",
-                    "-frename-registers",
-                    "-no-canonical-prefixes",
-                    "-O2",
-                    "-g",
-                    "-DNDEBUG",
-                    "-fomit-frame-pointer",
-                    "-funswitch-loops",
-                    "-finline-limit=300",
-            ],
-            (SdkConstants.ABI_MIPS64) : [
-                    "-fpic",
-                    "-fno-strict-aliasing",
-                    "-finline-functions",
-                    "-ffunction-sections",
-                    "-funwind-tables",
-                    "-fmessage-length=0",
-                    "-fno-inline-functions-called-once",
-                    "-fgcse-after-reload",
-                    "-frerun-cse-after-loop",
-                    "-frename-registers",
-                    "-no-canonical-prefixes",
-                    "-O2",
-                    "-g",
-                    "-DNDEBUG",
-                    "-fomit-frame-pointer",
-                    "-funswitch-loops",
-                    "-finline-limit=300",
-            ],
-    ]
+        private static final ListMultimap<String, String> DEBUG_CFLAGS =
+                ImmutableListMultimap.<String, String>builder()
+                        .putAll(SdkConstants.ABI_ARMEABI, ImmutableList.of(
+                                "-O0",
+                                "-UNDEBUG",
+                                "-fno-omit-frame-pointer",
+                                "-fno-strict-aliasing"))
+                        .putAll(SdkConstants.ABI_ARMEABI_V7A, ImmutableList.of(
+                                "-O0",
+                                "-UNDEBUG",
+                                "-fno-omit-frame-pointer",
+                                "-fno-strict-aliasing"))
+                        .putAll(SdkConstants.ABI_ARM64_V8A, ImmutableList.of(
+                                "-O0",
+                                "-UNDEBUG",
+                                "-fno-omit-frame-pointer",
+                                "-fno-strict-aliasing"))
+                        .putAll(SdkConstants.ABI_INTEL_ATOM, ImmutableList.of(
+                                "-O0",
+                                "-UNDEBUG",
+                                "-fno-omit-frame-pointer",
+                                "-fno-strict-aliasing"))
+                        .putAll(SdkConstants.ABI_INTEL_ATOM64, ImmutableList.of(
+                                "-O0",
+                                "-UNDEBUG",
+                                "-fno-omit-frame-pointer",
+                                "-fno-strict-aliasing"))
+                        .putAll(SdkConstants.ABI_MIPS, ImmutableList.of(
+                                "-O0",
+                                "-UNDEBUG",
+                                "-fno-omit-frame-pointer",
+                                "-fno-unswitch-loops"))
+                        .putAll(SdkConstants.ABI_MIPS64, ImmutableList.of(
+                                "-O0",
+                                "-UNDEBUG",
+                                "-fno-omit-frame-pointer"))
+                        .build();
 
-    private static final def DEBUG_CFLAGS = [
-            (SdkConstants.ABI_ARMEABI) : [
-                    "-O0",
-                    "-UNDEBUG",
-                    "-fno-omit-frame-pointer",
-                    "-fno-strict-aliasing",
-            ],
-            (SdkConstants.ABI_ARMEABI_V7A) : [
-                    "-O0",
-                    "-UNDEBUG",
-                    "-fno-omit-frame-pointer",
-                    "-fno-strict-aliasing",
-            ],
-            (SdkConstants.ABI_ARM64_V8A) : [
-                    "-O0",
-                    "-UNDEBUG",
-                    "-fno-omit-frame-pointer",
-                    "-fno-strict-aliasing",
-            ],
-            (SdkConstants.ABI_INTEL_ATOM) : [
-                    "-O0",
-                    "-UNDEBUG",
-                    "-fno-omit-frame-pointer",
-                    "-fno-strict-aliasing",
-            ],
-            (SdkConstants.ABI_INTEL_ATOM64) : [
-                    "-O0",
-                    "-UNDEBUG",
-                    "-fno-omit-frame-pointer",
-                    "-fno-strict-aliasing",
-            ],
-            (SdkConstants.ABI_MIPS) : [
-                    "-O0",
-                    "-UNDEBUG",
-                    "-fno-omit-frame-pointer",
-                    "-fno-unswitch-loops",
-            ],
-            (SdkConstants.ABI_MIPS64) : [
-                    "-O0",
-                    "-UNDEBUG",
-                    "-fno-omit-frame-pointer",
-            ]
-    ]
+    private static final Iterable<String> LDFLAGS = ImmutableList.of("-no-canonical-prefixes");
 
-    private static final Iterable<String> LDFLAGS = [
-            "-no-canonical-prefixes",
-    ]
+    private NativePlatform platform;
 
-    private NativePlatform platform
+    private boolean isDebugBuild;
 
-    private boolean isDebugBuild
 
-    GccNativeToolSpecification(BuildType buildType, NativePlatform platform) {
-        this.isDebugBuild = (buildType.name.equals(BuilderConstants.DEBUG))
-        this.platform = platform
+    public GccNativeToolSpecification(BuildType buildType, NativePlatform platform) {
+        this.isDebugBuild = (buildType.getName().equals(BuilderConstants.DEBUG));
+        this.platform = platform;
     }
 
     @Override
     public Iterable<String> getCFlags() {
-        RELEASE_CFLAGS[platform.name] + (isDebugBuild ? DEBUG_CFLAGS[platform.name] : [])
+        return Iterables.concat(
+                RELEASE_CFLAGS.get(platform.getName()),
+                (isDebugBuild ? DEBUG_CFLAGS.get(platform.getName()) : ImmutableList.<String>of()));
     }
 
     @Override
     public Iterable<String> getCppFlags() {
-        getCFlags()
+        return getCFlags();
     }
 
     @Override
     public Iterable<String> getLdFlags() {
-        LDFLAGS
+        return LDFLAGS;
     }
 }

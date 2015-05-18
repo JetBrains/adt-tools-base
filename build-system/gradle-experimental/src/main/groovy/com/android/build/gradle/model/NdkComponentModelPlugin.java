@@ -14,113 +14,128 @@
  * limitations under the License.
  */
 
+package com.android.build.gradle.model;
 
-package com.android.build.gradle.model
+import com.android.build.gradle.internal.NdkHandler;
+import com.android.build.gradle.internal.ProductFlavorCombo;
+import com.android.build.gradle.internal.core.GradleVariantConfiguration;
+import com.android.build.gradle.managed.NdkConfig;
+import com.android.build.gradle.ndk.internal.NdkConfiguration;
+import com.android.build.gradle.ndk.internal.NdkExtensionConvention;
+import com.android.build.gradle.ndk.internal.ToolchainConfiguration;
+import com.android.builder.core.VariantConfiguration;
+import com.android.builder.model.BuildType;
+import com.android.builder.model.ProductFlavor;
+import com.google.common.collect.ImmutableSet;
 
-import com.android.build.gradle.internal.ProductFlavorCombo
-import com.android.build.gradle.managed.BuildType
-import com.android.build.gradle.managed.NdkConfig
-import com.android.build.gradle.ndk.internal.NdkConfiguration
-import com.android.build.gradle.ndk.internal.NdkExtensionConvention
-import com.android.build.gradle.internal.NdkHandler
-import com.android.build.gradle.ndk.internal.ToolchainConfiguration
-import com.android.builder.core.VariantConfiguration
-import com.android.builder.model.ProductFlavor
-import org.gradle.api.Action
-import org.gradle.api.NamedDomainObjectContainer
-import org.gradle.api.Plugin
-import org.gradle.api.Project
-import org.gradle.api.Task
-import org.gradle.api.internal.project.ProjectIdentifier
-import org.gradle.api.tasks.TaskContainer
-import org.gradle.language.c.CSourceSet
-import org.gradle.language.cpp.CppSourceSet
-import org.gradle.model.Finalize
-import org.gradle.model.Model
-import org.gradle.model.Mutate
-import org.gradle.model.Path
-import org.gradle.model.RuleSource
-import org.gradle.model.collection.ManagedSet
-import org.gradle.model.collection.CollectionBuilder
-import org.gradle.nativeplatform.BuildTypeContainer
-import org.gradle.nativeplatform.FlavorContainer
-import org.gradle.nativeplatform.NativeLibraryBinarySpec
-import org.gradle.nativeplatform.NativeLibrarySpec
-import org.gradle.nativeplatform.SharedLibraryBinarySpec
-import org.gradle.nativeplatform.StaticLibraryBinary
-import org.gradle.nativeplatform.toolchain.NativeToolChainRegistry
-import org.gradle.platform.base.BinaryContainer
-import org.gradle.platform.base.BinarySpec
-import org.gradle.platform.base.ComponentSpecContainer
-import org.gradle.platform.base.PlatformContainer
+import org.gradle.api.Action;
+import org.gradle.api.Plugin;
+import org.gradle.api.Project;
+import org.gradle.api.Task;
+import org.gradle.api.internal.project.ProjectIdentifier;
+import org.gradle.api.specs.Spec;
+import org.gradle.api.tasks.TaskContainer;
+import org.gradle.language.c.CSourceSet;
+import org.gradle.language.c.plugins.CPlugin;
+import org.gradle.language.cpp.CppSourceSet;
+import org.gradle.language.cpp.plugins.CppPlugin;
+import org.gradle.model.Finalize;
+import org.gradle.model.Model;
+import org.gradle.model.Mutate;
+import org.gradle.model.Path;
+import org.gradle.model.RuleSource;
+import org.gradle.model.collection.CollectionBuilder;
+import org.gradle.model.collection.ManagedSet;
+import org.gradle.nativeplatform.BuildTypeContainer;
+import org.gradle.nativeplatform.FlavorContainer;
+import org.gradle.nativeplatform.NativeLibraryBinarySpec;
+import org.gradle.nativeplatform.NativeLibrarySpec;
+import org.gradle.nativeplatform.SharedLibraryBinarySpec;
+import org.gradle.nativeplatform.internal.StaticLibraryBinarySpecInternal;
+import org.gradle.nativeplatform.toolchain.NativeToolChainRegistry;
+import org.gradle.platform.base.BinaryContainer;
+import org.gradle.platform.base.ComponentSpecContainer;
+import org.gradle.platform.base.PlatformContainer;
+
+import java.io.File;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+
+import groovy.lang.Closure;
 
 /**
  * Plugin for Android NDK applications.
  */
 public class NdkComponentModelPlugin implements Plugin<Project> {
-    private Project project
+    private Project project;
 
-    void apply(Project project) {
-        this.project = project
+    @Override
+    public void apply(Project project) {
+        this.project = project;
 
-        project.apply plugin: AndroidComponentModelPlugin
-
-        project.apply plugin: 'c'
-        project.apply plugin: 'cpp'
+        project.getPluginManager().apply(AndroidComponentModelPlugin.class);
+        project.getPluginManager().apply(CPlugin.class);
+        project.getPluginManager().apply(CppPlugin.class);
 
         // Remove static library tasks from assemble
-        project.binaries.withType(StaticLibraryBinary) {
-            it.buildable = false
-        }
+        ((BinaryContainer) project.getExtensions().getByName("binaries")).withType(
+                StaticLibraryBinarySpecInternal.class,
+                new Action<StaticLibraryBinarySpecInternal>() {
+                    @Override
+                    public void execute(StaticLibraryBinarySpecInternal binary) {
+                        binary.setBuildable(false);
+                    }
+                });
     }
 
-    @SuppressWarnings("GrMethodMayBeStatic")
-    static class Rules extends RuleSource {
+    @SuppressWarnings("MethodMayBeStatic")
+    public static class Rules extends RuleSource {
+
         @Mutate
-        void initializeNdkConfig(@Path("android.ndk") NdkConfig ndk) {
-            ndk.moduleName = ""
-            ndk.toolchain = ""
-            ndk.toolchainVersion = ""
-            ndk.CFlags = ""
-            ndk.cppFlags = ""
-            ndk.stl = ""
-            ndk.renderscriptNdkMode = false
+        public void initializeNdkConfig(@Path("android.ndk") NdkConfig ndk) {
+            ndk.setModuleName("");
+            ndk.setToolchain("");
+            ndk.setToolchainVersion("");
+            ndk.setCFlags("");
+            ndk.setCppFlags("");
+            ndk.setStl("");
+            ndk.setRenderscriptNdkMode(false);
         }
 
         @Finalize
-        void setDefaultNdkExtensionValue(@Path("android.ndk") NdkConfig ndkConfig) {
-            NdkExtensionConvention.setExtensionDefault(ndkConfig)
+        public void setDefaultNdkExtensionValue(@Path("android.ndk") NdkConfig ndkConfig) {
+            NdkExtensionConvention.setExtensionDefault(ndkConfig);
         }
 
         @Mutate
-        void addDefaultNativeSourceSet(@Path("android.sources") AndroidComponentModelSourceSet sources) {
+        public void addDefaultNativeSourceSet(
+                @Path("android.sources") AndroidComponentModelSourceSet sources) {
             sources.addDefaultSourceSet("c", CSourceSet.class);
             sources.addDefaultSourceSet("cpp", CppSourceSet.class);
         }
 
         @Model(ModelConstants.NDK_HANDLER)
-        NdkHandler ndkHandler(
+        public NdkHandler ndkHandler(
                 ProjectIdentifier projectId,
                 @Path("android.compileSdkVersion") String compileSdkVersion,
                 @Path("android.ndk") NdkConfig ndkConfig) {
-            while (projectId.parentIdentifier != null) {
-                projectId = projectId.parentIdentifier
+            while (projectId.getParentIdentifier() != null) {
+                projectId = projectId.getParentIdentifier();
             }
-            return new NdkHandler(
-                    projectId.projectDir,
-                    compileSdkVersion,
-                    ndkConfig.toolchain,
-                    ndkConfig.toolchainVersion)
+
+            return new NdkHandler(projectId.getProjectDir(), compileSdkVersion,
+                    ndkConfig.getToolchain(), ndkConfig.getToolchainVersion());
         }
 
         @Mutate
-        void createAndroidPlatforms(PlatformContainer platforms, NdkHandler ndkHandler) {
+        public void createAndroidPlatforms(PlatformContainer platforms, NdkHandler ndkHandler) {
             // Create android platforms.
-            ToolchainConfiguration.configurePlatforms(platforms, ndkHandler)
+            ToolchainConfiguration.configurePlatforms(platforms, ndkHandler);
         }
 
         @Mutate
-        void createToolchains(
+        public void createToolchains(
                 NativeToolChainRegistry toolchainRegistry,
                 @Path("android.ndk") NdkConfig ndkConfig,
                 NdkHandler ndkHandler) {
@@ -128,172 +143,204 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
             ToolchainConfiguration.configureToolchain(
                     toolchainRegistry,
                     ndkConfig.getToolchain(),
-                    ndkHandler)
+                    ndkHandler);
         }
 
         @Mutate
-        void createNativeBuildTypes(
-                BuildTypeContainer nativeBuildTypes,
-                @Path("android.buildTypes") ManagedSet<BuildType> androidBuildTypes) {
-            for (def buildType : androidBuildTypes) {
-                nativeBuildTypes.maybeCreate(buildType.name)
+        public void createNativeBuildTypes(BuildTypeContainer nativeBuildTypes,
+                @Path("android.buildTypes") ManagedSet<com.android.build.gradle.managed.BuildType> androidBuildTypes) {
+            for (com.android.build.gradle.managed.BuildType buildType : androidBuildTypes) {
+                nativeBuildTypes.maybeCreate(buildType.getName());
             }
         }
 
         @Mutate
-        void createNativeFlavors(
-                FlavorContainer nativeFlavors,
+        public void createNativeFlavors(FlavorContainer nativeFlavors,
                 List<ProductFlavorCombo> androidFlavorGroups) {
-            for (def group : androidFlavorGroups) {
-                nativeFlavors.maybeCreate(group.name)
+            for (ProductFlavorCombo group : androidFlavorGroups) {
+                nativeFlavors.maybeCreate(group.getName());
             }
+
         }
 
         @Mutate
-        void createNativeLibrary(
+        public void createNativeLibrary(
                 ComponentSpecContainer specs,
-                @Path("android.ndk") NdkConfig ndkConfig,
-                NdkHandler ndkHandler,
-                @Path("android.sources") AndroidComponentModelSourceSet sources,
-                @Path("buildDir") File buildDir) {
-            if (!ndkConfig.moduleName.isEmpty()) {
-                NativeLibrarySpec library = specs.create(ndkConfig.moduleName, NativeLibrarySpec)
-                specs.withType(DefaultAndroidComponentSpec) { androidSpec ->
-                    androidSpec.nativeLibrary = library
-                    NdkConfiguration.configureProperties(
-                            library, sources, buildDir, ndkConfig, ndkHandler)
-                }
+                @Path("android.ndk") final NdkConfig ndkConfig,
+                final NdkHandler ndkHandler,
+                @Path("android.sources") final AndroidComponentModelSourceSet sources,
+                @Path("buildDir") final File buildDir) {
+            if (!ndkConfig.getModuleName().isEmpty()) {
+                final NativeLibrarySpec library = specs.create(
+                        ndkConfig.getModuleName(), NativeLibrarySpec.class);
+                specs.withType(DefaultAndroidComponentSpec.class,
+                        new Action<DefaultAndroidComponentSpec>() {
+                            @Override
+                            public void execute(DefaultAndroidComponentSpec spec) {
+                                spec.setNativeLibrary(library);
+                                NdkConfiguration.configureProperties(
+                                        library,
+                                        sources,
+                                        buildDir,
+                                        ndkConfig,
+                                        ndkHandler);
+                            }
+                        });
             }
         }
 
         @Mutate
-        void createAdditionalTasksForNatives(
-                CollectionBuilder<Task> tasks,
+        public void createAdditionalTasksForNatives(
+                final CollectionBuilder<Task> tasks,
                 AndroidComponentSpec spec,
-                @Path("android.ndk") NdkConfig ndkConfig,
-                NdkHandler ndkHandler,
+                @Path("android.ndk") final NdkConfig ndkConfig,
+                final NdkHandler ndkHandler,
                 BinaryContainer binaries,
-                @Path("buildDir") File buildDir) {
-            DefaultAndroidComponentSpec androidSpec = (DefaultAndroidComponentSpec) spec
-            if (androidSpec.nativeLibrary != null) {
-                binaries.withType(SharedLibraryBinarySpec) { binary ->
-                    if (binary.getComponent() == androidSpec.nativeLibrary) {
-                        NdkConfiguration.createTasks(
-                                tasks, binary, buildDir, ndkConfig, ndkHandler)
-                    }
-                }
+                @Path("buildDir") final File buildDir) {
+            final DefaultAndroidComponentSpec androidSpec = (DefaultAndroidComponentSpec) spec;
+            if (androidSpec.getNativeLibrary() != null) {
+                binaries.withType(SharedLibraryBinarySpec.class,
+                        new Action<SharedLibraryBinarySpec>() {
+                            @Override
+                            public void execute(SharedLibraryBinarySpec binary) {
+                                if (binary.getComponent().equals(androidSpec.getNativeLibrary())) {
+                                    NdkConfiguration.createTasks(
+                                            tasks, binary, buildDir, ndkConfig, ndkHandler);
+                                }
+                            }
+                        });
             }
+
         }
 
         @Mutate
-        void storeNativeBinariesInAndroidBinary(
-                BinaryContainer binaries,
-                ComponentSpecContainer specs,
-                AndroidComponentSpec androidSpec,
+        public void storeNativeBinariesInAndroidBinary(BinaryContainer binaries,
+                ComponentSpecContainer specs, AndroidComponentSpec androidSpec,
                 @Path("android.ndk") NdkConfig ndkConfig) {
-            if (!ndkConfig.moduleName.isEmpty()) {
-                NativeLibrarySpec library =
-                        specs.withType(NativeLibrarySpec).getByName(ndkConfig.moduleName);
-                binaries.withType(DefaultAndroidBinary).each { DefaultAndroidBinary binary ->
-                    def nativeBinaries = getNativeBinaries(library, binary.buildType, binary.productFlavors)
-                    binary.getNativeBinaries().addAll(nativeBinaries)
-                }
+            if (!ndkConfig.getModuleName().isEmpty()) {
+                final NativeLibrarySpec library = specs.withType(NativeLibrarySpec.class)
+                        .getByName(ndkConfig.getModuleName());
+                binaries.withType(DefaultAndroidBinary.class, new Action<DefaultAndroidBinary>() {
+                            @Override
+                            public void execute(DefaultAndroidBinary binary) {
+                                Collection<SharedLibraryBinarySpec> nativeBinaries =
+                                        getNativeBinaries(
+                                                library,
+                                                binary.getBuildType(),
+                                                binary.getProductFlavors());
+                                binary.getNativeBinaries().addAll(nativeBinaries);
+
+                            }
+                        });
             }
         }
 
         @Finalize
-        void attachNativeTasksToAndroidBinary(CollectionBuilder<AndroidBinary> binaries) {
-            binaries.afterEach(
-                    new Action<AndroidBinary>() {
-                        @Override
-                        void execute(AndroidBinary androidBinary) {
-                            DefaultAndroidBinary binary = (DefaultAndroidBinary) androidBinary
-                            if (binary.targetAbi.isEmpty())  {
-                                binary.builtBy(binary.nativeBinaries)
-                            } else {
-                                for (NativeLibraryBinarySpec nativeBinary : binary.nativeBinaries) {
-                                    if (binary.targetAbi.contains(
-                                            nativeBinary.targetPlatform.name)) {
-                                        binary.builtBy(nativeBinary)
-                                    }
-                                }
+        public void attachNativeTasksToAndroidBinary(CollectionBuilder<AndroidBinary> binaries) {
+            binaries.afterEach(new Action<AndroidBinary>() {
+                @Override
+                public void execute(AndroidBinary androidBinary) {
+                    DefaultAndroidBinary binary = (DefaultAndroidBinary) androidBinary;
+                    if (binary.getTargetAbi().isEmpty()) {
+                        binary.builtBy(binary.getNativeBinaries());
+                    } else {
+                        for (NativeLibraryBinarySpec nativeBinary : binary.getNativeBinaries()) {
+                            if (binary.getTargetAbi()
+                                    .contains(nativeBinary.getTargetPlatform().getName())) {
+                                binary.builtBy(nativeBinary);
                             }
                         }
-                    })
+                    }
+                }
+            });
         }
 
         /**
          * Remove unintended tasks created by Gradle native plugin from task list.
          *
-         * Gradle native plugins creates static library tasks automatically.  This method removes them
-         * to avoid cluttering the task list.
+         * Gradle native plugins creates static library tasks automatically.  This method removes
+         * them to avoid cluttering the task list.
          */
         @Mutate
-        void hideNativeTasks(TaskContainer tasks, BinaryContainer binaries) {
+        public void hideNativeTasks(TaskContainer tasks, BinaryContainer binaries) {
             // Gradle do not support a way to remove created tasks.  The best workaround is to clear the
             // group of the task and have another task depends on it.  Therefore, we have to create
             // a dummy task to depend on all the tasks that we do not want to show up on the task
             // list. The dummy task dependsOn itself, effectively making it non-executable and
             // invisible unless the --all option is use.
-            Task nonExecutableTask = tasks.create("nonExecutableTask")
-            nonExecutableTask.dependsOn nonExecutableTask
-            nonExecutableTask.description =
-                    "Dummy task to hide other unwanted tasks in the task list."
+            final Task nonExecutableTask = tasks.create("nonExecutableTask");
+            nonExecutableTask.dependsOn(nonExecutableTask);
+            nonExecutableTask
+                    .setDescription("Dummy task to hide other unwanted tasks in the task list.");
 
-            binaries.withType(NativeLibraryBinarySpec) { binary ->
-                Task buildTask = binary.getBuildTask()
-                nonExecutableTask.dependsOn buildTask
-                buildTask.group = null
-            }
+            binaries.withType(NativeLibraryBinarySpec.class, new Action<NativeLibraryBinarySpec>() {
+                @Override
+                public void execute(NativeLibraryBinarySpec binary) {
+                    Task buildTask = binary.getBuildTask();
+                    nonExecutableTask.dependsOn(buildTask);
+                    buildTask.setGroup(null);
+                }
+            });
         }
     }
 
     private static Collection<SharedLibraryBinarySpec> getNativeBinaries(
             NativeLibrarySpec library,
-            com.android.builder.model.BuildType buildType,
-            List<? extends ProductFlavor> productFlavors) {
-        ProductFlavorCombo flavorGroup = new ProductFlavorCombo(productFlavors);
-        library.binaries.withType(SharedLibraryBinarySpec).matching { binary ->
-            (binary.buildType.name.equals(buildType.name)
-                    && ((productFlavors.isEmpty() && binary.flavor.name.equals("default"))
-                        || binary.flavor.name.equals(flavorGroup.name)))
-        }
+            final BuildType buildType,
+            final List<? extends ProductFlavor> productFlavors) {
+        final ProductFlavorCombo flavorGroup = new ProductFlavorCombo(productFlavors);
+        return library.getBinaries().withType(SharedLibraryBinarySpec.class)
+                .matching(new Spec<SharedLibraryBinarySpec>() {
+                    @Override
+                    public boolean isSatisfiedBy(SharedLibraryBinarySpec binary) {
+                        return binary.getBuildType().getName().equals(buildType.getName())
+                                && (binary.getFlavor().getName().equals(flavorGroup.getName())
+                                        || (productFlavors.isEmpty()
+                                                && binary.getFlavor().getName().equals("default")));
+                    }
+                });
     }
 
     /**
      * Return library binaries for a VariantConfiguration.
      */
-    public Collection<SharedLibraryBinarySpec> getBinaries(VariantConfiguration variantConfig) {
+    public Collection<SharedLibraryBinarySpec> getBinaries(final VariantConfiguration variantConfig) {
         if (variantConfig.getType().isForTesting()) {
             // Do not return binaries for test variants as test source set is not supported at the
             // moment.
-            return []
+            return Collections.emptyList();
         }
+        final GradleVariantConfiguration config = (GradleVariantConfiguration) variantConfig;
 
-        project.binaries.withType(SharedLibraryBinarySpec).matching { binary ->
-            (binary.buildType.name.equals(variantConfig.getBuildType().getName())
-                    && (binary.flavor.name.equals(variantConfig.getFlavorName())
-                            || (binary.flavor.name.equals("default")
-                                    && variantConfig.getFlavorName().isEmpty()))
-                    && (variantConfig.getNdkConfig().getAbiFilters() == null
-                            || variantConfig.getNdkConfig().getAbiFilters().isEmpty()
-                            || variantConfig.getNdkConfig().getAbiFilters().contains(
-                                    binary.targetPlatform.name)))
-        }
+        BinaryContainer binaries = (BinaryContainer) project.getExtensions().getByName("binaries");
+
+        return binaries.withType(SharedLibraryBinarySpec.class).matching(
+                new Spec<SharedLibraryBinarySpec>() {
+                    @Override
+                    public boolean isSatisfiedBy(SharedLibraryBinarySpec binary) {
+                        return (binary.getBuildType().getName().equals(config.getBuildType().getName())
+                                && (binary.getFlavor().getName().equals(config.getFlavorName())
+                                        || (binary.getFlavor().getName().equals("default")
+                                                && config.getFlavorName().isEmpty()))
+                                && (config.getNdkConfig().getAbiFilters() == null
+                                        || config.getNdkConfig().getAbiFilters().isEmpty()
+                                        || config.getNdkConfig().getAbiFilters().contains(
+                                                    binary.getTargetPlatform().getName())));
+                    }
+                });
     }
 
     /**
      * Return the output directory of the native binary tasks for a VariantConfiguration.
      */
-    public List<File> getOutputDirectories(VariantConfiguration variantConfig) {
+    public Collection<File> getOutputDirectories(VariantConfiguration variantConfig) {
         // Return the parent's parent directory of the binaries' output.
         // A binary's output file is set to something in the form of
         // "/path/to/lib/platformName/libmodulename.so".  We want to return "/path/to/lib".
-        (getBinaries(variantConfig)
-                *.getPrimaryOutput()
-                *.getParentFile()
-                *.getParentFile()
-                .unique())
+        ImmutableSet.Builder<File> builder = ImmutableSet.builder();
+        for (SharedLibraryBinarySpec binary : getBinaries(variantConfig)) {
+            builder.add(binary.getSharedLibraryFile().getParentFile().getParentFile());
+        }
+        return builder.build();
     }
 }
-
