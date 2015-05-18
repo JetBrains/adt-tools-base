@@ -61,6 +61,7 @@ import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.IAndroidTarget;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -205,6 +206,10 @@ public class ModelBuilder implements ToolingModelBuilder {
      */
     public static Map<Abi, NativeToolchain> createNativeToolchainModelMap(
             @NonNull NdkHandler ndkHandler) {
+        if (ndkHandler.getNdkDirectory() == null) {
+            return ImmutableMap.of();
+        }
+
         Map<Abi, NativeToolchain> toolchains = Maps.newHashMap();
 
         for (Abi abi : ndkHandler.getSupportedAbis()) {
@@ -325,6 +330,9 @@ public class ModelBuilder implements ToolingModelBuilder {
         Collection<NativeLibrary> nativeLibraries = Lists.newArrayListWithCapacity(abis.size());
         for (Abi abi : abis) {
             NativeToolchain toolchain = toolchains.get(abi);
+            if (toolchain == null) {
+                continue;
+            }
 
             String sysrootFlag = "--sysroot=" + ndkHandler.getSysroot(abi);
             List<String> cFlags = ndkConfig.getcFlags() == null
@@ -336,7 +344,7 @@ public class ModelBuilder implements ToolingModelBuilder {
             @SuppressWarnings("ConstantConditions")
             NativeLibrary lib = new NativeLibraryImpl(
                     ndkConfig.getModuleName(),
-                    toolchain == null ? "" : toolchain.getName(),
+                    toolchain.getName(),
                     abi.getName(),
                     Collections.<File>emptyList(),  /*cIncludeDirs*/
                     Collections.<File>emptyList(),  /*cppIncludeDirs*/
@@ -370,25 +378,23 @@ public class ModelBuilder implements ToolingModelBuilder {
         List<AndroidArtifactOutput> outputs = Lists.newArrayListWithCapacity(variantOutputs.size());
 
         NdkConfig ndkConfig = variantData.getVariantConfiguration().getNdkConfig();
-        Collection<NativeLibrary> nativeLibraries = Collections.emptyList();
-        if (ndkConfig.getModuleName() != null) {
-            if (config.getSplits().getAbi().isEnable()) {
+        Collection<NativeLibrary> nativeLibraries;
+        if (config.getSplits().getAbi().isEnable()) {
+            nativeLibraries = createNativeLibraries(
+                    ndkConfig,
+                    createAbiList(config.getSplits().getAbiFilters()),
+                    variantData);
+        } else {
+            if (ndkConfig.getAbiFilters() == null || ndkConfig.getAbiFilters().isEmpty()) {
                 nativeLibraries = createNativeLibraries(
                         ndkConfig,
                         createAbiList(config.getSplits().getAbiFilters()),
                         variantData);
             } else {
-                if (ndkConfig.getAbiFilters() == null || ndkConfig.getAbiFilters().isEmpty()) {
-                    nativeLibraries = createNativeLibraries(
-                            ndkConfig,
-                            ndkHandler.getSupportedAbis(),
-                            variantData);
-                } else {
-                    nativeLibraries = createNativeLibraries(
-                            ndkConfig,
-                            createAbiList(ndkConfig.getAbiFilters()),
-                            variantData);
-                }
+                nativeLibraries = createNativeLibraries(
+                        ndkConfig,
+                        createAbiList(ndkConfig.getAbiFilters()),
+                        variantData);
             }
         }
 
