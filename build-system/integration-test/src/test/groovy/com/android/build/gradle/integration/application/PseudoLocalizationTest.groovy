@@ -35,6 +35,7 @@ class PseudoLocalizationTest {
 
     @BeforeClass
     static void setUp() {
+        GradleTestProject.assumeBuildToolsAtLeast(21)
         project.execute("clean", "assembleDebug")
     }
 

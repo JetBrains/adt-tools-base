@@ -42,6 +42,7 @@ class NdkComponentSplitTest {
 
     @BeforeClass
     public static void setUp() {
+        GradleTestProject.assumeBuildToolsAtLeast(21)
         project.getBuildFile() << """
 apply plugin: 'com.android.model.application'
 

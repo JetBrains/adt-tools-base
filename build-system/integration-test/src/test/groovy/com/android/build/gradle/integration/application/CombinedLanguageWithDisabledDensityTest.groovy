@@ -48,6 +48,7 @@ class CombinedLanguageWithDisabledDensityTest {
 
     @BeforeClass
     static void setup() {
+        GradleTestProject.assumeBuildToolsAtLeast(21)
         project.getBuildFile() << """android {
             splits {
                 density {

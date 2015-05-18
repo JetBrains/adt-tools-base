@@ -49,6 +49,7 @@ class AutoResConfig {
 
     @BeforeClass
     static void setup() {
+        GradleTestProject.assumeBuildToolsAtLeast(21)
         project.getBuildFile() << """android {
               defaultConfig {
                 versionCode 12

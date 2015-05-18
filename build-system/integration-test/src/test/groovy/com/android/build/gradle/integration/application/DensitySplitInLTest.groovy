@@ -48,6 +48,7 @@ class DensitySplitInLTest {
 
     @BeforeClass
     static void setUp() {
+        GradleTestProject.assumeBuildToolsAtLeast(21)
         model = project.executeAndReturnModel("clean", "assembleDebug")
     }
 

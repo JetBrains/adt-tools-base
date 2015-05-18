@@ -46,6 +46,7 @@ class AbiPureSplits {
 
     @BeforeClass
     static void setup() {
+        GradleTestProject.assumeBuildToolsAtLeast(21)
         model = project.executeAndReturnModel("clean", "assembleDebug")
     }
 
