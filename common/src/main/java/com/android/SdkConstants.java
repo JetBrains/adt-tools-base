@@ -360,6 +360,7 @@ public final class SdkConstants {
     /** Name of the SDK extras folder. */
     public static final String FD_EXTRAS = "extras";                    //$NON-NLS-1$
     public static final String FD_M2_REPOSITORY = "m2repository";       //$NON-NLS-1$
+    public static final String FD_NDK = "ndk";                          //$NON-NLS-1$
     /**
      * Name of an extra's sample folder.
      * Ideally extras should have one {@link #FD_SAMPLES} folder containing
