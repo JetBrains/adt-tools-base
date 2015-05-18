@@ -16,7 +16,7 @@
 
 package com.android.build.gradle.integration.common.truth;
 
-import static com.google.common.truth.Truth.assertThat;
+import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat;
 
 import com.android.annotations.NonNull;
 import com.google.common.base.Charsets;
@@ -43,10 +43,11 @@ public abstract class AbstractZipSubject<T extends Subject<T, File>> extends Sub
 
     public AbstractZipSubject(@NonNull FailureStrategy failureStrategy, @NonNull File subject) {
         super(failureStrategy, subject);
+        assertThat(subject).exists();
         try {
             zip = new ZipFile(subject);
         } catch (IOException e) {
-            failWithRawMessage("IOException thrown when creating ZipFile: %s.", e.toString());
+            failWithRawMessage("IOException thrown when creating ZipFile: '%s'.", e.toString());
         }
     }
 

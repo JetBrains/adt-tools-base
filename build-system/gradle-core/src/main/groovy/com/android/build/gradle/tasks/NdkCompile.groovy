@@ -65,6 +65,9 @@ class NdkCompile extends NdkTask {
     @Input
     boolean ndkCygwinMode
 
+    @Input
+    boolean isForTesting
+
     @SkipWhenEmpty
     @InputFiles
     FileTree getSource() {
@@ -138,7 +141,12 @@ class NdkCompile extends NdkTask {
                 'LOCAL_PATH := $(call my-dir)\n' +
                 'include \$(CLEAR_VARS)\n\n')
 
-        sb.append('LOCAL_MODULE := ').append(ndk.moduleName != null ? ndk.moduleName : project.name).append('\n')
+        String moduleName = ndk.moduleName != null ? ndk.moduleName : project.name
+        if (isForTesting) {
+            moduleName = moduleName + "_test"
+        }
+
+        sb.append('LOCAL_MODULE := ').append(moduleName).append('\n')
 
         if (ndk.cFlags != null) {
             sb.append('LOCAL_CFLAGS := ').append(ndk.cFlags).append('\n')
