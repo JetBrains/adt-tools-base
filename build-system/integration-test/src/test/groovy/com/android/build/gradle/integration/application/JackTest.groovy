@@ -55,6 +55,7 @@ class JackTest {
 
     @BeforeClass
     static void setUp() {
+        GradleTestProject.assumeBuildToolsAtLeast(21, 1, 0)
         basic.execute(JACK_OPTIONS, "clean", "assembleDebug")
         minify.execute(JACK_OPTIONS, "clean", "assembleDebug")
         multiDex.execute(JACK_OPTIONS, "clean", "assembleDebug")
