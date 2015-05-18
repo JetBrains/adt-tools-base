@@ -443,14 +443,11 @@ public class LocalSdk {
      */
     @Nullable
     public LocalPkgInfo getPkgInfo(@NonNull PkgType filter) {
-
-        assert filter == PkgType.PKG_TOOLS ||
-               filter == PkgType.PKG_PLATFORM_TOOLS ||
-               filter == PkgType.PKG_DOC;
-
         if (filter != PkgType.PKG_TOOLS &&
             filter != PkgType.PKG_PLATFORM_TOOLS &&
-            filter != PkgType.PKG_DOC) {
+            filter != PkgType.PKG_DOC &&
+            filter != PkgType.PKG_NDK) {
+            assert false;
             return null;
         }
 
@@ -475,6 +472,8 @@ public class LocalSdk {
                 case PKG_DOC:
                     info = scanDoc(uniqueDir);
                     break;
+                case PKG_NDK:
+                    info = scanNdk(uniqueDir);
                 default:
                     break;
                 }
@@ -534,7 +533,8 @@ public class LocalSdk {
         for (PkgType filter : filters) {
             if (filter == PkgType.PKG_TOOLS ||
                     filter == PkgType.PKG_PLATFORM_TOOLS ||
-                    filter == PkgType.PKG_DOC) {
+                    filter == PkgType.PKG_DOC ||
+                    filter == PkgType.PKG_NDK) {
                 LocalPkgInfo info = getPkgInfo(filter);
                 if (info != null) {
                     list.add(info);
@@ -588,6 +588,7 @@ public class LocalSdk {
                         case PKG_TOOLS:
                         case PKG_PLATFORM_TOOLS:
                         case PKG_DOC:
+                        case PKG_NDK:
                             break;
                         default:
                             throw new IllegalArgumentException(
@@ -876,6 +877,23 @@ public class LocalSdk {
             return null; // skip invalid or missing android version.
         }
     }
+
+    /**
+     * Try to find an NDK package at the given location.
+     * Returns null if not found.
+     */
+    @Nullable
+    private LocalNdkPkgInfo scanNdk(@NonNull File ndkFolder) {
+        // Can we find some properties?
+        Properties props = parseProperties(new File(ndkFolder, SdkConstants.FN_SOURCE_PROP));
+        FullRevision rev = PackageParserUtils.getPropertyFull(props, PkgProps.PKG_REVISION);
+        if (rev == null) {
+            return null;
+        }
+
+        return new LocalNdkPkgInfo(this, ndkFolder, props, rev);
+    }
+
 
     /**
      * Helper used by scanXyz methods below to check whether a directory should be visited.
