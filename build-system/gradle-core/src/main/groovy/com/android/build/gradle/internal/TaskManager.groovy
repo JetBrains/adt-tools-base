@@ -885,6 +885,7 @@ abstract class TaskManager {
 
         ndkCompile.androidBuilder = androidBuilder
         ndkCompile.ndkDirectory = sdkHandler.getNdkFolder()
+        ndkCompile.isForTesting = variantData.getType().isForTesting()
         variantData.ndkCompileTask = ndkCompile
         variantData.compileTask.dependsOn variantData.ndkCompileTask
 
