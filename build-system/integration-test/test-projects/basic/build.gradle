@@ -39,6 +39,8 @@ android {
         targetSdkVersion 16
 
         testInstrumentationRunner "android.test.InstrumentationTestRunner"
+        testInstrumentationRunnerArgument "size", "medium"
+
         testHandleProfiling false
 
         buildConfigField "boolean", "DEFAULT", "true"

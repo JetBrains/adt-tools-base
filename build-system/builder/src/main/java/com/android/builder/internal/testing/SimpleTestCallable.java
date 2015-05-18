@@ -150,6 +150,11 @@ public class SimpleTestCallable implements Callable<Boolean> {
                     testData.getInstrumentationRunner(),
                     device);
 
+            for (Map.Entry<String, String> argument:
+                    testData.getInstrumentationRunnerArguments().entrySet()) {
+                runner.addInstrumentationArg(argument.getKey(), argument.getValue());
+            }
+
             if (testData.isTestCoverageEnabled()) {
                 runner.addInstrumentationArg("coverage", "true");
                 runner.addInstrumentationArg("coverageFile", coverageFile);

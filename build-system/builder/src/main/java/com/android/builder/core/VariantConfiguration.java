@@ -36,6 +36,7 @@ import com.android.builder.model.SourceProvider;
 import com.android.ide.common.res2.AssetSet;
 import com.android.ide.common.res2.ResourceSet;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -887,6 +888,21 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
         }
         String runner = config.mMergedFlavor.getTestInstrumentationRunner();
         return runner != null ? runner : DEFAULT_TEST_RUNNER;
+    }
+
+    /**
+     * Returns the instrumentationRunner arguments to use to test this variant, or if the
+     * variant is a test, the ones to use to test the tested variant
+     */
+    @NonNull
+    public Map<String, String> getInstrumentationRunnerArguments() {
+        VariantConfiguration config = this;
+        if (mType.isForTesting()) {
+            config = getTestedConfig();
+            checkState(config != null);
+        }
+        Map<String, String>  runner = config.mMergedFlavor.getTestInstrumentationRunnerArguments();
+        return runner != null ? runner : ImmutableMap.<String, String>of();
     }
 
     /**

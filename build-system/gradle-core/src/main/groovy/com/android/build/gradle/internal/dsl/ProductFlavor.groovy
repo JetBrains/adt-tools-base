@@ -157,6 +157,18 @@ class ProductFlavor extends DefaultProductFlavor implements CoreProductFlavor {
         return null
     }
 
+    /** Adds a custom argument to the test instrumentation runner. */
+    @NonNull
+    public void testInstrumentationRunnerArgument(
+            @NonNull String key, @NonNull String value) {
+        Map<String, String> args = getTestInstrumentationRunnerArguments();
+        if (args == null) {
+            args = new LinkedHashMap<String, String>();
+        }
+        args.put(key, value);
+        setTestInstrumentationRunnerArguments(args);
+    }
+
     /**
      * Signing config used by this product flavor.
      */

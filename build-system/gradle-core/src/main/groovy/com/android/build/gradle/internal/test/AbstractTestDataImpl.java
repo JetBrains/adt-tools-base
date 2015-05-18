@@ -22,6 +22,7 @@ import com.android.builder.model.ApiVersion;
 import com.android.builder.testing.TestData;
 
 import java.util.Locale;
+import java.util.Map;
 
 /**
  * Common implementation of {@link TestData} for embedded test projects (in androidTest folder)
@@ -40,6 +41,12 @@ public abstract class AbstractTestDataImpl implements TestData {
     @Override
     public String getInstrumentationRunner() {
         return testVariantConfig.getInstrumentationRunner();
+    }
+
+    @NonNull
+    @Override
+    public Map<String, String> getInstrumentationRunnerArguments() {
+        return testVariantConfig.getInstrumentationRunnerArguments();
     }
 
     @Override
