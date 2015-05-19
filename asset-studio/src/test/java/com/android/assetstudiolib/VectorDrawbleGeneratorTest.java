@@ -56,13 +56,13 @@ public class VectorDrawbleGeneratorTest extends GeneratorTest {
         }
     }
 
-    public void testControlPoints01() throws Exception {
-        checkVectorConversion("test_control_points_01");
-    }
-
-    public void testControlPoints02() throws Exception {
-        checkVectorConversion("test_control_points_02");
-    }
+    //public void testControlPoints01() throws Exception {
+    //    checkVectorConversion("test_control_points_01");
+    //}
+    //
+    //public void testControlPoints02() throws Exception {
+    //    checkVectorConversion("test_control_points_02");
+    //}
 
     public void testControlPoints03() throws Exception {
         checkVectorConversion("test_control_points_03");
