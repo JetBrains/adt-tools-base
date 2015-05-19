@@ -86,6 +86,17 @@ public class MessageJsonSerializerTest {
             }, {new Message(Message.Kind.SIMPLE, "something else", new SourceFilePosition(SourceFile.UNKNOWN, SourcePosition.UNKNOWN)),
                     "{\"kind\":\"SIMPLE\","
                             + "\"text\":\"something else\",\"position\":{},\"original\":\"something else\"}"
+            }, {
+                    new Message(
+                            Message.Kind.SIMPLE,
+                            "Warning: AndroidManifest.xml already defines debuggable (in http://"
+                                    + "schemas.android.com/apk/res/android); using existing value "
+                                    + "in manifest.",
+                            SourceFilePosition.UNKNOWN),
+                    "{\"kind\":\"simple\",\"text\":\"Warning: AndroidManifest.xml already defines "
+                            + "debuggable (in http://schemas.android.com/apk/res/android); using "
+                            + "existing value in manifest.\",\"sources\":[{}]}"
+
             }});
         }
 
