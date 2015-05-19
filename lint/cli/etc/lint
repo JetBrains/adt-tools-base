@@ -66,7 +66,7 @@ javaCmd="java"
 jarpath="$frameworkdir/$jarfile"
 
 exec "$javaCmd" \
-    -Xmx512m $os_opts $java_debug \
+    -Xmx1024m $os_opts $java_debug \
     -Dcom.android.tools.lint.bindir="$progdir" \
     -Djava.awt.headless=true \
     -classpath "$jarpath" \
