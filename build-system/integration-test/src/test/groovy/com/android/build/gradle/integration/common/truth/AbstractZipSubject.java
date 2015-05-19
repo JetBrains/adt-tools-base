@@ -43,7 +43,7 @@ public abstract class AbstractZipSubject<T extends Subject<T, File>> extends Sub
 
     public AbstractZipSubject(@NonNull FailureStrategy failureStrategy, @NonNull File subject) {
         super(failureStrategy, subject);
-        assertThat(subject).exists();
+        new FileSubject(failureStrategy, subject).exists();
         try {
             zip = new ZipFile(subject);
         } catch (IOException e) {
