@@ -85,8 +85,12 @@ class BasicTest {
                 model.getAaptOptions().getFailOnMissingConfigEntry())
 
         JavaCompileOptions javaCompileOptions = model.getJavaCompileOptions()
-        assertEquals("1.6", javaCompileOptions.getSourceCompatibility())
-        assertEquals("1.6", javaCompileOptions.getTargetCompatibility())
+        // since source and target compatibility are not explicitly set in the build.gradle,
+        // the default value should be the JDK version used to build against.
+        assertEquals(System.getProperty("java.specification.version"),
+                javaCompileOptions.getSourceCompatibility())
+        assertEquals(System.getProperty("java.specification.version"),
+                javaCompileOptions.getTargetCompatibility())
         assertEquals("UTF-8", javaCompileOptions.getEncoding())
     }
 
