@@ -57,10 +57,12 @@ public interface IProjectCallback {
      * to use a different constructor or replace it with a MockView.
      * <p/>
      * This is done so that LayoutLib can continue to work on older versions of the IDE.
+     * Newer versions of LayoutLib should call {@link
+     * LayoutlibCallback#loadClass(String, Class[], Object[])} in such a case.
      *
-     * @param name The fully qualified name of the class.
+     * @param name                 The fully qualified name of the class.
      * @param constructorSignature The signature of the class to use
-     * @param constructorArgs The arguments to use on the constructor
+     * @param constructorArgs      The arguments to use on the constructor
      * @return A newly instantiated object.
      */
     Object loadView(String name, Class[] constructorSignature, Object[] constructorArgs)
