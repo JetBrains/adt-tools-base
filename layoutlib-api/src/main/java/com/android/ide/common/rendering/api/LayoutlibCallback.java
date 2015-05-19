@@ -21,8 +21,6 @@ import com.android.resources.ResourceType;
 import com.android.util.Pair;
 
 import org.intellij.lang.annotations.MagicConstant;
-import org.xmlpull.v1.XmlPullParser;
-import org.xmlpull.v1.XmlPullParserException;
 
 /**
  * Intermediary class implementing parts of both the old and new ProjectCallback from the
@@ -87,6 +85,19 @@ public abstract class LayoutlibCallback implements IProjectCallback,
     @NonNull
     public ParserFactory getParserFactory() {
         throw new UnsupportedOperationException("getParserFactory not supported.");
+    }
+
+    /**
+     * Find a custom class in the project.
+     * <p/>
+     * Like {@link #loadClass(String, Class[], Object[])}, but doesn't instantiate
+     * an object and just returns the class found.
+     * @param name className in binary format. (see {@link ClassLoader}.
+     * @since API 15
+     */
+    @NonNull
+    public Class<?> findClass(@NonNull String name) throws ClassNotFoundException {
+        throw new ClassNotFoundException(name + " not found.");
     }
 
     // ------ implementation of the old interface using the new interface.
