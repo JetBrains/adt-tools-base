@@ -30,7 +30,6 @@ import com.google.gson.JsonSerializer;
 
 import java.io.File;
 import java.lang.reflect.Type;
-import java.util.List;
 
 public class MessageJsonSerializer
         implements JsonSerializer<Message>,
@@ -98,9 +97,8 @@ public class MessageJsonSerializer
         if (object.has(SOURCE_FILE_POSITIONS)) {
             JsonElement e = object.get(SOURCE_FILE_POSITIONS);
             if (e.isJsonArray()) {
-                sourceFilePositions = ImmutableList.copyOf(
-                        context.<Iterable<? extends SourceFilePosition>>deserialize(
-                                e, SourceFilePosition[].class));
+                SourceFilePosition[] positions = context.deserialize(e, SourceFilePosition[].class);
+                sourceFilePositions = ImmutableList.copyOf(positions);
             } else if (e.isJsonObject()) {
                 sourceFilePositions = ImmutableList.of(
                         context.<SourceFilePosition>deserialize(e, SourceFilePosition.class));
