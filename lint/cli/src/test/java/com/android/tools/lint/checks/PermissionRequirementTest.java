@@ -156,7 +156,7 @@ public class PermissionRequirementTest extends TestCase {
     }
 
     public static void testDbUpToDate() throws Exception {
-        List<String> expected = getCurrentPermissions(Pattern.compile("dangerous"));
+        List<String> expected = getDangerousPermissions();
         if (expected == null) {
             return;
         }
@@ -167,22 +167,29 @@ public class PermissionRequirementTest extends TestCase {
                 System.out.println("            \"" + name + "\",");
             }
             fail("List of revocable permissions has changed:\n" +
-                SdkTestCase.getDiff(Joiner.on('\n').join(expected),
-                    Joiner.on('\n').join(actual)));
+                // Make the diff show what it take to bring the actual results into the
+                // expected results
+                SdkTestCase.getDiff(Joiner.on('\n').join(actual),
+                    Joiner.on('\n').join(expected)));
         }
     }
 
     @Nullable
-    static List<String> getCurrentPermissions(@NonNull Pattern pattern) throws IOException {
+    private static List<String> getDangerousPermissions() throws IOException {
+        Pattern pattern = Pattern.compile("dangerous");
         String top = System.getenv("ANDROID_BUILD_TOP");   //$NON-NLS-1$
         if (top == null) {
-            top = "/Volumes/android";
+            top = "/Volumes/android/mnc-dev";
         }
+
+        // TODO: We should ship this file with the SDK!
         File file = new File(top, "frameworks/base/core/res/AndroidManifest.xml");
         if (!file.exists()) {
             System.out.println("Set $ANDROID_BUILD_TOP to point to the git repository to check permissions");
             return null;
         }
+        boolean passedRuntimeHeader = false;
+        boolean passedInstallHeader = false;
         String xml = Files.toString(file, Charsets.UTF_8);
         Document document = XmlUtils.parseDocumentSilently(xml, true);
         Set<String> revocable = Sets.newHashSet();
@@ -190,8 +197,17 @@ public class PermissionRequirementTest extends TestCase {
             NodeList children = document.getDocumentElement().getChildNodes();
             for (int i = 0, n = children.getLength(); i < n; i++) {
                 Node child = children.item(i);
-                if (child.getNodeType() == Node.ELEMENT_NODE &&
-                        child.getNodeName().equals(TAG_PERMISSION)) {
+                short nodeType = child.getNodeType();
+                if (nodeType == Node.COMMENT_NODE) {
+                    String comment = child.getNodeValue();
+                    if (comment.contains("RUNTIME PERMISSIONS")) {
+                        passedRuntimeHeader = true;
+                    } else if (comment.contains("INSTALLTIME PERMISSIONS"))
+                        passedInstallHeader = true;
+                } else if (passedRuntimeHeader
+                        && !passedInstallHeader
+                        && nodeType == Node.ELEMENT_NODE
+                        && child.getNodeName().equals(TAG_PERMISSION)) {
                     Element element = (Element) child;
                     String protectionLevel = element.getAttributeNS(ANDROID_URI, "protectionLevel");
                     String name = element.getAttributeNS(ANDROID_URI, ATTR_NAME);
