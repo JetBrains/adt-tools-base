@@ -63,7 +63,7 @@ class ToolchainConfiguration {
                     @Override
                     void execute(GccPlatformToolChain targetPlatform) {
                         if (ndkToolchain == Toolchain.GCC) {
-                            String gccPrefix = abi.getGccPrefix()
+                            String gccPrefix = abi.getGccExecutablePrefix()
                             targetPlatform.cCompiler.setExecutable("$gccPrefix-gcc")
                             targetPlatform.cppCompiler.setExecutable("$gccPrefix-g++")
                             targetPlatform.linker.setExecutable("$gccPrefix-g++")
