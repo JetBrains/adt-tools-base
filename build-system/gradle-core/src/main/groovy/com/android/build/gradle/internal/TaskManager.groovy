@@ -540,6 +540,10 @@ abstract class TaskManager {
     public void createPreprocessResourcesTask(
             @NonNull TaskFactory tasks,
             @NonNull VariantScope scope) {
+        if (project.properties['com.android.build.gradle.experimentalPreprocessResources'] != 'true') {
+            return
+        }
+
         BaseVariantData<? extends BaseVariantOutputData> variantData = scope.variantData
         String variantName = variantData.variantConfiguration.fullName.capitalize()
         int minSdk = variantData.variantConfiguration.minSdkVersion.getApiLevel()
