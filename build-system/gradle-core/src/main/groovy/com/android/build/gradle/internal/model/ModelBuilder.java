@@ -388,7 +388,7 @@ public class ModelBuilder implements ToolingModelBuilder {
             if (ndkConfig.getAbiFilters() == null || ndkConfig.getAbiFilters().isEmpty()) {
                 nativeLibraries = createNativeLibraries(
                         ndkConfig,
-                        createAbiList(config.getSplits().getAbiFilters()),
+                        ndkHandler.getSupportedAbis(),
                         variantData);
             } else {
                 nativeLibraries = createNativeLibraries(
