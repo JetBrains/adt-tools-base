@@ -30,6 +30,10 @@ import java.util.regex.Pattern
 import static org.junit.Assert.assertTrue
 
 @CompileStatic
+/**
+ * Tests to ensure that changing the build tools version in the build.gradle will trigger
+ * re-execution of some tasks even if no source file change was detected.
+ */
 class BuildToolsTest {
 
     private static final Pattern UP_TO_DATE_PATTERN = ~/:(\S+)\s+UP-TO-DATE/
@@ -78,13 +82,20 @@ android {
     @Test
     public void invalidateBuildTools() {
         project.execute("assemble")
+        // downgrade our build tools version to 19.1.0 unless it is already the current version,
+        // in that case, upgrade to 20.0.0.
+        // The point is, change the build tools version from what it was when the "assemble" task
+        // was executed right before this comment.
+        String newBuildToolVersion =
+                GradleTestProject.DEFAULT_BUILD_TOOL_VERSION.contentEquals("19.1.0") ?
+                        "20.0.0" : "19.1.0";
 
         project.getBuildFile() << """
 apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
-    buildToolsVersion "19.1.0"
+    buildToolsVersion '$newBuildToolVersion'
 }
 """
 
