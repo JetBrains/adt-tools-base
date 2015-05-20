@@ -180,11 +180,19 @@ public class ResourceItem extends DataItem<ResourceFile>
                     "ResourceItem.getKey called on object with no ResourceFile: " + this);
         }
         String qualifiers = getQualifiers();
-        if (!qualifiers.isEmpty()) {
-            return mType.getName() + "-" + qualifiers + "/" + getName();
+
+        final String typeName;
+        if (mType == ResourceType.PUBLIC) {
+            typeName = "public_" + ((Element) mValue).getAttribute(ATTR_TYPE);
+        } else {
+            typeName = mType.getName();
         }
 
-        return mType.getName() + "/" + getName();
+        if (!qualifiers.isEmpty()) {
+            return typeName + "-" + qualifiers + "/" + getName();
+        }
+
+        return typeName + "/" + getName();
     }
 
     @Override
