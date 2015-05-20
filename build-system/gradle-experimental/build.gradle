@@ -14,7 +14,7 @@ apply plugin: 'jacoco'
 
 // Extract gradle libraries to ensure gradle-core is compatible with older version.
 String gradleVersion = "2.4"
-File gradleBinary = file("$rootProject.projectDir/external/gradle/gradle-$gradleVersion-bin.zip")
+File gradleBinary = file("$rootProject.projectDir/external/gradle/gradle-$gradleVersion-all.zip")
 File gradleLib = file("$rootProject.ext.androidHostOut/alternate-gradle/gradle-$gradleVersion/lib")
 
 task extractGradleLibs(type: Copy) {
