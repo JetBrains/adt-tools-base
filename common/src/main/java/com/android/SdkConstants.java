@@ -273,6 +273,8 @@ public final class SdkConstants {
     public static final String FD_TEST = "androidTest";                 //$NON-NLS-1$
     /** Default java code folder name, i.e. "java" */
     public static final String FD_JAVA = "java";                        //$NON-NLS-1$
+    /** Default native code folder name, i.e. "jni" */
+    public static final String FD_JNI = "jni";                          //$NON-NLS-1$
     /** Default gradle folder name, i.e. "gradle" */
     public static final String FD_GRADLE = "gradle";                    //$NON-NLS-1$
     /** Default gradle wrapper folder name, i.e. "gradle/wrapper" */
