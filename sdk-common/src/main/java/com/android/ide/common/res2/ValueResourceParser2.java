@@ -258,7 +258,7 @@ class ValueResourceParser2 {
             set = Sets.newHashSet(name);
             map.put(resource.getType(), set);
         } else {
-            if (set.contains(name)) {
+            if (set.contains(name) && resource.getType() != ResourceType.PUBLIC) {
                 throw MergingException.withMessage(
                         "Found item %s/%s more than one time",
                         resource.getType().getDisplayName(), name).withFile(from).build();
