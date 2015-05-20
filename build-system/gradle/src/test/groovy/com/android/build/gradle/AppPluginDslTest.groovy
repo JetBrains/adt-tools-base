@@ -571,6 +571,8 @@ public class AppPluginDslTest extends BaseTest {
         Project project = ProjectBuilder.builder().withProjectDir(
                 new File(testDir, "${FOLDER_TEST_PROJECTS}/basic")).build()
 
+        project.ext['com.android.build.gradle.experimentalPreprocessResources'] = 'true'
+
         project.apply plugin: 'com.android.application'
 
         project.android {

@@ -98,6 +98,7 @@ public abstract class BaseExtension implements AndroidConfig {
     /** Packaging options. */
     final PackagingOptions packagingOptions
 
+    /** Options to control resources preprocessing. Not finalized yet.*/
     final PreprocessingOptions preprocessingOptions
 
     /** JaCoCo options. */
