@@ -83,10 +83,10 @@ public interface IPkgDesc extends Comparable<IPkgDesc>, IPkgCapabilities, IListD
     /**
      * Returns the package's revision or null. This will come from the {@link FullRevision} or
      * {@link MajorRevision}, with the precision set as appropriate.
-     * @return A non-null value if {@link #hasMajorRevision()} or {@link #hasFullRevision()}
-     * is true; otherwise a null value.
+     * @return A representation of {@link #getMajorRevision()} or {@link #getFullRevision()},
+     * depending on which one exists.
      */
-    @Nullable
+    @NonNull
     PreciseRevision getPreciseRevision();
 
   /**
@@ -140,12 +140,25 @@ public interface IPkgDesc extends Comparable<IPkgDesc>, IPkgCapabilities, IListD
 
     /**
      * Indicates whether <em>this</em> package descriptor is an update for the given
-     * existing descriptor.
+     * existing descriptor. Preview versions are never considered updates for non-
+     * previews, and vice versa.
      *
      * @param existingDesc A non-null existing descriptor.
      * @return True if this package is an update for the given one.
      */
     boolean isUpdateFor(@NonNull IPkgDesc existingDesc);
+
+  /**
+   * Indicates whether <em>this</em> package descriptor is an update for the given
+   * existing descriptor, using the given comparison method.
+   *
+   * @param existingDesc A non-null existing descriptor.
+   * @param previewComparison The {@link FullRevision.PreviewComparison} method to use
+   *                          when comparing the packages.
+   * @return True if this package is an update for the given one.
+   */
+    boolean isUpdateFor(@NonNull IPkgDesc existingDesc,
+                        @NonNull FullRevision.PreviewComparison previewComparison);
 
     /**
      * Returns a stable string id that can be used to reference this package.
@@ -161,5 +174,10 @@ public interface IPkgDesc extends Comparable<IPkgDesc>, IPkgCapabilities, IListD
      */
     @NonNull
     File getCanonicalInstallFolder(@NonNull File sdkLocation);
+
+    /**
+     * @return True if the revision of this package is a preview.
+     */
+    boolean isPreview();
 }
 

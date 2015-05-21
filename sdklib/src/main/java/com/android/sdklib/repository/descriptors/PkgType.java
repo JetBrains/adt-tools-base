@@ -64,7 +64,7 @@ public enum PkgType implements IPkgCapabilities {
     /** Filter the SDK/docs folder.
      *  Has {@link MajorRevision}. */
     PKG_DOC(0x0010, SdkConstants.FD_DOCS,
-            "Documentation for Android SDK $API{?$MAJ>1:, rev $MAJ}",
+            "Documentation for Android SDK",
             true /*maj-r*/, false, true /*api*/, false, false, false, false, false),
 
     /** Filter the SDK/platforms.
