@@ -901,20 +901,6 @@ public class ExternalAnnotationRepository {
             public List<Value> getValues() {
                 return mValues == null ? Collections.<Value>emptyList() : mValues;
             }
-
-            @Nullable
-            @Override
-            public Object getValue(@NonNull String name) {
-                if (mValues != null) {
-                    for (Value value : mValues) {
-                        if (name.equals(value.name)) {
-                            return value.value;
-                        }
-                    }
-                }
-
-                return null;
-            }
         }
 
         private Map<String, ResolvedExternalAnnotation> mMarkerAnnotations = Maps.newHashMapWithExpectedSize(30);
@@ -951,20 +937,31 @@ public class ExternalAnnotationRepository {
                             value = false;
                         } else if (valueString.startsWith("\"") && valueString.endsWith("\"") &&
                                 valueString.length() >= 2) {
-                            value = valueString.substring(1, valueString.length() - 2);
+                            value = valueString.substring(1, valueString.length() - 1);
                         } else if (valueString.startsWith("{") && valueString.endsWith("}")) {
                             // Array of values
-                            String listString = valueString.substring(1, valueString.length() - 2);
-                            // We can't actually know; this could be for example
-                            //  {java.util.zip.ZipEntry.STORED, java.util.zip.ZipEntry.DEFLATED}
-                            // and we don't know the types of these
-                            // For now, initialize the fields to the string names
+                            String listString = valueString.substring(1, valueString.length() - 1);
+                            // We don't know the types, but we'll assume that they're either
+                            // all strings (the most common array type in our annotations), or
+                            // field references. We can't know the types of the fields; it's
+                            // not part of the annotation metadata. We'll place them in an Object[]
+                            // for now.
+                            boolean allStrings = true;
                             Splitter splitter = Splitter.on(',').omitEmptyStrings().trimResults();
                             List<Object> result = Lists.newArrayList();
                             for (String reference : splitter.split(listString)) {
-                                result.add(new ResolvedExternalField(reference));
+                                if (reference.startsWith("\"")) {
+                                    result.add(reference.substring(1, reference.length() - 1));
+                                } else {
+                                    result.add(new ResolvedExternalField(reference));
+                                    allStrings = false;
+                                }
                             }
-                            value = result.toArray();
+                            if (allStrings) {
+                                value = result.toArray(new String[result.size()]);
+                            } else {
+                                value = result.toArray();
+                            }
 
                             // We don't know the actual type of these fields; we'll assume they're
                             // a special form of
