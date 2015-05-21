@@ -44,7 +44,7 @@ public class ProductFlavorCombo {
         flavorList = ImmutableList.copyOf(flavors);
     }
 
-    public ProductFlavorCombo(@NonNull Iterable<ProductFlavor> flavors) {
+    public ProductFlavorCombo(@NonNull Iterable<? extends ProductFlavor> flavors) {
         flavorList = ImmutableList.copyOf(flavors);
     }
 

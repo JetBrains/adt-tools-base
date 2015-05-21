@@ -14,20 +14,20 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.ndk.internal
+package com.android.build.gradle.ndk.internal;
 
-import org.gradle.nativeplatform.NativeBinarySpec
+import org.gradle.nativeplatform.NativeBinarySpec;
 
 /**
  * Interface for native binaries flag configurations.
  */
-interface NativeToolSpecification {
+public interface NativeToolSpecification {
 
-    public Iterable<String> getCFlags()
+    Iterable<String> getCFlags();
 
-    public Iterable<String> getCppFlags()
+    Iterable<String> getCppFlags();
 
-    public Iterable<String> getLdFlags()
+    Iterable<String> getLdFlags();
 
-    public void apply(NativeBinarySpec binary);
+    void apply(NativeBinarySpec binary);
 }
