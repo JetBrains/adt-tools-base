@@ -24,7 +24,7 @@ import com.android.annotations.Nullable;
  * Enum of valid ABI you can specify for NDK.
  */
 public enum Abi {
-    //          name                           architecture                        plaform                   gccPrefix                 supports64Bits
+    //          name                           architecture                        gccToolchainPrefix        gccExecutablePrefix       supports64Bits
     ARMEABI    (SdkConstants.ABI_ARMEABI,      SdkConstants.CPU_ARCH_ARM,          "arm-linux-androideabi",  "arm-linux-androideabi",  false),
     ARMEABI_V7A(SdkConstants.ABI_ARMEABI_V7A,  SdkConstants.CPU_ARCH_ARM,          "arm-linux-androideabi",  "arm-linux-androideabi",  false),
     ARM64_V8A  (SdkConstants.ABI_ARM64_V8A,    SdkConstants.CPU_ARCH_ARM64,        "aarch64-linux-android",  "aarch64-linux-android",  true),
@@ -39,17 +39,17 @@ public enum Abi {
     @NonNull
     String architecture;
     @NonNull
-    private String platform;
+    private String gccToolchainPrefix;
     @NonNull
-    private String gccPrefix;
+    private String gccExecutablePrefix;
     private boolean supports64Bits;
 
     Abi(@NonNull String name, @NonNull String architecture,
-            @NonNull String platform, @NonNull String gccPrefix, boolean supports64Bits) {
+            @NonNull String gccToolchainPrefix, @NonNull String gccExecutablePrefix, boolean supports64Bits) {
         this.name = name;
         this.architecture = architecture;
-        this.platform = platform;
-        this.gccPrefix = gccPrefix;
+        this.gccToolchainPrefix = gccToolchainPrefix;
+        this.gccExecutablePrefix = gccExecutablePrefix;
         this.supports64Bits = supports64Bits;
     }
 
@@ -86,16 +86,16 @@ public enum Abi {
      * Returns the platform string for locating the toolchains in the NDK.
      */
     @NonNull
-    public String getPlatform() {
-        return platform;
+    public String getGccToolchainPrefix() {
+        return gccToolchainPrefix;
     }
 
     /**
      * Returns the prefix of GCC tools for the ABI.
      */
     @NonNull
-    public String getGccPrefix() {
-        return gccPrefix;
+    public String getGccExecutablePrefix() {
+        return gccExecutablePrefix;
     }
 
     /**
