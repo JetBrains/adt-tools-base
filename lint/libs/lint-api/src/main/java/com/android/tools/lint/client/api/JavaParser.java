@@ -494,7 +494,14 @@ public abstract class JavaParser {
         public abstract List<Value> getValues();
 
         @Nullable
-        public abstract Object getValue(@NonNull String name);
+        public Object getValue(@NonNull String name) {
+            for (Value value : getValues()) {
+                if (name.equals(value.name)) {
+                    return value.value;
+                }
+            }
+            return null;
+        }
 
         @Nullable
         public Object getValue() {

@@ -19,6 +19,7 @@ package com.android.tools.lint.checks;
 import com.android.tools.lint.ExternalAnnotationRepository;
 import com.android.tools.lint.detector.api.Detector;
 
+@SuppressWarnings("ClassNameDiffersFromFileName") // For embedded unit tests
 public class SupportAnnotationDetectorTest extends AbstractCheckTest {
     private static final boolean SDK_ANNOTATIONS_AVAILABLE =
             new SupportAnnotationDetectorTest().createClient().findResource(
@@ -199,16 +200,16 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                 + "        setFlags(\"\", flag); // ERROR\n"
                 + "                     ~~~~\n"
                 + (SDK_ANNOTATIONS_AVAILABLE ?
-                "src/test/pkg/IntDefTest.java:99: Error: Must be one of: View.LAYOUT_DIRECTION_LTR, View.LAYOUT_DIRECTION_RTL, View.LAYOUT_DIRECTION_INHERIT, View.LAYOUT_DIRECTION_LOCAL [WrongConstant]\n"
+                "src/test/pkg/IntDefTest.java:99: Error: Must be one of: View.LAYOUT_DIRECTION_LTR, View.LAYOUT_DIRECTION_RTL, View.LAYOUT_DIRECTION_INHERIT, View.LAYOUT_DIRECTION_LOCALE [WrongConstant]\n"
                 + "        view.setLayoutDirection(View.TEXT_DIRECTION_LTR); // ERROR\n"
                 + "                                ~~~~~~~~~~~~~~~~~~~~~~~\n"
-                + "src/test/pkg/IntDefTest.java:100: Error: Must be one of: View.LAYOUT_DIRECTION_LTR, View.LAYOUT_DIRECTION_RTL, View.LAYOUT_DIRECTION_INHERIT, View.LAYOUT_DIRECTION_LOCAL [WrongConstant]\n"
+                + "src/test/pkg/IntDefTest.java:100: Error: Must be one of: View.LAYOUT_DIRECTION_LTR, View.LAYOUT_DIRECTION_RTL, View.LAYOUT_DIRECTION_INHERIT, View.LAYOUT_DIRECTION_LOCALE [WrongConstant]\n"
                 + "        view.setLayoutDirection(0); // ERROR\n"
                 + "                                ~\n"
                 + "src/test/pkg/IntDefTest.java:101: Error: Flag not allowed here [WrongConstant]\n"
                 + "        view.setLayoutDirection(View.LAYOUT_DIRECTION_LTR|View.LAYOUT_DIRECTION_RTL); // ERROR\n"
                 + "                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-                + "src/test/pkg/IntDefTest.java:102: Error: Must be one of: Context.POWER_SERVICE, Context.WINDOW_SERVICE, Context.LAYOUT_INFLATER_SERVICE, Context.ACCOUNT_SERVICE, Context.ACTIVITY_SERVICE, Context.ALARM_SERVICE, Context.NOTIFICATION_SERVICE, Context.ACCESSIBILITY_SERVICE, Context.CAPTIONING_SERVICE, Context.KEYGUARD_SERVICE, Context.LOCATION_SERVICE, Context.SEARCH_SERVICE, Context.SENSOR_SERVICE, Context.STORAGE_SERVICE, Context.WALLPAPER_SERVICE, Context.VIBRATOR_SERVICE, Context.CONNECTIVITY_SERVICE, Context.WIFI_SERVICE, Context.WIFI_P2P_SERVICE, Context.NSD_SERVICE, Context.AUDIO_SERVICE, Context.MEDIA_ROUTER_SERVICE, Context.TELEPHONY_SERVICE, Context.TELECOM_SERVICE, Context.CLIPBOARD_SERVICE, Context.INPUT_METHOD_SERVICE, Context.TEXT_SERVICES_MANAGER_SERVICE, Context.APPWIDGET_SERVICE, Context.DROPBOX_SERVICE, Context.DEVICE_POLICY_SERVICE, Context.UI_MODE_SERVICE, Context.DOWNLOAD_SERVICE, Context.NFC_SERVICE, Context.BLUETOOTH_SERVICE, Context.USB_SERVICE, Context.LAUNCHER_APPS_SERVICE, Context.INPUT_SERVICE, Context.DISPLAY_SERVICE, Context.USER_SERVICE, Context.RESTRICTIONS_SERVICE, Context.APP_OPS_SERVICE, Context.CAMERA_SERVICE, Context.PRINT_SERVICE, Context.CONSUMER_IR_SERVICE, Context.TV_INPUT_SERVICE, Context.MEDIA_SESSION_SERVICE, Context.BATTERY_SERVICE, Context.JOB_SCHEDULER_SERVICE, Context.MEDIA_PROJECTION_SERVIC [WrongConstant]\n"
+                + "src/test/pkg/IntDefTest.java:102: Error: Must be one of: Context.POWER_SERVICE, Context.WINDOW_SERVICE, Context.LAYOUT_INFLATER_SERVICE, Context.ACCOUNT_SERVICE, Context.ACTIVITY_SERVICE, Context.ALARM_SERVICE, Context.NOTIFICATION_SERVICE, Context.ACCESSIBILITY_SERVICE, Context.CAPTIONING_SERVICE, Context.KEYGUARD_SERVICE, Context.LOCATION_SERVICE, Context.SEARCH_SERVICE, Context.SENSOR_SERVICE, Context.STORAGE_SERVICE, Context.WALLPAPER_SERVICE, Context.VIBRATOR_SERVICE, Context.CONNECTIVITY_SERVICE, Context.WIFI_SERVICE, Context.WIFI_P2P_SERVICE, Context.NSD_SERVICE, Context.AUDIO_SERVICE, Context.MEDIA_ROUTER_SERVICE, Context.TELEPHONY_SERVICE, Context.TELECOM_SERVICE, Context.CLIPBOARD_SERVICE, Context.INPUT_METHOD_SERVICE, Context.TEXT_SERVICES_MANAGER_SERVICE, Context.APPWIDGET_SERVICE, Context.DROPBOX_SERVICE, Context.DEVICE_POLICY_SERVICE, Context.UI_MODE_SERVICE, Context.DOWNLOAD_SERVICE, Context.NFC_SERVICE, Context.BLUETOOTH_SERVICE, Context.USB_SERVICE, Context.LAUNCHER_APPS_SERVICE, Context.INPUT_SERVICE, Context.DISPLAY_SERVICE, Context.USER_SERVICE, Context.RESTRICTIONS_SERVICE, Context.APP_OPS_SERVICE, Context.CAMERA_SERVICE, Context.PRINT_SERVICE, Context.CONSUMER_IR_SERVICE, Context.TV_INPUT_SERVICE, Context.MEDIA_SESSION_SERVICE, Context.BATTERY_SERVICE, Context.JOB_SCHEDULER_SERVICE, Context.MEDIA_PROJECTION_SERVICE [WrongConstant]\n"
                 + "        context.getSystemService(TYPE_1); // ERROR\n"
                 + "                                 ~~~~~~\n"
                 + "20 errors, 0 warnings\n" :
@@ -291,14 +292,137 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                 + "src/test/pkg/CheckPermissions.java:22: Warning: The result of extractAlpha is not used [CheckResult]\n"
                 + "        bitmap.extractAlpha(); // WARNING\n"
                 + "        ~~~~~~~~~~~~~~~~~~~~~\n"
-                + "src/test/pkg/CheckPermissions.java:10: Warning: The result of checkCallingOrSelfPermission is not used; did you mean to call #enforceCallingOrSelfPermission(String,String? [UseCheckPermission]\n"
+                + "src/test/pkg/CheckPermissions.java:10: Warning: The result of checkCallingOrSelfPermission is not used; did you mean to call #enforceCallingOrSelfPermission(String,String)? [UseCheckPermission]\n"
                 + "        context.checkCallingOrSelfPermission(Manifest.permission.INTERNET); // WRONG\n"
                 + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-                + "src/test/pkg/CheckPermissions.java:11: Warning: The result of checkPermission is not used; did you mean to call #enforcePermission(String,int,int,String? [UseCheckPermission]\n"
+                + "src/test/pkg/CheckPermissions.java:11: Warning: The result of checkPermission is not used; did you mean to call #enforcePermission(String,int,int,String)? [UseCheckPermission]\n"
                 + "        context.checkPermission(Manifest.permission.INTERNET, 1, 1);\n"
                 + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                 + "0 errors, 3 warnings\n",
 
                 lintProject("src/test/pkg/CheckPermissions.java.txt=>src/test/pkg/CheckPermissions.java"));
+    }
+
+    private final TestFile mUiThreadAnnotation = java("src/android/support/annotation/UiThread.java", ""
+            + "package android.support.annotation;\n"
+            + "\n"
+            + "import java.lang.annotation.Retention;\n"
+            + "import java.lang.annotation.Target;\n"
+            + "\n"
+            + "import static java.lang.annotation.ElementType.CONSTRUCTOR;\n"
+            + "import static java.lang.annotation.ElementType.METHOD;\n"
+            + "import static java.lang.annotation.ElementType.TYPE;\n"
+            + "import static java.lang.annotation.RetentionPolicy.CLASS;\n"
+            + "\n"
+            + "@Retention(CLASS)\n"
+            + "@Target({METHOD,CONSTRUCTOR,TYPE})\n"
+            + "public @interface UiThread {\n"
+            + "}\n");
+
+    private final TestFile mMainThreadAnnotation = java("src/android/support/annotation/MainThread.java", ""
+            + "package android.support.annotation;\n"
+            + "\n"
+            + "import java.lang.annotation.Retention;\n"
+            + "import java.lang.annotation.Target;\n"
+            + "\n"
+            + "import static java.lang.annotation.ElementType.CONSTRUCTOR;\n"
+            + "import static java.lang.annotation.ElementType.METHOD;\n"
+            + "import static java.lang.annotation.ElementType.TYPE;\n"
+            + "import static java.lang.annotation.RetentionPolicy.CLASS;\n"
+            + "\n"
+            + "@Retention(CLASS)\n"
+            + "@Target({METHOD,CONSTRUCTOR,TYPE})\n"
+            + "public @interface MainThread {\n"
+            + "}\n");
+
+    private final TestFile mWorkerThreadAnnotation = java("src/android/support/annotation/WorkerThread.java", ""
+            + "package android.support.annotation;\n"
+            + "\n"
+            + "import java.lang.annotation.Retention;\n"
+            + "import java.lang.annotation.Target;\n"
+            + "\n"
+            + "import static java.lang.annotation.ElementType.CONSTRUCTOR;\n"
+            + "import static java.lang.annotation.ElementType.METHOD;\n"
+            + "import static java.lang.annotation.ElementType.TYPE;\n"
+            + "import static java.lang.annotation.RetentionPolicy.CLASS;\n"
+            + "\n"
+            + "@Retention(CLASS)\n"
+            + "@Target({METHOD,CONSTRUCTOR,TYPE})\n"
+            + "public @interface WorkerThread {\n"
+            + "}\n");
+
+    public void testThreading() throws Exception {
+        assertEquals(""
+                + "src/test/pkg/ThreadTest.java:15: Error: Method onPreExecute must be called from the main thread, currently inferred thread is worker thread [WrongThread]\n"
+                + "                onPreExecute(); // ERROR\n"
+                + "                ~~~~~~~~~~~~~~\n"
+                + "src/test/pkg/ThreadTest.java:16: Error: Method paint must be called from the UI thread, currently inferred thread is worker thread [WrongThread]\n"
+                + "                view.paint(); // ERROR\n"
+                + "                ~~~~~~~~~~~~\n"
+                + "src/test/pkg/ThreadTest.java:22: Error: Method publishProgress must be called from the worker thread, currently inferred thread is main thread [WrongThread]\n"
+                + "                publishProgress(); // ERROR\n"
+                + "                ~~~~~~~~~~~~~~~~~\n"
+                + "3 errors, 0 warnings\n",
+
+            lintProject(
+                java("src/test/pkg/ThreadTest.java", ""
+                        + "package com.android.demo.frameworkannotations;\n"
+                        + "\n"
+                        + "import android.support.annotation.MainThread;\n"
+                        + "import android.support.annotation.UiThread;\n"
+                        + "import android.support.annotation.WorkerThread;\n"
+                        + "\n"
+                        + "public class ThreadTest {\n"
+                        + "    public static AsyncTask testTask() {\n"
+                        + "\n"
+                        + "        return new AsyncTask() {\n"
+                        + "            final CustomView view = new CustomView();\n"
+                        + "\n"
+                        + "            @Override\n"
+                        + "            protected void doInBackground(Object... params) {\n"
+                        + "                onPreExecute(); // ERROR\n"
+                        + "                view.paint(); // ERROR\n"
+                        + "                publishProgress(); // OK\n"
+                        + "            }\n"
+                        + "\n"
+                        + "            @Override\n"
+                        + "            protected void onPreExecute() {\n"
+                        + "                publishProgress(); // ERROR\n"
+                        + "                onProgressUpdate(); // OK\n"
+                        + "            }\n"
+                        + "        };\n"
+                        + "    }\n"
+                        + "\n"
+                        + "    @UiThread\n"
+                        + "    public static class View {\n"
+                        + "        public void paint() {\n"
+                        + "        }\n"
+                        + "    }\n"
+                        + "\n"
+                        + "    public static class CustomView extends View {\n"
+                        + "        @Override public void paint() {\n"
+                        + "        }\n"
+                        + "    }\n"
+                        + "\n"
+                        + "    public abstract static class AsyncTask {\n"
+                        + "        @WorkerThread\n"
+                        + "        protected abstract void doInBackground(Object... params);\n"
+                        + "\n"
+                        + "        @MainThread\n"
+                        + "        protected void onPreExecute() {\n"
+                        + "        }\n"
+                        + "\n"
+                        + "        @MainThread\n"
+                        + "        protected void onProgressUpdate(Object... values) {\n"
+                        + "        }\n"
+                        + "\n"
+                        + "        @WorkerThread\n"
+                        + "        protected final void publishProgress(Object... values) {\n"
+                        + "        }\n"
+                        + "    }\n"
+                        + "}\n"),
+                    mUiThreadAnnotation,
+                    mMainThreadAnnotation,
+                    mWorkerThreadAnnotation));
     }
 }
