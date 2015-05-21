@@ -698,7 +698,7 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
 
             lintProject(
                 java("src/test/pkg/ThreadTest.java", ""
-                        + "package com.android.demo.frameworkannotations;\n"
+                        + "package test.pkg;\n"
                         + "\n"
                         + "import android.support.annotation.MainThread;\n"
                         + "import android.support.annotation.UiThread;\n"
