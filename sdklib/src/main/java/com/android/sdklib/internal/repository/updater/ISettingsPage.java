@@ -74,9 +74,9 @@ public interface ISettingsPage {
     /**
      * Setting to enabling previews in the package list
      * Type: Boolean.
-     * Default: False.
+     * Default: True.
      */
-    String KEY_ENABLE_PREVIEWS = "sdkman.enable.previews";   //$NON-NLS-1$
+    String KEY_ENABLE_PREVIEWS = "sdkman.enable.previews2";   //$NON-NLS-1$
 
     /**
      * Setting to set the density of the monitor.

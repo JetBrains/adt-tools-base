@@ -193,7 +193,10 @@ public class SettingsController {
          * @see ISettingsPage#KEY_ENABLE_PREVIEWS
          */
         public boolean getEnablePreviews() {
-            return Boolean.parseBoolean(mProperties.getProperty(ISettingsPage.KEY_ENABLE_PREVIEWS));
+            return Boolean.parseBoolean(
+                    mProperties.getProperty(
+                            ISettingsPage.KEY_ENABLE_PREVIEWS,
+                            Boolean.TRUE.toString()));
         }
 
         /**
@@ -288,6 +291,7 @@ public class SettingsController {
             setShowUpdateOnly(mSettings.getShowUpdateOnly());
             setSetting(ISettingsPage.KEY_ASK_ADB_RESTART, mSettings.getAskBeforeAdbRestart());
             setSetting(ISettingsPage.KEY_USE_DOWNLOAD_CACHE, mSettings.getUseDownloadCache());
+            setSetting(ISettingsPage.KEY_ENABLE_PREVIEWS, mSettings.getEnablePreviews());
 
         } catch (Exception e) {
             if (mSdkLog != null) {
