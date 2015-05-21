@@ -303,7 +303,7 @@ public class ExternalAnnotationRepositoryTest extends SdkTestCase {
         assertEquals(values[2], createField("android.graphics.Canvas", "HAS_ALPHA_LAYER_SAVE_FLAG"));
         assertEquals(values[3], createField("android.graphics.Canvas", "FULL_COLOR_LAYER_SAVE_FLAG"));
         assertEquals(values[4], createField("android.graphics.Canvas", "CLIP_TO_LAYER_SAVE_FLAG"));
-        assertEquals(values[5], createField("android.graphics.Canvas", "ALL_SAVE_FLA"));
+        assertEquals(values[5], createField("android.graphics.Canvas", "ALL_SAVE_FLAG"));
 
         ResolvedField field = (ResolvedField)values[0];
         assertEquals("android.graphics.Canvas.MATRIX_SAVE_FLAG", field.getSignature());
