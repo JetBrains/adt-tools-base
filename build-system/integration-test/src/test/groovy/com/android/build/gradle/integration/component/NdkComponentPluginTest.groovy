@@ -67,6 +67,7 @@ model {
     @Test
     public void assemble() {
         project.execute("assemble");
+        assertThat(project.file("build/intermediates/binaries/debug/obj/x86/libhello-jni.so")).exists()
         assertThat(project.file("build/intermediates/binaries/debug/lib/x86/libhello-jni.so")).exists()
         assertThat(project.file("build/intermediates/binaries/release/lib/x86/libhello-jni.so")).exists()
     }

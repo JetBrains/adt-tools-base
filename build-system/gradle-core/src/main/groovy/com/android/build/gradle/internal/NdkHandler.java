@@ -420,6 +420,14 @@ public class NdkHandler {
     }
 
     /**
+     * Return the executable for removing debug symbols from a shared object.
+     */
+    public File getStripCommand(Abi abi) {
+        String strip = toolchain == Toolchain.CLANG ? "ndk-strip" : abi.getGccExecutablePrefix() + "-strip";
+        return new File(getToolchainPath(toolchain, toolchainVersion, abi), "bin/" + strip);
+    }
+
+    /**
      * Return a list of include directories for an STl.
      */
     public List<File> getStlIncludes(@Nullable String stlName, @NonNull Abi abi) {
