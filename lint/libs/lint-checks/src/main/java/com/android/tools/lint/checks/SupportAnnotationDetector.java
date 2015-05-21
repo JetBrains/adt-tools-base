@@ -25,6 +25,7 @@ import static com.android.SdkConstants.TYPE_DEF_FLAG_ATTRIBUTE;
 import static com.android.resources.ResourceType.COLOR;
 import static com.android.resources.ResourceType.DRAWABLE;
 import static com.android.resources.ResourceType.MIPMAP;
+import static com.android.tools.lint.detector.api.JavaContext.findSurroundingMethod;
 import static com.android.tools.lint.detector.api.JavaContext.getParentOfType;
 
 import com.android.annotations.NonNull;
@@ -173,14 +174,35 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
         Severity.WARNING,
         IMPLEMENTATION);
 
+    /** Passing the wrong constant to an int or String method */
+    public static final Issue THREAD = Issue.create(
+            "WrongThread", //$NON-NLS-1$
+            "Wrong Thread",
+
+            "Ensures that a method which expects to be called on a specific thread, is actually " +
+            "called from that thread. For example, calls on methods in widgets should always " +
+            "be made on the UI thread.",
+
+            Category.CORRECTNESS,
+            6,
+            Severity.ERROR,
+            IMPLEMENTATION)
+            .addMoreInfo(
+                    "http://developer.android.com/guide/components/processes-and-threads.html#Threads");
+
     public static final String CHECK_RESULT_ANNOTATION = SUPPORT_ANNOTATIONS_PREFIX + "CheckResult"; //$NON-NLS-1$
     public static final String COLOR_INT_ANNOTATION = SUPPORT_ANNOTATIONS_PREFIX + "ColorInt"; //$NON-NLS-1$
     public static final String INT_RANGE_ANNOTATION = SUPPORT_ANNOTATIONS_PREFIX + "IntRange"; //$NON-NLS-1$
     public static final String FLOAT_RANGE_ANNOTATION = SUPPORT_ANNOTATIONS_PREFIX + "FloatRange"; //$NON-NLS-1$
     public static final String SIZE_ANNOTATION = SUPPORT_ANNOTATIONS_PREFIX + "Size"; //$NON-NLS-1$
+    public static final String UI_THREAD_ANNOTATION = SUPPORT_ANNOTATIONS_PREFIX + "UiThread"; //$NON-NLS-1$
+    public static final String MAIN_THREAD_ANNOTATION = SUPPORT_ANNOTATIONS_PREFIX + "MainThread"; //$NON-NLS-1$
+    public static final String WORKER_THREAD_ANNOTATION = SUPPORT_ANNOTATIONS_PREFIX + "WorkerThread"; //$NON-NLS-1$
+    public static final String BINDER_THREAD_ANNOTATION = SUPPORT_ANNOTATIONS_PREFIX + "BinderThread"; //$NON-NLS-1$
 
-    public static final String RES_SUFFIX = "Res";       //$NON-NLS-1$
-    public static final String ATTR_SUGGEST = "suggest"; //$NON-NLS-1$
+    public static final String RES_SUFFIX = "Res";
+    public static final String THREAD_SUFFIX = "Thread";
+    public static final String ATTR_SUGGEST = "suggest";
     public static final String ATTR_TO = "to";
     public static final String ATTR_FROM = "from";
     public static final String ATTR_FROM_INCLUSIVE = "fromInclusive";
@@ -195,14 +217,18 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
     public SupportAnnotationDetector() {
     }
 
-    private static void checkMethodAnnotation(
+    private void checkMethodAnnotation(
             @NonNull JavaContext context,
+            @NonNull ResolvedMethod method,
             @NonNull MethodInvocation node,
             @NonNull ResolvedAnnotation annotation) {
         String signature = annotation.getSignature();
         if (CHECK_RESULT_ANNOTATION.equals(signature)
                 || signature.endsWith(".CheckReturnValue")) { // support findbugs annotation too
             checkResult(context, node, annotation);
+        } else if (signature.endsWith(THREAD_SUFFIX)
+                && signature.startsWith(SUPPORT_ANNOTATIONS_PREFIX)) {
+            checkThreading(context, node, method, signature);
         }
     }
 
@@ -290,6 +316,101 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
         }
     }
 
+    private static void checkThreading(
+            @NonNull JavaContext context,
+            @NonNull MethodInvocation node,
+            @NonNull ResolvedMethod method,
+            @NonNull String annotation) {
+        String threadContext = getThreadContext(context, node);
+        if (threadContext != null && !isCompatibleThread(threadContext, annotation)) {
+            String message = String.format("Method %1$s must be called from the `%2$s` thread, currently inferred thread is `%3$s` thread",
+                    method.getName(), describeThread(annotation), describeThread(threadContext));
+            context.report(THREAD, node, context.getLocation(node), message);
+        }
+    }
+
+    @NonNull
+    public static String describeThread(@NonNull String annotation) {
+        if (UI_THREAD_ANNOTATION.equals(annotation)) {
+            return "UI";
+        }
+        else if (MAIN_THREAD_ANNOTATION.equals(annotation)) {
+            return "main";
+        }
+        else if (BINDER_THREAD_ANNOTATION.equals(annotation)) {
+            return "binder";
+        }
+        else if (WORKER_THREAD_ANNOTATION.equals(annotation)) {
+            return "worker";
+        } else {
+            return "other";
+        }
+    }
+
+    /** returns true if the two threads are compatible */
+    public static boolean isCompatibleThread(@NonNull String thread1, @NonNull String thread2) {
+        if (thread1.equals(thread2)) {
+            return true;
+        }
+
+        // Allow @UiThread and @MainThread to be combined
+        if (thread1.equals(UI_THREAD_ANNOTATION)) {
+            if (thread2.equals(MAIN_THREAD_ANNOTATION)) {
+                return true;
+            }
+        } else if (thread1.equals(MAIN_THREAD_ANNOTATION)) {
+            if (thread2.equals(UI_THREAD_ANNOTATION)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /** Attempts to infer the current thread context at the site of the given method call */
+    @Nullable
+    private static String getThreadContext(@NonNull JavaContext context,
+            @NonNull MethodInvocation methodCall) {
+        Node node = findSurroundingMethod(methodCall);
+        if (node != null) {
+            ResolvedNode resolved = context.resolve(node);
+            if (resolved instanceof ResolvedMethod) {
+                ResolvedMethod method = (ResolvedMethod) resolved;
+                ResolvedClass cls = method.getContainingClass();
+
+                while (method != null) {
+                    for (ResolvedAnnotation annotation : method.getAnnotations()) {
+                        String name = annotation.getSignature();
+                        if (name.startsWith(SUPPORT_ANNOTATIONS_PREFIX)
+                                && name.endsWith(THREAD_SUFFIX)) {
+                            return name;
+                        }
+                    }
+                    method = method.getSuperMethod();
+                }
+
+                // See if we're extending a class with a known threading context
+                while (cls != null) {
+                    for (ResolvedAnnotation annotation : cls.getAnnotations()) {
+                        String name = annotation.getSignature();
+                        if (name.startsWith(SUPPORT_ANNOTATIONS_PREFIX)
+                                && name.endsWith(THREAD_SUFFIX)) {
+                            return name;
+                        }
+                    }
+                    cls = cls.getSuperClass();
+                }
+            }
+        }
+
+        // In the future, we could also try to infer the threading context using
+        // other heuristics. For example, if we're in a method with unknown threading
+        // context, but we see that the method is called by another method with a known
+        // threading context, we can infer that that threading context is the context for
+        // this thread too (assuming the call is direct).
+
+        return null;
+    }
 
     private static boolean isNumber(@NonNull Node argument) {
         return argument instanceof IntegralLiteral || argument instanceof UnaryExpression
@@ -883,7 +1004,7 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
         return new CallVisitor(context);
     }
 
-    private static class CallVisitor extends ForwardingAstVisitor {
+    private class CallVisitor extends ForwardingAstVisitor {
         private final JavaContext mContext;
 
         public CallVisitor(JavaContext context) {
@@ -899,7 +1020,18 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
                 for (ResolvedAnnotation annotation : annotations) {
                     annotation = getRelevantAnnotation(annotation);
                     if (annotation != null) {
-                        checkMethodAnnotation(mContext, call, annotation);
+                        checkMethodAnnotation(mContext, method, call, annotation);
+                    }
+                }
+
+                // Look for annotations on the class as well: these trickle
+                // down to all the methods in the class
+                ResolvedClass containingClass = method.getContainingClass();
+                annotations = containingClass.getAnnotations();
+                for (ResolvedAnnotation annotation : annotations) {
+                    annotation = getRelevantAnnotation(annotation);
+                    if (annotation != null) {
+                        checkMethodAnnotation(mContext, method, call, annotation);
                     }
                 }
 
