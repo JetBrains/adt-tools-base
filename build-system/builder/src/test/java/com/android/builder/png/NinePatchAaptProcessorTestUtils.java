@@ -62,12 +62,18 @@ public class NinePatchAaptProcessorTestUtils {
     public static final byte[] SIGNATURE = new byte[]{
             (byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A};
 
+    /**
+     * Returns the lastest build tools that's at least the passed version.
+     * @param fullRevision the minimum required build tools version.
+     * @return the latest build tools.
+     * @throws RuntimeException if the latest build tools is older than fullRevision.
+     */
     static File getAapt(FullRevision fullRevision) {
         ILogger logger = new StdLogger(StdLogger.Level.VERBOSE);
         SdkManager sdkManager = SdkManager.createManager(getSdkDir().getAbsolutePath(), logger);
         assert sdkManager != null;
-        BuildToolInfo buildToolInfo = sdkManager.getBuildTool(fullRevision);
-        if (buildToolInfo == null) {
+        BuildToolInfo buildToolInfo = sdkManager.getLatestBuildTool();
+        if (buildToolInfo == null || buildToolInfo.getRevision().compareTo(fullRevision) < 0) {
             throw new RuntimeException("Test requires build-tools " + fullRevision.toShortString());
         }
         return new File(buildToolInfo.getPath(BuildToolInfo.PathId.AAPT));
