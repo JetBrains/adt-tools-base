@@ -24,10 +24,13 @@ import com.android.build.gradle.internal.core.Abi;
 import com.android.build.gradle.internal.core.Toolchain;
 import com.android.sdklib.AndroidTargetHash;
 import com.android.sdklib.AndroidVersion;
+import com.android.sdklib.repository.PreciseRevision;
+import com.android.utils.Pair;
 import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.google.common.io.Closeables;
 
 import org.gradle.api.InvalidUserDataException;
@@ -36,11 +39,13 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -51,8 +56,10 @@ public class NdkHandler {
     private String compileSdkVersion;
     private final Toolchain toolchain;
     private final String toolchainVersion;
+    private final File ndkDirectory;
 
-    private File ndkDirectory;
+    private Map<Pair<Toolchain, Abi>, PreciseRevision> defaultToolchainVersions = Maps.newHashMap();
+
 
     public NdkHandler(
             @NonNull File projectDir,
@@ -84,23 +91,6 @@ public class NdkHandler {
 
     public String getToolchainVersion() {
         return toolchainVersion;
-    }
-
-    /**
-     * Toolchain name used by the NDK.
-     *
-     * This is the name of the folder containing the toolchain under $ANDROID_NDK_HOME/toolchain.
-     * e.g. for gcc targetting arm64_v8a, this method returns "aarch64-linux-android-4.9".
-     */
-    public String getToolchainDirectory(Abi abi) {
-        return getToolchainDirectory(toolchain, toolchainVersion, abi);
-    }
-
-    private String getToolchainDirectory(Toolchain toolchain, String toolchainVersion, Abi abi) {
-        String version = toolchainVersion.isEmpty()
-                ? getDefaultToolchainVersion(abi)
-                : toolchainVersion;
-        return abi.getPlatform() + "-" + (toolchain == Toolchain.GCC ? "" : "clang") + version;
     }
 
     /**
@@ -156,42 +146,33 @@ public class NdkHandler {
         return ndkDirectory;
     }
 
-    /**
-     * Return the path containing the prebuilt toolchain.
-     *
-     * @param abi         Target platform supported by the NDK.
-     * @return Directory containing the prebuilt toolchain.
-     */
-    private File getToolchainPath(Abi abi) {
-        return getToolchainPath(toolchain, toolchainVersion, abi);
-    }
-
-
-    private File getDefaultGccToolchainPath(Abi abi) {
-        return getToolchainPath(Toolchain.GCC, getGccToolchainVersion(abi), abi);
-    }
-
-    private File getToolchainPath(Toolchain otherToolchain, String otherToolchainVersion, Abi abi) {
-
-        String version = otherToolchainVersion.isEmpty()
-                ? getDefaultToolchainVersion(abi)
-                : otherToolchainVersion;
-
-        File prebuiltFolder;
-        if (otherToolchain == Toolchain.GCC) {
-            prebuiltFolder = new File(
-                    getNdkDirectory(),
-                    "toolchains/"
-                            + getToolchainDirectory(otherToolchain, otherToolchainVersion, abi)
-                            + "/prebuilt");
-
-        } else if (otherToolchain == Toolchain.CLANG) {
-            prebuiltFolder = new File(
-                    getNdkDirectory(),
-                    "toolchains/llvm-" + version + "/prebuilt");
+    private static String getToolchainPrefix(Toolchain toolchain, Abi abi) {
+        if (toolchain == Toolchain.GCC) {
+            return abi.getGccToolchainPrefix();
         } else {
-            throw new InvalidUserDataException("Unrecognized toolchain: " + otherToolchain);
+            return "llvm";
         }
+    }
+
+    /**
+     * Return the directory containing the toolchain.
+     *
+     * @param toolchain toolchain to use.
+     * @param toolchainVersion toolchain version to use.
+     * @param abi target ABI of the toolchaina
+     * @return a directory that contains the executables.
+     */
+    private File getToolchainPath(
+            Toolchain toolchain,
+            String toolchainVersion,
+            Abi abi) {
+        String version = toolchainVersion.isEmpty()
+                ? getDefaultToolchainVersion(toolchain, abi).toString()
+                : toolchainVersion;
+
+        File prebuiltFolder = new File(
+                ndkDirectory,
+                "toolchains/" + getToolchainPrefix(toolchain, abi) + "-" + version + "/prebuilt");
 
         String osName = System.getProperty("os.name").toLowerCase(Locale.ENGLISH);
         String hostOs;
@@ -267,27 +248,69 @@ public class NdkHandler {
 
     /**
      * Return the default version of the specified toolchain for a target abi.
+     *
+     * The default version is the highest version found in the NDK for the specified toolchain and
+     * ABI.  The result is cached for performance.
      */
-    private String getDefaultToolchainVersion(Abi abi) {
-        return abi.supports64Bits() ? toolchain.getDefaultVersion64() : toolchain.getDefaultVersion32();
+    private PreciseRevision getDefaultToolchainVersion(Toolchain toolchain, final Abi abi) {
+        PreciseRevision defaultVersion = defaultToolchainVersions.get(Pair.of(toolchain, abi));
+        if (defaultVersion != null) {
+            return defaultVersion;
+        }
+
+        final String toolchainPrefix = getToolchainPrefix(toolchain, abi);
+        File toolchains = new File(ndkDirectory, "toolchains");
+        File[] toolchainsForAbi = toolchains.listFiles(new FilenameFilter() {
+            @Override
+            public boolean accept(File dir, String name) {
+                return name.startsWith(toolchainPrefix);
+            }
+        });
+        if (toolchainsForAbi == null || toolchainsForAbi.length == 0) {
+            throw new RuntimeException(
+                    "No toolchains found in the NDK toolchains folder for ABI with prefix: "
+                            + toolchainPrefix);
+        }
+
+        // Once we have a list of toolchains, we look the highest version
+        PreciseRevision bestRevision = null;
+        for (File toolchainFolder : toolchainsForAbi) {
+            String folderName = toolchainFolder.getName();
+            String version = folderName.substring(toolchainPrefix.length() + 1);
+            try {
+                PreciseRevision revision = PreciseRevision.parseRevision(version);
+                if (bestRevision == null || revision.compareTo(bestRevision) > 0) {
+                    bestRevision = revision;
+                }
+            } catch (NumberFormatException ignore) {
+            }
+        }
+        defaultToolchainVersions.put(Pair.of(toolchain, abi), bestRevision);
+        if (bestRevision == null) {
+            throw new RuntimeException("Unable to find a valid toolchain in " + toolchains);
+        }
+        return bestRevision;
     }
 
     /**
-     * Return the gcc version that will be used by the NDK.
+     * Return the version of gcc that will be used by the NDK.
+     *
+     * Gcc is used by clang for linking.  It also contains gnu-libstdc++.
      *
      * If the gcc toolchain is used, then it's simply the toolchain version requested by the user.
      * If clang is used, then it depends the target abi.
      */
     public String getGccToolchainVersion(Abi abi) {
-        if (toolchain == Toolchain.GCC) {
-            return (toolchainVersion.isEmpty())
-                    ? getDefaultToolchainVersion(abi)
-                    : toolchainVersion;
-        } else {
-            return abi.supports64Bits()
-                    ? Toolchain.CLANG.getDefaultGccVersion64()
-                    : Toolchain.CLANG.getDefaultGccVersion32();
-        }
+        return (toolchain == Toolchain.GCC && !toolchainVersion.isEmpty())
+                ? toolchainVersion
+                : getDefaultToolchainVersion(Toolchain.GCC, abi).toString();
+    }
+
+    /**
+     * Return the folder containing gcc that will be used by the NDK.
+     */
+    public File getDefaultGccToolchainPath(Abi abi) {
+        return getToolchainPath(Toolchain.GCC, getGccToolchainVersion(abi), abi);
     }
 
     /**
@@ -317,17 +340,25 @@ public class NdkHandler {
         return supports64Bits() ? getAbiList() : getAbiList32();
     }
 
+    /**
+     * Return the executable for compiling C code.
+     */
     public File getCCompiler(Abi abi) {
-        String compiler = toolchain == Toolchain.CLANG ? "clang" : abi.getGccPrefix() + "-gcc";
-        return new File(getToolchainPath(abi), "bin/" + compiler);
+        String compiler = toolchain == Toolchain.CLANG ? "clang" : abi.getGccExecutablePrefix() + "-gcc";
+        return new File(getToolchainPath(toolchain, toolchainVersion, abi), "bin/" + compiler);
     }
 
+    /**
+     * Return the executable for compiling C++ code.
+     */
     public File getCppCompiler(Abi abi) {
-        String compiler = toolchain == Toolchain.CLANG ? "clang++" : abi.getGccPrefix() + "-g++";
-        return new File(getToolchainPath(abi), "bin/" + compiler);
+        String compiler = toolchain == Toolchain.CLANG ? "clang++" : abi.getGccExecutablePrefix() + "-g++";
+        return new File(getToolchainPath(toolchain, toolchainVersion, abi), "bin/" + compiler);
     }
 
-
+    /**
+     * Return a list of include directories for an STl.
+     */
     public List<File> getStlIncludes(@Nullable String stlName, @NonNull Abi abi) {
         File stlBaseDir = new File(ndkDirectory, "sources/cxx-stl/");
         if (stlName == null || stlName.isEmpty()) {
