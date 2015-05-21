@@ -937,10 +937,10 @@ public class ExternalAnnotationRepository {
                             value = false;
                         } else if (valueString.startsWith("\"") && valueString.endsWith("\"") &&
                                 valueString.length() >= 2) {
-                            value = valueString.substring(1, valueString.length() - 2);
+                            value = valueString.substring(1, valueString.length() - 1);
                         } else if (valueString.startsWith("{") && valueString.endsWith("}")) {
                             // Array of values
-                            String listString = valueString.substring(1, valueString.length() - 2);
+                            String listString = valueString.substring(1, valueString.length() - 1);
                             // We don't know the types, but we'll assume that they're either
                             // all strings (the most common array type in our annotations), or
                             // field references. We can't know the types of the fields; it's
@@ -951,7 +951,7 @@ public class ExternalAnnotationRepository {
                             List<Object> result = Lists.newArrayList();
                             for (String reference : splitter.split(listString)) {
                                 if (reference.startsWith("\"")) {
-                                    result.add(reference.substring(1, reference.length() - 2));
+                                    result.add(reference.substring(1, reference.length() - 1));
                                 } else {
                                     result.add(new ResolvedExternalField(reference));
                                     allStrings = false;
