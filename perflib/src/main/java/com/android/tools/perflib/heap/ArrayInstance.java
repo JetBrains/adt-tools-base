@@ -17,6 +17,10 @@
 package com.android.tools.perflib.heap;
 
 import com.android.annotations.NonNull;
+import com.android.tools.perflib.heap.io.HprofBuffer;
+
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
 
 public class ArrayInstance extends Instance {
 
@@ -43,6 +47,24 @@ public class ArrayInstance extends Instance {
             values[i] = readValue(mType);
         }
         return values;
+    }
+
+    @NonNull
+    private byte[] asRawByteArray(int elementCount) {
+        getBuffer().setPosition(mValuesOffset);
+        assert mType != Type.OBJECT;
+        byte[] bytes = new byte[Math.min(elementCount, mLength) * mType.getSize()];
+        getBuffer().read(bytes);
+        return bytes;
+    }
+
+    @NonNull
+    public char[] asCharArray(int length) {
+        assert mType == Type.CHAR;
+        CharBuffer charBuffer = ByteBuffer.wrap(asRawByteArray(length)).order(HprofBuffer.HPROF_BYTE_ORDER).asCharBuffer();
+        char[] result = new char[charBuffer.length()];
+        charBuffer.get(result);
+        return result;
     }
 
     @Override
