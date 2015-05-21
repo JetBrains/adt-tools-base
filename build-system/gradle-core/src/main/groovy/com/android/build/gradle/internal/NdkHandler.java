@@ -22,7 +22,10 @@ import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.core.Abi;
 import com.android.build.gradle.internal.core.Toolchain;
+import com.android.sdklib.AndroidTargetHash;
+import com.android.sdklib.AndroidVersion;
 import com.google.common.base.Charsets;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.io.Closeables;
@@ -53,10 +56,12 @@ public class NdkHandler {
 
     public NdkHandler(
             @NonNull File projectDir,
-            @NonNull String compileSdkVersion,
+            @Nullable String compileSdkVersion,
             @NonNull String toolchainName,
             @NonNull String toolchainVersion) {
-        this.compileSdkVersion = compileSdkVersion;
+        if (compileSdkVersion != null) {
+            setCompileSdkVersion(compileSdkVersion);
+        }
         this.toolchain = Toolchain.getByName(toolchainName);
         this.toolchainVersion = toolchainVersion;
         ndkDirectory = findNdkDirectory(projectDir);
@@ -66,8 +71,11 @@ public class NdkHandler {
         return compileSdkVersion;
     }
 
-    public void setCompileSdkVersion(String compileSdkVersion) {
-        this.compileSdkVersion = compileSdkVersion;
+    public void setCompileSdkVersion(@NonNull String compileSdkVersion) {
+        // Ensure compileSdkVersion is in platform hash string format (e.g. "android-21").
+        AndroidVersion androidVersion = AndroidTargetHash.getVersionFromHash(compileSdkVersion);
+        Preconditions.checkState(androidVersion != null);
+        this.compileSdkVersion = AndroidTargetHash.getPlatformHashString(androidVersion);
     }
 
     public Toolchain getToolchain() {
