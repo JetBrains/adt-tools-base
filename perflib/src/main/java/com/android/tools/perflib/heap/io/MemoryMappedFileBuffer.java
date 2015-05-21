@@ -62,7 +62,7 @@ public class MemoryMappedFileBuffer implements HprofBuffer {
                 long size = Math.min(mLength - offset, mBufferSize + mPadding);
                 mByteBuffers[i] = inputStream.getChannel()
                         .map(FileChannel.MapMode.READ_ONLY, offset, size);
-                mByteBuffers[i].order(ByteOrder.BIG_ENDIAN);
+                mByteBuffers[i].order(HPROF_BYTE_ORDER);
                 offset += mBufferSize;
             }
             mCurrentPosition = 0;
