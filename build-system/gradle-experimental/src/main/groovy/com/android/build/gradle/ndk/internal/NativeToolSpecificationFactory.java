@@ -14,30 +14,31 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.ndk.internal
+package com.android.build.gradle.ndk.internal;
 
-import com.android.build.gradle.internal.NdkHandler
-import com.android.build.gradle.internal.core.Toolchain
-import org.gradle.nativeplatform.BuildType
-import org.gradle.nativeplatform.platform.NativePlatform
+import com.android.build.gradle.internal.NdkHandler;
+import com.android.build.gradle.internal.core.Toolchain;
+
+import org.gradle.nativeplatform.BuildType;
+import org.gradle.nativeplatform.platform.NativePlatform;
 
 /**
  * Factory to create a NativeToolSpecification.
  */
-class NativeToolSpecificationFactory {
+public class NativeToolSpecificationFactory {
+
     /**
      * Returns a NativeToolSpecification.
      *
      * @param buildType Build type of the native binary.
-     * @param platform Target platform of the native binary.
+     * @param platform  Target platform of the native binary.
      * @return A NativeToolSpecification for the targeted native binary.
      */
-    public static NativeToolSpecification create(
-            NdkHandler ndkHandler,
-            BuildType buildType,
+    public static NativeToolSpecification create(NdkHandler ndkHandler, BuildType buildType,
             NativePlatform platform) {
-        return (ndkHandler.getToolchain() == Toolchain.GCC
+        return (ndkHandler.getToolchain().equals(Toolchain.GCC)
                 ? new GccNativeToolSpecification(buildType, platform)
-                : new ClangNativeToolSpecification(ndkHandler, buildType, platform))
+                : new ClangNativeToolSpecification(ndkHandler, buildType, platform));
     }
+
 }
