@@ -120,6 +120,24 @@ android {
                 mipsDebug : [SdkConstants.ABI_MIPS]);
     }
 
+    @Test
+    void "check using add on string for compileSdkVersion"() {
+        project.buildFile <<
+"""
+android {
+    compileSdkVersion "Google Inc.:Google APIs:$GradleTestProject.DEFAULT_COMPILE_SDK_VERSION"
+}
+"""
+        AndroidProject model = project.executeAndReturnModel("assembleDebug")
+        NativeLibrary lib = ModelHelper.getVariant(model.getVariants(), "debug").getMainArtifact()
+                .getNativeLibraries().first()
+        for (String flag : lib.getCCompilerFlags()) {
+            if (flag.contains("sysroot")) {
+                assertThat(flag).contains("android-${GradleTestProject.DEFAULT_COMPILE_SDK_VERSION}")
+            }
+        }
+    }
+
     /**
      * Verify resulting model is as expected.
      *
