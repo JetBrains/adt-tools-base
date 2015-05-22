@@ -16,6 +16,8 @@
 
 package com.android.assetstudiolib.vectordrawable;
 
+import org.w3c.dom.Node;
+
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
@@ -30,8 +32,8 @@ class SvgGroupNode extends SvgNode {
     private final static String INDENT_LEVEL = "    ";
     private ArrayList<SvgNode> mChildren = new ArrayList<SvgNode>();
 
-    public SvgGroupNode(String name) {
-        super(name);
+    public SvgGroupNode(SvgTree svgTree, Node docNode, String name) {
+        super(svgTree, docNode, name);
     }
 
     public void addChild(SvgNode child) {

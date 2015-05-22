@@ -43,7 +43,7 @@ public class VectorDrawbleGeneratorTest extends GeneratorTest {
             assertTrue("Failure: Exception in Svg2Vector.parseSvgToXml!", false);
         }
 
-        BufferedImage image = VdPreview.getPreviewFromVectorXml(24, outStream.toString());
+        BufferedImage image = VdPreview.getPreviewFromVectorXml(24, outStream.toString(), null);
 
         String path = grandParentDir + imageName;
         InputStream is = GeneratorTest.class.getResourceAsStream(path);
@@ -90,5 +90,9 @@ public class VectorDrawbleGeneratorTest extends GeneratorTest {
 
     public void testIconMicOff() throws Exception {
         checkVectorConversion("ic_mic_off_24px");
+    }
+
+    public void testShapes() throws Exception {
+        checkVectorConversion("ic_shapes");
     }
 }
