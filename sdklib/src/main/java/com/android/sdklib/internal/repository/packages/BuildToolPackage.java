@@ -149,8 +149,7 @@ public class BuildToolPackage extends FullRevisionPackage {
                             names.add(file.getName());
                         }
                         for (String name : new String[] { SdkConstants.FN_AAPT,
-                                                          SdkConstants.FN_AIDL,
-                                                          SdkConstants.FN_DX } ) {
+                                                          SdkConstants.FN_AIDL } ) {
                             if (!names.contains(name)) {
                                 if (error == null) {
                                     error = String.format("build-tool/%1$s folder is missing ",
