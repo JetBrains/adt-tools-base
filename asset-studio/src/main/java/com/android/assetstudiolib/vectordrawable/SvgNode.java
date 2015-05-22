@@ -16,6 +16,8 @@
 
 package com.android.assetstudiolib.vectordrawable;
 
+import org.w3c.dom.Node;
+
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 
@@ -25,13 +27,27 @@ import java.io.OutputStreamWriter;
 abstract class SvgNode {
 
     protected String mName;
+    // Keep a reference to the tree in order to dump the error log.
+    private SvgTree mSvgTree;
+    // Use document node to get the line number for error reporting.
+    private Node mDocumentNode;
 
-    public SvgNode(String name) {
+    public SvgNode(SvgTree svgTree, Node node, String name) {
         mName = name;
+        mSvgTree = svgTree;
+        mDocumentNode = node;
+    }
+
+    protected SvgTree getTree() {
+        return mSvgTree;
     }
 
     public String getName() {
         return mName;
+    }
+
+    public Node getDocumentNode() {
+        return mDocumentNode;
     }
 
     /**

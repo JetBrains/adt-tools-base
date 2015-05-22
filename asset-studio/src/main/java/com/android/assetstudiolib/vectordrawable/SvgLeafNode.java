@@ -17,6 +17,7 @@
 package com.android.assetstudiolib.vectordrawable;
 
 import com.google.common.collect.ImmutableMap;
+import org.w3c.dom.Node;
 
 import java.io.IOException;
 import java.io.OutputStreamWriter;
@@ -31,11 +32,12 @@ class SvgLeafNode extends SvgNode {
     private static Logger logger = Logger.getLogger(SvgLeafNode.class.getSimpleName());
 
     private String mPathData;
+
     // Key is the attributes for vector drawable, and the value is the converted from SVG.
     private HashMap<String, String> mVdAttributesMap = new HashMap<String, String>();
 
-    public SvgLeafNode(String nodeName) {
-        super(nodeName);
+    public SvgLeafNode(SvgTree svgTree, Node node, String nodeName) {
+        super(svgTree, node, nodeName);
     }
 
     private String getAttributeValues(ImmutableMap<String, String> presentationMap) {
@@ -107,6 +109,11 @@ class SvgLeafNode extends SvgNode {
 
     public void fillPresentationAttributes(String name, String value) {
         logger.log(Level.FINE, ">>>> PROP " + name + " = " + value);
+        if (value.startsWith("url("))  {
+            getTree().logErrorLine("Unsupported URL value: " + value, getDocumentNode(),
+                                   SvgTree.SvgLogLevel.ERROR);
+            return;
+        }
         mVdAttributesMap.put(name, value);
     }
 }

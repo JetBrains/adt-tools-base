@@ -76,7 +76,7 @@ class VdParser {
     private static final String LINEJOIN_BEVEL = "bevel";
 
     interface ElemParser {
-        public void parse(VdTree path, Attributes attributes);
+        void parse(VdTree path, Attributes attributes);
     }
 
     ElemParser mParseSize = new ElemParser() {
@@ -112,7 +112,7 @@ class VdParser {
 
     // Note that the incoming file is the VectorDrawable's XML file, not the SVG.
     // TODO: Use Document to parse and make sure no big performance difference.
-    public VdTree parse(InputStream is) {
+    public VdTree parse(InputStream is, StringBuilder vdErrorLog) {
         try {
             final VdTree tree = new VdTree();
             SAXParserFactory spf = SAXParserFactory.newInstance();
@@ -177,7 +177,8 @@ class VdParser {
             tree.parseFinish();
             return tree;
         } catch (Exception e) {
-            throw new IllegalArgumentException(e);
+            vdErrorLog.append("Exception while parsing XML file:\n" + e.getMessage());
+            return null;
         }
     }
 
@@ -362,8 +363,8 @@ class VdParser {
         list.add(new VdPath.Node(cmd, val));
     }
 
-    public VdTree parse(URL r) throws Exception {
-        return parse(r.openStream());
+    public VdTree parse(URL r, StringBuilder vdErrorLog) throws Exception {
+        return parse(r.openStream(), vdErrorLog);
     }
 
     private void parseSize(VdTree vdTree, Attributes attributes) {
