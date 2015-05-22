@@ -371,7 +371,8 @@ public class ExternalAnnotationRepository {
      * */
     static class AnnotationsDatabase {
         AnnotationsDatabase(@NonNull File file) throws IOException {
-            if (file.getPath().endsWith(DOT_JAR)) {
+            String path = file.getPath();
+            if (path.endsWith(DOT_JAR) || path.endsWith(FN_ANNOTATIONS_ZIP)) {
                 initializeFromJar(file);
             } else {
                 assert file.isDirectory() : file;
