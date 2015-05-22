@@ -66,13 +66,13 @@ class DefaultManifestParser implements ManifestParser {
     @NonNull
     public synchronized int getVersionCode(@NonNull File manifestFile) {
         if (mVersionCode == null) {
+            mVersionCode = Optional.absent();
             try {
                 String value = getStringValue(manifestFile, "/manifest/@android:versionCode");
                 if (value != null) {
                     mVersionCode = Optional.of(Integer.valueOf(value));
                 }
             } catch (NumberFormatException ignored) {
-                mVersionCode = Optional.absent();
             }
         }
         return mVersionCode.or(-1);

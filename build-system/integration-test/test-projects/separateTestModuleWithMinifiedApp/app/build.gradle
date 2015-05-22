@@ -16,6 +16,12 @@
 
 apply plugin: 'com.android.application'
 
+apply from: "../../commonLocalRepo.gradle"
+
+dependencies {
+    compile 'com.google.code.findbugs:jsr305:1.3.9'
+}
+
 android {
     compileSdkVersion 21
     buildToolsVersion = rootProject.ext.buildToolsVersion

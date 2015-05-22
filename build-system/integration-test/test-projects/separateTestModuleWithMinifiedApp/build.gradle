@@ -16,3 +16,4 @@
 
 apply from: "../commonHeader.gradle"
 buildscript { apply from: "../commonBuildScript.gradle", to: buildscript }
+apply from: "../commonLocalRepo.gradle"
