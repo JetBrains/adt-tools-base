@@ -16,6 +16,8 @@
 
 apply plugin: 'com.android.test'
 
+apply from: "../../commonLocalRepo.gradle"
+
 android {
     compileSdkVersion 19
     buildToolsVersion = rootProject.buildToolsVersion

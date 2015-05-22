@@ -45,6 +45,7 @@ import org.gradle.api.artifacts.dsl.DependencyHandler;
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
 
 import java.io.File;
+import java.util.LinkedHashMap;
 import java.util.Locale;
 
 import proguard.ParseException;
@@ -135,6 +136,8 @@ public class TestApplicationTaskManager extends ApplicationTaskManager {
                 TestModuleProGuardTask.class);
 
         variantData.obfuscationTask = proguardTask;
+        proguardTask.setLogger(getLogger());
+        proguardTask.setVariantConfiguration(scope.getVariantConfiguration());
 
         // --- Output File ---
 
@@ -208,8 +211,12 @@ public class TestApplicationTaskManager extends ApplicationTaskManager {
         });
 
         try {
+
             // injar: the compilation output
             proguardTask.injars(pcData.getInputDir());
+            if (pcData.getJavaResourcesInputDir() != null) {
+                proguardTask.injars(pcData.getJavaResourcesInputDir());
+            }
 
             // All -dontwarn rules for test dependencies should go in here:
             proguardTask.configuration(
