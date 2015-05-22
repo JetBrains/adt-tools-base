@@ -749,17 +749,21 @@ public class EcjParser extends JavaParser {
 
     /** Computes the super method, if any, given a method binding */
     private static MethodBinding findSuperMethodBinding(@NonNull MethodBinding binding) {
-        ReferenceBinding superclass = binding.declaringClass.superclass();
-        while (superclass != null) {
-            MethodBinding[] methods = superclass.getMethods(binding.selector,
-                    binding.parameters.length);
-            for (MethodBinding method : methods) {
-                if (method.areParameterErasuresEqual(binding)) {
-                    return method;
+        try {
+            ReferenceBinding superclass = binding.declaringClass.superclass();
+            while (superclass != null) {
+                MethodBinding[] methods = superclass.getMethods(binding.selector,
+                        binding.parameters.length);
+                for (MethodBinding method : methods) {
+                    if (method.areParameterErasuresEqual(binding)) {
+                        return method;
+                    }
                 }
-            }
 
-            superclass = superclass.superclass();
+                superclass = superclass.superclass();
+            }
+        } catch (Exception ignore) {
+            // Work around ECJ bugs; see https://code.google.com/p/android/issues/detail?id=172268
         }
 
         return null;
