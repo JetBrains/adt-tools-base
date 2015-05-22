@@ -16,6 +16,16 @@
 
 package com.android.ide.common.resources;
 
+import static com.android.SdkConstants.ANDROID_NS_NAME_PREFIX;
+import static com.android.SdkConstants.ANDROID_NS_NAME_PREFIX_LEN;
+import static com.android.SdkConstants.ATTR_NAME;
+import static com.android.SdkConstants.ATTR_PARENT;
+import static com.android.SdkConstants.ATTR_TYPE;
+import static com.android.SdkConstants.ATTR_VALUE;
+import static com.android.SdkConstants.TAG_ITEM;
+import static com.android.SdkConstants.TAG_RESOURCES;
+
+import com.android.ide.common.rendering.api.ArrayResourceValue;
 import com.android.ide.common.rendering.api.AttrResourceValue;
 import com.android.ide.common.rendering.api.DeclareStyleableResourceValue;
 import com.android.ide.common.rendering.api.ItemResourceValue;
@@ -33,27 +43,17 @@ import org.xml.sax.helpers.DefaultHandler;
  */
 public final class ValueResourceParser extends DefaultHandler {
 
-    // TODO: reuse definitions from somewhere else.
-    private static final String NODE_RESOURCES = "resources";
-    private static final String NODE_ITEM = "item";
-    private static final String ATTR_NAME = "name";
-    private static final String ATTR_TYPE = "type";
-    private static final String ATTR_PARENT = "parent";
-    private static final String ATTR_VALUE = "value";
-
-    private static final String DEFAULT_NS_PREFIX = "android:";
-    private static final int DEFAULT_NS_PREFIX_LEN = DEFAULT_NS_PREFIX.length();
-
     public interface IValueResourceRepository {
         void addResourceValue(ResourceValue value);
         boolean hasResourceValue(ResourceType type, String name);
     }
 
-    private boolean inResources = false;
-    private int mDepth = 0;
-    private ResourceValue mCurrentValue = null;
-    private StyleResourceValue mCurrentStyle = null;
-    private DeclareStyleableResourceValue mCurrentDeclareStyleable = null;
+    private boolean inResources;
+    private int mDepth;
+    private ResourceValue mCurrentValue;
+    private ArrayResourceValue mArrayResourceValue;
+    private StyleResourceValue mCurrentStyle;
+    private DeclareStyleableResourceValue mCurrentDeclareStyleable;
     private AttrResourceValue mCurrentAttr;
     private IValueResourceRepository mRepository;
     private final boolean mIsFramework;
@@ -71,15 +71,20 @@ public final class ValueResourceParser extends DefaultHandler {
             mCurrentValue.setValue(value);
         }
 
-        if (inResources && qName.equals(NODE_RESOURCES)) {
+        if (inResources && qName.equals(TAG_RESOURCES)) {
             inResources = false;
         } else if (mDepth == 2) {
             mCurrentValue = null;
             mCurrentStyle = null;
             mCurrentDeclareStyleable = null;
             mCurrentAttr = null;
+            mArrayResourceValue = null;
         } else if (mDepth == 3) {
+            if (mArrayResourceValue != null && mCurrentValue != null) {
+                mArrayResourceValue.addElement(mCurrentValue.getValue());
+            }
             mCurrentValue = null;
+            //noinspection VariableNotUsedInsideIf
             if (mCurrentDeclareStyleable != null) {
                 mCurrentAttr = null;
             }
@@ -94,11 +99,11 @@ public final class ValueResourceParser extends DefaultHandler {
             throws SAXException {
         try {
             mDepth++;
-            if (inResources == false && mDepth == 1) {
-                if (qName.equals(NODE_RESOURCES)) {
+            if (!inResources && mDepth == 1) {
+                if (qName.equals(TAG_RESOURCES)) {
                     inResources = true;
                 }
-            } else if (mDepth == 2 && inResources == true) {
+            } else if (mDepth == 2 && inResources) {
                 ResourceType type = getType(qName, attributes);
 
                 if (type != null) {
@@ -121,6 +126,10 @@ public final class ValueResourceParser extends DefaultHandler {
                                 mCurrentAttr = new AttrResourceValue(type, name, mIsFramework);
                                 mRepository.addResourceValue(mCurrentAttr);
                                 break;
+                            case ARRAY:
+                                mArrayResourceValue = new ArrayResourceValue(name, mIsFramework);
+                                mRepository.addResourceValue(mArrayResourceValue);
+                                break;
                             default:
                                 mCurrentValue = new ResourceValue(type, name, mIsFramework);
                                 mRepository.addResourceValue(mCurrentValue);
@@ -136,8 +145,8 @@ public final class ValueResourceParser extends DefaultHandler {
                     if (mCurrentStyle != null) {
                         // is the attribute in the android namespace?
                         boolean isFrameworkAttr = mIsFramework;
-                        if (name.startsWith(DEFAULT_NS_PREFIX)) {
-                            name = name.substring(DEFAULT_NS_PREFIX_LEN);
+                        if (name.startsWith(ANDROID_NS_NAME_PREFIX)) {
+                            name = name.substring(ANDROID_NS_NAME_PREFIX_LEN);
                             isFrameworkAttr = true;
                         }
 
@@ -146,8 +155,8 @@ public final class ValueResourceParser extends DefaultHandler {
                     } else if (mCurrentDeclareStyleable != null) {
                         // is the attribute in the android namespace?
                         boolean isFramework = mIsFramework;
-                        if (name.startsWith(DEFAULT_NS_PREFIX)) {
-                            name = name.substring(DEFAULT_NS_PREFIX_LEN);
+                        if (name.startsWith(ANDROID_NS_NAME_PREFIX)) {
+                            name = name.substring(ANDROID_NS_NAME_PREFIX_LEN);
                             isFramework = true;
                         }
 
@@ -169,6 +178,11 @@ public final class ValueResourceParser extends DefaultHandler {
                             // pass, we'll just ignore this value
                         }
 
+                    } else //noinspection VariableNotUsedInsideIf
+                        if (mArrayResourceValue != null) {
+                        // Create a temporary resource value to hold the item's value. The value is
+                        // not added to the repository, since it's just a holder.
+                        mCurrentValue = new ResourceValue(null, null, mIsFramework);
                     }
                 }
             } else if (mDepth == 4 && mCurrentAttr != null) {
@@ -189,21 +203,19 @@ public final class ValueResourceParser extends DefaultHandler {
         }
     }
 
-    private ResourceType getType(String qName, Attributes attributes) {
+    private static ResourceType getType(String qName, Attributes attributes) {
         String typeValue;
 
         // if the node is <item>, we get the type from the attribute "type"
-        if (NODE_ITEM.equals(qName)) {
+        if (TAG_ITEM.equals(qName)) {
             typeValue = attributes.getValue(ATTR_TYPE);
         } else {
             // the type is the name of the node.
             typeValue = qName;
         }
 
-        ResourceType type = ResourceType.getEnum(typeValue);
-        return type;
+        return ResourceType.getEnum(typeValue);
     }
-
 
     @Override
     public void characters(char[] ch, int start, int length) throws SAXException {
@@ -216,6 +228,4 @@ public final class ValueResourceParser extends DefaultHandler {
             }
         }
     }
-
-
 }
