@@ -1430,13 +1430,15 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
         }
 
         for (LibraryDependency libraryDependency : mFlatLibraries) {
-            File libJar = libraryDependency.getJarFile();
-            if (libJar.exists()) {
-                jars.add(libJar);
-            }
-            for (File jarFile : libraryDependency.getLocalJars()) {
-                if (jarFile.isFile()) {
-                    jars.add(jarFile);
+            if (!libraryDependency.isOptional()) {
+                File libJar = libraryDependency.getJarFile();
+                if (libJar.exists()) {
+                    jars.add(libJar);
+                }
+                for (File jarFile : libraryDependency.getLocalJars()) {
+                    if (jarFile.isFile()) {
+                        jars.add(jarFile);
+                    }
                 }
             }
         }
@@ -1466,6 +1468,21 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
                 jars.add(jarFile);
             }
         }
+
+        for (LibraryDependency libraryDependency : mFlatLibraries) {
+            if (libraryDependency.isOptional()) {
+                File libJar = libraryDependency.getJarFile();
+                if (libJar.exists()) {
+                    jars.add(libJar);
+                }
+                for (File jarFile : libraryDependency.getLocalJars()) {
+                    if (jarFile.isFile()) {
+                        jars.add(jarFile);
+                    }
+                }
+            }
+        }
+
 
         return Lists.newArrayList(jars);
     }
