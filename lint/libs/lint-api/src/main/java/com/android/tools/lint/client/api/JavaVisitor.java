@@ -269,6 +269,13 @@ public class JavaVisitor {
             for (VisitingDetector v : mAllDetectors) {
                 v.getDetector().afterCheckFile(context);
             }
+        } catch (RuntimeException e) {
+            // Work around ECJ bugs; see https://code.google.com/p/android/issues/detail?id=172268
+            // Don't allow lint bugs to take down the whole build. TRY to log this as a
+            // lint error instead!
+            context.log(e, "Unexpected failure during lint analysis of "
+                    + context.file.getName()
+                    + " (this is a bug in lint or one of the libraries it depends on)");
         } finally {
             if (compilationUnit != null) {
                 mParser.dispose(context, compilationUnit);
