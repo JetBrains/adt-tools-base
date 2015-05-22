@@ -345,7 +345,7 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
             String name = method.getContainingClass().getSimpleName() + "." + method.getName();
             String message = getMissingPermissionMessage(requirement, name, permissions);
             context.report(MISSING_PERMISSION, node, context.getLocation(node), message);
-        } else if (requirement.isRevocable() && context.getMainProject().getTargetSdk() >= 23) {
+        } else if (requirement.isRevocable() && context.getMainProject().getTargetSdkVersion().getFeatureLevel() >= 23) {
             // Ensure that the caller is handling a security exception
             // First check to see if we're inside a try/catch which catches a SecurityException
             // (or some wider exception than that). Check for nested try/catches too.
