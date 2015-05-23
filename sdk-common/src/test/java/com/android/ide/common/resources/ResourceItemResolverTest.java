@@ -17,6 +17,7 @@
 package com.android.ide.common.resources;
 
 import com.android.annotations.Nullable;
+import com.android.ide.common.rendering.api.ArrayResourceValue;
 import com.android.ide.common.rendering.api.LayoutLog;
 import com.android.ide.common.rendering.api.ResourceValue;
 import com.android.ide.common.res2.MergingException;
@@ -105,7 +106,12 @@ public class ResourceItemResolverTest extends TestCase {
                         + "    <string name=\"menu_settings\">Settings</string>\n"
                         + "    <string name=\"dummy\" translatable=\"false\">Ignore Me</string>\n"
                         + "    <string name=\"wallpaper_instructions\">Tap picture to set portrait wallpaper</string>\n"
-                        + "    <string name=\"xliff_string\">First: <xliff:g id=\"firstName\">%1$s</xliff:g> Last: <xliff:g id=\"lastName\">%2$s</xliff:g></string>"
+                        + "    <string name=\"xliff_string\">First: <xliff:g id=\"firstName\">%1$s</xliff:g> Last: <xliff:g id=\"lastName\">%2$s</xliff:g></string>\n"
+                        + "    <array name=\"my_array\">\"\n"
+                        + "        <item>  value1</item>\n"   // also test trimming.
+                        + "        <item>value2\n</item>\n"
+                        + "        <item>value3</item>\n"
+                        + "    </array>\n"
                         + "</resources>\n",
 
                         "values-es/strings.xml", ""
@@ -199,6 +205,13 @@ public class ResourceItemResolverTest extends TestCase {
         assertEquals("#ffffffff", resolver.resolveResValue(
                 resolver.findResValue("@android:color/bright_foreground_dark", false)).getValue());
 
+        // Test array values.
+        ResourceValue resValue = resolver.findResValue("@array/my_array", false);
+        assertTrue(resValue instanceof ArrayResourceValue);
+        assertEquals(3, ((ArrayResourceValue) resValue).getElementCount());
+        assertEquals("value1", ((ArrayResourceValue) resValue).getElement(0));
+        assertEquals("value2", ((ArrayResourceValue) resValue).getElement(1));
+
 
         // Now do everything over again, but this time without a resource resolver.
         // Also set a lookup chain.
@@ -251,8 +264,12 @@ public class ResourceItemResolverTest extends TestCase {
                 + "@android:color/background_dark => #ff000000",
                 ResourceItemResolver.getDisplayString("?foo", chain));
 
-        assertEquals("?foo => ?android:colorForeground => @color/bright_foreground_light => "
-                + "@android:color/background_dark => #ff000000",
-                ResourceItemResolver.getDisplayString("?foo", chain));
+        // Test array values.
+        resValue = resolver.findResValue("@array/my_array", false);
+        assertTrue(resValue instanceof ArrayResourceValue);
+        assertEquals(3, ((ArrayResourceValue) resValue).getElementCount());
+        assertEquals("value1", ((ArrayResourceValue) resValue).getElement(0));
+        assertEquals("value2", ((ArrayResourceValue) resValue).getElement(1));
+
     }
 }
