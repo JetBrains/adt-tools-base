@@ -840,7 +840,8 @@ abstract class TaskManager {
                 // add the class files (whether they are instrumented or not.
                 jar.from({ scope.getJavaOutputDir() })
 
-                jar.destinationDir = scope.getJavaOutputDir();
+                jar.destinationDir = project.file(
+                        "$project.buildDir/${FD_INTERMEDIATES}/classes-jar/${variantData.variantConfiguration.dirName}")
                 jar.archiveName = "classes.jar"
             }
         }
