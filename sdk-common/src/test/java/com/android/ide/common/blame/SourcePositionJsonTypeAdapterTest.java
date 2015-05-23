@@ -109,7 +109,8 @@ public class SourcePositionJsonTypeAdapterTest {
         public void testDeserialize() {
             String json
                     = "{\"startLine\":11,\"startColumn\":22,\"startOffset\":33,"
-                    + "\"endLine\":66,\"endColumn\":77,\"endOffset\":88}";
+                    + "\"endLine\":66,\"endColumn\":77,\"endOffset\":88, "
+                    + "\"invalid\":[\"ignored\"]}";
             SourcePosition range =
                     mGson.fromJson(json, SourcePosition.class);
             assertEquals(range, new SourcePosition(11, 22, 33, 66, 77, 88));

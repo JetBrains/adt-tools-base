@@ -100,6 +100,10 @@ public class SourceFileJsonTypeAdapterTest {
                     },
                     {
                             SourceFile.UNKNOWN,
+                            "\"\""
+                    },
+                    {
+                            SourceFile.UNKNOWN,
                             "{\"foo\":\"\"}"
                     },
                     {
