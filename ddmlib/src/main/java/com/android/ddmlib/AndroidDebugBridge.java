@@ -23,6 +23,7 @@ import com.google.common.base.Throwables;
 import com.google.common.collect.Iterables;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
+import com.google.common.util.concurrent.SettableFuture;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -612,35 +613,50 @@ public final class AndroidDebugBridge {
     }
 
     public static ListenableFuture<AdbVersion> getAdbVersion(@NonNull final File adb) {
-        return MoreExecutors.listeningDecorator(Executors.newFixedThreadPool(1)).submit(
-          new Callable<AdbVersion>() {
-              @Override
-              public AdbVersion call() throws Exception {
-                  ProcessBuilder pb = new ProcessBuilder(adb.getPath(), "version");
-                  pb.redirectErrorStream(true);
+        final SettableFuture<AdbVersion> future = SettableFuture.create();
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                ProcessBuilder pb = new ProcessBuilder(adb.getPath(), "version");
+                pb.redirectErrorStream(true);
 
-                  Process p = pb.start();
+                Process p = null;
+                try {
+                    p = pb.start();
+                } catch (IOException e) {
+                    future.setException(e);
+                    return;
+                }
 
-                  StringBuilder sb = new StringBuilder();
-                  BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()));
-                  try {
-                      String line;
-                      while ((line = br.readLine()) != null) {
-                          AdbVersion version = AdbVersion.parseFrom(line);
-                          if (version != AdbVersion.UNKNOWN) {
-                              return version;
-                          }
-                          sb.append(line);
-                          sb.append('\n');
-                      }
-                  } finally {
-                      br.close();
-                  }
+                StringBuilder sb = new StringBuilder();
+                BufferedReader br = new BufferedReader(new InputStreamReader(p.getInputStream()));
+                try {
+                    String line;
+                    while ((line = br.readLine()) != null) {
+                        AdbVersion version = AdbVersion.parseFrom(line);
+                        if (version != AdbVersion.UNKNOWN) {
+                            future.set(version);
+                            return;
+                        }
+                        sb.append(line);
+                        sb.append('\n');
+                    }
+                } catch (IOException e) {
+                    future.setException(e);
+                    return;
+                } finally {
+                    try {
+                        br.close();
+                    } catch (IOException e) {
+                        future.setException(e);
+                    }
+                }
 
-                  throw new RuntimeException(
-                          "Unable to detect adb version, adb output: " + sb.toString());
-              }
-          });
+                future.setException(new RuntimeException(
+                        "Unable to detect adb version, adb output: " + sb.toString()));
+            }
+        }, "Obtaining adb version").start();
+        return future;
     }
 
     /**
