@@ -68,7 +68,7 @@ public class CallSuperDetector extends Detector implements Detector.JavaScanner 
 
             Category.CORRECTNESS,
             9,
-            Severity.WARNING,
+            Severity.ERROR,
             IMPLEMENTATION);
 
     /** Constructs a new {@link CallSuperDetector} check */
