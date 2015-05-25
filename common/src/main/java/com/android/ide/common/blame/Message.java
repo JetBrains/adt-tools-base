@@ -21,7 +21,6 @@ import com.android.annotations.Nullable;
 import com.android.annotations.concurrency.Immutable;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
 
 import java.io.File;
 import java.util.List;
@@ -142,8 +141,7 @@ public final class Message {
     }
 
     /**
-     * Returns a legacy 1-based column number.
-     * @return
+     * @return a legacy 1-based column number.
      */
     @Deprecated
     public int getColumn() {
