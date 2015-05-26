@@ -202,6 +202,9 @@ public class MergeResources extends IncrementalTask {
         } catch (MergingException e) {
             merger.cleanBlob(getIncrementalFolder());
             throw new ResourceException(e.getMessage(), e);
+        } finally {
+            // some clean up after the task to help multi variant/module builds.
+            fileValidity.clear();
         }
     }
 
