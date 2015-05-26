@@ -84,6 +84,8 @@ import java.util.concurrent.TimeUnit;
  */
 public class GradleTestProject implements TestRule {
 
+    public static final File TEST_RES_DIR = new File("src/test/resources");
+
     public static final int DEFAULT_COMPILE_SDK_VERSION = 21;
     public static final String DEFAULT_BUILD_TOOL_VERSION;
     public static final String REMOTE_TEST_PROVIDER = System.getenv().get("REMOTE_TEST_PROVIDER");
