@@ -176,9 +176,9 @@ android {
 }
 """
         createFile('src/main/jniLibs/x86/libconflict.so') << "foo"
-        createFile('src/debug/jniLibs/x86/libconflict.so') << "bar"
+        createFile('src/debug/jniLibs/x86/libconflict.so') << "foo"
         project.execute("clean", "assembleDebug")
-        assertThatZip(project.getApk("debug")).containsFileWithContent("lib/x86/libconflict.so", "foobar")
+        assertThatZip(project.getApk("debug")).containsFileWithContent("lib/x86/libconflict.so", "foofoo")
     }
 
     @Test
