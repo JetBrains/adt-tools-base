@@ -49,11 +49,12 @@ public class LegacyNdkOutputParserTest {
     }
 
     @Test
-    public void testParse() throws Exception {
-        String err = mSourceFile.getPath() +
-          ":35:18: fatal error: fake.h: No such file or directory\n" +
-          " #include \"fake.h\"\n" +
-          "                  ^";
+    public void testParseUnresolvedInclude() {
+        String path = mSourceFile.getAbsolutePath();
+        String err = path +
+                ":35:18: fatal error: fake.h: No such file or directory\n" +
+                " #include \"fake.h\"\n" +
+                "                  ^";
         List<Message> messages = mParser.parseToolOutput(err);
         assertEquals("[message count]", 1, messages.size());
         Message message = messages.iterator().next();
@@ -61,6 +62,39 @@ public class LegacyNdkOutputParserTest {
 
         assertEquals("fake.h: No such file or directory", message.getText());
         assertEquals(Message.Kind.ERROR, message.getKind());
+        assertEquals(path, message.getSourcePath());
+        assertEquals(35, message.getLineNumber());
+        assertEquals(18, message.getColumn());
+    }
+
+    @Test
+    public void testParseUnknownMessage() {
+        String path = mSourceFile.getAbsolutePath();
+        String err = "In file included from " + path + ":35:18,";
+        List<Message> messages = mParser.parseToolOutput(err);
+        assertEquals("[message count]", 1, messages.size());
+        Message message = messages.iterator().next();
+        assertNotNull(message);
+
+        assertEquals("(Unknown) In file included", message.getText());
+        assertEquals(Message.Kind.INFO, message.getKind());
+        assertEquals(path, message.getSourcePath());
+        assertEquals(35, message.getLineNumber());
+        assertEquals(18, message.getColumn());
+    }
+
+    @Test
+    public void testParseUnknownMessage2() {
+        String path = mSourceFile.getAbsolutePath();
+        String err = "                 from " + path + ":35:18:";
+        List<Message> messages = mParser.parseToolOutput(err);
+        assertEquals("[message count]", 1, messages.size());
+        Message message = messages.iterator().next();
+        assertNotNull(message);
+
+        assertEquals("(Unknown)", message.getText());
+        assertEquals(Message.Kind.INFO, message.getKind());
+        assertEquals(path, message.getSourcePath());
         assertEquals(35, message.getLineNumber());
         assertEquals(18, message.getColumn());
     }
