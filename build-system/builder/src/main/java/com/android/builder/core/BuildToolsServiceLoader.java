@@ -22,6 +22,9 @@ import com.android.jack.api.JackProvider;
 import com.android.jill.api.JillProvider;
 import com.android.sdklib.BuildToolInfo;
 import com.android.sdklib.repository.FullRevision;
+import com.android.utils.ILogger;
+import com.google.common.base.Joiner;
+import com.google.common.base.Objects;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 
@@ -119,6 +122,14 @@ public enum BuildToolsServiceLoader {
         public Class<T> getServiceClass() {
             return serviceClass;
         }
+
+        @Override
+        public String toString() {
+            return Objects.toStringHelper(this)
+                    .add("serviceClass", serviceClass)
+                    .add("classpath", Joiner.on(",").join(classpath))
+                    .toString();
+        }
     }
 
     /**
@@ -204,16 +215,31 @@ public enum BuildToolsServiceLoader {
         /**
          * Return the first service instance for the requested service type or
          * {@link Optional#absent()} if none exist.
+         * @param logger to log resolution.
          * @param serviceType the requested service type encapsulation.
          * @param <T> the requested service class type.
          * @return the instance of T or null of none exist in this context.
          * @throws ClassNotFoundException
          */
         @NonNull
-        public <T> Optional<T> getSingleService(Service<T> serviceType) throws ClassNotFoundException {
+        public synchronized <T> Optional<T> getSingleService(
+                ILogger logger,
+                Service<T> serviceType) throws ClassNotFoundException {
+            logger.verbose("Looking for %1$s", serviceType);
             ServiceLoader<T> serviceLoader = getServiceLoader(serviceType);
+            logger.verbose("Got a serviceLoader %1$d",
+                    Integer.toHexString(System.identityHashCode(serviceLoader)));
             Iterator<T> serviceIterator = serviceLoader.iterator();
-            return Optional.fromNullable(serviceIterator.hasNext() ? serviceIterator.next() : null);
+            logger.verbose("Service Iterator =  %1$s ", serviceIterator);
+            if (serviceIterator.hasNext()) {
+                T service = serviceIterator.next();
+                logger.verbose("Got it from %1$s, loaded service = %2$s, type = %3$s",
+                        serviceIterator, service, service.getClass());
+                return Optional.of(service);
+            } else {
+                logger.info("Cannot find service implementation %1$s" + serviceType);
+                return Optional.absent();
+            }
         }
 
         @NonNull
