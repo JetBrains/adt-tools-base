@@ -41,4 +41,10 @@ public class FileValidity<S extends DataSet> {
     public File getSourceFile() {
         return sourceFile;
     }
+
+    public void clear() {
+        dataSet = null;
+        sourceFile = null;
+        status = FileStatus.UNKNOWN_FILE;
+    }
 }
