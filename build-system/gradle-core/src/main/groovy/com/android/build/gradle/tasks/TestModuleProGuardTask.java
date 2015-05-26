@@ -16,10 +16,16 @@
 
 package com.android.build.gradle.tasks;
 
+import com.android.builder.core.VariantConfiguration;
+
+import org.gradle.api.logging.LogLevel;
+import org.gradle.api.logging.Logger;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.tasks.TaskAction;
 
+import java.io.File;
 import java.io.IOException;
+import java.util.LinkedHashMap;
 
 import proguard.ParseException;
 import proguard.gradle.ProGuardTask;
@@ -29,8 +35,9 @@ import proguard.gradle.ProGuardTask;
  * input files like the tested application classes and the tested application mapping file.
  */
 public class TestModuleProGuardTask extends ProGuardTask {
+    private Logger logger;
     private Configuration mappingConfiguration;
-    private Configuration classesConfiguration;
+    private VariantConfiguration variantConfiguration;
 
 
     /**
@@ -45,18 +52,45 @@ public class TestModuleProGuardTask extends ProGuardTask {
      * Sets the {@link Configuration} to later retrieve the test application classes jar file.
      */
     public void setClassesConfiguration(Configuration configuration) {
-        this.classesConfiguration = configuration;
         dependsOn(configuration);
+    }
+
+
+    public void setVariantConfiguration(
+            VariantConfiguration variantConfiguration) {
+        this.variantConfiguration = variantConfiguration;
+    }
+
+    public void setLogger(Logger logger) {
+        this.logger = logger;
     }
 
     @Override
     @TaskAction
     public void proguard() throws ParseException, IOException {
-        if (mappingConfiguration.getFiles().isEmpty() || classesConfiguration.getFiles().isEmpty()) {
+        if (mappingConfiguration.getFiles().isEmpty()
+                || variantConfiguration.getProvidedOnlyJars().isEmpty()) {
             return;
         }
+
+        if (logger.isEnabled(LogLevel.INFO)) {
+            logger.info("test module mapping file " + mappingConfiguration.getSingleFile());
+            for (Object file : variantConfiguration.getPackagedJars()) {
+                logger.info("test module proguard input " + file);
+
+            }
+            for (Object file : variantConfiguration.getProvidedOnlyJars()) {
+                logger.info("test module proguard library " + file);
+            }
+        }
+
+        // injar: the packaged dependencies
+        LinkedHashMap<String, String> map = new LinkedHashMap<String, String>(1);
+        map.put("filter", "!META-INF/MANIFEST.MF");
+        injars(map, variantConfiguration.getPackagedJars());
+
         applymapping(mappingConfiguration.getSingleFile());
-        libraryjars(classesConfiguration.getSingleFile());
+        libraryjars(variantConfiguration.getProvidedOnlyJars());
         super.proguard();
     }
 }
