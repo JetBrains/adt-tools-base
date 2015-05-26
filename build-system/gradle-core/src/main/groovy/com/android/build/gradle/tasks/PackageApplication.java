@@ -92,6 +92,14 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
         this.jniFolders = jniFolders;
     }
 
+    public File getMergingFolder() {
+        return mergingFolder;
+    }
+
+    public void setMergingFolder(File mergingFolder) {
+        this.mergingFolder = mergingFolder;
+    }
+
     @OutputFile
     public File getOutputFile() {
         return outputFile;
@@ -122,6 +130,8 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
     private File javaResourceDir;
 
     private Set<File> jniFolders;
+
+    private File mergingFolder;
 
     @ApkFile
     private File outputFile;
@@ -194,9 +204,9 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
             final File dir = getJavaResourceDir();
             getBuilder().packageApk(getResourceFile().getAbsolutePath(), getDexFolder(),
                     getDexedLibraries(), getPackagedJars(),
-                    (dir == null ? null : dir.getAbsolutePath()), getJniFolders(), getAbiFilters(),
-                    getJniDebugBuild(), getSigningConfig(), getPackagingOptions(),
-                    getOutputFile().getAbsolutePath());
+                    (dir == null ? null : dir.getAbsolutePath()), getJniFolders(),
+                    getMergingFolder(), getAbiFilters(), getJniDebugBuild(), getSigningConfig(),
+                    getPackagingOptions(), getOutputFile().getAbsolutePath());
         } catch (DuplicateFileException e) {
             Logger logger = getLogger();
             logger.error("Error: duplicate files during packaging of APK " + getOutputFile()
@@ -301,6 +311,10 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
                     return scope.getGlobalScope().getAndroidBuilder().getPackagedJars(config);
                 }
             });
+
+            packageApp.setMergingFolder(new File(scope.getGlobalScope().getIntermediatesDir(),
+                    variantOutputData.getFullName() + "/merging"));
+
             ConventionMappingHelper.map(packageApp, "javaResourceDir", new Callable<File>() {
                 @Override
                 public File call() {
