@@ -54,6 +54,7 @@ import java.util.Properties;
 public class NdkHandler {
 
     private String compileSdkVersion;
+    private boolean resolvedSdkVersion;
     private final Toolchain toolchain;
     private final String toolchainVersion;
     private final File ndkDirectory;
@@ -75,7 +76,53 @@ public class NdkHandler {
     }
 
     public String getCompileSdkVersion() {
+        if (!resolvedSdkVersion) {
+            resolveCompileSdkVersion();
+        }
         return compileSdkVersion;
+    }
+
+    /**
+     * Retrieve the newest supported version if it is not the specified version is not supported.
+     *
+     * An older NDK may not support the specified compiledSdkVersion.  In that case, determine what
+     * is the newest supported version and modify compileSdkVersion.
+     */
+    private void resolveCompileSdkVersion() {
+        File platformFolder = new File(ndkDirectory, "/platforms/" + compileSdkVersion);
+        if (!platformFolder.exists()) {
+            int targetVersion = 0;
+            try {
+                targetVersion = Integer.parseInt(compileSdkVersion.substring("android-".length()));
+            } catch (NumberFormatException ignore) {
+                // If the targetVerison is not a number, most likely it is a preview version.
+                // In that case, assume we are using the highest available version.
+                targetVersion = Integer.MAX_VALUE;
+            }
+
+            File[] platformFolders = new File(ndkDirectory, "/platforms/").listFiles(
+                    new FileFilter() {
+                        @Override
+                        public boolean accept(File file) {
+                            return file.isDirectory();
+                        }
+                    });
+            int highestVersion = 0;
+            for(File platform :platformFolders) {
+                if (platform.getName().startsWith("android-")) {
+                    try {
+                        int version = Integer.parseInt(
+                                platform.getName().substring("android-".length()));
+                        if (version > highestVersion && version < targetVersion) {
+                            highestVersion = version;
+                            compileSdkVersion = "android-" + version;
+                        }
+                    } catch(NumberFormatException ignore) {
+                    }
+                }
+            }
+        }
+        resolvedSdkVersion = true;
     }
 
     public void setCompileSdkVersion(@NonNull String compileSdkVersion) {
@@ -83,6 +130,7 @@ public class NdkHandler {
         AndroidVersion androidVersion = AndroidTargetHash.getVersionFromHash(compileSdkVersion);
         Preconditions.checkState(androidVersion != null);
         this.compileSdkVersion = AndroidTargetHash.getPlatformHashString(androidVersion);
+        resolvedSdkVersion = false;
     }
 
     public Toolchain getToolchain() {
@@ -223,7 +271,7 @@ public class NdkHandler {
      * Returns the sysroot directory for the toolchain.
      */
     public String getSysroot(Abi abi) {
-        return ndkDirectory + "/platforms/" + compileSdkVersion+ "/arch-" + abi.getArchitecture();
+        return ndkDirectory + "/platforms/" + getCompileSdkVersion() + "/arch-" + abi.getArchitecture();
     }
 
     /**
@@ -237,7 +285,7 @@ public class NdkHandler {
      * Return true if compiledSdkVersion supports 64 bits ABI.
      */
     public boolean supports64Bits() {
-        String targetString = compileSdkVersion.replace("android-", "");
+        String targetString = getCompileSdkVersion().replace("android-", "");
         try {
             return Integer.parseInt(targetString) >= 20;
         } catch (NumberFormatException ignored) {
