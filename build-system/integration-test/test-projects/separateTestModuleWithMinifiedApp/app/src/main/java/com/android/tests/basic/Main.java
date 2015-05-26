@@ -21,6 +21,8 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.widget.TextView;
 
+import javax.annotation.Nullable;
+
 public class Main extends Activity
 {
     /** Called when the activity is first created. */
@@ -29,7 +31,12 @@ public class Main extends Activity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
         TextView mTextView = (TextView) findViewById(R.id.text);
-        mTextView.setText(getUtility().getValue());
+        mTextView.setText(getString());
+    }
+
+    @Nullable
+    private String getString() {
+        return getUtility().getValue();
     }
 
     public Utility getUtility() {
