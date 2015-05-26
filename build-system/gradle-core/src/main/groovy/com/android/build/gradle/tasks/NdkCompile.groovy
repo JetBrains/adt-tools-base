@@ -81,6 +81,21 @@ class NdkCompile extends NdkTask {
 
     @TaskAction
     void taskAction(IncrementalTaskInputs inputs) {
+        if (isNdkOptionUnset()) {
+            logger.warn("Warning: Native C/C++ source code is found, but it seems that NDK " +
+                    "option is not configured.  Note that if you have an Android.mk, it is not " +
+                    "used for compilation.  The recommended workaround is to remove the default " +
+                    "jni source code directory by adding: \n " +
+                    "android {\n" +
+                    "    sourceSets {\n" +
+                    "        main {\n" +
+                    "            jni.srcDirs = []\n" +
+                    "        }\n" +
+                    "    }\n" +
+                    "}\n" +
+                    "to build.gradle, manually compile the code with ndk-build, " +
+                    "and then place the resulting shared object in src/main/jniLibs.");
+        }
 
         FileTree sourceFileTree = getSource()
         Set<File> sourceFiles = sourceFileTree.matching(new PatternSet().exclude("**/*.h")).files
@@ -253,5 +268,14 @@ class NdkCompile extends NdkTask {
         }
 
         getBuilder().executeProcess(builder.createProcess()).rethrowFailure().assertNormalExitValue()
+    }
+
+    private boolean isNdkOptionUnset() {
+        // If none of the NDK options are set, then it is likely that NDK is not configured.
+        return (getModuleName() == null &&
+                getcFlags() == null &&
+                getLdLibs() == null &&
+                getAbiFilters() == null &&
+                getStl() == null);
     }
 }
