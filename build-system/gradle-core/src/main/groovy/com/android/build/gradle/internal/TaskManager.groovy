@@ -740,6 +740,9 @@ abstract class TaskManager {
         variantOutputData.packageSplitAbiTask.signingConfig = config.signingConfig
         variantOutputData.packageSplitAbiTask.outputDirectory =
                 new File("$project.buildDir/${FD_INTERMEDIATES}/splits/${config.dirName}")
+        variantOutputData.packageSplitAbiTask.mergingFolder =
+                new File(scope.getGlobalScope().getIntermediatesDir(),
+                        "package-merge/" + variantOutputData.getDirName());
         variantOutputData.packageSplitAbiTask.androidBuilder = androidBuilder
         variantOutputData.packageSplitAbiTask.dependsOn generateSplitAbiRes
         variantOutputData.packageSplitAbiTask.dependsOn scope.getNdkBuildable()

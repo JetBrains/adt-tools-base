@@ -148,6 +148,18 @@ public class SignedJarBuilder {
         boolean checkEntry(String archivePath) throws ZipAbortException;
     }
 
+
+    /**
+     * Classes which implement this interface provides a method to check whether a file should
+     * be merged and extracted from the zip.
+     */
+    public interface ZipEntryExtractor {
+
+        boolean checkEntry(String archivePath);
+
+        void extract(String archivePath, InputStream zis) throws IOException;
+    }
+
     /**
      * Creates a {@link SignedJarBuilder} with a given output stream, and signing information.
      * <p/>If either <code>key</code> or <code>certificate</code> is <code>null</code> then
@@ -209,6 +221,17 @@ public class SignedJarBuilder {
 
     /**
      * Copies the content of a Jar/Zip archive into the receiver archive.
+     * @param input the {@link InputStream} for the Jar/Zip to copy.
+     * @throws IOException
+     * @throws ZipAbortException if the {@link IZipEntryFilter} filter indicated that the write
+     *                           must be aborted.
+     */
+    public void writeZip(InputStream input) throws IOException, ZipAbortException {
+        writeZip(input, null, null);
+    }
+
+    /**
+     * Copies the content of a Jar/Zip archive into the receiver archive.
      * <p/>An optional {@link IZipEntryFilter} allows to selectively choose which files
      * to copy over.
      * @param input the {@link InputStream} for the Jar/Zip to copy.
@@ -217,7 +240,7 @@ public class SignedJarBuilder {
      * @throws ZipAbortException if the {@link IZipEntryFilter} filter indicated that the write
      *                           must be aborted.
      */
-    public void writeZip(InputStream input, IZipEntryFilter filter)
+    public void writeZip(InputStream input, IZipEntryFilter filter, ZipEntryExtractor extractor)
             throws IOException, ZipAbortException {
         ZipInputStream zis = new ZipInputStream(input);
 
@@ -254,6 +277,12 @@ public class SignedJarBuilder {
                             continue;
                         }
                     }
+                }
+
+                // if we have a filter, we check the entry to see if it's a file that should be extracted.
+                if (extractor != null && extractor.checkEntry(name)) {
+                    extractor.extract(name, zis);
+                    continue;
                 }
 
                 // if we have a filter, we check the entry against it
