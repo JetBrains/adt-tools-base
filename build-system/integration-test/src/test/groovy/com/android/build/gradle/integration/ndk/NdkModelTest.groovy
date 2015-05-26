@@ -91,6 +91,33 @@ android {
     }
 
     @Test
+    void "check native libraries with splits and universalApk"() {
+        project.buildFile <<
+                """
+android {
+    splits {
+        abi {
+            enable true
+            reset()
+            include 'x86', 'armeabi-v7a', 'mips'
+            universalApk true
+        }
+    }
+}
+"""
+        checkModel(
+                debug : [
+                        SdkConstants.ABI_ARMEABI,
+                        SdkConstants.ABI_ARMEABI_V7A,
+                        SdkConstants.ABI_ARM64_V8A,
+                        SdkConstants.ABI_INTEL_ATOM,
+                        SdkConstants.ABI_INTEL_ATOM64,
+                        SdkConstants.ABI_MIPS,
+                        SdkConstants.ABI_MIPS64
+                ]);
+    }
+
+    @Test
     void "check native libraries with abiFilters"() {
         project.buildFile <<
                 """
