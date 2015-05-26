@@ -66,6 +66,6 @@ public class ClassInstance extends Instance {
     }
 
     public final String toString() {
-        return String.format("%s@0x%08x", getClassObj().getClassName(), getUniqueId());
+        return String.format("%s@%d", getClassObj().getClassName(), getUniqueId());
     }
 }
