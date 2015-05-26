@@ -1058,8 +1058,7 @@ abstract class TaskManager {
             @NonNull BaseVariantData<? extends BaseVariantOutputData> baseVariantData) {
         // Only create lint targets for variants like debug and release, not debugTest
         VariantConfiguration config = baseVariantData.variantConfiguration
-        // TODO: re-enable with Jack when possible
-        return !config.getType().isForTesting() && !config.useJack;
+        return !config.getType().isForTesting();
     }
 
     // Add tasks for running lint on individual variants. We've already added a
@@ -1073,20 +1072,12 @@ abstract class TaskManager {
         // wire the main lint task dependency.
         tasks.named(LINT) {
             it.dependsOn(LINT_COMPILE)
-            if (baseVariantData.javacTask != null) {
-                it.dependsOn(baseVariantData.javacTask)
-            }
-            if (scope.javacTask != null) {
-                it.dependsOn(scope.javacTask.name)
-            }
+            it.dependsOn(scope.javacTask.name)
         }
 
         AndroidTask<Lint> variantLintCheck = androidTasks.create(
                 tasks, new Lint.ConfigAction(scope))
-        variantLintCheck.dependsOn(tasks, LINT_COMPILE)
-        variantLintCheck.optionalDependsOn(tasks,
-                baseVariantData.javacTask,
-                scope.javacTask)
+        variantLintCheck.dependsOn(tasks, LINT_COMPILE, scope.javacTask)
     }
 
     private void createLintVitalTask(@NonNull ApkVariantData variantData) {
