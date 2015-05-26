@@ -142,6 +142,7 @@ public class AndroidProGuardTask extends ProGuardTask implements FileSupplier {
         private VariantScope scope;
 
         private Closure<File> inputDir;
+        private Closure<File> javaResourcesInputDir;
 
         private Closure<List<File>> inputLibraries;
 
@@ -149,6 +150,7 @@ public class AndroidProGuardTask extends ProGuardTask implements FileSupplier {
                 TaskManager.PostCompilationData pcData) {
             this.scope = scope;
             inputDir = pcData.getInputDir();
+            javaResourcesInputDir = pcData.getJavaResourcesInputDir();
             inputLibraries = pcData.getInputLibraries();
         }
 
@@ -310,6 +312,9 @@ public class AndroidProGuardTask extends ProGuardTask implements FileSupplier {
                 } else {
                     // injar: the compilation output
                     proguardTask.injars(inputDir);
+                    if (javaResourcesInputDir != null) {
+                        proguardTask.injars(javaResourcesInputDir);
+                    }
 
                     // injar: the packaged dependencies
                     LinkedHashMap<String, String> map = new LinkedHashMap<String, String>(1);
