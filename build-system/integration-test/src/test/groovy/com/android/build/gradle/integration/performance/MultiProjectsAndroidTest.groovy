@@ -23,6 +23,7 @@ import com.android.build.gradle.integration.common.fixture.app.MultiModuleTestPr
 import com.android.build.gradle.integration.common.fixture.app.TestSourceFile
 import com.android.build.gradle.integration.common.fixture.app.VariantBuildScriptGenerator
 import org.junit.AfterClass
+import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
 /**
@@ -62,6 +63,12 @@ class MultiProjectsAndroidTest {
             .useExperimentalGradleVersion(true)
             .create()
 
+    @BeforeClass
+    static void setUp() {
+        // Execute before performance test to warm up the cache.
+        project.execute("help");
+    }
+
     @AfterClass
     static void cleanUp() {
         app = null;
@@ -70,7 +77,12 @@ class MultiProjectsAndroidTest {
     }
 
     @Test
-    void performanceTest() {
+    void "performance test - help"() {
         project.execute("help")
+    }
+
+    @Test
+    void "performance test - single variant"() {
+        project.execute(":app0:assembleProductFlavor0BuildType0")
     }
 }
