@@ -23,6 +23,7 @@ import com.android.ide.common.blame.SourcePosition;
 import com.android.ide.common.blame.parser.util.OutputLineReader;
 import com.android.utils.ILogger;
 import com.android.utils.SdkUtils;
+import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
 
 import java.io.File;
@@ -33,12 +34,60 @@ import java.util.List;
  */
 public class LegacyNdkOutputParser implements PatternAwareOutputParser {
 
+    private static final String FROM = "from";
+    private static final String UNKNOWN_MSG_PREFIX1 = "In file included " + FROM;
+    private static final String UNKNOWN_MSG_PREFIX2 = "                 " + FROM;
+
     private static final char COLON = ':';
 
     @Override
     public boolean parse(@NonNull String line, @NonNull OutputLineReader reader,
             @NonNull List<Message> messages, @NonNull ILogger logger)
             throws ParsingFailedException {
+        // Parses unknown message
+        if (line.startsWith(UNKNOWN_MSG_PREFIX1) || line.startsWith(UNKNOWN_MSG_PREFIX2)) {
+            int fromIndex = line.indexOf(FROM);
+            String unknownMsgCause = line.substring(0, fromIndex).trim();
+            unknownMsgCause = "(Unknown) " + unknownMsgCause;
+            String coordinates = line.substring(fromIndex + FROM.length()).trim();
+            if (!coordinates.isEmpty()) {
+                int colonIndex1 = line.indexOf(COLON);
+                if (colonIndex1 == 1) { // drive letter (Windows)
+                    coordinates = coordinates.substring(colonIndex1 + 1);
+                }
+                if (coordinates.endsWith(",") || coordinates.endsWith(":")) {
+                    coordinates = coordinates.substring(0, coordinates.length() - 1);
+                }
+
+                List<String> segments = Splitter.on(COLON).splitToList(coordinates);
+                if (segments.size() == 3) {
+                    String pathname = segments.get(0);
+                    File file = new File(pathname);
+                    int lineNumber = 0;
+                    try {
+                        lineNumber = Integer.parseInt(segments.get(1));
+                    }
+                    catch (NumberFormatException ignore) {
+                    }
+                    int column = 0;
+                    try {
+                        column = Integer.parseInt(segments.get(2));
+                    }
+                    catch (NumberFormatException ignore) {
+                    }
+                    SourceFilePosition position = new SourceFilePosition(file,
+                            new SourcePosition(lineNumber - 1, column - 1, -1));
+                    Message message = new Message(Message.Kind.INFO, unknownMsgCause.trim(), position);
+                    if (!messages.contains(message)) {
+                        // There may be a few duplicate "unknown" messages
+                        addMessage(message, messages);
+                    }
+                }
+            }
+            return true;
+        }
+
+        // Parses unresolved include.
         int colonIndex1 = line.indexOf(COLON);
         if (colonIndex1 == 1) { // drive letter (Windows)
             colonIndex1 = line.indexOf(COLON, colonIndex1 + 1);
@@ -114,7 +163,9 @@ public class LegacyNdkOutputParser implements PatternAwareOutputParser {
                                 Message msg = new Message(kind, buf.toString(),
                                         new SourceFilePosition(file,
                                                 new SourcePosition(lineNumber - 1, column - 1, -1)));
-                                addMessage(msg, messages);
+                                if (!messages.contains(msg)) {
+                                    addMessage(msg, messages);
+                                }
                                 return true;
                             }
                         }
