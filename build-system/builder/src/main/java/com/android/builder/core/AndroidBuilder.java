@@ -1479,7 +1479,7 @@ public class AndroidBuilder {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         try {
             Optional<JackProvider> jackProvider = buildToolServiceLoader
-                    .getSingleService(BuildToolsServiceLoader.JACK);
+                    .getSingleService(getLogger(), BuildToolsServiceLoader.JACK);
             if (jackProvider.isPresent()) {
                 Api01Config config;
 
@@ -1649,7 +1649,7 @@ public class AndroidBuilder {
         if (System.getenv("USE_JACK_API") != null) {
             try {
                 Optional<JillProvider> jillProviderOptional = buildToolServiceLoader
-                        .getSingleService(BuildToolsServiceLoader.JILL);
+                        .getSingleService(logger, BuildToolsServiceLoader.JILL);
 
                 if (jillProviderOptional.isPresent()) {
                     com.android.jill.api.v01.Api01Config config =
