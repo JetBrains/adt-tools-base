@@ -25,6 +25,7 @@ import com.android.build.gradle.integration.common.fixture.app.TestSourceFile
 import com.android.build.gradle.integration.common.fixture.app.VariantBuildScriptGenerator
 import groovy.transform.CompileStatic
 import org.junit.AfterClass
+import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
 
@@ -42,8 +43,8 @@ class MultiProjectsAndroidComponentTest {
 
                 model {
                     android {
-                        compileSdkVersion $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
-                        buildToolsVersion "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
+                        compileSdkVersion = $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
+                        buildToolsVersion = "$GradleTestProject.DEFAULT_BUILD_TOOL_VERSION"
                     }
 
                     android.buildTypes {
@@ -69,6 +70,12 @@ class MultiProjectsAndroidComponentTest {
             .forExpermimentalPlugin(true)
             .create()
 
+    @BeforeClass
+    static void setUp() {
+        // Execute before performance test to warm up the cache.
+        project.execute("help");
+    }
+
     @AfterClass
     static void cleanUp() {
         app = null;
@@ -77,7 +84,12 @@ class MultiProjectsAndroidComponentTest {
     }
 
     @Test
-    void performanceTest() {
+    void "performance test - help"() {
         project.execute("help")
+    }
+
+    @Test
+    void "performance test - single variant"() {
+        project.execute(":app0:assembleProductFlavor0BuildType0")
     }
 }
