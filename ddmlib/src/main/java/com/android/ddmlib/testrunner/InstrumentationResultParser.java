@@ -476,6 +476,7 @@ public class InstrumentationResultParser extends MultiLineReceiver {
             case StatusCodes.IGNORED:
                 metrics = getAndResetTestMetrics();
                 for (ITestRunListener listener : mTestListeners) {
+                    listener.testStarted(testId);
                     listener.testIgnored(testId);
                     listener.testEnded(testId, metrics);
                 }
