@@ -43,7 +43,6 @@ import java.util.zip.DataFormatException;
 /**
  * Asynchronous version of the aapt cruncher test.
  */
-@Ignore  // TODO: Re-enable when build tools 22 are available.
 @RunWith(Parameterized.class)
 public class NinePatchAsyncAaptProcessTest {
 
@@ -83,7 +82,7 @@ public class NinePatchAsyncAaptProcessTest {
     @NonNull
     private static PngCruncher getCruncher() {
         ILogger logger = new StdLogger(StdLogger.Level.VERBOSE);
-        File aapt = NinePatchAaptProcessorTestUtils.getAapt(FullRevision.parseRevision("22.1.3"));
+        File aapt = NinePatchAaptProcessorTestUtils.getAapt(FullRevision.parseRevision("22.0.1"));
         return QueuedCruncher.Builder.INSTANCE.newCruncher(aapt.getAbsolutePath(), logger);
     }
 
