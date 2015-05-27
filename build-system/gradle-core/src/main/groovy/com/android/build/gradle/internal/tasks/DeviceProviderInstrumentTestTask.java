@@ -15,9 +15,26 @@
  */
 package com.android.build.gradle.internal.tasks;
 
+import static com.android.builder.core.BuilderConstants.*;
+import static com.android.builder.model.AndroidProject.FD_OUTPUTS;
+import static com.android.sdklib.BuildToolInfo.PathId.SPLIT_SELECT;
+
+import com.android.build.gradle.internal.TaskManager;
+import com.android.build.gradle.internal.scope.ConventionMappingHelper;
+import com.android.build.gradle.internal.scope.TaskConfigAction;
+import com.android.build.gradle.internal.scope.VariantScope;
+import com.android.build.gradle.internal.test.TestDataImpl;
 import com.android.build.gradle.internal.test.report.ReportType;
 import com.android.build.gradle.internal.test.report.TestReport;
+import com.android.build.gradle.internal.variant.ApkVariantData;
+import com.android.build.gradle.internal.variant.TestVariantData;
+import com.android.builder.core.BuilderConstants;
+import com.android.builder.core.VariantType;
 import com.android.builder.internal.testing.SimpleTestCallable;
+import com.android.builder.model.AndroidProject;
+import com.android.builder.sdk.SdkInfo;
+import com.android.builder.sdk.TargetInfo;
+import com.android.builder.testing.ConnectedDeviceProvider;
 import com.android.builder.testing.SimpleTestRunner;
 import com.android.builder.testing.TestData;
 import com.android.builder.testing.TestRunner;
@@ -25,16 +42,21 @@ import com.android.builder.testing.api.DeviceException;
 import com.android.builder.testing.api.DeviceProvider;
 import com.android.builder.testing.api.TestException;
 import com.android.ide.common.process.ProcessExecutor;
+import com.android.utils.StringHelper;
 import com.google.common.collect.ImmutableList;
 
 import org.gradle.api.GradleException;
 import org.gradle.api.Nullable;
+import org.gradle.api.plugins.JavaBasePlugin;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.logging.ConsoleRenderer;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.concurrent.Callable;
+
+import groovy.lang.Closure;
 
 /**
  * Run instrumentation tests for a given variant
@@ -235,4 +257,118 @@ public class DeviceProviderInstrumentTestTask extends BaseTask implements Androi
         return testFailed;
     }
 
+
+    public static class ConfigAction implements TaskConfigAction<DeviceProviderInstrumentTestTask> {
+
+        private final VariantScope scope;
+        private final DeviceProvider deviceProvider;
+        private final TestData testData;
+
+        public ConfigAction(VariantScope scope, DeviceProvider deviceProvider, TestData testData) {
+            this.scope = scope;
+            this.deviceProvider = deviceProvider;
+            this.testData = testData;
+        }
+
+        @Override
+        public String getName() {
+            return scope.getTaskName(
+                    deviceProvider.getName() + VariantType.ANDROID_TEST.getSuffix());
+        }
+
+        @Override
+        public Class<DeviceProviderInstrumentTestTask> getType() {
+            return DeviceProviderInstrumentTestTask.class;
+        }
+
+        @Override
+        public void execute(DeviceProviderInstrumentTestTask task) {
+            final boolean connected = deviceProvider instanceof ConnectedDeviceProvider;
+            String variantName = scope.getTestedVariantData() != null ?
+                    scope.getTestedVariantData().getName() : scope.getVariantData().getName();
+            if (connected) {
+                task.setDescription("Installs and runs the tests for " + variantName +
+                        " on connected devices.");
+            } else {
+                task.setDescription("Installs and runs the tests for " + variantName +
+                        " using provider: " + StringHelper.capitalize(deviceProvider.getName()));
+
+            }
+            task.setGroup(JavaBasePlugin.VERIFICATION_GROUP);
+            task.setAndroidBuilder(scope.getGlobalScope().getAndroidBuilder());
+            task.setTestData(testData);
+            task.setFlavorName(testData.getFlavorName());
+            task.setDeviceProvider(deviceProvider);
+            task.setInstallOptions(scope.getGlobalScope().getExtension().getAdbOptions().getInstallOptions());
+            task.setProcessExecutor(scope.getGlobalScope().getAndroidBuilder().getProcessExecutor());
+
+            String flavorFolder = testData.getFlavorName();
+            if (!flavorFolder.isEmpty()) {
+                flavorFolder = FD_FLAVORS + "/" + flavorFolder;
+            }
+            String providerFolder = connected ? CONNECTED : DEVICE + "/" + deviceProvider.getName();
+            final String subFolder = "/" + providerFolder + "/" + flavorFolder;
+
+            ConventionMappingHelper.map(task, "adbExec", new Callable<File>() {
+                @Override
+                public File call() {
+                    final SdkInfo info = scope.getGlobalScope().getSdkHandler()
+                            .getSdkInfo();
+                    return (info == null ? null : info.getAdb());
+                }
+            });
+            ConventionMappingHelper.map(task, "splitSelectExec", new Callable<File>() {
+                @Override
+                public File call() throws Exception {
+                    final TargetInfo info = scope.getGlobalScope().getAndroidBuilder().getTargetInfo();
+                    String path = info == null ? null : info.getBuildTools().getPath(SPLIT_SELECT);
+                    if (path != null) {
+                        File splitSelectExe = new File(path);
+                        return splitSelectExe.exists() ? splitSelectExe : null;
+                    } else {
+                        return null;
+                    }
+                }
+            });
+
+            ConventionMappingHelper.map(task, "resultsDir", new Callable<File>() {
+                @Override
+                public File call() {
+                    String rootLocation = scope.getGlobalScope().getExtension().getTestOptions().getResultsDir();
+                    if (rootLocation == null) {
+                        rootLocation = scope.getGlobalScope().getBuildDir() + "/" +
+                                FD_OUTPUTS + "/" + FD_ANDROID_RESULTS;
+                    }
+                    return scope.getGlobalScope().getProject().file(rootLocation + subFolder);
+                }
+            });
+
+            ConventionMappingHelper.map(task, "reportsDir", new Callable<File>() {
+                @Override
+                public File call() {
+                    String rootLocation = scope.getGlobalScope().getExtension().getTestOptions().getReportDir();
+                    if (rootLocation == null) {
+                        rootLocation = scope.getGlobalScope().getBuildDir() + "/" +
+                                FD_REPORTS + "/" + FD_ANDROID_TESTS;
+                    }
+                    return scope.getGlobalScope().getProject().file(rootLocation + subFolder);
+                }
+            });
+
+            String rootLocation = scope.getGlobalScope().getBuildDir() + "/" +
+                                FD_OUTPUTS + "/code-coverage";
+            task.setCoverageDir(scope.getGlobalScope().getProject().file(rootLocation + subFolder));
+
+            if (scope.getVariantData() instanceof TestVariantData) {
+                TestVariantData testVariantData = (TestVariantData) scope.getVariantData();
+                if (connected) {
+                    testVariantData.connectedTestTask = task;
+                } else {
+                    testVariantData.providerTestTaskList.add(task);
+                }
+            }
+
+            task.setEnabled(deviceProvider.isConfigured());
+        }
+    }
 }

@@ -15,6 +15,8 @@
  */
 
 package com.android.build.gradle.integration.test
+
+import com.android.build.gradle.integration.common.category.DeviceTests
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.utils.ModelHelper
 import com.android.builder.model.AndroidArtifact
@@ -26,6 +28,7 @@ import org.junit.AfterClass
 import org.junit.BeforeClass
 import org.junit.ClassRule
 import org.junit.Test
+import org.junit.experimental.categories.Category
 
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThat
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
@@ -114,5 +117,12 @@ dependencies {
 //        assertThat(javaLibs).hasSize(0);
 //        Collection<AndroidLibrary> libs = dependencies.getLibraries();
 //        assertThat(libs).hasSize(0);
+    }
+
+    @Test
+    @Category(DeviceTests)
+    void "connected check"() {
+        GradleTestProject.assumeLocalDevice()
+        project.execute(":test:connectedAndroidTest");
     }
 }
