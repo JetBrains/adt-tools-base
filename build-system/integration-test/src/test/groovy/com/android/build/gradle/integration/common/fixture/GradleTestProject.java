@@ -128,6 +128,10 @@ public class GradleTestProject implements TestRule {
         @Nullable
         private TestProject testProject = null;
 
+        @Nullable
+        File sdkDir = SdkHelper.findSdkDir();
+        @Nullable
+        File ndkDir = findNdkDir();
         boolean captureStdOut = false;
         boolean captureStdErr = false;
         boolean experimentalMode = false;
@@ -147,6 +151,8 @@ public class GradleTestProject implements TestRule {
                     useExperimentalGradleVersion ? GRADLE_EXP_TEST_VERSION : GRADLE_TEST_VERSION,
                     captureStdOut,
                     captureStdErr,
+                    sdkDir,
+                    ndkDir,
                     heapSize);
         }
 
@@ -185,6 +191,14 @@ public class GradleTestProject implements TestRule {
          */
         public Builder useExperimentalGradleVersion(boolean mode) {
             this.useExperimentalGradleVersion = mode;
+            return this;
+        }
+
+        /**
+         * Create a project without setting ndk.dir in local.properties.
+         */
+        public Builder withoutNdk() {
+            this.ndkDir = null;
             return this;
         }
 
@@ -259,9 +273,9 @@ public class GradleTestProject implements TestRule {
             String targetGradleVersion,
             boolean captureStdOut,
             boolean captureStdErr,
+            @Nullable File sdkDir,
+            @Nullable File ndkDir,
             @Nullable String heapSize) {
-        sdkDir = SdkHelper.findSdkDir();
-        ndkDir = findNdkDir();
         String buildDir = System.getenv("PROJECT_BUILD_DIR");
         outDir = (buildDir == null) ? new File("build/tests") : new File(buildDir, "tests");
         this.name = (name == null) ? DEFAULT_TEST_PROJECT_NAME : name;
@@ -270,6 +284,8 @@ public class GradleTestProject implements TestRule {
         this.testProject = testProject;
         stdout = captureStdOut ? new ByteArrayOutputStream() : null;
         stderr = captureStdErr ? new ByteArrayOutputStream() : null;
+        this.sdkDir = sdkDir;
+        this.ndkDir = ndkDir;
         this.heapSize = heapSize;
     }
 

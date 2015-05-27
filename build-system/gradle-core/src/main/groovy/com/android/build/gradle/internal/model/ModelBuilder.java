@@ -378,25 +378,27 @@ public class ModelBuilder implements ToolingModelBuilder {
         List<AndroidArtifactOutput> outputs = Lists.newArrayListWithCapacity(variantOutputs.size());
 
         NdkConfig ndkConfig = variantData.getVariantConfiguration().getNdkConfig();
-        Collection<NativeLibrary> nativeLibraries;
-        if (config.getSplits().getAbi().isEnable()) {
-            nativeLibraries = createNativeLibraries(
-                    ndkConfig,
-                    config.getSplits().getAbi().isUniversalApk()
-                            ? ndkHandler.getSupportedAbis()
-                            : createAbiList(config.getSplits().getAbiFilters()),
-                    variantData);
-        } else {
-            if (ndkConfig.getAbiFilters() == null || ndkConfig.getAbiFilters().isEmpty()) {
+        Collection<NativeLibrary> nativeLibraries = ImmutableList.of();;
+        if (ndkHandler.getNdkDirectory() != null) {
+            if (config.getSplits().getAbi().isEnable()) {
                 nativeLibraries = createNativeLibraries(
                         ndkConfig,
-                        ndkHandler.getSupportedAbis(),
+                        config.getSplits().getAbi().isUniversalApk()
+                                ? ndkHandler.getSupportedAbis()
+                                : createAbiList(config.getSplits().getAbiFilters()),
                         variantData);
             } else {
-                nativeLibraries = createNativeLibraries(
-                        ndkConfig,
-                        createAbiList(ndkConfig.getAbiFilters()),
-                        variantData);
+                if (ndkConfig.getAbiFilters() == null || ndkConfig.getAbiFilters().isEmpty()) {
+                    nativeLibraries = createNativeLibraries(
+                            ndkConfig,
+                            ndkHandler.getSupportedAbis(),
+                            variantData);
+                } else {
+                    nativeLibraries = createNativeLibraries(
+                            ndkConfig,
+                            createAbiList(ndkConfig.getAbiFilters()),
+                            variantData);
+                }
             }
         }
 
