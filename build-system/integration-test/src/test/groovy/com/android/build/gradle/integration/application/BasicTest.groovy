@@ -47,6 +47,7 @@ class BasicTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
             .fromTestProject("basic")
+            .withoutNdk()
             .create()
 
     static public AndroidProject model
