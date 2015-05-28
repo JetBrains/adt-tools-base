@@ -1352,7 +1352,7 @@ abstract class TaskManager {
             tasks.named(mainProviderTaskName) {
                 it.dependsOn providerTask.name
             }
-            connectedTask.dependsOn(tasks, artifactsTasks)
+            providerTask.dependsOn(tasks, artifactsTasks)
         }
 
         // now the test servers

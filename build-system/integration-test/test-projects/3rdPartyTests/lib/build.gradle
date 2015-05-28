@@ -20,7 +20,7 @@ android {
 }
 
 project.afterEvaluate {
-    configure(fakeAndroidTest) {
+    configure(fakeDebugAndroidTest) {
         doLast {
             String error = project.fakeProvider.isValid()
             if (error != null) {
