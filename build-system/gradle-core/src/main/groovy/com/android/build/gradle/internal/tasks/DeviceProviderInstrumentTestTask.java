@@ -272,8 +272,7 @@ public class DeviceProviderInstrumentTestTask extends BaseTask implements Androi
 
         @Override
         public String getName() {
-            return scope.getTaskName(
-                    deviceProvider.getName() + VariantType.ANDROID_TEST.getSuffix());
+            return scope.getTaskName(deviceProvider.getName());
         }
 
         @Override

@@ -139,9 +139,9 @@ model {
     @Category(DeviceTests.class)
     public void connectedAndroidTest() {
         if (GradleTestProject.DEVICE_PROVIDER_NAME.equals(BuilderConstants.CONNECTED)) {
-            project.execute(GradleTestProject.DEVICE_PROVIDER_NAME + "AndroidTestArmDebug");
+            project.execute(GradleTestProject.DEVICE_PROVIDER_NAME + "ArmDebugAndroidTest")
         } else {
-            project.execute(GradleTestProject.DEVICE_PROVIDER_NAME + "AndroidTestX86Debug");
+            project.execute(GradleTestProject.DEVICE_PROVIDER_NAME + "X86DebugAndroidTest")
         }
     }
 }
