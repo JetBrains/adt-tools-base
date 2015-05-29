@@ -82,6 +82,18 @@ public class ResourceUrl {
      */
     @Nullable
     public static ResourceUrl parse(@NonNull String url) {
+        return parse(url, false);
+    }
+
+    /**
+     * Return the resource type of the given url, and the resource name.
+     *
+     * @param url the resource url to be parsed
+     * @param forceFramework force the returned value to be a framework resource.
+     * @return a pair of the resource type and the resource name
+     */
+    @Nullable
+    public static ResourceUrl parse(@NonNull String url, boolean forceFramework) {
         // Handle theme references
         if (url.startsWith(PREFIX_THEME_REF)) {
             String remainder = url.substring(PREFIX_THEME_REF.length());
@@ -107,8 +119,7 @@ public class ResourceUrl {
             }
         }
 
-        if (!url.startsWith(PREFIX_RESOURCE_REF) || url.equals(REFERENCE_NULL)
-                || url.equals(REFERENCE_EMPTY) || url.equals(REFERENCE_UNDEFINED)) {
+        if (!url.startsWith(PREFIX_RESOURCE_REF) || isNullOrEmpty(url)) {
             return null;
         }
 
@@ -123,7 +134,7 @@ public class ResourceUrl {
         int typeBegin = create ? 2 : 1;
 
         int colon = url.lastIndexOf(':', typeEnd);
-        boolean framework = false;
+        boolean framework = forceFramework;
         if (colon != -1) {
             if (url.startsWith(ANDROID_NS_NAME, typeBegin)) {
                 framework = true;
@@ -146,6 +157,12 @@ public class ResourceUrl {
             url.theme = true;
         }
         return url;
+    }
+
+    /** Returns if the resource url is @null, @empty or @undefined. */
+    public static boolean isNullOrEmpty(@NonNull String url) {
+        return url.equals(REFERENCE_NULL) || url.equals(REFERENCE_EMPTY) ||
+                url.equals(REFERENCE_UNDEFINED);
     }
 
     /**
