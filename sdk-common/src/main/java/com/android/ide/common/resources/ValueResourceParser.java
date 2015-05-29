@@ -177,14 +177,13 @@ public final class ValueResourceParser extends DefaultHandler {
                         } catch (NumberFormatException e) {
                             // pass, we'll just ignore this value
                         }
-
-                    } else //noinspection VariableNotUsedInsideIf
-                        if (mArrayResourceValue != null) {
+                    }
+                } else //noinspection VariableNotUsedInsideIf
+                    if (mArrayResourceValue != null) {
                         // Create a temporary resource value to hold the item's value. The value is
                         // not added to the repository, since it's just a holder.
                         mCurrentValue = new ResourceValue(null, null, mIsFramework);
                     }
-                }
             } else if (mDepth == 4 && mCurrentAttr != null) {
                 // get the enum/flag name
                 String name = attributes.getValue(ATTR_NAME);
