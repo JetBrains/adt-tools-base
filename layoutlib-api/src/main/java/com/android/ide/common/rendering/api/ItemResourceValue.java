@@ -25,22 +25,32 @@ public class ItemResourceValue extends ResourceValue {
     /**
      * @see #ItemResourceValue(String, boolean, String, boolean)
      */
-    public ItemResourceValue(String name, boolean isFrameworkAttr, boolean isFramework) {
-        this(name, isFrameworkAttr, null, isFramework);
+    public ItemResourceValue(String name, boolean isFrameworkAttr, boolean isFrameworkStyle) {
+        this(name, isFrameworkAttr, null, isFrameworkStyle);
     }
 
     /**
+     * If the value is a reference to a framework resource or not is NOT represented with a boolean!
+     * but can be deduced with:
+     * <pre> {@code
+     *        boolean isFrameworkValue = item.isFramework() ||
+     *            item.getValue().startsWith(SdkConstants.ANDROID_PREFIX) ||
+     *            item.getValue().startsWith(SdkConstants.ANDROID_THEME_PREFIX);
+     * } </pre>
      * For {@code <item name="foo">bar</item>}, item in a style resource, the values of the
      * parameters will be as follows:
      *
-     * @param attributeName foo
+     * @param attributeName   foo
      * @param isFrameworkAttr is foo in framework namespace.
-     * @param value bar
-     * @param isFramework if the style is a framework file or project file.
+     * @param value           bar (in case of a reference, the value may include the namespace.
+     *                        if the namespace is absent, default namespace is assumed based on
+     *                        isFrameworkStyle (android namespace when isFrameworkStyle=true and app
+     *                        namespace when isFrameworkStyle=false))
+     * @param isFrameworkStyle if the style is a framework file or project file.
      */
     public ItemResourceValue(String attributeName, boolean isFrameworkAttr, String value,
-            boolean isFramework) {
-        super(null, attributeName, value, isFramework);
+            boolean isFrameworkStyle) {
+        super(null, attributeName, value, isFrameworkStyle);
         mIsFrameworkAttr = isFrameworkAttr;
     }
 
