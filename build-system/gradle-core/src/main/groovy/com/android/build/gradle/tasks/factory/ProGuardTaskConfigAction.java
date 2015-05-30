@@ -2,19 +2,16 @@ package com.android.build.gradle.tasks.factory;
 
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
 
-import com.android.build.gradle.internal.TaskManager;
+import com.android.build.gradle.internal.PostCompilationData;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantScope;
-import com.android.utils.StringHelper;
 import com.google.common.base.Preconditions;
-
-import org.codehaus.groovy.runtime.StringGroovyMethods;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.Callable;
 
-import groovy.lang.Closure;
 import proguard.ParseException;
 import proguard.gradle.ProGuardTask;
 
@@ -25,11 +22,11 @@ public class ProGuardTaskConfigAction implements TaskConfigAction<ProGuardTask> 
 
     private VariantScope scope;
 
-    private Closure<List<File>> inputFiles;
+    private Callable<List<File>> inputFiles;
 
-    public ProGuardTaskConfigAction(VariantScope scope, TaskManager.PostCompilationData pcData) {
+    public ProGuardTaskConfigAction(VariantScope scope, PostCompilationData pcData) {
         this.scope = scope;
-        this.inputFiles = pcData.getInputFiles();
+        this.inputFiles = pcData.getInputFilesCallable();
     }
 
     @Override
@@ -53,8 +50,9 @@ public class ProGuardTaskConfigAction implements TaskConfigAction<ProGuardTask> 
         try {
             proguardComponentsTask.configuration(scope.getManifestKeepListFile());
 
-            proguardComponentsTask.libraryjars(new Closure<File>(this, this) {
-                public File doCall(Object it) {
+            proguardComponentsTask.libraryjars(new Callable<File>() {
+                @Override
+                public File call() throws Exception {
                     Preconditions.checkNotNull(
                             scope.getGlobalScope().getAndroidBuilder().getTargetInfo());
                     File shrinkedAndroid = new File(
@@ -74,14 +72,14 @@ public class ProGuardTaskConfigAction implements TaskConfigAction<ProGuardTask> 
 
                     return shrinkedAndroid;
                 }
-
-                public File doCall() {
-                    return doCall(null);
-                }
-
             });
 
-            proguardComponentsTask.injars(inputFiles.call().iterator().next());
+            proguardComponentsTask.injars(new Callable<File>() {
+                @Override
+                public File call() throws Exception {
+                    return inputFiles.call().iterator().next();
+                }
+            });
 
             proguardComponentsTask.outjars(scope.getProguardComponentsJarFile());
 

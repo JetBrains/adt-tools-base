@@ -61,8 +61,16 @@ public class MockableAndroidJarTask extends DefaultAndroidTask {
       return mOutputFile;
    }
 
+   public void setOutputFile(File outputFile) {
+       mOutputFile = outputFile;
+   }
+
    @InputFile
    public File getAndroidJar() {
       return mAndroidJar;
+   }
+
+   public void setAndroidJar(File androidJar) {
+       mAndroidJar = androidJar;
    }
 }

@@ -18,22 +18,20 @@
 
 package com.android.build.gradle.internal.tasks.multidex
 
-import com.android.build.gradle.internal.TaskManager
+import com.android.build.gradle.internal.PostCompilationData
 import com.android.build.gradle.internal.scope.ConventionMappingHelper
 import com.android.build.gradle.internal.scope.TaskConfigAction
 import com.android.build.gradle.internal.scope.VariantScope
 import com.android.build.gradle.internal.tasks.BaseTask
-import com.android.builder.model.AndroidProject
 import com.google.common.base.Charsets
 import com.google.common.base.Joiner
 import com.google.common.io.Files
-import org.gradle.api.Task
 import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 
-import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
+import java.util.concurrent.Callable
 
 /**
  * Task to create the main (non-obfuscated) list of classes to keep.
@@ -106,11 +104,11 @@ public class CreateMainDexList extends BaseTask {
 
         VariantScope scope;
 
-        private Closure<List<File>> inputFiles
+        private Callable<List<File>> inputFiles
 
-        ConfigAction(VariantScope scope, TaskManager.PostCompilationData pcData) {
+        ConfigAction(VariantScope scope, PostCompilationData pcData) {
             this.scope = scope
-            inputFiles = pcData.inputFiles;
+            inputFiles = pcData.inputFilesCallable;
         }
 
         @Override
@@ -128,7 +126,7 @@ public class CreateMainDexList extends BaseTask {
             createMainDexList.androidBuilder = scope.globalScope.androidBuilder
 
             def files = inputFiles
-            createMainDexList.allClassesJarFile = files().first()
+            createMainDexList.allClassesJarFile = files.call().first()
             ConventionMappingHelper.map(createMainDexList, "componentsJarFile") {
                 scope.getProguardComponentsJarFile()
             }

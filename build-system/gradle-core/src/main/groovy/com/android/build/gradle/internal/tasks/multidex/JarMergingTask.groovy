@@ -19,7 +19,7 @@
 package com.android.build.gradle.internal.tasks.multidex
 
 import com.android.build.gradle.internal.tasks.DefaultAndroidTask
-import com.android.build.gradle.internal.TaskManager
+import com.android.build.gradle.internal.PostCompilationData
 import com.android.build.gradle.internal.scope.ConventionMappingHelper
 import com.android.build.gradle.internal.scope.TaskConfigAction
 import com.android.build.gradle.internal.scope.VariantScope
@@ -32,6 +32,7 @@ import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 
+import java.util.concurrent.Callable
 import java.util.jar.JarEntry
 import java.util.jar.JarOutputStream
 import java.util.zip.ZipEntry
@@ -161,14 +162,14 @@ class JarMergingTask extends DefaultAndroidTask {
 
         private VariantScope scope
 
-        private Closure<File> inputDir;
+        private Callable<File> inputDir;
 
-        private Closure<List<File>> inputLibraries;
+        private Callable<List<File>> inputLibraries;
 
-        ConfigAction(VariantScope scope, TaskManager.PostCompilationData pcData) {
+        ConfigAction(VariantScope scope, PostCompilationData pcData) {
             this.scope = scope
-            inputDir = pcData.inputDir
-            inputLibraries = pcData.inputLibraries
+            inputDir = pcData.inputDirCallable
+            inputLibraries = pcData.inputLibrariesCallable
         }
 
         @Override

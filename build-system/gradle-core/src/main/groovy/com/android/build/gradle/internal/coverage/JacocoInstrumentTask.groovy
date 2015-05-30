@@ -16,10 +16,10 @@
 
 package com.android.build.gradle.internal.coverage
 
-import com.android.build.gradle.internal.TaskManager
 import com.android.build.gradle.internal.scope.ConventionMappingHelper
 import com.android.build.gradle.internal.scope.TaskConfigAction
 import com.android.build.gradle.internal.scope.VariantScope
+import com.android.build.gradle.internal.PostCompilationData
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.FileCollection
 import org.gradle.api.tasks.InputDirectory
@@ -64,9 +64,9 @@ public class JacocoInstrumentTask extends DefaultTask {
 
         VariantScope scope;
 
-        TaskManager.PostCompilationData pcData;
+        PostCompilationData pcData;
 
-        ConfigAction(VariantScope scope, TaskManager.PostCompilationData pcData) {
+        ConfigAction(VariantScope scope, PostCompilationData pcData) {
             this.scope = scope
             this.pcData = pcData
         }
@@ -88,7 +88,7 @@ public class JacocoInstrumentTask extends DefaultTask {
                 scope.globalScope.project.configurations[JacocoPlugin.ANT_CONFIGURATION_NAME]
             }
             // can't directly use the existing inputFiles closure as we need the dir instead :\
-            ConventionMappingHelper.map(jacocoTask, "inputDir", pcData.inputDir)
+            ConventionMappingHelper.map(jacocoTask, "inputDir", pcData.inputDirCallable)
             ConventionMappingHelper.map(jacocoTask, "outputDir") {
                 new File("${scope.globalScope.buildDir}/${FD_INTERMEDIATES}/coverage-instrumented-classes/${scope.variantConfiguration.dirName}")
             }
