@@ -52,6 +52,8 @@ import com.android.builder.model.ProductFlavor;
 import com.android.builder.model.ProductFlavorContainer;
 import com.android.builder.model.SourceProviderContainer;
 import com.android.builder.model.Variant;
+import com.android.ide.common.res2.AbstractResourceRepository;
+import com.android.ide.common.resources.ResourceUrl;
 import com.android.tools.lint.detector.api.Category;
 import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
@@ -814,6 +816,33 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
                     (mApplicationTagHandle == null || isMainManifest(context, context.file))) {
                 mApplicationTagHandle = context.createLocationHandle(element);
             }
+            Attr fullBackupNode = element.getAttributeNodeNS(ANDROID_URI, "fullBackupContent");
+            if (fullBackupNode != null &&
+                    fullBackupNode.getValue().startsWith(PREFIX_RESOURCE_REF) &&
+                    context.getClient().supportsProjectResources()) {
+                AbstractResourceRepository resources = context.getClient()
+                        .getProjectResources(context.getProject(), true);
+                ResourceUrl url = ResourceUrl.parse(fullBackupNode.getValue());
+                if (url != null && !url.framework
+                        && resources != null
+                        && !resources.hasResourceItem(url.type, url.name)) {
+                    Location location = context.getValueLocation(fullBackupNode);
+                    context.report(ALLOW_BACKUP, location,
+                            "Missing `<full-backup-content>` resource");
+                }
+            } else if (fullBackupNode == null && context.getMainProject().getTargetSdk() >= 23) {
+                Location location = context.getLocation(element);
+                context.report(ALLOW_BACKUP, location,
+                        "Should explicitly set `android:fullBackupContent` to `true` or `false` "
+                                + "to opt-in to or out of full app data back-up and restore, or "
+                                + "alternatively to an `@xml` resource which specifies which "
+                                + "files to backup");
+            } else if (fullBackupNode == null && hasGcmReceiver(element)) {
+                Location location = context.getLocation(element);
+                context.report(ALLOW_BACKUP, location,
+                        "Should explicitly set `android:fullBackupContent` to avoid backing up "
+                                + "the GCM device specific regId.");
+            }
         } else if (mSeenApplication) {
             if (context.isEnabled(ORDER)) {
                 context.report(ORDER, element, context.getLocation(element),
@@ -840,6 +869,41 @@ public class ManifestDetector extends Detector implements Detector.XmlScanner {
                 }
             }
         }
+    }
+
+    /**
+     * Returns true if the given application element has a receiver with an intent filter
+     * action for GCM receive
+     */
+    private static boolean hasGcmReceiver(@NonNull Element application) {
+        NodeList applicationChildren = application.getChildNodes();
+        for (int i1 = 0, n1 = applicationChildren.getLength(); i1 < n1; i1++) {
+            Node applicationChild = applicationChildren.item(i1);
+            if (applicationChild.getNodeType() == Node.ELEMENT_NODE
+                    && TAG_RECEIVER.equals(applicationChild.getNodeName())) {
+                NodeList receiverChildren = applicationChild.getChildNodes();
+                for (int i2 = 0, n2 = receiverChildren.getLength(); i2 < n2; i2++) {
+                    Node receiverChild = receiverChildren.item(i2);
+                    if (receiverChild.getNodeType() == Node.ELEMENT_NODE
+                            && TAG_INTENT_FILTER.equals(receiverChild.getNodeName())) {
+                        NodeList filterChildren = receiverChild.getChildNodes();
+                        for (int i3 = 0, n3 = filterChildren.getLength(); i3 < n3; i3++) {
+                            Node filterChild = filterChildren.item(i3);
+                            if (filterChild.getNodeType() == Node.ELEMENT_NODE
+                                    && NODE_ACTION.equals(filterChild.getNodeName())) {
+                                Element action = (Element) filterChild;
+                                String name = action.getAttributeNS(ANDROID_URI, ATTR_NAME);
+                                if ("com.google.android.c2dm.intent.RECEIVE".equals(name)) {
+                                    return true;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return false;
     }
 
     private static void checkMipmapIcon(@NonNull XmlContext context, @NonNull Element element) {

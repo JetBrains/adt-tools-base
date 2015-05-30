@@ -61,10 +61,21 @@ import org.eclipse.jdt.internal.compiler.ast.MemberValuePair;
 import org.eclipse.jdt.internal.compiler.ast.MethodDeclaration;
 import org.eclipse.jdt.internal.compiler.ast.NameReference;
 import org.eclipse.jdt.internal.compiler.ast.NumberLiteral;
+import org.eclipse.jdt.internal.compiler.ast.SingleMemberAnnotation;
 import org.eclipse.jdt.internal.compiler.ast.StringLiteral;
 import org.eclipse.jdt.internal.compiler.ast.TrueLiteral;
 import org.eclipse.jdt.internal.compiler.ast.TypeDeclaration;
+import org.eclipse.jdt.internal.compiler.impl.BooleanConstant;
+import org.eclipse.jdt.internal.compiler.impl.ByteConstant;
+import org.eclipse.jdt.internal.compiler.impl.CharConstant;
+import org.eclipse.jdt.internal.compiler.impl.Constant;
+import org.eclipse.jdt.internal.compiler.impl.DoubleConstant;
+import org.eclipse.jdt.internal.compiler.impl.FloatConstant;
+import org.eclipse.jdt.internal.compiler.impl.IntConstant;
+import org.eclipse.jdt.internal.compiler.impl.LongConstant;
 import org.eclipse.jdt.internal.compiler.impl.ReferenceContext;
+import org.eclipse.jdt.internal.compiler.impl.ShortConstant;
+import org.eclipse.jdt.internal.compiler.impl.StringConstant;
 import org.eclipse.jdt.internal.compiler.lookup.AnnotationBinding;
 import org.eclipse.jdt.internal.compiler.lookup.Binding;
 import org.eclipse.jdt.internal.compiler.lookup.BlockScope;
@@ -164,6 +175,8 @@ public class Extractor {
     public static final String SUPPORT_NOTNULL = "android.support.annotation.NonNull";
     public static final String ANDROID_INT_DEF = "android.annotation.IntDef";
     public static final String ANDROID_STRING_DEF = "android.annotation.StringDef";
+    public static final String REQUIRES_PERMISSION = "android.support.annotation.RequiresPermission";
+    public static final String ANDROID_REQUIRES_PERMISSION = "android.annotation.RequiresPermission";
     public static final String IDEA_NULLABLE = "org.jetbrains.annotations.Nullable";
     public static final String IDEA_NOTNULL = "org.jetbrains.annotations.NotNull";
     public static final String IDEA_MAGIC = "org.intellij.lang.annotations.MagicConstant";
@@ -636,6 +649,8 @@ public class Extractor {
             if (fqn != null &&
                     (fqn.equals(INT_DEF_ANNOTATION) ||
                             fqn.equals(STRING_DEF_ANNOTATION) ||
+                            fqn.equals(REQUIRES_PERMISSION) ||
+                            fqn.equals(ANDROID_REQUIRES_PERMISSION) ||
                             fqn.equals(ANDROID_INT_DEF) ||
                             fqn.equals(ANDROID_STRING_DEF))) {
                 AnnotationData a = createAnnotation(typeDef);
@@ -645,7 +660,6 @@ public class Extractor {
                 }
             }
         }
-
 
         irrelevantAnnotations.add(typeName);
 
@@ -1429,6 +1443,25 @@ public class Extractor {
                     });
                 }
 
+                MemberValuePair[] attributes = this.attributes;
+
+                if (attributes.length == 1
+                        && name.startsWith(REQUIRES_PERMISSION)
+                        && name.length() > REQUIRES_PERMISSION.length()
+                        && attributes[0].value instanceof SingleMemberAnnotation) {
+                    // The external annotations format does not allow for nested/complex annotations.
+                    // However, these special annotations (@RequiresPermission.Read,
+                    // @RequiresPermission.Write, etc) are known to only be simple containers with a
+                    // single permission child, so instead we "inline" the content:
+                    //  @Read(@RequiresPermission(allOf={P1,P2},conditional=true)
+                    //     =>
+                    //      @RequiresPermission.Read(allOf({P1,P2},conditional=true)
+                    // That's setting attributes that don't actually exist on the container permission,
+                    // but we'll counteract that on the read-annotations side.
+                    SingleMemberAnnotation annotation = (SingleMemberAnnotation)attributes[0].value;
+                    attributes = annotation.memberValuePairs();
+                }
+
                 for (MemberValuePair pair : attributes) {
                     writer.print("      <val name=\"");
                     if (pair.name != null) {
@@ -1519,6 +1552,38 @@ public class Extractor {
                 if (reference.binding != null) {
                     if (reference.binding instanceof FieldBinding) {
                         FieldBinding fb = (FieldBinding)reference.binding;
+                        Constant constant = fb.constant();
+                        if (constant != null && !(name.equals(INT_DEF_ANNOTATION)) &&
+                            !(name.equals(STRING_DEF_ANNOTATION))) {
+                            if (constant instanceof StringConstant) {
+                                sb.append('"').append(constant.stringValue()).append('"');
+                                return true;
+                            } else if (constant instanceof IntConstant) {
+                                sb.append(Integer.toString(constant.intValue()));
+                                return true;
+                            } else if (constant instanceof BooleanConstant) {
+                                sb.append(Boolean.toString(constant.booleanValue()));
+                                return true;
+                            } else if (constant instanceof LongConstant) {
+                                sb.append(Long.toString(constant.longValue()));
+                                return true;
+                            } else if (constant instanceof DoubleConstant) {
+                                sb.append(Double.toString(constant.doubleValue()));
+                                return true;
+                            } else if (constant instanceof CharConstant) {
+                                sb.append('\'').append(Character.toString(constant.charValue())).append('\'');
+                                return true;
+                            } else if (constant instanceof FloatConstant) {
+                                sb.append(Float.toString(constant.floatValue()));
+                                return true;
+                            } else if (constant instanceof ShortConstant) {
+                                sb.append(Short.toString(constant.shortValue()));
+                                return true;
+                            } else if (constant instanceof ByteConstant) {
+                                sb.append(Byte.toString(constant.byteValue()));
+                                return true;
+                            }
+                        }
                         if (fb.declaringClass != null) {
                             if (apiFilter != null &&
                                     !apiFilter.hasField(
