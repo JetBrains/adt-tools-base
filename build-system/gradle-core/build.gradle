@@ -69,6 +69,8 @@ groovydoc {
     header ""
     footer "Copyright (C) 2012 The Android Open Source Project"
     overview ""
+
+    groovyClasspath = configurations.provided
 }
 
 task javadocJar(type: Jar, dependsOn:groovydoc) {
