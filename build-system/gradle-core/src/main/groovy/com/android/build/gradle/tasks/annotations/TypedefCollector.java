@@ -97,6 +97,8 @@ public class TypedefCollector extends ASTVisitor {
 
                     if (typeName.equals(INT_DEF_ANNOTATION) ||
                             typeName.equals(STRING_DEF_ANNOTATION) ||
+                            typeName.equals(Extractor.REQUIRES_PERMISSION) ||
+                            typeName.equals(Extractor.ANDROID_REQUIRES_PERMISSION) ||
                             typeName.equals(Extractor.ANDROID_INT_DEF) ||
                             typeName.equals(Extractor.ANDROID_STRING_DEF)) {
                         String fqn = new String(binding.readableName());

@@ -34,7 +34,7 @@ import java.io.File;
  * <li><code>EXT_</code> File name extension, without the dot </li>
  * </ul>
  */
-@SuppressWarnings("javadoc") // Not documenting all the fields here
+@SuppressWarnings({"javadoc", "unused"}) // Not documenting all the fields here
 public final class SdkConstants {
     public static final int PLATFORM_UNKNOWN = 0;
     public static final int PLATFORM_LINUX = 1;
@@ -360,6 +360,7 @@ public final class SdkConstants {
     /** Name of the SDK extras folder. */
     public static final String FD_EXTRAS = "extras";                    //$NON-NLS-1$
     public static final String FD_M2_REPOSITORY = "m2repository";       //$NON-NLS-1$
+    public static final String FD_NDK = "ndk-bundle";                   //$NON-NLS-1$
     /**
      * Name of an extra's sample folder.
      * Ideally extras should have one {@link #FD_SAMPLES} folder containing
@@ -454,7 +455,7 @@ public final class SdkConstants {
     /** Path of the bin folder of proguard folder relative to the sdk folder.
      *  This is an OS path, ending with a separator. */
     public static final String OS_SDK_TOOLS_PROGUARD_BIN_FOLDER =
-        SdkConstants.OS_SDK_TOOLS_FOLDER +
+        OS_SDK_TOOLS_FOLDER +
         "proguard" + File.separator +                                   //$NON-NLS-1$
         "bin" + File.separator;                                         //$NON-NLS-1$
 
@@ -584,6 +585,7 @@ public final class SdkConstants {
     /** MockView is part of the layoutlib bridge and used to display classes that have
      * no rendering in the graphical layout editor. */
     public static final String CLASS_MOCK_VIEW = "com.android.layoutlib.bridge.MockView"; //$NON-NLS-1$
+    public static final String CLASS_LAYOUT_INFLATER = "android.view.LayoutInflater";
 
     /** Returns the appropriate name for the 'android' command, which is 'android.exe' for
      * Windows and 'android' for all other platforms. */
@@ -819,9 +821,16 @@ public final class SdkConstants {
     public static final String MULTI_AUTO_COMPLETE_TEXT_VIEW = "MultiAutoCompleteTextView"; //$NON-NLS-1$
     public static final String AUTO_COMPLETE_TEXT_VIEW = "AutoCompleteTextView"; //$NON-NLS-1$
     public static final String CHECKABLE = "Checkable";                //$NON-NLS-1$
+    public static final String TEXTURE_VIEW = "TextureView";           //$NON-NLS-1$
 
     // Tags: Drawables
     public static final String TAG_BITMAP = "bitmap";                  //$NON-NLS-1$
+
+    // Tags: Data-Binding
+    public static final String TAG_LAYOUT = "layout";                  //$NON-NLS-1$
+    public static final String TAG_DATA = "data";                      //$NON-NLS-1$
+    public static final String TAG_VARIABLE = "variable";              //$NON-NLS-1$
+    public static final String TAG_IMPORT = "import";                  //$NON-NLS-1$
 
     // Attributes: Manifest
     public static final String ATTR_EXPORTED = "exported";             //$NON-NLS-1$
@@ -855,6 +864,9 @@ public final class SdkConstants {
     public static final String ATTR_VALUE = "value";                   //$NON-NLS-1$
     public static final String ATTR_QUANTITY = "quantity";             //$NON-NLS-1$
     public static final String ATTR_FORMAT = "format";                 //$NON-NLS-1$
+
+    // Attributes: Data-Binding
+    public static final String ATTR_ALIAS = "alias";                  //$NON-NLS-1$
 
     // Attributes: Layout
     public static final String ATTR_LAYOUT_RESOURCE_PREFIX = "layout_";//$NON-NLS-1$
@@ -1138,6 +1150,7 @@ public final class SdkConstants {
     // Resources
     public static final String PREFIX_RESOURCE_REF = "@";               //$NON-NLS-1$
     public static final String PREFIX_THEME_REF = "?";                  //$NON-NLS-1$
+    public static final String PREFIX_BINDING_EXPR = "@{";              //$NON-NLS-1$
     public static final String ANDROID_PREFIX = "@android:";            //$NON-NLS-1$
     public static final String ANDROID_THEME_PREFIX = "?android:";      //$NON-NLS-1$
     public static final String LAYOUT_RESOURCE_PREFIX = "@layout/";     //$NON-NLS-1$
@@ -1392,4 +1405,11 @@ public final class SdkConstants {
     public static final String TYPE_DEF_VALUE_ATTRIBUTE = "value";
     public static final String TYPE_DEF_FLAG_ATTRIBUTE = "flag";
     public static final String FN_ANNOTATIONS_ZIP = "annotations.zip";
+
+    // Data Binding MISC
+    public static final String DATA_BINDING_LIB_ARTIFACT = "com.android.databinding:library";
+    public static final String[] TAGS_DATA_BINDING = new String[]{TAG_VARIABLE,
+        TAG_IMPORT, TAG_LAYOUT, TAG_DATA};
+    public static final String[] ATTRS_DATA_BINDING = new String[]{ATTR_NAME,
+        ATTR_TYPE, ATTR_CLASS, ATTR_ALIAS};
 }

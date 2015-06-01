@@ -68,7 +68,7 @@ public class CallSuperDetector extends Detector implements Detector.JavaScanner 
 
             Category.CORRECTNESS,
             9,
-            Severity.WARNING,
+            Severity.ERROR,
             IMPLEMENTATION);
 
     /** Constructs a new {@link CallSuperDetector} check */
@@ -157,27 +157,26 @@ public class CallSuperDetector extends Detector implements Detector.JavaScanner 
         }
 
         // Look up annotations metadata
-        while (true) {
-            ResolvedMethod superMethod = method.getSuperMethod();
-            if (superMethod == null) {
-                return null;
-            }
-
+        ResolvedMethod directSuper = method.getSuperMethod();
+        ResolvedMethod superMethod = directSuper;
+        while (superMethod != null) {
             Iterable<JavaParser.ResolvedAnnotation> annotations = superMethod.getAnnotations();
             for (JavaParser.ResolvedAnnotation annotation : annotations) {
                 annotation = SupportAnnotationDetector.getRelevantAnnotation(annotation);
                 if (annotation != null) {
                     String signature = annotation.getSignature();
                     if (CALL_SUPER_ANNOTATION.equals(signature)) {
-                        return superMethod;
+                        return directSuper;
                     } else if (signature.endsWith(".OverrideMustInvoke")) {
                         // Handle findbugs annotation on the fly too
-                        return superMethod;
+                        return directSuper;
                     }
                 }
             }
-            method = superMethod;
+            superMethod = superMethod.getSuperMethod();
         }
+
+        return null;
     }
 
     /** Visits a method and determines whether the method calls its super method */
