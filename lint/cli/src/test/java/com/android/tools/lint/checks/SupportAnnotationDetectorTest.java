@@ -209,7 +209,7 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                 + "src/test/pkg/IntDefTest.java:101: Error: Flag not allowed here [WrongConstant]\n"
                 + "        view.setLayoutDirection(View.LAYOUT_DIRECTION_LTR|View.LAYOUT_DIRECTION_RTL); // ERROR\n"
                 + "                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
-                + "src/test/pkg/IntDefTest.java:102: Error: Must be one of: Context.POWER_SERVICE, Context.WINDOW_SERVICE, Context.LAYOUT_INFLATER_SERVICE, Context.ACCOUNT_SERVICE, Context.ACTIVITY_SERVICE, Context.ALARM_SERVICE, Context.NOTIFICATION_SERVICE, Context.ACCESSIBILITY_SERVICE, Context.CAPTIONING_SERVICE, Context.KEYGUARD_SERVICE, Context.LOCATION_SERVICE, Context.SEARCH_SERVICE, Context.SENSOR_SERVICE, Context.STORAGE_SERVICE, Context.WALLPAPER_SERVICE, Context.VIBRATOR_SERVICE, Context.CONNECTIVITY_SERVICE, Context.WIFI_SERVICE, Context.WIFI_P2P_SERVICE, Context.NSD_SERVICE, Context.AUDIO_SERVICE, Context.MEDIA_ROUTER_SERVICE, Context.TELEPHONY_SERVICE, Context.TELECOM_SERVICE, Context.CLIPBOARD_SERVICE, Context.INPUT_METHOD_SERVICE, Context.TEXT_SERVICES_MANAGER_SERVICE, Context.APPWIDGET_SERVICE, Context.DROPBOX_SERVICE, Context.DEVICE_POLICY_SERVICE, Context.UI_MODE_SERVICE, Context.DOWNLOAD_SERVICE, Context.NFC_SERVICE, Context.BLUETOOTH_SERVICE, Context.USB_SERVICE, Context.LAUNCHER_APPS_SERVICE, Context.INPUT_SERVICE, Context.DISPLAY_SERVICE, Context.USER_SERVICE, Context.RESTRICTIONS_SERVICE, Context.APP_OPS_SERVICE, Context.CAMERA_SERVICE, Context.PRINT_SERVICE, Context.CONSUMER_IR_SERVICE, Context.TV_INPUT_SERVICE, Context.MEDIA_SESSION_SERVICE, Context.BATTERY_SERVICE, Context.JOB_SCHEDULER_SERVICE, Context.MEDIA_PROJECTION_SERVICE [WrongConstant]\n"
+                + "src/test/pkg/IntDefTest.java:102: Error: Must be one of: Context.POWER_SERVICE, Context.WINDOW_SERVICE, Context.LAYOUT_INFLATER_SERVICE, Context.ACCOUNT_SERVICE, Context.ACTIVITY_SERVICE, Context.ALARM_SERVICE, Context.NOTIFICATION_SERVICE, Context.ACCESSIBILITY_SERVICE, Context.CAPTIONING_SERVICE, Context.KEYGUARD_SERVICE, Context.LOCATION_SERVICE, Context.SEARCH_SERVICE, Context.SENSOR_SERVICE, Context.STORAGE_SERVICE, Context.WALLPAPER_SERVICE, Context.VIBRATOR_SERVICE, Context.CONNECTIVITY_SERVICE, Context.NETWORK_STATS_SERVICE, Context.WIFI_SERVICE, Context.WIFI_P2P_SERVICE, Context.NSD_SERVICE, Context.AUDIO_SERVICE, Context.FINGERPRINT_SERVICE, Context.MEDIA_ROUTER_SERVICE, Context.TELEPHONY_SERVICE, Context.TELEPHONY_SUBSCRIPTION_SERVICE, Context.CARRIER_CONFIG_SERVICE, Context.TELECOM_SERVICE, Context.CLIPBOARD_SERVICE, Context.INPUT_METHOD_SERVICE, Context.TEXT_SERVICES_MANAGER_SERVICE, Context.APPWIDGET_SERVICE, Context.DROPBOX_SERVICE, Context.DEVICE_POLICY_SERVICE, Context.UI_MODE_SERVICE, Context.DOWNLOAD_SERVICE, Context.NFC_SERVICE, Context.BLUETOOTH_SERVICE, Context.USB_SERVICE, Context.LAUNCHER_APPS_SERVICE, Context.INPUT_SERVICE, Context.DISPLAY_SERVICE, Context.USER_SERVICE, Context.RESTRICTIONS_SERVICE, Context.APP_OPS_SERVICE, Context.CAMERA_SERVICE, Context.PRINT_SERVICE, Context.CONSUMER_IR_SERVICE, Context.TV_INPUT_SERVICE, Context.USAGE_STATS_SERVICE, Context.MEDIA_SESSION_SERVICE, Context.BATTERY_SERVICE, Context.JOB_SCHEDULER_SERVICE, Context.MEDIA_PROJECTION_SERVICE, Context.MIDI_SERVICE [WrongConstant]\n"
                 + "        context.getSystemService(TYPE_1); // ERROR\n"
                 + "                                 ~~~~~~\n"
                 + "20 errors, 0 warnings\n" :
@@ -303,7 +303,97 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                 lintProject("src/test/pkg/CheckPermissions.java.txt=>src/test/pkg/CheckPermissions.java"));
     }
 
-    private final TestFile mUiThreadAnnotation = java("src/android/support/annotation/UiThread.java", ""
+    private final TestFile mPermissionTest = java("src/test/pkg/PermissionTest.java", ""
+                + "package test.pkg;\n"
+                + "\n"
+                + "import android.location.LocationManager;\n"
+                + "\n"
+                + "public class PermissionTest {\n"
+                + "    public static void test(LocationManager locationManager, String provider) {\n"
+                + "        LocationManager.Location location = locationManager.myMethod(provider);\n"
+                + "    }\n"
+                + "}\n");
+
+    private final TestFile mLocationManagerStub = java("src/android/location/LocationManager.java", ""
+                + "package android.location;\n"
+                + "\n"
+                + "import android.support.annotation.RequiresPermission;\n"
+                + "\n"
+                + "import static android.Manifest.permission.ACCESS_COARSE_LOCATION;\n"
+                + "import static android.Manifest.permission.ACCESS_FINE_LOCATION;\n"
+                + "\n"
+                + "@SuppressWarnings(\"UnusedDeclaration\")\n"
+                + "public abstract class LocationManager {\n"
+                + "    @RequiresPermission(anyOf = {ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION})\n"
+                + "    public abstract Location myMethod(String provider);\n"
+                + "    public static class Location {\n"
+                + "    }\n"
+                + "}\n");
+
+        private final TestFile mComplexLocationManagerStub = java("src/android/location/LocationManager.java", ""
+                + "package android.location;\n"
+                + "\n"
+                + "import android.support.annotation.RequiresPermission;\n"
+                + "\n"
+                + "import static android.Manifest.permission.ACCESS_COARSE_LOCATION;\n"
+                + "import static android.Manifest.permission.ACCESS_FINE_LOCATION;\n"
+                + "import static android.Manifest.permission.ADD_VOICEMAIL;\n"
+                + "import static android.Manifest.permission.AUTHENTICATE_ACCOUNTS;\n"
+                + "\n"
+                + "@SuppressWarnings(\"UnusedDeclaration\")\n"
+                + "public abstract class LocationManager {\n"
+                + "    @RequiresPermission(\"(\" + ACCESS_FINE_LOCATION + \"|| \" + ACCESS_COARSE_LOCATION + \") && (\" + ADD_VOICEMAIL + \" ^ \" + AUTHENTICATE_ACCOUNTS + \")\")\n"
+                + "    public abstract Location myMethod(String provider);\n"
+                + "    public static class Location {\n"
+                + "    }\n"
+                + "}\n");
+
+
+
+        private final TestFile mRequirePermissionAnnotation = java("src/android/support/annotation/RequiresPermission.java", ""
+                + "/*\n"
+                + " * Copyright (C) 2015 The Android Open Source Project\n"
+                + " *\n"
+                + " * Licensed under the Apache License, Version 2.0 (the \"License\");\n"
+                + " * you may not use this file except in compliance with the License.\n"
+                + " * You may obtain a copy of the License at\n"
+                + " *\n"
+                + " *      http://www.apache.org/licenses/LICENSE-2.0\n"
+                + " *\n"
+                + " * Unless required by applicable law or agreed to in writing, software\n"
+                + " * distributed under the License is distributed on an \"AS IS\" BASIS,\n"
+                + " * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n"
+                + " * See the License for the specific language governing permissions and\n"
+                + " * limitations under the License.\n"
+                + " */\n"
+                + "package android.support.annotation;\n"
+                + "\n"
+                + "import java.lang.annotation.Retention;\n"
+                + "import java.lang.annotation.Target;\n"
+                + "\n"
+                + "import static java.lang.annotation.ElementType.CONSTRUCTOR;\n"
+                + "import static java.lang.annotation.ElementType.FIELD;\n"
+                + "import static java.lang.annotation.ElementType.METHOD;\n"
+                + "import static java.lang.annotation.RetentionPolicy.CLASS;\n"
+                + "@Retention(CLASS)\n"
+                + "@Target({METHOD,CONSTRUCTOR,FIELD})\n"
+                + "public @interface RequiresPermission {\n"
+                + "    String value() default \"\";\n"
+                + "    String[] allOf() default {};\n"
+                + "    String[] anyOf() default {};\n"
+                + "    boolean conditional() default false;\n"
+                + "    String notes() default \"\";\n"
+                + "    @Target(FIELD)\n"
+                + "    @interface Read {\n"
+                + "        RequiresPermission value();\n"
+                + "    }\n"
+                + "    @Target(FIELD)\n"
+                + "    @interface Write {\n"
+                + "        RequiresPermission value();\n"
+                + "    }\n"
+                + "}");
+
+    private final TestFile mUiThreadPermission = java("src/android/support/annotation/UiThread.java", ""
             + "package android.support.annotation;\n"
             + "\n"
             + "import java.lang.annotation.Retention;\n"
@@ -319,7 +409,7 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
             + "public @interface UiThread {\n"
             + "}\n");
 
-    private final TestFile mMainThreadAnnotation = java("src/android/support/annotation/MainThread.java", ""
+    private final TestFile mMainThreadPermission = java("src/android/support/annotation/MainThread.java", ""
             + "package android.support.annotation;\n"
             + "\n"
             + "import java.lang.annotation.Retention;\n"
@@ -335,7 +425,7 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
             + "public @interface MainThread {\n"
             + "}\n");
 
-    private final TestFile mWorkerThreadAnnotation = java("src/android/support/annotation/WorkerThread.java", ""
+    private final TestFile mWorkerThreadPermission = java("src/android/support/annotation/WorkerThread.java", ""
             + "package android.support.annotation;\n"
             + "\n"
             + "import java.lang.annotation.Retention;\n"
@@ -350,6 +440,248 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
             + "@Target({METHOD,CONSTRUCTOR,TYPE})\n"
             + "public @interface WorkerThread {\n"
             + "}\n");
+
+    private TestFile getManifestWithPermissions(int targetSdk, String... permissions) {
+        StringBuilder permissionBlock = new StringBuilder();
+        for (String permission : permissions) {
+            permissionBlock.append("    <uses-permission android:name=\"").append(permission)
+                    .append("\" />\n");
+        }
+        return xml("AndroidManifest.xml", ""
+                + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+                + "<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n"
+                + "    package=\"foo.bar2\"\n"
+                + "    android:versionCode=\"1\"\n"
+                + "    android:versionName=\"1.0\" >\n"
+                + "\n"
+                + "    <uses-sdk android:minSdkVersion=\"14\" android:targetSdkVersion=\""
+                + targetSdk + "\" />\n"
+                + "\n"
+                + permissionBlock.toString()
+                + "\n"
+                + "    <application\n"
+                + "        android:icon=\"@drawable/ic_launcher\"\n"
+                + "        android:label=\"@string/app_name\" >\n"
+                + "    </application>\n"
+                + "\n"
+                + "</manifest>");
+    }
+
+    private TestFile mRevokeTest = java("src/test/pkg/RevokeTest.java", ""
+            + "package test.pkg;\n"
+            + "\n"
+            + "import android.content.Context;\n"
+            + "import android.content.pm.PackageManager;\n"
+            + "import android.location.LocationManager;\n"
+            + "\n"
+            + "import java.security.AccessControlException;\n"
+            + "\n"
+            + "public class RevokeTest {\n"
+            + "    public static void test1(LocationManager locationManager, String provider) {\n"
+            + "        try {\n"
+            + "            // Ok: Security exception caught in one of the branches\n"
+            + "            locationManager.myMethod(provider); // OK\n"
+            + "        } catch (IllegalArgumentException ignored) {\n"
+            + "        } catch (SecurityException ignored) {\n"
+            + "        }\n"
+            + "\n"
+            + "        try {\n"
+            + "            // Ok: Security exception super class caught in one of the branches\n"
+            + "            locationManager.myMethod(provider); // OK\n"
+            + "        } catch (RuntimeException e) { // includes Security Exception\n"
+            + "        }\n"
+            + "\n"
+            + "        try {\n"
+            + "            // Ok: Caught in outer statement\n"
+            + "            try {\n"
+            + "                locationManager.myMethod(provider); // OK\n"
+            + "            } catch (IllegalArgumentException e) {\n"
+            + "                // inner\n"
+            + "            }\n"
+            + "        } catch (SecurityException ignored) {\n"
+            + "        }\n"
+            + "\n"
+            + "        try {\n"
+            + "            // Ok: Security exception super class caught in one of the branches\n"
+            + "            locationManager.myMethod(provider); // OK\n"
+            + "        } catch (Exception e) { // includes Security Exception\n"
+            + "        }\n"
+            + "\n"
+            + "        // NOT OK: Catching security exception subclass (except for dedicated ones?)\n"
+            + "\n"
+            + "        try {\n"
+            + "            // Error: catching security exception, but not all of them\n"
+            + "            locationManager.myMethod(provider); // ERROR\n"
+            + "        } catch (AccessControlException e) { // security exception but specific one\n"
+            + "        }\n"
+            + "    }\n"
+            + "\n"
+            + "    public static void test2(LocationManager locationManager, String provider) {\n"
+            + "        locationManager.myMethod(provider); // ERROR: not caught\n"
+            + "    }\n"
+            + "\n"
+            + "    public static void test3(LocationManager locationManager, String provider)\n"
+            + "            throws IllegalArgumentException {\n"
+            + "        locationManager.myMethod(provider); // ERROR: not caught by right type\n"
+            + "    }\n"
+            + "\n"
+            + "    public static void test4(LocationManager locationManager, String provider)\n"
+            + "            throws AccessControlException {  // Security exception but specific one\n"
+            + "        locationManager.myMethod(provider); // ERROR\n"
+            + "    }\n"
+            + "\n"
+            + "    public static void test5(LocationManager locationManager, String provider)\n"
+            + "            throws SecurityException {\n"
+            + "        locationManager.myMethod(provider); // OK\n"
+            + "    }\n"
+            + "\n"
+            + "    public static void test6(LocationManager locationManager, String provider)\n"
+            + "            throws Exception { // includes Security Exception\n"
+            + "        locationManager.myMethod(provider); // OK\n"
+            + "    }\n"
+            + "\n"
+            + "    public static void test7(LocationManager locationManager, String provider, Context context)\n"
+            + "            throws IllegalArgumentException {\n"
+            + "        if (context.getPackageManager().checkPermission(android.Manifest.permission.ACCESS_FINE_LOCATION, context.getPackageName()) != PackageManager.PERMISSION_GRANTED) {\n"
+            + "            return;\n"
+            + "        }\n"
+            + "        locationManager.myMethod(provider); // OK: permission checked\n"
+            + "    }\n"
+            + "\n"
+            + "}\n");
+
+    public void testMissingPermissions() throws Exception {
+        assertEquals(""
+                + "src/test/pkg/PermissionTest.java:7: Error: Missing permissions required by LocationManager.myMethod: android.permission.ACCESS_FINE_LOCATION or android.permission.ACCESS_COARSE_LOCATION [MissingPermission]\n"
+                + "        LocationManager.Location location = locationManager.myMethod(provider);\n"
+                + "                                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "1 errors, 0 warnings\n",
+                lintProject(
+                        getManifestWithPermissions(14),
+                        mPermissionTest,
+                        mLocationManagerStub,
+                        mRequirePermissionAnnotation));
+    }
+
+    public void testHasPermission() throws Exception {
+        assertEquals("No warnings.",
+                lintProject(
+                        getManifestWithPermissions(14, "android.permission.ACCESS_FINE_LOCATION"),
+                        mPermissionTest,
+                        mLocationManagerStub,
+                        mRequirePermissionAnnotation));
+    }
+
+    public void testRevokePermissions() throws Exception {
+        assertEquals(""
+                + "src/test/pkg/RevokeTest.java:44: Error: Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with checkPermission) or handle a potential SecurityException [MissingPermission]\n"
+                + "            locationManager.myMethod(provider); // ERROR\n"
+                + "            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "src/test/pkg/RevokeTest.java:50: Error: Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with checkPermission) or handle a potential SecurityException [MissingPermission]\n"
+                + "        locationManager.myMethod(provider); // ERROR: not caught\n"
+                + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "src/test/pkg/RevokeTest.java:55: Error: Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with checkPermission) or handle a potential SecurityException [MissingPermission]\n"
+                + "        locationManager.myMethod(provider); // ERROR: not caught by right type\n"
+                + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "src/test/pkg/RevokeTest.java:60: Error: Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with checkPermission) or handle a potential SecurityException [MissingPermission]\n"
+                + "        locationManager.myMethod(provider); // ERROR\n"
+                + "        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "4 errors, 0 warnings\n",
+                lintProject(
+                        getManifestWithPermissions(23, "android.permission.ACCESS_FINE_LOCATION"),
+                        mLocationManagerStub,
+                        mRequirePermissionAnnotation,
+                        mRevokeTest
+                ));
+    }
+
+    public void testRevokePermissionsPre23() throws Exception {
+        assertEquals("No warnings.",
+                lintProject(
+                        getManifestWithPermissions(14, "android.permission.ACCESS_FINE_LOCATION"),
+                        mLocationManagerStub,
+                        mRequirePermissionAnnotation,
+                        mRevokeTest
+                ));
+    }
+
+    public void testComplexPermission1() throws Exception {
+        assertEquals(""
+                + "src/test/pkg/PermissionTest.java:7: Error: Missing permissions required by LocationManager.myMethod: com.android.voicemail.permission.ADD_VOICEMAIL xor android.permission.AUTHENTICATE_ACCOUNTS [MissingPermission]\n"
+                + "        LocationManager.Location location = locationManager.myMethod(provider);\n"
+                + "                                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "1 errors, 0 warnings\n",
+                lintProject(
+                        getManifestWithPermissions(14,
+                                "android.permission.ACCESS_FINE_LOCATION"),
+                        mPermissionTest,
+                        mComplexLocationManagerStub,
+                        mRequirePermissionAnnotation));
+    }
+
+    public void testComplexPermission2() throws Exception {
+        assertEquals("No warnings.",
+                lintProject(
+                        getManifestWithPermissions(14,
+                                "android.permission.ACCESS_FINE_LOCATION",
+                                "com.android.voicemail.permission.ADD_VOICEMAIL"),
+                        mPermissionTest,
+                        mComplexLocationManagerStub,
+                        mRequirePermissionAnnotation));
+    }
+
+    public void testComplexPermission3() throws Exception {
+        assertEquals(""
+                + "src/test/pkg/PermissionTest.java:7: Error: Missing permissions required by LocationManager.myMethod: com.android.voicemail.permission.ADD_VOICEMAIL xor android.permission.AUTHENTICATE_ACCOUNTS [MissingPermission]\n"
+                + "        LocationManager.Location location = locationManager.myMethod(provider);\n"
+                + "                                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "1 errors, 0 warnings\n",
+                lintProject(
+                        getManifestWithPermissions(14,
+                                "android.permission.ACCESS_FINE_LOCATION",
+                                "com.android.voicemail.permission.ADD_VOICEMAIL",
+                                "android.permission.AUTHENTICATE_ACCOUNTS"),
+                        mPermissionTest,
+                        mComplexLocationManagerStub,
+                        mRequirePermissionAnnotation));
+    }
+
+    public void testPermissionAnnotation() throws Exception {
+        assertEquals(""
+                + "src/test/pkg/LocationManager.java:24: Error: Missing permissions required by LocationManager.getLastKnownLocation: android.permission.ACCESS_FINE_LOCATION or android.permission.ACCESS_COARSE_LOCATION [MissingPermission]\n"
+                + "        Location location = manager.getLastKnownLocation(\"provider\");\n"
+                + "                            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                + "1 errors, 0 warnings\n",
+                lintProject(
+                        java("src/test/pkg/LocationManager.java", ""
+                                + "package test.pkg;\n"
+                                + "\n"
+                                + "import android.support.annotation.RequiresPermission;\n"
+                                + "\n"
+                                + "import java.lang.annotation.Retention;\n"
+                                + "import java.lang.annotation.RetentionPolicy;\n"
+                                + "\n"
+                                + "import static android.Manifest.permission.ACCESS_COARSE_LOCATION;\n"
+                                + "import static android.Manifest.permission.ACCESS_FINE_LOCATION;\n"
+                                + "\n"
+                                + "@SuppressWarnings(\"UnusedDeclaration\")\n"
+                                + "public abstract class LocationManager {\n"
+                                + "    @RequiresPermission(anyOf = {ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION})\n"
+                                + "    @Retention(RetentionPolicy.SOURCE)\n"
+                                + "    @interface AnyLocationPermission {\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    @AnyLocationPermission\n"
+                                + "    public abstract Location getLastKnownLocation(String provider);\n"
+                                + "    public static class Location {\n"
+                                + "    }\n"
+                                + "    \n"
+                                + "    public static void test(LocationManager manager) {\n"
+                                + "        Location location = manager.getLastKnownLocation(\"provider\");\n"
+                                + "    }\n"
+                                + "}\n"),
+                        mRequirePermissionAnnotation));
+    }
 
     public void testThreading() throws Exception {
         assertEquals(""
@@ -421,8 +753,8 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                         + "        }\n"
                         + "    }\n"
                         + "}\n"),
-                    mUiThreadAnnotation,
-                    mMainThreadAnnotation,
-                    mWorkerThreadAnnotation));
+                        mUiThreadPermission,
+                        mMainThreadPermission,
+                        mWorkerThreadPermission));
     }
 }

@@ -76,6 +76,7 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(DuplicateResourceDetector.TYPE_MISMATCH);
         issues.add(ExtraTextDetector.ISSUE);
         issues.add(FieldGetterDetector.ISSUE);
+        issues.add(FullBackupContentDetector.ISSUE);
         issues.add(FragmentDetector.ISSUE);
         issues.add(GetSignaturesDetector.ISSUE);
         issues.add(GradleDetector.COMPATIBILITY);
@@ -213,6 +214,7 @@ public class BuiltinIssueRegistry extends IssueRegistry {
         issues.add(SupportAnnotationDetector.CHECK_PERMISSION);
         issues.add(SupportAnnotationDetector.CHECK_RESULT);
         issues.add(SupportAnnotationDetector.COLOR_USAGE);
+        issues.add(SupportAnnotationDetector.MISSING_PERMISSION);
         issues.add(SupportAnnotationDetector.RANGE);
         issues.add(SupportAnnotationDetector.RESOURCE_TYPE);
         issues.add(SupportAnnotationDetector.THREAD);
