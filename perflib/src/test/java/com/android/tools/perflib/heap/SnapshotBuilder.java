@@ -19,6 +19,7 @@ package com.android.tools.perflib.heap;
 import com.android.tools.perflib.heap.io.InMemoryBuffer;
 
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 /**
  * Utility for creating Snapshot objects to be used in tests.
@@ -29,6 +30,7 @@ import java.nio.ByteBuffer;
  * instance. The default heap holds the roots.
  */
 public class SnapshotBuilder {
+    public static final int SOFT_REFERENCE_ID = 99;
 
     private final Snapshot mSnapshot;
 
@@ -38,16 +40,31 @@ public class SnapshotBuilder {
 
     private final ByteBuffer mDirectBuffer;
 
+    private final int mMaxTotalNodes;
+
+    private short mNextAvailableSoftReferenceNodeId;
+
     public SnapshotBuilder(int numNodes) {
-        InMemoryBuffer buffer = new InMemoryBuffer(2 * numNodes * numNodes);
+        this(numNodes, 0);
+    }
+
+    public SnapshotBuilder(int numNodes, int numSoftNodes) {
+        mMaxTotalNodes = numNodes + numSoftNodes;
+        InMemoryBuffer buffer = new InMemoryBuffer(2 * mMaxTotalNodes * mMaxTotalNodes);
         mDirectBuffer = buffer.getDirectBuffer();
-        mOffsets = new int[numNodes + 1];
+        mOffsets = new int[mMaxTotalNodes + 1];
 
         mSnapshot = new Snapshot(buffer);
         mSnapshot.setHeapTo(13, "testHeap");
         mSnapshot.setIdSize(2);
 
-        mNodes = new ClassInstance[numNodes + 1];
+        ClassObj softClazz = new ClassObj(SOFT_REFERENCE_ID, null, ClassObj.getReferenceClassName(), 0);
+        softClazz.setClassLoaderId(0);
+        softClazz.setFields(new Field[]{new Field(Type.OBJECT, "referent")});
+        softClazz.setIsSoftReference();
+        mSnapshot.addClass(SOFT_REFERENCE_ID, softClazz);
+
+        mNodes = new ClassInstance[mMaxTotalNodes + 1];
         for (int i = 1; i <= numNodes; i++) {
             // Use same name classes on different loaders to extend test coverage
             ClassObj clazz = new ClassObj(100 + i, null, "Class" + (i / 2), 0);
@@ -55,15 +72,26 @@ public class SnapshotBuilder {
             clazz.setFields(new Field[0]);
             mSnapshot.addClass(100 + i, clazz);
 
-            mOffsets[i] = 2 * (i - 1) * numNodes;
+            mOffsets[i] = 2 * (i - 1) * mMaxTotalNodes;
             mNodes[i] = new ClassInstance(i, null, mOffsets[i]);
             mNodes[i].setClassId(100 + i);
+            mNodes[i].setSize(i);
+            mSnapshot.addInstance(i, mNodes[i]);
+        }
+
+        mNextAvailableSoftReferenceNodeId = (short)(numNodes + 1);
+        for (int i = mNextAvailableSoftReferenceNodeId; i <= mMaxTotalNodes; ++i) {
+            mOffsets[i] = 2 * (i - 1) * mMaxTotalNodes;
+            mNodes[i] = new ClassInstance(i, null, mOffsets[i]);
+            mNodes[i].setClassId(SOFT_REFERENCE_ID);
             mNodes[i].setSize(i);
             mSnapshot.addInstance(i, mNodes[i]);
         }
     }
 
     public SnapshotBuilder addReferences(int nodeFrom, int... nodesTo) {
+        assert mNodes[nodeFrom].getClassObj().getFields().length == 0;
+
         Field[] fields = new Field[nodesTo.length];
         for (int i = 0; i < nodesTo.length; i++) {
             mDirectBuffer.putShort(mOffsets[nodeFrom] + i * 2, (short) nodesTo[i]);
@@ -71,6 +99,27 @@ public class SnapshotBuilder {
         }
 
         mNodes[nodeFrom].getClassObj().setFields(fields);
+        return this;
+    }
+
+    /**
+     * Inserts a soft reference instance between <code>nodeFrom</code> to <code>nodeTo</code>.
+     *
+     * @param nodeFrom the parent node
+     * @param nodeTo the child node
+     * @return this
+     */
+    public SnapshotBuilder insertSoftRefences(int nodeFrom, int... nodesTo) {
+        Field[] nodeFromFields = mNodes[nodeFrom].getClassObj().getFields();
+        Field[] newFields = Arrays.copyOf(nodeFromFields, nodeFromFields.length + nodesTo.length);
+        for (int i = 0; i < nodesTo.length; ++i) {
+            short softReferenceId = mNextAvailableSoftReferenceNodeId++;
+            assert softReferenceId <= mMaxTotalNodes;
+            mDirectBuffer.putShort(mOffsets[nodeFrom] + (nodeFromFields.length + i) * 2, softReferenceId);
+            newFields[nodeFromFields.length + i] = new Field(Type.OBJECT, "fSoftReference" + nodesTo[i]);
+        }
+
+        mNodes[nodeFrom].getClassObj().setFields(newFields);
         return this;
     }
 

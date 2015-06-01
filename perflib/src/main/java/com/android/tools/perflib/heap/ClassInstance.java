@@ -59,10 +59,15 @@ public class ClassInstance extends Instance {
                 if (!mReferencesAdded) {
                     ((Instance)value).addReference(this);
                 }
-                visitor.visitLater((Instance) value);
+                visitor.visitLater(this, (Instance)value);
             }
         }
         mReferencesAdded = true;
+    }
+
+    @Override
+    public boolean getIsSoftReference() {
+        return getClassObj().getIsSoftReference();
     }
 
     public final String toString() {

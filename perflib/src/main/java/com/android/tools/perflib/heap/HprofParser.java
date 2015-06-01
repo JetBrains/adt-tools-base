@@ -196,6 +196,7 @@ public class HprofParser {
                 //  this is fine
             }
             mSnapshot.resolveClasses();
+            mSnapshot.resolveReferences();
             // TODO: enable this after the dominators computation is also optimized.
             // mSnapshot.computeRetainedSizes();
         } catch (Exception e) {

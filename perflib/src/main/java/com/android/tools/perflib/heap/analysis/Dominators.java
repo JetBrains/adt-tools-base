@@ -20,10 +20,6 @@ import com.android.annotations.NonNull;
 import com.android.tools.perflib.heap.*;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
-import gnu.trove.TLongHashSet;
-
-import java.util.Comparator;
-import java.util.PriorityQueue;
 
 /**
  * Initial implementation of dominator computation.
@@ -74,8 +70,8 @@ public class Dominators {
                 if (node.getImmediateDominator() != Snapshot.SENTINEL_ROOT) {
                     Instance dominator = null;
 
-                    for (int j = 0; j < node.getReferences().size(); j++) {
-                        Instance predecessor = node.getReferences().get(j);
+                    for (int j = 0; j < node.getHardReferences().size(); j++) {
+                        Instance predecessor = node.getHardReferences().get(j);
                         if (predecessor.getImmediateDominator() == null) {
                             // If we don't have a dominator/approximation for predecessor, skip it
                             continue;

@@ -31,5 +31,5 @@ public interface Visitor {
     /**
      * Marks an instance to be visited later, depending on the visitor's traversal strategy.
      */
-    void visitLater(@NonNull Instance instance);
+    void visitLater(Instance parent, @NonNull Instance child);
 }

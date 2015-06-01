@@ -23,11 +23,9 @@ import com.android.tools.perflib.heap.analysis.ShortestDistanceVisitor;
 import com.android.tools.perflib.heap.analysis.TopologicalSort;
 import com.android.tools.perflib.heap.io.HprofBuffer;
 import com.google.common.collect.ImmutableList;
+import gnu.trove.THashSet;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 /*
  * A snapshot of all of the heaps, and related meta-data, for the runtime at a given instant.
@@ -57,6 +55,9 @@ public class Snapshot {
     private ImmutableList<Instance> mTopSort;
 
     private Dominators mDominators;
+
+    //  The set of all classes that are (sub)class(es) of java.lang.ref.Reference.
+    private THashSet<ClassObj> mReferenceClasses = new THashSet<ClassObj>();
 
     private int[] mTypeSizes;
 
@@ -192,7 +193,7 @@ public class Snapshot {
     }
 
     @Nullable
-    public final Instance findReference(long id) {
+    public final Instance findInstance(long id) {
         //noinspection ForLoopReplaceableByForEach
         for (int i = 0; i < mHeaps.size(); i++) {
             Instance instance = mHeaps.get(i).getInstance(id);
@@ -220,6 +221,12 @@ public class Snapshot {
         return null;
     }
 
+    /**
+     * Finds the first ClassObj with a class name that matches <code>name</code>.
+     *
+     * @param name of the class to find
+     * @return the found <code>ClassObj</code>, or null if not found
+     */
     @Nullable
     public final ClassObj findClass(String name) {
         //noinspection ForLoopReplaceableByForEach
@@ -232,6 +239,24 @@ public class Snapshot {
         }
 
         return null;
+    }
+
+    /**
+     * Finds all <code>ClassObj</code>s with class name that match the given <code>name</code>.
+     *
+     * @param name of the class to find
+     * @return a collection of the found <code>ClassObj</code>s, or empty collection if not found
+     */
+    @NonNull
+    public final Collection<ClassObj> findClasses(String name) {
+        ArrayList<ClassObj> classObjs = new ArrayList<ClassObj>();
+
+        //noinspection ForLoopReplaceableByForEach
+        for (int i = 0; i < mHeaps.size(); i++) {
+            classObjs.addAll(mHeaps.get(i).getClasses(name));
+        }
+
+        return classObjs;
     }
 
     public void resolveClasses() {
@@ -262,6 +287,23 @@ public class Snapshot {
         }
     }
 
+    public void resolveReferences() {
+        Stack<ClassObj> referenceSubclasses = new Stack<ClassObj>();
+        Collection<ClassObj> references = findClasses(ClassObj.getReferenceClassName());
+        for (ClassObj classObj : references) {
+            referenceSubclasses.push(classObj);
+        }
+
+        while (!referenceSubclasses.isEmpty()) {
+            ClassObj classObj = referenceSubclasses.pop();
+            classObj.setIsSoftReference();
+            mReferenceClasses.add(classObj);
+            for (ClassObj subClass : classObj.getSubclasses()) {
+                referenceSubclasses.push(subClass);
+            }
+        }
+    }
+
     // TODO: Break dominator computation into fixed chunks, because it can be unbounded/expensive.
     public void computeDominators() {
         if (mDominators == null) {
@@ -283,6 +325,10 @@ public class Snapshot {
             }
         }
         return result;
+    }
+
+    public ImmutableList<Instance> getTopologicalOrdering() {
+        return mTopSort;
     }
 
     public final void dumpInstanceCounts() {

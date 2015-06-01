@@ -57,8 +57,8 @@ public class NonRecursiveVisitor implements Visitor {
     }
 
     @Override
-    public void visitLater(@NonNull Instance instance) {
-        mStack.push(instance);
+    public void visitLater(Instance parent, @NonNull Instance child) {
+        mStack.push(child);
     }
 
     public void doVisit(Iterable<? extends Instance> startNodes) {
@@ -67,7 +67,7 @@ public class NonRecursiveVisitor implements Visitor {
                 // RootObj nodes don't have their own id, they should be visited right away.
                 node.accept(this);
             } else {
-                visitLater(node);
+                visitLater(null, node);
             }
         }
         while (!mStack.isEmpty()) {

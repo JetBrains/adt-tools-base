@@ -45,6 +45,8 @@ public class ClassObj extends Instance implements Comparable<ClassObj> {
 
     private int mInstanceSize;
 
+    private boolean mIsSoftReference = false;
+
     @NonNull
     TIntObjectHashMap<HeapData> mHeapData = new TIntObjectHashMap<HeapData>();
 
@@ -135,6 +137,15 @@ public class ClassObj extends Instance implements Comparable<ClassObj> {
         return heapData == null ? 0 : mHeapData.get(heapId).mShallowSize;
     }
 
+    public void setIsSoftReference() {
+        mIsSoftReference = true;
+    }
+
+    @Override
+    public boolean getIsSoftReference() {
+        return mIsSoftReference;
+    }
+
     @NonNull
     public Map<Field, Object> getStaticFieldValues() {
         Map<Field, Object> result = new HashMap<Field, Object>();
@@ -185,7 +196,7 @@ public class ClassObj extends Instance implements Comparable<ClassObj> {
                 if (!mReferencesAdded) {
                     ((Instance)value).addReference(this);
                 }
-                visitor.visitLater((Instance) value);
+                visitor.visitLater(this, (Instance)value);
             }
         }
         mReferencesAdded = true;
@@ -220,7 +231,7 @@ public class ClassObj extends Instance implements Comparable<ClassObj> {
 
     @Nullable
     public Instance getClassLoader() {
-        return mHeap.mSnapshot.findReference(mClassLoaderId);
+        return mHeap.mSnapshot.findInstance(mClassLoaderId);
     }
 
     public List<Instance> getInstancesList() {
@@ -257,5 +268,10 @@ public class ClassObj extends Instance implements Comparable<ClassObj> {
             size += ((HeapData)heapStat).mShallowSize;
         }
         return size;
+    }
+
+    @NonNull
+    public static String getReferenceClassName() {
+        return "java.lang.ref.Reference";
     }
 }
