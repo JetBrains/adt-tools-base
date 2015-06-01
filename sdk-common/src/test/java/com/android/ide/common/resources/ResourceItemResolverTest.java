@@ -40,6 +40,11 @@ public class ResourceItemResolverTest extends TestCase {
                         + "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
                         + "<resources>\n"
                         + "    <string name=\"ok\">Ok</string>\n"
+                        + "    <array name=\"my_fw_array\">\"\n"
+                        + "        <item>  fw_value1</item>\n"   // also test trimming.
+                        + "        <item>fw_value2\n</item>\n"
+                        + "        <item>fw_value3</item>\n"
+                        + "    </array>\n"
                         + "</resources>\n",
 
                         "values/themes.xml", ""
@@ -211,6 +216,13 @@ public class ResourceItemResolverTest extends TestCase {
         assertEquals(3, ((ArrayResourceValue) resValue).getElementCount());
         assertEquals("value1", ((ArrayResourceValue) resValue).getElement(0));
         assertEquals("value2", ((ArrayResourceValue) resValue).getElement(1));
+        assertEquals("value3", ((ArrayResourceValue) resValue).getElement(2));
+        resValue = resolver.findResValue("@android:array/my_fw_array", false);
+        assertTrue(resValue instanceof ArrayResourceValue);
+        assertEquals(3, ((ArrayResourceValue) resValue).getElementCount());
+        assertEquals("fw_value1", ((ArrayResourceValue) resValue).getElement(0));
+        assertEquals("fw_value2", ((ArrayResourceValue) resValue).getElement(1));
+        assertEquals("fw_value3", ((ArrayResourceValue) resValue).getElement(2));
 
 
         // Now do everything over again, but this time without a resource resolver.
@@ -270,6 +282,13 @@ public class ResourceItemResolverTest extends TestCase {
         assertEquals(3, ((ArrayResourceValue) resValue).getElementCount());
         assertEquals("value1", ((ArrayResourceValue) resValue).getElement(0));
         assertEquals("value2", ((ArrayResourceValue) resValue).getElement(1));
+        assertEquals("value3", ((ArrayResourceValue) resValue).getElement(2));
+        resValue = resolver.findResValue("@android:array/my_fw_array", false);
+        assertTrue(resValue instanceof ArrayResourceValue);
+        assertEquals(3, ((ArrayResourceValue) resValue).getElementCount());
+        assertEquals("fw_value1", ((ArrayResourceValue) resValue).getElement(0));
+        assertEquals("fw_value2", ((ArrayResourceValue) resValue).getElement(1));
+        assertEquals("fw_value3", ((ArrayResourceValue) resValue).getElement(2));
 
     }
 }
