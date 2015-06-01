@@ -1046,6 +1046,8 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
         // See if the support library version is lower than the targetSdkVersion
         if (mTargetSdkVersion > 0 && dependency.getMajorVersion() < mTargetSdkVersion &&
                 dependency.getMajorVersion() != GradleCoordinate.PLUS_REV_VALUE &&
+                // The multidex library doesn't follow normal supportlib numbering scheme
+                !dependency.getArtifactId().startsWith("multidex") &&
                 context.isEnabled(COMPATIBILITY)) {
             String message = "This support library should not use a lower version ("
                 + dependency.getMajorVersion() + ") than the `targetSdkVersion` ("

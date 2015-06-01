@@ -49,6 +49,53 @@ public class CallSuperDetectorTest extends AbstractCheckTest {
                         "src/android/support/annotation/CallSuper.java.txt=>src/android/support/annotation/CallSuper.java"));
     }
 
+    @SuppressWarnings("ClassNameDiffersFromFileName")
+    public void testCallSuperIndirect() throws Exception {
+        // Ensure that when the @CallSuper is on an indirect super method,
+        // we correctly check that you call the direct super method, not the ancestor.
+        //
+        // Regression test for
+        //    https://code.google.com/p/android/issues/detail?id=174964
+        assertEquals("No warnings.",
+            lintProject(
+                java("src/test/pkg/CallSuperTest.java", ""
+                + "package test.pkg;\n"
+                + "\n"
+                + "import android.support.annotation.CallSuper;\n"
+                + "\n"
+                + "import java.util.List;\n"
+                + "import java.util.Map;\n"
+                + "\n"
+                + "@SuppressWarnings(\"UnusedDeclaration\")\n"
+                + "public class CallSuperTest {\n"
+                + "    private static class Child extends Parent {\n"
+                + "        @Override\n"
+                + "        protected void test1() {\n"
+                + "            super.test1();\n"
+                + "        }\n"
+                + "    }\n"
+                + "\n"
+                + "    private static class Parent extends ParentParent {\n"
+                + "        @Override\n"
+                + "        protected void test1() {\n"
+                + "            super.test1();\n"
+                + "        }\n"
+                + "    }\n"
+                + "\n"
+                + "    private static class ParentParent extends ParentParentParent {\n"
+                + "        @CallSuper\n"
+                + "        protected void test1() {\n"
+                + "        }\n"
+                + "    }\n"
+                + "\n"
+                + "    private static class ParentParentParent {\n"
+                + "\n"
+                + "    }\n"
+                + "}\n"),
+                copy("src/android/support/annotation/CallSuper.java.txt",
+                        "src/android/support/annotation/CallSuper.java")));
+    }
+
     public void testDetachFromWindow() throws Exception {
         assertEquals(""
                 + "src/test/pkg/DetachedFromWindow.java:7: Error: Overriding method should call super.onDetachedFromWindow [MissingSuperCall]\n"
