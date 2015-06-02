@@ -21,21 +21,18 @@ import com.android.annotations.Nullable;
 import com.android.utils.XmlUtils;
 import com.google.common.base.Charsets;
 import com.google.common.io.Files;
-
 import junit.framework.TestCase;
-
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.PrintStream;
 import java.security.Permission;
-
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 
 @SuppressWarnings("javadoc")
 public class XmlPrettyPrinterTest extends TestCase {
@@ -1377,6 +1374,7 @@ public class XmlPrettyPrinterTest extends TestCase {
             throws Exception {
         PrintStream previousOut = System.out;
         PrintStream previousErr = System.err;
+        SecurityManager prevSecurityManager = System.getSecurityManager();
         try {
             // Trap System.exit calls:
             System.setSecurityManager(new SecurityManager() {
@@ -1417,7 +1415,7 @@ public class XmlPrettyPrinterTest extends TestCase {
             assertEquals(expectedExitCode, exitCode);
         } finally {
             // Re-enable system exit for unit test
-            System.setSecurityManager(null);
+            System.setSecurityManager(prevSecurityManager);
 
             System.setOut(previousOut);
             System.setErr(previousErr);

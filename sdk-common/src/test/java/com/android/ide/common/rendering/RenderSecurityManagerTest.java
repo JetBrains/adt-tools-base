@@ -15,15 +15,14 @@
  */
 package com.android.ide.common.rendering;
 
-import static java.io.File.separator;
-
 import com.android.ide.common.res2.RecordingLogger;
 import com.android.testutils.TestUtils;
 import com.android.utils.SdkUtils;
 import com.google.common.io.Files;
-
 import junit.framework.TestCase;
 
+import javax.imageio.ImageIO;
+import javax.swing.*;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -37,12 +36,24 @@ import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import javax.imageio.ImageIO;
-import javax.swing.*;
+import static java.io.File.separator;
 
 public class RenderSecurityManagerTest extends TestCase {
 
     private Object myCredential = new Object();
+    private SecurityManager mySecurityManager;
+
+    @Override
+    protected void setUp() throws Exception {
+        super.setUp();
+        mySecurityManager = System.getSecurityManager();
+    }
+
+    @Override
+    protected void tearDown() throws Exception {
+        System.setSecurityManager(mySecurityManager);
+        super.tearDown();
+    }
 
     public void testExec() throws Exception {
         assertNull(RenderSecurityManager.getCurrent());
