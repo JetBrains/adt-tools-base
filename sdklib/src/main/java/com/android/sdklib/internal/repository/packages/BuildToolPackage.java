@@ -126,35 +126,20 @@ public class BuildToolPackage extends FullRevisionPackage {
                                            buildToolDir.getName());
                 } else {
                     Set<String> names = new HashSet<String>();
-                    if (rev.getMajor() >= 23) {
-                        File binFolder = new File(buildToolDir, "bin");
-                        if (!binFolder.isDirectory()) {
-                            error = String.format("build-tool/%1$s/bin folder is missing",
-                                    buildToolDir.getName());
-                        }
-                        files = binFolder.listFiles();
-                        if (files == null || files.length == 0) {
-                            error = String.format("build-tool/%1$s/bin folder is empty",
-                                                   buildToolDir.getName());
-                        }
+                    for (File file : files) {
+                        names.add(file.getName());
                     }
-
-                    if (error == null) {
-                        for (File file : files) {
-                            names.add(file.getName());
-                        }
-                        for (String name : new String[] { SdkConstants.FN_AAPT,
-                                                          SdkConstants.FN_AIDL,
-                                                          SdkConstants.FN_DX } ) {
-                            if (!names.contains(name)) {
-                                if (error == null) {
-                                    error = String.format("build-tool/%1$s folder is missing ",
-                                                           buildToolDir.getName());
-                                } else {
-                                    error += ", ";
-                                }
-                                error += name;
+                    for (String name : new String[] { SdkConstants.FN_AAPT,
+                                                      SdkConstants.FN_AIDL,
+                                                      SdkConstants.FN_DX } ) {
+                        if (!names.contains(name)) {
+                            if (error == null) {
+                                error = String.format("build-tool/%1$s folder is missing ",
+                                                       buildToolDir.getName());
+                            } else {
+                                error += ", ";
                             }
+                            error += name;
                         }
                     }
                 }
