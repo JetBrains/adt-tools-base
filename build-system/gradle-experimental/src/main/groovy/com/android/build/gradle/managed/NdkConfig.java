@@ -5,7 +5,7 @@ import com.android.build.gradle.managed.FilePattern;
 import com.android.build.gradle.managed.ManagedString;
 
 import org.gradle.model.Managed;
-import org.gradle.model.collection.ManagedSet;
+import org.gradle.model.ModelSet;
 
 /**
  * Configuration model for android-ndk plugin.
@@ -30,7 +30,7 @@ public interface NdkConfig {
     String getToolchainVersion();
     void setToolchainVersion(@NonNull String toolchainVersion);
 
-    ManagedSet<ManagedString> getAbiFilters();
+    ModelSet<ManagedString> getAbiFilters();
 
     String getCFlags();
     void setCFlags(@NonNull String cFlags);
@@ -38,7 +38,7 @@ public interface NdkConfig {
     String getCppFlags();
     void setCppFlags(@NonNull String cppFlags);
 
-    ManagedSet<ManagedString> getLdLibs();
+    ModelSet<ManagedString> getLdLibs();
 
     String getStl();
     void setStl(@NonNull String stl);

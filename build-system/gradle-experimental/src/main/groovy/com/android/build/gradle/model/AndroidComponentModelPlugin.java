@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.model;
 
-import static com.android.build.gradle.model.ModelConstants.ANDROID_COMPONENT_SPEC;
 import static com.android.builder.core.VariantType.ANDROID_TEST;
 import static com.android.builder.core.VariantType.UNIT_TEST;
 
@@ -47,15 +46,14 @@ import org.gradle.language.base.plugins.ComponentModelBasePlugin;
 import org.gradle.model.Defaults;
 import org.gradle.model.Finalize;
 import org.gradle.model.Model;
+import org.gradle.model.ModelMap;
+import org.gradle.model.ModelSet;
 import org.gradle.model.Mutate;
 import org.gradle.model.Path;
 import org.gradle.model.RuleSource;
-import org.gradle.model.collection.CollectionBuilder;
-import org.gradle.model.collection.ManagedSet;
 import org.gradle.platform.base.BinaryType;
 import org.gradle.platform.base.BinaryTypeBuilder;
 import org.gradle.platform.base.ComponentBinaries;
-import org.gradle.platform.base.ComponentSpecContainer;
 import org.gradle.platform.base.ComponentType;
 import org.gradle.platform.base.ComponentTypeBuilder;
 import org.gradle.platform.base.LanguageType;
@@ -119,7 +117,7 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
 
         @Defaults
         public void createDefaultBuildTypes(
-                @Path("android.buildTypes") ManagedSet<BuildType> buildTypes) {
+                @Path("android.buildTypes") ModelSet<BuildType> buildTypes) {
             buildTypes.create(new Action<BuildType>() {
                 @Override
                 public void execute(BuildType buildType) {
@@ -138,7 +136,7 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
 
         @Model
         public List<ProductFlavorCombo> createProductFlavorCombo(
-                @Path("android.productFlavors") ManagedSet<ProductFlavor> productFlavors) {
+                @Path("android.productFlavors") ModelSet<ProductFlavor> productFlavors) {
             // TODO: Create custom product flavor container to manually configure flavor dimensions.
             Set<String> flavorDimensionList = Sets.newHashSet();
             for (ProductFlavor flavor : productFlavors) {
@@ -164,14 +162,8 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
         }
 
         @Mutate
-        public void createAndroidComponents(
-                CollectionBuilder<AndroidComponentSpec> androidComponents) {
+        public void createAndroidComponents(ModelMap<AndroidComponentSpec> androidComponents) {
             androidComponents.create(COMPONENT_NAME);
-        }
-
-        @Model(ANDROID_COMPONENT_SPEC)
-        public AndroidComponentSpec createAndroidComponentSpec(ComponentSpecContainer specs) {
-            return (AndroidComponentSpec) specs.getByName(COMPONENT_NAME);
         }
 
         @Model
@@ -186,8 +178,8 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
         @Mutate
         public void createVariantSourceSet(
                 @Path("android.sources") final AndroidComponentModelSourceSet sources,
-                @Path("android.buildTypes") final ManagedSet<BuildType> buildTypes,
-                @Path("android.productFlavors") ManagedSet<ProductFlavor> flavors,
+                @Path("android.buildTypes") final ModelSet<BuildType> buildTypes,
+                @Path("android.productFlavors") ModelSet<ProductFlavor> flavors,
                 List<ProductFlavorCombo> flavorGroups, ProjectSourceSet projectSourceSet,
                 LanguageRegistry languageRegistry) {
             sources.setProjectSourceSet(projectSourceSet);
@@ -235,8 +227,8 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
 
         @ComponentBinaries
         public void createBinaries(
-                final CollectionBuilder<AndroidBinary> binaries,
-                @Path("android.buildTypes") ManagedSet<BuildType> buildTypes,
+                final ModelMap<AndroidBinary> binaries,
+                @Path("android.buildTypes") ModelSet<BuildType> buildTypes,
                 List<ProductFlavorCombo> flavorCombos, AndroidComponentSpec spec) {
             if (flavorCombos.isEmpty()) {
                 flavorCombos.add(new ProductFlavorCombo());

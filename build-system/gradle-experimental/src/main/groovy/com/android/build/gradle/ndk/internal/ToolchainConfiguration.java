@@ -53,8 +53,10 @@ public class ToolchainConfiguration {
     /**
      * Configure toolchain for a platform.
      */
-    public static void configureToolchain(NativeToolChainRegistry toolchainRegistry,
-            String toolchainName, final NdkHandler ndkHandler) {
+    public static void configureToolchain(
+            NativeToolChainRegistry toolchainRegistry,
+            final String toolchainName,
+            final NdkHandler ndkHandler) {
         final Toolchain ndkToolchain = Toolchain.getByName(toolchainName);
         toolchainRegistry.create("ndk-" + toolchainName,
                 toolchainName.equals("gcc") ? Gcc.class : Clang.class,

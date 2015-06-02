@@ -34,7 +34,7 @@ import com.android.sdklib.repository.FullRevision;
 
 import org.gradle.model.Managed;
 import org.gradle.model.Unmanaged;
-import org.gradle.model.collection.ManagedSet;
+import org.gradle.model.ModelSet;
 
 import java.util.Collection;
 import java.util.List;
@@ -100,13 +100,13 @@ public interface AndroidConfig {
     void setPreProcessingOptions(PreprocessingOptions preprocessingOptions);
 
     /** Build types used by this project. */
-    ManagedSet<BuildType> getBuildTypes();
+    ModelSet<BuildType> getBuildTypes();
 
     /** All product flavors used by this project. */
-    ManagedSet<ProductFlavor> getProductFlavors();
+    ModelSet<ProductFlavor> getProductFlavors();
 
     /** Signing configs used by this project. */
-    ManagedSet<SigningConfig> getSigningConfigs();
+    ModelSet<SigningConfig> getSigningConfigs();
 
     @Unmanaged
     AndroidComponentModelSourceSet getSources();
