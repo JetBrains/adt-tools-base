@@ -99,7 +99,7 @@ public class ResourceUrl {
             String remainder = url.substring(PREFIX_THEME_REF.length());
             if (url.startsWith(ATTR_REF_PREFIX)) {
                 url = PREFIX_RESOURCE_REF + url.substring(PREFIX_THEME_REF.length());
-                return setTheme(parse(url));
+                return setTheme(parse(url, forceFramework));
             }
             int colon = url.indexOf(':');
             if (colon != -1) {
@@ -109,12 +109,12 @@ public class ResourceUrl {
                             + remainder.substring(colon);
                 }
                 url = PREFIX_RESOURCE_REF + remainder;
-                return setTheme(parse(url));
+                return setTheme(parse(url, forceFramework));
             } else {
                 int slash = url.indexOf('/');
                 if (slash == -1) {
                     url = PREFIX_RESOURCE_REF + RESOURCE_CLZ_ATTR + '/' + remainder;
-                    return setTheme(parse(url));
+                    return setTheme(parse(url, forceFramework));
                 }
             }
         }

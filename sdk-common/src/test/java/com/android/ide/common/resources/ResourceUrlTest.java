@@ -67,6 +67,10 @@ public class ResourceUrlTest extends TestCase {
         assertEquals("foo", ResourceUrl.parse("?android:foo").name);
         assertTrue(ResourceUrl.parse("?android:foo").framework);
         assertTrue(ResourceUrl.parse("?android:foo").theme);
+        assertFalse(ResourceUrl.parse("?foo", false).framework);
+        assertTrue(ResourceUrl.parse("?android:foo", false).framework);
+        assertTrue(ResourceUrl.parse("?foo", true).framework);
+        assertTrue(ResourceUrl.parse("?attr/foo", true).framework);
 
         assertEquals("@+id/foo", ResourceUrl.parse("@+id/foo").toString());
         assertEquals("@layout/foo", ResourceUrl.parse("@layout/foo").toString());
