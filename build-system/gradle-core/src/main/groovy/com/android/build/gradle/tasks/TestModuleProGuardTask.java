@@ -89,7 +89,9 @@ public class TestModuleProGuardTask extends ProGuardTask {
         map.put("filter", "!META-INF/MANIFEST.MF");
         injars(map, variantConfiguration.getPackagedJars());
 
-        applymapping(mappingConfiguration.getSingleFile());
+        if (mappingConfiguration.getSingleFile().isFile()) {
+            applymapping(mappingConfiguration.getSingleFile());
+        }
         libraryjars(variantConfiguration.getProvidedOnlyJars());
         super.proguard();
     }
