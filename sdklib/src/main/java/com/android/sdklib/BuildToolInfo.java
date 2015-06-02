@@ -165,28 +165,22 @@ public class BuildToolInfo {
         mRevision = revision;
         mPath = path;
 
+        add(AAPT, FN_AAPT);
+        add(AIDL, FN_AIDL);
         add(DX, FN_DX);
         add(DX_JAR, FD_LIB + File.separator + FN_DX_JAR);
-        add(JACK, FN_JACK);
-        add(JILL, FN_JILL);
+        add(LLVM_RS_CC, FN_RENDERSCRIPT);
         add(ANDROID_RS, OS_FRAMEWORK_RS);
         add(ANDROID_RS_CLANG, OS_FRAMEWORK_RS_CLANG);
-
-        String binFolder = null;
-        if (revision.getMajor() >= 23) {
-            binFolder = "bin";
-        }
-
-        add(AAPT,         binFolder, FN_AAPT);
-        add(AIDL,         binFolder, FN_AIDL);
-        add(LLVM_RS_CC,   binFolder, FN_RENDERSCRIPT);
-        add(DEXDUMP,      binFolder, FN_DEXDUMP);
-        add(BCC_COMPAT,   binFolder, FN_BCC_COMPAT);
-        add(LD_ARM,       binFolder, FN_LD_ARM);
-        add(LD_X86,       binFolder, FN_LD_X86);
-        add(LD_MIPS,      binFolder, FN_LD_MIPS);
-        add(ZIP_ALIGN,    binFolder, FN_ZIPALIGN);
-        add(SPLIT_SELECT, binFolder, FN_SPLIT_SELECT);
+        add(DEXDUMP, FN_DEXDUMP);
+        add(BCC_COMPAT, FN_BCC_COMPAT);
+        add(LD_ARM, FN_LD_ARM);
+        add(LD_X86, FN_LD_X86);
+        add(LD_MIPS, FN_LD_MIPS);
+        add(ZIP_ALIGN, FN_ZIPALIGN);
+        add(JACK, FN_JACK);
+        add(JILL, FN_JILL);
+        add(SPLIT_SELECT, FN_SPLIT_SELECT);
     }
 
     public BuildToolInfo(
@@ -239,18 +233,8 @@ public class BuildToolInfo {
         }
     }
 
-    private void add(PathId id, String... leaves) {
-        StringBuilder sb = new StringBuilder(256);
-        for (String leaf : leaves) {
-            if (leaf != null) {
-                if (sb.length() > 0) {
-                    sb.append(File.separatorChar);
-                }
-                sb.append(leaf);
-            }
-        }
-
-        add(id, new File(mPath, sb.toString()));
+    private void add(PathId id, String leaf) {
+        add(id, new File(mPath, leaf));
     }
 
     private void add(PathId id, File path) {
