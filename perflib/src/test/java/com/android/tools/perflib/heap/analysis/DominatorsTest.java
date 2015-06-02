@@ -163,6 +163,27 @@ public class DominatorsTest extends TestCase {
         assertEquals(3, mSnapshot.findReference(3).getRetainedSize(1));
     }
 
+    public void testMultiplePaths() {
+        mSnapshot = new SnapshotBuilder(8)
+                .addReferences(1, 7, 8)
+                .addReferences(7, 2, 3)
+                .addReferences(8, 2)
+                .addReferences(2, 4)
+                .addReferences(3, 5)
+                .addReferences(5, 4)
+                .addReferences(4, 6)
+                .addRoot(1)
+                .getSnapshot();
+
+        mSnapshot.computeDominators();
+
+        assertEquals(mSnapshot.findReference(1), mSnapshot.findReference(4).getImmediateDominator());
+        assertEquals(mSnapshot.findReference(4), mSnapshot.findReference(6).getImmediateDominator());
+        assertEquals(36, mSnapshot.findReference(1).getRetainedSize(1));
+        assertEquals(2, mSnapshot.findReference(2).getRetainedSize(1));
+        assertEquals(8, mSnapshot.findReference(3).getRetainedSize(1));
+    }
+
     public void testSampleHprof() throws Exception {
         File file = new File(ClassLoader.getSystemResource("dialer.android-hprof").getFile());
         mSnapshot = (new HprofParser(new MemoryMappedFileBuffer(file))).parse();
