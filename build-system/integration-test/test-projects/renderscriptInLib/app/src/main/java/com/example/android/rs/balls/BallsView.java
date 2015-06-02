@@ -46,7 +46,7 @@ public class BallsView extends RSSurfaceView {
 
     @Override
     protected void onDetachedFromWindow() {
-        super.onDetachedFromWindow()
+        super.onDetachedFromWindow();
         if(mRS != null) {
             mRS = null;
             destroyRenderScriptGL();
