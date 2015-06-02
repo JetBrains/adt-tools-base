@@ -13,23 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.android.build.gradle.internal;
 
-package com.android.build.gradle.internal
-import com.android.annotations.NonNull
-import com.android.annotations.Nullable
-import com.android.build.gradle.internal.api.DefaultAndroidSourceSet
-import com.android.build.gradle.internal.dsl.CoreProductFlavor
-import com.android.builder.core.BuilderConstants
-import groovy.transform.CompileStatic
-import org.gradle.api.Project
-import org.gradle.api.Task
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+import com.android.build.gradle.internal.api.DefaultAndroidSourceSet;
+import com.android.build.gradle.internal.dsl.CoreProductFlavor;
+import com.android.builder.core.BuilderConstants;
+import com.android.utils.StringHelper;
+
+import org.gradle.api.Project;
+import org.gradle.api.Task;
+import org.gradle.api.plugins.BasePlugin;
+
 /**
  * Class containing a ProductFlavor and associated data (sourcesets)
  */
-@CompileStatic
 public class ProductFlavorData<T extends CoreProductFlavor> extends VariantDimensionData {
-    final T productFlavor
-    final Task assembleTask
+    private final T productFlavor;
+    private final Task assembleTask;
 
     ProductFlavorData(
             @NonNull T productFlavor,
@@ -37,16 +39,25 @@ public class ProductFlavorData<T extends CoreProductFlavor> extends VariantDimen
             @Nullable DefaultAndroidSourceSet androidTestSourceSet,
             @Nullable DefaultAndroidSourceSet unitTestSourceSet,
             @NonNull Project project) {
-        super(sourceSet, androidTestSourceSet, unitTestSourceSet, project)
+        super(sourceSet, androidTestSourceSet, unitTestSourceSet, project);
 
-        this.productFlavor = productFlavor
+        this.productFlavor = productFlavor;
 
-        if (!BuilderConstants.MAIN.equals(sourceSet.name)) {
-            assembleTask = project.tasks.create("assemble${sourceSet.name.capitalize()}")
-            assembleTask.description = "Assembles all ${sourceSet.name.capitalize()} builds."
-            assembleTask.setGroup("Build")
+        if (!BuilderConstants.MAIN.equals(sourceSet.getName())) {
+            String sourceSetName = StringHelper.capitalize(sourceSet.getName());
+            assembleTask = project.getTasks().create("assemble" + sourceSetName);
+            assembleTask.setDescription("Assembles all " + sourceSetName + " builds.");
+            assembleTask.setGroup(BasePlugin.BUILD_GROUP);
         } else {
-            assembleTask = null
+            assembleTask = null;
         }
+    }
+
+    public T getProductFlavor() {
+        return productFlavor;
+    }
+
+    public Task getAssembleTask() {
+        return assembleTask;
     }
 }
