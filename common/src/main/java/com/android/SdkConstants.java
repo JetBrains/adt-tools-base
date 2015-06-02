@@ -585,7 +585,18 @@ public final class SdkConstants {
     /** MockView is part of the layoutlib bridge and used to display classes that have
      * no rendering in the graphical layout editor. */
     public static final String CLASS_MOCK_VIEW = "com.android.layoutlib.bridge.MockView"; //$NON-NLS-1$
-    public static final String CLASS_LAYOUT_INFLATER = "android.view.LayoutInflater";
+    public static final String CLASS_LAYOUT_INFLATER = "android.view.LayoutInflater"; //$NON-NLS-1$
+
+    /* Android Design Support Class Constants */
+    public static final String CLASS_COORDINATOR_LAYOUT = "android.support.design.widget.CoordinatorLayout"; //$NON-NLS-1$
+    public static final String CLASS_APP_BAR_LAYOUT = "android.support.design.widget.AppBarLayout"; //$NON-NLS-1$
+    public static final String CLASS_FLOATING_ACTION_BUTTON = "android.support.design.widget.FloatingActionButton"; //$NON-NLS-1$
+    public static final String CLASS_COLLAPSING_TOOLBAR_LAYOUT = "android.support.design.widget.CollapsingToolbarLayout"; //$NON-NLS-1$
+    public static final String CLASS_NAVIGATION_VIEW = "android.support.design.widget.NavigationView"; //$NON-NLS-1$
+    public static final String CLASS_SNACKBAR = "android.support.design.widget.Snackbar"; //$NON-NLS-1$
+    public static final String CLASS_TAB_LAYOUT = "android.support.design.widget.TabLayout"; //$NON-NLS-1$
+    public static final String CLASS_TEXT_INPUT_LAYOUT = "android.support.design.widget.TextInputLayout"; //$NON-NLS-1$
+    public static final String CLASS_NESTED_SCROLL_VIEW = "android.support.v4.widget.NestedScrollView";  //$NON-NLS-1$
 
     /** Returns the appropriate name for the 'android' command, which is 'android.exe' for
      * Windows and 'android' for all other platforms. */
@@ -823,6 +834,16 @@ public final class SdkConstants {
     public static final String CHECKABLE = "Checkable";                //$NON-NLS-1$
     public static final String TEXTURE_VIEW = "TextureView";           //$NON-NLS-1$
 
+    /* Android Design Support Tag Constants */
+    public static final String COORDINATOR_LAYOUT = CLASS_COORDINATOR_LAYOUT;
+    public static final String APP_BAR_LAYOUT = CLASS_APP_BAR_LAYOUT;
+    public static final String FLOATING_ACTION_BUTTON = CLASS_FLOATING_ACTION_BUTTON;
+    public static final String COLLAPSING_TOOLBAR_LAYOUT = CLASS_COLLAPSING_TOOLBAR_LAYOUT;
+    public static final String NAVIGATION_VIEW = CLASS_NAVIGATION_VIEW;
+    public static final String SNACKBAR = CLASS_SNACKBAR;
+    public static final String TAB_LAYOUT = CLASS_TAB_LAYOUT;
+    public static final String TEXT_INPUT_LAYOUT = CLASS_TEXT_INPUT_LAYOUT;
+
     // Tags: Drawables
     public static final String TAG_BITMAP = "bitmap";                  //$NON-NLS-1$
 
@@ -987,6 +1008,12 @@ public final class SdkConstants {
     // Attributes: Drawables
     public static final String ATTR_TILE_MODE = "tileMode";            //$NON-NLS-1$
 
+    // Attributes: CoordinatorLayout
+    public static final String ATTR_LAYOUT_ANCHOR = "layout_anchor";                //$NON-NLS-1$
+    public static final String ATTR_LAYOUT_ANCHOR_GRAVITY = "layout_anchorGravity"; //$NON-NLS-1$
+    public static final String ATTR_LAYOUT_BEHAVIOR = "layout_behavior";            //$NON-NLS-1$
+    public static final String ATTR_LAYOUT_KEYLINE = "layout_keyline";              //$NON-NLS-1$
+
     // Values: Manifest
     public static final String VALUE_SPLIT_ACTION_BAR_WHEN_NARROW = "splitActionBarWhenNarrow"; // NON-NLS-$1
 
@@ -999,7 +1026,6 @@ public final class SdkConstants {
     public static final String VALUE_AUTO_FIT = "auto_fit";             //$NON-NLS-1$
     public static final String VALUE_SELECTABLE_ITEM_BACKGROUND =
             "?android:attr/selectableItemBackground";                   //$NON-NLS-1$
-
 
     // Values: Resources
     public static final String VALUE_ID = "id";                        //$NON-NLS-1$
