@@ -18,7 +18,7 @@
 
 package com.android.build.gradle.internal.tasks.multidex
 
-import com.android.build.gradle.internal.TaskManager
+import com.android.build.gradle.internal.PostCompilationData
 import com.android.build.gradle.internal.scope.ConventionMappingHelper
 import com.android.build.gradle.internal.scope.TaskConfigAction
 import com.android.build.gradle.internal.scope.VariantScope
@@ -128,9 +128,9 @@ class RetraceMainDexList extends DefaultAndroidTask {
 
         VariantScope scope;
 
-        TaskManager.PostCompilationData pcData;
+        PostCompilationData pcData;
 
-        ConfigAction(VariantScope scope, TaskManager.PostCompilationData pcData) {
+        ConfigAction(VariantScope scope, PostCompilationData pcData) {
             this.scope = scope
             this.pcData = pcData
         }

@@ -16,18 +16,17 @@
 package com.android.build.gradle.tasks
 import com.android.SdkConstants
 import com.android.annotations.NonNull
-import com.android.build.gradle.internal.TaskManager
 import com.android.build.gradle.internal.scope.ConventionMappingHelper
 import com.android.build.gradle.internal.scope.TaskConfigAction
 import com.android.build.gradle.internal.scope.VariantScope
 import com.android.build.gradle.internal.tasks.BaseTask
 import com.android.build.gradle.internal.variant.ApkVariantData
 import com.android.build.gradle.internal.variant.TestVariantData
+import com.android.build.gradle.internal.PostCompilationData
 import com.android.builder.core.AndroidBuilder
 import com.android.builder.core.DexOptions
 import com.android.builder.core.VariantConfiguration
 import com.android.builder.core.VariantType
-import com.android.builder.model.AndroidProject
 import com.android.ide.common.internal.WaitableExecutor
 import com.google.common.base.Charsets
 import com.google.common.collect.Lists
@@ -45,8 +44,6 @@ import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.incremental.IncrementalTaskInputs
 
 import java.util.concurrent.Callable
-
-import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES
 
 @ParallelizableTask
 public class PreDex extends BaseTask {
@@ -208,9 +205,9 @@ public class PreDex extends BaseTask {
 
         VariantScope scope;
 
-        TaskManager.PostCompilationData pcData
+        PostCompilationData pcData
 
-        ConfigAction(VariantScope scope, TaskManager.PostCompilationData pcData) {
+        ConfigAction(VariantScope scope, PostCompilationData pcData) {
             this.scope = scope
             this.pcData = pcData
         }
@@ -240,7 +237,7 @@ public class PreDex extends BaseTask {
             preDexTask.dexOptions = scope.globalScope.getExtension().dexOptions
             preDexTask.multiDex = isMultiDexEnabled
 
-            ConventionMappingHelper.map(preDexTask, "inputFiles", pcData.inputLibraries)
+            ConventionMappingHelper.map(preDexTask, "inputFiles", pcData.inputLibrariesCallable)
             ConventionMappingHelper.map(preDexTask, "outputFolder") {
                 scope.getPreDexOutputDir();
             }
