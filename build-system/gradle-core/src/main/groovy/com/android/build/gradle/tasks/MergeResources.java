@@ -50,6 +50,12 @@ import java.util.concurrent.Callable;
 @ParallelizableTask
 public class MergeResources extends IncrementalTask {
 
+    /**
+     * The first version of build tools that normalizes resources when packaging the APK.
+     *
+     * <p>This means that e.g. drawable-hdpi becomes drawable-hdpi-v4 to make it clear it was not
+     * available before API 4.
+     */
     public static final FullRevision NORMALIZE_RESOURCES_BUILD_TOOLS = new FullRevision(21, 0, 0);
 
     // ----- PUBLIC TASK API -----

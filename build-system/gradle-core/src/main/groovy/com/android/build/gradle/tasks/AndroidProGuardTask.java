@@ -23,6 +23,7 @@ import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.internal.DependencyManager;
+import com.android.build.gradle.internal.PostCompilationData;
 import com.android.build.gradle.internal.TaskManager;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantScope;
@@ -51,6 +52,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Callable;
 
 import groovy.lang.Closure;
 import proguard.ParseException;
@@ -141,17 +143,16 @@ public class AndroidProGuardTask extends ProGuardTask implements FileSupplier {
 
         private VariantScope scope;
 
-        private Closure<File> inputDir;
-        private Closure<File> javaResourcesInputDir;
+        private Callable<File> inputDir;
+        private Callable<File> javaResourcesInputDir;
 
-        private Closure<List<File>> inputLibraries;
+        private Callable<List<File>> inputLibraries;
 
-        public ConfigAction(VariantScope scope,
-                TaskManager.PostCompilationData pcData) {
+        public ConfigAction(VariantScope scope, final PostCompilationData pcData) {
             this.scope = scope;
-            inputDir = pcData.getInputDir();
-            javaResourcesInputDir = pcData.getJavaResourcesInputDir();
-            inputLibraries = pcData.getInputLibraries();
+            inputDir = pcData.getInputDirCallable();
+            javaResourcesInputDir = pcData.getJavaResourcesInputDirCallable();
+            inputLibraries = pcData.getInputLibrariesCallable();
         }
 
         @Override
@@ -221,8 +222,9 @@ public class AndroidProGuardTask extends ProGuardTask implements FileSupplier {
                         proguardTask.dontwarn("org.jacoco.**");
                     }
 
-                    proguardTask.configuration(new Closure<Collection<File>>(this, this) {
-                        public Collection<File> doCall(Object it) {
+                    proguardTask.configuration(new Callable<Collection<File>>() {
+                        @Override
+                        public Collection<File> call() throws Exception {
                             List<File> proguardFiles = variantConfig.getProguardFiles(true,
                                     Collections.singletonList(getDefaultProguardFile(
                                             TaskManager.DEFAULT_PROGUARD_CONFIG_FILE)));
@@ -230,11 +232,6 @@ public class AndroidProGuardTask extends ProGuardTask implements FileSupplier {
                                     variantOutputData.processResourcesTask.getProguardOutputFile());
                             return proguardFiles;
                         }
-
-                        public Collection<File> doCall() {
-                            return doCall(null);
-                        }
-
                     });
                 }
 
@@ -267,24 +264,21 @@ public class AndroidProGuardTask extends ProGuardTask implements FileSupplier {
                     proguardTask.libraryjars(map1, inputDir);
 
                     // injar: the local dependencies
-                    Closure inJars = new Closure<List<File>>(this, this) {
-                        public List<File> doCall(Object it) {
+                    Callable inJars = new Callable<List<File>>() {
+                        @Override
+                        public List<File> call() throws Exception {
                             return DependencyManager
                                     .getPackagedLocalJarFileList(variantData.getVariantDependency());
                         }
-
-                        public List<File> doCall() {
-                            return doCall(null);
-                        }
-
                     };
 
                     proguardTask.injars(ImmutableMap.of("filter", "!META-INF/MANIFEST.MF"), inJars);
 
                     // libjar: the library dependencies. In this case we take all the compile-scope
                     // dependencies
-                    Closure libJars = new Closure<Iterable<File>>(this, this) {
-                        public Iterable<File> doCall(Object it) {
+                    Callable libJars = new Callable<Iterable<File>>() {
+                        @Override
+                        public Iterable<File> call() throws Exception {
                             // get all the compiled jar.
                             Set<File> compiledJars = scope.getGlobalScope().getAndroidBuilder()
                                     .getCompileClasspath(variantConfig);
@@ -298,10 +292,6 @@ public class AndroidProGuardTask extends ProGuardTask implements FileSupplier {
                                     return !localJars.contains(file);
                                 }
                             });
-                        }
-
-                        public Iterable<File> doCall() {
-                            return doCall(null);
                         }
                     };
 
@@ -322,15 +312,11 @@ public class AndroidProGuardTask extends ProGuardTask implements FileSupplier {
                     proguardTask.injars(map, inputLibraries);
 
                     // the provided-only jars as libraries.
-                    Closure libJars = new Closure<List<File>>(this, this) {
-                        public List<File> doCall(Object it) {
+                    Callable<List<File>> libJars = new Callable<List<File>>() {
+                        @Override
+                        public List<File> call() throws Exception {
                             return variantData.getVariantConfiguration().getProvidedOnlyJars();
                         }
-
-                        public List<File> doCall() {
-                            return doCall(null);
-                        }
-
                     };
 
                     proguardTask.libraryjars(libJars);
@@ -356,16 +342,12 @@ public class AndroidProGuardTask extends ProGuardTask implements FileSupplier {
                     // input the tested app as library
                     proguardTask.libraryjars(testedVariantData.javacTask.getDestinationDir());
                     // including its dependencies
-                    Closure testedPackagedJars = new Closure<Set<File>>(this, this) {
-                        public Set<File> doCall(Object it) {
+                    Callable testedPackagedJars = new Callable<Set<File>>() {
+                        @Override
+                        public Set<File> call() throws Exception {
                             return scope.getGlobalScope().getAndroidBuilder()
                                     .getPackagedJars(testedVariantData.getVariantConfiguration());
                         }
-
-                        public Set<File> doCall() {
-                            return doCall(null);
-                        }
-
                     };
 
                     LinkedHashMap<String, String> map = new LinkedHashMap<String, String>(1);

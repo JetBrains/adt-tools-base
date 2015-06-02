@@ -18,7 +18,7 @@
 
 package com.android.build.gradle.internal.tasks.multidex
 
-import com.android.build.gradle.internal.TaskManager
+import com.android.build.gradle.internal.PostCompilationData
 import com.android.build.gradle.internal.scope.ConventionMappingHelper
 import com.android.build.gradle.internal.scope.TaskConfigAction
 import com.android.build.gradle.internal.scope.VariantScope
@@ -35,6 +35,7 @@ import org.xml.sax.helpers.DefaultHandler
 
 import javax.xml.parsers.SAXParser
 import javax.xml.parsers.SAXParserFactory
+
 
 class CreateManifestKeepList extends DefaultAndroidTask {
 
@@ -120,9 +121,9 @@ class CreateManifestKeepList extends DefaultAndroidTask {
     public static class ConfigAction implements TaskConfigAction<CreateManifestKeepList> {
 
         VariantScope scope;
-        TaskManager.PostCompilationData pcData;
+        PostCompilationData pcData;
 
-        ConfigAction(VariantScope scope, TaskManager.PostCompilationData pcData) {
+        ConfigAction(VariantScope scope, PostCompilationData pcData) {
             this.scope = scope
             this.pcData = pcData
         }

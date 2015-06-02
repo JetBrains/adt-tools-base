@@ -17,7 +17,6 @@ package com.android.build.gradle.tasks
 
 import com.android.SdkConstants
 import com.android.annotations.Nullable
-import com.android.build.gradle.internal.TaskManager
 import com.android.build.gradle.internal.core.GradleVariantConfiguration
 import com.android.build.gradle.internal.dsl.DexOptions
 import com.android.build.gradle.internal.scope.ConventionMappingHelper
@@ -26,8 +25,8 @@ import com.android.build.gradle.internal.scope.VariantScope
 import com.android.build.gradle.internal.tasks.BaseTask
 import com.android.build.gradle.internal.variant.ApkVariantData
 import com.android.build.gradle.internal.variant.TestVariantData
-import com.android.utils.StringHelper
 import org.codehaus.groovy.runtime.DefaultGroovyMethods
+import com.android.build.gradle.internal.PostCompilationData
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.InputFile
@@ -172,9 +171,9 @@ public class Dex extends BaseTask {
 
         private final VariantScope scope;
 
-        private final TaskManager.PostCompilationData pcData;
+        private final PostCompilationData pcData;
 
-        public ConfigAction(VariantScope scope, TaskManager.PostCompilationData pcData) {
+        public ConfigAction(VariantScope scope, PostCompilationData pcData) {
             this.scope = scope;
             this.pcData = pcData;
         }
@@ -218,11 +217,11 @@ public class Dex extends BaseTask {
             dexTask.setOptimize(true);//!variantData.variantConfiguration.buildType.debuggable
 
             // inputs
-            if (pcData.getInputDir() != null) {
-                ConventionMappingHelper.map(dexTask, "inputDir", pcData.getInputDir());
+            if (pcData.getInputDirCallable() != null) {
+                ConventionMappingHelper.map(dexTask, "inputDir", pcData.getInputDirCallable());
             }
-            ConventionMappingHelper.map(dexTask, "inputFiles", pcData.getInputFiles());
-            ConventionMappingHelper.map(dexTask, "libraries", pcData.getInputLibraries());
+            ConventionMappingHelper.map(dexTask, "inputFiles", pcData.getInputFilesCallable());
+            ConventionMappingHelper.map(dexTask, "libraries", pcData.getInputLibrariesCallable());
 
             if (isMultiDexEnabled && isLegacyMultiDexMode) {
                 // configure the dex task to receive the generated class list.
