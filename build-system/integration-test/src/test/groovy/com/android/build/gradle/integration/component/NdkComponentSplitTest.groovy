@@ -36,7 +36,7 @@ class NdkComponentSplitTest {
 
     @ClassRule
     public static GradleTestProject project = GradleTestProject.builder()
-            .fromTestApp(new HelloWorldJniApp(jniDir: "c"))
+            .fromTestApp(new HelloWorldJniApp())
             .forExpermimentalPlugin(true)
             .create()
 
