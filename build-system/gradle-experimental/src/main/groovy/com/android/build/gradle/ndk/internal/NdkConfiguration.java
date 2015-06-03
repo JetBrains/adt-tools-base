@@ -132,7 +132,7 @@ public class NdkConfiguration {
                         }
 
                         if (ndkConfig.getCppFlags() != null) {
-                            getCCompiler(binary).args(ndkConfig.getCppFlags());
+                            getCppCompiler(binary).args(ndkConfig.getCppFlags());
                         }
 
                         for (ManagedString ldLibs : ndkConfig.getLdLibs()) {
