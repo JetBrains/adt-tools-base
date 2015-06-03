@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.managed;
 
+import org.gradle.api.Named;
 import org.gradle.model.Managed;
 import org.gradle.model.ModelSet;
 
@@ -23,10 +24,7 @@ import org.gradle.model.ModelSet;
  * A Managed build type.
  */
 @Managed
-public interface BuildType {
-
-    String getName();
-    void setName(String name);
+public interface BuildType extends Named {
 
     ModelSet<ClassField> getBuildConfigFields();
 

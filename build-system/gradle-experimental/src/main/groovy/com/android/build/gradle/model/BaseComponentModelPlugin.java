@@ -37,10 +37,10 @@ import com.android.build.gradle.internal.process.GradleProcessExecutor;
 import com.android.build.gradle.internal.profile.RecordingBuildListener;
 import com.android.build.gradle.internal.tasks.DependencyReportTask;
 import com.android.build.gradle.internal.tasks.SigningReportTask;
+import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.VariantFactory;
 import com.android.build.gradle.managed.AndroidConfig;
 import com.android.build.gradle.managed.BuildType;
-import com.android.build.gradle.managed.ManagedString;
 import com.android.build.gradle.managed.NdkConfig;
 import com.android.build.gradle.managed.ProductFlavor;
 import com.android.build.gradle.managed.SigningConfig;
@@ -61,8 +61,7 @@ import com.android.ide.common.process.LoggedProcessOutputHandler;
 import com.android.ide.common.signing.KeystoreHelper;
 import com.android.prefs.AndroidLocation;
 import com.android.utils.ILogger;
-import com.google.common.base.Predicate;
-import com.google.common.collect.Iterables;
+import com.google.common.collect.Maps;
 
 import org.gradle.api.Action;
 import org.gradle.api.Plugin;
@@ -81,7 +80,6 @@ import org.gradle.model.ModelMap;
 import org.gradle.model.Mutate;
 import org.gradle.model.Path;
 import org.gradle.model.RuleSource;
-import org.gradle.model.ModelSet;
 import org.gradle.model.internal.core.ModelCreators;
 import org.gradle.model.internal.core.ModelReference;
 import org.gradle.model.internal.registry.ModelRegistry;
@@ -92,6 +90,7 @@ import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
 import java.io.File;
 import java.io.IOException;
 import java.security.KeyStore;
+import java.util.Map;
 
 import javax.inject.Inject;
 
@@ -167,16 +166,16 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
     public static class Rules extends RuleSource {
 
         @Mutate
-        public void configureAndroidModel(AndroidConfig androidModel,
+        public void configureAndroidModel(
+                AndroidConfig androidModel,
                 ServiceRegistry serviceRegistry) {
             Instantiator instantiator = serviceRegistry.get(Instantiator.class);
             AndroidConfigHelper.configure(androidModel, instantiator);
 
-            androidModel.getSigningConfigs().create(new Action<SigningConfig>() {
+            androidModel.getSigningConfigs().create(DEBUG, new Action<SigningConfig>() {
                 @Override
                 public void execute(SigningConfig signingConfig) {
                     try {
-                        signingConfig.setName(DEBUG);
                         signingConfig.setStoreFile(KeystoreHelper.defaultDebugKeystoreLocation());
                         signingConfig.setStorePassword(DefaultSigningConfig.DEFAULT_PASSWORD);
                         signingConfig.setKeyAlias(DefaultSigningConfig.DEFAULT_ALIAS);
@@ -279,16 +278,8 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
 
         @Mutate
         public void initDebugBuildTypes(
-                @Path("android.buildTypes") ModelSet<BuildType> buildTypes,
-                @Path("android.signingConfigs") ModelSet<SigningConfig> signingConfigs) {
-            final SigningConfig debugSigningConfig = Iterables.find(signingConfigs,
-                    new Predicate<SigningConfig>() {
-                        @Override
-                        public boolean apply(SigningConfig signingConfig) {
-                            return signingConfig.getName().equals(DEBUG);
-                        }
-                    });
-
+                @Path("android.buildTypes") ModelMap<BuildType> buildTypes,
+                @Path("android.signingConfigs") final ModelMap<SigningConfig> signingConfigs) {
             buildTypes.beforeEach(new Action<BuildType>() {
                 @Override
                 public void execute(BuildType buildType) {
@@ -296,13 +287,10 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
                 }
             });
 
-            buildTypes.afterEach(new Action<BuildType>() {
+            buildTypes.named(DEBUG, new Action<BuildType>() {
                 @Override
                 public void execute(BuildType buildType) {
-                    if (buildType.getName().equals(DEBUG)) {
-                        buildType.setSigningConfig(debugSigningConfig);
-                    }
-
+                    buildType.setSigningConfig(signingConfigs.get(DEBUG));
                 }
             });
         }
@@ -350,9 +338,9 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
                 ComponentSpecContainer androidSpecs,
                 ServiceRegistry serviceRegistry, AndroidConfig androidExtension,
                 com.android.build.gradle.AndroidConfig adaptedModel,
-                @Path("android.buildTypes") ModelSet<BuildType> buildTypes,
-                @Path("android.productFlavors") ModelSet<ProductFlavor> productFlavors,
-                @Path("android.signingConfigs") ModelSet<SigningConfig> signingConfigs,
+                @Path("android.buildTypes") ModelMap<BuildType> buildTypes,
+                @Path("android.productFlavors") ModelMap<ProductFlavor> productFlavors,
+                @Path("android.signingConfigs") ModelMap<SigningConfig> signingConfigs,
                 VariantFactory variantFactory,
                 TaskManager taskManager,
                 Project project,
@@ -373,11 +361,11 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
             VariantManager variantManager = new VariantManager(project, androidBuilder,
                     adaptedModel, variantFactory, taskManager, instantiator);
 
-            for (BuildType buildType : buildTypes) {
+            for (BuildType buildType : buildTypes.values()) {
                 variantManager.addBuildType(new BuildTypeAdaptor(buildType));
             }
 
-            for (ProductFlavor productFlavor : productFlavors) {
+            for (ProductFlavor productFlavor : productFlavors.values()) {
                 variantManager.addProductFlavor(new ProductFlavorAdaptor(productFlavor));
             }
 
@@ -394,7 +382,7 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
                 TaskManager taskManager) {
             final VariantManager variantManager =
                     ((DefaultAndroidComponentSpec) specs.get(COMPONENT_NAME)).getVariantManager();
-            binaries.all(new Action<AndroidBinary>() {
+            binaries.afterEach(new Action<AndroidBinary>() {
                 @Override
                 public void execute(AndroidBinary androidBinary) {
                     DefaultAndroidBinary binary = (DefaultAndroidBinary) androidBinary;

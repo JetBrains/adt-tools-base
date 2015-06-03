@@ -1,10 +1,8 @@
 package com.android.build.gradle.ndk.internal;
 
 import com.android.build.gradle.internal.core.Toolchain;
-import com.android.build.gradle.managed.ManagedString;
 import com.android.build.gradle.managed.NdkConfig;
 
-import org.gradle.api.Action;
 import org.gradle.api.InvalidUserDataException;
 
 /**
