@@ -68,6 +68,17 @@ public class LocaleManagerTest extends TestCase {
         assertEquals("German", LocaleManager.getLanguageName("de"));
         assertEquals("Hindi", LocaleManager.getLanguageName("hi"));
 
+        // Check deprecated codes
+        assertEquals("Indonesian", LocaleManager.getLanguageName("id"));
+        assertEquals("Indonesian", LocaleManager.getLanguageName("in"));
+        assertEquals("Indonesian", LocaleManager.getLanguageName("ind"));
+        assertEquals("Hebrew", LocaleManager.getLanguageName("he"));
+        assertEquals("Hebrew", LocaleManager.getLanguageName("iw"));
+        assertEquals("Hebrew", LocaleManager.getLanguageName("heb"));
+        assertEquals("Yiddish", LocaleManager.getLanguageName("yi"));
+        assertEquals("Yiddish", LocaleManager.getLanguageName("ji"));
+        assertEquals("Yiddish", LocaleManager.getLanguageName("yid"));
+
         // 3 letter language lookup
         assertEquals("English", LocaleManager.getLanguageName("eng"));
         assertEquals("Norwegian", LocaleManager.getLanguageName("nor"));
@@ -175,6 +186,17 @@ public class LocaleManagerTest extends TestCase {
         assertEquals("nb", LocaleManager.getLanguageAlpha2("nob"));
         assertEquals("NOR", LocaleManager.getRegionAlpha3("NO"));
         assertEquals("NO", LocaleManager.getRegionAlpha2("NOR"));
+
+        // Check deprecated codes
+        assertEquals("in", LocaleManager.getLanguageAlpha2("ind"));
+        assertEquals("ind", LocaleManager.getLanguageAlpha3("in"));
+        assertEquals("ind", LocaleManager.getLanguageAlpha3("id"));
+        assertEquals("iw", LocaleManager.getLanguageAlpha2("heb"));
+        assertEquals("heb", LocaleManager.getLanguageAlpha3("he"));
+        assertEquals("heb", LocaleManager.getLanguageAlpha3("iw"));
+        assertEquals("ji", LocaleManager.getLanguageAlpha2("yid"));
+        assertEquals("yid", LocaleManager.getLanguageAlpha3("yi"));
+        assertEquals("yid", LocaleManager.getLanguageAlpha3("ji"));
     }
 
     @SuppressWarnings("ConstantConditions")
