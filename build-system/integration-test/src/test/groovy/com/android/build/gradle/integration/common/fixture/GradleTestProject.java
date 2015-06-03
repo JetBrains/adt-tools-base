@@ -100,6 +100,8 @@ public class GradleTestProject implements TestRule {
 
     public static final String CUSTOM_JACK;
 
+    public static final boolean USE_JACK;
+
     static {
         String envBuildToolVersion = System.getenv("CUSTOM_BUILDTOOLS");
         DEFAULT_BUILD_TOOL_VERSION = !Strings.isNullOrEmpty(envBuildToolVersion) ?
@@ -109,6 +111,7 @@ public class GradleTestProject implements TestRule {
                 : Version.ANDROID_GRADLE_PLUGIN_VERSION;
         String envJack = System.getenv().get("CUSTOM_JACK");
         CUSTOM_JACK = !Strings.isNullOrEmpty(envJack) ? envJack : "false";
+        USE_JACK = Boolean.parseBoolean(CUSTOM_JACK);
     }
 
     private static final String COMMON_HEADER = "commonHeader.gradle";
