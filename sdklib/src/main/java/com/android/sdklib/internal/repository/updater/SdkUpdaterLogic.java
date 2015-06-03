@@ -871,6 +871,10 @@ public class SdkUpdaterLogic {
                 Package p = a.getParentPackage();
                 if (p instanceof PlatformToolPackage) {
                     FullRevision r = ((PlatformToolPackage) p).getRevision();
+                    // If computing dependencies for a non-preview package, don't offer preview dependencies
+                    if (r.isPreview() && !rev.isPreview()) {
+                        continue;
+                    }
                     if (r.compareTo(localRev) >= compareThreshold) {
                         localRev = r;
                         localAiMax = ai;
@@ -897,6 +901,11 @@ public class SdkUpdaterLogic {
                 Package p = a.getParentPackage();
                 if (p instanceof PlatformToolPackage) {
                     FullRevision r = ((PlatformToolPackage) p).getRevision();
+                    // If computing dependencies for a non-preview package, don't offer preview dependencies
+                    if (r.isPreview() && !rev.isPreview()) {
+                        continue;
+                    }
+
                     if (r.compareTo(localRev) >= compareThreshold) {
                         localRev = r;
                         localAiMax = null;
@@ -929,6 +938,11 @@ public class SdkUpdaterLogic {
         for (Package p : remotePkgs) {
             if (p instanceof PlatformToolPackage) {
                 FullRevision r = ((PlatformToolPackage) p).getRevision();
+                // If computing dependencies for a non-preview package, don't offer preview dependencies
+                if (r.isPreview() && !rev.isPreview()) {
+                    continue;
+                }
+
                 if (r.compareTo(rev) >= 0) {
                     // Make sure there's at least one valid archive here
                     for (Archive a : p.getArchives()) {
