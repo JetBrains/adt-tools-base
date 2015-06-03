@@ -27,5 +27,6 @@
     <orderEntry type="library" scope="TEST" name="JUnit4" level="project" />
     <orderEntry type="library" name="jack-api" level="project" />
     <orderEntry type="library" name="jill-api" level="project" />
+    <orderEntry type="module" module-name="assetstudio-base" />
   </component>
 </module>

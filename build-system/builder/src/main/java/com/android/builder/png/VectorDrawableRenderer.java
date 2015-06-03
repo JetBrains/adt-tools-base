@@ -19,6 +19,7 @@ package com.android.builder.png;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import com.android.annotations.NonNull;
+import com.android.assetstudiolib.GraphicGenerator;
 import com.android.ide.common.resources.configuration.DensityQualifier;
 import com.android.ide.common.resources.configuration.FolderConfiguration;
 import com.android.ide.common.resources.configuration.VersionQualifier;
@@ -36,6 +37,7 @@ import java.util.Collection;
 /**
  * Generates PNG images (and XML copies) from VectorDrawable files.
  */
+@SuppressWarnings("MethodMayBeStatic")
 public class VectorDrawableRenderer {
 
     /** Projects with minSdk set to this or higher don't need to generate PNGs. */
@@ -134,5 +136,10 @@ public class VectorDrawableRenderer {
         // Because of the above, the will be no NPE here.
         //noinspection ConstantConditions
         return configuration.getVersionQualifier().getVersion();
+    }
+
+    private GraphicGenerator getGraphicGenerator() {
+        // This method is here to check classes from asset-studio are visible at compile-time.
+        throw new RuntimeException("Not implemented yet.");
     }
 }
