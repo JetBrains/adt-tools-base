@@ -147,7 +147,7 @@ public class LocalSdkTest extends TestCase {
         assertEquals(null, pi.getLoadError());
         assertEquals(new MajorRevision(2), pi.getDesc().getMajorRevision());
         assertEquals("<LocalDocPkgInfo <PkgDesc Type=doc Android=API 18 MajorRev=2>>", pi.toString());
-        assertEquals("Documentation for Android SDK 18, rev 2", pi.getListDescription());
+        assertEquals("Documentation for Android SDK", pi.getListDescription());
         assertSame(pi, mLS.getPkgInfo(pi.getDesc()));
     }
 
