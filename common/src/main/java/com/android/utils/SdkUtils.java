@@ -21,6 +21,7 @@ import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 import com.google.common.base.CaseFormat;
 import com.google.common.base.Charsets;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.io.ByteStreams;
 import com.google.common.io.Closeables;
@@ -37,6 +38,7 @@ import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.List;
 
+import static com.android.SdkConstants.DOT_WEBP;
 import static com.android.SdkConstants.DOT_XML;
 import static com.android.SdkConstants.DOT_PNG;
 import static com.android.SdkConstants.DOT_GIF;
@@ -489,8 +491,8 @@ public class SdkUtils {
         return resourceName;
     }
 
-    public static final List<String> IMAGE_EXTENSIONS = Lists.newArrayList(
-            DOT_PNG, DOT_9PNG, DOT_GIF, DOT_JPEG, DOT_JPG, DOT_BMP);
+    public static final List<String> IMAGE_EXTENSIONS = ImmutableList.of(
+            DOT_PNG, DOT_9PNG, DOT_GIF, DOT_JPEG, DOT_JPG, DOT_BMP, DOT_WEBP);
 
     /**
      * Returns true if the given file path points to an image file recognized by
