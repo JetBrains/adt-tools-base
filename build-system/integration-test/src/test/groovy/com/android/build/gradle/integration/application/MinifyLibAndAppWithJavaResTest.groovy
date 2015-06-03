@@ -20,7 +20,8 @@ import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.build.gradle.integration.common.truth.ApkSubject;
 import com.android.builder.model.AndroidProject;
 
-import org.junit.AfterClass;
+import org.junit.AfterClass
+import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -73,6 +74,7 @@ public class MinifyLibAndAppWithJavaResTest {
 
     @Test
     void testReleasePackaging() {
+        Assume.assumeFalse("Ignore until Jack fixed proguard confusion", GradleTestProject.USE_JACK)
         File releaseApk = project.getSubproject("app").getApk("release")
         assertNotNull(releaseApk)
         ApkSubject apkSubject = assertThatApk(releaseApk);
