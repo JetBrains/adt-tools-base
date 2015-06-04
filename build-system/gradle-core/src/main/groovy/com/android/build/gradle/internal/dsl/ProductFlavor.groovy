@@ -15,7 +15,6 @@
  */
 
 package com.android.build.gradle.internal.dsl
-
 import com.android.annotations.NonNull
 import com.android.annotations.Nullable
 import com.android.build.gradle.internal.LoggingUtil
@@ -27,12 +26,10 @@ import com.android.builder.core.DefaultProductFlavor
 import com.android.builder.model.ApiVersion
 import com.android.builder.model.ClassField
 import com.google.common.base.Strings
-import com.google.common.collect.ImmutableList
 import org.gradle.api.Action
 import org.gradle.api.Project
 import org.gradle.api.logging.Logger
 import org.gradle.internal.reflect.Instantiator
-
 /**
  * DSL object used to configure product flavors.
  */
@@ -159,14 +156,14 @@ class ProductFlavor extends DefaultProductFlavor implements CoreProductFlavor {
 
     /** Adds a custom argument to the test instrumentation runner. */
     @NonNull
-    public void testInstrumentationRunnerArgument(
-            @NonNull String key, @NonNull String value) {
-        Map<String, String> args = getTestInstrumentationRunnerArguments();
-        if (args == null) {
-            args = new LinkedHashMap<String, String>();
-        }
-        args.put(key, value);
-        setTestInstrumentationRunnerArguments(args);
+    public void testInstrumentationRunnerArgument(@NonNull String key, @NonNull String value) {
+        testInstrumentationRunnerArguments[key] = value
+    }
+
+    /** Adds  custom arguments to the test instrumentation runner. */
+    @NonNull
+    public void testInstrumentationRunnerArguments(@NonNull Map<String, String> args) {
+        getTestInstrumentationRunnerArguments().putAll(args)
     }
 
     /**

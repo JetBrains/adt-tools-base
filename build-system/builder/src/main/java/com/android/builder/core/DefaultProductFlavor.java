@@ -16,6 +16,8 @@
 
 package com.android.builder.core;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.builder.internal.BaseConfigImpl;
@@ -24,6 +26,7 @@ import com.android.builder.model.ProductFlavor;
 import com.android.builder.model.SigningConfig;
 import com.google.common.base.Objects;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 import java.io.File;
@@ -66,8 +69,8 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
     private String mTestApplicationId;
     @Nullable
     private String mTestInstrumentationRunner;
-    @Nullable
-    private Map<String, String> mTestInstrumentationRunnerArguments;
+    @NonNull
+    private Map<String, String> mTestInstrumentationRunnerArguments = Maps.newHashMap();
     @Nullable
     private Boolean mTestHandleProfiling;
     @Nullable
@@ -300,8 +303,8 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
     /** Sets the test instrumentation runner custom arguments. */
     @NonNull
     public ProductFlavor setTestInstrumentationRunnerArguments(
-            Map<String, String> testInstrumentationRunnerArguments) {
-        mTestInstrumentationRunnerArguments = testInstrumentationRunnerArguments;
+            @NonNull Map<String, String> testInstrumentationRunnerArguments) {
+        mTestInstrumentationRunnerArguments = checkNotNull(testInstrumentationRunnerArguments);
         return this;
     }
 
@@ -315,7 +318,7 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
      * instrumentation</a>.
      */
     @Override
-    @Nullable
+    @NonNull
     public Map<String, String> getTestInstrumentationRunnerArguments() {
         return mTestInstrumentationRunnerArguments;
     }
@@ -460,9 +463,11 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
         flavor.mTestInstrumentationRunner = chooseNotNull(
                 overlay.getTestInstrumentationRunner(),
                 base.getTestInstrumentationRunner());
-        flavor.mTestInstrumentationRunnerArguments = chooseNotNull(
-                overlay.getTestInstrumentationRunnerArguments(),
+
+        flavor.mTestInstrumentationRunnerArguments.putAll(
                 base.getTestInstrumentationRunnerArguments());
+        flavor.mTestInstrumentationRunnerArguments.putAll(
+                overlay.getTestInstrumentationRunnerArguments());
 
         flavor.mTestHandleProfiling = chooseNotNull(
                 overlay.getTestHandleProfiling(),
