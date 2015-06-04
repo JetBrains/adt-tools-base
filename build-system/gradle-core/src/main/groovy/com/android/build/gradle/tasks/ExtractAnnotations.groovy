@@ -45,6 +45,22 @@ import org.gradle.tooling.BuildException
 import static com.android.SdkConstants.DOT_JAVA
 import static com.android.SdkConstants.UTF_8
 
+/**
+ * Task which extracts annotations from the source files, and writes them to one of
+ * two possible destinations:
+ * <ul>
+ *     <li> A "external annotations" file (pointed to by {@link ExtractAnnotations#output})
+ *          which records the annotations in a zipped XML format for use by the IDE and by
+ *          lint to associate the (source retention) annotations back with the compiled code</li>
+ *     <li> For any {@code Keep} annotated elements, a Proguard keep file (pointed to by
+ *          {@link ExtractAnnotations#proguard}, which lists APIs (classes, methods and fields)
+ *          that should not be removed even if no references in code are found to those APIs.</li>
+ * <p>
+ * We typically only extract external annotations when building libraries; ProGuard annotations
+ * are extracted when building libraries (to record in the AAR), <b>or</b> when building an
+ * app module where ProGuarding is enabled.
+ * </ul>
+ */
 class ExtractAnnotations extends AbstractAndroidCompile {
     public BaseVariantData variant
 
@@ -53,8 +69,14 @@ class ExtractAnnotations extends AbstractAndroidCompile {
     public List<String> bootClasspath
 
     /** The output .zip file to write the annotations database to, if any */
+    @Optional
     @OutputFile
     public File output
+
+    /** The output proguard file to write any @Keep rules into, if any */
+    @Optional
+    @OutputFile
+    public File proguard
 
     /**
      * An optional pointer to an API file to filter the annotations by (any annotations
@@ -137,15 +159,20 @@ class ExtractAnnotations extends AbstractAndroidCompile {
                 }
             }
 
-            Extractor extractor = new Extractor(database, classDir,
-                    project.logger.isEnabled(LogLevel.INFO), false);
+
+            def displayInfo = project.logger.isEnabled(LogLevel.INFO)
+            def includeClassRetentionAnnotations = false
+            def sortAnnotations = false
+
+            Extractor extractor = new Extractor(database, classDir, displayInfo,
+                    includeClassRetentionAnnotations, sortAnnotations);
             extractor.extractFromProjectSource(parsedUnits)
             if (mergeJars != null) {
                 for (File jar : mergeJars) {
                     extractor.mergeExisting(jar);
                 }
             }
-            extractor.export(output)
+            extractor.export(output, proguard)
             extractor.removeTypedefClasses();
         } finally {
             if (environment != null) {
