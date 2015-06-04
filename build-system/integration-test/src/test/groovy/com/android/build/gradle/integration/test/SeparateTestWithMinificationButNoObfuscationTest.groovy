@@ -37,7 +37,8 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
 import static com.android.build.gradle.integration.common.truth.TruthHelper.assertThatApk
 
 /**
- * Created by jedo on 6/2/15.
+ * Test for a separate test module that has minification turned on but no obfuscation
+ * (no mapping.txt file produced)
  */
 @CompileStatic
 class SeparateTestWithMinificationButNoObfuscationTest {
