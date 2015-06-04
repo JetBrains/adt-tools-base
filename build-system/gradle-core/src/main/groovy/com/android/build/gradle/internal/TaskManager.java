@@ -16,6 +16,19 @@
 
 package com.android.build.gradle.internal;
 
+import static com.android.build.OutputFile.DENSITY;
+import static com.android.builder.core.BuilderConstants.CONNECTED;
+import static com.android.builder.core.BuilderConstants.DEVICE;
+import static com.android.builder.core.BuilderConstants.FD_ANDROID_RESULTS;
+import static com.android.builder.core.BuilderConstants.FD_ANDROID_TESTS;
+import static com.android.builder.core.BuilderConstants.FD_FLAVORS_ALL;
+import static com.android.builder.core.VariantType.ANDROID_TEST;
+import static com.android.builder.core.VariantType.DEFAULT;
+import static com.android.builder.core.VariantType.UNIT_TEST;
+import static com.android.sdklib.BuildToolInfo.PathId.ZIP_ALIGN;
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
+
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -97,6 +110,7 @@ import com.android.build.gradle.tasks.RenderscriptCompile;
 import com.android.build.gradle.tasks.ShrinkResources;
 import com.android.build.gradle.tasks.SplitZipAlign;
 import com.android.build.gradle.tasks.ZipAlign;
+import com.android.build.gradle.tasks.factory.AbstractCompilesUtil;
 import com.android.build.gradle.tasks.factory.JavaCompileConfigAction;
 import com.android.build.gradle.tasks.factory.ProGuardTaskConfigAction;
 import com.android.build.gradle.tasks.factory.ProcessJavaResConfigAction;
@@ -110,8 +124,6 @@ import com.android.builder.testing.ConnectedDeviceProvider;
 import com.android.builder.testing.TestData;
 import com.android.builder.testing.api.DeviceProvider;
 import com.android.builder.testing.api.TestServer;
-import com.android.sdklib.AndroidTargetHash;
-import com.android.sdklib.AndroidVersion;
 import com.android.sdklib.IAndroidTarget;
 import com.android.utils.StringHelper;
 import com.google.common.base.CharMatcher;
@@ -124,7 +136,6 @@ import com.google.common.collect.Sets;
 
 import org.gradle.api.Action;
 import org.gradle.api.GradleException;
-import org.gradle.api.JavaVersion;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
 import org.gradle.api.artifacts.Configuration;
@@ -161,19 +172,6 @@ import java.util.concurrent.Callable;
 
 import groovy.lang.Closure;
 import proguard.gradle.ProGuardTask;
-
-import static com.android.build.OutputFile.DENSITY;
-import static com.android.builder.core.BuilderConstants.CONNECTED;
-import static com.android.builder.core.BuilderConstants.DEVICE;
-import static com.android.builder.core.BuilderConstants.FD_ANDROID_RESULTS;
-import static com.android.builder.core.BuilderConstants.FD_ANDROID_TESTS;
-import static com.android.builder.core.BuilderConstants.FD_FLAVORS_ALL;
-import static com.android.builder.core.VariantType.ANDROID_TEST;
-import static com.android.builder.core.VariantType.DEFAULT;
-import static com.android.builder.core.VariantType.UNIT_TEST;
-import static com.android.sdklib.BuildToolInfo.PathId.ZIP_ALIGN;
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkState;
 
 /**
  * Manages tasks creation.
@@ -2072,61 +2070,18 @@ public abstract class TaskManager {
                             "/mapping.txt"));
         }
 
-        ConventionMappingHelper.map(jackTask, "jarJarRuleFiles",
-                new Callable<List<File>>() {
-                    @Override
-                    public List<File> call() throws Exception {
-                        return new ArrayList<File>(project.files(config.getJarJarRuleFiles()).getFiles());
-                    }
-                });
-
-        configureLanguageLevel(jackTask);
-    }
-
-    /**
-     * Configures the source and target language level of a compile task. If the user has set it
-     * explicitly, we obey the setting. Otherwise we change the default language level based on the
-     * compile SDK version.
-     *
-     * <p>This method modifies getExtension().compileOptions, to propagate the language level to
-     * Studio.
-     */
-    private void configureLanguageLevel(AbstractCompile compileTask) {
-        final CompileOptions compileOptions = getExtension().getCompileOptions();
-        JavaVersion javaVersionToUse;
-
-        final AndroidVersion hash = AndroidTargetHash
-                .getVersionFromHash(getExtension().getCompileSdkVersion());
-        Integer compileSdkLevel = (hash == null ? null : hash.getApiLevel());
-        if (compileSdkLevel == null || (compileSdkLevel >= 0 && compileSdkLevel <= 20)) {
-            javaVersionToUse = JavaVersion.VERSION_1_6;
-        } else {
-            javaVersionToUse = JavaVersion.VERSION_1_7;
-        }
-
-        JavaVersion jdkVersion = JavaVersion
-                .toVersion(System.getProperty("java.specification.version"));
-        if (jdkVersion.compareTo(javaVersionToUse) < 0) {
-            logger.info(String.format("Default language level for \'compileSdkVersion %1$s\' is " +
-                            "%2$s, but the JDK used is %3$s, so the JDK language level will be used.",
-                    compileSdkLevel, javaVersionToUse, jdkVersion));
-            javaVersionToUse = jdkVersion;
-        }
-
-        compileOptions.setDefaultJavaVersion(javaVersionToUse);
-
-        ConventionMappingHelper.map(compileTask, "sourceCompatibility", new Callable<String>() {
+        ConventionMappingHelper.map(jackTask, "jarJarRuleFiles", new Callable<List<File>>() {
             @Override
-            public String call() throws Exception {
-                return compileOptions.getSourceCompatibility().toString();
+            public List<File> call() throws Exception {
+                return new ArrayList<File>(project.files(config.getJarJarRuleFiles()).getFiles());
             }
         });
-        ConventionMappingHelper.map(compileTask, "targetCompatibility", new Callable<String>() {
-            @Override
-            public String call() throws Exception {
-                return compileOptions.getTargetCompatibility().toString();
-            }
-        });
+
+        AbstractCompilesUtil.configureLanguageLevel(
+                jackTask,
+                getExtension().getCompileOptions(),
+                getExtension().getCompileSdkVersion()
+        );
     }
 
     /**
