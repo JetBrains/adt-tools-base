@@ -18,6 +18,7 @@ package com.android.build.gradle.integration.application
 
 import com.android.build.gradle.integration.common.fixture.GradleTestProject
 import com.android.builder.model.AndroidProject
+import com.google.common.base.Charsets
 import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.BeforeClass
@@ -28,6 +29,12 @@ import static com.android.build.gradle.integration.common.truth.TruthHelper.asse
 
 /**
  * Integration test for extracting annotations.
+ * <p>
+ * Tip: To execute just this test after modifying the annotations extraction code:
+ * <pre>
+ *     $ cd tools
+ *     $ ./gradlew :base:i:test -Dtest.single=ExtractAnnotationTest
+ * </pre>
  */
 @CompileStatic
 class ExtractAnnotationTest {
@@ -49,6 +56,7 @@ class ExtractAnnotationTest {
     @Test
     void "check extract annotation"() {
         File debugFileOutput = project.file("build/$AndroidProject.FD_INTERMEDIATES/annotations/debug")
+        File classesJar = project.file("build/$AndroidProject.FD_INTERMEDIATES/bundles/debug/classes.jar")
         File file = new File(debugFileOutput, "annotations.zip")
 
         //noinspection SpellCheckingInspection
@@ -96,11 +104,28 @@ class ExtractAnnotationTest {
                 + "  </item>\n"
                 + "</root>\n")
 
-
         assertThatZip(file).containsFileWithContent(
                 "com/android/tests/extractannotations/annotations.xml", expectedContent)
 
         // check the resulting .aar file to ensure annotations.zip inclusion.
         assertThatZip(project.getAar("debug")).contains("annotations.zip")
+
+        // Check typedefs removals:
+
+        // public typedef: should be present
+        assertThatZip(classesJar).contains(
+                "com/android/tests/extractannotations/ExtractTest\$Visibility.class")
+
+        // private/protected typedefs: should have been removed
+        assertThatZip(classesJar).doesNotContain(
+                "com/android/tests/extractannotations/ExtractTest\$Mask.class")
+        assertThatZip(classesJar).doesNotContain(
+                "com/android/tests/extractannotations/ExtractTest\$NonMaskType.class")
+
+        // Make sure the NonMask symbol (from a private typedef) is completely gone from the
+        // outer class
+        assertThatZip(classesJar).containsFileWithoutContent(
+                "com/android/tests/extractannotations/ExtractTest.class",
+                "NonMaskType".getBytes(Charsets.UTF_8));
     }
 }
