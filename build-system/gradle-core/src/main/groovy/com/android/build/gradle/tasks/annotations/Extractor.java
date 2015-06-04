@@ -207,7 +207,7 @@ public class Extractor {
     private Set<String> ignoredAnnotations = Sets.newHashSet();
     private boolean listIgnored;
     private Map<String,Annotation> typedefs;
-    private List<File> classFiles;
+    private List<String> typedefClasses;
     private Map<String,Boolean> sourceRetention;
 
     public Extractor(@Nullable ApiDatabase apiFilter, @Nullable File classDir, boolean displayInfo,
@@ -223,7 +223,7 @@ public class Extractor {
         TypedefCollector collector = new TypedefCollector(units, false /*requireHide*/,
                 true /*requireSourceRetention*/);
         typedefs = collector.getTypedefs();
-        classFiles = collector.getNonPublicTypedefClassFiles();
+        typedefClasses = collector.getNonPublicTypedefClasses();
 
         for (CompilationUnitDeclaration unit : units) {
             analyze(unit);
@@ -231,22 +231,13 @@ public class Extractor {
     }
 
     public void removeTypedefClasses() {
-        if (classDir != null && classFiles != null && !classFiles.isEmpty()) {
-            int count = 0;
-            for (File file : classFiles) {
-                if (!file.isAbsolute()) {
-                    file = new File(classDir, file.getPath());
-                }
-                if (file.exists()) {
-                    boolean deleted = file.delete();
-                    if (deleted) {
-                        count++;
-                    } else {
-                        warning("Could not delete typedef class " + file.getPath());
-                    }
-                }
-            }
-            info("Deleted " + count + " typedef annotation classes");
+        if (classDir != null && typedefClasses != null && !typedefClasses.isEmpty()) {
+            boolean quiet = false;
+            boolean verbose = false;
+            boolean dryRun = false;
+            //noinspection ConstantConditions
+            TypedefRemover remover = new TypedefRemover(this, quiet, verbose, dryRun);
+            remover.remove(classDir, typedefClasses);
         }
     }
 

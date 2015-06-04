@@ -16,7 +16,6 @@
 
 package com.android.build.gradle.tasks.annotations;
 
-import static com.android.SdkConstants.DOT_CLASS;
 import static com.android.SdkConstants.INT_DEF_ANNOTATION;
 import static com.android.SdkConstants.STRING_DEF_ANNOTATION;
 
@@ -43,10 +42,10 @@ import java.util.Map;
 public class TypedefCollector extends ASTVisitor {
     private Map<String,Annotation> mMap = Maps.newHashMap();
 
-    private boolean mRequireHide;
-    private boolean mRequireSourceRetention;
+    private final boolean mRequireHide;
+    private final boolean mRequireSourceRetention;
     private CompilationUnitDeclaration mCurrentUnit;
-    private List<File> mClassFiles = Lists.newArrayList();
+    private List<String> mTypedefClasses = Lists.newArrayList();
 
     public TypedefCollector(
             @NonNull Collection<CompilationUnitDeclaration> units,
@@ -62,8 +61,8 @@ public class TypedefCollector extends ASTVisitor {
         }
     }
 
-    public List<File> getNonPublicTypedefClassFiles() {
-        return mClassFiles;
+    public List<String> getNonPublicTypedefClasses() {
+        return mTypedefClasses;
     }
 
     public Map<String,Annotation> getTypedefs() {
@@ -127,7 +126,7 @@ public class TypedefCollector extends ASTVisitor {
                             StringBuilder sb = new StringBuilder(100);
                             for (char c : declaration.binding.qualifiedPackageName()) {
                                 if (c == '.') {
-                                    sb.append(File.separatorChar);
+                                    sb.append('/');
                                 } else {
                                     sb.append(c);
                                 }
@@ -140,9 +139,7 @@ public class TypedefCollector extends ASTVisitor {
                                     sb.append(c);
                                 }
                             }
-                            sb.append(DOT_CLASS);
-                            File file = new File(sb.toString());
-                            mClassFiles.add(file);
+                            mTypedefClasses.add(sb.toString());
                         }
                     }
                 }
