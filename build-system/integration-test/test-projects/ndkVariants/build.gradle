@@ -14,7 +14,7 @@ model {
         moduleName = "simple-jni"
 
         // TODO: Include a way to set include directories the DSL.
-        cppFlags = "-I$rootDir/src/include"
+        cppFlags += "-I$rootDir/src/include".toString()
         stl = "stlport_static"
     }
 

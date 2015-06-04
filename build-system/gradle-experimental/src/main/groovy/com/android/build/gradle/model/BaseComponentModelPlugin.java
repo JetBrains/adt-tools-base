@@ -198,28 +198,10 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
             defaultNdkConfig.setModuleName(pluginNdkConfig.getModuleName());
             defaultNdkConfig.setToolchain(pluginNdkConfig.getToolchain());
             defaultNdkConfig.setToolchainVersion(pluginNdkConfig.getToolchainVersion());
-
-            for (final ManagedString abi : pluginNdkConfig.getAbiFilters()) {
-                defaultNdkConfig.getAbiFilters().create(new Action<ManagedString>() {
-                    @Override
-                    public void execute(ManagedString managedString) {
-                        managedString.setValue(abi.getValue());
-                    }
-                });
-            }
-
             defaultNdkConfig.setCFlags(pluginNdkConfig.getCFlags());
             defaultNdkConfig.setCppFlags(pluginNdkConfig.getCppFlags());
-
-            for (final ManagedString ldLibs : pluginNdkConfig.getAbiFilters()) {
-                defaultNdkConfig.getLdLibs().create(new Action<ManagedString>() {
-                        @Override
-                        public void execute(ManagedString managedString) {
-                            managedString.setValue(ldLibs.getValue());
-                        }
-                    });
-            }
-
+            defaultNdkConfig.setLdLibs(pluginNdkConfig.getLdLibs());
+            defaultNdkConfig.setAbiFilters(pluginNdkConfig.getAbiFilters());
             defaultNdkConfig.setStl(pluginNdkConfig.getStl());
             defaultNdkConfig.setRenderscriptNdkMode(pluginNdkConfig.getRenderscriptNdkMode());
         }
