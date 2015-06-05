@@ -58,8 +58,8 @@ class LargeVariantAndroidComponentTest {
                     }
                 }
                 """.stripIndent())
-        generator.addPostProcessor("buildTypes") { return (String) "create { name = \"$it\" }" }
-        generator.addPostProcessor("productFlavors") { return (String) "create { name = \"$it\" }" }
+        generator.addPostProcessor("buildTypes") { return (String) "create(\"$it\")" }
+        generator.addPostProcessor("productFlavors") { return (String) "create(\"$it\")" }
 
         project.buildFile << generator.createBuildScript()
 

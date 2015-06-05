@@ -53,7 +53,6 @@ import org.gradle.model.Mutate;
 import org.gradle.model.Path;
 import org.gradle.model.RuleSource;
 import org.gradle.model.ModelMap;
-import org.gradle.model.ModelSet;
 import org.gradle.nativeplatform.BuildTypeContainer;
 import org.gradle.nativeplatform.FlavorContainer;
 import org.gradle.nativeplatform.NativeLibraryBinarySpec;
@@ -156,8 +155,8 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
 
         @Mutate
         public void createNativeBuildTypes(BuildTypeContainer nativeBuildTypes,
-                @Path("android.buildTypes") ModelSet<com.android.build.gradle.managed.BuildType> androidBuildTypes) {
-            for (com.android.build.gradle.managed.BuildType buildType : androidBuildTypes) {
+                @Path("android.buildTypes") ModelMap<com.android.build.gradle.managed.BuildType> androidBuildTypes) {
+            for (com.android.build.gradle.managed.BuildType buildType : androidBuildTypes.values()) {
                 nativeBuildTypes.maybeCreate(buildType.getName());
             }
         }

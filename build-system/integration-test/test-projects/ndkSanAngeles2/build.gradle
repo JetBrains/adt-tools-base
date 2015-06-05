@@ -16,10 +16,8 @@ model {
     }
 
     android.buildTypes {
-        afterEach {
-            if (name == "debug") {
-                isJniDebuggable = true
-            }
+        debug {
+            isJniDebuggable = true
         }
     }
 
@@ -34,26 +32,22 @@ model {
     }
 
     android.productFlavors {
-        create {
-            name = "x86"
+        create("x86") {
             ndkConfig.abiFilters += "x86"
             // this is the flavor part of the version code.
             // It must be higher than the arm one for devices supporting
             // both, as x86 is preferred.
             versionCode = 3
         }
-        create {
-            name = "arm"
+        create("arm") {
             ndkConfig.abiFilters += "armeabi-v7a"
             versionCode = 2
         }
-        create {
-            name = "mips"
+        create("mips") {
             ndkConfig.abiFilters += "mips"
             versionCode = 1
         }
-        create {
-            name = "fat"
+        create("fat") {
             // fat binary, lowest version code to be
             // the last option
             versionCode = 0

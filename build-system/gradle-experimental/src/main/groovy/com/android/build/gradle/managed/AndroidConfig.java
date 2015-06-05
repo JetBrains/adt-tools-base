@@ -33,6 +33,7 @@ import com.android.builder.testing.api.TestServer;
 import com.android.sdklib.repository.FullRevision;
 
 import org.gradle.model.Managed;
+import org.gradle.model.ModelMap;
 import org.gradle.model.Unmanaged;
 import org.gradle.model.ModelSet;
 
@@ -100,13 +101,13 @@ public interface AndroidConfig {
     void setPreProcessingOptions(PreprocessingOptions preprocessingOptions);
 
     /** Build types used by this project. */
-    ModelSet<BuildType> getBuildTypes();
+    ModelMap<BuildType> getBuildTypes();
 
     /** All product flavors used by this project. */
-    ModelSet<ProductFlavor> getProductFlavors();
+    ModelMap<ProductFlavor> getProductFlavors();
 
     /** Signing configs used by this project. */
-    ModelSet<SigningConfig> getSigningConfigs();
+    ModelMap<SigningConfig> getSigningConfigs();
 
     @Unmanaged
     AndroidComponentModelSourceSet getSources();

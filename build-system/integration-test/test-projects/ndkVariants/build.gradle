@@ -19,7 +19,7 @@ model {
     }
 
     android.productFlavors {
-        create { name = "free" }
-        create { name = "premium" }
+        create("free")
+        create("premium")
     }
 }
