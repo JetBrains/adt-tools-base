@@ -13,59 +13,68 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.build.gradle.internal.tasks
+package com.android.build.gradle.internal.tasks;
 
-import com.android.build.gradle.internal.dependency.DependencyChecker
-import com.android.build.gradle.internal.variant.BaseVariantData
-import com.android.builder.model.ApiVersion
-import com.android.builder.model.SyncIssue
-import com.android.sdklib.SdkVersionInfo
-import com.android.utils.Pair
-import groovy.transform.CompileStatic
-import org.gradle.api.GradleException
-import org.gradle.api.tasks.TaskAction
+import com.android.build.gradle.internal.dependency.DependencyChecker;
+import com.android.build.gradle.internal.variant.BaseVariantData;
+import com.android.builder.model.ApiVersion;
+import com.android.builder.model.SyncIssue;
+import com.android.sdklib.SdkVersionInfo;
+import com.android.utils.Pair;
+import com.android.utils.StringHelper;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 
-@CompileStatic
+import org.gradle.api.GradleException;
+import org.gradle.api.artifacts.ModuleVersionIdentifier;
+import org.gradle.api.tasks.TaskAction;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 public class PrepareDependenciesTask extends BaseTask {
-    BaseVariantData variant
-    final List<DependencyChecker> checkers = []
-    final Set<Pair<Integer, String>> androidDependencies = []
 
-    public void addDependency(Pair<Integer, String> api) {
-        androidDependencies.add(api)
-    }
+    private BaseVariantData variant;
+    private final List<DependencyChecker> checkers = Lists.newArrayList();
 
     @TaskAction
     protected void prepare() {
-        ApiVersion minSdkVersion = variant.variantConfiguration.minSdkVersion
-        int minSdk = 1
-        if (minSdkVersion != null) {
-            if (minSdkVersion.getCodename() != null) {
-                minSdk = SdkVersionInfo.getApiByBuildCode(minSdkVersion.getCodename(), true)
-            } else {
-                minSdk = minSdkVersion.getApiLevel()
-            }
+        ApiVersion minSdkVersion = variant.getVariantConfiguration().getMinSdkVersion();
+        int minSdk = 1;
+        if (minSdkVersion.getCodename() != null) {
+            minSdk = SdkVersionInfo.getApiByBuildCode(minSdkVersion.getCodename(), true);
+        } else {
+            minSdk = minSdkVersion.getApiLevel();
         }
 
         boolean foundError = false;
 
         for (DependencyChecker checker : checkers) {
-            checker.legacyApiLevels.each { mavenVersion, api ->
+            for (Map.Entry<ModuleVersionIdentifier, Integer> entry :
+                    checker.getLegacyApiLevels().entrySet()) {
+                ModuleVersionIdentifier mavenVersion = entry.getKey();
+                int api = entry.getValue();
                 if (api > minSdk) {
                     foundError = true;
-                    def configurationName = checker.configurationDependencies.name.capitalize()
-                    logger.error(
-                            "Variant ${configurationName} has a dependency on version ${mavenVersion.version} " +
-                                    "of the legacy ${mavenVersion.group} Maven artifact, which corresponds to " +
-                                    "API level ${api}. This is not compatible with min SDK of this module, " +
-                                    "which is ${minSdk}. Please use the 'gradle dependencies' task to debug your " +
-                                    "dependencies graph.")
+                    String configurationName = checker.getConfigurationDependencies().getName();
+                    getLogger().error(
+                            "Variant {} has a dependency on version {} of the legacy {} Maven " +
+                                    "artifact, which corresponds to API level {}. This is not " +
+                                    "compatible with min SDK of this module, which is {}. " +
+                                    "Please use the 'gradle dependencies' task to debug your " +
+                                    "dependencies graph.",
+                            StringHelper.capitalize(configurationName),
+                            mavenVersion.getVersion(),
+                            mavenVersion.getGroup(),
+                            api,
+                            minSdk);
                 }
             }
 
             for (SyncIssue syncIssue : checker.getSyncIssues()) {
-                foundError = true
-                logger.error(syncIssue.message);
+                foundError = true;
+                getLogger().error(syncIssue.getMessage());
             }
         }
 
@@ -75,7 +84,15 @@ public class PrepareDependenciesTask extends BaseTask {
 
     }
 
-    def addChecker(DependencyChecker checker) {
-        checkers.add(checker)
+    public void addChecker(DependencyChecker checker) {
+        checkers.add(checker);
+    }
+
+    public BaseVariantData getVariant() {
+        return variant;
+    }
+
+    public void setVariant(BaseVariantData variant) {
+        this.variant = variant;
     }
 }
