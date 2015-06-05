@@ -29,29 +29,6 @@ public class NdkExtensionConvention {
             }
         }
 
-        ndkConfig.getCFilePattern().getIncludes().create(
-                new Action<ManagedString>() {
-            @Override
-            public void execute(ManagedString managedString) {
-                        managedString.setValue("**/*.c");
-                }
-            });
-
-        ndkConfig.getCppFilePattern().getIncludes().create(
-                new Action<ManagedString>() {
-                    @Override
-                    public void execute(ManagedString managedString) {
-                        managedString.setValue("**/*.cpp");
-                    }
-                });
-        ndkConfig.getCppFilePattern().getIncludes().create(
-                new Action<ManagedString>() {
-            @Override
-            public void execute(ManagedString managedString) {
-                        managedString.setValue("**/*.cc");
-                }
-            });
-
         if (ndkConfig.getStl().isEmpty()) {
             ndkConfig.setStl(DEFAULT_STL);
         } else {

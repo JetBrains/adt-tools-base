@@ -19,6 +19,7 @@ package com.android.build.gradle.ndk.internal;
 import static com.android.build.gradle.ndk.internal.BinaryToolHelper.getCCompiler;
 import static com.android.build.gradle.ndk.internal.BinaryToolHelper.getCppCompiler;
 
+import com.android.build.gradle.api.AndroidSourceSet;
 import com.android.build.gradle.internal.NdkHandler;
 import com.android.build.gradle.internal.core.Abi;
 import com.android.build.gradle.managed.ManagedString;
@@ -29,10 +30,14 @@ import com.android.builder.core.BuilderConstants;
 import com.android.utils.StringHelper;
 
 import org.gradle.api.Action;
+import org.gradle.api.PolymorphicDomainObjectContainer;
 import org.gradle.api.Task;
 import org.gradle.api.tasks.Copy;
 import org.gradle.language.base.FunctionalSourceSet;
+import org.gradle.language.base.LanguageSourceSet;
+import org.gradle.language.c.CSourceSet;
 import org.gradle.language.c.tasks.CCompile;
+import org.gradle.language.cpp.CppSourceSet;
 import org.gradle.language.cpp.tasks.CppCompile;
 import org.gradle.model.ModelMap;
 import org.gradle.nativeplatform.NativeBinarySpec;
@@ -163,11 +168,43 @@ public class NdkConfiguration {
     /**
      * Add the sourceSet with the specified name to the binary if such sourceSet is defined.
      */
-    private static void sourceIfExist(BinarySpec binary,
-            AndroidComponentModelSourceSet projectSourceSet, String sourceSetName) {
+    private static void sourceIfExist(
+            BinarySpec binary,
+            AndroidComponentModelSourceSet projectSourceSet,
+            final String sourceSetName) {
         FunctionalSourceSet sourceSet = projectSourceSet.findByName(sourceSetName);
         if (sourceSet != null) {
-            binary.source(sourceSet);
+            final LanguageSourceSet jni = sourceSet.getByName("jni");
+            binary.sources(new Action<PolymorphicDomainObjectContainer<LanguageSourceSet>>() {
+                @Override
+                public void execute(PolymorphicDomainObjectContainer<LanguageSourceSet> languageSourceSets) {
+                    // Hardcode the acceptable extension until we find a suitable DSL for user to
+                    // modify.
+                    languageSourceSets.create(
+                            sourceSetName + "C",
+                            CSourceSet.class,
+                            new Action<LanguageSourceSet>() {
+                                @Override
+                                public void execute(LanguageSourceSet source) {
+                                    source.getSource().setSrcDirs(jni.getSource().getSrcDirs());
+                                    source.getSource().include("**/*.c");
+                                }
+                            });
+                    languageSourceSets.create(
+                            sourceSetName + "Cpp",
+                            CppSourceSet.class,
+                            new Action<LanguageSourceSet>() {
+                                @Override
+                                public void execute(LanguageSourceSet source) {
+                                    source.getSource().setSrcDirs(jni.getSource().getSrcDirs());
+                                    source.getSource().include("**/*.cpp");
+                                    source.getSource().include("**/*.cc");
+                                    source.getSource().include("**/*.cp");
+                                    source.getSource().include("**/*.cxx");
+                                }
+                            });
+                }
+            });
         }
     }
 
