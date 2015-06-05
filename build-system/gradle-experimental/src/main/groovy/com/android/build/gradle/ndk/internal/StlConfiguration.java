@@ -26,7 +26,7 @@ import org.gradle.api.Action;
 import org.gradle.api.InvalidUserDataException;
 import org.gradle.api.Task;
 import org.gradle.api.tasks.Copy;
-import org.gradle.model.collection.CollectionBuilder;
+import org.gradle.model.ModelMap;
 import org.gradle.nativeplatform.SharedLibraryBinarySpec;
 
 import java.io.File;
@@ -98,7 +98,7 @@ public class StlConfiguration {
     }
 
     public static void createStlCopyTask(NdkHandler ndkHandler, String stl,
-            CollectionBuilder<Task> tasks, final File buildDir,
+            ModelMap<Task> tasks, final File buildDir,
             final SharedLibraryBinarySpec binary) {
         if (stl.endsWith("_shared")) {
             final StlNativeToolSpecification stlConfig = new StlNativeToolSpecification(ndkHandler,
