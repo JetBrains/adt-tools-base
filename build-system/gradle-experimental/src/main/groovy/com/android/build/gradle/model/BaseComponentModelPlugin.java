@@ -261,6 +261,17 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
                     }
                 }
             });
+
+            // setup SDK repositories.
+            for (final File file : sdkHandler.getSdkLoader().getRepositories()) {
+                project.getRepositories().maven(new Action<MavenArtifactRepository>() {
+                    @Override
+                    public void execute(MavenArtifactRepository repo) {
+                        repo.setUrl(file.toURI());
+
+                    }
+                });
+            }
             return sdkHandler;
         }
 
