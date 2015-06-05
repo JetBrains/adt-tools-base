@@ -384,7 +384,7 @@ public class RenderSecurityManagerTest extends TestCase {
 
                     barrier2.await();
 
-                    Thread thread4 = new Thread() {
+                    Thread thread4 = new Thread("render2 test") {
                         @Override
                         public void run() {
                             try {
@@ -453,7 +453,7 @@ public class RenderSecurityManagerTest extends TestCase {
                         fail("Should not have been affected by security manager");
                     }
 
-                    Thread thread3 = new Thread() {
+                    Thread thread3 = new Thread("render3 test") {
                         @Override
                         public void run() {
                             try {
@@ -533,7 +533,7 @@ public class RenderSecurityManagerTest extends TestCase {
         final CyclicBarrier barrier2 = new CyclicBarrier(2);
         final CyclicBarrier barrier3 = new CyclicBarrier(2);
 
-        Thread thread = new Thread() {
+        Thread thread = new Thread("render log test") {
             @Override
             public void run() {
                 try {
@@ -695,7 +695,7 @@ public class RenderSecurityManagerTest extends TestCase {
             assertNull(ImageIO.getCacheDirectory());
 
             // Also run in non AWT thread to test ImageIO thread locals cache dir behavior
-            Thread thread = new Thread() {
+            Thread thread = new Thread("render rec test") {
                 @Override
                 public void run() {
                     try {
