@@ -1,11 +1,12 @@
 package com.android.build.gradle.managed;
 
 import com.android.annotations.NonNull;
-import com.android.build.gradle.managed.FilePattern;
-import com.android.build.gradle.managed.ManagedString;
 
 import org.gradle.model.Managed;
-import org.gradle.model.ModelSet;
+import org.gradle.model.Unmanaged;
+
+import java.util.List;
+import java.util.Set;
 
 /**
  * Configuration model for android-ndk plugin.
@@ -30,15 +31,21 @@ public interface NdkConfig {
     String getToolchainVersion();
     void setToolchainVersion(@NonNull String toolchainVersion);
 
-    ModelSet<ManagedString> getAbiFilters();
+    @Unmanaged
+    Set<String> getAbiFilters();
+    void setAbiFilters(@NonNull Set<String> filters);
 
-    String getCFlags();
-    void setCFlags(@NonNull String cFlags);
+    @Unmanaged
+    List<String> getCFlags();
+    void setCFlags(@NonNull List<String> cFlags);
 
-    String getCppFlags();
-    void setCppFlags(@NonNull String cppFlags);
+    @Unmanaged
+    List<String> getCppFlags();
+    void setCppFlags(@NonNull List<String> cppFlags);
 
-    ModelSet<ManagedString> getLdLibs();
+    @Unmanaged
+    List<String> getLdLibs();
+    void setLdLibs(@NonNull List<String> ldLibs);
 
     String getStl();
     void setStl(@NonNull String stl);
