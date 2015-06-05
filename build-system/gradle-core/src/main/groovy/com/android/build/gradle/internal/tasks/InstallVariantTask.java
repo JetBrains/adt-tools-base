@@ -13,40 +13,49 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.build.gradle.internal.tasks
+package com.android.build.gradle.internal.tasks;
 
-import com.android.build.gradle.internal.LoggerWrapper
-import com.android.build.gradle.internal.TaskManager
-import com.android.build.gradle.internal.scope.ConventionMappingHelper
-import com.android.build.gradle.internal.scope.TaskConfigAction
-import com.android.build.gradle.internal.scope.VariantScope
-import com.android.build.gradle.internal.variant.ApkVariantData
-import com.android.build.gradle.internal.variant.BaseVariantData
-import com.android.build.gradle.internal.variant.BaseVariantOutputData
-import com.android.builder.core.VariantConfiguration
-import com.android.builder.internal.InstallUtils
-import com.android.builder.sdk.SdkInfo
-import com.android.builder.sdk.TargetInfo
-import com.android.builder.testing.ConnectedDeviceProvider
-import com.android.builder.testing.api.DeviceConfigProviderImpl
-import com.android.builder.testing.api.DeviceConnector
-import com.android.builder.testing.api.DeviceProvider
-import com.android.ide.common.build.SplitOutputMatcher
-import com.android.ide.common.process.ProcessExecutor
-import com.android.utils.ILogger
-import com.google.common.base.Joiner
-import com.google.common.collect.ImmutableList
-import org.gradle.api.Action
-import org.gradle.api.GradleException
-import org.gradle.api.logging.LogLevel
-import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.InputFile
-import org.gradle.api.tasks.Optional
-import org.gradle.api.tasks.TaskAction
+import static com.android.sdklib.BuildToolInfo.PathId.SPLIT_SELECT;
 
-import java.util.concurrent.Callable
+import com.android.build.gradle.internal.LoggerWrapper;
+import com.android.build.gradle.internal.TaskManager;
+import com.android.build.gradle.internal.scope.ConventionMappingHelper;
+import com.android.build.gradle.internal.scope.TaskConfigAction;
+import com.android.build.gradle.internal.scope.VariantScope;
+import com.android.build.gradle.internal.variant.ApkVariantData;
+import com.android.build.gradle.internal.variant.BaseVariantData;
+import com.android.build.gradle.internal.variant.BaseVariantOutputData;
+import com.android.builder.core.VariantConfiguration;
+import com.android.builder.internal.InstallUtils;
+import com.android.builder.sdk.SdkInfo;
+import com.android.builder.sdk.TargetInfo;
+import com.android.builder.testing.ConnectedDeviceProvider;
+import com.android.builder.testing.api.DeviceConfigProviderImpl;
+import com.android.builder.testing.api.DeviceConnector;
+import com.android.builder.testing.api.DeviceException;
+import com.android.builder.testing.api.DeviceProvider;
+import com.android.ide.common.build.SplitOutputMatcher;
+import com.android.ide.common.process.ProcessException;
+import com.android.ide.common.process.ProcessExecutor;
+import com.android.utils.FileUtils;
+import com.android.utils.ILogger;
+import com.google.common.base.Joiner;
+import com.google.common.base.Objects;
+import com.google.common.collect.ImmutableList;
 
-import static com.android.sdklib.BuildToolInfo.PathId.SPLIT_SELECT
+import org.gradle.api.GradleException;
+import org.gradle.api.Task;
+import org.gradle.api.logging.LogLevel;
+import org.gradle.api.specs.Spec;
+import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.InputFile;
+import org.gradle.api.tasks.Optional;
+import org.gradle.api.tasks.TaskAction;
+
+import java.io.File;
+import java.util.Collection;
+import java.util.List;
+import java.util.concurrent.Callable;
 
 /**
  * Task installing an app variant. It looks at connected device and install the best matching
@@ -54,85 +63,152 @@ import static com.android.sdklib.BuildToolInfo.PathId.SPLIT_SELECT
  */
 public class InstallVariantTask extends BaseTask {
 
-    @InputFile
-    File adbExe
+    private File adbExe;
 
-    @InputFile
-    @Optional
-    File splitSelectExe
+    private File splitSelectExe;
 
-    ProcessExecutor processExecutor;
+    private ProcessExecutor processExecutor;
 
-    String projectName
+    private String projectName;
 
-    @Input
-    int timeOutInMs = 0
+    private int timeOutInMs = 0;
 
-    @Input @Optional
-    Collection<String> installOptions;
+    private Collection<String> installOptions;
 
-    BaseVariantData<? extends BaseVariantOutputData> variantData
+    private BaseVariantData<? extends BaseVariantOutputData> variantData;
 
-    InstallVariantTask() {
-        this.getOutputs().upToDateWhen {
-            logger.debug("Install task is always run.");
-            false;
-        }
+    public InstallVariantTask() {
+        this.getOutputs().upToDateWhen(new Spec<Task>() {
+            @Override
+            public boolean isSatisfiedBy(Task task) {
+                getLogger().debug("Install task is always run.");
+                return false;
+            }
+        });
     }
 
     @TaskAction
-    void install() {
-        final ILogger iLogger = new LoggerWrapper(getLogger(), LogLevel.LIFECYCLE)
-        DeviceProvider deviceProvider = new ConnectedDeviceProvider(getAdbExe(), iLogger)
-        deviceProvider.init()
+    public void install() throws DeviceException, ProcessException, InterruptedException {
+        final ILogger iLogger = new LoggerWrapper(getLogger(), LogLevel.LIFECYCLE);
+        DeviceProvider deviceProvider = new ConnectedDeviceProvider(getAdbExe(), iLogger);
+        deviceProvider.init();
 
-        VariantConfiguration variantConfig = variantData.variantConfiguration
-        String variantName = variantConfig.fullName
+        VariantConfiguration variantConfig = variantData.getVariantConfiguration();
+        String variantName = variantConfig.getFullName();
 
         int successfulInstallCount = 0;
-
-        for (DeviceConnector device : deviceProvider.getDevices()) {
+        List<? extends DeviceConnector> devices = deviceProvider.getDevices();
+        for (final DeviceConnector device : devices) {
             if (InstallUtils.checkDeviceApiLevel(
-                    device, variantConfig.minSdkVersion, iLogger, projectName, variantName)) {
+                    device, variantConfig.getMinSdkVersion(), iLogger, projectName, variantName)) {
                 // When InstallUtils.checkDeviceApiLevel returns false, it logs the reason.
-                List<File> apkFiles = SplitOutputMatcher.computeBestOutput(processExecutor,
+                final List<File> apkFiles = SplitOutputMatcher.computeBestOutput(processExecutor,
                         getSplitSelectExe(),
                         new DeviceConfigProviderImpl(device),
-                        variantData.outputs,
-                        variantData.variantConfiguration.getSupportedAbis())
+                        variantData.getOutputs(),
+                        variantData.getVariantConfiguration().getSupportedAbis());
 
                 if (apkFiles.isEmpty()) {
-                    logger.lifecycle(
-                            "Skipping device '${device.getName()}' for " +
-                                    "'${projectName}:${variantName}': " +
-                                    "Could not find build of variant which supports " +
-                                    "density " + "${device.getDensity()} " +
-                                    "and an ABI in " + Joiner.on(", ").join(device.getAbis()));
+                    getLogger().lifecycle(
+                            "Skipping device '{}' for '{}:{}': Could not find build of variant " +
+                                    "which supports density {} and an ABI in {}",
+                            device.getName(), projectName, variantName,
+                            device.getDensity(), Joiner.on(", ").join(device.getAbis()));
                 } else {
-                    logger.lifecycle(
-                            "Installing APK '${Joiner.on(", ").join(apkFiles*.getName())}'" +
-                                    " on '${device.getName()}'")
+                    getLogger().lifecycle(
+                            "Installing APK '{}' on '{}' for {}:{}",
+                            FileUtils.getNamesAsCommaSeparatedList(apkFiles),
+                            device.getName(),
+                            projectName,
+                            variantName);
 
-                    List<String> extraArgs = installOptions == null ? ImmutableList.of() :
-                            installOptions;
+                    final Collection<String> extraArgs =
+                            Objects.firstNonNull(installOptions, ImmutableList.<String>of());
+
                     if (apkFiles.size() > 1 || device.getApiLevel() >= 21) {
-                        device.installPackages(apkFiles, extraArgs, getTimeOutInMs(), getILogger());
-                        successfulInstallCount++
+                        device.installPackages(apkFiles, extraArgs,
+                                getTimeOutInMs(), getILogger());
+                        successfulInstallCount++;
                     } else {
-                        device.installPackage(apkFiles.get(0), extraArgs, getTimeOutInMs(),
-                                getILogger())
-                        successfulInstallCount++
+                        device.installPackage(apkFiles.get(0), extraArgs,
+                                getTimeOutInMs(),
+                                getILogger());
+                        successfulInstallCount++;
                     }
                 }
             }
         }
 
         if (successfulInstallCount == 0) {
-            throw new GradleException("Failed to install on any devices.")
+            throw new GradleException("Failed to install on any devices.");
         } else {
-            logger.quiet("Installed on ${successfulInstallCount} " +
-                    "${successfulInstallCount==1?'device':'devicess'}.");
+            getLogger().quiet("Installed on {} {}.",
+                    successfulInstallCount,
+                    successfulInstallCount==1 ? "device" : "devices");
         }
+    }
+
+    @InputFile
+    public File getAdbExe() {
+        return adbExe;
+    }
+
+    public void setAdbExe(File adbExe) {
+        this.adbExe = adbExe;
+    }
+
+    @InputFile
+    @Optional
+    public File getSplitSelectExe() {
+        return splitSelectExe;
+    }
+
+    public void setSplitSelectExe(File splitSelectExe) {
+        this.splitSelectExe = splitSelectExe;
+    }
+
+    public ProcessExecutor getProcessExecutor() {
+        return processExecutor;
+    }
+
+    public void setProcessExecutor(ProcessExecutor processExecutor) {
+        this.processExecutor = processExecutor;
+    }
+
+    public String getProjectName() {
+        return projectName;
+    }
+
+    public void setProjectName(String projectName) {
+        this.projectName = projectName;
+    }
+
+    @Input
+    public int getTimeOutInMs() {
+        return timeOutInMs;
+    }
+
+    public void setTimeOutInMs(int timeOutInMs) {
+        this.timeOutInMs = timeOutInMs;
+    }
+
+    @Input
+    @Optional
+    public Collection<String> getInstallOptions() {
+        return installOptions;
+    }
+
+    public void setInstallOptions(Collection<String> installOptions) {
+        this.installOptions = installOptions;
+    }
+
+    public BaseVariantData<? extends BaseVariantOutputData> getVariantData() {
+        return variantData;
+    }
+
+    public void setVariantData(
+            BaseVariantData<? extends BaseVariantOutputData> variantData) {
+        this.variantData = variantData;
     }
 
     public static class ConfigAction implements TaskConfigAction<InstallVariantTask> {
@@ -144,39 +220,40 @@ public class InstallVariantTask extends BaseTask {
         }
 
         @Override
-        String getName() {
-            return "install${scope.getVariantConfiguration().fullName.capitalize()}";
+        public String getName() {
+            return scope.getTaskName("install");
         }
 
         @Override
-        Class<InstallVariantTask> getType() {
-            return InstallVariantTask.class
+        public Class<InstallVariantTask> getType() {
+            return InstallVariantTask.class;
         }
 
         @Override
         public void execute(InstallVariantTask installTask) {
-            installTask.setDescription("Installs the " + scope.getVariantData().getDescription() + ".");
+            installTask.setDescription(
+                    "Installs the " + scope.getVariantData().getDescription() + ".");
             installTask.setGroup(TaskManager.INSTALL_GROUP);
             installTask.setProjectName(scope.getGlobalScope().getProject().getName());
             installTask.setVariantData(scope.getVariantData());
-            installTask.setTimeOutInMs(scope.getGlobalScope().getExtension().getAdbOptions().getTimeOutInMs());
-            installTask.setInstallOptions(scope.getGlobalScope().getExtension().getAdbOptions().getInstallOptions());
-            installTask.setProcessExecutor(scope.getGlobalScope().getAndroidBuilder().getProcessExecutor());
-            ConventionMappingHelper.map(installTask, "adbExe", new Closure<File>(this, this) {
-                public File doCall(Object it) {
+            installTask.setTimeOutInMs(
+                    scope.getGlobalScope().getExtension().getAdbOptions().getTimeOutInMs());
+            installTask.setInstallOptions(
+                    scope.getGlobalScope().getExtension().getAdbOptions().getInstallOptions());
+            installTask.setProcessExecutor(
+                    scope.getGlobalScope().getAndroidBuilder().getProcessExecutor());
+            ConventionMappingHelper.map(installTask, "adbExe", new Callable<File>() {
+                @Override
+                public File call() throws Exception {
                     final SdkInfo info = scope.getGlobalScope().getSdkHandler().getSdkInfo();
                     return (info == null ? null : info.getAdb());
                 }
-
-                public File doCall() {
-                    return doCall(null);
-                }
-
             });
             ConventionMappingHelper.map(installTask, "splitSelectExe", new Callable<File>() {
                 @Override
                 public File call() throws Exception {
-                    final TargetInfo info = scope.getGlobalScope().getAndroidBuilder().getTargetInfo();
+                    final TargetInfo info =
+                            scope.getGlobalScope().getAndroidBuilder().getTargetInfo();
                     String path = info == null ? null : info.getBuildTools().getPath(SPLIT_SELECT);
                     if (path != null) {
                         File splitSelectExe = new File(path);
