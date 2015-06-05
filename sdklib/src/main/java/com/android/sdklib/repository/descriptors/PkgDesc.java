@@ -273,7 +273,7 @@ public class PkgDesc implements IPkgDesc {
             // be updatable to the next revision.
             int[] version = getFullRevision().toIntArray(false);
             for (int i = 0; i < version.length; i++) {
-                sb.append(i);
+                sb.append(version[i]);
                 if (i != version.length - 1) {
                     sb.append('.');
                 }
