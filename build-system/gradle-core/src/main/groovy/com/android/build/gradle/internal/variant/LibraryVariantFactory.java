@@ -14,40 +14,42 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.variant
+package com.android.build.gradle.internal.variant;
 
-import com.android.annotations.NonNull
-import com.android.build.gradle.AndroidConfig
-import com.android.build.gradle.api.BaseVariantOutput
-import com.android.build.gradle.api.LibraryVariant
-import com.android.build.gradle.internal.BuildTypeData
-import com.android.build.gradle.internal.ProductFlavorData
-import com.android.build.gradle.internal.TaskManager
-import com.android.build.gradle.internal.VariantModel
-import com.android.build.gradle.internal.api.LibraryVariantImpl
-import com.android.build.gradle.internal.api.LibraryVariantOutputImpl
-import com.android.build.gradle.internal.api.ReadOnlyObjectProvider
-import com.android.build.gradle.internal.core.GradleVariantConfiguration
-import com.android.build.gradle.internal.dsl.BuildType
-import com.android.build.gradle.internal.dsl.ProductFlavor
-import com.android.build.gradle.internal.dsl.SigningConfig
-import com.android.builder.core.AndroidBuilder
-import com.android.builder.core.VariantType
-import com.google.common.collect.Lists
-import org.gradle.api.GradleException
-import org.gradle.api.NamedDomainObjectContainer
-import org.gradle.api.Project
-import org.gradle.internal.reflect.Instantiator
+import com.android.annotations.NonNull;
+import com.android.build.gradle.AndroidConfig;
+import com.android.build.gradle.api.BaseVariantOutput;
+import com.android.build.gradle.api.LibraryVariant;
+import com.android.build.gradle.internal.BuildTypeData;
+import com.android.build.gradle.internal.ProductFlavorData;
+import com.android.build.gradle.internal.TaskManager;
+import com.android.build.gradle.internal.VariantModel;
+import com.android.build.gradle.internal.api.LibraryVariantImpl;
+import com.android.build.gradle.internal.api.LibraryVariantOutputImpl;
+import com.android.build.gradle.internal.api.ReadOnlyObjectProvider;
+import com.android.build.gradle.internal.core.GradleVariantConfiguration;
+import com.android.build.gradle.internal.dsl.BuildType;
+import com.android.build.gradle.internal.dsl.ProductFlavor;
+import com.android.build.gradle.internal.dsl.SigningConfig;
+import com.android.builder.core.AndroidBuilder;
+import com.android.builder.core.VariantType;
+import com.google.common.collect.Lists;
+import org.gradle.api.GradleException;
+import org.gradle.api.NamedDomainObjectContainer;
+import org.gradle.api.Project;
+import org.gradle.internal.reflect.Instantiator;
 
-import static com.android.builder.core.BuilderConstants.DEBUG
-import static com.android.builder.core.BuilderConstants.RELEASE
+import static com.android.builder.core.BuilderConstants.DEBUG;
+import static com.android.builder.core.BuilderConstants.RELEASE;
+
+import java.util.List;
 
 public class LibraryVariantFactory implements VariantFactory {
 
     @NonNull
-    Instantiator instantiator
+    private Instantiator instantiator;
     @NonNull
-    private final AndroidConfig extension
+    private final AndroidConfig extension;
     @NonNull
     private final AndroidBuilder androidBuilder;
 
@@ -65,7 +67,7 @@ public class LibraryVariantFactory implements VariantFactory {
     public BaseVariantData createVariantData(
             @NonNull GradleVariantConfiguration variantConfiguration,
             @NonNull TaskManager taskManager) {
-        return new LibraryVariantData(extension, taskManager, variantConfiguration)
+        return new LibraryVariantData(extension, taskManager, variantConfiguration);
     }
 
     @Override
@@ -74,7 +76,7 @@ public class LibraryVariantFactory implements VariantFactory {
             @NonNull BaseVariantData<? extends BaseVariantOutputData> variantData,
             @NonNull ReadOnlyObjectProvider readOnlyObjectProvider) {
         LibraryVariantImpl variant = instantiator.newInstance(
-                LibraryVariantImpl.class, variantData, androidBuilder, readOnlyObjectProvider)
+                LibraryVariantImpl.class, variantData, androidBuilder, readOnlyObjectProvider);
 
         // now create the output objects
         List<? extends BaseVariantOutputData> outputList = variantData.getOutputs();
@@ -91,23 +93,23 @@ public class LibraryVariantFactory implements VariantFactory {
 
         variant.addOutputs(apiOutputList);
 
-        return variant
+        return variant;
     }
 
     @NonNull
     @Override
     public VariantType getVariantConfigurationType() {
-        return VariantType.LIBRARY
+        return VariantType.LIBRARY;
     }
 
     @Override
-    boolean isLibrary() {
-        return true
+    public boolean isLibrary() {
+        return true;
     }
 
     @Override
-    boolean hasTestScope() {
-        return true
+    public boolean hasTestScope() {
+        return true;
     }
 
     /***
@@ -142,7 +144,7 @@ public class LibraryVariantFactory implements VariantFactory {
     }
 
     @Override
-    void preVariantWork(Project project) {
+    public void preVariantWork(Project project) {
         // nothing to be done here.
     }
 

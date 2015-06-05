@@ -14,22 +14,23 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.variant
+package com.android.build.gradle.internal.variant;
 
-import com.android.annotations.NonNull
-import com.android.build.gradle.AndroidConfig
-import com.android.build.gradle.TestAndroidConfig
-import com.android.build.gradle.internal.dsl.BuildType
-import com.android.build.gradle.internal.dsl.ProductFlavor
-import com.android.build.gradle.internal.dsl.SigningConfig
-import com.android.builder.core.AndroidBuilder
-import org.gradle.api.GradleException
-import org.gradle.api.NamedDomainObjectContainer
-import org.gradle.api.Project
-import org.gradle.api.artifacts.dsl.DependencyHandler
-import org.gradle.internal.reflect.Instantiator
+import com.android.annotations.NonNull;
+import com.android.build.gradle.AndroidConfig;
+import com.android.build.gradle.TestAndroidConfig;
+import com.android.build.gradle.internal.dsl.BuildType;
+import com.android.build.gradle.internal.dsl.ProductFlavor;
+import com.android.build.gradle.internal.dsl.SigningConfig;
+import com.android.builder.core.AndroidBuilder;
+import com.android.builder.core.BuilderConstants;
+import com.google.common.collect.ImmutableMap;
 
-import static com.android.builder.core.BuilderConstants.DEBUG
+import org.gradle.api.GradleException;
+import org.gradle.api.NamedDomainObjectContainer;
+import org.gradle.api.Project;
+import org.gradle.api.artifacts.dsl.DependencyHandler;
+import org.gradle.internal.reflect.Instantiator;
 
 /**
  * Customization of ApplcationVariantFactory for test-only projects.
@@ -40,31 +41,34 @@ public class TestVariantFactory extends ApplicationVariantFactory {
             @NonNull Instantiator instantiator,
             @NonNull AndroidBuilder androidBuilder,
             @NonNull AndroidConfig extension) {
-        super(instantiator, androidBuilder, extension)
+        super(instantiator, androidBuilder, extension);
     }
 
     @Override
     public boolean hasTestScope() {
-        return false
+        return false;
     }
 
     @Override
-    public void preVariantWork(Project project) {
-        TestAndroidConfig testExtension = (TestAndroidConfig) extension
+    public void preVariantWork(final Project project) {
+        final TestAndroidConfig testExtension = (TestAndroidConfig) extension;
 
-        String path = testExtension.targetProjectPath
+        String path = testExtension.getTargetProjectPath();
         if (path == null) {
-            throw new GradleException("targetProjectPath cannot be null in test project ${project.name}")
+            throw new GradleException(
+                    "targetProjectPath cannot be null in test project " + project.getName());
         }
 
-        if (testExtension.targetVariant == null) {
-            throw new GradleException("targetVariant cannot be null in test project ${project.name}")
+        if (testExtension.getTargetVariant() == null) {
+            throw new GradleException(
+                    "targetVariant cannot be null in test project " + project.getName());
         }
 
-        String variant = "${testExtension.targetVariant}-classes"
-
-        DependencyHandler handler = project.getDependencies()
-        handler.add("provided", handler.project(path: path, configuration: variant))
+        DependencyHandler handler = project.getDependencies();
+        handler.add("provided", handler.project(ImmutableMap.of(
+                "path", path,
+                "configuration", testExtension.getTargetVariant() + "-classes"
+        )));
     }
 
     @Override
@@ -75,8 +79,8 @@ public class TestVariantFactory extends ApplicationVariantFactory {
         // don't call super as we don't want the default app version.
         // must create signing config first so that build type 'debug' can be initialized
         // with the debug signing config.
-        signingConfigs.create(DEBUG);
-        buildTypes.create(DEBUG);
+        signingConfigs.create(BuilderConstants.DEBUG);
+        buildTypes.create(BuilderConstants.DEBUG);
     }
 
 }
