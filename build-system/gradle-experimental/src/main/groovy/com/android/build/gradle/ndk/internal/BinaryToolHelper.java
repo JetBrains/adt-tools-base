@@ -31,11 +31,11 @@ import org.gradle.platform.base.BinarySpec;
  * This helper class hide the details for accessing the tools.
  */
 public class BinaryToolHelper {
-    static DefaultPreprocessingTool getCCompiler(BinarySpec binary) {
+    public static DefaultPreprocessingTool getCCompiler(BinarySpec binary) {
         return (DefaultPreprocessingTool) ((ExtensionAware) binary).getExtensions().getByName("cCompiler");
     }
 
-    static DefaultPreprocessingTool getCppCompiler(BinarySpec binary) {
+    public static DefaultPreprocessingTool getCppCompiler(BinarySpec binary) {
         return (DefaultPreprocessingTool) ((ExtensionAware) binary).getExtensions().getByName("cppCompiler");
     }
 }
