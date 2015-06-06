@@ -82,7 +82,6 @@ import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
 import com.android.build.gradle.internal.variant.LibraryVariantData;
 import com.android.build.gradle.internal.variant.TestVariantData;
-import com.android.build.gradle.internal.variant.TestedVariantData;
 import com.android.build.gradle.tasks.AidlCompile;
 import com.android.build.gradle.tasks.AndroidJarTask;
 import com.android.build.gradle.tasks.AndroidProGuardTask;
@@ -110,7 +109,6 @@ import com.android.build.gradle.tasks.RenderscriptCompile;
 import com.android.build.gradle.tasks.ShrinkResources;
 import com.android.build.gradle.tasks.SplitZipAlign;
 import com.android.build.gradle.tasks.ZipAlign;
-import com.android.build.gradle.tasks.factory.AbstractCompilesUtil;
 import com.android.build.gradle.tasks.factory.JavaCompileConfigAction;
 import com.android.build.gradle.tasks.factory.ProGuardTaskConfigAction;
 import com.android.build.gradle.tasks.factory.ProcessJavaResConfigAction;
@@ -141,7 +139,6 @@ import org.gradle.api.Task;
 import org.gradle.api.artifacts.Configuration;
 import org.gradle.api.execution.TaskExecutionGraph;
 import org.gradle.api.file.ConfigurableFileCollection;
-import org.gradle.api.file.ConfigurableFileTree;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.file.FileTree;
 import org.gradle.api.internal.file.collections.DefaultConfigurableFileCollection;
@@ -1125,7 +1122,7 @@ public abstract class TaskManager {
 
         // Add a task to compile the test application
         if (variantData.getVariantConfiguration().getUseJack()) {
-            createJackTask(variantData, variantData.getTestedVariantData());
+            createJackTask(tasks, variantScope);
         } else {
             AndroidTask<JavaCompile> javacTask = createJavacTask(tasks, variantScope);
             setJavaCompilerTask(javacTask, tasks, variantScope);
@@ -1894,194 +1891,38 @@ public abstract class TaskManager {
     }
 
     public void createJackTask(
-            @NonNull final BaseVariantData<? extends BaseVariantOutputData> variantData,
-            @Nullable final TestedVariantData testedVariantData) {
+            @NonNull TaskFactory tasks,
+            @NonNull VariantScope scope) {
 
-        final GradleVariantConfiguration config = variantData.getVariantConfiguration();
-        final VariantScope scope = variantData.getScope();
+        final GradleVariantConfiguration config = scope.getVariantData().getVariantConfiguration();
 
         // ----- Create Jill tasks -----
-        final JillTask jillRuntimeTask = project.getTasks()
-                .create(scope.getTaskName("jill", "RuntimeLibraries"), JillTask.class);
+        final AndroidTask<JillTask> jillRuntimeTask = androidTasks.create(tasks,
+                new JillTask.RuntimeTaskConfigAction(scope));
 
-        jillRuntimeTask.setAndroidBuilder(androidBuilder);
-        jillRuntimeTask.setDexOptions(getExtension().getDexOptions());
+        final AndroidTask<JillTask> jillPackagedTask = androidTasks.create(tasks,
+                new JillTask.PackagedConfigAction(scope));
 
-        ConventionMappingHelper.map(jillRuntimeTask, "inputLibs", new Callable<List<File>>() {
-            @Override
-            public List<File> call() throws Exception {
-                return androidBuilder.getBootClasspath();
-            }
-        });
-
-        jillRuntimeTask.setOutputFolder(new File(
-                scope.getGlobalScope().getIntermediatesDir(),
-                "jill/" + config.getDirName() + "/runtime"));
-
-        // ----
-
-        final JillTask jillPackagedTask = project.getTasks().create(
-                scope.getTaskName("jill", "PackagedLibraries"), JillTask.class);
-
-        jillPackagedTask.dependsOn(variantData.getVariantDependency().getPackageConfiguration()
-                .getBuildDependencies());
-        jillPackagedTask.setAndroidBuilder(androidBuilder);
-        jillPackagedTask.setDexOptions(getExtension().getDexOptions());
-
-        ConventionMappingHelper.map(jillPackagedTask, "inputLibs", new Callable<Set<File>>() {
-            @Override
-            public Set<File> call() throws Exception {
-                return androidBuilder.getPackagedJars(config);
-            }
-        });
-        ConventionMappingHelper.map(jillPackagedTask, "outputFolder", new Callable<File>() {
-            @Override
-            public File call() throws Exception {
-                return new File(scope.getGlobalScope().getIntermediatesDir(),
-                        "/jill/" + config.getDirName() + "/packaged");
-            }
-        });
+        jillPackagedTask.dependsOn(tasks,
+                scope.getVariantData().getVariantDependency().getPackageConfiguration()
+                        .getBuildDependencies());
 
         // ----- Create Jack Task -----
-        JackTask jackTask = project.getTasks().create(
-                scope.getTaskName("compile", "JavaWithJack"), JackTask.class);
-        jackTask.setIsVerbose(isVerbose());
-        jackTask.setIsDebugLog(isDebugLog());
+        AndroidTask<JackTask> jackTask = androidTasks.create(tasks,
+                new JackTask.ConfigAction(scope, isVerbose(), isDebugLog()));
+
 
         // Jack is compiling and also providing the binary and mapping files.
-        // TODO: Use setJavaCompilerTask once this uses scopes etc.
-        variantData.compileTask.dependsOn(jackTask);
-        variantData.javaCompilerTask = jackTask;
-        variantData.jackTask = jackTask;
-        variantData.mappingFileProviderTask = jackTask;
-        variantData.binayFileProviderTask = jackTask;
+        setJavaCompilerTask(jackTask, tasks, scope);
+        jackTask.dependsOn(tasks,
+                scope.getVariantData().sourceGenTask,
+                jillRuntimeTask,
+                jillPackagedTask,
+                // TODO - dependency information for the compile classpath is being lost.
+                // Add a temporary approximation
+                scope.getVariantData().getVariantDependency().getCompileConfiguration()
+                        .getBuildDependencies());
 
-        jackTask.dependsOn(variantData.sourceGenTask, jillRuntimeTask, jillPackagedTask);
-        // TODO - dependency information for the compile classpath is being lost.
-        // Add a temporary approximation
-        jackTask.dependsOn(variantData.getVariantDependency().getCompileConfiguration()
-                .getBuildDependencies());
-
-        jackTask.setAndroidBuilder(androidBuilder);
-        ConventionMappingHelper.map(jackTask, "javaMaxHeapSize", new Callable<String>() {
-            @Override
-            public String call() throws Exception {
-                return getExtension().getDexOptions().getJavaMaxHeapSize();
-            }
-        });
-
-        jackTask.setSource(variantData.getJavaSources());
-
-        jackTask.setMultiDexEnabled(config.isMultiDexEnabled());
-        jackTask.setMinSdkVersion(config.getMinSdkVersion().getApiLevel());
-
-        jackTask.setIncrementalDir(variantData.getScope().getJackIncrementalDir());
-
-        // if the tested variant is an app, add its classpath. For the libraries,
-        // it's done automatically since the classpath includes the library output as a normal
-        // dependency.
-        if (testedVariantData instanceof ApplicationVariantData) {
-            ConventionMappingHelper.map(jackTask, "classpath", new Callable<FileCollection>() {
-                @Override
-                public FileCollection call() throws Exception {
-                    JackTask testedVariantJackTack = ((BaseVariantData) testedVariantData).jackTask;
-                    return project.fileTree(jillRuntimeTask.getOutputFolder())
-                            .plus(testedVariantJackTack.getClasspath())
-                            .plus(project.fileTree(testedVariantJackTack.getJackFile()));
-                }
-            });
-        } else {
-            ConventionMappingHelper.map(jackTask, "classpath",
-                    new Callable<ConfigurableFileTree>() {
-                        @Override
-                        public ConfigurableFileTree call() throws Exception {
-                            return project.fileTree(jillRuntimeTask.getOutputFolder());
-                        }
-                    });
-        }
-
-        ConventionMappingHelper.map(jackTask, "packagedLibraries", new Callable<Set<File>>() {
-            @Override
-            public Set<File> call() throws Exception {
-                return project.fileTree(jillPackagedTask.getOutputFolder()).getFiles();
-            }
-        });
-
-        ConventionMappingHelper.map(jackTask, "destinationDir", new Callable<File>() {
-            @Override
-            public File call() throws Exception {
-                return new File(scope.getGlobalScope().getIntermediatesDir(),
-                        "/dex/" + config.getDirName());
-            }
-        });
-
-        ConventionMappingHelper.map(jackTask, "jackFile", new Callable<File>() {
-            @Override
-            public File call() throws Exception {
-                return new File(scope.getGlobalScope().getIntermediatesDir(),
-                        "/packaged/" + config.getDirName() + "/classes.zip");
-            }
-        });
-
-        ConventionMappingHelper.map(jackTask, "tempFolder", new Callable<File>() {
-            @Override
-            public File call() throws Exception {
-                return new File(scope.getGlobalScope().getIntermediatesDir(),
-                        "/tmp/jack/" + config.getDirName());
-            }
-        });
-        if (config.isMinifyEnabled()) {
-            ConventionMappingHelper.map(jackTask, "proguardFiles", new Callable<List<File>>() {
-                @Override
-                public List<File> call() throws Exception {
-                    // since all the output use the same resources, we can use the first output
-                    // to query for a proguard file.
-                    BaseVariantOutputData variantOutputData = variantData.getOutputs().get(0);
-
-                    List<File> proguardFiles = config.getProguardFiles(
-                            true /*includeLibraries*/,
-                            Collections.singletonList(
-                                    getDefaultProguardFile(DEFAULT_PROGUARD_CONFIG_FILE)));
-                    File proguardResFile = variantOutputData.processResourcesTask
-                            .getProguardOutputFile();
-                    if (proguardResFile != null) {
-                        proguardFiles.add(proguardResFile);
-                    }
-
-                    // for tested app, we only care about their aapt config since the base
-                    // configs are the same files anyway.
-                    if (testedVariantData != null) {
-                        // use single output for now.
-                        proguardResFile = ((BaseVariantOutputData) ((BaseVariantData) testedVariantData).getOutputs().get(0)).processResourcesTask
-                                .getProguardOutputFile();
-                        if (proguardResFile != null) {
-                            proguardFiles.add(proguardResFile);
-                        }
-
-                    }
-
-                    return proguardFiles;
-                }
-            });
-
-            jackTask.setMappingFile(new File(
-                    scope.getGlobalScope().getOutputsDir(),
-                    "/mapping/" + variantData.getVariantConfiguration().getDirName() +
-                            "/mapping.txt"));
-        }
-
-        ConventionMappingHelper.map(jackTask, "jarJarRuleFiles", new Callable<List<File>>() {
-            @Override
-            public List<File> call() throws Exception {
-                return new ArrayList<File>(project.files(config.getJarJarRuleFiles()).getFiles());
-            }
-        });
-
-        AbstractCompilesUtil.configureLanguageLevel(
-                jackTask,
-                getExtension().getCompileOptions(),
-                getExtension().getCompileSdkVersion()
-        );
     }
 
     /**
