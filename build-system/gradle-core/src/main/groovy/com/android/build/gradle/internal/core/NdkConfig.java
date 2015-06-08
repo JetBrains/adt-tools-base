@@ -19,6 +19,7 @@ package com.android.build.gradle.internal.core;
 import com.android.annotations.Nullable;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -42,7 +43,7 @@ public interface NdkConfig {
      * The LD Libs
      */
     @Nullable
-    Collection<String> getLdLibs();
+    List<String> getLdLibs();
 
     /**
      * The ABI Filters

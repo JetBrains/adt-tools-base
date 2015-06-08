@@ -134,6 +134,20 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
             });
         }
 
+        @Defaults
+        public void initializeProductFlavor(
+                @Path("android.productFlavors") ModelSet<ProductFlavor> productFlavors) {
+            productFlavors.beforeEach(new Action<ProductFlavor>() {
+                @Override
+                public void execute(ProductFlavor productFlavor) {
+                    productFlavor.getNdkConfig().setCFlags(Lists.<String>newArrayList());
+                    productFlavor.getNdkConfig().setCppFlags(Lists.<String>newArrayList());
+                    productFlavor.getNdkConfig().setLdLibs(Lists.<String>newArrayList());
+                    productFlavor.getNdkConfig().setAbiFilters(Sets.<String>newHashSet());
+                }
+            });
+        }
+
         @Model
         public List<ProductFlavorCombo> createProductFlavorCombo(
                 @Path("android.productFlavors") ModelSet<ProductFlavor> productFlavors) {
