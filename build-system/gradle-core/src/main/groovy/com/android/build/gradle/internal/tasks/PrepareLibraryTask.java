@@ -13,25 +13,43 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.build.gradle.internal.tasks
+package com.android.build.gradle.internal.tasks;
 
-import com.android.build.gradle.internal.LibraryCache
-import com.android.builder.Version
-import org.gradle.api.tasks.Input
-import org.gradle.api.tasks.InputFile
-import org.gradle.api.tasks.OutputDirectory
-import org.gradle.api.tasks.TaskAction
+import com.android.build.gradle.internal.LibraryCache;
+import com.android.builder.Version;
+import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.InputFile;
+import org.gradle.api.tasks.OutputDirectory;
+import org.gradle.api.tasks.TaskAction;
+
+import java.io.File;
 
 public class PrepareLibraryTask extends DefaultAndroidTask {
-    @InputFile
-    File bundle
-
-    @OutputDirectory
-    File explodedDir
+    private File bundle;
+    private File explodedDir;
 
     @TaskAction
-    def prepare() {
+    public void prepare() {
         //LibraryCache.getCache().unzipLibrary(this.name, project, getBundle(), getExplodedDir())
-        LibraryCache.unzipAar(getBundle(), getExplodedDir(), project)
+        LibraryCache.unzipAar(getBundle(), getExplodedDir(), getProject());
     }
+
+    @InputFile
+    public File getBundle() {
+        return bundle;
+    }
+
+    @OutputDirectory
+    public File getExplodedDir() {
+        return explodedDir;
+    }
+
+    public void setBundle(File bundle) {
+        this.bundle = bundle;
+    }
+
+    public void setExplodedDir(File explodedDir) {
+        this.explodedDir = explodedDir;
+    }
+
 }
