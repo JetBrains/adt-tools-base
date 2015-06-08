@@ -27,6 +27,7 @@ import static com.android.SdkConstants.TAG_SKIP;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.resources.ResourceType;
+import com.android.utils.PositionXmlParser;
 import com.android.utils.XmlUtils;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -37,9 +38,10 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
-import org.xml.sax.SAXParseException;
 
+import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
@@ -193,12 +195,10 @@ class ValueResourceParser2 {
     @NonNull
     static Document parseDocument(@NonNull File file) throws MergingException {
         try {
-            return XmlUtils.parseUtfXmlFile(file, true /*namespaceAware*/);
-        } catch (SAXParseException e) {
+            return PositionXmlParser.parse(new BufferedInputStream(new FileInputStream(file)));
+        } catch (SAXException e) {
             throw MergingException.wrapException(e).withFile(file).build();
         } catch (ParserConfigurationException e) {
-            throw MergingException.wrapException(e).withFile(file).build();
-        } catch (SAXException e) {
             throw MergingException.wrapException(e).withFile(file).build();
         } catch (IOException e) {
             throw MergingException.wrapException(e).withFile(file).build();
