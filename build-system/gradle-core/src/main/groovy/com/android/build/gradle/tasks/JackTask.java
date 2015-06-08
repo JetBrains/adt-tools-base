@@ -16,9 +16,18 @@
 
 package com.android.build.gradle.tasks;
 
+import com.android.SdkConstants;
 import com.android.annotations.NonNull;
+import com.android.build.gradle.internal.TaskManager;
+import com.android.build.gradle.internal.core.GradleVariantConfiguration;
+import com.android.build.gradle.internal.scope.ConventionMappingHelper;
+import com.android.build.gradle.internal.scope.GlobalScope;
+import com.android.build.gradle.internal.scope.TaskConfigAction;
+import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.AbstractAndroidCompile;
 import com.android.build.gradle.internal.tasks.FileSupplier;
+import com.android.build.gradle.internal.variant.ApplicationVariantData;
+import com.android.build.gradle.tasks.factory.AbstractCompilesUtil;
 import com.android.builder.core.AndroidBuilder;
 import com.android.builder.tasks.Job;
 import com.android.builder.tasks.JobContext;
@@ -29,9 +38,13 @@ import com.android.sdklib.repository.FullRevision;
 import com.google.common.base.Charsets;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 
+import org.gradle.api.Project;
+import org.gradle.api.file.FileCollection;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.InputFiles;
@@ -43,6 +56,8 @@ import org.gradle.api.tasks.TaskAction;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.List;
+import java.util.concurrent.Callable;
 
 /**
  * Jack task.
@@ -322,5 +337,145 @@ public class JackTask extends AbstractAndroidCompile
     @Override
     public File get() {
         return getMappingFile();
+    }
+
+    public static class ConfigAction implements TaskConfigAction<JackTask> {
+
+        private final VariantScope scope;
+        private final boolean isVerbose;
+        private final boolean isDebugLog;
+
+        public ConfigAction(VariantScope scope, boolean isVerbose, boolean isDebugLog) {
+            this.scope = scope;
+            this.isVerbose = isVerbose;
+            this.isDebugLog = isDebugLog;
+        }
+
+        @Override
+        public String getName() {
+            return scope.getTaskName("compile", "JavaWithJack");
+        }
+
+        @Override
+        public Class<JackTask> getType() {
+            return JackTask.class;
+        }
+
+        @Override
+        public void execute(JackTask jackTask) {
+            jackTask.setIsVerbose(isVerbose);
+            jackTask.setIsDebugLog(isDebugLog);
+
+            GlobalScope globalScope = scope.getGlobalScope();
+
+            jackTask.androidBuilder = globalScope.getAndroidBuilder();
+            jackTask.setJavaMaxHeapSize(
+                    globalScope.getExtension().getDexOptions().getJavaMaxHeapSize());
+
+            jackTask.setSource(scope.getVariantData().getJavaSources());
+
+            final GradleVariantConfiguration config = scope.getVariantData().getVariantConfiguration();
+            jackTask.setMultiDexEnabled(config.isMultiDexEnabled());
+            jackTask.setMinSdkVersion(config.getMinSdkVersion().getApiLevel());
+            jackTask.incrementalDir  = scope.getJackIncrementalDir();
+
+            // if the tested variant is an app, add its classpath. For the libraries,
+            // it's done automatically since the classpath includes the library output as a normal
+            // dependency.
+            if (scope.getTestedVariantData() instanceof ApplicationVariantData) {
+                ConventionMappingHelper.map(jackTask, "classpath", new Callable<FileCollection>() {
+                    @Override
+                    public FileCollection call() throws Exception {
+                        Project project = scope.getGlobalScope().getProject();
+                        return project.fileTree(scope.getJillRuntimeLibrariesDir()).plus(
+                                project.fileTree(
+                                        scope.getTestedVariantData().getScope()
+                                                .getJillRuntimeLibrariesDir())).plus(
+                                project.fileTree(
+                                        scope.getTestedVariantData().getScope().getJackClassesZip()
+                                ));
+                    }
+                });
+            } else {
+                ConventionMappingHelper.map(jackTask, "classpath", new Callable<FileCollection>() {
+                    @Override
+                    public FileCollection call() throws Exception {
+                        return scope.getGlobalScope().getProject().fileTree(
+                                scope.getJillRuntimeLibrariesDir());
+                    }
+                });
+            }
+
+            ConventionMappingHelper.map(jackTask, "packagedLibraries", new Callable<Collection<File>>() {
+                @Override
+                public Collection<File> call() throws Exception {
+                    return scope.getGlobalScope().getProject()
+                            .fileTree(scope.getJillPackagedLibrariesDir()).getFiles();
+                }
+            });
+
+            jackTask.setDestinationDir(scope.getJackDestinationDir());
+            jackTask.setJackFile(scope.getJackClassesZip());
+            jackTask.setTempFolder(new File(scope.getGlobalScope().getIntermediatesDir(),
+                    "/tmp/jack/" + scope.getVariantConfiguration().getDirName()));
+
+
+
+            if (config.isMinifyEnabled()) {
+                ConventionMappingHelper.map(jackTask, "proguardFiles", new Callable<List<File>>() {
+                    @Override
+                    public List<File> call() throws Exception {
+                        // since all the output use the same resources, we can use the first output
+                        // to query for a proguard file.
+                        File sdkDir = scope.getGlobalScope().getSdkHandler().getAndCheckSdkFolder();
+                        File defaultProguardFile =  new File(sdkDir,
+                                SdkConstants.FD_TOOLS + File.separatorChar
+                                        + SdkConstants.FD_PROGUARD + File.separatorChar
+                                        + TaskManager.DEFAULT_PROGUARD_CONFIG_FILE);
+
+                        List<File> proguardFiles = config.getProguardFiles(true /*includeLibs*/,
+                                ImmutableList.of(defaultProguardFile));
+                        File proguardResFile = scope.getProcessAndroidResourcesProguardOutputFile();
+                        proguardFiles.add(proguardResFile);
+                        // for tested app, we only care about their aapt config since the base
+                        // configs are the same files anyway.
+                        if (scope.getTestedVariantData() != null) {
+                            proguardResFile = scope.getTestedVariantData().getScope()
+                                    .getProcessAndroidResourcesProguardOutputFile();
+                            proguardFiles.add(proguardResFile);
+                        }
+
+                        return proguardFiles;
+                    }
+                });
+
+                jackTask.mappingFile = new File(scope.getProguardOutputFolder(), "mapping.txt");
+            }
+
+
+            ConventionMappingHelper.map(jackTask, "jarJarRuleFiles", new Callable<List<File>>() {
+                @Override
+                public List<File> call() throws Exception {
+                    List<File> jarJarRuleFiles = Lists.newArrayListWithCapacity(
+                            config.getJarJarRuleFiles().size());
+                    Project project = scope.getGlobalScope().getProject();
+                    for (File file: config.getJarJarRuleFiles()) {
+                        jarJarRuleFiles.add(project.file(file));
+                    }
+                    return jarJarRuleFiles;
+                }
+            });
+
+            AbstractCompilesUtil.configureLanguageLevel(
+                    jackTask,
+                    scope.getGlobalScope().getExtension().getCompileOptions(),
+                    scope.getGlobalScope().getExtension().getCompileSdkVersion()
+            );
+
+            scope.getVariantData().jackTask = jackTask;
+            scope.getVariantData().javaCompilerTask = jackTask;
+            scope.getVariantData().mappingFileProviderTask = jackTask;
+            scope.getVariantData().binayFileProviderTask = jackTask;
+        }
     }
 }
