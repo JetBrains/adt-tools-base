@@ -22,6 +22,8 @@ import com.android.tools.perflib.heap.io.MemoryMappedFileBuffer;
 import junit.framework.TestCase;
 
 import java.io.File;
+import java.util.HashSet;
+import java.util.Set;
 
 public class DominatorsTest extends TestCase {
 
@@ -91,7 +93,7 @@ public class DominatorsTest extends TestCase {
         assertDominates(2, 4);
         // Node 5 is reachable via both roots, neither of which can be the sole dominator.
         assertEquals(mSnapshot.SENTINEL_ROOT,
-                mSnapshot.findReference(5).getImmediateDominator());
+                mSnapshot.findInstance(5).getImmediateDominator());
         assertDominates(5, 6);
 
         assertParentPathToGc(3, 1);
@@ -117,10 +119,10 @@ public class DominatorsTest extends TestCase {
 
         mSnapshot.computeDominators();
 
-        assertEquals(45, mSnapshot.findReference(1).getRetainedSize(1));
-        assertEquals(44, mSnapshot.findReference(2).getRetainedSize(1));
+        assertEquals(45, mSnapshot.findInstance(1).getRetainedSize(1));
+        assertEquals(44, mSnapshot.findInstance(2).getRetainedSize(1));
         for (int i = 3; i <= 9; i++) {
-            assertEquals(i, mSnapshot.findReference(i).getRetainedSize(1));
+            assertEquals(i, mSnapshot.findInstance(i).getRetainedSize(1));
         }
 
         assertParentPathToGc(2, 1);
@@ -158,9 +160,9 @@ public class DominatorsTest extends TestCase {
 
         mSnapshot.computeDominators();
 
-        assertEquals(6, mSnapshot.findReference(1).getRetainedSize(1));
-        assertEquals(2, mSnapshot.findReference(2).getRetainedSize(1));
-        assertEquals(3, mSnapshot.findReference(3).getRetainedSize(1));
+        assertEquals(6, mSnapshot.findInstance(1).getRetainedSize(1));
+        assertEquals(2, mSnapshot.findInstance(2).getRetainedSize(1));
+        assertEquals(3, mSnapshot.findInstance(3).getRetainedSize(1));
     }
 
     public void testMultiplePaths() {
@@ -177,11 +179,35 @@ public class DominatorsTest extends TestCase {
 
         mSnapshot.computeDominators();
 
-        assertEquals(mSnapshot.findReference(1), mSnapshot.findReference(4).getImmediateDominator());
-        assertEquals(mSnapshot.findReference(4), mSnapshot.findReference(6).getImmediateDominator());
-        assertEquals(36, mSnapshot.findReference(1).getRetainedSize(1));
-        assertEquals(2, mSnapshot.findReference(2).getRetainedSize(1));
-        assertEquals(8, mSnapshot.findReference(3).getRetainedSize(1));
+        assertEquals(mSnapshot.findInstance(1), mSnapshot.findInstance(4).getImmediateDominator());
+        assertEquals(mSnapshot.findInstance(4), mSnapshot.findInstance(6).getImmediateDominator());
+        assertEquals(36, mSnapshot.findInstance(1).getRetainedSize(1));
+        assertEquals(2, mSnapshot.findInstance(2).getRetainedSize(1));
+        assertEquals(8, mSnapshot.findInstance(3).getRetainedSize(1));
+    }
+
+    public void testReachableInstances() {
+        mSnapshot = new SnapshotBuilder(10, 2)
+                .addReferences(1, 2, 3)
+                .insertSoftRefences(1, 10)
+                .addReferences(2, 4)
+                .addReferences(3, 5, 6)
+                .addReferences(5, 7)
+                .addReferences(6, 7)
+                .addReferences(7, 8)
+                .insertSoftRefences(8, 9)
+                .addRoot(1)
+                .getSnapshot();
+
+        mSnapshot.computeDominators();
+        for (Heap heap : mSnapshot.getHeaps()) {
+            ClassObj classObj = heap.getClass(SnapshotBuilder.SOFT_REFERENCE_ID);
+            if (classObj != null) {
+                assertTrue(classObj.getIsSoftReference());
+            }
+        }
+
+        assertEquals(10, mSnapshot.getReachableInstances().size());
     }
 
     public void testSampleHprof() throws Exception {
@@ -189,11 +215,20 @@ public class DominatorsTest extends TestCase {
         mSnapshot = (new HprofParser(new MemoryMappedFileBuffer(file))).parse();
         mSnapshot.computeDominators();
 
-        // TODO: investigate the unreachable objects: there are 43687 objects in total.
-        assertEquals(42911, mSnapshot.getReachableInstances().size());
+        Set<Instance> topologicalSet = new HashSet<Instance>(mSnapshot.getTopologicalOrdering());
+        assertEquals(topologicalSet.size(), mSnapshot.getTopologicalOrdering().size());
+
+        long totalInstanceCount = 0;
+        for (Heap heap : mSnapshot.getHeaps()) {
+            totalInstanceCount += heap.getInstances().size();
+            totalInstanceCount += heap.getClasses().size();
+        }
+        assertEquals(43687, totalInstanceCount);
+
+        assertEquals(42571, mSnapshot.getReachableInstances().size());
 
         // An object reachable via two GC roots, a JNI global and a Thread.
-        Instance instance = mSnapshot.findReference(0xB0EDFFA0);
+        Instance instance = mSnapshot.findInstance(0xB0EDFFA0);
         assertEquals(Snapshot.SENTINEL_ROOT, instance.getImmediateDominator());
 
         int appIndex = mSnapshot.getHeapIndex(mSnapshot.getHeap("app"));
@@ -206,7 +241,7 @@ public class DominatorsTest extends TestCase {
 
         // One of the bigger objects in the app heap
         ClassObj activityThread = mSnapshot.findClass("android.app.ActivityThread");
-        assertEquals(813, activityThread.getRetainedSize(zygoteIndex));
+        assertEquals(853, activityThread.getRetainedSize(zygoteIndex));
         assertEquals(576, activityThread.getRetainedSize(appIndex));
     }
 
@@ -214,8 +249,8 @@ public class DominatorsTest extends TestCase {
      * Asserts that nodeA dominates nodeB in mHeap.
      */
     private void assertDominates(int nodeA, int nodeB) {
-        assertEquals(mSnapshot.findReference(nodeA),
-                mSnapshot.findReference(nodeB).getImmediateDominator());
+        assertEquals(mSnapshot.findInstance(nodeA),
+                mSnapshot.findInstance(nodeB).getImmediateDominator());
     }
 
     /**
@@ -223,7 +258,7 @@ public class DominatorsTest extends TestCase {
      */
     private void assertParentPathToGc(int node, int... parents) {
         for (int parent : parents) {
-            Instance parentInstance = mSnapshot.findReference(node).getNextInstanceToGcRoot();
+            Instance parentInstance = mSnapshot.findInstance(node).getNextInstanceToGcRoot();
             if (parentInstance != null && parentInstance.getId() == parent) {
                 return;
             }
