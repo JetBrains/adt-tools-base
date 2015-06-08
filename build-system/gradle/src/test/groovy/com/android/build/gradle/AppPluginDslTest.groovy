@@ -591,6 +591,58 @@ public class AppPluginDslTest extends BaseTest {
         assert project.preprocessDebugResources.densitiesToGenerate.contains(Density.LOW)
     }
 
+    public void testInstrumentationRunnerArguments_merging() throws Exception {
+        Project project = ProjectBuilder.builder().withProjectDir(
+                new File(testDir, "${FOLDER_TEST_PROJECTS}/basic")).build()
+
+        project.apply plugin: 'com.android.application'
+
+        project.android {
+            compileSdkVersion COMPILE_SDK_VERSION
+            buildToolsVersion '20.0.0'
+
+            defaultConfig {
+                testInstrumentationRunnerArguments(value: "default", size: "small")
+            }
+
+            productFlavors {
+                f1 {
+                }
+
+                f2  {
+                    testInstrumentationRunnerArgument "value", "f2"
+                }
+
+                f3  {
+                    testInstrumentationRunnerArguments["otherValue"] = "f3"
+                }
+
+                f4  {
+                    testInstrumentationRunnerArguments(otherValue: "f4.1")
+                    testInstrumentationRunnerArguments = [otherValue: "f4.2"]
+                }
+            }
+        }
+
+        AppPlugin plugin = project.plugins.getPlugin(AppPlugin)
+        plugin.createAndroidTasks(false)
+
+        def variantsData = plugin.variantManager.variantDataList
+        Map<String, GradleVariantConfiguration> variantMap =
+                variantsData.collectEntries {[it.name, it.variantConfiguration]}
+
+        def expectedArgs = [
+                f1Debug: [value: "default", size: "small"],
+                f2Debug: [value: "f2", size: "small"],
+                f3Debug: [value: "default", size: "small", otherValue: "f3"],
+                f4Debug: [value: "default", size: "small", otherValue: "f4.2"],
+        ]
+
+        expectedArgs.each { name, expected ->
+            assert expected == variantMap[name].instrumentationRunnerArguments
+        }
+    }
+
     private static void checkTestedVariant(@NonNull String variantName,
                                            @NonNull String testedVariantName,
                                            @NonNull Collection<ApplicationVariant> variants,

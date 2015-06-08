@@ -22,6 +22,7 @@ import com.android.builder.model.ApiVersion;
 import com.android.builder.model.ProductFlavor;
 import com.android.builder.model.SigningConfig;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Maps;
 
 import java.io.Serializable;
 import java.util.Collection;
@@ -48,7 +49,7 @@ class ProductFlavorImpl extends BaseConfigImpl implements ProductFlavor, Seriali
     private String mApplicationId = null;
     private String mTestApplicationId = null;
     private String mTestInstrumentationRunner = null;
-    private Map<String, String> mTestInstrumentationRunnerArguments = null;
+    private Map<String, String> mTestInstrumentationRunnerArguments = Maps.newHashMap();
     private Boolean mTestHandleProfiling = null;
     private Boolean mTestFunctionalTest = null;
     private Set<String> mResourceConfigurations = null;
@@ -87,6 +88,9 @@ class ProductFlavorImpl extends BaseConfigImpl implements ProductFlavor, Seriali
 
         clonedFlavor.mResourceConfigurations = ImmutableSet.copyOf(
                 productFlavor.getResourceConfigurations());
+
+        clonedFlavor.mTestInstrumentationRunnerArguments = Maps.newHashMap(
+                productFlavor.getTestInstrumentationRunnerArguments());
 
         return clonedFlavor;
     }
@@ -165,7 +169,7 @@ class ProductFlavorImpl extends BaseConfigImpl implements ProductFlavor, Seriali
         return mTestInstrumentationRunner;
     }
 
-    @Nullable
+    @NonNull
     @Override
     public Map<String, String> getTestInstrumentationRunnerArguments() {
         return mTestInstrumentationRunnerArguments;

@@ -122,7 +122,7 @@ public class ReadOnlyProductFlavor extends ReadOnlyBaseConfig implements Product
         return productFlavor.getTestInstrumentationRunner();
     }
 
-    @Nullable
+    @NonNull
     @Override
     public Map<String, String> getTestInstrumentationRunnerArguments() {
         return productFlavor.getTestInstrumentationRunnerArguments();
