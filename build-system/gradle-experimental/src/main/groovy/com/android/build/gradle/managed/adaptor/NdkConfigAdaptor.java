@@ -18,14 +18,9 @@ package com.android.build.gradle.managed.adaptor;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
-import com.android.build.gradle.managed.ManagedString;
 import com.android.build.gradle.managed.NdkConfig;
-import com.google.common.base.Function;
 import com.google.common.base.Joiner;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Sets;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
