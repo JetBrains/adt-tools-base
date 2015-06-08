@@ -18,6 +18,7 @@ package com.android.build.gradle.model;
 
 import static com.android.build.gradle.model.ModelConstants.ANDROID_BUILDER;
 import static com.android.build.gradle.model.ModelConstants.ANDROID_CONFIG_ADAPTOR;
+import static com.android.build.gradle.model.ModelConstants.BINARIES;
 import static com.android.build.gradle.model.ModelConstants.COMPONENTS;
 import static com.android.build.gradle.model.ModelConstants.EXTRA_MODEL_INFO;
 import static com.android.build.gradle.model.ModelConstants.IS_APPLICATION;
@@ -38,6 +39,7 @@ import org.gradle.model.ModelMap;
 import org.gradle.model.internal.core.ModelPath;
 import org.gradle.model.internal.registry.ModelRegistry;
 import org.gradle.model.internal.type.ModelType;
+import org.gradle.platform.base.BinaryContainer;
 import org.gradle.platform.base.ComponentSpecContainer;
 import org.gradle.tooling.provider.model.ToolingModelBuilder;
 
@@ -53,6 +55,7 @@ public class ComponentModelBuilder implements ToolingModelBuilder {
 
     ModelBuilder modelBuilder;
     ModelRegistry registry;
+
 
     public ComponentModelBuilder(ModelRegistry registry) {
         this.registry = registry;
@@ -95,12 +98,14 @@ public class ComponentModelBuilder implements ToolingModelBuilder {
         NdkHandler ndkHandler = registry.realize(
                 new ModelPath(NDK_HANDLER),
                 ModelType.of(NdkHandler.class));
-
-        // Forces rules for binaries to run so that the variants are created.
-        registry.realizeNode(new ModelPath("binaries"));
+        BinaryContainer binaries = registry.realize(
+                new ModelPath(BINARIES),
+                ModelType.of(BinaryContainer.class));
 
         return new ModelBuilder(
                 androidBuilder, variantManager, taskManager,
-                extension, extraModelInfo, ndkHandler, !isApplication);
+                extension, extraModelInfo, ndkHandler,
+                new ComponentNativeLibraryFactory(binaries, ndkHandler),
+                !isApplication);
     }
 }
