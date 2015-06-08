@@ -97,12 +97,15 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.io.Writer;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -145,11 +148,11 @@ import java.util.zip.ZipEntry;
  * - Ignore annotations defined on @hide elements
  */
 public class Extractor {
-    /** Whether to sort annotation attributes (otherwise their declaration order is used) */
-    private static final boolean SORT_ANNOTATIONS = false;
-
     /** Whether we should include type args like &lt;T*gt; in external annotations signatures */
     private static final boolean INCLUDE_TYPE_ARGS = false;
+
+    /** Whether to sort annotation attributes (otherwise their declaration order is used) */
+    private final boolean sortAnnotations;
 
     /**
      * Whether we should include class-retention annotations into the extracted file;
@@ -170,6 +173,7 @@ public class Extractor {
     public static final String ANDROID_ANNOTATIONS_PREFIX = "android.annotation.";
     public static final String ANDROID_NULLABLE = "android.annotation.Nullable";
     public static final String SUPPORT_NULLABLE = "android.support.annotation.Nullable";
+    public static final String SUPPORT_KEEP = "android.support.annotation.Keep";
     public static final String RESOURCE_TYPE_ANNOTATIONS_SUFFIX = "Res";
     public static final String ANDROID_NOTNULL = "android.annotation.NonNull";
     public static final String SUPPORT_NOTNULL = "android.support.annotation.NonNull";
@@ -193,30 +197,32 @@ public class Extractor {
     private final File classDir;
 
     @NonNull
-    private Map<String, Map<String, List<Item>>> itemMap = Maps.newHashMap();
+    private final Map<String, Map<String, List<Item>>> itemMap = Maps.newHashMap();
 
     @Nullable
     private final ApiDatabase apiFilter;
 
     private final boolean displayInfo;
 
-    private Map<String,Integer> stats = Maps.newHashMap();
+    private final Map<String,Integer> stats = Maps.newHashMap();
     private int filteredCount;
     private int mergedCount;
-    private Set<CompilationUnitDeclaration> processedFiles = Sets.newHashSetWithExpectedSize(100);
-    private Set<String> ignoredAnnotations = Sets.newHashSet();
+    private final Set<CompilationUnitDeclaration> processedFiles = Sets.newHashSetWithExpectedSize(100);
+    private final Set<String> ignoredAnnotations = Sets.newHashSet();
     private boolean listIgnored;
     private Map<String,Annotation> typedefs;
     private List<String> typedefClasses;
     private Map<String,Boolean> sourceRetention;
+    private final List<Item> keepItems = Lists.newArrayList();
 
     public Extractor(@Nullable ApiDatabase apiFilter, @Nullable File classDir, boolean displayInfo,
-            boolean includeClassRetentionAnnotations) {
+            boolean includeClassRetentionAnnotations, boolean sortAnnotations) {
         this.apiFilter = apiFilter;
         this.listIgnored = apiFilter != null;
         this.classDir = classDir;
         this.displayInfo = displayInfo;
         this.includeClassRetentionAnnotations = includeClassRetentionAnnotations;
+        this.sortAnnotations = sortAnnotations;
     }
 
     public void extractFromProjectSource(Collection<CompilationUnitDeclaration> units) {
@@ -241,16 +247,30 @@ public class Extractor {
         }
     }
 
-    public void export(@NonNull File output) {
-        if (itemMap.isEmpty()) {
-            if (output.exists()) {
-                //noinspection ResultOfMethodCallIgnored
-                output.delete();
+    public void export(@Nullable File annotationsZip, @Nullable File proguardCfg) {
+        if (proguardCfg != null) {
+            if (keepItems.isEmpty()) {
+                if (proguardCfg.exists()) {
+                    //noinspection ResultOfMethodCallIgnored
+                    proguardCfg.delete();
+                }
+            } else if (writeKeepRules(proguardCfg)) {
+                info("ProGuard keep rules written to " + proguardCfg);
             }
-        } else if (writeOutputFile(output)) {
-            writeStats();
-            info("Annotations written to " + output);
         }
+
+        if (annotationsZip != null) {
+            if (itemMap.isEmpty()) {
+                if (annotationsZip.exists()) {
+                    //noinspection ResultOfMethodCallIgnored
+                    annotationsZip.delete();
+                }
+            } else if (writeExternalAnnotations(annotationsZip)) {
+                writeStats();
+                info("Annotations written to " + annotationsZip);
+            }
+        }
+
     }
 
     public void writeStats() {
@@ -492,7 +512,14 @@ public class Extractor {
                 if (isRelevantAnnotation(annotation)) {
                     AnnotationData annotationData = createAnnotation(annotation);
                     if (annotationData != null) {
-                        item.annotations.add(annotationData);
+                        if (annotationData.name.equals(SUPPORT_KEEP)) {
+                            // Put keep rules in a different place; we don't want to write
+                            // these out into the external annotations database, they go
+                            // into a special proguard file
+                            keepItems.add(item);
+                        } else {
+                            item.annotations.add(annotationData);
+                        }
                     }
                 }
             }
@@ -586,14 +613,12 @@ public class Extractor {
             return false;
         }
         if (fqn.startsWith(SUPPORT_ANNOTATIONS_PREFIX)) {
-            //noinspection PointlessBooleanExpression,ConstantConditions,RedundantIfStatement
-            if (!includeClassRetentionAnnotations && !hasSourceRetention(fqn, annotation)) {
-                return false;
+            if (fqn.equals(SUPPORT_KEEP)) {
+                return true; // even with class file retention we want to process these
             }
 
-            //noinspection RedundantIfStatement
-            if (fqn.endsWith(".Keep")) {
-                // TODO: Extract into a proguard file
+            //noinspection PointlessBooleanExpression,ConstantConditions,RedundantIfStatement
+            if (!includeClassRetentionAnnotations && !hasSourceRetention(fqn, annotation)) {
                 return false;
             }
 
@@ -657,11 +682,44 @@ public class Extractor {
         return false;
     }
 
-    private boolean writeOutputFile(File dest) {
-        try {
-            FileOutputStream fileOutputStream = new FileOutputStream(dest);
-            JarOutputStream zos = new JarOutputStream(fileOutputStream);
+    private boolean writeKeepRules(@NonNull File proguardCfg) {
+        if (!keepItems.isEmpty()) {
             try {
+                Writer writer = new BufferedWriter(new FileWriter(proguardCfg));
+                try {
+                    Collections.sort(keepItems);
+                    for (Item item : keepItems) {
+                        writer.write(item.getKeepRule());
+                        writer.write('\n');
+                    }
+                } finally {
+                    writer.close();
+                }
+            } catch (IOException ioe) {
+                error(ioe.toString());
+                return true;
+            }
+
+            // Now that we've handled these items, remove them from the list
+            // such that we don't accidentally also emit them into the annotations.zip
+            // file, where they are not needed
+            for (Item item : keepItems) {
+                removeItem(item.getQualifiedClassName(), item);
+            }
+        } else if (proguardCfg.exists()) {
+            //noinspection ResultOfMethodCallIgnored
+            proguardCfg.delete();
+        }
+        return false;
+    }
+
+    private boolean writeExternalAnnotations(@NonNull File annotationsZip) {
+        try {
+            FileOutputStream fileOutputStream = new FileOutputStream(annotationsZip);
+            JarOutputStream zos = new JarOutputStream(fileOutputStream);
+
+            try {
+                // TODO: Extract to share with keep rules
                 List<String> sortedPackages = new ArrayList<String>(itemMap.keySet());
                 Collections.sort(sortedPackages);
                 for (String pkg : sortedPackages) {
@@ -746,15 +804,15 @@ public class Extractor {
         items.add(item);
     }
 
-    private void removeItem(@NonNull String fqn, @NonNull Item item) {
-        String pkg = getPackage(fqn);
+    private void removeItem(@NonNull String classFqn, @NonNull Item item) {
+        String pkg = getPackage(classFqn);
         Map<String, List<Item>> classMap = itemMap.get(pkg);
         if (classMap != null) {
-            List<Item> items = classMap.get(fqn);
+            List<Item> items = classMap.get(classFqn);
             if (items != null) {
                 items.remove(item);
                 if (items.isEmpty()) {
-                    classMap.remove(fqn);
+                    classMap.remove(classFqn);
                     if (classMap.isEmpty()) {
                         itemMap.remove(pkg);
                     }
@@ -862,6 +920,7 @@ public class Extractor {
     }
 
     private void mergeDocument(@NonNull Document document) {
+        @SuppressWarnings("SpellCheckingInspection")
         final Pattern XML_SIGNATURE = Pattern.compile(
                 // Class (FieldName | Type? Name(ArgList) Argnum?)
                 //"(\\S+) (\\S+|(.*)\\s+(\\S+)\\((.*)\\)( \\d+)?)");
@@ -938,7 +997,7 @@ public class Extractor {
             }
             filteredCount++;
         } else {
-            FieldItem fieldItem = new FieldItem(containingClass, fieldName);
+            FieldItem fieldItem = new FieldItem(containingClass, ClassKind.CLASS, fieldName, null);
             Item existing = findItem(containingClass, fieldItem);
             if (existing != null) {
                 mergedCount += mergeAnnotations(item, existing);
@@ -966,7 +1025,7 @@ public class Extractor {
         String argNum = matcher.group(7);
         if (argNum != null) {
             argNum = argNum.trim();
-            ParameterItem parameterItem = new ParameterItem(containingClass, type,
+            ParameterItem parameterItem = new ParameterItem(containingClass, ClassKind.CLASS, type,
                     methodName, parameters, constructor, argNum);
             Item existing = findItem(containingClass, parameterItem);
 
@@ -984,8 +1043,8 @@ public class Extractor {
                 mergedCount += addAnnotations(item, parameterItem);
             }
         } else {
-            MethodItem methodItem = new MethodItem(containingClass, type, methodName,
-                    parameters, constructor);
+            MethodItem methodItem = new MethodItem(containingClass, ClassKind.CLASS, type,
+                    methodName, parameters, constructor);
             Item existing = findItem(containingClass, methodItem);
             if (existing != null) {
                 mergedCount += mergeAnnotations(item, existing);
@@ -1276,7 +1335,7 @@ public class Extractor {
             }
             annotation = new AnnotationData(SUPPORT_NULLABLE);
         } else {
-            annotation = new AnnotationData(name, null, null);
+            annotation = new AnnotationData(name, null, null, null, null);
         }
         return annotation;
     }
@@ -1383,11 +1442,6 @@ public class Extractor {
             assert attributes == null || attributes.length > 0;
         }
 
-        private AnnotationData(@NonNull String name, @Nullable String attributeName,
-                @Nullable String attributeValue) {
-            this(name, attributeName, attributeValue, null, null);
-        }
-
         private AnnotationData(@NonNull String name,
                 @Nullable String attributeName1, @Nullable String attributeValue1,
                 @Nullable String attributeName2, @Nullable String attributeValue2) {
@@ -1406,7 +1460,7 @@ public class Extractor {
                 writer.print("\">");
                 writer.println();
                 //noinspection PointlessBooleanExpression,ConstantConditions
-                if (attributes.length > 1 && SORT_ANNOTATIONS) {
+                if (attributes.length > 1 && sortAnnotations) {
                     // Ensure that the value attribute is written first
                     Arrays.sort(attributes, new Comparator<MemberValuePair>() {
                         private String getName(MemberValuePair pair) {
@@ -1644,16 +1698,62 @@ public class Extractor {
         }
     }
 
+    public enum ClassKind {
+        CLASS,
+        INTERFACE,
+        ENUM,
+        ANNOTATION;
+
+        @NonNull
+        public static ClassKind forType(@Nullable TypeDeclaration declaration) {
+            if (declaration == null) {
+                return CLASS;
+            }
+            switch (TypeDeclaration.kind(declaration.modifiers)) {
+                case TypeDeclaration.INTERFACE_DECL:
+                    return INTERFACE;
+                case TypeDeclaration.ANNOTATION_TYPE_DECL:
+                    return ANNOTATION;
+                case TypeDeclaration.ENUM_DECL:
+                    return ENUM;
+                default:
+                    return CLASS;
+            }
+        }
+
+        public String getKeepType() {
+            // See http://proguard.sourceforge.net/manual/usage.html#classspecification
+            switch (this) {
+                case INTERFACE:
+                    return "interface";
+                case ENUM:
+                    return "enum";
+
+                case ANNOTATION:
+                case CLASS:
+                default:
+                    return "class";
+            }
+        }
+    }
+
     /**
      * An item in the XML file: this corresponds to a method, a field, or a method parameter, and
      * has an associated set of annotations
      */
     private abstract static class Item implements Comparable<Item> {
+        @NonNull public final String containingClass;
+        @NonNull public final ClassKind classKind;
+
+        public Item(@NonNull String containingClass, @NonNull ClassKind classKind) {
+            this.containingClass = containingClass;
+            this.classKind = classKind;
+        }
 
         public final List<AnnotationData> annotations = Lists.newArrayList();
 
         void write(PrintWriter writer) {
-            if (!isValid() || annotations.isEmpty()) {
+            if (annotations.isEmpty()) {
                 return;
             }
             writer.print("  <item name=\"");
@@ -1667,10 +1767,9 @@ public class Extractor {
             writer.println();
         }
 
-        abstract boolean isValid();
-
         abstract boolean isFiltered(@NonNull ApiDatabase database);
 
+        @NonNull
         abstract String getSignature();
 
         @Override
@@ -1687,41 +1786,52 @@ public class Extractor {
 
             return signature1.compareTo(signature2);
         }
+
+        @NonNull
+        public abstract String getKeepRule();
+
+        @NonNull
+        public abstract String getQualifiedClassName();
     }
 
     private static class ClassItem extends Item {
-
-        @NonNull
-        public final String className;
-
-        private ClassItem(@NonNull String containingClass) {
-            this.className = containingClass;
+        private ClassItem(@NonNull String containingClass, @NonNull ClassKind classKind) {
+            super(containingClass, classKind);
         }
 
         @NonNull
-        static ClassItem create(@NonNull String classFqn) {
+        static ClassItem create(@NonNull String classFqn, @NonNull ClassKind kind) {
             classFqn = ApiDatabase.getRawClass(classFqn);
-            return new ClassItem(classFqn);
-        }
-
-        @Override
-        boolean isValid() {
-            return true;
+            return new ClassItem(classFqn, kind);
         }
 
         @Override
         boolean isFiltered(@NonNull ApiDatabase database) {
-            return !database.hasClass(className);
+            return !database.hasClass(containingClass);
         }
 
+        @NonNull
         @Override
         String getSignature() {
-            return escapeXml(className);
+            return escapeXml(containingClass);
+        }
+
+        @NonNull
+        @Override
+        public String getKeepRule() {
+            // See http://proguard.sourceforge.net/manual/usage.html#classspecification
+            return "-keep " + classKind.getKeepType() + " " + containingClass + "\n";
+        }
+
+        @NonNull
+        @Override
+        public String getQualifiedClassName() {
+            return containingClass;
         }
 
         @Override
         public String toString() {
-            return "Class " + className;
+            return "Class " + containingClass;
         }
 
         @Override
@@ -1735,12 +1845,12 @@ public class Extractor {
 
             ClassItem that = (ClassItem) o;
 
-            return className.equals(that.className);
+            return containingClass.equals(that.containingClass);
         }
 
         @Override
         public int hashCode() {
-            return className.hashCode();
+            return containingClass.hashCode();
         }
     }
 
@@ -1749,23 +1859,30 @@ public class Extractor {
         @NonNull
         public final String fieldName;
 
-        @NonNull
-        public final String containingClass;
+        @Nullable
+        public final String fieldType;
 
-        private FieldItem(@NonNull String containingClass, @NonNull String fieldName) {
-            this.containingClass = containingClass;
+        private FieldItem(@NonNull String containingClass, @NonNull ClassKind classKind,
+                @NonNull String fieldName, @Nullable String fieldType) {
+            super(containingClass, classKind);
             this.fieldName = fieldName;
+            this.fieldType = fieldType;
         }
 
         @Nullable
-        static FieldItem create(String classFqn, FieldBinding field) {
+        static FieldItem create(String classFqn, @NonNull ClassKind classKind, FieldBinding field) {
             String name = new String(field.name);
-            return classFqn != null ? new FieldItem(classFqn, name) : null;
+            String type = getFieldType(field);
+            return classFqn != null ? new FieldItem(classFqn, classKind, name, type) : null;
         }
 
-        @Override
-        boolean isValid() {
-            return true;
+        @Nullable
+        private static String getFieldType(FieldBinding binding) {
+            if (binding.type != null) {
+                return new String(binding.type.readableName());
+            }
+
+            return null;
         }
 
         @Override
@@ -1773,9 +1890,27 @@ public class Extractor {
             return !database.hasField(containingClass, fieldName);
         }
 
+        @NonNull
         @Override
         String getSignature() {
             return escapeXml(containingClass) + ' ' + fieldName;
+        }
+
+        @NonNull
+        @Override
+        public String getKeepRule() {
+            if (fieldType == null) {
+                return ""; // imported item; these can't have keep rules
+            }
+            // See http://proguard.sourceforge.net/manual/usage.html#classspecification
+            return "-keep " + classKind.getKeepType() + " " + containingClass +
+                    " {\n    " + fieldType + " " + fieldName + "\n}\n";
+        }
+
+        @NonNull
+        @Override
+        public String getQualifiedClassName() {
+            return containingClass;
         }
 
         @Override
@@ -1812,9 +1947,6 @@ public class Extractor {
         public final String methodName;
 
         @NonNull
-        public final String containingClass;
-
-        @NonNull
         public final String parameterList;
 
         @Nullable
@@ -1822,9 +1954,14 @@ public class Extractor {
 
         public final boolean isConstructor;
 
-        private MethodItem(@NonNull String containingClass, @Nullable String returnType,
-                @NonNull String methodName, @NonNull String parameterList, boolean isConstructor) {
-            this.containingClass = containingClass;
+        private MethodItem(
+                @NonNull String containingClass,
+                @NonNull ClassKind classKind,
+                @Nullable String returnType,
+                @NonNull String methodName,
+                @NonNull String parameterList,
+                boolean isConstructor) {
+            super(containingClass, classKind);
             this.returnType = returnType;
             this.methodName = methodName;
             this.parameterList = parameterList;
@@ -1838,6 +1975,7 @@ public class Extractor {
 
         @Nullable
         static MethodItem create(@Nullable String classFqn,
+                @NonNull ClassKind classKind,
                 @NonNull AbstractMethodDeclaration declaration,
                 @Nullable MethodBinding binding) {
             if (classFqn == null || binding == null) {
@@ -1857,16 +1995,12 @@ public class Extractor {
                 classFqn = ApiDatabase.getRawClass(classFqn);
                 methodName = ApiDatabase.getRawMethod(methodName);
             }
-            return new MethodItem(classFqn, returnType,
+            return new MethodItem(classFqn, classKind, returnType,
                     methodName, parameterList,
                     binding.isConstructor());
         }
 
-        @Override
-        boolean isValid() {
-            return true;
-        }
-
+        @NonNull
         @Override
         String getSignature() {
             StringBuilder sb = new StringBuilder(100);
@@ -1949,6 +2083,38 @@ public class Extractor {
         public String toString() {
             return "Method " + containingClass + "#" + methodName;
         }
+
+        @NonNull
+        @Override
+        public String getKeepRule() {
+            // See http://proguard.sourceforge.net/manual/usage.html#classspecification
+            StringBuilder sb = new StringBuilder();
+            sb.append("-keep ");
+            sb.append(classKind.getKeepType());
+            sb.append(" ");
+            sb.append(containingClass);
+            sb.append(" {\n");
+            sb.append("    ");
+            if (isConstructor) {
+                sb.append("<init>");
+            } else {
+                sb.append(returnType);
+                sb.append(" ");
+                sb.append(methodName);
+            }
+            sb.append("(");
+            sb.append(parameterList); // TODO: Strip generics?
+            sb.append(")\n");
+            sb.append("}\n");
+
+            return sb.toString();
+        }
+
+        @NonNull
+        @Override
+        public String getQualifiedClassName() {
+            return containingClass;
+        }
     }
 
     @Nullable
@@ -2004,18 +2170,27 @@ public class Extractor {
 
     private static class ParameterItem extends MethodItem {
         @NonNull
-        public String argIndex;
+        public final String argIndex;
 
-        private ParameterItem(@NonNull String containingClass, @Nullable String returnType,
-                @NonNull String methodName, @NonNull String parameterList, boolean isConstructor,
+        private ParameterItem(
+                @NonNull String containingClass,
+                @NonNull ClassKind classKind,
+                @Nullable String returnType,
+                @NonNull String methodName,
+                @NonNull String parameterList,
+                boolean isConstructor,
                 @NonNull String argIndex) {
-            super(containingClass, returnType, methodName, parameterList, isConstructor);
+            super(containingClass, classKind, returnType, methodName, parameterList, isConstructor);
             this.argIndex = argIndex;
         }
 
         @Nullable
-        static ParameterItem create(AbstractMethodDeclaration methodDeclaration, Argument argument,
-                String classFqn, MethodBinding methodBinding,
+        static ParameterItem create(
+                AbstractMethodDeclaration methodDeclaration,
+                Argument argument,
+                String classFqn,
+                ClassKind classKind,
+                MethodBinding methodBinding,
                 LocalVariableBinding parameterBinding) {
             if (classFqn == null || methodBinding == null || parameterBinding == null) {
                 return null;
@@ -2052,11 +2227,12 @@ public class Extractor {
                 classFqn = ApiDatabase.getRawClass(classFqn);
                 methodName = ApiDatabase.getRawMethod(methodName);
             }
-            return new ParameterItem(classFqn, returnType, methodName, parameterList,
+            return new ParameterItem(classFqn, classKind, returnType, methodName, parameterList,
                     methodBinding.isConstructor(), argNum);
         }
 
 
+        @NonNull
         @Override
         String getSignature() {
             return super.getSignature() + ' ' + argIndex;
@@ -2091,9 +2267,15 @@ public class Extractor {
         public String toString() {
             return "Parameter #" + argIndex + " in " + super.toString();
         }
+
+        @NonNull
+        @Override
+        public String getKeepRule() {
+            return "";
+        }
     }
 
-    class AnnotationVisitor extends ASTVisitor {
+    private class AnnotationVisitor extends ASTVisitor {
         @Override
         public boolean visit(Argument argument, BlockScope scope) {
             Annotation[] annotations = argument.annotations;
@@ -2101,9 +2283,14 @@ public class Extractor {
                 ReferenceContext referenceContext = scope.referenceContext();
                 if (referenceContext instanceof AbstractMethodDeclaration) {
                     MethodBinding binding = ((AbstractMethodDeclaration) referenceContext).binding;
-                    String fqn = getFqn(scope);
+                    ClassScope classScope = findClassScope(scope);
+                    if (classScope == null) {
+                        return false;
+                    }
+                    String fqn = getFqn(classScope);
+                    ClassKind kind = ClassKind.forType(classScope.referenceContext);
                     Item item = ParameterItem.create(
-                            (AbstractMethodDeclaration) referenceContext, argument, fqn,
+                            (AbstractMethodDeclaration) referenceContext, argument, fqn, kind,
                             binding, argument.binding);
                     if (item != null) {
                         addItem(fqn, item);
@@ -2124,7 +2311,8 @@ public class Extractor {
                 }
 
                 String fqn = getFqn(scope);
-                Item item = MethodItem.create(fqn, constructorDeclaration, constructorBinding);
+                ClassKind kind = ClassKind.forType(scope.referenceContext);
+                Item item = MethodItem.create(fqn, kind, constructorDeclaration, constructorBinding);
                 if (item != null) {
                     addItem(fqn, item);
                     addAnnotations(annotations, item);
@@ -2150,8 +2338,11 @@ public class Extractor {
                 }
 
                 String fqn = getFqn(scope);
-                Item item = FieldItem.create(fqn, fieldBinding);
-                if (item != null) {
+                ClassKind kind = scope.referenceContext instanceof TypeDeclaration ?
+                        ClassKind.forType((TypeDeclaration)scope.referenceContext) :
+                        ClassKind.CLASS;
+                Item item = FieldItem.create(fqn, kind, fieldBinding);
+                if (item != null && fqn != null) {
                     addItem(fqn, item);
                     addAnnotations(annotations, item);
                 }
@@ -2167,9 +2358,9 @@ public class Extractor {
                 if (methodBinding == null) {
                     return false;
                 }
-
                 String fqn = getFqn(scope);
-                MethodItem item = MethodItem.create(fqn, methodDeclaration,
+                ClassKind kind = ClassKind.forType(scope.referenceContext);
+                MethodItem item = MethodItem.create(fqn, kind, methodDeclaration,
                         methodDeclaration.binding);
                 if (item != null) {
                     addItem(fqn, item);
@@ -2217,7 +2408,7 @@ public class Extractor {
                 if (fqn == null) {
                     fqn = new String(localTypeDeclaration.binding.readableName());
                 }
-                Item item = ClassItem.create(fqn);
+                Item item = ClassItem.create(fqn, ClassKind.forType(localTypeDeclaration));
                 addItem(fqn, item);
                 addAnnotations(annotations, item);
 
@@ -2230,7 +2421,7 @@ public class Extractor {
             Annotation[] annotations = memberTypeDeclaration.annotations;
             if (hasRelevantAnnotations(annotations)) {
                 SourceTypeBinding binding = memberTypeDeclaration.binding;
-                if (binding == null || !(binding instanceof MemberTypeBinding)) {
+                if (!(binding instanceof MemberTypeBinding)) {
                     return true;
                 }
                 if (binding.isAnnotationType() || binding.isAnonymousType()) {
@@ -2238,7 +2429,7 @@ public class Extractor {
                 }
 
                 String fqn = new String(memberTypeDeclaration.binding.readableName());
-                Item item = ClassItem.create(fqn);
+                Item item = ClassItem.create(fqn, ClassKind.forType(memberTypeDeclaration));
                 addItem(fqn, item);
                 addAnnotations(annotations, item);
             }
@@ -2254,7 +2445,7 @@ public class Extractor {
                     return true;
                 }
                 String fqn = new String(typeDeclaration.binding.readableName());
-                Item item = ClassItem.create(fqn);
+                Item item = ClassItem.create(fqn, ClassKind.forType(typeDeclaration));
                 addItem(fqn, item);
                 addAnnotations(annotations, item);
 
