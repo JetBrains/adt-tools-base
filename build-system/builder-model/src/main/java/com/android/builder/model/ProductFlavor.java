@@ -149,7 +149,7 @@ public interface ProductFlavor extends BaseConfig {
     /**
      * Returns the arguments for the test instrumentation runner.
      */
-    @Nullable
+    @NonNull
     Map<String, String> getTestInstrumentationRunnerArguments();
 
     /**
