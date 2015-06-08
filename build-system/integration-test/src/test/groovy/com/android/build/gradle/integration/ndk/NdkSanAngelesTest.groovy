@@ -49,6 +49,7 @@ class NdkSanAngelesTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
             .fromTestProject("ndkSanAngeles")
+            .addGradleProperties("android.useDeprecatedNdk=true")
             .create()
 
     static AndroidProject model

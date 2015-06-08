@@ -80,6 +80,7 @@ public class HelloJniTest extends ActivityInstrumentationTestCase<HelloJni> {
     @ClassRule
     public static GradleTestProject project = GradleTestProject.builder()
             .fromTestApp(app)
+            .addGradleProperties("android.useDeprecatedNdk=true")
             .create()
 
 
