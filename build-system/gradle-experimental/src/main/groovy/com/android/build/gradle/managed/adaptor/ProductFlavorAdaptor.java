@@ -22,11 +22,13 @@ import com.android.build.gradle.internal.core.NdkConfig;
 import com.android.build.gradle.internal.dsl.CoreProductFlavor;
 import com.android.build.gradle.managed.ProductFlavor;
 import com.android.builder.core.BuilderConstants;
+import com.android.builder.internal.ClassFieldImpl;
 import com.android.builder.model.ApiVersion;
 import com.android.builder.model.ClassField;
 import com.android.builder.model.SigningConfig;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
+import com.google.common.base.Objects;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 
 import java.io.File;
@@ -61,36 +63,53 @@ public class ProductFlavorAdaptor implements CoreProductFlavor {
     @NonNull
     @Override
     public Map<String, ClassField> getBuildConfigFields() {
-        // TODO: To be implemented
-        return Maps.newHashMap();
+        ImmutableMap.Builder<String, ClassField> builder = ImmutableMap.builder();
+        for (com.android.build.gradle.managed.ClassField cf : productFlavor.getBuildConfigFields()) {
+            builder.put(
+                    cf.getName(),
+                    new ClassFieldImpl(
+                            cf.getType(),
+                            cf.getName(),
+                            cf.getValue(),
+                            Objects.firstNonNull(cf.getAnnotations(), ImmutableSet.<String>of()),
+                            Objects.firstNonNull(cf.getDocumentation(), "")));
+        }
+        return builder.build();
     }
 
     @NonNull
     @Override
     public Map<String, ClassField> getResValues() {
-        // TODO: To be implemented
-        return Maps.newHashMap();
+        ImmutableMap.Builder<String, ClassField> builder = ImmutableMap.builder();
+        for (com.android.build.gradle.managed.ClassField cf : productFlavor.getResValues()) {
+            builder.put(
+                    cf.getName(),
+                    new ClassFieldImpl(
+                            cf.getType(),
+                            cf.getName(),
+                            cf.getValue(),
+                            Objects.firstNonNull(cf.getAnnotations(), ImmutableSet.<String>of()),
+                            Objects.firstNonNull(cf.getDocumentation(), "")));
+        }
+        return builder.build();
     }
 
     @NonNull
     @Override
     public Collection<File> getProguardFiles() {
-        // TODO: To be implemented
-        return Lists.newArrayList();
+        return productFlavor.getProguardFiles();
     }
 
     @NonNull
     @Override
     public Collection<File> getConsumerProguardFiles() {
-        // TODO: To be implemented
-        return Lists.newArrayList();
+        return productFlavor.getConsumerProguardFiles();
     }
 
     @NonNull
     @Override
     public Collection<File> getTestProguardFiles() {
-        // TODO: To be implemented
-        return Lists.newArrayList();
+        return productFlavor.getTestProguardFiles();
     }
 
     @NonNull
@@ -210,8 +229,7 @@ public class ProductFlavorAdaptor implements CoreProductFlavor {
     @NonNull
     @Override
     public Collection<String> getResourceConfigurations() {
-        // TODO: To be implemented.
-        return Lists.newArrayList();
+        return productFlavor.getResourceConfigurations();
     }
 
     @Nullable
@@ -235,7 +253,6 @@ public class ProductFlavorAdaptor implements CoreProductFlavor {
     @NonNull
     @Override
     public List<File> getJarJarRuleFiles() {
-        // TODO: To be implemented
-        return ImmutableList.of();
+        return productFlavor.getJarJarRuleFiles();
     }
 }

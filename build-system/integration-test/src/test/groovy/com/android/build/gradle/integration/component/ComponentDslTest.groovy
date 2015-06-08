@@ -44,6 +44,7 @@ public class ComponentDslTest {
 
     @Before
     public void setUp() {
+        project.file("proguard.txt").createNewFile()
         project.buildFile << """
 apply plugin: "com.android.model.application"
 
@@ -64,7 +65,14 @@ model {
         }
     }
     android.productFlavors {
-        create("f1")
+        create("f1") {
+            proguardFiles += file("proguard.txt")
+            buildConfigFields.create {
+                type = "String"
+                name = "foo"
+                value = "\\"bar\\""
+            }
+        }
         create("f2")
     }
 }
