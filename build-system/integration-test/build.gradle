@@ -101,7 +101,6 @@ task performanceTest(type: Test) {
 test.dependsOn ':publishLocal'
 connectedIntegrationTest.dependsOn ':publishLocal'
 performanceTest.dependsOn ':publishLocal'
-check.dependsOn performanceTest
 
 jacocoTestReport {
     sourceSets project(':base:gradle').sourceSets.main
