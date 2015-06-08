@@ -22,42 +22,63 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
+import com.google.gson.TypeAdapter;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonWriter;
 
+import java.io.IOException;
 import java.lang.reflect.Type;
 
-public class SourceFilePositionJsonSerializer implements JsonSerializer<SourceFilePosition>,
-        JsonDeserializer<SourceFilePosition> {
+public class SourceFilePositionJsonSerializer extends TypeAdapter<SourceFilePosition> {
 
     private static final String POSITION = "position";
 
     private static final String FILE = "file";
 
-    @Override
-    public SourceFilePosition deserialize(JsonElement json, Type typeOfT,
-            JsonDeserializationContext context) {
-        JsonObject object = json.getAsJsonObject();
-        SourceFile file = object.has(FILE) ?
-                context.<SourceFile>deserialize(object.get(FILE), SourceFile.class) :
-                SourceFile.UNKNOWN;
-        SourcePosition position = object.has(POSITION) ?
-                context.<SourcePosition>deserialize(object.get(POSITION), SourcePosition.class) :
-                SourcePosition.UNKNOWN;
+    private final SourceFileJsonTypeAdapter mSourceFileJsonTypeAdapter;
+    private final SourcePositionJsonTypeAdapter mSourcePositionJsonTypeAdapter;
 
+    public SourceFilePositionJsonSerializer() {
+        mSourcePositionJsonTypeAdapter = new SourcePositionJsonTypeAdapter();
+        mSourceFileJsonTypeAdapter = new SourceFileJsonTypeAdapter();
+    }
+
+    @Override
+    public SourceFilePosition read(JsonReader in) throws IOException {
+        in.beginObject();
+        SourceFile file = SourceFile.UNKNOWN;
+        SourcePosition position = SourcePosition.UNKNOWN;
+        while(in.hasNext()) {
+            String name = in.nextName();
+            if (name.equals(FILE)) {
+                file = mSourceFileJsonTypeAdapter.read(in);
+            } else if (name.equals(POSITION)) {
+                position = mSourcePositionJsonTypeAdapter.read(in);
+            } else {
+                in.skipValue();
+            }
+        }
+        in.endObject();
         return new SourceFilePosition(file, position);
     }
 
     @Override
-    public JsonElement serialize(SourceFilePosition src, Type typeOfSrc,
-            JsonSerializationContext context) {
-        JsonObject object = new JsonObject();
+    public void write(JsonWriter out, SourceFilePosition src) throws IOException {
+        out.beginObject();
         SourceFile sourceFile = src.getFile();
         if (!sourceFile.equals(SourceFile.UNKNOWN)) {
-            object.add(FILE, context.serialize(sourceFile));
+            out.name(FILE);
+            mSourceFileJsonTypeAdapter.write(out, sourceFile);
         }
         SourcePosition position = src.getPosition();
         if (!position.equals(SourcePosition.UNKNOWN)) {
-            object.add(POSITION, context.serialize(position));
+            out.name(POSITION);
+            mSourcePositionJsonTypeAdapter.write(out, position);
         }
-        return object;
+        out.endObject();
+    }
+
+    /* package */ SourcePositionJsonTypeAdapter getSourcePositionTypeAdapter() {
+        return mSourcePositionJsonTypeAdapter;
     }
 }
