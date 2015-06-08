@@ -157,8 +157,7 @@ public class TestRunResult implements ITestRunListener {
      * Return total number of tests in a failure state (failed, assumption failure)
      */
     public int getNumAllFailedTests() {
-        return getNumTestsInState(TestStatus.FAILURE) +
-                getNumTestsInState(TestStatus.ASSUMPTION_FAILURE);
+        return getNumTestsInState(TestStatus.FAILURE);
     }
 
     /**
