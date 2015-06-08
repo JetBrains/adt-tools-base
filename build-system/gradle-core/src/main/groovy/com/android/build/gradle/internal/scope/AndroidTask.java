@@ -28,7 +28,7 @@ import java.util.List;
 
 /**
  * Handle for a {@link Task} that may not yet been created.
- * For tasks created using CollectionBuilder<Task>, they are usually not actually created until
+ * For tasks created using ModelMap<Task>, they are usually not actually created until
  * Gradle decides those tasks needs to be executed.  This class contains information about those
  * tasks and allow dependencies to be specified.
  */
