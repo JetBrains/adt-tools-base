@@ -50,6 +50,7 @@ configure([test, testPrebuilts]) {
     useJUnit {
         excludeCategories "com.android.build.gradle.integration.common.category.DeviceTests"
     }
+    exclude "com/android/build/gradle/integration/performance/**"
 }
 
 task connectedIntegrationTest(type: Test)
@@ -78,6 +79,7 @@ configure([connectedIntegrationTest, connectedIntegrationTestPrebuilts]) {
     useJUnit {
         includeCategories "com.android.build.gradle.integration.common.category.DeviceTests"
     }
+    exclude "com/android/build/gradle/integration/performance/**"
 }
 
 task performanceTest(type: Test) {
