@@ -66,9 +66,9 @@ public class TopologicalSort {
         private final List<Instance> mPostorder = Lists.newArrayList();
 
         @Override
-        public void visitLater(@NonNull Instance instance) {
-            if (!mSeen.contains(instance.getId())) {
-                mStack.push(instance);
+        public void visitLater(Instance parent, @NonNull Instance child) {
+            if (!mSeen.contains(child.getId())) {
+                mStack.push(child);
             }
         }
 

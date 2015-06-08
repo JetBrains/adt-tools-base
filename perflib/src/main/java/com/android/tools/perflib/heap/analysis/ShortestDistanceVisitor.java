@@ -18,7 +18,6 @@ package com.android.tools.perflib.heap.analysis;
 import com.android.annotations.NonNull;
 import com.android.tools.perflib.heap.Instance;
 import com.android.tools.perflib.heap.NonRecursiveVisitor;
-import gnu.trove.TLongHashSet;
 
 import java.util.Comparator;
 import java.util.PriorityQueue;
@@ -30,17 +29,16 @@ public class ShortestDistanceVisitor extends NonRecursiveVisitor {
             return o1.getDistanceToGcRoot() - o2.getDistanceToGcRoot();
         }
     });
-    private TLongHashSet mExistsInQueue = new TLongHashSet();
     private Instance mPreviousInstance = null;
     private int mVisitDistance = 0;
 
     @Override
-    public void visitLater(@NonNull Instance instance) {
-        if (mVisitDistance < instance.getDistanceToGcRoot()) {
-            instance.setDistanceToGcRoot(mVisitDistance);
-            instance.setNextInstanceToGcRoot(mPreviousInstance);
-            mExistsInQueue.add(instance.getId());
-            mPriorityQueue.add(instance);
+    public void visitLater(Instance parent, @NonNull Instance child) {
+        if (mVisitDistance < child.getDistanceToGcRoot() &&
+                (parent == null || !parent.getIsSoftReference() || child.getIsSoftReference())) {
+            child.setDistanceToGcRoot(mVisitDistance);
+            child.setNextInstanceToGcRoot(mPreviousInstance);
+            mPriorityQueue.add(child);
         }
     }
 
@@ -56,10 +54,9 @@ public class ShortestDistanceVisitor extends NonRecursiveVisitor {
 
         while (!mPriorityQueue.isEmpty()) {
             Instance node = mPriorityQueue.poll();
-            mExistsInQueue.remove(node.getId());
             mVisitDistance = node.getDistanceToGcRoot() + 1;
             mPreviousInstance = node;
             node.accept(this);
-          }
+        }
     }
 }
