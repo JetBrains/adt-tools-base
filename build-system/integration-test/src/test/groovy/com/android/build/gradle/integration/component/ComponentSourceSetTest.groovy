@@ -42,10 +42,10 @@ class ComponentSourceSetTest {
         TestSourceFile cSource = app.getFile("hello-jni.c");
         app.removeFile(cSource);
         app.addFile(
-                new TestSourceFile("src/release/c", cSource.name, cSource.content))
+                new TestSourceFile("src/release/jni", cSource.name, cSource.content))
         app.addFile(
-                new TestSourceFile("src/flavor1/c/hello-jni.c", cSource.name, cSource.content))
-        app.addFile(new TestSourceFile("src/flavor2Debug/c/hello-jni.c", cSource.name,
+                new TestSourceFile("src/flavor1/jni/hello-jni.c", cSource.name, cSource.content))
+        app.addFile(new TestSourceFile("src/flavor2Debug/jni/hello-jni.c", cSource.name,
                 cSource.content))
     }
 
@@ -76,9 +76,9 @@ model {
     }
     android.sources {
         flavor3 {
-            c {
+            jni {
                 source {
-                    srcDir 'src/flavor1/c'
+                    srcDir 'src/flavor1/jni'
                 }
             }
         }
