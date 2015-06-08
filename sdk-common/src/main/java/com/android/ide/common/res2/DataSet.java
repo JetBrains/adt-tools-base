@@ -18,6 +18,7 @@ package com.android.ide.common.res2;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.ide.common.blame.Message;
 import com.android.utils.ILogger;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ArrayListMultimap;
@@ -229,14 +230,20 @@ abstract class DataSet<I extends DataItem<F>, F extends DataFile<I>> implements 
      * @throws MergingException if something goes wrong
      */
     public void loadFromFiles(ILogger logger) throws MergingException {
+        List<Message> errors = Lists.newArrayList();
         for (File file : mSourceFiles) {
             if (file.isDirectory()) {
-                readSourceFolder(file, logger);
+                try {
+                    readSourceFolder(file, logger);
+                } catch (MergingException e) {
+                    errors.addAll(e.getMessages());
+                }
 
             } else if (file.isFile()) {
                 // TODO support resource bundle
             }
         }
+        MergingException.throwIfNonEmpty(errors);
         checkItems();
     }
 
