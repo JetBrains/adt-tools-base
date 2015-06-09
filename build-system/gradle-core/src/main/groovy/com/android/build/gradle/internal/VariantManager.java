@@ -18,6 +18,7 @@ package com.android.build.gradle.internal;
 
 import static com.android.builder.core.BuilderConstants.LINT;
 import static com.android.builder.core.VariantType.ANDROID_TEST;
+import static com.android.builder.core.VariantType.LIBRARY;
 import static com.android.builder.core.VariantType.UNIT_TEST;
 import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_KEY_ALIAS;
 import static com.android.builder.model.AndroidProject.PROPERTY_SIGNING_KEY_PASSWORD;
@@ -481,6 +482,13 @@ public class VariantManager implements VariantModel {
                 buildTypeData.getSourceSet(),
                 variantFactory.getVariantConfigurationType(),
                 signingOverride);
+
+        if (variantConfig.getType() == LIBRARY && variantConfig.getUseJack()) {
+            project.getLogger().warn(
+                    "{}, {}: Jack compiler is not supported in library projects, falling back to javac.",
+                    project.getPath(),
+                    variantConfig.getFullName());
+        }
 
         // sourceSetContainer in case we are creating variant specific sourceSets.
         NamedDomainObjectContainer<AndroidSourceSet> sourceSetsContainer = extension
