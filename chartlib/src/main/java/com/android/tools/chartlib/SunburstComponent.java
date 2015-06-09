@@ -241,9 +241,13 @@ public class SunburstComponent extends AnimatedComponent {
             }
         }
         if (myZoom != null && myZoom.node == null) {
-            myZoom = null;
-            myZoomLevel = -1;
+            resetZoom();
         }
+    }
+
+    public void resetZoom() {
+        myZoom = null;
+        myZoomLevel = -1;
     }
 
     private boolean updateSlice(Slice slice, int level, boolean zoom) {
