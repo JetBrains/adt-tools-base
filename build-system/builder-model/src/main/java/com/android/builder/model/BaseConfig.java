@@ -49,28 +49,28 @@ public interface BaseConfig {
     Map<String, ClassField> getResValues();
 
     /**
-     * Returns the list of proguard rule files.
+     * Returns the collection of proguard rule files.
      *
      * <p>These files are only applied to the production code.
      *
-     * @return a non-null list of files.
+     * @return a non-null collection of files.
      * @see #getTestProguardFiles()
      */
     @NonNull
     Collection<File> getProguardFiles();
 
     /**
-     * Returns the list of proguard rule files for consumers of the library to use.
+     * Returns the collection of proguard rule files for consumers of the library to use.
      *
-     * @return a non-null list of files.
+     * @return a non-null collection of files.
      */
     @NonNull
     Collection<File> getConsumerProguardFiles();
 
     /**
-     * Returns the list of proguard rule files to use for the test APK.
+     * Returns the collection of proguard rule files to use for the test APK.
      *
-     * @return a non-null list of files.
+     * @return a non-null collection of files.
      */
     @NonNull
     Collection<File> getTestProguardFiles();

@@ -37,10 +37,10 @@ import com.android.build.gradle.internal.process.GradleProcessExecutor;
 import com.android.build.gradle.internal.profile.RecordingBuildListener;
 import com.android.build.gradle.internal.tasks.DependencyReportTask;
 import com.android.build.gradle.internal.tasks.SigningReportTask;
-import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.VariantFactory;
 import com.android.build.gradle.managed.AndroidConfig;
 import com.android.build.gradle.managed.BuildType;
+import com.android.build.gradle.managed.ClassField;
 import com.android.build.gradle.managed.NdkConfig;
 import com.android.build.gradle.managed.ProductFlavor;
 import com.android.build.gradle.managed.SigningConfig;
@@ -61,7 +61,8 @@ import com.android.ide.common.process.LoggedProcessOutputHandler;
 import com.android.ide.common.signing.KeystoreHelper;
 import com.android.prefs.AndroidLocation;
 import com.android.utils.ILogger;
-import com.google.common.collect.Maps;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 
 import org.gradle.api.Action;
 import org.gradle.api.Plugin;
@@ -90,7 +91,6 @@ import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
 import java.io.File;
 import java.io.IOException;
 import java.security.KeyStore;
-import java.util.Map;
 
 import javax.inject.Inject;
 
@@ -318,6 +318,45 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
             buildType.setIsEmbedMicroApp(true);
             buildType.setUseJack(false);
             buildType.setShrinkResources(false);
+            buildType.setProguardFiles(Sets.<File>newHashSet());
+            buildType.setConsumerProguardFiles(Sets.<File>newHashSet());
+            buildType.setTestProguardFiles(Sets.<File>newHashSet());
+        }
+
+        @Mutate
+        public void initDefaultConfig(@Path("android.defaultConfig") ProductFlavor defaultConfig) {
+            initProductFlavor(defaultConfig);
+        }
+
+        @Mutate
+        public void initProductFlavors(
+                @Path("android.productFlavors") final ModelMap<ProductFlavor> productFlavors) {
+            productFlavors.beforeEach(new Action<ProductFlavor>() {
+                @Override
+                public void execute(ProductFlavor productFlavor) {
+                    initProductFlavor(productFlavor);
+                }
+            });
+        }
+
+        private void initProductFlavor(ProductFlavor productFlavor) {
+            productFlavor.setProguardFiles(Sets.<File>newHashSet());
+            productFlavor.setConsumerProguardFiles(Sets.<File>newHashSet());
+            productFlavor.setTestProguardFiles(Sets.<File>newHashSet());
+            productFlavor.setResourceConfigurations(Sets.<String>newHashSet());
+            productFlavor.setJarJarRuleFiles(Lists.<File>newArrayList());
+            productFlavor.getBuildConfigFields().beforeEach(new Action<ClassField>() {
+                @Override
+                public void execute(ClassField classField) {
+                    classField.setAnnotations(Sets.<String>newHashSet());
+                }
+            });
+            productFlavor.getResValues().beforeEach(new Action<ClassField>() {
+                @Override
+                public void execute(ClassField classField) {
+                    classField.setAnnotations(Sets.<String>newHashSet());
+                }
+            });
         }
 
         @Mutate
