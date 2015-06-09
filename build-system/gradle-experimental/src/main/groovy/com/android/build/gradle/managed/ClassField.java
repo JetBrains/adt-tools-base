@@ -17,6 +17,10 @@
 package com.android.build.gradle.managed;
 
 import org.gradle.model.Managed;
+import org.gradle.model.ModelSet;
+import org.gradle.model.Unmanaged;
+
+import java.util.Set;
 
 /**
  * A Managed ClassField.
@@ -36,8 +40,7 @@ public interface ClassField {
     String getDocumentation();
     void setDocumentation(String documentation);
 
-    // TODO: Implement this.
-    //@Override
-    //ModelSet<String> getAnnotations();
-    //void setAnnotations(ModelSet<String> annotations);
+    @Unmanaged
+    Set<String> getAnnotations();
+    void setAnnotations(Set<String> annotations);
 }

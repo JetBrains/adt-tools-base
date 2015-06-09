@@ -16,27 +16,83 @@
 
 package com.android.build.gradle.managed;
 
+import com.android.builder.model.AndroidArtifact;
+
 import org.gradle.api.Named;
 import org.gradle.model.Managed;
 import org.gradle.model.ModelSet;
+import org.gradle.model.Unmanaged;
+
+import java.io.File;
+import java.util.List;
+import java.util.Set;
 
 /**
  * A Managed build type.
+ *
+ * TODO: Convert Unmanaged Collection to Managed type when Gradle provides ModelSet for basic class.
  */
 @Managed
 public interface BuildType extends Named {
 
+    /**
+     * Map of Build Config Fields where the key is the field name.
+     *
+     * @return a non-null map of class fields (possibly empty).
+     */
     ModelSet<ClassField> getBuildConfigFields();
 
+    /**
+     * Map of generated res values where the key is the res name.
+     *
+     * @return a non-null map of class fields (possibly empty).
+     */
     ModelSet<ClassField> getResValues();
 
+    /**
+     * Returns the collection of proguard rule files.
+     *
+     * <p>These files are only applied to the production code.
+     *
+     * @return a non-null collection of files.
+     * @see #getTestProguardFiles()
+     */
+    @Unmanaged
+    Set<File> getProguardFiles();
+    void setProguardFiles(Set<File> files);
+
+    /**
+     * Returns the collection of proguard rule files for consumers of the library to use.
+     *
+     * @return a non-null collection of files.
+     */
+    @Unmanaged
+    Set<File> getConsumerProguardFiles();
+    void setConsumerProguardFiles(Set<File> files);
+
+    /**
+     * Returns the collection of proguard rule files to use for the test APK.
+     *
+     * @return a non-null collection of files.
+     */
+    @Unmanaged
+    Set<File> getTestProguardFiles();
+    void setTestProguardFiles(Set<File> files);
+
+    /**
+     * Returns the map of key value pairs for placeholder substitution in the android manifest file.
+     *
+     * This map will be used by the manifest merger.
+     * @return the map of key value pairs.
+     */
     // TODO: Add the commented fields.
-    //ModelSet<String> getProguardFiles();
-
-    //ModelSet<String> getConsumerProguardFiles();
-
     //Map<String, Object> getManifestPlaceholders();
 
+    /**
+     * Returns whether multi-dex is enabled.
+     *
+     * This can be null if the flag is not set, in which case the default value is used.
+     */
     Boolean getMultiDexEnabled();
     void setMultiDexEnabled(Boolean multiDexEnabled);
 
@@ -46,39 +102,111 @@ public interface BuildType extends Named {
     String getMultiDexKeepProguard();
     void setMultiDexKeepProguard(String multiDexKeepProguard);
 
+    /**
+     * Returns the optional jarjar rule files, or empty if jarjar should be skipped.
+     *
+     * <p>If more than one file is provided, the rule files will be merged in order with last one
+     * win in case of rule redefinition.
+     *
+     * <p>Can only be used with Jack toolchain.
+     *
+     * @return the optional jarjar rule file.
+     */
+    @Unmanaged
+    List<File> getJarJarRuleFiles();
+    void setJarJarRuleFiles(List<File> jarJarRuleFiles);
+
+    /**
+     * Returns whether the build type is configured to generate a debuggable apk.
+     *
+     * @return true if the apk is debuggable
+     */
     Boolean getIsDebuggable();
     void setIsDebuggable(Boolean isDebuggable);
 
+    /**
+     * Returns whether the build type is configured to be build with support for code coverage.
+     *
+     * @return true if code coverage is enabled.
+     */
     Boolean getIsTestCoverageEnabled();
     void setIsTestCoverageEnabled(Boolean isTestCoverageEnabled);
 
+    /**
+     * Returns whether the build type is configured to be build with support for pseudolocales.
+     *
+     * @return true if code coverage is enabled.
+     */
     Boolean getIsPseudoLocalesEnabled();
     void setIsPseudoLocalesEnabled(Boolean isPseudoLocalesEnabled);
 
+    /**
+     * Returns whether the build type is configured to generate an apk with debuggable native code.
+     *
+     * @return true if the apk is debuggable
+     */
     Boolean getIsJniDebuggable();
     void setIsJniDebuggable(Boolean isJniDebuggable);
 
+    /**
+     * Returns whether the build type is configured to generate an apk with debuggable
+     * renderscript code.
+     *
+     * @return true if the apk is debuggable
+     */
     Boolean getIsRenderscriptDebuggable();
     void setIsRenderscriptDebuggable(Boolean isRenderscriptDebuggable);
 
+    /**
+     * Returns the optimization level of the renderscript compilation.
+     *
+     * @return the optimization level.
+     */
     Integer getRenderscriptOptimLevel();
     void setRenderscriptOptimLevel(Integer renderscriptOptimLevel);
 
+    /**
+     * Returns the application id suffix applied to this build type.
+     * To get the final application id, use {@link AndroidArtifact#getApplicationId()}.
+     *
+     * @return the application id
+     */
     String getApplicationIdSuffix();
     void setApplicationIdSuffix(String applicationIdSuffix);
 
+    /**
+     * Returns the version name suffix.
+     *
+     * @return the version name suffix.
+     */
     String getVersionNameSuffix();
     void setVersionNameSuffix(String versionNameSuffix);
 
+    /**
+     * Returns whether minification is enabled for this build type.
+     *
+     * @return true if minification is enabled.
+     */
     Boolean getIsMinifyEnabled();
     void setIsMinifyEnabled(Boolean isMinifyEnabled);
 
+    /**
+     * Return whether zipalign is enabled for this build type.
+     *
+     * @return true if zipalign is enabled.
+     */
     Boolean getIsZipAlignEnabled();
     void setIsZipAlignEnabled(Boolean isZipAlignEnabled);
 
+    /**
+     * Returns whether the variant embeds the micro app.
+     */
     Boolean getIsEmbedMicroApp();
     void setIsEmbedMicroApp(Boolean isEmbedMicroApp);
 
+    /**
+     * Returns the associated signing config or null if none are set on the build type.
+     */
     SigningConfig getSigningConfig();
     void setSigningConfig(SigningConfig signingConfig);
 
