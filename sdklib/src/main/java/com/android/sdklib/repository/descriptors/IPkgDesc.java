@@ -161,11 +161,17 @@ public interface IPkgDesc extends Comparable<IPkgDesc>, IPkgCapabilities, IListD
                         @NonNull FullRevision.PreviewComparison previewComparison);
 
     /**
-     * Returns a stable string id that can be used to reference this package.
-     * @return A stable string id that can be used to reference this package.
+     * Returns a stable string id that can be used to reference this package, including
+     * a suffix indicating that this package is a preview if it is.
      */
     @NonNull
     String getInstallId();
+
+    /**
+     * Returns a stable string id that can be used to reference this package, which
+     * excludes the preview suffix.
+     */
+    String getBaseInstallId();
 
     /**
      * Returns the canonical location where such a package would be installed.
