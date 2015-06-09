@@ -60,7 +60,7 @@ public class BuildToolPackageTest extends TestCase {
     public void testInstallId() throws Exception {
         Properties props1 = createExpectedProps(true);
         BuildToolPackage p1 = new BuildToolPackageFakeArchive(props1);
-        assertEquals("build-tools-1.2.3_rc4", p1.installId());
+        assertEquals("build-tools-1.2.3-preview", p1.installId());
 
         Properties props2 = createExpectedProps(false);
         BuildToolPackage p2 = new BuildToolPackageFakeArchive(props2);
