@@ -61,6 +61,7 @@ import com.android.ide.common.process.LoggedProcessOutputHandler;
 import com.android.ide.common.signing.KeystoreHelper;
 import com.android.prefs.AndroidLocation;
 import com.android.utils.ILogger;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
@@ -76,6 +77,8 @@ import org.gradle.api.logging.LogLevel;
 import org.gradle.api.plugins.JavaBasePlugin;
 import org.gradle.internal.reflect.Instantiator;
 import org.gradle.internal.service.ServiceRegistry;
+import org.gradle.language.base.FunctionalSourceSet;
+import org.gradle.language.base.LanguageSourceSet;
 import org.gradle.model.Model;
 import org.gradle.model.ModelMap;
 import org.gradle.model.Mutate;
@@ -370,6 +373,14 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
             sources.addDefaultSourceSet("aidl", AndroidLanguageSourceSet.class);
             sources.addDefaultSourceSet("renderscript", AndroidLanguageSourceSet.class);
             sources.addDefaultSourceSet("jniLibs", AndroidLanguageSourceSet.class);
+
+            sources.all(new Action<FunctionalSourceSet>() {
+                @Override
+                public void execute(FunctionalSourceSet functionalSourceSet) {
+                    LanguageSourceSet manifest = functionalSourceSet.getByName("manifest");
+                    manifest.getSource().setIncludes(ImmutableList.of("AndroidManifest.xml"));
+                }
+            });
         }
 
         @Model(ANDROID_CONFIG_ADAPTOR)

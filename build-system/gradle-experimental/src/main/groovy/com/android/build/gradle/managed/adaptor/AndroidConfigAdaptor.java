@@ -21,6 +21,7 @@ import static com.android.builder.core.VariantType.ANDROID_TEST;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.build.gradle.api.AndroidSourceDirectorySet;
+import com.android.build.gradle.api.AndroidSourceFile;
 import com.android.build.gradle.api.AndroidSourceSet;
 import com.android.build.gradle.internal.BuildTypeData;
 import com.android.build.gradle.internal.CompileOptions;
@@ -58,8 +59,10 @@ import org.gradle.api.file.SourceDirectorySet;
 import org.gradle.language.base.FunctionalSourceSet;
 import org.gradle.language.base.LanguageSourceSet;
 
+import java.io.File;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 import groovy.lang.Closure;
 
@@ -266,6 +269,7 @@ public class AndroidConfigAdaptor implements com.android.build.gradle.AndroidCon
                     sourceSetsContainer.maybeCreate(getDefaultConfig().getName()) :
                     sourceSetsContainer.maybeCreate(name);
 
+            convertSourceFile(androidSource.getManifest(), source, "manifest");
             convertSourceSet(androidSource.getResources(), source, "resource");
             convertSourceSet(androidSource.getJava(), source, "java");
             convertSourceSet(androidSource.getRes(), source, "res");
@@ -295,6 +299,32 @@ public class AndroidConfigAdaptor implements com.android.build.gradle.AndroidCon
         return null;
     }
 
+    /**
+     * Convert a FunctionalSourceSet to an AndroidSourceFile.
+     */
+    private static void convertSourceFile(
+            AndroidSourceFile androidFile,
+            FunctionalSourceSet source,
+            String sourceName) {
+        LanguageSourceSet languageSourceSet = source.findByName(sourceName);
+        if (languageSourceSet == null) {
+            return;
+        }
+        SourceDirectorySet dir = languageSourceSet.getSource();
+        if (dir == null) {
+            return;
+        }
+        // We use the first file in the file tree until Gradle has a way to specify one source file
+        // instead of an entire source set.
+        Set<File> files = dir.getAsFileTree().getFiles();
+        if (!files.isEmpty()) {
+            androidFile.srcFile(Iterables.getOnlyElement(files));
+        }
+    }
+
+    /**
+     * Convert a FunctionalSourceSet to an AndroidSourceDirectorySet.
+     */
     private static void convertSourceSet(
             AndroidSourceDirectorySet androidDir,
             FunctionalSourceSet source,
