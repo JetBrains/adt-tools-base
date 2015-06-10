@@ -197,9 +197,12 @@ public class NdkConfiguration {
                                 @Override
                                 public void execute(LanguageSourceSet source) {
                                     source.getSource().setSrcDirs(jni.getSource().getSrcDirs());
-                                    source.getSource().include("**/*.cpp");
+                                    source.getSource().include("**/*.C");
+                                    source.getSource().include("**/*.CPP");
+                                    source.getSource().include("**/*.c++");
                                     source.getSource().include("**/*.cc");
                                     source.getSource().include("**/*.cp");
+                                    source.getSource().include("**/*.cpp");
                                     source.getSource().include("**/*.cxx");
                                 }
                             });
