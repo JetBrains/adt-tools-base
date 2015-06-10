@@ -7,6 +7,9 @@
 - New sourceSets task for inspecting the set of all available source sets.
 - Unit tests recognize multi-flavor and per-variant source folders (e.g.
   testDemoDebug). Android tests recognized multi-flavor source folders.
+- Unit testing improvements
+  * Run javac on main and test sources, even if useJack is true.
+  * Correctly recognize per-build-type dependencies.
 
 1.2.0
 - Unit testing improvements
