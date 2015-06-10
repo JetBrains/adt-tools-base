@@ -16,6 +16,7 @@
 
 package com.android.assetstudiolib.vectordrawable;
 
+import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.google.common.base.Charsets;
 
@@ -27,10 +28,46 @@ import java.io.*;
  * Generate a Image based on the VectorDrawable's XML content.
  */
 public class VdPreview {
+    /**
+     * This encapsulates the information used to determine the preview image size.
+     * When {@value mUseWidth} is true, use {@code mImageWidth} as the final width and
+     * keep the same aspect ratio.
+     * Otherwise, use {@code mImageScale} to scale the image based on the XML's size information.
+     */
+    public static class Size {
+        private boolean mUseWidth;
+        private int mImageWidth;
+        private float mImageScale;
+
+        private Size(boolean useWidth, int imageWidth, float imageScale) {
+            mUseWidth = useWidth;
+            mImageWidth = imageWidth;
+            mImageScale = imageScale;
+        }
+
+        public static Size createSizeFromWidth(int imageWidth) {
+            return new Size(true, imageWidth, 0.0f);
+        };
+
+        public static Size createSizeFromScale(float imageScale) {
+            return new Size(false, 0, imageScale);
+        };
+    }
+
+    /**
+     * This generates an image according to the VectorDrawable's content {@code xmlFileContent}.
+     * At the same time, {@vdErrorLog} captures all the errors found during parsing.
+     * The size of image is determined by the {@code size}.
+     *
+     * @param size the size of result image.
+     * @param xmlFileContent  VectorDrawable's XML file's content.
+     * @param vdErrorLog      log for the parsing errors and warnings.
+     * @return an preview image according to the VectorDrawable's XML
+     */
     @Nullable
-    public static BufferedImage getPreviewFromVectorXml(int imageWidth,
-                                                        @Nullable String xmlFileContent,
-                                                        @Nullable StringBuilder vdErrorLog) {
+    public static BufferedImage getPreviewFromVectorXml(@NonNull Size size,
+            @Nullable String xmlFileContent,
+            @Nullable StringBuilder vdErrorLog) {
         if (xmlFileContent == null || xmlFileContent.isEmpty()) {
             return null;
         }
@@ -38,15 +75,32 @@ public class VdPreview {
         VdTree vdTree;
 
         InputStream inputStream = new ByteArrayInputStream(
-            xmlFileContent.getBytes(Charsets.UTF_8));
+                xmlFileContent.getBytes(Charsets.UTF_8));
         vdTree = p.parse(inputStream, vdErrorLog);
         if (vdTree == null) {
             return null;
         }
+
+        // If the forceImageWidth is set (>0), then we honor that.
+        // Otherwise, we will ask the vectorDrawable for the prefer size, then apply the imageScale.
+        float vdWidth = vdTree.getBaseWidth();
+        float vdHeight = vdTree.getBaseHeight();
+        float imageWidth;
+        float imageHeight;
+        int forceImageWidth = size.mImageWidth;
+        float imageScale = size.mImageScale;
+
+        if (forceImageWidth > 0) {
+            imageWidth = forceImageWidth;
+            imageHeight = forceImageWidth * vdHeight / vdWidth;
+        } else {
+            imageWidth = vdWidth * imageScale;
+            imageHeight = vdHeight * imageScale;
+        }
+
         // Create the image according to the vectorDrawable's aspect ratio.
-        BufferedImage image = new BufferedImage(imageWidth,
-                                  (int) (imageWidth / vdTree.getAspectRatio()),
-                                  BufferedImage.TYPE_INT_ARGB);
+        BufferedImage image = new BufferedImage((int) imageWidth, (int) imageHeight,
+                BufferedImage.TYPE_INT_ARGB);
 
         Graphics g = image.getGraphics();
         g.setColor(new Color(255, 255, 255, 0));

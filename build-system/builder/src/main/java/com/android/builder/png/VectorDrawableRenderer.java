@@ -20,6 +20,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import com.android.annotations.NonNull;
 import com.android.assetstudiolib.GraphicGenerator;
+import com.android.assetstudiolib.vectordrawable.VdPreview;
 import com.android.ide.common.resources.configuration.DensityQualifier;
 import com.android.ide.common.resources.configuration.FolderConfiguration;
 import com.android.ide.common.resources.configuration.VersionQualifier;
@@ -30,9 +31,12 @@ import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
+
+import javax.imageio.ImageIO;
 
 /**
  * Generates PNG images (and XML copies) from VectorDrawable files.
@@ -70,15 +74,15 @@ public class VectorDrawableRenderer {
                     inputXmlFile.getName().replace(".xml", ".png"));
 
             Files.createParentDirs(pngFile);
-            Files.write(
-                    String.format(
-                            "%s in %s, %s%n",
-                            inputXmlFile.getName(),
-                            density.getResourceValue(),
-                            // For testing, make sure different inputs produce different outputs.
-                            FileUtils.sha1(inputXmlFile)),
-                    pngFile,
-                    Charsets.UTF_8);
+            String xmlContent = Files.toString(inputXmlFile, Charsets.UTF_8);
+            float scaleFactor = density.getDpiValue() / (float) Density.MEDIUM.getDpiValue();
+            if (scaleFactor <= 0) {
+                scaleFactor = 1.0f;
+            }
+
+            final VdPreview.Size imageSize = VdPreview.Size.createSizeFromScale(scaleFactor);
+            BufferedImage image = VdPreview.getPreviewFromVectorXml(imageSize, xmlContent, null);
+            ImageIO.write(image, "png", pngFile);
             createdFiles.add(pngFile);
 
             newConfiguration.setVersionQualifier(new VersionQualifier(MIN_SDK_WITH_VECTOR_SUPPORT));
