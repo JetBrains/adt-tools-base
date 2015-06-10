@@ -19,6 +19,10 @@ package com.android.build.gradle.tasks;
 import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.build.gradle.internal.dsl.DexOptions;
+import com.android.build.gradle.internal.scope.ConventionMappingHelper;
+import com.android.build.gradle.internal.scope.GlobalScope;
+import com.android.build.gradle.internal.scope.TaskConfigAction;
+import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.tasks.BaseTask;
 import com.android.builder.core.AndroidBuilder;
 import com.android.ide.common.internal.LoggedErrorException;
@@ -223,5 +227,80 @@ public class JillTask extends BaseTask {
         HashCode hashCode = hashFunction.hashString(input, Charsets.UTF_16LE);
 
         return new File(outFolder, name + "-" + hashCode.toString() + SdkConstants.DOT_JAR);
+    }
+
+    public static class RuntimeTaskConfigAction implements TaskConfigAction<JillTask> {
+
+        private final VariantScope variantScope;
+
+        // TODO: If task can be shared between variants, change to GlobalScope.
+        public RuntimeTaskConfigAction(VariantScope scope) {
+            this.variantScope = scope;
+        }
+
+        @Override
+        public String getName() {
+            return variantScope.getTaskName("jill", "RuntimeLibraries");
+        }
+
+        @Override
+        public Class<JillTask> getType() {
+            return JillTask.class;
+        }
+
+        @Override
+        public void execute(JillTask jillTask) {
+            final GlobalScope globalScope = variantScope.getGlobalScope();
+            final AndroidBuilder androidBuilder = globalScope.getAndroidBuilder();
+
+            jillTask.setAndroidBuilder(androidBuilder);
+            jillTask.setDexOptions(globalScope.getExtension().getDexOptions());
+
+            ConventionMappingHelper.map(jillTask, "inputLibs", new Callable<List<File>>() {
+                @Override
+                public List<File> call() throws Exception {
+                    return androidBuilder.getBootClasspath();
+                }
+            });
+
+            jillTask.setOutputFolder(variantScope.getJillRuntimeLibrariesDir());
+        }
+    }
+
+    public static class PackagedConfigAction implements TaskConfigAction<JillTask> {
+
+        private final VariantScope variantScope;
+
+        public PackagedConfigAction(VariantScope scope) {
+            this.variantScope = scope;
+        }
+
+        @Override
+        public String getName() {
+            return variantScope.getTaskName("jill", "PackagedLibraries");
+        }
+
+        @Override
+        public Class<JillTask> getType() {
+            return JillTask.class;
+        }
+
+        @Override
+        public void execute(JillTask jillTask) {
+            final GlobalScope globalScope = variantScope.getGlobalScope();
+            final AndroidBuilder androidBuilder = globalScope.getAndroidBuilder();
+
+            jillTask.setAndroidBuilder(androidBuilder);
+            jillTask.setDexOptions(globalScope.getExtension().getDexOptions());
+
+            ConventionMappingHelper.map(jillTask, "inputLibs", new Callable<Set<File>>() {
+                @Override
+                public Set<File> call() throws Exception {
+                    return androidBuilder.getPackagedJars(variantScope.getVariantConfiguration());
+                }
+            });
+
+            jillTask.setOutputFolder(variantScope.getJillPackagedLibrariesDir());
+        }
     }
 }
