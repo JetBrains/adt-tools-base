@@ -133,7 +133,6 @@ public class NdkConfiguration {
 
                         // Add flags defined in NdkConfig
                         for (String flag : ndkConfig.getCFlags()) {
-                            System.out.println(flag);
                             getCCompiler(binary).args(flag);
                         }
 
