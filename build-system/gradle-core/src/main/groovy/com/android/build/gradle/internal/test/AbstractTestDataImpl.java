@@ -31,9 +31,9 @@ import java.util.Map;
 public abstract class AbstractTestDataImpl implements TestData {
 
     @NonNull
-    private final VariantConfiguration testVariantConfig;
+    private final VariantConfiguration<?, ?, ?> testVariantConfig;
 
-    public AbstractTestDataImpl(@NonNull VariantConfiguration testVariantConfig) {
+    public AbstractTestDataImpl(@NonNull VariantConfiguration<?, ?, ?> testVariantConfig) {
         this.testVariantConfig = testVariantConfig;
     }
 
