@@ -137,10 +137,13 @@ public class PkgDescTest extends TestCase {
         final FullRevision min5671 = new FullRevision(5, 6, 7, 1);
         final IPkgDesc p1231 =
                 PkgDesc.Builder.newTool(new FullRevision(1, 2, 3, 1), min5671).create();
-        /* TODO: What should the behavior be here?
         assertFalse(p1231.isUpdateFor(f122));
-         */
         assertFalse(f122 .isUpdateFor(p1231));
+        assertFalse(p1231.isUpdateFor(f122, FullRevision.PreviewComparison.COMPARE_NUMBER));
+        assertFalse(p1231.isUpdateFor(f122, FullRevision.PreviewComparison.COMPARE_TYPE));
+        // ...unless we ignore them explicitly
+        assertTrue(p1231.isUpdateFor(f122, FullRevision.PreviewComparison.IGNORE));
+
         // but previews are used for comparisons
         assertTrue (p1231.compareTo(f122 ) > 0);
         assertTrue (f123 .compareTo(p1231) > 0);
@@ -246,9 +249,7 @@ public class PkgDescTest extends TestCase {
         // previews are not updated by final packages
         final IPkgDesc p1231 =
                 PkgDesc.Builder.newPlatformTool(new FullRevision(1, 2, 3, 1)).create();
-        /* TODO: What should the behavior be here?
         assertFalse(p1231.isUpdateFor(f122));
-         */
         assertFalse(f122 .isUpdateFor(p1231));
         // but previews are used for comparisons
         assertTrue (p1231.compareTo(f122 ) > 0);
