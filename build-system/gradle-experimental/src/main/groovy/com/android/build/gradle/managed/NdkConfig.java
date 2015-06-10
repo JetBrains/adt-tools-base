@@ -45,10 +45,4 @@ public interface NdkConfig {
 
     Boolean getRenderscriptNdkMode();
     void setRenderscriptNdkMode(Boolean renderscriptNdkMode);
-
-    @NonNull
-    FilePattern getCFilePattern();
-
-    @NonNull
-    FilePattern getCppFilePattern();
 }
