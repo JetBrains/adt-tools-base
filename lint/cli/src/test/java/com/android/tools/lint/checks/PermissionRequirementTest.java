@@ -20,7 +20,7 @@ import static com.android.SdkConstants.ANDROID_URI;
 import static com.android.SdkConstants.ATTR_NAME;
 import static com.android.SdkConstants.TAG_PERMISSION;
 import static com.android.tools.lint.checks.PermissionRequirement.REVOCABLE_PERMISSION_NAMES;
-import static com.android.tools.lint.checks.PermissionRequirement.isRevocablePermission;
+import static com.android.tools.lint.checks.PermissionRequirement.isRevocableSystemPermission;
 import static com.android.tools.lint.checks.SupportAnnotationDetector.PERMISSION_ANNOTATION;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -74,7 +74,7 @@ public class PermissionRequirementTest extends TestCase {
         Set<String> fineSet = Collections.singleton("android.permission.ACCESS_FINE_LOCATION");
         ResolvedAnnotation annotation = createAnnotation(PERMISSION_ANNOTATION, values);
         PermissionRequirement req = PermissionRequirement.create(null, annotation);
-        assertTrue(req.isRevocable());
+        assertTrue(req.isRevocable(new SetPermissionLookup(emptySet)));
 
         assertFalse(req.isSatisfied(new SetPermissionLookup(emptySet)));
         assertFalse(req.isSatisfied(new SetPermissionLookup(Collections.singleton(""))));
@@ -83,7 +83,7 @@ public class PermissionRequirementTest extends TestCase {
                 req.describeMissingPermissions(new SetPermissionLookup(emptySet)));
         assertEquals(fineSet, req.getMissingPermissions(new SetPermissionLookup(emptySet)));
         assertEquals(emptySet, req.getMissingPermissions(new SetPermissionLookup(fineSet)));
-        assertEquals(fineSet, req.getRevocablePermissions());
+        assertEquals(fineSet, req.getRevocablePermissions(new SetPermissionLookup(emptySet)));
         assertNull(req.getOperator());
         assertFalse(req.getChildren().iterator().hasNext());
     }
@@ -101,7 +101,7 @@ public class PermissionRequirementTest extends TestCase {
 
         ResolvedAnnotation annotation = createAnnotation(PERMISSION_ANNOTATION, values);
         PermissionRequirement req = PermissionRequirement.create(null, annotation);
-        assertTrue(req.isRevocable());
+        assertTrue(req.isRevocable(new SetPermissionLookup(emptySet)));
         assertFalse(req.isSatisfied(new SetPermissionLookup(emptySet)));
         assertFalse(req.isSatisfied(new SetPermissionLookup(Collections.singleton(""))));
         assertTrue(req.isSatisfied(new SetPermissionLookup(fineSet)));
@@ -110,7 +110,7 @@ public class PermissionRequirementTest extends TestCase {
                 "android.permission.ACCESS_FINE_LOCATION or android.permission.ACCESS_COARSE_LOCATION",
                 req.describeMissingPermissions(new SetPermissionLookup(emptySet)));
         assertEquals(bothSet, req.getMissingPermissions(new SetPermissionLookup(emptySet)));
-        assertEquals(bothSet, req.getRevocablePermissions());
+        assertEquals(bothSet, req.getRevocablePermissions(new SetPermissionLookup(emptySet)));
         assertSame(BinaryOperator.LOGICAL_OR, req.getOperator());
     }
 
@@ -127,7 +127,7 @@ public class PermissionRequirementTest extends TestCase {
 
         ResolvedAnnotation annotation = createAnnotation(PERMISSION_ANNOTATION, values);
         PermissionRequirement req = PermissionRequirement.create(null, annotation);
-        assertTrue(req.isRevocable());
+        assertTrue(req.isRevocable(new SetPermissionLookup(emptySet)));
         assertFalse(req.isSatisfied(new SetPermissionLookup(emptySet)));
         assertFalse(req.isSatisfied(new SetPermissionLookup(Collections.singleton(""))));
         assertFalse(req.isSatisfied(new SetPermissionLookup(fineSet)));
@@ -145,14 +145,19 @@ public class PermissionRequirementTest extends TestCase {
                 "android.permission.ACCESS_FINE_LOCATION",
                 req.describeMissingPermissions(new SetPermissionLookup(coarseSet)));
         assertEquals(fineSet, req.getMissingPermissions(new SetPermissionLookup(coarseSet)));
-        assertEquals(bothSet, req.getRevocablePermissions());
+        assertEquals(bothSet, req.getRevocablePermissions(new SetPermissionLookup(emptySet)));
         assertSame(BinaryOperator.LOGICAL_AND, req.getOperator());
     }
 
     public void testRevocable() {
-        assertTrue(isRevocablePermission("android.permission.ACCESS_FINE_LOCATION"));
-        assertTrue(isRevocablePermission("android.permission.ACCESS_COARSE_LOCATION"));
-        assertFalse(isRevocablePermission("android.permission.UNKNOWN_PERMISSION_NAME"));
+        assertTrue(isRevocableSystemPermission("android.permission.ACCESS_FINE_LOCATION"));
+        assertTrue(isRevocableSystemPermission("android.permission.ACCESS_COARSE_LOCATION"));
+        assertFalse(isRevocableSystemPermission("android.permission.UNKNOWN_PERMISSION_NAME"));
+    }
+
+    public void testRevocable2() {
+        assertTrue(new SetPermissionLookup(Collections.<String>emptySet(),
+            Sets.newHashSet("my.permission1", "my.permission2")).isRevocable("my.permission2"));
     }
 
     public static void testDbUpToDate() throws Exception {

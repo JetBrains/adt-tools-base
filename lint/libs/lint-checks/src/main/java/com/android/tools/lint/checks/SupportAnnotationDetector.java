@@ -23,11 +23,14 @@ import static com.android.SdkConstants.INT_DEF_ANNOTATION;
 import static com.android.SdkConstants.R_CLASS;
 import static com.android.SdkConstants.STRING_DEF_ANNOTATION;
 import static com.android.SdkConstants.SUPPORT_ANNOTATIONS_PREFIX;
+import static com.android.SdkConstants.TAG_PERMISSION;
 import static com.android.SdkConstants.TAG_USES_PERMISSION;
 import static com.android.SdkConstants.TYPE_DEF_FLAG_ATTRIBUTE;
 import static com.android.resources.ResourceType.COLOR;
 import static com.android.resources.ResourceType.DRAWABLE;
 import static com.android.resources.ResourceType.MIPMAP;
+import static com.android.tools.lint.checks.PermissionRequirement.ATTR_PROTECTION_LEVEL;
+import static com.android.tools.lint.checks.PermissionRequirement.VALUE_DANGEROUS;
 import static com.android.tools.lint.detector.api.JavaContext.findSurroundingMethod;
 import static com.android.tools.lint.detector.api.JavaContext.getParentOfType;
 
@@ -345,7 +348,8 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
             String name = method.getContainingClass().getSimpleName() + "." + method.getName();
             String message = getMissingPermissionMessage(requirement, name, permissions);
             context.report(MISSING_PERMISSION, node, context.getLocation(node), message);
-        } else if (requirement.isRevocable() && context.getMainProject().getTargetSdkVersion().getFeatureLevel() >= 23) {
+        } else if (requirement.isRevocable(permissions) &&
+                context.getMainProject().getTargetSdkVersion().getFeatureLevel() >= 23) {
             // Ensure that the caller is handling a security exception
             // First check to see if we're inside a try/catch which catches a SecurityException
             // (or some wider exception than that). Check for nested try/catches too.
@@ -477,20 +481,21 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
             @NonNull JavaContext context) {
         if (mPermissions == null) {
             Set<String> permissions = Sets.newHashSetWithExpectedSize(30);
+            Set<String> revocable = Sets.newHashSetWithExpectedSize(4);
             LintClient client = context.getClient();
             // Gather permissions from all projects that contribute to the
             // main project.
             Project mainProject = context.getMainProject();
             for (File manifest : mainProject.getManifestFiles()) {
-                addPermissions(client, permissions, manifest);
+                addPermissions(client, permissions, revocable, manifest);
             }
             for (Project library : mainProject.getAllLibraries()) {
                 for (File manifest : library.getManifestFiles()) {
-                    addPermissions(client, permissions, manifest);
+                    addPermissions(client, permissions, revocable, manifest);
                 }
             }
 
-            mPermissions = new SetPermissionLookup(permissions);
+            mPermissions = new SetPermissionLookup(permissions, revocable);
         }
 
         return mPermissions;
@@ -498,6 +503,7 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
 
     private static void addPermissions(@NonNull LintClient client,
             @NonNull Set<String> permissions,
+            @NonNull Set<String> revocable,
             @NonNull File manifest) {
         Document document = XmlUtils.parseDocumentSilently(client.readFile(manifest), true);
         if (document == null) {
@@ -510,12 +516,25 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
         NodeList children = root.getChildNodes();
         for (int i = 0, n = children.getLength(); i < n; i++) {
             org.w3c.dom.Node item = children.item(i);
-            if (item.getNodeType() == org.w3c.dom.Node.ELEMENT_NODE
-                    && item.getNodeName().equals(TAG_USES_PERMISSION)) {
+            if (item.getNodeType() != org.w3c.dom.Node.ELEMENT_NODE) {
+                continue;
+            }
+            String nodeName = item.getNodeName();
+            if (nodeName.equals(TAG_USES_PERMISSION)) {
                 Element element = (Element)item;
                 String name = element.getAttributeNS(ANDROID_URI, ATTR_NAME);
                 if (!name.isEmpty()) {
                     permissions.add(name);
+                }
+            } else if (nodeName.equals(TAG_PERMISSION)) {
+                Element element = (Element)item;
+                String protectionLevel = element.getAttributeNS(ANDROID_URI,
+                        ATTR_PROTECTION_LEVEL);
+                if (VALUE_DANGEROUS.equals(protectionLevel)) {
+                    String name = element.getAttributeNS(ANDROID_URI, ATTR_NAME);
+                    if (!name.isEmpty()) {
+                        revocable.add(name);
+                    }
                 }
             }
         }
