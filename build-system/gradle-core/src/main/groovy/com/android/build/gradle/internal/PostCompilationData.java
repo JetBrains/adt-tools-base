@@ -18,9 +18,11 @@ package com.android.build.gradle.internal;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.Callables;
 
 import java.io.File;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Callable;
 
@@ -47,21 +49,23 @@ public class PostCompilationData {
     @Nullable
     private Callable<List<File>> inputLibraries;
 
-    @Nullable
+    @NonNull
     public List<?> getClassGeneratingTasks() {
+        Preconditions.checkState(classGeneratingTasks != null);
         return classGeneratingTasks;
     }
 
-    public void setClassGeneratingTasks(@Nullable List<?> classGeneratingTasks) {
+    public void setClassGeneratingTasks(@NonNull List<?> classGeneratingTasks) {
         this.classGeneratingTasks = classGeneratingTasks;
     }
 
-    @Nullable
+    @NonNull
     public List<?> getLibraryGeneratingTasks() {
+        Preconditions.checkState(libraryGeneratingTasks != null);
         return libraryGeneratingTasks;
     }
 
-    public void setLibraryGeneratingTasks(@Nullable List<?> libraryGeneratingTasks) {
+    public void setLibraryGeneratingTasks(@NonNull List<?> libraryGeneratingTasks) {
         this.libraryGeneratingTasks = libraryGeneratingTasks;
     }
 
