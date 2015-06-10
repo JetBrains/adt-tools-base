@@ -127,6 +127,17 @@ public class LocaleTableGenerator {
                 continue;
             }
             assert iso3.length() == 3 : iso3;
+
+            // 3 languages in that spec have deprecated codes which will not work right;
+            // see LocaleFolderDetector#DEPRECATED_CODE for details
+            if (iso2.equals("he")) {
+                iso2 = "iw";
+            } else if (iso2.equals("id")) {
+                iso2 = "in";
+            } else if (iso2.equals("yi")) {
+                iso2 = "ji";
+            }
+
             if (!iso2.isEmpty() && mLanguage2to3.containsKey(iso2)) {
                 // We already know about this one
                 matched++;
@@ -297,6 +308,11 @@ public class LocaleTableGenerator {
         mLanguage2to3.put("in", "ind"); // proper 3-letter code, but NOT mapping back: should be id
         mLanguage2to3.put("ji", "yid"); // proper 3-letter code, but NOT mapping back: should be yi
         mLanguage2to3.put("iw", "heb"); // proper 3-letter code, but NOT mapping back: should be he
+        // Make sure the forward map (from 3 to 2) is also using the primary (new) code
+        mLanguage3to2.put("ind", "in");
+        mLanguage3to2.put("heb", "iw");
+        mLanguage3to2.put("yid", "ji");
+
 
         mLanguage2Codes = sorted(mLanguage2to3.keySet());
         mLanguage3Codes = sorted(mLanguageName.keySet());

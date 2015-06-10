@@ -1345,7 +1345,7 @@ public class LocaleManager {
             "Haitian; Haitian Creole",              // Code hat/ht
             "Hausa",                                // Code hau/ha
             "Hawaiian",                             // Code haw
-            "Hebrew",                               // Code heb/he
+            "Hebrew",                               // Code heb/iw
             "Herero",                               // Code her/hz
             "Hiligaynon",                           // Code hil
             "Himachali languages; Western Pahari languages",// Code him
@@ -1368,7 +1368,7 @@ public class LocaleManager {
             "Iloko",                                // Code ilo
             "Interlingua (International Auxiliary Language Association)",// Code ina/ia
             "Indic languages",                      // Code inc
-            "Indonesian",                           // Code ind/id
+            "Indonesian",                           // Code ind/in
             "Indo-European languages",              // Code ine
             "Ingush",                               // Code inh
             "Inupiaq",                              // Code ipk/ik
@@ -1684,7 +1684,7 @@ public class LocaleManager {
             "Yao",                                  // Code yao
             "Yapese",                               // Code yap
             "Yangben",                              // Code yav
-            "Yiddish",                              // Code yid/yi
+            "Yiddish",                              // Code yid/ji
             "Yoruba",                               // Code yor/yo
             "Yupik languages",                      // Code ypk
             "Zapotec",                              // Code zap
@@ -1762,9 +1762,9 @@ public class LocaleManager {
             -1,  -1,  47,  -1,  -1,  -1,  -1,  48,  43,  -1,  -1,
             -1,  -1,  -1,  -1,  -1,  50,  49,  51,  54,  -1,  -1,
             -1,  -1,  -1,  -1,  -1,  52,  -1,  53,  -1,  -1,  -1,
-            60,  55,  -1,  56,  63,  -1,  -1,  57,  -1,  -1,  58,
+            60,  55,  -1,  75,  63,  -1,  -1,  57,  -1,  -1,  58,
             59,  -1,  61,  -1,  62,  -1,  67,  71,  68,  -1,  74,
-            66,  -1,  64,  -1,  65,  -1,  -1,  69,  -1,  -1,  72,
+            66,  -1,  64,  -1,  70,  -1,  -1,  69,  -1,  -1,  72,
             73,  78,  -1,  -1,  -1,  76,  -1,  -1,  -1,  -1,  -1,
             84,  -1,  86,  -1,  89,  79,  88,  -1,  83,  -1,  -1,
             -1,  -1,  -1,  85,  -1,  -1,  81, 139,  93,  -1,  -1,
@@ -1793,7 +1793,7 @@ public class LocaleManager {
             -1,  -1, 170,  -1,  -1,  -1,  -1,  -1, 172, 173,  -1,
             -1, 174, 175,  -1, 176, 177, 178,  -1,  -1,  -1,  -1,
             -1,  -1,  -1,  -1, 179, 180,  -1, 181,  -1,  -1,  -1,
-            -1, 182, 183,  -1,  -1,  -1,  -1,  -1, 184, 185,  -1,
+            -1,  77, 183,  -1,  -1,  -1,  -1,  -1, 184, 185,  -1,
             186,  -1,  -1
     };
     private static final String[] ISO_3166_2_CODES = new String[] {
