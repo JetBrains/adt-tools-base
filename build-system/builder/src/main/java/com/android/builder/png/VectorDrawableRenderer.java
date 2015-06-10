@@ -19,14 +19,13 @@ package com.android.builder.png;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import com.android.annotations.NonNull;
-import com.android.assetstudiolib.GraphicGenerator;
 import com.android.assetstudiolib.vectordrawable.VdPreview;
 import com.android.ide.common.resources.configuration.DensityQualifier;
 import com.android.ide.common.resources.configuration.FolderConfiguration;
 import com.android.ide.common.resources.configuration.VersionQualifier;
 import com.android.resources.Density;
 import com.android.resources.ResourceFolderType;
-import com.android.utils.FileUtils;
+import com.android.utils.ILogger;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
@@ -43,9 +42,14 @@ import javax.imageio.ImageIO;
  */
 @SuppressWarnings("MethodMayBeStatic")
 public class VectorDrawableRenderer {
-
     /** Projects with minSdk set to this or higher don't need to generate PNGs. */
     public static final int MIN_SDK_WITH_VECTOR_SUPPORT = 21;
+
+    private final ILogger mLogger;
+
+    public VectorDrawableRenderer(ILogger logger) {
+        mLogger = logger;
+    }
 
     public Collection<File> createPngFiles(
             @NonNull File inputXmlFile,
@@ -84,6 +88,8 @@ public class VectorDrawableRenderer {
             BufferedImage image = VdPreview.getPreviewFromVectorXml(imageSize, xmlContent, null);
             ImageIO.write(image, "png", pngFile);
             createdFiles.add(pngFile);
+
+            mLogger.info("Generated %s from %s", pngFile, inputXmlFile);
 
             newConfiguration.setVersionQualifier(new VersionQualifier(MIN_SDK_WITH_VECTOR_SUPPORT));
             File xmlCopy = copyOriginalXml(inputXmlFile, outputResDirectory, newConfiguration);
@@ -140,10 +146,5 @@ public class VectorDrawableRenderer {
         // Because of the above, the will be no NPE here.
         //noinspection ConstantConditions
         return configuration.getVersionQualifier().getVersion();
-    }
-
-    private GraphicGenerator getGraphicGenerator() {
-        // This method is here to check classes from asset-studio are visible at compile-time.
-        throw new RuntimeException("Not implemented yet.");
     }
 }

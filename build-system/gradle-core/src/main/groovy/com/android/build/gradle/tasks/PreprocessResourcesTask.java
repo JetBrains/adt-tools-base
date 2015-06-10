@@ -45,7 +45,6 @@ import java.util.Map;
 public class PreprocessResourcesTask extends IncrementalTask {
     public static final int MIN_SDK = VectorDrawableRenderer.MIN_SDK_WITH_VECTOR_SUPPORT;
 
-    private final VectorDrawableRenderer renderer = new VectorDrawableRenderer();
     private File outputResDirectory;
     private File generatedResDirectory;
     private File mergedResDirectory;
@@ -174,6 +173,8 @@ public class PreprocessResourcesTask extends IncrementalTask {
             PreprocessDataSet mergedSet,
             PreprocessDataSet generatedSet,
             SetMultimap<File, File> generatedFiles) throws IOException, MergingException {
+        VectorDrawableRenderer renderer = new VectorDrawableRenderer(getILogger());
+
         if (renderer.needsPreprocessing(resourceFile)) {
             Collection<File> newFiles = renderer.createPngFiles(
                     resourceFile,
