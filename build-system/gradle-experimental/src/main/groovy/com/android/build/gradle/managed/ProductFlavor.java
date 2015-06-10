@@ -16,19 +16,22 @@
 
 package com.android.build.gradle.managed;
 
+import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 
+import org.gradle.api.Named;
 import org.gradle.model.Managed;
 import org.gradle.model.ModelSet;
+
+import java.io.File;
+import java.util.Collection;
+import java.util.Map;
 
 /**
  * A Managed product flavor.
  */
 @Managed
-public interface ProductFlavor {
-
-    String getName();
-    void setName(String name);
+public interface ProductFlavor extends Named {
 
     @Nullable
     String getDimension();
@@ -52,12 +55,12 @@ public interface ProductFlavor {
     void setMultiDexEnabled(Boolean multiDexEnabled);
 
     @Nullable
-    String getMultiDexKeepFile();
-    void setMultiDexKeepFile(String multiDexKeepFile);
+    File getMultiDexKeepFile();
+    void setMultiDexKeepFile(File multiDexKeepFile);
 
     @Nullable
-    String getMultiDexKeepProguard();
-    void setMultiDexKeepProguard(String multiDexKeepProguard);
+    File getMultiDexKeepProguard();
+    void setMultiDexKeepProguard(File multiDexKeepProguard);
 
     @Nullable
     String getApplicationId();

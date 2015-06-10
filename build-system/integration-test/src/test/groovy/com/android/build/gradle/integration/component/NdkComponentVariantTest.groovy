@@ -57,24 +57,19 @@ model {
         moduleName = "hello-jni"
     }
     android.buildTypes {
-        afterEach {
-            if (name == "debug") {
-                isJniDebuggable = true
-            }
+        debug {
+            isJniDebuggable = true
         }
     }
     android.productFlavors {
-        create {
-            name = "x86"
+        create("x86") {
             ndkConfig.abiFilters += "x86"
         }
-        create {
-            name = "arm"
+        create("arm") {
             ndkConfig.abiFilters += "armeabi-v7a"
             ndkConfig.abiFilters += "armeabi"
         }
-        create {
-            name = "mips"
+        create("mips") {
             ndkConfig.abiFilters += "mips"
         }
     }

@@ -155,7 +155,7 @@ public class AndroidConfigAdaptor implements com.android.build.gradle.AndroidCon
 
     @Override
     public Collection<CoreBuildType> getBuildTypes() {
-        return ImmutableList.copyOf(Iterables.transform(model.getBuildTypes(),
+        return ImmutableList.copyOf(Iterables.transform(model.getBuildTypes().values(),
                 new Function<BuildType, CoreBuildType>() {
                     @Override
                     public CoreBuildType apply(BuildType buildType) {
@@ -166,7 +166,7 @@ public class AndroidConfigAdaptor implements com.android.build.gradle.AndroidCon
 
     @Override
     public Collection<CoreProductFlavor> getProductFlavors() {
-        return ImmutableList.copyOf(Iterables.transform(model.getProductFlavors(),
+        return ImmutableList.copyOf(Iterables.transform(model.getProductFlavors().values(),
                 new Function<ProductFlavor, CoreProductFlavor>() {
                     @Override
                     public CoreProductFlavor apply(ProductFlavor flavor) {
@@ -177,7 +177,7 @@ public class AndroidConfigAdaptor implements com.android.build.gradle.AndroidCon
 
     @Override
     public Collection<com.android.builder.model.SigningConfig> getSigningConfigs() {
-        return ImmutableList.copyOf(Iterables.transform(model.getSigningConfigs(),
+        return ImmutableList.copyOf(Iterables.transform(model.getSigningConfigs().values(),
                 new Function<SigningConfig, com.android.builder.model.SigningConfig>() {
                     @Override
                     public com.android.builder.model.SigningConfig apply(SigningConfig signingConfig) {

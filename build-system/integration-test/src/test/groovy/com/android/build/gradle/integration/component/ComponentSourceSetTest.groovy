@@ -70,9 +70,9 @@ model {
         moduleName = "hello-jni"
     }
     android.productFlavors {
-        create { name = "flavor1" }
-        create { name = "flavor2" }
-        create { name = "flavor3" }
+        create("flavor1")
+        create("flavor2")
+        create("flavor3")
     }
     android.sources {
         flavor3 {

@@ -49,7 +49,6 @@ public class AndroidConfigHelper {
     public static void configure(
             @NonNull AndroidConfig model,
             @NonNull Instantiator instantiator) {
-        model.getDefaultConfig().setName(BuilderConstants.MAIN);
         model.setDefaultPublishConfig(BuilderConstants.RELEASE);
         model.setPublishNonDefault(false);
         model.setGeneratePureSplits(false);

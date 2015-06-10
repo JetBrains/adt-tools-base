@@ -42,11 +42,11 @@ apply plugin: AndroidComponentModelPlugin
 
 model {
     android.buildTypes {
-        create { name = "custom" }
+        create("custom")
     }
     android.productFlavors {
-        create { name = "flavor1" }
-        create { name = "flavor2" }
+        create("flavor1")
+        create("flavor2")
     }
 }
 """

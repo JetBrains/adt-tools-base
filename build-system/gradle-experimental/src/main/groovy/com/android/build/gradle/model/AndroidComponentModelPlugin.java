@@ -47,7 +47,6 @@ import org.gradle.model.Defaults;
 import org.gradle.model.Finalize;
 import org.gradle.model.Model;
 import org.gradle.model.ModelMap;
-import org.gradle.model.ModelSet;
 import org.gradle.model.Mutate;
 import org.gradle.model.Path;
 import org.gradle.model.RuleSource;
@@ -117,26 +116,20 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
 
         @Defaults
         public void createDefaultBuildTypes(
-                @Path("android.buildTypes") ModelSet<BuildType> buildTypes) {
-            buildTypes.create(new Action<BuildType>() {
+                @Path("android.buildTypes") ModelMap<BuildType> buildTypes) {
+            buildTypes.create(BuilderConstants.DEBUG, new Action<BuildType>() {
                 @Override
                 public void execute(BuildType buildType) {
-                    buildType.setName(BuilderConstants.DEBUG);
                     buildType.setIsDebuggable(true);
                     buildType.setIsEmbedMicroApp(false);
                 }
             });
-            buildTypes.create(new Action<BuildType>() {
-                @Override
-                public void execute(BuildType buildType) {
-                    buildType.setName(BuilderConstants.RELEASE);
-                }
-            });
+            buildTypes.create(BuilderConstants.RELEASE);
         }
 
         @Defaults
         public void initializeProductFlavor(
-                @Path("android.productFlavors") ModelSet<ProductFlavor> productFlavors) {
+                @Path("android.productFlavors") ModelMap<ProductFlavor> productFlavors) {
             productFlavors.beforeEach(new Action<ProductFlavor>() {
                 @Override
                 public void execute(ProductFlavor productFlavor) {
@@ -150,10 +143,10 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
 
         @Model
         public List<ProductFlavorCombo> createProductFlavorCombo(
-                @Path("android.productFlavors") ModelSet<ProductFlavor> productFlavors) {
+                @Path("android.productFlavors") ModelMap<ProductFlavor> productFlavors) {
             // TODO: Create custom product flavor container to manually configure flavor dimensions.
             Set<String> flavorDimensionList = Sets.newHashSet();
-            for (ProductFlavor flavor : productFlavors) {
+            for (ProductFlavor flavor : productFlavors.values()) {
                 if (flavor.getDimension() != null) {
                     flavorDimensionList.add(flavor.getDimension());
                 }
@@ -161,7 +154,7 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
 
             return ProductFlavorCombo.createCombinations(
                     Lists.newArrayList(flavorDimensionList),
-                    Iterables.transform(productFlavors,
+                    Iterables.transform(productFlavors.values(),
                             new Function<ProductFlavor, com.android.builder.model.ProductFlavor>() {
                                 @Override
                                 public com.android.builder.model.ProductFlavor apply(ProductFlavor productFlavor) {
@@ -192,8 +185,8 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
         @Mutate
         public void createVariantSourceSet(
                 @Path("android.sources") final AndroidComponentModelSourceSet sources,
-                @Path("android.buildTypes") final ModelSet<BuildType> buildTypes,
-                @Path("android.productFlavors") ModelSet<ProductFlavor> flavors,
+                @Path("android.buildTypes") final ModelMap<BuildType> buildTypes,
+                @Path("android.productFlavors") ModelMap<ProductFlavor> flavors,
                 List<ProductFlavorCombo> flavorGroups, ProjectSourceSet projectSourceSet,
                 LanguageRegistry languageRegistry) {
             sources.setProjectSourceSet(projectSourceSet);
@@ -206,7 +199,7 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
             sources.create(ANDROID_TEST.getPrefix());
             sources.create(UNIT_TEST.getPrefix());
 
-            for (BuildType buildType : buildTypes) {
+            for (BuildType buildType : buildTypes.values()) {
                 sources.maybeCreate(buildType.getName());
 
                 for (ProductFlavorCombo group: flavorGroups) {
@@ -222,7 +215,7 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
             if (flavorGroups.size() != flavors.size()) {
                 // If flavorGroups and flavors are the same size, there is at most 1 flavor
                 // dimension.  So we don't need to reconfigure the source sets for flavorGroups.
-                for (ProductFlavor flavor: flavors) {
+                for (ProductFlavor flavor: flavors.values()) {
                     sources.maybeCreate(flavor.getName());
                 }
             }
@@ -242,13 +235,13 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
         @ComponentBinaries
         public void createBinaries(
                 final ModelMap<AndroidBinary> binaries,
-                @Path("android.buildTypes") ModelSet<BuildType> buildTypes,
+                @Path("android.buildTypes") ModelMap<BuildType> buildTypes,
                 List<ProductFlavorCombo> flavorCombos, AndroidComponentSpec spec) {
             if (flavorCombos.isEmpty()) {
                 flavorCombos.add(new ProductFlavorCombo());
             }
 
-            for (final BuildType buildType : buildTypes) {
+            for (final BuildType buildType : buildTypes.values()) {
                 for (final ProductFlavorCombo flavorCombo : flavorCombos) {
                     binaries.create(getBinaryName(buildType, flavorCombo),
                             new Action<AndroidBinary>() {

@@ -70,10 +70,8 @@ model {
         moduleName = "hello-jni"
     }
     android.buildTypes {
-        afterEach {
-            if (name == "debug") {
-                isJniDebuggable = true
-            }
+        debug {
+            isJniDebuggable = true
         }
     }
 }

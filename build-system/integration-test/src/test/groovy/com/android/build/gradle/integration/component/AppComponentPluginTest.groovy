@@ -60,6 +60,7 @@ model {
         assertThat(model).isNotNull();
         assertThat(model.getName()).isEqualTo(project.name)
         assertThat(model.getBuildTypes()).hasSize(2)
+        assertThat(model.getProductFlavors()).hasSize(0)
         assertThat(model.getVariants()).hasSize(2)
     }
 
@@ -68,11 +69,11 @@ model {
         project.buildFile << """
 model {
     android.buildTypes {
-        create { name = "b1" }
+        create("b1")
     }
     android.productFlavors {
-        create { name = "f1" }
-        create { name = "f2" }
+        create("f1")
+        create("f2")
     }
 }
 """
@@ -95,6 +96,12 @@ model {
                 "assembleF1DebugAndroidTest",
                 "assembleF2DebugAndroidTest");
 
+        AndroidProject model = project.executeAndReturnModel("assemble");
+        assertThat(model).isNotNull();
+        assertThat(model.getName()).isEqualTo(project.name)
+        assertThat(model.getBuildTypes()).hasSize(3)
+        assertThat(model.getProductFlavors()).hasSize(2)
+        assertThat(model.getVariants()).hasSize(6)
     }
 
     @Test
