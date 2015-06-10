@@ -105,7 +105,7 @@ public final class SourceFile {
     public String print(boolean shortFormat) {
         if (mSourceFile == null) {
             if (mDescription == null) {
-                return "Unknown";
+                return "Unknown source file";
             }
             return mDescription;
         }
