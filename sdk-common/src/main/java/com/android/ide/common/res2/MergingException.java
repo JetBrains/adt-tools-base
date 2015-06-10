@@ -24,6 +24,7 @@ import com.android.ide.common.blame.SourceFile;
 import com.android.ide.common.blame.SourceFilePosition;
 import com.android.ide.common.blame.SourcePosition;
 import com.google.common.base.Joiner;
+import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -60,6 +61,8 @@ public class MergingException extends Exception {
 
         private String mMessageText = null;
 
+        private String mOriginalMessageText = null;
+
         private SourceFile mFile = SourceFile.UNKNOWN;
 
         private SourcePosition mPosition = SourcePosition.UNKNOWN;
@@ -69,6 +72,7 @@ public class MergingException extends Exception {
 
         public Builder wrapException(Throwable cause) {
             mCause = cause;
+            mOriginalMessageText = Throwables.getStackTraceAsString(cause);
             return this;
         }
 
@@ -107,10 +111,16 @@ public class MergingException extends Exception {
                     }
                 }
             }
+            if (mOriginalMessageText == null) {
+                mOriginalMessageText = mMessageText;
+            }
             return new MergingException(
                     mCause,
                     new Message(
-                            Kind.ERROR, mMessageText, new SourceFilePosition(mFile, mPosition)));
+                            Kind.ERROR,
+                            mMessageText,
+                            mOriginalMessageText,
+                            new SourceFilePosition(mFile, mPosition)));
         }
 
     }
