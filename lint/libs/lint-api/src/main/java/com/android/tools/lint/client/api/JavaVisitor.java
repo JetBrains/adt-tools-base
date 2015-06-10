@@ -151,6 +151,15 @@ public class JavaVisitor {
     private final Map<String, List<VisitingDetector>> mSuperClassDetectors =
             new HashMap<String, List<VisitingDetector>>();
 
+    /**
+     * Number of fatal exceptions (internal errors, usually from ECJ) we've
+     * encountered; we don't log each and every one to avoid massive log spam
+     * in code which triggers this condition
+     */
+    private static int sExceptionCount;
+    /** Max number of logs to include */
+    private static final int MAX_REPORTED_CRASHES = 20;
+
     JavaVisitor(@NonNull JavaParser parser, @NonNull List<Detector> detectors) {
         mParser = parser;
         mAllDetectors = new ArrayList<VisitingDetector>(detectors.size());
@@ -270,12 +279,42 @@ public class JavaVisitor {
                 v.getDetector().afterCheckFile(context);
             }
         } catch (RuntimeException e) {
+            if (sExceptionCount++ > MAX_REPORTED_CRASHES) {
+                // No need to keep spamming the user that a lot of the files
+                // are tripping up ECJ, they get the picture.
+                return;
+            }
+
             // Work around ECJ bugs; see https://code.google.com/p/android/issues/detail?id=172268
             // Don't allow lint bugs to take down the whole build. TRY to log this as a
             // lint error instead!
-            context.log(e, "Unexpected failure during lint analysis of "
-                    + context.file.getName()
-                    + " (this is a bug in lint or one of the libraries it depends on)");
+            StringBuilder sb = new StringBuilder(100);
+            sb.append("Unexpected failure during lint analysis of ");
+            sb.append(context.file.getName());
+            sb.append(" (this is a bug in lint or one of the libraries it depends on)\n");
+
+            StackTraceElement[] stackTrace = e.getStackTrace();
+            int count = 0;
+            for (StackTraceElement frame : stackTrace) {
+                if (count > 0) {
+                    sb.append("->");
+                }
+
+                String className = frame.getClassName();
+                sb.append(className.substring(className.lastIndexOf('.') + 1));
+                sb.append('.').append(frame.getMethodName());
+                sb.append('(');
+                sb.append(frame.getFileName()).append(':').append(frame.getLineNumber());
+                sb.append(')');
+                count++;
+                // Only print the top 3-4 frames such that we can identify the bug
+                if (count == 4) {
+                    break;
+                }
+            }
+            Throwable throwable = null; // NOT e: this makes for very noisy logs
+            //noinspection ConstantConditions
+            context.log(throwable, sb.toString());
         } finally {
             if (compilationUnit != null) {
                 mParser.dispose(context, compilationUnit);
