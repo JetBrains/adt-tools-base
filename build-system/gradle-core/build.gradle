@@ -37,6 +37,7 @@ dependencies {
     testCompile 'junit:junit:4.12'
     testCompile 'org.mockito:mockito-all:1.9.5'
     testCompile project(':base:project-test-lib')
+    testCompile project(':base:testutils')
 }
 
 tasks.compileJava.dependsOn ":setupGradleInIde"
