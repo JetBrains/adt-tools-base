@@ -568,9 +568,6 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
 
         resolveIndirectLibraryDependencies(mDirectLibraries, mFlatLibraries);
 
-        for (LibraryDependency libraryDependency : mFlatLibraries) {
-            mLocalJars.addAll(libraryDependency.getLocalDependencies());
-        }
         return this;
     }
 
