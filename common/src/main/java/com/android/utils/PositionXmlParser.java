@@ -81,7 +81,7 @@ public class PositionXmlParser {
      *             happen since the input source is known to be constructed from
      *             a string.
      */
-    @Nullable
+    @NonNull
     public static Document parse(@NonNull InputStream input)
             throws ParserConfigurationException, SAXException, IOException {
         // Read in all the data
@@ -109,7 +109,7 @@ public class PositionXmlParser {
      *             happen since the input source is known to be constructed from
      *             a string.
      */
-    @Nullable
+    @NonNull
     public static Document parse(@NonNull byte[] data)
             throws ParserConfigurationException, SAXException, IOException {
         String xml = getXmlString(data);
@@ -129,7 +129,7 @@ public class PositionXmlParser {
      *             happen since the input source is known to be constructed from
      *             a string.
      */
-    @Nullable
+    @NonNull
     public static Document parse(@NonNull String xml)
             throws ParserConfigurationException, SAXException, IOException {
         xml = XmlUtils.stripBom(xml);
