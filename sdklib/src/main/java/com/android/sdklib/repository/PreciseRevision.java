@@ -104,7 +104,7 @@ public class PreciseRevision extends FullRevision {
     @Override
     public int[] toIntArray(boolean includePreview) {
         int[] result;
-        if (mPrecision >= PRECISION_PREVIEW && isPreview()) {
+        if (mPrecision >= PRECISION_PREVIEW) {
             if (includePreview) {
                 result = new int[mPrecision];
                 result[3] = getPreview();

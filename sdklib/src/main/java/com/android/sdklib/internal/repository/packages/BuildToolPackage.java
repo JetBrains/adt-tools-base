@@ -26,6 +26,7 @@ import com.android.sdklib.repository.FullRevision;
 import com.android.sdklib.repository.FullRevision.PreviewComparison;
 import com.android.sdklib.repository.IDescription;
 import com.android.sdklib.repository.PkgProps;
+import com.android.sdklib.repository.PreciseRevision;
 import com.android.sdklib.repository.descriptors.IPkgDesc;
 import com.android.sdklib.repository.descriptors.PkgDesc;
 
@@ -229,7 +230,7 @@ public class BuildToolPackage extends FullRevisionPackage {
      */
     @Override
     public String installId() {
-        return INSTALL_ID_BASE + getRevision().toString().replace(' ', '_');
+        return getPkgDesc().getInstallId();
     }
 
     /**
@@ -297,7 +298,21 @@ public class BuildToolPackage extends FullRevisionPackage {
     @Override
     public File getInstallFolder(String osSdkRoot, SdkManager sdkManager) {
         File folder = new File(osSdkRoot, SdkConstants.FD_BUILD_TOOLS);
-        folder = new File(folder, getRevision().toString().replace(' ', '_'));
+        StringBuilder sb = new StringBuilder();
+
+        PreciseRevision revision = getPkgDesc().getPreciseRevision();
+        int[] version = revision.toIntArray(false);
+        for (int i = 0; i < version.length; i++) {
+            sb.append(version[i]);
+            if (i != version.length - 1) {
+                sb.append('.');
+            }
+        }
+        if (getPkgDesc().getPreciseRevision().isPreview()) {
+            sb.append(PkgDesc.PREVIEW_SUFFIX);
+        }
+
+        folder = new File(folder, sb.toString());
         return folder;
     }
 

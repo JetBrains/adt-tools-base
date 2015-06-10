@@ -269,14 +269,17 @@ public class PkgDesc implements IPkgDesc {
 
         case PKG_BUILD_TOOLS:
             sb.append(mType.getFolderName()).append('-');
-            // Add version number without the preview. This is to make preview packages
+            // Add version number without the preview revision number. This is to make preview packages
             // be updatable to the next revision.
-            int[] version = getFullRevision().toIntArray(false);
+            int[] version = getPreciseRevision().toIntArray(false);
             for (int i = 0; i < version.length; i++) {
                 sb.append(version[i]);
                 if (i != version.length - 1) {
                     sb.append('.');
                 }
+            }
+            if (getPreciseRevision().isPreview()) {
+                sb.append(PREVIEW_SUFFIX);
             }
             break;
 

@@ -37,7 +37,7 @@ public class PreciseRevisionTest extends TestCase {
         assertEquals(PreciseRevision.IMPLICIT_MINOR_REV, p.getMinor());
         assertEquals(PreciseRevision.IMPLICIT_MICRO_REV, p.getMicro());
         assertEquals(PreciseRevision.NOT_A_PREVIEW, p.getPreview());
-        assertFalse (p.isPreview());
+        assertFalse(p.isPreview());
         assertEquals("5", p.toShortString());
         assertEquals(p, PreciseRevision.parseRevision("5"));
         assertEquals("5", p.toString());
@@ -106,6 +106,8 @@ public class PreciseRevisionTest extends TestCase {
         assertFalse(p.isPreview());
         assertEquals("10.11.12", p.toShortString());
         assertEquals("10.11.12", p.toString());
+        assertEquals("[10, 11, 12]",    Arrays.toString(p.toIntArray(false /*includePreview*/)));
+        assertEquals("[10, 11, 12, 0]", Arrays.toString(p.toIntArray(true  /*includePreview*/)));
 
         p = new PreciseRevision(10, 11, 12, 13);
         assertEquals(10, p.getMajor());
