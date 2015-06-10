@@ -1,12 +1,3 @@
-buildscript {
-    repositories {
-        maven { url = uri(rootProject.cloneArtifacts.repository) }
-    }
-    dependencies {
-        classpath "com.jfrog.bintray.gradle:gradle-bintray-plugin:1.0"
-    }
-}
-
 apply plugin: 'java'
 apply plugin: 'sdk-java-lib'
 
