@@ -14,34 +14,34 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal
+package com.android.build.gradle.internal;
 
-import com.android.annotations.NonNull
-import com.android.annotations.Nullable
-import com.google.common.base.Charsets
-import groovy.transform.CompileStatic
-import org.gradle.api.JavaVersion
+import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+import com.google.common.base.Charsets;
+import org.gradle.api.JavaVersion;
+
+import java.util.Locale;
 
 /**
  * Compilation options.
  */
-@CompileStatic
-class CompileOptions {
+public class CompileOptions {
     @Nullable
-    private JavaVersion sourceCompatibility
+    private JavaVersion sourceCompatibility;
 
     @Nullable
-    private JavaVersion targetCompatibility
+    private JavaVersion targetCompatibility;
 
-    String encoding = Charsets.UTF_8.name()
+    private String encoding = Charsets.UTF_8.name();
 
     /**
      * Default Java version that will be used if the source and target compatibility levels will
      * not be set explicitly.
      */
-    JavaVersion defaultJavaVersion = JavaVersion.VERSION_1_6
+    private JavaVersion defaultJavaVersion = JavaVersion.VERSION_1_6;
 
-    boolean ndkCygwinMode = false
+    private boolean ndkCygwinMode = false;
 
     /**
      * Language level of the source code.
@@ -52,8 +52,8 @@ class CompileOptions {
      *      JavaVersion.Version_1_6
      *      "Version_1_6"
      */
-    void setSourceCompatibility(@NonNull Object sourceCompatibility) {
-        this.sourceCompatibility = convert(sourceCompatibility)
+    public void setSourceCompatibility(@NonNull Object sourceCompatibility) {
+        this.sourceCompatibility = convert(sourceCompatibility);
     }
 
     /**
@@ -63,8 +63,8 @@ class CompileOptions {
      * Gradle Java plugin</a> uses.
      */
     @NonNull
-    JavaVersion getSourceCompatibility() {
-        sourceCompatibility?: defaultJavaVersion
+    public JavaVersion getSourceCompatibility() {
+        return sourceCompatibility != null ? sourceCompatibility : defaultJavaVersion;
     }
 
     /**
@@ -76,8 +76,8 @@ class CompileOptions {
      *      JavaVersion.Version_1_6
      *      "Version_1_6"
      */
-    void setTargetCompatibility(@NonNull Object targetCompatibility) {
-        this.targetCompatibility = convert(targetCompatibility)
+    public void setTargetCompatibility(@NonNull Object targetCompatibility) {
+        this.targetCompatibility = convert(targetCompatibility);
     }
 
     /**
@@ -87,24 +87,43 @@ class CompileOptions {
      * Gradle Java plugin</a> uses.
      */
     @NonNull
-    JavaVersion getTargetCompatibility() {
-        targetCompatibility?: defaultJavaVersion
+    public JavaVersion getTargetCompatibility() {
+        return targetCompatibility != null ? targetCompatibility : defaultJavaVersion;
     }
 
+    public void setEncoding(String encoding) {
+        this.encoding = encoding;
+    }
+
+    public String getEncoding() {
+        return encoding;
+    }
+
+    public void setDefaultJavaVersion(JavaVersion defaultJavaVersion) {
+        this.defaultJavaVersion = defaultJavaVersion;
+    }
+
+    public JavaVersion getDefaultJavaVersion() {
+        return defaultJavaVersion;
+    }
+
+
+    private static final String VERSION_PREFIX = "VERSION_";
     /**
      * Convert all possible supported way of specifying a Java version to {@link JavaVersion}
      * @param version the user provided java version.
      * @return {@link JavaVersion}
-     * @throws {@link RuntimeException} if it cannot be converted.
+     * @throws RuntimeException if it cannot be converted.
      */
     @NonNull
-    private JavaVersion convert(@NonNull Object version) {
+    private static JavaVersion convert(@NonNull Object version) {
         // for backward version reasons, we support setting strings like 'Version_1_6'
-        if (version instanceof String
-                && version.toString().toUpperCase().startsWith(
-                'Version_'.toUpperCase())) {
-            version = version.substring("Version".length() + 1).replace("_", ".")
+        if (version instanceof String) {
+            final String versionString = (String) version;
+            if (versionString.toUpperCase(Locale.ENGLISH).startsWith(VERSION_PREFIX)) {
+                version = versionString.substring(VERSION_PREFIX.length()).replace('_', '.');
+            }
         }
-        return JavaVersion.toVersion(version)
+        return JavaVersion.toVersion(version);
     }
 }
