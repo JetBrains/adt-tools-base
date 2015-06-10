@@ -58,15 +58,14 @@ public class ExtractTest {
 
     @IntDef(flag=false, value={0, Constants.CONSTANT_1, Constants.CONSTANT_3})
     @Retention(RetentionPolicy.SOURCE)
-    private @interface NonMask {}
+    protected @interface NonMaskType {}
 
-    public void testNonMask(@NonMask int mask) {
+    public void testNonMask(@NonMaskType int mask) {
     }
 
-    /** @hide */
     @IntDef({VISIBLE, INVISIBLE, GONE, 5, 7 + 10, Constants.CONSTANT_1})
     @Retention(RetentionPolicy.SOURCE)
-    private @interface Visibility {}
+    public @interface Visibility {}
 
     public static final int VISIBLE = 0x00000000;
     public static final int INVISIBLE = 0x00000004;

@@ -22,6 +22,7 @@ import com.android.annotations.NonNull;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.ByteStreams;
+import com.google.common.primitives.Bytes;
 import com.google.common.truth.FailureStrategy;
 import com.google.common.truth.IterableSubject;
 import com.google.common.truth.Subject;
@@ -114,6 +115,19 @@ public abstract class AbstractZipSubject<T extends Subject<T, File>> extends Sub
     @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
     public void containsFileWithContent(@NonNull String path, @NonNull byte[] content) {
         assertThat(extractContentAsByte(path)).named(path).isEqualTo(content);
+    }
+
+    /**
+     * Asserts the zip file contains a file <b>without</b> the specified byte sequence
+     * <b>anywhere</b> in the file
+     */
+    @SuppressWarnings("NonBooleanMethodNameMayNotStartWithQuestion")
+    public void containsFileWithoutContent(@NonNull String path, @NonNull byte[] sub) {
+        byte[] contents = extractContentAsByte(path);
+        int index = Bytes.indexOf(contents, sub);
+        if (index != -1) {
+            failWithRawMessage("Found byte sequence at " + index + " in class file " + path);
+        }
     }
 
     protected String extractContentAsString(@NonNull String path) {
