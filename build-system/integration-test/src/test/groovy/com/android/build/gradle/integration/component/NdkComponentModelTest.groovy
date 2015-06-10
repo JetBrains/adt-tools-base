@@ -139,13 +139,26 @@ model {
         create("mips") {
             ndkConfig.abiFilters +="mips"
         }
+        create("fat")
     }
 }
 """
-        checkModel(
+        AndroidProject model = checkModel(
                 x86Debug : [SdkConstants.ABI_INTEL_ATOM],
                 armDebug : [SdkConstants.ABI_ARMEABI_V7A],
-                mipsDebug : [SdkConstants.ABI_MIPS]);
+                mipsDebug : [SdkConstants.ABI_MIPS],
+                fatDebug: [
+                        SdkConstants.ABI_ARMEABI,
+                        SdkConstants.ABI_ARMEABI_V7A,
+                        SdkConstants.ABI_ARM64_V8A,
+                        SdkConstants.ABI_INTEL_ATOM,
+                        SdkConstants.ABI_INTEL_ATOM64,
+                        SdkConstants.ABI_MIPS,
+                        SdkConstants.ABI_MIPS64
+                ]);
+
+        AndroidArtifact fat = ModelHelper.getVariant(model.getVariants(), "fatDebug").getMainArtifact()
+        assertThat(fat.abiFilters).isNull();
     }
 
     @Test
@@ -173,7 +186,7 @@ model {
      *
      * @param variantToolchains map of variant name to array of expected toolchains.
      */
-    private void checkModel(Map variantToolchains) {
+    private AndroidProject checkModel(Map variantToolchains) {
 
         AndroidProject model = project.executeAndReturnModel("assembleDebug")
 
@@ -202,6 +215,6 @@ model {
                     collect { it.getToolchainName() }
             assertThat(nativeLibToolchains).containsExactlyElementsIn(expectedToolchainNames)
         }
-
+        return model;
     }
 }

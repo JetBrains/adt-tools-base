@@ -56,7 +56,8 @@ public class NdkConfigAdaptor implements com.android.build.gradle.internal.core.
     @Nullable
     @Override
     public Set<String> getAbiFilters() {
-        return ndkConfig.getAbiFilters();
+        // null is considered to be no filter, which is different from an empty filter list.
+        return (ndkConfig.getAbiFilters().isEmpty() ? null : ndkConfig.getAbiFilters());
     }
 
     @Nullable
