@@ -35,6 +35,7 @@ import com.android.build.gradle.internal.dsl.ProductFlavor
 import com.android.build.gradle.internal.dsl.ProductFlavorFactory
 import com.android.build.gradle.internal.dsl.SigningConfig
 import com.android.build.gradle.internal.dsl.SigningConfigFactory
+import com.android.build.gradle.internal.NativeLibraryFactoryImpl
 import com.android.build.gradle.internal.model.ModelBuilder
 import com.android.build.gradle.internal.process.GradleJavaProcessExecutor
 import com.android.build.gradle.internal.process.GradleProcessExecutor
@@ -368,6 +369,7 @@ public abstract class BasePlugin {
                 extension,
                 extraModelInfo,
                 ndkHandler,
+                new NativeLibraryFactoryImpl(ndkHandler),
                 isLibrary())
         registry.register(modelBuilder);
 

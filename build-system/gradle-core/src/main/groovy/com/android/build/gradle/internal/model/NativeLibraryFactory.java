@@ -14,26 +14,21 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.model;
+package com.android.build.gradle.internal.model;
+
+import com.android.annotations.NonNull;
+import com.android.build.gradle.internal.core.Abi;
+import com.android.build.gradle.internal.scope.VariantScope;
+import com.android.builder.model.NativeLibrary;
+import com.google.common.base.Optional;
 
 /**
- * Component model path names.
+ * Factory for creating NativeLibrary.
  */
-public class ModelConstants {
-
-    public static final String ANDROID_BUILDER = "androidBuilder";
-
-    public static final String ANDROID_CONFIG_ADAPTOR = "androidConfigAdaptor";
-
-    public static final String BINARIES = "binaries";
-
-    public static final String COMPONENTS = "components";
-
-    public static final String EXTRA_MODEL_INFO = "extraModelInfo";
-
-    public static final String IS_APPLICATION = "isApplication";
-
-    public static final String NDK_HANDLER = "ndkHandler";
-
-    public static final String TASK_MANAGER = "taskManager";
+public interface NativeLibraryFactory {
+    @NonNull
+    Optional<NativeLibrary> create(
+            @NonNull VariantScope scope,
+            @NonNull String toolchainName,
+            @NonNull Abi abi);
 }
