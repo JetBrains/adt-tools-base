@@ -47,10 +47,10 @@ public class AndroidComponentGradleModule extends GradleModule {
                 "\n" +
                 "model {\n" +
                 "    android {\n" +
-                "        compileSdkVersion " + DEFAULT_COMPILE_SDK_VERSION + "\n" +
-                "        buildToolsVersion '" + DEFAULT_BUILD_TOOL_VERSION + "'\n" +
-                "        defaultConfig {\n" +
-                "            useJack " + CUSTOM_JACK + "\n" +
+                "        compileSdkVersion = " + DEFAULT_COMPILE_SDK_VERSION + "\n" +
+                "        buildToolsVersion = '" + DEFAULT_BUILD_TOOL_VERSION + "'\n" +
+                "        defaultConfig.with {\n" +
+                "//            useJack " + CUSTOM_JACK + "\n" +
                 "        }\n" +
                 "    }\n" +
                 "}\n";
