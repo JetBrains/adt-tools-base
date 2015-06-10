@@ -21,7 +21,7 @@ import org.gradle.model.Managed;
 /**
  * A Managed wrapper of String.
  *
- * This really should not be necessary, but at the moment, there is no way to create a ManagedSet of
+ * This really should not be necessary, but at the moment, there is no way to create a ModelSet of
  * String or equivalent.
  */
 @Managed

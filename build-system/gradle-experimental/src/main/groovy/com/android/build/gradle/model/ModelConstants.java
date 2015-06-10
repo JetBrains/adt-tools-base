@@ -23,7 +23,9 @@ public class ModelConstants {
 
     public static final String ANDROID_BUILDER = "androidBuilder";
 
-    public static final String ANDROID_COMPONENT_SPEC = "androidComponentSpec";
+    public static final String ANDROID_CONFIG_ADAPTOR = "androidConfigAdaptor";
+
+    public static final String COMPONENTS = "components";
 
     public static final String EXTRA_MODEL_INFO = "extraModelInfo";
 

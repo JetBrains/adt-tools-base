@@ -17,7 +17,7 @@
 package com.android.build.gradle.managed;
 
 import org.gradle.model.Managed;
-import org.gradle.model.collection.ManagedSet;
+import org.gradle.model.ModelSet;
 
 /**
  * A Managed build type.
@@ -28,14 +28,14 @@ public interface BuildType {
     String getName();
     void setName(String name);
 
-    ManagedSet<ClassField> getBuildConfigFields();
+    ModelSet<ClassField> getBuildConfigFields();
 
-    ManagedSet<ClassField> getResValues();
+    ModelSet<ClassField> getResValues();
 
     // TODO: Add the commented fields.
-    //ManagedSet<String> getProguardFiles();
+    //ModelSet<String> getProguardFiles();
 
-    //ManagedSet<String> getConsumerProguardFiles();
+    //ModelSet<String> getConsumerProguardFiles();
 
     //Map<String, Object> getManifestPlaceholders();
 

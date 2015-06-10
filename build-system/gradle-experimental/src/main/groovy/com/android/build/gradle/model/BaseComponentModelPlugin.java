@@ -16,7 +16,9 @@
 
 package com.android.build.gradle.model;
 
+import static com.android.build.gradle.model.AndroidComponentModelPlugin.COMPONENT_NAME;
 import static com.android.build.gradle.model.ModelConstants.ANDROID_BUILDER;
+import static com.android.build.gradle.model.ModelConstants.ANDROID_CONFIG_ADAPTOR;
 import static com.android.build.gradle.model.ModelConstants.EXTRA_MODEL_INFO;
 import static com.android.builder.core.BuilderConstants.DEBUG;
 import static com.android.builder.model.AndroidProject.FD_INTERMEDIATES;
@@ -75,15 +77,16 @@ import org.gradle.api.plugins.JavaBasePlugin;
 import org.gradle.internal.reflect.Instantiator;
 import org.gradle.internal.service.ServiceRegistry;
 import org.gradle.model.Model;
+import org.gradle.model.ModelMap;
 import org.gradle.model.Mutate;
 import org.gradle.model.Path;
 import org.gradle.model.RuleSource;
-import org.gradle.model.collection.CollectionBuilder;
-import org.gradle.model.collection.ManagedSet;
+import org.gradle.model.ModelSet;
 import org.gradle.model.internal.core.ModelCreators;
 import org.gradle.model.internal.core.ModelReference;
 import org.gradle.model.internal.registry.ModelRegistry;
 import org.gradle.platform.base.BinaryContainer;
+import org.gradle.platform.base.ComponentSpecContainer;
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
 
 import java.io.File;
@@ -294,8 +297,8 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
 
         @Mutate
         public void initDebugBuildTypes(
-                @Path("android.buildTypes") ManagedSet<BuildType> buildTypes,
-                @Path("android.signingConfigs") ManagedSet<SigningConfig> signingConfigs) {
+                @Path("android.buildTypes") ModelSet<BuildType> buildTypes,
+                @Path("android.signingConfigs") ModelSet<SigningConfig> signingConfigs) {
             final SigningConfig debugSigningConfig = Iterables.find(signingConfigs,
                     new Predicate<SigningConfig>() {
                         @Override
@@ -349,7 +352,7 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
             sources.addDefaultSourceSet("jniLibs", AndroidLanguageSourceSet.class);
         }
 
-        @Model
+        @Model(ANDROID_CONFIG_ADAPTOR)
         public com.android.build.gradle.AndroidConfig createModelAdaptor(
                 ServiceRegistry serviceRegistry,
                 AndroidConfig androidExtension,
@@ -361,12 +364,13 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
         }
 
         @Mutate
-        public void createAndroidComponents(AndroidComponentSpec androidSpec,
+        public void createAndroidComponents(
+                ComponentSpecContainer androidSpecs,
                 ServiceRegistry serviceRegistry, AndroidConfig androidExtension,
                 com.android.build.gradle.AndroidConfig adaptedModel,
-                @Path("android.buildTypes") ManagedSet<BuildType> buildTypes,
-                @Path("android.productFlavors") ManagedSet<ProductFlavor> productFlavors,
-                @Path("android.signingConfigs") ManagedSet<SigningConfig> signingConfigs,
+                @Path("android.buildTypes") ModelSet<BuildType> buildTypes,
+                @Path("android.productFlavors") ModelSet<ProductFlavor> productFlavors,
+                @Path("android.signingConfigs") ModelSet<SigningConfig> signingConfigs,
                 VariantFactory variantFactory,
                 TaskManager taskManager,
                 Project project,
@@ -395,17 +399,19 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
                 variantManager.addProductFlavor(new ProductFlavorAdaptor(productFlavor));
             }
 
-            DefaultAndroidComponentSpec spec = (DefaultAndroidComponentSpec) androidSpec;
+            DefaultAndroidComponentSpec spec =
+                    (DefaultAndroidComponentSpec) androidSpecs.get(COMPONENT_NAME);
             spec.setExtension(androidExtension);
             spec.setVariantManager(variantManager);
         }
 
         @Mutate
         public void createVariantData(
-                CollectionBuilder<AndroidBinary> binaries,
-                AndroidComponentSpec spec, TaskManager taskManager) {
+                ModelMap<AndroidBinary> binaries,
+                ModelMap<AndroidComponentSpec> specs,
+                TaskManager taskManager) {
             final VariantManager variantManager =
-                    ((DefaultAndroidComponentSpec) spec).getVariantManager();
+                    ((DefaultAndroidComponentSpec) specs.get(COMPONENT_NAME)).getVariantManager();
             binaries.all(new Action<AndroidBinary>() {
                 @Override
                 public void execute(AndroidBinary androidBinary) {
@@ -418,13 +424,16 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
         }
 
         @Mutate
-        public void createLifeCycleTasks(CollectionBuilder<Task> tasks, TaskManager taskManager) {
-            taskManager.createTasksBeforeEvaluate(new TaskCollectionBuilderAdaptor(tasks));
+        public void createLifeCycleTasks(ModelMap<Task> tasks, TaskManager taskManager) {
+            taskManager.createTasksBeforeEvaluate(new TaskModelMapAdaptor(tasks));
         }
 
         @Mutate
-        public void createAndroidTasks(CollectionBuilder<Task> tasks,
-                AndroidComponentSpec androidSpec, TaskManager taskManager, SdkHandler sdkHandler,
+        public void createAndroidTasks(
+                ModelMap<Task> tasks,
+                ModelMap<AndroidComponentSpec> androidSpecs,
+                TaskManager taskManager,
+                SdkHandler sdkHandler,
                 Project project, AndroidComponentModelSourceSet androidSources) {
             // setup SDK repositories.
             for (final File file : sdkHandler.getSdkLoader().getRepositories()) {
@@ -441,18 +450,18 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
         // TODO: Use @BinaryTasks after figuring how to configure non-binary specific tasks.
         @Mutate
         public void createBinaryTasks(
-                final CollectionBuilder<Task> tasks,
+                final ModelMap<Task> tasks,
                 BinaryContainer binaries,
-                AndroidComponentSpec spec,
+                ModelMap<AndroidComponentSpec> specs,
                 TaskManager taskManager) {
             final VariantManager variantManager =
-                    ((DefaultAndroidComponentSpec) spec).getVariantManager();
+                    ((DefaultAndroidComponentSpec) specs.get(COMPONENT_NAME)).getVariantManager();
             binaries.withType(AndroidBinary.class, new Action<AndroidBinary>() {
                 @Override
                 public void execute(AndroidBinary androidBinary) {
                     DefaultAndroidBinary binary = (DefaultAndroidBinary) androidBinary;
                     variantManager.createTasksForVariantData(
-                            new TaskCollectionBuilderAdaptor(tasks),
+                            new TaskModelMapAdaptor(tasks),
                             binary.getVariantData());
                 }
             });
@@ -462,19 +471,24 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
          * Create tasks that must be created after other tasks for variants are created.
          */
         @Mutate
-        public void createRemainingTasks(CollectionBuilder<Task> tasks, TaskManager taskManager,
-                AndroidComponentSpec spec) {
-            VariantManager variantManager = ((DefaultAndroidComponentSpec)spec).getVariantManager();
+        public void createRemainingTasks(
+                ModelMap<Task> tasks,
+                TaskManager taskManager,
+                ModelMap<AndroidComponentSpec> spec) {
+            VariantManager variantManager =
+                    ((DefaultAndroidComponentSpec)spec.get(COMPONENT_NAME)).getVariantManager();
 
             // create the test tasks.
-            taskManager.createTopLevelTestTasks(new TaskCollectionBuilderAdaptor(tasks),
+            taskManager.createTopLevelTestTasks(new TaskModelMapAdaptor(tasks),
                     !variantManager.getProductFlavors().isEmpty());
         }
 
         @Mutate
-        public void createReportTasks(CollectionBuilder<Task> tasks, AndroidComponentSpec spec) {
+        public void createReportTasks(
+                ModelMap<Task> tasks,
+                ModelMap<AndroidComponentSpec> specs) {
             final VariantManager variantManager =
-                    ((DefaultAndroidComponentSpec)spec).getVariantManager();
+                    ((DefaultAndroidComponentSpec)specs.get(COMPONENT_NAME)).getVariantManager();
 
             tasks.create("androidDependencies", DependencyReportTask.class,
                     new Action<DependencyReportTask>() {

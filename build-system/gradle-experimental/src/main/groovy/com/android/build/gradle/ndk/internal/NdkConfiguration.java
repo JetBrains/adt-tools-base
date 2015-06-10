@@ -34,7 +34,7 @@ import org.gradle.api.tasks.Copy;
 import org.gradle.language.base.FunctionalSourceSet;
 import org.gradle.language.c.tasks.CCompile;
 import org.gradle.language.cpp.tasks.CppCompile;
-import org.gradle.model.collection.CollectionBuilder;
+import org.gradle.model.ModelMap;
 import org.gradle.nativeplatform.NativeBinarySpec;
 import org.gradle.nativeplatform.NativeLibrarySpec;
 import org.gradle.nativeplatform.SharedLibraryBinarySpec;
@@ -79,7 +79,8 @@ public class NdkConfiguration {
                                         buildDir,
                                         NdkNamingScheme.getOutputDirectoryName(binary)
                                                 + "/"
-                                                + NdkNamingScheme.getSharedLibraryFileName(ndkConfig.getModuleName())));
+                                                + NdkNamingScheme.getSharedLibraryFileName(
+                                                        ndkConfig.getModuleName())));
 
                         // Replace output directory of compile tasks.
                         binary.getTasks().withType(CCompile.class, new Action<CCompile>() {
@@ -149,7 +150,7 @@ public class NdkConfiguration {
                 });
     }
 
-    public static void createTasks(CollectionBuilder<Task> tasks, SharedLibraryBinarySpec binary,
+    public static void createTasks(ModelMap<Task> tasks, SharedLibraryBinarySpec binary,
             File buildDir, NdkConfig ndkConfig, NdkHandler ndkHandler) {
         StlConfiguration.createStlCopyTask(ndkHandler, ndkConfig.getStl(), tasks, buildDir, binary);
 
@@ -168,14 +169,13 @@ public class NdkConfiguration {
         if (sourceSet != null) {
             binary.source(sourceSet);
         }
-
     }
 
     /**
      * Setup tasks to create gdb.setup and copy gdbserver for NDK debugging.
      */
     private static void setupNdkGdbDebug(
-            CollectionBuilder<Task> tasks,
+            ModelMap<Task> tasks,
             final NativeBinarySpec binary,
             final File buildDir,
             final NdkConfig ndkConfig,

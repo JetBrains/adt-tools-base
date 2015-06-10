@@ -21,16 +21,16 @@ import com.android.build.gradle.internal.TaskFactory;
 
 import org.gradle.api.Action;
 import org.gradle.api.Task;
-import org.gradle.model.collection.CollectionBuilder;
+import org.gradle.model.ModelMap;
 
 /**
- * Adaptor to transform CollectionBuilder<Task> into TaskFactory.
+ * Adaptor to transform ModelMap<Task> into TaskFactory.
  */
-public class TaskCollectionBuilderAdaptor implements TaskFactory {
+public class TaskModelMapAdaptor implements TaskFactory {
 
-    private final CollectionBuilder<Task> tasks;
+    private final ModelMap<Task> tasks;
 
-    public TaskCollectionBuilderAdaptor(CollectionBuilder<Task> tasks) {
+    public TaskModelMapAdaptor(ModelMap<Task> tasks) {
         this.tasks = tasks;
     }
 

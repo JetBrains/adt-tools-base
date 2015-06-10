@@ -16,6 +16,7 @@
 
 package com.android.build.gradle.model;
 
+import static com.android.build.gradle.model.AndroidComponentModelPlugin.COMPONENT_NAME;
 import static com.android.builder.core.VariantType.ANDROID_TEST;
 
 import com.android.build.gradle.internal.TaskManager;
@@ -27,9 +28,9 @@ import com.google.common.base.Preconditions;
 
 import org.gradle.api.Action;
 import org.gradle.api.Task;
+import org.gradle.model.ModelMap;
 import org.gradle.model.Mutate;
 import org.gradle.model.RuleSource;
-import org.gradle.model.collection.CollectionBuilder;
 import org.gradle.platform.base.BinaryContainer;
 
 /**
@@ -40,11 +41,12 @@ public class AndroidComponentModelTestPlugin extends RuleSource {
 
     @Mutate
     public void createConnectedTestTasks(
-            final CollectionBuilder<Task> tasks,
+            final ModelMap<Task> tasks,
             BinaryContainer binaries,
             TaskManager taskManager,
-            AndroidComponentSpec spec) {
-        final VariantManager variantManager = ((DefaultAndroidComponentSpec) spec).getVariantManager();
+            ModelMap<AndroidComponentSpec> specs) {
+        final VariantManager variantManager =
+                ((DefaultAndroidComponentSpec) specs.get(COMPONENT_NAME)).getVariantManager();
         binaries.withType(AndroidBinary.class, new Action<AndroidBinary>() {
             @Override
             public void execute(AndroidBinary androidBinary) {
@@ -66,7 +68,7 @@ public class AndroidComponentModelTestPlugin extends RuleSource {
                         variantManager.createTestVariantData(testedVariantData, ANDROID_TEST);
                 variantManager.getVariantDataList().add(testVariantData);
                 variantManager.createTasksForVariantData(
-                        new TaskCollectionBuilderAdaptor(tasks),
+                        new TaskModelMapAdaptor(tasks),
                         testVariantData);
             }
         });

@@ -17,7 +17,8 @@
 package com.android.build.gradle.model;
 
 import static com.android.build.gradle.model.ModelConstants.ANDROID_BUILDER;
-import static com.android.build.gradle.model.ModelConstants.ANDROID_COMPONENT_SPEC;
+import static com.android.build.gradle.model.ModelConstants.ANDROID_CONFIG_ADAPTOR;
+import static com.android.build.gradle.model.ModelConstants.COMPONENTS;
 import static com.android.build.gradle.model.ModelConstants.EXTRA_MODEL_INFO;
 import static com.android.build.gradle.model.ModelConstants.IS_APPLICATION;
 import static com.android.build.gradle.model.ModelConstants.NDK_HANDLER;
@@ -33,9 +34,11 @@ import com.android.builder.core.AndroidBuilder;
 import com.android.builder.model.AndroidProject;
 
 import org.gradle.api.Project;
+import org.gradle.model.ModelMap;
 import org.gradle.model.internal.core.ModelPath;
 import org.gradle.model.internal.registry.ModelRegistry;
 import org.gradle.model.internal.type.ModelType;
+import org.gradle.platform.base.ComponentSpecContainer;
 import org.gradle.tooling.provider.model.ToolingModelBuilder;
 
 /**
@@ -73,14 +76,15 @@ public class ComponentModelBuilder implements ToolingModelBuilder {
                 new ModelPath(ANDROID_BUILDER),
                 ModelType.of(AndroidBuilder.class));
         DefaultAndroidComponentSpec componentSpec = (DefaultAndroidComponentSpec) registry.realize(
-                new ModelPath(ANDROID_COMPONENT_SPEC),
-                ModelType.of(AndroidComponentSpec.class));
+                new ModelPath(COMPONENTS),
+                ModelType.of(ComponentSpecContainer.class))
+                        .get(AndroidComponentModelPlugin.COMPONENT_NAME);
         VariantManager variantManager = componentSpec.getVariantManager();
         TaskManager taskManager = registry.realize(
                 new ModelPath(TASK_MANAGER),
                 ModelType.of(TaskManager.class));
         AndroidConfig extension = registry.realize(
-                new ModelPath("createModelAdaptor"),
+                new ModelPath(ANDROID_CONFIG_ADAPTOR),
                 ModelType.of(AndroidConfig.class));
         ExtraModelInfo extraModelInfo = registry.realize(
                 new ModelPath(EXTRA_MODEL_INFO),

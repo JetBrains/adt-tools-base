@@ -17,7 +17,7 @@
 package com.android.build.gradle.managed;
 
 import org.gradle.model.Managed;
-import org.gradle.model.collection.ManagedSet;
+import org.gradle.model.ModelSet;
 
 /**
  * A Managed interface for FilterablePattern.
@@ -25,7 +25,7 @@ import org.gradle.model.collection.ManagedSet;
 @Managed
 public interface FilePattern {
 
-    ManagedSet<ManagedString> getIncludes();
+    ModelSet<ManagedString> getIncludes();
 
-    ManagedSet<ManagedString> getExcludes();
+    ModelSet<ManagedString> getExcludes();
 }

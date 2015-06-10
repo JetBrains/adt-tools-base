@@ -38,6 +38,6 @@ public interface ClassField {
 
     // TODO: Implement this.
     //@Override
-    //ManagedSet<String> getAnnotations();
-    //void setAnnotations(ManagedSet<String> annotations);
+    //ModelSet<String> getAnnotations();
+    //void setAnnotations(ModelSet<String> annotations);
 }
