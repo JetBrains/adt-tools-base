@@ -239,6 +239,7 @@ public abstract class BasePlugin {
         this.project = project
 
         checkPathForErrors()
+        checkModulesForErrors()
 
         ProcessRecorderFactory.initialize(logger, project.rootProject.
                 file("profiler" + System.currentTimeMillis() + ".json"))
@@ -501,6 +502,28 @@ public abstract class BasePlugin {
                     extension.buildToolsRevision,
                     extension.getLibraryRequests(),
                     androidBuilder)
+        }
+    }
+
+    /**
+     * Check the sub-projects structure :
+     * So far, checks that 2 modules do not have the same identification (group+name).
+     */
+    private void checkModulesForErrors() {
+        Project rootProject = project.getRootProject();
+        Map<String, Project> subProjectsById = new HashMap<>();
+        for (Project subProject : rootProject.getAllprojects()) {
+            String id = subProject.getGroup().toString() + ":" + subProject.getName();
+            if (subProjectsById.containsKey(id)) {
+                String message = """
+Your project contains 2 or more modules with the same identification ${id}
+at "${subProjectsById.get(id).getPath()}" and "${subProject.getPath()}".
+You must use different identification (either name or group) for each modules.
+""".trim();
+                throw new StopExecutionException(message)
+            } else {
+                subProjectsById.put(id, subProject);
+            }
         }
     }
 

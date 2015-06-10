@@ -1,0 +1,6 @@
+
+include ':A:Project'
+include ':B:Project'
+
+
+
