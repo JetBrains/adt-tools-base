@@ -21,6 +21,8 @@ import com.google.common.collect.Sets;
 
 import junit.framework.TestCase;
 
+import java.util.Set;
+
 public class PermissionHolderTest extends TestCase {
     public void test() {
         assertTrue(new SetPermissionLookup(Sets.newHashSet("foo")).hasPermission("foo"));
@@ -29,5 +31,10 @@ public class PermissionHolderTest extends TestCase {
         assertFalse(new SetPermissionLookup(Sets.newHashSet("foo")).hasPermission("bar"));
         assertFalse(new SetPermissionLookup(Sets.newHashSet("foo")).hasPermission(""));
         assertFalse(new SetPermissionLookup(Sets.<String>newHashSet()).hasPermission(""));
+
+        Set<String> empty = Sets.newHashSet();
+        assertFalse(new SetPermissionLookup(Sets.newHashSet("foo"), empty).isRevocable("foo"));
+        assertTrue(new SetPermissionLookup(empty, Sets.newHashSet("foo")).isRevocable("foo"));
+        assertFalse(new SetPermissionLookup(empty, Sets.newHashSet("foo")).isRevocable("bar"));
     }
 }

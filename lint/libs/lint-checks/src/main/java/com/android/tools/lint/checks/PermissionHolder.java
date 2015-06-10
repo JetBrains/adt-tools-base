@@ -18,6 +18,7 @@ package com.android.tools.lint.checks;
 
 import com.android.annotations.NonNull;
 
+import java.util.Collections;
 import java.util.Set;
 
 /**
@@ -26,20 +27,37 @@ import java.util.Set;
  */
 public interface PermissionHolder {
 
+    /** Returns true if the permission holder has been granted the given permission */
     boolean hasPermission(@NonNull String permission);
 
-    /** A convenience implementation of {@link PermissionHolder} backed by a set
+    /** Returns true if the given permission is known to be revocable for targetSdkVersion >= M */
+    boolean isRevocable(@NonNull String permission);
+
+    /**
+     * A convenience implementation of {@link PermissionHolder} backed by a set
      */
     class SetPermissionLookup implements PermissionHolder {
-        private Set<String> myPermissions;
+        private Set<String> myGrantedPermissions;
+        private Set<String> myRevocablePermissions;
 
-        public SetPermissionLookup(@NonNull Set<String> permissions) {
-            myPermissions = permissions;
+        public SetPermissionLookup(@NonNull Set<String> grantedPermissions,
+                @NonNull Set<String> revocablePermissions) {
+            myGrantedPermissions = grantedPermissions;
+            myRevocablePermissions = revocablePermissions;
+        }
+
+        public SetPermissionLookup(@NonNull Set<String> grantedPermissions) {
+            this(grantedPermissions, Collections.<String>emptySet());
         }
 
         @Override
         public boolean hasPermission(@NonNull String permission) {
-            return myPermissions.contains(permission);
+            return myGrantedPermissions.contains(permission);
+        }
+
+        @Override
+        public boolean isRevocable(@NonNull String permission) {
+            return myRevocablePermissions.contains(permission);
         }
     }
 }
