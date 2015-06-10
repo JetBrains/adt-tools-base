@@ -375,8 +375,8 @@ public class PkgDescTest extends TestCase {
         assertFalse(p.hasMinPlatformToolsRev());
         assertNull (p.getMinPlatformToolsRev());
 
-        assertEquals("build-tools-1.2.3_rc4", p.getInstallId());
-        assertEquals(FileOp.append(mRoot, "build-tools", "build-tools-1.2.3_rc4"),
+        assertEquals("build-tools-1.2.3", p.getInstallId());
+        assertEquals(FileOp.append(mRoot, "build-tools", "build-tools-1.2.3"),
                 p.getCanonicalInstallFolder(mRoot));
 
         assertEquals("<PkgDesc Type=build_tools FullRev=1.2.3 rc4>", p.toString());
