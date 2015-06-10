@@ -22,7 +22,6 @@ import static com.android.build.gradle.ndk.internal.BinaryToolHelper.getCppCompi
 import com.android.build.gradle.api.AndroidSourceSet;
 import com.android.build.gradle.internal.NdkHandler;
 import com.android.build.gradle.internal.core.Abi;
-import com.android.build.gradle.managed.ManagedString;
 import com.android.build.gradle.managed.NdkConfig;
 import com.android.build.gradle.model.AndroidComponentModelSourceSet;
 import com.android.build.gradle.tasks.GdbSetupTask;
@@ -133,16 +132,17 @@ public class NdkConfiguration {
                                 binary.getTargetPlatform()).apply(binary);
 
                         // Add flags defined in NdkConfig
-                        if (ndkConfig.getCFlags() != null) {
-                            getCCompiler(binary).args(ndkConfig.getCFlags());
+                        for (String flag : ndkConfig.getCFlags()) {
+                            System.out.println(flag);
+                            getCCompiler(binary).args(flag);
                         }
 
-                        if (ndkConfig.getCppFlags() != null) {
-                            getCppCompiler(binary).args(ndkConfig.getCppFlags());
+                        for (String flag : ndkConfig.getCppFlags()) {
+                            getCppCompiler(binary).args(flag);
                         }
 
-                        for (ManagedString ldLibs : ndkConfig.getLdLibs()) {
-                            binary.getLinker().args("-l" + ldLibs.getValue());
+                        for (String ldLib : ndkConfig.getLdLibs()) {
+                            binary.getLinker().args("-l" + ldLib);
                         }
 
                         StlNativeToolSpecification stlConfig = new StlNativeToolSpecification(

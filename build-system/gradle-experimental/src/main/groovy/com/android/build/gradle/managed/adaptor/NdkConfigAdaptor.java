@@ -21,11 +21,12 @@ import com.android.annotations.Nullable;
 import com.android.build.gradle.managed.ManagedString;
 import com.android.build.gradle.managed.NdkConfig;
 import com.google.common.base.Function;
+import com.google.common.base.Joiner;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -48,32 +49,19 @@ public class NdkConfigAdaptor implements com.android.build.gradle.internal.core.
     @Nullable
     @Override
     public String getcFlags() {
-        return ndkConfig.getCFlags();
+        return Joiner.on(' ').join(ndkConfig.getCFlags());
     }
 
     @Nullable
     @Override
-    public Collection<String> getLdLibs() {
-        return Lists.newArrayList(Iterables.transform(ndkConfig.getLdLibs(),
-                new Function<ManagedString, String>() {
-                    @Override
-                    public String apply(@Nullable ManagedString managedString) {
-                        return managedString == null ? null : managedString.getValue();
-                    }
-                }));
+    public List<String> getLdLibs() {
+        return ndkConfig.getLdLibs();
     }
 
     @Nullable
     @Override
     public Set<String> getAbiFilters() {
-        return ndkConfig.getAbiFilters().isEmpty() ? null :
-                Sets.newHashSet(Iterables.transform(ndkConfig.getAbiFilters(),
-                        new Function<ManagedString, String>() {
-                            @Override
-                            public String apply(@Nullable ManagedString managedString) {
-                                return managedString == null ? null : managedString.getValue();
-                            }
-                        }));
+        return ndkConfig.getAbiFilters();
     }
 
     @Nullable

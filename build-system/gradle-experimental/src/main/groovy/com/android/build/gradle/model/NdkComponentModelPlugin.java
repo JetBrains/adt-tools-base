@@ -32,6 +32,8 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 
 import org.gradle.api.Action;
 import org.gradle.api.Plugin;
@@ -69,8 +71,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-import groovy.lang.Closure;
-
 /**
  * Plugin for Android NDK applications.
  */
@@ -104,8 +104,10 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
             ndk.setModuleName("");
             ndk.setToolchain("");
             ndk.setToolchainVersion("");
-            ndk.setCFlags("");
-            ndk.setCppFlags("");
+            ndk.setCFlags(Lists.<String>newArrayList());
+            ndk.setCppFlags(Lists.<String>newArrayList());
+            ndk.setLdLibs(Lists.<String>newArrayList());
+            ndk.setAbiFilters(Sets.<String>newHashSet());
             ndk.setStl("");
             ndk.setRenderscriptNdkMode(false);
         }

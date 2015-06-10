@@ -105,7 +105,7 @@ public class MergedNdkConfig implements NdkConfig {
 
         if (cFlags == null) {
             cFlags = ndkConfig.getcFlags();
-        } else if (ndkConfig.getcFlags() != null) {
+        } else if (ndkConfig.getcFlags() != null && !ndkConfig.getcFlags().isEmpty()) {
             cFlags = cFlags + " " + ndkConfig.getcFlags();
         }
 

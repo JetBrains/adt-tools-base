@@ -66,16 +66,16 @@ model {
     android.productFlavors {
         create {
             name = "x86"
-            ndkConfig.abiFilters.create { value = "x86" }
+            ndkConfig.abiFilters += "x86"
         }
         create {
             name = "arm"
-            ndkConfig.abiFilters.create { value = "armeabi-v7a" }
-            ndkConfig.abiFilters.create { value = "armeabi" }
+            ndkConfig.abiFilters += "armeabi-v7a"
+            ndkConfig.abiFilters += "armeabi"
         }
         create {
             name = "mips"
-            ndkConfig.abiFilters.create { value = "mips" }
+            ndkConfig.abiFilters += "mips"
         }
     }
 }
