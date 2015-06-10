@@ -45,7 +45,11 @@ import org.gradle.api.artifacts.dsl.DependencyHandler;
 import org.gradle.tooling.provider.model.ToolingModelBuilderRegistry;
 
 import java.io.File;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
+import java.util.Set;
+import java.util.concurrent.Callable;
 
 import proguard.ParseException;
 
@@ -124,8 +128,8 @@ public class TestApplicationTaskManager extends ApplicationTaskManager {
     @Override
     @Nullable
     public File maybeCreateProguardTasks(
-            TaskFactory tasks,
-            VariantScope scope,
+            final TaskFactory tasks,
+            final VariantScope scope,
             @NonNull final PostCompilationData pcData) {
         BaseVariantData<? extends BaseVariantOutputData> variantData = scope.getVariantData();
 
@@ -217,9 +221,28 @@ public class TestApplicationTaskManager extends ApplicationTaskManager {
                 proguardTask.injars(pcData.getJavaResourcesInputDirCallable());
             }
 
+            // injar: the packaged dependencies
+            LinkedHashMap<String, String> map = new LinkedHashMap<String, String>(1);
+            map.put("filter", "!META-INF/MANIFEST.MF");
+            proguardTask.injars(map, new Callable<Set<File>>() {
+                @Override
+                public Set<File> call() throws Exception {
+                    return scope.getVariantConfiguration().getPackagedJars();
+                }
+            });
+
+            proguardTask.libraryjars(new Callable<List<File>>() {
+                @Override
+                public List<File> call() throws Exception {
+                    return scope.getVariantConfiguration().getProvidedOnlyJars();
+                }
+            });
+
+
             // All -dontwarn rules for test dependencies should go in here:
             proguardTask.configuration(
                     variantData.getVariantConfiguration().getTestProguardFiles());
+
 
 
             // --- Out files ---
