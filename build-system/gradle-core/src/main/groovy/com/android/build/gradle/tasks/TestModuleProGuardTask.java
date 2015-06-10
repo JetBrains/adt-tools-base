@@ -84,15 +84,9 @@ public class TestModuleProGuardTask extends ProGuardTask {
             }
         }
 
-        // injar: the packaged dependencies
-        LinkedHashMap<String, String> map = new LinkedHashMap<String, String>(1);
-        map.put("filter", "!META-INF/MANIFEST.MF");
-        injars(map, variantConfiguration.getPackagedJars());
-
         if (mappingConfiguration.getSingleFile().isFile()) {
             applymapping(mappingConfiguration.getSingleFile());
         }
-        libraryjars(variantConfiguration.getProvidedOnlyJars());
         super.proguard();
     }
 }
