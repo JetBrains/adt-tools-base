@@ -212,7 +212,7 @@ public class Queries {
     public static Instance findObject(@NonNull Snapshot snapshot, String id) {
         long id2 = Long.parseLong(id, 16);
 
-        return snapshot.findReference(id2);
+        return snapshot.findInstance(id2);
     }
 
     @NonNull

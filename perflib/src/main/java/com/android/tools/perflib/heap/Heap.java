@@ -201,4 +201,8 @@ public class Heap {
         });
         return result;
     }
+
+    public int getInstancesCount() {
+        return mInstances.size();
+    }
 }

@@ -75,7 +75,7 @@ public class HprofParserTest extends TestCase {
         assertEquals(0, byteArray.getInstanceSize());
         assertEquals(681489, byteArray.getShallowSize());
 
-        ArrayInstance byteArrayInstance = (ArrayInstance) mSnapshot.findReference(0xB0D60401);
+        ArrayInstance byteArrayInstance = (ArrayInstance) mSnapshot.findInstance(0xB0D60401);
         assertEquals(byteArray, byteArrayInstance.getClassObj());
         assertEquals(43224, byteArrayInstance.getSize());
         assertEquals(43224, byteArrayInstance.getCompositeSize());
@@ -83,7 +83,7 @@ public class HprofParserTest extends TestCase {
         ClassObj intArrayArray = mSnapshot.findClass("int[][]");
         assertEquals(37, intArrayArray.getInstancesList().size());
 
-        ArrayInstance intArrayInstance = (ArrayInstance) mSnapshot.findReference(0xB0F69F58);
+        ArrayInstance intArrayInstance = (ArrayInstance) mSnapshot.findInstance(0xB0F69F58);
         assertEquals(intArrayArray, intArrayInstance.getClassObj());
         assertEquals(40, intArrayInstance.getSize());
         assertEquals(52, intArrayInstance.getCompositeSize());
@@ -141,12 +141,31 @@ public class HprofParserTest extends TestCase {
         mSnapshot.computeDominators();
 
         assertEquals(2, mSnapshot.getReachableInstances().size());
-        ClassInstance parent = (ClassInstance)mSnapshot.findReference(1);
+        ClassInstance parent = (ClassInstance)mSnapshot.findInstance(1);
         Map<Field, Object> firstGet = parent.getValues();
         Map<Field, Object> secondGet = parent.getValues();
         assertEquals(1, firstGet.size());
         assertEquals(firstGet.size(), secondGet.size());
-        Instance child = mSnapshot.findReference(2);
-        assertEquals(1, child.getReferences().size());
+        Instance child = mSnapshot.findInstance(2);
+        assertEquals(1, child.getHardReferences().size());
+    }
+
+    public void testResolveReferences() {
+        mSnapshot = new SnapshotBuilder(1).addRoot(1).getSnapshot();
+        ClassObj subSoftReferenceClass = new ClassObj(98, null, "SubSoftReference", 0);
+        subSoftReferenceClass.setSuperClassId(SnapshotBuilder.SOFT_REFERENCE_ID);
+        ClassObj subSubSoftReferenceClass = new ClassObj(97, null, "SubSubSoftReference", 0);
+        subSubSoftReferenceClass.setSuperClassId(98);
+
+        mSnapshot.findClass(SnapshotBuilder.SOFT_REFERENCE_ID).addSubclass(subSoftReferenceClass);
+        subSoftReferenceClass.addSubclass(subSubSoftReferenceClass);
+
+        mSnapshot.addClass(98, subSoftReferenceClass);
+        mSnapshot.addClass(97, subSubSoftReferenceClass);
+
+        mSnapshot.resolveReferences();
+
+        assertTrue(subSoftReferenceClass.getIsSoftReference());
+        assertTrue(subSubSoftReferenceClass.getIsSoftReference());
     }
 }

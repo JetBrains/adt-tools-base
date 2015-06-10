@@ -48,7 +48,7 @@ public class RootObj extends Instance {
         if (mType == RootType.SYSTEM_CLASS) {
             theClass = snapshot.findClass(mId);
         } else {
-            theClass = snapshot.findReference(mId).getClassObj();
+            theClass = snapshot.findInstance(mId).getClassObj();
         }
 
         if (theClass == null) {
@@ -63,7 +63,7 @@ public class RootObj extends Instance {
         visitor.visitRootObj(this);
         Instance instance = getReferredInstance();
         if (instance != null) {
-            visitor.visitLater(instance);
+            visitor.visitLater(null, instance);
         }
     }
 
@@ -76,7 +76,7 @@ public class RootObj extends Instance {
         if (mType == RootType.SYSTEM_CLASS) {
             return mHeap.mSnapshot.findClass(mId);
         } else {
-            return mHeap.mSnapshot.findReference(mId);
+            return mHeap.mSnapshot.findInstance(mId);
         }
     }
 

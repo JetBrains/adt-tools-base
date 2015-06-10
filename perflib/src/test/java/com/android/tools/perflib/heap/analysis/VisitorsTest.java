@@ -110,10 +110,10 @@ public class VisitorsTest extends TestCase {
                 .addRoot(1)
                 .getSnapshot();
 
-        assertEquals(10, snapshot.findReference(1).getCompositeSize());
-        assertEquals(6, snapshot.findReference(2).getCompositeSize());
-        assertEquals(7, snapshot.findReference(3).getCompositeSize());
-        assertEquals(4, snapshot.findReference(4).getCompositeSize());
+        assertEquals(10, snapshot.findInstance(1).getCompositeSize());
+        assertEquals(6, snapshot.findInstance(2).getCompositeSize());
+        assertEquals(7, snapshot.findInstance(3).getCompositeSize());
+        assertEquals(4, snapshot.findInstance(4).getCompositeSize());
     }
 
     public void testBasicCycle() {
@@ -125,9 +125,9 @@ public class VisitorsTest extends TestCase {
                 .getSnapshot();
 
         // The composite size is a sum over all nodes participating in the cycle.
-        assertEquals(6, snapshot.findReference(1).getCompositeSize());
-        assertEquals(6, snapshot.findReference(2).getCompositeSize());
-        assertEquals(6, snapshot.findReference(3).getCompositeSize());
+        assertEquals(6, snapshot.findInstance(1).getCompositeSize());
+        assertEquals(6, snapshot.findInstance(2).getCompositeSize());
+        assertEquals(6, snapshot.findInstance(3).getCompositeSize());
     }
 
     public void testTopSortSimpleGraph() {
@@ -144,19 +144,19 @@ public class VisitorsTest extends TestCase {
         // Make sure finishing times are computed correctly. A visitor simply collecting nodes as
         // they are expanded will not yield the correct order. The correct invariant for a DAG is:
         // for each directed edge (u,v), topsort(u) < topsort(v).
-        assertTrue(snapshot.findReference(1).getTopologicalOrder() <
-                snapshot.findReference(2).getTopologicalOrder());
-        assertTrue(snapshot.findReference(1).getTopologicalOrder() <
-                snapshot.findReference(3).getTopologicalOrder());
-        assertTrue(snapshot.findReference(2).getTopologicalOrder() <
-                snapshot.findReference(4).getTopologicalOrder());
-        assertTrue(snapshot.findReference(2).getTopologicalOrder() <
-                snapshot.findReference(6).getTopologicalOrder());
-        assertTrue(snapshot.findReference(3).getTopologicalOrder() <
-                snapshot.findReference(4).getTopologicalOrder());
-        assertTrue(snapshot.findReference(3).getTopologicalOrder() <
-                snapshot.findReference(5).getTopologicalOrder());
-        assertTrue(snapshot.findReference(4).getTopologicalOrder() <
-                snapshot.findReference(6).getTopologicalOrder());
+        assertTrue(snapshot.findInstance(1).getTopologicalOrder() <
+                snapshot.findInstance(2).getTopologicalOrder());
+        assertTrue(snapshot.findInstance(1).getTopologicalOrder() <
+                snapshot.findInstance(3).getTopologicalOrder());
+        assertTrue(snapshot.findInstance(2).getTopologicalOrder() <
+                snapshot.findInstance(4).getTopologicalOrder());
+        assertTrue(snapshot.findInstance(2).getTopologicalOrder() <
+                snapshot.findInstance(6).getTopologicalOrder());
+        assertTrue(snapshot.findInstance(3).getTopologicalOrder() <
+                snapshot.findInstance(4).getTopologicalOrder());
+        assertTrue(snapshot.findInstance(3).getTopologicalOrder() <
+                snapshot.findInstance(5).getTopologicalOrder());
+        assertTrue(snapshot.findInstance(4).getTopologicalOrder() <
+                snapshot.findInstance(6).getTopologicalOrder());
     }
 }
