@@ -50,6 +50,8 @@ import lombok.ast.VariableDefinitionEntry;
  * caller must satisfy for a given Android API.
  */
 public abstract class PermissionRequirement {
+    public static final String ATTR_PROTECTION_LEVEL = "protectionLevel"; //$NON-NLS-1$
+    public static final String VALUE_DANGEROUS = "dangerous"; //$NON-NLS-1$
 
     private final ResolvedAnnotation annotation;
 
@@ -66,7 +68,7 @@ public abstract class PermissionRequirement {
         }
 
         @Override
-        public boolean isRevocable() {
+        public boolean isRevocable(@NonNull PermissionHolder revocable) {
             return false;
         }
 
@@ -81,7 +83,8 @@ public abstract class PermissionRequirement {
         }
 
         @Override
-        protected void addRevocablePermissions(@NonNull Set<String> result) {
+        protected void addRevocablePermissions(@NonNull Set<String> result,
+                @NonNull PermissionHolder revocable) {
         }
 
         @Nullable
@@ -166,6 +169,12 @@ public abstract class PermissionRequirement {
         return true;
     }
 
+    /**
+     * Whether the permission requirement is satisfied given the set of granted permissions
+     *
+     * @param available the available permissions
+     * @return true if all permissions specified by this requirement are available
+     */
     public abstract boolean isSatisfied(@NonNull PermissionHolder available);
 
     /** Describes the missing permissions (e.g. "P1, P2 and P3") */
@@ -184,20 +193,22 @@ public abstract class PermissionRequirement {
         @NonNull Set<String> result);
 
     /** Returns the permissions in the requirement that are revocable */
-    public Set<String> getRevocablePermissions() {
+    public Set<String> getRevocablePermissions(@NonNull PermissionHolder revocable) {
         Set<String> result = Sets.newHashSet();
-        addRevocablePermissions(result);
+        addRevocablePermissions(result, revocable);
         return result;
     }
 
-    protected abstract void addRevocablePermissions(@NonNull Set<String> result);
+    protected abstract void addRevocablePermissions(@NonNull Set<String> result,
+            @NonNull PermissionHolder revocable);
 
     /**
      * Returns whether this permission is revocable
      *
+     * @param revocable the set of revocable permissions
      * @return true if a user can revoke the permission
      */
-    public abstract boolean isRevocable();
+    public abstract boolean isRevocable(@NonNull PermissionHolder revocable);
 
     /**
      * For permission requirements that combine children, the operator to combine them with; null
@@ -222,8 +233,8 @@ public abstract class PermissionRequirement {
         }
 
         @Override
-        public boolean isRevocable() {
-            return isRevocablePermission(name);
+        public boolean isRevocable(@NonNull PermissionHolder revocable) {
+            return revocable.isRevocable(name) || isRevocableSystemPermission(name);
         }
 
         @Nullable
@@ -267,8 +278,9 @@ public abstract class PermissionRequirement {
         }
 
         @Override
-        protected void addRevocablePermissions(@NonNull Set<String> result) {
-            if (isRevocable()) {
+        protected void addRevocablePermissions(@NonNull Set<String> result,
+                @NonNull PermissionHolder revocable) {
+            if (isRevocable(revocable)) {
                 result.add(name);
             }
         }
@@ -376,21 +388,22 @@ public abstract class PermissionRequirement {
         }
 
         @Override
-        protected void addRevocablePermissions(@NonNull Set<String> result) {
+        protected void addRevocablePermissions(@NonNull Set<String> result,
+                @NonNull PermissionHolder revocable) {
             for (PermissionRequirement requirement : permissions) {
-                requirement.addRevocablePermissions(result);
+                requirement.addRevocablePermissions(result, revocable);
             }
         }
 
         @Override
-        public boolean isRevocable() {
+        public boolean isRevocable(@NonNull PermissionHolder revocable) {
             // TODO: Pass in the available set of permissions here, and if
             // the operator is BinaryOperator.LOGICAL_OR, only return revocable=true
             // if an unsatisfied permission is also revocable. In other words,
             // if multiple permissions are allowed, and some of them are satisfied and
             // not revocable the overall permission requirement is not revocable.
             for (PermissionRequirement requirement : permissions) {
-                if (requirement.isRevocable()) {
+                if (requirement.isRevocable(revocable)) {
                     return true;
                 }
             }
@@ -528,16 +541,17 @@ public abstract class PermissionRequirement {
         }
 
         @Override
-        protected void addRevocablePermissions(@NonNull Set<String> result) {
-            left.addRevocablePermissions(result);
-            right.addRevocablePermissions(result);
+        protected void addRevocablePermissions(@NonNull Set<String> result,
+                @NonNull PermissionHolder revocable) {
+            left.addRevocablePermissions(result, revocable);
+            right.addRevocablePermissions(result, revocable);
         }
 
         @Override
-        public boolean isRevocable() {
+        public boolean isRevocable(@NonNull PermissionHolder revocable) {
             // TODO: If operator == BinaryOperator.LOGICAL_OR only return
             // revocable the there isn't a non-revocable term which is also satisfied.
-            return left.isRevocable() || right.isRevocable();
+            return left.isRevocable(revocable) || right.isRevocable(revocable);
         }
 
         @NonNull
@@ -627,7 +641,7 @@ public abstract class PermissionRequirement {
      * @param name permission name
      * @return true if this is a revocable permission
      */
-    public static boolean isRevocablePermission(@NonNull String name) {
+    public static boolean isRevocableSystemPermission(@NonNull String name) {
         return Arrays.binarySearch(REVOCABLE_PERMISSION_NAMES, name) >= 0;
     }
 

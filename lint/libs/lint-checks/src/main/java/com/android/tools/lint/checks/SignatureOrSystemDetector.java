@@ -17,22 +17,19 @@
 package com.android.tools.lint.checks;
 
 
-import static com.android.SdkConstants.ANDROID_MANIFEST_XML;
+import static com.android.tools.lint.checks.PermissionRequirement.ATTR_PROTECTION_LEVEL;
 
 import com.android.annotations.NonNull;
 import com.android.tools.lint.detector.api.Category;
-import com.android.tools.lint.detector.api.Context;
 import com.android.tools.lint.detector.api.Detector;
 import com.android.tools.lint.detector.api.Implementation;
 import com.android.tools.lint.detector.api.Issue;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
-import com.android.tools.lint.detector.api.Speed;
 import com.android.tools.lint.detector.api.XmlContext;
 
 import org.w3c.dom.Attr;
 
-import java.io.File;
 import java.util.Collection;
 import java.util.Collections;
 
@@ -57,24 +54,12 @@ public class SignatureOrSystemDetector extends Detector implements Detector.XmlS
                     Scope.MANIFEST_SCOPE
             ));
     private static final String SIGNATURE_OR_SYSTEM = "signatureOrSystem"; //$NON-NLS-1$
-    private static final String PROTECTION_LEVEL = "protectionLevel"; //$NON-NLS-1$
 
-    @NonNull
-    @Override
-    public Speed getSpeed() {
-        return Speed.FAST;
-    }
-
-    @Override
-    public boolean appliesTo(@NonNull Context context, @NonNull File file) {
-        return file.getName().equals(ANDROID_MANIFEST_XML);
-    }
-
-    // ---- Implements Detector.XmlScanner ---- TAG_PERMISSION
+    // ---- Implements Detector.XmlScanner ----
 
     @Override
     public Collection<String> getApplicableAttributes() {
-        return Collections.singletonList(PROTECTION_LEVEL);
+        return Collections.singletonList(ATTR_PROTECTION_LEVEL);
     }
 
     @Override
