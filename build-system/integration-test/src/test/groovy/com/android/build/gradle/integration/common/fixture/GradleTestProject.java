@@ -40,6 +40,7 @@ import com.android.sdklib.repository.FullRevision;
 import com.google.common.base.Charsets;
 import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
@@ -63,9 +64,11 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.security.CodeSource;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -139,7 +142,8 @@ public class GradleTestProject implements TestRule {
         boolean captureStdErr = false;
         boolean experimentalMode = false;
         boolean useExperimentalGradleVersion = false;
-
+        @NonNull
+        private List<String> gradleProperties = Lists.newArrayList();
         @Nullable
         private String heapSize;
 
@@ -156,6 +160,7 @@ public class GradleTestProject implements TestRule {
                     captureStdErr,
                     sdkDir,
                     ndkDir,
+                    gradleProperties,
                     heapSize);
         }
 
@@ -225,6 +230,14 @@ public class GradleTestProject implements TestRule {
         }
 
         /**
+         * Add gradle properties.
+         */
+        public Builder addGradleProperties(@NonNull String property) {
+            gradleProperties.add(property);
+            return this;
+        }
+
+        /**
          * Sets the test heap size requirement. Example values : 1024m, 2048m...
          *
          * @param heapSize the heap size in a format understood by the -Xmx JVM parameter
@@ -260,6 +273,8 @@ public class GradleTestProject implements TestRule {
     private final ByteArrayOutputStream stdout;
     private final ByteArrayOutputStream stderr;
 
+    private final Collection<String> gradleProperties;
+
     @Nullable
     private TestProject testProject;
 
@@ -278,6 +293,7 @@ public class GradleTestProject implements TestRule {
             boolean captureStdErr,
             @Nullable File sdkDir,
             @Nullable File ndkDir,
+            @NonNull Collection<String> gradleProperties,
             @Nullable String heapSize) {
         String buildDir = System.getenv("PROJECT_BUILD_DIR");
         outDir = (buildDir == null) ? new File("build/tests") : new File(buildDir, "tests");
@@ -290,6 +306,7 @@ public class GradleTestProject implements TestRule {
         this.sdkDir = sdkDir;
         this.ndkDir = ndkDir;
         this.heapSize = heapSize;
+        this.gradleProperties = gradleProperties;
     }
 
     /**
@@ -312,6 +329,7 @@ public class GradleTestProject implements TestRule {
         sdkDir = rootProject.sdkDir;
         stdout = rootProject.stdout;
         stderr = rootProject.stdout;
+        gradleProperties = ImmutableList.of();
         testProject = null;
     }
 
@@ -409,6 +427,7 @@ public class GradleTestProject implements TestRule {
                 }
 
                 createLocalProp(testDir, sdkDir, ndkDir);
+                createGradleProp();
                 base.evaluate();
             }
         };
@@ -979,6 +998,15 @@ public class GradleTestProject implements TestRule {
 
         return (File) localProp.getFile();
     }
+
+    private void createGradleProp() throws IOException {
+        if (gradleProperties.isEmpty()) {
+            return;
+        }
+        File propertyFile = file("gradle.properties");
+        Files.write(Joiner.on('\n').join(gradleProperties), propertyFile, Charset.defaultCharset());
+    }
+
 
     public static void assumeLocalDevice() {
         Assume.assumeTrue(

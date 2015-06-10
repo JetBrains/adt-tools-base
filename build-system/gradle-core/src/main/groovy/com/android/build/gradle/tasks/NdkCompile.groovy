@@ -26,6 +26,7 @@ import com.google.common.collect.Lists
 import com.google.common.io.Files
 import org.gradle.api.GradleException
 import org.gradle.api.file.FileTree
+import org.gradle.api.invocation.Gradle
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Optional
@@ -40,6 +41,8 @@ import static com.android.SdkConstants.CURRENT_PLATFORM
 import static com.android.SdkConstants.PLATFORM_WINDOWS
 
 class NdkCompile extends NdkTask {
+
+    public static String USE_DEPRECATED_NDK = "android.useDeprecatedNdk";
 
     List<File> sourceFolders
 
@@ -81,6 +84,14 @@ class NdkCompile extends NdkTask {
 
     @TaskAction
     void taskAction(IncrementalTaskInputs inputs) {
+         if (!project.hasProperty(USE_DEPRECATED_NDK)) {
+             // TODO: Link to documentation on the new component model plugin.
+             logger.warn("Warning: NDK integration is deprecated.  Set " +
+                     "\"$USE_DEPRECATED_NDK=true\" in gradle.properties to continue using.");
+             return;
+         }
+
+
         if (isNdkOptionUnset()) {
             logger.warn("Warning: Native C/C++ source code is found, but it seems that NDK " +
                     "option is not configured.  Note that if you have an Android.mk, it is not " +

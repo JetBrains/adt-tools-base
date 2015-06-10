@@ -37,6 +37,7 @@ class NdkModelTest {
     @Rule
     public GradleTestProject project = GradleTestProject.builder()
             .fromTestApp(new HelloWorldJniApp())
+            .addGradleProperties("android.useDeprecatedNdk=true")
             .create()
 
     @Before
