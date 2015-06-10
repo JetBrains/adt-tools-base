@@ -41,6 +41,7 @@ class NoSplitNdkVariantsTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
             .fromTestApp(new HelloWorldJniApp())
+            .addGradleProperties("android.useDeprecatedNdk=true")
             .create()
 
     @BeforeClass
