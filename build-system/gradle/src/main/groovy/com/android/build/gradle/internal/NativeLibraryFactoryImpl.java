@@ -25,9 +25,12 @@ import com.android.build.gradle.internal.model.NativeLibraryImpl;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.build.gradle.internal.variant.BaseVariantOutputData;
+import com.android.build.gradle.tasks.NdkCompile;
 import com.android.builder.model.NativeLibrary;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
+
+import org.gradle.api.Project;
 
 import java.io.File;
 import java.util.Collections;
@@ -38,9 +41,11 @@ import java.util.List;
  */
 public class NativeLibraryFactoryImpl implements NativeLibraryFactory {
 
-    NdkHandler ndkHandler;
+    @NonNull
+    final NdkHandler ndkHandler;
 
-    public NativeLibraryFactoryImpl(NdkHandler ndkHandler) {
+    public NativeLibraryFactoryImpl(
+            @NonNull NdkHandler ndkHandler) {
         this.ndkHandler = ndkHandler;
     }
 
@@ -50,6 +55,10 @@ public class NativeLibraryFactoryImpl implements NativeLibraryFactory {
             @NonNull VariantScope scope,
             @NonNull String toolchainName, @NonNull Abi abi) {
         BaseVariantData<? extends BaseVariantOutputData> variantData = scope.getVariantData();
+        if (!scope.getGlobalScope().getProject().hasProperty(NdkCompile.USE_DEPRECATED_NDK)) {
+            return Optional.absent();
+        }
+
         NdkConfig ndkConfig = variantData.getVariantConfiguration().getNdkConfig();
 
         String sysrootFlag = "--sysroot=" + ndkHandler.getSysroot(abi);
@@ -71,6 +80,6 @@ public class NativeLibraryFactoryImpl implements NativeLibraryFactory {
                 Collections.<String>emptyList(),  /*cppDefines*/
                 cFlags,
                 cFlags,  // TODO: NdkConfig should allow cppFlags to be set separately.
-                ImmutableList.of(variantData.getScope().getNdkDebuggableLibraryFolders(abi))));
+                ImmutableList.of(scope.getNdkDebuggableLibraryFolders(abi))));
     }
 }

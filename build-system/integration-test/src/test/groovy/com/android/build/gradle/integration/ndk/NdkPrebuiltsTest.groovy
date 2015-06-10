@@ -35,6 +35,7 @@ class NdkPrebuiltsTest {
     @ClassRule
     static public GradleTestProject project = GradleTestProject.builder()
             .fromTestProject("ndkPrebuilts")
+            .addGradleProperties("android.useDeprecatedNdk=true")
             .create()
 
     static AndroidProject model
