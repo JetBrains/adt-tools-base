@@ -72,4 +72,7 @@ dependencies {
     wearApp project(':${WearprojectName}')
     compile 'com.google.android.gms:play-services:+'
 </#if>
+<#if unitTestsSupported>
+    testCompile 'junit:junit:${junitVersion}'
+</#if>
 }

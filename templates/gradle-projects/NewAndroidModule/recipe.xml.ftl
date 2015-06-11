@@ -49,4 +49,10 @@
 
     <instantiate from="test/app_package/ApplicationTest.java.ftl"
                    to="${testOut}/ApplicationTest.java" />
+
+<#if unitTestsSupported>
+    <instantiate from="test/app_package/ExampleUnitTest.java.ftl"
+                   to="${unitTestOut}/ExampleUnitTest.java" />
+</#if>
+
 </recipe>
