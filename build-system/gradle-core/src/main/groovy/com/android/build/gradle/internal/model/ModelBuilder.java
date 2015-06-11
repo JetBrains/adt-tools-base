@@ -211,7 +211,7 @@ public class ModelBuilder implements ToolingModelBuilder {
      */
     public static Map<Abi, NativeToolchain> createNativeToolchainModelMap(
             @NonNull NdkHandler ndkHandler) {
-        if (ndkHandler.getNdkDirectory() == null) {
+        if (!ndkHandler.isNdkDirConfigured()) {
             return ImmutableMap.of();
         }
 

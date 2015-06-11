@@ -36,10 +36,9 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 
 import org.gradle.api.Action;
+import org.gradle.api.InvalidUserDataException;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.Task;
@@ -55,6 +54,7 @@ import org.gradle.model.ModelMap;
 import org.gradle.model.Mutate;
 import org.gradle.model.Path;
 import org.gradle.model.RuleSource;
+import org.gradle.model.Validate;
 import org.gradle.nativeplatform.BuildTypeContainer;
 import org.gradle.nativeplatform.FlavorContainer;
 import org.gradle.nativeplatform.NativeLibraryBinarySpec;
@@ -114,6 +114,25 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
             NdkExtensionConvention.setExtensionDefault(ndkConfig);
         }
 
+        @Validate
+        public void checkNdkDir(NdkHandler ndkHandler, @Path("android.ndk") NdkConfig ndkConfig) {
+            if (!ndkConfig.getModuleName().isEmpty() && !ndkHandler.isNdkDirConfigured()) {
+                throw new InvalidUserDataException(
+                        "NDK location not found. Define location with ndk.dir in the "
+                                + "local.properties file or with an ANDROID_NDK_HOME environment "
+                                + "variable.");
+            }
+            if (ndkHandler.isNdkDirConfigured()) {
+                if (!ndkHandler.getNdkDirectory().exists()) {
+                    throw new InvalidUserDataException(
+                            "Specified NDK location does not exists.  Please ensure ndk.dir in "
+                                    + "local.properties file or ANDROID_NDK_HOME is configured "
+                                    + "correctly.");
+
+                }
+            }
+        }
+
         @Mutate
         public void addDefaultNativeSourceSet(
                 @Path("android.sources") AndroidComponentModelSourceSet sources) {
@@ -156,6 +175,9 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
 
         @Mutate
         public void createAndroidPlatforms(PlatformContainer platforms, NdkHandler ndkHandler) {
+            if (!ndkHandler.isNdkDirConfigured()) {
+                return;
+            }
             // Create android platforms.
             ToolchainConfiguration.configurePlatforms(platforms, ndkHandler);
         }
@@ -165,6 +187,9 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                 NativeToolChainRegistry toolchainRegistry,
                 @Path("android.ndk") NdkConfig ndkConfig,
                 NdkHandler ndkHandler) {
+            if (!ndkHandler.isNdkDirConfigured()) {
+                return;
+            }
             // Create toolchain for each ABI.
             ToolchainConfiguration.configureToolchain(
                     toolchainRegistry,
@@ -200,6 +225,9 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                 final NdkHandler ndkHandler,
                 @Path("android.sources") final AndroidComponentModelSourceSet sources,
                 @Path("buildDir") final File buildDir) {
+            if (!ndkHandler.isNdkDirConfigured()) {
+                return;
+            }
             if (!ndkConfig.getModuleName().isEmpty()) {
                 specs.create(
                         ndkConfig.getModuleName(),
@@ -232,6 +260,9 @@ public class NdkComponentModelPlugin implements Plugin<Project> {
                 final NdkHandler ndkHandler,
                 BinaryContainer binaries,
                 @Path("buildDir") final File buildDir) {
+            if (!ndkHandler.isNdkDirConfigured()) {
+                return;
+            }
             final DefaultAndroidComponentSpec androidSpec =
                     (DefaultAndroidComponentSpec) specs.get(COMPONENT_NAME);
             if (androidSpec.getNativeLibrary() != null) {
