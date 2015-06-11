@@ -6,16 +6,17 @@
   </component>
   <component name="EntryPointsManager">
     <entry_points version="2.0" />
-    <list size="9">
-      <item index="0" class="java.lang.String" itemvalue="org.gradle.model.Defaults" />
-      <item index="1" class="java.lang.String" itemvalue="org.gradle.model.Finalize" />
-      <item index="2" class="java.lang.String" itemvalue="org.gradle.model.Model" />
-      <item index="3" class="java.lang.String" itemvalue="org.gradle.model.Mutate" />
-      <item index="4" class="java.lang.String" itemvalue="org.gradle.platform.base.BinaryTasks" />
-      <item index="5" class="java.lang.String" itemvalue="org.gradle.platform.base.BinaryType" />
-      <item index="6" class="java.lang.String" itemvalue="org.gradle.platform.base.ComponentBinaries" />
-      <item index="7" class="java.lang.String" itemvalue="org.gradle.platform.base.ComponentType" />
-      <item index="8" class="java.lang.String" itemvalue="org.gradle.platform.base.LanguageType" />
+    <list size="10">
+      <item index="0" class="java.lang.String" itemvalue="org.gradle.api.tasks.TaskAction" />
+      <item index="1" class="java.lang.String" itemvalue="org.gradle.model.Defaults" />
+      <item index="2" class="java.lang.String" itemvalue="org.gradle.model.Finalize" />
+      <item index="3" class="java.lang.String" itemvalue="org.gradle.model.Model" />
+      <item index="4" class="java.lang.String" itemvalue="org.gradle.model.Mutate" />
+      <item index="5" class="java.lang.String" itemvalue="org.gradle.platform.base.BinaryTasks" />
+      <item index="6" class="java.lang.String" itemvalue="org.gradle.platform.base.BinaryType" />
+      <item index="7" class="java.lang.String" itemvalue="org.gradle.platform.base.ComponentBinaries" />
+      <item index="8" class="java.lang.String" itemvalue="org.gradle.platform.base.ComponentType" />
+      <item index="9" class="java.lang.String" itemvalue="org.gradle.platform.base.LanguageType" />
     </list>
   </component>
   <component name="FrameworkDetectionExcludesConfiguration">

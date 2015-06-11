@@ -15,23 +15,22 @@
  */
 package com.android.build.gradle.internal.tasks;
 
-import static com.android.builder.core.BuilderConstants.*;
+import static com.android.builder.core.BuilderConstants.CONNECTED;
+import static com.android.builder.core.BuilderConstants.DEVICE;
+import static com.android.builder.core.BuilderConstants.FD_ANDROID_RESULTS;
+import static com.android.builder.core.BuilderConstants.FD_ANDROID_TESTS;
+import static com.android.builder.core.BuilderConstants.FD_FLAVORS;
+import static com.android.builder.core.BuilderConstants.FD_REPORTS;
 import static com.android.builder.model.AndroidProject.FD_OUTPUTS;
 import static com.android.sdklib.BuildToolInfo.PathId.SPLIT_SELECT;
 
-import com.android.build.gradle.internal.TaskManager;
 import com.android.build.gradle.internal.scope.ConventionMappingHelper;
 import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantScope;
-import com.android.build.gradle.internal.test.TestDataImpl;
 import com.android.build.gradle.internal.test.report.ReportType;
 import com.android.build.gradle.internal.test.report.TestReport;
-import com.android.build.gradle.internal.variant.ApkVariantData;
 import com.android.build.gradle.internal.variant.TestVariantData;
-import com.android.builder.core.BuilderConstants;
-import com.android.builder.core.VariantType;
 import com.android.builder.internal.testing.SimpleTestCallable;
-import com.android.builder.model.AndroidProject;
 import com.android.builder.sdk.SdkInfo;
 import com.android.builder.sdk.TargetInfo;
 import com.android.builder.testing.ConnectedDeviceProvider;
@@ -55,8 +54,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.concurrent.Callable;
-
-import groovy.lang.Closure;
 
 /**
  * Run instrumentation tests for a given variant
@@ -113,12 +110,15 @@ public class DeviceProviderInstrumentTestTask extends BaseTask implements Androi
                     ? ImmutableList.<String>of() : installOptions;
             try {
                 success = testRunner.runTests(getProject().getName(), flavor,
-                        testApk, testData,
+                        testApk,
+                        testData,
                         deviceProvider.getDevices(),
                         deviceProvider.getMaxThreads(),
                         deviceProvider.getTimeoutInMs(),
                         extraArgs,
-                        resultsOutDir, coverageOutDir, getILogger());
+                        resultsOutDir,
+                        coverageOutDir,
+                        getILogger());
             } finally {
                 deviceProvider.terminate();
             }
