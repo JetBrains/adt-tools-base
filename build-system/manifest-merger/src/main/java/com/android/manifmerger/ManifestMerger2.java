@@ -134,16 +134,6 @@ public class ManifestMerger2 {
             return mergingReportBuilder.build();
         }
 
-        // check for placeholders presence.
-        Map<String, Object> finalPlaceHolderValues = mPlaceHolderValues;
-        if (!mPlaceHolderValues.containsKey(APPLICATION_ID)) {
-            finalPlaceHolderValues =
-                    ImmutableMap.<String, Object>builder().putAll(mPlaceHolderValues)
-                            .put(PACKAGE_NAME, mainPackageAttribute.get().getValue())
-                            .put(APPLICATION_ID, mainPackageAttribute.get().getValue())
-                            .build();
-        }
-
         // perform system property injection
         performSystemPropertiesInjection(mergingReportBuilder,
                 loadedMainManifestInfo.getXmlDocument());
@@ -255,7 +245,7 @@ public class ManifestMerger2 {
             // been overridden so the problem was transient. However, with the final document
             // ready, all placeholders values must have been provided.
             KeyBasedValueResolver<String> placeHolderValueResolver =
-                    new MapBasedKeyBasedValueResolver<String>(finalPlaceHolderValues);
+                    new MapBasedKeyBasedValueResolver<String>(mPlaceHolderValues);
             PlaceholderHandler placeholderHandler = new PlaceholderHandler();
             placeholderHandler.visit(
                     mMergeType,
@@ -426,7 +416,7 @@ public class ManifestMerger2 {
         // check for placeholders presence, switch first the packageName and application id if
         // it is not explicitly set.
         Map<String, Object> finalPlaceHolderValues = mPlaceHolderValues;
-        if (!mPlaceHolderValues.containsKey("applicationId")) {
+        if (!mPlaceHolderValues.containsKey(PlaceholderHandler.APPLICATION_ID)) {
             String packageName = manifestInfo.getMainManifestPackageName().isPresent()
                     ? manifestInfo.getMainManifestPackageName().get()
                     : xmlDocument.getPackageName();
@@ -437,9 +427,11 @@ public class ManifestMerger2 {
                     builder.put(entry);
                 }
             }
-            finalPlaceHolderValues = builder.put(PlaceholderHandler.PACKAGE_NAME, packageName)
-                            .put(PlaceholderHandler.APPLICATION_ID, packageName)
-                            .build();
+            builder.put(PlaceholderHandler.PACKAGE_NAME, packageName);
+            if (mMergeType != MergeType.LIBRARY) {
+                builder.put(PlaceholderHandler.APPLICATION_ID, packageName);
+            }
+            finalPlaceHolderValues = builder.build();
         }
 
         KeyBasedValueResolver<String> placeHolderValueResolver =
@@ -989,8 +981,14 @@ public class ManifestMerger2 {
             // provide some free placeholders values.
             ImmutableMap<SystemProperty, Object> systemProperties = mSystemProperties.build();
             if (systemProperties.containsKey(SystemProperty.PACKAGE)) {
+                // if the package is provided, make it available for placeholder replacement.
                 mPlaceholders.put(PACKAGE_NAME, systemProperties.get(SystemProperty.PACKAGE));
-                mPlaceholders.put(APPLICATION_ID, systemProperties.get(SystemProperty.PACKAGE));
+                // as well as applicationId since package system property overrides everything
+                // but not when output is a library since only the final (application)
+                // application Id should be used to replace libraries "applicationId" placeholders.
+                if (mMergeType != MergeType.LIBRARY) {
+                    mPlaceholders.put(APPLICATION_ID, systemProperties.get(SystemProperty.PACKAGE));
+                }
             }
 
             ManifestMerger2 manifestMerger =

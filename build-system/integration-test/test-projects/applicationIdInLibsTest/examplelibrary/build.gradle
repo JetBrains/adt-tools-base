@@ -1,0 +1,18 @@
+apply plugin: 'com.android.library'
+
+android {
+    compileSdkVersion 21
+    buildToolsVersion "21.1.0"
+
+    defaultConfig {
+        minSdkVersion 15
+        targetSdkVersion 21
+        versionCode 1
+        versionName "1.0"
+    }
+}
+
+android.testVariants.all {
+    it.mergedFlavor.manifestPlaceholders = [ localApplicationId:"com.example.manifest_merger_example.flavor"]
+}
+
