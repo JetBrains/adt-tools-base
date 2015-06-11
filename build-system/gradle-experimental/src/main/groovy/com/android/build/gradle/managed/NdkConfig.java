@@ -44,6 +44,10 @@ public interface NdkConfig {
     void setCppFlags(@NonNull List<String> cppFlags);
 
     @Unmanaged
+    List<String> getLdFlags();
+    void setLdFlags(@NonNull List<String> ldFlags);
+
+    @Unmanaged
     List<String> getLdLibs();
     void setLdLibs(@NonNull List<String> ldLibs);
 
