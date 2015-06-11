@@ -38,6 +38,11 @@
       }
     }
 - Resource names are validated before they are merged.
+- When building aar, do not provide automatic @{applicationId} placeholder
+  in manifest merger. Use a different placeholder like @{libApplicationId}
+  and provide a value for it if applicationIds should be baked in the library.
+- Introduce support for incremental compilation support with Jill and Jack. Change is purely
+  internal and does not require DSL change nor can it be disabled.
 
 1.2.0
 - Unit testing improvements
