@@ -22,6 +22,7 @@ import com.android.builder.model.AndroidProject
 import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.ClassRule
+import org.junit.Ignore
 import org.junit.Test
 /**
  * test with ~30 projects that queries the IDE model
@@ -45,6 +46,7 @@ class SmallAndroidComponentModelTest {
     }
 
     @Test
+    @Ignore
     void "model query for 30 projects"() {
         Map<String, AndroidProject> models = project.getAllModels()
     }
