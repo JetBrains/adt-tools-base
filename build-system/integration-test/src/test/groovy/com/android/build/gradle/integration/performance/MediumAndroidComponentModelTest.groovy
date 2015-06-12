@@ -23,6 +23,7 @@ import com.android.builder.model.AndroidProject
 import groovy.transform.CompileStatic
 import org.junit.AfterClass
 import org.junit.ClassRule
+import org.junit.Ignore
 import org.junit.Test
 
 import static com.android.build.gradle.integration.common.fixture.app.LargeTestProject.MEDIUM_BREADTH
@@ -50,6 +51,7 @@ class MediumAndroidComponentModelTest {
     }
 
     @Test
+    @Ignore
     void "model query for 120 projects"() {
         Map<String, AndroidProject> models = project.getAllModels()
     }
