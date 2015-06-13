@@ -36,7 +36,7 @@ public class DominatorsTest extends TestCase {
                 .addReferences(3, 4, 5)
                 .addReferences(4, 6)
                 .addRoot(1)
-                .getSnapshot();
+                .build();
 
         mSnapshot.computeDominators();
 
@@ -61,7 +61,7 @@ public class DominatorsTest extends TestCase {
                 .addReferences(3, 4)
                 .addReferences(4, 2)
                 .addRoot(1)
-                .getSnapshot();
+                .build();
 
         mSnapshot.computeDominators();
 
@@ -84,7 +84,7 @@ public class DominatorsTest extends TestCase {
                 .addReferences(5, 6)
                 .addRoot(1)
                 .addRoot(2)
-                .getSnapshot();
+                .build();
 
         mSnapshot.computeDominators();
 
@@ -92,8 +92,7 @@ public class DominatorsTest extends TestCase {
         assertDominates(1, 3);
         assertDominates(2, 4);
         // Node 5 is reachable via both roots, neither of which can be the sole dominator.
-        assertEquals(mSnapshot.SENTINEL_ROOT,
-                mSnapshot.findInstance(5).getImmediateDominator());
+        assertEquals(mSnapshot.SENTINEL_ROOT, mSnapshot.findInstance(5).getImmediateDominator());
         assertDominates(5, 6);
 
         assertParentPathToGc(3, 1);
@@ -115,7 +114,7 @@ public class DominatorsTest extends TestCase {
                 .addReferences(8, 7, 9)
                 .addReferences(9, 2, 8)
                 .addRoot(1)
-                .getSnapshot();
+                .build();
 
         mSnapshot.computeDominators();
 
@@ -140,7 +139,7 @@ public class DominatorsTest extends TestCase {
                 .addReferences(1, 3, 2)
                 .addReferences(3, 2)
                 .addRoot(1)
-                .getSnapshot();
+                .build();
 
         assertNotNull(mSnapshot.getHeap(13).getClass(102));
         assertNotNull(mSnapshot.getHeap(13).getClass(103));
@@ -156,7 +155,7 @@ public class DominatorsTest extends TestCase {
                 .addReferences(1, 3, 2)
                 .addReferences(3, 2)
                 .addRoot(1)
-                .getSnapshot();
+                .build();
 
         mSnapshot.computeDominators();
 
@@ -175,7 +174,7 @@ public class DominatorsTest extends TestCase {
                 .addReferences(5, 4)
                 .addReferences(4, 6)
                 .addRoot(1)
-                .getSnapshot();
+                .build();
 
         mSnapshot.computeDominators();
 
@@ -197,7 +196,7 @@ public class DominatorsTest extends TestCase {
                 .addReferences(7, 8)
                 .insertSoftRefences(8, 9)
                 .addRoot(1)
-                .getSnapshot();
+                .build();
 
         mSnapshot.computeDominators();
         for (Heap heap : mSnapshot.getHeaps()) {
@@ -225,7 +224,7 @@ public class DominatorsTest extends TestCase {
         }
         assertEquals(43687, totalInstanceCount);
 
-        assertEquals(42571, mSnapshot.getReachableInstances().size());
+        assertEquals(42584, mSnapshot.getReachableInstances().size());
 
         // An object reachable via two GC roots, a JNI global and a Thread.
         Instance instance = mSnapshot.findInstance(0xB0EDFFA0);

@@ -108,7 +108,7 @@ public class VisitorsTest extends TestCase {
                 .addReferences(2, 4)
                 .addReferences(3, 4)
                 .addRoot(1)
-                .getSnapshot();
+                .build();
 
         assertEquals(10, snapshot.findInstance(1).getCompositeSize());
         assertEquals(6, snapshot.findInstance(2).getCompositeSize());
@@ -122,7 +122,7 @@ public class VisitorsTest extends TestCase {
                 .addReferences(2, 3)
                 .addReferences(3, 1)
                 .addRoot(1)
-                .getSnapshot();
+                .build();
 
         // The composite size is a sum over all nodes participating in the cycle.
         assertEquals(6, snapshot.findInstance(1).getCompositeSize());
@@ -137,7 +137,7 @@ public class VisitorsTest extends TestCase {
                 .addReferences(3, 4, 5)
                 .addReferences(4, 6)
                 .addRoot(1)
-                .getSnapshot();
+                .build();
 
         List<Instance> topSort = TopologicalSort.compute(snapshot.getGCRoots());
         assertEquals(6, topSort.size());
