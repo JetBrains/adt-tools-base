@@ -26,7 +26,6 @@ import com.android.annotations.VisibleForTesting;
 import com.android.builder.dependency.DependencyContainer;
 import com.android.builder.dependency.JarDependency;
 import com.android.builder.dependency.LibraryDependency;
-import com.android.utils.StringHelper;
 import com.android.builder.model.ApiVersion;
 import com.android.builder.model.BuildType;
 import com.android.builder.model.ClassField;
@@ -35,8 +34,8 @@ import com.android.builder.model.SigningConfig;
 import com.android.builder.model.SourceProvider;
 import com.android.ide.common.res2.AssetSet;
 import com.android.ide.common.res2.ResourceSet;
+import com.android.utils.StringHelper;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -898,8 +897,7 @@ public class VariantConfiguration<T extends BuildType, D extends ProductFlavor, 
             config = getTestedConfig();
             checkState(config != null);
         }
-        Map<String, String>  runner = config.mMergedFlavor.getTestInstrumentationRunnerArguments();
-        return runner != null ? runner : ImmutableMap.<String, String>of();
+        return config.mMergedFlavor.getTestInstrumentationRunnerArguments();
     }
 
     /**
