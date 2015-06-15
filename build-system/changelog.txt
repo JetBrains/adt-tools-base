@@ -1,15 +1,36 @@
 1.3.0
 - By default, "LICENSE" and "LICENSE.txt" are excluded when creating an APK.
   This can be changed from the DSL:
-  android {
-    packagingOptions.excludes = []
-  }
+
+    android {
+      packagingOptions.excludes = []
+    }
+
 - New sourceSets task for inspecting the set of all available source sets.
 - Unit tests recognize multi-flavor and per-variant source folders (e.g.
   testDemoDebug). Android tests recognized multi-flavor source folders.
 - Unit testing improvements
   * Run javac on main and test sources, even if useJack is true.
   * Correctly recognize per-build-type dependencies.
+- It's now possible to specify instrumentation test runner arguments in
+  build.gradle (in defaultConfig or per flavor):
+
+    android {
+      defaultConfig {
+        testInstrumentationRunnerArguments size: "medium"
+      }
+
+      productFlavors {
+        foo {
+          testInstrumentationRunnerArguments foo: "bar"
+        }
+      }
+    }
+
+  or from the command line:
+
+    INSTRUMENTATION_TEST_RUNNER_ARGS="size=medium,foo=bar" ./gradlew cC
+    ./gradlew cC -Pcom.android.tools.instrumentationTestRunnerArgs=size=medium,foo=bar
 
 1.2.0
 - Unit testing improvements
