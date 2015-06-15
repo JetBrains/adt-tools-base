@@ -37,6 +37,10 @@ class ComponentSourceSetTest {
     public static AndroidTestApp app = new HelloWorldJniApp()
 
     static {
+        TestSourceFile manifest = app.getFile("AndroidManifest.xml")
+        app.removeFile(manifest)
+        app.addFile(new TestSourceFile("src", manifest.name, manifest.content));
+
         // Remove the main hello-jni.c and place it in different directories for different flavors.
         // Note that *not* all variant can be built.
         TestSourceFile cSource = app.getFile("hello-jni.c");
@@ -75,6 +79,13 @@ model {
         create("flavor3")
     }
     android.sources {
+        main {
+            manifest {
+                source {
+                    srcDir 'src'
+                }
+            }
+        }
         flavor3 {
             jni {
                 source {
