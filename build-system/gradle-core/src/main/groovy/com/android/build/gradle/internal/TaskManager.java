@@ -119,14 +119,15 @@ import com.android.builder.dependency.LibraryDependency;
 import com.android.builder.internal.testing.SimpleTestCallable;
 import com.android.builder.sdk.TargetInfo;
 import com.android.builder.testing.ConnectedDeviceProvider;
-import com.android.builder.testing.TestData;
 import com.android.builder.testing.api.DeviceProvider;
 import com.android.builder.testing.api.TestServer;
 import com.android.sdklib.IAndroidTarget;
 import com.android.utils.StringHelper;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Function;
+import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
+import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -164,6 +165,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
@@ -186,6 +188,13 @@ public abstract class TaskManager {
     public static final String BUILD_GROUP = BasePlugin.BUILD_GROUP;
 
     public static final String ANDROID_GROUP = "Android";
+
+    /** Property used to define extra instrumentation test runner arguments. */
+    public static final String TEST_RUNNER_ARGS_PROP =
+            "com.android.tools.instrumentationTestRunnerArgs";
+
+    /** Env variable used to define extra instrumentation test runner arguments. */
+    public static final String TEST_RUNNER_ENV = "INSTRUMENTATION_TEST_RUNNER_ARGS";
 
     protected Project project;
 
@@ -1505,7 +1514,14 @@ public abstract class TaskManager {
 
         String connectedRootName = CONNECTED + ANDROID_TEST.getSuffix();
 
-        TestData testData = new TestDataImpl(testVariantData);
+        TestDataImpl testData = new TestDataImpl(testVariantData);
+        Optional<String> extraRunnerArgs = getExtraRunnerArgs();
+        if (extraRunnerArgs.isPresent()) {
+            Map<String, String> argsMap =
+                    Splitter.on(',').withKeyValueSeparator('=').split(extraRunnerArgs.get());
+            testData.setExtraInstrumentationTestRunnerArgs(argsMap);
+        }
+
         // create the check tasks for this test
         // first the connected one.
         ImmutableList<Task> artifactsTasks = ImmutableList.of(
@@ -1654,10 +1670,24 @@ public abstract class TaskManager {
             if (!testServer.isConfigured()) {
                 serverTask.setEnabled(false);
             }
+        }
+    }
 
+    private Optional<String> getExtraRunnerArgs() {
+        Object fromProperties =
+                project.getProperties().get(TEST_RUNNER_ARGS_PROP);
+        if (fromProperties != null) {
+            return Optional.of(fromProperties.toString());
         }
 
+        String fromEnv = System.getenv(TEST_RUNNER_ENV);
+        if (fromEnv != null) {
+            return Optional.of(fromEnv);
+        }
+
+        return Optional.absent();
     }
+
 
     public static void createJarTask(@NonNull TaskFactory tasks, @NonNull final VariantScope scope) {
         final BaseVariantData variantData = scope.getVariantData();
