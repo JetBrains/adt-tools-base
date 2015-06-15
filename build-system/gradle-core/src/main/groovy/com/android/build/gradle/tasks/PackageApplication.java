@@ -18,7 +18,9 @@ import com.android.build.gradle.internal.variant.ApkVariantData;
 import com.android.build.gradle.internal.variant.ApkVariantOutputData;
 import com.android.build.gradle.internal.variant.BaseVariantData;
 import com.android.builder.packaging.DuplicateFileException;
+import com.android.builder.signing.SignedJarBuilder;
 import com.android.utils.StringHelper;
+import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableSet;
 
 import org.codehaus.groovy.runtime.StringGroovyMethods;
@@ -146,6 +148,8 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
 
     private PackagingOptions packagingOptions;
 
+    private SignedJarBuilder.IZipEntryFilter packagingOptionsFilter;
+
     @InputFiles
     public Set<File> getPackagedJars() {
         return packagedJars;
@@ -187,6 +191,14 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
         this.packagingOptions = packagingOptions;
     }
 
+    public SignedJarBuilder.IZipEntryFilter getPackagingOptionsFilter() {
+        return packagingOptionsFilter;
+    }
+
+    public void setPackagingOptionsFilter(SignedJarBuilder.IZipEntryFilter filter) {
+        this.packagingOptionsFilter = filter;
+    }
+
     @InputFiles
     public FileTree getNativeLibraries() {
         FileTree src = null;
@@ -206,7 +218,9 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
                     getDexedLibraries(), getPackagedJars(),
                     (dir == null ? null : dir.getAbsolutePath()), getJniFolders(),
                     getMergingFolder(), getAbiFilters(), getJniDebugBuild(), getSigningConfig(),
-                    getPackagingOptions(), getOutputFile().getAbsolutePath());
+                    getPackagingOptions(),
+                    getPackagingOptionsFilter(),
+                    getOutputFile().getAbsolutePath());
         } catch (DuplicateFileException e) {
             Logger logger = getLogger();
             logger.error("Error: duplicate files during packaging of APK " + getOutputFile()
@@ -293,48 +307,58 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
                     return scope.getVariantScope().getDexOutputFolder();
                 }
             });
-            ConventionMappingHelper.map(packageApp, "dexedLibraries", new Callable<Collection<File>>() {
-                @Override
-                public Collection<File> call() {
-                    if (config.isMultiDexEnabled() && !config.isLegacyMultiDexMode()
-                            && variantData.preDexTask != null) {
-                        return scope.getGlobalScope().getProject()
-                                .fileTree(variantData.preDexTask.getOutputFolder()).getFiles();
-                    }
+            ConventionMappingHelper.map(packageApp, "dexedLibraries",
+                    new Callable<Collection<File>>() {
+                        @Override
+                        public Collection<File> call() {
+                            if (config.isMultiDexEnabled() && !config.isLegacyMultiDexMode()
+                                    && variantData.preDexTask != null) {
+                                return scope.getGlobalScope().getProject()
+                                        .fileTree(variantData.preDexTask.getOutputFolder())
+                                        .getFiles();
+                            }
 
-                    return Collections.emptyList();
-                }
-            });
+                            return Collections.emptyList();
+                        }
+                    });
+            scope.getVariantScope().getJavaResourcesProvider();
             ConventionMappingHelper.map(packageApp, "packagedJars", new Callable<Set<File>>() {
                 @Override
                 public Set<File> call() {
-                    // when the application is obfuscated, the original resources may have been
-                    // adapted to match changing package names for instance, so we take the
-                    // resources from the obfuscation process results rather than the original
-                    // exploded library's classes.jar files.
-                    if (config.isMinifyEnabled() && variantData.obfuscationTask != null) {
-                        return variantData.obfuscationTask.getOutputs().getFiles().getFiles();
+                    ImmutableSet.Builder<File> jarFiles = ImmutableSet.builder();
+                    for (JavaResourcesProvider.JavaResourcesLocation javaResourcesProvider :
+                            scope.getVariantScope().getJavaResourcesProvider().getJavaResourcesLocations()) {
+                        if (javaResourcesProvider.type == JavaResourcesProvider.Type.JAR) {
+                            jarFiles.add(javaResourcesProvider.location);
+                        }
                     }
-                    return scope.getGlobalScope().getAndroidBuilder().getPackagedJars(config);
+                    return jarFiles.build();
+                }
+            });
+            ConventionMappingHelper.map(packageApp, "javaResourceDir", new Callable<File>() {
+                @Override
+                public File call() {
+                    ImmutableSet.Builder<File> folders = ImmutableSet.builder();
+                    for (JavaResourcesProvider.JavaResourcesLocation javaResourcesProvider :
+                            scope.getVariantScope().getJavaResourcesProvider()
+                                    .getJavaResourcesLocations()) {
+                        if (javaResourcesProvider.type == JavaResourcesProvider.Type.FOLDER) {
+                            folders.add(javaResourcesProvider.location);
+                        }
+                    }
+                    ImmutableSet<File> resourceFolders = folders.build();
+                    if (resourceFolders.size() > 1) {
+                        throw new RuntimeException("More than one java resources folders : " +
+                                Joiner.on(",").join(resourceFolders));
+                    }
+                    return resourceFolders.isEmpty() ? null : resourceFolders.iterator().next();
                 }
             });
 
             packageApp.setMergingFolder(new File(scope.getGlobalScope().getIntermediatesDir(),
                     variantOutputData.getFullName() + "/merging"));
 
-            // when we use minification, the javaResources are given to the obfuscation task
-            // so it has a chance to rename java resources in sync with packages renaming,
-            // therefore the javaResources are located with the rest of the proguarded binary
-            // files, otherwise use the output of the Java resources processing task.
-            if (!config.isMinifyEnabled()) {
-                ConventionMappingHelper.map(packageApp, "javaResourceDir", new Callable<File>() {
-                    @Override
-                    public File call() {
-                        return getOptionalDir(
-                                variantData.processJavaResourcesTask.getDestinationDir());
-                    }
-                });
-            }
+
             ConventionMappingHelper.map(packageApp, "jniFolders", new Callable<Set<File>>() {
                 @Override
                 public Set<File> call() {
@@ -390,6 +414,14 @@ public class PackageApplication extends IncrementalTask implements FileSupplier 
                 @Override
                 public PackagingOptions call() throws Exception {
                     return scope.getGlobalScope().getExtension().getPackagingOptions();
+                }
+            });
+
+            ConventionMappingHelper.map(packageApp, "packagingOptionsFilter",
+                    new Callable<SignedJarBuilder.IZipEntryFilter>() {
+                @Override
+                public SignedJarBuilder.IZipEntryFilter call() throws Exception {
+                    return scope.getVariantScope().getPackagingOptionsFilter();
                 }
             });
 

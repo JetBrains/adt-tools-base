@@ -64,7 +64,7 @@ import java.util.concurrent.Callable;
  */
 @ParallelizableTask
 public class JackTask extends AbstractAndroidCompile
-        implements FileSupplier, BinaryFileProviderTask {
+        implements FileSupplier, BinaryFileProviderTask, JavaResourcesProvider {
 
     public static final FullRevision JACK_MIN_REV = new FullRevision(21, 1, 0);
 
@@ -81,6 +81,7 @@ public class JackTask extends AbstractAndroidCompile
 
     private File tempFolder;
     private File jackFile;
+    private File javaResourcesFolder;
 
     private File mappingFile;
 
@@ -121,20 +122,21 @@ public class JackTask extends AbstractAndroidCompile
 
     private void doMinification() throws ProcessException, IOException {
 
-        if (System.getenv("USE_JACK_API") == null ||
-                !androidBuilder.convertByteCodeUsingJackApis(
-                        getDestinationDir(),
-                        getJackFile(),
-                        getClasspath().getFiles(),
-                        getPackagedLibraries(),
-                        getSource().getFiles(),
-                        getProguardFiles(),
-                        getMappingFile(),
-                        getJarJarRuleFiles(),
-                        getIncrementalDir(),
-                        isMultiDexEnabled(),
-                        getMinSdkVersion())) {
-
+        if (System.getenv("USE_JACK_API") == null) {
+            androidBuilder.convertByteCodeUsingJackApis(
+                    getDestinationDir(),
+                    getJackFile(),
+                    getClasspath().getFiles(),
+                    getPackagedLibraries(),
+                    getSource().getFiles(),
+                    getProguardFiles(),
+                    getMappingFile(),
+                    getJarJarRuleFiles(),
+                    getIncrementalDir(),
+                    getJavaResourcesFolder(),
+                    isMultiDexEnabled(),
+                    getMinSdkVersion());
+        } else {
             // no incremental support through command line so far.
             androidBuilder.convertByteCodeWithJack(
                     getDestinationDir(),
@@ -319,6 +321,23 @@ public class JackTask extends AbstractAndroidCompile
         this.incrementalDir = incrementalDir;
     }
 
+    @Input
+    @Optional
+    public File getJavaResourcesFolder() {
+        return javaResourcesFolder;
+    }
+
+    public void setJavaResourcesFolder(File javaResourcesFolder) {
+        this.javaResourcesFolder = javaResourcesFolder;
+    }
+
+    @NonNull
+    @Override
+    public ImmutableList<JavaResourcesLocation> getJavaResourcesLocations() {
+        return ImmutableList.of(
+                new JavaResourcesLocation(Type.FOLDER, getDestinationDir()));
+    }
+
     @Override
     @NonNull
     public BinaryFileProviderTask.Artifact getArtifact() {
@@ -419,7 +438,8 @@ public class JackTask extends AbstractAndroidCompile
             jackTask.setTempFolder(new File(scope.getGlobalScope().getIntermediatesDir(),
                     "/tmp/jack/" + scope.getVariantConfiguration().getDirName()));
 
-
+            jackTask.setJavaResourcesFolder(scope.getJavaResourcesDestinationDir());
+            scope.setJavaResourcesProvider(jackTask);
 
             if (config.isMinifyEnabled()) {
                 ConventionMappingHelper.map(jackTask, "proguardFiles", new Callable<List<File>>() {

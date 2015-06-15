@@ -217,7 +217,7 @@ public class LibraryTaskManager extends TaskManager {
                                 false /*generateResourcePackage*/);
 
                         // process java resources
-                        createProcessJavaResTask(tasks, variantScope);
+                        createProcessJavaResTasks(tasks, variantScope);
                         return null;
                     }
                 });
@@ -418,7 +418,7 @@ public class LibraryTaskManager extends TaskManager {
                             // jar the classes.
                             Jar jar = project.getTasks().create(
                                     variantScope.getTaskName("package", "Jar"), Jar.class);
-                            jar.dependsOn(variantScope.getProcessJavaResourcesTask().getName());
+                            jar.dependsOn(variantScope.getMergeJavaResourcesTask().getName());
 
                             // add the class files (whether they are instrumented or not.
                             jar.from(pcData.getInputDirCallable());

@@ -97,7 +97,6 @@ class MinifyTest {
                 .findAll { !it.startsWith("org/hamcrest") }
 
         assertThat(testClassFiles).containsExactly(
-                "LICENSE.txt", // Comes from hamcrest, is not packaged.
                 "com/android/tests/basic/MainTest.class",
                 "com/android/tests/basic/UnusedTestClass.class",
                 "com/android/tests/basic/UsedTestClass.class",

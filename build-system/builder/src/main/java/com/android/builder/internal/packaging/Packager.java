@@ -28,16 +28,13 @@ import com.android.builder.packaging.PackagerException;
 import com.android.builder.packaging.SealedPackageException;
 import com.android.builder.signing.SignedJarBuilder;
 import com.android.builder.signing.SignedJarBuilder.IZipEntryFilter;
-import com.android.builder.signing.SignedJarBuilder.ZipEntryExtractor;
-import com.android.ide.common.packaging.PackagingUtils;
 import com.android.ide.common.signing.CertificateInfo;
 import com.android.utils.FileUtils;
 import com.android.utils.ILogger;
-import com.google.common.base.Predicate;
-import com.google.common.collect.Sets;
 import com.google.common.io.Closeables;
 import com.google.common.io.Files;
 
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -48,11 +45,8 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.jar.Attributes;
@@ -74,10 +68,10 @@ public final class Packager implements IArchiveBuilder {
             Pattern.CASE_INSENSITIVE);
 
     /**
-     * A No-op zip filter. It's used to detect conflicts.
+     * Filter to detect duplicate entries
      *
      */
-    private final class NullZipFilter implements IZipEntryFilter {
+    private final class DuplicateZipFilter implements IZipEntryFilter {
         private File mInputFile;
 
         void reset(File inputFile) {
@@ -90,7 +84,13 @@ public final class Packager implements IArchiveBuilder {
 
             File duplicate = checkFileForDuplicate(archivePath);
             if (duplicate != null) {
-                throw new DuplicateFileException(archivePath, duplicate, mInputFile);
+                // we have a duplicate but it might be the same source file, in this case,
+                // we just ignore the duplicate, and of course, we don't add it again.
+                File potentialDuplicate = new File(mInputFile, archivePath);
+                if (!duplicate.getAbsolutePath().equals(potentialDuplicate.getAbsolutePath())) {
+                    throw new DuplicateFileException(archivePath, duplicate, mInputFile);
+                }
+                return false;
             } else {
                 mAddedFiles.put(archivePath, mInputFile);
             }
@@ -100,163 +100,20 @@ public final class Packager implements IArchiveBuilder {
     }
 
     /**
-     * Filter based on packaging options.
+     * A filter to filter out binary files like .class
      */
-    private static final class FileFilter implements Predicate<String> {
-        @Nullable
-        private final PackagingOptions mPackagingOptions;
+    private static final class NoBinaryZipFilter implements IZipEntryFilter {
         @NonNull
-        private final Set<String> mExcludes;
-        @NonNull
-        private final Set<String> mPickFirsts;
-        private Set<String> mUsedPickFirsts = null;
+        private final IZipEntryFilter parentFilter;
 
-        public FileFilter(@Nullable PackagingOptions packagingOptions) {
-            mPackagingOptions = packagingOptions;
-            mExcludes = mPackagingOptions != null ? mPackagingOptions.getExcludes() :
-                    Collections.<String>emptySet();
-            mPickFirsts = mPackagingOptions != null ? mPackagingOptions.getPickFirsts() :
-                    Collections.<String>emptySet();
+        private NoBinaryZipFilter(@NonNull IZipEntryFilter parentFilter) {
+            this.parentFilter = parentFilter;
         }
 
-        @Override
-        public boolean apply(@Nullable String input) {
-            //noinspection VariableNotUsedInsideIf
-            if (mPackagingOptions != null) {
-                if (mExcludes.contains(input)) {
-                    return false;
-                }
-
-                if (mPickFirsts.contains(input)) {
-                    if (mUsedPickFirsts == null) {
-                        mUsedPickFirsts = Sets.newHashSetWithExpectedSize(mPickFirsts.size());
-                    }
-
-                    if (mUsedPickFirsts.contains(input)) {
-                        return false;
-                    } else {
-                        mUsedPickFirsts.add(input);
-                    }
-                }
-            }
-            return true;
-        }
-    }
-
-    /**
-     * Custom {@link IZipEntryFilter} to filter out everything that is not a standard java
-     * resources, and also record whether the zip file contains native libraries.
-     * <p/>Used in
-     * {@link SignedJarBuilder#writeZip(java.io.InputStream, IZipEntryFilter, ZipEntryExtractor)}
-     * when we only want the java resources from external jars.
-     */
-    private final class JavaAndNativeResourceFilter implements IZipEntryFilter {
-        private final List<String> mNativeLibs = new ArrayList<String>();
-
-        private boolean mNativeLibsConflict = false;
-        private File mInputFile;
-
-        private FileFilter mFilter;
-
-        private JavaAndNativeResourceFilter(@NonNull FileFilter filter) {
-            mFilter = filter;
-        }
 
         @Override
         public boolean checkEntry(String archivePath) throws ZipAbortException {
-            // split the path into segments.
-            String[] segments = archivePath.split("/");
-
-            // empty path? skip to next entry.
-            if (segments.length == 0) {
-                return false;
-            }
-
-            if (!mFilter.apply(archivePath)) {
-                return false;
-            }
-
-            // Check each folders to make sure they should be included.
-            // Folders like CVS, .svn, etc.. should already have been excluded from the
-            // jar file, but we need to exclude some other folder (like /META-INF) so
-            // we check anyway.
-            for (int i = 0 ; i < segments.length - 1; i++) {
-                if (!PackagingUtils.checkFolderForPackaging(segments[i])) {
-                    return false;
-                }
-            }
-
-            // get the file name from the path
-            String fileName = segments[segments.length-1];
-
-            boolean check = PackagingUtils.checkFileForPackaging(fileName);
-
-            // only do additional checks if the file passes the default checks.
-            if (check) {
-                mLogger.verbose("=> %s", archivePath);
-
-                if (!mMergeFiles.keySet().contains(archivePath)) {
-                    File duplicate = checkFileForDuplicate(archivePath);
-                    if (duplicate != null) {
-                        throw new DuplicateFileException(archivePath, duplicate, mInputFile);
-                    }
-                    mAddedFiles.put(archivePath, mInputFile);
-                }
-
-                if (archivePath.endsWith(".so")) {
-                    mNativeLibs.add(archivePath);
-
-                    // only .so located in lib/ will interfere with the installation
-                    if (archivePath.startsWith(SdkConstants.FD_APK_NATIVE_LIBS + "/")) {
-                        mNativeLibsConflict = true;
-                    }
-                } else if (archivePath.endsWith(".jnilib")) {
-                    mNativeLibs.add(archivePath);
-                }
-            }
-
-            return check;
-        }
-
-        List<String> getNativeLibs() {
-            return mNativeLibs;
-        }
-
-        boolean getNativeLibsConflict() {
-            return mNativeLibsConflict;
-        }
-
-        void reset(File inputFile) {
-            mInputFile = inputFile;
-            mNativeLibs.clear();
-            mNativeLibsConflict = false;
-        }
-    }
-
-    /**
-     * Custom {@link ZipEntryExtractor} to extract zip entries that should be merged.
-     * <p/>Used in
-     * {@link SignedJarBuilder#writeZip(java.io.InputStream, IZipEntryFilter, ZipEntryExtractor)}
-     */
-    private class MergeEntryExtractor implements ZipEntryExtractor {
-
-        @Override
-        public boolean checkEntry(String archivePath) {
-            return mMergeFiles.containsKey(archivePath);
-        }
-
-        @Override
-        public void extract(String archivePath, InputStream zis) throws IOException {
-            FileOutputStream fos = new FileOutputStream(mMergeFiles.get(archivePath), true);
-            try {
-                byte[] buffer = new byte[4096];
-                int count;
-                while ((count = zis.read(buffer)) != -1) {
-                    fos.write(buffer, 0, count);
-                }
-            } finally {
-                fos.close();
-            }
+            return parentFilter.checkEntry(archivePath) && !archivePath.endsWith(".class");
         }
     }
 
@@ -265,50 +122,11 @@ public final class Packager implements IArchiveBuilder {
     private boolean mJniDebugMode = false;
     private boolean mIsSealed = false;
 
-    private final FileFilter mFileFilter;
-    private final NullZipFilter mNullFilter = new NullZipFilter();
-    private final JavaAndNativeResourceFilter mJarFilter;
+    private final DuplicateZipFilter mNoDuplicateFilter = new DuplicateZipFilter();
+    private final NoBinaryZipFilter mNoBinaryZipFilter = new NoBinaryZipFilter(mNoDuplicateFilter);
+    @Nullable private final SignedJarBuilder.IZipEntryFilter mPackagingOptionsFilter;
     private final HashMap<String, File> mAddedFiles = new HashMap<String, File>();
     private final HashMap<String, File> mMergeFiles = new HashMap<String, File>();
-
-    /**
-     * Status for the addition of a jar file resources into the APK.
-     * This indicates possible issues with native library inside the jar file.
-     */
-    public interface JarStatus {
-        /**
-         * Returns the list of native libraries found in the jar file.
-         */
-        List<String> getNativeLibs();
-
-        /**
-         * Returns whether some of those libraries were located in the location that Android
-         * expects its native libraries.
-         */
-        boolean hasNativeLibsConflicts();
-
-    }
-
-    /** Internal implementation of {@link JarStatus}. */
-    private static final class JarStatusImpl implements JarStatus {
-        public final List<String> mLibs;
-        public final boolean mNativeLibsConflict;
-
-        private JarStatusImpl(List<String> libs, boolean nativeLibsConflict) {
-            mLibs = libs;
-            mNativeLibsConflict = nativeLibsConflict;
-        }
-
-        @Override
-        public List<String> getNativeLibs() {
-            return mLibs;
-        }
-
-        @Override
-        public boolean hasNativeLibsConflicts() {
-            return mNativeLibsConflict;
-        }
-    }
 
     /**
      * Creates a new instance.
@@ -336,9 +154,8 @@ public final class Packager implements IArchiveBuilder {
             CertificateInfo certificateInfo,
             @Nullable String createdBy,
             @Nullable PackagingOptions packagingOptions,
+            @Nullable SignedJarBuilder.IZipEntryFilter packagingOptionsFilter,
             ILogger logger) throws PackagerException {
-        mFileFilter = new FileFilter(packagingOptions);
-        mJarFilter = new JavaAndNativeResourceFilter(mFileFilter);
 
         try {
             File apkFile = new File(apkLocation);
@@ -354,7 +171,7 @@ public final class Packager implements IArchiveBuilder {
                 }
             }
 
-
+            mPackagingOptionsFilter = packagingOptionsFilter;
             mLogger = logger;
 
             mBuilder = new SignedJarBuilder(
@@ -472,11 +289,11 @@ public final class Packager implements IArchiveBuilder {
             mLogger.verbose("%s:", zipFile);
 
             // reset the filter with this input.
-            mNullFilter.reset(zipFile);
+            mNoDuplicateFilter.reset(zipFile);
 
             // ask the builder to add the content of the file.
             fis = new FileInputStream(zipFile);
-            mBuilder.writeZip(fis, mNullFilter, new MergeEntryExtractor());
+            mBuilder.writeZip(fis, mNoDuplicateFilter, null /* ZipEntryExtractor */);
         } catch (DuplicateFileException e) {
             mBuilder.cleanUp();
             throw e;
@@ -493,47 +310,55 @@ public final class Packager implements IArchiveBuilder {
     }
 
     /**
-     * Adds the resources from a jar file.
-     * @param jarFile the jar File.
-     * @return a {@link JarStatus} object indicating if native libraries where found in
-     *         the jar file.
-     * @throws PackagerException if an error occurred
-     * @throws SealedPackageException if the APK is already sealed.
-     * @throws DuplicateFileException if a file conflicts with another already added to the APK
-     *                                   at the same location inside the APK archive.
+     * Adds all resources from a merged folder or jar file. There cannot be any duplicates and all
+     * files present must be added unless it is a "binary" file like a .class or .dex (jack
+     * produces the classes.dex in the same location as the obfuscated resources).
+     * @param jarFileOrDirectory a jar file or directory reference.
+     * @throws PackagerException could not add an entry to the package.
+     * @throws DuplicateFileException if an entry with the same name was already present in the
+     * package being built while adding the jarFileOrDirectory content.
      */
-    public JarStatus addResourcesFromJar(File jarFile) throws PackagerException,
-            SealedPackageException, DuplicateFileException {
-        if (mIsSealed) {
-            throw new SealedPackageException("APK is already sealed");
-        }
+    public void addResources(@NonNull File jarFileOrDirectory)
+            throws PackagerException, DuplicateFileException {
 
-        FileInputStream fis = null;
+        mNoDuplicateFilter.reset(jarFileOrDirectory);
+        InputStream fis = null;
         try {
-            mLogger.verbose("%s:", jarFile);
-
-            // reset the filter with this input.
-            mJarFilter.reset(jarFile);
-
-            // ask the builder to add the content of the file, filtered to only let through
-            // the java resources.
-            fis = new FileInputStream(jarFile);
-            mBuilder.writeZip(fis, mJarFilter, new MergeEntryExtractor());
-
-            // check if native libraries were found in the external library. This should
-            // constitutes an error or warning depending on if they are in lib/
-            return new JarStatusImpl(mJarFilter.getNativeLibs(), mJarFilter.getNativeLibsConflict());
+            if (jarFileOrDirectory.isDirectory()) {
+                addResourcesFromDirectory(jarFileOrDirectory, "");
+            } else {
+                fis = new BufferedInputStream(new FileInputStream(jarFileOrDirectory));
+                mBuilder.writeZip(fis, mNoBinaryZipFilter, null /* ZipEntryExtractor */);
+            }
         } catch (DuplicateFileException e) {
             mBuilder.cleanUp();
             throw e;
         } catch (Exception e) {
             mBuilder.cleanUp();
-            throw new PackagerException(e, "Failed to add %s", jarFile);
+            throw new PackagerException(e, "Failed to add %s", jarFileOrDirectory);
         } finally {
             try {
-                Closeables.close(fis, true /* swallowIOException */);
+                if (fis != null) {
+                    Closeables.close(fis, true /* swallowIOException */);
+                }
             } catch (IOException e) {
                 // ignore.
+            }
+        }
+    }
+
+    private void addResourcesFromDirectory(@NonNull File directory, String path)
+            throws IOException, IZipEntryFilter.ZipAbortException {
+        File[] directoryFiles = directory.listFiles();
+        if (directoryFiles == null) {
+            return;
+        }
+        for (File file : directoryFiles) {
+            String entryName = path.isEmpty() ? file.getName() : path + "/" + file.getName();
+            if (file.isDirectory()) {
+                addResourcesFromDirectory(file, entryName);
+            } else {
+                doAddFile(file, entryName);
             }
         }
     }
@@ -598,8 +423,12 @@ public final class Packager implements IArchiveBuilder {
                                     abi.getName() + "/" + libName;
 
                                 try {
-                                    doAddFile(lib, path);
-                                } catch (IOException e) {
+
+                                    if (mPackagingOptionsFilter == null
+                                            || mPackagingOptionsFilter.checkEntry(path)) {
+                                        doAddFile(lib, path);
+                                    }
+                                } catch (Exception e) {
                                     mBuilder.cleanUp();
                                     throw new PackagerException(e, "Failed to add %s", lib);
                                 }
@@ -647,36 +476,26 @@ public final class Packager implements IArchiveBuilder {
         }
     }
 
-    private void doAddFile(File file, String archivePath) throws DuplicateFileException,
+    private void doAddFile(File file, String archivePath) throws IZipEntryFilter.ZipAbortException,
             IOException {
-        if (!mFileFilter.apply(archivePath)) {
-            return;
-        }
-
-        mLogger.verbose("%1$s => %2$s", file, archivePath);
 
         // If a file has to be merged, write it to a file in the merging folder and add it later.
-        if (!mMergeFiles.keySet().contains(archivePath)) {
-            File duplicate = checkFileForDuplicate(archivePath);
-            if (duplicate != null) {
-                throw new DuplicateFileException(archivePath, duplicate, file);
-            }
-        } else {
+        if (mMergeFiles.keySet().contains(archivePath)) {
             File mergingFile = mMergeFiles.get(archivePath);
-            if (!mergingFile.getParentFile().exists()) {
-                mergingFile.getParentFile().mkdirs();
-            }
+            Files.createParentDirs(mergingFile);
             FileOutputStream fos = new FileOutputStream(mMergeFiles.get(archivePath), true);
             try {
                 fos.write(Files.toByteArray(file));
             } finally {
                 fos.close();
             }
-            return;
+        } else {
+            if (!mNoBinaryZipFilter.checkEntry(archivePath)) {
+                return;
+            }
+            mAddedFiles.put(archivePath, file);
+            mBuilder.writeFile(file, archivePath);
         }
-
-        mAddedFiles.put(archivePath, file);
-        mBuilder.writeFile(file, archivePath);
     }
 
     /**
@@ -699,7 +518,7 @@ public final class Packager implements IArchiveBuilder {
      * @param file the File to check
      * @throws PackagerException If the check fails
      */
-    private void checkOutputFile(File file) throws PackagerException {
+    private static void checkOutputFile(File file) throws PackagerException {
         if (file.isDirectory()) {
             throw new PackagerException("%s is a directory!", file);
         }

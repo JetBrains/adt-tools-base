@@ -318,7 +318,7 @@ public class ModelBuilder implements ToolingModelBuilder {
                 (variantData.javacTask != null) ?
                         variantData.javacTask.getDestinationDir() :
                         variantData.getScope().getJavaOutputDir(),
-                variantData.processJavaResourcesTask.getDestinationDir(),
+                variantData.getScope().getJavaResourcesDestinationDir(),
                 taskManager.createMockableJar.getOutputFile(),
                 dependencies,
                 sourceProviders.variantSourceProvider,

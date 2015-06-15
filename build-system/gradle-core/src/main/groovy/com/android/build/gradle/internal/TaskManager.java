@@ -61,11 +61,13 @@ import com.android.build.gradle.internal.tasks.AndroidReportTask;
 import com.android.build.gradle.internal.tasks.CheckManifest;
 import com.android.build.gradle.internal.tasks.DependencyReportTask;
 import com.android.build.gradle.internal.tasks.DeviceProviderInstrumentTestTask;
+import com.android.build.gradle.internal.tasks.ExtractJavaResourcesTask;
 import com.android.build.gradle.internal.tasks.FileSupplier;
 import com.android.build.gradle.internal.tasks.GenerateApkDataTask;
 import com.android.build.gradle.internal.tasks.InstallVariantTask;
 import com.android.build.gradle.internal.tasks.MockableAndroidJarTask;
 import com.android.build.gradle.internal.tasks.PrepareDependenciesTask;
+import com.android.build.gradle.internal.tasks.MergeJavaResourcesTask;
 import com.android.build.gradle.internal.tasks.SigningReportTask;
 import com.android.build.gradle.internal.tasks.SourceSetsTask;
 import com.android.build.gradle.internal.tasks.TestServerTask;
@@ -92,6 +94,7 @@ import com.android.build.gradle.tasks.GenerateBuildConfig;
 import com.android.build.gradle.tasks.GenerateResValues;
 import com.android.build.gradle.tasks.GenerateSplitAbiRes;
 import com.android.build.gradle.tasks.JackTask;
+import com.android.build.gradle.tasks.JavaResourcesProvider;
 import com.android.build.gradle.tasks.JillTask;
 import com.android.build.gradle.tasks.Lint;
 import com.android.build.gradle.tasks.MergeAssets;
@@ -119,6 +122,7 @@ import com.android.builder.core.VariantType;
 import com.android.builder.dependency.LibraryDependency;
 import com.android.builder.internal.testing.SimpleTestCallable;
 import com.android.builder.sdk.TargetInfo;
+import com.android.builder.signing.SignedJarBuilder;
 import com.android.builder.testing.ConnectedDeviceProvider;
 import com.android.builder.testing.api.DeviceProvider;
 import com.android.builder.testing.api.TestServer;
@@ -411,12 +415,13 @@ public abstract class TaskManager {
         createMockableJar.setOutputFile(
                 new File(globalScope.getIntermediatesDir(), "mockable-" + sdkName + ".jar"));
 
-        ConventionMappingHelper.map(createMockableJar, "returnDefaultValues", new Callable<Boolean>() {
-            @Override
-            public Boolean call() {
-                return extension.getTestOptions().getUnitTests().isReturnDefaultValues();
-            }
-        });
+        ConventionMappingHelper.map(createMockableJar, "returnDefaultValues",
+                new Callable<Boolean>() {
+                    @Override
+                    public Boolean call() {
+                        return extension.getTestOptions().getUnitTests().isReturnDefaultValues();
+                    }
+                });
     }
 
     public void createMergeAppManifestsTask(
@@ -793,12 +798,13 @@ public abstract class TaskManager {
                 return config.getBuildType().isDebuggable();
             }
         });
-        ConventionMappingHelper.map(generateSplitAbiRes, "aaptOptions", new Callable<AaptOptions>() {
-            @Override
-            public AaptOptions call() throws Exception {
-                return getExtension().getAaptOptions();
-            }
-        });
+        ConventionMappingHelper.map(generateSplitAbiRes, "aaptOptions",
+                new Callable<AaptOptions>() {
+                    @Override
+                    public AaptOptions call() throws Exception {
+                        return getExtension().getAaptOptions();
+                    }
+                });
         generateSplitAbiRes.dependsOn(
                 variantOutputData.getScope().getProcessResourcesTask().getName());
 
@@ -838,6 +844,13 @@ public abstract class TaskManager {
                     @Override
                     public PackagingOptions call() throws Exception {
                         return getExtension().getPackagingOptions();
+                    }
+                });
+        ConventionMappingHelper.map(variantOutputData.packageSplitAbiTask, "packagingOptionsFilter",
+                new Callable<SignedJarBuilder.IZipEntryFilter>() {
+                    @Override
+                    public SignedJarBuilder.IZipEntryFilter call() throws Exception {
+                        return scope.getPackagingOptionsFilter();
                     }
                 });
 
@@ -885,9 +898,53 @@ public abstract class TaskManager {
         }
     }
 
-    public void createProcessJavaResTask(@NonNull TaskFactory tasks, @NonNull VariantScope scope) {
+    /**
+     * Creates the java resources processing tasks.
+     *
+     * The java processing will happen in three steps :
+     * <ul>{@link ExtractJavaResourcesTask} will extract all java resources from packaged jar files
+     * dependencies. Each jar file will be extracted in a separate folder. Each folder will be
+     * located under {@link VariantScope#getPackagedJarsJavaResDestinationDir()}</ul>
+     * <ul>{@link ProcessJavaResConfigAction} will sync all source folders into a single folder
+     * identified by {@link VariantScope#getSourceFoldersJavaResDestinationDir()}</ul>
+     * <ul>{@link MergeJavaResourcesTask} will take all these folders and will create a single
+     * merged folder with the {@link PackagingOptions} settings applied. The folder is located at
+     * {@link VariantScope#getJavaResourcesDestinationDir()}</ul>
+     *
+     * the result of 3 is the final set of java resources to can be either directly embedded in
+     * the resulting APK or fed into the obfuscation tool to produce obfuscated resources.
+     *
+     * @param tasks tasks factory to create tasks.
+     * @param scope the variant scope we are operating under.
+     */
+    public void createProcessJavaResTasks(@NonNull TaskFactory tasks, @NonNull VariantScope scope) {
+        final BaseVariantData<? extends BaseVariantOutputData> variantData = scope.getVariantData();
+
+        // first create the incremental task that will extract all libraries java resources
+        // in separate folders.
+        AndroidTask<ExtractJavaResourcesTask> extractJavaResourcesTask = androidTasks
+                .create(tasks, new ExtractJavaResourcesTask.Config(scope));
+
+        // now copy the source folders java resources into the temporary location, mainly to
+        // maintain the PluginDsl COPY semantics.
         scope.setProcessJavaResourcesTask(
                 androidTasks.create(tasks, new ProcessJavaResConfigAction(scope)));
+
+        // and create the merge tasks that will merge everything.
+        AndroidTask<MergeJavaResourcesTask> mergeJavaResourcesTask = androidTasks
+                .create(tasks, new MergeJavaResourcesTask.Config(scope));
+        // the merge task is the official provider for merged java resources to be bundled in the
+        // final variant specific APK, this may change if obfuscation is turned on.
+        scope.setJavaResourcesProvider(
+                JavaResourcesProvider.Adapter.build(tasks, mergeJavaResourcesTask));
+
+        // set the dependencies.
+        extractJavaResourcesTask.dependsOn(tasks, variantData.prepareDependenciesTask);
+        scope.getProcessJavaResourcesTask().dependsOn(tasks, extractJavaResourcesTask);
+        mergeJavaResourcesTask.dependsOn(tasks, scope.getProcessJavaResourcesTask());
+
+        scope.setMergeJavaResourcesTask(mergeJavaResourcesTask);
+
     }
 
     public void createAidlTask(@NonNull TaskFactory tasks, @NonNull VariantScope scope) {
@@ -912,7 +969,7 @@ public abstract class TaskManager {
         javacTask.optionalDependsOn(tasks, scope.getSourceGenTask());
         javacTask.dependsOn(tasks,
                 scope.getVariantData().prepareDependenciesTask,
-                scope.getProcessJavaResourcesTask());
+                scope.getMergeJavaResourcesTask());
 
         // TODO - dependency information for the compile classpath is being lost.
         // Add a temporary approximation
@@ -1055,8 +1112,8 @@ public abstract class TaskManager {
         variantData.assembleVariantTask.dependsOn(createMockableJar);
         VariantScope variantScope = variantData.getScope();
 
-        createPreBuildTasks(tasks, variantScope);
-        createProcessJavaResTask(tasks, variantScope);
+        createPreBuildTasks(variantScope);
+        createProcessJavaResTasks(tasks, variantScope);
         createCompileAnchorTask(tasks, variantScope);
         AndroidTask<JavaCompile> javacTask = createJavacTask(tasks, variantScope);
         setJavaCompilerTask(javacTask, tasks, variantScope);
@@ -1119,7 +1176,7 @@ public abstract class TaskManager {
         createProcessResTask(tasks, variantScope, true /*generateResourcePackage*/);
 
         // process java resources
-        createProcessJavaResTask(tasks, variantScope);
+        createProcessJavaResTasks(tasks, variantScope);
 
         createAidlTask(tasks, variantScope);
 
@@ -1927,8 +1984,6 @@ public abstract class TaskManager {
             @NonNull TaskFactory tasks,
             @NonNull VariantScope scope) {
 
-        final GradleVariantConfiguration config = scope.getVariantData().getVariantConfiguration();
-
         // ----- Create Jill tasks -----
         final AndroidTask<JillTask> jillRuntimeTask = androidTasks.create(tasks,
                 new JillTask.RuntimeTaskConfigAction(scope));
@@ -1947,6 +2002,7 @@ public abstract class TaskManager {
 
         // Jack is compiling and also providing the binary and mapping files.
         setJavaCompilerTask(jackTask, tasks, scope);
+        jackTask.dependsOn(tasks, scope.getMergeJavaResourcesTask());
         jackTask.dependsOn(tasks,
                 scope.getVariantData().sourceGenTask,
                 jillRuntimeTask,
@@ -2000,7 +2056,7 @@ public abstract class TaskManager {
                     tasks, new PackageApplication.ConfigAction(variantOutputScope));
 
             packageApp.dependsOn(tasks, variantOutputScope.getProcessResourcesTask(),
-                    variantOutputScope.getVariantScope().getProcessJavaResourcesTask(),
+                    variantOutputScope.getVariantScope().getMergeJavaResourcesTask(),
                     variantOutputScope.getVariantScope().getNdkBuildable());
 
             packageApp.optionalDependsOn(
@@ -2258,16 +2314,17 @@ public abstract class TaskManager {
      */
     @Nullable
     public File maybeCreateProguardTasks(
-            @NonNull TaskFactory tasks,
+            final @NonNull TaskFactory tasks,
             @NonNull VariantScope scope,
             @NonNull final PostCompilationData pcData) {
         if (!scope.getVariantData().getVariantConfiguration().isMinifyEnabled()) {
             return null;
         }
 
-        AndroidTask<AndroidProGuardTask> proguardTask = androidTasks.create(
+        final AndroidTask<AndroidProGuardTask> proguardTask = androidTasks.create(
                 tasks, new AndroidProGuardTask.ConfigAction(scope, pcData));
         scope.setObfuscationTask(proguardTask);
+        scope.setJavaResourcesProvider(JavaResourcesProvider.Adapter.build(tasks, proguardTask));
 
         // update dependency.
         proguardTask.optionalDependsOn(tasks, pcData.getClassGeneratingTasks(),
@@ -2295,7 +2352,7 @@ public abstract class TaskManager {
     }
 
     public void createAnchorTasks(@NonNull TaskFactory tasks, @NonNull VariantScope scope) {
-        createPreBuildTasks(tasks, scope);
+        createPreBuildTasks(scope);
 
         // also create sourceGenTask
         final BaseVariantData<? extends BaseVariantOutputData> variantData = scope.getVariantData();
@@ -2310,7 +2367,7 @@ public abstract class TaskManager {
                 }));
         // and resGenTask
         scope.setResourceGenTask(androidTasks.create(tasks,
-                scope.getTaskName("generate","Resources"),
+                scope.getTaskName("generate", "Resources"),
                 Task.class,
                 new Action<Task>() {
                     @Override
@@ -2334,7 +2391,7 @@ public abstract class TaskManager {
         createCompileAnchorTask(tasks, scope);
     }
 
-    private void createPreBuildTasks(@NonNull TaskFactory tasks, @NonNull VariantScope scope) {
+    private void createPreBuildTasks(@NonNull VariantScope scope) {
         final BaseVariantData<? extends BaseVariantOutputData> variantData = scope.getVariantData();
         variantData.preBuildTask = project.getTasks().create(scope.getTaskName("pre", "Build"));
 
@@ -2355,7 +2412,6 @@ public abstract class TaskManager {
         for (LibraryDependencyImpl lib : configurationDependencies.getLibraries()) {
             dependencyManager.addDependencyToPrepareTask(variantData, prepareDependenciesTask, lib);
         }
-
     }
 
     private void createCompileAnchorTask(@NonNull TaskFactory tasks, @NonNull final VariantScope scope) {
