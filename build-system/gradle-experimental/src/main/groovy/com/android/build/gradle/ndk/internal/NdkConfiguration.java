@@ -114,6 +114,8 @@ public class NdkConfiguration {
                             }
                         });
 
+                        new DefaultNativeToolSpecification().apply(binary);
+
                         String sysroot = ndkHandler.getSysroot(
                                 Abi.getByName(binary.getTargetPlatform().getName()));
 
