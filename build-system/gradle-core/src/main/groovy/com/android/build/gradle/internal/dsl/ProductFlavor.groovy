@@ -154,13 +154,35 @@ class ProductFlavor extends DefaultProductFlavor implements CoreProductFlavor {
         return null
     }
 
-    /** Adds a custom argument to the test instrumentation runner. */
+    /**
+     * Adds a custom argument to the test instrumentation runner, e.g:
+     *
+     * <p><pre>testInstrumentationRunnerArgument "size", "medium"</pre>
+     *
+     * <p>Test runner arguments can also be specified from the command line:
+     *
+     * <p><pre>
+     * INSTRUMENTATION_TEST_RUNNER_ARGS=size=medium,foo=bar ./gradlew connectedAndroidTest
+     * ./gradlew connectedAndroidTest -Pcom.android.tools.instrumentationTestRunnerArgs=size=medium,foo=bar
+     * </pre>
+     */
     @NonNull
     public void testInstrumentationRunnerArgument(@NonNull String key, @NonNull String value) {
         testInstrumentationRunnerArguments[key] = value
     }
 
-    /** Adds  custom arguments to the test instrumentation runner. */
+    /**
+     * Adds custom arguments to the test instrumentation runner, e.g:
+     *
+     * <p><pre>testInstrumentationRunnerArguments(size: "medium", foo: "bar")</pre>
+     *
+     * <p>Test runner arguments can also be specified from the command line:
+     *
+     * <p><pre>
+     * INSTRUMENTATION_TEST_RUNNER_ARGS=size=medium,foo=bar ./gradlew connectedAndroidTest
+     * ./gradlew connectedAndroidTest -Pcom.android.tools.instrumentationTestRunnerArgs=size=medium,foo=bar
+     * </pre>
+     */
     @NonNull
     public void testInstrumentationRunnerArguments(@NonNull Map<String, String> args) {
         getTestInstrumentationRunnerArguments().putAll(args)

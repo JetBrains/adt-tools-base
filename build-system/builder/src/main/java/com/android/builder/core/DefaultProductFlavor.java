@@ -316,6 +316,13 @@ public class DefaultProductFlavor extends BaseConfigImpl implements ProductFlavo
      *
      * <p>See <a href="http://developer.android.com/guide/topics/manifest/instrumentation-element.html">
      * instrumentation</a>.
+     *
+     * <p>Test runner arguments can also be specified from the command line:
+     *
+     * <p><pre>
+     * INSTRUMENTATION_TEST_RUNNER_ARGS=size=medium,foo=bar ./gradlew connectedAndroidTest
+     * ./gradlew connectedAndroidTest -Pcom.android.tools.instrumentationTestRunnerArgs=size=medium,foo=bar
+     * </pre>
      */
     @Override
     @NonNull
