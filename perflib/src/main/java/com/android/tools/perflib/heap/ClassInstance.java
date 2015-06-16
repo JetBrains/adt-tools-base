@@ -17,10 +17,11 @@
 package com.android.tools.perflib.heap;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
 import com.android.annotations.VisibleForTesting;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ClassInstance extends Instance {
 
@@ -32,19 +33,26 @@ public class ClassInstance extends Instance {
     }
 
     @VisibleForTesting
-    Object getField(Type type, String name) {
-        return getValues().get(new Field(type, name));
+    @NonNull
+    List<FieldValue> getFields(String name) {
+        ArrayList<FieldValue> result = new ArrayList<FieldValue>();
+        for (FieldValue value : getValues()) {
+            if (value.getField().getName().equals(name)) {
+                result.add(value);
+            }
+        }
+        return result;
     }
 
     @NonNull
-    public Map<Field, Object> getValues() {
-        Map<Field, Object> result = new HashMap<Field, Object>();
+    public List<FieldValue> getValues() {
+        ArrayList<FieldValue> result = new ArrayList<FieldValue>();
 
         ClassObj clazz = getClassObj();
         getBuffer().setPosition(mValuesOffset);
         while (clazz != null) {
             for (Field field : clazz.getFields()) {
-                result.put(field, readValue(field.getType()));
+                result.add(new FieldValue(field, readValue(field.getType())));
             }
             clazz = clazz.getSuperClassObj();
         }
@@ -54,12 +62,12 @@ public class ClassInstance extends Instance {
     @Override
     public final void accept(@NonNull Visitor visitor) {
         visitor.visitClassInstance(this);
-        for (Object value : getValues().values()) {
-            if (value instanceof Instance) {
+        for (FieldValue field : getValues()) {
+            if (field.getValue() instanceof Instance) {
                 if (!mReferencesAdded) {
-                    ((Instance)value).addReference(this);
+                    ((Instance) field.getValue()).addReference(this);
                 }
-                visitor.visitLater(this, (Instance)value);
+                visitor.visitLater(this, (Instance) field.getValue());
             }
         }
         mReferencesAdded = true;
@@ -72,5 +80,23 @@ public class ClassInstance extends Instance {
 
     public final String toString() {
         return String.format("%s@%d", getClassObj().getClassName(), getUniqueId());
+    }
+
+    public static class FieldValue {
+        private Field mField;
+        private Object mValue;
+
+        public FieldValue(@NonNull Field field, @Nullable Object value) {
+            this.mField = field;
+            this.mValue = value;
+        }
+
+        public Field getField() {
+            return mField;
+        }
+
+        public Object getValue() {
+            return mValue;
+        }
     }
 }
