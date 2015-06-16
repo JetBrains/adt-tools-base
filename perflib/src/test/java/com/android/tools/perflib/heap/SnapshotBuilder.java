@@ -20,6 +20,7 @@ import com.android.tools.perflib.heap.io.InMemoryBuffer;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.Map;
 
 /**
  * Utility for creating Snapshot objects to be used in tests.
@@ -95,7 +96,8 @@ public class SnapshotBuilder {
         Field[] fields = new Field[nodesTo.length];
         for (int i = 0; i < nodesTo.length; i++) {
             mDirectBuffer.putShort(mOffsets[nodeFrom] + i * 2, (short) nodesTo[i]);
-            fields[i] = new Field(Type.OBJECT, "f" + nodesTo[i]);
+            // Fields should support duplicated field names due to inheritance of private fields
+            fields[i] = new Field(Type.OBJECT, "duplicated_name");
         }
 
         mNodes[nodeFrom].getClassObj().setFields(fields);
@@ -130,7 +132,7 @@ public class SnapshotBuilder {
         return this;
     }
 
-    public Snapshot getSnapshot() {
+    public Snapshot build() {
         return mSnapshot;
     }
 }

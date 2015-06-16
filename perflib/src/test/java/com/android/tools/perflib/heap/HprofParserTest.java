@@ -21,8 +21,9 @@ import com.android.tools.perflib.heap.io.MemoryMappedFileBuffer;
 import junit.framework.TestCase;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Map;
+import java.util.List;
 
 public class HprofParserTest extends TestCase {
 
@@ -117,11 +118,18 @@ public class HprofParserTest extends TestCase {
         ClassInstance instance = (ClassInstance) enumValue;
         assertSame(clazz, instance.getClassObj());
 
-        Object name = instance.getField(Type.OBJECT, "name");
+        List<ClassInstance.FieldValue> fields = instance.getFields("name");
+        assertEquals(1, fields.size());
+        assertEquals(Type.OBJECT, fields.get(0).getField().getType());
+        Object name = fields.get(0).getValue();
+
         assertTrue(name instanceof ClassInstance);
         ClassInstance string = (ClassInstance) name;
         assertEquals("java.lang.String", string.getClassObj().getClassName());
-        Object value = string.getField(Type.OBJECT, "value");
+        fields = string.getFields("value");
+        assertEquals(1, fields.size());
+        assertEquals(Type.OBJECT, fields.get(0).getField().getType());
+        Object value = fields.get(0).getValue();
         assertTrue(value instanceof ArrayInstance);
         Object[] data = ((ArrayInstance) value).getValues();
         assertEquals(3, data.length);
@@ -129,21 +137,23 @@ public class HprofParserTest extends TestCase {
         assertEquals('E', data[1]);
         assertEquals('W', data[2]);
 
-        Object ordinal = instance.getField(Type.INT, "ordinal");
-        assertEquals(0, ordinal);
+        fields = instance.getFields("ordinal");
+        assertEquals(1, fields.size());
+        assertEquals(Type.INT, fields.get(0).getField().getType());
+        assertEquals(0, fields.get(0).getValue());
     }
 
     /**
      * Tests getValues to make sure it's not adding duplicate entries to the back references.
      */
     public void testDuplicateEntries() {
-        mSnapshot = new SnapshotBuilder(2).addReferences(1, 2).addRoot(1).getSnapshot();
+        mSnapshot = new SnapshotBuilder(2).addReferences(1, 2).addRoot(1).build();
         mSnapshot.computeDominators();
 
         assertEquals(2, mSnapshot.getReachableInstances().size());
         ClassInstance parent = (ClassInstance)mSnapshot.findInstance(1);
-        Map<Field, Object> firstGet = parent.getValues();
-        Map<Field, Object> secondGet = parent.getValues();
+        List<ClassInstance.FieldValue> firstGet = parent.getValues();
+        List<ClassInstance.FieldValue> secondGet = parent.getValues();
         assertEquals(1, firstGet.size());
         assertEquals(firstGet.size(), secondGet.size());
         Instance child = mSnapshot.findInstance(2);
@@ -151,7 +161,7 @@ public class HprofParserTest extends TestCase {
     }
 
     public void testResolveReferences() {
-        mSnapshot = new SnapshotBuilder(1).addRoot(1).getSnapshot();
+        mSnapshot = new SnapshotBuilder(1).addRoot(1).build();
         ClassObj subSoftReferenceClass = new ClassObj(98, null, "SubSoftReference", 0);
         subSoftReferenceClass.setSuperClassId(SnapshotBuilder.SOFT_REFERENCE_ID);
         ClassObj subSubSoftReferenceClass = new ClassObj(97, null, "SubSubSoftReference", 0);
