@@ -82,19 +82,9 @@ public class JavaCompileConfigAction implements TaskConfigAction<JavaCompile> {
             }
         });
 
-        ConventionMappingHelper.map(javacTask, "destinationDir", new Callable<File>() {
-            @Override
-            public File call() {
-                return scope.getJavaOutputDir();
-            }
-        });
+        javacTask.setDestinationDir(scope.getJavaOutputDir());
 
-        ConventionMappingHelper.map(javacTask, "dependencyCacheDir", new Callable<File>() {
-            @Override
-            public File call() {
-                return scope.getJavaDependencyCache();
-            }
-        });
+        javacTask.setDependencyCacheDir(scope.getJavaDependencyCache());
 
         CompileOptions compileOptions = scope.getGlobalScope().getExtension().getCompileOptions();
 
