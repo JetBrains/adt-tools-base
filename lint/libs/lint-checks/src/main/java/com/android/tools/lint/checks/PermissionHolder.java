@@ -17,6 +17,8 @@
 package com.android.tools.lint.checks;
 
 import com.android.annotations.NonNull;
+import com.android.annotations.Nullable;
+import com.google.common.collect.Sets;
 
 import java.util.Collections;
 import java.util.Set;
@@ -58,6 +60,42 @@ public interface PermissionHolder {
         @Override
         public boolean isRevocable(@NonNull String permission) {
             return myRevocablePermissions.contains(permission);
+        }
+
+        /**
+         * Creates a {@linkplain PermissionHolder} which combines the permissions
+         * held by the given holder, with the permissions implied by the given
+         * {@link PermissionRequirement}
+         */
+        @NonNull
+        public static PermissionHolder join(@NonNull PermissionHolder lookup,
+                                            @NonNull PermissionRequirement requirement) {
+            SetPermissionLookup empty = new SetPermissionLookup(Collections.<String>emptySet());
+            return join(lookup, requirement.getMissingPermissions(empty));
+        }
+
+        /**
+         * Creates a {@linkplain PermissionHolder} which combines the permissions
+         * held by the given holder, along with a set of additional permission names
+         */
+        @NonNull
+        public static PermissionHolder join(@NonNull final PermissionHolder lookup,
+                @Nullable final Set<String> permissions) {
+            if (permissions != null && !permissions.isEmpty()) {
+                return new PermissionHolder() {
+                    @Override
+                    public boolean hasPermission(@NonNull String permission) {
+                        return lookup.hasPermission(permission)
+                                || permissions.contains(permission);
+                    }
+
+                    @Override
+                    public boolean isRevocable(@NonNull String permission) {
+                        return lookup.isRevocable(permission);
+                    }
+                };
+            }
+            return lookup;
         }
     }
 }
