@@ -326,7 +326,7 @@ public class MergedResourceWriter extends MergeWriter<ResourceItem> {
 
                     currentFile = null;
 
-                    String content = XmlUtils.toXml(document, true /*preserveWhitespace*/);
+                    String content = XmlUtils.toXml(document);
                     Files.write(content, outFile, Charsets.UTF_8);
 
                     if (publicNodes != null && mPublicFile != null) {

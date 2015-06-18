@@ -17,7 +17,6 @@ package com.android.builder.compiling;
 
 import static com.android.SdkConstants.ATTR_NAME;
 import static com.android.SdkConstants.ATTR_TYPE;
-import static com.android.SdkConstants.TAG_STRING;
 import static com.android.SdkConstants.TAG_ITEM;
 import static com.android.SdkConstants.TAG_RESOURCES;
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -164,7 +163,7 @@ public class ResValueGenerator {
         try {
             content = XmlPrettyPrinter.prettyPrint(document, true);
         } catch (Throwable t) {
-            content = XmlUtils.toXml(document, false);
+            content = XmlUtils.toXml(document);
         }
 
         Files.write(content, resFile, Charsets.UTF_8);
