@@ -19,6 +19,7 @@ package com.android.tools.lint.checks;
 import static com.android.SdkConstants.ANDROID_URI;
 import static com.android.SdkConstants.ATTR_NAME;
 import static com.android.SdkConstants.ATTR_VALUE;
+import static com.android.SdkConstants.CLASS_INTENT;
 import static com.android.SdkConstants.INT_DEF_ANNOTATION;
 import static com.android.SdkConstants.R_CLASS;
 import static com.android.SdkConstants.STRING_DEF_ANNOTATION;
@@ -29,6 +30,10 @@ import static com.android.SdkConstants.TYPE_DEF_FLAG_ATTRIBUTE;
 import static com.android.resources.ResourceType.COLOR;
 import static com.android.resources.ResourceType.DRAWABLE;
 import static com.android.resources.ResourceType.MIPMAP;
+import static com.android.tools.lint.checks.CleanupDetector.CONTENT_RESOLVER_CLS;
+import static com.android.tools.lint.checks.PermissionFinder.Operation.ACTION;
+import static com.android.tools.lint.checks.PermissionFinder.Operation.READ;
+import static com.android.tools.lint.checks.PermissionFinder.Operation.WRITE;
 import static com.android.tools.lint.checks.PermissionRequirement.ATTR_PROTECTION_LEVEL;
 import static com.android.tools.lint.checks.PermissionRequirement.VALUE_DANGEROUS;
 import static com.android.tools.lint.detector.api.JavaContext.findSurroundingMethod;
@@ -37,6 +42,8 @@ import static com.android.tools.lint.detector.api.JavaContext.getParentOfType;
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
 import com.android.resources.ResourceType;
+import com.android.tools.lint.checks.PermissionFinder.Operation;
+import com.android.tools.lint.checks.PermissionFinder.Result;
 import com.android.tools.lint.checks.PermissionHolder.SetPermissionLookup;
 import com.android.tools.lint.client.api.JavaParser.ResolvedAnnotation;
 import com.android.tools.lint.client.api.JavaParser.ResolvedClass;
@@ -241,6 +248,8 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
     public static final String MAIN_THREAD_ANNOTATION = SUPPORT_ANNOTATIONS_PREFIX + "MainThread"; //$NON-NLS-1$
     public static final String WORKER_THREAD_ANNOTATION = SUPPORT_ANNOTATIONS_PREFIX + "WorkerThread"; //$NON-NLS-1$
     public static final String BINDER_THREAD_ANNOTATION = SUPPORT_ANNOTATIONS_PREFIX + "BinderThread"; //$NON-NLS-1$
+    public static final String PERMISSION_ANNOTATION_READ = PERMISSION_ANNOTATION + ".Read"; //$NON-NLS-1$
+    public static final String PERMISSION_ANNOTATION_WRITE = PERMISSION_ANNOTATION + ".Write"; //$NON-NLS-1$
 
     public static final String RES_SUFFIX = "Res";
     public static final String THREAD_SUFFIX = "Thread";
@@ -280,7 +289,8 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
                 || signature.endsWith(".CheckReturnValue")) { // support findbugs annotation too
             checkResult(context, node, annotation);
         } else if (signature.equals(PERMISSION_ANNOTATION)) {
-            checkPermission(context, node, method, annotation);
+            PermissionRequirement requirement = PermissionRequirement.create(context, annotation);
+            checkPermission(context, node, method, null, requirement);
         } else if (signature.endsWith(THREAD_SUFFIX)
                 && signature.startsWith(SUPPORT_ANNOTATIONS_PREFIX)) {
             checkThreading(context, node, method, signature);
@@ -346,9 +356,9 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
     private void checkPermission(
             @NonNull JavaContext context,
             @NonNull MethodInvocation node,
-            @NonNull ResolvedMethod method,
-            @NonNull ResolvedAnnotation annotation) {
-        PermissionRequirement requirement = PermissionRequirement.create(context, annotation);
+            @Nullable ResolvedMethod method,
+            @Nullable Result result,
+            @NonNull PermissionRequirement requirement) {
         if (requirement.isConditional()) {
             return;
         }
@@ -358,8 +368,18 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
             // annotations in the surrounding context
             permissions  = addLocalPermissions(context, permissions, node);
             if (!requirement.isSatisfied(permissions)) {
-                String name = method.getContainingClass().getSimpleName() + "." + method.getName();
-                String message = getMissingPermissionMessage(requirement, name, permissions);
+                Operation operation;
+                String name;
+                if (result != null) {
+                    name = result.name;
+                    operation = result.operation;
+                } else {
+                    assert method != null;
+                    name = method.getContainingClass().getSimpleName() + "." + method.getName();
+                    operation = Operation.CALL;
+                }
+                String message = getMissingPermissionMessage(requirement, name, permissions,
+                        operation);
                 context.report(MISSING_PERMISSION, node, context.getLocation(node), message);
             }
         } else if (requirement.isRevocable(permissions) &&
@@ -456,9 +476,10 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
 
     /** Returns the error message shown when a given call is missing one or more permissions */
     public static String getMissingPermissionMessage(@NonNull PermissionRequirement requirement,
-            @NonNull String callName, @NonNull PermissionHolder permissions) {
-        return String.format("Missing permissions required by %1$s: %2$s", callName,
-                requirement.describeMissingPermissions(permissions));
+            @NonNull String callName, @NonNull PermissionHolder permissions,
+            @NonNull Operation operation) {
+        return String.format("Missing permissions required %1$s %2$s: %3$s", operation.prefix(),
+                callName, requirement.describeMissingPermissions(permissions));
     }
 
     /** Returns the error message shown when a revocable permission call is not properly handled */
@@ -1390,9 +1411,102 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
                         }
                     }
                 }
+
+                checkIndirectPermissions(call, method, mContext);
             }
 
             return false;
         }
+    }
+
+    private void checkIndirectPermissions(
+            @NonNull MethodInvocation call,
+            @NonNull ResolvedMethod method,
+            @NonNull JavaContext context) {
+        String name = call.astName().astValue();
+        if (method.getArgumentCount() == 0) {
+            return;
+        }
+
+        Operation operation = getPermissionOperation(name);
+        if (operation != null) {
+            if (operation == ACTION) {
+                int indentIndex = getIntentMethodParameterIndex(name);
+                if (indentIndex != -1) {
+                    if (!method.getArgumentType(indentIndex).matchesSignature(CLASS_INTENT)) {
+                        return;
+                    }
+
+                    Result result = PermissionFinder.findRequiredPermissions(
+                            ACTION, context, call, indentIndex);
+                    if (result != null) {
+                        checkPermission(context, call, method, result, result.requirement);
+                    }
+                }
+            } else if (operation == READ || operation == WRITE) {
+                if (method.getContainingClass().isSubclassOf(
+                        CONTENT_RESOLVER_CLS, false)) {
+                    Result result = PermissionFinder.findRequiredPermissions(
+                            operation, context, call, 0);
+                    if (result != null) {
+                        checkPermission(context, call, method, result, result.requirement);
+                    }
+                }
+            }
+        }
+    }
+
+    @Nullable
+    public static Operation getPermissionOperation(@NonNull String name) {
+        int index = getIntentMethodParameterIndex(name);
+        if (index != -1) {
+            return ACTION;
+        }
+
+        if (name.equals("query")) {
+            return READ;
+        }
+
+        if (name.equals("insert") //$NON-NLS-1$
+                || name.equals("update") //$NON-NLS-1$
+                || name.equals("delete")) { //$NON-NLS-1$
+            return WRITE;
+        }
+
+        // TODO: Check for reflection calls -- look for java.lang.Class' getMethod,
+        // getDeclaredMethod, getConstructor and getDeclaredConstructor
+
+        return null;
+    }
+
+    public static int getIntentMethodParameterIndex(@NonNull String name) {
+        // Intents?
+        if (name.startsWith("start")) {
+            if (name.startsWith("startActivity") || name.equals("startNextMatchingActivity")) {
+                if (name.startsWith("startActivityFrom")) {
+                    // These are tricky because they place the intent as the SECOND argument
+                    //   startActivityFromChild(Activity, Intent, int);
+                    //   startActivityFromFragment(Fragment, Intent, int);
+                    return 1;
+                } else {
+                    return 0;
+                }
+
+                // TODO: There is also a startActivities() which takes an Intent[],
+                // Check that you have permission to start the given activity,
+                // though it does not appear to be commonly used in app code.
+            } else if (name.startsWith("startService")) {
+                return 0;
+            }
+        } else if (name.equals("bindService")) {
+            return 0;
+        } else if (name.startsWith("send") //$NON-NLS-1$
+                && (name.endsWith("Broadcast") || name.endsWith("BroadcastAsUser"))) {
+            // sendBroadcast, sendOrderedBroadcast, sendStickyBroadcast,
+            // sendStickyOrderedBroadcast, etc
+            return 0;
+        }
+
+        return -1;
     }
 }

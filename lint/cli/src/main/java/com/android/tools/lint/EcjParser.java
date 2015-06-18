@@ -1796,8 +1796,11 @@ public class EcjParser extends JavaParser {
     }
 
     @Nullable
-    private static Object getConstantValue(@Nullable Object value) {
+    private Object getConstantValue(@Nullable Object value) {
         if (value instanceof Constant) {
+            if (value == Constant.NotAConstant) {
+                return null;
+            }
             if (value instanceof StringConstant) {
                 return ((StringConstant) value).stringValue();
             } else if (value instanceof IntConstant) {
@@ -1842,6 +1845,8 @@ public class EcjParser extends JavaParser {
 
                 return list.toArray();
             }
+        } else if (value instanceof AnnotationBinding) {
+            return new EcjResolvedAnnotation((AnnotationBinding) value);
         }
 
         return value;
