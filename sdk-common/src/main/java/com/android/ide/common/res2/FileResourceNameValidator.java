@@ -18,6 +18,7 @@ package com.android.ide.common.res2;
 
 import static com.android.SdkConstants.DOT_9PNG;
 import static com.android.SdkConstants.DOT_XML;
+import static com.android.SdkConstants.DOT_XSD;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
@@ -119,6 +120,23 @@ public final class FileResourceNameValidator {
                     if (!SdkUtils.startsWithIgnoreCase(DOT_XML, ext) &&
                             !oneOfStartsWithIgnoreCase(SdkUtils.IMAGE_EXTENSIONS, ext)) {
                         return "The file name must end with .xml or .png";
+                    }
+                }
+            }
+        } else if (resourceType == ResourceType.XML) {
+            // Also allow xsd as they are xml files.
+            if (SdkUtils.endsWithIgnoreCase(fileNameWithExt, DOT_XML) ||
+                    SdkUtils.endsWithIgnoreCase(fileNameWithExt, DOT_XSD)) {
+                fileName = removeSingleExtension(fileNameWithExt);
+            } else {
+                if (!allowPartialOrMissingExtension) {
+                    return "The file name must end with .xml";
+                } else {
+                    fileName = removeSingleExtension(fileNameWithExt);
+                    String ext = fileNameWithExt.substring(fileName.length());
+                    if (!SdkUtils.startsWithIgnoreCase(DOT_XML, ext) &&
+                            !SdkUtils.startsWithIgnoreCase(DOT_XSD, ext)) {
+                        return "The file name must end with .xml";
                     }
                 }
             }
