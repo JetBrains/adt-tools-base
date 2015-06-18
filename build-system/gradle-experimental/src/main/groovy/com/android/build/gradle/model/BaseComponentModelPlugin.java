@@ -79,6 +79,7 @@ import org.gradle.internal.reflect.Instantiator;
 import org.gradle.internal.service.ServiceRegistry;
 import org.gradle.language.base.FunctionalSourceSet;
 import org.gradle.language.base.LanguageSourceSet;
+import org.gradle.model.Defaults;
 import org.gradle.model.Model;
 import org.gradle.model.ModelMap;
 import org.gradle.model.Mutate;
@@ -168,7 +169,7 @@ public class BaseComponentModelPlugin implements Plugin<Project> {
     @SuppressWarnings("MethodMayBeStatic")
     public static class Rules extends RuleSource {
 
-        @Mutate
+        @Defaults
         public void configureAndroidModel(
                 AndroidConfig androidModel,
                 ServiceRegistry serviceRegistry) {
