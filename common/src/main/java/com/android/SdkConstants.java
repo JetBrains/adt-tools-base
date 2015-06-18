@@ -1062,6 +1062,7 @@ public final class SdkConstants {
 
     public static final String RES_FOLDER = "res";                     //$NON-NLS-1$
     public static final String DOT_XML = ".xml";                       //$NON-NLS-1$
+    public static final String DOT_XSD = ".xsd";                       //$NON-NLS-1$
     public static final String DOT_GIF = ".gif";                       //$NON-NLS-1$
     public static final String DOT_JPG = ".jpg";                       //$NON-NLS-1$
     public static final String DOT_JPEG = ".jpeg";                     //$NON-NLS-1$
