@@ -972,7 +972,7 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
     /** Normally null; used for testing */
     @Nullable
     @VisibleForTesting
-    static Map<String,String> ourMockData;
+    static Map<String,String> sMockData;
 
     @Nullable
     private static String readUrlData(
@@ -980,8 +980,8 @@ public class GradleDetector extends Detector implements Detector.GradleScanner {
             @NonNull GradleCoordinate dependency,
             @NonNull String query) {
         // For unit testing: avoid network as well as unexpected new versions
-        if (ourMockData != null) {
-            String value = ourMockData.get(query);
+        if (sMockData != null) {
+            String value = sMockData.get(query);
             assert value != null : query;
             return value;
         }

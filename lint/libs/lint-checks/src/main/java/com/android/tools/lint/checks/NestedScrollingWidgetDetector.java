@@ -40,7 +40,7 @@ import java.util.Arrays;
 import java.util.Collection;
 
 /**
- * Checks whether a root FrameLayout can be replaced with a {@code <merge>} tag.
+ * Checks whether a scroll view contains a nested scrolling widget
  */
 public class NestedScrollingWidgetDetector extends LayoutDetector {
     private int mVisitingHorizontalScroll;
@@ -77,6 +77,7 @@ public class NestedScrollingWidgetDetector extends LayoutDetector {
     }
 
     @Override
+    @NonNull
     public Collection<String> getApplicableElements() {
         return Arrays.asList(
                 SCROLL_VIEW,

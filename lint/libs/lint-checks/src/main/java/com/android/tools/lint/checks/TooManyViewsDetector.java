@@ -32,7 +32,7 @@ import org.w3c.dom.Element;
 import java.util.Collection;
 
 /**
- * Checks whether a root FrameLayout can be replaced with a {@code <merge>} tag.
+ * Checks whether a view hierarchy has too many views or has a suspiciously deep hierarchy
  */
 public class TooManyViewsDetector extends LayoutDetector {
 
