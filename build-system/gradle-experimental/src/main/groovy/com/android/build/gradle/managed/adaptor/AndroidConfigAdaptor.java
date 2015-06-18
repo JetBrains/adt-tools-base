@@ -27,7 +27,7 @@ import com.android.build.gradle.internal.BuildTypeData;
 import com.android.build.gradle.internal.CompileOptions;
 import com.android.build.gradle.internal.ProductFlavorData;
 import com.android.build.gradle.internal.VariantManager;
-import com.android.build.gradle.internal.core.NdkConfig;
+import com.android.build.gradle.internal.dsl.CoreNdkOptions;
 import com.android.build.gradle.internal.coverage.JacocoExtension;
 import com.android.build.gradle.internal.dsl.AaptOptions;
 import com.android.build.gradle.internal.dsl.AdbOptions;
@@ -207,8 +207,8 @@ public class AndroidConfigAdaptor implements com.android.build.gradle.AndroidCon
         model.setSources(sources);
     }
 
-    public NdkConfig getNdk() {
-        return new NdkConfigAdaptor(model.getNdk());
+    public CoreNdkOptions getNdk() {
+        return new NdkOptionsAdaptor(model.getNdk());
     }
 
     @Override

@@ -131,13 +131,13 @@ model {
 model {
     android.productFlavors {
         create("x86") {
-            ndkConfig.abiFilters += "x86"
+            ndk.abiFilters += "x86"
         }
         create("arm") {
-            ndkConfig.abiFilters += "armeabi-v7a"
+            ndk.abiFilters += "armeabi-v7a"
         }
         create("mips") {
-            ndkConfig.abiFilters +="mips"
+            ndk.abiFilters +="mips"
         }
         create("fat")
     }
@@ -159,6 +159,40 @@ model {
 
         AndroidArtifact fat = ModelHelper.getVariant(model.getVariants(), "fatDebug").getMainArtifact()
         assertThat(fat.abiFilters).isNull();
+    }
+
+    @Test
+    void "check variant specific flags"() {
+        project.buildFile <<
+                """
+model {
+    android.buildTypes {
+        debug {
+            ndk.CFlags += "-DTEST_FLAG_DEBUG"
+        }
+        release {
+            ndk.CFlags += "-DTEST_FLAG_RELEASE"
+        }
+    }
+    android.productFlavors {
+        create("f1") {
+            ndk.CFlags += "-DTEST_FLAG_F1"
+        }
+        create("f2") {
+            ndk.CFlags += "-DTEST_FLAG_F2"
+        }
+    }
+}
+"""
+        AndroidProject model = project.executeAndReturnModel("assembleDebug")
+        NativeLibrary f1Debug = ModelHelper.getVariant(model.getVariants(), "f1Debug").getMainArtifact()
+                .getNativeLibraries().first()
+        assertThat(f1Debug.getCCompilerFlags()).contains("-DTEST_FLAG_DEBUG")
+        assertThat(f1Debug.getCCompilerFlags()).contains("-DTEST_FLAG_F1")
+        NativeLibrary f2Release = ModelHelper.getVariant(model.getVariants(), "f2Release").getMainArtifact()
+                .getNativeLibraries().first()
+        assertThat(f2Release.getCCompilerFlags()).contains("-DTEST_FLAG_RELEASE")
+        assertThat(f2Release.getCCompilerFlags()).contains("-DTEST_FLAG_F2")
     }
 
     @Test

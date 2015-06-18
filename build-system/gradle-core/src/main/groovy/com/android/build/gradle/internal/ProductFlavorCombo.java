@@ -18,33 +18,38 @@ package com.android.build.gradle.internal;
 
 import com.android.annotations.NonNull;
 import com.android.annotations.Nullable;
+import com.android.builder.model.DimensionAware;
 import com.android.builder.model.ProductFlavor;
 import com.android.utils.StringHelper;
+import com.google.common.base.Predicates;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Lists;
+
+import org.gradle.api.Named;
 
 import java.util.List;
 
 /**
  * A combination of product flavors for a variant, each belonging to a different flavor dimension.
  */
-public class ProductFlavorCombo {
+public class ProductFlavorCombo<T extends DimensionAware & Named> {
     private String name;
 
     @NonNull
-    private final List<ProductFlavor> flavorList;
+    private final List<T> flavorList;
 
     /**
      * Create a ProductFlavorCombo.
      * @param flavors Lists of ProductFlavor.
      */
-    public ProductFlavorCombo(@NonNull ProductFlavor... flavors) {
+    public ProductFlavorCombo(@NonNull T... flavors) {
         flavorList = ImmutableList.copyOf(flavors);
     }
 
-    public ProductFlavorCombo(@NonNull Iterable<? extends ProductFlavor> flavors) {
+    public ProductFlavorCombo(@NonNull Iterable<T> flavors) {
         flavorList = ImmutableList.copyOf(flavors);
     }
 
@@ -53,7 +58,7 @@ public class ProductFlavorCombo {
         if (name == null) {
             boolean first = true;
             StringBuilder sb = new StringBuilder();
-            for (ProductFlavor flavor : flavorList) {
+            for (T flavor : flavorList) {
                 if (first) {
                     sb.append(flavor.getName());
                     first = false;
@@ -67,7 +72,7 @@ public class ProductFlavorCombo {
     }
 
     @NonNull
-    public List<ProductFlavor> getFlavorList() {
+    public List<T> getFlavorList() {
         return flavorList;
     }
 
@@ -78,20 +83,20 @@ public class ProductFlavorCombo {
      * @return A list of ProductFlavorCombo representing all combinations of ProductFlavors.
      */
     @NonNull
-    public static List<ProductFlavorCombo> createCombinations(
+    public static <S extends DimensionAware & Named> List<ProductFlavorCombo<S>> createCombinations(
             @Nullable List<String> flavorDimensions,
-            @NonNull Iterable<? extends ProductFlavor> productFlavors) {
+            @NonNull Iterable<S> productFlavors) {
 
-        List <ProductFlavorCombo> result = Lists.newArrayList();
+        List <ProductFlavorCombo<S>> result = Lists.newArrayList();
         if (flavorDimensions == null || flavorDimensions.isEmpty()) {
-            for (ProductFlavor flavor : productFlavors) {
-                result.add(new ProductFlavorCombo(ImmutableList.of(flavor)));
+            for (S flavor : productFlavors) {
+                result.add(new ProductFlavorCombo<S>(ImmutableList.of(flavor)));
             }
         } else {
             // need to group the flavor per dimension.
             // First a map of dimension -> list(ProductFlavor)
-            ArrayListMultimap<String, ProductFlavor> map = ArrayListMultimap.create();
-            for (ProductFlavor flavor : productFlavors) {
+            ArrayListMultimap<String, S> map = ArrayListMultimap.create();
+            for (S flavor : productFlavors) {
                 String flavorDimension = flavor.getDimension();
 
                 if (flavorDimension == null) {
@@ -108,7 +113,7 @@ public class ProductFlavorCombo {
             }
 
             createProductFlavorCombinations(result,
-                    new ProductFlavor[flavorDimensions.size()],
+                    Lists.<S>newArrayListWithCapacity(flavorDimensions.size()),
                     0, flavorDimensions, map);
         }
         return result;
@@ -127,14 +132,14 @@ public class ProductFlavorCombo {
         return builder.build();
     }
 
-    private static void createProductFlavorCombinations(
-            List<ProductFlavorCombo> flavorGroups,
-            ProductFlavor[] group,
+    private static <S extends DimensionAware & Named> void createProductFlavorCombinations(
+            List<ProductFlavorCombo<S>> flavorGroups,
+            List<S> group,
             int index,
             List<String> flavorDimensionList,
-            ListMultimap<String, ProductFlavor> map) {
+            ListMultimap<String, S> map) {
         if (index == flavorDimensionList.size()) {
-            flavorGroups.add(new ProductFlavorCombo(filterNullFromArray(group)));
+            flavorGroups.add(new ProductFlavorCombo<S>(Iterables.filter(group, Predicates.notNull())));
             return;
         }
 
@@ -143,7 +148,7 @@ public class ProductFlavorCombo {
         String dimension = flavorDimensionList.get(index);
 
         // from our map, get all the possible flavors in that dimension.
-        List<ProductFlavor> flavorList = map.get(dimension);
+        List<S> flavorList = map.get(dimension);
 
         // loop on all the flavors to add them to the current index and recursively fill the next
         // indices.
@@ -151,10 +156,11 @@ public class ProductFlavorCombo {
             throw new RuntimeException(String.format(
                     "No flavor is associated with flavor dimension '%1$s'.", dimension));
         } else {
-            for (ProductFlavor flavor : flavorList) {
-                group[index] = flavor;
+            for (S flavor : flavorList) {
+                group.add(flavor);
                 createProductFlavorCombinations(
                         flavorGroups, group, index + 1, flavorDimensionList, map);
+                group.remove(group.size() - 1);
             }
         }
     }

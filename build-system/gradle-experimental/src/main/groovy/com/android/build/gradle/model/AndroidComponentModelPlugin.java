@@ -19,17 +19,15 @@ package com.android.build.gradle.model;
 import static com.android.builder.core.VariantType.ANDROID_TEST;
 import static com.android.builder.core.VariantType.UNIT_TEST;
 
+import com.android.build.gradle.internal.NdkOptionsHelper;
 import com.android.build.gradle.internal.ProductFlavorCombo;
 import com.android.build.gradle.managed.AndroidConfig;
 import com.android.build.gradle.managed.BuildType;
+import com.android.build.gradle.managed.NdkOptions;
 import com.android.build.gradle.managed.ProductFlavor;
-import com.android.build.gradle.managed.adaptor.BuildTypeAdaptor;
-import com.android.build.gradle.managed.adaptor.ProductFlavorAdaptor;
 import com.android.builder.core.BuilderConstants;
 import com.android.sdklib.repository.FullRevision;
 import com.android.utils.StringHelper;
-import com.google.common.base.Function;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.primitives.Ints;
@@ -127,22 +125,8 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
             buildTypes.create(BuilderConstants.RELEASE);
         }
 
-        @Defaults
-        public void initializeProductFlavor(
-                @Path("android.productFlavors") ModelMap<ProductFlavor> productFlavors) {
-            productFlavors.beforeEach(new Action<ProductFlavor>() {
-                @Override
-                public void execute(ProductFlavor productFlavor) {
-                    productFlavor.getNdkConfig().setCFlags(Lists.<String>newArrayList());
-                    productFlavor.getNdkConfig().setCppFlags(Lists.<String>newArrayList());
-                    productFlavor.getNdkConfig().setLdLibs(Lists.<String>newArrayList());
-                    productFlavor.getNdkConfig().setAbiFilters(Sets.<String>newHashSet());
-                }
-            });
-        }
-
         @Model
-        public List<ProductFlavorCombo> createProductFlavorCombo(
+        public List<ProductFlavorCombo<ProductFlavor>> createProductFlavorCombo(
                 @Path("android.productFlavors") ModelMap<ProductFlavor> productFlavors) {
             // TODO: Create custom product flavor container to manually configure flavor dimensions.
             Set<String> flavorDimensionList = Sets.newHashSet();
@@ -154,13 +138,7 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
 
             return ProductFlavorCombo.createCombinations(
                     Lists.newArrayList(flavorDimensionList),
-                    Iterables.transform(productFlavors.values(),
-                            new Function<ProductFlavor, com.android.builder.model.ProductFlavor>() {
-                                @Override
-                                public com.android.builder.model.ProductFlavor apply(ProductFlavor productFlavor) {
-                                    return new ProductFlavorAdaptor(productFlavor);
-                                }
-                            }));
+                    productFlavors.values());
         }
 
         @ComponentType
@@ -187,7 +165,7 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
                 @Path("android.sources") final AndroidComponentModelSourceSet sources,
                 @Path("android.buildTypes") final ModelMap<BuildType> buildTypes,
                 @Path("android.productFlavors") ModelMap<ProductFlavor> flavors,
-                List<ProductFlavorCombo> flavorGroups, ProjectSourceSet projectSourceSet,
+                List<ProductFlavorCombo<ProductFlavor>> flavorGroups, ProjectSourceSet projectSourceSet,
                 LanguageRegistry languageRegistry) {
             sources.setProjectSourceSet(projectSourceSet);
             for (LanguageRegistration languageRegistration : languageRegistry) {
@@ -235,20 +213,22 @@ public class AndroidComponentModelPlugin implements Plugin<Project> {
         @ComponentBinaries
         public void createBinaries(
                 final ModelMap<AndroidBinary> binaries,
-                @Path("android.buildTypes") ModelMap<BuildType> buildTypes,
-                List<ProductFlavorCombo> flavorCombos, AndroidComponentSpec spec) {
+                @Path("android") final AndroidConfig androidConfig,
+                @Path("android.buildTypes") final ModelMap<BuildType> buildTypes,
+                final List<ProductFlavorCombo<ProductFlavor>> flavorCombos,
+                final AndroidComponentSpec spec) {
             if (flavorCombos.isEmpty()) {
-                flavorCombos.add(new ProductFlavorCombo());
+                flavorCombos.add(new ProductFlavorCombo<ProductFlavor>());
             }
 
             for (final BuildType buildType : buildTypes.values()) {
-                for (final ProductFlavorCombo flavorCombo : flavorCombos) {
+                for (final ProductFlavorCombo<ProductFlavor> flavorCombo : flavorCombos) {
                     binaries.create(getBinaryName(buildType, flavorCombo),
                             new Action<AndroidBinary>() {
                                 @Override
                                 public void execute(AndroidBinary androidBinary) {
                                     DefaultAndroidBinary binary = (DefaultAndroidBinary) androidBinary;
-                                    binary.setBuildType(new BuildTypeAdaptor(buildType));
+                                    binary.setBuildType(buildType);
                                     binary.setProductFlavors(flavorCombo.getFlavorList());
                                 }
                             });

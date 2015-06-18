@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.build.gradle.internal.core;
+package com.android.build.gradle.internal.dsl;
 
 import com.android.annotations.Nullable;
 
@@ -25,7 +25,7 @@ import java.util.Set;
 /**
  * Base class for NDK config file.
  */
-public interface NdkConfig {
+public interface CoreNdkOptions {
 
     /**
      * The module name

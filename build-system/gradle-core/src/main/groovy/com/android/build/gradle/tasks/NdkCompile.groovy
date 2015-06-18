@@ -16,7 +16,7 @@
 
 package com.android.build.gradle.tasks
 import com.android.annotations.NonNull
-import com.android.build.gradle.internal.core.NdkConfig
+import com.android.build.gradle.internal.dsl.CoreNdkOptions
 import com.android.build.gradle.internal.tasks.NdkTask
 import com.android.ide.common.process.ProcessInfoBuilder
 import com.android.sdklib.IAndroidTarget
@@ -26,7 +26,6 @@ import com.google.common.collect.Lists
 import com.google.common.io.Files
 import org.gradle.api.GradleException
 import org.gradle.api.file.FileTree
-import org.gradle.api.invocation.Gradle
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.Optional
@@ -159,7 +158,7 @@ class NdkCompile extends NdkTask {
     }
 
     private void writeMakefile(@NonNull Set<File> sourceFiles, @NonNull File makefile) {
-        NdkConfig ndk = getNdkConfig()
+        CoreNdkOptions ndk = getNdkConfig()
 
         StringBuilder sb = new StringBuilder()
 
@@ -226,7 +225,7 @@ class NdkCompile extends NdkTask {
     }
 
     private void runNdkBuild(@NonNull File ndkLocation, @NonNull File makefile) {
-        NdkConfig ndk = getNdkConfig()
+        CoreNdkOptions ndk = getNdkConfig()
 
         ProcessInfoBuilder builder = new ProcessInfoBuilder()
 
