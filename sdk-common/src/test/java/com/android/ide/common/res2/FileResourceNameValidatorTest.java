@@ -56,6 +56,7 @@ public class FileResourceNameValidatorTest {
                 {"foo.webp", ResourceType.DRAWABLE, null},
                 {"foo.other.png", ResourceType.DRAWABLE, "'.'" + IS_NOT_A_VALID_ETC},
                 {"foo.xml", ResourceType.XML, null},
+                {"foo.xsd", ResourceType.XML, null},
                 {"foo.png", ResourceType.XML, "The file name must end with .xml"},
                 {"foo.8.xml", ResourceType.DRAWABLE, "'.'" + IS_NOT_A_VALID_ETC},
                 {"foo", ResourceType.DRAWABLE, THE_FILE_NAME_MUST_END_WITH_XML_OR_PNG},
