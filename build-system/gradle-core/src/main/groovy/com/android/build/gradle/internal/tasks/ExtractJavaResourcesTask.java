@@ -22,13 +22,13 @@ import com.android.build.gradle.internal.scope.TaskConfigAction;
 import com.android.build.gradle.internal.scope.VariantScope;
 import com.android.ide.common.packaging.PackagingUtils;
 import com.android.utils.FileUtils;
-import com.google.common.io.ByteSource;
 import com.google.common.io.ByteStreams;
-import com.google.common.io.Files;
 
 import org.gradle.api.tasks.InputFiles;
 import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.TaskAction;
+import org.gradle.api.tasks.incremental.IncrementalTaskInputs;
+import org.gradle.api.tasks.incremental.InputFileDetails;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -45,8 +45,6 @@ import java.util.jar.JarFile;
 /**
  * Extract all packaged jar files java resources into a directory. Each jar file will be extracted
  * in a jar specific folder, and only java resources are extracted.
- *
- * TODO : make this task incremental.
  */
 public class ExtractJavaResourcesTask extends DefaultAndroidTask {
 
@@ -58,56 +56,69 @@ public class ExtractJavaResourcesTask extends DefaultAndroidTask {
     @OutputDirectory
     public File outputDir;
 
+    @InputFiles
     public Set<File> getJarInputFiles() {
         return jarInputFiles;
     }
 
     @TaskAction
-    public void extractJavaResources() {
-        if (getJarInputFiles() == null) {
-            return;
-        }
+    public void extractJavaResources(final IncrementalTaskInputs incrementalTaskInputs) {
 
-        for (File inputJar : getJarInputFiles()) {
-            if (!inputJar.exists()) {
-                continue;
-            }
-            String folderName = inputJar.getName() +
-                    inputJar.getPath().hashCode();
+        incrementalTaskInputs.outOfDate(new org.gradle.api.Action<InputFileDetails>() {
+            @Override
+            public void execute(InputFileDetails inputFileDetails) {
+                File inputJar = inputFileDetails.getFile();
+                String folderName = inputJar.getName() +
+                        inputJar.getPath().hashCode();
 
-            File outputFolder = new File(outputDir, folderName);
-            if (outputFolder.exists()) {
-                FileUtils.deleteFolder(outputFolder);
-            }
-            if (!outputFolder.mkdirs()) {
-                throw new RuntimeException("Cannot create folder to extract java resources in for "
-                        + inputJar.getAbsolutePath());
-            }
+                File outputFolder = new File(outputDir, folderName);
+                if (outputFolder.exists()) {
+                    FileUtils.deleteFolder(outputFolder);
+                }
+                if (!outputFolder.mkdirs()) {
+                    throw new RuntimeException(
+                            "Cannot create folder to extract java resources in for "
+                                    + inputJar.getAbsolutePath());
+                }
 
-            // create the jar file visitor that will check for out-dated resources.
+                // create the jar file visitor that will check for out-dated resources.
 
-            JarFile jarFile = null;
-            try {
-                jarFile = new JarFile(inputJar);
-                Enumeration<JarEntry> entries = jarFile.entries();
-                while (entries.hasMoreElements()) {
-                    JarEntry jarEntry = entries.nextElement();
-                    if (!jarEntry.isDirectory()) {
-                        processJarEntry(jarFile, jarEntry, outputFolder);
+                JarFile jarFile = null;
+                try {
+                    jarFile = new JarFile(inputJar);
+                    Enumeration<JarEntry> entries = jarFile.entries();
+                    while (entries.hasMoreElements()) {
+                        JarEntry jarEntry = entries.nextElement();
+                        if (!jarEntry.isDirectory()) {
+                            processJarEntry(jarFile, jarEntry, outputFolder);
+                        }
+                    }
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                } finally {
+                    if (jarFile != null) {
+                        try {
+                            jarFile.close();
+                        } catch (IOException e) {
+                            // ignore.
+                        }
                     }
                 }
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            } finally {
-                if (jarFile != null) {
-                    try {
-                        jarFile.close();
-                    } catch (IOException e) {
-                        // ignore.
-                    }
+            }
+        });
+
+        incrementalTaskInputs.removed(new org.gradle.api.Action<InputFileDetails>() {
+            @Override
+            public void execute(InputFileDetails inputFileDetails) {
+                File deletedJar = inputFileDetails.getFile();
+                String folderName = deletedJar.getName() +
+                        deletedJar.getPath().hashCode();
+                File outputFolder = new File(outputDir, folderName);
+                if (outputFolder.exists()) {
+                    FileUtils.deleteFolder(outputFolder);
                 }
             }
-        }
+        });
     }
 
     /**
@@ -154,7 +165,7 @@ public class ExtractJavaResourcesTask extends DefaultAndroidTask {
             }
         }
     }
-
+    
     /**
      * Define all possible actions for a Jar file entry.
      */
@@ -201,14 +212,6 @@ public class ExtractJavaResourcesTask extends DefaultAndroidTask {
 
         // get the file name from the path
         String fileName = segments[segments.length-1];
-
-        // ignore maven and licensing information.
-        if (fileName.endsWith("license.txt")
-                || fileName.startsWith("pom.")
-                || fileName.equals("NOTICE")
-                || fileName.startsWith("LICENSE")) {
-            return Action.IGNORE;
-        }
 
         return PackagingUtils.checkFileForPackaging(fileName)
                 ? Action.COPY
