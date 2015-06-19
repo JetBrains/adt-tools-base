@@ -57,6 +57,11 @@ model {
 """
 apply plugin: "com.android.model.library"
 
+dependencies {
+    /* Depend on annotations to trigger the creation of the ExtractAnnotations task */
+    compile 'com.android.support:support-annotations:22.2.0'
+}
+
 model {
     android {
         compileSdkVersion = $GradleTestProject.DEFAULT_COMPILE_SDK_VERSION
