@@ -593,7 +593,7 @@ public class LibraryTaskManager extends TaskManager {
                 return project.files(androidBuilder.getCompileClasspath(config));
             }
         });
-        task.dependsOn(variantData.javacTask);
+        task.dependsOn(variantData.getScope().getJavacTask().getName());
 
         // Setup the boot classpath just before the task actually runs since this will
         // force the sdk to be parsed. (Same as in compileTask)
