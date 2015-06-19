@@ -55,6 +55,7 @@ import com.android.tools.lint.detector.api.Project;
 import com.android.tools.lint.detector.api.Scope;
 import com.android.tools.lint.detector.api.Severity;
 import com.android.utils.XmlUtils;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
 import org.w3c.dom.Document;
@@ -256,6 +257,14 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
     public static final String ATTR_CONDITIONAL = "conditional";
 
     /**
+     * Marker ResourceType used to signify that an expression is of type {@code @ColorInt},
+     * which isn't actually a ResourceType but one we want to specifically compare with.
+     * We're using {@link ResourceType#PUBLIC} because that one won't appear in the R
+     * class (and ResourceType is an enum we can't just create new constants for.)
+     */
+    public static final ResourceType COLOR_INT_MARKER_TYPE = ResourceType.PUBLIC;
+
+    /**
      * Constructs a new {@link SupportAnnotationDetector} check
      */
     public SupportAnnotationDetector() {
@@ -324,9 +333,9 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
             return;
         }
 
-        ResourceType type = getResourceType(argument);
+        List<ResourceType> types = getResourceTypes(context, argument);
 
-        if (type == ResourceType.COLOR) {
+        if (types != null && types.contains(ResourceType.COLOR)) {
             String message = String.format(
                     "Should pass resolved color instead of resource id here: " +
                             "`getResources().getColor(%1$s)`", argument.toString());
@@ -687,17 +696,22 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
             @NonNull JavaContext context,
             @NonNull Node argument,
             @Nullable ResourceType expectedType) {
-        ResourceType actual = getResourceType(argument);
+        List<ResourceType> actual = getResourceTypes(context, argument);
         if (actual == null && (!isNumber(argument) || isZero(argument) || isMinusOne(argument)) ) {
             return;
         } else if (actual != null && (expectedType == null
-                || expectedType == actual
-                || expectedType == DRAWABLE && (actual == COLOR || actual == MIPMAP))) {
+                || actual.contains(expectedType)
+                || expectedType == DRAWABLE && (actual.contains(COLOR) || actual.contains(MIPMAP)))) {
             return;
         }
 
         String message;
-        if (expectedType != null) {
+        if (actual != null && actual.size() == 1 && actual.get(0) == COLOR_INT_MARKER_TYPE) {
+            message = "Expected a color resource id (`R.color.`) but received an RGB integer";
+        } else if (expectedType == COLOR_INT_MARKER_TYPE) {
+            message = String.format("Should pass resolved color instead of resource id here: " +
+                    "`getResources().getColor(%1$s)`", argument.toString());
+        } else if (expectedType != null) {
             message = String.format(
                     "Expected resource of type %1$s", expectedType.getName());
         } else {
@@ -707,7 +721,8 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
     }
 
     @Nullable
-    private static ResourceType getResourceType(@NonNull Node argument) {
+    private static List<ResourceType> getResourceTypes(@NonNull JavaContext context,
+            @NonNull Node argument) {
         if (argument instanceof Select) {
             Select node = (Select) argument;
             if (node.astOperand() instanceof Select) {
@@ -715,15 +730,17 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
                 if (select.astOperand() instanceof Select) { // android.R....
                     Select innerSelect = (Select) select.astOperand();
                     if (innerSelect.astIdentifier().astValue().equals(R_CLASS)) {
-                        String type = select.astIdentifier().astValue();
-                        return ResourceType.getEnum(type);
+                        String typeName = select.astIdentifier().astValue();
+                        ResourceType type = ResourceType.getEnum(typeName);
+                        return type != null ? Collections.singletonList(type) : null;
                     }
                 }
                 if (select.astOperand() instanceof VariableReference) {
                     VariableReference reference = (VariableReference) select.astOperand();
                     if (reference.astIdentifier().astValue().equals(R_CLASS)) {
-                        String type = select.astIdentifier().astValue();
-                        return ResourceType.getEnum(type);
+                        String typeName = select.astIdentifier().astValue();
+                        ResourceType type = ResourceType.getEnum(typeName);
+                        return type != null ? Collections.singletonList(type) : null;
                     }
                 }
             }
@@ -738,8 +755,9 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
                         Expression typeOperand = select.astOperand();
                         if (typeOperand instanceof Select) {
                             Select typeSelect = (Select) typeOperand;
-                            String type = typeSelect.astIdentifier().astValue();
-                            return ResourceType.getEnum(type);
+                            String typeName = typeSelect.astIdentifier().astValue();
+                            ResourceType type = ResourceType.getEnum(typeName);
+                            return type != null ? Collections.singletonList(type) : null;
                         }
                     }
                 }
@@ -767,7 +785,7 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
                                 .astVariables()) {
                             if (entry.astInitializer() != null
                                     && entry.astName().astValue().equals(targetName)) {
-                                return getResourceType(entry.astInitializer());
+                                return getResourceTypes(context, entry.astInitializer());
                             }
                         }
                     } else if (previous instanceof ExpressionStatement) {
@@ -778,8 +796,38 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
                                         == BinaryOperator.ASSIGN) {
                             BinaryExpression binaryExpression = (BinaryExpression) expression;
                             if (targetName.equals(binaryExpression.astLeft().toString())) {
-                                return getResourceType(binaryExpression.astRight());
+                                return getResourceTypes(context, binaryExpression.astRight());
                             }
+                        }
+                    }
+                }
+            }
+        } else if (argument instanceof MethodInvocation) {
+            ResolvedNode resolved = context.resolve(argument);
+            if (resolved != null) {
+                for (ResolvedAnnotation annotation : resolved.getAnnotations()) {
+                    String signature = annotation.getSignature();
+                    if (signature.equals(COLOR_INT_ANNOTATION)) {
+                        return Collections.singletonList(COLOR_INT_MARKER_TYPE);
+                    }
+                    if (signature.endsWith(RES_SUFFIX)
+                            && signature.startsWith(SUPPORT_ANNOTATIONS_PREFIX)) {
+                        String typeString = signature.substring(SUPPORT_ANNOTATIONS_PREFIX.length(),
+                                signature.length() - RES_SUFFIX.length()).toLowerCase(Locale.US);
+                        ResourceType type = ResourceType.getEnum(typeString);
+                        if (type != null) {
+                            return Collections.singletonList(type);
+                        } else if (typeString.equals("any")) { // @AnyRes
+                            ResourceType[] types = ResourceType.values();
+                            List<ResourceType> result = Lists.newArrayListWithExpectedSize(
+                                    types.length);
+                            for (ResourceType t : types) {
+                                if (t != COLOR_INT_MARKER_TYPE) {
+                                    result.add(t);
+                                }
+                            }
+
+                            return result;
                         }
                     }
                 }
