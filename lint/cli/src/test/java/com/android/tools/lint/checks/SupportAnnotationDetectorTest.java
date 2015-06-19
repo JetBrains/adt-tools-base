@@ -253,6 +253,86 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                 ));
     }
 
+    public void testColorInt2() throws Exception {
+        assertEquals(""
+                + "src/test/pkg/ColorTest.java:23: Error: Should pass resolved color instead of resource id here: getResources().getColor(actualColor) [ResourceAsColor]\n"
+                + "        setColor2(actualColor); // ERROR\n"
+                + "                  ~~~~~~~~~~~\n"
+                + "src/test/pkg/ColorTest.java:24: Error: Should pass resolved color instead of resource id here: getResources().getColor(getColor2()) [ResourceAsColor]\n"
+                + "        setColor2(getColor2()); // ERROR\n"
+                + "                  ~~~~~~~~~~~\n"
+                + "src/test/pkg/ColorTest.java:17: Error: Expected a color resource id (R.color.) but received an RGB integer [ResourceType]\n"
+                + "        setColor1(actualColor); // ERROR\n"
+                + "                  ~~~~~~~~~~~\n"
+                + "src/test/pkg/ColorTest.java:18: Error: Expected a color resource id (R.color.) but received an RGB integer [ResourceType]\n"
+                + "        setColor1(getColor1()); // ERROR\n"
+                + "                  ~~~~~~~~~~~\n"
+                + "4 errors, 0 warnings\n",
+
+                lintProject(
+                        java("src/test/pkg/ColorTest.java", ""
+                                + "package test.pkg;\n"
+                                + "import android.content.Context;\n"
+                                + "import android.content.res.Resources;\n"
+                                + "import android.support.annotation.ColorInt;\n"
+                                + "import android.support.annotation.ColorRes;\n"
+                                + "\n"
+                                + "public abstract class ColorTest {\n"
+                                + "    @ColorInt\n"
+                                + "    public abstract int getColor1();\n"
+                                + "    public abstract void setColor1(@ColorRes int color);\n"
+                                + "    @ColorRes\n"
+                                + "    public abstract int getColor2();\n"
+                                + "    public abstract void setColor2(@ColorInt int color);\n"
+                                + "\n"
+                                + "    public void test1(Context context) {\n"
+                                + "        int actualColor = getColor1();\n"
+                                + "        setColor1(actualColor); // ERROR\n"
+                                + "        setColor1(getColor1()); // ERROR\n"
+                                + "        setColor1(getColor2()); // OK\n"
+                                + "    }\n"
+                                + "    public void test2(Context context) {\n"
+                                + "        int actualColor = getColor2();\n"
+                                + "        setColor2(actualColor); // ERROR\n"
+                                + "        setColor2(getColor2()); // ERROR\n"
+                                + "        setColor2(getColor1()); // OK\n"
+                                + "    }\n"
+                                + "}\n"),
+                        mColorResAnnotation,
+                        mColorIntAnnotation
+                ));
+    }
+
+    public void testColorInt3() throws Exception {
+        // Regression test for https://code.google.com/p/android/issues/detail?id=176321
+
+        if (!SDK_ANNOTATIONS_AVAILABLE) {
+            return;
+        }
+        assertEquals(""
+                        + "src/test/pkg/ColorTest.java:11: Error: Expected a color resource id (R.color.) but received an RGB integer [ResourceType]\n"
+                        + "        setColor(actualColor);\n"
+                        + "                 ~~~~~~~~~~~\n"
+                        + "1 errors, 0 warnings\n",
+
+                lintProject(
+                        java("src/test/pkg/ColorTest.java", ""
+                                + "package test.pkg;\n"
+                                + "import android.content.Context;\n"
+                                + "import android.content.res.Resources;\n"
+                                + "import android.support.annotation.ColorRes;\n"
+                                + "\n"
+                                + "public abstract class ColorTest {\n"
+                                + "    public abstract void setColor(@ColorRes int color);\n"
+                                + "\n"
+                                + "    public void test(Context context, @ColorRes int id) {\n"
+                                + "        int actualColor = context.getResources().getColor(id, null);\n"
+                                + "        setColor(actualColor);\n"
+                                + "    }\n"
+                                + "}\n"),
+                        mColorResAnnotation
+                ));
+    }
     public void testResourceType() throws Exception {
         assertEquals((SDK_ANNOTATIONS_AVAILABLE ? ""
                 + "src/p1/p2/Flow.java:13: Error: Expected resource of type drawable [ResourceType]\n"
@@ -267,10 +347,13 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                 + "src/p1/p2/Flow.java:32: Error: Expected resource identifier (R.type.name) [ResourceType]\n"
                 + "        myAnyResMethod(50); // ERROR\n"
                 + "                       ~~\n"
+                + (SDK_ANNOTATIONS_AVAILABLE ? "src/p1/p2/Flow.java:60: Error: Expected resource of type drawable [ResourceType]\n"
+                + "        resources.getDrawable(MimeTypes.getAnnotatedString()); // Error\n"
+                + "                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" : "")
                 + "src/p1/p2/Flow.java:68: Error: Expected resource of type drawable [ResourceType]\n"
                 + "        myMethod(z); // ERROR\n"
                 + "                 ~\n"
-                + (SDK_ANNOTATIONS_AVAILABLE ? "5 errors, 0 warnings\n" : "3 errors, 0 warnings\n"),
+                + (SDK_ANNOTATIONS_AVAILABLE ? "6 errors, 0 warnings\n" : "3 errors, 0 warnings\n"),
 
                 lintProject("src/p1/p2/Flow.java.txt=>src/p1/p2/Flow.java",
                         "src/android/support/annotation/DrawableRes.java.txt=>src/android/support/annotation/DrawableRes.java"));
@@ -439,6 +522,34 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
             + "@Retention(CLASS)\n"
             + "@Target({METHOD,CONSTRUCTOR,TYPE})\n"
             + "public @interface WorkerThread {\n"
+            + "}\n");
+
+    private final TestFile mColorResAnnotation = java("src/android/support/annotation/ColorRes.java", ""
+            + "package android.support.annotation;\n"
+            + "\n"
+            + "import java.lang.annotation.Retention;\n"
+            + "import java.lang.annotation.Target;\n"
+            + "\n"
+            + "import static java.lang.annotation.ElementType.*;\n"
+            + "import static java.lang.annotation.RetentionPolicy.CLASS;\n"
+            + "\n"
+            + "@Retention(CLASS)\n"
+            + "@Target({METHOD, PARAMETER, FIELD, LOCAL_VARIABLE})\n"
+            + "public @interface ColorRes {\n"
+            + "}\n");
+
+    private final TestFile mColorIntAnnotation = java("src/android/support/annotation/ColorInt.java", ""
+            + "package android.support.annotation;\n"
+            + "\n"
+            + "import java.lang.annotation.Retention;\n"
+            + "import java.lang.annotation.Target;\n"
+            + "\n"
+            + "import static java.lang.annotation.ElementType.*;\n"
+            + "import static java.lang.annotation.RetentionPolicy.CLASS;\n"
+            + "\n"
+            + "@Retention(CLASS)\n"
+            + "@Target({METHOD, PARAMETER, FIELD, LOCAL_VARIABLE})\n"
+            + "public @interface ColorInt {\n"
             + "}\n");
 
     private TestFile getManifestWithPermissions(int targetSdk, String... permissions) {
