@@ -1,4 +1,5 @@
 apply plugin: 'java'
+apply plugin: 'jacoco'
 
 group = 'com.android.tools.chartlib'
 archivesBaseName = 'chartlib'
