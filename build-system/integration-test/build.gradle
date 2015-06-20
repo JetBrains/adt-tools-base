@@ -105,9 +105,12 @@ connectedIntegrationTest.dependsOn ':publishLocal'
 performanceTest.dependsOn ':publishLocal'
 
 jacocoTestReport {
+    sourceSets project(':base:gradle-experimental').sourceSets.main
     sourceSets project(':base:gradle').sourceSets.main
+    sourceSets project(':base:gradle-core').sourceSets.main
     sourceSets project(':base:builder').sourceSets.main
     sourceSets project(':base:builder-model').sourceSets.main
+    sourceSets project(':base:builder-test-api').sourceSets.main
 }
 
 // Due to memory constraints, apply jacoco only when jacocoTestReport is invoked.  Make sure to
