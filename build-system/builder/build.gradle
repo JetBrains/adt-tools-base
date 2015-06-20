@@ -1,5 +1,6 @@
 apply plugin: 'java'
 apply plugin: 'clone-artifacts'
+apply plugin: 'jacoco'
 
 evaluationDependsOn(':base:builder-model')
 evaluationDependsOn(':base:builder-test-api')
