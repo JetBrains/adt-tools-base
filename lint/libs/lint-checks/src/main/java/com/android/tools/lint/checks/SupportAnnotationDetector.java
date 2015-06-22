@@ -354,9 +354,14 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
         }
         PermissionHolder permissions = getPermissions(context);
         if (!requirement.isSatisfied(permissions)) {
-            String name = method.getContainingClass().getSimpleName() + "." + method.getName();
-            String message = getMissingPermissionMessage(requirement, name, permissions);
-            context.report(MISSING_PERMISSION, node, context.getLocation(node), message);
+            // See if it looks like we're holding the permission implicitly by @RequirePermission
+            // annotations in the surrounding context
+            permissions  = addLocalPermissions(context, permissions, node);
+            if (!requirement.isSatisfied(permissions)) {
+                String name = method.getContainingClass().getSimpleName() + "." + method.getName();
+                String message = getMissingPermissionMessage(requirement, name, permissions);
+                context.report(MISSING_PERMISSION, node, context.getLocation(node), message);
+            }
         } else if (requirement.isRevocable(permissions) &&
                 context.getMainProject().getTargetSdkVersion().getFeatureLevel() >= 23) {
             // Ensure that the caller is handling a security exception
@@ -412,6 +417,41 @@ public class SupportAnnotationDetector extends Detector implements Detector.Java
                 context.report(MISSING_PERMISSION, node, context.getLocation(node), message);
             }
         }
+    }
+
+    @NonNull
+    private static PermissionHolder addLocalPermissions(
+            @NonNull JavaContext context,
+            @NonNull PermissionHolder permissions,
+            @NonNull Node node) {
+        // Accumulate @RequirePermissions available in the local context
+        Node methodNode = JavaContext.findSurroundingMethod(node);
+        if (methodNode == null) {
+            return permissions;
+        }
+        ResolvedNode resolved = context.resolve(methodNode);
+        if (!(resolved instanceof ResolvedMethod)) {
+            return permissions;
+        }
+        ResolvedMethod method = (ResolvedMethod) resolved;
+        ResolvedAnnotation annotation = method.getAnnotation(PERMISSION_ANNOTATION);
+        permissions = mergeAnnotationPermissions(context, permissions, annotation);
+        annotation = method.getContainingClass().getAnnotation(PERMISSION_ANNOTATION);
+        permissions = mergeAnnotationPermissions(context, permissions, annotation);
+        return permissions;
+    }
+
+    @NonNull
+    private static PermissionHolder mergeAnnotationPermissions(
+            @NonNull JavaContext context,
+            @NonNull PermissionHolder permissions,
+            @Nullable ResolvedAnnotation annotation) {
+        if (annotation != null) {
+            PermissionRequirement requirement = PermissionRequirement.create(context, annotation);
+            permissions = SetPermissionLookup.join(permissions, requirement);
+        }
+
+        return permissions;
     }
 
     /** Returns the error message shown when a given call is missing one or more permissions */
