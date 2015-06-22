@@ -37,7 +37,6 @@ import static com.android.resources.ResourceFolderType.INTERPOLATOR;
 import static com.android.resources.ResourceFolderType.LAYOUT;
 import static com.android.resources.ResourceFolderType.MENU;
 
-import com.android.SdkConstants;
 import com.android.annotations.NonNull;
 import com.android.resources.ResourceFolderType;
 import com.android.tools.lint.detector.api.Category;
