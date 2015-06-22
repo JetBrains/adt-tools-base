@@ -24,6 +24,8 @@ public interface HprofBuffer {
 
     void read(byte[] b);
 
+    void readSubSequence(byte[] b, int sourceStart, int sourceEnd);
+
     char readChar();
 
     short readShort();

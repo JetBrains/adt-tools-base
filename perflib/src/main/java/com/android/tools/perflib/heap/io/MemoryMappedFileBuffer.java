@@ -120,6 +120,35 @@ public class MemoryMappedFileBuffer implements HprofBuffer {
     }
 
     @Override
+    public void readSubSequence(@NonNull byte[] b, int sourceStart, int length) {
+        assert length < mLength;
+
+        mCurrentPosition += sourceStart;
+
+        int index = getIndex();
+        mByteBuffers[index].position(getOffset());
+        if (b.length <= mByteBuffers[index].remaining()) {
+            mByteBuffers[index].get(b, 0, b.length);
+        } else {
+            int split = mBufferSize - mByteBuffers[index].position();
+            mByteBuffers[index].get(b, 0, split);
+
+            int start = split;
+            int remainingMaxLength = Math.min(length - start, b.length - start);
+            int remainingShardCount = (remainingMaxLength + mBufferSize - 1) / mBufferSize;
+            for (int i = 0; i < remainingShardCount; ++i) {
+                int maxToRead = Math.min(remainingMaxLength, mBufferSize);
+                mByteBuffers[index + 1 + i].position(0);
+                mByteBuffers[index + 1 + i].get(b, start, maxToRead);
+                start += maxToRead;
+                remainingMaxLength -= maxToRead;
+            }
+        }
+
+        mCurrentPosition += Math.min(b.length, length);
+    }
+
+    @Override
     public char readChar() {
         char result = mByteBuffers[getIndex()].getChar(getOffset());
         mCurrentPosition += 2;
