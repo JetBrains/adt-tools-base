@@ -18,6 +18,8 @@ package com.android.tools.lint.checks;
 
 import com.android.tools.lint.detector.api.Detector;
 
+import java.io.File;
+
 @SuppressWarnings("javadoc")
 public class RequiredAttributeDetectorTest extends AbstractCheckTest {
     @Override
@@ -121,5 +123,18 @@ public class RequiredAttributeDetectorTest extends AbstractCheckTest {
                     "res/layout/size.xml",
                     "res/values/themes2.xml"
             ));
+    }
+
+    public void testHasLayoutVariations() throws Exception {
+        File projectDir = getProjectDir(null,
+                copy("res/layout/size.xml"),
+                copy("res/layout/size.xml", "res/layout-land/size.xml"),
+                copy("res/layout/size.xml", "res/layout/size2.xml"));
+        assertTrue(RequiredAttributeDetector.hasLayoutVariations(
+                new File(projectDir, "res/layout/size.xml".replace('/', File.separatorChar))));
+        assertTrue(RequiredAttributeDetector.hasLayoutVariations(
+                new File(projectDir, "res/layout-land/size.xml".replace('/', File.separatorChar))));
+        assertFalse(RequiredAttributeDetector.hasLayoutVariations(
+                new File(projectDir, "res/layout/size2.xml".replace('/', File.separatorChar))));
     }
 }
