@@ -36,5 +36,11 @@ public class PermissionHolderTest extends TestCase {
         assertFalse(new SetPermissionLookup(Sets.newHashSet("foo"), empty).isRevocable("foo"));
         assertTrue(new SetPermissionLookup(empty, Sets.newHashSet("foo")).isRevocable("foo"));
         assertFalse(new SetPermissionLookup(empty, Sets.newHashSet("foo")).isRevocable("bar"));
+
+        SetPermissionLookup lookup1 = new SetPermissionLookup(Sets.newHashSet("foo", "bar"));
+        assertTrue(SetPermissionLookup.join(lookup1, Sets.newHashSet("baz")).hasPermission("foo"));
+        assertTrue(SetPermissionLookup.join(lookup1, Sets.newHashSet("baz")).hasPermission("bar"));
+        assertTrue(SetPermissionLookup.join(lookup1, Sets.newHashSet("baz")).hasPermission("baz"));
+        assertFalse(SetPermissionLookup.join(lookup1, Sets.newHashSet("baz")).hasPermission("a"));
     }
 }

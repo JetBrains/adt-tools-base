@@ -121,12 +121,28 @@ public abstract class PermissionRequirement {
             return new Single(annotation, value);
         }
 
-        String[] anyOf = (String[])annotation.getValue(ATTR_ANY_OF);
-        if (anyOf != null && anyOf.length > 0) {
-            return new Many(annotation, BinaryOperator.LOGICAL_OR, anyOf);
-        } else {
-            String[] allOf = (String[])annotation.getValue(ATTR_ALL_OF);
-            if (allOf != null && allOf.length > 0) {
+        Object v = annotation.getValue(ATTR_ANY_OF);
+        if (v != null) {
+            if (v instanceof String[]) {
+                String[] anyOf = (String[])v;
+                if (anyOf.length > 0) {
+                    return new Many(annotation, BinaryOperator.LOGICAL_OR, anyOf);
+                }
+            } else if (v instanceof String) {
+                String[] anyOf = new String[] { (String)v };
+                return new Many(annotation, BinaryOperator.LOGICAL_OR, anyOf);
+            }
+        }
+
+        v = annotation.getValue(ATTR_ALL_OF);
+        if (v != null) {
+            if (v instanceof String[]) {
+                String[] allOf = (String[])v;
+                if (allOf.length > 0) {
+                    return new Many(annotation, BinaryOperator.LOGICAL_AND, allOf);
+                }
+            } else if (v instanceof String) {
+                String[] allOf = new String[] { (String)v };
                 return new Many(annotation, BinaryOperator.LOGICAL_AND, allOf);
             }
         }

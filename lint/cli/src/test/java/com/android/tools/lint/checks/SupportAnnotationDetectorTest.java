@@ -706,6 +706,42 @@ public class SupportAnnotationDetectorTest extends AbstractCheckTest {
                 ));
     }
 
+    public void testImpliedPermissions() throws Exception {
+        // Regression test for
+        //   https://code.google.com/p/android/issues/detail?id=177381
+        assertEquals(""
+                + "src/test/pkg/PermissionTest2.java:11: Error: Missing permissions required by X.method1: my.permission.PERM2 [MissingPermission]\n"
+                + "        method1(); // ERROR\n"
+                + "        ~~~~~~~~~\n"
+                + "1 errors, 0 warnings\n",
+                lintProject(
+                        getManifestWithPermissions(14, "android.permission.ACCESS_FINE_LOCATION"),
+                        java("src/test/pkg/PermissionTest2.java", ""
+                                + "package test.pkg;\n"
+                                + "import android.support.annotation.RequiresPermission;\n"
+                                + "\n"
+                                + "public class X {\n"
+                                + "    @RequiresPermission(allOf = {\"my.permission.PERM1\",\"my.permission.PERM2\"})\n"
+                                + "    public void method1() {\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    @RequiresPermission(\"my.permission.PERM1\")\n"
+                                + "    public void method2() {\n"
+                                + "        method1(); // ERROR\n"
+                                + "    }\n"
+                                + "\n"
+                                + "    @RequiresPermission(allOf = {\"my.permission.PERM1\",\"my.permission.PERM2\"})\n"
+                                + "    public void method3() {\n"
+                                + "        // The above @RequiresPermission implies that we are holding these\n"
+                                + "        // permissions here, so the call to method1() should not be flagged as\n"
+                                + "        // missing a permission!\n"
+                                + "        method1(); // OK\n"
+                                + "    }\n"
+                                + "}\n"),
+                        mRequirePermissionAnnotation
+                ));
+    }
+
     public void testRevokePermissionsPre23() throws Exception {
         assertEquals("No warnings.",
                 lintProject(
